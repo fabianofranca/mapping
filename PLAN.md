@@ -47,7 +47,7 @@ A **Etapa 2** (especialização: arquivo JSON que pré-define camadas e tipos de
 
 ## 4. Modelo de dados (`mapping.json`, schema v1)
 
-> Substituído pelo **schema v2** na seção 12.1 (`name` nas imagens; `inherit` e `parentAnnotationId` nas anotações).
+> Substituído pelo **schema v3** na seção 12.1 (`name` e `markingColor` nas imagens; `inherit` e `parentAnnotationId` nas anotações).
 
 ```json
 {
@@ -275,7 +275,7 @@ Princípios:
 
 > Zoom semântico revisado na seção 12.4.
 
-- **Borda da marcação** sempre na cor neutra do tema.
+- **Borda da marcação** na cor neutra do tema, ou na cor escolhida para a imagem (`markingColor`, seção 12.1).
 - **Indicadores**: bolinhas no canto superior esquerdo, uma para cada camada visível em que a marcação tem anotação, na cor da camada. Acima de 4, mostrar "+N".
 - **Esmaecimento**: marcações sem anotação em nenhuma camada visível ficam com opacidade ~0.35 (a selecionada, nunca).
 - **Seleção**: borda mais grossa. Hover no desktop destaca a marcação e esmaece as outras.
@@ -412,7 +412,7 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 
 Levantadas no uso real no celular. Esta seção prevalece sobre as anteriores.
 
-### 12.1 Schema v2
+### 12.1 Schema v2 e v3
 
 **Imagens** ganham **`name`** (string ou `null`, padrão `null`):
 
@@ -493,11 +493,12 @@ Problema: ao tentar fazer pan, o usuário movia sem querer a marcação ou image
 
 **Indicadores no canvas**
 - Camada que chega à marcação **só por herança**: bolinha **vazada** (contorno). Com anotação própria: bolinha cheia.
-- Herdadas contam para **não esmaecer** a marcação.
+- Herdadas contam para **não esmaecer** a marcação (na camada ativa, ver abaixo).
 
 **Modos de exibição das marcações** (no painel/folha de camadas; preferência por dispositivo, fora do JSON)
 - **Mostrar todas** / **Esmaecer sem anotação** (padrão, comportamento atual) / **Ocultar sem anotação**.
 - "Sem anotação" = sem anotação própria **nem herdada** na **camada ativa** (decisão revista após o uso no celular; as demais camadas visíveis só acrescentam indicadores e texto).
+- Só a **camada ativa** decide quem é "sem anotação". As outras camadas visíveis continuam mostrando indicadores e texto, mas só nas marcações que a camada ativa mantém visíveis.
 - No modo Ocultar:
   - **ancestrais** de uma marcação visível continuam aparecendo, só com a borda esmaecida (sem texto, nome nem indicadores), para manter o contexto da hierarquia; marcações sem anotação que não são pai de nenhuma visível somem;
   - a **marcação selecionada sempre aparece**, mesmo sem anotação (ex: selecionada pela árvore para receber a primeira anotação);
@@ -584,10 +585,16 @@ Problema: o texto solto sobre a foto, com a mesma cor e peso para nomes e pares,
 - [x] Seção "Herdadas" no painel; identificação na Lista
 - [x] Indicadores: bolinha vazada para camada só herdada
 - [x] Modos de exibição Mostrar todas / Esmaecer / Ocultar sem anotação (12.3)
+- [x] Extra, pedido no uso: cor da borda das marcações por imagem (`markingColor`, schema v3; 12.1)
 
-**Aceite**: criar a marcação "Botão" com a anotação `Button` na camada Componentes e os eventos `onClick` e `onLongPress` na camada Eventos vinculados a ela; ocultar e mostrar cada camada; na Porta › Maçaneta, ligar a herança numa anotação da Porta e vê-la como herdada na Maçaneta; excluir a camada Componentes mostra as contagens e apaga também os eventos; com só a camada Eventos visível e o modo Ocultar, aparecem apenas os componentes com eventos (e o contorno dos ancestrais).
+**Aceite**: criar a marcação "Botão" com a anotação `Button` na camada Componentes e os eventos `onClick` e `onLongPress` na camada Eventos vinculados a ela; ocultar e mostrar cada camada; na Porta › Maçaneta, ligar a herança numa anotação da Porta e vê-la como herdada na Maçaneta; excluir a camada Componentes mostra as contagens e apaga também os eventos; com a camada Eventos ativa e o modo Ocultar, aparecem apenas os componentes com eventos (e a borda esmaecida dos ancestrais).
 
 #### Fase 11 — Zoom semântico
+
+> Regras vindas da Fase 10 que o cartão precisa respeitar (implementadas em `src/model/display.ts` e no `CanvasController`):
+> - marcação `hidden` (modo Ocultar): nem borda nem cartão; `outline` (pai de marcação visível): só a borda esmaecida, **sem cartão, nome nem indicadores**; `dim`: cartão esmaecido junto com o resto;
+> - as anotações **herdadas** e **vinculadas** ("↳ herdado de", "↳ de") entram no cartão como em 12.4; o texto mostra as camadas visíveis, mesmo que a camada ativa seja a única que decide a visibilidade;
+> - a cor da borda vem de `images[].markingColor` (schema v3): o cartão usa a cor de superfície do tema e não deve depender dela.
 - [ ] Cartão com seções por camada, nomes em destaque, pares com recuo, separadores (12.4)
 - [ ] Identificação de herdadas e vinculadas no cartão
 - [ ] Texto do pai na maior área livre + testes do algoritmo
