@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light;
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-text: #1b1f24;
+  --color-text-muted: #5b6470;
+  --color-border: #d3d8de;
+  --color-accent: #1e6fe0;
+  --color-accent-text: #ffffff;
+  --color-marking: #2b2f36;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --radius: 8px;
+  --touch-target: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-bg: #12151a;
+    --color-surface: #1c2027;
+    --color-text: #e8eaed;
+    --color-text-muted: #9aa3ad;
+    --color-border: #343b45;
+    --color-accent: #5b9bff;
+    --color-accent-text: #0b1220;
+    --color-marking: #d5d9df;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #12151a;
+  --color-surface: #1c2027;
+  --color-text: #e8eaed;
+  --color-text-muted: #9aa3ad;
+  --color-border: #343b45;
+  --color-accent: #5b9bff;
+  --color-accent-text: #0b1220;
+  --color-marking: #d5d9df;
+}

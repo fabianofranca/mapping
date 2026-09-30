@@ -312,11 +312,11 @@ Princípios:
 Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 
 ### Fase 0 — Fundação
-- [ ] Vite + TS strict + Preact + @preact/signals; ESLint + Prettier; Vitest
-- [ ] Build singlefile com `base: './'`
-- [ ] Workflow de deploy no Pages (+ `workflow_dispatch` + artefato)
-- [ ] Infra de i18n (pt-BR, en-US) e de tema (sistema/claro/escuro)
-- [ ] Tela inicial vazia com troca de idioma e tema
+- [x] Vite + TS strict + Preact + @preact/signals; ESLint + Prettier; Vitest
+- [x] Build singlefile com `base: './'`
+- [x] Workflow de deploy no Pages (+ `workflow_dispatch` + artefato)
+- [x] Infra de i18n (pt-BR, en-US) e de tema (sistema/claro/escuro)
+- [x] Tela inicial vazia com troca de idioma e tema
 
 **Aceite**: `dist/index.html` abre com duplo clique no Chrome desktop; a URL do Pages abre no celular; tema e idioma trocam e persistem.
 
