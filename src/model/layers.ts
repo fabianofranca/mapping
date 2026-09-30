@@ -4,6 +4,9 @@ import type { Layer, Project } from './types';
 
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
 
+/** Cor da primeira camada de um projeto novo. */
+export const DEFAULT_LAYER_COLOR = '#E53935';
+
 function checkName(name: string): string {
   const trimmed = name.trim();
   if (trimmed === '') fail('invalid-name');

@@ -1,0 +1,39 @@
+/** Nome do arquivo do projeto na raiz da pasta/zip. */
+export const MAPPING_FILE = 'mapping.json';
+/** Pasta das imagens, relativa à raiz do projeto. */
+export const IMAGES_DIR = 'images';
+
+export type StorageKind = 'folder' | 'local';
+
+/**
+ * Onde o projeto vive: uma pasta no disco (File System Access API) ou o
+ * IndexedDB do navegador. Os caminhos são relativos à raiz do projeto
+ * (`mapping.json`, `images/foto.jpg`).
+ */
+export interface ProjectStorage {
+  readonly kind: StorageKind;
+  /** Texto do `mapping.json`, ou `null` se ele não existir. */
+  loadMapping(): Promise<string | null>;
+  saveMapping(text: string): Promise<void>;
+  /** Conteúdo da imagem, ou `null` se o arquivo não existir. */
+  readImage(path: string): Promise<Blob | null>;
+  writeImage(path: string, data: Blob): Promise<void>;
+  /** Remove a imagem. Não falha se ela já não existir. */
+  removeImage(path: string): Promise<void>;
+}
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'];
+
+/** `true` se o nome do arquivo tem extensão de imagem conhecida. */
+export function isImageFileName(name: string): boolean {
+  const dot = name.lastIndexOf('.');
+  return dot > 0 && IMAGE_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
+}
+
+/** Tipo MIME a partir da extensão (para arquivos lidos sem tipo, como os do zip). */
+export function imageMimeType(name: string): string {
+  const ext = name.slice(name.lastIndexOf('.') + 1).toLowerCase();
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  if (IMAGE_EXTENSIONS.includes(ext)) return `image/${ext}`;
+  return 'application/octet-stream';
+}

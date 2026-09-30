@@ -330,13 +330,13 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 **Aceite**: testes cobrindo todas as operações e invariantes; round-trip do JSON idêntico.
 
 ### Fase 2 — Armazenamento e tela inicial
-- [ ] Interface `ProjectStorage`
-- [ ] FolderStorage com salvamento automático e indicador de status
-- [ ] LocalStorage (IndexedDB), abrir zip, exportar zip (Web Share / download), lista de projetos locais, `persist()`, indicador de não exportado
-- [ ] Importação de imagens com normalização EXIF e bitmap de exibição
-- [ ] Tela inicial: Novo projeto, Abrir pasta, Abrir zip, Projetos neste dispositivo (conforme os recursos detectados)
-- [ ] Pasta sem `mapping.json` → criar o projeto a partir das imagens existentes
-- [ ] Editor provisório listando as imagens do projeto (o canvas vem na fase 3)
+- [x] Interface `ProjectStorage`
+- [x] FolderStorage com salvamento automático e indicador de status
+- [x] LocalStorage (IndexedDB), abrir zip, exportar zip (Web Share / download), lista de projetos locais, `persist()`, indicador de não exportado
+- [x] Importação de imagens com normalização EXIF e bitmap de exibição
+- [x] Tela inicial: Novo projeto, Abrir pasta, Abrir zip, Projetos neste dispositivo (conforme os recursos detectados)
+- [x] Pasta sem `mapping.json` → criar o projeto a partir das imagens existentes
+- [x] Editor provisório listando as imagens do projeto (o canvas vem na fase 3)
 
 **Aceite**: desktop — criar projeto numa pasta, adicionar imagens, fechar, reabrir e ver o mesmo estado. Celular — abrir um zip, adicionar imagem, fechar o navegador, reabrir, exportar; o zip exportado abre no desktop com o mesmo estado.
 
