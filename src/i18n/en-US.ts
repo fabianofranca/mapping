@@ -58,18 +58,50 @@ export const enUS: Dictionary = {
   'editor.importFailed': 'Could not import: {names}',
   'editor.export': 'Export',
   'editor.exporting': 'Building zip…',
-  'editor.images': 'Images',
-  'editor.noImages': 'No images yet. Tap "Add images".',
-  'editor.imageMissing': 'Missing image',
-  'editor.imageError': 'Cannot display',
-  'editor.dimensions': '{width} × {height} px',
-  'editor.provisional': 'Provisional editor: the canvas arrives in the next phase.',
   'editor.readOnlyNotice':
     'This file was made by a newer version of the app and is open read-only.',
   'editor.closeUnsavedTitle': 'Close without saving?',
   'editor.closeUnsavedMessage':
     'The latest changes were not saved. If you close now, they will be lost.',
   'editor.closeAnyway': 'Close anyway',
+
+  'editor.addImageShort': 'Image',
+  'editor.undo': 'Undo',
+  'editor.redo': 'Redo',
+  'editor.fitAll': 'Fit all',
+  'editor.menu': 'Menu',
+  'editor.closeProject': 'Close project',
+  'editor.emptyCanvas': 'No images yet. Add photos to build the canvas.',
+  'editor.canvasLabel': 'Project canvas',
+  'editor.dismiss': 'Dismiss',
+
+  'panel.details': 'Details',
+  'panel.nothingSelected': 'Nothing selected',
+  'panel.empty': 'Tap or click an image on the canvas to see its details.',
+  'panel.expand': 'Show details',
+  'panel.collapse': 'Hide details',
+
+  'image.dimensions': '{width} × {height} px',
+  'image.missingTitle': 'Missing image',
+  'image.missingMessage':
+    'The file {file} was not found. Markings stay in place: repoint the image to another file.',
+  'image.errorMessage':
+    'This image cannot be displayed. You can replace it with another file.',
+  'image.replace': 'Replace image',
+  'image.repoint': 'Repoint image',
+  'image.delete': 'Delete image',
+  'image.deleteTitle': 'Delete image?',
+  'image.deleteMessage':
+    '"{file}" will be removed from the project, with {markings} marking(s) and {annotations} annotation(s). You can undo this.',
+  'image.aspectTitle': 'Different aspect ratio',
+  'image.aspectMessage':
+    'The current image is {from} and the new one is {to}. Markings will be rescaled and flagged for review.',
+  'image.aspectConfirm': 'Replace anyway',
+  'image.replacing': 'Replacing image…',
+  'image.replaceFailed': 'Could not replace the image.',
+
+  'canvas.imageMissing': 'Missing image',
+  'canvas.imageError': 'Cannot display',
 
   'export.title': 'Export project',
   'export.ready': '{file} is ready.',

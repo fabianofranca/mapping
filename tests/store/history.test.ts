@@ -165,6 +165,37 @@ describe('store: gestos', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
+  it('actions de gesto: mover imagem com prévias, sobreposição e uma entrada', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    const start = before.images[1]?.placement;
+    if (!start) throw new Error('sem I2');
+    expect(actions.beginGesture().ok).toBe(true);
+    expect(actions.previewImagePlacement('I2', { ...start, y: 900 }).ok).toBe(true);
+    // Em cima da I1 (0..1000 × 0..750): recusada, fica na última válida.
+    expect(actions.previewImagePlacement('I2', { ...start, x: 100, y: 100 })).toEqual({
+      ok: false,
+      error: 'image-overlap',
+    });
+    expect(project(store).images[1]?.placement).toEqual({ ...start, y: 900 });
+    actions.commitGesture();
+    expect(project(store).images[1]?.placement).toEqual({ ...start, y: 900 });
+    expect(store.undo()).toBe(true);
+    expect(project(store).images).toBe(before.images);
+    expect(store.undo()).toBe(false);
+  });
+
+  it('actions de gesto: redimensionar e cancelar', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    actions.beginGesture();
+    actions.previewImagePlacement('I1', { x: 0, y: 0, scale: 0.1 });
+    expect(project(store).images[0]?.placement.scale).toBe(0.1);
+    actions.cancelGesture();
+    expect(project(store)).toBe(before);
+    expect(store.canUndo.value).toBe(false);
+  });
+
   it('durante o gesto, outras actions e undo ficam bloqueados', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'A');

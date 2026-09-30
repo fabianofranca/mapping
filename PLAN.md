@@ -341,12 +341,12 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 **Aceite**: desktop — criar projeto numa pasta, adicionar imagens, fechar, reabrir e ver o mesmo estado. Celular — abrir um zip, adicionar imagem, fechar o navegador, reabrir, exportar; o zip exportado abre no desktop com o mesmo estado.
 
 ### Fase 3 — Canvas e imagens
-- [ ] Layout responsivo (barras, gaveta inferior no celular, painel lateral no desktop)
-- [ ] CanvasHost + CanvasController: pan, zoom, pinça, enquadrar tudo
-- [ ] Renderizar imagens e o espaço vazio de imagem ausente
-- [ ] Adicionar com posicionamento automático; selecionar, mover e redimensionar sem sobreposição
-- [ ] Excluir em cascata; trocar imagem com reescala e `needsReview`; reapontar imagem ausente
-- [ ] Desfazer/refazer na interface + atalhos
+- [x] Layout responsivo (barras, gaveta inferior no celular, painel lateral no desktop)
+- [x] CanvasHost + CanvasController: pan, zoom, pinça, enquadrar tudo
+- [x] Renderizar imagens e o espaço vazio de imagem ausente
+- [x] Adicionar com posicionamento automático; selecionar, mover e redimensionar sem sobreposição
+- [x] Excluir em cascata; trocar imagem com reescala e `needsReview`; reapontar imagem ausente
+- [x] Desfazer/refazer na interface + atalhos
 
 **Aceite**: montar o "carro" com 4 fotos no celular, reorganizar sem conseguir sobrepor, trocar uma foto, desfazer tudo.
 

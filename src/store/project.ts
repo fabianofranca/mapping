@@ -54,6 +54,14 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     ) => store.apply((p) => model.replaceImage(p, imageId, file, options)),
     removeImage: (imageId: string) => store.apply((p) => model.removeImage(p, imageId)),
 
+    // Gestos: prévias sem histórico e uma única entrada no fim (ver `ProjectStore`).
+    beginGesture: () => store.beginGesture(),
+    /** Prévia de mover/redimensionar. Se sobrepuser, fica na última posição válida. */
+    previewImagePlacement: (imageId: string, placement: Placement) =>
+      store.updateGesture((p) => model.setImagePlacement(p, imageId, placement)),
+    commitGesture: () => store.commitGesture(),
+    cancelGesture: () => store.cancelGesture(),
+
     // Marcações
     createMarking: (imageId: string, rect: Rect, name?: string | null) =>
       create((id) => (p) => model.createMarking(p, { id, imageId, rect, name })),
