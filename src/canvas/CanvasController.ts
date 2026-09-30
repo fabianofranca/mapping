@@ -112,6 +112,9 @@ interface ImagePreview {
   readonly valid: boolean;
 }
 
+/** Alvo de um arrastar-e-soltar de arquivos: área vazia ou uma imagem (será trocada). */
+export type DropTarget = { readonly imageId: string | null } | null;
+
 /** Retângulo sendo desenhado (modo Desenhar), em pixels da imagem. */
 interface Draft {
   readonly imageId: string;
@@ -246,6 +249,7 @@ export class CanvasController {
   private readonly size = signal<Size>({ width: 0, height: 0 });
   private readonly preview = signal<ImagePreview | null>(null);
   private readonly draft = signal<Draft | null>(null);
+  private readonly dropTarget = signal<DropTarget>(null);
   private readonly tokens = signal<CanvasTokens>(readCanvasTokens());
 
   private readonly stage: Konva.Stage;
@@ -254,6 +258,7 @@ export class CanvasController {
   private readonly overlayLayer = new Konva.Layer({ listening: false });
   private readonly selectionOutline = new KonvaRect({ visible: false });
   private readonly draftRect = new KonvaRect({ visible: false });
+  private readonly dropRect = new KonvaRect({ visible: false });
   private readonly handles = new Map<Corner, KonvaRect>();
   private readonly nodes = new Map<string, ImageNode>();
   private readonly markingNodes = new Map<string, MarkingNode>();
@@ -275,7 +280,7 @@ export class CanvasController {
 
     this.stage = new Konva.Stage({ container: this.container, width: 1, height: 1 });
     this.stage.add(this.imageLayer, this.markingLayer, this.overlayLayer);
-    this.overlayLayer.add(this.selectionOutline, this.draftRect);
+    this.overlayLayer.add(this.selectionOutline, this.draftRect, this.dropRect);
     for (const corner of CORNERS) {
       const handle = new KonvaRect({ visible: false });
       this.handles.set(corner, handle);
@@ -313,6 +318,29 @@ export class CanvasController {
         ? markingCanvasRect(image.placement, selected.marking.rect)
         : imageCanvasRect(image, image.placement);
     this.viewport.value = centerOn(this.viewport.peek(), rect, size);
+  }
+
+  /** Ponto do canvas (unidades do canvas) sob uma coordenada de tela da página. */
+  canvasPointAt(clientX: number, clientY: number): Point {
+    return this.toCanvas(this.screenPoint({ clientX, clientY }));
+  }
+
+  /** Centro da área visível, em unidades do canvas. */
+  viewportCenter(): Point {
+    this.onResize();
+    const size = this.size.peek();
+    return this.toCanvas({ x: size.width / 2, y: size.height / 2 });
+  }
+
+  /** Id da imagem sob uma coordenada de tela da página, ou `null` em área vazia. */
+  imageIdAt(clientX: number, clientY: number): string | null {
+    const images = this.store.project.peek()?.images ?? [];
+    return imageAt(images, this.canvasPointAt(clientX, clientY))?.id ?? null;
+  }
+
+  /** Destaca o alvo de um arrastar-e-soltar (`null` remove o destaque). */
+  setDropTarget(target: DropTarget): void {
+    this.dropTarget.value = target;
   }
 
   /** Cancela o gesto de mover/redimensionar/desenhar em andamento. `true` se havia um. */
@@ -377,6 +405,7 @@ export class CanvasController {
     this.renderMarkings(project, shown, placements, annotated, tokens, v.scale);
     this.renderDraft(placements, tokens, v.scale);
     this.renderSelection(project, preview, placements, tokens, v.scale);
+    this.renderDropTarget(project, tokens, v.scale);
     this.stage.batchDraw();
   }
 
@@ -737,6 +766,29 @@ export class CanvasController {
         stroke: tokens.surface,
         strokeWidth: 2.5 / zoom,
       });
+    });
+  }
+
+  private renderDropTarget(
+    project: Project | null,
+    tokens: CanvasTokens,
+    zoom: number,
+  ): void {
+    const target = this.dropTarget.value;
+    this.container.classList.toggle('canvas-host--drop', target?.imageId === null);
+    const image = target?.imageId
+      ? project?.images.find((i) => i.id === target.imageId)
+      : undefined;
+    if (!image) {
+      this.dropRect.visible(false);
+      return;
+    }
+    this.dropRect.setAttrs({
+      ...imageCanvasRect(image, image.placement),
+      visible: true,
+      stroke: tokens.accent,
+      strokeWidth: (3 * SELECTION_STROKE) / zoom,
+      dash: [10 / zoom, 6 / zoom],
     });
   }
 

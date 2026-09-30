@@ -43,8 +43,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     removeLayer: (layerId: string) => store.apply((p) => model.removeLayer(p, layerId)),
 
     // Imagens
-    addImage: (file: model.ImageFile) =>
-      create((id) => (p) => model.addImage(p, { ...file, id })),
+    addImage: (
+      file: model.ImageFile,
+      center?: { readonly x: number; readonly y: number },
+    ) => create((id) => (p) => model.addImage(p, { ...file, id, center })),
     setImagePlacement: (imageId: string, placement: Placement) =>
       store.apply((p) => model.setImagePlacement(p, imageId, placement)),
     replaceImage: (

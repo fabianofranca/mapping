@@ -1,7 +1,12 @@
+import {
+  chooseOutputFormat,
+  encodedAsRequested,
+  planOutputSize,
+  shouldUseEncoded,
+  type OutputMime,
+} from '../model';
 import { readExifOrientation } from './exif';
 
-/** Qualidade JPEG usada ao recodificar uma foto com orientação EXIF. */
-export const NORMALIZED_JPEG_QUALITY = 0.92;
 /** Lado maior do bitmap usado para exibir a imagem (as coordenadas não mudam). */
 export const DISPLAY_MAX_SIDE = 2048;
 
@@ -29,33 +34,67 @@ function drawToCanvas(
   source: ImageBitmap,
   width: number,
   height: number,
+  mime?: OutputMime,
 ): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2d context unavailable');
+  if (mime === 'image/jpeg') {
+    // JPEG não tem transparência: sem fundo, ela viraria preto.
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, width, height);
+  }
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(source, 0, 0, width, height);
   return canvas;
 }
 
-function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Blob | null> {
-  return new Promise((resolve) =>
-    canvas.toBlob(resolve, 'image/jpeg', NORMALIZED_JPEG_QUALITY),
-  );
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  mime: OutputMime,
+  quality: number | undefined,
+): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, mime, quality));
 }
 
-function withJpegExtension(name: string): string {
+let webpSupport: Promise<boolean> | null = null;
+
+/** Detecta em runtime se `canvas.toBlob` gera WebP (senão ele devolve PNG). */
+function supportsWebp(): Promise<boolean> {
+  webpSupport ??= (async () => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const blob = await canvasToBlob(canvas, 'image/webp', 0.5);
+      return blob !== null && encodedAsRequested('image/webp', blob.type);
+    } catch {
+      return false;
+    }
+  })();
+  return webpSupport;
+}
+
+function withExtension(name: string, extension: string): string {
   const dot = name.lastIndexOf('.');
-  return `${dot > 0 ? name.slice(0, dot) : name}.jpg`;
+  return `${dot > 0 ? name.slice(0, dot) : name}.${extension}`;
+}
+
+function isPngFile(file: File): boolean {
+  return file.type === 'image/png' || /\.png$/i.test(file.name);
 }
 
 /**
- * Prepara uma imagem escolhida pelo usuário: lê as dimensões com a orientação
- * EXIF aplicada e, se a orientação for diferente de 1, recodifica em JPEG já
- * rotacionado. Se a recodificação falhar (ex.: foto maior que o limite de canvas
- * do iOS), guarda o arquivo original: as coordenadas continuam corretas porque
- * o sistema de coordenadas é o da imagem com EXIF aplicado.
+ * Prepara e otimiza uma imagem que entra pela app (arquivo, câmera, colar,
+ * arrastar, troca): aplica a orientação EXIF, limita o lado maior a
+ * `MAX_IMAGE_SIDE` e recodifica em WebP (PNG de origem: sem perdas; sem suporte
+ * a WebP: JPEG ou PNG), removendo os metadados. Sem redução, só usa o
+ * recodificado se ficar menor (ou se for preciso girar a foto). Se a
+ * recodificação falhar (ex.: foto maior que o limite de canvas do iOS), guarda o
+ * arquivo original: as coordenadas continuam corretas porque o sistema de
+ * coordenadas é o da imagem com EXIF aplicado.
  */
 export async function prepareImage(file: File): Promise<PreparedImage> {
   let bitmap: ImageBitmap;
@@ -68,14 +107,30 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   try {
     const isJpeg = file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name);
     const orientation = isJpeg ? readExifOrientation(await file.arrayBuffer()) : 1;
-    if (orientation !== 1) {
-      try {
-        const jpeg = await canvasToJpeg(drawToCanvas(bitmap, width, height));
-        if (jpeg)
-          return { name: withJpegExtension(file.name), data: jpeg, width, height };
-      } catch {
-        // Cai no arquivo original abaixo.
+    try {
+      const plan = planOutputSize({ width, height });
+      const format = chooseOutputFormat({ isPng: isPngFile(file) }, await supportsWebp());
+      const canvas = drawToCanvas(bitmap, plan.width, plan.height, format.mime);
+      const encoded = await canvasToBlob(canvas, format.mime, format.quality);
+      if (
+        encoded &&
+        encodedAsRequested(format.mime, encoded.type) &&
+        shouldUseEncoded({
+          resized: plan.resized,
+          needsRotation: orientation !== 1,
+          originalBytes: file.size,
+          encodedBytes: encoded.size,
+        })
+      ) {
+        return {
+          name: withExtension(file.name, format.extension),
+          data: encoded,
+          width: plan.width,
+          height: plan.height,
+        };
       }
+    } catch {
+      // Cai no arquivo original abaixo.
     }
     return { name: file.name, data: file, width, height };
   } finally {

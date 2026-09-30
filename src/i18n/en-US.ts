@@ -55,6 +55,11 @@ export const enUS: Dictionary = {
 
   'editor.addImages': 'Add images',
   'editor.importing': 'Importing {current} of {total}…',
+  'editor.addFromDevice': 'Choose file or camera',
+  'editor.pasteImage': 'Paste image',
+  'editor.pasteEmpty': 'There is no image on the clipboard.',
+  'editor.pasteFailed': 'Could not paste the image.',
+  'editor.dropIgnored': 'Ignored (not an image): {names}',
   'editor.importFailed': 'Could not import: {names}',
   'editor.export': 'Export',
   'editor.exporting': 'Building zip…',

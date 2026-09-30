@@ -33,6 +33,11 @@ export interface AspectChange {
 
 export type ReplaceImageResult = 'replaced' | 'cancelled' | 'failed';
 
+export interface AddImagesOptions {
+  /** Ponto do canvas onde o centro de cada imagem deve ficar (espaço livre mais próximo). */
+  readonly center?: { readonly x: number; readonly y: number };
+}
+
 /** Um projeto aberto: store com undo/redo ligado ao armazenamento. */
 export interface ProjectSession {
   readonly storage: ProjectStorage;
@@ -40,7 +45,7 @@ export interface ProjectSession {
   readonly actions: ProjectActions;
   readonly saveStatus: ReadonlySignal<SaveStatus>;
   /** Importa as imagens: grava cada arquivo e o adiciona ao projeto (uma entrada de undo cada). */
-  addImages(files: readonly File[]): Promise<AddImagesResult>;
+  addImages(files: readonly File[], options?: AddImagesOptions): Promise<AddImagesResult>;
   /**
    * Troca o arquivo da imagem (ou reaponta uma imagem ausente) mantendo as
    * marcações. Com proporção diferente, pergunta antes via `confirmAspectChange`.
@@ -124,7 +129,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     actions,
     saveStatus: saver.status,
 
-    async addImages(files) {
+    async addImages(files, addOptions = {}) {
       const added: string[] = [];
       const failed: string[] = [];
       if (store.readOnly.value || !store.project.value) {
@@ -138,11 +143,10 @@ export function openSession(options: SessionOptions): ProjectSession {
           path = uniqueImageFile(currentProject(store), safeFileName(prepared.name));
           await storage.writeImage(path, prepared.data);
           stored.add(path);
-          const result = actions.addImage({
-            file: path,
-            width: prepared.width,
-            height: prepared.height,
-          });
+          const result = actions.addImage(
+            { file: path, width: prepared.width, height: prepared.height },
+            addOptions.center,
+          );
           if (!result.ok) throw new Error(result.error);
           added.push(path);
         } catch {

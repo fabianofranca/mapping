@@ -43,6 +43,13 @@ import { ToolButton } from '../ui/ToolButton';
 import { useMediaQuery } from '../ui/useMediaQuery';
 import { buildExport, closeProject, type OpenProject } from './controller';
 import { ExportDialog } from './ExportDialog';
+import {
+  canReadClipboard,
+  dragHasFiles,
+  imagesFromPaste,
+  readClipboardImages,
+  splitImageFiles,
+} from './imageIntake';
 import { isTextInput, shortcutFor } from './shortcuts';
 
 /** Largura a partir da qual o layout de desktop é usado (PLAN.md, 7.1). */
@@ -73,6 +80,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const [exportFile, setExportFile] = useState<File | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProjectImage | null>(null);
   const [deleteMarking, setDeleteMarking] = useState<Marking | null>(null);
   const [panelTab, setPanelTab] = useState<PanelTab>('details');
@@ -139,17 +147,16 @@ export function Editor({ open }: { readonly open: OpenProject }) {
 
   if (!project) return null;
 
-  const onImagesChosen = async (input: HTMLInputElement) => {
-    const files = [...(input.files ?? [])];
-    input.value = '';
-    if (files.length === 0) return;
+  /** Importa as imagens; `center` (canvas) as posiciona perto de um ponto. */
+  const addFiles = async (files: readonly File[], center?: { x: number; y: number }) => {
+    if (files.length === 0 || readOnly) return;
     setMessage(null);
     const failed: string[] = [];
     const added: string[] = [];
     // Uma chamada por arquivo para mostrar o progresso.
     for (const [index, file] of files.entries()) {
       setProgress(t('editor.importing', { current: index + 1, total: files.length }));
-      const result = await session.addImages([file]);
+      const result = await session.addImages([file], { center });
       failed.push(...result.failed);
       added.push(...result.added);
     }
@@ -157,10 +164,93 @@ export function Editor({ open }: { readonly open: OpenProject }) {
     const last = store.project.peek()?.images.find((i) => i.file === added.at(-1));
     if (last) {
       ui.selection.value = { kind: 'image', id: last.id };
-      controller.current?.fitAll();
+      if (!center) controller.current?.fitAll();
     }
     if (failed.length > 0)
       setMessage(t('editor.importFailed', { names: failed.join(', ') }));
+  };
+
+  const onImagesChosen = async (input: HTMLInputElement) => {
+    const files = [...(input.files ?? [])];
+    input.value = '';
+    await addFiles(files);
+  };
+
+  const addAtViewCenter = (files: readonly File[]) =>
+    addFiles(files, controller.current?.viewportCenter());
+
+  const onPasteImage = async () => {
+    setAddMenuOpen(false);
+    try {
+      const files = await readClipboardImages();
+      if (files.length === 0) setMessage(t('editor.pasteEmpty'));
+      else await addAtViewCenter(files);
+    } catch {
+      setMessage(t('editor.pasteFailed'));
+    }
+  };
+
+  /** Botão de adicionar: no celular com clipboard, oferece "Colar imagem". */
+  const onAddClick = () => {
+    if (!desktop && canReadClipboard()) setAddMenuOpen(true);
+    else imageInput.current?.click();
+  };
+
+  // Ctrl/Cmd+V com o foco fora de campos de texto adiciona a imagem copiada.
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (isTextInput(e.target) || document.querySelector('dialog[open]')) return;
+      const files = imagesFromPaste(e.clipboardData);
+      if (files.length === 0 || store.readOnly.peek()) return;
+      e.preventDefault();
+      void addAtViewCenter(files);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  });
+
+  // ---- Arrastar e soltar arquivos ----
+
+  const dropTargetAt = (e: DragEvent) => {
+    const single = (e.dataTransfer?.items.length ?? 0) === 1;
+    const imageId = controller.current?.imageIdAt(e.clientX, e.clientY) ?? null;
+    return { imageId: single ? imageId : null };
+  };
+
+  const onDragOver = (e: DragEvent) => {
+    if (!dragHasFiles(e.dataTransfer) || readOnly || busy) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    controller.current?.setDropTarget(dropTargetAt(e));
+  };
+
+  const onDragLeave = (e: DragEvent) => {
+    // Só limpa ao sair da área (dragleave também dispara entre filhos).
+    if (e.relatedTarget instanceof Node && e.currentTarget instanceof Node) {
+      if (e.currentTarget.contains(e.relatedTarget)) return;
+    }
+    controller.current?.setDropTarget(null);
+  };
+
+  const onDrop = (e: DragEvent) => {
+    if (!dragHasFiles(e.dataTransfer)) return;
+    e.preventDefault();
+    controller.current?.setDropTarget(null);
+    if (readOnly || busy) return;
+    const { images, ignored } = splitImageFiles([...(e.dataTransfer?.files ?? [])]);
+    const [only] = images;
+    const overImage = controller.current?.imageIdAt(e.clientX, e.clientY) ?? null;
+    const warn = () => {
+      if (ignored.length > 0)
+        setMessage(t('editor.dropIgnored', { names: ignored.join(', ') }));
+    };
+    if (!only) return warn();
+    if (images.length === 1 && overImage) {
+      void replaceWith(overImage, only).then(warn);
+      return;
+    }
+    const point = controller.current?.canvasPointAt(e.clientX, e.clientY);
+    void addFiles(images, point).then(warn);
   };
 
   const askAspectChange = (change: AspectChange) =>
@@ -176,17 +266,21 @@ export function Editor({ open }: { readonly open: OpenProject }) {
     replaceInput.current?.click();
   };
 
+  const replaceWith = async (imageId: string, file: File) => {
+    setMessage(null);
+    setProgress(t('image.replacing'));
+    const result = await session.replaceImage(imageId, file, askAspectChange);
+    setProgress(null);
+    if (result === 'failed') setMessage(t('image.replaceFailed'));
+  };
+
   const onReplaceChosen = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = '';
     const imageId = replaceTarget.current;
     replaceTarget.current = null;
     if (!file || !imageId) return;
-    setMessage(null);
-    setProgress(t('image.replacing'));
-    const result = await session.replaceImage(imageId, file, askAspectChange);
-    setProgress(null);
-    if (result === 'failed') setMessage(t('image.replaceFailed'));
+    await replaceWith(imageId, file);
   };
 
   const onMarkingDeleteConfirmed = (marking: Marking) => {
@@ -255,7 +349,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
       label={t('editor.addImages')}
       text={desktop ? t('editor.addImages') : undefined}
       disabled={readOnly || busy}
-      onClick={() => imageInput.current?.click()}
+      onClick={onAddClick}
     />
   );
   const historyButtons = (
@@ -398,6 +492,9 @@ export function Editor({ open }: { readonly open: OpenProject }) {
           class="canvas-area"
           aria-label={t('editor.canvasLabel')}
           hidden={mobileList}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
         >
           <CanvasHost
             store={store}
@@ -432,7 +529,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
                 type="button"
                 class="button button-primary"
                 disabled={readOnly || busy}
-                onClick={() => imageInput.current?.click()}
+                onClick={onAddClick}
               >
                 {t('editor.addImages')}
               </button>
@@ -503,6 +600,34 @@ export function Editor({ open }: { readonly open: OpenProject }) {
         hidden
         onChange={(e) => void onReplaceChosen(e.currentTarget)}
       />
+
+      {addMenuOpen && (
+        <Dialog
+          title={t('editor.addImages')}
+          onCancel={() => setAddMenuOpen(false)}
+          actions={
+            <button type="button" class="button" onClick={() => setAddMenuOpen(false)}>
+              {t('common.cancel')}
+            </button>
+          }
+        >
+          <div class="dialog-stack">
+            <button
+              type="button"
+              class="button"
+              onClick={() => {
+                setAddMenuOpen(false);
+                imageInput.current?.click();
+              }}
+            >
+              {t('editor.addFromDevice')}
+            </button>
+            <button type="button" class="button" onClick={() => void onPasteImage()}>
+              {t('editor.pasteImage')}
+            </button>
+          </div>
+        </Dialog>
+      )}
 
       {menuOpen && (
         <Dialog

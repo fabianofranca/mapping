@@ -53,6 +53,11 @@ export const ptBR = {
 
   'editor.addImages': 'Adicionar imagens',
   'editor.importing': 'Importando {current} de {total}…',
+  'editor.addFromDevice': 'Escolher arquivo ou câmera',
+  'editor.pasteImage': 'Colar imagem',
+  'editor.pasteEmpty': 'Não há imagem na área de transferência.',
+  'editor.pasteFailed': 'Não foi possível colar a imagem.',
+  'editor.dropIgnored': 'Ignorado (não é imagem): {names}',
   'editor.importFailed': 'Não foi possível importar: {names}',
   'editor.export': 'Exportar',
   'editor.exporting': 'Gerando zip…',
