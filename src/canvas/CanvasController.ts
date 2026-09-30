@@ -106,6 +106,8 @@ const DOT_MARGIN = 3;
 const MAX_DOTS = 4;
 /** Opacidade das marcações sem anotação em nenhuma camada visível. */
 const DIMMED_OPACITY = 0.35;
+/** Borda de contexto dos pais no modo Ocultar: esmaecida, mas legível sobre fotos. */
+const OUTLINE_OPACITY = 0.75;
 /** Zoom semântico: fonte e altura de linha (px de tela) e margem interna do texto. */
 const TEXT_FONT_SIZE = 12;
 const TEXT_LINE_HEIGHT = 15;
@@ -672,7 +674,11 @@ export class CanvasController {
     const rect = markingCanvasRect(placement, marking.rect);
     // Sem anotação (própria ou herdada) nas camadas visíveis: esmaecida (a selecionada, nunca).
     node.group.opacity(
-      visibility === 'dim' || visibility === 'outline' ? DIMMED_OPACITY : 1,
+      visibility === 'dim'
+        ? DIMMED_OPACITY
+        : visibility === 'outline'
+          ? OUTLINE_OPACITY
+          : 1,
     );
     const stroke = (selected ? MARKING_SELECTED_STROKE : MARKING_STROKE) / zoom;
     const dash = marking.needsReview ? [6 / zoom, 4 / zoom] : [];
