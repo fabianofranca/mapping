@@ -68,7 +68,7 @@ const SELECTION_STROKE = 2;
 /** Espessura da borda das marcações (px de tela): normal e selecionada. */
 const MARKING_STROKE = 1;
 const MARKING_SELECTED_STROKE = 2;
-/** Contorno claro em volta da borda, para ela aparecer em fotos escuras e claras. */
+/** Contorno claro em volta da borda da selecionada, para ela aparecer em fotos escuras. */
 const MARKING_HALO = 0.75;
 const REVIEW_BADGE_SIZE = 14;
 
@@ -447,8 +447,10 @@ export class CanvasController {
     const rect = markingCanvasRect(placement, marking.rect);
     const stroke = (selected ? MARKING_SELECTED_STROKE : MARKING_STROKE) / zoom;
     const dash = marking.needsReview ? [6 / zoom, 4 / zoom] : [];
+    // Contorno claro só na selecionada; as demais ficam com a linha de 1 px.
     node.halo.setAttrs({
       ...rect,
+      visible: selected,
       stroke: tokens.surface,
       strokeWidth: stroke + (2 * MARKING_HALO) / zoom,
       opacity: 0.7,
