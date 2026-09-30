@@ -9,9 +9,16 @@ import {
   type ProjectImage,
 } from '../model';
 import type { AspectChange } from '../store/session';
-import { createEditorUi, resolveSelection, type Selection } from '../store/ui';
+import {
+  createEditorUi,
+  resolveActiveLayerId,
+  resolveSelection,
+  visibleLayers,
+  type Selection,
+} from '../store/ui';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Dialog } from '../ui/Dialog';
+import { LayersDialog } from '../ui/LayersDialog';
 import {
   AddImageIcon,
   DrawIcon,
@@ -66,6 +73,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const [deleteMarking, setDeleteMarking] = useState<Marking | null>(null);
   const [panelTab, setPanelTab] = useState<PanelTab>('details');
   const [aspectPrompt, setAspectPrompt] = useState<AspectPrompt | null>(null);
+  const [layersOpen, setLayersOpen] = useState(false);
 
   const project = store.project.value;
   const readOnly = store.readOnly.value;
@@ -73,6 +81,9 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const mode = ui.mode.value;
   const selected = resolveSelection(project, selection);
   const selectedImage = selected?.kind === 'image' ? selected.image : null;
+  const activeLayerId = resolveActiveLayerId(project, ui.activeLayer.value);
+  const activeLayer = project?.layers.find((l) => l.id === activeLayerId) ?? null;
+  const shownLayers = visibleLayers(project, ui.hiddenLayers.value, activeLayerId);
   const busy = progress !== null;
   const requestMarkingDelete = useRef<(marking: Marking) => void>(() => undefined);
 
@@ -248,6 +259,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
         project={project}
         marking={selected.marking}
         image={selected.image}
+        visibleLayers={shownLayers}
+        activeLayer={activeLayer}
         actions={actions}
         readOnly={readOnly || busy}
         onDelete={onMarkingDelete}
@@ -288,6 +301,19 @@ export function Editor({ open }: { readonly open: OpenProject }) {
           </button>
         )}
         <h1 class="project-title">{project.project.name}</h1>
+        {activeLayer && (
+          <button
+            type="button"
+            class="button layer-chip"
+            style={{ '--layer-color': activeLayer.color }}
+            aria-label={t('layer.chipLabel', { name: activeLayer.name })}
+            title={t('layer.chipLabel', { name: activeLayer.name })}
+            onClick={() => setLayersOpen(true)}
+          >
+            <span class="layer-dot" aria-hidden="true" />
+            <span class="layer-chip-name">{activeLayer.name}</span>
+          </button>
+        )}
         <SaveStatus open={open} />
         {desktop && (
           <div class="toolbar">
@@ -414,6 +440,16 @@ export function Editor({ open }: { readonly open: OpenProject }) {
           </div>
           <SettingsBar />
         </Dialog>
+      )}
+
+      {layersOpen && (
+        <LayersDialog
+          project={project}
+          ui={ui}
+          actions={actions}
+          readOnly={readOnly}
+          onClose={() => setLayersOpen(false)}
+        />
       )}
 
       {deleteTarget && (

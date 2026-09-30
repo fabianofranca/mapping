@@ -2,14 +2,17 @@
 // transforma os gestos em actions. Único lugar (com `CanvasHost`) que conhece o Konva.
 import { effect, signal, untracked } from '@preact/signals';
 import Konva from 'konva/lib/Core';
+import { Circle as KonvaCircle } from 'konva/lib/shapes/Circle';
 import { Image as KonvaImage } from 'konva/lib/shapes/Image';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../i18n';
 import {
+  annotatedLayersByMarking,
   imageCanvasRect,
   markingRectLimits,
   topDown,
+  type Layer,
   type Marking,
   type Placement,
   type Project,
@@ -19,7 +22,12 @@ import {
 import type { DisplayImage, DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
-import { resolveSelection, type EditorUi } from '../store/ui';
+import {
+  resolveActiveLayerId,
+  resolveSelection,
+  visibleLayers,
+  type EditorUi,
+} from '../store/ui';
 import {
   CORNERS,
   cornerAt,
@@ -71,6 +79,13 @@ const MARKING_SELECTED_STROKE = 2;
 /** Contorno claro em volta da borda da selecionada, para ela aparecer em fotos escuras. */
 const MARKING_HALO = 0.75;
 const REVIEW_BADGE_SIZE = 14;
+/** Indicadores de camada: bolinhas (px de tela), no máximo `MAX_DOTS` e depois "+N". */
+const DOT_RADIUS = 4;
+const DOT_GAP = 3;
+const DOT_MARGIN = 3;
+const MAX_DOTS = 4;
+/** Opacidade das marcações sem anotação em nenhuma camada visível. */
+const DIMMED_OPACITY = 0.35;
 
 export interface CanvasControllerOptions {
   readonly container: HTMLDivElement;
@@ -181,6 +196,10 @@ interface MarkingNode {
   readonly halo: KonvaRect;
   readonly border: KonvaRect;
   readonly badge: KonvaText;
+  /** Bolinhas das camadas visíveis com anotação, recortadas no retângulo da marcação. */
+  readonly indicators: Konva.Group;
+  readonly dots: readonly KonvaCircle[];
+  readonly more: KonvaText;
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -329,7 +348,10 @@ export class CanvasController {
       this.nodes.delete(id);
     }
 
-    this.renderMarkings(project?.markings ?? [], placements, tokens, v.scale);
+    const activeLayerId = resolveActiveLayerId(project, this.ui.activeLayer.value);
+    const shown = visibleLayers(project, this.ui.hiddenLayers.value, activeLayerId);
+    const annotated = project ? annotatedLayersByMarking(project, shown) : new Map();
+    this.renderMarkings(project?.markings ?? [], placements, annotated, tokens, v.scale);
     this.renderDraft(placements, tokens, v.scale);
     this.renderSelection(project, preview, placements, tokens, v.scale);
     this.stage.batchDraw();
@@ -400,6 +422,7 @@ export class CanvasController {
   private renderMarkings(
     markings: readonly Marking[],
     placements: ReadonlyMap<string, Placement>,
+    annotated: ReadonlyMap<string, readonly Layer[]>,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
@@ -413,7 +436,15 @@ export class CanvasController {
       const node =
         this.markingNodes.get(marking.id) ?? this.createMarkingNode(marking.id);
       const selected = selection?.kind === 'marking' && selection.id === marking.id;
-      this.updateMarkingNode(node, marking, placement, selected, tokens, zoom);
+      this.updateMarkingNode(
+        node,
+        marking,
+        placement,
+        selected,
+        annotated.get(marking.id) ?? [],
+        tokens,
+        zoom,
+      );
       node.group.zIndex(index++);
     }
     for (const [id, node] of this.markingNodes) {
@@ -424,13 +455,18 @@ export class CanvasController {
   }
 
   private createMarkingNode(id: string): MarkingNode {
+    const dots = Array.from({ length: MAX_DOTS }, () => new KonvaCircle());
     const node: MarkingNode = {
       group: new Konva.Group(),
       halo: new KonvaRect(),
       border: new KonvaRect(),
       badge: new KonvaText({ text: '⚠', fontStyle: 'bold' }),
+      indicators: new Konva.Group(),
+      dots,
+      more: new KonvaText({ fontStyle: 'bold' }),
     };
-    node.group.add(node.halo, node.border, node.badge);
+    node.indicators.add(...dots, node.more);
+    node.group.add(node.halo, node.border, node.badge, node.indicators);
     this.markingLayer.add(node.group);
     this.markingNodes.set(id, node);
     return node;
@@ -441,10 +477,13 @@ export class CanvasController {
     marking: Marking,
     placement: Placement,
     selected: boolean,
+    layers: readonly Layer[],
     tokens: CanvasTokens,
     zoom: number,
   ): void {
     const rect = markingCanvasRect(placement, marking.rect);
+    // Sem anotação nas camadas visíveis: esmaecida (a selecionada, nunca).
+    node.group.opacity(selected || layers.length > 0 ? 1 : DIMMED_OPACITY);
     const stroke = (selected ? MARKING_SELECTED_STROKE : MARKING_STROKE) / zoom;
     const dash = marking.needsReview ? [6 / zoom, 4 / zoom] : [];
     // Contorno claro só na selecionada; as demais ficam com a linha de 1 px.
@@ -463,6 +502,53 @@ export class CanvasController {
       y: rect.y + badge / 3,
       fontSize: badge,
       fill: tokens.warning,
+      stroke: tokens.surface,
+      strokeWidth: 3 / zoom,
+      fillAfterStrokeEnabled: true,
+    });
+    this.updateIndicators(node, marking, rect, layers, tokens, zoom);
+  }
+
+  /** Bolinhas coloridas no canto superior esquerdo, uma por camada visível com anotação. */
+  private updateIndicators(
+    node: MarkingNode,
+    marking: Marking,
+    rect: Rect,
+    layers: readonly Layer[],
+    tokens: CanvasTokens,
+    zoom: number,
+  ): void {
+    node.indicators.setAttrs({
+      visible: layers.length > 0,
+      clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+    });
+    const radius = DOT_RADIUS / zoom;
+    const step = (2 * DOT_RADIUS + DOT_GAP) / zoom;
+    // Com o alerta de revisão no canto, as bolinhas começam depois dele.
+    const left = marking.needsReview ? (REVIEW_BADGE_SIZE + DOT_MARGIN) / zoom : 0;
+    const x0 = rect.x + left + (DOT_MARGIN + DOT_RADIUS) / zoom;
+    const cy = rect.y + (DOT_MARGIN + DOT_RADIUS) / zoom;
+    const shown = Math.min(layers.length, MAX_DOTS);
+    node.dots.forEach((dot, i) => {
+      dot.setAttrs({
+        visible: i < shown,
+        x: x0 + i * step,
+        y: cy,
+        radius,
+        fill: layers[i]?.color ?? tokens.marking,
+        stroke: tokens.surface,
+        strokeWidth: 1 / zoom,
+      });
+    });
+    const extra = layers.length - MAX_DOTS;
+    const fontSize = 11 / zoom;
+    node.more.setAttrs({
+      visible: extra > 0,
+      text: `+${extra}`,
+      x: x0 + shown * step - radius,
+      y: cy - fontSize / 2,
+      fontSize,
+      fill: tokens.marking,
       stroke: tokens.surface,
       strokeWidth: 3 / zoom,
       fillAfterStrokeEnabled: true,

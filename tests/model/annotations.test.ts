@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   addEntry,
+  annotatedLayersByMarking,
+  annotationsOf,
   moveEntry,
   removeAnnotation,
   removeEntry,
@@ -106,5 +108,33 @@ describe('pares chave-valor', () => {
         { key: 'b', value: '' },
       ]),
     ).toEqual([null, 'empty-key', 'duplicate-key', null]);
+  });
+
+  it('lista as camadas anotadas por marcação, só entre as visíveis', () => {
+    const p = sampleProject();
+    const [l1, l2] = p.layers;
+    const both = annotatedLayersByMarking(p, [l1!, l2!]);
+    expect(both.get('M1')?.map((l) => l.id)).toEqual(['L1', 'L2']);
+    expect(both.get('M2')?.map((l) => l.id)).toEqual(['L1']);
+    expect(both.get('M4')?.map((l) => l.id)).toEqual(['L2']);
+    expect(both.has('M3')).toBe(false);
+
+    const onlyL2 = annotatedLayersByMarking(p, [l2!]);
+    expect(onlyL2.get('M1')?.map((l) => l.id)).toEqual(['L2']);
+    expect(onlyL2.has('M2')).toBe(false);
+    // A ordem segue a das camadas passadas.
+    expect(
+      annotatedLayersByMarking(p, [l2!, l1!])
+        .get('M1')
+        ?.map((l) => l.id),
+    ).toEqual(['L2', 'L1']);
+  });
+
+  it('anotações de um par (marcação, camada), na ordem de exibição', () => {
+    let p = sampleProject();
+    p = addAnnotation(p, { id: 'A9', markingId: 'M1', layerId: 'L1' });
+    expect(annotationsOf(p, 'M1', 'L1').map((a) => a.id)).toEqual(['A1', 'A9']);
+    expect(annotationsOf(p, 'M1', 'L2').map((a) => a.id)).toEqual(['A2']);
+    expect(annotationsOf(p, 'M3', 'L1')).toEqual([]);
   });
 });
