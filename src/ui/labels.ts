@@ -6,8 +6,14 @@ import {
   type Annotation,
   type Marking,
   type Project,
+  type ProjectImage,
 } from '../model';
 import type { StoreErrorCode } from '../store/history';
+
+/** Nome da imagem; sem nome, o nome do arquivo. */
+export function imageLabel(image: Pick<ProjectImage, 'name' | 'file'>): string {
+  return image.name ?? image.file;
+}
 
 export function markingLabel(marking: Pick<Marking, 'name'>): string {
   return marking.name ?? t('marking.unnamed');

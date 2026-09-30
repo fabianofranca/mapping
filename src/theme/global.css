@@ -1071,3 +1071,29 @@ body {
   flex-direction: column;
   gap: 8px;
 }
+
+/* Botão "T" do celular: flutua no canto do canvas, longe das abas e da barra inferior. */
+.canvas-float {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  display: flex;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.id-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.id-value {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.8em;
+  user-select: all;
+}

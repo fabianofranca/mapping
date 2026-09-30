@@ -7,7 +7,7 @@ import {
   type EditorUi,
   type Selection,
 } from '../store/ui';
-import { markingLabel } from './labels';
+import { imageLabel, markingLabel } from './labels';
 
 interface ListViewProps {
   readonly project: Project;
@@ -81,7 +81,7 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
         <ul class="list-images" aria-label={t('list.title')}>
           {listing.map(({ image, markings }) => (
             <li key={image.id}>
-              <h3 class="list-image">{image.file}</h3>
+              <h3 class="list-image">{imageLabel(image)}</h3>
               <ul class="list-markings">
                 {markings.map(({ marking, path, sections }) => {
                   const label = path.map(markingLabel).join(t('marking.pathSeparator'));

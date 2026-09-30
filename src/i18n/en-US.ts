@@ -17,6 +17,10 @@ export const enUS: Dictionary = {
   'common.delete': 'Delete',
   'common.open': 'Open',
   'common.close': 'Close',
+  'common.id': 'ID',
+  'common.copyId': 'Copy ID',
+  'common.copied': 'ID copied.',
+  'common.copyFailed': 'Could not copy.',
 
   'layer.defaultName': 'Layer 1',
   'project.untitled': 'Untitled project',
@@ -120,6 +124,7 @@ export const enUS: Dictionary = {
   'marking.error.invalid-parent': 'That marking cannot be the parent.',
   'marking.error.generic': 'Could not change the marking.',
 
+  'image.name': 'Name',
   'image.dimensions': '{width} × {height} px',
   'image.missingTitle': 'Missing image',
   'image.missingMessage':
