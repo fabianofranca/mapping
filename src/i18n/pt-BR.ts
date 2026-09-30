@@ -198,6 +198,23 @@ export const ptBR = {
   'export.download': 'Baixar',
   'export.shareFailed': 'Não foi possível compartilhar. Tente baixar.',
 
+  'pwa.updateAvailable': 'Nova versão disponível.',
+  'pwa.update': 'Atualizar',
+  'pwa.installTitle': 'Instalar no dispositivo',
+  'pwa.installIos':
+    'No Safari, toque em Compartilhar e depois em "Adicionar à Tela de Início". A app passa a abrir sem a barra do navegador e funciona sem internet.',
+  'pwa.iosRetention':
+    'Atenção: o Safari pode apagar os dados de sites não instalados depois de alguns dias sem uso. Instale a app e exporte seus projetos com frequência.',
+  'pwa.installAndroid':
+    'No menu do navegador (⋮), toque em "Instalar app" ou "Adicionar à tela inicial". Depois de instalada, funciona sem internet.',
+  'pwa.installOffline': 'Instale para abrir direto da tela inicial e usar sem internet.',
+  'pwa.install': 'Instalar',
+  'pwa.dismiss': 'Agora não',
+
+  'error.crashed': 'Algo deu errado.',
+  'error.crashedHint':
+    'O que você fez até agora está gravado. Recarregue a página para continuar.',
+  'error.reload': 'Recarregar',
   'error.invalid-json': 'O mapping.json não é um JSON válido.',
   'error.invalid-schema': 'O mapping.json não segue o formato esperado.',
   'error.unsupported-version': 'O projeto foi feito numa versão incompatível da app.',

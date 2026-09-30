@@ -4,6 +4,7 @@ import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import type { LocalProjectMeta } from '../storage/local';
 import { locale } from '../store/settings';
 import { Dialog } from '../ui/Dialog';
+import { InstallHint } from '../ui/InstallHint';
 import {
   createFolderProject,
   createLocalProject,
@@ -96,6 +97,7 @@ export function Home() {
           {message}
         </p>
       )}
+      <InstallHint />
 
       <div class="home-actions">
         {available.local && (

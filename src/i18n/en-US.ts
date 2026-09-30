@@ -197,6 +197,22 @@ export const enUS: Dictionary = {
   'export.download': 'Download',
   'export.shareFailed': 'Could not share. Try downloading.',
 
+  'pwa.updateAvailable': 'New version available.',
+  'pwa.update': 'Update',
+  'pwa.installTitle': 'Install on this device',
+  'pwa.installIos':
+    'In Safari, tap Share and then "Add to Home Screen". The app then opens without the browser bar and works offline.',
+  'pwa.iosRetention':
+    'Note: Safari may delete the data of sites that are not installed after a few days without use. Install the app and export your projects often.',
+  'pwa.installAndroid':
+    'In the browser menu (⋮), tap "Install app" or "Add to Home screen". Once installed, it works offline.',
+  'pwa.installOffline': 'Install to open it from the home screen and use it offline.',
+  'pwa.install': 'Install',
+  'pwa.dismiss': 'Not now',
+
+  'error.crashed': 'Something went wrong.',
+  'error.crashedHint': 'Everything you did so far is saved. Reload the page to continue.',
+  'error.reload': 'Reload',
   'error.invalid-json': 'mapping.json is not valid JSON.',
   'error.invalid-schema': 'mapping.json does not follow the expected format.',
   'error.unsupported-version': 'The project was made with an incompatible app version.',
