@@ -7,6 +7,29 @@ const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
 /** Cor da primeira camada de um projeto novo. */
 export const DEFAULT_LAYER_COLOR = '#E53935';
 
+/** Paleta de sugestões de cor para camadas (a cor também pode ser livre). */
+export const LAYER_PALETTE: readonly string[] = [
+  DEFAULT_LAYER_COLOR,
+  '#FB8C00',
+  '#FDD835',
+  '#43A047',
+  '#00ACC1',
+  '#1E88E5',
+  '#5E35B1',
+  '#D81B60',
+  '#6D4C41',
+  '#546E7A',
+];
+
+/** Primeira cor da paleta ainda não usada por uma camada (recomeça quando todas estão em uso). */
+export function nextLayerColor(p: Project): string {
+  const used = new Set(p.layers.map((l) => l.color.toUpperCase()));
+  return (
+    LAYER_PALETTE.find((c) => !used.has(c)) ??
+    (LAYER_PALETTE[p.layers.length % LAYER_PALETTE.length] as string)
+  );
+}
+
 function checkName(name: string): string {
   const trimmed = name.trim();
   if (trimmed === '') fail('invalid-name');

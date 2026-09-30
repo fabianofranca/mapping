@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import {
   parentCandidates,
+  type Layer,
   type Marking,
   type Project,
   type ProjectImage,
@@ -9,6 +10,7 @@ import {
 } from '../model';
 import type { ActionResult } from '../store/history';
 import type { ProjectActions } from '../store/project';
+import { AnnotationsPanel } from './AnnotationsPanel';
 import { CommitInput } from './CommitInput';
 import { markingErrorMessage, markingPath } from './labels';
 
@@ -16,6 +18,9 @@ interface MarkingPanelProps {
   readonly project: Project;
   readonly marking: Marking;
   readonly image: ProjectImage;
+  /** Camadas visíveis e camada ativa (estado da UI). */
+  readonly visibleLayers: readonly Layer[];
+  readonly activeLayer: Layer | null;
   readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onDelete: (marking: Marking) => void;
@@ -33,6 +38,8 @@ export function MarkingPanel({
   project,
   marking,
   image,
+  visibleLayers,
+  activeLayer,
   actions,
   readOnly,
   onDelete,
@@ -94,6 +101,15 @@ export function MarkingPanel({
           }}
         />
       </label>
+
+      <AnnotationsPanel
+        project={project}
+        marking={marking}
+        layers={visibleLayers}
+        activeLayer={activeLayer}
+        actions={actions}
+        readOnly={readOnly}
+      />
 
       <fieldset class="rect-fields" disabled={readOnly}>
         <legend>{t('marking.rect')}</legend>

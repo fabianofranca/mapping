@@ -361,10 +361,10 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 **Aceite**: criar Porta › Maçaneta › Fechadura no celular; mover a Porta arrasta as filhas; a Fechadura não sai da Maçaneta; selecionar cada nível pelo toque e pela árvore.
 
 ### Fase 5 — Camadas e anotações
-- [ ] Gestão de camadas (criar/renomear/cor/reordenar/excluir)
-- [ ] Camadas visíveis (múltiplas) × camada ativa
-- [ ] Painel de anotações agrupado por camada visível; editor de nome e pares; validação de chaves
-- [ ] Indicadores coloridos e esmaecimento no canvas
+- [x] Gestão de camadas (criar/renomear/cor/reordenar/excluir)
+- [x] Camadas visíveis (múltiplas) × camada ativa
+- [x] Painel de anotações agrupado por camada visível; editor de nome e pares; validação de chaves
+- [x] Indicadores coloridos e esmaecimento no canvas
 
 **Aceite**: com as camadas Lataria e Vidros, anotar a Porta nas duas; ligar e desligar camadas altera os indicadores e o painel; excluir Vidros apaga só as anotações dela.
 

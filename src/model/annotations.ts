@@ -1,7 +1,7 @@
 import { fail } from './errors';
 import { validateEntries } from './invariants';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
-import type { Annotation, Entry, Project } from './types';
+import type { Annotation, Entry, Layer, Project } from './types';
 
 /** Valida e normaliza os pares (chaves sem espaços nas pontas). */
 function checkEntries(entries: readonly Entry[]): Entry[] {
@@ -111,4 +111,41 @@ export function moveEntry(
   to: number,
 ): Project {
   return updateEntries(p, annotationId, (entries) => moveItem(entries, from, to));
+}
+
+/**
+ * Camadas com ao menos uma anotação, por marcação, considerando só `layers`
+ * (as camadas visíveis). Cada lista segue a ordem de `layers`; marcações sem
+ * anotação nessas camadas não aparecem no mapa.
+ */
+export function annotatedLayersByMarking(
+  p: Project,
+  layers: readonly Layer[],
+): Map<string, Layer[]> {
+  const order = new Map(layers.map((l, i) => [l.id, i]));
+  const found = new Map<string, Set<number>>();
+  for (const a of p.annotations) {
+    const index = order.get(a.layerId);
+    if (index === undefined) continue;
+    const set = found.get(a.markingId) ?? new Set<number>();
+    set.add(index);
+    found.set(a.markingId, set);
+  }
+  const result = new Map<string, Layer[]>();
+  for (const [markingId, indexes] of found) {
+    result.set(
+      markingId,
+      [...indexes].sort((a, b) => a - b).map((i) => layers[i] as Layer),
+    );
+  }
+  return result;
+}
+
+/** Anotações da marcação na camada, na ordem de exibição. */
+export function annotationsOf(
+  p: Project,
+  markingId: string,
+  layerId: string,
+): Annotation[] {
+  return p.annotations.filter((a) => a.markingId === markingId && a.layerId === layerId);
 }

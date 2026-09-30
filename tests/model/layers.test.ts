@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  LAYER_PALETTE,
   ModelError,
   addLayer,
   layerDeletionImpact,
   moveLayer,
+  nextLayerColor,
   removeLayer,
   renameLayer,
   setLayerColor,
@@ -64,5 +66,17 @@ describe('camadas', () => {
     removeLayer(p, 'L1');
     renameLayer(p, 'L1', 'Outro');
     expect(JSON.stringify(p)).toBe(snapshot);
+  });
+
+  it('sugere a primeira cor da paleta ainda não usada', () => {
+    const p = emptyProject();
+    expect(nextLayerColor(p)).toBe(LAYER_PALETTE[1]);
+    let q = addLayer(p, { id: 'L2', name: 'B', color: LAYER_PALETTE[1] as string });
+    expect(nextLayerColor(q)).toBe(LAYER_PALETTE[2]);
+    // Com a paleta toda em uso, recomeça.
+    for (const [i, color] of LAYER_PALETTE.slice(2).entries()) {
+      q = addLayer(q, { id: `X${i}`, name: 'X', color });
+    }
+    expect(LAYER_PALETTE).toContain(nextLayerColor(q));
   });
 });

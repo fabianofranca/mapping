@@ -1,6 +1,12 @@
 // Textos derivados do projeto (nomes de marcações, caminhos, erros), sempre via `t()`.
 import { t, type TranslationKey } from '../i18n';
-import { MIN_MARKING_SIZE, ancestorsOf, type Marking, type Project } from '../model';
+import {
+  MIN_MARKING_SIZE,
+  ancestorsOf,
+  type Annotation,
+  type Marking,
+  type Project,
+} from '../model';
 import type { StoreErrorCode } from '../store/history';
 
 export function markingLabel(marking: Pick<Marking, 'name'>): string {
@@ -25,4 +31,20 @@ const MARKING_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
 
 export function markingErrorMessage(code: StoreErrorCode): string {
   return t(MARKING_ERRORS[code] ?? 'marking.error.generic', { min: MIN_MARKING_SIZE });
+}
+
+/** Nome da anotação; sem nome, o primeiro par como `chave: valor`. */
+export function annotationLabel(
+  annotation: Pick<Annotation, 'name' | 'entries'>,
+): string {
+  const first = annotation.entries[0];
+  return (
+    annotation.name ?? (first ? `${first.key}: ${first.value}` : t('annotation.unnamed'))
+  );
+}
+
+export function annotationErrorMessage(code: StoreErrorCode): string {
+  if (code === 'empty-key') return t('annotation.error.empty-key');
+  if (code === 'duplicate-key') return t('annotation.error.duplicate-key');
+  return t('annotation.error.generic');
 }

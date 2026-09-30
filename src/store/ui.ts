@@ -1,5 +1,5 @@
 import { signal, type Signal } from '@preact/signals';
-import type { Marking, Project, ProjectImage } from '../model';
+import type { Layer, Marking, Project, ProjectImage } from '../model';
 
 /** Item selecionado no editor. */
 export type Selection =
@@ -17,10 +17,69 @@ export type EditorMode = 'navigate' | 'draw';
 export interface EditorUi {
   readonly selection: Signal<Selection>;
   readonly mode: Signal<EditorMode>;
+  /**
+   * Camadas escondidas. Guardar as escondidas (e não as visíveis) faz camadas
+   * novas, ou restauradas pelo desfazer, aparecerem visíveis por padrão.
+   */
+  readonly hiddenLayers: Signal<ReadonlySet<string>>;
+  /** Camada ativa escolhida (use `resolveActiveLayerId`: ela pode não existir mais). */
+  readonly activeLayer: Signal<string | null>;
 }
 
 export function createEditorUi(): EditorUi {
-  return { selection: signal<Selection>(null), mode: signal<EditorMode>('navigate') };
+  return {
+    selection: signal<Selection>(null),
+    mode: signal<EditorMode>('navigate'),
+    hiddenLayers: signal<ReadonlySet<string>>(new Set()),
+    activeLayer: signal<string | null>(null),
+  };
+}
+
+/** Camada ativa efetiva: a escolhida, se ainda existir; senão a primeira do projeto. */
+export function resolveActiveLayerId(
+  project: Project | null,
+  activeLayer: string | null,
+): string | null {
+  if (!project) return null;
+  const chosen = project.layers.find((l) => l.id === activeLayer);
+  return (chosen ?? project.layers[0])?.id ?? null;
+}
+
+/** Camadas visíveis, na ordem do projeto. A ativa está sempre visível. */
+export function visibleLayers(
+  project: Project | null,
+  hidden: ReadonlySet<string>,
+  activeLayerId: string | null,
+): Layer[] {
+  return (project?.layers ?? []).filter(
+    (l) => l.id === activeLayerId || !hidden.has(l.id),
+  );
+}
+
+/** Torna a camada ativa (e, com isso, visível). */
+export function setActiveLayer(ui: EditorUi, layerId: string): void {
+  ui.activeLayer.value = layerId;
+  if (ui.hiddenLayers.peek().has(layerId)) {
+    const hidden = new Set(ui.hiddenLayers.peek());
+    hidden.delete(layerId);
+    ui.hiddenLayers.value = hidden;
+  }
+}
+
+/** Liga/desliga a visibilidade. A camada ativa não pode ser escondida. */
+export function toggleLayerVisible(
+  ui: EditorUi,
+  project: Project | null,
+  layerId: string,
+): void {
+  if (layerId === resolveActiveLayerId(project, ui.activeLayer.peek())) return;
+  const hidden = new Set(ui.hiddenLayers.peek());
+  if (!hidden.delete(layerId)) hidden.add(layerId);
+  ui.hiddenLayers.value = hidden;
+}
+
+export function showAllLayers(ui: EditorUi): void {
+  ui.hiddenLayers.value = new Set();
 }
 
 export type ResolvedSelection =
