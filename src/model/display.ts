@@ -74,15 +74,19 @@ export function layerDotsByMarking(
   return result;
 }
 
-/** `full`: desenhada normalmente. `dim`: esmaecida. `hidden`: não aparece nem recebe toque. */
-export type MarkingVisibility = 'full' | 'dim' | 'hidden';
+/**
+ * `full`: desenhada normalmente. `dim`: esmaecida. `outline`: só a borda esmaecida,
+ * sem texto nem indicadores (ancestral de uma marcação visível, no modo Ocultar).
+ * `hidden`: não aparece nem recebe toque.
+ */
+export type MarkingVisibility = 'full' | 'dim' | 'outline' | 'hidden';
 
 /**
  * Visibilidade de cada marcação segundo o modo. "Sem anotação" = sem anotação
  * própria nem herdada na camada ativa: `dots` vem de `layerDotsByMarking` com
- * só a camada ativa (as demais camadas visíveis não contam).
- * A selecionada sempre aparece por inteiro. No modo Ocultar não há contorno de
- * contexto: as marcações sem anotação somem, mesmo que contenham outras.
+ * só a camada ativa (as demais camadas visíveis não contam). A selecionada
+ * sempre aparece por inteiro. No modo Ocultar, o ancestral sem anotação de uma
+ * marcação que aparece fica só com a borda, para manter o contexto.
  */
 export function markingVisibility(
   p: Project,
@@ -91,10 +95,22 @@ export function markingVisibility(
   selectedMarkingId: string | null,
 ): Map<string, MarkingVisibility> {
   const result = new Map<string, MarkingVisibility>();
+  const shown = (id: string) => dots.has(id) || id === selectedMarkingId;
+  const absent = mode === 'hide' ? 'hidden' : 'dim';
   for (const m of p.markings) {
-    const shown = dots.has(m.id) || m.id === selectedMarkingId;
-    const hiddenState = mode === 'hide' ? 'hidden' : 'dim';
-    result.set(m.id, mode === 'all' || shown ? 'full' : hiddenState);
+    result.set(m.id, mode === 'all' || shown(m.id) ? 'full' : absent);
+  }
+  if (mode !== 'hide') return result;
+
+  const byId = new Map(p.markings.map((m) => [m.id, m]));
+  for (const m of p.markings) {
+    if (!shown(m.id)) continue;
+    let parentId = m.parentId;
+    // Para ao achar um ancestral já resolvido (o resto da cadeia também está).
+    while (parentId !== null && result.get(parentId) === 'hidden') {
+      result.set(parentId, 'outline');
+      parentId = byId.get(parentId)?.parentId ?? null;
+    }
   }
   return result;
 }

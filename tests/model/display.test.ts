@@ -61,8 +61,8 @@ describe('modos de exibição', () => {
     expect(v1.get('M3')).toBe('dim');
   });
 
-  it('ocultar: some quem não tem anotação nas camadas visíveis, sem contorno de contexto', () => {
-    // Só L1 visível, sem herança: M1 e M2 têm; M3 e M4 não.
+  it('ocultar: quem não tem anotação some, e o ancestral de quem aparece fica só com a borda', () => {
+    // Só L1: M1 e M2 têm; M3 (filha de M2) e M4 não têm e não são pai de ninguém.
     const base = sampleProject();
     const only = [l1 as NonNullable<typeof l1>];
     const v = markingVisibility(base, layerDotsByMarking(base, only), 'hide', null);
@@ -72,15 +72,25 @@ describe('modos de exibição', () => {
     expect(v.get('M4')).toBe('hidden');
   });
 
-  it('ocultar: o ancestral sem anotação também some; a selecionada sempre aparece', () => {
-    // Só L2: M1 e M4 têm; M2 (só L1) some mesmo contendo a selecionada M3.
+  it('ocultar: o pai sem anotação vira borda; a selecionada sempre aparece', () => {
+    // Só L2: M1 e M4 têm; M2 (só L1) contém a selecionada M3, então fica como borda.
     const base = sampleProject();
     const only = [l2 as NonNullable<typeof l2>];
     const v = markingVisibility(base, layerDotsByMarking(base, only), 'hide', 'M3');
     expect(v.get('M3')).toBe('full');
-    expect(v.get('M2')).toBe('hidden');
+    expect(v.get('M2')).toBe('outline');
     expect(v.get('M1')).toBe('full');
     expect(v.get('M4')).toBe('full');
+  });
+
+  it('ocultar: o pai sem anotação vira borda quando só um filho tem anotação', () => {
+    // Ativa = L2 com A2 só em M1: nenhum pai sem anotação. Sem A2, a cadeia M1 › M2 é borda.
+    const base = sampleProject();
+    const v = markingVisibility(base, new Map([['M2', []]]), 'hide', null);
+    expect(v.get('M2')).toBe('full');
+    expect(v.get('M1')).toBe('outline');
+    expect(v.get('M3')).toBe('hidden');
+    expect(v.get('M4')).toBe('hidden');
   });
 });
 
