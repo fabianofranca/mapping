@@ -24,6 +24,8 @@ export interface EditorUi {
   readonly hiddenLayers: Signal<ReadonlySet<string>>;
   /** Camada ativa escolhida (use `resolveActiveLayerId`: ela pode não existir mais). */
   readonly activeLayer: Signal<string | null>;
+  /** Visão de Lista: mostrar também marcações sem anotação nas camadas visíveis. */
+  readonly listShowEmpty: Signal<boolean>;
 }
 
 export function createEditorUi(): EditorUi {
@@ -32,6 +34,7 @@ export function createEditorUi(): EditorUi {
     mode: signal<EditorMode>('navigate'),
     hiddenLayers: signal<ReadonlySet<string>>(new Set()),
     activeLayer: signal<string | null>(null),
+    listShowEmpty: signal<boolean>(false),
   };
 }
 

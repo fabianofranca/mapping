@@ -2,7 +2,15 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../src/i18n';
 import { enUS } from '../src/i18n/en-US';
 import { ptBR } from '../src/i18n/pt-BR';
-import { detectLocale, locale, setLocale, setTheme, theme } from '../src/store/settings';
+import {
+  detectLocale,
+  locale,
+  semanticText,
+  setLocale,
+  setSemanticText,
+  setTheme,
+  theme,
+} from '../src/store/settings';
 import { bindDocumentSettings } from '../src/theme/apply';
 
 describe('i18n', () => {
@@ -53,5 +61,18 @@ describe('tema e persistência', () => {
     } finally {
       Storage.prototype.setItem = original;
     }
+  });
+});
+
+describe('texto no canvas (zoom semântico)', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('vem ligado e a preferência é gravada', () => {
+    expect(semanticText.value).toBe(true);
+    setSemanticText(false);
+    expect(semanticText.value).toBe(false);
+    expect(localStorage.getItem('mapping.semanticText')).toBe('off');
+    setSemanticText(true);
+    expect(localStorage.getItem('mapping.semanticText')).toBe('on');
   });
 });

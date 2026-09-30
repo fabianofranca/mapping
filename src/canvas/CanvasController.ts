@@ -9,6 +9,8 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../i18n';
 import {
   annotatedLayersByMarking,
+  annotationsByMarking,
+  layerSections,
   imageCanvasRect,
   markingRectLimits,
   topDown,
@@ -22,6 +24,7 @@ import {
 import type { DisplayImage, DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
+import { semanticText } from '../store/settings';
 import {
   resolveActiveLayerId,
   resolveSelection,
@@ -49,6 +52,7 @@ import {
   resizeMarkingRect,
   type RectLimits,
 } from './markingGeometry';
+import { bodyLines, semanticMode, type SemanticMode } from './semanticText';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import {
   EMPTY_CANVAS_RECT,
@@ -86,6 +90,12 @@ const DOT_MARGIN = 3;
 const MAX_DOTS = 4;
 /** Opacidade das marcações sem anotação em nenhuma camada visível. */
 const DIMMED_OPACITY = 0.35;
+/** Zoom semântico: fonte e altura de linha (px de tela) e margem interna do texto. */
+const TEXT_FONT_SIZE = 12;
+const TEXT_LINE_HEIGHT = 15;
+const TEXT_PADDING = 4;
+/** Altura da linha de cabeçalho (onde ficam o alerta, as bolinhas e o nome). */
+const TEXT_HEADER_HEIGHT = 2 * DOT_MARGIN + 2 * DOT_RADIUS;
 
 export interface CanvasControllerOptions {
   readonly container: HTMLDivElement;
@@ -200,6 +210,18 @@ interface MarkingNode {
   readonly indicators: Konva.Group;
   readonly dots: readonly KonvaCircle[];
   readonly more: KonvaText;
+  /** Texto do zoom semântico, recortado no retângulo da marcação. */
+  readonly text: Konva.Group;
+  /** Uma linha por nó; o cabeçalho é a primeira. Cresce sob demanda. */
+  readonly lines: KonvaText[];
+}
+
+function intersectRects(a: Rect, b: Rect): Rect | null {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const width = Math.min(a.x + a.width, b.x + b.width) - x;
+  const height = Math.min(a.y + a.height, b.y + b.height) - y;
+  return width > 0 && height > 0 ? { x, y, width, height } : null;
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -278,6 +300,7 @@ export class CanvasController {
 
   /** Centraliza o canvas no item selecionado (ajustando o zoom se ele for grande ou pequeno demais). */
   focusSelection(): void {
+    this.onResize(); // O canvas pode ter acabado de reaparecer (aba Lista → Canvas).
     const size = this.size.peek();
     const selected = resolveSelection(
       this.store.project.peek(),
@@ -351,7 +374,7 @@ export class CanvasController {
     const activeLayerId = resolveActiveLayerId(project, this.ui.activeLayer.value);
     const shown = visibleLayers(project, this.ui.hiddenLayers.value, activeLayerId);
     const annotated = project ? annotatedLayersByMarking(project, shown) : new Map();
-    this.renderMarkings(project?.markings ?? [], placements, annotated, tokens, v.scale);
+    this.renderMarkings(project, shown, placements, annotated, tokens, v.scale);
     this.renderDraft(placements, tokens, v.scale);
     this.renderSelection(project, preview, placements, tokens, v.scale);
     this.stage.batchDraw();
@@ -420,13 +443,27 @@ export class CanvasController {
 
   /** Marcações de cima para baixo na hierarquia: as filhas ficam por cima dos pais. */
   private renderMarkings(
-    markings: readonly Marking[],
+    project: Project | null,
+    shown: readonly Layer[],
     placements: ReadonlyMap<string, Placement>,
     annotated: ReadonlyMap<string, readonly Layer[]>,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
+    const markings = project?.markings ?? [];
     const selection = this.ui.selection.value;
+    const semantic = semanticText.value;
+    const parents = new Set(markings.map((m) => m.parentId));
+    const size = this.size.value;
+    const vp = this.viewport.value;
+    /** Parte do canvas visível na tela, em coordenadas do canvas. */
+    const view: Rect = {
+      x: -vp.x / vp.scale,
+      y: -vp.y / vp.scale,
+      width: size.width / vp.scale,
+      height: size.height / vp.scale,
+    };
+    const byMarking = project && semantic ? annotationsByMarking(project) : new Map();
     const seen = new Set<string>();
     let index = 0;
     for (const marking of topDown(markings)) {
@@ -442,6 +479,22 @@ export class CanvasController {
         placement,
         selected,
         annotated.get(marking.id) ?? [],
+        tokens,
+        zoom,
+      );
+      const mode = semanticMode({
+        enabled: semantic,
+        screenWidth: marking.rect.width * placement.scale * zoom,
+        screenHeight: marking.rect.height * placement.scale * zoom,
+        hasChildren: parents.has(marking.id),
+      });
+      this.updateSemanticText(
+        node,
+        marking,
+        markingCanvasRect(placement, marking.rect),
+        view,
+        mode,
+        layerSections(byMarking, marking.id, shown),
         tokens,
         zoom,
       );
@@ -464,9 +517,11 @@ export class CanvasController {
       indicators: new Konva.Group(),
       dots,
       more: new KonvaText({ fontStyle: 'bold' }),
+      text: new Konva.Group(),
+      lines: [],
     };
     node.indicators.add(...dots, node.more);
-    node.group.add(node.halo, node.border, node.badge, node.indicators);
+    node.group.add(node.halo, node.border, node.badge, node.indicators, node.text);
     this.markingLayer.add(node.group);
     this.markingNodes.set(id, node);
     return node;
@@ -552,6 +607,108 @@ export class CanvasController {
       stroke: tokens.surface,
       strokeWidth: 3 / zoom,
       fillAfterStrokeEnabled: true,
+    });
+  }
+
+  /**
+   * Zoom semântico: no cabeçalho, o nome (ao lado das bolinhas); nas folhas,
+   * também o nome e os pares `chave: valor` de cada camada visível, na cor
+   * dela. Marcações com filhas só têm o cabeçalho, para não cobrir as filhas.
+   * O texto é recortado no retângulo e só as linhas que cabem viram nós.
+   */
+  private updateSemanticText(
+    node: MarkingNode,
+    marking: Marking,
+    markingRect: Rect,
+    view: Rect,
+    mode: SemanticMode,
+    sections: ReturnType<typeof layerSections>,
+    tokens: CanvasTokens,
+    zoom: number,
+  ): void {
+    // Com zoom alto o canto da marcação sai da tela: o texto fica ancorado na
+    // parte visível dela (e recortado nela).
+    const rect = intersectRects(markingRect, view);
+    if (mode === 'none' || !rect) {
+      node.text.visible(false);
+      return;
+    }
+    const px = (n: number) => n / zoom;
+    const left = rect.x + px(TEXT_PADDING);
+    node.text.setAttrs({
+      visible: true,
+      clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+    });
+    // Alerta e bolinhas só ocupam o cabeçalho se o canto da marcação estiver visível.
+    const atCorner = rect.x === markingRect.x && rect.y === markingRect.y;
+
+    const layers = sections.map((s) => s.layer);
+    const shown = Math.min(layers.length, MAX_DOTS);
+    const extra = layers.length - MAX_DOTS;
+    // O nome começa depois do alerta de revisão e das bolinhas.
+    const before = atCorner && marking.needsReview ? REVIEW_BADGE_SIZE + DOT_MARGIN : 0;
+    const dots =
+      atCorner && shown > 0 ? shown * (2 * DOT_RADIUS + DOT_GAP) + DOT_MARGIN : 0;
+    const more = atCorner && extra > 0 ? 22 : 0;
+    const headerX =
+      rect.x + px(before + dots + more + (dots + more > 0 ? 0 : TEXT_PADDING));
+
+    type Line = { text: string; color: string; bold: boolean; x: number; y: number };
+    const lines: Line[] = [];
+    if (marking.name !== null) {
+      lines.push({
+        text: marking.name,
+        color: tokens.marking,
+        bold: true,
+        x: headerX,
+        y: rect.y + px((TEXT_HEADER_HEIGHT - TEXT_FONT_SIZE) / 2),
+      });
+    }
+    if (mode === 'full') {
+      const top =
+        marking.name !== null || atCorner ? TEXT_HEADER_HEIGHT + 2 : TEXT_PADDING;
+      const fit = Math.floor((rect.height * zoom - top) / TEXT_LINE_HEIGHT);
+      bodyLines(sections)
+        .slice(0, Math.max(0, fit))
+        .forEach((line, i) => {
+          lines.push({
+            text: line.text,
+            color: line.color,
+            bold: line.bold,
+            x: left,
+            y: rect.y + px(top + i * TEXT_LINE_HEIGHT),
+          });
+        });
+    }
+
+    while (node.lines.length < lines.length) {
+      const line = new KonvaText({
+        wrap: 'none',
+        ellipsis: true,
+        fillAfterStrokeEnabled: true,
+      });
+      node.lines.push(line);
+      node.text.add(line);
+    }
+    node.lines.forEach((textNode, i) => {
+      const line = lines[i];
+      if (!line) {
+        textNode.visible(false);
+        return;
+      }
+      textNode.setAttrs({
+        visible: true,
+        text: line.text,
+        x: line.x,
+        y: line.y,
+        width: Math.max(0, rect.x + rect.width - line.x - px(TEXT_PADDING)),
+        height: px(TEXT_LINE_HEIGHT),
+        fontSize: px(TEXT_FONT_SIZE),
+        fontStyle: line.bold ? 'bold' : 'normal',
+        fill: line.color,
+        stroke: tokens.surface,
+        strokeWidth: 2.5 / zoom,
+      });
     });
   }
 

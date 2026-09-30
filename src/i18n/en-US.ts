@@ -172,6 +172,22 @@ export const enUS: Dictionary = {
   'annotation.error.duplicate-key': 'A pair with this key already exists.',
   'annotation.error.generic': 'Could not change the annotation.',
 
+  'view.canvas': 'Canvas',
+  'view.list': 'List',
+  'view.tabsLabel': 'View',
+  'view.semanticText': 'Text on canvas',
+  'view.semanticTextHint': 'Shows annotations inside markings when you zoom in.',
+  'view.showList': 'Show the list',
+  'view.hideList': 'Hide the list',
+
+  'list.title': 'Annotation list',
+  'list.showEmpty': 'Show markings without annotations',
+  'list.layers': 'Visible layers',
+  'list.empty': 'No annotations in the visible layers.',
+  'list.emptyNoImages': 'No images yet.',
+  'list.noAnnotations': 'No annotations in the visible layers.',
+  'list.select': 'Show {name} on the canvas',
+
   'canvas.imageMissing': 'Missing image',
   'canvas.imageError': 'Cannot display',
 

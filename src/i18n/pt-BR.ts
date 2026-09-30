@@ -172,6 +172,23 @@ export const ptBR = {
   'annotation.error.duplicate-key': 'Já existe um par com esta chave.',
   'annotation.error.generic': 'Não foi possível alterar a anotação.',
 
+  'view.canvas': 'Canvas',
+  'view.list': 'Lista',
+  'view.tabsLabel': 'Visualização',
+  'view.semanticText': 'Texto no canvas',
+  'view.semanticTextHint':
+    'Mostra as anotações dentro das marcações ao aproximar o zoom.',
+  'view.showList': 'Mostrar a lista',
+  'view.hideList': 'Esconder a lista',
+
+  'list.title': 'Lista de anotações',
+  'list.showEmpty': 'Mostrar marcações sem anotação',
+  'list.layers': 'Camadas visíveis',
+  'list.empty': 'Nenhuma anotação nas camadas visíveis.',
+  'list.emptyNoImages': 'Nenhuma imagem ainda.',
+  'list.noAnnotations': 'Sem anotações nas camadas visíveis.',
+  'list.select': 'Ver {name} no canvas',
+
   'canvas.imageMissing': 'Imagem ausente',
   'canvas.imageError': 'Não foi possível exibir',
 
