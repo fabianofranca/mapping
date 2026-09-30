@@ -474,3 +474,149 @@ body {
   justify-content: flex-end;
   gap: var(--space-2);
 }
+
+.segmented {
+  display: flex;
+  gap: 2px;
+}
+
+.tool-button-pressed {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.canvas-overlay .canvas-hint {
+  align-self: center;
+  pointer-events: none;
+  font-size: 0.85rem;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+  flex: 1;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2);
+  font: inherit;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--color-text);
+  font-weight: 600;
+  border-bottom-color: var(--color-accent);
+}
+
+.tab-panel > p {
+  margin: 0;
+}
+
+.panel-details .notice p {
+  margin: var(--space-1) 0 var(--space-2);
+}
+
+.rect-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.rect-fields legend {
+  padding: 0 var(--space-1);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.rect-fields .input {
+  width: 100%;
+  min-width: 0;
+}
+
+.field-error {
+  margin: 0;
+  color: var(--color-danger);
+}
+
+.tree,
+.tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2) 0 calc(var(--space-2) + var(--depth, 0) * var(--space-3));
+  font: inherit;
+  text-align: left;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.tree-item:hover {
+  background: var(--color-bg);
+}
+
+.tree-item[aria-current='true'] {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+}
+
+.tree-item[aria-current='true'] .muted {
+  color: inherit;
+}
+
+.tree-image {
+  font-weight: 600;
+}
+
+.tree-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-warning {
+  color: var(--color-warning);
+}
+
+.tree-item[aria-current='true'] .tree-warning {
+  color: inherit;
+}
+
+/* As abas ficam visíveis ao rolar a gaveta. */
+.sheet-content .tabs {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface);
+}
+
+/* Desktop estreito: botões da barra só com ícone, para o título do projeto caber. */
+@media (max-width: 1199px) {
+  .toolbar .tool-button span {
+    display: none;
+  }
+}

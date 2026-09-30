@@ -63,3 +63,17 @@ export function topDown(markings: readonly Marking[]): Marking[] {
   }
   return result;
 }
+
+/** Ancestrais da marcação, do pai até a raiz. */
+export function ancestorsOf(p: Project, markingId: string): Marking[] {
+  const byId = new Map(p.markings.map((m) => [m.id, m]));
+  const result: Marking[] = [];
+  let parentId = byId.get(markingId)?.parentId ?? null;
+  while (parentId !== null && result.length <= byId.size) {
+    const parent = byId.get(parentId);
+    if (!parent) break;
+    result.push(parent);
+    parentId = parent.parentId;
+  }
+  return result;
+}

@@ -211,4 +211,39 @@ describe('store: gestos', () => {
     store.cancelGesture();
     expect(store.undo()).toBe(true);
   });
+  it('actions de gesto: mover a marcação com as filhas, limitada ao pai, uma entrada', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    const rectOf = (id: string) => project(store).markings.find((m) => m.id === id)?.rect;
+    expect(actions.beginGesture().ok).toBe(true);
+    actions.previewMarkingMove('M1', 40.4, -10);
+    actions.previewMarkingMove('M1', 100.4, -50.6);
+    expect(rectOf('M1')).toMatchObject({ x: 1100, y: 949 });
+    expect(rectOf('M3')).toMatchObject({ x: 1400, y: 1199 });
+    // M3 não sai de M2 (agora em x 1300..1700): o deslocamento é limitado.
+    actions.commitGesture();
+    expect(actions.beginGesture().ok).toBe(true);
+    actions.previewMarkingMove('M3', 10_000, 0);
+    actions.commitGesture();
+    expect(rectOf('M3')).toMatchObject({ x: 1650, y: 1199 });
+    expect(store.undo()).toBe(true);
+    expect(store.undo()).toBe(true);
+    expect(project(store).markings).toBe(before.markings);
+  });
+
+  it('actions de gesto: redimensionar marcação inválido fica na última prévia válida', () => {
+    const { store, actions } = setup();
+    actions.beginGesture();
+    const ok = { x: 1000, y: 1000, width: 900, height: 900 };
+    expect(actions.previewMarkingRect('M1', ok).ok).toBe(true);
+    const bad = { x: 1300, y: 1000, width: 100, height: 100 };
+    expect(actions.previewMarkingRect('M1', bad)).toEqual({
+      ok: false,
+      error: 'rect-excludes-children',
+    });
+    actions.commitGesture();
+    expect(project(store).markings.find((m) => m.id === 'M1')?.rect).toEqual(ok);
+    expect(store.undo()).toBe(true);
+    expect(store.canUndo.value).toBe(false);
+  });
 });
