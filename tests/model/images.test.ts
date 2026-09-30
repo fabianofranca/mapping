@@ -117,6 +117,7 @@ describe('imagens: trocar', () => {
     );
     expect(image(next, 'I1')).toEqual({
       id: 'I1',
+      name: null,
       file: 'images/nova.jpg',
       width: 2000,
       height: 1500,

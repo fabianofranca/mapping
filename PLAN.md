@@ -561,11 +561,11 @@ Problema: o texto solto sobre a foto, com a mesma cor e peso para nomes e pares,
 ### 12.7 Fases
 
 #### Fase 8 — Schema v2 (modelo)
-- [ ] Tipos e schema zod v2 (`name` na imagem; `inherit` e `parentAnnotationId` na anotação) + migração v1 → v2
-- [ ] Invariantes do vínculo (mesma marcação, outra camada, sem ciclo)
-- [ ] Operações: definir/remover `inherit`, definir/remover dona; cascatas de exclusão (anotação, camada)
-- [ ] `getInheritedAnnotations` e `getLinkedAnnotations` em `src/model/`
-- [ ] `docs/FORMAT.md` com a seção "Como um agente lê o mapping.json"
+- [x] Tipos e schema zod v2 (`name` na imagem; `inherit` e `parentAnnotationId` na anotação) + migração v1 → v2
+- [x] Invariantes do vínculo (mesma marcação, outra camada, sem ciclo)
+- [x] Operações: definir/remover `inherit`, definir/remover dona; cascatas de exclusão (anotação, camada)
+- [x] `getInheritedAnnotations` e `getLinkedAnnotations` em `src/model/`
+- [x] `docs/FORMAT.md` com a seção "Como um agente lê o mapping.json"
 
 **Aceite**: testes da migração (um v1 real abre como v2 sem perdas), da herança em cascata (Porta › Maçaneta › Fechadura), dos invariantes e das cascatas; o zip de teste v1 abre e salva como v2.
 

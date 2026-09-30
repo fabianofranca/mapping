@@ -216,7 +216,7 @@ export function LayersDialog({
           <p>
             {t('layer.deleteMessage', {
               name: deleting.name,
-              ...layerDeletionImpact(project, deleting.id),
+              annotations: layerDeletionImpact(project, deleting.id).annotations,
             })}
           </p>
         </Dialog>

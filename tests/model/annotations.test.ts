@@ -31,6 +31,8 @@ describe('anotações', () => {
       markingId: 'M3',
       layerId: 'L2',
       name: null,
+      inherit: false,
+      parentAnnotationId: null,
       entries: [{ key: 'cor', value: ' azul ' }],
     });
   });
