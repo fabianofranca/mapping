@@ -32,7 +32,7 @@ import {
   TextIcon,
   UndoIcon,
 } from '../ui/icons';
-import { markingLabel, markingPath } from '../ui/labels';
+import { imageLabel, markingLabel, markingPath } from '../ui/labels';
 import { MarkingPanel } from '../ui/MarkingPanel';
 import { MarkingTree } from '../ui/MarkingTree';
 import { PanelTabs, type PanelTab } from '../ui/PanelTabs';
@@ -136,6 +136,12 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   }, [store, ui]);
 
   requestMarkingDelete.current = onMarkingDelete;
+
+  // Celular: sem seleção, a gaveta recolhe (ao selecionar algo ela abre recolhida).
+  const hasSelection = selected !== null;
+  useEffect(() => {
+    if (!hasSelection) setSheetExpanded(false);
+  }, [hasSelection]);
 
   // Voltar da lista para o canvas (celular): centraliza depois que o canvas reaparece.
   useEffect(() => {
@@ -419,6 +425,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
         display={selectedImage ? display.images.value.get(selectedImage.file) : undefined}
         readOnly={readOnly}
         busy={busy}
+        actions={actions}
         onReplace={onReplace}
         onDelete={setDeleteTarget}
       />
@@ -438,7 +445,9 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const sheetTitle =
     selected?.kind === 'marking'
       ? markingPath(project, selected.marking)
-      : (selectedImage?.file ?? t('panel.nothingSelected'));
+      : selectedImage
+        ? imageLabel(selectedImage)
+        : t('panel.nothingSelected');
 
   return (
     <div class={desktop ? 'editor editor-desktop' : 'editor editor-mobile'}>
@@ -522,6 +531,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
               </p>
             )}
           </div>
+          {!desktop && <div class="canvas-float">{semanticButton}</div>}
           {project.images.length === 0 && (
             <div class="canvas-empty">
               <p class="muted">{t('editor.emptyCanvas')}</p>
@@ -575,7 +585,6 @@ export function Editor({ open }: { readonly open: OpenProject }) {
                 </button>
               ))}
             </div>
-            {semanticButton}
           </div>
           <nav class="bottombar">
             {modeButtons}

@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import { childrenIndex, type Marking, type Project } from '../model';
 import type { Selection } from '../store/ui';
-import { markingLabel } from './labels';
+import { imageLabel, markingLabel } from './labels';
 
 interface MarkingTreeProps {
   readonly project: Project;
@@ -54,7 +54,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
             aria-current={isSelected('image', image.id) || undefined}
             onClick={() => onSelect({ kind: 'image', id: image.id })}
           >
-            <span class="tree-label">{image.file}</span>
+            <span class="tree-label">{imageLabel(image)}</span>
           </button>
           {branch(
             (index.get(null) ?? []).filter((m) => m.imageId === image.id),

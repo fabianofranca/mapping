@@ -12,7 +12,8 @@ import type { ActionResult } from '../store/history';
 import type { ProjectActions } from '../store/project';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { CommitInput } from './CommitInput';
-import { markingErrorMessage, markingPath } from './labels';
+import { IdField } from './IdField';
+import { imageLabel, markingErrorMessage, markingPath } from './labels';
 
 interface MarkingPanelProps {
   readonly project: Project;
@@ -69,8 +70,9 @@ export function MarkingPanel({
     <div class="panel-details">
       <div class="panel-heading">
         <strong class="panel-name">{markingPath(project, marking)}</strong>
-        <span class="muted">{t('marking.inImage', { file: image.file })}</span>
+        <span class="muted">{t('marking.inImage', { file: imageLabel(image) })}</span>
       </div>
+      <IdField id={marking.id} />
 
       {marking.needsReview && (
         <div class="notice" role="status">

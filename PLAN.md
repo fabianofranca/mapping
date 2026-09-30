@@ -570,10 +570,10 @@ Problema: o texto solto sobre a foto, com a mesma cor e peso para nomes e pares,
 **Aceite**: testes da migração (um v1 real abre como v2 sem perdas), da herança em cascata (Porta › Maçaneta › Fechadura), dos invariantes e das cascatas; o zip de teste v1 abre e salva como v2.
 
 #### Fase 9 — Gestos e ajustes de interface
-- [ ] Máquina de estados de gestos com segurar-e-mover (12.2) + testes
-- [ ] Integração no CanvasController para marcações e imagens, com sinal visual e vibração
-- [ ] Botão "T" reposicionado; gaveta recolhe sem seleção (12.5)
-- [ ] Nome da imagem (painel + rótulo no canvas, árvore e lista) e `id` copiável nos detalhes (12.1, 12.5)
+- [x] Máquina de estados de gestos com segurar-e-mover (12.2) + testes
+- [x] Integração no CanvasController para marcações e imagens, com sinal visual e vibração
+- [x] Botão "T" reposicionado; gaveta recolhe sem seleção (12.5)
+- [x] Nome da imagem (painel + rótulo no canvas, árvore e lista) e `id` copiável nos detalhes (12.1, 12.5)
 
 **Aceite** (no celular): fazer pan por cima de uma marcação selecionada sem movê-la; segurar e mover uma marcação e uma imagem; redimensionar pelas alças sem segurar; a aba Lista fica 100% tocável; sem seleção, a gaveta não ocupa a tela; dar nome a uma imagem e vê-lo no canvas; copiar o `id` de uma marcação.
 

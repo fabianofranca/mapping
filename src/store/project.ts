@@ -30,6 +30,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       );
     },
     renameProject: (name: string) => store.apply((p) => model.renameProject(p, name)),
+    renameImage: (imageId: string, name: string | null) =>
+      store.apply((p) => model.renameImage(p, imageId, name)),
 
     // Camadas
     addLayer: (name: string, color: string) =>

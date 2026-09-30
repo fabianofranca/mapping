@@ -52,6 +52,13 @@ import {
   resizeMarkingRect,
   type RectLimits,
 } from './markingGeometry';
+import {
+  HOLD_MS,
+  IDLE,
+  stepGesture,
+  type DragMode,
+  type GestureState,
+} from './gestureMachine';
 import { bodyLines, semanticMode, type SemanticMode } from './semanticText';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import {
@@ -68,8 +75,6 @@ import {
   type Viewport,
 } from './viewport';
 
-/** Distância (px de tela) a partir da qual um toque vira arrasto. */
-const DRAG_THRESHOLD = 6;
 /** Distância (px de tela) em que um novo toque conta como "no mesmo ponto". */
 const TAP_REPEAT_DISTANCE = 12;
 /** Lado visível da alça de redimensionamento (px de tela). */
@@ -82,6 +87,14 @@ const MARKING_STROKE = 1;
 const MARKING_SELECTED_STROKE = 2;
 /** Contorno claro em volta da borda da selecionada, para ela aparecer em fotos escuras. */
 const MARKING_HALO = 0.75;
+/** Sombra do item "pego" pelo segurar-e-mover (px de tela). */
+const GRAB_SHADOW_BLUR = 14;
+/** Vibração ao pegar o item (ms), onde o sistema oferecer (Android). */
+const GRAB_VIBRATION_MS = 20;
+/** Rótulo da imagem (px de tela): fonte, distância da borda e largura mínima para aparecer. */
+const IMAGE_TITLE_FONT_SIZE = 12;
+const IMAGE_TITLE_GAP = 4;
+const IMAGE_TITLE_MIN_WIDTH = 48;
 const REVIEW_BADGE_SIZE = 14;
 /** Indicadores de camada: bolinhas (px de tela), no máximo `MAX_DOTS` e depois "+N". */
 const DOT_RADIUS = 4;
@@ -115,6 +128,12 @@ interface ImagePreview {
 /** Alvo de um arrastar-e-soltar de arquivos: área vazia ou uma imagem (será trocada). */
 export type DropTarget = { readonly imageId: string | null } | null;
 
+/** Item "pego" pelo segurar-e-mover: recebe o sinal visual até soltar. */
+interface Grabbed {
+  readonly kind: 'image' | 'marking';
+  readonly id: string;
+}
+
 /** Retângulo sendo desenhado (modo Desenhar), em pixels da imagem. */
 interface Draft {
   readonly imageId: string;
@@ -139,7 +158,8 @@ type Gesture =
       readonly kind: 'pending';
       readonly pointerId: number;
       readonly start: Point;
-      readonly intent: Intent;
+      /** Vira o item pego se o dedo segurar; senão é o que o arrasto direto faria. */
+      intent: Intent;
     }
   | { readonly kind: 'pan'; readonly pointerId: number; last: Point }
   | {
@@ -202,6 +222,8 @@ interface ImageNode {
   readonly bitmap: KonvaImage;
   readonly placeholder: KonvaRect;
   readonly label: KonvaText;
+  /** Nome da imagem, como rótulo acima dela. */
+  readonly title: KonvaText;
 }
 
 interface MarkingNode {
@@ -234,6 +256,13 @@ function isEditable(target: EventTarget | null): boolean {
   );
 }
 
+function dragModeOf(intent: Intent): DragMode {
+  if (intent.kind === 'pan' || intent.kind === 'draw') return intent.kind;
+  return intent.kind === 'move-image' || intent.kind === 'move-marking'
+    ? 'move'
+    : 'resize';
+}
+
 function resizeCursor(corner: Corner): string {
   return corner === 'nw' || corner === 'se' ? 'nwse-resize' : 'nesw-resize';
 }
@@ -250,6 +279,7 @@ export class CanvasController {
   private readonly preview = signal<ImagePreview | null>(null);
   private readonly draft = signal<Draft | null>(null);
   private readonly dropTarget = signal<DropTarget>(null);
+  private readonly grabbed = signal<Grabbed | null>(null);
   private readonly tokens = signal<CanvasTokens>(readCanvasTokens());
 
   private readonly stage: Konva.Stage;
@@ -259,12 +289,16 @@ export class CanvasController {
   private readonly selectionOutline = new KonvaRect({ visible: false });
   private readonly draftRect = new KonvaRect({ visible: false });
   private readonly dropRect = new KonvaRect({ visible: false });
+  private readonly grabRect = new KonvaRect({ visible: false });
   private readonly handles = new Map<Corner, KonvaRect>();
   private readonly nodes = new Map<string, ImageNode>();
   private readonly markingNodes = new Map<string, MarkingNode>();
 
   private readonly pointers = new Map<number, Point>();
   private gesture: Gesture | null = null;
+  /** Classificação do gesto em andamento (toque / pan / segurar-e-mover / …). */
+  private gestureState: GestureState = IDLE;
+  private holdTimer: ReturnType<typeof setTimeout> | null = null;
   /** Último toque (canvas), para o ciclo "tocar de novo sobe para o pai". */
   private lastTap: Point | null = null;
   private spaceDown = false;
@@ -280,7 +314,12 @@ export class CanvasController {
 
     this.stage = new Konva.Stage({ container: this.container, width: 1, height: 1 });
     this.stage.add(this.imageLayer, this.markingLayer, this.overlayLayer);
-    this.overlayLayer.add(this.selectionOutline, this.draftRect, this.dropRect);
+    this.overlayLayer.add(
+      this.selectionOutline,
+      this.draftRect,
+      this.dropRect,
+      this.grabRect,
+    );
     for (const corner of CORNERS) {
       const handle = new KonvaRect({ visible: false });
       this.handles.set(corner, handle);
@@ -350,11 +389,14 @@ export class CanvasController {
     if (isStoreGesture(g)) this.actions.cancelGesture();
     this.preview.value = null;
     this.draft.value = null;
+    this.grabbed.value = null;
     this.gesture = { kind: 'pinch' }; // Ignora o resto do arrasto até soltar.
+    this.gestureState = { phase: 'pinch' };
     return true;
   }
 
   destroy(): void {
+    this.clearHold();
     if (isStoreGesture(this.gesture)) this.actions.cancelGesture();
     for (const cleanup of this.cleanups.splice(0)) cleanup();
     this.stage.destroy();
@@ -415,8 +457,9 @@ export class CanvasController {
       bitmap: new KonvaImage({ image: undefined }),
       placeholder: new KonvaRect(),
       label: new KonvaText({ align: 'center', verticalAlign: 'middle', wrap: 'char' }),
+      title: new KonvaText({ wrap: 'none', ellipsis: true, fontStyle: 'bold' }),
     };
-    node.group.add(node.placeholder, node.bitmap, node.label);
+    node.group.add(node.placeholder, node.bitmap, node.label, node.title);
     this.imageLayer.add(node.group);
     this.nodes.set(id, node);
     return node;
@@ -451,6 +494,8 @@ export class CanvasController {
       dash: broken ? [8 / zoom, 6 / zoom] : [],
     });
 
+    this.updateTitle(node, image, rect.width, tokens, zoom);
+
     const message =
       state?.status === 'missing'
         ? t('canvas.imageMissing')
@@ -471,6 +516,32 @@ export class CanvasController {
       height: Math.max(0, rect.height - 2 * padding),
       fontSize: Math.max(Math.min(rect.width, rect.height) * 0.06, 12 / zoom),
       fill: broken ? tokens.warning : tokens.textMuted,
+    });
+  }
+
+  /** Rótulo com o nome da imagem (ou do arquivo) logo acima dela. */
+  private updateTitle(
+    node: ImageNode,
+    image: ProjectImage,
+    width: number,
+    tokens: CanvasTokens,
+    zoom: number,
+  ): void {
+    // Tela pequena demais para caber um rótulo legível: esconde.
+    if (width * zoom < IMAGE_TITLE_MIN_WIDTH) {
+      node.title.visible(false);
+      return;
+    }
+    const fontSize = IMAGE_TITLE_FONT_SIZE / zoom;
+    node.title.setAttrs({
+      visible: true,
+      text: image.name ?? image.file,
+      x: 0,
+      y: -(IMAGE_TITLE_FONT_SIZE + IMAGE_TITLE_GAP) / zoom,
+      width,
+      height: fontSize * 1.2,
+      fontSize,
+      fill: image.name === null ? tokens.textMuted : tokens.text,
     });
   }
 
@@ -821,9 +892,11 @@ export class CanvasController {
     zoom: number,
   ): void {
     const selected = resolveSelection(project, this.ui.selection.value);
+    const grabbed = this.grabbed.value;
     // Alças só no modo Navegar (em Desenhar, arrastar sempre desenha).
     const showHandles = !this.store.readOnly.value && this.ui.mode.value === 'navigate';
     const hide = () => {
+      this.grabRect.visible(false);
       this.selectionOutline.visible(false);
       for (const handle of this.handles.values()) handle.visible(false);
     };
@@ -848,6 +921,21 @@ export class CanvasController {
       rect = markingCanvasRect(placement, selected.marking.rect);
       this.selectionOutline.visible(false);
     }
+
+    const selectedId =
+      selected.kind === 'image' ? selected.image.id : selected.marking.id;
+    const isGrabbed = grabbed?.kind === selected.kind && grabbed.id === selectedId;
+    this.grabRect.setAttrs({
+      ...rect,
+      visible: isGrabbed,
+      fill: tokens.accent,
+      opacity: 0.25,
+      stroke: tokens.accent,
+      strokeWidth: (2 * SELECTION_STROKE) / zoom,
+      shadowColor: tokens.accent,
+      shadowBlur: GRAB_SHADOW_BLUR / zoom,
+      shadowOpacity: 0.8,
+    });
 
     const side = HANDLE_SIZE / zoom;
     for (const [corner, handle] of this.handles) {
@@ -973,11 +1061,107 @@ export class CanvasController {
 
     if (this.pointers.size >= 2) {
       this.cancelInteraction();
+      this.clearHold();
+      this.grabbed.value = null;
       this.gesture = { kind: 'pinch' };
+      this.gestureState = stepGesture(this.gestureState, {
+        type: 'second-pointer',
+      }).state;
       return;
     }
     const intent: Intent = e.button === 1 ? { kind: 'pan' } : this.intentAt(p);
-    this.gesture = { kind: 'pending', pointerId: e.pointerId, start: p, intent };
+    // No toque, arrastar sempre faz pan; para mover um item é preciso segurar antes.
+    // Alças (resize) e o modo Desenhar continuam diretos, e o mouse não muda.
+    const holdable =
+      e.pointerType === 'touch' &&
+      (intent.kind === 'pan' ||
+        intent.kind === 'move-marking' ||
+        intent.kind === 'move-image') &&
+      this.canGrab();
+    this.gesture = {
+      kind: 'pending',
+      pointerId: e.pointerId,
+      start: p,
+      intent: holdable ? { kind: 'pan' } : intent,
+    };
+    this.gestureState = stepGesture(IDLE, {
+      type: 'down',
+      point: p,
+      direct: dragModeOf(intent),
+      holdable,
+    }).state;
+    this.clearHold();
+    if (holdable) {
+      const pointerId = e.pointerId;
+      this.holdTimer = setTimeout(() => this.onHold(pointerId), HOLD_MS);
+    }
+  }
+
+  /** Segurar-e-mover só existe no modo Navegar, com a edição liberada. */
+  private canGrab(): boolean {
+    return (
+      !this.spaceDown &&
+      !this.store.readOnly.peek() &&
+      this.store.project.peek() !== null &&
+      this.ui.mode.peek() === 'navigate'
+    );
+  }
+
+  private clearHold(): void {
+    if (this.holdTimer === null) return;
+    clearTimeout(this.holdTimer);
+    this.holdTimer = null;
+  }
+
+  /** O dedo ficou parado por `HOLD_MS`: pega o item sob ele, se houver. */
+  private onHold(pointerId: number): void {
+    this.holdTimer = null;
+    const g = this.gesture;
+    if (g?.kind !== 'pending' || g.pointerId !== pointerId) return;
+    const intent = this.grabIntentAt(g.start);
+    const step = stepGesture(this.gestureState, {
+      type: 'hold',
+      hasTarget: intent !== null,
+    });
+    this.gestureState = step.state;
+    if (step.effect.kind !== 'grab' || !intent) return;
+    g.intent = intent;
+    if (intent.kind === 'move-marking') {
+      this.ui.selection.value = { kind: 'marking', id: intent.markingId };
+      this.grabbed.value = { kind: 'marking', id: intent.markingId };
+    } else if (intent.kind === 'move-image') {
+      this.ui.selection.value = { kind: 'image', id: intent.imageId };
+      this.grabbed.value = { kind: 'image', id: intent.imageId };
+    }
+    try {
+      navigator.vibrate?.(GRAB_VIBRATION_MS);
+    } catch {
+      // Sem vibração (iOS, permissões): fica só o sinal visual.
+    }
+  }
+
+  /**
+   * Item que o segurar-e-mover pega em `p` (tela): a marcação selecionada, se o
+   * dedo estiver nela; senão a mais interna sob o dedo; senão a imagem.
+   */
+  private grabIntentAt(p: Point): Intent | null {
+    const project = this.store.project.peek();
+    if (!project) return null;
+    const c = this.toCanvas(p);
+    const image = imageAt(project.images, c);
+    if (!image) return null;
+    const chain = markingChainAt(
+      project.markings,
+      image.id,
+      canvasToImagePixel(image.placement, c),
+    );
+    const selection = this.ui.selection.peek();
+    const picked =
+      chain.find((m) => selection?.kind === 'marking' && selection.id === m.id) ??
+      chain[0];
+    return picked
+      ? { kind: 'move-marking', markingId: picked.id }
+      : { kind: 'move-image', imageId: image.id };
   }
 
   private onPointerMove(e: PointerEvent): void {
@@ -1004,12 +1188,18 @@ export class CanvasController {
     if (g.pointerId !== e.pointerId) return;
 
     switch (g.kind) {
-      case 'pending':
-        if (Math.hypot(p.x - g.start.x, p.y - g.start.y) >= DRAG_THRESHOLD) {
-          this.startDrag(g.pointerId, g.start, g.intent);
+      case 'pending': {
+        const step = stepGesture(this.gestureState, { type: 'move', point: p });
+        this.gestureState = step.state;
+        if (step.effect.kind === 'start-drag') {
+          this.clearHold();
+          // Mexeu antes de segurar: pan. Depois de segurar, move o item pego.
+          const intent: Intent = step.effect.mode === 'pan' ? { kind: 'pan' } : g.intent;
+          this.startDrag(g.pointerId, g.start, intent);
           this.onPointerMove(e);
         }
         return;
+      }
       case 'pan':
         this.viewport.value = panBy(this.viewport.peek(), p.x - g.last.x, p.y - g.last.y);
         g.last = p;
@@ -1143,12 +1333,21 @@ export class CanvasController {
     const g = this.gesture;
     if (!g) return;
     if (g.kind === 'pinch') {
-      if (this.pointers.size === 0) this.gesture = null;
+      if (this.pointers.size === 0) {
+        this.gesture = null;
+        this.gestureState = stepGesture(this.gestureState, {
+          type: 'all-released',
+        }).state;
+      }
       return;
     }
     if (g.pointerId !== e.pointerId) return;
     this.gesture = null;
-    if (g.kind === 'pending' && !cancelled) this.tap(g.start);
+    this.clearHold();
+    this.grabbed.value = null;
+    const step = stepGesture(this.gestureState, { type: cancelled ? 'cancel' : 'up' });
+    this.gestureState = step.state;
+    if (g.kind === 'pending' && step.effect.kind === 'tap') this.tap(step.effect.at);
     if (isStoreGesture(g)) {
       // Volta para a última posição válida (a do projeto) e grava uma entrada.
       if (cancelled) this.actions.cancelGesture();

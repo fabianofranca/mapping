@@ -1,12 +1,17 @@
 import { t } from '../i18n';
 import type { ProjectImage } from '../model';
+import { imageLabel } from './labels';
 import type { DisplayImage } from '../store/displayImages';
+import type { ProjectActions } from '../store/project';
+import { CommitInput } from './CommitInput';
+import { IdField } from './IdField';
 
 interface SelectionPanelProps {
   readonly image: ProjectImage | null;
   readonly display: DisplayImage<unknown> | undefined;
   readonly readOnly: boolean;
   readonly busy: boolean;
+  readonly actions: ProjectActions;
   readonly onReplace: (image: ProjectImage) => void;
   readonly onDelete: (image: ProjectImage) => void;
 }
@@ -17,6 +22,7 @@ export function SelectionPanel({
   display,
   readOnly,
   busy,
+  actions,
   onReplace,
   onDelete,
 }: SelectionPanelProps) {
@@ -28,11 +34,27 @@ export function SelectionPanel({
   return (
     <div class="panel-details">
       <div class="panel-heading">
-        <strong class="panel-name">{image.file}</strong>
+        <strong class="panel-name">{imageLabel(image)}</strong>
         <span class="muted">
+          {image.file} ·{' '}
           {t('image.dimensions', { width: image.width, height: image.height })}
         </span>
       </div>
+      <label class="field">
+        {t('image.name')}
+        <CommitInput
+          class="input"
+          value={image.name ?? ''}
+          placeholder={image.file}
+          disabled={disabled}
+          onCommit={(text) => {
+            // Espaços em volta não contam como alteração.
+            if ((text.trim() || null) === image.name) return false;
+            return actions.renameImage(image.id, text).ok;
+          }}
+        />
+      </label>
+      <IdField id={image.id} />
       {broken && (
         <p class="notice" role="status">
           <strong>{t(missing ? 'image.missingTitle' : 'canvas.imageError')}</strong>

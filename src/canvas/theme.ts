@@ -6,6 +6,7 @@ export interface CanvasTokens {
   readonly warning: string;
   readonly surface: string;
   readonly border: string;
+  readonly text: string;
   readonly textMuted: string;
   /** Borda neutra das marcações. */
   readonly marking: string;
@@ -25,6 +26,7 @@ export function readCanvasTokens(
     warning: read(style, '--color-warning'),
     surface: read(style, '--color-surface'),
     border: read(style, '--color-border'),
+    text: read(style, '--color-text'),
     textMuted: read(style, '--color-text-muted'),
     marking: read(style, '--color-marking'),
   };

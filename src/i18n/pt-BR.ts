@@ -15,6 +15,10 @@ export const ptBR = {
   'common.delete': 'Excluir',
   'common.open': 'Abrir',
   'common.close': 'Fechar',
+  'common.id': 'ID',
+  'common.copyId': 'Copiar ID',
+  'common.copied': 'ID copiado.',
+  'common.copyFailed': 'Não foi possível copiar.',
 
   'layer.defaultName': 'Camada 1',
   'project.untitled': 'Projeto sem nome',
@@ -120,6 +124,7 @@ export const ptBR = {
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
   'marking.error.generic': 'Não foi possível alterar a marcação.',
 
+  'image.name': 'Nome',
   'image.dimensions': '{width} × {height} px',
   'image.missingTitle': 'Imagem ausente',
   'image.missingMessage':
