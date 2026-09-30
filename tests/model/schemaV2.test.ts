@@ -37,13 +37,13 @@ function load(text: string): Project {
 }
 
 describe('migração v1 → v2', () => {
-  it('abre um v1 real como v2 sem perder nada', () => {
+  it('abre um v1 real como v3 sem perder nada', () => {
     const result = deserialize(v1Text);
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(2);
+    expect(p.schemaVersion).toBe(3);
     expect(p.images.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => !a.inherit && a.parentAnnotationId === null)).toBe(
       true,
@@ -53,15 +53,17 @@ describe('migração v1 → v2', () => {
     expect(p.layers).toEqual(original.layers);
     expect(p.markings).toEqual(original.markings);
     expect(p.project).toEqual(original.project);
-    expect(p.images.map((i) => omit(i, ['name']))).toEqual(original.images);
+    expect(p.images.map((i) => omit(i, ['name', 'markingColor']))).toEqual(
+      original.images,
+    );
     expect(p.annotations.map((a) => omit(a, ['inherit', 'parentAnnotationId']))).toEqual(
       original.annotations,
     );
   });
 
-  it('salvar o v1 migrado gera v2 estável (round-trip)', () => {
+  it('salvar o v1 migrado gera v3 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(2);
+    expect(JSON.parse(saved).schemaVersion).toBe(3);
     expect(serialize(load(saved))).toBe(saved);
   });
 
@@ -75,6 +77,7 @@ describe('migração v1 → v2', () => {
       'width',
       'height',
       'placement',
+      'markingColor',
     ]);
     expect(Object.keys(data.annotations[0])).toEqual([
       'id',

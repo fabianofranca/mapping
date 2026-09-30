@@ -1,13 +1,19 @@
 import { useState } from 'preact/hooks';
-import { t } from '../i18n';
+import { t, type TranslationKey } from '../i18n';
 import {
   LAYER_PALETTE,
+  MARKING_DISPLAY_MODES,
   layerDeletionImpact,
   nextLayerColor,
   type Layer,
   type Project,
 } from '../model';
 import type { ProjectActions } from '../store/project';
+import {
+  isMarkingDisplayMode,
+  markingDisplay,
+  setMarkingDisplay,
+} from '../store/settings';
 import {
   resolveActiveLayerId,
   setActiveLayer,
@@ -75,6 +81,26 @@ export function LayersDialog({
             {t('layer.showAll')}
           </button>
         </div>
+
+        <fieldset class="display-mode">
+          <legend>{t('layer.displayMode')}</legend>
+          {MARKING_DISPLAY_MODES.map((mode) => (
+            <label key={mode} class="field field-check">
+              <input
+                type="radio"
+                name="marking-display"
+                value={mode}
+                checked={markingDisplay.value === mode}
+                onChange={(e) => {
+                  const v = e.currentTarget.value;
+                  if (isMarkingDisplayMode(v)) setMarkingDisplay(v);
+                }}
+              />
+              <span>{t(`layer.display.${mode}` satisfies TranslationKey)}</span>
+            </label>
+          ))}
+          <small class="muted">{t('layer.displayHint')}</small>
+        </fieldset>
 
         <ul class="layer-list">
           {project.layers.map((layer, index) => {
@@ -213,13 +239,44 @@ export function LayersDialog({
             </>
           }
         >
-          <p>
-            {t('layer.deleteMessage', {
-              name: deleting.name,
-              annotations: layerDeletionImpact(project, deleting.id).annotations,
-            })}
-          </p>
+          <DeleteImpact project={project} layer={deleting} />
         </Dialog>
+      )}
+    </>
+  );
+}
+
+/** Contagens da exclusão: total e, por camada, incluindo as vinculadas em outras camadas. */
+function DeleteImpact({
+  project,
+  layer,
+}: {
+  readonly project: Project;
+  readonly layer: Layer;
+}) {
+  const impact = layerDeletionImpact(project, layer.id);
+  const others = project.layers
+    .filter((l) => l.id !== layer.id && (impact.byLayer.get(l.id) ?? 0) > 0)
+    .map((l) => ({ layer: l, count: impact.byLayer.get(l.id) ?? 0 }));
+  return (
+    <>
+      <p>
+        {t('layer.deleteMessage', {
+          name: layer.name,
+          annotations: impact.annotations,
+        })}
+      </p>
+      {others.length > 0 && (
+        <>
+          <p>{t('layer.deleteCounts')}</p>
+          <ul>
+            {others.map(({ layer: other, count }) => (
+              <li key={other.id}>
+                {t('layer.deleteCount', { name: other.name, count })}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </>
   );

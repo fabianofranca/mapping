@@ -125,6 +125,10 @@ export const ptBR = {
   'marking.error.generic': 'Não foi possível alterar a marcação.',
 
   'image.name': 'Nome',
+  'image.markingColor': 'Cor das linhas das marcações',
+  'image.markingColorTheme': 'Cor do tema',
+  'image.markingColorHint':
+    'Vale para as marcações desta imagem e é salva no projeto. Use outra cor quando a foto esconder a linha.',
   'image.dimensions': '{width} × {height} px',
   'image.missingTitle': 'Imagem ausente',
   'image.missingMessage':
@@ -164,6 +168,14 @@ export const ptBR = {
   'layer.deleteMessage':
     '"{name}" será excluída com {annotations} anotação(ões). Dá para desfazer.',
   'layer.lastLayer': 'O projeto precisa ter ao menos uma camada.',
+  'layer.deleteCounts': 'Serão excluídas também anotações vinculadas em outras camadas:',
+  'layer.deleteCount': '{name}: {count}',
+  'layer.displayMode': 'Marcações sem anotação',
+  'layer.display.all': 'Mostrar todas',
+  'layer.display.dim': 'Esmaecer sem anotação',
+  'layer.display.hide': 'Ocultar sem anotação',
+  'layer.displayHint':
+    'Vale pela camada ativa: conta a anotação própria e a herdada nela. A marcação selecionada sempre aparece.',
 
   'annotation.heading': 'Anotações',
   'annotation.add': '+ Anotação',
@@ -181,6 +193,17 @@ export const ptBR = {
   'annotation.error.empty-key': 'A chave não pode ficar vazia.',
   'annotation.error.duplicate-key': 'Já existe um par com esta chave.',
   'annotation.error.generic': 'Não foi possível alterar a anotação.',
+  'annotation.inherit': 'Aplicar às marcações filhas',
+  'annotation.owner': 'Pertence a',
+  'annotation.noOwner': 'Nenhuma',
+  'annotation.ownerOption': '{layer}: {name}',
+  'annotation.linkedTo': '↳ de {name}',
+  'annotation.linkedHeading': 'Vinculadas',
+  'annotation.goToAnnotation': 'Ir para a anotação {name}',
+  'annotation.showLayer': 'Mostrar a camada {layer}',
+  'annotation.inheritedHeading': 'Herdadas',
+  'annotation.inheritedFrom': 'herdado de {name}',
+  'annotation.goToMarking': 'Ir para {name}',
 
   'view.canvas': 'Canvas',
   'view.list': 'Lista',

@@ -37,11 +37,48 @@ export function layerSections(
   return sections;
 }
 
+/** Anotação herdada, com a marcação de onde vem. */
+export interface InheritedAnnotation {
+  readonly annotation: Annotation;
+  readonly source: Marking;
+}
+
+export interface LayerInherited {
+  readonly layer: Layer;
+  readonly items: readonly InheritedAnnotation[];
+}
+
 export interface ListedMarking {
   readonly marking: Marking;
   /** Da marcação raiz até ela mesma (o último item é `marking`). */
   readonly path: readonly Marking[];
   readonly sections: readonly LayerAnnotations[];
+  /** Herdadas por camada visível (da raiz para baixo dentro de cada camada). */
+  readonly inherited: readonly LayerInherited[];
+}
+
+/**
+ * Anotações herdadas pela marcação, por camada, só nas `layers` dadas (as visíveis).
+ * `path` é da raiz até a marcação; cada ancestral contribui com as `inherit: true` dele.
+ */
+export function inheritedSections(
+  byMarking: ReadonlyMap<string, readonly Annotation[]>,
+  path: readonly Marking[],
+  layers: readonly Layer[],
+): LayerInherited[] {
+  const all: InheritedAnnotation[] = [];
+  for (const source of path.slice(0, -1)) {
+    for (const annotation of byMarking.get(source.id) ?? []) {
+      if (annotation.inherit) all.push({ annotation, source });
+    }
+  }
+  if (all.length === 0) return [];
+  const sections: LayerInherited[] = [];
+  for (const layer of layers) {
+    const items = all.filter((i) => i.annotation.layerId === layer.id);
+    if (items.length > 0) sections.push({ layer, items });
+  }
+  return sections;
 }
 
 export interface ListedImage {
@@ -58,7 +95,7 @@ export interface ListingOptions {
  * Dados da Visão de Lista: Imagem → Marcação → Camada → Anotações.
  * As marcações de cada imagem vêm em profundidade (o pai antes das filhas).
  * Respeita as camadas visíveis: sem `showEmpty`, só entram marcações com
- * anotação nelas, e imagens sem nenhuma marcação assim ficam de fora.
+ * anotação própria ou herdada nelas, e imagens sem nenhuma marcação assim ficam de fora.
  */
 export function buildListing(
   p: Project,
@@ -75,8 +112,9 @@ export function buildListing(
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
       const sections = layerSections(byMarking, marking.id, layers);
-      if (options.showEmpty || sections.length > 0) {
-        markings.push({ marking, path, sections });
+      const inherited = inheritedSections(byMarking, path, layers);
+      if (options.showEmpty || sections.length > 0 || inherited.length > 0) {
+        markings.push({ marking, path, sections, inherited });
       }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };

@@ -8,14 +8,17 @@ import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../i18n';
 import {
-  annotatedLayersByMarking,
   annotationsByMarking,
+  layerDotsByMarking,
   layerSections,
   imageCanvasRect,
+  markingVisibility,
   markingRectLimits,
   topDown,
   type Layer,
+  type LayerDot,
   type Marking,
+  type MarkingVisibility,
   type Placement,
   type Project,
   type ProjectImage,
@@ -24,7 +27,7 @@ import {
 import type { DisplayImage, DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
-import { semanticText } from '../store/settings';
+import { markingDisplay, semanticText } from '../store/settings';
 import {
   resolveActiveLayerId,
   resolveSelection,
@@ -103,6 +106,8 @@ const DOT_MARGIN = 3;
 const MAX_DOTS = 4;
 /** Opacidade das marcações sem anotação em nenhuma camada visível. */
 const DIMMED_OPACITY = 0.35;
+/** Borda de contexto dos pais no modo Ocultar: esmaecida, mas legível sobre fotos. */
+const OUTLINE_OPACITY = 0.75;
 /** Zoom semântico: fonte e altura de linha (px de tela) e margem interna do texto. */
 const TEXT_FONT_SIZE = 12;
 const TEXT_LINE_HEIGHT = 15;
@@ -293,6 +298,8 @@ export class CanvasController {
   private readonly handles = new Map<Corner, KonvaRect>();
   private readonly nodes = new Map<string, ImageNode>();
   private readonly markingNodes = new Map<string, MarkingNode>();
+  /** Visibilidade de cada marcação no último desenho (modo de exibição). */
+  private visibility: ReadonlyMap<string, MarkingVisibility> = new Map();
 
   private readonly pointers = new Map<number, Point>();
   private gesture: Gesture | null = null;
@@ -443,8 +450,21 @@ export class CanvasController {
 
     const activeLayerId = resolveActiveLayerId(project, this.ui.activeLayer.value);
     const shown = visibleLayers(project, this.ui.hiddenLayers.value, activeLayerId);
-    const annotated = project ? annotatedLayersByMarking(project, shown) : new Map();
-    this.renderMarkings(project, shown, placements, annotated, tokens, v.scale);
+    const dots = project ? layerDotsByMarking(project, shown) : new Map();
+    // "Sem anotação" (esmaecer/ocultar) é medido só pela camada ativa, própria ou herdada.
+    const activeLayer = shown.find((l) => l.id === activeLayerId);
+    const activeDots =
+      project && activeLayer ? layerDotsByMarking(project, [activeLayer]) : new Map();
+    const selection = this.ui.selection.value;
+    this.visibility = project
+      ? markingVisibility(
+          project,
+          activeDots,
+          markingDisplay.value,
+          selection?.kind === 'marking' ? selection.id : null,
+        )
+      : new Map();
+    this.renderMarkings(project, shown, placements, dots, tokens, v.scale);
     this.renderDraft(placements, tokens, v.scale);
     this.renderSelection(project, preview, placements, tokens, v.scale);
     this.renderDropTarget(project, tokens, v.scale);
@@ -550,7 +570,7 @@ export class CanvasController {
     project: Project | null,
     shown: readonly Layer[],
     placements: ReadonlyMap<string, Placement>,
-    annotated: ReadonlyMap<string, readonly Layer[]>,
+    dots: ReadonlyMap<string, readonly LayerDot[]>,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
@@ -568,6 +588,7 @@ export class CanvasController {
       height: size.height / vp.scale,
     };
     const byMarking = project && semantic ? annotationsByMarking(project) : new Map();
+    const lineColors = new Map(project?.images.map((i) => [i.id, i.markingColor]));
     const seen = new Set<string>();
     let index = 0;
     for (const marking of topDown(markings)) {
@@ -578,24 +599,29 @@ export class CanvasController {
         this.markingNodes.get(marking.id) ?? this.createMarkingNode(marking.id);
       const markingRect = markingCanvasRect(placement, marking.rect);
       // Fora da tela: nem atualiza nem desenha (a camada não recebe toques, então é seguro).
-      const onScreen = intersectRects(markingRect, view) !== null;
+      const visibility = this.visibility.get(marking.id) ?? 'full';
+      const onScreen =
+        visibility !== 'hidden' && intersectRects(markingRect, view) !== null;
       node.group.visible(onScreen);
       // Reordenar custa caro no Konva: só quando a posição na pilha mudou.
       if (node.group.zIndex() !== index) node.group.zIndex(index);
       index++;
       if (!onScreen) continue;
       const selected = selection?.kind === 'marking' && selection.id === marking.id;
+      // Cor da borda escolhida para a imagem (sem escolha, a neutra do tema).
+      const lineColor = lineColors.get(marking.imageId) ?? null;
       this.updateMarkingNode(
         node,
         marking,
         placement,
         selected,
-        annotated.get(marking.id) ?? [],
-        tokens,
+        visibility,
+        dots.get(marking.id) ?? [],
+        lineColor ? { ...tokens, marking: lineColor } : tokens,
         zoom,
       );
       const mode = semanticMode({
-        enabled: semantic,
+        enabled: semantic && visibility !== 'outline',
         screenWidth: marking.rect.width * placement.scale * zoom,
         screenHeight: marking.rect.height * placement.scale * zoom,
         hasChildren: parents.has(marking.id),
@@ -643,13 +669,20 @@ export class CanvasController {
     marking: Marking,
     placement: Placement,
     selected: boolean,
-    layers: readonly Layer[],
+    visibility: MarkingVisibility,
+    dots: readonly LayerDot[],
     tokens: CanvasTokens,
     zoom: number,
   ): void {
     const rect = markingCanvasRect(placement, marking.rect);
-    // Sem anotação nas camadas visíveis: esmaecida (a selecionada, nunca).
-    node.group.opacity(selected || layers.length > 0 ? 1 : DIMMED_OPACITY);
+    // Sem anotação (própria ou herdada) nas camadas visíveis: esmaecida (a selecionada, nunca).
+    node.group.opacity(
+      visibility === 'dim'
+        ? DIMMED_OPACITY
+        : visibility === 'outline'
+          ? OUTLINE_OPACITY
+          : 1,
+    );
     const stroke = (selected ? MARKING_SELECTED_STROKE : MARKING_STROKE) / zoom;
     const dash = marking.needsReview ? [6 / zoom, 4 / zoom] : [];
     // Contorno claro só na selecionada; as demais ficam com a linha de 1 px.
@@ -662,7 +695,9 @@ export class CanvasController {
     });
     node.border.setAttrs({ ...rect, stroke: tokens.marking, strokeWidth: stroke, dash });
     // Texto do Konva remede a cada mudança de atributo: só mexe nos que aparecem.
-    if (marking.needsReview) {
+    // Ancestral de contexto (modo Ocultar): só a borda, sem alerta nem bolinhas.
+    const outline = visibility === 'outline';
+    if (marking.needsReview && !outline) {
       const badge = REVIEW_BADGE_SIZE / zoom;
       node.badge.setAttrs({
         visible: true,
@@ -677,7 +712,7 @@ export class CanvasController {
     } else {
       node.badge.visible(false);
     }
-    this.updateIndicators(node, marking, rect, layers, tokens, zoom);
+    this.updateIndicators(node, marking, rect, outline ? [] : dots, tokens, zoom);
   }
 
   /** Bolinhas coloridas no canto superior esquerdo, uma por camada visível com anotação. */
@@ -685,7 +720,7 @@ export class CanvasController {
     node: MarkingNode,
     marking: Marking,
     rect: Rect,
-    layers: readonly Layer[],
+    layers: readonly LayerDot[],
     tokens: CanvasTokens,
     zoom: number,
   ): void {
@@ -709,14 +744,17 @@ export class CanvasController {
         dot.visible(false);
         return;
       }
+      // Só por herança: bolinha vazada (contorno na cor da camada).
+      const item = layers[i];
+      const hollow = item?.inheritedOnly ?? false;
       dot.setAttrs({
         visible: true,
         x: x0 + i * step,
         y: cy,
-        radius,
-        fill: layers[i]?.color ?? tokens.marking,
-        stroke: tokens.surface,
-        strokeWidth: 1 / zoom,
+        radius: hollow ? radius - 0.5 / zoom : radius,
+        fill: hollow ? tokens.surface : (item?.layer.color ?? tokens.marking),
+        stroke: hollow ? (item?.layer.color ?? tokens.marking) : tokens.surface,
+        strokeWidth: (hollow ? 2 : 1) / zoom,
       });
     });
     const extra = layers.length - MAX_DOTS;
@@ -1151,7 +1189,7 @@ export class CanvasController {
     const image = imageAt(project.images, c);
     if (!image) return null;
     const chain = markingChainAt(
-      project.markings,
+      this.selectableMarkings(project),
       image.id,
       canvasToImagePixel(image.placement, c),
     );
@@ -1162,6 +1200,11 @@ export class CanvasController {
     return picked
       ? { kind: 'move-marking', markingId: picked.id }
       : { kind: 'move-image', imageId: image.id };
+  }
+
+  /** Marcações que aceitam toque: as ocultas pelo modo de exibição ficam de fora. */
+  private selectableMarkings(project: Project): readonly Marking[] {
+    return project.markings.filter((m) => this.visibility.get(m.id) !== 'hidden');
   }
 
   private onPointerMove(e: PointerEvent): void {
@@ -1385,7 +1428,7 @@ export class CanvasController {
       last !== null &&
       Math.hypot(c.x - last.x, c.y - last.y) * zoom <= TAP_REPEAT_DISTANCE;
     const chain = markingChainAt(
-      project.markings,
+      this.selectableMarkings(project),
       image.id,
       canvasToImagePixel(image.placement, c),
     ).map((m) => m.id);

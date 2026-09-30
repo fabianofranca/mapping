@@ -14,6 +14,7 @@ import {
   createEditorUi,
   resolveActiveLayerId,
   resolveSelection,
+  showLayer,
   visibleLayers,
   type Selection,
 } from '../store/ui';
@@ -418,6 +419,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
         actions={actions}
         readOnly={readOnly || busy}
         onDelete={onMarkingDelete}
+        onShowLayer={(layerId) => showLayer(ui, layerId)}
+        onSelectMarking={(id) => onTreeSelect({ kind: 'marking', id })}
       />
     ) : (
       <SelectionPanel

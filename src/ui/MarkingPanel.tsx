@@ -25,6 +25,8 @@ interface MarkingPanelProps {
   readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onDelete: (marking: Marking) => void;
+  readonly onShowLayer: (layerId: string) => void;
+  readonly onSelectMarking: (markingId: string) => void;
 }
 
 const RECT_FIELDS: readonly { key: keyof Rect; label: TranslationKey }[] = [
@@ -44,6 +46,8 @@ export function MarkingPanel({
   actions,
   readOnly,
   onDelete,
+  onShowLayer,
+  onSelectMarking,
 }: MarkingPanelProps) {
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +115,8 @@ export function MarkingPanel({
         activeLayer={activeLayer}
         actions={actions}
         readOnly={readOnly}
+        onShowLayer={onShowLayer}
+        onSelectMarking={onSelectMarking}
       />
 
       <fieldset class="rect-fields" disabled={readOnly}>

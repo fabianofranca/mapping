@@ -7,7 +7,7 @@ import {
   type EditorUi,
   type Selection,
 } from '../store/ui';
-import { imageLabel, markingLabel } from './labels';
+import { annotationLabel, imageLabel, markingLabel, markingPath } from './labels';
 
 interface ListViewProps {
   readonly project: Project;
@@ -40,6 +40,10 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
   }, [selectedId, listing.length]);
 
   const shownIds = new Set(layers.map((l) => l.id));
+  const ownerLabel = (ownerId: string | null): string | null => {
+    const owner = ownerId ? project.annotations.find((a) => a.id === ownerId) : undefined;
+    return owner ? annotationLabel(owner) : null;
+  };
 
   return (
     <div class="list-view" ref={root}>
@@ -83,7 +87,7 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
             <li key={image.id}>
               <h3 class="list-image">{imageLabel(image)}</h3>
               <ul class="list-markings">
-                {markings.map(({ marking, path, sections }) => {
+                {markings.map(({ marking, path, sections, inherited }) => {
                   const label = path.map(markingLabel).join(t('marking.pathSeparator'));
                   return (
                     <li key={marking.id}>
@@ -103,7 +107,7 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
                           )}
                           {label}
                         </span>
-                        {sections.length === 0 && (
+                        {sections.length === 0 && inherited.length === 0 && (
                           <span class="muted list-none">{t('list.noAnnotations')}</span>
                         )}
                         {sections.map(({ layer, annotations }) => (
@@ -121,11 +125,48 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
                                 {a.name !== null && (
                                   <strong class="list-annotation-name">{a.name}</strong>
                                 )}
+                                {ownerLabel(a.parentAnnotationId) !== null && (
+                                  <span class="muted list-linked">
+                                    {t('annotation.linkedTo', {
+                                      name: ownerLabel(a.parentAnnotationId) ?? '',
+                                    })}
+                                  </span>
+                                )}
                                 {a.entries.map((e, i) => (
                                   <span key={i} class="list-entry">
                                     <span class="list-key">{e.key}:</span> {e.value}
                                   </span>
                                 ))}
+                              </span>
+                            ))}
+                          </span>
+                        ))}
+                        {inherited.map(({ layer, items }) => (
+                          <span
+                            key={`inherited:${layer.id}`}
+                            class="list-layer-section list-inherited"
+                            style={{ '--layer-color': layer.color }}
+                          >
+                            <span class="list-layer-header">
+                              <span class="layer-dot" aria-hidden="true" />
+                              {layer.name}
+                            </span>
+                            {items.map(({ annotation: a, source }) => (
+                              <span key={a.id} class="list-annotation">
+                                <span class="list-annotation-name">
+                                  {annotationLabel(a)}
+                                </span>
+                                {a.name !== null &&
+                                  a.entries.map((e, i) => (
+                                    <span key={i} class="list-entry">
+                                      <span class="list-key">{e.key}:</span> {e.value}
+                                    </span>
+                                  ))}
+                                <span class="muted list-linked">
+                                  {t('annotation.inheritedFrom', {
+                                    name: markingPath(project, source),
+                                  })}
+                                </span>
                               </span>
                             ))}
                           </span>

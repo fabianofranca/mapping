@@ -1097,3 +1097,87 @@ body {
   font-size: 0.8em;
   user-select: all;
 }
+
+/* Herança e vínculos (fase 10) */
+.annotation-linked {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.annotation-linked-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 0.9rem;
+}
+
+.linked-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.linked-layer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+.link-button {
+  min-height: 24px;
+  padding: 0 var(--space-1);
+  font: inherit;
+  color: var(--color-accent);
+  text-align: left;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.inherited {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  font-style: italic;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+}
+
+.inherited-heading {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.inherited-item {
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.inherited-source {
+  font-size: 0.85rem;
+}
+
+.display-mode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.list-inherited {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.list-linked {
+  font-size: 0.85rem;
+}

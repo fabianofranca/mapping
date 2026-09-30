@@ -30,6 +30,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       );
     },
     renameProject: (name: string) => store.apply((p) => model.renameProject(p, name)),
+    setImageMarkingColor: (imageId: string, color: string | null) =>
+      store.apply((p) => model.setImageMarkingColor(p, imageId, color)),
     renameImage: (imageId: string, name: string | null) =>
       store.apply((p) => model.renameImage(p, imageId, name)),
 
@@ -108,6 +110,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.renameAnnotation(p, annotationId, name)),
     removeAnnotation: (annotationId: string) =>
       store.apply((p) => model.removeAnnotation(p, annotationId)),
+    setAnnotationInherit: (annotationId: string, inherit: boolean) =>
+      store.apply((p) => model.setAnnotationInherit(p, annotationId, inherit)),
+    setAnnotationParent: (annotationId: string, ownerId: string | null) =>
+      store.apply((p) => model.setAnnotationParent(p, annotationId, ownerId)),
     setEntries: (annotationId: string, entries: readonly Entry[]) =>
       store.apply((p) => model.setEntries(p, annotationId, entries)),
     addEntry: (annotationId: string, entry: Entry) =>

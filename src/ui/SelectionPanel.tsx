@@ -5,6 +5,7 @@ import type { DisplayImage } from '../store/displayImages';
 import type { ProjectActions } from '../store/project';
 import { CommitInput } from './CommitInput';
 import { IdField } from './IdField';
+import { MarkingColorField } from './MarkingColorField';
 
 interface SelectionPanelProps {
   readonly image: ProjectImage | null;
@@ -54,6 +55,7 @@ export function SelectionPanel({
           }}
         />
       </label>
+      <MarkingColorField image={image} actions={actions} disabled={disabled} />
       <IdField id={image.id} />
       {broken && (
         <p class="notice" role="status">

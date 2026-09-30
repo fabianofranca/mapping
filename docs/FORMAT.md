@@ -1,11 +1,11 @@
-# Formato do `mapping.json` (schema v2)
+# Formato do `mapping.json` (schema v3)
 
 O projeto é uma pasta com `mapping.json` e `images/`. Todas as coordenadas das marcações
 são **pixels inteiros da imagem original** (`images[].file`, com a orientação EXIF já aplicada).
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "app": "mapeador-imagens",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": { "name": "Carro", "createdAt": "…", "updatedAt": "…" },
@@ -17,7 +17,8 @@ são **pixels inteiros da imagem original** (`images[].file`, com a orientação
       "file": "images/home.webp",
       "width": 1182,
       "height": 2560,
-      "placement": { "x": 0, "y": 0, "scale": 0.4 }
+      "placement": { "x": 0, "y": 0, "scale": 0.4 },
+      "markingColor": null
     }
   ],
   "markings": [
@@ -44,9 +45,10 @@ são **pixels inteiros da imagem original** (`images[].file`, com a orientação
 }
 ```
 
-## Campos da v2
+## Campos da v2 e v3
 
 - `images[].name`: rótulo opcional (`null` = use o nome do arquivo). Mudá-lo não renomeia o arquivo.
+- `images[].markingColor` (v3): cor `#RRGGBB` da borda das marcações da imagem, ou `null` (cor neutra do tema). Só afeta a interface, não o recorte.
 - `annotations[].inherit`: se `true`, a anotação também vale para **todos os descendentes** da marcação.
 - `annotations[].parentAnnotationId`: anotação "dona" (ou `null`).
   - a dona está na **mesma marcação** e em **outra camada**;
@@ -71,5 +73,5 @@ Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, ma
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
-`inherit: false` e `parentAnnotationId: null`. Ao salvar, o arquivo passa a ser v2.
+`inherit: false` e `parentAnnotationId: null`. Arquivos v2 recebem `markingColor: null` em cada imagem. Ao salvar, o arquivo passa a ser v3.
 Arquivos de versão mais nova abrem somente para leitura.

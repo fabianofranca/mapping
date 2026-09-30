@@ -81,6 +81,14 @@ export function toggleLayerVisible(
   ui.hiddenLayers.value = hidden;
 }
 
+/** Torna a camada visível (sem mudar a ativa). */
+export function showLayer(ui: EditorUi, layerId: string): void {
+  if (!ui.hiddenLayers.peek().has(layerId)) return;
+  const hidden = new Set(ui.hiddenLayers.peek());
+  hidden.delete(layerId);
+  ui.hiddenLayers.value = hidden;
+}
+
 export function showAllLayers(ui: EditorUi): void {
   ui.hiddenLayers.value = new Set();
 }

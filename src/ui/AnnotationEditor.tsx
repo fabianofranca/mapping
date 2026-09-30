@@ -1,13 +1,25 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
-import type { Annotation, Entry } from '../model';
+import {
+  getLinkedAnnotations,
+  validAnnotationOwners,
+  type Annotation,
+  type Entry,
+  type Layer,
+  type Project,
+} from '../model';
 import type { ProjectActions } from '../store/project';
 import { CommitInput } from './CommitInput';
 import { ArrowDownIcon, ArrowUpIcon, CloseIcon, TrashIcon } from './icons';
 import { annotationErrorMessage, annotationLabel } from './labels';
 
 interface AnnotationEditorProps {
+  readonly project: Project;
   readonly annotation: Annotation;
+  /** Ids das camadas visíveis (as vinculadas em camadas ocultas oferecem mostrá-las). */
+  readonly visibleLayerIds: ReadonlySet<string>;
+  readonly onGoToAnnotation: (annotation: Annotation) => void;
+  readonly onShowLayer: (layerId: string) => void;
   readonly actions: ProjectActions;
   readonly readOnly: boolean;
 }
@@ -151,7 +163,11 @@ function EntryRow({
 
 /** Uma anotação: nome opcional e lista de pares chave-valor. */
 export function AnnotationEditor({
+  project,
   annotation,
+  visibleLayerIds,
+  onGoToAnnotation,
+  onShowLayer,
   actions,
   readOnly,
 }: AnnotationEditorProps) {
@@ -189,8 +205,23 @@ export function AnnotationEditor({
     );
   }
 
+  const layerOf = (id: string): Layer | undefined =>
+    project.layers.find((l) => l.id === id);
+  const owners = validAnnotationOwners(project, annotation.id);
+  const owner = annotation.parentAnnotationId
+    ? project.annotations.find((a) => a.id === annotation.parentAnnotationId)
+    : undefined;
+  const linked = getLinkedAnnotations(project, annotation.id);
+  // Resumo das vinculadas, agrupado por camada na ordem das camadas.
+  const linkedGroups = project.layers
+    .map((layer) => ({
+      layer,
+      items: linked.filter((a) => a.layerId === layer.id),
+    }))
+    .filter((g) => g.items.length > 0);
+
   return (
-    <div class="annotation">
+    <div class="annotation" data-annotation={annotation.id}>
       <div class="annotation-header">
         <CommitInput
           class="input annotation-name"
@@ -215,6 +246,12 @@ export function AnnotationEditor({
         </button>
       </div>
 
+      {owner && (
+        <p class="annotation-linked muted">
+          {t('annotation.linkedTo', { name: annotationLabel(owner) })}
+        </p>
+      )}
+
       <ul class="entries">{rows}</ul>
 
       <div class="row">
@@ -227,6 +264,86 @@ export function AnnotationEditor({
           {t('annotation.addEntry')}
         </button>
       </div>
+
+      <label class="field field-check">
+        <input
+          type="checkbox"
+          checked={annotation.inherit}
+          disabled={readOnly}
+          onChange={(e) =>
+            actions.setAnnotationInherit(annotation.id, e.currentTarget.checked)
+          }
+        />
+        <span>{t('annotation.inherit')}</span>
+      </label>
+
+      <label class="field">
+        {t('annotation.owner')}
+        <select
+          class="input"
+          value={annotation.parentAnnotationId ?? ''}
+          disabled={readOnly}
+          onChange={(e) => {
+            const value = e.currentTarget.value;
+            actions.setAnnotationParent(annotation.id, value === '' ? null : value);
+          }}
+        >
+          <option value="">{t('annotation.noOwner')}</option>
+          {owners.map((a) => (
+            <option key={a.id} value={a.id}>
+              {t('annotation.ownerOption', {
+                layer: layerOf(a.layerId)?.name ?? '',
+                name: annotationLabel(a),
+              })}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {linkedGroups.length > 0 && (
+        <div class="annotation-linked-summary">
+          <strong class="annotation-linked-title">{t('annotation.linkedHeading')}</strong>
+          {linkedGroups.map(({ layer, items }) => (
+            <div
+              key={layer.id}
+              class="linked-group"
+              style={{ '--layer-color': layer.color }}
+            >
+              <span class="linked-layer">
+                <span class="layer-dot" aria-hidden="true" />
+                {layer.name}:
+              </span>
+              {items.map((a) =>
+                visibleLayerIds.has(layer.id) ? (
+                  <button
+                    key={a.id}
+                    type="button"
+                    class="link-button"
+                    title={t('annotation.goToAnnotation', { name: annotationLabel(a) })}
+                    onClick={() => onGoToAnnotation(a)}
+                  >
+                    {annotationLabel(a)}
+                  </button>
+                ) : (
+                  <button
+                    key={a.id}
+                    type="button"
+                    class="link-button"
+                    title={t('annotation.showLayer', { layer: layer.name })}
+                    onClick={() => {
+                      onShowLayer(layer.id);
+                      onGoToAnnotation(a);
+                    }}
+                  >
+                    {annotationLabel(a)} (
+                    {t('annotation.showLayer', { layer: layer.name })})
+                  </button>
+                ),
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
