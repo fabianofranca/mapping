@@ -171,7 +171,7 @@ export const ptBR = {
   'layer.display.dim': 'Esmaecer sem anotação',
   'layer.display.hide': 'Ocultar sem anotação',
   'layer.displayHint':
-    'Conta a anotação própria e a herdada nas camadas visíveis. A marcação selecionada sempre aparece.',
+    'Vale pela camada ativa: conta a anotação própria e a herdada nela. A marcação selecionada sempre aparece.',
 
   'annotation.heading': 'Anotações',
   'annotation.add': '+ Anotação',

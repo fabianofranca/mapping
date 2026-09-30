@@ -84,6 +84,19 @@ describe('modos de exibição', () => {
   });
 });
 
+describe('modos de exibição pela camada ativa', () => {
+  it('só a camada ativa decide: anotação em outra camada visível não mantém a marcação', () => {
+    const base = sampleProject();
+    // Ativa = L2 (Vidros): M1 (A2) e M4 (A4) têm; M2 só tem L1 e some.
+    const active = layerDotsByMarking(base, [l2 as NonNullable<typeof l2>]);
+    const v = markingVisibility(base, active, 'hide', null);
+    expect(v.get('M1')).toBe('full');
+    expect(v.get('M4')).toBe('full');
+    expect(v.get('M2')).toBe('hidden');
+    expect(markingVisibility(base, active, 'dim', null).get('M2')).toBe('dim');
+  });
+});
+
 describe('lista com herdadas', () => {
   it('mostra as herdadas sob a marcação, com a origem', () => {
     const listing = buildListing(p, both, { showEmpty: false });

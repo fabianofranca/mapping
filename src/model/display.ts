@@ -79,7 +79,8 @@ export type MarkingVisibility = 'full' | 'dim' | 'hidden';
 
 /**
  * Visibilidade de cada marcação segundo o modo. "Sem anotação" = sem anotação
- * própria nem herdada nas camadas visíveis (`dots` vem de `layerDotsByMarking`).
+ * própria nem herdada na camada ativa: `dots` vem de `layerDotsByMarking` com
+ * só a camada ativa (as demais camadas visíveis não contam).
  * A selecionada sempre aparece por inteiro. No modo Ocultar não há contorno de
  * contexto: as marcações sem anotação somem, mesmo que contenham outras.
  */

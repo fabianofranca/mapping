@@ -171,7 +171,7 @@ export const enUS: Dictionary = {
   'layer.display.dim': 'Dim without annotations',
   'layer.display.hide': 'Hide without annotations',
   'layer.displayHint':
-    'Counts own and inherited annotations in the visible layers. The selected marking always shows.',
+    'Based on the active layer: counts its own and inherited annotations. The selected marking always shows.',
 
   'annotation.heading': 'Annotations',
   'annotation.add': '+ Annotation',

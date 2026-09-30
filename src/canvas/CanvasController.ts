@@ -449,11 +449,15 @@ export class CanvasController {
     const activeLayerId = resolveActiveLayerId(project, this.ui.activeLayer.value);
     const shown = visibleLayers(project, this.ui.hiddenLayers.value, activeLayerId);
     const dots = project ? layerDotsByMarking(project, shown) : new Map();
+    // "Sem anotação" (esmaecer/ocultar) é medido só pela camada ativa, própria ou herdada.
+    const activeLayer = shown.find((l) => l.id === activeLayerId);
+    const activeDots =
+      project && activeLayer ? layerDotsByMarking(project, [activeLayer]) : new Map();
     const selection = this.ui.selection.value;
     this.visibility = project
       ? markingVisibility(
           project,
-          dots,
+          activeDots,
           markingDisplay.value,
           selection?.kind === 'marking' ? selection.id : null,
         )

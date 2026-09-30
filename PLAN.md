@@ -496,7 +496,7 @@ Problema: ao tentar fazer pan, o usuário movia sem querer a marcação ou image
 
 **Modos de exibição das marcações** (no painel/folha de camadas; preferência por dispositivo, fora do JSON)
 - **Mostrar todas** / **Esmaecer sem anotação** (padrão, comportamento atual) / **Ocultar sem anotação**.
-- "Sem anotação" = sem anotação própria **nem herdada** em nenhuma camada visível.
+- "Sem anotação" = sem anotação própria **nem herdada** na **camada ativa** (decisão revista após o uso no celular; as demais camadas visíveis só acrescentam indicadores e texto).
 - No modo Ocultar:
   - marcações sem anotação somem por completo, mesmo as que contêm outras com anotação (**sem** contorno de contexto dos ancestrais; decisão revista após o uso no celular);
   - a **marcação selecionada sempre aparece**, mesmo sem anotação (ex: selecionada pela árvore para receber a primeira anotação);
