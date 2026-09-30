@@ -216,6 +216,14 @@ interface MarkingNode {
   readonly lines: KonvaText[];
 }
 
+function intersectRects(a: Rect, b: Rect): Rect | null {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const width = Math.min(a.x + a.width, b.x + b.width) - x;
+  const height = Math.min(a.y + a.height, b.y + b.height) - y;
+  return width > 0 && height > 0 ? { x, y, width, height } : null;
+}
+
 function isEditable(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
@@ -446,6 +454,15 @@ export class CanvasController {
     const selection = this.ui.selection.value;
     const semantic = semanticText.value;
     const parents = new Set(markings.map((m) => m.parentId));
+    const size = this.size.value;
+    const vp = this.viewport.value;
+    /** Parte do canvas visível na tela, em coordenadas do canvas. */
+    const view: Rect = {
+      x: -vp.x / vp.scale,
+      y: -vp.y / vp.scale,
+      width: size.width / vp.scale,
+      height: size.height / vp.scale,
+    };
     const byMarking = project && semantic ? annotationsByMarking(project) : new Map();
     const seen = new Set<string>();
     let index = 0;
@@ -475,6 +492,7 @@ export class CanvasController {
         node,
         marking,
         markingCanvasRect(placement, marking.rect),
+        view,
         mode,
         layerSections(byMarking, marking.id, shown),
         tokens,
@@ -601,13 +619,17 @@ export class CanvasController {
   private updateSemanticText(
     node: MarkingNode,
     marking: Marking,
-    rect: Rect,
+    markingRect: Rect,
+    view: Rect,
     mode: SemanticMode,
     sections: ReturnType<typeof layerSections>,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
-    if (mode === 'none') {
+    // Com zoom alto o canto da marcação sai da tela: o texto fica ancorado na
+    // parte visível dela (e recortado nela).
+    const rect = intersectRects(markingRect, view);
+    if (mode === 'none' || !rect) {
       node.text.visible(false);
       return;
     }
@@ -617,14 +639,17 @@ export class CanvasController {
       visible: true,
       clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
     });
+    // Alerta e bolinhas só ocupam o cabeçalho se o canto da marcação estiver visível.
+    const atCorner = rect.x === markingRect.x && rect.y === markingRect.y;
 
     const layers = sections.map((s) => s.layer);
     const shown = Math.min(layers.length, MAX_DOTS);
     const extra = layers.length - MAX_DOTS;
     // O nome começa depois do alerta de revisão e das bolinhas.
-    const before = marking.needsReview ? REVIEW_BADGE_SIZE + DOT_MARGIN : 0;
-    const dots = shown > 0 ? shown * (2 * DOT_RADIUS + DOT_GAP) + DOT_MARGIN : 0;
-    const more = extra > 0 ? 22 : 0;
+    const before = atCorner && marking.needsReview ? REVIEW_BADGE_SIZE + DOT_MARGIN : 0;
+    const dots =
+      atCorner && shown > 0 ? shown * (2 * DOT_RADIUS + DOT_GAP) + DOT_MARGIN : 0;
+    const more = atCorner && extra > 0 ? 22 : 0;
     const headerX =
       rect.x + px(before + dots + more + (dots + more > 0 ? 0 : TEXT_PADDING));
 
@@ -640,7 +665,8 @@ export class CanvasController {
       });
     }
     if (mode === 'full') {
-      const top = TEXT_HEADER_HEIGHT + 2;
+      const top =
+        marking.name !== null || atCorner ? TEXT_HEADER_HEIGHT + 2 : TEXT_PADDING;
       const fit = Math.floor((rect.height * zoom - top) / TEXT_LINE_HEIGHT);
       bodyLines(sections)
         .slice(0, Math.max(0, fit))
