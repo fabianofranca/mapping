@@ -498,7 +498,7 @@ Problema: ao tentar fazer pan, o usuário movia sem querer a marcação ou image
 - **Mostrar todas** / **Esmaecer sem anotação** (padrão, comportamento atual) / **Ocultar sem anotação**.
 - "Sem anotação" = sem anotação própria **nem herdada** em nenhuma camada visível.
 - No modo Ocultar:
-  - **ancestrais** de uma marcação visível continuam aparecendo, só com o contorno fino (sem texto nem indicadores), para manter o contexto da hierarquia;
+  - marcações sem anotação somem por completo, mesmo as que contêm outras com anotação (**sem** contorno de contexto dos ancestrais; decisão revista após o uso no celular);
   - a **marcação selecionada sempre aparece**, mesmo sem anotação (ex: selecionada pela árvore para receber a primeira anotação);
   - a **árvore de marcações** continua mostrando todas;
   - não interfere no modo Desenhar: a detecção de pai automático considera todas as marcações, visíveis ou não.

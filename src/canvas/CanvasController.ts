@@ -612,7 +612,7 @@ export class CanvasController {
         zoom,
       );
       const mode = semanticMode({
-        enabled: semantic && visibility !== 'outline',
+        enabled: semantic,
         screenWidth: marking.rect.width * placement.scale * zoom,
         screenHeight: marking.rect.height * placement.scale * zoom,
         hasChildren: parents.has(marking.id),
@@ -680,9 +680,7 @@ export class CanvasController {
     });
     node.border.setAttrs({ ...rect, stroke: tokens.marking, strokeWidth: stroke, dash });
     // Texto do Konva remede a cada mudança de atributo: só mexe nos que aparecem.
-    // Ancestral de contexto (modo Ocultar): só o contorno fino, sem alerta nem bolinhas.
-    const outline = visibility === 'outline';
-    if (marking.needsReview && !outline) {
+    if (marking.needsReview) {
       const badge = REVIEW_BADGE_SIZE / zoom;
       node.badge.setAttrs({
         visible: true,
@@ -697,7 +695,7 @@ export class CanvasController {
     } else {
       node.badge.visible(false);
     }
-    this.updateIndicators(node, marking, rect, outline ? [] : dots, tokens, zoom);
+    this.updateIndicators(node, marking, rect, dots, tokens, zoom);
   }
 
   /** Bolinhas coloridas no canto superior esquerdo, uma por camada visível com anotação. */

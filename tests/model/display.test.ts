@@ -61,8 +61,8 @@ describe('modos de exibição', () => {
     expect(v1.get('M3')).toBe('dim');
   });
 
-  it('ocultar: ancestrais de marcações visíveis ficam só com o contorno', () => {
-    // Só a camada L1 visível, e sem herança: M3 não tem nada; M1 e M2 têm.
+  it('ocultar: some quem não tem anotação nas camadas visíveis, sem contorno de contexto', () => {
+    // Só L1 visível, sem herança: M1 e M2 têm; M3 e M4 não.
     const base = sampleProject();
     const only = [l1 as NonNullable<typeof l1>];
     const v = markingVisibility(base, layerDotsByMarking(base, only), 'hide', null);
@@ -72,13 +72,13 @@ describe('modos de exibição', () => {
     expect(v.get('M4')).toBe('hidden');
   });
 
-  it('ocultar: o ancestral sem anotação aparece como contorno', () => {
-    // Só L2: M4 tem (própria) e M1 tem (A2). M2 só tem L1, então fica oculta.
+  it('ocultar: o ancestral sem anotação também some; a selecionada sempre aparece', () => {
+    // Só L2: M1 e M4 têm; M2 (só L1) some mesmo contendo a selecionada M3.
     const base = sampleProject();
     const only = [l2 as NonNullable<typeof l2>];
     const v = markingVisibility(base, layerDotsByMarking(base, only), 'hide', 'M3');
-    expect(v.get('M3')).toBe('full'); // selecionada sempre aparece
-    expect(v.get('M2')).toBe('outline'); // ancestral da selecionada, sem anotação
+    expect(v.get('M3')).toBe('full');
+    expect(v.get('M2')).toBe('hidden');
     expect(v.get('M1')).toBe('full');
     expect(v.get('M4')).toBe('full');
   });
