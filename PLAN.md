@@ -2,6 +2,8 @@
 
 > Nome provisório. Este documento é a fonte de verdade do desenvolvimento.
 > Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+>
+> **Etapa 1 concluída.** As melhorias de usabilidade (Etapa 1.1, fases 8 a 12) estão na **seção 12**. Onde a seção 12 contradiz as anteriores, **a seção 12 prevalece**.
 
 ---
 
@@ -44,6 +46,8 @@ A **Etapa 2** (especialização: arquivo JSON que pré-define camadas e tipos de
 ---
 
 ## 4. Modelo de dados (`mapping.json`, schema v1)
+
+> Substituído pelo **schema v2** na seção 12.1 (`name` nas imagens; `inherit` e `parentAnnotationId` nas anotações).
 
 ```json
 {
@@ -216,12 +220,16 @@ Princípios:
 
 ### 7.2 Canvas
 
+> Gestos de toque no modo Navegar revisados na seção 12.2.
+
 - Pan (arrastar em área vazia), zoom (roda do mouse e pinça), botão "enquadrar tudo".
 - **Modo Navegar**: toque ou clique seleciona. Arrastar um item já selecionado move o item. Arrastar em outro lugar faz pan.
 - **Modo Desenhar**: arrastar cria um retângulo na imagem sob o ponto inicial, limitado às bordas dela. Continua no modo até o usuário trocar.
 - Alças de redimensionamento com área de toque de pelo menos 24 px de tela.
 
 ### 7.3 Imagens
+
+> Nome da imagem, colar, arrastar e otimização: seções 12.1 e 12.6.
 
 - **Adicionar**: posicionada automaticamente à direita da imagem mais à direita, com espaçamento. Escala inicial: lado maior = 1000 unidades do canvas.
 - **Mover e redimensionar** (proporcional, pelos cantos): se a nova posição sobrepuser outra imagem, mostrar contorno vermelho durante o gesto e voltar à última posição válida ao soltar. Sem rotação.
@@ -254,6 +262,8 @@ Princípios:
 
 ### 7.6 Anotações
 
+> Herança e vínculos entre anotações: seção 12.3.
+
 - No painel da marcação selecionada: uma **seção por camada visível** (cabeçalho na cor da camada), com as anotações daquela camada.
 - Cada seção tem "+ Anotação". O botão principal "+ Anotação" usa a camada ativa.
 - Editor: nome opcional e lista de pares. No celular, **chave em cima e valor embaixo**; no desktop, lado a lado. Adicionar, remover e reordenar pares.
@@ -262,6 +272,8 @@ Princípios:
 - Anotação sem nome aparece como `chave: valor` do primeiro par.
 
 ### 7.7 Visualização
+
+> Zoom semântico revisado na seção 12.4.
 
 - **Borda da marcação** sempre na cor neutra do tema.
 - **Indicadores**: bolinhas no canto superior esquerdo, uma para cada camada visível em que a marcação tem anotação, na cor da camada. Acima de 4, mostrar "+N".
@@ -392,3 +404,203 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 - Valores tipados (número, data, opções fixas)
 - Vários canvas por projeto; rotação de imagens; marcações que não sejam retângulos
 - Colaboração, sincronização em nuvem, contas de usuário
+- Valores aninhados (lista de tabelas dentro de um valor): **descartados**. O caso de uso é atendido pelos vínculos entre anotações (12.3)
+
+---
+
+## 12. Etapa 1.1 — Melhorias de usabilidade
+
+Levantadas no uso real no celular. Esta seção prevalece sobre as anteriores.
+
+### 12.1 Schema v2
+
+**Imagens** ganham **`name`** (string ou `null`, padrão `null`):
+
+```json
+{ "id": "I1", "name": "Tela Home", "file": "images/img-20260930-122915.webp", "width": 1182, "height": 2560, "placement": { "x": 0, "y": 0, "scale": 0.4 } }
+```
+
+- Editável no painel de detalhes da imagem. Exibido como rótulo acima da imagem no canvas, na árvore e na lista. Sem nome, a app mostra o nome do arquivo.
+- O `id` continua um UUID automático e não editável.
+- Mudar o `name` **não renomeia o arquivo**.
+
+**Anotações** ganham duas propriedades:
+
+```json
+{
+  "id": "A2",
+  "markingId": "M1",
+  "layerId": "L-eventos",
+  "name": "onClick",
+  "inherit": false,
+  "parentAnnotationId": "A1",
+  "entries": [{ "key": "ação", "value": "navigate" }]
+}
+```
+
+- **`inherit`** (boolean, padrão `false`): quando `true`, a anotação também vale para **todos os descendentes** da marcação, em qualquer profundidade.
+- **`parentAnnotationId`** (string ou `null`, padrão `null`): vincula a anotação a uma anotação "dona". Ex: o evento `onClick` (camada Eventos) pertence ao componente `Button` (camada Componentes). Para quem lê, as anotações vinculadas numa camada formam uma propriedade da dona, com o nome da camada: `Button.Eventos = [onClick, …]`.
+- **Invariantes do vínculo**:
+  - a dona está na **mesma marcação**;
+  - a dona está em **outra camada** (diferente da camada da anotação vinculada);
+  - **sem ciclos** (a cadeia pode seguir por várias camadas, ex: Componentes ← Eventos ← Parâmetros).
+- **Herança e vínculo são independentes**: se a dona tem `inherit: true`, as vinculadas só descem para as filhas se também tiverem `inherit: true`.
+- **A herança não é materializada no JSON.** As anotações herdadas por uma marcação M são as anotações com `inherit: true` de todos os ancestrais de M (seguindo `parentId`). Mudar o pai de uma marcação muda o que ela herda.
+- **Migração v1 → v2**: toda imagem recebe `name: null`; toda anotação recebe `inherit: false` e `parentAnnotationId: null`. `schemaVersion` passa a ser 2.
+- **Exclusões em cascata** (sempre com confirmação e contagens):
+  - excluir uma anotação exclui as vinculadas a ela, recursivamente;
+  - excluir uma camada exclui as anotações da camada **e as vinculadas a elas**, mesmo em outras camadas (a confirmação lista as contagens por camada);
+  - excluir uma marcação já exclui todas as anotações dela (sem mudança).
+- **`src/model/`**: funções puras para resolver herdadas (`getInheritedAnnotations(project, markingId)`) e vinculadas (`getLinkedAnnotations(project, annotationId)`), reutilizáveis pelo servidor MCP da etapa 3.
+
+#### Como um agente lê o `mapping.json` (documentar também num `docs/FORMAT.md`)
+
+1. Recorte da marcação: `rect` em pixels da imagem em `images[].file` (orientação EXIF aplicada).
+2. Anotações próprias: `annotations` com o `markingId` da marcação, agrupadas por `layerId`.
+3. Herdadas: subir por `parentId` e pegar as anotações dos ancestrais com `inherit: true`.
+4. Estrutura: anotações com `parentAnnotationId` formam uma árvore; o nome da camada da vinculada é o nome da propriedade na dona.
+
+### 12.2 Gestos no celular (modo Navegar)
+
+Problema: ao tentar fazer pan, o usuário movia sem querer a marcação ou imagem que estava selecionada.
+
+- **Toque**: seleciona (sem mudança, incluindo o toque repetido que sobe para o pai).
+- **Arrastar**: **sempre faz pan**, mesmo começando sobre o item selecionado.
+- **Segurar ~400 ms e arrastar**: move o item sob o dedo (**marcações e imagens**).
+  - Se o dedo se mover mais de ~8 px antes dos 400 ms, o gesto vira pan.
+  - Ao completar o tempo: sinal visual de "item pego" (sombra/escala leve) e `navigator.vibrate` quando existir (Android; no iOS só o visual).
+  - Segurar e soltar sem arrastar não faz nada.
+  - Continuam valendo as regras de limites, não sobreposição e mover o pai com os descendentes.
+- **Alças de redimensionamento**: arrasto direto, sem segurar.
+- **Desktop (mouse)**: sem mudança — clicar seleciona, arrastar move.
+- **Modo Desenhar**: sem mudança.
+- A classificação do gesto (toque / pan / segurar-e-mover / pinça) fica numa **máquina de estados pura** em `src/canvas/`, testada com Vitest.
+
+### 12.3 Herança e vínculos na interface
+
+**Editor da anotação**
+- Interruptor **"Aplicar às marcações filhas"** (`inherit`).
+- Campo **"Pertence a"**: lista as anotações da mesma marcação em outras camadas (mostrando camada + nome ou primeiro par) e "Nenhuma". Só oferece opções válidas (sem ciclo).
+- Na anotação dona: resumo clicável das vinculadas, agrupado por camada (ex: "Eventos: onClick, onLongPress"). Tocar leva à anotação; se a camada dela estiver oculta, oferecer torná-la visível.
+
+**Painel de detalhes da marcação**
+- Depois das anotações próprias de cada camada visível, uma seção **"Herdadas"** com as anotações herdadas daquela camada: estilo discreto, itálico, **somente leitura**, com "herdado de Porta" e ação "ir para Porta".
+
+**Lista**
+- Anotações herdadas aparecem sob a marcação com a mesma identificação ("herdado de …").
+- Anotações vinculadas mostram "↳ de Button".
+
+**Indicadores no canvas**
+- Camada que chega à marcação **só por herança**: bolinha **vazada** (contorno). Com anotação própria: bolinha cheia.
+- Herdadas contam para **não esmaecer** a marcação.
+
+**Modos de exibição das marcações** (no painel/folha de camadas; preferência por dispositivo, fora do JSON)
+- **Mostrar todas** / **Esmaecer sem anotação** (padrão, comportamento atual) / **Ocultar sem anotação**.
+- "Sem anotação" = sem anotação própria **nem herdada** em nenhuma camada visível.
+- No modo Ocultar:
+  - **ancestrais** de uma marcação visível continuam aparecendo, só com o contorno fino (sem texto nem indicadores), para manter o contexto da hierarquia;
+  - a **marcação selecionada sempre aparece**, mesmo sem anotação (ex: selecionada pela árvore para receber a primeira anotação);
+  - a **árvore de marcações** continua mostrando todas;
+  - não interfere no modo Desenhar: a detecção de pai automático considera todas as marcações, visíveis ou não.
+- Caso de uso: na camada Eventos, só aparecem os componentes que têm eventos.
+
+### 12.4 Zoom semântico — novo visual
+
+Problema: o texto solto sobre a foto, com a mesma cor e peso para nomes e pares, não deixa distinguir camadas, anotações e a origem do texto. Além disso, as anotações próprias de um pai com filhas nunca aparecem.
+
+**Cartão**
+- O texto fica num **cartão com fundo semiopaco** (cor de superfície do tema, ~85–90% de opacidade), com cantos arredondados e padding. Nada de contorno escuro no texto.
+- **Uma seção por camada visível**: barra vertical na cor da camada à esquerda + nome da camada em letra pequena. A cor não é mais a única pista (daltonismo).
+- **Nome da anotação em negrito.** Anotação sem nome: título neutro em itálico ("Anotação 1", "Anotação 2" dentro da camada).
+- **Pares** abaixo do nome, com recuo, na cor de texto normal do tema.
+- **Linha fina** separando anotações dentro da mesma camada.
+- **Herdadas**: itálico e esmaecidas, com "↳ herdado de Porta".
+- **Vinculadas**: linha pequena "↳ de Button" abaixo do nome.
+- O cartão é cortado aos limites da área; se não couber tudo, termina com "…" (o detalhe completo fica no painel).
+
+**Onde o texto é desenhado**
+- **Marcação sem filhas**: dentro do próprio retângulo (sem mudança).
+- **Marcação com filhas**: na **maior área retangular livre** dentro do retângulo dela, ou seja, não coberta por nenhuma filha direta. Algoritmo simples com as bordas das filhas como grade de candidatos (poucas filhas por marcação; testar em `src/canvas/` ou num util puro).
+- A regra de tamanho vale para a **área onde o texto vai**: o texto só aparece se ela ocupar na tela pelo menos ~180 × 100 px. Senão, só a linha de cabeçalho (nome + indicadores) com "…".
+
+### 12.5 Ajustes de interface
+
+- **Painel de detalhes** da imagem e da marcação mostra o **`id`** em modo somente leitura, com botão de copiar (útil para referenciar o item ao conversar com um agente).
+- **Nome da imagem**: campo no painel de detalhes e rótulo no canvas (12.1).
+- O botão de liga/desliga do texto no canvas ("T") **não pode cobrir a aba Lista**: reposicionar para não sobrepor as abas nem a barra inferior (ex: dentro da barra de ferramentas ou flutuando sobre o canvas, acima da gaveta).
+- **Gaveta inferior**: recolhe automaticamente quando nada está selecionado (sem ocupar espaço com a dica) e abre no estado recolhido/intermediário ao selecionar algo. O usuário ainda pode expandir ou recolher manualmente.
+
+### 12.6 Entrada e otimização de imagens
+
+**Colar da área de transferência**
+- **Desktop**: Ctrl/Cmd+V com o foco no canvas (fora de campos de texto) adiciona a imagem copiada. Em campo de texto, o colar continua sendo de texto.
+- **Celular**: opção **"Colar imagem"** no botão de adicionar, via `navigator.clipboard.read()`. Detectar em runtime; ocultar a opção onde a API não existir.
+- Posição: **centro da área visível**; se sobrepuser outra imagem, o espaço livre mais próximo.
+- Nome do arquivo gerado: **`img-AAAAMMDD-HHMMSS.<ext>`** (ex: `img-20260930-122915.webp`), com a regra de colisão (`-2`, `-3`…).
+
+**Arrastar e soltar** (foco no desktop; no celular só onde o sistema permitir)
+- Soltar arquivo(s) de imagem **em área vazia**: adiciona no ponto de soltura; se sobrepuser, vai para o espaço livre mais próximo.
+- Soltar **um único arquivo sobre uma imagem existente**: **troca a imagem**, usando o fluxo de troca de 7.3 (mesma proporção: direto, coberto pelo desfazer; proporção diferente: aviso e `needsReview`).
+- Soltar **vários arquivos**: sempre adiciona todos como novos, mesmo sobre uma imagem.
+- Arquivos que não são imagem: ignorados, com aviso.
+- Destacar visualmente o alvo durante o arrasto (área vazia × imagem que será trocada).
+
+**Otimização** (vale para toda imagem que entra pela app: arquivo, câmera, colar, arrastar e troca)
+- Acontece **na importação, antes de existir qualquer marcação**: a imagem otimizada passa a ser a "original", e as coordenadas nascem nela.
+- **Lado maior limitado a 2560 px** (constante no código, sem opção na interface). Imagens menores não são ampliadas.
+- **Formato WebP**:
+  - fotos (origem JPEG/HEIC/etc.): WebP com perdas, qualidade ~0,85;
+  - origem PNG (prints, imagens com texto): WebP **sem perdas**;
+  - se o navegador não gerar WebP (testar em runtime, ex: `canvas.toBlob` devolvendo outro tipo), usar **JPEG ~0,85** para fotos e manter **PNG** para origem PNG.
+- **Só substitui se ficar menor**: se a imagem **não** precisou ser reduzida, usa o recodificado apenas se ele for menor que o arquivo original; se foi reduzida, usa sempre a versão reduzida.
+- A recodificação **remove os metadados** (inclusive GPS). A normalização EXIF da seção 5.3 acontece antes.
+- No **zip**, as imagens entram **sem compressão** (`STORE`), porque já estão comprimidas.
+- **Fora do escopo**: otimizar imagens de projetos anteriores e as imagens existentes numa pasta ao criar o projeto a partir dela (os arquivos do usuário ficam intocados).
+- A lógica de decisão (dimensões finais, formato de saída, "ficou menor?") fica em função pura testável; a recodificação em si fica em `src/storage/`.
+
+### 12.7 Fases
+
+#### Fase 8 — Schema v2 (modelo)
+- [ ] Tipos e schema zod v2 (`name` na imagem; `inherit` e `parentAnnotationId` na anotação) + migração v1 → v2
+- [ ] Invariantes do vínculo (mesma marcação, outra camada, sem ciclo)
+- [ ] Operações: definir/remover `inherit`, definir/remover dona; cascatas de exclusão (anotação, camada)
+- [ ] `getInheritedAnnotations` e `getLinkedAnnotations` em `src/model/`
+- [ ] `docs/FORMAT.md` com a seção "Como um agente lê o mapping.json"
+
+**Aceite**: testes da migração (um v1 real abre como v2 sem perdas), da herança em cascata (Porta › Maçaneta › Fechadura), dos invariantes e das cascatas; o zip de teste v1 abre e salva como v2.
+
+#### Fase 9 — Gestos e ajustes de interface
+- [ ] Máquina de estados de gestos com segurar-e-mover (12.2) + testes
+- [ ] Integração no CanvasController para marcações e imagens, com sinal visual e vibração
+- [ ] Botão "T" reposicionado; gaveta recolhe sem seleção (12.5)
+- [ ] Nome da imagem (painel + rótulo no canvas, árvore e lista) e `id` copiável nos detalhes (12.1, 12.5)
+
+**Aceite** (no celular): fazer pan por cima de uma marcação selecionada sem movê-la; segurar e mover uma marcação e uma imagem; redimensionar pelas alças sem segurar; a aba Lista fica 100% tocável; sem seleção, a gaveta não ocupa a tela; dar nome a uma imagem e vê-lo no canvas; copiar o `id` de uma marcação.
+
+#### Fase 10 — Herança e vínculos na interface
+- [ ] Editor: "Aplicar às marcações filhas" e "Pertence a"
+- [ ] Resumo das vinculadas na anotação dona, com navegação
+- [ ] Seção "Herdadas" no painel; identificação na Lista
+- [ ] Indicadores: bolinha vazada para camada só herdada
+- [ ] Modos de exibição Mostrar todas / Esmaecer / Ocultar sem anotação (12.3)
+
+**Aceite**: criar a marcação "Botão" com a anotação `Button` na camada Componentes e os eventos `onClick` e `onLongPress` na camada Eventos vinculados a ela; ocultar e mostrar cada camada; na Porta › Maçaneta, ligar a herança numa anotação da Porta e vê-la como herdada na Maçaneta; excluir a camada Componentes mostra as contagens e apaga também os eventos; com só a camada Eventos visível e o modo Ocultar, aparecem apenas os componentes com eventos (e o contorno dos ancestrais).
+
+#### Fase 11 — Zoom semântico
+- [ ] Cartão com seções por camada, nomes em destaque, pares com recuo, separadores (12.4)
+- [ ] Identificação de herdadas e vinculadas no cartão
+- [ ] Texto do pai na maior área livre + testes do algoritmo
+- [ ] Conferir legibilidade nos temas claro e escuro, sobre fotos claras e escuras
+
+**Aceite**: com o projeto de teste (Header › Back), aproximar o zoom e ver o texto da Header na área livre e o da Back dentro dela, sem sobreposição; distinguir anotação sem nome, anotação nomeada e seus pares; distinguir as camadas sem depender da cor.
+
+#### Fase 12 — Entrada e otimização de imagens
+- [ ] Otimização na importação (2560 px, WebP com/sem perdas, fallback, só se menor, sem metadados) + testes da lógica de decisão
+- [ ] Zip com imagens em `STORE`
+- [ ] Colar: Ctrl/Cmd+V no desktop; "Colar imagem" no celular (com detecção)
+- [ ] Arrastar e soltar: adicionar no ponto, trocar ao soltar sobre imagem, vários arquivos, aviso para não-imagens, destaque do alvo
+- [ ] Nome de arquivo `img-AAAAMMDD-HHMMSS` para imagens coladas
+
+**Aceite**: adicionar uma foto de 12 MP pela câmera e conferir que o arquivo salvo tem lado maior 2560 px, é WebP (ou JPEG no fallback) e ficou menor; colar um print no desktop e no celular; arrastar uma imagem para área vazia e outra sobre uma imagem existente (troca mantendo as marcações); exportar o zip e conferir o tamanho.
+
+> A Fase 12 não depende das fases 9 a 11 e pode ser feita logo depois da Fase 8, se for mais conveniente.
