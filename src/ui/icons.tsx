@@ -65,3 +65,27 @@ export const ChevronIcon = () => (
     <path d="m6 15 6-6 6 6" />
   </Icon>
 );
+
+/** Modo Navegar. */
+export const HandIcon = () => (
+  <Icon>
+    <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+    <path d="M14 10V4a2 2 0 0 0-4 0v6" />
+    <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+    <path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+  </Icon>
+);
+
+/** Modo Desenhar: retângulo tracejado com "+". */
+export const DrawIcon = () => (
+  <Icon>
+    <path d="M4 8V4h4" />
+    <path d="M12 4h2" />
+    <path d="M4 12v2" />
+    <path d="M4 18v2h4" />
+    <path d="M12 20h2" />
+    <path d="M20 8V4h-2" />
+    <path d="M17 14v6" />
+    <path d="M14 17h6" />
+  </Icon>
+);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  adjustMarkingRect,
   clampMarkingDelta,
   confirmMarkingReview,
   createMarking,
@@ -185,5 +186,42 @@ describe('hierarquia', () => {
     ).toEqual(['M2', 'M3']);
     const reversed = [...p.markings].reverse();
     expect(topDown(reversed).map((m) => m.id)).toEqual(['M4', 'M1', 'M2', 'M3']);
+  });
+});
+
+describe('marcações: ajuste fino pelo painel', () => {
+  it('x/y movem a marcação com os descendentes', () => {
+    const p = sampleProject();
+    const q = expectValid(adjustMarkingRect(p, 'M1', 'x', 1100));
+    expect(marking(q, 'M1').rect).toMatchObject({ x: 1100, y: 1000 });
+    expect(marking(q, 'M2').rect).toMatchObject({ x: 1300, y: 1200 });
+    expect(marking(q, 'M3').rect).toMatchObject({ x: 1400, y: 1250 });
+  });
+
+  it('x/y fora do pai ou da imagem param no limite', () => {
+    const p = sampleProject();
+    // M3 (50×50) dentro de M2 (1200..1600 × 1200..1400).
+    expect(marking(adjustMarkingRect(p, 'M3', 'x', 0), 'M3').rect.x).toBe(1200);
+    expect(marking(adjustMarkingRect(p, 'M3', 'y', 9999), 'M3').rect.y).toBe(1350);
+    expect(marking(adjustMarkingRect(p, 'M1', 'x', -50), 'M1').rect.x).toBe(0);
+  });
+
+  it('largura/altura ficam entre o mínimo (ou as filhas) e o pai', () => {
+    const p = sampleProject();
+    expect(marking(adjustMarkingRect(p, 'M3', 'width', 1), 'M3').rect.width).toBe(8);
+    expect(marking(adjustMarkingRect(p, 'M3', 'width', 9999), 'M3').rect.width).toBe(300);
+    // M1 precisa envolver M2 (até x 1600, y 1400).
+    expect(marking(adjustMarkingRect(p, 'M1', 'width', 10), 'M1').rect.width).toBe(600);
+    expect(marking(adjustMarkingRect(p, 'M1', 'height', 10), 'M1').rect.height).toBe(400);
+    expect(marking(adjustMarkingRect(p, 'M1', 'height', 5000), 'M1').rect.height).toBe(
+      2000,
+    );
+  });
+
+  it('sem mudança devolve o mesmo projeto; não inteiro falha', () => {
+    const p = sampleProject();
+    expect(adjustMarkingRect(p, 'M3', 'x', 1300)).toBe(p);
+    expect(adjustMarkingRect(p, 'M3', 'x', 5000 - 3700)).toBe(p);
+    expect(() => adjustMarkingRect(p, 'M3', 'x', 1.5)).toThrow('rect-not-integer');
   });
 });

@@ -59,6 +59,15 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Prévia de mover/redimensionar. Se sobrepuser, fica na última posição válida. */
     previewImagePlacement: (imageId: string, placement: Placement) =>
       store.updateGesture((p) => model.setImagePlacement(p, imageId, placement)),
+    /** Prévia de mover a marcação (com os descendentes), limitada ao pai ou à imagem. */
+    previewMarkingMove: (markingId: string, dx: number, dy: number) =>
+      store.updateGesture((p) => {
+        const d = model.clampMarkingDelta(p, markingId, dx, dy);
+        return model.moveMarking(p, markingId, d.dx, d.dy);
+      }),
+    /** Prévia de redimensionar a marcação. */
+    previewMarkingRect: (markingId: string, rect: Rect) =>
+      store.updateGesture((p) => model.setMarkingRect(p, markingId, rect)),
     commitGesture: () => store.commitGesture(),
     cancelGesture: () => store.cancelGesture(),
 
@@ -69,6 +78,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.renameMarking(p, markingId, name)),
     setMarkingRect: (markingId: string, rect: Rect) =>
       store.apply((p) => model.setMarkingRect(p, markingId, rect)),
+    /** Ajuste fino pelo painel: o valor é limitado às regras (ver `adjustMarkingRect`). */
+    adjustMarkingRect: (markingId: string, field: keyof Rect, value: number) =>
+      store.apply((p) => model.adjustMarkingRect(p, markingId, field, value)),
     moveMarking: (markingId: string, dx: number, dy: number) =>
       store.apply((p) => model.moveMarking(p, markingId, dx, dy)),
     setMarkingParent: (markingId: string, parentId: string | null) =>

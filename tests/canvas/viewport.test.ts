@@ -3,6 +3,7 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
   canvasToScreen,
+  centerOn,
   fitRect,
   panBy,
   pinch,
@@ -86,5 +87,34 @@ describe('viewport', () => {
     expect(wheelZoomFactor(-100, 0, false)).toBeGreaterThan(1);
     expect(wheelZoomFactor(100, 0, false)).toBeLessThan(1);
     expect(wheelZoomFactor(3, 1, false)).toBeCloseTo(wheelZoomFactor(48, 0, false));
+  });
+});
+
+describe('centralizar', () => {
+  const size = { width: 400, height: 800 };
+
+  it('mantém o zoom quando o retângulo cabe bem', () => {
+    const v = centerOn(
+      { x: 0, y: 0, scale: 1 },
+      { x: 100, y: 100, width: 200, height: 200 },
+      size,
+    );
+    expect(v).toEqual({ x: 0, y: 200, scale: 1 });
+  });
+
+  it('ajusta o zoom para retângulos grandes ou pequenos demais', () => {
+    const big = centerOn(
+      { x: 0, y: 0, scale: 1 },
+      { x: 0, y: 0, width: 800, height: 100 },
+      size,
+    );
+    expect(big.scale).toBeCloseTo(0.25);
+    const small = centerOn(
+      { x: 0, y: 0, scale: 1 },
+      { x: 0, y: 0, width: 10, height: 10 },
+      size,
+    );
+    expect(small.scale).toBeCloseTo(20);
+    expect(small.x).toBeCloseTo(200 - 5 * 20);
   });
 });

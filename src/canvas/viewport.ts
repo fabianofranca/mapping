@@ -95,3 +95,29 @@ export function wheelZoomFactor(
   const limited = Math.max(-200, Math.min(200, pixels));
   return Math.exp(-limited * sensitivity);
 }
+
+/**
+ * Centraliza `rect` (canvas) na tela. Mantém o zoom se o retângulo ocupar
+ * entre `minFraction` e `maxFraction` da tela; senão, ajusta para metade dela.
+ */
+export function centerOn(
+  v: Viewport,
+  rect: Rect,
+  size: Size,
+  minFraction = 0.15,
+  maxFraction = 0.8,
+): Viewport {
+  const fraction = Math.max(
+    (rect.width * v.scale) / Math.max(1, size.width),
+    (rect.height * v.scale) / Math.max(1, size.height),
+  );
+  const scale =
+    fraction > 0 && (fraction < minFraction || fraction > maxFraction)
+      ? clampZoom((v.scale * 0.5) / fraction)
+      : v.scale;
+  return {
+    x: size.width / 2 - (rect.x + rect.width / 2) * scale,
+    y: size.height / 2 - (rect.y + rect.height / 2) * scale,
+    scale,
+  };
+}

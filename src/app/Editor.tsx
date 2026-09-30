@@ -2,12 +2,29 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { CanvasController } from '../canvas/CanvasController';
 import { CanvasHost } from '../canvas/CanvasHost';
 import { t } from '../i18n';
-import { imageDeletionImpact, type ProjectImage } from '../model';
+import {
+  imageDeletionImpact,
+  markingDeletionImpact,
+  type Marking,
+  type ProjectImage,
+} from '../model';
 import type { AspectChange } from '../store/session';
-import { createEditorUi } from '../store/ui';
+import { createEditorUi, resolveSelection, type Selection } from '../store/ui';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Dialog } from '../ui/Dialog';
-import { AddImageIcon, FitIcon, MenuIcon, RedoIcon, UndoIcon } from '../ui/icons';
+import {
+  AddImageIcon,
+  DrawIcon,
+  FitIcon,
+  HandIcon,
+  MenuIcon,
+  RedoIcon,
+  UndoIcon,
+} from '../ui/icons';
+import { markingLabel, markingPath } from '../ui/labels';
+import { MarkingPanel } from '../ui/MarkingPanel';
+import { MarkingTree } from '../ui/MarkingTree';
+import { PanelTabs, type PanelTab } from '../ui/PanelTabs';
 import { SaveStatus } from '../ui/SaveStatus';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import { SettingsBar } from '../ui/SettingsBar';
@@ -46,15 +63,27 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const [confirmClose, setConfirmClose] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProjectImage | null>(null);
+  const [deleteMarking, setDeleteMarking] = useState<Marking | null>(null);
+  const [panelTab, setPanelTab] = useState<PanelTab>('details');
   const [aspectPrompt, setAspectPrompt] = useState<AspectPrompt | null>(null);
 
   const project = store.project.value;
   const readOnly = store.readOnly.value;
   const selection = ui.selection.value;
-  const selectedImage =
-    (selection?.kind === 'image' && project?.images.find((i) => i.id === selection.id)) ||
-    null;
+  const mode = ui.mode.value;
+  const selected = resolveSelection(project, selection);
+  const selectedImage = selected?.kind === 'image' ? selected.image : null;
   const busy = progress !== null;
+  const requestMarkingDelete = useRef<(marking: Marking) => void>(() => undefined);
+
+  /** Exclusão de marcação: em cascata pede confirmação; simples, não (o desfazer cobre). */
+  const onMarkingDelete = (marking: Marking) => {
+    const current = store.project.peek();
+    if (!current) return;
+    const impact = markingDeletionImpact(current, marking.id);
+    if (impact.descendants > 0 || impact.annotations > 0) setDeleteMarking(marking);
+    else if (actions.removeMarking(marking.id).ok) ui.selection.value = null;
+  };
 
   // Atalhos de teclado. Diálogos abertos cuidam do próprio teclado (Esc).
   useEffect(() => {
@@ -70,17 +99,16 @@ export function Editor({ open }: { readonly open: OpenProject }) {
         ui.selection.value = null;
       }
       if (shortcut === 'delete' && !store.readOnly.peek()) {
-        const current = ui.selection.peek();
-        const image =
-          current?.kind === 'image'
-            ? store.project.peek()?.images.find((i) => i.id === current.id)
-            : undefined;
-        if (image) setDeleteTarget(image);
+        const current = resolveSelection(store.project.peek(), ui.selection.peek());
+        if (current?.kind === 'image') setDeleteTarget(current.image);
+        if (current?.kind === 'marking') requestMarkingDelete.current(current.marking);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [store, ui]);
+
+  requestMarkingDelete.current = onMarkingDelete;
 
   if (!project) return null;
 
@@ -134,6 +162,16 @@ export function Editor({ open }: { readonly open: OpenProject }) {
     if (result === 'failed') setMessage(t('image.replaceFailed'));
   };
 
+  const onMarkingDeleteConfirmed = (marking: Marking) => {
+    setDeleteMarking(null);
+    if (actions.removeMarking(marking.id).ok) ui.selection.value = null;
+  };
+
+  const onTreeSelect = (next: NonNullable<Selection>) => {
+    ui.selection.value = next;
+    controller.current?.focusSelection();
+  };
+
   const onDeleteConfirmed = (image: ProjectImage) => {
     setDeleteTarget(null);
     if (actions.removeImage(image.id).ok) ui.selection.value = null;
@@ -156,11 +194,28 @@ export function Editor({ open }: { readonly open: OpenProject }) {
     else await closeProject();
   };
 
+  const modeButtons = (
+    <div class="segmented" role="group">
+      <ToolButton
+        icon={<HandIcon />}
+        label={t('editor.modeNavigate')}
+        pressed={mode === 'navigate'}
+        onClick={() => (ui.mode.value = 'navigate')}
+      />
+      <ToolButton
+        icon={<DrawIcon />}
+        label={t('editor.modeDraw')}
+        pressed={mode === 'draw'}
+        disabled={readOnly}
+        onClick={() => (ui.mode.value = 'draw')}
+      />
+    </div>
+  );
   const addButton = (
     <ToolButton
       icon={<AddImageIcon />}
       label={t('editor.addImages')}
-      text={desktop ? t('editor.addImages') : t('editor.addImageShort')}
+      text={desktop ? t('editor.addImages') : undefined}
       disabled={readOnly || busy}
       onClick={() => imageInput.current?.click()}
     />
@@ -186,16 +241,43 @@ export function Editor({ open }: { readonly open: OpenProject }) {
       />
     </>
   );
+  const details =
+    selected?.kind === 'marking' ? (
+      <MarkingPanel
+        key={selected.marking.id}
+        project={project}
+        marking={selected.marking}
+        image={selected.image}
+        actions={actions}
+        readOnly={readOnly || busy}
+        onDelete={onMarkingDelete}
+      />
+    ) : (
+      <SelectionPanel
+        image={selectedImage}
+        display={selectedImage ? display.images.value.get(selectedImage.file) : undefined}
+        readOnly={readOnly}
+        busy={busy}
+        onReplace={onReplace}
+        onDelete={setDeleteTarget}
+      />
+    );
   const panel = (
-    <SelectionPanel
-      image={selectedImage}
-      display={selectedImage ? display.images.value.get(selectedImage.file) : undefined}
-      readOnly={readOnly}
-      busy={busy}
-      onReplace={onReplace}
-      onDelete={setDeleteTarget}
-    />
+    <>
+      <PanelTabs tab={panelTab} onChange={setPanelTab} />
+      <div role="tabpanel" class="tab-panel">
+        {panelTab === 'details' ? (
+          details
+        ) : (
+          <MarkingTree project={project} selection={selection} onSelect={onTreeSelect} />
+        )}
+      </div>
+    </>
   );
+  const sheetTitle =
+    selected?.kind === 'marking'
+      ? markingPath(project, selected.marking)
+      : (selectedImage?.file ?? t('panel.nothingSelected'));
 
   return (
     <div class={desktop ? 'editor editor-desktop' : 'editor editor-mobile'}>
@@ -209,6 +291,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
         <SaveStatus open={open} />
         {desktop && (
           <div class="toolbar">
+            {modeButtons}
             {addButton}
             {historyButtons}
             <button
@@ -247,6 +330,9 @@ export function Editor({ open }: { readonly open: OpenProject }) {
                 </button>
               </p>
             )}
+            {mode === 'draw' && !readOnly && project.images.length > 0 && (
+              <p class="notice notice-info canvas-hint">{t('editor.drawHint')}</p>
+            )}
             {progress && (
               <p class="notice notice-info" aria-live="polite">
                 {progress}
@@ -267,24 +353,20 @@ export function Editor({ open }: { readonly open: OpenProject }) {
             </div>
           )}
         </main>
-        {desktop && (
-          <aside class="side-panel">
-            <h2>{t('panel.details')}</h2>
-            {panel}
-          </aside>
-        )}
+        {desktop && <aside class="side-panel">{panel}</aside>}
       </div>
 
       {!desktop && (
         <>
           <BottomSheet
-            title={selectedImage?.file ?? t('panel.nothingSelected')}
+            title={sheetTitle}
             expanded={sheetExpanded}
             onToggle={() => setSheetExpanded(!sheetExpanded)}
           >
             {panel}
           </BottomSheet>
           <nav class="bottombar">
+            {modeButtons}
             {addButton}
             {historyButtons}
           </nav>
@@ -357,6 +439,34 @@ export function Editor({ open }: { readonly open: OpenProject }) {
             {t('image.deleteMessage', {
               file: deleteTarget.file,
               ...imageDeletionImpact(project, deleteTarget.id),
+            })}
+          </p>
+        </Dialog>
+      )}
+
+      {deleteMarking && (
+        <Dialog
+          title={t('marking.deleteTitle')}
+          onCancel={() => setDeleteMarking(null)}
+          actions={
+            <>
+              <button type="button" class="button" onClick={() => setDeleteMarking(null)}>
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                class="button button-danger"
+                onClick={() => onMarkingDeleteConfirmed(deleteMarking)}
+              >
+                {t('common.delete')}
+              </button>
+            </>
+          }
+        >
+          <p>
+            {t('marking.deleteMessage', {
+              name: markingLabel(deleteMarking),
+              ...markingDeletionImpact(project, deleteMarking.id),
             })}
           </p>
         </Dialog>

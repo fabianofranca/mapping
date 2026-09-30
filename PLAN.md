@@ -351,12 +351,12 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 **Aceite**: montar o "carro" com 4 fotos no celular, reorganizar sem conseguir sobrepor, trocar uma foto, desfazer tudo.
 
 ### Fase 4 — Marcações
-- [ ] Modos Navegar/Desenhar; criar retângulo limitado à imagem
-- [ ] Alças de redimensionamento, mover, tamanho mínimo
-- [ ] Hierarquia: pai automático, trocar pai, limites pai/filha, mover o pai com os descendentes
-- [ ] Seleção da mais interna com ciclo para o pai; árvore de marcações
-- [ ] Painel de detalhes (nome, x/y/largura/altura, pai, confirmar revisão)
-- [ ] Excluir em cascata com confirmação
+- [x] Modos Navegar/Desenhar; criar retângulo limitado à imagem
+- [x] Alças de redimensionamento, mover, tamanho mínimo
+- [x] Hierarquia: pai automático, trocar pai, limites pai/filha, mover o pai com os descendentes
+- [x] Seleção da mais interna com ciclo para o pai; árvore de marcações
+- [x] Painel de detalhes (nome, x/y/largura/altura, pai, confirmar revisão)
+- [x] Excluir em cascata com confirmação
 
 **Aceite**: criar Porta › Maçaneta › Fechadura no celular; mover a Porta arrasta as filhas; a Fechadura não sai da Maçaneta; selecionar cada nível pelo toque e pela árvore.
 
