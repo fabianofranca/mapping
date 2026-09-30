@@ -57,9 +57,16 @@ export function canPlaceImage(
   );
 }
 
-/** Nome livre em `images/`: `foto.jpg`, `foto-2.jpg`, `foto-3.jpg`… */
-export function uniqueImageFile(p: Project, fileName: string): string {
-  const used = new Set(p.images.map((i) => i.file));
+/**
+ * Nome livre em `images/`: `foto.jpg`, `foto-2.jpg`, `foto-3.jpg`…
+ * `taken` lista caminhos ocupados fora do projeto (arquivos já existentes na pasta).
+ */
+export function uniqueImageFile(
+  p: Project,
+  fileName: string,
+  taken: ReadonlySet<string> = new Set(),
+): string {
+  const used = new Set([...p.images.map((i) => i.file), ...taken]);
   const dot = fileName.lastIndexOf('.');
   const base = dot > 0 ? fileName.slice(0, dot) : fileName;
   const ext = dot > 0 ? fileName.slice(dot) : '';

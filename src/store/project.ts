@@ -1,6 +1,6 @@
 import * as model from '../model';
 import type { Entry, Layer, Placement, Project, Rect } from '../model';
-import { createProjectStore, type ActionResult, type ProjectStore } from './history';
+import type { ActionResult, ProjectStore } from './history';
 
 export interface ActionDeps {
   readonly newId?: () => string;
@@ -98,7 +98,3 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
 }
 
 export type ProjectActions = ReturnType<typeof createProjectActions>;
-
-/** Instâncias usadas pela app. Os testes criam as suas com `createProjectStore`. */
-export const projectStore = createProjectStore();
-export const projectActions = createProjectActions(projectStore);
