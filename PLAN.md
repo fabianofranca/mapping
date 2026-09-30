@@ -321,11 +321,11 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 **Aceite**: `dist/index.html` abre com duplo clique no Chrome desktop; a URL do Pages abre no celular; tema e idioma trocam e persistem.
 
 ### Fase 1 — Modelo e estado
-- [ ] Tipos + schema zod v1 + registro de migrações
-- [ ] Operações puras: camadas, imagens (adicionar/mover/redimensionar/trocar/remover), marcações (criar/alterar/mover com descendentes/trocar pai/remover), anotações e pares
-- [ ] Validador de invariantes
-- [ ] Store com undo/redo e agrupamento por gesto
-- [ ] Serialização/desserialização
+- [x] Tipos + schema zod v1 + registro de migrações
+- [x] Operações puras: camadas, imagens (adicionar/mover/redimensionar/trocar/remover), marcações (criar/alterar/mover com descendentes/trocar pai/remover), anotações e pares
+- [x] Validador de invariantes
+- [x] Store com undo/redo e agrupamento por gesto
+- [x] Serialização/desserialização
 
 **Aceite**: testes cobrindo todas as operações e invariantes; round-trip do JSON idêntico.
 
