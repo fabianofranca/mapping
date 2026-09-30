@@ -42,6 +42,46 @@ function placementAtRight(p: Project, scale: number, excludeId?: string): Placem
   return { x: right(rightmost) + IMAGE_GAP, y: rightmost.y, scale };
 }
 
+/**
+ * Posição livre mais próxima de `center` (ponto do canvas onde o centro da
+ * imagem deveria ficar). Testa o ponto pedido e os encaixes junto às bordas
+ * das outras imagens; sempre existe um (à direita de todas).
+ */
+export function placementNear(
+  p: Project,
+  size: { readonly width: number; readonly height: number },
+  scale: number,
+  center: { readonly x: number; readonly y: number },
+  excludeId?: string,
+): Placement {
+  const w = size.width * scale;
+  const h = size.height * scale;
+  const wanted = { x: center.x - w / 2, y: center.y - h / 2 };
+  const others = p.images
+    .filter((i) => i.id !== excludeId)
+    .map((i) => imageCanvasRect(i, i.placement));
+  const xs = [wanted.x];
+  const ys = [wanted.y];
+  for (const o of others) {
+    xs.push(right(o) + IMAGE_GAP, o.x - IMAGE_GAP - w);
+    ys.push(o.y + o.height + IMAGE_GAP, o.y - IMAGE_GAP - h);
+  }
+  let best: { x: number; y: number } | null = null;
+  let bestDistance = Infinity;
+  for (const x of xs) {
+    for (const y of ys) {
+      const rect = { x, y, width: w, height: h };
+      if (others.some((o) => rectsOverlap(rect, o))) continue;
+      const distance = Math.hypot(x - wanted.x, y - wanted.y);
+      if (distance < bestDistance) {
+        best = { x, y };
+        bestDistance = distance;
+      }
+    }
+  }
+  return { ...(best ?? placementAtRight(p, scale)), scale };
+}
+
 /** `true` se a imagem pode ocupar `placement` sem sobrepor outra imagem. */
 export function canPlaceImage(
   p: Project,
@@ -76,10 +116,17 @@ export function uniqueImageFile(
 }
 
 /**
- * Adiciona a imagem à direita da imagem mais à direita, com o lado maior
- * medindo `INITIAL_IMAGE_SIZE` unidades do canvas.
+ * Adiciona a imagem, com o lado maior medindo `INITIAL_IMAGE_SIZE` unidades do
+ * canvas: perto de `center`, se informado; senão à direita da imagem mais à direita.
  */
-export function addImage(p: Project, args: ImageFile & { readonly id: string }): Project {
+export function addImage(
+  p: Project,
+  args: ImageFile & {
+    readonly id: string;
+    /** Onde o centro da imagem deve ficar (vai para o espaço livre mais próximo). */
+    readonly center?: { readonly x: number; readonly y: number };
+  },
+): Project {
   checkDimensions(args);
   if (p.images.some((i) => i.file === args.file)) fail('duplicate-file');
   const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
@@ -88,7 +135,9 @@ export function addImage(p: Project, args: ImageFile & { readonly id: string }):
     file: args.file,
     width: args.width,
     height: args.height,
-    placement: placementAtRight(p, scale),
+    placement: args.center
+      ? placementNear(p, args, scale, args.center)
+      : placementAtRight(p, scale),
   };
   return { ...p, images: [...p.images, image] };
 }

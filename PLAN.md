@@ -595,11 +595,11 @@ Problema: o texto solto sobre a foto, com a mesma cor e peso para nomes e pares,
 **Aceite**: com o projeto de teste (Header › Back), aproximar o zoom e ver o texto da Header na área livre e o da Back dentro dela, sem sobreposição; distinguir anotação sem nome, anotação nomeada e seus pares; distinguir as camadas sem depender da cor.
 
 #### Fase 12 — Entrada e otimização de imagens
-- [ ] Otimização na importação (2560 px, WebP com/sem perdas, fallback, só se menor, sem metadados) + testes da lógica de decisão
-- [ ] Zip com imagens em `STORE`
-- [ ] Colar: Ctrl/Cmd+V no desktop; "Colar imagem" no celular (com detecção)
-- [ ] Arrastar e soltar: adicionar no ponto, trocar ao soltar sobre imagem, vários arquivos, aviso para não-imagens, destaque do alvo
-- [ ] Nome de arquivo `img-AAAAMMDD-HHMMSS` para imagens coladas
+- [x] Otimização na importação (2560 px, WebP com/sem perdas, fallback, só se menor, sem metadados) + testes da lógica de decisão
+- [x] Zip com imagens em `STORE`
+- [x] Colar: Ctrl/Cmd+V no desktop; "Colar imagem" no celular (com detecção)
+- [x] Arrastar e soltar: adicionar no ponto, trocar ao soltar sobre imagem, vários arquivos, aviso para não-imagens, destaque do alvo
+- [x] Nome de arquivo `img-AAAAMMDD-HHMMSS` para imagens coladas
 
 **Aceite**: adicionar uma foto de 12 MP pela câmera e conferir que o arquivo salvo tem lado maior 2560 px, é WebP (ou JPEG no fallback) e ficou menor; colar um print no desktop e no celular; arrastar uma imagem para área vazia e outra sobre uma imagem existente (troca mantendo as marcações); exportar o zip e conferir o tamanho.
 

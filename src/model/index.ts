@@ -15,6 +15,7 @@ export {
 } from './project';
 export * from './layers';
 export * from './images';
+export * from './imageOptimization';
 export * from './markings';
 export * from './annotations';
 export * from './listing';

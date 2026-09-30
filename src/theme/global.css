@@ -1059,3 +1059,15 @@ body {
   margin: var(--space-3) auto;
   padding: var(--space-3);
 }
+
+/* Arrastar e soltar arquivos em área vazia do canvas. */
+.canvas-host--drop {
+  outline: 3px dashed var(--color-accent);
+  outline-offset: -3px;
+}
+
+.dialog-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
