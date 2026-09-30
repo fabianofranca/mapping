@@ -66,10 +66,10 @@ const HANDLE_SIZE = 14;
 const HANDLE_HIT_RADIUS = 22;
 const SELECTION_STROKE = 2;
 /** Espessura da borda das marcações (px de tela): normal e selecionada. */
-const MARKING_STROKE = 1.5;
-const MARKING_SELECTED_STROKE = 3;
+const MARKING_STROKE = 1;
+const MARKING_SELECTED_STROKE = 2;
 /** Contorno claro em volta da borda, para ela aparecer em fotos escuras e claras. */
-const MARKING_HALO = 2;
+const MARKING_HALO = 0.75;
 const REVIEW_BADGE_SIZE = 14;
 
 export interface CanvasControllerOptions {
