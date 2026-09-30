@@ -29,6 +29,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 ## Regras de arquitetura
 
 - `src/model/` contém só funções puras e imutáveis, sem DOM. Toda regra de negócio fica aqui e é testada.
+- **`src/model/` não pode depender de APIs de navegador** (DOM, `window`, `document`, IndexedDB, File System Access, `createImageBitmap`, `Image`, canvas, `localStorage`). Ele será reutilizado por um servidor MCP em Node na etapa 3. Use apenas APIs disponíveis tanto no navegador quanto no Node (ex: `crypto.randomUUID()`). Tudo que depende de navegador (leitura de dimensões da imagem, EXIF, bitmaps) fica em `src/storage/` ou `src/canvas/` e entrega dados já prontos ao `model/`.
 - Toda mutação do projeto passa por uma action do store. Nunca altere o estado diretamente num componente.
 - O estado do projeto (JSON + undo) é separado do estado da UI (seleção, visibilidade, modo, viewport).
 - Um gesto (arrastar/redimensionar) gera **uma** entrada no histórico de undo.
@@ -62,4 +63,8 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
   2. **Como testar no celular**: passos manuais objetivos, lembrando que o deploy do branch pode ser disparado pelo `workflow_dispatch`;
   3. **Decisões tomadas** que não estavam no `PLAN.md`.
 - Se algo no `PLAN.md` estiver ambíguo ou for inviável, registre a dúvida no PR em vez de inventar comportamento grande. Para detalhes pequenos, decida, siga e documente.
-- A etapa 2 (especialização) está fora do escopo. Não implemente nada dela.
+
+## Etapas futuras (fora do escopo atual, não implementar)
+
+- **Etapa 2 — Especialização:** arquivo JSON que pré-define camadas e tipos de anotação com chaves e valores.
+- **Etapa 3 — Servidor MCP:** servidor em Node/TypeScript, no mesmo repositório, que reutiliza o `src/model/` para um agente criar projetos, adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
