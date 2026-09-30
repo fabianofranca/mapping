@@ -42,6 +42,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
     const imageId = `I${i}`;
     imageList.push({
       id: imageId,
+      name: null,
       file: `images/foto-${i}.jpg`,
       width: imageWidth,
       height: imageHeight,
@@ -88,6 +89,8 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         markingId: marking.id,
         layerId,
         name: `Anotação ${index}`,
+        inherit: false,
+        parentAnnotationId: null,
         entries: [
           { key: 'tipo', value: 'amassado' },
           { key: 'gravidade', value: 'média' },

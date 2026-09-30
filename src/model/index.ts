@@ -17,4 +17,5 @@ export * from './layers';
 export * from './images';
 export * from './markings';
 export * from './annotations';
+export * from './links';
 export * from './listing';

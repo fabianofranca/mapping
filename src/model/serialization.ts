@@ -21,6 +21,7 @@ export function serialize(p: Project): string {
     layers: p.layers.map((l) => ({ id: l.id, name: l.name, color: l.color })),
     images: p.images.map((i) => ({
       id: i.id,
+      name: i.name,
       file: i.file,
       width: i.width,
       height: i.height,
@@ -39,6 +40,8 @@ export function serialize(p: Project): string {
       markingId: a.markingId,
       layerId: a.layerId,
       name: a.name,
+      inherit: a.inherit,
+      parentAnnotationId: a.parentAnnotationId,
       entries: a.entries.map((e) => ({ key: e.key, value: e.value })),
     })),
   };

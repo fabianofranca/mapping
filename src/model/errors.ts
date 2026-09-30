@@ -20,6 +20,7 @@ export type ModelErrorCode =
   | 'rect-outside-parent'
   | 'rect-excludes-children'
   | 'invalid-parent'
+  | 'invalid-annotation-parent'
   | 'empty-key'
   | 'duplicate-key';
 

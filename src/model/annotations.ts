@@ -1,5 +1,6 @@
 import { fail } from './errors';
 import { validateEntries } from './invariants';
+import { annotationWithLinked } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
 import type { Annotation, Entry, Layer, Project } from './types';
 
@@ -27,6 +28,8 @@ export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
     markingId: args.markingId,
     layerId: args.layerId,
     name: normalizeOptionalName(args.name ?? null),
+    inherit: false,
+    parentAnnotationId: null,
     entries: checkEntries(args.entries ?? []),
   };
   return { ...p, annotations: [...p.annotations, annotation] };
@@ -47,10 +50,20 @@ export function renameAnnotation(
   };
 }
 
-/** Exclusão simples (sem cascata): o undo cobre. */
+/** Exclui a anotação e, em cascata, as vinculadas a ela (recursivamente). */
 export function removeAnnotation(p: Project, annotationId: string): Project {
   findById(p.annotations, annotationId);
-  return { ...p, annotations: p.annotations.filter((a) => a.id !== annotationId) };
+  const doomed = annotationWithLinked(p, annotationId);
+  return { ...p, annotations: p.annotations.filter((a) => !doomed.has(a.id)) };
+}
+
+/** Quantas anotações saem junto na exclusão (inclui a própria). */
+export function annotationDeletionImpact(
+  p: Project,
+  annotationId: string,
+): { annotations: number } {
+  findById(p.annotations, annotationId);
+  return { annotations: annotationWithLinked(p, annotationId).size };
 }
 
 function updateEntries(
