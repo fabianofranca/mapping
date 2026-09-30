@@ -363,7 +363,7 @@ export class CanvasController {
       placements.set(image.id, placement);
       const node = this.nodes.get(image.id) ?? this.createNode(image.id);
       this.updateNode(node, image, placement, bitmaps.get(image.file), tokens, v.scale);
-      node.group.zIndex(index);
+      if (node.group.zIndex() !== index) node.group.zIndex(index);
     });
     for (const [id, node] of this.nodes) {
       if (seen.has(id)) continue;
@@ -429,9 +429,13 @@ export class CanvasController {
           ? t('canvas.imageError')
           : null;
     const padding = Math.min(rect.width, rect.height) * 0.05;
+    if (message === null) {
+      node.label.visible(false);
+      return;
+    }
     node.label.setAttrs({
-      visible: message !== null,
-      text: message ? `⚠ ${message}\n${image.file}` : '',
+      visible: true,
+      text: `⚠ ${message}\n${image.file}`,
       x: padding,
       y: padding,
       width: Math.max(0, rect.width - 2 * padding),
@@ -472,6 +476,14 @@ export class CanvasController {
       seen.add(marking.id);
       const node =
         this.markingNodes.get(marking.id) ?? this.createMarkingNode(marking.id);
+      const markingRect = markingCanvasRect(placement, marking.rect);
+      // Fora da tela: nem atualiza nem desenha (a camada não recebe toques, então é seguro).
+      const onScreen = intersectRects(markingRect, view) !== null;
+      node.group.visible(onScreen);
+      // Reordenar custa caro no Konva: só quando a posição na pilha mudou.
+      if (node.group.zIndex() !== index) node.group.zIndex(index);
+      index++;
+      if (!onScreen) continue;
       const selected = selection?.kind === 'marking' && selection.id === marking.id;
       this.updateMarkingNode(
         node,
@@ -491,14 +503,13 @@ export class CanvasController {
       this.updateSemanticText(
         node,
         marking,
-        markingCanvasRect(placement, marking.rect),
+        markingRect,
         view,
         mode,
         layerSections(byMarking, marking.id, shown),
         tokens,
         zoom,
       );
-      node.group.zIndex(index++);
     }
     for (const [id, node] of this.markingNodes) {
       if (seen.has(id)) continue;
@@ -550,17 +561,22 @@ export class CanvasController {
       opacity: 0.7,
     });
     node.border.setAttrs({ ...rect, stroke: tokens.marking, strokeWidth: stroke, dash });
-    const badge = REVIEW_BADGE_SIZE / zoom;
-    node.badge.setAttrs({
-      visible: marking.needsReview,
-      x: rect.x + badge / 3,
-      y: rect.y + badge / 3,
-      fontSize: badge,
-      fill: tokens.warning,
-      stroke: tokens.surface,
-      strokeWidth: 3 / zoom,
-      fillAfterStrokeEnabled: true,
-    });
+    // Texto do Konva remede a cada mudança de atributo: só mexe nos que aparecem.
+    if (marking.needsReview) {
+      const badge = REVIEW_BADGE_SIZE / zoom;
+      node.badge.setAttrs({
+        visible: true,
+        x: rect.x + badge / 3,
+        y: rect.y + badge / 3,
+        fontSize: badge,
+        fill: tokens.warning,
+        stroke: tokens.surface,
+        strokeWidth: 3 / zoom,
+        fillAfterStrokeEnabled: true,
+      });
+    } else {
+      node.badge.visible(false);
+    }
     this.updateIndicators(node, marking, rect, layers, tokens, zoom);
   }
 
@@ -573,8 +589,12 @@ export class CanvasController {
     tokens: CanvasTokens,
     zoom: number,
   ): void {
+    if (layers.length === 0) {
+      node.indicators.visible(false);
+      return;
+    }
     node.indicators.setAttrs({
-      visible: layers.length > 0,
+      visible: true,
       clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
     });
     const radius = DOT_RADIUS / zoom;
@@ -585,8 +605,12 @@ export class CanvasController {
     const cy = rect.y + (DOT_MARGIN + DOT_RADIUS) / zoom;
     const shown = Math.min(layers.length, MAX_DOTS);
     node.dots.forEach((dot, i) => {
+      if (i >= shown) {
+        dot.visible(false);
+        return;
+      }
       dot.setAttrs({
-        visible: i < shown,
+        visible: true,
         x: x0 + i * step,
         y: cy,
         radius,
@@ -596,9 +620,13 @@ export class CanvasController {
       });
     });
     const extra = layers.length - MAX_DOTS;
+    if (extra <= 0) {
+      node.more.visible(false);
+      return;
+    }
     const fontSize = 11 / zoom;
     node.more.setAttrs({
-      visible: extra > 0,
+      visible: true,
       text: `+${extra}`,
       x: x0 + shown * step - radius,
       y: cy - fontSize / 2,

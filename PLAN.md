@@ -376,11 +376,11 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 **Aceite**: aproximando o zoom, os pares aparecem sem cobrir as filhas; pela lista, tocar numa anotação leva à marcação no canvas.
 
 ### Fase 7 — PWA e acabamento
-- [ ] Manifest, ícones, service worker, aviso de nova versão
-- [ ] Orientação para instalar no iOS/Android e aviso de retenção no iOS
-- [ ] Estados vazios, mensagens de erro, acessibilidade básica (foco, rótulos, contraste nos dois temas)
-- [ ] Teste de desempenho: 20 imagens e 500 marcações no celular
-- [ ] Revisão de todas as strings nos dois idiomas
+- [x] Manifest, ícones, service worker, aviso de nova versão
+- [x] Orientação para instalar no iOS/Android e aviso de retenção no iOS
+- [x] Estados vazios, mensagens de erro, acessibilidade básica (foco, rótulos, contraste nos dois temas)
+- [x] Teste de desempenho: 20 imagens e 500 marcações no celular (medido em Chromium com CPU 4× mais lenta; conferir no aparelho real)
+- [x] Revisão de todas as strings nos dois idiomas
 
 **Aceite**: instalar no celular, usar em modo avião, exportar e reabrir no desktop.
 

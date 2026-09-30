@@ -57,6 +57,7 @@ export default tseslint.config(
       ],
     },
   },
+  { files: ['pwa/**/*.js'], languageOptions: { globals: globals.serviceworker } },
   { files: ['*.config.{js,ts}'], languageOptions: { globals: globals.node } },
   prettier,
 );

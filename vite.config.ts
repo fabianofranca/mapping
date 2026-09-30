@@ -1,11 +1,46 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+import { readFileSync } from 'node:fs';
+
+/** FNV-1a de 32 bits em hexadecimal: basta para distinguir um build do outro. */
+function hash(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+/**
+ * Publica o service worker (`pwa/sw.js`) carimbado com um hash do index.html:
+ * cada build novo muda o sw.js, e é isso que faz o navegador detectar a
+ * "nova versão". Fica fora de `public/` para poder ser carimbado.
+ */
+function serviceWorker(): Plugin {
+  return {
+    name: 'service-worker',
+    apply: 'build',
+    generateBundle: {
+      order: 'post',
+      handler(_options, bundle) {
+        const html = bundle['index.html'];
+        if (html?.type !== 'asset')
+          throw new Error('index.html não encontrado no bundle');
+        const source = readFileSync('pwa/sw.js', 'utf8').replaceAll(
+          '__BUILD_ID__',
+          hash(String(html.source)),
+        );
+        this.emitFile({ type: 'asset', fileName: 'sw.js', source });
+      },
+    },
+  };
+}
 
 const base = {
   base: './',
-  plugins: [preact(), viteSingleFile()],
+  plugins: [preact(), viteSingleFile(), serviceWorker()],
 };
 
 export default defineConfig({

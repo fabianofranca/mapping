@@ -232,10 +232,16 @@ body {
   color: var(--color-warning);
 }
 
+.app-editor {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 .editor {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -1014,4 +1020,42 @@ body {
 
 .canvas-area[hidden] {
   display: none;
+}
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  border-radius: 0;
+}
+
+.install-hint {
+  margin: var(--space-2) 0;
+}
+
+.install-hint h2 {
+  margin-top: 0;
+}
+
+/* Foco visível para quem usa teclado (o contraste do acento passa de 3:1 nos dois temas). */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+.crash {
+  max-width: 480px;
+  margin: var(--space-3) auto;
+  padding: var(--space-3);
 }
