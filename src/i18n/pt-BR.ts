@@ -125,6 +125,10 @@ export const ptBR = {
   'marking.error.generic': 'Não foi possível alterar a marcação.',
 
   'image.name': 'Nome',
+  'image.markingColor': 'Cor das linhas das marcações',
+  'image.markingColorTheme': 'Cor do tema',
+  'image.markingColorHint':
+    'Vale para as marcações desta imagem e é salva no projeto. Use outra cor quando a foto esconder a linha.',
   'image.dimensions': '{width} × {height} px',
   'image.missingTitle': 'Imagem ausente',
   'image.missingMessage':

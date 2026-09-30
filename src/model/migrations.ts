@@ -29,8 +29,17 @@ export const migrateFrom1To2: Migration = (data) => ({
   })),
 });
 
+/** v2 → v3: imagens ganham `markingColor: null` (borda das marcações na cor do tema). */
+export const migrateFrom2To3: Migration = (data) => ({
+  ...data,
+  images: mapItems(data.images, (i) => ({ markingColor: null, ...i })),
+});
+
 /** Registro de migrações: a chave é a versão de origem. */
-export const migrations: ReadonlyMap<number, Migration> = new Map([[1, migrateFrom1To2]]);
+export const migrations: ReadonlyMap<number, Migration> = new Map([
+  [1, migrateFrom1To2],
+  [2, migrateFrom2To3],
+]);
 
 export type MigrationResult =
   | { readonly ok: true; readonly data: Record<string, unknown> }

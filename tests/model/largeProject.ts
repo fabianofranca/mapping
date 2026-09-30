@@ -43,6 +43,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
     imageList.push({
       id: imageId,
       name: null,
+      markingColor: null,
       file: `images/foto-${i}.jpg`,
       width: imageWidth,
       height: imageHeight,

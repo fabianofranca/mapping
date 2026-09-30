@@ -26,6 +26,7 @@ export function serialize(p: Project): string {
       width: i.width,
       height: i.height,
       placement: { x: i.placement.x, y: i.placement.y, scale: i.placement.scale },
+      markingColor: i.markingColor,
     })),
     markings: p.markings.map((m) => ({
       id: m.id,

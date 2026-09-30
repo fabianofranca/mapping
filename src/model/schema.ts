@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { APP_ID, COORDINATE_SYSTEM, SCHEMA_VERSION, type Project } from './types';
 
-// Schema zod do mapping.json v2. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json v3. Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`.
 
 const id = z.string().min(1);
@@ -30,6 +30,7 @@ const imageSchema = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
   placement: placementSchema,
+  markingColor: hexColor.nullable(),
 });
 
 const markingSchema = z.object({

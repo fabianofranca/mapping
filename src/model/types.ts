@@ -1,7 +1,7 @@
-// Tipos do `mapping.json` (schema v2). Ver PLAN.md, seção 4.
+// Tipos do `mapping.json` (schema v3). Ver PLAN.md, seção 4.
 // Tudo é `readonly`: o modelo é imutável e as operações sempre devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const APP_ID = 'mapeador-imagens';
 export const COORDINATE_SYSTEM = 'image-pixels-exif-oriented';
 
@@ -34,6 +34,8 @@ export interface ProjectImage {
   readonly width: number;
   readonly height: number;
   readonly placement: Placement;
+  /** Cor da borda das marcações desta imagem (`#RRGGBB`); `null` = cor neutra do tema. */
+  readonly markingColor: string | null;
 }
 
 export interface Marking {

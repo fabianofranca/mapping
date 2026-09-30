@@ -588,6 +588,7 @@ export class CanvasController {
       height: size.height / vp.scale,
     };
     const byMarking = project && semantic ? annotationsByMarking(project) : new Map();
+    const lineColors = new Map(project?.images.map((i) => [i.id, i.markingColor]));
     const seen = new Set<string>();
     let index = 0;
     for (const marking of topDown(markings)) {
@@ -607,6 +608,8 @@ export class CanvasController {
       index++;
       if (!onScreen) continue;
       const selected = selection?.kind === 'marking' && selection.id === marking.id;
+      // Cor da borda escolhida para a imagem (sem escolha, a neutra do tema).
+      const lineColor = lineColors.get(marking.imageId) ?? null;
       this.updateMarkingNode(
         node,
         marking,
@@ -614,7 +617,7 @@ export class CanvasController {
         selected,
         visibility,
         dots.get(marking.id) ?? [],
-        tokens,
+        lineColor ? { ...tokens, marking: lineColor } : tokens,
         zoom,
       );
       const mode = semanticMode({

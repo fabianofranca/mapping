@@ -30,6 +30,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       );
     },
     renameProject: (name: string) => store.apply((p) => model.renameProject(p, name)),
+    setImageMarkingColor: (imageId: string, color: string | null) =>
+      store.apply((p) => model.setImageMarkingColor(p, imageId, color)),
     renameImage: (imageId: string, name: string | null) =>
       store.apply((p) => model.renameImage(p, imageId, name)),
 

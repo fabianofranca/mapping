@@ -133,6 +133,7 @@ export function addImage(
   const image: ProjectImage = {
     id: args.id,
     name: null,
+    markingColor: null,
     file: args.file,
     width: args.width,
     height: args.height,
@@ -149,6 +150,32 @@ export function renameImage(p: Project, imageId: string, name: string | null): P
   return {
     ...p,
     images: updateById(p.images, imageId, (i) => ({ ...i, name: normalized })),
+  };
+}
+
+/** Sugestões de cor para a borda das marcações (alto contraste sobre fotos claras e escuras). */
+export const MARKING_COLOR_PALETTE: readonly string[] = [
+  '#FFFFFF',
+  '#000000',
+  '#FFEB3B',
+  '#00E5FF',
+  '#76FF03',
+  '#FF4081',
+  '#FF6D00',
+  '#E53935',
+];
+
+/** Cor da borda das marcações da imagem (`#RRGGBB`); `null` volta para a cor do tema. */
+export function setImageMarkingColor(
+  p: Project,
+  imageId: string,
+  color: string | null,
+): Project {
+  if (color !== null && !/^#[0-9A-Fa-f]{6}$/.test(color)) fail('invalid-color');
+  const normalized = color === null ? null : color.toUpperCase();
+  return {
+    ...p,
+    images: updateById(p.images, imageId, (i) => ({ ...i, markingColor: normalized })),
   };
 }
 
@@ -312,6 +339,7 @@ export function replaceImage(
   const updated: ProjectImage = {
     id: image.id,
     name: image.name,
+    markingColor: image.markingColor,
     file: next.file,
     width: next.width,
     height: next.height,

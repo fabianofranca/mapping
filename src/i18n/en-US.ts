@@ -125,6 +125,10 @@ export const enUS: Dictionary = {
   'marking.error.generic': 'Could not change the marking.',
 
   'image.name': 'Name',
+  'image.markingColor': 'Marking line color',
+  'image.markingColorTheme': 'Theme color',
+  'image.markingColorHint':
+    'Applies to the markings of this image and is saved in the project. Pick another color when the photo hides the line.',
   'image.dimensions': '{width} × {height} px',
   'image.missingTitle': 'Missing image',
   'image.missingMessage':

@@ -446,6 +446,7 @@ Levantadas no uso real no celular. Esta seção prevalece sobre as anteriores.
   - **sem ciclos** (a cadeia pode seguir por várias camadas, ex: Componentes ← Eventos ← Parâmetros).
 - **Herança e vínculo são independentes**: se a dona tem `inherit: true`, as vinculadas só descem para as filhas se também tiverem `inherit: true`.
 - **A herança não é materializada no JSON.** As anotações herdadas por uma marcação M são as anotações com `inherit: true` de todos os ancestrais de M (seguindo `parentId`). Mudar o pai de uma marcação muda o que ela herda.
+- **Schema v3**: a imagem ganha `markingColor` (`#RRGGBB` ou `null`), a cor da borda das marcações dela; `null` = cor neutra do tema. Migração v2 → v3: toda imagem recebe `markingColor: null`. Editável no painel de detalhes da imagem (paleta, cor livre ou "Cor do tema"). Substitui a borda "sempre neutra" da seção 7.7 quando definida.
 - **Migração v1 → v2**: toda imagem recebe `name: null`; toda anotação recebe `inherit: false` e `parentAnnotationId: null`. `schemaVersion` passa a ser 2.
 - **Exclusões em cascata** (sempre com confirmação e contagens):
   - excluir uma anotação exclui as vinculadas a ela, recursivamente;
