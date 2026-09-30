@@ -16,6 +16,7 @@ describe('estado da UI do editor', () => {
     const ui = createEditorUi();
     expect(ui.selection.value).toBeNull();
     expect(ui.mode.value).toBe('navigate');
+    expect(ui.listShowEmpty.value).toBe(false);
   });
 
   it('resolve a seleção no projeto atual', () => {

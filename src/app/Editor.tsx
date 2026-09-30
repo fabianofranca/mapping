@@ -9,6 +9,7 @@ import {
   type ProjectImage,
 } from '../model';
 import type { AspectChange } from '../store/session';
+import { semanticText, setSemanticText } from '../store/settings';
 import {
   createEditorUi,
   resolveActiveLayerId,
@@ -19,13 +20,16 @@ import {
 import { BottomSheet } from '../ui/BottomSheet';
 import { Dialog } from '../ui/Dialog';
 import { LayersDialog } from '../ui/LayersDialog';
+import { ListView } from '../ui/ListView';
 import {
   AddImageIcon,
   DrawIcon,
   FitIcon,
   HandIcon,
+  ListIcon,
   MenuIcon,
   RedoIcon,
+  TextIcon,
   UndoIcon,
 } from '../ui/icons';
 import { markingLabel, markingPath } from '../ui/labels';
@@ -74,6 +78,10 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const [panelTab, setPanelTab] = useState<PanelTab>('details');
   const [aspectPrompt, setAspectPrompt] = useState<AspectPrompt | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
+  /** Celular: aba ativa (Canvas | Lista). Desktop: lista lado a lado com o canvas. */
+  const [view, setView] = useState<'canvas' | 'list'>('canvas');
+  const [listOpen, setListOpen] = useState(false);
+  const focusAfterView = useRef(false);
 
   const project = store.project.value;
   const readOnly = store.readOnly.value;
@@ -120,6 +128,14 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   }, [store, ui]);
 
   requestMarkingDelete.current = onMarkingDelete;
+
+  // Voltar da lista para o canvas (celular): centraliza depois que o canvas reaparece.
+  useEffect(() => {
+    if (view === 'canvas' && focusAfterView.current) {
+      focusAfterView.current = false;
+      controller.current?.focusSelection();
+    }
+  }, [view]);
 
   if (!project) return null;
 
@@ -181,6 +197,17 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const onTreeSelect = (next: NonNullable<Selection>) => {
     ui.selection.value = next;
     controller.current?.focusSelection();
+  };
+
+  /** Tocar na lista seleciona a marcação e centraliza o canvas (no celular, muda para ele). */
+  const onListSelect = (next: NonNullable<Selection>) => {
+    ui.selection.value = next;
+    if (desktop) {
+      controller.current?.focusSelection();
+      return;
+    }
+    focusAfterView.current = true;
+    setView('canvas');
   };
 
   const onDeleteConfirmed = (image: ProjectImage) => {
@@ -252,6 +279,33 @@ export function Editor({ open }: { readonly open: OpenProject }) {
       />
     </>
   );
+  const semanticButton = (
+    <ToolButton
+      icon={<TextIcon />}
+      label={t('view.semanticText')}
+      pressed={semanticText.value}
+      onClick={() => setSemanticText(!semanticText.value)}
+    />
+  );
+  const listButton = (
+    <ToolButton
+      icon={<ListIcon />}
+      label={t(listOpen ? 'view.hideList' : 'view.showList')}
+      text={t('view.list')}
+      pressed={listOpen}
+      onClick={() => setListOpen(!listOpen)}
+    />
+  );
+  const list = (
+    <ListView
+      project={project}
+      ui={ui}
+      layers={shownLayers}
+      selection={selection}
+      onSelect={onListSelect}
+    />
+  );
+  const mobileList = !desktop && view === 'list';
   const details =
     selected?.kind === 'marking' ? (
       <MarkingPanel
@@ -320,6 +374,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
             {modeButtons}
             {addButton}
             {historyButtons}
+            {semanticButton}
+            {listButton}
             <button
               type="button"
               class="button"
@@ -338,7 +394,11 @@ export function Editor({ open }: { readonly open: OpenProject }) {
       </header>
 
       <div class="editor-body">
-        <main class="canvas-area" aria-label={t('editor.canvasLabel')}>
+        <main
+          class="canvas-area"
+          aria-label={t('editor.canvasLabel')}
+          hidden={mobileList}
+        >
           <CanvasHost
             store={store}
             actions={actions}
@@ -379,18 +439,47 @@ export function Editor({ open }: { readonly open: OpenProject }) {
             </div>
           )}
         </main>
+        {mobileList && (
+          <section class="list-screen" aria-label={t('list.title')}>
+            {list}
+          </section>
+        )}
+        {desktop && listOpen && (
+          <aside class="list-pane" aria-label={t('list.title')}>
+            {list}
+          </aside>
+        )}
         {desktop && <aside class="side-panel">{panel}</aside>}
       </div>
 
       {!desktop && (
         <>
-          <BottomSheet
-            title={sheetTitle}
-            expanded={sheetExpanded}
-            onToggle={() => setSheetExpanded(!sheetExpanded)}
-          >
-            {panel}
-          </BottomSheet>
+          {!mobileList && (
+            <BottomSheet
+              title={sheetTitle}
+              expanded={sheetExpanded}
+              onToggle={() => setSheetExpanded(!sheetExpanded)}
+            >
+              {panel}
+            </BottomSheet>
+          )}
+          <div class="viewtabs">
+            <div class="tabs" role="tablist" aria-label={t('view.tabsLabel')}>
+              {(['canvas', 'list'] as const).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  class="tab"
+                  aria-selected={view === id}
+                  onClick={() => setView(id)}
+                >
+                  {t(id === 'canvas' ? 'view.canvas' : 'view.list')}
+                </button>
+              ))}
+            </div>
+            {semanticButton}
+          </div>
           <nav class="bottombar">
             {modeButtons}
             {addButton}

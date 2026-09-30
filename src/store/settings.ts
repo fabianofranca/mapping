@@ -22,6 +22,7 @@ export function detectLocale(language: string | undefined): Locale {
 
 const LOCALE_KEY = 'mapping.locale';
 const THEME_KEY = 'mapping.theme';
+const SEMANTIC_TEXT_KEY = 'mapping.semanticText';
 
 const storedLocale = readSetting(LOCALE_KEY);
 const storedTheme = readSetting(THEME_KEY);
@@ -29,6 +30,8 @@ const storedTheme = readSetting(THEME_KEY);
 export const locale = signal<Locale>(
   isLocale(storedLocale) ? storedLocale : detectLocale(globalThis.navigator?.language),
 );
+/** Zoom semântico: texto das anotações dentro das marcações (ligado por padrão). */
+export const semanticText = signal<boolean>(readSetting(SEMANTIC_TEXT_KEY) !== 'off');
 export const theme = signal<ThemePreference>(
   isTheme(storedTheme) ? storedTheme : 'system',
 );
@@ -41,4 +44,9 @@ export function setLocale(value: Locale): void {
 export function setTheme(value: ThemePreference): void {
   theme.value = value;
   writeSetting(THEME_KEY, value);
+}
+
+export function setSemanticText(value: boolean): void {
+  semanticText.value = value;
+  writeSetting(SEMANTIC_TEXT_KEY, value ? 'on' : 'off');
 }

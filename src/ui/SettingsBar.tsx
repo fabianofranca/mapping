@@ -5,7 +5,9 @@ import {
   isLocale,
   isTheme,
   locale,
+  semanticText,
   setLocale,
+  setSemanticText,
   setTheme,
   theme,
 } from '../store/settings';
@@ -44,6 +46,17 @@ export function SettingsBar() {
             </option>
           ))}
         </select>
+      </label>
+      <label class="field field-check">
+        <input
+          type="checkbox"
+          checked={semanticText.value}
+          onChange={(e) => setSemanticText(e.currentTarget.checked)}
+        />
+        <span>
+          {t('view.semanticText')}
+          <small class="muted"> {t('view.semanticTextHint')}</small>
+        </span>
       </label>
     </div>
   );

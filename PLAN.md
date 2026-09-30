@@ -369,9 +369,9 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 **Aceite**: com as camadas Lataria e Vidros, anotar a Porta nas duas; ligar e desligar camadas altera os indicadores e o painel; excluir Vidros apaga só as anotações dela.
 
 ### Fase 6 — Visualização
-- [ ] Zoom semântico por marcação (folha × com filhas) + liga/desliga
-- [ ] Visão de Lista com filtros e navegação para o canvas
-- [ ] Lista lado a lado no desktop com seleção sincronizada
+- [x] Zoom semântico por marcação (folha × com filhas) + liga/desliga
+- [x] Visão de Lista com filtros e navegação para o canvas
+- [x] Lista lado a lado no desktop com seleção sincronizada
 
 **Aceite**: aproximando o zoom, os pares aparecem sem cobrir as filhas; pela lista, tocar numa anotação leva à marcação no canvas.
 

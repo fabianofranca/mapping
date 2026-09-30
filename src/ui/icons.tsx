@@ -120,3 +120,22 @@ export const CloseIcon = () => (
     <path d="M18 6 6 18" />
   </Icon>
 );
+
+export const TextIcon = () => (
+  <Icon>
+    <path d="M4 7V4h16v3" />
+    <path d="M9 20h6" />
+    <path d="M12 4v16" />
+  </Icon>
+);
+
+export const ListIcon = () => (
+  <Icon>
+    <path d="M8 6h13" />
+    <path d="M8 12h13" />
+    <path d="M8 18h13" />
+    <path d="M3 6h.01" />
+    <path d="M3 12h.01" />
+    <path d="M3 18h.01" />
+  </Icon>
+);
