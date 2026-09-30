@@ -578,11 +578,11 @@ Problema: o texto solto sobre a foto, com a mesma cor e peso para nomes e pares,
 **Aceite** (no celular): fazer pan por cima de uma marcação selecionada sem movê-la; segurar e mover uma marcação e uma imagem; redimensionar pelas alças sem segurar; a aba Lista fica 100% tocável; sem seleção, a gaveta não ocupa a tela; dar nome a uma imagem e vê-lo no canvas; copiar o `id` de uma marcação.
 
 #### Fase 10 — Herança e vínculos na interface
-- [ ] Editor: "Aplicar às marcações filhas" e "Pertence a"
-- [ ] Resumo das vinculadas na anotação dona, com navegação
-- [ ] Seção "Herdadas" no painel; identificação na Lista
-- [ ] Indicadores: bolinha vazada para camada só herdada
-- [ ] Modos de exibição Mostrar todas / Esmaecer / Ocultar sem anotação (12.3)
+- [x] Editor: "Aplicar às marcações filhas" e "Pertence a"
+- [x] Resumo das vinculadas na anotação dona, com navegação
+- [x] Seção "Herdadas" no painel; identificação na Lista
+- [x] Indicadores: bolinha vazada para camada só herdada
+- [x] Modos de exibição Mostrar todas / Esmaecer / Ocultar sem anotação (12.3)
 
 **Aceite**: criar a marcação "Botão" com a anotação `Button` na camada Componentes e os eventos `onClick` e `onLongPress` na camada Eventos vinculados a ela; ocultar e mostrar cada camada; na Porta › Maçaneta, ligar a herança numa anotação da Porta e vê-la como herdada na Maçaneta; excluir a camada Componentes mostra as contagens e apaga também os eventos; com só a camada Eventos visível e o modo Ocultar, aparecem apenas os componentes com eventos (e o contorno dos ancestrais).
 

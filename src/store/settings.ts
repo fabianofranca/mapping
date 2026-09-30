@@ -1,4 +1,5 @@
 import { signal } from '@preact/signals';
+import { MARKING_DISPLAY_MODES, type MarkingDisplayMode } from '../model';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 
 export const LOCALES = ['pt-BR', 'en-US'] as const;
@@ -23,6 +24,7 @@ export function detectLocale(language: string | undefined): Locale {
 const LOCALE_KEY = 'mapping.locale';
 const THEME_KEY = 'mapping.theme';
 const SEMANTIC_TEXT_KEY = 'mapping.semanticText';
+const MARKING_DISPLAY_KEY = 'mapping.markingDisplay';
 
 const storedLocale = readSetting(LOCALE_KEY);
 const storedTheme = readSetting(THEME_KEY);
@@ -35,6 +37,21 @@ export const semanticText = signal<boolean>(readSetting(SEMANTIC_TEXT_KEY) !== '
 export const theme = signal<ThemePreference>(
   isTheme(storedTheme) ? storedTheme : 'system',
 );
+
+export function isMarkingDisplayMode(value: unknown): value is MarkingDisplayMode {
+  return MARKING_DISPLAY_MODES.some((m) => m === value);
+}
+
+const storedDisplay = readSetting(MARKING_DISPLAY_KEY);
+/** Marcações sem anotação: mostrar todas, esmaecer (padrão) ou ocultar. Por dispositivo. */
+export const markingDisplay = signal<MarkingDisplayMode>(
+  isMarkingDisplayMode(storedDisplay) ? storedDisplay : 'dim',
+);
+
+export function setMarkingDisplay(value: MarkingDisplayMode): void {
+  markingDisplay.value = value;
+  writeSetting(MARKING_DISPLAY_KEY, value);
+}
 
 export function setLocale(value: Locale): void {
   locale.value = value;

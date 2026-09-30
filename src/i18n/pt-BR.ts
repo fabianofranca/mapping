@@ -164,6 +164,14 @@ export const ptBR = {
   'layer.deleteMessage':
     '"{name}" será excluída com {annotations} anotação(ões). Dá para desfazer.',
   'layer.lastLayer': 'O projeto precisa ter ao menos uma camada.',
+  'layer.deleteCounts': 'Serão excluídas também anotações vinculadas em outras camadas:',
+  'layer.deleteCount': '{name}: {count}',
+  'layer.displayMode': 'Marcações sem anotação',
+  'layer.display.all': 'Mostrar todas',
+  'layer.display.dim': 'Esmaecer sem anotação',
+  'layer.display.hide': 'Ocultar sem anotação',
+  'layer.displayHint':
+    'Conta a anotação própria e a herdada nas camadas visíveis. A marcação selecionada sempre aparece.',
 
   'annotation.heading': 'Anotações',
   'annotation.add': '+ Anotação',
@@ -181,6 +189,17 @@ export const ptBR = {
   'annotation.error.empty-key': 'A chave não pode ficar vazia.',
   'annotation.error.duplicate-key': 'Já existe um par com esta chave.',
   'annotation.error.generic': 'Não foi possível alterar a anotação.',
+  'annotation.inherit': 'Aplicar às marcações filhas',
+  'annotation.owner': 'Pertence a',
+  'annotation.noOwner': 'Nenhuma',
+  'annotation.ownerOption': '{layer}: {name}',
+  'annotation.linkedTo': '↳ de {name}',
+  'annotation.linkedHeading': 'Vinculadas',
+  'annotation.goToAnnotation': 'Ir para a anotação {name}',
+  'annotation.showLayer': 'Mostrar a camada {layer}',
+  'annotation.inheritedHeading': 'Herdadas',
+  'annotation.inheritedFrom': 'herdado de {name}',
+  'annotation.goToMarking': 'Ir para {name}',
 
   'view.canvas': 'Canvas',
   'view.list': 'Lista',

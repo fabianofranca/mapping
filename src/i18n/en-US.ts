@@ -164,6 +164,14 @@ export const enUS: Dictionary = {
   'layer.deleteMessage':
     '"{name}" will be deleted along with {annotations} annotation(s). You can undo this.',
   'layer.lastLayer': 'The project needs at least one layer.',
+  'layer.deleteCounts': 'Linked annotations in other layers will be deleted too:',
+  'layer.deleteCount': '{name}: {count}',
+  'layer.displayMode': 'Markings without annotations',
+  'layer.display.all': 'Show all',
+  'layer.display.dim': 'Dim without annotations',
+  'layer.display.hide': 'Hide without annotations',
+  'layer.displayHint':
+    'Counts own and inherited annotations in the visible layers. The selected marking always shows.',
 
   'annotation.heading': 'Annotations',
   'annotation.add': '+ Annotation',
@@ -181,6 +189,17 @@ export const enUS: Dictionary = {
   'annotation.error.empty-key': 'The key cannot be empty.',
   'annotation.error.duplicate-key': 'A pair with this key already exists.',
   'annotation.error.generic': 'Could not change the annotation.',
+  'annotation.inherit': 'Apply to child markings',
+  'annotation.owner': 'Belongs to',
+  'annotation.noOwner': 'None',
+  'annotation.ownerOption': '{layer}: {name}',
+  'annotation.linkedTo': '↳ of {name}',
+  'annotation.linkedHeading': 'Linked',
+  'annotation.goToAnnotation': 'Go to annotation {name}',
+  'annotation.showLayer': 'Show layer {layer}',
+  'annotation.inheritedHeading': 'Inherited',
+  'annotation.inheritedFrom': 'inherited from {name}',
+  'annotation.goToMarking': 'Go to {name}',
 
   'view.canvas': 'Canvas',
   'view.list': 'List',
