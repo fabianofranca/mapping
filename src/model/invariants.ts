@@ -22,6 +22,10 @@ export type InvariantCode =
   | 'parent-other-image'
   | 'rect-outside-parent'
   | 'hierarchy-cycle'
+  | 'missing-parent-annotation'
+  | 'annotation-parent-other-marking'
+  | 'annotation-parent-same-layer'
+  | 'annotation-cycle'
   | 'empty-key'
   | 'duplicate-key';
 
@@ -78,6 +82,7 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const images = new Map(p.images.map((image) => [image.id, image]));
   const markings = new Map(p.markings.map((m) => [m.id, m]));
+  const annotations = new Map(p.annotations.map((a) => [a.id, a]));
 
   for (const m of p.markings) {
     const image = images.get(m.imageId);
@@ -120,6 +125,30 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (!layerIds.has(a.layerId)) push('missing-layer', a.id, a.layerId);
     for (const issue of validateEntries(a.entries)) {
       if (issue) push(issue, a.id);
+    }
+    if (a.parentAnnotationId === null) continue;
+    const owner = annotations.get(a.parentAnnotationId);
+    if (!owner) {
+      push('missing-parent-annotation', a.id, a.parentAnnotationId);
+      continue;
+    }
+    if (owner.markingId !== a.markingId) {
+      push('annotation-parent-other-marking', a.id, owner.id);
+    }
+    if (owner.layerId === a.layerId) push('annotation-parent-same-layer', a.id, owner.id);
+  }
+
+  for (const a of p.annotations) {
+    // Mesma detecção de ciclo usada na hierarquia de marcações.
+    const visited = new Set<string>([a.id]);
+    let ownerId = a.parentAnnotationId;
+    while (ownerId !== null) {
+      if (visited.has(ownerId)) {
+        push('annotation-cycle', a.id);
+        break;
+      }
+      visited.add(ownerId);
+      ownerId = annotations.get(ownerId)?.parentAnnotationId ?? null;
     }
   }
 

@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "app": "mapeador-imagens",
+  "coordinateSystem": "image-pixels-exif-oriented",
+  "project": {
+    "name": "Carro",
+    "createdAt": "2026-09-01T10:00:00.000Z",
+    "updatedAt": "2026-09-20T18:30:00.000Z"
+  },
+  "layers": [
+    {
+      "id": "L1",
+      "name": "Lataria",
+      "color": "#E53935"
+    },
+    {
+      "id": "L2",
+      "name": "Vidros",
+      "color": "#1E88E5"
+    }
+  ],
+  "images": [
+    {
+      "id": "I1",
+      "file": "images/lateral.jpg",
+      "width": 4000,
+      "height": 3000,
+      "placement": {
+        "x": 0,
+        "y": 0,
+        "scale": 0.25
+      }
+    },
+    {
+      "id": "I2",
+      "file": "images/frente.jpg",
+      "width": 1000,
+      "height": 1000,
+      "placement": {
+        "x": 1050,
+        "y": 0,
+        "scale": 1
+      }
+    }
+  ],
+  "markings": [
+    {
+      "id": "M1",
+      "imageId": "I1",
+      "parentId": null,
+      "name": "Porta",
+      "rect": {
+        "x": 1000,
+        "y": 1000,
+        "width": 1000,
+        "height": 1000
+      },
+      "needsReview": false
+    },
+    {
+      "id": "M2",
+      "imageId": "I1",
+      "parentId": "M1",
+      "name": "Maçaneta",
+      "rect": {
+        "x": 1200,
+        "y": 1200,
+        "width": 400,
+        "height": 200
+      },
+      "needsReview": false
+    },
+    {
+      "id": "M3",
+      "imageId": "I1",
+      "parentId": "M2",
+      "name": "Fechadura",
+      "rect": {
+        "x": 1300,
+        "y": 1250,
+        "width": 50,
+        "height": 50
+      },
+      "needsReview": true
+    },
+    {
+      "id": "M4",
+      "imageId": "I2",
+      "parentId": null,
+      "name": null,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 100
+      },
+      "needsReview": false
+    }
+  ],
+  "annotations": [
+    {
+      "id": "A1",
+      "markingId": "M1",
+      "layerId": "L1",
+      "name": "Amassado",
+      "entries": [
+        {
+          "key": "tipo",
+          "value": "amassado"
+        },
+        {
+          "key": "gravidade",
+          "value": "média"
+        }
+      ]
+    },
+    {
+      "id": "A2",
+      "markingId": "M1",
+      "layerId": "L2",
+      "name": null,
+      "entries": [
+        {
+          "key": "tipo",
+          "value": "trinca"
+        }
+      ]
+    },
+    {
+      "id": "A3",
+      "markingId": "M2",
+      "layerId": "L1",
+      "name": null,
+      "entries": []
+    }
+  ]
+}

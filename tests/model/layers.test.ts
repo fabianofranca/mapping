@@ -49,7 +49,7 @@ describe('camadas', () => {
 
   it('exclui em cascata só as anotações da camada', () => {
     const p = sampleProject();
-    expect(layerDeletionImpact(p, 'L2')).toEqual({ annotations: 2 });
+    expect(layerDeletionImpact(p, 'L2')).toMatchObject({ annotations: 2 });
     const next = expectValid(removeLayer(p, 'L2'));
     expect(next.layers.map((l) => l.id)).toEqual(['L1']);
     expect(next.annotations.map((a) => a.id)).toEqual(['A1', 'A3']);

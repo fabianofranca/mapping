@@ -1,4 +1,5 @@
 import { fail } from './errors';
+import { annotationWithLinked } from './links';
 import { findById, moveItem, updateById } from './project';
 import type { Layer, Project } from './types';
 
@@ -72,21 +73,44 @@ export function moveLayer(p: Project, layerId: string, toIndex: number): Project
   return { ...p, layers: moveItem(p.layers, from, toIndex) };
 }
 
+/** Anotações da camada mais as vinculadas a elas (recursivamente), mesmo em outras camadas. */
+function doomedByLayer(p: Project, layerId: string): Set<string> {
+  const doomed = new Set<string>();
+  for (const a of p.annotations) {
+    if (a.layerId !== layerId) continue;
+    for (const id of annotationWithLinked(p, a.id)) doomed.add(id);
+  }
+  return doomed;
+}
+
+/**
+ * Efeito de excluir a camada: `annotations` é o total e `byLayer` a contagem por
+ * camada (inclui a própria camada e as outras atingidas pelo vínculo).
+ */
 export function layerDeletionImpact(
   p: Project,
   layerId: string,
-): { annotations: number } {
+): { annotations: number; byLayer: ReadonlyMap<string, number> } {
   findById(p.layers, layerId);
-  return { annotations: p.annotations.filter((a) => a.layerId === layerId).length };
+  const doomed = doomedByLayer(p, layerId);
+  const byLayer = new Map<string, number>();
+  for (const a of p.annotations) {
+    if (doomed.has(a.id)) byLayer.set(a.layerId, (byLayer.get(a.layerId) ?? 0) + 1);
+  }
+  return { annotations: doomed.size, byLayer };
 }
 
-/** Exclui a camada e as anotações dela. O projeto precisa manter ao menos uma camada. */
+/**
+ * Exclui a camada, as anotações dela e as vinculadas a elas em outras camadas.
+ * O projeto precisa manter ao menos uma camada.
+ */
 export function removeLayer(p: Project, layerId: string): Project {
   findById(p.layers, layerId);
   if (p.layers.length === 1) fail('last-layer');
+  const doomed = doomedByLayer(p, layerId);
   return {
     ...p,
     layers: p.layers.filter((l) => l.id !== layerId),
-    annotations: p.annotations.filter((a) => a.layerId !== layerId),
+    annotations: p.annotations.filter((a) => !doomed.has(a.id)),
   };
 }

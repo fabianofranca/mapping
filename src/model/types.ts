@@ -1,7 +1,7 @@
-// Tipos do `mapping.json` (schema v1). Ver PLAN.md, seção 4.
+// Tipos do `mapping.json` (schema v2). Ver PLAN.md, seção 4.
 // Tudo é `readonly`: o modelo é imutável e as operações sempre devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export const APP_ID = 'mapeador-imagens';
 export const COORDINATE_SYSTEM = 'image-pixels-exif-oriented';
 
@@ -28,6 +28,8 @@ export interface Layer {
 
 export interface ProjectImage {
   readonly id: string;
+  /** Rótulo editável; `null` = a app mostra o nome do arquivo. Não renomeia o arquivo. */
+  readonly name: string | null;
   readonly file: string;
   readonly width: number;
   readonly height: number;
@@ -53,6 +55,10 @@ export interface Annotation {
   readonly markingId: string;
   readonly layerId: string;
   readonly name: string | null;
+  /** `true`: a anotação também vale para todos os descendentes da marcação. */
+  readonly inherit: boolean;
+  /** Anotação "dona" (mesma marcação, outra camada, sem ciclos) ou `null`. */
+  readonly parentAnnotationId: string | null;
   readonly entries: readonly Entry[];
 }
 

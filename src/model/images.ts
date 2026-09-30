@@ -8,7 +8,7 @@ import {
   right,
 } from './geometry';
 import { topDown } from './hierarchy';
-import { findById, updateById } from './project';
+import { findById, normalizeOptionalName, updateById } from './project';
 import type { Marking, Placement, Project, ProjectImage, Rect } from './types';
 
 /** Lado maior de uma imagem recém-adicionada, em unidades do canvas. */
@@ -132,6 +132,7 @@ export function addImage(
   const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
   const image: ProjectImage = {
     id: args.id,
+    name: null,
     file: args.file,
     width: args.width,
     height: args.height,
@@ -140,6 +141,15 @@ export function addImage(
       : placementAtRight(p, scale),
   };
   return { ...p, images: [...p.images, image] };
+}
+
+/** Nome de exibição da imagem; vazio vira `null` (a app mostra o nome do arquivo). */
+export function renameImage(p: Project, imageId: string, name: string | null): Project {
+  const normalized = normalizeOptionalName(name);
+  return {
+    ...p,
+    images: updateById(p.images, imageId, (i) => ({ ...i, name: normalized })),
+  };
 }
 
 /** Define posição e escala (mover ou redimensionar). Falha se sobrepor outra imagem. */
@@ -301,6 +311,7 @@ export function replaceImage(
 
   const updated: ProjectImage = {
     id: image.id,
+    name: image.name,
     file: next.file,
     width: next.width,
     height: next.height,
