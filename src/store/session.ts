@@ -1,5 +1,5 @@
 import { effect, type ReadonlySignal } from '@preact/signals';
-import { serialize, uniqueImageFile, type Project } from '../model';
+import { isSameAspect, serialize, uniqueImageFile, type Project } from '../model';
 import { createAutoSaver, type SaveStatus } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import type { ProjectStorage } from '../storage/types';
@@ -26,6 +26,13 @@ export interface AddImagesResult {
   readonly failed: readonly string[];
 }
 
+export interface AspectChange {
+  readonly from: { readonly width: number; readonly height: number };
+  readonly to: { readonly width: number; readonly height: number };
+}
+
+export type ReplaceImageResult = 'replaced' | 'cancelled' | 'failed';
+
 /** Um projeto aberto: store com undo/redo ligado ao armazenamento. */
 export interface ProjectSession {
   readonly storage: ProjectStorage;
@@ -34,6 +41,15 @@ export interface ProjectSession {
   readonly saveStatus: ReadonlySignal<SaveStatus>;
   /** Importa as imagens: grava cada arquivo e o adiciona ao projeto (uma entrada de undo cada). */
   addImages(files: readonly File[]): Promise<AddImagesResult>;
+  /**
+   * Troca o arquivo da imagem (ou reaponta uma imagem ausente) mantendo as
+   * marcações. Com proporção diferente, pergunta antes via `confirmAspectChange`.
+   */
+  replaceImage(
+    imageId: string,
+    file: File,
+    confirmAspectChange: (change: AspectChange) => Promise<boolean>,
+  ): Promise<ReplaceImageResult>;
   readImage(path: string): Promise<Blob | null>;
   /** Grava agora o que estiver pendente (também serve para "tentar de novo"). */
   flush(): Promise<void>;
@@ -137,6 +153,37 @@ export function openSession(options: SessionOptions): ProjectSession {
         }
       }
       return { added, failed };
+    },
+
+    async replaceImage(imageId, file, confirmAspectChange) {
+      if (store.readOnly.value || !store.project.value) return 'failed';
+      let path: string | null = null;
+      try {
+        const prepared = await prepareImage(file);
+        const image = currentProject(store).images.find((i) => i.id === imageId);
+        if (!image) return 'failed';
+        const next = { width: prepared.width, height: prepared.height };
+        const sameAspect = isSameAspect(image, next);
+        if (!sameAspect) {
+          const from = { width: image.width, height: image.height };
+          if (!(await confirmAspectChange({ from, to: next }))) return 'cancelled';
+        }
+        path = uniqueImageFile(currentProject(store), safeFileName(prepared.name));
+        await storage.writeImage(path, prepared.data);
+        stored.add(path);
+        const result = actions.replaceImage(
+          imageId,
+          { file: path, ...next },
+          { confirmAspectChange: !sameAspect },
+        );
+        if (!result.ok) throw new Error(result.error);
+        return 'replaced';
+      } catch {
+        if (path && stored.delete(path)) {
+          await storage.removeImage(path).catch(() => undefined);
+        }
+        return 'failed';
+      }
     },
 
     async readImage(path) {

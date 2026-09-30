@@ -56,18 +56,50 @@ export const ptBR = {
   'editor.importFailed': 'Não foi possível importar: {names}',
   'editor.export': 'Exportar',
   'editor.exporting': 'Gerando zip…',
-  'editor.images': 'Imagens',
-  'editor.noImages': 'Nenhuma imagem ainda. Toque em "Adicionar imagens".',
-  'editor.imageMissing': 'Imagem ausente',
-  'editor.imageError': 'Não foi possível exibir',
-  'editor.dimensions': '{width} × {height} px',
-  'editor.provisional': 'Editor provisório: o canvas chega na próxima fase.',
   'editor.readOnlyNotice':
     'Este arquivo foi feito por uma versão mais nova da app e está aberto só para leitura.',
   'editor.closeUnsavedTitle': 'Fechar sem salvar?',
   'editor.closeUnsavedMessage':
     'As últimas alterações não foram salvas. Se fechar agora, elas serão perdidas.',
   'editor.closeAnyway': 'Fechar mesmo assim',
+
+  'editor.addImageShort': 'Imagem',
+  'editor.undo': 'Desfazer',
+  'editor.redo': 'Refazer',
+  'editor.fitAll': 'Enquadrar tudo',
+  'editor.menu': 'Menu',
+  'editor.closeProject': 'Fechar projeto',
+  'editor.emptyCanvas': 'Nenhuma imagem ainda. Adicione fotos para montar o canvas.',
+  'editor.canvasLabel': 'Canvas do projeto',
+  'editor.dismiss': 'Dispensar',
+
+  'panel.details': 'Detalhes',
+  'panel.nothingSelected': 'Nada selecionado',
+  'panel.empty': 'Toque ou clique numa imagem do canvas para ver os detalhes.',
+  'panel.expand': 'Mostrar detalhes',
+  'panel.collapse': 'Esconder detalhes',
+
+  'image.dimensions': '{width} × {height} px',
+  'image.missingTitle': 'Imagem ausente',
+  'image.missingMessage':
+    'O arquivo {file} não foi encontrado. As marcações continuam no lugar: reaponte a imagem para outro arquivo.',
+  'image.errorMessage':
+    'Não foi possível exibir esta imagem. Você pode trocá-la por outro arquivo.',
+  'image.replace': 'Trocar imagem',
+  'image.repoint': 'Reapontar imagem',
+  'image.delete': 'Excluir imagem',
+  'image.deleteTitle': 'Excluir imagem?',
+  'image.deleteMessage':
+    '"{file}" será removida do projeto, com {markings} marcação(ões) e {annotations} anotação(ões). Dá para desfazer.',
+  'image.aspectTitle': 'Proporção diferente',
+  'image.aspectMessage':
+    'A imagem atual tem {from} e a nova tem {to}. As marcações serão reescaladas e marcadas para revisão.',
+  'image.aspectConfirm': 'Trocar mesmo assim',
+  'image.replacing': 'Trocando imagem…',
+  'image.replaceFailed': 'Não foi possível trocar a imagem.',
+
+  'canvas.imageMissing': 'Imagem ausente',
+  'canvas.imageError': 'Não foi possível exibir',
 
   'export.title': 'Exportar projeto',
   'export.ready': '{file} está pronto.',

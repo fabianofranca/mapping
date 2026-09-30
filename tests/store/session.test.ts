@@ -115,6 +115,107 @@ describe('sessão de projeto', () => {
     ]);
   });
 
+  describe('trocar imagem', () => {
+    async function withImage(content = '400x300') {
+      const root = new MemoryDirectory('p');
+      const s = start(root);
+      session = s;
+      await s.addImages([file('a.jpg', content)]);
+      const created = s.actions.createMarking(
+        s.store.project.value?.images[0]?.id ?? '',
+        { x: 100, y: 100, width: 200, height: 100 },
+      );
+      if (!created.ok) throw new Error(created.error);
+      await s.flush();
+      const imageId = s.store.project.value?.images[0]?.id ?? '';
+      return { root, s, imageId };
+    }
+    const current = (s: ProjectSession) => {
+      const p = s.store.project.value;
+      if (!p) throw new Error('sem projeto');
+      return p;
+    };
+
+    it('mesma proporção: reescala sem perguntar e troca o arquivo', async () => {
+      const { root, s, imageId } = await withImage();
+      const confirm = vi.fn(async () => true);
+      expect(await s.replaceImage(imageId, file('b.jpg', '800x600'), confirm)).toBe(
+        'replaced',
+      );
+      expect(confirm).not.toHaveBeenCalled();
+      const p = current(s);
+      expect(p.images[0]).toMatchObject({
+        file: 'images/b.jpg',
+        width: 800,
+        height: 600,
+      });
+      expect(p.markings[0]).toMatchObject({
+        rect: { x: 200, y: 200, width: 400, height: 200 },
+        needsReview: false,
+      });
+      await s.flush();
+      expect(await root.read('images/b.jpg')).toBe('800x600');
+      expect(await root.read('images/a.jpg')).toBeNull();
+
+      // Desfazer volta ao arquivo antigo, que é restaurado no disco.
+      s.store.undo();
+      await s.flush();
+      expect(current(s).images[0]?.file).toBe('images/a.jpg');
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+    });
+
+    it('proporção diferente: pergunta e marca as marcações para revisão', async () => {
+      const { s, imageId } = await withImage();
+      const confirm = vi.fn(async () => true);
+      expect(await s.replaceImage(imageId, file('b.jpg', '400x400'), confirm)).toBe(
+        'replaced',
+      );
+      expect(confirm).toHaveBeenCalledWith({
+        from: { width: 400, height: 300 },
+        to: { width: 400, height: 400 },
+      });
+      expect(current(s).markings[0]?.needsReview).toBe(true);
+    });
+
+    it('proporção diferente recusada: não grava nem altera nada', async () => {
+      const { root, s, imageId } = await withImage();
+      const before = current(s);
+      const result = await s.replaceImage(
+        imageId,
+        file('b.jpg', '400x400'),
+        async () => false,
+      );
+      expect(result).toBe('cancelled');
+      expect(current(s)).toBe(before);
+      expect(await root.read('images/b.jpg')).toBeNull();
+    });
+
+    it('arquivo ilegível falha sem alterar o projeto', async () => {
+      const { s, imageId } = await withImage();
+      const before = current(s);
+      expect(await s.replaceImage(imageId, file('b.jpg', 'ruim'), async () => true)).toBe(
+        'failed',
+      );
+      expect(current(s)).toBe(before);
+    });
+
+    it('reaponta uma imagem ausente', async () => {
+      const { root, s, imageId } = await withImage();
+      await root.getDirectoryHandle('images').then((d) => d.removeEntry('a.jpg'));
+      expect(await s.readImage('images/a.jpg')).toBeNull();
+      expect(
+        await s.replaceImage(imageId, file('a.jpg', '400x300'), async () => true),
+      ).toBe('replaced');
+      expect(current(s).images[0]?.file).toBe('images/a-2.jpg');
+      expect(current(s).markings[0]?.rect).toEqual({
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 100,
+      });
+    });
+  });
+
   it('com erro de gravação mostra o status e tenta de novo', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
