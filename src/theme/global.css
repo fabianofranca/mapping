@@ -138,6 +138,10 @@ body {
   border-radius: var(--radius);
 }
 
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
 .notice {
   padding: var(--space-2) var(--space-3);
   color: var(--color-warning);

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import type { LocalProjectMeta } from '../storage/local';
@@ -69,7 +69,7 @@ export function Home() {
   const onOpenFolder = async () => {
     const result = await run(openFolder);
     if (result?.kind === 'needs-setup') {
-      setName(result.handle.name);
+      setName('');
       setDialog({ kind: 'folder-setup', handle: result.handle, images: result.images });
     }
   };
@@ -104,7 +104,7 @@ export function Home() {
             class="action-card"
             disabled={busy}
             onClick={() => {
-              setName(t('project.untitled'));
+              setName('');
               setDialog({ kind: 'new' });
             }}
           >
@@ -214,7 +214,11 @@ export function Home() {
               void run(() => createLocalProject(name));
             }}
           >
-            <NameField value={name} onInput={setName} />
+            <NameField
+              value={name}
+              placeholder={t('project.untitled')}
+              onInput={setName}
+            />
           </form>
         </Dialog>
       )}
@@ -260,7 +264,7 @@ export function Home() {
                     count: dialog.images.length,
                   })}
             </p>
-            <NameField value={name} onInput={setName} />
+            <NameField value={name} placeholder={dialog.handle.name} onInput={setName} />
           </form>
         </Dialog>
       )}
@@ -296,22 +300,28 @@ export function Home() {
   );
 }
 
+/** Campo de nome: vazio usa o `placeholder` como nome (ver controller). */
 function NameField({
   value,
+  placeholder,
   onInput,
 }: {
   readonly value: string;
+  readonly placeholder: string;
   readonly onInput: (value: string) => void;
 }) {
+  const input = useRef<HTMLInputElement>(null);
+  // `autoFocus` nem sempre vale dentro de um <dialog> reaberto; foca na montagem.
+  useEffect(() => input.current?.focus(), []);
   return (
     <label class="field">
       {t('project.name')}
       <input
+        ref={input}
         type="text"
         class="input"
         value={value}
-        required
-        autoFocus
+        placeholder={placeholder}
         onInput={(e) => onInput(e.currentTarget.value)}
       />
     </label>
