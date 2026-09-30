@@ -51,7 +51,9 @@ export function MarkingPanel({
       setError(markingErrorMessage('rect-not-integer'));
       return false;
     }
-    return report(actions.setMarkingRect(marking.id, { ...marking.rect, [key]: value }));
+    // Fora dos limites, o valor é ajustado ao limite; o campo mostra o valor gravado.
+    report(actions.adjustMarkingRect(marking.id, key, value));
+    return false;
   };
 
   const candidates = parentCandidates(project, marking.id);

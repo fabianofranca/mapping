@@ -78,6 +78,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.renameMarking(p, markingId, name)),
     setMarkingRect: (markingId: string, rect: Rect) =>
       store.apply((p) => model.setMarkingRect(p, markingId, rect)),
+    /** Ajuste fino pelo painel: o valor é limitado às regras (ver `adjustMarkingRect`). */
+    adjustMarkingRect: (markingId: string, field: keyof Rect, value: number) =>
+      store.apply((p) => model.adjustMarkingRect(p, markingId, field, value)),
     moveMarking: (markingId: string, dx: number, dy: number) =>
       store.apply((p) => model.moveMarking(p, markingId, dx, dy)),
     setMarkingParent: (markingId: string, parentId: string | null) =>

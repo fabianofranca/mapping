@@ -2,10 +2,13 @@ import { fail } from './errors';
 import {
   MIN_MARKING_SIZE,
   area,
+  bottom,
   boundingBox,
+  clamp,
   containsRect,
   imagePixelRect,
   isIntegerRect,
+  right,
   translateRect,
 } from './geometry';
 import { childrenOf, depthOf, descendantIds } from './hierarchy';
@@ -161,6 +164,46 @@ export function moveMarking(
       affected.has(m.id) ? { ...m, rect: translateRect(m.rect, dx, dy) } : m,
     ),
   };
+}
+
+/**
+ * Ajuste fino de um campo do retângulo (painel de detalhes), com o valor
+ * limitado às regras em vez de rejeitado: `x`/`y` movem a marcação com os
+ * descendentes (como arrastar); `width`/`height` redimensionam mantendo o canto
+ * superior esquerdo, entre o tamanho mínimo (ou a caixa das filhas) e o pai.
+ */
+export function adjustMarkingRect(
+  p: Project,
+  markingId: string,
+  field: keyof Rect,
+  value: number,
+): Project {
+  if (!Number.isInteger(value)) fail('rect-not-integer');
+  const { rect } = findById(p.markings, markingId);
+  if (field === 'x' || field === 'y') {
+    const d = clampMarkingDelta(
+      p,
+      markingId,
+      field === 'x' ? value - rect.x : 0,
+      field === 'y' ? value - rect.y : 0,
+    );
+    return d.dx === 0 && d.dy === 0 ? p : moveMarking(p, markingId, d.dx, d.dy);
+  }
+  const { outer, inner } = markingRectLimits(p, markingId);
+  const size =
+    field === 'width'
+      ? clamp(
+          value,
+          Math.max(MIN_MARKING_SIZE, inner ? right(inner) - rect.x : 0),
+          right(outer) - rect.x,
+        )
+      : clamp(
+          value,
+          Math.max(MIN_MARKING_SIZE, inner ? bottom(inner) - rect.y : 0),
+          bottom(outer) - rect.y,
+        );
+  if (size === rect[field]) return p;
+  return setMarkingRect(p, markingId, { ...rect, [field]: size });
 }
 
 /** Pais válidos: mesma imagem, contém o retângulo, não é a própria nem descendente. */
