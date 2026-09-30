@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: Branch a publicar (para testar um PR no celular)
+        description: Branch a publicar (vazio = o escolhido em "Use workflow from")
         required: false
-        default: main
+        default: ''
 
 permissions:
   contents: read
