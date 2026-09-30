@@ -1,0 +1,65 @@
+# CLAUDE.md
+
+## Projeto
+
+Mapeador de Imagens: app web para marcar áreas retangulares em imagens, organizar em camadas e anotar com pares chave-valor, salvando tudo num `mapping.json` ao lado das imagens.
+
+**Leia o `PLAN.md` antes de qualquer tarefa.** Ele é a fonte de verdade: modelo de dados, comportamento e fases. Trabalhe **uma fase por vez**, na ordem, e marque os checkboxes concluídos no próprio PR.
+
+## Stack
+
+- Vite + TypeScript (strict) + Preact + @preact/signals
+- Konva.js (canvas), JSZip (zip), zod (validação do schema), idb (IndexedDB)
+- vite-plugin-singlefile: o build gera **um único `dist/index.html`** autocontido
+- Vitest para testes
+- Deploy: GitHub Pages via GitHub Actions
+
+## Comandos
+
+```bash
+npm run dev       # servidor de desenvolvimento
+npm run build     # gera dist/index.html
+npm test          # vitest
+npm run lint      # eslint + prettier --check
+npm run typecheck # tsc --noEmit
+```
+
+Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm test && npm run build` precisam passar.
+
+## Regras de arquitetura
+
+- `src/model/` contém só funções puras e imutáveis, sem DOM. Toda regra de negócio fica aqui e é testada.
+- Toda mutação do projeto passa por uma action do store. Nunca altere o estado diretamente num componente.
+- O estado do projeto (JSON + undo) é separado do estado da UI (seleção, visibilidade, modo, viewport).
+- Um gesto (arrastar/redimensionar) gera **uma** entrada no histórico de undo.
+- Konva fica isolado em `src/canvas/` (`CanvasController` imperativo). Componentes Preact não importam Konva, exceto `CanvasHost`. Não usar `react-konva`.
+- As coordenadas das marcações são **sempre** em pixels da imagem original. Conversões de tela/canvas ficam só em `src/canvas/`.
+- Nenhuma string de UI hardcoded: tudo via `t()` com chaves em `src/i18n/pt-BR.ts` e `src/i18n/en-US.ts`.
+- Nenhuma cor hardcoded: use as variáveis CSS do tema (claro e escuro). O canvas lê os tokens do tema.
+
+## Restrições do ambiente de execução
+
+- O `index.html` precisa funcionar em **`file://` no Chrome/Edge desktop** e hospedado no **GitHub Pages**:
+  - nada de import de módulos externos em runtime nem requisições de rede;
+  - o service worker só é registrado quando `location.protocol === 'https:'`;
+  - detecte os recursos em runtime (`showDirectoryPicker`, IndexedDB, `navigator.canShare`) e degrade com elegância.
+- **Mobile-first**: teste os layouts em 380 px de largura. Áreas de toque de pelo menos 24 px (alças) e 44 px (botões).
+- Envolva todo acesso a `localStorage`/IndexedDB em try/catch.
+
+## Código
+
+- Identificadores e nomes de arquivos em inglês. Comentários e documentação podem ser em português.
+- TypeScript strict, sem `any` (use `unknown` + validação).
+- Componentes pequenos e funcionais; lógica fora dos componentes.
+- Não adicione dependências além da stack acima sem justificar no PR.
+
+## Fluxo de trabalho
+
+- O dono do projeto usa o Claude Code **pelo celular** e não roda nada localmente.
+- Um branch e um PR por fase (ou por parte de uma fase, se ela for grande).
+- Toda descrição de PR contém:
+  1. **Resumo** do que mudou;
+  2. **Como testar no celular**: passos manuais objetivos, lembrando que o deploy do branch pode ser disparado pelo `workflow_dispatch`;
+  3. **Decisões tomadas** que não estavam no `PLAN.md`.
+- Se algo no `PLAN.md` estiver ambíguo ou for inviável, registre a dúvida no PR em vez de inventar comportamento grande. Para detalhes pequenos, decida, siga e documente.
+- A etapa 2 (especialização) está fora do escopo. Não implemente nada dela.
