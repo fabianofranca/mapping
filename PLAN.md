@@ -595,10 +595,10 @@ Problema: o texto solto sobre a foto, com a mesma cor e peso para nomes e pares,
 > - marcação `hidden` (modo Ocultar): nem borda nem cartão; `outline` (pai de marcação visível): só a borda esmaecida, **sem cartão, nome nem indicadores**; `dim`: cartão esmaecido junto com o resto;
 > - as anotações **herdadas** e **vinculadas** ("↳ herdado de", "↳ de") entram no cartão como em 12.4; o texto mostra as camadas visíveis, mesmo que a camada ativa seja a única que decide a visibilidade;
 > - a cor da borda vem de `images[].markingColor` (schema v3): o cartão usa a cor de superfície do tema e não deve depender dela.
-- [ ] Cartão com seções por camada, nomes em destaque, pares com recuo, separadores (12.4)
-- [ ] Identificação de herdadas e vinculadas no cartão
-- [ ] Texto do pai na maior área livre + testes do algoritmo
-- [ ] Conferir legibilidade nos temas claro e escuro, sobre fotos claras e escuras
+- [x] Cartão com seções por camada, nomes em destaque, pares com recuo, separadores (12.4)
+- [x] Identificação de herdadas e vinculadas no cartão
+- [x] Texto do pai na maior área livre + testes do algoritmo
+- [x] Conferir legibilidade nos temas claro e escuro, sobre fotos claras e escuras
 
 **Aceite**: com o projeto de teste (Header › Back), aproximar o zoom e ver o texto da Header na área livre e o da Back dentro dela, sem sobreposição; distinguir anotação sem nome, anotação nomeada e seus pares; distinguir as camadas sem depender da cor.
 

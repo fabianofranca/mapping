@@ -221,6 +221,8 @@ export const enUS: Dictionary = {
   'list.noAnnotations': 'No annotations in the visible layers.',
   'list.select': 'Show {name} on the canvas',
 
+  'canvas.card.untitled': 'Annotation {n}',
+  'canvas.card.inheritedFrom': '↳ inherited from {name}',
   'canvas.imageMissing': 'Missing image',
   'canvas.imageError': 'Cannot display',
 
