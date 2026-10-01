@@ -9,12 +9,13 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../i18n';
 import {
   annotationsByMarking,
+  childrenIndex,
   layerDotsByMarking,
-  layerSections,
   imageCanvasRect,
   markingVisibility,
   markingRectLimits,
   topDown,
+  type Annotation,
   type Layer,
   type LayerDot,
   type Marking,
@@ -62,7 +63,20 @@ import {
   type DragMode,
   type GestureState,
 } from './gestureMachine';
-import { bodyLines, semanticMode, type SemanticMode } from './semanticText';
+import { largestFreeRect } from './freeArea';
+import {
+  SEMANTIC_MIN_HEIGHT,
+  SEMANTIC_MIN_WIDTH,
+  cardRows,
+  cardSections,
+  layoutCard,
+  semanticMode,
+  type CardInherited,
+  type CardLabels,
+  type CardRow,
+  type SemanticMode,
+} from './semanticText';
+import { annotationLabel, markingLabel } from '../ui/labels';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import {
   EMPTY_CANVAS_RECT,
@@ -114,6 +128,30 @@ const TEXT_LINE_HEIGHT = 15;
 const TEXT_PADDING = 4;
 /** Altura da linha de cabeçalho (onde ficam o alerta, as bolinhas e o nome). */
 const TEXT_HEADER_HEIGHT = 2 * DOT_MARGIN + 2 * DOT_RADIUS;
+/** Cartão do zoom semântico (px de tela): margem na área, padding, largura máxima. */
+const CARD_MARGIN = 4;
+const CARD_PADDING = 6;
+const CARD_MAX_WIDTH = 300;
+/** Mais estreito que isso (ex: área quase toda fora da tela), o cartão não aparece. */
+const CARD_MIN_WIDTH = 120;
+const CARD_RADIUS = 6;
+/** Fundo semiopaco (cor de superfície do tema) e barra da camada à esquerda. */
+const CARD_OPACITY = 0.88;
+const CARD_BAR_WIDTH = 3;
+const CARD_BAR_GAP = 6;
+/** Recuo dos pares sob o nome da anotação. */
+const CARD_ENTRY_INDENT = 10;
+/** Herdadas: itálico e esmaecidas. */
+const CARD_INHERITED_OPACITY = 0.7;
+const CARD_FONT: Readonly<Record<CardRow['kind'], number>> = {
+  layer: 10,
+  title: 12,
+  note: 10,
+  entry: 12,
+  separator: 0,
+  more: 12,
+};
+const ELLIPSIS = '…';
 
 export interface CanvasControllerOptions {
   readonly container: HTMLDivElement;
@@ -242,8 +280,14 @@ interface MarkingNode {
   readonly more: KonvaText;
   /** Texto do zoom semântico, recortado no retângulo da marcação. */
   readonly text: Konva.Group;
-  /** Uma linha por nó; o cabeçalho é a primeira. Cresce sob demanda. */
+  /** Nome da marcação na linha de cabeçalho, ao lado das bolinhas. */
+  readonly header: KonvaText;
+  /** Fundo do cartão (cor de superfície do tema, semiopaco). */
+  readonly card: KonvaRect;
+  /** Linhas do cartão, uma por nó. Crescem sob demanda. */
   readonly lines: KonvaText[];
+  /** Barras das camadas e separadores do cartão. Crescem sob demanda. */
+  readonly shapes: KonvaRect[];
 }
 
 function intersectRects(a: Rect, b: Rect): Rect | null {
@@ -252,6 +296,38 @@ function intersectRects(a: Rect, b: Rect): Rect | null {
   const width = Math.min(a.x + a.width, b.x + b.width) - x;
   const height = Math.min(a.y + a.height, b.y + b.height) - y;
   return width > 0 && height > 0 ? { x, y, width, height } : null;
+}
+
+/** Textos do cartão do zoom semântico, no idioma atual. */
+function cardLabels(): CardLabels {
+  return {
+    untitled: (n) => t('canvas.card.untitled', { n }),
+    linkedTo: (owner) => t('annotation.linkedTo', { name: annotationLabel(owner) }),
+    inheritedFrom: (source) =>
+      t('canvas.card.inheritedFrom', { name: markingLabel(source) }),
+  };
+}
+
+/**
+ * Herdadas pela marcação: as `inherit: true` dos ancestrais, da raiz até o pai
+ * (como `getInheritedAnnotations`, mas com os índices já montados do render).
+ */
+function inheritedOf(
+  marking: Marking,
+  byId: ReadonlyMap<string, Marking>,
+  byMarking: ReadonlyMap<string, readonly Annotation[]>,
+): CardInherited[] {
+  const ancestors: Marking[] = [];
+  let parent = marking.parentId === null ? undefined : byId.get(marking.parentId);
+  while (parent && ancestors.length <= byId.size) {
+    ancestors.unshift(parent);
+    parent = parent.parentId === null ? undefined : byId.get(parent.parentId);
+  }
+  return ancestors.flatMap((source) =>
+    (byMarking.get(source.id) ?? [])
+      .filter((a) => a.inherit)
+      .map((annotation) => ({ annotation, source })),
+  );
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -577,7 +653,6 @@ export class CanvasController {
     const markings = project?.markings ?? [];
     const selection = this.ui.selection.value;
     const semantic = semanticText.value;
-    const parents = new Set(markings.map((m) => m.parentId));
     const size = this.size.value;
     const vp = this.viewport.value;
     /** Parte do canvas visível na tela, em coordenadas do canvas. */
@@ -587,7 +662,14 @@ export class CanvasController {
       width: size.width / vp.scale,
       height: size.height / vp.scale,
     };
-    const byMarking = project && semantic ? annotationsByMarking(project) : new Map();
+    const byMarking: ReadonlyMap<string, readonly Annotation[]> =
+      project && semantic ? annotationsByMarking(project) : new Map();
+    const owners = new Map(
+      semantic ? (project?.annotations ?? []).map((a) => [a.id, a]) : [],
+    );
+    const byId = new Map(markings.map((m) => [m.id, m]));
+    const children = childrenIndex(markings);
+    const labels = cardLabels();
     const lineColors = new Map(project?.images.map((i) => [i.id, i.markingColor]));
     const seen = new Set<string>();
     let index = 0;
@@ -620,19 +702,58 @@ export class CanvasController {
         lineColor ? { ...tokens, marking: lineColor } : tokens,
         zoom,
       );
+      // Ancestral de contexto (modo Ocultar): só a borda, sem cartão nem nome.
+      const enabled = semantic && visibility !== 'outline';
+      const pxPerUnit = placement.scale * zoom;
+      const screenWidth = marking.rect.width * pxPerUnit;
+      const screenHeight = marking.rect.height * pxPerUnit;
+      const bigEnough =
+        enabled &&
+        screenWidth >= SEMANTIC_MIN_WIDTH &&
+        screenHeight >= SEMANTIC_MIN_HEIGHT;
+      // Com filhas, o cartão vai na maior área livre delas (as ocultas não ocupam
+      // espaço). Entre as áreas em que o cartão cabe, a maior.
+      const kids = bigEnough
+        ? (children.get(marking.id) ?? []).filter(
+            (k) => this.visibility.get(k.id) !== 'hidden',
+          )
+        : [];
+      const area = !bigEnough
+        ? null
+        : kids.length === 0
+          ? marking.rect
+          : largestFreeRect(
+              marking.rect,
+              kids.map((k) => k.rect),
+              {
+                minWidth: SEMANTIC_MIN_WIDTH / pxPerUnit,
+                minHeight: SEMANTIC_MIN_HEIGHT / pxPerUnit,
+              },
+            );
       const mode = semanticMode({
-        enabled: semantic && visibility !== 'outline',
-        screenWidth: marking.rect.width * placement.scale * zoom,
-        screenHeight: marking.rect.height * placement.scale * zoom,
-        hasChildren: parents.has(marking.id),
+        enabled,
+        screenWidth,
+        screenHeight,
+        areaWidth: area ? area.width * pxPerUnit : null,
+        areaHeight: area ? area.height * pxPerUnit : null,
       });
+      const sections =
+        mode === 'none'
+          ? []
+          : cardSections(
+              shown,
+              byMarking.get(marking.id) ?? [],
+              inheritedOf(marking, byId, byMarking),
+            );
       this.updateSemanticText(
         node,
         marking,
         markingRect,
+        area && mode === 'full' ? markingCanvasRect(placement, area) : null,
         view,
         mode,
-        layerSections(byMarking, marking.id, shown),
+        cardRows(sections, owners, labels),
+        sections.map((section) => section.layer),
         tokens,
         zoom,
       );
@@ -655,8 +776,17 @@ export class CanvasController {
       dots,
       more: new KonvaText({ fontStyle: 'bold' }),
       text: new Konva.Group(),
+      header: new KonvaText({
+        wrap: 'none',
+        ellipsis: true,
+        fontStyle: 'bold',
+        fillAfterStrokeEnabled: true,
+      }),
+      card: new KonvaRect(),
       lines: [],
+      shapes: [],
     };
+    node.text.add(node.card, node.header);
     node.indicators.add(...dots, node.more);
     node.group.add(node.halo, node.border, node.badge, node.indicators, node.text);
     this.markingLayer.add(node.group);
@@ -777,18 +907,21 @@ export class CanvasController {
   }
 
   /**
-   * Zoom semântico: no cabeçalho, o nome (ao lado das bolinhas); nas folhas,
-   * também o nome e os pares `chave: valor` de cada camada visível, na cor
-   * dela. Marcações com filhas só têm o cabeçalho, para não cobrir as filhas.
-   * O texto é recortado no retângulo e só as linhas que cabem viram nós.
+   * Zoom semântico. No cabeçalho, o nome da marcação (ao lado das bolinhas); em
+   * `full`, também o cartão com uma seção por camada visível, dentro de `area`
+   * (o próprio retângulo ou, com filhas, a maior área livre delas). Em `header`
+   * a área é pequena demais: o nome termina com "…". Tudo é recortado na parte
+   * visível da marcação, e só as linhas que cabem viram nós.
    */
   private updateSemanticText(
     node: MarkingNode,
     marking: Marking,
     markingRect: Rect,
+    area: Rect | null,
     view: Rect,
     mode: SemanticMode,
-    sections: ReturnType<typeof layerSections>,
+    rows: readonly CardRow[],
+    sectionLayers: readonly Layer[],
     tokens: CanvasTokens,
     zoom: number,
   ): void {
@@ -800,58 +933,180 @@ export class CanvasController {
       return;
     }
     const px = (n: number) => n / zoom;
-    const left = rect.x + px(TEXT_PADDING);
     node.text.setAttrs({
       visible: true,
       clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
     });
     // Alerta e bolinhas só ocupam o cabeçalho se o canto da marcação estiver visível.
     const atCorner = rect.x === markingRect.x && rect.y === markingRect.y;
-
-    const layers = sections.map((s) => s.layer);
-    const shown = Math.min(layers.length, MAX_DOTS);
-    const extra = layers.length - MAX_DOTS;
+    // Uma seção por camada que chega à marcação: o mesmo número de bolinhas.
+    const dotCount = atCorner ? sectionLayers.length : 0;
+    const shownDots = Math.min(dotCount, MAX_DOTS);
     // O nome começa depois do alerta de revisão e das bolinhas.
     const before = atCorner && marking.needsReview ? REVIEW_BADGE_SIZE + DOT_MARGIN : 0;
-    const dots =
-      atCorner && shown > 0 ? shown * (2 * DOT_RADIUS + DOT_GAP) + DOT_MARGIN : 0;
-    const more = atCorner && extra > 0 ? 22 : 0;
+    const dotsWidth =
+      shownDots > 0 ? shownDots * (2 * DOT_RADIUS + DOT_GAP) + DOT_MARGIN : 0;
+    const more = dotCount > MAX_DOTS ? 22 : 0;
     const headerX =
-      rect.x + px(before + dots + more + (dots + more > 0 ? 0 : TEXT_PADDING));
-
-    type Line = { text: string; color: string; bold: boolean; x: number; y: number };
-    const lines: Line[] = [];
-    if (marking.name !== null) {
-      lines.push({
-        text: marking.name,
-        color: tokens.marking,
-        bold: true,
+      rect.x + px(before + dotsWidth + more + (dotsWidth + more > 0 ? 0 : TEXT_PADDING));
+    const cut = mode === 'header' && rows.length > 0;
+    const headerText =
+      marking.name !== null
+        ? cut
+          ? `${marking.name} ${ELLIPSIS}`
+          : marking.name
+        : cut
+          ? ELLIPSIS
+          : '';
+    if (headerText === '') {
+      node.header.visible(false);
+    } else {
+      node.header.setAttrs({
+        visible: true,
+        text: headerText,
         x: headerX,
         y: rect.y + px((TEXT_HEADER_HEIGHT - TEXT_FONT_SIZE) / 2),
+        width: Math.max(0, rect.x + rect.width - headerX - px(TEXT_PADDING)),
+        height: px(TEXT_LINE_HEIGHT),
+        fontSize: px(TEXT_FONT_SIZE),
+        fill: tokens.marking,
+        stroke: tokens.surface,
+        strokeWidth: 2.5 / zoom,
       });
     }
-    if (mode === 'full') {
-      const top =
-        marking.name !== null || atCorner ? TEXT_HEADER_HEIGHT + 2 : TEXT_PADDING;
-      const fit = Math.floor((rect.height * zoom - top) / TEXT_LINE_HEIGHT);
-      bodyLines(sections)
-        .slice(0, Math.max(0, fit))
-        .forEach((line, i) => {
-          lines.push({
-            text: line.text,
-            color: line.color,
-            bold: line.bold,
-            x: left,
-            y: rect.y + px(top + i * TEXT_LINE_HEIGHT),
-          });
+    const headerUsed = headerText !== '' || before + dotsWidth > 0;
+    this.updateCard(node, area, rect, headerUsed, rows, sectionLayers, tokens, zoom);
+  }
+
+  /** Cartão com fundo semiopaco: barra da camada, nomes, pares com recuo e separadores. */
+  private updateCard(
+    node: MarkingNode,
+    area: Rect | null,
+    visible: Rect,
+    headerUsed: boolean,
+    rows: readonly CardRow[],
+    sectionLayers: readonly Layer[],
+    tokens: CanvasTokens,
+    zoom: number,
+  ): void {
+    const px = (n: number) => n / zoom;
+    const hide = () => {
+      node.card.visible(false);
+      for (const line of node.lines) line.visible(false);
+      for (const shape of node.shapes) shape.visible(false);
+    };
+    const box = area ? intersectRects(area, visible) : null;
+    if (!box || rows.length === 0) {
+      hide();
+      return;
+    }
+    // O cartão não cobre a linha de cabeçalho da marcação.
+    const headerBottom = visible.y + px(TEXT_HEADER_HEIGHT + 2);
+    const top = Math.max(box.y, headerUsed ? headerBottom : box.y) + px(CARD_MARGIN);
+    const bottom = box.y + box.height - px(CARD_MARGIN);
+    const x = box.x + px(CARD_MARGIN);
+    const width = Math.min(box.width - px(2 * CARD_MARGIN), px(CARD_MAX_WIDTH));
+    const layout = layoutCard(rows, (bottom - top) * zoom - 2 * CARD_PADDING);
+    if (width < px(CARD_MIN_WIDTH) || layout.rows.length === 0) {
+      hide();
+      return;
+    }
+    node.card.setAttrs({
+      visible: true,
+      x,
+      y: top,
+      width,
+      height: px(layout.height + 2 * CARD_PADDING),
+      fill: tokens.surface,
+      opacity: CARD_OPACITY,
+      cornerRadius: px(CARD_RADIUS),
+      stroke: tokens.border,
+      strokeWidth: px(1),
+    });
+
+    const contentX = x + px(CARD_PADDING + CARD_BAR_WIDTH + CARD_BAR_GAP);
+    const contentRight = x + width - px(CARD_PADDING);
+    const rowY = (y: number) => top + px(CARD_PADDING + y);
+
+    type Shape = { x: number; y: number; width: number; height: number; fill: string };
+    const shapes: Shape[] = [];
+    // Barra vertical na cor da camada, do nome dela até a última linha da seção.
+    const spans = new Map<number, { from: number; to: number }>();
+    for (const row of layout.rows) {
+      const span = spans.get(row.section);
+      const to = row.y + row.height;
+      spans.set(row.section, { from: span?.from ?? row.y, to });
+    }
+    for (const [section, { from, to }] of spans) {
+      shapes.push({
+        x: x + px(CARD_PADDING),
+        y: rowY(from),
+        width: px(CARD_BAR_WIDTH),
+        height: px(to - from),
+        fill: sectionLayers[section]?.color ?? tokens.marking,
+      });
+    }
+    type Line = {
+      text: string;
+      x: number;
+      y: number;
+      height: number;
+      fontSize: number;
+      fontStyle: string;
+      fill: string;
+      opacity: number;
+    };
+    const lines: Line[] = [];
+    for (const row of layout.rows) {
+      if (row.kind === 'separator') {
+        shapes.push({
+          x: contentX,
+          y: rowY(row.y + row.height / 2),
+          width: Math.max(0, contentRight - contentX),
+          height: px(1),
+          fill: tokens.border,
         });
+        continue;
+      }
+      const inherited = 'inherited' in row && row.inherited;
+      const italic = inherited || (row.kind === 'title' && row.untitled);
+      const bold = row.kind === 'title' && !row.untitled;
+      const muted =
+        row.kind === 'layer' ||
+        row.kind === 'note' ||
+        row.kind === 'more' ||
+        (row.kind === 'title' && row.untitled);
+      lines.push({
+        text: row.kind === 'more' ? ELLIPSIS : row.text,
+        x: contentX + (row.kind === 'entry' ? px(CARD_ENTRY_INDENT) : 0),
+        y: rowY(row.y),
+        height: px(row.height),
+        fontSize: px(CARD_FONT[row.kind]),
+        fontStyle:
+          [italic ? 'italic' : '', bold ? 'bold' : ''].join(' ').trim() || 'normal',
+        fill: muted ? tokens.textMuted : tokens.text,
+        opacity: inherited ? CARD_INHERITED_OPACITY : 1,
+      });
     }
 
+    while (node.shapes.length < shapes.length) {
+      const shape = new KonvaRect();
+      node.shapes.push(shape);
+      node.text.add(shape);
+    }
+    node.shapes.forEach((node, i) => {
+      const shape = shapes[i];
+      if (!shape) {
+        node.visible(false);
+        return;
+      }
+      node.setAttrs({ visible: true, ...shape, cornerRadius: shape.width / 2 });
+    });
     while (node.lines.length < lines.length) {
       const line = new KonvaText({
         wrap: 'none',
         ellipsis: true,
-        fillAfterStrokeEnabled: true,
+        verticalAlign: 'middle',
       });
       node.lines.push(line);
       node.text.add(line);
@@ -864,16 +1119,8 @@ export class CanvasController {
       }
       textNode.setAttrs({
         visible: true,
-        text: line.text,
-        x: line.x,
-        y: line.y,
-        width: Math.max(0, rect.x + rect.width - line.x - px(TEXT_PADDING)),
-        height: px(TEXT_LINE_HEIGHT),
-        fontSize: px(TEXT_FONT_SIZE),
-        fontStyle: line.bold ? 'bold' : 'normal',
-        fill: line.color,
-        stroke: tokens.surface,
-        strokeWidth: 2.5 / zoom,
+        ...line,
+        width: Math.max(0, contentRight - line.x),
       });
     });
   }

@@ -222,6 +222,8 @@ export const ptBR = {
   'list.noAnnotations': 'Sem anotações nas camadas visíveis.',
   'list.select': 'Ver {name} no canvas',
 
+  'canvas.card.untitled': 'Anotação {n}',
+  'canvas.card.inheritedFrom': '↳ herdado de {name}',
   'canvas.imageMissing': 'Imagem ausente',
   'canvas.imageError': 'Não foi possível exibir',
 
