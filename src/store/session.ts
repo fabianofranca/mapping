@@ -1,4 +1,4 @@
-import { effect, type ReadonlySignal } from '@preact/signals';
+import { effect, signal, type ReadonlySignal } from '@preact/signals';
 import {
   isSameAspect,
   serialize,
@@ -8,7 +8,7 @@ import {
 } from '../model';
 import { createAutoSaver, type SaveStatus } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
-import type { ProjectStorage } from '../storage/types';
+import { backupFileName, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
 import { createProjectStore, type ProjectStore } from './history';
 import { createProjectActions, type ProjectActions } from './project';
@@ -21,6 +21,11 @@ export interface SessionOptions {
   readonly prepareImage: (file: File) => Promise<PreparedImage>;
   /** Chamado após cada gravação bem-sucedida do `mapping.json`. */
   readonly onSaved?: () => void;
+  /**
+   * O projeto foi migrado de um schema antigo: `text` é o `mapping.json` original,
+   * guardado com `writeBackup` antes do primeiro salvamento (que o sobrescreve).
+   */
+  readonly migratedFrom?: { readonly version: number; readonly text: string };
   readonly autosaveDelay?: number;
   readonly now?: () => string;
   readonly newId?: () => string;
@@ -50,6 +55,8 @@ export interface ProjectSession {
   readonly store: ProjectStore;
   readonly actions: ProjectActions;
   readonly saveStatus: ReadonlySignal<SaveStatus>;
+  /** Versão de origem, depois que o backup do original pré-migração foi gravado. */
+  readonly backupSaved: ReadonlySignal<number | null>;
   /** Importa as imagens: grava cada arquivo e o adiciona ao projeto (uma entrada de undo cada). */
   addImages(files: readonly File[], options?: AddImagesOptions): Promise<AddImagesResult>;
   /**
@@ -94,6 +101,9 @@ export function openSession(options: SessionOptions): ProjectSession {
   // Cópias de `specs/` gravadas (caminho → texto). O conteúdo vive no projeto, então
   // o desfazer de aplicar/remover especialização só precisa regravar ou apagar.
   const writtenSpecs = specFiles(options.project);
+  // Original pré-migração ainda não guardado: o primeiro salvamento grava antes.
+  let pendingBackup = options.migratedFrom ?? null;
+  const backupSaved = signal<number | null>(null);
 
   /**
    * Grava o projeto: restaura imagens que voltaram (undo) e grava as cópias de
@@ -104,6 +114,16 @@ export function openSession(options: SessionOptions): ProjectSession {
   const persist = async () => {
     const p = store.project.value;
     if (!p) return;
+    if (pendingBackup) {
+      // Se o backup falhar, o salvamento falha junto: o original não é sobrescrito.
+      const date = options.now ? new Date(options.now()) : new Date();
+      await storage.writeBackup(
+        backupFileName(pendingBackup.version, date),
+        pendingBackup.text,
+      );
+      backupSaved.value = pendingBackup.version;
+      pendingBackup = null;
+    }
     const referenced = new Set(p.images.map((i) => i.file));
     for (const file of referenced) {
       const blob = trash.get(file);
@@ -149,6 +169,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     store,
     actions,
     saveStatus: saver.status,
+    backupSaved,
 
     async addImages(files, addOptions = {}) {
       const added: string[] = [];

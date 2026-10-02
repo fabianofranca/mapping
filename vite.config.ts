@@ -3,6 +3,10 @@ import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { readFileSync } from 'node:fs';
+import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
+
+/** `VITE_CHANNEL=preview` no build do branch publicado em /preview/ (deploy.yml). */
+const channel: BuildChannel = process.env.VITE_CHANNEL === 'preview' ? 'preview' : 'main';
 
 /** FNV-1a de 32 bits em hexadecimal: basta para distinguir um build do outro. */
 function hash(text: string): string {
@@ -16,7 +20,8 @@ function hash(text: string): string {
 /**
  * Publica o service worker (`pwa/sw.js`) carimbado com um hash do index.html:
  * cada build novo muda o sw.js, e é isso que faz o navegador detectar a
- * "nova versão". Fica fora de `public/` para poder ser carimbado.
+ * "nova versão". Publica também o manifest do canal (o do preview tem outro
+ * nome). Ficam fora de `public/` para poderem ser transformados.
  */
 function serviceWorker(): Plugin {
   return {
@@ -28,11 +33,21 @@ function serviceWorker(): Plugin {
         const html = bundle['index.html'];
         if (html?.type !== 'asset')
           throw new Error('index.html não encontrado no bundle');
-        const source = readFileSync('pwa/sw.js', 'utf8').replaceAll(
-          '__BUILD_ID__',
+        const sw = stampServiceWorker(
+          readFileSync('pwa/sw.js', 'utf8'),
           hash(String(html.source)),
+          channel,
         );
-        this.emitFile({ type: 'asset', fileName: 'sw.js', source });
+        this.emitFile({ type: 'asset', fileName: 'sw.js', source: sw });
+        const manifest = channelManifest(
+          readFileSync('pwa/manifest.webmanifest', 'utf8'),
+          channel,
+        );
+        this.emitFile({
+          type: 'asset',
+          fileName: 'manifest.webmanifest',
+          source: manifest,
+        });
       },
     },
   };

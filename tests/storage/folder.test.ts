@@ -40,6 +40,17 @@ describe('FolderStorage', () => {
     await storage.removeSpec('specs/sdui.json');
   });
 
+  it('guarda backups do mapping em backups/ sem tocar no mapping.json', async () => {
+    const root = new MemoryDirectory('projeto');
+    const storage = createFolderStorage(root);
+    await storage.saveMapping('{"schemaVersion":1}');
+    await storage.writeBackup('mapping.v1.20260930-120000.json', '{"schemaVersion":1}');
+    expect(await root.read('backups/mapping.v1.20260930-120000.json')).toBe(
+      '{"schemaVersion":1}',
+    );
+    expect(await root.read('mapping.json')).toBe('{"schemaVersion":1}');
+  });
+
   it('rejeita caminhos com ..', async () => {
     const storage = createFolderStorage(new MemoryDirectory('projeto'));
     await expect(storage.writeImage('../fora.jpg', new Blob(['x']))).rejects.toThrow();

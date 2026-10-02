@@ -1,4 +1,10 @@
-import { IMAGES_DIR, MAPPING_FILE, isImageFileName, type ProjectStorage } from './types';
+import {
+  BACKUPS_DIR,
+  IMAGES_DIR,
+  MAPPING_FILE,
+  isImageFileName,
+  type ProjectStorage,
+} from './types';
 
 // Subconjunto da File System Access API usado pela app. Tipado à parte para
 // não depender das definições do navegador e para permitir mocks nos testes.
@@ -154,6 +160,7 @@ export function createFolderStorage(root: DirectoryHandleLike): ProjectStorage {
     },
     writeSpec: (path, text) => writeFile(root, path, text),
     removeSpec: (path) => removeFile(root, path),
+    writeBackup: (name, text) => writeFile(root, `${BACKUPS_DIR}/${name}`, text),
   };
 }
 

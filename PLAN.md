@@ -1337,9 +1337,9 @@ Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E
 ### 14.4 Fases
 
 #### Fase 18 — Segurança do fluxo (P0)
-- [ ] `ci.yml` em PR com lint, typecheck, testes e build; lint também no `deploy.yml`
-- [ ] Preview em `/preview/` com `VITE_CHANNEL=preview`: armazenamento separado, faixa de aviso, manifest próprio
-- [ ] Backup do `mapping.json` original antes do primeiro salvamento após migração (pasta e local) + aviso
+- [x] `ci.yml` em PR com lint, typecheck, testes e build; lint também no `deploy.yml`
+- [x] Preview em `/preview/` com `VITE_CHANNEL=preview`: armazenamento separado, faixa de aviso, manifest próprio
+- [x] Backup do `mapping.json` original antes do primeiro salvamento após migração (pasta e local) + aviso
 
 **Aceite**: um PR com erro de lint fica vermelho; publicar um branch pelo `workflow_dispatch` mantém a versão principal intacta e o preview não enxerga os projetos locais dela; abrir o projeto de teste v1 (`tests/fixtures/mapping-v1.json`) numa pasta cria o backup e só então grava o v4.
 

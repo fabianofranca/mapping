@@ -107,13 +107,19 @@ export async function refreshLocalProjects(): Promise<void> {
 function start(
   storage: ProjectStorage,
   project: Project,
-  options: { readOnly: boolean; localId: string | null; unexported: boolean },
+  options: {
+    readOnly: boolean;
+    localId: string | null;
+    unexported: boolean;
+    migratedFrom?: { version: number; text: string };
+  },
 ): void {
   const unexported = signal(options.unexported);
   const session = openSession({
     storage,
     project,
     readOnly: options.readOnly,
+    migratedFrom: options.migratedFrom,
     prepareImage,
     onSaved: () => {
       unexported.value = true;
@@ -155,6 +161,10 @@ async function openFromStorage(
     readOnly: result.readOnly,
     localId,
     unexported: meta?.unexported ?? false,
+    // Schema antigo: o original vai para `backups/` antes do primeiro salvamento.
+    ...(result.migratedFrom !== null
+      ? { migratedFrom: { version: result.migratedFrom, text } }
+      : {}),
   });
   return ok(undefined);
 }
