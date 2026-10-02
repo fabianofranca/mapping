@@ -1,5 +1,6 @@
 import { findById } from './project';
-import { isRefAccepted, parseRef, resolveRef, tableRows } from './refs';
+import { memoByProject, projectIndex } from './projectIndex';
+import { isTargetAccepted, parseRef, resolveRef, tableRows } from './refs';
 import { fieldOf, isAllowedOwner, specLayerOf, typeOfAnnotation } from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Project } from './types';
@@ -41,7 +42,8 @@ export interface AnnotationIssue {
 
 function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
   const issues: AnnotationIssue[] = [];
-  const layer = p.layers.find((l) => l.id === a.layerId);
+  const index = projectIndex(p);
+  const layer = index.layers.get(a.layerId);
 
   if (!a.type || !a.values) {
     if (layer?.spec) issues.push({ code: 'layer-mismatch' });
@@ -103,9 +105,10 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
     }
     if (field.type === 'ref') {
       const ref = parseRef(value);
+      const target = ref && resolveRef(p, ref);
       if (!ref) issues.push({ code: 'invalid-value', key });
-      else if (!resolveRef(p, ref)) issues.push({ code: 'broken-ref', key });
-      else if (!isRefAccepted(p, a.id, field.accepts, ref)) {
+      else if (!target) issues.push({ code: 'broken-ref', key });
+      else if (ref.annotationId === a.id || !isTargetAccepted(target, field.accepts)) {
         issues.push({ code: 'ref-not-accepted', key });
       }
       continue;
@@ -117,7 +120,7 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
   if (a.parentAnnotationId === null) {
     if (type.requiresOwner) issues.push({ code: 'missing-owner' });
   } else {
-    const owner = p.annotations.find((x) => x.id === a.parentAnnotationId);
+    const owner = index.annotations.get(a.parentAnnotationId);
     // Dono de tipo inexistente já aparece como pendência nele mesmo.
     const ownerUnknown = owner?.type != null && typeOfAnnotation(p, owner) === null;
     if (owner && !ownerUnknown && !isAllowedOwner(p, a.type, owner)) {
@@ -129,15 +132,26 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
 
 /** Pendências da anotação; vazio = completa. */
 export function getAnnotationIssues(p: Project, annotationId: string): AnnotationIssue[] {
-  return annotationIssues(p, findById(p.annotations, annotationId));
+  const issues = projectIssues(p).get(findById(p.annotations, annotationId).id);
+  return issues ? [...issues] : [];
 }
 
 /** Pendências de todas as anotações incompletas (filtro "Incompletas" e alertas). */
 export function getProjectIssues(p: Project): Map<string, AnnotationIssue[]> {
-  const result = new Map<string, AnnotationIssue[]>();
+  return new Map([...projectIssues(p)].map(([id, issues]) => [id, [...issues]]));
+}
+
+/**
+ * Pendências do projeto, calculadas uma vez por versão do projeto (o mesmo mapa
+ * para a mesma versão). Só leitura: use `getProjectIssues` para uma cópia.
+ */
+export const projectIssues: (
+  p: Project,
+) => ReadonlyMap<string, readonly AnnotationIssue[]> = memoByProject((p) => {
+  const result = new Map<string, readonly AnnotationIssue[]>();
   for (const a of p.annotations) {
     const issues = annotationIssues(p, a);
     if (issues.length > 0) result.set(a.id, issues);
   }
   return result;
-}
+});

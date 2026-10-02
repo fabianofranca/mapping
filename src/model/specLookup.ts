@@ -1,3 +1,4 @@
+import { projectIndex, typeKey } from './projectIndex';
 import type { Spec, SpecAnnotationType, SpecField, SpecLayer } from './spec';
 import type {
   Annotation,
@@ -13,7 +14,7 @@ export function getSpecialization(
   p: Project,
   specId: string,
 ): ProjectSpecialization | null {
-  return p.specializations.find((s) => s.id === specId) ?? null;
+  return projectIndex(p).specializations.get(specId) ?? null;
 }
 
 /** Conteúdo da especialização aplicada; `null` se não aplicada ou arquivo ausente. */
@@ -37,8 +38,7 @@ export function findTypeInSpec(spec: Spec, typeId: string): ResolvedType | null 
 }
 
 export function findSpecType(p: Project, ref: AnnotationTypeRef): ResolvedType | null {
-  const spec = getSpec(p, ref.specId);
-  return spec ? findTypeInSpec(spec, ref.typeId) : null;
+  return projectIndex(p).types.get(typeKey(ref.specId, ref.typeId)) ?? null;
 }
 
 /** Tipo da anotação; `null` se ela é livre ou o tipo não existe mais. */
@@ -49,8 +49,8 @@ export function typeOfAnnotation(p: Project, a: Annotation): ResolvedType | null
 /** Camada de origem da camada do projeto; `null` para camada livre ou spec ausente. */
 export function specLayerOf(p: Project, layer: Layer): SpecLayer | null {
   if (!layer.spec) return null;
-  const { layerId } = layer.spec;
-  return getSpec(p, layer.spec.specId)?.layers.find((l) => l.id === layerId) ?? null;
+  const { specId, layerId } = layer.spec;
+  return projectIndex(p).specLayers.get(typeKey(specId, layerId)) ?? null;
 }
 
 /** Tipos que podem ser criados na camada do projeto (vazio para camada livre). */
@@ -58,7 +58,7 @@ export function layerAnnotationTypes(
   p: Project,
   layerId: string,
 ): readonly SpecAnnotationType[] {
-  const layer = p.layers.find((l) => l.id === layerId);
+  const layer = projectIndex(p).layers.get(layerId);
   return (layer && specLayerOf(p, layer)?.annotationTypes) ?? [];
 }
 

@@ -1,6 +1,7 @@
 import { fail } from './errors';
 import { annotationWithLinked } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
+import { projectIndex } from './projectIndex';
 import {
   DEFAULT_LABEL_TEXTS,
   isRecord,
@@ -89,8 +90,8 @@ export function validTypedOwners(
   markingId: string,
   type: AnnotationTypeRef,
 ): Annotation[] {
-  return p.annotations.filter(
-    (a) => a.markingId === markingId && isAllowedOwner(p, type, a),
+  return (projectIndex(p).annotationsByMarking.get(markingId) ?? []).filter((a) =>
+    isAllowedOwner(p, type, a),
   );
 }
 

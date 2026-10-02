@@ -1,5 +1,5 @@
 import { t } from '../i18n';
-import { childrenIndex, type Marking, type Project } from '../model';
+import { projectIndex, type Marking, type Project } from '../model';
 import type { Selection } from '../store/ui';
 import { imageLabel, markingLabel } from './labels';
 
@@ -12,7 +12,7 @@ interface MarkingTreeProps {
 /** Árvore Imagem → marcações aninhadas. Tocar num item o seleciona. */
 export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) {
   if (project.images.length === 0) return <p class="muted">{t('panel.treeEmpty')}</p>;
-  const index = childrenIndex(project.markings);
+  const index = projectIndex(project).children;
   const isSelected = (kind: 'image' | 'marking', id: string) =>
     selection?.kind === kind && selection.id === id;
 

@@ -1,21 +1,17 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
-import { buildListing, type Layer, type Project } from '../model';
-import {
-  resolveActiveLayerId,
-  toggleLayerVisible,
-  type EditorUi,
-  type Selection,
-} from '../store/ui';
+import type { Project } from '../model';
+import type { EditorDerived } from '../store/derived';
+import { toggleLayerVisible, type EditorUi, type Selection } from '../store/ui';
 import { AnnotationLines, AnnotationTitle, IssueBadge } from './AnnotationSummary';
 import { imageLabel, markingLabel, markingPath } from './labels';
-import { annotationDisplayName, projectIssues } from './typedText';
+import { annotationDisplayName } from './typedText';
 
 interface ListViewProps {
   readonly project: Project;
   readonly ui: EditorUi;
-  /** Camadas visíveis (a lista respeita esse filtro). */
-  readonly layers: readonly Layer[];
+  /** Camadas visíveis (a lista respeita esse filtro) e os dados já montados da lista. */
+  readonly derived: EditorDerived;
   readonly selection: Selection;
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }
@@ -25,14 +21,12 @@ interface ListViewProps {
  * seus pares. Tocar num item seleciona a marcação. Os filtros são as camadas
  * visíveis (compartilhadas com o canvas e o painel) e "marcações sem anotação".
  */
-export function ListView({ project, ui, layers, selection, onSelect }: ListViewProps) {
+export function ListView({ project, ui, derived, selection, onSelect }: ListViewProps) {
   const showEmpty = ui.listShowEmpty.value;
   const incompleteOnly = ui.listIncompleteOnly.value;
-  const listing = buildListing(project, layers, {
-    showEmpty,
-    onlyAnnotations: incompleteOnly ? new Set(projectIssues(project).keys()) : undefined,
-  });
-  const activeId = resolveActiveLayerId(project, ui.activeLayer.value);
+  const layers = derived.visibleLayers.value;
+  const listing = derived.listing.value;
+  const activeId = derived.activeLayerId.value;
   const selectedId = selection?.kind === 'marking' ? selection.id : null;
   const root = useRef<HTMLDivElement>(null);
 

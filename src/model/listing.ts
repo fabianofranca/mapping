@@ -1,4 +1,4 @@
-import { childrenIndex } from './hierarchy';
+import { projectIndex } from './projectIndex';
 import type { Annotation, Layer, Marking, Project, ProjectImage } from './types';
 
 /** Anotações de uma marcação numa camada. */
@@ -107,11 +107,15 @@ export function buildListing(
   layers: readonly Layer[],
   options: ListingOptions,
 ): ListedImage[] {
-  const children = childrenIndex(p.markings);
+  const index = projectIndex(p);
+  const children = index.children;
   const only = options.onlyAnnotations;
-  const byMarking = annotationsByMarking(
-    only ? { ...p, annotations: p.annotations.filter((a) => only.has(a.id)) } : p,
-  );
+  const byMarking = only
+    ? annotationsByMarking({
+        ...p,
+        annotations: p.annotations.filter((a) => only.has(a.id)),
+      })
+    : index.annotationsByMarking;
   const showEmpty = options.showEmpty && !only;
   const roots = children.get(null) ?? [];
   const result: ListedImage[] = [];

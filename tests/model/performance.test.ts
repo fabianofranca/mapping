@@ -3,11 +3,20 @@ import {
   addAnnotation,
   buildListing,
   deserialize,
+  getAnnotationIssues,
+  getBacklinks,
+  layerDotsByMarking,
+  markingVisibility,
   moveMarking,
+  projectIndex,
+  projectIssues,
+  refsOf,
   serialize,
   validateProject,
+  type Project,
 } from '../../src/model';
 import { buildLargeProject } from './largeProject';
+import { buildLargeTypedProject } from './largeTypedProject';
 
 // Limites folgados (o CI e o celular são mais lentos que o desktop): o objetivo é
 // pegar regressões grosseiras (algo virar O(n²) ou pior) com 20 imagens e 500 marcações.
@@ -61,5 +70,61 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
       }),
     );
     expect(annotated.ms).toBeLessThan(BUDGET_MS);
+  });
+});
+
+// Orçamentos por quadro (PLAN.md 14.3): o que o canvas, o painel e a lista leem a
+// cada mudança de projeto. A mediana de várias rodadas, cada uma numa versão
+// nova do projeto (sem o índice nem as pendências já calculados).
+const FRAME_BUDGET_MS = 8;
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)] ?? 0;
+}
+
+function medianMs(fn: (p: Project) => unknown, p: Project, runs = 7): number {
+  fn({ ...p }); // Aquece o JIT.
+  return median(Array.from({ length: runs }, () => time(() => fn({ ...p })).ms));
+}
+
+describe('projeto grande com tipadas e referências', () => {
+  const project = buildLargeTypedProject();
+  const typed = project.annotations.filter((a) => a.type !== null);
+  const refs = project.annotations.flatMap((a) => refsOf(project, a));
+
+  it('o fixture tem o tamanho pedido e é válido', () => {
+    expect(project.markings).toHaveLength(500);
+    expect(project.annotations).toHaveLength(1500);
+    expect(typed).toHaveLength(750);
+    expect(refs).toHaveLength(500);
+    expect(validateProject(project)).toEqual([]);
+    const issues = projectIssues(project);
+    expect([...issues.values()].flat().map((i) => i.code)).toEqual(
+      expect.arrayContaining(['required-empty', 'broken-ref']),
+    );
+  });
+
+  it(`índice + pendências + indicadores + visibilidade em menos de ${FRAME_BUDGET_MS} ms`, () => {
+    const ms = medianMs((p) => {
+      projectIndex(p);
+      projectIssues(p);
+      const dots = layerDotsByMarking(p, p.layers);
+      const active = layerDotsByMarking(p, p.layers.slice(0, 1));
+      markingVisibility(p, active, 'hide', null);
+      return dots;
+    }, project);
+    expect(ms).toBeLessThan(FRAME_BUDGET_MS);
+  });
+
+  it('consultas repetidas na mesma versão reaproveitam o índice', () => {
+    projectIssues(project);
+    const { ms } = time(() => {
+      for (const a of project.annotations) {
+        getAnnotationIssues(project, a.id);
+        getBacklinks(project, a.id);
+      }
+    });
+    expect(ms).toBeLessThan(FRAME_BUDGET_MS * 4);
   });
 });

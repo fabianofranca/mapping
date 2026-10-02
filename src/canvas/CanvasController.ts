@@ -1,6 +1,6 @@
 // Canvas imperativo com Konva. Observa os signals do projeto e da UI, desenha e
 // transforma os gestos em actions. Único lugar (com `CanvasHost`) que conhece o Konva.
-import { effect, signal, untracked } from '@preact/signals';
+import { computed, effect, signal, untracked } from '@preact/signals';
 import Konva from 'konva/lib/Core';
 import { Circle as KonvaCircle } from 'konva/lib/shapes/Circle';
 import { Image as KonvaImage } from 'konva/lib/shapes/Image';
@@ -9,13 +9,11 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../i18n';
 import {
   annotationTitle,
-  annotationsByMarking,
-  childrenIndex,
   rawValueLines,
-  layerDotsByMarking,
   imageCanvasRect,
-  markingVisibility,
   markingRectLimits,
+  memoByProject,
+  projectIndex,
   topDown,
   type Annotation,
   type Layer,
@@ -27,15 +25,16 @@ import {
   type ProjectImage,
   type Rect,
 } from '../model';
+import type { EditorDerived } from '../store/derived';
 import type { DisplayImage, DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
-import { markingDisplay, semanticText } from '../store/settings';
+import { locale, semanticText, type Locale } from '../store/settings';
 import {
-  resolveActiveLayerId,
   resolveSelection,
-  visibleLayers,
+  type EditorMode,
   type EditorUi,
+  type Selection,
 } from '../store/ui';
 import {
   CORNERS,
@@ -79,12 +78,7 @@ import {
   type SemanticMode,
 } from './semanticText';
 import { annotationLabel, markingLabel } from '../ui/labels';
-import {
-  annotationDisplayName,
-  displayLines,
-  issuesOf,
-  projectIssues,
-} from '../ui/typedText';
+import { annotationDisplayName, displayLines, issuesOf } from '../ui/typedText';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import {
   EMPTY_CANVAS_RECT,
@@ -172,6 +166,7 @@ export interface CanvasControllerOptions {
   readonly actions: ProjectActions;
   readonly display: DisplayImages<ImageBitmap>;
   readonly ui: EditorUi;
+  readonly derived: EditorDerived;
 }
 
 /** Posição exibida durante um gesto de imagem (segue o dedo, mesmo se inválida). */
@@ -303,6 +298,15 @@ interface MarkingNode {
   readonly lines: KonvaText[];
   /** Barras das camadas e separadores do cartão. Crescem sob demanda. */
   readonly shapes: KonvaRect[];
+  /** Entradas do último `updateMarkingNode`: iguais, o nó já está certo. */
+  drawn: readonly unknown[] | null;
+}
+
+const NO_LAYER_DOTS: readonly LayerDot[] = [];
+
+/** Mesmos itens (por referência) na mesma ordem. */
+function sameInputs(a: readonly unknown[] | null, b: readonly unknown[]): boolean {
+  return a !== null && a.length === b.length && a.every((item, i) => item === b[i]);
 }
 
 function intersectRects(a: Rect, b: Rect): Rect | null {
@@ -341,21 +345,6 @@ function cardLabels(project: Project | null): CardLabels {
 }
 
 /**
- * Marcações com alguma anotação incompleta nas camadas dadas (as visíveis): elas
- * ganham um pequeno alerta junto às bolinhas.
- */
-function incompleteMarkings(project: Project, layers: readonly Layer[]): Set<string> {
-  const shown = new Set(layers.map((l) => l.id));
-  const result = new Set<string>();
-  const byId = new Map(project.annotations.map((a) => [a.id, a]));
-  for (const id of projectIssues(project).keys()) {
-    const a = byId.get(id);
-    if (a && shown.has(a.layerId)) result.add(a.markingId);
-  }
-  return result;
-}
-
-/**
  * Herdadas pela marcação: as `inherit: true` dos ancestrais, da raiz até o pai
  * (como `getInheritedAnnotations`, mas com os índices já montados do render).
  */
@@ -376,6 +365,101 @@ function inheritedOf(
       .map((annotation) => ({ annotation, source })),
   );
 }
+
+/** Marcações de cima para baixo na hierarquia, uma vez por versão do projeto. */
+const topDownMarkings = memoByProject((p: Project) => topDown(p.markings));
+
+/** Conteúdo do cartão do zoom semântico de uma marcação. */
+interface MarkingCard {
+  readonly rows: readonly CardRow[];
+  /** Camada de cada seção, na ordem das seções. */
+  readonly layers: readonly Layer[];
+}
+
+const NO_CARD: MarkingCard = { rows: [], layers: [] };
+
+/**
+ * Cartões montados sob demanda e guardados enquanto o projeto, as camadas
+ * visíveis e o idioma não mudam: pan e zoom reaproveitam todos.
+ */
+function cardCache(
+  project: Project | null,
+  shown: readonly Layer[],
+  byMarking: ReadonlyMap<string, readonly Annotation[]>,
+): (marking: Marking) => MarkingCard {
+  if (!project) return () => NO_CARD;
+  const index = projectIndex(project);
+  const labels = cardLabels(project);
+  const cache = new Map<string, MarkingCard>();
+  return (marking) => {
+    let card = cache.get(marking.id);
+    if (!card) {
+      const sections = cardSections(
+        shown,
+        byMarking.get(marking.id) ?? [],
+        inheritedOf(marking, index.markings, byMarking),
+      );
+      card = {
+        rows: cardRows(sections, index.annotations, labels),
+        layers: sections.map((section) => section.layer),
+      };
+      cache.set(marking.id, card);
+    }
+    return card;
+  };
+}
+
+/** Tudo o que um quadro desenha. Mudar qualquer item agenda um novo quadro. */
+interface Frame {
+  readonly project: Project | null;
+  readonly readOnly: boolean;
+  readonly bitmaps: ReadonlyMap<string, DisplayImage<ImageBitmap>>;
+  readonly preview: ImagePreview | null;
+  readonly draft: Draft | null;
+  readonly dropTarget: DropTarget;
+  readonly grabbed: Grabbed | null;
+  readonly tokens: CanvasTokens;
+  readonly size: Size;
+  readonly viewport: Viewport;
+  readonly selection: Selection;
+  readonly mode: EditorMode;
+  readonly semantic: boolean;
+  readonly locale: Locale;
+  readonly shown: readonly Layer[];
+  readonly dots: ReadonlyMap<string, readonly LayerDot[]>;
+  readonly incomplete: ReadonlySet<string>;
+  readonly visibility: ReadonlyMap<string, MarkingVisibility>;
+  readonly card: (marking: Marking) => MarkingCard;
+}
+
+/** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */
+function sameFrame(a: Frame | null, b: Frame, keys: readonly (keyof Frame)[]): boolean {
+  return a !== null && keys.every((key) => a[key] === b[key]);
+}
+
+/** O que muda o desenho das imagens (o deslocamento do viewport não muda). */
+const IMAGE_KEYS = ['project', 'bitmaps', 'preview', 'tokens', 'locale'] as const;
+/** O que muda as sobreposições (seleção, alças, rascunho, alvo de soltar). */
+const OVERLAY_KEYS = [
+  'project',
+  'readOnly',
+  'preview',
+  'draft',
+  'dropTarget',
+  'grabbed',
+  'tokens',
+  'selection',
+  'mode',
+] as const;
+
+const requestFrame: (callback: () => void) => number =
+  typeof requestAnimationFrame === 'function'
+    ? (callback) => requestAnimationFrame(callback)
+    : (callback) => window.setTimeout(callback, 16);
+const cancelFrame: (id: number) => void =
+  typeof cancelAnimationFrame === 'function'
+    ? (id) => cancelAnimationFrame(id)
+    : (id) => window.clearTimeout(id);
 
 function isEditable(target: EventTarget | null): boolean {
   return (
@@ -401,6 +485,7 @@ export class CanvasController {
   private readonly actions: ProjectActions;
   private readonly display: DisplayImages<ImageBitmap>;
   private readonly ui: EditorUi;
+  private readonly derived: EditorDerived;
 
   private readonly viewport = signal<Viewport>({ x: 0, y: 0, scale: 1 });
   private readonly size = signal<Size>({ width: 0, height: 0 });
@@ -421,8 +506,43 @@ export class CanvasController {
   private readonly handles = new Map<Corner, KonvaRect>();
   private readonly nodes = new Map<string, ImageNode>();
   private readonly markingNodes = new Map<string, MarkingNode>();
-  /** Visibilidade de cada marcação no último desenho (modo de exibição). */
-  private visibility: ReadonlyMap<string, MarkingVisibility> = new Map();
+  /** Cartões do zoom semântico; refeitos só quando o projeto, as camadas ou o idioma mudam. */
+  private readonly cards = computed(() => {
+    // `t()` dos rótulos lê o idioma só quando o cartão é montado: assina aqui.
+    void locale.value;
+    return cardCache(
+      this.store.project.value,
+      this.derived.visibleLayers.value,
+      this.derived.annotationsByMarking.value,
+    );
+  });
+  /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
+  private readonly frame = computed((): Frame => ({
+    project: this.store.project.value,
+    readOnly: this.store.readOnly.value,
+    bitmaps: this.display.images.value,
+    preview: this.preview.value,
+    draft: this.draft.value,
+    dropTarget: this.dropTarget.value,
+    grabbed: this.grabbed.value,
+    tokens: this.tokens.value,
+    size: this.size.value,
+    viewport: this.viewport.value,
+    selection: this.ui.selection.value,
+    mode: this.ui.mode.value,
+    semantic: semanticText.value,
+    locale: locale.value,
+    shown: this.derived.visibleLayers.value,
+    dots: this.derived.layerDots.value,
+    incomplete: this.derived.incompleteMarkings.value,
+    visibility: this.derived.markingVisibility.value,
+    card: this.cards.value,
+  }));
+  /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
+  private drawn: Frame | null = null;
+  /** Placements do último quadro (com a prévia do gesto aplicada). */
+  private placements: ReadonlyMap<string, Placement> = new Map();
+  private frameRequest: number | null = null;
 
   private readonly pointers = new Map<number, Point>();
   private gesture: Gesture | null = null;
@@ -441,6 +561,7 @@ export class CanvasController {
     this.actions = options.actions;
     this.display = options.display;
     this.ui = options.ui;
+    this.derived = options.derived;
 
     this.stage = new Konva.Stage({ container: this.container, width: 1, height: 1 });
     this.stage.add(this.imageLayer, this.markingLayer, this.overlayLayer);
@@ -460,7 +581,15 @@ export class CanvasController {
     this.cleanups.push(
       watchTheme(() => (this.tokens.value = readCanvasTokens())),
       effect(() => this.loadBitmaps()),
-      effect(() => this.render()),
+      // O effect só agenda: várias mudanças no mesmo quadro geram um desenho só.
+      effect(() => {
+        void this.frame.value;
+        this.requestRender();
+      }),
+      () => {
+        if (this.frameRequest !== null) cancelFrame(this.frameRequest);
+        this.frameRequest = null;
+      },
     );
   }
 
@@ -541,18 +670,43 @@ export class CanvasController {
     });
   }
 
-  private render(): void {
-    const project = this.store.project.value;
-    const bitmaps = this.display.images.value;
-    const preview = this.preview.value;
-    const tokens = this.tokens.value;
-    const size = this.size.value;
-    const v = this.viewport.value;
+  private requestRender(): void {
+    if (this.frameRequest !== null) return;
+    this.frameRequest = requestFrame(() => {
+      this.frameRequest = null;
+      this.render(this.frame.peek());
+    });
+  }
+
+  /**
+   * Desenha o quadro. Pan e zoom só mudam o viewport: as imagens são refeitas só
+   * quando muda a escala (espessuras e textos), e as marcações reaproveitam os
+   * dados derivados e os cartões; só o recorte da parte visível é refeito.
+   */
+  private render(frame: Frame): void {
+    const last = this.drawn;
+    this.drawn = frame;
+    const { project, size, tokens } = frame;
+    const v = frame.viewport;
+    const scaleChanged = last?.viewport.scale !== v.scale;
 
     this.stage.size({ width: Math.max(1, size.width), height: Math.max(1, size.height) });
     this.stage.position({ x: v.x, y: v.y });
     this.stage.scale({ x: v.scale, y: v.scale });
 
+    if (scaleChanged || !sameFrame(last, frame, IMAGE_KEYS)) this.renderImages(frame);
+    this.renderMarkings(frame);
+    if (scaleChanged || !sameFrame(last, frame, OVERLAY_KEYS)) {
+      this.renderDraft(frame.draft, this.placements, tokens, v.scale);
+      this.renderSelection(frame, this.placements, v.scale);
+      this.renderDropTarget(project, frame.dropTarget, tokens, v.scale);
+    }
+    this.stage.batchDraw();
+  }
+
+  private renderImages(frame: Frame): void {
+    const { project, preview, bitmaps, tokens } = frame;
+    const zoom = frame.viewport.scale;
     const images = project?.images ?? [];
     const placements = new Map<string, Placement>();
     const seen = new Set<string>();
@@ -562,7 +716,7 @@ export class CanvasController {
         preview?.imageId === image.id ? preview.placement : image.placement;
       placements.set(image.id, placement);
       const node = this.nodes.get(image.id) ?? this.createNode(image.id);
-      this.updateNode(node, image, placement, bitmaps.get(image.file), tokens, v.scale);
+      this.updateNode(node, image, placement, bitmaps.get(image.file), tokens, zoom);
       if (node.group.zIndex() !== index) node.group.zIndex(index);
     });
     for (const [id, node] of this.nodes) {
@@ -570,29 +724,7 @@ export class CanvasController {
       node.group.destroy();
       this.nodes.delete(id);
     }
-
-    const activeLayerId = resolveActiveLayerId(project, this.ui.activeLayer.value);
-    const shown = visibleLayers(project, this.ui.hiddenLayers.value, activeLayerId);
-    const dots = project ? layerDotsByMarking(project, shown) : new Map();
-    // "Sem anotação" (esmaecer/ocultar) é medido só pela camada ativa, própria ou herdada.
-    const activeLayer = shown.find((l) => l.id === activeLayerId);
-    const activeDots =
-      project && activeLayer ? layerDotsByMarking(project, [activeLayer]) : new Map();
-    const selection = this.ui.selection.value;
-    this.visibility = project
-      ? markingVisibility(
-          project,
-          activeDots,
-          markingDisplay.value,
-          selection?.kind === 'marking' ? selection.id : null,
-        )
-      : new Map();
-    const incomplete = project ? incompleteMarkings(project, shown) : new Set<string>();
-    this.renderMarkings(project, shown, placements, dots, incomplete, tokens, v.scale);
-    this.renderDraft(placements, tokens, v.scale);
-    this.renderSelection(project, preview, placements, tokens, v.scale);
-    this.renderDropTarget(project, tokens, v.scale);
-    this.stage.batchDraw();
+    this.placements = placements;
   }
 
   private createNode(id: string): ImageNode {
@@ -690,20 +822,11 @@ export class CanvasController {
   }
 
   /** Marcações de cima para baixo na hierarquia: as filhas ficam por cima dos pais. */
-  private renderMarkings(
-    project: Project | null,
-    shown: readonly Layer[],
-    placements: ReadonlyMap<string, Placement>,
-    dots: ReadonlyMap<string, readonly LayerDot[]>,
-    incomplete: ReadonlySet<string>,
-    tokens: CanvasTokens,
-    zoom: number,
-  ): void {
-    const markings = project?.markings ?? [];
-    const selection = this.ui.selection.value;
-    const semantic = semanticText.value;
-    const size = this.size.value;
-    const vp = this.viewport.value;
+  private renderMarkings(frame: Frame): void {
+    const { project, selection, semantic, size, dots, incomplete, tokens } = frame;
+    const placements = this.placements;
+    const vp = frame.viewport;
+    const zoom = vp.scale;
     /** Parte do canvas visível na tela, em coordenadas do canvas. */
     const view: Rect = {
       x: -vp.x / vp.scale,
@@ -711,18 +834,12 @@ export class CanvasController {
       width: size.width / vp.scale,
       height: size.height / vp.scale,
     };
-    const byMarking: ReadonlyMap<string, readonly Annotation[]> =
-      project && semantic ? annotationsByMarking(project) : new Map();
-    const owners = new Map(
-      semantic ? (project?.annotations ?? []).map((a) => [a.id, a]) : [],
-    );
-    const byId = new Map(markings.map((m) => [m.id, m]));
-    const children = childrenIndex(markings);
-    const labels = cardLabels(project);
-    const lineColors = new Map(project?.images.map((i) => [i.id, i.markingColor]));
+    const lookup = project ? projectIndex(project) : null;
+    const children = lookup?.children ?? new Map<string | null, readonly Marking[]>();
+    const ordered = project ? topDownMarkings(project) : [];
     const seen = new Set<string>();
     let index = 0;
-    for (const marking of topDown(markings)) {
+    for (const marking of ordered) {
       const placement = placements.get(marking.imageId);
       if (!placement) continue;
       seen.add(marking.id);
@@ -730,7 +847,7 @@ export class CanvasController {
         this.markingNodes.get(marking.id) ?? this.createMarkingNode(marking.id);
       const markingRect = markingCanvasRect(placement, marking.rect);
       // Fora da tela: nem atualiza nem desenha (a camada não recebe toques, então é seguro).
-      const visibility = this.visibility.get(marking.id) ?? 'full';
+      const visibility = frame.visibility.get(marking.id) ?? 'full';
       const onScreen =
         visibility !== 'hidden' && intersectRects(markingRect, view) !== null;
       node.group.visible(onScreen);
@@ -740,18 +857,35 @@ export class CanvasController {
       if (!onScreen) continue;
       const selected = selection?.kind === 'marking' && selection.id === marking.id;
       // Cor da borda escolhida para a imagem (sem escolha, a neutra do tema).
-      const lineColor = lineColors.get(marking.imageId) ?? null;
-      this.updateMarkingNode(
-        node,
+      const lineColor = lookup?.images.get(marking.imageId)?.markingColor ?? null;
+      const markingDots = dots.get(marking.id) ?? NO_LAYER_DOTS;
+      const markingIncomplete = incomplete.has(marking.id);
+      // Pan sem mudar nada da marcação (o caso comum): borda e indicadores ficam.
+      const inputs = [
         marking,
         placement,
         selected,
         visibility,
-        dots.get(marking.id) ?? [],
-        incomplete.has(marking.id),
-        lineColor ? { ...tokens, marking: lineColor } : tokens,
+        markingDots,
+        markingIncomplete,
+        tokens,
+        lineColor,
         zoom,
-      );
+      ];
+      if (!sameInputs(node.drawn, inputs)) {
+        node.drawn = inputs;
+        this.updateMarkingNode(
+          node,
+          marking,
+          placement,
+          selected,
+          visibility,
+          markingDots,
+          markingIncomplete,
+          lineColor ? { ...tokens, marking: lineColor } : tokens,
+          zoom,
+        );
+      }
       // Ancestral de contexto (modo Ocultar): só a borda, sem cartão nem nome.
       const enabled = semantic && visibility !== 'outline';
       const pxPerUnit = placement.scale * zoom;
@@ -765,7 +899,7 @@ export class CanvasController {
       // espaço). Entre as áreas em que o cartão cabe, a maior.
       const kids = bigEnough
         ? (children.get(marking.id) ?? []).filter(
-            (k) => this.visibility.get(k.id) !== 'hidden',
+            (k) => frame.visibility.get(k.id) !== 'hidden',
           )
         : [];
       const area = !bigEnough
@@ -787,14 +921,7 @@ export class CanvasController {
         areaWidth: area ? area.width * pxPerUnit : null,
         areaHeight: area ? area.height * pxPerUnit : null,
       });
-      const sections =
-        mode === 'none'
-          ? []
-          : cardSections(
-              shown,
-              byMarking.get(marking.id) ?? [],
-              inheritedOf(marking, byId, byMarking),
-            );
+      const card = mode === 'none' ? NO_CARD : frame.card(marking);
       this.updateSemanticText(
         node,
         marking,
@@ -802,8 +929,8 @@ export class CanvasController {
         area && mode === 'full' ? markingCanvasRect(placement, area) : null,
         view,
         mode,
-        cardRows(sections, owners, labels),
-        sections.map((section) => section.layer),
+        card.rows,
+        card.layers,
         incomplete.has(marking.id),
         tokens,
         zoom,
@@ -837,6 +964,7 @@ export class CanvasController {
       card: new KonvaRect(),
       lines: [],
       shapes: [],
+      drawn: null,
     };
     node.text.add(node.card, node.header);
     node.indicators.add(...dots, node.more, node.alert);
@@ -1216,13 +1344,13 @@ export class CanvasController {
 
   private renderDropTarget(
     project: Project | null,
+    target: DropTarget,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
-    const target = this.dropTarget.value;
     this.container.classList.toggle('canvas-host--drop', target?.imageId === null);
     const image = target?.imageId
-      ? project?.images.find((i) => i.id === target.imageId)
+      ? project && projectIndex(project).images.get(target.imageId)
       : undefined;
     if (!image) {
       this.dropRect.visible(false);
@@ -1238,11 +1366,11 @@ export class CanvasController {
   }
 
   private renderDraft(
+    draft: Draft | null,
     placements: ReadonlyMap<string, Placement>,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
-    const draft = this.draft.value;
     const placement = draft && placements.get(draft.imageId);
     if (!draft || !placement) {
       this.draftRect.visible(false);
@@ -1259,16 +1387,14 @@ export class CanvasController {
   }
 
   private renderSelection(
-    project: Project | null,
-    preview: ImagePreview | null,
+    frame: Frame,
     placements: ReadonlyMap<string, Placement>,
-    tokens: CanvasTokens,
     zoom: number,
   ): void {
-    const selected = resolveSelection(project, this.ui.selection.value);
-    const grabbed = this.grabbed.value;
+    const { preview, grabbed, tokens } = frame;
+    const selected = resolveSelection(frame.project, frame.selection);
     // Alças só no modo Navegar (em Desenhar, arrastar sempre desenha).
-    const showHandles = !this.store.readOnly.value && this.ui.mode.value === 'navigate';
+    const showHandles = !frame.readOnly && frame.mode === 'navigate';
     const hide = () => {
       this.grabRect.visible(false);
       this.selectionOutline.visible(false);
@@ -1540,7 +1666,8 @@ export class CanvasController {
 
   /** Marcações que aceitam toque: as ocultas pelo modo de exibição ficam de fora. */
   private selectableMarkings(project: Project): readonly Marking[] {
-    return project.markings.filter((m) => this.visibility.get(m.id) !== 'hidden');
+    const visibility = this.derived.markingVisibility.peek();
+    return project.markings.filter((m) => visibility.get(m.id) !== 'hidden');
   }
 
   private onPointerMove(e: PointerEvent): void {

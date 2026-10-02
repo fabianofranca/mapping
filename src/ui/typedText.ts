@@ -4,8 +4,8 @@ import {
   annotationShortLabel,
   annotationTitle,
   fieldLabel,
-  getProjectIssues,
   ownerTypesOf,
+  projectIssues as modelProjectIssues,
   tableRows,
   typeOfAnnotation,
   typedDisplayLines,
@@ -51,16 +51,11 @@ export function displayLines(
   return typedDisplayLines(p, a, { tables, texts: displayTexts() });
 }
 
-const issuesCache = new WeakMap<Project, Map<string, AnnotationIssue[]>>();
-
 /** Pendências do projeto, calculadas uma vez por versão do projeto. */
-export function projectIssues(p: Project): ReadonlyMap<string, AnnotationIssue[]> {
-  let issues = issuesCache.get(p);
-  if (!issues) {
-    issues = getProjectIssues(p);
-    issuesCache.set(p, issues);
-  }
-  return issues;
+export function projectIssues(
+  p: Project,
+): ReadonlyMap<string, readonly AnnotationIssue[]> {
+  return modelProjectIssues(p);
 }
 
 export function issuesOf(p: Project, annotationId: string): readonly AnnotationIssue[] {
