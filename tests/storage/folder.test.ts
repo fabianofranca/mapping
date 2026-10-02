@@ -28,6 +28,18 @@ describe('FolderStorage', () => {
     await storage.removeImage('outra/b.jpg');
   });
 
+  it('grava, lê e remove as cópias de specs/', async () => {
+    const root = new MemoryDirectory('projeto');
+    const storage = createFolderStorage(root);
+    expect(await storage.readSpec('specs/sdui.json')).toBeNull();
+    await storage.writeSpec('specs/sdui.json', '{"id":"sdui"}\n');
+    expect(await root.read('specs/sdui.json')).toBe('{"id":"sdui"}\n');
+    expect(await storage.readSpec('specs/sdui.json')).toBe('{"id":"sdui"}\n');
+    await storage.removeSpec('specs/sdui.json');
+    expect(await storage.readSpec('specs/sdui.json')).toBeNull();
+    await storage.removeSpec('specs/sdui.json');
+  });
+
   it('rejeita caminhos com ..', async () => {
     const storage = createFolderStorage(new MemoryDirectory('projeto'));
     await expect(storage.writeImage('../fora.jpg', new Blob(['x']))).rejects.toThrow();

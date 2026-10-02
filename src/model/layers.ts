@@ -1,6 +1,7 @@
 import { fail } from './errors';
 import { annotationWithLinked } from './links';
 import { findById, moveItem, updateById } from './project';
+import { countBrokenRefs } from './refs';
 import type { Layer, Project } from './types';
 
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
@@ -42,16 +43,24 @@ function checkColor(color: string): string {
   return color.toUpperCase();
 }
 
-export function addLayer(p: Project, layer: Layer): Project {
+/** Cria uma camada livre. Camadas de especialização vêm de `applySpecialization`. */
+export function addLayer(p: Project, layer: Omit<Layer, 'spec'>): Project {
   const created: Layer = {
     id: layer.id,
     name: checkName(layer.name),
     color: checkColor(layer.color),
+    spec: null,
   };
   return { ...p, layers: [...p.layers, created] };
 }
 
+/** Camadas da especialização não podem ser renomeadas nem excluídas individualmente. */
+function checkFreeLayer(p: Project, layerId: string): void {
+  if (findById(p.layers, layerId).spec) fail('spec-layer', layerId);
+}
+
 export function renameLayer(p: Project, layerId: string, name: string): Project {
+  checkFreeLayer(p, layerId);
   const trimmed = checkName(name);
   return {
     ...p,
@@ -90,14 +99,15 @@ function doomedByLayer(p: Project, layerId: string): Set<string> {
 export function layerDeletionImpact(
   p: Project,
   layerId: string,
-): { annotations: number; byLayer: ReadonlyMap<string, number> } {
+): { annotations: number; byLayer: ReadonlyMap<string, number>; brokenRefs: number } {
   findById(p.layers, layerId);
   const doomed = doomedByLayer(p, layerId);
   const byLayer = new Map<string, number>();
   for (const a of p.annotations) {
     if (doomed.has(a.id)) byLayer.set(a.layerId, (byLayer.get(a.layerId) ?? 0) + 1);
   }
-  return { annotations: doomed.size, byLayer };
+  const after = { ...p, annotations: p.annotations.filter((a) => !doomed.has(a.id)) };
+  return { annotations: doomed.size, byLayer, brokenRefs: countBrokenRefs(p, after) };
 }
 
 /**
@@ -105,7 +115,7 @@ export function layerDeletionImpact(
  * O projeto precisa manter ao menos uma camada.
  */
 export function removeLayer(p: Project, layerId: string): Project {
-  findById(p.layers, layerId);
+  checkFreeLayer(p, layerId);
   if (p.layers.length === 1) fail('last-layer');
   const doomed = doomedByLayer(p, layerId);
   return {

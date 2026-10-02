@@ -6,6 +6,7 @@ import {
   isIntegerRect,
   rectsOverlap,
 } from './geometry';
+import { tableRows } from './refs';
 import type { Entry, Project } from './types';
 
 export type InvariantCode =
@@ -27,7 +28,10 @@ export type InvariantCode =
   | 'annotation-parent-same-layer'
   | 'annotation-cycle'
   | 'empty-key'
-  | 'duplicate-key';
+  | 'duplicate-key'
+  | 'duplicate-spec-file'
+  | 'duplicate-entry-id'
+  | 'duplicate-row-id';
 
 export interface InvariantIssue {
   readonly code: InvariantCode;
@@ -40,7 +44,9 @@ export interface InvariantIssue {
 export type EntryIssue = 'empty-key' | 'duplicate-key' | null;
 
 /** Erro de cada par, na mesma ordem de `entries`. Usado também pelo editor (erro inline). */
-export function validateEntries(entries: readonly Entry[]): EntryIssue[] {
+export function validateEntries<T extends Pick<Entry, 'key'>>(
+  entries: readonly T[],
+): EntryIssue[] {
   const seen = new Set<string>();
   return entries.map(({ key }) => {
     const trimmed = key.trim();
@@ -53,18 +59,41 @@ export function validateEntries(entries: readonly Entry[]): EntryIssue[] {
 
 /**
  * Checa os invariantes que o schema zod não expressa. Lista vazia = projeto válido.
- * Ver "Regras do modelo" no PLAN.md.
+ * Ver "Regras do modelo" no PLAN.md. As regras das especializações (camada × tipo,
+ * `allowedChildren`, referências) não bloqueiam a abertura: viram pendências
+ * (`getAnnotationIssues`). Só a unicidade dos ids de tupla e de linha fica aqui.
  */
 export function validateProject(p: Project): InvariantIssue[] {
   const issues: InvariantIssue[] = [];
   const push = (code: InvariantCode, id: string, otherId?: string) =>
     issues.push(otherId === undefined ? { code, id } : { code, id, otherId });
 
-  for (const list of [p.layers, p.images, p.markings, p.annotations]) {
+  for (const list of [p.specializations, p.layers, p.images, p.markings, p.annotations]) {
     const ids = new Set<string>();
     for (const item of list) {
       if (ids.has(item.id)) push('duplicate-id', item.id);
       ids.add(item.id);
+    }
+  }
+
+  const specFiles = new Set<string>();
+  for (const s of p.specializations) {
+    if (specFiles.has(s.file)) push('duplicate-spec-file', s.id);
+    specFiles.add(s.file);
+  }
+
+  const entryIds = new Set<string>();
+  for (const a of p.annotations) {
+    for (const e of a.entries) {
+      if (entryIds.has(e.id)) push('duplicate-entry-id', a.id, e.id);
+      entryIds.add(e.id);
+    }
+    for (const value of Object.values(a.values ?? {})) {
+      const rowIds = new Set<string>();
+      for (const row of tableRows(value)) {
+        if (rowIds.has(row._id)) push('duplicate-row-id', a.id, row._id);
+        rowIds.add(row._id);
+      }
     }
   }
 

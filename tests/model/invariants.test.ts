@@ -124,9 +124,9 @@ describe('validador de invariantes', () => {
           ? {
               ...a,
               entries: [
-                { key: 'x', value: '' },
-                { key: 'x', value: '' },
-                { key: ' ', value: '' },
+                { id: 'X1', key: 'x', value: '' },
+                { id: 'X2', key: 'x', value: '' },
+                { id: 'X3', key: ' ', value: '' },
               ],
             }
           : a,

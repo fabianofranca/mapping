@@ -92,17 +92,19 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         name: `Anotação ${index}`,
         inherit: false,
         parentAnnotationId: null,
+        type: null,
+        values: null,
         entries: [
-          { key: 'tipo', value: 'amassado' },
-          { key: 'gravidade', value: 'média' },
-          { key: 'obs', value: `item ${index}` },
+          { id: `A${index}-${layerId}-e1`, key: 'tipo', value: 'amassado' },
+          { id: `A${index}-${layerId}-e2`, key: 'gravidade', value: 'média' },
+          { id: `A${index}-${layerId}-e3`, key: 'obs', value: `item ${index}` },
         ],
       });
     }
   });
   return {
     ...base,
-    layers: [...base.layers, { id: 'L2', name: 'Vidros', color: '#1E88E5' }],
+    layers: [...base.layers, { id: 'L2', name: 'Vidros', color: '#1E88E5', spec: null }],
     images: imageList,
     markings,
     annotations,

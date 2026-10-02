@@ -27,12 +27,13 @@ describe('serialização', () => {
   it('usa 2 espaços, ordem fixa de chaves e quebra de linha final', () => {
     const text = serialize(emptyProject());
     expect(text.endsWith('}\n')).toBe(true);
-    expect(text.split('\n')[1]).toBe('  "schemaVersion": 3,');
+    expect(text.split('\n')[1]).toBe('  "schemaVersion": 4,');
     expect(Object.keys(JSON.parse(text))).toEqual([
       'schemaVersion',
       'app',
       'coordinateSystem',
       'project',
+      'specializations',
       'layers',
       'images',
       'markings',
@@ -47,6 +48,7 @@ describe('serialização', () => {
       markings: p.markings,
       images: p.images,
       layers: p.layers,
+      specializations: p.specializations,
       project: p.project,
       coordinateSystem: p.coordinateSystem,
       app: p.app,
@@ -115,8 +117,8 @@ describe('serialização', () => {
 
 describe('migrações', () => {
   it('registro atual não tem migrações pendentes', () => {
-    expect(SCHEMA_VERSION).toBe(3);
-    expect(migrate({ a: 1 }, 3)).toEqual({ ok: true, data: { a: 1 } });
+    expect(SCHEMA_VERSION).toBe(4);
+    expect(migrate({ a: 1 }, 4)).toEqual({ ok: true, data: { a: 1 } });
   });
 
   it('aplica as migrações registradas em sequência', () => {

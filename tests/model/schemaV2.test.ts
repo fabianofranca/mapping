@@ -37,33 +37,36 @@ function load(text: string): Project {
 }
 
 describe('migração v1 → v2', () => {
-  it('abre um v1 real como v3 sem perder nada', () => {
+  it('abre um v1 real como v4 sem perder nada', () => {
     const result = deserialize(v1Text);
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(3);
+    expect(p.schemaVersion).toBe(4);
     expect(p.images.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => !a.inherit && a.parentAnnotationId === null)).toBe(
       true,
     );
     // Os dados originais continuam idênticos.
     const original = JSON.parse(v1Text) as Project;
-    expect(p.layers).toEqual(original.layers);
+    expect(p.layers.map((l) => omit(l, ['spec']))).toEqual(original.layers);
     expect(p.markings).toEqual(original.markings);
     expect(p.project).toEqual(original.project);
     expect(p.images.map((i) => omit(i, ['name', 'markingColor']))).toEqual(
       original.images,
     );
-    expect(p.annotations.map((a) => omit(a, ['inherit', 'parentAnnotationId']))).toEqual(
-      original.annotations,
-    );
+    expect(
+      p.annotations.map((a) => ({
+        ...omit(a, ['inherit', 'parentAnnotationId', 'type', 'values']),
+        entries: a.entries.map((e) => omit(e, ['id'])),
+      })),
+    ).toEqual(original.annotations);
   });
 
-  it('salvar o v1 migrado gera v3 estável (round-trip)', () => {
+  it('salvar o v1 migrado gera v4 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(3);
+    expect(JSON.parse(saved).schemaVersion).toBe(4);
     expect(serialize(load(saved))).toBe(saved);
   });
 
@@ -86,6 +89,8 @@ describe('migração v1 → v2', () => {
       'name',
       'inherit',
       'parentAnnotationId',
+      'type',
+      'values',
       'entries',
     ]);
   });
@@ -213,7 +218,7 @@ describe('vínculos', () => {
 describe('exclusões em cascata', () => {
   it('excluir a anotação exclui as vinculadas, recursivamente', () => {
     const p = linked();
-    expect(annotationDeletionImpact(p, 'A1')).toEqual({ annotations: 3 });
+    expect(annotationDeletionImpact(p, 'A1')).toEqual({ annotations: 3, brokenRefs: 0 });
     expect(removeAnnotation(p, 'A1').annotations.map((a) => a.id)).toEqual([
       'A2',
       'A3',

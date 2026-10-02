@@ -137,6 +137,12 @@ export function createFolderStorage(root: DirectoryHandleLike): ProjectStorage {
     readImage: (path) => readFile(root, path),
     writeImage: (path, data) => writeFile(root, path, data),
     removeImage: (path) => removeFile(root, path),
+    async readSpec(path) {
+      const blob = await readFile(root, path);
+      return blob ? blob.text() : null;
+    },
+    writeSpec: (path, text) => writeFile(root, path, text),
+    removeSpec: (path) => removeFile(root, path),
   };
 }
 

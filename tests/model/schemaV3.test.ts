@@ -8,13 +8,40 @@ import {
 } from '../../src/model';
 import { sampleProject } from './fixtures';
 
-/** Um mapping.json v2 (sem `markingColor` nas imagens). */
+const without = (item: Record<string, unknown>, keys: string[]) =>
+  Object.fromEntries(Object.entries(item).filter(([key]) => !keys.includes(key)));
+
+/** Um mapping.json v2 (sem `markingColor` nas imagens nem os campos da v4). */
 function v2Text(): string {
   const data = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
   const images = (data.images as Record<string, unknown>[]).map((i) =>
-    Object.fromEntries(Object.entries(i).filter(([key]) => key !== 'markingColor')),
+    without(i, ['markingColor']),
   );
-  return JSON.stringify({ ...data, schemaVersion: 2, images });
+  const layers = (data.layers as Record<string, unknown>[]).map((l) =>
+    without(l, ['spec']),
+  );
+  const annotations = (data.annotations as Record<string, unknown>[]).map((a) => ({
+    ...without(a, ['type', 'values']),
+    entries: (a.entries as Record<string, unknown>[]).map((e) => without(e, ['id'])),
+  }));
+  return JSON.stringify({
+    ...without(data, ['specializations']),
+    schemaVersion: 2,
+    images,
+    layers,
+    annotations,
+  });
+}
+
+/** Projeto sem os ids das tuplas (gerados na migração v3 → v4). */
+function withoutEntryIds(p: Project) {
+  return {
+    ...p,
+    annotations: p.annotations.map((a) => ({
+      ...a,
+      entries: a.entries.map((e) => without({ ...e }, ['id'])),
+    })),
+  };
 }
 
 function load(text: string): Project {
@@ -24,18 +51,18 @@ function load(text: string): Project {
 }
 
 describe('migração v2 → v3', () => {
-  it('abre um v2 como v3 com markingColor nulo e sem perder nada', () => {
+  it('abre um v2 como v4 com markingColor nulo e sem perder nada', () => {
     const result = deserialize(v2Text());
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(2);
-    expect(result.project.schemaVersion).toBe(3);
+    expect(result.project.schemaVersion).toBe(4);
     expect(result.project.images.every((i) => i.markingColor === null)).toBe(true);
-    expect(result.project).toEqual(sampleProject());
+    expect(withoutEntryIds(result.project)).toEqual(withoutEntryIds(sampleProject()));
   });
 
-  it('salvar o v2 migrado gera v3 estável (round-trip)', () => {
+  it('salvar o v2 migrado gera v4 estável (round-trip)', () => {
     const saved = serialize(load(v2Text()));
-    expect(JSON.parse(saved).schemaVersion).toBe(3);
+    expect(JSON.parse(saved).schemaVersion).toBe(4);
     expect(serialize(load(saved))).toBe(saved);
   });
 });

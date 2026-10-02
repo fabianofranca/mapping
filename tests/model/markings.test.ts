@@ -156,8 +156,16 @@ describe('marcações: trocar pai', () => {
 describe('marcações: excluir e revisão', () => {
   it('exclui em cascata descendentes e anotações', () => {
     const p = sampleProject();
-    expect(markingDeletionImpact(p, 'M1')).toEqual({ descendants: 2, annotations: 3 });
-    expect(markingDeletionImpact(p, 'M2')).toEqual({ descendants: 1, annotations: 1 });
+    expect(markingDeletionImpact(p, 'M1')).toEqual({
+      descendants: 2,
+      annotations: 3,
+      brokenRefs: 0,
+    });
+    expect(markingDeletionImpact(p, 'M2')).toEqual({
+      descendants: 1,
+      annotations: 1,
+      brokenRefs: 0,
+    });
     const q = expectValid(removeMarking(p, 'M2'));
     expect(q.markings.map((m) => m.id)).toEqual(['M1', 'M4']);
     expect(q.annotations.map((a) => a.id)).toEqual(['A1', 'A2', 'A4']);

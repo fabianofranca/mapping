@@ -6,6 +6,8 @@ import {
   DEFAULT_LAYER_COLOR,
   createProject,
   deserialize,
+  migrations,
+  referencedSpecFiles,
   serialize,
   type DeserializeError,
   type Project,
@@ -141,7 +143,12 @@ async function openFromStorage(
 ): Promise<AppResult> {
   const text = await storage.loadMapping();
   if (text === null) return err('not-found');
-  const result = deserialize(text);
+  const specs = new Map<string, string>();
+  for (const file of referencedSpecFiles(text)) {
+    const spec = await storage.readSpec(file).catch(() => null);
+    if (spec !== null) specs.set(file, spec);
+  }
+  const result = deserialize(text, migrations, specs);
   if (!result.ok) return err(result.error.code);
   const meta = localId ? await library?.get(localId) : undefined;
   start(storage, result.project, {
@@ -167,7 +174,11 @@ export function createLocalProject(name: string): Promise<AppResult> {
     if (!library) return err('storage-failed');
     const id = crypto.randomUUID();
     const project = newProject(name.trim() || t('project.untitled'));
-    await library.create(id, { mapping: serialize(project), images: new Map() });
+    await library.create(id, {
+      mapping: serialize(project),
+      images: new Map(),
+      specs: new Map(),
+    });
     void requestPersistentStorage();
     return openFromStorage(library.open(id), id);
   });
@@ -196,7 +207,7 @@ export function importZip(file: Blob): Promise<AppResult> {
     if (!library) return err('storage-failed');
     const read = await readProjectZip(file);
     if (!read.ok) return err(read.error);
-    const parsed = deserialize(read.files.mapping);
+    const parsed = deserialize(read.files.mapping, migrations, read.files.specs);
     if (!parsed.ok) return err(parsed.error.code);
     const id = crypto.randomUUID();
     await library.create(id, read.files, { unexported: false });

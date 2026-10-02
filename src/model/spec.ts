@@ -83,13 +83,17 @@ const fieldType = z.enum(['string', 'number', 'date', 'enum', 'table', 'ref'], {
       : 'obrigatório',
 });
 
+/** `true` para uma data existente no formato ISO `AAAA-MM-DD`. */
+export function isIsoDate(s: string): boolean {
+  if (!DATE_RE.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(s);
+}
+
 const dateString = z
   .string()
   .regex(DATE_RE, 'data inválida; use AAAA-MM-DD')
-  .refine((s) => {
-    const d = new Date(`${s}T00:00:00Z`);
-    return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(s);
-  }, 'data inexistente');
+  .refine(isIsoDate, 'data inexistente');
 
 const acceptsSchema = z
   .object({ tags: tags.optional(), free: z.boolean().optional() })

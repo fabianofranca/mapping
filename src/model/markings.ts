@@ -13,6 +13,7 @@ import {
 } from './geometry';
 import { childrenOf, depthOf, descendantIds } from './hierarchy';
 import { findById, normalizeOptionalName, updateById } from './project';
+import { countBrokenRefs } from './refs';
 import type { Marking, Project, Rect } from './types';
 
 function checkRectShape(rect: Rect): void {
@@ -246,7 +247,7 @@ export function confirmMarkingReview(p: Project, markingId: string): Project {
 export function markingDeletionImpact(
   p: Project,
   markingId: string,
-): { descendants: number; annotations: number } {
+): { descendants: number; annotations: number; brokenRefs: number } {
   findById(p.markings, markingId);
   const ids = descendantIds(p, markingId);
   const descendants = ids.size;
@@ -254,6 +255,7 @@ export function markingDeletionImpact(
   return {
     descendants,
     annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
+    brokenRefs: countBrokenRefs(p, removeMarking(p, markingId)),
   };
 }
 

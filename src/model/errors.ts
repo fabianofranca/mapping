@@ -22,7 +22,23 @@ export type ModelErrorCode =
   | 'invalid-parent'
   | 'invalid-annotation-parent'
   | 'empty-key'
-  | 'duplicate-key';
+  | 'duplicate-key'
+  | 'duplicate-id'
+  // Especializações (PLAN.md 13)
+  | 'spec-layer'
+  | 'typed-layer'
+  | 'typed-annotation'
+  | 'not-typed'
+  | 'unknown-type'
+  | 'type-not-in-layer'
+  | 'owner-required'
+  | 'unknown-field'
+  | 'invalid-value'
+  | 'unknown-option'
+  | 'self-ref'
+  | 'ref-not-accepted'
+  | 'spec-already-applied'
+  | 'spec-not-newer';
 
 export class ModelError extends Error {
   constructor(

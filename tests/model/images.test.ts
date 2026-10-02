@@ -89,7 +89,11 @@ describe('imagens: mover e redimensionar sem sobreposição', () => {
 describe('imagens: excluir em cascata', () => {
   it('apaga marcações e anotações da imagem', () => {
     const p = sampleProject();
-    expect(imageDeletionImpact(p, 'I1')).toEqual({ markings: 3, annotations: 3 });
+    expect(imageDeletionImpact(p, 'I1')).toEqual({
+      markings: 3,
+      annotations: 3,
+      brokenRefs: 0,
+    });
     const next = expectValid(removeImage(p, 'I1'));
     expect(next.images.map((i) => i.id)).toEqual(['I2']);
     expect(next.markings.map((m) => m.id)).toEqual(['M4']);

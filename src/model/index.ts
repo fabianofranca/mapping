@@ -22,3 +22,8 @@ export * from './links';
 export * from './listing';
 export * from './display';
 export * from './spec';
+export * from './specLookup';
+export * from './specializations';
+export * from './typed';
+export * from './refs';
+export * from './issues';
