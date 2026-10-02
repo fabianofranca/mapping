@@ -1,3 +1,4 @@
+import { projectIndex } from './projectIndex';
 import type { Marking, Project } from './types';
 
 /** Filhas diretas de cada marcação (chave `null` = marcações sem pai), na ordem do array. */
@@ -14,12 +15,12 @@ export function childrenIndex(
 }
 
 export function childrenOf(p: Project, markingId: string): Marking[] {
-  return p.markings.filter((m) => m.parentId === markingId);
+  return [...(projectIndex(p).children.get(markingId) ?? [])];
 }
 
 /** Todos os descendentes (filhas, netas…), sem incluir a própria marcação. */
 export function descendantsOf(p: Project, markingId: string): Marking[] {
-  const index = childrenIndex(p.markings);
+  const index = projectIndex(p).children;
   const result: Marking[] = [];
   const stack = [...(index.get(markingId) ?? [])];
   while (stack.length > 0) {
@@ -36,7 +37,7 @@ export function descendantIds(p: Project, markingId: string): Set<string> {
 
 /** Profundidade na hierarquia: 0 para marcações sem pai. */
 export function depthOf(p: Project, markingId: string): number {
-  const byId = new Map(p.markings.map((m) => [m.id, m]));
+  const byId = projectIndex(p).markings;
   let depth = 0;
   let parentId = byId.get(markingId)?.parentId ?? null;
   while (parentId !== null && depth <= byId.size) {
@@ -66,7 +67,7 @@ export function topDown(markings: readonly Marking[]): Marking[] {
 
 /** Ancestrais da marcação, do pai até a raiz. */
 export function ancestorsOf(p: Project, markingId: string): Marking[] {
-  const byId = new Map(p.markings.map((m) => [m.id, m]));
+  const byId = projectIndex(p).markings;
   const result: Marking[] = [];
   let parentId = byId.get(markingId)?.parentId ?? null;
   while (parentId !== null && result.length <= byId.size) {

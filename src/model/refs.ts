@@ -1,5 +1,5 @@
-import { ModelError } from './errors';
-import { findById } from './project';
+import { fail, ModelError } from './errors';
+import { memoByProject, projectIndex } from './projectIndex';
 import type { SpecField, SpecRefAccepts } from './spec';
 import { fieldOf, sharesTag, typeOfAnnotation } from './specLookup';
 import type { Annotation, Entry, JsonValue, Project, RefValue, TableRow } from './types';
@@ -77,10 +77,11 @@ export type ResolvedRef =
  * os dados (o alvo existe?); se o alvo ainda é aceito é outra pergunta (`isRefAccepted`).
  */
 export function resolveRef(p: Project, ref: RefValue): ResolvedRef | null {
-  const annotation = p.annotations.find((a) => a.id === ref.annotationId);
+  const index = projectIndex(p);
+  const annotation = index.annotations.get(ref.annotationId);
   if (!annotation) return null;
   if ('entryId' in ref) {
-    const entry = annotation.entries.find((e) => e.id === ref.entryId);
+    const entry = index.entries.get(annotation.id)?.get(ref.entryId);
     return entry && annotation.type === null
       ? { kind: 'entry', annotation, entry }
       : null;
@@ -157,7 +158,11 @@ export function isRefAccepted(
 ): boolean {
   if (ref.annotationId === sourceAnnotationId) return false;
   const target = resolveRef(p, ref);
-  if (!target) return false;
+  return target !== null && isTargetAccepted(target, accepts);
+}
+
+/** `true` se o alvo já resolvido é aceito por `accepts` (ver `isRefAccepted`). */
+export function isTargetAccepted(target: ResolvedRef, accepts: SpecRefAccepts): boolean {
   switch (target.kind) {
     case 'entry':
       return accepts.free === true;
@@ -178,7 +183,8 @@ export function refFieldOf(
   annotationId: string,
   key: string,
 ): Extract<SpecField, { type: 'ref' }> | null {
-  const source = findById(p.annotations, annotationId);
+  const source =
+    projectIndex(p).annotations.get(annotationId) ?? fail('not-found', annotationId);
   const type = typeOfAnnotation(p, source)?.type;
   const field = type ? fieldOf(type, key) : null;
   return field?.type === 'ref' ? field : null;
@@ -266,15 +272,22 @@ export interface Backlink extends AnnotationRef {
  * na ordem do projeto. Para agrupar por alvo, use `ref.entryId`/`ref.rowId`/`ref.key`.
  */
 export function getBacklinks(p: Project, annotationId: string): Backlink[] {
-  const result: Backlink[] = [];
+  return [...(backlinkIndex(p).get(annotationId) ?? [])];
+}
+
+/** Referências recebidas por alvo, montadas uma vez por versão do projeto. */
+const backlinkIndex = memoByProject((p) => {
+  const result = new Map<string, Backlink[]>();
   for (const source of p.annotations) {
-    if (source.id === annotationId) continue;
     for (const r of refsOf(p, source)) {
-      if (r.ref.annotationId === annotationId) result.push({ ...r, source });
+      if (r.ref.annotationId === source.id) continue;
+      const list = result.get(r.ref.annotationId);
+      if (list) list.push({ ...r, source });
+      else result.set(r.ref.annotationId, [{ ...r, source }]);
     }
   }
   return result;
-}
+});
 
 /**
  * Quantas referências válidas em `before` ficam quebradas em `after`, contando só

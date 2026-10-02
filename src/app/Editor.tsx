@@ -8,15 +8,14 @@ import {
   type Marking,
   type ProjectImage,
 } from '../model';
+import { createEditorDerived } from '../store/derived';
 import type { AspectChange } from '../store/session';
 import { semanticText, setSemanticText } from '../store/settings';
 import {
   createEditorUi,
   goToAnnotation,
-  resolveActiveLayerId,
   resolveSelection,
   showLayer,
-  visibleLayers,
   type AnnotationLocation,
   type Selection,
 } from '../store/ui';
@@ -74,6 +73,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   // Um estado de UI novo por sessão aberta (o Editor não é remontado ao trocar de projeto).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const ui = useMemo(() => createEditorUi(), [session]);
+  const derived = useMemo(() => createEditorDerived(store, ui), [store, ui]);
   const controller = useRef<CanvasController | null>(null);
   const desktop = useMediaQuery(DESKTOP_QUERY);
 
@@ -108,9 +108,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const mode = ui.mode.value;
   const selected = resolveSelection(project, selection);
   const selectedImage = selected?.kind === 'image' ? selected.image : null;
-  const activeLayerId = resolveActiveLayerId(project, ui.activeLayer.value);
-  const activeLayer = project?.layers.find((l) => l.id === activeLayerId) ?? null;
-  const shownLayers = visibleLayers(project, ui.hiddenLayers.value, activeLayerId);
+  const activeLayer = derived.activeLayer.value;
+  const shownLayers = derived.visibleLayers.value;
   const busy = progress !== null;
   const requestMarkingDelete = useRef<(marking: Marking) => void>(() => undefined);
 
@@ -424,7 +423,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
     <ListView
       project={project}
       ui={ui}
-      layers={shownLayers}
+      derived={derived}
       selection={selection}
       onSelect={onListSelect}
     />
@@ -539,6 +538,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
             actions={actions}
             display={display}
             ui={ui}
+            derived={derived}
             onReady={(c) => (controller.current = c)}
           />
           <div class="canvas-overlay">

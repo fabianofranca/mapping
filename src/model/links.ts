@@ -1,6 +1,7 @@
 import { fail } from './errors';
 import { ancestorsOf } from './hierarchy';
 import { findById, updateById } from './project';
+import { projectIndex } from './projectIndex';
 import { isAllowedOwner, typeOfAnnotation } from './specLookup';
 import type { Annotation, Project } from './types';
 
@@ -9,7 +10,7 @@ import type { Annotation, Project } from './types';
 
 /** Anotações vinculadas diretamente à dona, na ordem do array. */
 function directLinked(p: Project, annotationId: string): Annotation[] {
-  return p.annotations.filter((a) => a.parentAnnotationId === annotationId);
+  return [...(projectIndex(p).annotationsByOwner.get(annotationId) ?? [])];
 }
 
 /** Vinculadas a `annotationId`, em qualquer profundidade (sem incluir a própria). */
@@ -48,8 +49,9 @@ export function annotationWithLinked(p: Project, annotationId: string): Set<stri
 export function getInheritedAnnotations(p: Project, markingId: string): Annotation[] {
   findById(p.markings, markingId);
   const ancestors = ancestorsOf(p, markingId).reverse();
+  const byMarking = projectIndex(p).annotationsByMarking;
   return ancestors.flatMap((ancestor) =>
-    p.annotations.filter((a) => a.markingId === ancestor.id && a.inherit),
+    (byMarking.get(ancestor.id) ?? []).filter((a) => a.inherit),
   );
 }
 
@@ -62,9 +64,8 @@ export function validAnnotationOwners(p: Project, annotationId: string): Annotat
   const annotation = findById(p.annotations, annotationId);
   const descendants = annotationWithLinked(p, annotationId);
   const type = annotation.type;
-  return p.annotations.filter(
+  return (projectIndex(p).annotationsByMarking.get(annotation.markingId) ?? []).filter(
     (a) =>
-      a.markingId === annotation.markingId &&
       a.layerId !== annotation.layerId &&
       !descendants.has(a.id) &&
       (type === null || isAllowedOwner(p, type, a)),

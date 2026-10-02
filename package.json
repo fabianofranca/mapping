@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:perf": "vitest run tests/model/performance.test.ts tests/canvas/renderPerformance.test.ts",
     "test:e2e": "playwright test",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",

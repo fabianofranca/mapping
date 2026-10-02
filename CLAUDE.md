@@ -20,7 +20,8 @@ Mapeador de Imagens: app web para marcar áreas retangulares em imagens, organiz
 npm run dev       # servidor de desenvolvimento
 npm run build     # gera dist/index.html
 npm test          # vitest (modelo, store, storage, canvas e componentes)
-npm run test:coverage # vitest com relatório de cobertura (coverage/)
+npm run test:coverage # vitest com relatório de cobertura (coverage/); pula os orçamentos de desempenho
+npm run test:perf # só os orçamentos de desempenho (sem cobertura; o CI roda separado)
 npm run test:e2e  # Playwright contra dist/index.html; roda no CI (localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
 npm run lint      # eslint + prettier --check
 npm run typecheck # tsc --noEmit
@@ -34,6 +35,8 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - **`src/model/` não pode depender de APIs de navegador** (DOM, `window`, `document`, IndexedDB, File System Access, `createImageBitmap`, `Image`, canvas, `localStorage`). Ele será reutilizado por um servidor MCP em Node na etapa 3. Use apenas APIs disponíveis tanto no navegador quanto no Node (ex: `crypto.randomUUID()`). Tudo que depende de navegador (leitura de dimensões da imagem, EXIF, bitmaps) fica em `src/storage/` ou `src/canvas/` e entrega dados já prontos ao `model/`. A regra é imposta automaticamente: ESLint (`no-restricted-globals`/`no-restricted-imports` em `src/model/**`) e o projeto `model` do Vitest, que roda `tests/model/` com `environment: 'node'`.
 - Toda mutação do projeto passa por uma action do store. Nunca altere o estado diretamente num componente.
 - O estado do projeto (JSON + undo) é separado do estado da UI (seleção, visibilidade, modo, viewport).
+- Consultas por id e agrupamentos do projeto usam `projectIndex(p)` (`src/model/projectIndex.ts`, memoizado por versão do projeto), nunca `find`/`filter` dentro de laços. O estado derivado do editor (camadas visíveis, indicadores, visibilidade, pendências, lista) fica em `src/store/derived.ts` e é lido por canvas, painel e lista, sem recalcular.
+- O canvas desenha no máximo uma vez por quadro (`requestAnimationFrame`); pan e zoom não recalculam dados que dependem só do projeto.
 - Um gesto (arrastar/redimensionar) gera **uma** entrada no histórico de undo.
 - Konva fica isolado em `src/canvas/` (`CanvasController` imperativo). Componentes Preact não importam Konva, exceto `CanvasHost`. Não usar `react-konva`.
 - As coordenadas das marcações são **sempre** em pixels da imagem original. Conversões de tela/canvas ficam só em `src/canvas/`.

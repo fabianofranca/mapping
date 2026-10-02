@@ -1358,10 +1358,10 @@ Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E
 **Aceite**: CI verde com os novos testes; quebrar de propósito o seletor de `ref` faz um teste de componente falhar.
 
 #### Fase 21 — Índice, estado derivado e renderização por quadro
-- [ ] `projectIndex` com `WeakMap` + uso em `issues`, `refs`, `display`, `hierarchy`, `listing`
-- [ ] `src/store/derived.ts` consumido por canvas, painel e lista
-- [ ] Canvas: separação projeto × viewport e renderização por `requestAnimationFrame`
-- [ ] Fixture grande com tipadas e referências + orçamentos de desempenho
+- [x] `projectIndex` com `WeakMap` + uso em `issues`, `refs`, `display`, `hierarchy`, `listing`
+- [x] `src/store/derived.ts` consumido por canvas, painel e lista
+- [x] Canvas: separação projeto × viewport e renderização por `requestAnimationFrame`
+- [x] Fixture grande com tipadas e referências + orçamentos de desempenho
 
 **Aceite**: orçamentos da 14.3 cumpridos; pan e zoom no celular com o fixture grande sem travadas perceptíveis; todos os testes verdes.
 

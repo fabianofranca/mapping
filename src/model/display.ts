@@ -1,3 +1,4 @@
+import { projectIndex } from './projectIndex';
 import type { Layer, Project } from './types';
 
 // Como as marcações aparecem de acordo com as anotações (próprias e herdadas) nas
@@ -37,7 +38,7 @@ export function layerDotsByMarking(
     if (a.inherit) add(inheriting, a.markingId, index);
   }
 
-  const byId = new Map(p.markings.map((m) => [m.id, m]));
+  const byId = projectIndex(p).markings;
   // Camadas herdadas por marcação, com memória para não refazer a subida.
   const inheritedOf = new Map<string, ReadonlySet<number>>();
   const inherited = (id: string, guard = 0): ReadonlySet<number> => {
@@ -102,7 +103,7 @@ export function markingVisibility(
   }
   if (mode !== 'hide') return result;
 
-  const byId = new Map(p.markings.map((m) => [m.id, m]));
+  const byId = projectIndex(p).markings;
   for (const m of p.markings) {
     if (!shown(m.id)) continue;
     let parentId = m.parentId;

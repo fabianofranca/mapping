@@ -2,6 +2,7 @@ import { fail } from './errors';
 import { validateEntries } from './invariants';
 import { annotationWithLinked } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
+import { projectIndex } from './projectIndex';
 import { countBrokenRefs } from './refs';
 import type { Annotation, Entry, Layer, Project } from './types';
 
@@ -192,5 +193,7 @@ export function annotationsOf(
   markingId: string,
   layerId: string,
 ): Annotation[] {
-  return p.annotations.filter((a) => a.markingId === markingId && a.layerId === layerId);
+  return (projectIndex(p).annotationsByMarking.get(markingId) ?? []).filter(
+    (a) => a.layerId === layerId,
+  );
 }
