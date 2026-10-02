@@ -1351,9 +1351,9 @@ Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E
 **Aceite**: lint sem erros com a regra nova; testes das operações por id; comportamento igual no roteiro 13.9.
 
 #### Fase 20 — Rede de testes
-- [ ] Testes de componentes (lista da 14.3)
-- [ ] Playwright no CI com os três fluxos (desktop e celular emulado)
-- [ ] Cobertura no CI
+- [x] Testes de componentes (lista da 14.3)
+- [x] Playwright no CI com os três fluxos (desktop e celular emulado)
+- [x] Cobertura no CI
 
 **Aceite**: CI verde com os novos testes; quebrar de propósito o seletor de `ref` faz um teste de componente falhar.
 
