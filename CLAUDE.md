@@ -64,7 +64,8 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
   3. **Decisões tomadas** que não estavam no `PLAN.md`.
 - Se algo no `PLAN.md` estiver ambíguo ou for inviável, registre a dúvida no PR em vez de inventar comportamento grande. Para detalhes pequenos, decida, siga e documente.
 
-## Etapas futuras (fora do escopo atual, não implementar)
+## Etapa atual e etapas futuras
 
-- **Etapa 2 — Especialização:** arquivo JSON que pré-define camadas e tipos de anotação com chaves e valores.
-- **Etapa 3 — Servidor MCP:** servidor em Node/TypeScript, no mesmo repositório, que reutiliza o `src/model/` para um agente criar projetos, adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
+- **Etapa 2 — Especialização (atual):** seção 13 do `PLAN.md`, fases 13 a 17.
+- **Etapa 3 — Servidor MCP (futura, não implementar):** servidor em Node/TypeScript, no mesmo repositório, que reutiliza o `src/model/` para um agente criar projetos, aplicar especializações e adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
+- **Etapa 4 — Editor de especializações (futura, não implementar):** criar e editar especializações dentro da app.

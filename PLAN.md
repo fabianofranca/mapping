@@ -1,9 +1,11 @@
-# Mapeador de Imagens — Plano da Etapa 1
+# Mapeador de Imagens — Plano de desenvolvimento
 
 > Nome provisório. Este documento é a fonte de verdade do desenvolvimento.
 > Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 >
 > **Etapa 1 concluída.** As melhorias de usabilidade (Etapa 1.1, fases 8 a 12) estão na **seção 12**. Onde a seção 12 contradiz as anteriores, **a seção 12 prevalece**.
+>
+> **Etapa 2 (especialização)**: **seção 13**, fases 13 a 17. Onde a seção 13 contradiz as anteriores, **a seção 13 prevalece**.
 
 ---
 
@@ -400,11 +402,11 @@ Cada fase = um branch + um PR, terminando com build verde e deploy funcional.
 
 ## 11. Fora do escopo da etapa 1
 
-- Especialização / templates (etapa 2)
-- Valores tipados (número, data, opções fixas)
+- Especialização / templates (etapa 2 — **ver seção 13**)
+- Valores tipados (número, data, opções fixas) — **etapa 2, seção 13**
 - Vários canvas por projeto; rotação de imagens; marcações que não sejam retângulos
 - Colaboração, sincronização em nuvem, contas de usuário
-- Valores aninhados (lista de tabelas dentro de um valor): **descartados**. O caso de uso é atendido pelos vínculos entre anotações (12.3)
+- Valores aninhados (lista de tabelas dentro de um valor): **descartados** em anotações livres; o caso de uso é atendido pelos vínculos entre anotações (12.3). Nas anotações tipadas da etapa 2 existe o tipo `table`, só com colunas simples (13.2)
 
 ---
 
@@ -612,3 +614,596 @@ Problema: o texto solto sobre a foto, com a mesma cor e peso para nomes e pares,
 **Aceite**: adicionar uma foto de 12 MP pela câmera e conferir que o arquivo salvo tem lado maior 2560 px, é WebP (ou JPEG no fallback) e ficou menor; colar um print no desktop e no celular; arrastar uma imagem para área vazia e outra sobre uma imagem existente (troca mantendo as marcações); exportar o zip e conferir o tamanho.
 
 > A Fase 12 não depende das fases 9 a 11 e pode ser feita logo depois da Fase 8, se for mais conveniente.
+
+---
+
+## 13. Etapa 2 — Especialização
+
+> Esta seção prevalece sobre as anteriores onde houver conflito (ex: o tipo `table` da 13.2 substitui o descarte de valores aninhados da seção 11, com colunas só de tipos simples).
+
+### 13.1 Conceito
+
+Uma **especialização** é um arquivo JSON que define **camadas obrigatórias** e os **tipos de anotação** que podem ser criados nelas. Ex: a especialização **SDUI** traz as camadas Componentes (tipos Button, Input…) e Eventos (onClick, onHold…). Ao criar um Button, as chaves já vêm definidas e o usuário só preenche os valores.
+
+- Um projeto pode aplicar **várias especializações** (ex: SDUI + Modelo de dados), **a qualquer momento**.
+- Uma especialização **não cita outra pelo nome**. Ligações entre elas são feitas por **referências fortes entre tuplas** (tipo `ref`, 13.3), que escolhem seus alvos por **etiquetas** (ex: o `dado` do Input da SDUI aceita qualquer tupla com a etiqueta `data-field`, que a especialização Modelo de dados coloca nos atributos das classes).
+- **Camadas da especialização** só aceitam anotações **tipadas**, sem chaves extras. **Camadas criadas pelo usuário** continuam livres, como hoje.
+- Fora do escopo desta etapa: **editor de especializações** dentro da app (etapa 4, depois do MCP).
+
+### 13.2 Formato do arquivo de especialização (`formatVersion` 1)
+
+```json
+{
+  "format": "mapeador-spec",
+  "formatVersion": 1,
+  "id": "sdui",
+  "name": "SDUI",
+  "version": 1,
+  "description": "opcional",
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "input",
+          "name": "Input",
+          "description": "opcional",
+          "labelField": null,
+          "requiresOwner": false,
+          "allowedChildren": ["onChange"],
+          "fields": [
+            { "key": "id", "type": "string", "required": true },
+            { "key": "tipo", "type": "enum", "options": ["text", "email"], "default": "text" },
+            { "key": "dado", "type": "ref", "accepts": { "tags": ["data-field"], "free": true } }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Tipo de anotação** (`annotationTypes[]`):
+
+| Propriedade | Obrigatória | Descrição |
+|---|---|---|
+| `id` | sim | Único **na especialização inteira** (não só na camada). |
+| `name` | sim | Nome exibido (ex: "Button"). |
+| `description` | não | Texto de ajuda. |
+| `labelField` | não | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio (ex: a Classe usa `nome`, então aparece como "Usuario"). |
+| `requiresOwner` | não | Padrão `false`. Ver "Relações". |
+| `allowedChildren` | não | Ver "Relações". |
+| `fields` | sim | Lista de campos (pode ser vazia). |
+
+**Campos** (`fields[]`):
+
+| Propriedade | Obrigatória | Descrição |
+|---|---|---|
+| `key` | sim | Chave gravada no JSON. ASCII sem espaços (`[A-Za-z0-9_]`), **não pode começar com `_`** (reservado). Única dentro do tipo. |
+| `label` | não | Rótulo exibido na interface (pode ter acentos). Padrão: `key`. |
+| `type` | sim | `string`, `number`, `date`, `enum`, `table` ou `ref`. |
+| `required` | não | Padrão `false`. Vazio permitido ao salvar, mas a anotação fica **incompleta** (13.5). |
+| `default` | não | Valor inicial ao criar a anotação. Precisa ser válido para o tipo. Não existe para `ref`. |
+| `options` | só `enum` | Lista não vazia de strings únicas. |
+| `columns` | só `table` | Lista de campos com a mesma estrutura, **apenas tipos simples** (`string`, `number`, `date`, `enum`): sem `table` nem `ref` dentro de tabela. |
+| `tags` | não | Etiquetas que tornam o campo **alvo de referências** (13.3). Formato `[a-z0-9-]+`. Em `table`, cada **linha** vira um alvo. |
+| `rowLabel` | `table` com `tags` | Chave de uma coluna `string` que nomeia cada linha como alvo (ex: `nome`). |
+| `accepts` | só `ref` | Alvos aceitos: `{ "tags": [...], "free": true\|false }`. Precisa de pelo menos uma etiqueta ou `free: true`. |
+| `description` | não | Texto de ajuda exibido no editor. |
+
+**Tipos de valor**:
+- `string`: texto.
+- `number`: número (inteiro ou decimal).
+- `date`: data no formato ISO `AAAA-MM-DD`.
+- `enum`: uma das `options`. Booleanos são representados como `enum` (ex: `["sim", "não"]`).
+- `table`: lista de linhas; cada linha é um objeto com as chaves das `columns` (mais o id interno `_id`, 13.3).
+- `ref`: **referência forte** a uma tupla de outra anotação (13.3). O valor do campo **é** a referência.
+
+**Relações entre anotações** (sempre dentro da mesma especialização):
+- `allowedChildren`: ids dos tipos que podem ser **vinculados** a este (via `parentAnnotationId`). Ex: um Button aceita onClick e onHold. Um dono pode ter **N** filhos, inclusive vários do mesmo tipo.
+- `requiresOwner: true`: a anotação **precisa** ter exatamente um dono, de um tipo que a liste em `allowedChildren`. Ex: um evento sem componente não faz sentido.
+- Os filhos ficam na camada onde o tipo deles está definido (ex: onClick na camada Eventos), o que respeita a regra existente de dono em outra camada.
+
+**Etiquetas recomendadas** (convenção documentada na ajuda; novas especializações devem reutilizá-las):
+- `data-field`: atributo de um modelo de dados (classe, entidade, DTO).
+
+**Validação na importação** (mensagens com o caminho do erro, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "number"`):
+- `format`, `formatVersion`, `id`, `name`, `version` (inteiro ≥ 1) obrigatórios;
+- ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
+- `allowedChildren` só referencia tipos existentes **em outra camada** da mesma especialização;
+- todo tipo com `requiresOwner: true` aparece no `allowedChildren` de pelo menos um tipo;
+- `default` compatível com o tipo (e presente em `options` no `enum`); `ref` sem `default`;
+- `columns` só com tipos simples; `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
+- `labelField` aponta para um campo `string` do tipo;
+- `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
+- `color` no formato `#RRGGBB`.
+
+### 13.3 Schema v4 do projeto
+
+**Pasta/zip**: a especialização aplicada é **copiada** para `specs/<id>.json`. O projeto fica autocontido e o agente entende o significado das camadas e chaves.
+
+```
+meu-projeto/
+├── mapping.json
+├── images/
+└── specs/
+    ├── sdui.json
+    └── modelo-dados.json
+```
+
+**`mapping.json`** ganha:
+
+```json
+{
+  "schemaVersion": 4,
+  "specializations": [
+    { "id": "sdui", "version": 1, "file": "specs/sdui.json" },
+    { "id": "modelo-dados", "version": 1, "file": "specs/modelo-dados.json" }
+  ],
+  "layers": [
+    { "id": "L1", "name": "Componentes", "color": "#1E88E5", "spec": { "specId": "sdui", "layerId": "componentes" } },
+    { "id": "L3", "name": "Classes", "color": "#43A047", "spec": { "specId": "modelo-dados", "layerId": "classes" } },
+    { "id": "L9", "name": "Model", "color": "#757575", "spec": null }
+  ],
+  "annotations": [
+    {
+      "id": "A1", "markingId": "M-form", "layerId": "L9", "name": "User",
+      "inherit": false, "parentAnnotationId": null, "type": null, "values": null,
+      "entries": [
+        { "id": "E1", "key": "name", "value": "string" },
+        { "id": "E2", "key": "age", "value": "number" }
+      ]
+    },
+    {
+      "id": "A2", "markingId": "M-form", "layerId": "L3", "name": null,
+      "inherit": false, "parentAnnotationId": null,
+      "type": { "specId": "modelo-dados", "typeId": "classe" },
+      "values": {
+        "nome": "Contato",
+        "atributos": [ { "_id": "R1", "nome": "email", "tipo": "String", "obrigatorio": "sim" } ]
+      },
+      "entries": []
+    },
+    {
+      "id": "A3", "markingId": "M-nome", "layerId": "L1", "name": null,
+      "inherit": false, "parentAnnotationId": null,
+      "type": { "specId": "sdui", "typeId": "input" },
+      "values": {
+        "id": "input_nome", "tipo": "text",
+        "dado": { "annotationId": "A1", "entryId": "E1" }
+      },
+      "entries": []
+    },
+    {
+      "id": "A4", "markingId": "M-email", "layerId": "L1", "name": null,
+      "inherit": false, "parentAnnotationId": null,
+      "type": { "specId": "sdui", "typeId": "input" },
+      "values": {
+        "id": "input_email", "tipo": "email",
+        "dado": { "annotationId": "A2", "key": "atributos", "rowId": "R1" }
+      },
+      "entries": []
+    }
+  ]
+}
+```
+
+**Camadas e anotações**
+- **Camada**: `spec` é `null` (camada livre) ou aponta para a camada de origem na especialização.
+- **Anotação livre**: `type: null`, `values: null`, pares em `entries`.
+- **Anotação tipada**: `type` aponta para o tipo; `values` é um objeto com **valores JSON nativos** (`number` como número, `date` como string ISO, `table` como array de objetos, `ref` como objeto de referência); `entries: []`.
+  - Campo vazio: `null` (ou ausente). `table` vazia: `[]`.
+  - Chaves que não existem no tipo **não são aceitas** pela interface.
+- `name` continua opcional e funciona como **rótulo da instância**. Se estiver vazio e o tipo tiver `labelField`, o rótulo vem desse campo.
+
+**Ids estáveis** (para as referências sobreviverem a renomeações)
+- Toda tupla de anotação livre ganha **`id`** (`entries[].id`).
+- Toda linha de `table` ganha **`_id`** (chave reservada; por isso nenhuma `key` de especialização pode começar com `_`).
+- Ids gerados com `crypto.randomUUID()` (abreviados nos exemplos). Não mudam ao editar chave ou valores.
+
+**Referências (`ref`)**
+
+O valor de um campo `ref` é um destes três formatos:
+
+| Alvo | Valor | Rótulo exibido |
+|---|---|---|
+| Tupla de anotação livre | `{ "annotationId", "entryId" }` | `User.name` (rótulo da anotação + chave da tupla) |
+| Linha de `table` com etiqueta | `{ "annotationId", "key", "rowId" }` | `Contato.email` (rótulo da anotação + valor do `rowLabel`) |
+| Campo simples com etiqueta | `{ "annotationId", "key" }` | `Contato.nome` (rótulo da anotação + `label` do campo) |
+
+- **Alvos aceitos**: tuplas cujo campo tenha alguma das etiquetas de `accepts.tags` (em qualquer especialização aplicada) e, se `accepts.free` for `true`, qualquer tupla de anotação livre.
+- O alvo pode estar em **qualquer marcação e imagem do projeto**.
+- **Origem**: só campos `ref` de anotações tipadas. Anotações livres não têm referências fortes.
+- **Rótulo da anotação** no texto da referência: `name`; se vazio, valor do `labelField`; se vazio, nome do tipo; numa anotação livre sem nome, "Anotação".
+- Excluir o alvo **não apaga** a referência: ela fica **quebrada** e aparece como pendência (13.5). O desfazer restaura tudo.
+- Referências de uma anotação para ela mesma não são permitidas.
+
+**Migração v3 → v4**: `specializations: []`; toda camada recebe `spec: null`; toda anotação recebe `type: null` e `values: null`; toda tupla em `entries` recebe `id`.
+
+**Invariantes novas**:
+- camada com `spec` só tem anotações tipadas da mesma especialização e de tipos daquela camada; camada livre só tem anotações livres;
+- anotação tipada com dono só se o tipo do dono a listar em `allowedChildren`;
+- ids de tupla únicos no projeto; ids de linha únicos dentro da tabela.
+- Violações vindas de arquivos externos, de atualização de versão ou de referências quebradas **não bloqueiam a abertura**: viram pendências (13.5).
+
+O estado **incompleta** **não é gravado**: é calculado a partir do projeto + especializações.
+
+`src/model/`: tipos do formato da especialização, validação (zod), resolução de referências (`resolveRef`, `findRefTargets`, `getBacklinks`), cálculo de pendências e todas as operações, sem APIs de navegador (reutilizável pelo MCP). Leitura e escrita de `specs/` ficam em `src/storage/`.
+
+### 13.4 Ciclo de vida da especialização no projeto
+
+**Aplicar** (menu do projeto → Especializações → Aplicar): escolher o arquivo JSON → validar (13.2) → copiar para `specs/` → criar as camadas da especialização no fim da lista.
+- Se já existir no projeto uma especialização com o mesmo `id`:
+  - `version` maior: oferecer **Atualizar** (abaixo);
+  - mesma `version` ou menor: avisar e não fazer nada.
+
+**Atualizar versão** (manual):
+- substitui a cópia em `specs/`;
+- camadas novas são criadas; camadas existentes mantêm cor e anotações; o nome segue o da nova versão;
+- camadas que **sumiram** na nova versão viram **camadas livres** (mesma conversão de "Remover → Converter");
+- anotações que ficaram inválidas (campo obrigatório novo, opção removida, tipo removido, relação não permitida, etiqueta removida de um alvo) **não são alteradas**: aparecem como **incompletas** com o motivo, para o usuário corrigir. Tipo removido: a anotação fica somente leitura, com a ação "Converter em anotação livre".
+
+**Remover**: a app pergunta:
+- **Apagar dados**: remove as camadas da especialização e todas as anotações delas, **e as vinculadas a elas em outras camadas**; confirmação com contagens por camada;
+- **Converter em camadas livres**: as camadas viram livres (`spec: null`), as anotações tipadas viram livres (`type: null`, `values: null`) com os valores convertidos para texto em `entries` (na ordem dos campos; `number` e `date` como texto; campos vazios omitidos; `table` achatada como `parametros[1].nome: origem`; `ref` como o rótulo do alvo, ex: `dado: → User.name`); o nome do tipo é preservado no `name` quando este estiver vazio (ex: `Button`, ou o valor do `labelField`); vínculos (`parentAnnotationId`) e `inherit` mantidos.
+- Nos dois casos, a cópia em `specs/` é removida e o desfazer cobre a operação inteira.
+- **Referências de outras especializações** que apontavam para dados removidos ou convertidos ficam **quebradas** (pendências), e a confirmação informa quantas serão afetadas. Ex: remover o Modelo de dados quebra os `dado` dos Inputs que apontavam para atributos de Classe.
+
+**Camadas da especialização**:
+- **não podem ser excluídas nem renomeadas** individualmente (só removendo a especialização);
+- a **cor pode ser trocada**;
+- aparecem com um selo da especialização (ex: "SDUI") no seletor e na folha de camadas;
+- podem ser reordenadas, ocultadas e escolhidas como ativas, como qualquer camada.
+
+### 13.5 Anotações tipadas na interface
+
+**Criar**
+- Em camada da especialização, "+ Anotação" abre a lista dos **tipos daquela camada**.
+- Tipo com `requiresOwner`: pede o **dono** primeiro (anotações da mesma marcação cujo tipo permite este filho). Sem dono possível: mensagem explicando o que criar antes.
+- **A partir do dono**: no editor de uma anotação tipada aparecem botões para cada tipo de `allowedChildren` (ex: "+ onClick", "+ onHold"), que criam a anotação já vinculada, na camada do tipo filho. Se essa camada estiver oculta, criar mesmo assim e oferecer torná-la visível.
+- Campos com `default` vêm preenchidos.
+
+**Editores por tipo de campo** (mobile-first)
+- `string`: campo de texto; `number`: campo numérico (`inputmode="decimal"`); `date`: seletor nativo de data; `enum`: seleção (botões segmentados se houver até 3 opções, lista se mais).
+- `table`: linhas como **cartões empilhados** no celular (uma coluna por linha do cartão) e tabela no desktop; adicionar, remover e reordenar linhas.
+- `ref`: mostra o alvo atual (`→ User.name`) com ações **Escolher**, **Limpar** e **Ir para o alvo**. "Escolher" abre um seletor com busca listando **só os alvos aceitos**, agrupados por anotação, com o contexto (imagem › marcação). Se não houver nenhum alvo aceito, mensagem explicando o que falta (ex: "Nenhuma tupla com a etiqueta data-field. Aplique uma especialização de modelo de dados ou crie uma anotação livre.").
+- `label` e `description` exibidos; obrigatórios com `*`.
+- Sem campo para chaves extras.
+
+**Referências recebidas (backlinks)**
+- No editor de uma anotação que é alvo, cada tupla ou linha referenciada mostra quem aponta para ela, ex: `name ← Input input_nome (Nome)`. Tocar leva à origem.
+- Ao excluir uma anotação, tupla ou linha que é alvo, a confirmação informa quantas referências vão quebrar.
+
+**Incompletas**
+- Motivos: obrigatório vazio (inclusive coluna obrigatória numa linha de tabela), valor incompatível com o tipo, opção inexistente, tipo inexistente, dono ausente (`requiresOwner`), dono de tipo não permitido, **referência quebrada** (alvo não existe mais), **alvo não aceito** (perdeu a etiqueta ou deixou de ser livre).
+- Exibição: ícone de alerta na anotação (painel e lista) com a lista de motivos; no canvas, um pequeno alerta junto aos indicadores da marcação; filtro **"Incompletas"** na Lista.
+- Salvar incompleta é sempre permitido.
+
+**Exibição** (zoom semântico, painel e lista)
+- Título: nome do tipo + rótulo da instância, ex: **Button · Comprar**, **Classe · Contato** (sem rótulo: só **Button**).
+- Valores na ordem dos campos, usando o `label`: `estilo: primary`. Opcionais vazios omitidos; obrigatórios vazios como `id: —` na cor de alerta.
+- `table`: no zoom semântico, só o resumo (`atributos: 3 linhas`); no painel e na lista, a tabela completa.
+- `ref`: `dado: → User.name`; quebrada: `dado: → (referência quebrada)` na cor de alerta.
+- Filhos vinculados: "↳ de Button · Comprar", como já existe.
+
+### 13.6 Documentação na app
+
+- Página **"Ajuda → Especializações"** (pt-BR e en-US): conceito, formato completo (13.2), tipos de valor, relações, **referências e etiquetas** (com a lista de etiquetas recomendadas), regras de validação e o exemplo SDUI comentado.
+- Botões para baixar os **dois exemplos** (13.8) e o **JSON Schema** do formato.
+- `docs/SPEC-FORMAT.md` com o mesmo conteúdo, e `docs/spec.schema.json` (JSON Schema draft 2020-12). O zod em `src/model/` é a fonte da verdade: um teste garante que os exemplos passam nos dois e que um conjunto de arquivos inválidos é rejeitado pelos dois.
+- `docs/FORMAT.md` atualizado para o schema v4: como ler anotações tipadas, `specs/`, ids de tupla e linha, e **como resolver uma referência** (passo a passo para agentes).
+
+### 13.7 Fases
+
+#### Fase 13 — Formato da especialização (modelo)
+- [ ] Tipos + schema zod do formato (13.2), incluindo `ref`, `accepts`, `tags`, `rowLabel` e `labelField`, com mensagens de erro por caminho
+- [ ] `docs/spec.schema.json` + teste de consistência com o zod
+- [ ] Exemplos em `examples/specs/sdui.json` e `examples/specs/modelo-de-dados.json` (13.8) + testes de validação
+- [ ] `docs/SPEC-FORMAT.md`
+
+**Aceite**: os dois exemplos validam; arquivos com cada tipo de erro da 13.2 são rejeitados com o caminho correto.
+
+#### Fase 14 — Schema v4 e operações (modelo + armazenamento)
+- [ ] Tipos, schema zod v4 e migração v3 → v4 (inclusive `id` nas tuplas)
+- [ ] Operações: aplicar, atualizar e remover especialização (apagar / converter); criar anotação tipada com defaults; editar valores; linhas de tabela com `_id`; vínculos com `allowedChildren`/`requiresOwner`; converter tipada em livre
+- [ ] Referências: `resolveRef`, `findRefTargets` (respeitando `accepts`), `getBacklinks`; contagem de referências afetadas por exclusões e remoções
+- [ ] Cálculo de pendências (`getAnnotationIssues`) com todos os motivos da 13.5
+- [ ] Invariantes novas da 13.3
+- [ ] `src/storage/`: ler/gravar `specs/` na pasta, no IndexedDB e no zip
+- [ ] `docs/FORMAT.md` atualizado
+
+**Aceite**: testes cobrindo migração, aplicar/atualizar/remover (as duas opções), conversão com `table` achatada e `ref` em texto, os três formatos de referência, referência que sobrevive a renomear a chave da tupla, referência quebrada, `accepts` com etiqueta e com `free`, pendências e invariantes; um projeto com as duas especializações faz round-trip pelo zip sem perdas.
+
+#### Fase 15 — Especializações e camadas na interface
+- [ ] Menu Especializações: aplicar (com erros de validação legíveis), atualizar versão, remover (apagar / converter) com as contagens, inclusive de referências afetadas
+- [ ] Camadas da especialização: selo, nome travado, cor editável, sem exclusão individual
+
+**Aceite**: passo 1 do roteiro da 13.9; atualizar a SDUI com uma cópia de `version: 2` que tenha uma camada a mais e uma a menos (a que sumiu vira livre); remover cada especialização com as duas opções e desfazer.
+
+#### Fase 16 — Anotações tipadas e referências na interface
+- [ ] Criação tipada (lista de tipos, dono obrigatório, "+ filho" a partir do dono)
+- [ ] Editores de campo, inclusive `table` em cartões no celular e o seletor de `ref`
+- [ ] Backlinks no editor do alvo; aviso de referências afetadas ao excluir
+- [ ] Incompletas: ícone, motivos, alerta no canvas, filtro na Lista
+- [ ] Exibição tipada e de referências no zoom semântico, painel e lista
+
+**Aceite**: passos 2 a 10 do roteiro da 13.9 no celular.
+
+#### Fase 17 — Documentação na app
+- [ ] Página Ajuda → Especializações (pt-BR e en-US), incluindo referências e etiquetas
+- [ ] Downloads dos exemplos e do JSON Schema
+
+**Aceite**: abrir a ajuda no celular, baixar o exemplo SDUI e aplicá-lo num projeto.
+
+> Dependências: 14 depende de 13; 15 depende de 14; 16 depende de 15; 17 depende só de 13.
+
+### 13.8 Exemplos de especialização
+
+Usados pelos testes, pelos agentes e nos testes manuais. Criar exatamente com este conteúdo em `examples/specs/`.
+
+#### `examples/specs/sdui.json`
+
+Mostra: `string`, `number`, `enum`, `table` e `ref`; `required`, `default`, `label`, `description`; `allowedChildren` e `requiresOwner`; booleano como `enum`; referência forte por etiqueta aceitando também tuplas livres (`dado` no Input e no Text).
+
+```json
+{
+  "format": "mapeador-spec",
+  "formatVersion": 1,
+  "id": "sdui",
+  "name": "SDUI",
+  "version": 1,
+  "description": "Componentes de tela e seus eventos para Server-Driven UI.",
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": ["onClick", "onHold"],
+          "fields": [
+            {"key": "id", "type": "string", "required": true},
+            {"key": "texto", "type": "string", "required": true},
+            {"key": "estilo", "type": "enum", "options": ["primary", "secondary", "text"], "default": "primary"},
+            {"key": "habilitado", "type": "enum", "options": ["sim", "não"], "default": "sim"}
+          ]
+        },
+        {
+          "id": "input",
+          "name": "Input",
+          "allowedChildren": ["onChange"],
+          "fields": [
+            {"key": "id", "type": "string", "required": true},
+            {
+              "key": "tipo",
+              "type": "enum",
+              "options": ["text", "email", "password", "number", "phone"],
+              "default": "text",
+              "required": true
+            },
+            {"key": "placeholder", "type": "string"},
+            {
+              "key": "obrigatorio",
+              "label": "obrigatório",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não"
+            },
+            {"key": "maxLength", "type": "number"},
+            {
+              "key": "dado",
+              "type": "ref",
+              "accepts": {"tags": ["data-field"], "free": true},
+              "description": "Atributo do modelo de dados exibido e editado por este campo"
+            }
+          ]
+        },
+        {
+          "id": "text",
+          "name": "Text",
+          "fields": [
+            {"key": "id", "type": "string", "required": true},
+            {"key": "conteudo", "label": "conteúdo", "type": "string", "required": true},
+            {"key": "estilo", "type": "enum", "options": ["titulo", "corpo", "legenda"], "default": "corpo"},
+            {
+              "key": "dado",
+              "type": "ref",
+              "accepts": {"tags": ["data-field"], "free": true},
+              "description": "Atributo exibido por este texto (opcional)"
+            }
+          ]
+        },
+        {
+          "id": "image",
+          "name": "Image",
+          "allowedChildren": ["onClick"],
+          "fields": [
+            {"key": "id", "type": "string", "required": true},
+            {"key": "descricao", "label": "descrição (acessibilidade)", "type": "string", "required": true},
+            {"key": "url", "type": "string"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#FB8C00",
+      "annotationTypes": [
+        {
+          "id": "onClick",
+          "name": "onClick",
+          "requiresOwner": true,
+          "fields": [
+            {
+              "key": "acao",
+              "label": "ação",
+              "type": "enum",
+              "options": ["navigate", "submit", "openUrl", "showDialog", "track"],
+              "required": true
+            },
+            {"key": "destino", "type": "string"},
+            {
+              "key": "parametros",
+              "label": "parâmetros",
+              "type": "table",
+              "columns": [{"key": "nome", "type": "string", "required": true}, {"key": "valor", "type": "string"}]
+            }
+          ]
+        },
+        {
+          "id": "onHold",
+          "name": "onHold",
+          "requiresOwner": true,
+          "fields": [
+            {
+              "key": "acao",
+              "label": "ação",
+              "type": "enum",
+              "options": ["showTooltip", "showMenu", "track"],
+              "required": true
+            },
+            {"key": "duracaoMs", "label": "duração (ms)", "type": "number", "default": 500}
+          ]
+        },
+        {
+          "id": "onChange",
+          "name": "onChange",
+          "requiresOwner": true,
+          "fields": [
+            {
+              "key": "acao",
+              "label": "ação",
+              "type": "enum",
+              "options": ["validate", "mask", "track"],
+              "required": true
+            },
+            {"key": "regra", "type": "string", "description": "Ex: email, cpf, minLength:8"}
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### `examples/specs/modelo-de-dados.json`
+
+Mostra: `date`, `number` com `default`, `labelField` (a Classe é rotulada pelo `nome`), `table` com etiqueta `data-field` e `rowLabel` (cada atributo vira um alvo de referência) e, para contraste, referências **fracas** em texto (`request`/`response` do Endpoint).
+
+```json
+{
+  "format": "mapeador-spec",
+  "formatVersion": 1,
+  "id": "modelo-dados",
+  "name": "Modelo de dados",
+  "version": 1,
+  "description": "Classes de dados e endpoints relacionados às áreas mapeadas.",
+  "layers": [
+    {
+      "id": "classes",
+      "name": "Classes",
+      "color": "#43A047",
+      "annotationTypes": [
+        {
+          "id": "classe",
+          "name": "Classe",
+          "labelField": "nome",
+          "fields": [
+            {"key": "nome", "type": "string", "required": true},
+            {"key": "descricao", "label": "descrição", "type": "string"},
+            {"key": "versao", "label": "versão", "type": "number", "default": 1},
+            {"key": "revisadoEm", "label": "revisado em", "type": "date"},
+            {
+              "key": "atributos",
+              "type": "table",
+              "tags": ["data-field"],
+              "rowLabel": "nome",
+              "columns": [
+                {"key": "nome", "type": "string", "required": true},
+                {
+                  "key": "tipo",
+                  "type": "enum",
+                  "options": ["String", "Int", "Long", "Double", "Boolean", "Date", "List", "Object"],
+                  "required": true
+                },
+                {
+                  "key": "obrigatorio",
+                  "label": "obrigatório",
+                  "type": "enum",
+                  "options": ["sim", "não"],
+                  "default": "sim"
+                },
+                {"key": "exemplo", "type": "string"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endpoints",
+      "name": "Endpoints",
+      "color": "#8E24AA",
+      "annotationTypes": [
+        {
+          "id": "endpoint",
+          "name": "Endpoint",
+          "fields": [
+            {
+              "key": "metodo",
+              "label": "método",
+              "type": "enum",
+              "options": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+              "required": true
+            },
+            {"key": "path", "type": "string", "required": true},
+            {"key": "request", "type": "string", "description": "Referência fraca a uma Classe, ex: Credenciais"},
+            {"key": "response", "type": "string", "description": "Referência fraca a uma Classe, ex: Sessao"},
+            {"key": "timeoutMs", "label": "timeout (ms)", "type": "number", "default": 10000}
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 13.9 Roteiro de teste manual
+
+Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E-mail**, um botão **Cadastrar** e um título **Crie sua conta**.
+
+1. **Especializações**: criar um projeto, adicionar o print e criar uma **camada livre "Model"**. Aplicar **SDUI** e **Modelo de dados** (menu → Especializações). Conferir as quatro camadas novas com o selo, que não dá para renomear nem excluir nenhuma delas, e que dá para trocar a cor.
+2. **Marcações**: **Formulário** (envolvendo os campos e o botão) › **Nome**, **Idade**, **E-mail**, **Cadastrar**; e **Título**.
+3. **Modelo**, na marcação **Formulário**:
+   - camada **Model** (livre): anotação **User** com as tuplas `name: string` e `age: number`;
+   - camada **Classes**: **Classe** com `nome: Contato`, `revisadoEm` com a data de hoje e `atributos`: `email | String | sim | ana@exemplo.com`. Conferir que ela aparece como **Classe · Contato** sem preencher o nome da anotação (`labelField`).
+4. **Componentes** e **referências**:
+   - Nome → **Input** · `id: input_nome`, `dado` → escolher **User.name**;
+   - Idade → **Input** · `id: input_idade`, `tipo: number`, `dado` → **User.age**;
+   - E-mail → **Input** · `id: input_email`, `tipo: email`, `obrigatorio: sim`, `dado` → **Contato.email**;
+   - conferir que o seletor do `dado` lista **só** User.name, User.age e Contato.email (nada do Endpoint, do Button nem de outras camadas);
+   - Cadastrar → **Button** · `id: btn_cadastrar`, `texto: Cadastrar` (conferir `estilo: primary` e `habilitado: sim` já preenchidos);
+   - Título → **Text** · deixar `id` vazio → deve aparecer como **incompleta**.
+5. **Backlinks**: abrir a **User** e conferir `name ← Input input_nome` e `age ← Input input_idade`; tocar num deles leva ao Input.
+6. **Renomear e quebrar**:
+   - renomear a tupla `name` da User para `nome` → o Input do Nome passa a mostrar `dado: → User.nome` (a referência sobreviveu);
+   - excluir a linha `email` dos atributos da Contato → a confirmação avisa que 1 referência vai quebrar; o Input do E-mail vira **incompleta** com o motivo "referência quebrada"; **desfazer** e conferir que voltou.
+7. **Eventos**, criados **a partir do dono**:
+   - Cadastrar → **+ onClick** · `acao: submit`, `destino: /usuarios`, `parametros`: `origem = cadastro`;
+   - Cadastrar → **+ onHold** (conferir `duracaoMs: 500` preenchido) · `acao: track`;
+   - E-mail → **+ onChange** · `acao: validate`, `regra: email`;
+   - tentar criar um onClick direto na camada Eventos na marcação **Idade** (que só tem Input) → mensagem explicando que é preciso um dono que aceite onClick (Button ou Image).
+   - Camada **Endpoints**, na marcação Formulário: **Endpoint** · `metodo: POST`, `path: /v1/usuarios`, `request: User`, `response: User` (referências fracas, só texto).
+8. **Visualização**:
+   - só **Eventos** visível + modo **Ocultar sem anotação**: aparecem apenas E-mail e Cadastrar (e o contorno do Formulário);
+   - zoom semântico no Nome: **Input** com `dado: → User.nome`; no Cadastrar, o onClick com `parâmetros: 1 linha`;
+   - Lista com o filtro **Incompletas**: só o Título.
+9. **Arquivo**: exportar o zip e conferir `specs/sdui.json`, `specs/modelo-dados.json`, os `values` tipados no `mapping.json` (números como número, data ISO, tabela como array com `_id`), os `id` nas tuplas da User e os `dado` como objetos de referência.
+10. **Remover**:
+    - remover **Modelo de dados** com **Converter em camadas livres**: a confirmação avisa que 1 referência vai quebrar (Contato.email); conferir a Classe convertida em anotação livre com `name: Contato` e `atributos[1].nome: email` achatado; o Input do E-mail fica incompleto e os do Nome e da Idade continuam válidos (apontam para a User livre). **Desfazer**;
+    - remover **SDUI** com **Apagar dados** e conferir as contagens por camada na confirmação.
