@@ -76,7 +76,11 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
 // Orçamentos por quadro (PLAN.md 14.3): o que o canvas, o painel e a lista leem a
 // cada mudança de projeto. A mediana de várias rodadas, cada uma numa versão
 // nova do projeto (sem o índice nem as pendências já calculados).
-const FRAME_BUDGET_MS = 8;
+// Medido: mediana ~4 ms no desktop (picos de 8–12 ms por GC) e ~9 ms no runner do CI.
+// O limite é um quadro a 60 fps: com folga para o CI, ainda pega regressão O(n²).
+const FRAME_BUDGET_MS = 16;
+/** Consultas por anotação em todo o projeto (1.500 anotações), na mesma versão. */
+const QUERY_BUDGET_MS = 32;
 /** Desligados com `--coverage` (vite.config.ts): o código instrumentado é mais lento. */
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
 
@@ -132,6 +136,6 @@ describe('projeto grande com tipadas e referências', () => {
     };
     queryAll(); // Aquece o JIT.
     const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
-    expect(median(runs)).toBeLessThan(FRAME_BUDGET_MS * 4);
+    expect(median(runs)).toBeLessThan(QUERY_BUDGET_MS);
   });
 });
