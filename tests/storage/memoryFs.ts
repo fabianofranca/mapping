@@ -13,6 +13,8 @@ export class MemoryDirectory implements DirectoryHandleLike {
   readonly dirs = new Map<string, MemoryDirectory>();
   /** Se definido, toda escrita falha com este erro. */
   failWrites: Error | null = null;
+  /** Quantas escritas foram descartadas com `abort()` nesta pasta. */
+  abortedWrites = 0;
 
   constructor(readonly name: string) {}
 
@@ -47,6 +49,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
   private fileHandle(name: string): FileHandleLike {
     const files = this.files;
     const failWrites = () => this.failWrites;
+    const onAbort = () => this.abortedWrites++;
     return {
       kind: 'file',
       name,
@@ -57,6 +60,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
       },
       createWritable: async (): Promise<WritableLike> => {
         const parts: (Blob | string)[] = [];
+        let done = false;
         return {
           write: async (data) => {
             const error = failWrites();
@@ -64,7 +68,14 @@ export class MemoryDirectory implements DirectoryHandleLike {
             parts.push(data);
           },
           close: async () => {
+            if (done) throw new TypeError('closed');
+            done = true;
             files.set(name, new Blob(parts));
+          },
+          abort: async () => {
+            if (done) throw new TypeError('closed');
+            done = true;
+            onAbort();
           },
         };
       },

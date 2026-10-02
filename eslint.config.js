@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 // src/model/ roda também em Node (servidor MCP): proíbe globais só de navegador
 // (o que existe em `globals.browser` e não em Node) e dependências de UI/storage.
@@ -26,6 +27,16 @@ export default tseslint.config(
     files: ['**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },
     rules: { '@typescript-eslint/no-explicit-any': 'error' },
+  },
+  // Só as duas regras clássicas; as regras do React Compiler (preset
+  // `recommended` da v7) não se aplicam ao Preact.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
   },
   {
     files: ['src/model/**/*.ts'],

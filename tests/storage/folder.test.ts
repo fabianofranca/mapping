@@ -56,12 +56,22 @@ describe('FolderStorage', () => {
     await expect(storage.writeImage('../fora.jpg', new Blob(['x']))).rejects.toThrow();
   });
 
-  it('propaga erro de escrita', async () => {
+  it('propaga erro de escrita e descarta o gravável com abort()', async () => {
     const root = new MemoryDirectory('projeto');
+    root.put('mapping.json', '{"a":1}\n');
     root.failWrites = new Error('disco cheio');
     await expect(createFolderStorage(root).saveMapping('{}')).rejects.toThrow(
       'disco cheio',
     );
+    expect(root.abortedWrites).toBe(1);
+    // O conteúdo anterior continua lá.
+    expect(await root.read('mapping.json')).toBe('{"a":1}\n');
+  });
+
+  it('não chama abort() quando a escrita dá certo', async () => {
+    const root = new MemoryDirectory('projeto');
+    await createFolderStorage(root).saveMapping('{}');
+    expect(root.abortedWrites).toBe(0);
   });
 
   it('encontra imagens em images/ e na raiz, ignorando outros arquivos', async () => {

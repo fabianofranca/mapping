@@ -64,7 +64,7 @@ describe('exibição tipada', () => {
   it('ref com o rótulo do alvo; renomear a tupla atualiza; quebrada em alerta', () => {
     let p = cadastroProject();
     expect(texts(p, 'AIN')).toContain('dado: → User.name');
-    p = updateEntry(p, 'AU', 0, { key: 'nome', value: 'string' });
+    p = updateEntry(p, 'AU', 'EN', { key: 'nome', value: 'string' });
     expect(texts(p, 'AIN')).toContain('dado: → User.nome');
     expect(texts(p, 'AIE')).toContain('dado: → Contato.email');
     p = removeTableRow(p, 'AC', 'atributos', 'R1');

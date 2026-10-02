@@ -64,13 +64,12 @@ jobs:
       - name: Preview
         if: steps.preview.outputs.ref != ''
         working-directory: preview
-        env:
-          VITE_CHANNEL: preview
+        # `VITE_CHANNEL` só no build: os testes rodam como a versão principal.
         run: |
           npm ci
           npm run lint
           npm test
-          npm run build
+          VITE_CHANNEL=preview npm run build
 
       - name: Monta o site
         run: |

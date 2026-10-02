@@ -12,6 +12,7 @@ import {
 export interface WritableLike {
   write(data: Blob | string): Promise<void>;
   close(): Promise<void>;
+  abort(reason?: unknown): Promise<void>;
 }
 
 export interface FileHandleLike {
@@ -116,8 +117,18 @@ async function writeFile(
   const writable = await (
     await dir.getFileHandle(name, { create: true })
   ).createWritable();
-  await writable.write(data);
-  await writable.close();
+  try {
+    await writable.write(data);
+    await writable.close();
+  } catch (e) {
+    // Descarta a escrita pela metade: o arquivo continua com o conteúdo anterior.
+    try {
+      await writable.abort(e);
+    } catch {
+      // O gravável já pode estar fechado ou com erro; o que importa é a falha original.
+    }
+    throw e;
+  }
 }
 
 async function removeFile(root: DirectoryHandleLike, path: string): Promise<void> {
