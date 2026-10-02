@@ -133,9 +133,18 @@ export function LayersDialog({
                     class="input layer-name"
                     aria-label={t('layer.name')}
                     value={layer.name}
-                    disabled={readOnly}
+                    disabled={readOnly || layer.spec !== null}
+                    title={layer.spec ? t('layer.specLocked') : undefined}
                     onCommit={(text) => actions.renameLayer(layer.id, text).ok}
                   />
+                  {layer.spec && (
+                    <span
+                      class="layer-badge"
+                      title={t('layer.specBadge', { name: specName(project, layer) })}
+                    >
+                      {specName(project, layer)}
+                    </span>
+                  )}
                 </div>
 
                 {colorFor === layer.id && (
@@ -203,11 +212,15 @@ export function LayersDialog({
                       class="button button-danger"
                       aria-label={t('layer.delete')}
                       title={
-                        project.layers.length === 1
-                          ? t('layer.lastLayer')
-                          : t('layer.delete')
+                        layer.spec
+                          ? t('layer.specLocked')
+                          : project.layers.length === 1
+                            ? t('layer.lastLayer')
+                            : t('layer.delete')
                       }
-                      disabled={readOnly || project.layers.length === 1}
+                      disabled={
+                        readOnly || layer.spec !== null || project.layers.length === 1
+                      }
                       onClick={() => setDeleting(layer)}
                     >
                       <TrashIcon />
@@ -244,6 +257,12 @@ export function LayersDialog({
       )}
     </>
   );
+}
+
+/** Nome da especialização dona da camada (ou o id, se a cópia não estiver disponível). */
+function specName(project: Project, layer: Layer): string {
+  const id = layer.spec?.specId ?? '';
+  return project.specializations.find((s) => s.id === id)?.spec?.name ?? id;
 }
 
 /** Contagens da exclusão: total e, por camada, incluindo as vinculadas em outras camadas. */
