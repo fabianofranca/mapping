@@ -917,8 +917,8 @@ O estado **incompleta** **não é gravado**: é calculado a partir do projeto + 
 **Aceite**: testes cobrindo migração, aplicar/atualizar/remover (as duas opções), conversão com `table` achatada e `ref` em texto, os três formatos de referência, referência que sobrevive a renomear a chave da tupla, referência quebrada, `accepts` com etiqueta e com `free`, pendências e invariantes; um projeto com as duas especializações faz round-trip pelo zip sem perdas.
 
 #### Fase 15 — Especializações e camadas na interface
-- [ ] Menu Especializações: aplicar (com erros de validação legíveis), atualizar versão, remover (apagar / converter) com as contagens, inclusive de referências afetadas
-- [ ] Camadas da especialização: selo, nome travado, cor editável, sem exclusão individual
+- [x] Menu Especializações: aplicar (com erros de validação legíveis), atualizar versão, remover (apagar / converter) com as contagens, inclusive de referências afetadas
+- [x] Camadas da especialização: selo, nome travado, cor editável, sem exclusão individual
 
 **Aceite**: passo 1 do roteiro da 13.9; atualizar a SDUI com uma cópia de `version: 2` que tenha uma camada a mais e uma a menos (a que sumiu vira livre); remover cada especialização com as duas opções e desfazer.
 
