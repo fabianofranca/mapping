@@ -63,6 +63,19 @@ export interface CardLabels {
   linkedTo(owner: Annotation): string;
   /** "↳ herdado de Porta". */
   inheritedFrom(source: Marking): string;
+  /**
+   * Título e linhas de uma anotação tipada ("Input", `dado: → User.name`);
+   * `null` = livre (nome e pares). Sem a função, todas são tratadas como livres.
+   */
+  describe?(annotation: Annotation): CardDescription | null;
+}
+
+/** Como uma anotação tipada aparece no cartão. */
+export interface CardDescription {
+  readonly title: string;
+  /** Incompleta: título com alerta. */
+  readonly alert: boolean;
+  readonly lines: readonly { readonly text: string; readonly alert: boolean }[];
 }
 
 /**
@@ -78,6 +91,8 @@ export type CardRow =
       /** Sem nome: título neutro em itálico. */
       readonly untitled: boolean;
       readonly inherited: boolean;
+      /** Anotação incompleta: na cor de alerta. */
+      readonly alert?: boolean;
     }
   | {
       readonly kind: 'note';
@@ -90,6 +105,8 @@ export type CardRow =
       readonly section: number;
       readonly text: string;
       readonly inherited: boolean;
+      /** Obrigatório vazio ou referência quebrada: na cor de alerta. */
+      readonly alert?: boolean;
     }
   | { readonly kind: 'separator'; readonly section: number }
   | { readonly kind: 'more'; readonly section: number };
@@ -130,8 +147,9 @@ export function cardSections(
 
 /**
  * Linhas do cartão: por camada, o nome dela; por anotação, o título (nome em
- * negrito ou "Anotação N" em itálico), "↳ de …" quando vinculada, "↳ herdado de …"
- * quando herdada e os pares `chave: valor`. Uma linha fina separa as anotações
+ * negrito ou "Anotação N" em itálico; na tipada, "Button · Comprar"), "↳ de …"
+ * quando vinculada, "↳ herdado de …" quando herdada e os pares `chave: valor`
+ * (na tipada, os valores com o `label`, ex.: `dado: → User.name`). Uma linha fina separa as anotações
  * da mesma camada. `owners` resolve a dona de uma anotação vinculada.
  */
 export function cardRows(
@@ -150,13 +168,15 @@ export function cardRows(
     items.forEach(({ annotation, source }, i) => {
       if (i > 0) rows.push({ kind: 'separator', section });
       const isInherited = source !== null;
-      const name = annotation.name;
+      const typed = labels.describe?.(annotation) ?? null;
+      const name = typed ? typed.title : annotation.name;
       rows.push({
         kind: 'title',
         section,
         text: name ?? labels.untitled(++untitled),
         untitled: name === null,
         inherited: isInherited,
+        ...(typed?.alert ? { alert: true } : {}),
       });
       const owner =
         annotation.parentAnnotationId === null
@@ -177,6 +197,18 @@ export function cardRows(
           text: labels.inheritedFrom(source),
           inherited: true,
         });
+      }
+      if (typed) {
+        for (const line of typed.lines) {
+          rows.push({
+            kind: 'entry',
+            section,
+            text: line.text,
+            inherited: isInherited,
+            ...(line.alert ? { alert: true } : {}),
+          });
+        }
+        return;
       }
       for (const entry of annotation.entries) {
         rows.push({

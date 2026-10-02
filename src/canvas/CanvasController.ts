@@ -8,8 +8,10 @@ import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../i18n';
 import {
+  annotationTitle,
   annotationsByMarking,
   childrenIndex,
+  rawValueLines,
   layerDotsByMarking,
   imageCanvasRect,
   markingVisibility,
@@ -77,6 +79,12 @@ import {
   type SemanticMode,
 } from './semanticText';
 import { annotationLabel, markingLabel } from '../ui/labels';
+import {
+  annotationDisplayName,
+  displayLines,
+  issuesOf,
+  projectIssues,
+} from '../ui/typedText';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import {
   EMPTY_CANVAS_RECT,
@@ -118,6 +126,11 @@ const DOT_RADIUS = 4;
 const DOT_GAP = 3;
 const DOT_MARGIN = 3;
 const MAX_DOTS = 4;
+/** Alerta de anotação incompleta, depois das bolinhas (px de tela). */
+const ALERT_GLYPH = '⚠';
+const ALERT_SIZE = 13;
+/** Largura reservada para o "+N" depois das bolinhas (px de tela). */
+const MORE_WIDTH = 22;
 /** Opacidade das marcações sem anotação em nenhuma camada visível. */
 const DIMMED_OPACITY = 0.35;
 /** Borda de contexto dos pais no modo Ocultar: esmaecida, mas legível sobre fotos. */
@@ -278,6 +291,8 @@ interface MarkingNode {
   readonly indicators: Konva.Group;
   readonly dots: readonly KonvaCircle[];
   readonly more: KonvaText;
+  /** Alerta de anotação incompleta, depois das bolinhas. */
+  readonly alert: KonvaText;
   /** Texto do zoom semântico, recortado no retângulo da marcação. */
   readonly text: Konva.Group;
   /** Nome da marcação na linha de cabeçalho, ao lado das bolinhas. */
@@ -299,13 +314,45 @@ function intersectRects(a: Rect, b: Rect): Rect | null {
 }
 
 /** Textos do cartão do zoom semântico, no idioma atual. */
-function cardLabels(): CardLabels {
+function cardLabels(project: Project | null): CardLabels {
   return {
     untitled: (n) => t('canvas.card.untitled', { n }),
-    linkedTo: (owner) => t('annotation.linkedTo', { name: annotationLabel(owner) }),
+    linkedTo: (owner) =>
+      t('annotation.linkedTo', {
+        name: project ? annotationDisplayName(project, owner) : annotationLabel(owner),
+      }),
     inheritedFrom: (source) =>
       t('canvas.card.inheritedFrom', { name: markingLabel(source) }),
+    describe: (a) => {
+      if (!project || !a.type) return null;
+      const known = displayLines(project, a, 'summary');
+      const lines =
+        known.length > 0 || a.values === null
+          ? known.map((l) => ({
+              text: `${l.label}: ${l.kind === 'value' ? l.text : ''}`,
+              alert: l.alert,
+            }))
+          : rawValueLines(a).map((l) => ({ text: `${l.key}: ${l.text}`, alert: false }));
+      const alert = issuesOf(project, a.id).length > 0;
+      const title = annotationTitle(project, a) ?? '';
+      return { title: alert ? `${ALERT_GLYPH} ${title}` : title, alert, lines };
+    },
   };
+}
+
+/**
+ * Marcações com alguma anotação incompleta nas camadas dadas (as visíveis): elas
+ * ganham um pequeno alerta junto às bolinhas.
+ */
+function incompleteMarkings(project: Project, layers: readonly Layer[]): Set<string> {
+  const shown = new Set(layers.map((l) => l.id));
+  const result = new Set<string>();
+  const byId = new Map(project.annotations.map((a) => [a.id, a]));
+  for (const id of projectIssues(project).keys()) {
+    const a = byId.get(id);
+    if (a && shown.has(a.layerId)) result.add(a.markingId);
+  }
+  return result;
 }
 
 /**
@@ -540,7 +587,8 @@ export class CanvasController {
           selection?.kind === 'marking' ? selection.id : null,
         )
       : new Map();
-    this.renderMarkings(project, shown, placements, dots, tokens, v.scale);
+    const incomplete = project ? incompleteMarkings(project, shown) : new Set<string>();
+    this.renderMarkings(project, shown, placements, dots, incomplete, tokens, v.scale);
     this.renderDraft(placements, tokens, v.scale);
     this.renderSelection(project, preview, placements, tokens, v.scale);
     this.renderDropTarget(project, tokens, v.scale);
@@ -647,6 +695,7 @@ export class CanvasController {
     shown: readonly Layer[],
     placements: ReadonlyMap<string, Placement>,
     dots: ReadonlyMap<string, readonly LayerDot[]>,
+    incomplete: ReadonlySet<string>,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
@@ -669,7 +718,7 @@ export class CanvasController {
     );
     const byId = new Map(markings.map((m) => [m.id, m]));
     const children = childrenIndex(markings);
-    const labels = cardLabels();
+    const labels = cardLabels(project);
     const lineColors = new Map(project?.images.map((i) => [i.id, i.markingColor]));
     const seen = new Set<string>();
     let index = 0;
@@ -699,6 +748,7 @@ export class CanvasController {
         selected,
         visibility,
         dots.get(marking.id) ?? [],
+        incomplete.has(marking.id),
         lineColor ? { ...tokens, marking: lineColor } : tokens,
         zoom,
       );
@@ -754,6 +804,7 @@ export class CanvasController {
         mode,
         cardRows(sections, owners, labels),
         sections.map((section) => section.layer),
+        incomplete.has(marking.id),
         tokens,
         zoom,
       );
@@ -775,6 +826,7 @@ export class CanvasController {
       indicators: new Konva.Group(),
       dots,
       more: new KonvaText({ fontStyle: 'bold' }),
+      alert: new KonvaText({ text: ALERT_GLYPH, fontStyle: 'bold' }),
       text: new Konva.Group(),
       header: new KonvaText({
         wrap: 'none',
@@ -787,7 +839,7 @@ export class CanvasController {
       shapes: [],
     };
     node.text.add(node.card, node.header);
-    node.indicators.add(...dots, node.more);
+    node.indicators.add(...dots, node.more, node.alert);
     node.group.add(node.halo, node.border, node.badge, node.indicators, node.text);
     this.markingLayer.add(node.group);
     this.markingNodes.set(id, node);
@@ -801,6 +853,7 @@ export class CanvasController {
     selected: boolean,
     visibility: MarkingVisibility,
     dots: readonly LayerDot[],
+    incomplete: boolean,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
@@ -842,15 +895,27 @@ export class CanvasController {
     } else {
       node.badge.visible(false);
     }
-    this.updateIndicators(node, marking, rect, outline ? [] : dots, tokens, zoom);
+    this.updateIndicators(
+      node,
+      marking,
+      rect,
+      outline ? [] : dots,
+      incomplete && !outline,
+      tokens,
+      zoom,
+    );
   }
 
-  /** Bolinhas coloridas no canto superior esquerdo, uma por camada visível com anotação. */
+  /**
+   * Bolinhas coloridas no canto superior esquerdo, uma por camada visível com
+   * anotação, e o alerta de incompleta logo depois delas.
+   */
   private updateIndicators(
     node: MarkingNode,
     marking: Marking,
     rect: Rect,
     layers: readonly LayerDot[],
+    incomplete: boolean,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
@@ -888,6 +953,22 @@ export class CanvasController {
       });
     });
     const extra = layers.length - MAX_DOTS;
+    const afterDots = x0 + shown * step - radius;
+    if (incomplete) {
+      const size = ALERT_SIZE / zoom;
+      node.alert.setAttrs({
+        visible: true,
+        x: afterDots + (extra > 0 ? MORE_WIDTH / zoom : 0),
+        y: cy - size / 2,
+        fontSize: size,
+        fill: tokens.warning,
+        stroke: tokens.surface,
+        strokeWidth: 3 / zoom,
+        fillAfterStrokeEnabled: true,
+      });
+    } else {
+      node.alert.visible(false);
+    }
     if (extra <= 0) {
       node.more.visible(false);
       return;
@@ -896,7 +977,7 @@ export class CanvasController {
     node.more.setAttrs({
       visible: true,
       text: `+${extra}`,
-      x: x0 + shown * step - radius,
+      x: afterDots,
       y: cy - fontSize / 2,
       fontSize,
       fill: tokens.marking,
@@ -922,6 +1003,7 @@ export class CanvasController {
     mode: SemanticMode,
     rows: readonly CardRow[],
     sectionLayers: readonly Layer[],
+    incomplete: boolean,
     tokens: CanvasTokens,
     zoom: number,
   ): void {
@@ -946,7 +1028,9 @@ export class CanvasController {
     const before = atCorner && marking.needsReview ? REVIEW_BADGE_SIZE + DOT_MARGIN : 0;
     const dotsWidth =
       shownDots > 0 ? shownDots * (2 * DOT_RADIUS + DOT_GAP) + DOT_MARGIN : 0;
-    const more = dotCount > MAX_DOTS ? 22 : 0;
+    const more =
+      (dotCount > MAX_DOTS ? MORE_WIDTH : 0) +
+      (atCorner && incomplete ? ALERT_SIZE + 2 : 0);
     const headerX =
       rect.x + px(before + dotsWidth + more + (dotsWidth + more > 0 ? 0 : TEXT_PADDING));
     const cut = mode === 'header' && rows.length > 0;
@@ -1084,7 +1168,12 @@ export class CanvasController {
         fontSize: px(CARD_FONT[row.kind]),
         fontStyle:
           [italic ? 'italic' : '', bold ? 'bold' : ''].join(' ').trim() || 'normal',
-        fill: muted ? tokens.textMuted : tokens.text,
+        fill:
+          'alert' in row && row.alert
+            ? tokens.warning
+            : muted
+              ? tokens.textMuted
+              : tokens.text,
         opacity: inherited ? CARD_INHERITED_OPACITY : 1,
       });
     }

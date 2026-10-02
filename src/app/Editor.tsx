@@ -12,10 +12,12 @@ import type { AspectChange } from '../store/session';
 import { semanticText, setSemanticText } from '../store/settings';
 import {
   createEditorUi,
+  goToAnnotation,
   resolveActiveLayerId,
   resolveSelection,
   showLayer,
   visibleLayers,
+  type AnnotationLocation,
   type Selection,
 } from '../store/ui';
 import { BottomSheet } from '../ui/BottomSheet';
@@ -299,6 +301,15 @@ export function Editor({ open }: { readonly open: OpenProject }) {
     if (actions.removeMarking(marking.id).ok) ui.selection.value = null;
   };
 
+  /** Backlinks, "Ir para o alvo" e vinculadas: em qualquer marcação. */
+  const onGoToAnnotation = (annotation: AnnotationLocation) => {
+    const sameMarking =
+      selection?.kind === 'marking' && selection.id === annotation.markingId;
+    goToAnnotation(ui, annotation);
+    if (!sameMarking) controller.current?.focusSelection();
+    if (!desktop) setSheetExpanded(true);
+  };
+
   const onTreeSelect = (next: NonNullable<Selection>) => {
     ui.selection.value = next;
     controller.current?.focusSelection();
@@ -425,6 +436,9 @@ export function Editor({ open }: { readonly open: OpenProject }) {
         onDelete={onMarkingDelete}
         onShowLayer={(layerId) => showLayer(ui, layerId)}
         onSelectMarking={(id) => onTreeSelect({ kind: 'marking', id })}
+        onGoToAnnotation={onGoToAnnotation}
+        focusAnnotation={ui.focusAnnotation.value}
+        onFocusDone={() => (ui.focusAnnotation.value = null)}
       />
     ) : (
       <SelectionPanel

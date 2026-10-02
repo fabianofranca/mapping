@@ -325,6 +325,77 @@ export const ptBR = {
   'help.specs.download.schema': 'Baixar JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
     'Para usar um exemplo: abra um projeto, vá em Menu → Especializações → Aplicar e escolha o arquivo baixado.',
+  'typed.chooseTypeTitle': 'Nova anotação em {layer}',
+  'typed.chooseTypeHint':
+    'Escolha o tipo. Os campos já vêm definidos; é só preencher os valores.',
+  'typed.noTypes':
+    'A especialização desta camada não está disponível ou não tem tipos de anotação.',
+  'typed.chooseOwnerTitle': 'Dono do {type}',
+  'typed.chooseOwnerHint': '{type} precisa pertencer a outra anotação desta marcação.',
+  'typed.noOwner':
+    'Para criar um {type}, esta marcação precisa de um dono que aceite {type} ({owners}). Crie o dono antes e use o botão "+ {type}" no editor dele.',
+  'typed.ownersJoin': ' ou ',
+  'typed.addChild': '+ {type}',
+  'typed.addChildIn': 'Criar {type} vinculado, na camada {layer}',
+  'typed.childHidden': '{type} criado na camada {layer}, que está oculta.',
+  'typed.showLayer': 'Mostrar {layer}',
+  'typed.instanceName': 'Rótulo da instância (opcional)',
+  'typed.required': 'obrigatório',
+  'typed.enumNone': '—',
+  'typed.invalidNumber': 'Digite um número (use ponto ou vírgula para decimais).',
+  'typed.invalidValue': 'Valor inválido para este campo.',
+  'typed.unknownType':
+    'O tipo "{type}" não existe mais na especialização. A anotação está somente leitura.',
+  'typed.convertToFree': 'Converter em anotação livre',
+  'typed.addRow': '+ Linha',
+  'typed.removeRow': 'Remover linha',
+  'typed.moveRowUp': 'Subir linha',
+  'typed.moveRowDown': 'Descer linha',
+  'typed.row': 'Linha {n}',
+  'typed.noRows': 'Nenhuma linha.',
+  'typed.rowsOne': '1 linha',
+  'typed.rowsMany': '{count} linhas',
+  'typed.empty': '—',
+  'ref.choose': 'Escolher',
+  'ref.clear': 'Limpar',
+  'ref.goTo': 'Ir para o alvo',
+  'ref.none': 'Nenhum alvo escolhido.',
+  'ref.pickerTitle': 'Escolher alvo de "{field}"',
+  'ref.search': 'Buscar alvo',
+  'ref.noMatches': 'Nenhum alvo encontrado para a busca.',
+  'ref.noTargetsTagsFree':
+    'Nenhuma tupla com a etiqueta {tags}. Aplique uma especialização de modelo de dados ou crie uma anotação livre.',
+  'ref.noTargetsTags':
+    'Nenhuma tupla com a etiqueta {tags}. Aplique uma especialização que use essa etiqueta.',
+  'ref.noTargetsFree':
+    'Nenhuma tupla de anotação livre. Crie uma anotação livre com pares chave-valor.',
+  'ref.backlinks': 'Referências recebidas',
+  'ref.backlink': '← {source} ({marking})',
+  'ref.backlinkGo': 'Ir para {source}',
+  'ref.deleteTitle': 'Referências vão quebrar',
+  'ref.deleteAnnotation':
+    '"{name}" é alvo de referências: {count} referência(s) vão ficar quebradas. Dá para desfazer.',
+  'ref.deleteLinked': 'Saem junto {count} anotação(ões) vinculada(s).',
+  'ref.deleteEntry':
+    'A tupla "{name}" é alvo de {count} referência(s), que vão ficar quebradas. Dá para desfazer.',
+  'ref.deleteRow':
+    'A linha "{name}" é alvo de {count} referência(s), que vão ficar quebradas. Dá para desfazer.',
+  'issue.badge': 'Incompleta',
+  'issue.heading': 'Incompleta:',
+  'issue.line': '{where}: {reason}',
+  'issue.cell': '{field}, linha {row}, {column}',
+  'issue.required-empty': 'obrigatório vazio',
+  'issue.invalid-value': 'valor incompatível com o tipo',
+  'issue.unknown-option': 'opção inexistente',
+  'issue.unknown-field': 'chave que não existe no tipo',
+  'issue.unknown-type': 'tipo inexistente',
+  'issue.layer-mismatch': 'fora da camada do seu tipo',
+  'issue.missing-owner': 'sem dono (precisa pertencer a {owners})',
+  'issue.owner-not-allowed': 'dono de tipo não permitido',
+  'issue.broken-ref': 'referência quebrada',
+  'issue.ref-not-accepted': 'alvo não aceito (perdeu a etiqueta ou deixou de ser livre)',
+  'list.incomplete': 'Só incompletas',
+  'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
 } as const;
 
 export type Dictionary = Record<keyof typeof ptBR, string>;

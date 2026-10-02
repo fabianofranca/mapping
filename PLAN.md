@@ -923,11 +923,11 @@ O estado **incompleta** **não é gravado**: é calculado a partir do projeto + 
 **Aceite**: passo 1 do roteiro da 13.9; atualizar a SDUI com uma cópia de `version: 2` que tenha uma camada a mais e uma a menos (a que sumiu vira livre); remover cada especialização com as duas opções e desfazer.
 
 #### Fase 16 — Anotações tipadas e referências na interface
-- [ ] Criação tipada (lista de tipos, dono obrigatório, "+ filho" a partir do dono)
-- [ ] Editores de campo, inclusive `table` em cartões no celular e o seletor de `ref`
-- [ ] Backlinks no editor do alvo; aviso de referências afetadas ao excluir
-- [ ] Incompletas: ícone, motivos, alerta no canvas, filtro na Lista
-- [ ] Exibição tipada e de referências no zoom semântico, painel e lista
+- [x] Criação tipada (lista de tipos, dono obrigatório, "+ filho" a partir do dono)
+- [x] Editores de campo, inclusive `table` em cartões no celular e o seletor de `ref`
+- [x] Backlinks no editor do alvo; aviso de referências afetadas ao excluir
+- [x] Incompletas: ícone, motivos, alerta no canvas, filtro na Lista
+- [x] Exibição tipada e de referências no zoom semântico, painel e lista
 
 **Aceite**: passos 2 a 10 do roteiro da 13.9 no celular.
 

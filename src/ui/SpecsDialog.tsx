@@ -5,7 +5,6 @@ import {
   parseSpecText,
   specializationRemovalImpact,
   specializationUpdateImpact,
-  type LabelTexts,
   type Project,
   type ProjectSpecialization,
   type Spec,
@@ -13,6 +12,7 @@ import {
 } from '../model';
 import type { ProjectActions } from '../store/project';
 import { Dialog } from './Dialog';
+import { labelTexts } from './typedText';
 
 const MAX_ERRORS = 8;
 
@@ -27,11 +27,6 @@ type Step =
   | { readonly kind: 'info'; readonly title: string; readonly lines: readonly string[] }
   | { readonly kind: 'update'; readonly spec: Spec }
   | { readonly kind: 'remove'; readonly entry: ProjectSpecialization };
-
-/** Textos de rótulo usados ao converter anotações tipadas em livres. */
-function labelTexts(): LabelTexts {
-  return { untitled: t('annotation.untitled'), broken: t('ref.broken') };
-}
 
 /** Menu Especializações: aplicar, atualizar versão e remover (PLAN.md 13.4). */
 export function SpecsDialog({ project, actions, readOnly, onClose }: SpecsDialogProps) {

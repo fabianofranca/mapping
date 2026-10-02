@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   addAnnotation,
   addImage,
@@ -18,8 +19,9 @@ import {
 import { emptyProject } from './fixtures';
 
 export function loadExample(name: 'sdui' | 'modelo-de-dados'): Spec {
+  // A partir da raiz do projeto: no ambiente jsdom, `import.meta.url` não é `file:`.
   const text = readFileSync(
-    new URL(`../../examples/specs/${name}.json`, import.meta.url),
+    join(process.cwd(), 'examples', 'specs', `${name}.json`),
     'utf8',
   );
   const parsed = parseSpecText(text);
