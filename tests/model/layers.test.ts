@@ -19,13 +19,19 @@ describe('camadas', () => {
 
   it('cria, renomeia e muda a cor', () => {
     let p = addLayer(emptyProject(), { id: 'L2', name: '  Vidros ', color: '#1e88e5' });
-    expect(p.layers[1]).toEqual({ id: 'L2', name: 'Vidros', color: '#1E88E5' });
+    expect(p.layers[1]).toEqual({
+      id: 'L2',
+      name: 'Vidros',
+      color: '#1E88E5',
+      spec: null,
+    });
     p = renameLayer(p, 'L2', 'Janelas');
     p = setLayerColor(p, 'L2', '#00FF00');
     expect(expectValid(p).layers[1]).toEqual({
       id: 'L2',
       name: 'Janelas',
       color: '#00FF00',
+      spec: null,
     });
   });
 

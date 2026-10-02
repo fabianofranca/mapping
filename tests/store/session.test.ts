@@ -5,6 +5,7 @@ import { createFolderStorage } from '../../src/storage/folder';
 import type { PreparedImage } from '../../src/storage/imageImport';
 import { openSession, type ProjectSession } from '../../src/store/session';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
+import { loadExample } from '../model/specFixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 
 beforeEach(() => vi.useFakeTimers());
@@ -53,6 +54,32 @@ describe('sessão de projeto', () => {
   afterEach(async () => {
     await session?.close();
     session = null;
+  });
+
+  it('grava e remove a cópia em specs/ ao aplicar, remover e desfazer', async () => {
+    const root = new MemoryDirectory('p');
+    session = start(root);
+    const sdui = loadExample('sdui');
+    expect(session.actions.applySpecialization(sdui).ok).toBe(true);
+    await vi.advanceTimersByTimeAsync(800);
+    const copy = await root.read('specs/sdui.json');
+    expect(JSON.parse(copy ?? '')).toEqual(sdui);
+    expect((await savedProject(root)).specializations).toEqual([
+      { id: 'sdui', version: 1, file: 'specs/sdui.json', spec: null },
+    ]);
+
+    expect(session.actions.removeSpecialization('sdui', 'convert').ok).toBe(true);
+    await vi.advanceTimersByTimeAsync(800);
+    expect(await root.read('specs/sdui.json')).toBeNull();
+    expect((await savedProject(root)).specializations).toEqual([]);
+
+    session.store.undo();
+    await vi.advanceTimersByTimeAsync(800);
+    expect(await root.read('specs/sdui.json')).toBe(copy);
+
+    const files = await session.collectFiles();
+    expect([...files.specs.keys()]).toEqual(['specs/sdui.json']);
+    expect(files.specs.get('specs/sdui.json')).toBe(copy);
   });
 
   it('adiciona imagens: grava o arquivo, cria a entrada e salva o mapping após o debounce', async () => {

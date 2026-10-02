@@ -2,13 +2,28 @@ import { fail } from './errors';
 import { validateEntries } from './invariants';
 import { annotationWithLinked } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
+import { countBrokenRefs } from './refs';
 import type { Annotation, Entry, Layer, Project } from './types';
 
-/** Valida e normaliza os pares (chaves sem espaços nas pontas). */
-function checkEntries(entries: readonly Entry[]): Entry[] {
-  const normalized = entries.map((e) => ({ key: e.key.trim(), value: e.value }));
+/** Par a gravar; sem `id`, ganha um novo (`crypto.randomUUID()`). */
+export interface EntryInput {
+  readonly id?: string;
+  readonly key: string;
+  readonly value: string;
+}
+
+/** Valida e normaliza os pares (chaves sem espaços nas pontas; todo par com `id`). */
+function checkEntries(entries: readonly EntryInput[]): Entry[] {
+  const normalized = entries.map((e) => ({
+    id: e.id ?? crypto.randomUUID(),
+    key: e.key.trim(),
+    value: e.value,
+  }));
   const issue = validateEntries(normalized).find((i) => i !== null);
   if (issue) fail(issue);
+  if (new Set(normalized.map((e) => e.id)).size !== normalized.length) {
+    fail('duplicate-id');
+  }
   return normalized;
 }
 
@@ -17,12 +32,14 @@ export interface NewAnnotationArgs {
   readonly markingId: string;
   readonly layerId: string;
   readonly name?: string | null;
-  readonly entries?: readonly Entry[];
+  readonly entries?: readonly EntryInput[];
 }
 
+/** Cria uma anotação livre. Camadas de especialização só aceitam tipadas (`addTypedAnnotation`). */
 export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
   findById(p.markings, args.markingId);
-  findById(p.layers, args.layerId);
+  const layer = findById(p.layers, args.layerId);
+  if (layer.spec) fail('typed-layer', layer.id);
   const annotation: Annotation = {
     id: args.id,
     markingId: args.markingId,
@@ -30,6 +47,8 @@ export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
     name: normalizeOptionalName(args.name ?? null),
     inherit: false,
     parentAnnotationId: null,
+    type: null,
+    values: null,
     entries: checkEntries(args.entries ?? []),
   };
   return { ...p, annotations: [...p.annotations, annotation] };
@@ -57,56 +76,65 @@ export function removeAnnotation(p: Project, annotationId: string): Project {
   return { ...p, annotations: p.annotations.filter((a) => !doomed.has(a.id)) };
 }
 
-/** Quantas anotações saem junto na exclusão (inclui a própria). */
+/**
+ * Quantas anotações saem junto na exclusão (inclui a própria) e quantas
+ * referências de outras anotações vão quebrar.
+ */
 export function annotationDeletionImpact(
   p: Project,
   annotationId: string,
-): { annotations: number } {
+): { annotations: number; brokenRefs: number } {
   findById(p.annotations, annotationId);
-  return { annotations: annotationWithLinked(p, annotationId).size };
+  return {
+    annotations: annotationWithLinked(p, annotationId).size,
+    brokenRefs: countBrokenRefs(p, removeAnnotation(p, annotationId)),
+  };
 }
 
 function updateEntries(
   p: Project,
   annotationId: string,
-  update: (entries: readonly Entry[]) => readonly Entry[],
+  update: (entries: readonly Entry[]) => readonly EntryInput[],
 ): Project {
   return {
     ...p,
-    annotations: updateById(p.annotations, annotationId, (a) => ({
-      ...a,
-      entries: checkEntries(update(a.entries)),
-    })),
+    annotations: updateById(p.annotations, annotationId, (a) => {
+      if (a.type) fail('typed-annotation', a.id);
+      return { ...a, entries: checkEntries(update(a.entries)) };
+    }),
   };
 }
 
-function checkIndex(entries: readonly Entry[], index: number): void {
+function checkIndex(entries: readonly unknown[], index: number): void {
   if (!Number.isInteger(index) || index < 0 || index >= entries.length)
     fail('invalid-index');
 }
 
-/** Substitui todos os pares de uma vez. */
+/** Substitui todos os pares de uma vez (pares com `id` mantêm a identidade). */
 export function setEntries(
   p: Project,
   annotationId: string,
-  entries: readonly Entry[],
+  entries: readonly EntryInput[],
 ): Project {
   return updateEntries(p, annotationId, () => entries);
 }
 
-export function addEntry(p: Project, annotationId: string, entry: Entry): Project {
+export function addEntry(p: Project, annotationId: string, entry: EntryInput): Project {
   return updateEntries(p, annotationId, (entries) => [...entries, entry]);
 }
 
+/** Altera chave e valor do par; o `id` continua o mesmo (as referências seguem valendo). */
 export function updateEntry(
   p: Project,
   annotationId: string,
   index: number,
-  entry: Entry,
+  entry: { readonly key: string; readonly value: string },
 ): Project {
   return updateEntries(p, annotationId, (entries) => {
     checkIndex(entries, index);
-    return entries.map((e, i) => (i === index ? entry : e));
+    return entries.map((e, i) =>
+      i === index ? { id: e.id, key: entry.key, value: entry.value } : e,
+    );
   });
 }
 

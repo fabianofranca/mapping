@@ -1,5 +1,16 @@
 import * as model from '../model';
-import type { Entry, Layer, Placement, Project, Rect } from '../model';
+import type {
+  AnnotationTypeRef,
+  EntryInput,
+  JsonValue,
+  LabelTexts,
+  Layer,
+  Placement,
+  Project,
+  Rect,
+  Spec,
+  SpecRemovalMode,
+} from '../model';
 import type { ActionResult, ProjectStore } from './history';
 
 export interface ActionDeps {
@@ -24,7 +35,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
   };
 
   return {
-    newProject(name: string, now: string, firstLayer: Omit<Layer, 'id'>): void {
+    newProject(name: string, now: string, firstLayer: Omit<Layer, 'id' | 'spec'>): void {
       store.load(
         model.createProject({ name, now, firstLayer: { ...firstLayer, id: newId() } }),
       );
@@ -101,10 +112,17 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       markingId: string,
       layerId: string,
       name?: string | null,
-      entries?: readonly Entry[],
+      entries?: readonly EntryInput[],
     ) =>
       create(
-        (id) => (p) => model.addAnnotation(p, { id, markingId, layerId, name, entries }),
+        (id) => (p) =>
+          model.addAnnotation(p, {
+            id,
+            markingId,
+            layerId,
+            name,
+            entries: entries?.map((e) => ({ ...e, id: e.id ?? newId() })),
+          }),
       ),
     renameAnnotation: (annotationId: string, name: string | null) =>
       store.apply((p) => model.renameAnnotation(p, annotationId, name)),
@@ -114,16 +132,71 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.setAnnotationInherit(p, annotationId, inherit)),
     setAnnotationParent: (annotationId: string, ownerId: string | null) =>
       store.apply((p) => model.setAnnotationParent(p, annotationId, ownerId)),
-    setEntries: (annotationId: string, entries: readonly Entry[]) =>
-      store.apply((p) => model.setEntries(p, annotationId, entries)),
-    addEntry: (annotationId: string, entry: Entry) =>
-      store.apply((p) => model.addEntry(p, annotationId, entry)),
-    updateEntry: (annotationId: string, index: number, entry: Entry) =>
-      store.apply((p) => model.updateEntry(p, annotationId, index, entry)),
+    setEntries: (annotationId: string, entries: readonly EntryInput[]) =>
+      store.apply((p) =>
+        model.setEntries(
+          p,
+          annotationId,
+          entries.map((e) => ({ ...e, id: e.id ?? newId() })),
+        ),
+      ),
+    addEntry: (annotationId: string, entry: { key: string; value: string }) =>
+      create((id) => (p) => model.addEntry(p, annotationId, { ...entry, id })),
+    updateEntry: (
+      annotationId: string,
+      index: number,
+      entry: { key: string; value: string },
+    ) => store.apply((p) => model.updateEntry(p, annotationId, index, entry)),
     removeEntry: (annotationId: string, index: number) =>
       store.apply((p) => model.removeEntry(p, annotationId, index)),
     moveEntry: (annotationId: string, from: number, to: number) =>
       store.apply((p) => model.moveEntry(p, annotationId, from, to)),
+
+    // Especializações (PLAN.md 13.4): cada operação é uma entrada no histórico.
+    applySpecialization: (spec: Spec) =>
+      store.apply((p) => model.applySpecialization(p, spec, { newId })),
+    updateSpecialization: (spec: Spec, texts?: LabelTexts) =>
+      store.apply((p) => model.updateSpecialization(p, spec, { newId, texts })),
+    removeSpecialization: (specId: string, mode: SpecRemovalMode, texts?: LabelTexts) =>
+      store.apply((p) => model.removeSpecialization(p, specId, mode, { newId, texts })),
+
+    // Anotações tipadas
+    addTypedAnnotation: (
+      markingId: string,
+      layerId: string,
+      type: AnnotationTypeRef,
+      parentAnnotationId?: string | null,
+    ) =>
+      create(
+        (id) => (p) =>
+          model.addTypedAnnotation(p, {
+            id,
+            markingId,
+            layerId,
+            type,
+            parentAnnotationId,
+          }),
+      ),
+    setFieldValue: (annotationId: string, key: string, value: JsonValue) =>
+      store.apply((p) => model.setFieldValue(p, annotationId, key, value)),
+    addTableRow: (annotationId: string, key: string) =>
+      create((rowId) => (p) => model.addTableRow(p, annotationId, key, rowId)),
+    setTableCell: (
+      annotationId: string,
+      key: string,
+      rowId: string,
+      column: string,
+      value: JsonValue,
+    ) =>
+      store.apply((p) => model.setTableCell(p, annotationId, key, rowId, column, value)),
+    removeTableRow: (annotationId: string, key: string, rowId: string) =>
+      store.apply((p) => model.removeTableRow(p, annotationId, key, rowId)),
+    moveTableRow: (annotationId: string, key: string, rowId: string, toIndex: number) =>
+      store.apply((p) => model.moveTableRow(p, annotationId, key, rowId, toIndex)),
+    convertAnnotationToFree: (annotationId: string, texts?: LabelTexts) =>
+      store.apply((p) =>
+        model.convertAnnotationToFree(p, annotationId, { newId, texts }),
+      ),
   };
 }
 

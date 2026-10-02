@@ -9,6 +9,7 @@ import {
 } from './geometry';
 import { topDown } from './hierarchy';
 import { findById, normalizeOptionalName, updateById } from './project';
+import { countBrokenRefs } from './refs';
 import type { Marking, Placement, Project, ProjectImage, Rect } from './types';
 
 /** Lado maior de uma imagem recém-adicionada, em unidades do canvas. */
@@ -207,12 +208,13 @@ export function resizeImage(p: Project, imageId: string, placement: Placement): 
 export function imageDeletionImpact(
   p: Project,
   imageId: string,
-): { markings: number; annotations: number } {
+): { markings: number; annotations: number; brokenRefs: number } {
   findById(p.images, imageId);
   const ids = new Set(p.markings.filter((m) => m.imageId === imageId).map((m) => m.id));
   return {
     markings: ids.size,
     annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
+    brokenRefs: countBrokenRefs(p, removeImage(p, imageId)),
   };
 }
 

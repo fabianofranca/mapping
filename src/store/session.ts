@@ -1,5 +1,11 @@
 import { effect, type ReadonlySignal } from '@preact/signals';
-import { isSameAspect, serialize, uniqueImageFile, type Project } from '../model';
+import {
+  isSameAspect,
+  serialize,
+  specFiles,
+  uniqueImageFile,
+  type Project,
+} from '../model';
 import { createAutoSaver, type SaveStatus } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import type { ProjectStorage } from '../storage/types';
@@ -58,7 +64,7 @@ export interface ProjectSession {
   readImage(path: string): Promise<Blob | null>;
   /** Grava agora o que estiver pendente (também serve para "tentar de novo"). */
   flush(): Promise<void>;
-  /** `mapping.json` atual e as imagens existentes, para exportar. */
+  /** `mapping.json` atual, as imagens existentes e as cópias de `specs/`, para exportar. */
   collectFiles(): Promise<ProjectFiles>;
   close(): Promise<void>;
 }
@@ -85,11 +91,15 @@ export function openSession(options: SessionOptions): ProjectSession {
   const stored = new Set(options.project.images.map((i) => i.file));
   // Conteúdo das imagens removidas do armazenamento, para o desfazer restaurar.
   const trash = new Map<string, Blob>();
+  // Cópias de `specs/` gravadas (caminho → texto). O conteúdo vive no projeto, então
+  // o desfazer de aplicar/remover especialização só precisa regravar ou apagar.
+  const writtenSpecs = specFiles(options.project);
 
   /**
-   * Grava o projeto: restaura imagens que voltaram (undo), grava o `mapping.json`
-   * e só então remove as imagens que deixaram de ser usadas. Assim o
-   * `mapping.json` em disco nunca aponta para um arquivo já apagado.
+   * Grava o projeto: restaura imagens que voltaram (undo) e grava as cópias de
+   * `specs/` novas ou alteradas, grava o `mapping.json` e só então remove as
+   * imagens e cópias que deixaram de ser usadas. Assim o `mapping.json` em disco
+   * nunca aponta para um arquivo já apagado.
    */
   const persist = async () => {
     const p = store.project.value;
@@ -102,6 +112,12 @@ export function openSession(options: SessionOptions): ProjectSession {
       stored.add(file);
       trash.delete(file);
     }
+    const specs = specFiles(p);
+    for (const [file, text] of specs) {
+      if (writtenSpecs.get(file) === text) continue;
+      await storage.writeSpec(file, text);
+      writtenSpecs.set(file, text);
+    }
     await storage.saveMapping(serialize(p));
     options.onSaved?.();
     for (const file of [...stored]) {
@@ -110,6 +126,11 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (blob) trash.set(file, blob);
       await storage.removeImage(file);
       stored.delete(file);
+    }
+    for (const file of [...writtenSpecs.keys()]) {
+      if (specs.has(file)) continue;
+      await storage.removeSpec(file);
+      writtenSpecs.delete(file);
     }
   };
 
@@ -204,7 +225,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         const blob = await storage.readImage(image.file);
         if (blob) images.set(image.file, blob);
       }
-      return { mapping: serialize(p), images };
+      return { mapping: serialize(p), images, specs: specFiles(p) };
     },
 
     async close() {

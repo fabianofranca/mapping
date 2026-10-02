@@ -906,13 +906,13 @@ O estado **incompleta** **não é gravado**: é calculado a partir do projeto + 
 **Aceite**: os dois exemplos validam; arquivos com cada tipo de erro da 13.2 são rejeitados com o caminho correto.
 
 #### Fase 14 — Schema v4 e operações (modelo + armazenamento)
-- [ ] Tipos, schema zod v4 e migração v3 → v4 (inclusive `id` nas tuplas)
-- [ ] Operações: aplicar, atualizar e remover especialização (apagar / converter); criar anotação tipada com defaults; editar valores; linhas de tabela com `_id`; vínculos com `allowedChildren`/`requiresOwner`; converter tipada em livre
-- [ ] Referências: `resolveRef`, `findRefTargets` (respeitando `accepts`), `getBacklinks`; contagem de referências afetadas por exclusões e remoções
-- [ ] Cálculo de pendências (`getAnnotationIssues`) com todos os motivos da 13.5
-- [ ] Invariantes novas da 13.3
-- [ ] `src/storage/`: ler/gravar `specs/` na pasta, no IndexedDB e no zip
-- [ ] `docs/FORMAT.md` atualizado
+- [x] Tipos, schema zod v4 e migração v3 → v4 (inclusive `id` nas tuplas)
+- [x] Operações: aplicar, atualizar e remover especialização (apagar / converter); criar anotação tipada com defaults; editar valores; linhas de tabela com `_id`; vínculos com `allowedChildren`/`requiresOwner`; converter tipada em livre
+- [x] Referências: `resolveRef`, `findRefTargets` (respeitando `accepts`), `getBacklinks`; contagem de referências afetadas por exclusões e remoções
+- [x] Cálculo de pendências (`getAnnotationIssues`) com todos os motivos da 13.5
+- [x] Invariantes novas da 13.3
+- [x] `src/storage/`: ler/gravar `specs/` na pasta, no IndexedDB e no zip
+- [x] `docs/FORMAT.md` atualizado
 
 **Aceite**: testes cobrindo migração, aplicar/atualizar/remover (as duas opções), conversão com `table` achatada e `ref` em texto, os três formatos de referência, referência que sobrevive a renomear a chave da tupla, referência quebrada, `accepts` com etiqueta e com `free`, pendências e invariantes; um projeto com as duas especializações faz round-trip pelo zip sem perdas.
 

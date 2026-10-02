@@ -1,7 +1,23 @@
 import { validateProject, type InvariantIssue } from './invariants';
 import { migrate, migrations as defaultMigrations, type Migration } from './migrations';
 import { projectSchema } from './schema';
-import { SCHEMA_VERSION, type Project } from './types';
+import { parseSpecText, type Spec } from './spec';
+import {
+  SCHEMA_VERSION,
+  type JsonValue,
+  type Project,
+  type ProjectFile,
+  type ProjectSpecialization,
+} from './types';
+
+/** Cópia profunda com as chaves na ordem em que estão (valores das anotações tipadas). */
+function cloneJson(value: JsonValue): JsonValue {
+  if (Array.isArray(value)) return value.map(cloneJson);
+  if (typeof value === 'object' && value !== null) {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, cloneJson(v)]));
+  }
+  return value;
+}
 
 /**
  * Gera o texto do `mapping.json`: chaves sempre na mesma ordem, indentação de
@@ -9,7 +25,7 @@ import { SCHEMA_VERSION, type Project } from './types';
  * `deserialize` produz exatamente o mesmo texto (round-trip sem perdas).
  */
 export function serialize(p: Project): string {
-  const canonical: Project = {
+  const canonical: ProjectFile = {
     schemaVersion: p.schemaVersion,
     app: p.app,
     coordinateSystem: p.coordinateSystem,
@@ -18,7 +34,17 @@ export function serialize(p: Project): string {
       createdAt: p.project.createdAt,
       updatedAt: p.project.updatedAt,
     },
-    layers: p.layers.map((l) => ({ id: l.id, name: l.name, color: l.color })),
+    specializations: p.specializations.map((s) => ({
+      id: s.id,
+      version: s.version,
+      file: s.file,
+    })),
+    layers: p.layers.map((l) => ({
+      id: l.id,
+      name: l.name,
+      color: l.color,
+      spec: l.spec && { specId: l.spec.specId, layerId: l.spec.layerId },
+    })),
     images: p.images.map((i) => ({
       id: i.id,
       name: i.name,
@@ -43,10 +69,54 @@ export function serialize(p: Project): string {
       name: a.name,
       inherit: a.inherit,
       parentAnnotationId: a.parentAnnotationId,
-      entries: a.entries.map((e) => ({ key: e.key, value: e.value })),
+      type: a.type && { specId: a.type.specId, typeId: a.type.typeId },
+      values:
+        a.values &&
+        Object.fromEntries(Object.entries(a.values).map(([k, v]) => [k, cloneJson(v)])),
+      entries: a.entries.map((e) => ({ id: e.id, key: e.key, value: e.value })),
     })),
   };
   return `${JSON.stringify(canonical, null, 2)}\n`;
+}
+
+/** Texto de `specs/<id>.json`: a especialização com indentação de 2 espaços. */
+export function serializeSpec(spec: Spec): string {
+  return `${JSON.stringify(spec, null, 2)}\n`;
+}
+
+/** Arquivos de `specs/` do projeto (caminho → texto), para gravar ou exportar. */
+export function specFiles(p: Project): Map<string, string> {
+  const files = new Map<string, string>();
+  for (const s of p.specializations) {
+    if (s.spec) files.set(s.file, serializeSpec(s.spec));
+  }
+  return files;
+}
+
+/**
+ * Caminhos de `specs/` citados por um `mapping.json` ainda não validado, para o
+ * armazenamento ler as cópias antes de `deserialize`. Vazio se não der para ler.
+ */
+export function referencedSpecFiles(text: string): string[] {
+  try {
+    const raw: unknown = JSON.parse(text);
+    const list: unknown = isRecord(raw) ? raw.specializations : null;
+    if (!Array.isArray(list)) return [];
+    return list.flatMap((s: unknown) =>
+      isRecord(s) && typeof s.file === 'string' ? [s.file] : [],
+    );
+  } catch {
+    return [];
+  }
+}
+
+/** Problema com a cópia de uma especialização em `specs/` (não impede a abertura). */
+export interface SpecFileWarning {
+  readonly specId: string;
+  readonly file: string;
+  readonly problem: 'missing' | 'invalid' | 'id-mismatch' | 'version-mismatch';
+  /** Erros de validação (`caminho: mensagem`), em `invalid`. */
+  readonly errors?: readonly string[];
 }
 
 export type DeserializeError =
@@ -64,6 +134,11 @@ export type DeserializeResult =
       readonly readOnly: boolean;
       /** Versão original, quando o arquivo passou por migrações. */
       readonly migratedFrom: number | null;
+      /**
+       * Cópias de especialização ausentes ou inválidas: o projeto abre, e as
+       * anotações delas aparecem como pendências ("tipo inexistente").
+       */
+      readonly specWarnings: readonly SpecFileWarning[];
     }
   | { readonly ok: false; readonly error: DeserializeError };
 
@@ -71,13 +146,51 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Junta ao `mapping.json` o conteúdo de cada `specs/<id>.json`. */
+function attachSpecs(
+  data: ProjectFile,
+  files: ReadonlyMap<string, string>,
+): { project: Project; warnings: SpecFileWarning[] } {
+  const warnings: SpecFileWarning[] = [];
+  const specializations = data.specializations.map((ref): ProjectSpecialization => {
+    const base = { id: ref.id, version: ref.version, file: ref.file };
+    const warn = (problem: SpecFileWarning['problem'], errors?: readonly string[]) =>
+      warnings.push({
+        specId: ref.id,
+        file: ref.file,
+        problem,
+        ...(errors ? { errors } : {}),
+      });
+    const text = files.get(ref.file);
+    if (text === undefined) {
+      warn('missing');
+      return { ...base, spec: null };
+    }
+    const parsed = parseSpecText(text);
+    if (!parsed.ok) {
+      warn('invalid', parsed.errors);
+      return { ...base, spec: null };
+    }
+    if (parsed.spec.id !== ref.id) {
+      warn('id-mismatch');
+      return { ...base, spec: null };
+    }
+    if (parsed.spec.version !== ref.version) warn('version-mismatch');
+    return { ...base, spec: parsed.spec };
+  });
+  return { project: { ...data, specializations }, warnings };
+}
+
 /**
  * Lê o texto do `mapping.json`: JSON → migrações → schema zod → invariantes.
- * Versão maior que a suportada: tenta ler como a versão atual em modo somente leitura.
+ * `specs` traz o texto das cópias das especializações (caminho → texto, ex.:
+ * `specs/sdui.json`). Versão maior que a suportada: tenta ler como a versão
+ * atual em modo somente leitura.
  */
 export function deserialize(
   text: string,
   registry: ReadonlyMap<number, Migration> = defaultMigrations,
+  specs: ReadonlyMap<string, string> = new Map(),
 ): DeserializeResult {
   let raw: unknown;
   try {
@@ -122,9 +235,10 @@ export function deserialize(
       error: { code: 'invalid-schema', details: parsed.error.message },
     };
   }
-  const issues = validateProject(parsed.data);
+  const { project, warnings } = attachSpecs(parsed.data, specs);
+  const issues = validateProject(project);
   if (issues.length > 0) {
     return { ok: false, error: { code: 'invariant-violation', issues } };
   }
-  return { ok: true, project: parsed.data, readOnly, migratedFrom };
+  return { ok: true, project, readOnly, migratedFrom, specWarnings: warnings };
 }

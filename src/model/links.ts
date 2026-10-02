@@ -1,6 +1,7 @@
 import { fail } from './errors';
 import { ancestorsOf } from './hierarchy';
 import { findById, updateById } from './project';
+import { isAllowedOwner, typeOfAnnotation } from './specLookup';
 import type { Annotation, Project } from './types';
 
 // Herança (marcação → descendentes) e vínculos (anotação → anotação dona).
@@ -54,16 +55,19 @@ export function getInheritedAnnotations(p: Project, markingId: string): Annotati
 
 /**
  * Donas possíveis para a anotação: mesma marcação, outra camada e sem ciclo
- * (a anotação e suas vinculadas ficam de fora).
+ * (a anotação e suas vinculadas ficam de fora). Anotação tipada: só donas cujo
+ * tipo a liste em `allowedChildren`.
  */
 export function validAnnotationOwners(p: Project, annotationId: string): Annotation[] {
   const annotation = findById(p.annotations, annotationId);
   const descendants = annotationWithLinked(p, annotationId);
+  const type = annotation.type;
   return p.annotations.filter(
     (a) =>
       a.markingId === annotation.markingId &&
       a.layerId !== annotation.layerId &&
-      !descendants.has(a.id),
+      !descendants.has(a.id) &&
+      (type === null || isAllowedOwner(p, type, a)),
   );
 }
 
@@ -84,12 +88,14 @@ export function setAnnotationParent(
   annotationId: string,
   ownerId: string | null,
 ): Project {
+  const annotation = findById(p.annotations, annotationId);
   if (ownerId !== null) {
-    findById(p.annotations, annotationId);
     const owner = findById(p.annotations, ownerId);
     if (!validAnnotationOwners(p, annotationId).includes(owner)) {
       fail('invalid-annotation-parent', ownerId);
     }
+  } else if (typeOfAnnotation(p, annotation)?.type.requiresOwner) {
+    fail('owner-required', annotationId);
   }
   return {
     ...p,

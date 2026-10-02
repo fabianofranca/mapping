@@ -6,6 +6,8 @@ const DB_NAME = 'mapeador-imagens';
 const DB_VERSION = 1;
 /** Tempo máximo para abrir o banco (em `file://` alguns navegadores nunca respondem). */
 const OPEN_TIMEOUT_MS = 3000;
+/** As cópias de `specs/` ficam no mesmo store das imagens, com este tipo. */
+const SPEC_TYPE = 'application/json';
 
 /** Resumo de um projeto guardado neste dispositivo. */
 export interface LocalProjectMeta {
@@ -94,9 +96,12 @@ function createLibrary(db: Db): LocalLibrary {
 
     async create(id, files, options = {}) {
       // Converte antes de abrir a transação: ela fecha se esperar outra coisa.
-      const stored = await Promise.all(
-        [...files.images].map(([path, blob]) => toStoredFile(id, path, blob)),
-      );
+      const stored = await Promise.all([
+        ...[...files.images].map(([path, blob]) => toStoredFile(id, path, blob)),
+        ...[...files.specs].map(([path, text]) =>
+          toStoredFile(id, path, new Blob([text], { type: SPEC_TYPE })),
+        ),
+      ]);
       const info = readInfo(files.mapping);
       const tx = db.transaction(['projects', 'mappings', 'files'], 'readwrite');
       await Promise.all([
@@ -139,6 +144,17 @@ function createLibrary(db: Db): LocalLibrary {
           await db.put('files', await toStoredFile(id, path, data));
         },
         async removeImage(path) {
+          await db.delete('files', [id, path]);
+        },
+        async readSpec(path) {
+          const file = await db.get('files', [id, path]);
+          return file ? new Blob([file.data]).text() : null;
+        },
+        async writeSpec(path, text) {
+          const blob = new Blob([text], { type: SPEC_TYPE });
+          await db.put('files', await toStoredFile(id, path, blob));
+        },
+        async removeSpec(path) {
           await db.delete('files', [id, path]);
         },
       };

@@ -16,7 +16,8 @@ describe('zip do projeto', () => {
       ['images/lateral.jpg', new Blob(['LATERAL'], { type: 'image/jpeg' })],
       ['images/frente.jpg', new Blob(['FRENTE'], { type: 'image/jpeg' })],
     ]);
-    const zip = await writeProjectZip({ mapping, images });
+    const specs = new Map([['specs/sdui.json', '{"id":"sdui"}\n']]);
+    const zip = await writeProjectZip({ mapping, images, specs });
     expect(zip.type).toBe('application/zip');
 
     const read = await readProjectZip(zip);
@@ -28,6 +29,7 @@ describe('zip do projeto', () => {
     ]);
     expect(await blobText(read.files.images.get('images/lateral.jpg'))).toBe('LATERAL');
     expect(read.files.images.get('images/frente.jpg')?.type).toBe('image/jpeg');
+    expect(read.files.specs).toEqual(specs);
   });
 
   it('aceita o projeto dentro de uma pasta no zip', async () => {
@@ -35,6 +37,9 @@ describe('zip do projeto', () => {
     zip.file('meu-projeto/mapping.json', '{"x":1}');
     zip.file('meu-projeto/images/a.png', 'PNG');
     zip.file('meu-projeto/images/notas.txt', 'ignorar');
+    zip.file('meu-projeto/specs/sdui.json', '{}');
+    zip.file('meu-projeto/specs/sub/outra.json', 'ignorar');
+    zip.file('meu-projeto/specs/notas.txt', 'ignorar');
     zip.file('__MACOSX/meu-projeto/mapping.json', 'lixo');
     const blob = new Blob([await zip.generateAsync({ type: 'arraybuffer' })]);
 
@@ -43,6 +48,7 @@ describe('zip do projeto', () => {
     expect(read.files.mapping).toBe('{"x":1}');
     expect([...read.files.images.keys()]).toEqual(['images/a.png']);
     expect(read.files.images.get('images/a.png')?.type).toBe('image/png');
+    expect([...read.files.specs.keys()]).toEqual(['specs/sdui.json']);
   });
 
   it('erros: arquivo que não é zip e zip sem mapping.json', async () => {

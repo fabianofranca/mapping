@@ -1,11 +1,20 @@
 import JSZip from 'jszip';
-import { IMAGES_DIR, MAPPING_FILE, imageMimeType, isImageFileName } from './types';
+import {
+  IMAGES_DIR,
+  MAPPING_FILE,
+  SPECS_DIR,
+  imageMimeType,
+  isImageFileName,
+  isSpecPath,
+} from './types';
 
-/** Conteúdo de um projeto em memória, no formato da pasta (ver PLAN.md 5.1). */
+/** Conteúdo de um projeto em memória, no formato da pasta (ver PLAN.md 5.1 e 13.3). */
 export interface ProjectFiles {
   readonly mapping: string;
   /** Caminho relativo (`images/foto.jpg`) → conteúdo. */
   readonly images: ReadonlyMap<string, Blob>;
+  /** Cópias das especializações: caminho relativo (`specs/sdui.json`) → texto. */
+  readonly specs: ReadonlyMap<string, string>;
 }
 
 export type ReadZipResult =
@@ -42,13 +51,24 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
     const bytes = await entry.async('arraybuffer');
     images.set(relative, new Blob([bytes], { type: imageMimeType(relative) }));
   }
-  return { ok: true, files: { mapping: await mappingEntry.async('string'), images } };
+  const specs = new Map<string, string>();
+  const specsPrefix = `${root}${SPECS_DIR}/`;
+  for (const [path, entry] of Object.entries(zip.files)) {
+    if (entry.dir || !path.startsWith(specsPrefix)) continue;
+    const relative = path.slice(root.length);
+    if (isSpecPath(relative)) specs.set(relative, await entry.async('string'));
+  }
+  return {
+    ok: true,
+    files: { mapping: await mappingEntry.async('string'), images, specs },
+  };
 }
 
-/** Gera o zip com `mapping.json` e `images/` na raiz. */
+/** Gera o zip com `mapping.json`, `images/` e `specs/` na raiz. */
 export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   const zip = new JSZip();
   zip.file(MAPPING_FILE, files.mapping);
+  for (const [path, text] of files.specs) zip.file(path, text);
   for (const [path, blob] of files.images) {
     // Imagens já são comprimidas: guardar sem recomprimir é mais rápido.
     zip.file(path, await blob.arrayBuffer(), { compression: 'STORE' });

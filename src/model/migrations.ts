@@ -35,10 +35,27 @@ export const migrateFrom2To3: Migration = (data) => ({
   images: mapItems(data.images, (i) => ({ markingColor: null, ...i })),
 });
 
+/**
+ * v3 → v4 (especializações): `specializations: []`; camadas ganham `spec: null`;
+ * anotações ganham `type: null` e `values: null`; cada tupla ganha um `id`.
+ */
+export const migrateFrom3To4: Migration = (data) => ({
+  ...data,
+  specializations: data.specializations ?? [],
+  layers: mapItems(data.layers, (l) => ({ ...l, spec: l.spec ?? null })),
+  annotations: mapItems(data.annotations, (a) => ({
+    ...a,
+    type: a.type ?? null,
+    values: a.values ?? null,
+    entries: mapItems(a.entries, (e) => ({ id: crypto.randomUUID(), ...e })),
+  })),
+});
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
   [2, migrateFrom2To3],
+  [3, migrateFrom3To4],
 ]);
 
 export type MigrationResult =

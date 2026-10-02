@@ -2,6 +2,8 @@
 export const MAPPING_FILE = 'mapping.json';
 /** Pasta das imagens, relativa à raiz do projeto. */
 export const IMAGES_DIR = 'images';
+/** Pasta das cópias das especializações aplicadas (`specs/<id>.json`). */
+export const SPECS_DIR = 'specs';
 
 export type StorageKind = 'folder' | 'local';
 
@@ -20,6 +22,16 @@ export interface ProjectStorage {
   writeImage(path: string, data: Blob): Promise<void>;
   /** Remove a imagem. Não falha se ela já não existir. */
   removeImage(path: string): Promise<void>;
+  /** Texto da cópia de uma especialização (`specs/sdui.json`), ou `null` se não existir. */
+  readSpec(path: string): Promise<string | null>;
+  writeSpec(path: string, text: string): Promise<void>;
+  /** Remove a cópia da especialização. Não falha se ela já não existir. */
+  removeSpec(path: string): Promise<void>;
+}
+
+/** `true` para `specs/<nome>.json` (sem subpastas). */
+export function isSpecPath(path: string): boolean {
+  return /^specs\/[^/]+\.json$/.test(path);
 }
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'];

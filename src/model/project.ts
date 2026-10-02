@@ -11,8 +11,8 @@ export interface NewProjectArgs {
   readonly name: string;
   /** Data ISO 8601 usada em `createdAt` e `updatedAt`. */
   readonly now: string;
-  /** Camada inicial ("Camada 1" / "Layer 1", conforme o idioma). */
-  readonly firstLayer: Layer;
+  /** Camada inicial ("Camada 1" / "Layer 1", conforme o idioma). Sempre livre. */
+  readonly firstLayer: Omit<Layer, 'spec'>;
 }
 
 export function createProject({ name, now, firstLayer }: NewProjectArgs): Project {
@@ -21,7 +21,8 @@ export function createProject({ name, now, firstLayer }: NewProjectArgs): Projec
     app: APP_ID,
     coordinateSystem: COORDINATE_SYSTEM,
     project: { name: name.trim(), createdAt: now, updatedAt: now },
-    layers: [firstLayer],
+    specializations: [],
+    layers: [{ ...firstLayer, spec: null }],
     images: [],
     markings: [],
     annotations: [],

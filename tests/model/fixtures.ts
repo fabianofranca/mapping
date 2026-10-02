@@ -57,15 +57,15 @@ export function sampleProject(): Project {
     layerId: 'L1',
     name: 'Amassado',
     entries: [
-      { key: 'tipo', value: 'amassado' },
-      { key: 'gravidade', value: 'média' },
+      { id: 'E1', key: 'tipo', value: 'amassado' },
+      { id: 'E2', key: 'gravidade', value: 'média' },
     ],
   });
   p = addAnnotation(p, {
     id: 'A2',
     markingId: 'M1',
     layerId: 'L2',
-    entries: [{ key: 'tipo', value: 'trinca' }],
+    entries: [{ id: 'E3', key: 'tipo', value: 'trinca' }],
   });
   p = addAnnotation(p, { id: 'A3', markingId: 'M2', layerId: 'L1' });
   p = addAnnotation(p, { id: 'A4', markingId: 'M4', layerId: 'L2' });

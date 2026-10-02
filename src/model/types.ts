@@ -1,7 +1,9 @@
-// Tipos do `mapping.json` (schema v3). Ver PLAN.md, seção 4.
+import type { Spec } from './spec';
+
+// Tipos do `mapping.json` (schema v4). Ver PLAN.md, seções 4, 12.1 e 13.3.
 // Tudo é `readonly`: o modelo é imutável e as operações sempre devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export const APP_ID = 'mapeador-imagens';
 export const COORDINATE_SYSTEM = 'image-pixels-exif-oriented';
 
@@ -20,10 +22,27 @@ export interface Placement {
   readonly scale: number;
 }
 
+/** Valor JSON nativo (valores das anotações tipadas). */
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly JsonValue[]
+  | { readonly [key: string]: JsonValue };
+
+/** Camada de origem numa especialização aplicada. */
+export interface LayerSpecRef {
+  readonly specId: string;
+  readonly layerId: string;
+}
+
 export interface Layer {
   readonly id: string;
   readonly name: string;
   readonly color: string;
+  /** `null` = camada livre; senão, a camada da especialização de onde ela veio. */
+  readonly spec: LayerSpecRef | null;
 }
 
 export interface ProjectImage {
@@ -48,9 +67,45 @@ export interface Marking {
 }
 
 export interface Entry {
+  /** Id estável da tupla: as referências (`ref`) sobrevivem a renomear a chave. */
+  readonly id: string;
   readonly key: string;
   readonly value: string;
 }
+
+/** Tipo de uma anotação tipada. */
+export interface AnnotationTypeRef {
+  readonly specId: string;
+  readonly typeId: string;
+}
+
+/** Valores de uma anotação tipada, por `key` do campo (ver PLAN.md 13.3). */
+export type TypedValues = { readonly [key: string]: JsonValue };
+
+/** Linha de um campo `table`: as chaves das colunas mais o id interno `_id`. */
+export type TableRow = { readonly _id: string; readonly [key: string]: JsonValue };
+
+/** Referência a uma tupla de anotação livre. */
+export interface EntryRef {
+  readonly annotationId: string;
+  readonly entryId: string;
+}
+
+/** Referência a uma linha de `table` com etiqueta. */
+export interface RowRef {
+  readonly annotationId: string;
+  readonly key: string;
+  readonly rowId: string;
+}
+
+/** Referência a um campo simples com etiqueta. */
+export interface FieldRef {
+  readonly annotationId: string;
+  readonly key: string;
+}
+
+/** Valor de um campo `ref`: um dos três formatos da 13.3. */
+export type RefValue = EntryRef | RowRef | FieldRef;
 
 export interface Annotation {
   readonly id: string;
@@ -61,7 +116,29 @@ export interface Annotation {
   readonly inherit: boolean;
   /** Anotação "dona" (mesma marcação, outra camada, sem ciclos) ou `null`. */
   readonly parentAnnotationId: string | null;
+  /** `null` = anotação livre (pares em `entries`). */
+  readonly type: AnnotationTypeRef | null;
+  /** Valores da anotação tipada; `null` na anotação livre. */
+  readonly values: TypedValues | null;
+  /** Pares da anotação livre; sempre `[]` na tipada. */
   readonly entries: readonly Entry[];
+}
+
+/** Especialização aplicada, como gravada no `mapping.json`. */
+export interface SpecializationRef {
+  readonly id: string;
+  readonly version: number;
+  /** Cópia da especialização, relativa à raiz (`specs/sdui.json`). */
+  readonly file: string;
+}
+
+/**
+ * Especialização aplicada, em memória: a referência do `mapping.json` mais o
+ * conteúdo de `file`. `spec` não vai para o `mapping.json` (fica em `specs/`);
+ * `null` quando o arquivo está ausente ou inválido.
+ */
+export interface ProjectSpecialization extends SpecializationRef {
+  readonly spec: Spec | null;
 }
 
 export interface ProjectInfo {
@@ -75,8 +152,14 @@ export interface Project {
   readonly app: typeof APP_ID;
   readonly coordinateSystem: typeof COORDINATE_SYSTEM;
   readonly project: ProjectInfo;
+  readonly specializations: readonly ProjectSpecialization[];
   readonly layers: readonly Layer[];
   readonly images: readonly ProjectImage[];
   readonly markings: readonly Marking[];
   readonly annotations: readonly Annotation[];
 }
+
+/** O `mapping.json` como gravado: as especializações sem o conteúdo. */
+export type ProjectFile = Omit<Project, 'specializations'> & {
+  readonly specializations: readonly SpecializationRef[];
+};

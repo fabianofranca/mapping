@@ -33,7 +33,9 @@ describe('anotações', () => {
       name: null,
       inherit: false,
       parentAnnotationId: null,
-      entries: [{ key: 'cor', value: ' azul ' }],
+      type: null,
+      values: null,
+      entries: [{ id: expect.any(String), key: 'cor', value: ' azul ' }],
     });
   });
 
@@ -71,11 +73,15 @@ describe('pares chave-valor', () => {
     p = addEntry(p, 'A1', { key: 'local', value: '' });
     p = updateEntry(p, 'A1', 0, { key: 'tipo', value: 'risco' });
     p = moveEntry(p, 'A1', 2, 0);
-    expect(annotation(p, 'A1')?.entries).toEqual([
+    expect(
+      annotation(p, 'A1')?.entries.map(({ key, value }) => ({ key, value })),
+    ).toEqual([
       { key: 'local', value: '' },
       { key: 'tipo', value: 'risco' },
       { key: 'gravidade', value: 'média' },
     ]);
+    // Alterar chave e valor mantém o id da tupla.
+    expect(annotation(p, 'A1')?.entries[1]?.id).toBe('E1');
     p = removeEntry(p, 'A1', 1);
     expect(annotation(expectValid(p), 'A1')?.entries.map((e) => e.key)).toEqual([
       'local',
