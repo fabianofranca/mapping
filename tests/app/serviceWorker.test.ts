@@ -96,14 +96,30 @@ describe('sw.js', () => {
   it('a versão principal não responde pelas páginas do preview', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
-    const responses = await worker.dispatch('fetch', {
+    // Sem a barra final também: o GitHub Pages redireciona `/preview` para `/preview/`.
+    for (const path of ['preview/', 'preview', 'preview?x=1', 'preview/sw.js']) {
+      const responses = await worker.dispatch('fetch', {
+        request: {
+          method: 'GET',
+          mode: 'navigate',
+          url: `https://example.com/app/${path}`,
+        },
+      });
+      expect(responses, path).toEqual([]);
+    }
+  });
+
+  it('a versão principal responde por caminhos que só começam com "preview"', async () => {
+    const worker = loadWorker();
+    await worker.dispatch('install');
+    const [response] = await worker.dispatch('fetch', {
       request: {
         method: 'GET',
         mode: 'navigate',
-        url: 'https://example.com/app/preview/',
+        url: 'https://example.com/app/previews',
       },
     });
-    expect(responses).toEqual([]);
+    expect(response).toBe('cached');
   });
 
   it('navegação serve o index.html do cache, mesmo com query', async () => {

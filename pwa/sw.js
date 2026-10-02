@@ -23,6 +23,10 @@ const PRECACHE = [
 ];
 
 const url = (path) => new URL(path, self.registration.scope).href;
+const isPreviewPath = (pathname) => {
+  const preview = new URL('./preview', self.registration.scope).pathname;
+  return pathname === preview || pathname.startsWith(`${preview}/`);
+};
 
 self.addEventListener('install', (event) => {
   // Sem skipWaiting: a versão nova espera o usuário aceitar o aviso.
@@ -53,8 +57,9 @@ self.addEventListener('fetch', (event) => {
   const requested = new URL(request.url);
   if (requested.origin !== self.location.origin) return;
   // O preview (/preview/) é outra app, com o próprio service worker: o escopo da
-  // versão principal o contém, mas não pode responder por ele.
-  if (requested.href.startsWith(url('./preview/'))) return;
+  // versão principal o contém, mas não pode responder por ele (nem por `/preview`
+  // sem a barra, que o GitHub Pages redireciona para `/preview/`).
+  if (!PREVIEW && isPreviewPath(requested.pathname)) return;
 
   event.respondWith(
     (async () => {
