@@ -8,7 +8,11 @@ import {
   serialize,
   specFiles,
 } from '../../src/model';
-import { openLocalLibrary, type LocalLibrary } from '../../src/storage/local';
+import {
+  MAX_LOCAL_BACKUPS,
+  openLocalLibrary,
+  type LocalLibrary,
+} from '../../src/storage/local';
 import { readProjectZip, writeProjectZip } from '../../src/storage/zip';
 import { emptyProject, sampleProject } from '../model/fixtures';
 import { cadastroProject } from '../model/specFixtures';
@@ -171,5 +175,42 @@ describe('LocalLibrary (IndexedDB)', () => {
       'specs/sdui.json',
     ]);
     expect(await again.files.images.get('images/cadastro.png')?.text()).toBe('CADASTRO');
+  });
+
+  describe('backups do mapping (antes de migrar)', () => {
+    const create = (id: string) =>
+      library.create(id, {
+        mapping: serialize(emptyProject()),
+        images: noImages,
+        specs: noSpecs,
+      });
+
+    it(`guarda só os ${MAX_LOCAL_BACKUPS} mais recentes, por projeto`, async () => {
+      await create('p');
+      await create('q');
+      const storage = library.open('p');
+      // Fora de ordem e com versões diferentes: vale o carimbo de data.
+      await storage.writeBackup('mapping.v2.20260103-000000.json', 'c');
+      await storage.writeBackup('mapping.v1.20260101-000000.json', 'a');
+      await storage.writeBackup('mapping.v3.20260104-000000.json', 'd');
+      await storage.writeBackup('mapping.v1.20260102-000000.json', 'b');
+      await library.open('q').writeBackup('mapping.v1.20250101-000000.json', 'q');
+
+      expect(await library.listBackups('p')).toEqual([
+        'mapping.v3.20260104-000000.json',
+        'mapping.v2.20260103-000000.json',
+        'mapping.v1.20260102-000000.json',
+      ]);
+      expect(await library.listBackups('q')).toEqual(['mapping.v1.20250101-000000.json']);
+      // Os backups não mexem no mapping nem nas imagens.
+      expect(await storage.loadMapping()).toBe(serialize(emptyProject()));
+    });
+
+    it('somem ao excluir o projeto', async () => {
+      await create('p');
+      await library.open('p').writeBackup('mapping.v1.20260101-000000.json', 'a');
+      await library.remove('p');
+      expect(await library.listBackups('p')).toEqual([]);
+    });
   });
 });

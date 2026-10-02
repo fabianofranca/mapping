@@ -8,10 +8,17 @@ se houver especializações aplicadas, `specs/`. Todas as coordenadas das marca�
 meu-projeto/
 ├── mapping.json
 ├── images/
-└── specs/            # cópias das especializações aplicadas (ver SPEC-FORMAT.md)
-    ├── sdui.json
-    └── modelo-dados.json
+├── specs/            # cópias das especializações aplicadas (ver SPEC-FORMAT.md)
+│   ├── sdui.json
+│   └── modelo-dados.json
+└── backups/          # só no modo pasta: originais guardados antes de migrar o schema
+    └── mapping.v1.20260930-143015.json
 ```
+
+Ao abrir um `mapping.json` de versão antiga, a app migra em memória e, **antes do primeiro
+salvamento**, guarda o texto original em `backups/mapping.v<versão>.<AAAAMMDD-HHMMSS>.json`
+(horário local). No modo local, o backup fica no armazenamento do navegador (os 3 mais recentes
+por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não a inclui.
 
 ```json
 {

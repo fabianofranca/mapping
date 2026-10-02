@@ -1,13 +1,23 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { channelDbName } from '../utils/channel';
 import type { ProjectFiles } from './zip';
-import type { ProjectStorage } from './types';
+import { BACKUPS_DIR, backupTimestamp, type ProjectStorage } from './types';
 
-const DB_NAME = 'mapeador-imagens';
+/** O preview usa outro banco (`-preview`): nunca enxerga os projetos da versão principal. */
+const DB_NAME = channelDbName('mapeador-imagens');
 const DB_VERSION = 1;
 /** Tempo máximo para abrir o banco (em `file://` alguns navegadores nunca respondem). */
 const OPEN_TIMEOUT_MS = 3000;
-/** As cópias de `specs/` ficam no mesmo store das imagens, com este tipo. */
+/** As cópias de `specs/` e os backups ficam no mesmo store das imagens, com este tipo. */
 const SPEC_TYPE = 'application/json';
+/** Backups do `mapping.json` guardados por projeto (os mais recentes). */
+export const MAX_LOCAL_BACKUPS = 3;
+const BACKUP_PREFIX = `${BACKUPS_DIR}/`;
+
+/** Mais recente primeiro. */
+function byNewestBackup(a: string, b: string): number {
+  return backupTimestamp(b).localeCompare(backupTimestamp(a)) || b.localeCompare(a);
+}
 
 /** Resumo de um projeto guardado neste dispositivo. */
 export interface LocalProjectMeta {
@@ -82,6 +92,8 @@ export interface LocalLibrary {
   open(id: string): LocalProjectStorage;
   remove(id: string): Promise<void>;
   setUnexported(id: string, unexported: boolean): Promise<void>;
+  /** Nomes dos backups do `mapping.json` do projeto, do mais recente ao mais antigo. */
+  listBackups(id: string): Promise<string[]>;
   close(): void;
 }
 
@@ -157,6 +169,19 @@ function createLibrary(db: Db): LocalLibrary {
         async removeSpec(path) {
           await db.delete('files', [id, path]);
         },
+        async writeBackup(name, text) {
+          const blob = new Blob([text], { type: SPEC_TYPE });
+          const stored = await toStoredFile(id, `${BACKUP_PREFIX}${name}`, blob);
+          const tx = db.transaction('files', 'readwrite');
+          await tx.store.put(stored);
+          const keys = await tx.store.index('byProject').getAllKeys(id);
+          const old = keys
+            .map(([, path]) => path)
+            .filter((path) => path.startsWith(BACKUP_PREFIX))
+            .sort(byNewestBackup)
+            .slice(MAX_LOCAL_BACKUPS);
+          await Promise.all([...old.map((path) => tx.store.delete([id, path])), tx.done]);
+        },
       };
     },
 
@@ -177,6 +202,15 @@ function createLibrary(db: Db): LocalLibrary {
       const meta = await tx.store.get(id);
       if (meta) await tx.store.put({ ...meta, unexported });
       await tx.done;
+    },
+
+    async listBackups(id) {
+      const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+      return keys
+        .map(([, path]) => path)
+        .filter((path) => path.startsWith(BACKUP_PREFIX))
+        .map((path) => path.slice(BACKUP_PREFIX.length))
+        .sort(byNewestBackup);
     },
 
     close: () => db.close(),

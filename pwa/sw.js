@@ -1,8 +1,17 @@
 // Service worker do Mapeador de Imagens: cache-first do app (funciona offline).
 // `__BUILD_ID__` é trocado no build (vite.config.ts) por um hash do index.html;
 // cada build novo gera um sw.js diferente, o que dispara o aviso de nova versão.
+// `__CHANNEL__` vira `preview` no build do branch publicado em /preview/.
 const VERSION = '__BUILD_ID__';
-const CACHE = `mapeador-${VERSION}`;
+const PREVIEW = '__CHANNEL__' === 'preview';
+// Os caches são da origem inteira: a versão principal e o preview usam prefixos
+// distintos para um não apagar o cache do outro ao ativar.
+const PREVIEW_PREFIX = 'mapeador-preview-';
+const CACHE = PREVIEW ? `${PREVIEW_PREFIX}${VERSION}` : `mapeador-${VERSION}`;
+const ownsCache = (name) =>
+  PREVIEW
+    ? name.startsWith(PREVIEW_PREFIX)
+    : name.startsWith('mapeador-') && !name.startsWith(PREVIEW_PREFIX);
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
@@ -26,7 +35,7 @@ self.addEventListener('activate', (event) => {
       const names = await caches.keys();
       await Promise.all(
         names
-          .filter((name) => name.startsWith('mapeador-') && name !== CACHE)
+          .filter((name) => ownsCache(name) && name !== CACHE)
           .map((name) => caches.delete(name)),
       );
       await self.clients.claim();
@@ -43,6 +52,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const requested = new URL(request.url);
   if (requested.origin !== self.location.origin) return;
+  // O preview (/preview/) é outra app, com o próprio service worker: o escopo da
+  // versão principal o contém, mas não pode responder por ele.
+  if (requested.href.startsWith(url('./preview/'))) return;
 
   event.respondWith(
     (async () => {

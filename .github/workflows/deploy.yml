@@ -1,12 +1,16 @@
 name: Deploy
 
+# Push na `main`: publica só a `main` em `/`.
+# `workflow_dispatch` com um branch diferente da `main`: publica a `main` em `/`
+# e o branch em `/preview/`, com `VITE_CHANNEL=preview` (armazenamento separado,
+# faixa de aviso e manifest próprio). A produção nunca é substituída.
 on:
   push:
     branches: [main]
   workflow_dispatch:
     inputs:
       branch:
-        description: Branch a publicar (vazio = o escolhido em "Use workflow from")
+        description: Branch a publicar em /preview/ (vazio = o escolhido em "Use workflow from")
         required: false
         default: ''
 
@@ -22,25 +26,75 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PREVIEW_REF: ${{ github.event_name == 'workflow_dispatch' && (inputs.branch || github.ref_name) || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch || github.ref }}
+          ref: main
+          path: main
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
+          cache-dependency-path: main/package-lock.json
+
+      - name: Versão principal
+        working-directory: main
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+
+      - name: Decide se há preview
+        id: preview
+        run: |
+          ref="${PREVIEW_REF#refs/heads/}"
+          if [ -n "$ref" ] && [ "$ref" != "main" ]; then
+            echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.preview.outputs.ref != ''
+        with:
+          ref: ${{ steps.preview.outputs.ref }}
+          path: preview
+
+      - name: Preview
+        if: steps.preview.outputs.ref != ''
+        working-directory: preview
+        env:
+          VITE_CHANNEL: preview
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+
+      - name: Monta o site
+        run: |
+          mkdir site
+          cp -R main/dist/. site/
+          if [ -d preview/dist ]; then
+            mkdir site/preview
+            cp -R preview/dist/. site/preview/
+          fi
+
+      # O index.html avulso, para abrir por file:// (o do preview usa os dados do preview).
       - uses: actions/upload-artifact@v4
         with:
           name: index-html
-          path: dist/index.html
+          path: main/dist/index.html
+      - uses: actions/upload-artifact@v4
+        if: steps.preview.outputs.ref != ''
+        with:
+          name: index-html-preview
+          path: preview/dist/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build

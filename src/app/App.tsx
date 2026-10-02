@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { PreviewBanner } from '../ui/PreviewBanner';
 import { SettingsBar } from '../ui/SettingsBar';
 import { UpdateBanner } from '../ui/UpdateBanner';
 import { openProject } from './controller';
@@ -10,6 +11,7 @@ export function App() {
   if (open) {
     return (
       <div class="app app-editor">
+        <PreviewBanner />
         <UpdateBanner />
         <Editor open={open} />
       </div>
@@ -17,6 +19,7 @@ export function App() {
   }
   return (
     <div class="app">
+      <PreviewBanner />
       <UpdateBanner />
       <header class="topbar">
         <h1>{t('app.title')}</h1>

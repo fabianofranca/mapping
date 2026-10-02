@@ -4,6 +4,8 @@ export const MAPPING_FILE = 'mapping.json';
 export const IMAGES_DIR = 'images';
 /** Pasta das cópias das especializações aplicadas (`specs/<id>.json`). */
 export const SPECS_DIR = 'specs';
+/** Pasta das cópias do `mapping.json` original guardadas antes de uma migração. */
+export const BACKUPS_DIR = 'backups';
 
 export type StorageKind = 'folder' | 'local';
 
@@ -27,6 +29,25 @@ export interface ProjectStorage {
   writeSpec(path: string, text: string): Promise<void>;
   /** Remove a cópia da especialização. Não falha se ela já não existir. */
   removeSpec(path: string): Promise<void>;
+  /**
+   * Guarda uma cópia do `mapping.json` original (antes de migrar o schema).
+   * `name` é o nome do arquivo (ver `backupFileName`), sem a pasta.
+   */
+  writeBackup(name: string, text: string): Promise<void>;
+}
+
+const pad = (n: number, size = 2) => String(n).padStart(size, '0');
+
+/** `mapping.v<versão>.<AAAAMMDD-HHMMSS>.json`, no horário local. */
+export function backupFileName(version: number, date: Date): string {
+  const day = `${pad(date.getFullYear(), 4)}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
+  const time = `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+  return `mapping.v${version}.${day}-${time}.json`;
+}
+
+/** Carimbo `AAAAMMDD-HHMMSS` de um nome gerado por `backupFileName` (para ordenar). */
+export function backupTimestamp(name: string): string {
+  return /\.(\d{8}-\d{6})\.json$/.exec(name)?.[1] ?? '';
 }
 
 /** `true` para `specs/<nome>.json` (sem subpastas). */

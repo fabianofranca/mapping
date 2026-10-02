@@ -1,6 +1,7 @@
 // @vitest-environment node
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { deserialize, serialize } from '../../src/model';
+import { SCHEMA_VERSION, deserialize, serialize } from '../../src/model';
 import { createFolderStorage } from '../../src/storage/folder';
 import type { PreparedImage } from '../../src/storage/imageImport';
 import { openSession, type ProjectSession } from '../../src/store/session';
@@ -287,5 +288,103 @@ describe('sessão de projeto', () => {
     await s.close();
     expect((await savedProject(root)).project.name).toBe('Fechado');
     expect(s.store.project.value).toBeNull();
+  });
+
+  describe('backup antes de gravar um projeto migrado', () => {
+    const v1Text = readFileSync(
+      new URL('../fixtures/mapping-v1.json', import.meta.url),
+      'utf8',
+    );
+    // NOW = 2026-09-30T12:00:00Z; o nome usa o horário local.
+    const backupPath = () => {
+      const d = new Date(NOW);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+      return `backups/mapping.v1.${stamp}.json`;
+    };
+
+    /** Abre o v1 de teste numa pasta, como o controller faz. */
+    function openV1(root: MemoryDirectory, log: string[] = []) {
+      root.files.set('mapping.json', new Blob([v1Text]));
+      const loaded = deserialize(v1Text);
+      if (!loaded.ok || loaded.migratedFrom === null) throw new Error('fixture v1');
+      const storage = createFolderStorage(root);
+      return openSession({
+        storage: {
+          ...storage,
+          writeBackup: async (name, text) => {
+            log.push(`backup ${name}`);
+            await storage.writeBackup(name, text);
+          },
+          saveMapping: async (text) => {
+            log.push('mapping');
+            await storage.saveMapping(text);
+          },
+        },
+        project: loaded.project,
+        migratedFrom: { version: loaded.migratedFrom, text: v1Text },
+        prepareImage,
+        now: () => NOW,
+        newId: ids(),
+      });
+    }
+
+    it('abrir o v1 não grava nada; o primeiro salvamento guarda o original e só então grava o v4', async () => {
+      const root = new MemoryDirectory('p');
+      const log: string[] = [];
+      session = openV1(root, log);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(log).toEqual([]);
+      expect(session.backupSaved.value).toBeNull();
+
+      session.actions.renameProject('Migrado');
+      await session.flush();
+      expect(log).toEqual([`backup ${backupPath().slice('backups/'.length)}`, 'mapping']);
+      expect(await root.read(backupPath())).toBe(v1Text);
+      const saved = JSON.parse((await root.read('mapping.json')) ?? '') as {
+        schemaVersion: number;
+      };
+      expect(saved.schemaVersion).toBe(SCHEMA_VERSION);
+      expect((await savedProject(root)).project.name).toBe('Migrado');
+      expect(session.backupSaved.value).toBe(1);
+
+      // Só uma vez por abertura.
+      session.actions.renameProject('De novo');
+      await session.flush();
+      expect(log).toEqual([
+        `backup ${backupPath().slice('backups/'.length)}`,
+        'mapping',
+        'mapping',
+      ]);
+    });
+
+    it('se o backup falhar, o mapping original não é sobrescrito', async () => {
+      const root = new MemoryDirectory('p');
+      session = openV1(root);
+      session.actions.renameProject('Migrado');
+      root.failWrites = new Error('sem permissão');
+      await vi.advanceTimersByTimeAsync(800);
+      expect(session.saveStatus.value).toBe('error');
+      expect(await root.read('mapping.json')).toBe(v1Text);
+      expect(session.backupSaved.value).toBeNull();
+
+      // A pasta backups/ criada na tentativa herdou a falha (memoryFs).
+      root.failWrites = null;
+      const backups = root.dirs.get('backups');
+      if (backups) backups.failWrites = null;
+      await session.flush();
+      expect(session.saveStatus.value).toBe('saved');
+      expect(await root.read(backupPath())).toBe(v1Text);
+      expect((await savedProject(root)).project.name).toBe('Migrado');
+    });
+
+    it('projeto já na versão atual não gera backup', async () => {
+      const root = new MemoryDirectory('p');
+      session = start(root);
+      session.actions.renameProject('Outro');
+      await session.flush();
+      expect(root.dirs.has('backups')).toBe(false);
+      expect(session.backupSaved.value).toBeNull();
+    });
   });
 });

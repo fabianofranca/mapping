@@ -67,6 +67,8 @@ export const enUS: Dictionary = {
   'editor.importFailed': 'Could not import: {names}',
   'editor.export': 'Export',
   'editor.exporting': 'Building zip…',
+  'editor.migrationBackup':
+    'Project upgraded from format v{version}; a copy of the original was saved.',
   'editor.readOnlyNotice':
     'This file was made by a newer version of the app and is open read-only.',
   'editor.closeUnsavedTitle': 'Close without saving?',
@@ -243,6 +245,7 @@ export const enUS: Dictionary = {
     'In the browser menu (⋮), tap "Install app" or "Add to Home screen". Once installed, it works offline.',
   'pwa.installOffline': 'Install to open it from the home screen and use it offline.',
   'pwa.install': 'Install',
+  'pwa.previewBanner': 'PREVIEW — data kept apart from the main version',
   'pwa.dismiss': 'Not now',
 
   'error.crashed': 'Something went wrong.',
