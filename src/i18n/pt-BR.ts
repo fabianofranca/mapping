@@ -259,6 +259,20 @@ export const ptBR = {
   'error.missing-mapping': 'O zip não contém um mapping.json.',
   'error.not-found': 'Projeto não encontrado.',
   'error.storage-failed': 'Não foi possível acessar os arquivos. Tente de novo.',
+  'help.open': 'Ajuda: especializações',
+  'help.specs.title': 'Ajuda: especializações',
+  'help.specs.intro':
+    'Como criar e usar arquivos de especialização: camadas e tipos de anotação pré-definidos.',
+  'help.specs.contents': 'Conteúdo',
+  'help.specs.downloads': 'Downloads',
+  'help.specs.downloadsHint':
+    'Baixe os exemplos e o JSON Schema do formato. O JSON Schema valida só a estrutura; as demais regras são verificadas pela app ao aplicar.',
+  'help.specs.download.sdui': 'Baixar exemplo SDUI (sdui.json)',
+  'help.specs.download.data-model':
+    'Baixar exemplo Modelo de dados (modelo-de-dados.json)',
+  'help.specs.download.schema': 'Baixar JSON Schema (spec.schema.json)',
+  'help.specs.applyHint':
+    'Para usar um exemplo: abra um projeto, vá em Menu → Especializações → Aplicar e escolha o arquivo baixado.',
 } as const;
 
 export type Dictionary = Record<keyof typeof ptBR, string>;

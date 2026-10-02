@@ -21,6 +21,7 @@ import {
 import { BottomSheet } from '../ui/BottomSheet';
 import { Dialog } from '../ui/Dialog';
 import { LayersDialog } from '../ui/LayersDialog';
+import { SpecHelpDialog } from '../ui/SpecHelpDialog';
 import { ListView } from '../ui/ListView';
 import {
   AddImageIcon,
@@ -81,6 +82,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const [exportFile, setExportFile] = useState<File | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProjectImage | null>(null);
   const [deleteMarking, setDeleteMarking] = useState<Marking | null>(null);
@@ -660,6 +662,16 @@ export function Editor({ open }: { readonly open: OpenProject }) {
             >
               {t('editor.export')}
             </button>
+            <button
+              type="button"
+              class="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setHelpOpen(true);
+              }}
+            >
+              {t('help.open')}
+            </button>
             <button type="button" class="button" onClick={() => void onClose()}>
               {t('editor.closeProject')}
             </button>
@@ -667,6 +679,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
           <SettingsBar />
         </Dialog>
       )}
+
+      {helpOpen && <SpecHelpDialog onClose={() => setHelpOpen(false)} />}
 
       {layersOpen && (
         <LayersDialog
