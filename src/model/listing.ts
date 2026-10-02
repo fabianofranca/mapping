@@ -89,6 +89,11 @@ export interface ListedImage {
 export interface ListingOptions {
   /** Inclui marcações (e imagens) sem anotação nas camadas visíveis. */
   readonly showEmpty: boolean;
+  /**
+   * Só as anotações com estes ids (filtro "Incompletas"): herdadas e marcações
+   * sem nenhuma delas ficam de fora, e `showEmpty` é ignorado.
+   */
+  readonly onlyAnnotations?: ReadonlySet<string>;
 }
 
 /**
@@ -103,7 +108,11 @@ export function buildListing(
   options: ListingOptions,
 ): ListedImage[] {
   const children = childrenIndex(p.markings);
-  const byMarking = annotationsByMarking(p);
+  const only = options.onlyAnnotations;
+  const byMarking = annotationsByMarking(
+    only ? { ...p, annotations: p.annotations.filter((a) => only.has(a.id)) } : p,
+  );
+  const showEmpty = options.showEmpty && !only;
   const roots = children.get(null) ?? [];
   const result: ListedImage[] = [];
 
@@ -112,14 +121,14 @@ export function buildListing(
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
       const sections = layerSections(byMarking, marking.id, layers);
-      const inherited = inheritedSections(byMarking, path, layers);
-      if (options.showEmpty || sections.length > 0 || inherited.length > 0) {
+      const inherited = only ? [] : inheritedSections(byMarking, path, layers);
+      if (showEmpty || sections.length > 0 || inherited.length > 0) {
         markings.push({ marking, path, sections, inherited });
       }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };
     for (const root of roots) if (root.imageId === image.id) visit(root, []);
-    if (options.showEmpty || markings.length > 0) result.push({ image, markings });
+    if (showEmpty || markings.length > 0) result.push({ image, markings });
   }
   return result;
 }

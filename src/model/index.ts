@@ -27,3 +27,4 @@ export * from './specializations';
 export * from './typed';
 export * from './refs';
 export * from './issues';
+export * from './typedDisplay';

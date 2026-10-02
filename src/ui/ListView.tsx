@@ -7,7 +7,9 @@ import {
   type EditorUi,
   type Selection,
 } from '../store/ui';
-import { annotationLabel, imageLabel, markingLabel, markingPath } from './labels';
+import { AnnotationLines, AnnotationTitle, IssueBadge } from './AnnotationSummary';
+import { imageLabel, markingLabel, markingPath } from './labels';
+import { annotationDisplayName, projectIssues } from './typedText';
 
 interface ListViewProps {
   readonly project: Project;
@@ -25,7 +27,11 @@ interface ListViewProps {
  */
 export function ListView({ project, ui, layers, selection, onSelect }: ListViewProps) {
   const showEmpty = ui.listShowEmpty.value;
-  const listing = buildListing(project, layers, { showEmpty });
+  const incompleteOnly = ui.listIncompleteOnly.value;
+  const listing = buildListing(project, layers, {
+    showEmpty,
+    onlyAnnotations: incompleteOnly ? new Set(projectIssues(project).keys()) : undefined,
+  });
   const activeId = resolveActiveLayerId(project, ui.activeLayer.value);
   const selectedId = selection?.kind === 'marking' ? selection.id : null;
   const root = useRef<HTMLDivElement>(null);
@@ -42,7 +48,7 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
   const shownIds = new Set(layers.map((l) => l.id));
   const ownerLabel = (ownerId: string | null): string | null => {
     const owner = ownerId ? project.annotations.find((a) => a.id === ownerId) : undefined;
-    return owner ? annotationLabel(owner) : null;
+    return owner ? annotationDisplayName(project, owner) : null;
   };
 
   return (
@@ -75,12 +81,20 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
           />
           <span>{t('list.showEmpty')}</span>
         </label>
+        <label class="list-check">
+          <input
+            type="checkbox"
+            checked={incompleteOnly}
+            onChange={(e) => (ui.listIncompleteOnly.value = e.currentTarget.checked)}
+          />
+          <span>⚠ {t('list.incomplete')}</span>
+        </label>
       </div>
 
       {project.images.length === 0 ? (
         <p class="muted">{t('list.emptyNoImages')}</p>
       ) : listing.length === 0 ? (
-        <p class="muted">{t('list.empty')}</p>
+        <p class="muted">{t(incompleteOnly ? 'list.emptyIncomplete' : 'list.empty')}</p>
       ) : (
         <ul class="list-images" aria-label={t('list.title')}>
           {listing.map(({ image, markings }) => (
@@ -122,8 +136,12 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
                             </span>
                             {annotations.map((a) => (
                               <span key={a.id} class="list-annotation">
-                                {a.name !== null && (
-                                  <strong class="list-annotation-name">{a.name}</strong>
+                                {(a.type !== null || a.name !== null) && (
+                                  <AnnotationTitle
+                                    project={project}
+                                    annotation={a}
+                                    class="list-annotation-name"
+                                  />
                                 )}
                                 {ownerLabel(a.parentAnnotationId) !== null && (
                                   <span class="muted list-linked">
@@ -132,11 +150,15 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
                                     })}
                                   </span>
                                 )}
-                                {a.entries.map((e, i) => (
-                                  <span key={i} class="list-entry">
-                                    <span class="list-key">{e.key}:</span> {e.value}
-                                  </span>
-                                ))}
+                                {a.type === null && a.name === null && (
+                                  <IssueBadge project={project} annotation={a} />
+                                )}
+                                <AnnotationLines
+                                  project={project}
+                                  annotation={a}
+                                  lineClass="list-entry"
+                                  keyClass="list-key"
+                                />
                               </span>
                             ))}
                           </span>
@@ -153,15 +175,19 @@ export function ListView({ project, ui, layers, selection, onSelect }: ListViewP
                             </span>
                             {items.map(({ annotation: a, source }) => (
                               <span key={a.id} class="list-annotation">
-                                <span class="list-annotation-name">
-                                  {annotationLabel(a)}
-                                </span>
-                                {a.name !== null &&
-                                  a.entries.map((e, i) => (
-                                    <span key={i} class="list-entry">
-                                      <span class="list-key">{e.key}:</span> {e.value}
-                                    </span>
-                                  ))}
+                                <AnnotationTitle
+                                  project={project}
+                                  annotation={a}
+                                  class="list-annotation-name"
+                                />
+                                {(a.type !== null || a.name !== null) && (
+                                  <AnnotationLines
+                                    project={project}
+                                    annotation={a}
+                                    lineClass="list-entry"
+                                    keyClass="list-key"
+                                  />
+                                )}
                                 <span class="muted list-linked">
                                   {t('annotation.inheritedFrom', {
                                     name: markingPath(project, source),

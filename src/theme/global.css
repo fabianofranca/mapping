@@ -1277,3 +1277,268 @@ body {
 .wrap-anywhere {
   overflow-wrap: anywhere;
 }
+
+/* Anotações tipadas e referências (fase 16) */
+.annotation-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.issue-badge {
+  flex: none;
+  margin-right: var(--space-1);
+  color: var(--color-warning);
+  font-weight: 700;
+  cursor: help;
+}
+
+.issues {
+  padding: var(--space-2);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius);
+}
+
+.issues strong {
+  color: var(--color-warning);
+}
+
+.issues ul {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.value-alert {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.typed-description {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.typed-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.typed-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.typed-label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.required {
+  color: var(--color-danger);
+}
+
+.typed-options .button[aria-pressed='true'] {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.typed-options {
+  flex-wrap: wrap;
+}
+
+/* Tabela: cartões empilhados no celular. */
+.typed-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.typed-table-head {
+  display: none;
+}
+
+.typed-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.typed-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.typed-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.typed-row-actions {
+  display: flex;
+  flex: none;
+  gap: var(--space-1);
+}
+
+.typed-cells {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.typed-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+/* Desktop: uma linha por registro, com os nomes das colunas no topo. */
+@media (min-width: 900px) {
+  .typed-table-head,
+  .typed-cells {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .typed-table-head {
+    padding: 0 var(--space-2);
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .typed-cell-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.ref-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ref-current {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ref-field .row {
+  flex-wrap: wrap;
+}
+
+.ref-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 60dvh;
+  overflow-y: auto;
+}
+
+.ref-groups,
+.ref-options,
+.backlinks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ref-groups {
+  gap: var(--space-3);
+}
+
+.ref-group-title {
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.ref-option {
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.ref-option[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.backlinks {
+  font-size: 0.9rem;
+}
+
+.type-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+
+.child-actions {
+  flex-wrap: wrap;
+}
+
+.raw-values {
+  margin: 0;
+  padding-left: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+/* Tabela completa na Lista (spans: fica dentro de um botão). */
+.mini-table {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, auto));
+  margin: 2px 0 0 var(--space-2);
+  font-size: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.mini-row {
+  display: contents;
+}
+
+.mini-head,
+.mini-cell {
+  padding: 1px var(--space-1);
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mini-head {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}

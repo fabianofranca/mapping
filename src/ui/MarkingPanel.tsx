@@ -10,6 +10,7 @@ import {
 } from '../model';
 import type { ActionResult } from '../store/history';
 import type { ProjectActions } from '../store/project';
+import type { AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { CommitInput } from './CommitInput';
 import { IdField } from './IdField';
@@ -27,6 +28,9 @@ interface MarkingPanelProps {
   readonly onDelete: (marking: Marking) => void;
   readonly onShowLayer: (layerId: string) => void;
   readonly onSelectMarking: (markingId: string) => void;
+  readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
+  readonly focusAnnotation: string | null;
+  readonly onFocusDone: () => void;
 }
 
 const RECT_FIELDS: readonly { key: keyof Rect; label: TranslationKey }[] = [
@@ -48,6 +52,9 @@ export function MarkingPanel({
   onDelete,
   onShowLayer,
   onSelectMarking,
+  onGoToAnnotation,
+  focusAnnotation,
+  onFocusDone,
 }: MarkingPanelProps) {
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +124,9 @@ export function MarkingPanel({
         readOnly={readOnly}
         onShowLayer={onShowLayer}
         onSelectMarking={onSelectMarking}
+        onGoToAnnotation={onGoToAnnotation}
+        focusAnnotation={focusAnnotation}
+        onFocusDone={onFocusDone}
       />
 
       <fieldset class="rect-fields" disabled={readOnly}>

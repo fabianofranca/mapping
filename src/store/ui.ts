@@ -1,5 +1,5 @@
 import { signal, type Signal } from '@preact/signals';
-import type { Layer, Marking, Project, ProjectImage } from '../model';
+import type { Annotation, Layer, Marking, Project, ProjectImage } from '../model';
 
 /** Item selecionado no editor. */
 export type Selection =
@@ -26,6 +26,10 @@ export interface EditorUi {
   readonly activeLayer: Signal<string | null>;
   /** Visão de Lista: mostrar também marcações sem anotação nas camadas visíveis. */
   readonly listShowEmpty: Signal<boolean>;
+  /** Visão de Lista: só anotações incompletas (PLAN.md 13.5). */
+  readonly listIncompleteOnly: Signal<boolean>;
+  /** Anotação para rolar até (e focar) no painel assim que ela aparecer. */
+  readonly focusAnnotation: Signal<string | null>;
 }
 
 export function createEditorUi(): EditorUi {
@@ -35,6 +39,8 @@ export function createEditorUi(): EditorUi {
     hiddenLayers: signal<ReadonlySet<string>>(new Set()),
     activeLayer: signal<string | null>(null),
     listShowEmpty: signal<boolean>(false),
+    listIncompleteOnly: signal<boolean>(false),
+    focusAnnotation: signal<string | null>(null),
   };
 }
 
@@ -87,6 +93,19 @@ export function showLayer(ui: EditorUi, layerId: string): void {
   const hidden = new Set(ui.hiddenLayers.peek());
   hidden.delete(layerId);
   ui.hiddenLayers.value = hidden;
+}
+
+/** O bastante para ir até uma anotação. */
+export type AnnotationLocation = Pick<Annotation, 'id' | 'markingId' | 'layerId'>;
+
+/**
+ * Vai até a anotação (backlinks, "Ir para o alvo", vinculadas): mostra a camada
+ * dela, seleciona a marcação e pede ao painel para rolar até ela.
+ */
+export function goToAnnotation(ui: EditorUi, annotation: AnnotationLocation): void {
+  showLayer(ui, annotation.layerId);
+  ui.selection.value = { kind: 'marking', id: annotation.markingId };
+  ui.focusAnnotation.value = annotation.id;
 }
 
 export function showAllLayers(ui: EditorUi): void {

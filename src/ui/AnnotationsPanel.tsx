@@ -3,14 +3,22 @@ import { t } from '../i18n';
 import {
   annotationsOf,
   getInheritedAnnotations,
+  layerAnnotationTypes,
+  validTypedOwners,
   type Annotation,
+  type AnnotationTypeRef,
   type Layer,
   type Marking,
   type Project,
+  type SpecAnnotationType,
 } from '../model';
 import type { ProjectActions } from '../store/project';
+import type { AnnotationLocation } from '../store/ui';
 import { AnnotationEditor } from './AnnotationEditor';
-import { annotationLabel, markingPath } from './labels';
+import { AnnotationLines, AnnotationTitle } from './AnnotationSummary';
+import { Dialog } from './Dialog';
+import { markingPath } from './labels';
+import { annotationDisplayName, ownerTypeNames } from './typedText';
 
 interface AnnotationsPanelProps {
   readonly project: Project;
@@ -25,7 +33,28 @@ interface AnnotationsPanelProps {
   readonly onShowLayer: (layerId: string) => void;
   /** Seleciona outra marcação e centraliza o canvas nela ("ir para Porta"). */
   readonly onSelectMarking: (markingId: string) => void;
+  /** Vai até a anotação, em qualquer marcação (backlinks, alvo, vinculadas). */
+  readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
+  /** Anotação para rolar até assim que estiver na tela (estado da UI). */
+  readonly focusAnnotation: string | null;
+  readonly onFocusDone: () => void;
 }
+
+/** Passos da criação numa camada de especialização (PLAN.md 13.5, "Criar"). */
+type CreateStep =
+  | { readonly kind: 'type'; readonly layer: Layer }
+  | {
+      readonly kind: 'owner';
+      readonly layer: Layer;
+      readonly type: AnnotationTypeRef;
+      readonly definition: SpecAnnotationType;
+      readonly owners: readonly Annotation[];
+    }
+  | {
+      readonly kind: 'no-owner';
+      readonly definition: SpecAnnotationType;
+      readonly owners: string;
+    };
 
 /** Anotações da marcação, agrupadas por camada visível (cabeçalho na cor da camada). */
 export function AnnotationsPanel({
@@ -37,25 +66,64 @@ export function AnnotationsPanel({
   readOnly,
   onShowLayer,
   onSelectMarking,
+  onGoToAnnotation,
+  focusAnnotation,
+  onFocusDone,
 }: AnnotationsPanelProps) {
-  const add = (layer: Layer) => actions.addAnnotation(marking.id, layer.id);
   const root = useRef<HTMLElement>(null);
-  /** Anotação para onde ir assim que ela estiver na tela (a camada pode acabar de ser mostrada). */
-  const [goTo, setGoTo] = useState<string | null>(null);
+  const [step, setStep] = useState<CreateStep | null>(null);
   const visibleLayerIds = new Set(layers.map((l) => l.id));
   const inherited = getInheritedAnnotations(project, marking.id);
   const sourceOf = (a: Annotation) => project.markings.find((m) => m.id === a.markingId);
 
   useEffect(() => {
-    if (goTo === null) return;
+    if (focusAnnotation === null) return;
     const target = [
       ...(root.current?.querySelectorAll<HTMLElement>('[data-annotation]') ?? []),
-    ].find((el) => el.dataset.annotation === goTo);
+    ].find((el) => el.dataset.annotation === focusAnnotation);
     if (!target) return;
-    setGoTo(null);
+    onFocusDone();
     target.scrollIntoView({ block: 'nearest' });
-    target.querySelector<HTMLElement>('input')?.focus({ preventScroll: true });
-  }, [goTo, layers.length, project]);
+    target.querySelector<HTMLElement>('input, select')?.focus({ preventScroll: true });
+  }, [focusAnnotation, layers.length, project]);
+
+  const created = (layerId: string, result: { ok: boolean; value?: string }) => {
+    if (result.ok && result.value) {
+      onGoToAnnotation({ id: result.value, markingId: marking.id, layerId });
+    }
+  };
+
+  const createTyped = (layer: Layer, type: AnnotationTypeRef, owner: string | null) => {
+    setStep(null);
+    created(layer.id, actions.addTypedAnnotation(marking.id, layer.id, type, owner));
+  };
+
+  const chooseType = (layer: Layer, definition: SpecAnnotationType) => {
+    if (!layer.spec) return;
+    const type = { specId: layer.spec.specId, typeId: definition.id };
+    if (!definition.requiresOwner) {
+      createTyped(layer, type, null);
+      return;
+    }
+    const owners = validTypedOwners(project, marking.id, type);
+    if (owners.length === 0) {
+      setStep({
+        kind: 'no-owner',
+        definition,
+        owners: ownerTypeNames(project, { type }),
+      });
+    } else {
+      setStep({ kind: 'owner', layer, type, definition, owners });
+    }
+  };
+
+  const add = (layer: Layer) => {
+    if (layer.spec) {
+      setStep({ kind: 'type', layer });
+      return;
+    }
+    created(layer.id, actions.addAnnotation(marking.id, layer.id));
+  };
 
   return (
     <section class="annotations" ref={root} aria-label={t('annotation.heading')}>
@@ -106,7 +174,7 @@ export function AnnotationsPanel({
                   project={project}
                   annotation={annotation}
                   visibleLayerIds={visibleLayerIds}
-                  onGoToAnnotation={(a) => setGoTo(a.id)}
+                  onGoToAnnotation={onGoToAnnotation}
                   onShowLayer={onShowLayer}
                   actions={actions}
                   readOnly={readOnly}
@@ -122,7 +190,97 @@ export function AnnotationsPanel({
           </div>
         );
       })}
+
+      {step?.kind === 'type' && (
+        <Dialog
+          title={t('typed.chooseTypeTitle', { layer: step.layer.name })}
+          onCancel={() => setStep(null)}
+          actions={
+            <button type="button" class="button" onClick={() => setStep(null)}>
+              {t('common.cancel')}
+            </button>
+          }
+        >
+          <TypeList
+            types={layerAnnotationTypes(project, step.layer.id)}
+            onChoose={(definition) => chooseType(step.layer, definition)}
+          />
+        </Dialog>
+      )}
+
+      {step?.kind === 'owner' && (
+        <Dialog
+          title={t('typed.chooseOwnerTitle', { type: step.definition.name })}
+          onCancel={() => setStep(null)}
+          actions={
+            <button type="button" class="button" onClick={() => setStep(null)}>
+              {t('common.cancel')}
+            </button>
+          }
+        >
+          <p class="muted">
+            {t('typed.chooseOwnerHint', { type: step.definition.name })}
+          </p>
+          <div class="dialog-stack">
+            {step.owners.map((owner) => (
+              <button
+                key={owner.id}
+                type="button"
+                class="button"
+                onClick={() => createTyped(step.layer, step.type, owner.id)}
+              >
+                {annotationDisplayName(project, owner)}
+              </button>
+            ))}
+          </div>
+        </Dialog>
+      )}
+
+      {step?.kind === 'no-owner' && (
+        <Dialog
+          title={t('typed.chooseOwnerTitle', { type: step.definition.name })}
+          onCancel={() => setStep(null)}
+          actions={
+            <button type="button" class="button" onClick={() => setStep(null)}>
+              {t('common.close')}
+            </button>
+          }
+        >
+          <p role="alert">
+            {t('typed.noOwner', { type: step.definition.name, owners: step.owners })}
+          </p>
+        </Dialog>
+      )}
     </section>
+  );
+}
+
+/** Tipos da camada, com a descrição de cada um. */
+function TypeList({
+  types,
+  onChoose,
+}: {
+  readonly types: readonly SpecAnnotationType[];
+  readonly onChoose: (type: SpecAnnotationType) => void;
+}) {
+  if (types.length === 0) return <p>{t('typed.noTypes')}</p>;
+  return (
+    <>
+      <p class="muted">{t('typed.chooseTypeHint')}</p>
+      <div class="dialog-stack">
+        {types.map((type) => (
+          <button
+            key={type.id}
+            type="button"
+            class="button type-option"
+            onClick={() => onChoose(type)}
+          >
+            <strong>{type.name}</strong>
+            {type.description && <small class="muted">{type.description}</small>}
+          </button>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -147,21 +305,17 @@ function InheritedList({
       {items.map((a) => {
         const source = sourceOf(a);
         const sourceName = source ? markingPath(project, source) : '';
+        // Livre sem nome: o título já é o primeiro par.
+        const lines =
+          a.type || a.name !== null ? a : { ...a, entries: a.entries.slice(1) };
         return (
           <div key={a.id} class="inherited-item">
-            <strong class="inherited-name">{annotationLabel(a)}</strong>
-            {a.name !== null &&
-              a.entries.map((e, i) => (
-                <span key={i} class="inherited-entry">
-                  {e.key}: {e.value}
-                </span>
-              ))}
-            {a.name === null &&
-              a.entries.slice(1).map((e, i) => (
-                <span key={i} class="inherited-entry">
-                  {e.key}: {e.value}
-                </span>
-              ))}
+            <AnnotationTitle project={project} annotation={a} class="inherited-name" />
+            <AnnotationLines
+              project={project}
+              annotation={lines}
+              lineClass="inherited-entry"
+            />
             {source && (
               <span class="inherited-source">
                 {t('annotation.inheritedFrom', { name: sourceName })}
