@@ -898,10 +898,10 @@ O estado **incompleta** **não é gravado**: é calculado a partir do projeto + 
 ### 13.7 Fases
 
 #### Fase 13 — Formato da especialização (modelo)
-- [ ] Tipos + schema zod do formato (13.2), incluindo `ref`, `accepts`, `tags`, `rowLabel` e `labelField`, com mensagens de erro por caminho
-- [ ] `docs/spec.schema.json` + teste de consistência com o zod
-- [ ] Exemplos em `examples/specs/sdui.json` e `examples/specs/modelo-de-dados.json` (13.8) + testes de validação
-- [ ] `docs/SPEC-FORMAT.md`
+- [x] Tipos + schema zod do formato (13.2), incluindo `ref`, `accepts`, `tags`, `rowLabel` e `labelField`, com mensagens de erro por caminho
+- [x] `docs/spec.schema.json` + teste de consistência com o zod
+- [x] Exemplos em `examples/specs/sdui.json` e `examples/specs/modelo-de-dados.json` (13.8) + testes de validação
+- [x] `docs/SPEC-FORMAT.md`
 
 **Aceite**: os dois exemplos validam; arquivos com cada tipo de erro da 13.2 são rejeitados com o caminho correto.
 

@@ -21,3 +21,4 @@ export * from './annotations';
 export * from './links';
 export * from './listing';
 export * from './display';
+export * from './spec';
