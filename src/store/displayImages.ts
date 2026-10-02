@@ -12,6 +12,11 @@ export interface DisplayImages<T> {
   readonly images: ReadonlySignal<ReadonlyMap<string, DisplayImage<T>>>;
   /** Começa a carregar a imagem, se ainda não estiver carregada ou carregando. */
   ensure(path: string): void;
+  /**
+   * Libera (`close()`) os bitmaps dos arquivos fora de `paths` (arquivos que saíram
+   * do projeto). Se um deles voltar (desfazer), `ensure` o carrega de novo.
+   */
+  retain(paths: ReadonlySet<string>): void;
   /** Descarta o bitmap para carregar de novo (ex.: arquivo reapontado). */
   invalidate(path: string): void;
   dispose(): void;
@@ -63,6 +68,19 @@ export function createDisplayImages<T extends { close(): void }>(
           }
         },
       );
+    },
+    retain(paths) {
+      if (disposed) return;
+      const dropped = [...images.value.keys()].filter((path) => !paths.has(path));
+      if (dropped.length === 0) return;
+      const next = new Map(images.value);
+      for (const path of dropped) {
+        release(path);
+        // Um carregamento em andamento chega "velho": o bitmap é fechado ao chegar.
+        loadingGeneration.delete(path);
+        next.delete(path);
+      }
+      images.value = next;
     },
     invalidate(path) {
       release(path);

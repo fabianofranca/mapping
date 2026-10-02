@@ -312,6 +312,14 @@ export const enUS: Dictionary = {
     'Specialization layer: it cannot be renamed or deleted. Remove the specialization instead.',
   'annotation.untitled': 'Annotation',
   'ref.broken': '(broken reference)',
+  'diagnostics.open': 'Diagnostics',
+  'diagnostics.title': 'Diagnostics',
+  'diagnostics.intro':
+    'The latest errors the app handled in this session. Copy and paste them into a conversation to ask for help.',
+  'diagnostics.empty': 'No errors recorded.',
+  'diagnostics.copy': 'Copy',
+  'diagnostics.copied': 'Copied.',
+  'diagnostics.clear': 'Clear',
   'help.open': 'Help: specializations',
   'help.specs.title': 'Help: specializations',
   'help.specs.intro':

@@ -6,6 +6,7 @@ import {
   type OutputMime,
 } from '../model';
 import { readExifOrientation } from './exif';
+import { reportError } from '../utils/report';
 
 /** Lado maior do bitmap usado para exibir a imagem (as coordenadas não mudam). */
 export const DISPLAY_MAX_SIDE = 2048;
@@ -71,6 +72,7 @@ function supportsWebp(): Promise<boolean> {
       const blob = await canvasToBlob(canvas, 'image/webp', 0.5);
       return blob !== null && encodedAsRequested('image/webp', blob.type);
     } catch {
+      // Detecção de recurso: sem WebP o app usa JPEG, não é uma falha a registrar.
       return false;
     }
   })();
@@ -129,8 +131,9 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
           height: plan.height,
         };
       }
-    } catch {
+    } catch (e) {
       // Cai no arquivo original abaixo.
+      reportError('image.optimize', e);
     }
     return { name: file.name, data: file, width, height };
   } finally {

@@ -2,6 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { channelDbName } from '../utils/channel';
 import type { ProjectFiles } from './zip';
 import { BACKUPS_DIR, backupTimestamp, type ProjectStorage } from './types';
+import { reportError } from '../utils/report';
 
 /** O preview usa outro banco (`-preview`): nunca enxerga os projetos da versão principal. */
 const DB_NAME = channelDbName('mapeador-imagens');
@@ -62,6 +63,7 @@ function readInfo(mapping: string): { name?: string; updatedAt?: string } {
       ...(typeof updatedAt === 'string' ? { updatedAt } : {}),
     };
   } catch {
+    // Metadados opcionais: um `mapping.json` ilegível aparece sem nome na lista.
     return {};
   }
 }
@@ -239,11 +241,14 @@ export async function openLocalLibrary(): Promise<LocalLibrary | null> {
     const db = await Promise.race([open, timeout]);
     clearTimeout(timer);
     if (!db) {
+      // A abertura demorou demais: se ela terminar depois, só fecha a conexão.
       void open.then((late) => late.close()).catch(() => undefined);
       return null;
     }
     return createLibrary(db);
-  } catch {
+  } catch (e) {
+    // Sem IndexedDB o modo local fica indisponível; o motivo vai para o Diagnóstico.
+    reportError('local.open', e);
     return null;
   }
 }

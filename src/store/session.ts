@@ -10,6 +10,7 @@ import { createAutoSaver, type SaveStatus } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import { backupFileName, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
+import { reportError } from '../utils/report';
 import { createProjectStore, type ProjectStore } from './history';
 import { createProjectActions, type ProjectActions } from './project';
 
@@ -88,6 +89,8 @@ function safeFileName(name: string): string {
   return cleaned === '' ? 'imagem.jpg' : cleaned;
 }
 
+const reportCleanupFailure = (e: unknown) => reportError('session.cleanup', e);
+
 export function openSession(options: SessionOptions): ProjectSession {
   const { storage, prepareImage } = options;
   const store = createProjectStore({ now: options.now });
@@ -97,6 +100,7 @@ export function openSession(options: SessionOptions): ProjectSession {
   // Arquivos de imagem que a sessão sabe estarem gravados e referenciados.
   const stored = new Set(options.project.images.map((i) => i.file));
   // Conteúdo das imagens removidas do armazenamento, para o desfazer restaurar.
+  // Só guarda arquivos que algum snapshot do histórico ainda referencia.
   const trash = new Map<string, Blob>();
   // Cópias de `specs/` gravadas (caminho → texto). O conteúdo vive no projeto, então
   // o desfazer de aplicar/remover especialização só precisa regravar ou apagar.
@@ -140,12 +144,21 @@ export function openSession(options: SessionOptions): ProjectSession {
     }
     await storage.saveMapping(serialize(p));
     options.onSaved?.();
+    const inHistory = store.referencedImageFiles();
     for (const file of [...stored]) {
       if (referenced.has(file)) continue;
-      const blob = await storage.readImage(file);
-      if (blob) trash.set(file, blob);
+      if (inHistory.has(file)) {
+        const blob = await storage.readImage(file);
+        if (blob) trash.set(file, blob);
+      }
       await storage.removeImage(file);
       stored.delete(file);
+    }
+    // O histórico encolhe (limite de 100, novo gesto descarta o "refazer"): solta
+    // o conteúdo dos arquivos que nenhum snapshot restauraria mais.
+    const stillInHistory = store.referencedImageFiles();
+    for (const file of [...trash.keys()]) {
+      if (!stillInHistory.has(file)) trash.delete(file);
     }
     for (const file of [...writtenSpecs.keys()]) {
       if (specs.has(file)) continue;
@@ -191,10 +204,11 @@ export function openSession(options: SessionOptions): ProjectSession {
           );
           if (!result.ok) throw new Error(result.error);
           added.push(path);
-        } catch {
+        } catch (e) {
+          reportError('session.addImage', e);
           failed.push(file.name);
           if (path && stored.delete(path)) {
-            await storage.removeImage(path).catch(() => undefined);
+            await storage.removeImage(path).catch(reportCleanupFailure);
           }
         }
       }
@@ -224,9 +238,10 @@ export function openSession(options: SessionOptions): ProjectSession {
         );
         if (!result.ok) throw new Error(result.error);
         return 'replaced';
-      } catch {
+      } catch (e) {
+        reportError('session.replaceImage', e);
         if (path && stored.delete(path)) {
-          await storage.removeImage(path).catch(() => undefined);
+          await storage.removeImage(path).catch(reportCleanupFailure);
         }
         return 'failed';
       }

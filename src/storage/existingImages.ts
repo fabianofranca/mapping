@@ -1,6 +1,7 @@
 import { addImage, uniqueImageFile, type Project } from '../model';
 import type { ExistingImage } from './folder';
 import { IMAGES_DIR, type ProjectStorage } from './types';
+import { reportError } from '../utils/report';
 
 export interface ImportExistingDeps {
   /** Dimensões com a orientação EXIF aplicada (ver `readImageSize`). */
@@ -47,7 +48,8 @@ export async function importExistingImages(
         await storage.removeImage(image.path);
       }
       p = next;
-    } catch {
+    } catch (e) {
+      reportError('folder.importExisting', e);
       skipped.push(image.path);
     }
   }

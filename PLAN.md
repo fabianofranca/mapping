@@ -1378,8 +1378,8 @@ Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E
 **Aceite**: sem mudança de comportamento; componentes filhos sem `store`/`actions`/`ui` em props.
 
 #### Fase 24 — Memória e diagnóstico de erros
-- [ ] Limpeza do `trash` pelo histórico; `retain` dos bitmaps
-- [ ] `reportError`, revisão dos `catch {}` e tela "Diagnóstico"
+- [x] Limpeza do `trash` pelo histórico; `retain` dos bitmaps
+- [x] `reportError`, revisão dos `catch {}` e tela "Diagnóstico"
 
 **Aceite**: testes provando que o `trash` e os bitmaps são liberados quando nenhum snapshot referencia o arquivo e restaurados pelo desfazer quando ainda referenciam; um erro forçado de gravação aparece em "Diagnóstico".
 

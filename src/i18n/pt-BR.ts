@@ -314,6 +314,14 @@ export const ptBR = {
     'Camada de especialização: não pode ser renomeada nem excluída. Só dá para remover a especialização.',
   'annotation.untitled': 'Anotação',
   'ref.broken': '(referência quebrada)',
+  'diagnostics.open': 'Diagnóstico',
+  'diagnostics.title': 'Diagnóstico',
+  'diagnostics.intro':
+    'Últimos erros tratados pelo app nesta sessão. Copie e cole numa conversa para pedir ajuda.',
+  'diagnostics.empty': 'Nenhum erro registrado.',
+  'diagnostics.copy': 'Copiar',
+  'diagnostics.copied': 'Copiado.',
+  'diagnostics.clear': 'Limpar',
   'help.open': 'Ajuda: especializações',
   'help.specs.title': 'Ajuda: especializações',
   'help.specs.intro':

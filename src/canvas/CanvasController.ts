@@ -667,6 +667,8 @@ export class CanvasController {
     const images = this.store.project.value?.images ?? [];
     untracked(() => {
       for (const image of images) this.display.ensure(image.file);
+      // Arquivos que saíram do projeto (imagem excluída ou trocada) não ficam na memória.
+      this.display.retain(new Set(images.map((image) => image.file)));
     });
   }
 

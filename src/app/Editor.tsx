@@ -22,6 +22,7 @@ import {
 import { BottomSheet } from '../ui/BottomSheet';
 import { Dialog } from '../ui/Dialog';
 import { LayersDialog } from '../ui/LayersDialog';
+import { DiagnosticsDialog } from '../ui/DiagnosticsDialog';
 import { SpecHelpDialog } from '../ui/SpecHelpDialog';
 import { SpecsDialog } from '../ui/SpecsDialog';
 import { ListView } from '../ui/ListView';
@@ -55,6 +56,7 @@ import {
   splitImageFiles,
 } from './imageIntake';
 import { isTextInput, shortcutFor } from './shortcuts';
+import { reportError } from '../utils/report';
 
 /** Largura a partir da qual o layout de desktop é usado (PLAN.md, 7.1). */
 const DESKTOP_QUERY = '(min-width: 900px)';
@@ -88,6 +90,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const [confirmClose, setConfirmClose] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [specsOpen, setSpecsOpen] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProjectImage | null>(null);
@@ -216,7 +219,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
       const files = await readClipboardImages();
       if (files.length === 0) setMessage(t('editor.pasteEmpty'));
       else await addAtViewCenter(files);
-    } catch {
+    } catch (e) {
+      reportError('editor.paste', e);
       setMessage(t('editor.pasteFailed'));
     }
   };
@@ -718,6 +722,16 @@ export function Editor({ open }: { readonly open: OpenProject }) {
             >
               {t('help.open')}
             </button>
+            <button
+              type="button"
+              class="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setDiagnosticsOpen(true);
+              }}
+            >
+              {t('diagnostics.open')}
+            </button>
             <button type="button" class="button" onClick={() => void onClose()}>
               {t('editor.closeProject')}
             </button>
@@ -736,6 +750,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
       )}
 
       {helpOpen && <SpecHelpDialog onClose={() => setHelpOpen(false)} />}
+
+      {diagnosticsOpen && <DiagnosticsDialog onClose={() => setDiagnosticsOpen(false)} />}
 
       {layersOpen && (
         <LayersDialog
