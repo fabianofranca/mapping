@@ -932,8 +932,8 @@ O estado **incompleta** **não é gravado**: é calculado a partir do projeto + 
 **Aceite**: passos 2 a 10 do roteiro da 13.9 no celular.
 
 #### Fase 17 — Documentação na app
-- [ ] Página Ajuda → Especializações (pt-BR e en-US), incluindo referências e etiquetas
-- [ ] Downloads dos exemplos e do JSON Schema
+- [x] Página Ajuda → Especializações (pt-BR e en-US), incluindo referências e etiquetas
+- [x] Downloads dos exemplos e do JSON Schema
 
 **Aceite**: abrir a ajuda no celular, baixar o exemplo SDUI e aplicá-lo num projeto.
 

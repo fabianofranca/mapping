@@ -257,4 +257,17 @@ export const enUS: Dictionary = {
   'error.missing-mapping': 'The zip has no mapping.json.',
   'error.not-found': 'Project not found.',
   'error.storage-failed': 'Could not access the files. Try again.',
+  'help.open': 'Help: specializations',
+  'help.specs.title': 'Help: specializations',
+  'help.specs.intro':
+    'How to write and use specialization files: predefined layers and annotation types.',
+  'help.specs.contents': 'Contents',
+  'help.specs.downloads': 'Downloads',
+  'help.specs.downloadsHint':
+    'Download the examples and the format’s JSON Schema. The JSON Schema only validates the structure; the other rules are checked by the app when applying.',
+  'help.specs.download.sdui': 'Download SDUI example (sdui.json)',
+  'help.specs.download.data-model': 'Download Data model example (modelo-de-dados.json)',
+  'help.specs.download.schema': 'Download JSON Schema (spec.schema.json)',
+  'help.specs.applyHint':
+    'To use an example: open a project, go to Menu → Specializations → Apply and pick the downloaded file.',
 };
