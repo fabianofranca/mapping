@@ -5,6 +5,7 @@ import type { LocalProjectMeta } from '../storage/local';
 import { locale } from '../store/settings';
 import { Dialog } from '../ui/Dialog';
 import { InstallHint } from '../ui/InstallHint';
+import { SpecHelpDialog } from '../ui/SpecHelpDialog';
 import {
   createFolderProject,
   createLocalProject,
@@ -24,7 +25,8 @@ type HomeDialog =
       readonly handle: DirectoryHandleLike;
       readonly images: readonly ExistingImage[];
     }
-  | { readonly kind: 'delete'; readonly project: LocalProjectMeta };
+  | { readonly kind: 'delete'; readonly project: LocalProjectMeta }
+  | { readonly kind: 'help' };
 
 function formatDate(iso: string): string {
   try {
@@ -98,6 +100,9 @@ export function Home() {
         </p>
       )}
       <InstallHint />
+      <button type="button" class="button" onClick={() => setDialog({ kind: 'help' })}>
+        {t('help.open')}
+      </button>
 
       <div class="home-actions">
         {available.local && (
@@ -187,6 +192,8 @@ export function Home() {
           )}
         </section>
       )}
+
+      {dialog?.kind === 'help' && <SpecHelpDialog onClose={closeDialog} />}
 
       {dialog?.kind === 'new' && (
         <Dialog
