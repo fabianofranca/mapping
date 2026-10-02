@@ -17,17 +17,19 @@ interface CanvasHostProps {
 /** Monta o `CanvasController` num <div>. Único componente que conhece o Konva. */
 export function CanvasHost({ store, actions, display, ui, onReady }: CanvasHostProps) {
   const ref = useRef<HTMLDivElement>(null);
+  // O controller vive enquanto o projeto estiver aberto; `onReady` pode mudar sem recriá-lo.
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     const container = ref.current;
     if (!container) return;
     const controller = new CanvasController({ container, store, actions, display, ui });
-    onReady(controller);
+    onReadyRef.current(controller);
     return () => {
-      onReady(null);
+      onReadyRef.current(null);
       controller.destroy();
     };
-    // O controller vive enquanto o projeto estiver aberto; `onReady` pode mudar sem recriá-lo.
   }, [store, actions, display, ui]);
 
   return <div ref={ref} class="canvas-host" />;

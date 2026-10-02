@@ -1344,9 +1344,9 @@ Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E
 **Aceite**: um PR com erro de lint fica vermelho; publicar um branch pelo `workflow_dispatch` mantém a versão principal intacta e o preview não enxerga os projetos locais dela; abrir o projeto de teste v1 (`tests/fixtures/mapping-v1.json`) numa pasta cria o backup e só então grava o v4.
 
 #### Fase 19 — Correções pontuais
-- [ ] `eslint-plugin-react-hooks` + correção do `Editor.tsx` e dos avisos
-- [ ] Tuplas por id (`updateEntry`/`removeEntry`/`moveEntry`)
-- [ ] `abort()` em `writeFile` da pasta
+- [x] `eslint-plugin-react-hooks` + correção do `Editor.tsx` e dos avisos
+- [x] Tuplas por id (`updateEntry`/`removeEntry`/`moveEntry`)
+- [x] `abort()` em `writeFile` da pasta
 
 **Aceite**: lint sem erros com a regra nova; testes das operações por id; comportamento igual no roteiro 13.9.
 

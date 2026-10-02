@@ -105,9 +105,10 @@ function updateEntries(
   };
 }
 
-function checkIndex(entries: readonly unknown[], index: number): void {
-  if (!Number.isInteger(index) || index < 0 || index >= entries.length)
-    fail('invalid-index');
+function entryIndex(entries: readonly Entry[], entryId: string): number {
+  const index = entries.findIndex((e) => e.id === entryId);
+  if (index < 0) fail('not-found', entryId);
+  return index;
 }
 
 /** Substitui todos os pares de uma vez (pares com `id` mantêm a identidade). */
@@ -127,31 +128,34 @@ export function addEntry(p: Project, annotationId: string, entry: EntryInput): P
 export function updateEntry(
   p: Project,
   annotationId: string,
-  index: number,
+  entryId: string,
   entry: { readonly key: string; readonly value: string },
 ): Project {
   return updateEntries(p, annotationId, (entries) => {
-    checkIndex(entries, index);
-    return entries.map((e, i) =>
-      i === index ? { id: e.id, key: entry.key, value: entry.value } : e,
+    entryIndex(entries, entryId);
+    return entries.map((e) =>
+      e.id === entryId ? { id: e.id, key: entry.key, value: entry.value } : e,
     );
   });
 }
 
-export function removeEntry(p: Project, annotationId: string, index: number): Project {
+export function removeEntry(p: Project, annotationId: string, entryId: string): Project {
   return updateEntries(p, annotationId, (entries) => {
-    checkIndex(entries, index);
-    return entries.filter((_, i) => i !== index);
+    entryIndex(entries, entryId);
+    return entries.filter((e) => e.id !== entryId);
   });
 }
 
+/** Move o par para a posição `to` (índice final na lista). */
 export function moveEntry(
   p: Project,
   annotationId: string,
-  from: number,
+  entryId: string,
   to: number,
 ): Project {
-  return updateEntries(p, annotationId, (entries) => moveItem(entries, from, to));
+  return updateEntries(p, annotationId, (entries) =>
+    moveItem(entries, entryIndex(entries, entryId), to),
+  );
 }
 
 /**

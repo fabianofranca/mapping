@@ -309,7 +309,7 @@ describe('anotações tipadas', () => {
     expect(codeOf(() => setFieldValue(p, 'AC', 'atributos', []))).toBe('invalid-value');
     expect(codeOf(() => setFieldValue(p, 'AB', 'extra', 'x'))).toBe('unknown-field');
     expect(codeOf(() => setFieldValue(p, 'AU', 'name', 'x'))).toBe('not-typed');
-    expect(codeOf(() => updateEntry(p, 'AB', 0, { key: 'a', value: 'b' }))).toBe(
+    expect(codeOf(() => updateEntry(p, 'AB', 'EN', { key: 'a', value: 'b' }))).toBe(
       'typed-annotation',
     );
     expect(
@@ -469,7 +469,10 @@ describe('referências', () => {
   });
 
   it('a referência sobrevive a renomear a chave da tupla', () => {
-    const p = updateEntry(cadastroProject(), 'AU', 0, { key: 'nome', value: 'string' });
+    const p = updateEntry(cadastroProject(), 'AU', 'EN', {
+      key: 'nome',
+      value: 'string',
+    });
     expect(refLabel(p, annotation(p, 'AIN').values?.dado as never)).toBe('User.nome');
     expect(getAnnotationIssues(p, 'AIN')).toEqual([]);
   });

@@ -93,7 +93,7 @@ function EntryRow({
     if (!entry && current.key.trim() === '' && current.value === '') return;
     const next = { key: current.key, value: current.value };
     const result = entry
-      ? actions.updateEntry(annotationId, index, next)
+      ? actions.updateEntry(annotationId, entry.id, next)
       : actions.addEntry(annotationId, next);
     if (result.ok) {
       setError(null);
@@ -141,7 +141,7 @@ function EntryRow({
               aria-label={t('annotation.moveEntryUp')}
               title={t('annotation.moveEntryUp')}
               disabled={readOnly || index === 0}
-              onClick={() => actions.moveEntry(annotationId, index, index - 1)}
+              onClick={() => actions.moveEntry(annotationId, entry.id, index - 1)}
             >
               <ArrowUpIcon />
             </button>
@@ -151,7 +151,7 @@ function EntryRow({
               aria-label={t('annotation.moveEntryDown')}
               title={t('annotation.moveEntryDown')}
               disabled={readOnly || index === count - 1}
-              onClick={() => actions.moveEntry(annotationId, index, index + 1)}
+              onClick={() => actions.moveEntry(annotationId, entry.id, index + 1)}
             >
               <ArrowDownIcon />
             </button>
@@ -182,7 +182,7 @@ type PendingDelete =
   | { readonly kind: 'annotation'; readonly brokenRefs: number; readonly linked: number }
   | {
       readonly kind: 'entry';
-      readonly index: number;
+      readonly entryId: string;
       readonly key: string;
       readonly brokenRefs: number;
     };
@@ -201,7 +201,7 @@ function FreeEntries({
   readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
-  readonly onRemoveEntry: (index: number) => void;
+  readonly onRemoveEntry: (entryId: string) => void;
 }) {
   const [adding, setAdding] = useState(false);
   const count = annotation.entries.length;
@@ -220,7 +220,7 @@ function FreeEntries({
         readOnly={readOnly}
         onDiscard={() => undefined}
         onCreated={() => undefined}
-        onRemove={() => onRemoveEntry(index)}
+        onRemove={() => onRemoveEntry(entry.id)}
       />
       <BacklinkList
         project={project}
@@ -371,13 +371,15 @@ export function AnnotationEditor({
     }
   };
 
-  const requestRemoveEntry = (index: number) => {
-    const brokenRefs = refsBrokenBy(project, (p) => removeEntry(p, annotation.id, index));
+  const requestRemoveEntry = (entryId: string) => {
+    const brokenRefs = refsBrokenBy(project, (p) =>
+      removeEntry(p, annotation.id, entryId),
+    );
     if (brokenRefs > 0) {
-      const key = annotation.entries[index]?.key ?? '';
-      setPending({ kind: 'entry', index, key, brokenRefs });
+      const key = annotation.entries.find((e) => e.id === entryId)?.key ?? '';
+      setPending({ kind: 'entry', entryId, key, brokenRefs });
     } else {
-      actions.removeEntry(annotation.id, index);
+      actions.removeEntry(annotation.id, entryId);
     }
   };
 
@@ -385,7 +387,7 @@ export function AnnotationEditor({
     if (!pending) return;
     setPending(null);
     if (pending.kind === 'annotation') actions.removeAnnotation(annotation.id);
-    else actions.removeEntry(annotation.id, pending.index);
+    else actions.removeEntry(annotation.id, pending.entryId);
   };
 
   const addChild = (child: ChildType) => {

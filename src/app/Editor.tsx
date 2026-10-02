@@ -71,6 +71,8 @@ const formatSize = (s: { width: number; height: number }) =>
 export function Editor({ open }: { readonly open: OpenProject }) {
   const { session, display } = open;
   const { store, actions } = session;
+  // Um estado de UI novo por sessão aberta (o Editor não é remontado ao trocar de projeto).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const ui = useMemo(() => createEditorUi(), [session]);
   const controller = useRef<CanvasController | null>(null);
   const desktop = useMediaQuery(DESKTOP_QUERY);
@@ -158,6 +160,21 @@ export function Editor({ open }: { readonly open: OpenProject }) {
     }
   }, [view]);
 
+  // Ctrl/Cmd+V com o foco fora de campos de texto adiciona a imagem copiada.
+  // O listener é inscrito uma vez; `pasteFiles` aponta para a versão atual de `addFiles`.
+  const pasteFiles = useRef<(files: readonly File[]) => void>(() => {});
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (isTextInput(e.target) || document.querySelector('dialog[open]')) return;
+      const files = imagesFromPaste(e.clipboardData);
+      if (files.length === 0 || !store.project.peek() || store.readOnly.peek()) return;
+      e.preventDefault();
+      pasteFiles.current(files);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [store]);
+
   if (!project) return null;
 
   /** Importa as imagens; `center` (canvas) as posiciona perto de um ponto. */
@@ -209,18 +226,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
     else imageInput.current?.click();
   };
 
-  // Ctrl/Cmd+V com o foco fora de campos de texto adiciona a imagem copiada.
-  useEffect(() => {
-    const onPaste = (e: ClipboardEvent) => {
-      if (isTextInput(e.target) || document.querySelector('dialog[open]')) return;
-      const files = imagesFromPaste(e.clipboardData);
-      if (files.length === 0 || store.readOnly.peek()) return;
-      e.preventDefault();
-      void addAtViewCenter(files);
-    };
-    window.addEventListener('paste', onPaste);
-    return () => window.removeEventListener('paste', onPaste);
-  });
+  pasteFiles.current = (files) => void addAtViewCenter(files);
 
   // ---- Arrastar e soltar arquivos ----
 

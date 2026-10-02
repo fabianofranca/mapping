@@ -72,6 +72,9 @@ export function AnnotationsPanel({
 }: AnnotationsPanelProps) {
   const root = useRef<HTMLElement>(null);
   const [step, setStep] = useState<CreateStep | null>(null);
+  // A função muda a cada renderização do pai; o efeito só deve reagir ao foco pedido.
+  const onFocusDoneRef = useRef(onFocusDone);
+  onFocusDoneRef.current = onFocusDone;
   const visibleLayerIds = new Set(layers.map((l) => l.id));
   const inherited = getInheritedAnnotations(project, marking.id);
   const sourceOf = (a: Annotation) => project.markings.find((m) => m.id === a.markingId);
@@ -82,7 +85,7 @@ export function AnnotationsPanel({
       ...(root.current?.querySelectorAll<HTMLElement>('[data-annotation]') ?? []),
     ].find((el) => el.dataset.annotation === focusAnnotation);
     if (!target) return;
-    onFocusDone();
+    onFocusDoneRef.current();
     target.scrollIntoView({ block: 'nearest' });
     target.querySelector<HTMLElement>('input, select')?.focus({ preventScroll: true });
   }, [focusAnnotation, layers.length, project]);

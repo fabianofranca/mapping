@@ -144,13 +144,13 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       create((id) => (p) => model.addEntry(p, annotationId, { ...entry, id })),
     updateEntry: (
       annotationId: string,
-      index: number,
+      entryId: string,
       entry: { key: string; value: string },
-    ) => store.apply((p) => model.updateEntry(p, annotationId, index, entry)),
-    removeEntry: (annotationId: string, index: number) =>
-      store.apply((p) => model.removeEntry(p, annotationId, index)),
-    moveEntry: (annotationId: string, from: number, to: number) =>
-      store.apply((p) => model.moveEntry(p, annotationId, from, to)),
+    ) => store.apply((p) => model.updateEntry(p, annotationId, entryId, entry)),
+    removeEntry: (annotationId: string, entryId: string) =>
+      store.apply((p) => model.removeEntry(p, annotationId, entryId)),
+    moveEntry: (annotationId: string, entryId: string, to: number) =>
+      store.apply((p) => model.moveEntry(p, annotationId, entryId, to)),
 
     // Especializações (PLAN.md 13.4): cada operação é uma entrada no histórico.
     applySpecialization: (spec: Spec) =>

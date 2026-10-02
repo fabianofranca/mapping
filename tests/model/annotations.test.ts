@@ -71,8 +71,8 @@ describe('pares chave-valor', () => {
   it('adiciona, altera, remove e reordena', () => {
     let p = sampleProject();
     p = addEntry(p, 'A1', { key: 'local', value: '' });
-    p = updateEntry(p, 'A1', 0, { key: 'tipo', value: 'risco' });
-    p = moveEntry(p, 'A1', 2, 0);
+    p = updateEntry(p, 'A1', 'E1', { key: 'tipo', value: 'risco' });
+    p = moveEntry(p, 'A1', p.annotations[0]!.entries[2]!.id, 0);
     expect(
       annotation(p, 'A1')?.entries.map(({ key, value }) => ({ key, value })),
     ).toEqual([
@@ -82,11 +82,36 @@ describe('pares chave-valor', () => {
     ]);
     // Alterar chave e valor mantém o id da tupla.
     expect(annotation(p, 'A1')?.entries[1]?.id).toBe('E1');
-    p = removeEntry(p, 'A1', 1);
+    p = removeEntry(p, 'A1', 'E1');
     expect(annotation(expectValid(p), 'A1')?.entries.map((e) => e.key)).toEqual([
       'local',
       'gravidade',
     ]);
+  });
+
+  it('opera pelo id da tupla, independente da posição', () => {
+    // Reordenar antes não muda qual par é alterado ou removido.
+    let p = moveEntry(sampleProject(), 'A1', 'E2', 0);
+    expect(annotation(p, 'A1')?.entries.map((e) => e.id)).toEqual(['E2', 'E1']);
+    p = updateEntry(p, 'A1', 'E1', { key: 'tipo', value: 'risco' });
+    expect(annotation(p, 'A1')?.entries).toEqual([
+      { id: 'E2', key: 'gravidade', value: 'média' },
+      { id: 'E1', key: 'tipo', value: 'risco' },
+    ]);
+    p = removeEntry(p, 'A1', 'E2');
+    expect(annotation(expectValid(p), 'A1')?.entries.map((e) => e.id)).toEqual(['E1']);
+    // Mover para a posição atual não muda nada.
+    expect(moveEntry(p, 'A1', 'E1', 0).annotations).toEqual(p.annotations);
+  });
+
+  it('rejeita tupla inexistente ou de outra anotação, e posição inválida', () => {
+    const p = sampleProject();
+    expect(() => updateEntry(p, 'A1', 'X', { key: 'a', value: '' })).toThrow('not-found');
+    expect(() => removeEntry(p, 'A1', 'E3')).toThrow('not-found');
+    expect(() => moveEntry(p, 'A1', 'X', 0)).toThrow('not-found');
+    expect(() => moveEntry(p, 'A1', 'E1', 2)).toThrow('invalid-index');
+    expect(() => moveEntry(p, 'A1', 'E1', -1)).toThrow('invalid-index');
+    expect(() => removeEntry(p, 'A9', 'E1')).toThrow('not-found');
   });
 
   it('rejeita chave vazia ou duplicada (após trim)', () => {
@@ -95,10 +120,9 @@ describe('pares chave-valor', () => {
     expect(() => addEntry(p, 'A1', { key: ' tipo', value: 'x' })).toThrow(
       'duplicate-key',
     );
-    expect(() => updateEntry(p, 'A1', 1, { key: 'tipo', value: 'x' })).toThrow(
+    expect(() => updateEntry(p, 'A1', 'E2', { key: 'tipo', value: 'x' })).toThrow(
       'duplicate-key',
     );
-    expect(() => removeEntry(p, 'A1', 5)).toThrow('invalid-index');
     expect(() =>
       setEntries(p, 'A1', [
         { key: 'a', value: '1' },
