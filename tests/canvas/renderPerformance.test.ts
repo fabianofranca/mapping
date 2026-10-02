@@ -12,6 +12,8 @@ import { buildLargeTypedProject } from '../model/largeTypedProject';
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
 // mede o trabalho do controller e do Konva para atualizar os nós).
 const RENDER_BUDGET_MS = 16;
+/** Desligado com `--coverage` (vite.config.ts): o código instrumentado é mais lento. */
+const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
 
 /** Contexto 2D que aceita qualquer chamada; `measureText` estima pela quantidade de letras. */
 function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -91,7 +93,7 @@ describe('renderização do canvas com o projeto grande', () => {
     return { project, store, actions, ui, controller, container };
   }
 
-  it(`pan, zoom e edição desenham em menos de ${RENDER_BUDGET_MS} ms`, () => {
+  budgetIt(`pan, zoom e edição desenham em menos de ${RENDER_BUDGET_MS} ms`, () => {
     const { project, actions, ui, controller, container } = setup();
     flush(); // Primeiro quadro: cria os nós.
 

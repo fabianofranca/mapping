@@ -53,6 +53,13 @@ function serviceWorker(): Plugin {
   };
 }
 
+/**
+ * Com `--coverage` o código roda instrumentado e bem mais lento: os orçamentos de
+ * desempenho por quadro ficam de fora (o CI os mede num passo sem cobertura).
+ */
+const perfBudgets = process.argv.includes('--coverage') ? 'off' : 'on';
+const testEnv = { PERF_BUDGETS: perfBudgets };
+
 const base = {
   base: './',
   plugins: [preact(), viteSingleFile(), serviceWorker()],
@@ -75,6 +82,7 @@ export default defineConfig({
         test: {
           name: 'model',
           environment: 'node',
+          env: testEnv,
           include: ['tests/model/**/*.test.ts'],
         },
       },
@@ -83,6 +91,7 @@ export default defineConfig({
         test: {
           name: 'app',
           environment: 'jsdom',
+          env: testEnv,
           include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
           exclude: ['tests/model/**'],
         },

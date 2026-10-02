@@ -77,6 +77,8 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
 // cada mudança de projeto. A mediana de várias rodadas, cada uma numa versão
 // nova do projeto (sem o índice nem as pendências já calculados).
 const FRAME_BUDGET_MS = 8;
+/** Desligados com `--coverage` (vite.config.ts): o código instrumentado é mais lento. */
+const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
 
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
@@ -105,26 +107,31 @@ describe('projeto grande com tipadas e referências', () => {
     );
   });
 
-  it(`índice + pendências + indicadores + visibilidade em menos de ${FRAME_BUDGET_MS} ms`, () => {
-    const ms = medianMs((p) => {
-      projectIndex(p);
-      projectIssues(p);
-      const dots = layerDotsByMarking(p, p.layers);
-      const active = layerDotsByMarking(p, p.layers.slice(0, 1));
-      markingVisibility(p, active, 'hide', null);
-      return dots;
-    }, project);
-    expect(ms).toBeLessThan(FRAME_BUDGET_MS);
-  });
+  budgetIt(
+    `índice + pendências + indicadores + visibilidade em menos de ${FRAME_BUDGET_MS} ms`,
+    () => {
+      const ms = medianMs((p) => {
+        projectIndex(p);
+        projectIssues(p);
+        const dots = layerDotsByMarking(p, p.layers);
+        const active = layerDotsByMarking(p, p.layers.slice(0, 1));
+        markingVisibility(p, active, 'hide', null);
+        return dots;
+      }, project);
+      expect(ms).toBeLessThan(FRAME_BUDGET_MS);
+    },
+  );
 
-  it('consultas repetidas na mesma versão reaproveitam o índice', () => {
+  budgetIt('consultas repetidas na mesma versão reaproveitam o índice', () => {
     projectIssues(project);
-    const { ms } = time(() => {
+    const queryAll = () => {
       for (const a of project.annotations) {
         getAnnotationIssues(project, a.id);
         getBacklinks(project, a.id);
       }
-    });
-    expect(ms).toBeLessThan(FRAME_BUDGET_MS * 4);
+    };
+    queryAll(); // Aquece o JIT.
+    const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
+    expect(median(runs)).toBeLessThan(FRAME_BUDGET_MS * 4);
   });
 });
