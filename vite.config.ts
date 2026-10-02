@@ -61,6 +61,13 @@ const base = {
 export default defineConfig({
   ...base,
   test: {
+    // Relatório informativo (sem limite mínimo por enquanto): `npm run test:coverage`.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      reporter: ['text-summary', 'json-summary', 'html'],
+      reportsDirectory: 'coverage',
+    },
     projects: [
       {
         ...base,

@@ -19,7 +19,9 @@ Mapeador de Imagens: app web para marcar áreas retangulares em imagens, organiz
 ```bash
 npm run dev       # servidor de desenvolvimento
 npm run build     # gera dist/index.html
-npm test          # vitest
+npm test          # vitest (modelo, store, storage, canvas e componentes)
+npm run test:coverage # vitest com relatório de cobertura (coverage/)
+npm run test:e2e  # Playwright contra dist/index.html; roda no CI (localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
 npm run lint      # eslint + prettier --check
 npm run typecheck # tsc --noEmit
 ```

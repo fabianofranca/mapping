@@ -3,3 +3,6 @@ node_modules
 package-lock.json
 PLAN.md
 CLAUDE.md
+coverage
+playwright-report
+test-results
