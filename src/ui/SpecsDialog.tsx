@@ -165,7 +165,6 @@ export function SpecsDialog({ project, actions, readOnly, onClose }: SpecsDialog
                 <span class="muted">
                   {entry.spec
                     ? t('spec.item', {
-                        name: entry.id,
                         version: entry.version,
                         layers: entry.spec.layers.length,
                       })
@@ -206,7 +205,9 @@ export function SpecsDialog({ project, actions, readOnly, onClose }: SpecsDialog
           }
         >
           {step.lines.map((line, i) => (
-            <p key={i}>{line}</p>
+            <p key={i} class="wrap-anywhere">
+              {line}
+            </p>
           ))}
         </Dialog>
       )}

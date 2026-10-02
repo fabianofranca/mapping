@@ -265,7 +265,7 @@ export const enUS: Dictionary = {
   'spec.apply': 'Apply specialization…',
   'spec.update': 'Update version…',
   'spec.remove': 'Remove',
-  'spec.item': '{name} · v{version} · {layers} layer(s)',
+  'spec.item': 'v{version} · {layers} layer(s)',
   'spec.fileMissing': '(specialization file unavailable)',
   'spec.readFailed': 'Could not read the file.',
   'spec.invalidTitle': 'Invalid specialization file',

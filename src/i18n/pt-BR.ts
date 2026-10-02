@@ -267,7 +267,7 @@ export const ptBR = {
   'spec.apply': 'Aplicar especialização…',
   'spec.update': 'Atualizar versão…',
   'spec.remove': 'Remover',
-  'spec.item': '{name} · v{version} · {layers} camada(s)',
+  'spec.item': 'v{version} · {layers} camada(s)',
   'spec.fileMissing': '(arquivo da especialização indisponível)',
   'spec.readFailed': 'Não foi possível ler o arquivo.',
   'spec.invalidTitle': 'Arquivo de especialização inválido',

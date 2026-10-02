@@ -1273,3 +1273,7 @@ body {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
 }
+
+.wrap-anywhere {
+  overflow-wrap: anywhere;
+}
