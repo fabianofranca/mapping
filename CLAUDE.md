@@ -66,6 +66,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 ## Etapa atual e etapas futuras
 
-- **Etapa 2 — Especialização (atual):** seção 13 do `PLAN.md`, fases 13 a 17.
+- **Etapa 2 — Especialização (concluída):** seção 13 do `PLAN.md`, fases 13 a 17.
+- **Etapa 2.1 — Revisão técnica (atual):** seção 14 do `PLAN.md`, fases 18 a 25. Refatorações desta etapa **não podem mudar comportamento visível**: todos os testes verdes e o roteiro da 13.9 precisam continuar passando.
 - **Etapa 3 — Servidor MCP (futura, não implementar):** servidor em Node/TypeScript, no mesmo repositório, que reutiliza o `src/model/` para um agente criar projetos, aplicar especializações e adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
 - **Etapa 4 — Editor de especializações (futura, não implementar):** criar e editar especializações dentro da app.
