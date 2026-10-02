@@ -97,6 +97,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   const [view, setView] = useState<'canvas' | 'list'>('canvas');
   const [listOpen, setListOpen] = useState(false);
   const focusAfterView = useRef(false);
+  const [backupNoticeDismissed, setBackupNoticeDismissed] = useState(false);
+  const backupSaved = session.backupSaved.value;
 
   const project = store.project.value;
   const readOnly = store.readOnly.value;
@@ -535,6 +537,18 @@ export function Editor({ open }: { readonly open: OpenProject }) {
           />
           <div class="canvas-overlay">
             {readOnly && <p class="notice">{t('editor.readOnlyNotice')}</p>}
+            {backupSaved !== null && !backupNoticeDismissed && (
+              <p class="notice notice-info" role="status">
+                {t('editor.migrationBackup', { version: backupSaved })}{' '}
+                <button
+                  type="button"
+                  class="link"
+                  onClick={() => setBackupNoticeDismissed(true)}
+                >
+                  {t('editor.dismiss')}
+                </button>
+              </p>
+            )}
             {message && (
               <p class="notice notice-error" role="alert">
                 {message}{' '}

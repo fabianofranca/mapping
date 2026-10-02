@@ -65,6 +65,8 @@ export const ptBR = {
   'editor.importFailed': 'Não foi possível importar: {names}',
   'editor.export': 'Exportar',
   'editor.exporting': 'Gerando zip…',
+  'editor.migrationBackup':
+    'Projeto atualizado do formato v{version}; uma cópia do original foi guardada.',
   'editor.readOnlyNotice':
     'Este arquivo foi feito por uma versão mais nova da app e está aberto só para leitura.',
   'editor.closeUnsavedTitle': 'Fechar sem salvar?',
@@ -244,6 +246,7 @@ export const ptBR = {
     'No menu do navegador (⋮), toque em "Instalar app" ou "Adicionar à tela inicial". Depois de instalada, funciona sem internet.',
   'pwa.installOffline': 'Instale para abrir direto da tela inicial e usar sem internet.',
   'pwa.install': 'Instalar',
+  'pwa.previewBanner': 'PREVIEW — dados separados da versão principal',
   'pwa.dismiss': 'Agora não',
 
   'error.crashed': 'Algo deu errado.',

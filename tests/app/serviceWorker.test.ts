@@ -4,7 +4,7 @@ import source from '../../pwa/sw.js?raw';
 type Listener = (event: Record<string, unknown>) => void;
 
 /** Executa o sw.js com um `self`/`caches` falsos e devolve o que ele registrou. */
-function loadWorker(cacheNames: string[] = []) {
+function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'main') {
   const listeners = new Map<string, Listener>();
   const skipWaiting = vi.fn();
   const claim = vi.fn();
@@ -31,7 +31,8 @@ function loadWorker(cacheNames: string[] = []) {
     skipWaiting,
     addEventListener: (type: string, listener: Listener) => listeners.set(type, listener),
   };
-  new Function('self', 'caches', 'fetch', source)(self, caches, vi.fn());
+  const stamped = source.replaceAll('__CHANNEL__', channel);
+  new Function('self', 'caches', 'fetch', stamped)(self, caches, vi.fn());
   const dispatch = async (type: string, event: Record<string, unknown> = {}) => {
     const waits: Promise<unknown>[] = [];
     const responses: Promise<unknown>[] = [];
@@ -68,6 +69,41 @@ describe('sw.js', () => {
     expect(worker.deleted).toContain('mapeador-antigo');
     expect(worker.deleted).not.toContain('outro-site');
     expect(worker.claim).toHaveBeenCalled();
+  });
+
+  it('versão principal e preview não apagam o cache um do outro', async () => {
+    const names = [
+      'mapeador-antigo',
+      'mapeador-preview-antigo',
+      'mapeador-__BUILD_ID__',
+      'mapeador-preview-__BUILD_ID__',
+    ];
+    const main = loadWorker(names);
+    await main.dispatch('activate');
+    expect(main.deleted).toEqual(['mapeador-antigo']);
+
+    const preview = loadWorker(names, 'preview');
+    await preview.dispatch('activate');
+    expect(preview.deleted).toEqual(['mapeador-preview-antigo']);
+  });
+
+  it('o preview instala no próprio cache', async () => {
+    const worker = loadWorker([], 'preview');
+    await worker.dispatch('install');
+    expect([...worker.stored.keys()]).toEqual(['mapeador-preview-__BUILD_ID__']);
+  });
+
+  it('a versão principal não responde pelas páginas do preview', async () => {
+    const worker = loadWorker();
+    await worker.dispatch('install');
+    const responses = await worker.dispatch('fetch', {
+      request: {
+        method: 'GET',
+        mode: 'navigate',
+        url: 'https://example.com/app/preview/',
+      },
+    });
+    expect(responses).toEqual([]);
   });
 
   it('navegação serve o index.html do cache, mesmo com query', async () => {
