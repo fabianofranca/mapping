@@ -1,0 +1,178 @@
+{
+  "format": "mapeador-spec",
+  "formatVersion": 1,
+  "id": "sdui",
+  "name": "SDUI",
+  "version": 1,
+  "description": "Componentes de tela e seus eventos para Server-Driven UI.",
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": ["onClick", "onHold"],
+          "fields": [
+            { "key": "id", "type": "string", "required": true },
+            { "key": "texto", "type": "string", "required": true },
+            {
+              "key": "estilo",
+              "type": "enum",
+              "options": ["primary", "secondary", "text"],
+              "default": "primary"
+            },
+            {
+              "key": "habilitado",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "sim"
+            }
+          ]
+        },
+        {
+          "id": "input",
+          "name": "Input",
+          "allowedChildren": ["onChange"],
+          "fields": [
+            { "key": "id", "type": "string", "required": true },
+            {
+              "key": "tipo",
+              "type": "enum",
+              "options": ["text", "email", "password", "number", "phone"],
+              "default": "text",
+              "required": true
+            },
+            { "key": "placeholder", "type": "string" },
+            {
+              "key": "obrigatorio",
+              "label": "obrigatório",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não"
+            },
+            { "key": "maxLength", "type": "number" },
+            {
+              "key": "dado",
+              "type": "ref",
+              "accepts": { "tags": ["data-field"], "free": true },
+              "description": "Atributo do modelo de dados exibido e editado por este campo"
+            }
+          ]
+        },
+        {
+          "id": "text",
+          "name": "Text",
+          "fields": [
+            { "key": "id", "type": "string", "required": true },
+            {
+              "key": "conteudo",
+              "label": "conteúdo",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "estilo",
+              "type": "enum",
+              "options": ["titulo", "corpo", "legenda"],
+              "default": "corpo"
+            },
+            {
+              "key": "dado",
+              "type": "ref",
+              "accepts": { "tags": ["data-field"], "free": true },
+              "description": "Atributo exibido por este texto (opcional)"
+            }
+          ]
+        },
+        {
+          "id": "image",
+          "name": "Image",
+          "allowedChildren": ["onClick"],
+          "fields": [
+            { "key": "id", "type": "string", "required": true },
+            {
+              "key": "descricao",
+              "label": "descrição (acessibilidade)",
+              "type": "string",
+              "required": true
+            },
+            { "key": "url", "type": "string" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#FB8C00",
+      "annotationTypes": [
+        {
+          "id": "onClick",
+          "name": "onClick",
+          "requiresOwner": true,
+          "fields": [
+            {
+              "key": "acao",
+              "label": "ação",
+              "type": "enum",
+              "options": ["navigate", "submit", "openUrl", "showDialog", "track"],
+              "required": true
+            },
+            { "key": "destino", "type": "string" },
+            {
+              "key": "parametros",
+              "label": "parâmetros",
+              "type": "table",
+              "columns": [
+                { "key": "nome", "type": "string", "required": true },
+                { "key": "valor", "type": "string" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "onHold",
+          "name": "onHold",
+          "requiresOwner": true,
+          "fields": [
+            {
+              "key": "acao",
+              "label": "ação",
+              "type": "enum",
+              "options": ["showTooltip", "showMenu", "track"],
+              "required": true
+            },
+            {
+              "key": "duracaoMs",
+              "label": "duração (ms)",
+              "type": "number",
+              "default": 500
+            }
+          ]
+        },
+        {
+          "id": "onChange",
+          "name": "onChange",
+          "requiresOwner": true,
+          "fields": [
+            {
+              "key": "acao",
+              "label": "ação",
+              "type": "enum",
+              "options": ["validate", "mask", "track"],
+              "required": true
+            },
+            {
+              "key": "regra",
+              "type": "string",
+              "description": "Ex: email, cpf, minLength:8"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

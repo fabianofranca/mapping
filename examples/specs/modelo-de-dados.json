@@ -1,0 +1,97 @@
+{
+  "format": "mapeador-spec",
+  "formatVersion": 1,
+  "id": "modelo-dados",
+  "name": "Modelo de dados",
+  "version": 1,
+  "description": "Classes de dados e endpoints relacionados às áreas mapeadas.",
+  "layers": [
+    {
+      "id": "classes",
+      "name": "Classes",
+      "color": "#43A047",
+      "annotationTypes": [
+        {
+          "id": "classe",
+          "name": "Classe",
+          "labelField": "nome",
+          "fields": [
+            { "key": "nome", "type": "string", "required": true },
+            { "key": "descricao", "label": "descrição", "type": "string" },
+            { "key": "versao", "label": "versão", "type": "number", "default": 1 },
+            { "key": "revisadoEm", "label": "revisado em", "type": "date" },
+            {
+              "key": "atributos",
+              "type": "table",
+              "tags": ["data-field"],
+              "rowLabel": "nome",
+              "columns": [
+                { "key": "nome", "type": "string", "required": true },
+                {
+                  "key": "tipo",
+                  "type": "enum",
+                  "options": [
+                    "String",
+                    "Int",
+                    "Long",
+                    "Double",
+                    "Boolean",
+                    "Date",
+                    "List",
+                    "Object"
+                  ],
+                  "required": true
+                },
+                {
+                  "key": "obrigatorio",
+                  "label": "obrigatório",
+                  "type": "enum",
+                  "options": ["sim", "não"],
+                  "default": "sim"
+                },
+                { "key": "exemplo", "type": "string" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "endpoints",
+      "name": "Endpoints",
+      "color": "#8E24AA",
+      "annotationTypes": [
+        {
+          "id": "endpoint",
+          "name": "Endpoint",
+          "fields": [
+            {
+              "key": "metodo",
+              "label": "método",
+              "type": "enum",
+              "options": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+              "required": true
+            },
+            { "key": "path", "type": "string", "required": true },
+            {
+              "key": "request",
+              "type": "string",
+              "description": "Referência fraca a uma Classe, ex: Credenciais"
+            },
+            {
+              "key": "response",
+              "type": "string",
+              "description": "Referência fraca a uma Classe, ex: Sessao"
+            },
+            {
+              "key": "timeoutMs",
+              "label": "timeout (ms)",
+              "type": "number",
+              "default": 10000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

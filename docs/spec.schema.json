@@ -1,0 +1,367 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapeador.local/spec.schema.json",
+  "title": "Mapeador de Imagens — especialização (formatVersion 1)",
+  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags) só são verificadas pelo validador da app; veja SPEC-FORMAT.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "formatVersion", "id", "name", "version", "layers"],
+  "properties": {
+    "format": {
+      "const": "mapeador-spec"
+    },
+    "formatVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/layer"
+      }
+    }
+  },
+  "$defs": {
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "tag": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_]*$"
+    },
+    "layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "color", "annotationTypes"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "annotationTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/annotationType"
+          }
+        }
+      }
+    },
+    "annotationType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "fields"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "labelField": {
+          "type": ["string", "null"]
+        },
+        "requiresOwner": {
+          "type": "boolean"
+        },
+        "allowedChildren": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        }
+      }
+    },
+    "field": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/simpleField"
+        },
+        {
+          "$ref": "#/$defs/tableField"
+        },
+        {
+          "$ref": "#/$defs/refField"
+        }
+      ]
+    },
+    "simpleField": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["key", "type"],
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/key"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/tag"
+              }
+            },
+            "type": {
+              "enum": ["string", "number", "date"]
+            },
+            "default": {
+              "type": ["string", "number"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["key", "type", "options"],
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/key"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/tag"
+              }
+            },
+            "type": {
+              "const": "enum"
+            },
+            "default": {
+              "type": "string"
+            },
+            "options": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "column": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["key", "type"],
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/key"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "type": {
+              "enum": ["string", "number", "date"]
+            },
+            "default": {
+              "type": ["string", "number"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["key", "type", "options"],
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/key"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "description": {
+              "type": "string"
+            },
+            "type": {
+              "const": "enum"
+            },
+            "default": {
+              "type": "string"
+            },
+            "options": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "tableField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "type", "columns"],
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/key"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "const": "table"
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/column"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tag"
+          }
+        },
+        "rowLabel": {
+          "type": "string"
+        }
+      }
+    },
+    "refField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "type", "accepts"],
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/key"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "const": "ref"
+        },
+        "accepts": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["tags"],
+              "properties": {
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/tag"
+                  },
+                  "minItems": 1
+                },
+                "free": {
+                  "type": "boolean"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["free"],
+              "properties": {
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/tag"
+                  }
+                },
+                "free": {
+                  "const": true
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
