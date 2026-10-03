@@ -24,7 +24,7 @@ export type ModelErrorCode =
   | 'empty-key'
   | 'duplicate-key'
   | 'duplicate-id'
-  // Especializações (PLAN.md 13)
+  // Especializações (docs/history/PLAN-etapas-1-2.md 13)
   | 'spec-layer'
   | 'typed-layer'
   | 'typed-annotation'

@@ -1,0 +1,82 @@
+.canvas-area {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-canvas-bg);
+}
+
+.canvas-host {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.canvas-overlay {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.canvas-overlay .notice {
+  margin: 0;
+  pointer-events: auto;
+}
+
+.notice-info {
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.canvas-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  text-align: center;
+  pointer-events: none;
+}
+
+.canvas-empty .button {
+  pointer-events: auto;
+}
+
+.canvas-overlay .canvas-hint {
+  align-self: center;
+  pointer-events: none;
+  font-size: 0.85rem;
+}
+
+.canvas-area[hidden] {
+  display: none;
+}
+
+/* Arrastar e soltar arquivos em área vazia do canvas. */
+.canvas-host--drop {
+  outline: 3px dashed var(--color-accent);
+  outline-offset: -3px;
+}
+
+/* Botão "T" do celular: flutua no canto do canvas, longe das abas e da barra inferior. */
+.canvas-float {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  display: flex;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}

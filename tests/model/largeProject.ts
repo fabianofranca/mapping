@@ -14,7 +14,7 @@ interface LargeProjectOptions {
 }
 
 /**
- * Projeto grande e válido para testes de desempenho (PLAN.md, fase 7): 20 imagens e
+ * Projeto grande e válido para testes de desempenho (docs/history/PLAN-etapas-1-2.md, fase 7): 20 imagens e
  * 500 marcações por padrão. Cada imagem tem `markingsPerImage / 5` grupos de 1 marcação
  * com 4 filhas (hierarquia de 2 níveis), e as marcações têm anotações em 2 camadas.
  */

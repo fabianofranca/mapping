@@ -65,6 +65,61 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 }
 ```
 
+## Referência dos campos
+
+Todos os campos abaixo são **obrigatórios** (nenhum é omitido; o "vazio" é `null`). Ids são
+strings não vazias, únicas dentro da sua coleção (a app gera `crypto.randomUUID()`; ids curtos
+como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
+
+**Raiz**
+
+| Campo              | Tipo   | Descrição                                                                 |
+| ------------------ | ------ | ------------------------------------------------------------------------- |
+| `schemaVersion`    | `4`    | Versão do schema.                                                         |
+| `app`              | string | Sempre `"mapeador-imagens"`.                                              |
+| `coordinateSystem` | string | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
+| `project`          | objeto | `name` (texto), `createdAt` e `updatedAt` (ISO 8601).                     |
+| `specializations`  | array  | Especializações aplicadas (ver v4).                                       |
+| `layers`           | array  | Camadas, **globais** (valem para todas as imagens), na ordem de exibição. |
+| `images`           | array  | Imagens do projeto.                                                       |
+| `markings`         | array  | Marcações retangulares.                                                   |
+| `annotations`      | array  | Anotações (livres ou tipadas).                                            |
+
+**`layers[]`**: `id`; `name` (não vazio); `color`; `spec` (`null` ou `{ specId, layerId }`).
+
+**`images[]`**: `id`; `name` (`string` ou `null`); `file` (caminho relativo, ex: `images/home.webp`, único
+no projeto); `width` e `height` (pixels inteiros, com a orientação EXIF já aplicada);
+`placement` (`{ x, y, scale }` — posição e escala da imagem no canvas, só para a interface);
+`markingColor` (`null` ou cor).
+
+**`markings[]`**: `id`; `imageId`; `parentId` (marcação-pai ou `null`); `name` (`string` ou `null`);
+`rect` (`{ x, y, width, height }`, **inteiros em pixels da imagem original**, `x`/`y` ≥ 0);
+`needsReview` (booleano, só para a interface).
+
+**`annotations[]`**: `id`; `markingId`; `layerId`; `name` (`string` ou `null`); `inherit`;
+`parentAnnotationId`; `type`, `values` e `entries` (ver v4). Livre: `type` e `values` são `null`.
+Tipada: os dois preenchidos e `entries` vazio.
+
+## Regras de validade
+
+Um arquivo só abre se passar nas regras abaixo (`validateProject` em `src/model/`); caso contrário, a app
+recusa o arquivo e informa o problema, sem alterá-lo.
+
+- Ids únicos em cada coleção; `file` único entre as imagens; `file` das especializações único.
+- Toda marcação aponta para uma imagem existente; `parentId`, se houver, é uma marcação existente.
+- `rect`: inteiros, largura e altura **≥ 8 px**, e **inteiramente dentro** da imagem (`0 ≤ x`,
+  `x + width ≤ width da imagem`; idem para `y`).
+- A marcação-pai está **na mesma imagem** e **contém** o `rect` da filha. Não há ciclos.
+- As imagens **não se sobrepõem** no canvas (`placement` × tamanho × escala).
+- Toda anotação aponta para uma marcação e uma camada existentes.
+- Pares (`entries`): chave não vazia (após `trim`) e única dentro da anotação; ids de par únicos no projeto.
+- Linhas de `table`: `_id` único dentro da tabela.
+- Anotação "dona" (`parentAnnotationId`): existe, está na **mesma marcação** e em **outra camada**, e a
+  cadeia não tem ciclos.
+
+Regras das especializações (campo obrigatório vazio, tipo incompatível, referência quebrada,
+`allowedChildren`…) **não** impedem a abertura: viram **pendências** (ver abaixo).
+
 ## Campos da v2 e v3
 
 - `images[].name`: rótulo opcional (`null` = use o nome do arquivo). Mudá-lo não renomeia o arquivo.

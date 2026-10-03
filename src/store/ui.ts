@@ -26,7 +26,7 @@ export interface EditorUi {
   readonly activeLayer: Signal<string | null>;
   /** Visão de Lista: mostrar também marcações sem anotação nas camadas visíveis. */
   readonly listShowEmpty: Signal<boolean>;
-  /** Visão de Lista: só anotações incompletas (PLAN.md 13.5). */
+  /** Visão de Lista: só anotações incompletas (docs/history/PLAN-etapas-1-2.md 13.5). */
   readonly listIncompleteOnly: Signal<boolean>;
   /** Anotação para rolar até (e focar) no painel assim que ela aparecer. */
   readonly focusAnnotation: Signal<string | null>;

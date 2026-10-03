@@ -5,7 +5,7 @@ import { fieldOf, isAllowedOwner, specLayerOf, typeOfAnnotation } from './specLo
 import { checkSimpleValue, isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Project } from './types';
 
-// Pendências ("incompletas", PLAN.md 13.5): calculadas a partir do projeto e das
+// Pendências ("incompletas", docs/history/PLAN-etapas-1-2.md 13.5): calculadas a partir do projeto e das
 // especializações, nunca gravadas. Salvar incompleta é sempre permitido.
 
 export type AnnotationIssueCode =

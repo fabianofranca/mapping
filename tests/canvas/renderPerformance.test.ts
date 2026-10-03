@@ -9,7 +9,7 @@ import { createEditorUi } from '../../src/store/ui';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { installFakeCanvas } from './harness';
 
-// Orçamento de uma renderização do canvas (PLAN.md 14.3) com o projeto grande já
+// Orçamento de uma renderização do canvas (docs/history/PLAN-etapa-2-1.md 14.3) com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
 // mede o trabalho do controller e do Konva para atualizar os nós).
 const RENDER_BUDGET_MS = 16;

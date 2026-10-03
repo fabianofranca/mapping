@@ -3,7 +3,7 @@ import { buildLargeProject } from './largeProject';
 import { layerOf, specProject } from './specFixtures';
 
 /**
- * Projeto grande com tipadas e referências, para os orçamentos por quadro (PLAN.md
+ * Projeto grande com tipadas e referências, para os orçamentos por quadro (docs/history/PLAN-etapas-1-2.md
  * 14.3): as 20 imagens e 500 marcações de `buildLargeProject`, com as duas
  * especializações de exemplo e 1.500 anotações — metade tipadas — e 500 referências.
  *

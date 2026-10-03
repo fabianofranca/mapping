@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Formato da especialização (`formatVersion` 1), seção 13.2 do PLAN.md.
+// Formato da especialização (`formatVersion` 1), seção 13.2 do docs/history/PLAN-etapas-1-2.md.
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 

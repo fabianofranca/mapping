@@ -73,7 +73,7 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
   });
 });
 
-// Orçamentos por quadro (PLAN.md 14.3): o que o canvas, o painel e a lista leem a
+// Orçamentos por quadro (docs/history/PLAN-etapa-2-1.md 14.3): o que o canvas, o painel e a lista leem a
 // cada mudança de projeto. A mediana de várias rodadas, cada uma numa versão
 // nova do projeto (sem o índice nem as pendências já calculados).
 const FRAME_BUDGET_MS = 8;

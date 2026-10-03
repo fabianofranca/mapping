@@ -1,0 +1,142 @@
+.dialog {
+  width: min(480px, calc(100vw - 2 * var(--space-3)));
+  padding: 0;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.dialog::backdrop {
+  background: var(--color-backdrop);
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.dialog-body h2,
+.dialog-body p {
+  margin: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.dialog-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Ajuda → Especializações */
+.dialog:has(.help) {
+  width: min(720px, calc(100vw - 2 * var(--space-3)));
+}
+
+.help {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 65dvh;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+
+.help h3 {
+  margin: 0 0 var(--space-2);
+}
+
+.help p,
+.help ul {
+  margin: 0 0 var(--space-2);
+}
+
+.help-toc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-3);
+}
+
+.help-toc a {
+  display: inline-block;
+  min-height: 24px;
+  color: var(--color-accent);
+}
+
+.help-terms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+}
+
+.help-terms dd {
+  margin: 0 0 0 var(--space-3);
+}
+
+.help code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.help-code {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2);
+  overflow-x: auto;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.diagnostics-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.diagnostics-item {
+  padding: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.diagnostics-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.diagnostics-message {
+  overflow-wrap: anywhere;
+}
+
+.spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}

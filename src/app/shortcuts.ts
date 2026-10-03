@@ -1,4 +1,4 @@
-// Atalhos de teclado do editor (desktop). Ver PLAN.md, 7.1.
+// Atalhos de teclado do editor (desktop). Ver docs/history/PLAN-etapas-1-2.md, 7.1.
 
 export type Shortcut = 'undo' | 'redo' | 'delete' | 'escape';
 

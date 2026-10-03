@@ -20,7 +20,7 @@ import { useEditorShortcuts } from './useEditorShortcuts';
 import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
 
-/** Largura a partir da qual o layout de desktop é usado (PLAN.md, 7.1). */
+/** Largura a partir da qual o layout de desktop é usado (docs/history/PLAN-etapas-1-2.md, 7.1). */
 const DESKTOP_QUERY = '(min-width: 900px)';
 
 export function Editor({ open }: { readonly open: OpenProject }) {

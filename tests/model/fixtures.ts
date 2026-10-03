@@ -19,7 +19,7 @@ export function emptyProject(): Project {
 }
 
 /**
- * Projeto do exemplo do PLAN.md:
+ * Projeto do exemplo do docs/history/PLAN-etapas-1-2.md:
  * I1 (4000×3000) com M1 › M2 › M3; I2 (1000×1000) com M4.
  * Camadas L1 e L2; anotações A1 (M1/L1), A2 (M1/L2), A3 (M2/L1), A4 (M4/L2).
  */

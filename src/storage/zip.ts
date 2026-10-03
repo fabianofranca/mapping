@@ -9,7 +9,7 @@ import {
 } from './types';
 import { reportError } from '../utils/report';
 
-/** Conteúdo de um projeto em memória, no formato da pasta (ver PLAN.md 5.1 e 13.3). */
+/** Conteúdo de um projeto em memória, no formato da pasta (ver docs/history/PLAN-etapas-1-2.md 5.1 e 13.3). */
 export interface ProjectFiles {
   readonly mapping: string;
   /** Caminho relativo (`images/foto.jpg`) → conteúdo. */

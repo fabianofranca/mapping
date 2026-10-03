@@ -4,7 +4,7 @@
 
 Mapeador de Imagens: app web para marcar áreas retangulares em imagens, organizar em camadas e anotar com pares chave-valor, salvando tudo num `mapping.json` ao lado das imagens.
 
-**Leia o `PLAN.md` antes de qualquer tarefa.** Ele é a fonte de verdade: modelo de dados, comportamento e fases. Trabalhe **uma fase por vez**, na ordem, e marque os checkboxes concluídos no próprio PR.
+**Leia o `PLAN.md` antes de qualquer tarefa** (resumo do produto e fases pendentes). Trabalhe **uma fase por vez**, na ordem, e marque os checkboxes concluídos no próprio PR. A referência atual está em `docs/` (`ARCHITECTURE.md`, `FORMAT.md`, `SPEC-FORMAT.md`); o plano das etapas concluídas está em `docs/history/` (inclui o roteiro de teste manual, seção 13.9).
 
 ## Stack
 
@@ -71,7 +71,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 ## Etapa atual e etapas futuras
 
-- **Etapa 2 — Especialização (concluída):** seção 13 do `PLAN.md`, fases 13 a 17.
-- **Etapa 2.1 — Revisão técnica (atual):** seção 14 do `PLAN.md`, fases 18 a 25. Refatorações desta etapa **não podem mudar comportamento visível**: todos os testes verdes e o roteiro da 13.9 precisam continuar passando.
+- **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
+- **Etapa 2.1 — Revisão técnica (atual):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`; só a 25 está no `PLAN.md`). Refatorações desta etapa **não podem mudar comportamento visível**: todos os testes verdes e o roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) precisam continuar passando.
 - **Etapa 3 — Servidor MCP (futura, não implementar):** servidor em Node/TypeScript, no mesmo repositório, que reutiliza o `src/model/` para um agente criar projetos, aplicar especializações e adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
 - **Etapa 4 — Editor de especializações (futura, não implementar):** criar e editar especializações dentro da app.

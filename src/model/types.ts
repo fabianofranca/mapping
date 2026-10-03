@@ -1,6 +1,6 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v4). Ver PLAN.md, seções 4, 12.1 e 13.3.
+// Tipos do `mapping.json` (schema v4). Ver docs/history/PLAN-etapas-1-2.md, seções 4, 12.1 e 13.3.
 // Tudo é `readonly`: o modelo é imutável e as operações sempre devolvem um novo projeto.
 
 export const SCHEMA_VERSION = 4;
@@ -79,7 +79,7 @@ export interface AnnotationTypeRef {
   readonly typeId: string;
 }
 
-/** Valores de uma anotação tipada, por `key` do campo (ver PLAN.md 13.3). */
+/** Valores de uma anotação tipada, por `key` do campo (ver docs/history/PLAN-etapas-1-2.md 13.3). */
 export type TypedValues = { readonly [key: string]: JsonValue };
 
 /** Linha de um campo `table`: as chaves das colunas mais o id interno `_id`. */

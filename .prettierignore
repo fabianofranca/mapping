@@ -2,6 +2,7 @@ dist
 node_modules
 package-lock.json
 PLAN.md
+docs/history
 CLAUDE.md
 coverage
 playwright-report
