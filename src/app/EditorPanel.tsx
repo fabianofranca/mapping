@@ -1,3 +1,4 @@
+import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
 import type { ProjectImage } from '../model';
 import { resolveSelection, type AnnotationLocation, type Selection } from '../store/ui';
@@ -29,7 +30,8 @@ export function EditorPanel({
   onGoToAnnotation,
 }: EditorPanelProps) {
   const { store, ui, display, canvas } = useEditor();
-  const project = store.project.value;
+  // Projeto confirmado: os campos do painel atualizam ao soltar o gesto, não durante.
+  const project = store.committed.value;
   if (!project) return null;
   const readOnly = store.readOnly.value;
   const selection = ui.selection.value;
@@ -85,14 +87,16 @@ export function EditorSheet({
   ...panel
 }: EditorPanelProps & { readonly expanded: boolean; readonly onToggle: () => void }) {
   const { store, ui } = useEditor();
-  const project = store.project.value;
-  const selected = resolveSelection(project, ui.selection.value);
-  let title = t('panel.nothingSelected');
-  if (project && selected?.kind === 'marking') {
-    title = markingPath(project, selected.marking);
-  } else if (selected?.kind === 'image') {
-    title = imageLabel(selected.image);
-  }
+  // Só o título da gaveta: um texto, para não renderizar a cada edição do projeto.
+  const titleSignal = useComputed(() => {
+    const project = store.committed.value;
+    const selected = resolveSelection(project, ui.selection.value);
+    if (project && selected?.kind === 'marking') {
+      return markingPath(project, selected.marking);
+    }
+    return selected?.kind === 'image' ? imageLabel(selected.image) : null;
+  });
+  const title = titleSignal.value ?? t('panel.nothingSelected');
   return (
     <BottomSheet title={title} expanded={expanded} onToggle={onToggle}>
       <EditorPanel {...panel} />

@@ -1,3 +1,4 @@
+import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
 import { MenuIcon } from '../ui/icons';
 import { useEditor } from '../ui/EditorContext';
@@ -34,6 +35,7 @@ export function EditorTopBar({
   commands,
 }: EditorTopBarProps) {
   const { store, derived } = useEditor();
+  const projectName = useComputed(() => store.committed.value?.project.name);
   const activeLayer = derived.activeLayer.value;
   return (
     <header class="topbar editor-bar">
@@ -42,7 +44,7 @@ export function EditorTopBar({
           {t('common.close')}
         </button>
       )}
-      <h1 class="project-title">{store.project.value?.project.name}</h1>
+      <h1 class="project-title">{projectName.value}</h1>
       {activeLayer && (
         <button
           type="button"

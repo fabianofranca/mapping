@@ -1,4 +1,4 @@
-import { computed, signal, type ReadonlySignal } from '@preact/signals';
+import { batch, computed, signal, type ReadonlySignal } from '@preact/signals';
 import { ModelError, type ModelErrorCode } from '../model/errors';
 import { touchProject } from '../model/project';
 import type { Project } from '../model/types';
@@ -30,7 +30,14 @@ export interface LoadOptions {
  * O histórico é uma pilha de snapshots imutáveis. Estado de UI não entra aqui.
  */
 export interface ProjectStore {
+  /** Projeto atual, com a prévia do gesto em andamento (lido pelo canvas, para a geometria). */
   readonly project: ReadonlySignal<Project | null>;
+  /**
+   * Projeto sem as prévias de gesto: fora de um gesto é o mesmo objeto de `project`;
+   * durante o gesto fica no projeto do início e só muda no `commitGesture`/`cancelGesture`.
+   * A interface e o estado derivado leem este, para não renderizar a cada `pointermove`.
+   */
+  readonly committed: ReadonlySignal<Project | null>;
   readonly readOnly: ReadonlySignal<boolean>;
   readonly canUndo: ReadonlySignal<boolean>;
   readonly canRedo: ReadonlySignal<boolean>;
@@ -99,8 +106,11 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     revision.value++;
   };
 
+  const committed = computed(() => gestureBase.value ?? project.value);
+
   return {
     project,
+    committed,
     readOnly,
     revision,
     canUndo: computed(() => past.value.length > 0 && gestureBase.value === null),
@@ -124,20 +134,24 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     },
 
     load(p, options = {}) {
-      project.value = p;
-      readOnly.value = options.readOnly ?? false;
-      past.value = [];
-      future.value = [];
-      gestureBase.value = null;
-      revision.value = 0;
+      batch(() => {
+        project.value = p;
+        readOnly.value = options.readOnly ?? false;
+        past.value = [];
+        future.value = [];
+        gestureBase.value = null;
+        revision.value = 0;
+      });
     },
 
     close() {
-      project.value = null;
-      readOnly.value = false;
-      past.value = [];
-      future.value = [];
-      gestureBase.value = null;
+      batch(() => {
+        project.value = null;
+        readOnly.value = false;
+        past.value = [];
+        future.value = [];
+        gestureBase.value = null;
+      });
     },
 
     apply(op) {
@@ -192,14 +206,19 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     commitGesture() {
       const base = gestureBase.value;
       const current = project.value;
-      gestureBase.value = null;
-      if (base && current && current !== base) commit(base, current);
+      // Em lote: `committed` passa direto do projeto do início para o final.
+      batch(() => {
+        gestureBase.value = null;
+        if (base && current && current !== base) commit(base, current);
+      });
     },
 
     cancelGesture() {
       const base = gestureBase.value;
-      gestureBase.value = null;
-      if (base) project.value = base;
+      batch(() => {
+        gestureBase.value = null;
+        if (base) project.value = base;
+      });
     },
   };
 }

@@ -1,3 +1,4 @@
+import { effect } from '@preact/signals';
 import { describe, expect, it } from 'vitest';
 import { moveImage, moveMarking, renameLayer } from '../../src/model';
 import { HISTORY_LIMIT, createProjectStore } from '../../src/store/history';
@@ -279,5 +280,102 @@ describe('store: gestos', () => {
     expect(project(store).markings.find((m) => m.id === 'M1')?.rect).toEqual(ok);
     expect(store.undo()).toBe(true);
     expect(store.canUndo.value).toBe(false);
+  });
+});
+
+describe('store: projeto confirmado (committed)', () => {
+  const committed = (store: ReturnType<typeof createProjectStore>) => {
+    if (!store.committed.value) throw new Error('sem projeto');
+    return store.committed.value;
+  };
+
+  it('fora de um gesto é o mesmo objeto de project', () => {
+    const { store, actions } = setup();
+    expect(store.committed.value).toBe(store.project.value);
+    actions.renameLayer('L1', 'A');
+    expect(store.committed.value).toBe(store.project.value);
+    store.close();
+    expect(store.committed.value).toBeNull();
+  });
+
+  it('durante o gesto fica no projeto do início, mesmo com as prévias', () => {
+    const { store } = setup();
+    const before = project(store);
+    store.beginGesture();
+    expect(committed(store)).toBe(before);
+    for (let dx = 10; dx <= 100; dx += 10) {
+      store.updateGesture((p) => moveMarking(p, 'M1', dx, 0));
+      expect(committed(store)).toBe(before);
+    }
+    expect(project(store)).not.toBe(before);
+    expect(committed(store).markings[0]?.rect.x).toBe(1000);
+  });
+
+  it('commitGesture passa de uma vez para o projeto final', () => {
+    const { store } = setup();
+    const before = project(store);
+    store.beginGesture();
+    store.updateGesture((p) => moveMarking(p, 'M1', 100, 0));
+    const seen: unknown[] = [];
+    const dispose = effect(() => {
+      seen.push(store.committed.value);
+    });
+    store.commitGesture();
+    dispose();
+    expect(committed(store)).toBe(project(store));
+    expect(committed(store).markings[0]?.rect.x).toBe(1100);
+    // Valor inicial + o final: nenhum valor intermediário.
+    expect(seen).toEqual([before, project(store)]);
+  });
+
+  it('gesto sem mudança mantém o mesmo projeto', () => {
+    const { store } = setup();
+    const before = project(store);
+    store.beginGesture();
+    store.commitGesture();
+    expect(committed(store)).toBe(before);
+    expect(project(store)).toBe(before);
+  });
+
+  it('cancelGesture volta ao projeto do início', () => {
+    const { store } = setup();
+    const before = project(store);
+    store.beginGesture();
+    store.updateGesture((p) => moveImage(p, 'I2', 1200, 0));
+    store.cancelGesture();
+    expect(committed(store)).toBe(before);
+    expect(project(store)).toBe(before);
+  });
+
+  it('desfazer e refazer atualizam o projeto confirmado', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    store.beginGesture();
+    store.updateGesture((p) => moveMarking(p, 'M1', 100, 0));
+    store.commitGesture();
+    const after = project(store);
+
+    expect(store.undo()).toBe(true);
+    expect(committed(store)).toBe(project(store));
+    expect(committed(store).markings).toBe(before.markings);
+
+    expect(store.redo()).toBe(true);
+    expect(committed(store)).toBe(project(store));
+    expect(committed(store).markings).toBe(after.markings);
+
+    actions.renameLayer('L1', 'X');
+    expect(committed(store).layers[0]?.name).toBe('X');
+  });
+
+  it('carregar ou fechar durante um gesto limpa o projeto confirmado', () => {
+    const { store } = setup();
+    store.beginGesture();
+    store.updateGesture((p) => moveMarking(p, 'M1', 100, 0));
+    const next = emptyProject();
+    store.load(next);
+    expect(committed(store)).toBe(next);
+    store.beginGesture();
+    store.close();
+    expect(store.committed.value).toBeNull();
   });
 });
