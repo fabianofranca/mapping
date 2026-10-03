@@ -7,6 +7,7 @@ import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { createEditorUi } from '../../src/store/ui';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
+import { installFakeCanvas } from './harness';
 
 // Orçamento de uma renderização do canvas (PLAN.md 14.3) com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -14,30 +15,6 @@ import { buildLargeTypedProject } from '../model/largeTypedProject';
 const RENDER_BUDGET_MS = 16;
 /** Desligado com `--coverage` (vite.config.ts): o código instrumentado é mais lento. */
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
-
-/** Contexto 2D que aceita qualquer chamada; `measureText` estima pela quantidade de letras. */
-function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
-  const state: Record<string | symbol, unknown> = { canvas };
-  return new Proxy(state, {
-    get(target, key) {
-      if (key in target) return target[key];
-      if (key === 'measureText') {
-        return (text: string) => ({ width: text.length * 6 });
-      }
-      if (key === 'getImageData' || key === 'createImageData') {
-        return () => ({ data: new Uint8ClampedArray(4) });
-      }
-      if (key === 'createLinearGradient' || key === 'createRadialGradient') {
-        return () => ({ addColorStop: () => undefined });
-      }
-      return () => undefined;
-    },
-    set(target, key, value) {
-      target[key] = value;
-      return true;
-    },
-  }) as unknown as CanvasRenderingContext2D;
-}
 
 describe('renderização do canvas com o projeto grande', () => {
   const frames: FrameRequestCallback[] = [];
@@ -50,12 +27,7 @@ describe('renderização do canvas com o projeto grande', () => {
   };
 
   beforeAll(() => {
-    const getContext = function (this: HTMLCanvasElement) {
-      return fakeContext(this);
-    };
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
-      getContext as unknown as typeof HTMLCanvasElement.prototype.getContext,
-    );
+    installFakeCanvas();
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       frames.push(cb);
       return frames.length;

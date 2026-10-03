@@ -1366,8 +1366,8 @@ Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E
 **Aceite**: orçamentos da 14.3 cumpridos; pan e zoom no celular com o fixture grande sem travadas perceptíveis; todos os testes verdes.
 
 #### Fase 22 — Divisão do CanvasController
-- [ ] Renderers, entrada e viewport em módulos (14.3); `CanvasController` < 300 linhas
-- [ ] Testes unitários dos renderers com Konva em jsdom (o que for viável) e dos módulos de entrada
+- [x] Renderers, entrada e viewport em módulos (14.3); `CanvasController` < 300 linhas
+- [x] Testes unitários dos renderers com Konva em jsdom (o que for viável) e dos módulos de entrada
 
 **Aceite**: sem mudança de comportamento (testes, E2E e roteiro 13.9); nenhum arquivo de `src/canvas/` com mais de 400 linhas.
 
