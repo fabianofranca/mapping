@@ -1,3 +1,4 @@
+import { useComputed } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { CanvasHost } from '../canvas/CanvasHost';
 import { t } from '../i18n';
@@ -32,7 +33,8 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   );
 }
 
-function EditorScreen() {
+/** Exportado para o teste de contagem de renderizações (tests/components/editorRenders.test.tsx). */
+export function EditorScreen() {
   const { store, ui, canvas } = useEditor();
   const desktop = useMediaQuery(DESKTOP_QUERY);
   const dialogs = useEditorDialogs();
@@ -48,15 +50,19 @@ function EditorScreen() {
   const [listOpen, setListOpen] = useState(false);
   const focusAfterView = useRef(false);
 
-  const project = store.project.value;
-  const selection = ui.selection.value;
-  const hasSelection = resolveSelection(project, selection) !== null;
+  // Só fatias do projeto confirmado (ver `ProjectStore.committed`): a tela não
+  // renderiza de novo a cada prévia de gesto, nem a cada edição que não as muda.
+  const hasProject = useComputed(() => store.committed.value !== null);
+  const hasSelection = useComputed(
+    () => resolveSelection(store.committed.value, ui.selection.value) !== null,
+  );
+  const noImages = useComputed(() => (store.committed.value?.images.length ?? 0) === 0);
   const { busy } = notices;
 
   // Celular: sem seleção, a gaveta recolhe (ao selecionar algo ela abre recolhida).
   useEffect(() => {
-    if (!hasSelection) setSheetExpanded(false);
-  }, [hasSelection]);
+    if (!hasSelection.value) setSheetExpanded(false);
+  }, [hasSelection.value]);
 
   // Voltar da lista para o canvas (celular): centraliza depois que o canvas reaparece.
   useEffect(() => {
@@ -66,10 +72,11 @@ function EditorScreen() {
     }
   }, [view, canvas]);
 
-  if (!project) return null;
+  if (!hasProject.value) return null;
 
   /** Backlinks, "Ir para o alvo" e vinculadas: em qualquer marcação. */
   const onGoToAnnotation = (annotation: AnnotationLocation) => {
+    const selection = ui.selection.peek();
     const sameMarking =
       selection?.kind === 'marking' && selection.id === annotation.markingId;
     goToAnnotation(ui, annotation);
@@ -96,9 +103,7 @@ function EditorScreen() {
     onReplace: intake.requestReplace,
     onGoToAnnotation,
   };
-  const list = (
-    <ListView project={project} selection={selection} onSelect={onListSelect} />
-  );
+  const list = <ListView onSelect={onListSelect} />;
   const mobileList = !desktop && view === 'list';
 
   return (
@@ -127,7 +132,7 @@ function EditorScreen() {
               <SemanticTextButton />
             </div>
           )}
-          {project.images.length === 0 && (
+          {noImages.value && (
             <div class="canvas-empty">
               <p class="muted">{t('editor.emptyCanvas')}</p>
               <button
