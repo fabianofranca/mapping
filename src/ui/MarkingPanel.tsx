@@ -2,17 +2,16 @@ import { useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import {
   parentCandidates,
-  type Layer,
   type Marking,
   type Project,
   type ProjectImage,
   type Rect,
 } from '../model';
 import type { ActionResult } from '../store/history';
-import type { ProjectActions } from '../store/project';
-import type { AnnotationLocation } from '../store/ui';
+import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { CommitInput } from './CommitInput';
+import { useEditor } from './EditorContext';
 import { IdField } from './IdField';
 import { imageLabel, markingErrorMessage, markingPath } from './labels';
 
@@ -20,17 +19,10 @@ interface MarkingPanelProps {
   readonly project: Project;
   readonly marking: Marking;
   readonly image: ProjectImage;
-  /** Camadas visíveis e camada ativa (estado da UI). */
-  readonly visibleLayers: readonly Layer[];
-  readonly activeLayer: Layer | null;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onDelete: (marking: Marking) => void;
-  readonly onShowLayer: (layerId: string) => void;
   readonly onSelectMarking: (markingId: string) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
-  readonly focusAnnotation: string | null;
-  readonly onFocusDone: () => void;
 }
 
 const RECT_FIELDS: readonly { key: keyof Rect; label: TranslationKey }[] = [
@@ -45,17 +37,12 @@ export function MarkingPanel({
   project,
   marking,
   image,
-  visibleLayers,
-  activeLayer,
-  actions,
   readOnly,
   onDelete,
-  onShowLayer,
   onSelectMarking,
   onGoToAnnotation,
-  focusAnnotation,
-  onFocusDone,
 }: MarkingPanelProps) {
+  const { actions, ui, derived } = useEditor();
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
 
@@ -118,15 +105,14 @@ export function MarkingPanel({
       <AnnotationsPanel
         project={project}
         marking={marking}
-        layers={visibleLayers}
-        activeLayer={activeLayer}
-        actions={actions}
+        layers={derived.visibleLayers.value}
+        activeLayer={derived.activeLayer.value}
         readOnly={readOnly}
-        onShowLayer={onShowLayer}
+        onShowLayer={(layerId) => showLayer(ui, layerId)}
         onSelectMarking={onSelectMarking}
         onGoToAnnotation={onGoToAnnotation}
-        focusAnnotation={focusAnnotation}
-        onFocusDone={onFocusDone}
+        focusAnnotation={ui.focusAnnotation.value}
+        onFocusDone={() => (ui.focusAnnotation.value = null)}
       />
 
       <fieldset class="rect-fields" disabled={readOnly}>

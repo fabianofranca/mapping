@@ -25,8 +25,10 @@ export function CommitInput({ value, onCommit, ...rest }: CommitInputProps) {
   const text = draft.base === value ? draft.text : value;
   const setText = (next: string) => setDraft({ base: value, text: next });
 
-  const commit = () => {
-    if (text !== value && !onCommit(text)) setText(value);
+  // Lê o texto do próprio campo: o `change` pode chegar antes da renderização que
+  // acompanha o `input`, e `text` ainda seria o valor antigo.
+  const commit = (typed: string) => {
+    if (typed !== value && !onCommit(typed)) setText(value);
   };
 
   return (
@@ -34,7 +36,7 @@ export function CommitInput({ value, onCommit, ...rest }: CommitInputProps) {
       {...rest}
       value={text}
       onInput={(e) => setText(e.currentTarget.value)}
-      onChange={commit}
+      onChange={(e) => commit(e.currentTarget.value)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') e.currentTarget.blur();
         if (e.key === 'Escape') {

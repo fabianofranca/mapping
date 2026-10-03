@@ -25,7 +25,6 @@ function setup(annotationId: string, project: Project = cadastroProject()) {
         visibleLayerIds={new Set(p.layers.map((l) => l.id))}
         onGoToAnnotation={onGoToAnnotation}
         onShowLayer={onShowLayer}
-        actions={harness.actions}
         readOnly={harness.store.readOnly.value}
       />
     ) : null,
@@ -153,7 +152,6 @@ describe('AnnotationEditor — anotação livre', () => {
         visibleLayerIds={new Set(p.layers.map((l) => l.id))}
         onGoToAnnotation={() => undefined}
         onShowLayer={() => undefined}
-        actions={harness.actions}
         readOnly
       />
     ));

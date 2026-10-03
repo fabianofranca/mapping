@@ -1,35 +1,16 @@
 import { useEffect, useRef } from 'preact/hooks';
-import type { EditorDerived } from '../store/derived';
-import type { DisplayImages } from '../store/displayImages';
-import type { ProjectStore } from '../store/history';
-import type { ProjectActions } from '../store/project';
-import type { EditorUi } from '../store/ui';
+import { useEditor } from '../ui/EditorContext';
 import { CanvasController } from './CanvasController';
 
-interface CanvasHostProps {
-  readonly store: ProjectStore;
-  readonly actions: ProjectActions;
-  readonly display: DisplayImages<ImageBitmap>;
-  readonly ui: EditorUi;
-  readonly derived: EditorDerived;
-  /** Recebe o controller montado (e `null` ao desmontar), para comandos como "enquadrar". */
-  readonly onReady: (controller: CanvasController | null) => void;
-}
-
-/** Monta o `CanvasController` num <div>. Único componente que conhece o Konva. */
-export function CanvasHost({
-  store,
-  actions,
-  display,
-  ui,
-  derived,
-  onReady,
-}: CanvasHostProps) {
+/**
+ * Monta o `CanvasController` num <div> e o publica em `canvas.current` do contexto
+ * (comandos como "enquadrar"). Único componente que conhece o Konva.
+ */
+export function CanvasHost() {
+  const { store, actions, display, ui, derived, canvas } = useEditor();
   const ref = useRef<HTMLDivElement>(null);
-  // O controller vive enquanto o projeto estiver aberto; `onReady` pode mudar sem recriá-lo.
-  const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
 
+  // O controller vive enquanto o projeto estiver aberto.
   useEffect(() => {
     const container = ref.current;
     if (!container) return;
@@ -41,12 +22,12 @@ export function CanvasHost({
       ui,
       derived,
     });
-    onReadyRef.current(controller);
+    canvas.current = controller;
     return () => {
-      onReadyRef.current(null);
+      canvas.current = null;
       controller.destroy();
     };
-  }, [store, actions, display, ui, derived]);
+  }, [store, actions, display, ui, derived, canvas]);
 
   return <div ref={ref} class="canvas-host" />;
 }

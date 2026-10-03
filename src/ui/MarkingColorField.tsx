@@ -1,15 +1,15 @@
 import { t } from '../i18n';
 import { MARKING_COLOR_PALETTE, type ProjectImage } from '../model';
-import type { ProjectActions } from '../store/project';
+import { useEditor } from './EditorContext';
 
 interface MarkingColorFieldProps {
   readonly image: ProjectImage;
-  readonly actions: ProjectActions;
   readonly disabled: boolean;
 }
 
 /** Cor da borda das marcações da imagem: paleta, cor livre ou a neutra do tema. */
-export function MarkingColorField({ image, actions, disabled }: MarkingColorFieldProps) {
+export function MarkingColorField({ image, disabled }: MarkingColorFieldProps) {
+  const { actions } = useEditor();
   const current = image.markingColor;
   const set = (color: string | null) => actions.setImageMarkingColor(image.id, color);
   return (

@@ -16,11 +16,11 @@ import {
   type Layer,
   type Project,
 } from '../model';
-import type { ProjectActions } from '../store/project';
 import type { AnnotationLocation } from '../store/ui';
 import { IssueBadge, IssueList } from './AnnotationSummary';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
+import { useEditor } from './EditorContext';
 import { ArrowDownIcon, ArrowUpIcon, CloseIcon, TrashIcon } from './icons';
 import { annotationErrorMessage, annotationLabel } from './labels';
 import { BacklinkList, TypedField } from './TypedFields';
@@ -33,7 +33,6 @@ interface AnnotationEditorProps {
   readonly visibleLayerIds: ReadonlySet<string>;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
   readonly onShowLayer: (layerId: string) => void;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
 }
 
@@ -43,7 +42,6 @@ interface EntryRowProps {
   readonly index: number;
   readonly count: number;
   readonly annotationId: string;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
   /** Descarta o par novo. */
   readonly onDiscard: () => void;
@@ -62,12 +60,12 @@ function EntryRow({
   index,
   count,
   annotationId,
-  actions,
   readOnly,
   onDiscard,
   onCreated,
   onRemove,
 }: EntryRowProps) {
+  const { actions } = useEditor();
   const base = entry ? `${entry.key}\u0000${entry.value}` : '';
   const [draft, setDraft] = useState({
     base,
@@ -191,14 +189,12 @@ type PendingDelete =
 function FreeEntries({
   project,
   annotation,
-  actions,
   readOnly,
   onGoToAnnotation,
   onRemoveEntry,
 }: {
   readonly project: Project;
   readonly annotation: Annotation;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
   readonly onRemoveEntry: (entryId: string) => void;
@@ -216,7 +212,6 @@ function FreeEntries({
         index={index}
         count={count}
         annotationId={annotation.id}
-        actions={actions}
         readOnly={readOnly}
         onDiscard={() => undefined}
         onCreated={() => undefined}
@@ -239,7 +234,6 @@ function FreeEntries({
           index={count}
           count={count}
           annotationId={annotation.id}
-          actions={actions}
           readOnly={readOnly}
           onDiscard={() => setAdding(false)}
           onCreated={() => setAdding(false)}
@@ -269,16 +263,15 @@ function FreeEntries({
 function TypedBody({
   project,
   annotation,
-  actions,
   readOnly,
   onGoToAnnotation,
 }: {
   readonly project: Project;
   readonly annotation: Annotation;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }) {
+  const { actions } = useEditor();
   const resolved = typeOfAnnotation(project, annotation);
   if (!resolved) {
     return (
@@ -306,7 +299,7 @@ function TypedBody({
       </>
     );
   }
-  const ctx = { project, annotation, actions, readOnly, onGoToAnnotation };
+  const ctx = { project, annotation, readOnly, onGoToAnnotation };
   return (
     <>
       {resolved.type.description && (
@@ -328,9 +321,9 @@ export function AnnotationEditor({
   visibleLayerIds,
   onGoToAnnotation,
   onShowLayer,
-  actions,
   readOnly,
 }: AnnotationEditorProps) {
+  const { actions } = useEditor();
   const [pending, setPending] = useState<PendingDelete | null>(null);
   /** Filho criado numa camada oculta: oferece mostrá-la. */
   const [hiddenChild, setHiddenChild] = useState<{
@@ -463,7 +456,6 @@ export function AnnotationEditor({
         <TypedBody
           project={project}
           annotation={annotation}
-          actions={actions}
           readOnly={readOnly}
           onGoToAnnotation={onGoToAnnotation}
         />
@@ -471,7 +463,6 @@ export function AnnotationEditor({
         <FreeEntries
           project={project}
           annotation={annotation}
-          actions={actions}
           readOnly={readOnly}
           onGoToAnnotation={onGoToAnnotation}
           onRemoveEntry={requestRemoveEntry}

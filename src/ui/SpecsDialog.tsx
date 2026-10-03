@@ -10,8 +10,8 @@ import {
   type Spec,
   type SpecRemovalMode,
 } from '../model';
-import type { ProjectActions } from '../store/project';
 import { Dialog } from './Dialog';
+import { useEditor } from './EditorContext';
 import { labelTexts } from './typedText';
 import { reportError } from '../utils/report';
 
@@ -19,7 +19,6 @@ const MAX_ERRORS = 8;
 
 interface SpecsDialogProps {
   readonly project: Project;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onClose: () => void;
 }
@@ -30,7 +29,8 @@ type Step =
   | { readonly kind: 'remove'; readonly entry: ProjectSpecialization };
 
 /** Menu Especializações: aplicar, atualizar versão e remover (PLAN.md 13.4). */
-export function SpecsDialog({ project, actions, readOnly, onClose }: SpecsDialogProps) {
+export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
+  const { actions } = useEditor();
   const [step, setStep] = useState<Step | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);

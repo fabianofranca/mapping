@@ -1372,8 +1372,8 @@ Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E
 **Aceite**: sem mudança de comportamento (testes, E2E e roteiro 13.9); nenhum arquivo de `src/canvas/` com mais de 400 linhas.
 
 #### Fase 23 — Divisão do Editor
-- [ ] `EditorContext`, `useEditorDialogs`, `useImageIntake`, `useEditorShortcuts`
-- [ ] `EditorTopBar`, `EditorBottomBar`, `EditorDialogs`; `Editor.tsx` < 250 linhas
+- [x] `EditorContext`, `useEditorDialogs`, `useImageIntake`, `useEditorShortcuts`
+- [x] `EditorTopBar`, `EditorBottomBar`, `EditorDialogs`; `Editor.tsx` < 250 linhas
 
 **Aceite**: sem mudança de comportamento; componentes filhos sem `store`/`actions`/`ui` em props.
 

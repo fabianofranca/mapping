@@ -1,0 +1,44 @@
+import { useState } from 'preact/hooks';
+import { t } from '../i18n';
+import { useEditor } from '../ui/EditorContext';
+import type { EditorNotices } from './useEditorNotices';
+
+/** Avisos sobre o canvas: somente leitura, backup da migração, erros, dica de desenho e progresso. */
+export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) {
+  const { session, store, ui } = useEditor();
+  const [backupDismissed, setBackupDismissed] = useState(false);
+  const backupSaved = session.backupSaved.value;
+  const readOnly = store.readOnly.value;
+  const hasImages = (store.project.value?.images.length ?? 0) > 0;
+  const { message, progress } = notices;
+
+  return (
+    <div class="canvas-overlay">
+      {readOnly && <p class="notice">{t('editor.readOnlyNotice')}</p>}
+      {backupSaved !== null && !backupDismissed && (
+        <p class="notice notice-info" role="status">
+          {t('editor.migrationBackup', { version: backupSaved })}{' '}
+          <button type="button" class="link" onClick={() => setBackupDismissed(true)}>
+            {t('editor.dismiss')}
+          </button>
+        </p>
+      )}
+      {message && (
+        <p class="notice notice-error" role="alert">
+          {message}{' '}
+          <button type="button" class="link" onClick={() => notices.setMessage(null)}>
+            {t('editor.dismiss')}
+          </button>
+        </p>
+      )}
+      {ui.mode.value === 'draw' && !readOnly && hasImages && (
+        <p class="notice notice-info canvas-hint">{t('editor.drawHint')}</p>
+      )}
+      {progress && (
+        <p class="notice notice-info" aria-live="polite">
+          {progress}
+        </p>
+      )}
+    </div>
+  );
+}

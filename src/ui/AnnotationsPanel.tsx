@@ -12,11 +12,11 @@ import {
   type Project,
   type SpecAnnotationType,
 } from '../model';
-import type { ProjectActions } from '../store/project';
 import type { AnnotationLocation } from '../store/ui';
 import { AnnotationEditor } from './AnnotationEditor';
 import { AnnotationLines, AnnotationTitle } from './AnnotationSummary';
 import { Dialog } from './Dialog';
+import { useEditor } from './EditorContext';
 import { markingPath } from './labels';
 import { annotationDisplayName, ownerTypeNames } from './typedText';
 
@@ -27,7 +27,6 @@ interface AnnotationsPanelProps {
   readonly layers: readonly Layer[];
   /** Destino do botão principal "+ Anotação". */
   readonly activeLayer: Layer | null;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
   /** Torna a camada visível (para ir até uma anotação vinculada numa camada oculta). */
   readonly onShowLayer: (layerId: string) => void;
@@ -62,7 +61,6 @@ export function AnnotationsPanel({
   marking,
   layers,
   activeLayer,
-  actions,
   readOnly,
   onShowLayer,
   onSelectMarking,
@@ -70,6 +68,7 @@ export function AnnotationsPanel({
   focusAnnotation,
   onFocusDone,
 }: AnnotationsPanelProps) {
+  const { actions } = useEditor();
   const root = useRef<HTMLElement>(null);
   const [step, setStep] = useState<CreateStep | null>(null);
   // A função muda a cada renderização do pai; o efeito só deve reagir ao foco pedido.
@@ -179,7 +178,6 @@ export function AnnotationsPanel({
                   visibleLayerIds={visibleLayerIds}
                   onGoToAnnotation={onGoToAnnotation}
                   onShowLayer={onShowLayer}
-                  actions={actions}
                   readOnly={readOnly}
                 />
               ))

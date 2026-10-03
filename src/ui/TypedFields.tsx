@@ -20,10 +20,10 @@ import {
   type TableRow,
 } from '../model';
 import type { ActionResult } from '../store/history';
-import type { ProjectActions } from '../store/project';
 import type { AnnotationLocation } from '../store/ui';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
+import { useEditor } from './EditorContext';
 import { ArrowDownIcon, ArrowUpIcon, CloseIcon } from './icons';
 import { imageLabel, markingLabel, markingPath } from './labels';
 import { annotationSourceLabel, labelTexts } from './typedText';
@@ -37,7 +37,6 @@ type TableFieldDef = Extract<SpecField, { type: 'table' }>;
 export interface FieldContext {
   readonly project: Project;
   readonly annotation: Annotation;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
@@ -247,7 +246,8 @@ export function TypedField({
   field,
   ...ctx
 }: FieldContext & { readonly field: SpecField }) {
-  const { project, annotation, actions, readOnly } = ctx;
+  const { actions } = useEditor();
+  const { project, annotation, readOnly } = ctx;
   const value = annotation.values?.[field.key];
   const backlinks = getBacklinks(project, annotation.id).filter(
     (b) => 'key' in b.ref && !('rowId' in b.ref) && b.ref.key === field.key,
@@ -288,7 +288,8 @@ export function TypedField({
 // Tabela: cartões empilhados no celular, tabela no desktop (CSS).
 
 function TableField({ field, ...ctx }: FieldContext & { readonly field: TableFieldDef }) {
-  const { project, annotation, actions, readOnly } = ctx;
+  const { actions } = useEditor();
+  const { project, annotation, readOnly } = ctx;
   const rows = tableRows(annotation.values?.[field.key]);
   const [confirm, setConfirm] = useState<{ row: TableRow; count: number } | null>(null);
   const backlinks = getBacklinks(project, annotation.id);
@@ -451,7 +452,8 @@ function TableField({ field, ...ctx }: FieldContext & { readonly field: TableFie
 // Referência: alvo atual, Escolher, Limpar e Ir para o alvo.
 
 function RefField({ field, ...ctx }: FieldContext & { readonly field: RefFieldDef }) {
-  const { project, annotation, actions, readOnly } = ctx;
+  const { actions } = useEditor();
+  const { project, annotation, readOnly } = ctx;
   const [picking, setPicking] = useState(false);
   const ref = parseRef(annotation.values?.[field.key]);
   const target = ref ? resolveRef(project, ref) : null;

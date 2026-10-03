@@ -1,17 +1,14 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import type { Project } from '../model';
-import type { EditorDerived } from '../store/derived';
-import { toggleLayerVisible, type EditorUi, type Selection } from '../store/ui';
+import { toggleLayerVisible, type Selection } from '../store/ui';
 import { AnnotationLines, AnnotationTitle, IssueBadge } from './AnnotationSummary';
+import { useEditor } from './EditorContext';
 import { imageLabel, markingLabel, markingPath } from './labels';
 import { annotationDisplayName } from './typedText';
 
 interface ListViewProps {
   readonly project: Project;
-  readonly ui: EditorUi;
-  /** Camadas visíveis (a lista respeita esse filtro) e os dados já montados da lista. */
-  readonly derived: EditorDerived;
   readonly selection: Selection;
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }
@@ -21,7 +18,9 @@ interface ListViewProps {
  * seus pares. Tocar num item seleciona a marcação. Os filtros são as camadas
  * visíveis (compartilhadas com o canvas e o painel) e "marcações sem anotação".
  */
-export function ListView({ project, ui, derived, selection, onSelect }: ListViewProps) {
+export function ListView({ project, selection, onSelect }: ListViewProps) {
+  // Camadas visíveis (a lista respeita esse filtro) e os dados já montados da lista.
+  const { ui, derived } = useEditor();
   const showEmpty = ui.listShowEmpty.value;
   const incompleteOnly = ui.listIncompleteOnly.value;
   const layers = derived.visibleLayers.value;

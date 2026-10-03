@@ -64,4 +64,13 @@ describe('CommitInput', () => {
     rerender(<CommitInput aria-label="campo" value="b" onCommit={() => true} />);
     expect(input.value).toBe('b');
   });
+
+  it('grava o texto do campo mesmo se o `change` vier antes da renderização', () => {
+    const onCommit = vi.fn(() => true);
+    const { input } = setup(onCommit, 'a');
+    input.value = 'b';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(onCommit).toHaveBeenCalledWith('b');
+  });
 });

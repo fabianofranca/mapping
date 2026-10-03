@@ -1,157 +1,59 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type { CanvasController } from '../canvas/CanvasController';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { CanvasHost } from '../canvas/CanvasHost';
 import { t } from '../i18n';
-import {
-  imageDeletionImpact,
-  markingDeletionImpact,
-  type Marking,
-  type ProjectImage,
-} from '../model';
-import { createEditorDerived } from '../store/derived';
-import type { AspectChange } from '../store/session';
-import { semanticText, setSemanticText } from '../store/settings';
-import {
-  createEditorUi,
-  goToAnnotation,
-  resolveSelection,
-  showLayer,
-  type AnnotationLocation,
-  type Selection,
-} from '../store/ui';
-import { BottomSheet } from '../ui/BottomSheet';
-import { Dialog } from '../ui/Dialog';
-import { LayersDialog } from '../ui/LayersDialog';
-import { DiagnosticsDialog } from '../ui/DiagnosticsDialog';
-import { SpecHelpDialog } from '../ui/SpecHelpDialog';
-import { SpecsDialog } from '../ui/SpecsDialog';
+import { goToAnnotation, resolveSelection, type Selection } from '../store/ui';
+import type { AnnotationLocation } from '../store/ui';
+import { EditorProvider, useEditor } from '../ui/EditorContext';
 import { ListView } from '../ui/ListView';
-import {
-  AddImageIcon,
-  DrawIcon,
-  FitIcon,
-  HandIcon,
-  ListIcon,
-  MenuIcon,
-  RedoIcon,
-  TextIcon,
-  UndoIcon,
-} from '../ui/icons';
-import { imageLabel, markingLabel, markingPath } from '../ui/labels';
-import { MarkingPanel } from '../ui/MarkingPanel';
-import { MarkingTree } from '../ui/MarkingTree';
-import { PanelTabs, type PanelTab } from '../ui/PanelTabs';
-import { SaveStatus } from '../ui/SaveStatus';
-import { SelectionPanel } from '../ui/SelectionPanel';
-import { SettingsBar } from '../ui/SettingsBar';
-import { ToolButton } from '../ui/ToolButton';
+import type { PanelTab } from '../ui/PanelTabs';
 import { useMediaQuery } from '../ui/useMediaQuery';
-import { buildExport, closeProject, type OpenProject } from './controller';
-import { ExportDialog } from './ExportDialog';
-import {
-  canReadClipboard,
-  dragHasFiles,
-  imagesFromPaste,
-  readClipboardImages,
-  splitImageFiles,
-} from './imageIntake';
-import { isTextInput, shortcutFor } from './shortcuts';
-import { reportError } from '../utils/report';
+import type { OpenProject } from './controller';
+import { CanvasNotices } from './CanvasNotices';
+import { SemanticTextButton } from './EditorTools';
+import { EditorBottomBar, type EditorView } from './EditorBottomBar';
+import { EditorDialogs } from './EditorDialogs';
+import { EditorPanel, EditorSheet } from './EditorPanel';
+import { EditorTopBar } from './EditorTopBar';
+import { useEditorDialogs } from './useEditorDialogs';
+import { useEditorNotices } from './useEditorNotices';
+import { useEditorShortcuts } from './useEditorShortcuts';
+import { ImageInputs, useImageIntake } from './useImageIntake';
+import { useProjectCommands } from './useProjectCommands';
 
 /** Largura a partir da qual o layout de desktop é usado (PLAN.md, 7.1). */
 const DESKTOP_QUERY = '(min-width: 900px)';
 
-interface AspectPrompt {
-  readonly change: AspectChange;
-  readonly resolve: (confirmed: boolean) => void;
+export function Editor({ open }: { readonly open: OpenProject }) {
+  // Um contexto (e um estado de UI) novo por projeto aberto: o Editor não é remontado ao trocar.
+  return (
+    <EditorProvider open={open}>
+      <EditorScreen />
+    </EditorProvider>
+  );
 }
 
-const formatSize = (s: { width: number; height: number }) =>
-  t('image.dimensions', { width: s.width, height: s.height });
-
-export function Editor({ open }: { readonly open: OpenProject }) {
-  const { session, display } = open;
-  const { store, actions } = session;
-  // Um estado de UI novo por sessão aberta (o Editor não é remontado ao trocar de projeto).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const ui = useMemo(() => createEditorUi(), [session]);
-  const derived = useMemo(() => createEditorDerived(store, ui), [store, ui]);
-  const controller = useRef<CanvasController | null>(null);
+function EditorScreen() {
+  const { store, ui, canvas } = useEditor();
   const desktop = useMediaQuery(DESKTOP_QUERY);
+  const dialogs = useEditorDialogs();
+  const notices = useEditorNotices();
+  const intake = useImageIntake({ desktop, dialogs, notices });
+  const commands = useProjectCommands(dialogs, notices);
+  useEditorShortcuts(dialogs);
 
-  const imageInput = useRef<HTMLInputElement>(null);
-  const replaceInput = useRef<HTMLInputElement>(null);
-  const replaceTarget = useRef<string | null>(null);
-
-  const [sheetExpanded, setSheetExpanded] = useState(false);
-  const [progress, setProgress] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [exportFile, setExportFile] = useState<File | null>(null);
-  const [confirmClose, setConfirmClose] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
-  const [specsOpen, setSpecsOpen] = useState(false);
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<ProjectImage | null>(null);
-  const [deleteMarking, setDeleteMarking] = useState<Marking | null>(null);
   const [panelTab, setPanelTab] = useState<PanelTab>('details');
-  const [aspectPrompt, setAspectPrompt] = useState<AspectPrompt | null>(null);
-  const [layersOpen, setLayersOpen] = useState(false);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
   /** Celular: aba ativa (Canvas | Lista). Desktop: lista lado a lado com o canvas. */
-  const [view, setView] = useState<'canvas' | 'list'>('canvas');
+  const [view, setView] = useState<EditorView>('canvas');
   const [listOpen, setListOpen] = useState(false);
   const focusAfterView = useRef(false);
-  const [backupNoticeDismissed, setBackupNoticeDismissed] = useState(false);
-  const backupSaved = session.backupSaved.value;
 
   const project = store.project.value;
-  const readOnly = store.readOnly.value;
   const selection = ui.selection.value;
-  const mode = ui.mode.value;
-  const selected = resolveSelection(project, selection);
-  const selectedImage = selected?.kind === 'image' ? selected.image : null;
-  const activeLayer = derived.activeLayer.value;
-  const shownLayers = derived.visibleLayers.value;
-  const busy = progress !== null;
-  const requestMarkingDelete = useRef<(marking: Marking) => void>(() => undefined);
-
-  /** Exclusão de marcação: em cascata pede confirmação; simples, não (o desfazer cobre). */
-  const onMarkingDelete = (marking: Marking) => {
-    const current = store.project.peek();
-    if (!current) return;
-    const impact = markingDeletionImpact(current, marking.id);
-    if (impact.descendants > 0 || impact.annotations > 0) setDeleteMarking(marking);
-    else if (actions.removeMarking(marking.id).ok) ui.selection.value = null;
-  };
-
-  // Atalhos de teclado. Diálogos abertos cuidam do próprio teclado (Esc).
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || isTextInput(e.target)) return;
-      if (document.querySelector('dialog[open]')) return;
-      const shortcut = shortcutFor(e);
-      if (!shortcut) return;
-      e.preventDefault();
-      if (shortcut === 'undo') store.undo();
-      if (shortcut === 'redo') store.redo();
-      if (shortcut === 'escape' && !controller.current?.cancelInteraction()) {
-        ui.selection.value = null;
-      }
-      if (shortcut === 'delete' && !store.readOnly.peek()) {
-        const current = resolveSelection(store.project.peek(), ui.selection.peek());
-        if (current?.kind === 'image') setDeleteTarget(current.image);
-        if (current?.kind === 'marking') requestMarkingDelete.current(current.marking);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [store, ui]);
-
-  requestMarkingDelete.current = onMarkingDelete;
+  const hasSelection = resolveSelection(project, selection) !== null;
+  const { busy } = notices;
 
   // Celular: sem seleção, a gaveta recolhe (ao selecionar algo ela abre recolhida).
-  const hasSelection = selected !== null;
   useEffect(() => {
     if (!hasSelection) setSheetExpanded(false);
   }, [hasSelection]);
@@ -160,431 +62,79 @@ export function Editor({ open }: { readonly open: OpenProject }) {
   useEffect(() => {
     if (view === 'canvas' && focusAfterView.current) {
       focusAfterView.current = false;
-      controller.current?.focusSelection();
+      canvas.current?.focusSelection();
     }
-  }, [view]);
-
-  // Ctrl/Cmd+V com o foco fora de campos de texto adiciona a imagem copiada.
-  // O listener é inscrito uma vez; `pasteFiles` aponta para a versão atual de `addFiles`.
-  const pasteFiles = useRef<(files: readonly File[]) => void>(() => {});
-  useEffect(() => {
-    const onPaste = (e: ClipboardEvent) => {
-      if (isTextInput(e.target) || document.querySelector('dialog[open]')) return;
-      const files = imagesFromPaste(e.clipboardData);
-      if (files.length === 0 || !store.project.peek() || store.readOnly.peek()) return;
-      e.preventDefault();
-      pasteFiles.current(files);
-    };
-    window.addEventListener('paste', onPaste);
-    return () => window.removeEventListener('paste', onPaste);
-  }, [store]);
+  }, [view, canvas]);
 
   if (!project) return null;
-
-  /** Importa as imagens; `center` (canvas) as posiciona perto de um ponto. */
-  const addFiles = async (files: readonly File[], center?: { x: number; y: number }) => {
-    if (files.length === 0 || readOnly) return;
-    setMessage(null);
-    const failed: string[] = [];
-    const added: string[] = [];
-    // Uma chamada por arquivo para mostrar o progresso.
-    for (const [index, file] of files.entries()) {
-      setProgress(t('editor.importing', { current: index + 1, total: files.length }));
-      const result = await session.addImages([file], { center });
-      failed.push(...result.failed);
-      added.push(...result.added);
-    }
-    setProgress(null);
-    const last = store.project.peek()?.images.find((i) => i.file === added.at(-1));
-    if (last) {
-      ui.selection.value = { kind: 'image', id: last.id };
-      if (!center) controller.current?.fitAll();
-    }
-    if (failed.length > 0)
-      setMessage(t('editor.importFailed', { names: failed.join(', ') }));
-  };
-
-  const onImagesChosen = async (input: HTMLInputElement) => {
-    const files = [...(input.files ?? [])];
-    input.value = '';
-    await addFiles(files);
-  };
-
-  const addAtViewCenter = (files: readonly File[]) =>
-    addFiles(files, controller.current?.viewportCenter());
-
-  const onPasteImage = async () => {
-    setAddMenuOpen(false);
-    try {
-      const files = await readClipboardImages();
-      if (files.length === 0) setMessage(t('editor.pasteEmpty'));
-      else await addAtViewCenter(files);
-    } catch (e) {
-      reportError('editor.paste', e);
-      setMessage(t('editor.pasteFailed'));
-    }
-  };
-
-  /** Botão de adicionar: no celular com clipboard, oferece "Colar imagem". */
-  const onAddClick = () => {
-    if (!desktop && canReadClipboard()) setAddMenuOpen(true);
-    else imageInput.current?.click();
-  };
-
-  pasteFiles.current = (files) => void addAtViewCenter(files);
-
-  // ---- Arrastar e soltar arquivos ----
-
-  const dropTargetAt = (e: DragEvent) => {
-    const single = (e.dataTransfer?.items.length ?? 0) === 1;
-    const imageId = controller.current?.imageIdAt(e.clientX, e.clientY) ?? null;
-    return { imageId: single ? imageId : null };
-  };
-
-  const onDragOver = (e: DragEvent) => {
-    if (!dragHasFiles(e.dataTransfer) || readOnly || busy) return;
-    e.preventDefault();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-    controller.current?.setDropTarget(dropTargetAt(e));
-  };
-
-  const onDragLeave = (e: DragEvent) => {
-    // Só limpa ao sair da área (dragleave também dispara entre filhos).
-    if (e.relatedTarget instanceof Node && e.currentTarget instanceof Node) {
-      if (e.currentTarget.contains(e.relatedTarget)) return;
-    }
-    controller.current?.setDropTarget(null);
-  };
-
-  const onDrop = (e: DragEvent) => {
-    if (!dragHasFiles(e.dataTransfer)) return;
-    e.preventDefault();
-    controller.current?.setDropTarget(null);
-    if (readOnly || busy) return;
-    const { images, ignored } = splitImageFiles([...(e.dataTransfer?.files ?? [])]);
-    const [only] = images;
-    const overImage = controller.current?.imageIdAt(e.clientX, e.clientY) ?? null;
-    const warn = () => {
-      if (ignored.length > 0)
-        setMessage(t('editor.dropIgnored', { names: ignored.join(', ') }));
-    };
-    if (!only) return warn();
-    if (images.length === 1 && overImage) {
-      void replaceWith(overImage, only).then(warn);
-      return;
-    }
-    const point = controller.current?.canvasPointAt(e.clientX, e.clientY);
-    void addFiles(images, point).then(warn);
-  };
-
-  const askAspectChange = (change: AspectChange) =>
-    new Promise<boolean>((resolve) => setAspectPrompt({ change, resolve }));
-
-  const answerAspect = (confirmed: boolean) => {
-    aspectPrompt?.resolve(confirmed);
-    setAspectPrompt(null);
-  };
-
-  const onReplace = (image: ProjectImage) => {
-    replaceTarget.current = image.id;
-    replaceInput.current?.click();
-  };
-
-  const replaceWith = async (imageId: string, file: File) => {
-    setMessage(null);
-    setProgress(t('image.replacing'));
-    const result = await session.replaceImage(imageId, file, askAspectChange);
-    setProgress(null);
-    if (result === 'failed') setMessage(t('image.replaceFailed'));
-  };
-
-  const onReplaceChosen = async (input: HTMLInputElement) => {
-    const file = input.files?.[0];
-    input.value = '';
-    const imageId = replaceTarget.current;
-    replaceTarget.current = null;
-    if (!file || !imageId) return;
-    await replaceWith(imageId, file);
-  };
-
-  const onMarkingDeleteConfirmed = (marking: Marking) => {
-    setDeleteMarking(null);
-    if (actions.removeMarking(marking.id).ok) ui.selection.value = null;
-  };
 
   /** Backlinks, "Ir para o alvo" e vinculadas: em qualquer marcação. */
   const onGoToAnnotation = (annotation: AnnotationLocation) => {
     const sameMarking =
       selection?.kind === 'marking' && selection.id === annotation.markingId;
     goToAnnotation(ui, annotation);
-    if (!sameMarking) controller.current?.focusSelection();
+    if (!sameMarking) canvas.current?.focusSelection();
     if (!desktop) setSheetExpanded(true);
-  };
-
-  const onTreeSelect = (next: NonNullable<Selection>) => {
-    ui.selection.value = next;
-    controller.current?.focusSelection();
   };
 
   /** Tocar na lista seleciona a marcação e centraliza o canvas (no celular, muda para ele). */
   const onListSelect = (next: NonNullable<Selection>) => {
     ui.selection.value = next;
     if (desktop) {
-      controller.current?.focusSelection();
+      canvas.current?.focusSelection();
       return;
     }
     focusAfterView.current = true;
     setView('canvas');
   };
 
-  const onDeleteConfirmed = (image: ProjectImage) => {
-    setDeleteTarget(null);
-    if (actions.removeImage(image.id).ok) ui.selection.value = null;
+  const panelProps = {
+    tab: panelTab,
+    onTabChange: setPanelTab,
+    busy,
+    dialogs,
+    onReplace: intake.requestReplace,
+    onGoToAnnotation,
   };
-
-  const onExport = async () => {
-    setMenuOpen(false);
-    setMessage(null);
-    setProgress(t('editor.exporting'));
-    const result = await buildExport();
-    setProgress(null);
-    if (result.ok) setExportFile(result.value);
-    else setMessage(t(`error.${result.error}`));
-  };
-
-  const onClose = async () => {
-    setMenuOpen(false);
-    await session.flush();
-    if (session.saveStatus.value === 'error') setConfirmClose(true);
-    else await closeProject();
-  };
-
-  const modeButtons = (
-    <div class="segmented" role="group">
-      <ToolButton
-        icon={<HandIcon />}
-        label={t('editor.modeNavigate')}
-        pressed={mode === 'navigate'}
-        onClick={() => (ui.mode.value = 'navigate')}
-      />
-      <ToolButton
-        icon={<DrawIcon />}
-        label={t('editor.modeDraw')}
-        pressed={mode === 'draw'}
-        disabled={readOnly}
-        onClick={() => (ui.mode.value = 'draw')}
-      />
-    </div>
-  );
-  const addButton = (
-    <ToolButton
-      icon={<AddImageIcon />}
-      label={t('editor.addImages')}
-      text={desktop ? t('editor.addImages') : undefined}
-      disabled={readOnly || busy}
-      onClick={onAddClick}
-    />
-  );
-  const historyButtons = (
-    <>
-      <ToolButton
-        icon={<UndoIcon />}
-        label={t('editor.undo')}
-        disabled={!store.canUndo.value}
-        onClick={() => store.undo()}
-      />
-      <ToolButton
-        icon={<RedoIcon />}
-        label={t('editor.redo')}
-        disabled={!store.canRedo.value}
-        onClick={() => store.redo()}
-      />
-      <ToolButton
-        icon={<FitIcon />}
-        label={t('editor.fitAll')}
-        onClick={() => controller.current?.fitAll()}
-      />
-    </>
-  );
-  const semanticButton = (
-    <ToolButton
-      icon={<TextIcon />}
-      label={t('view.semanticText')}
-      pressed={semanticText.value}
-      onClick={() => setSemanticText(!semanticText.value)}
-    />
-  );
-  const listButton = (
-    <ToolButton
-      icon={<ListIcon />}
-      label={t(listOpen ? 'view.hideList' : 'view.showList')}
-      text={t('view.list')}
-      pressed={listOpen}
-      onClick={() => setListOpen(!listOpen)}
-    />
-  );
   const list = (
-    <ListView
-      project={project}
-      ui={ui}
-      derived={derived}
-      selection={selection}
-      onSelect={onListSelect}
-    />
+    <ListView project={project} selection={selection} onSelect={onListSelect} />
   );
   const mobileList = !desktop && view === 'list';
-  const details =
-    selected?.kind === 'marking' ? (
-      <MarkingPanel
-        key={selected.marking.id}
-        project={project}
-        marking={selected.marking}
-        image={selected.image}
-        visibleLayers={shownLayers}
-        activeLayer={activeLayer}
-        actions={actions}
-        readOnly={readOnly || busy}
-        onDelete={onMarkingDelete}
-        onShowLayer={(layerId) => showLayer(ui, layerId)}
-        onSelectMarking={(id) => onTreeSelect({ kind: 'marking', id })}
-        onGoToAnnotation={onGoToAnnotation}
-        focusAnnotation={ui.focusAnnotation.value}
-        onFocusDone={() => (ui.focusAnnotation.value = null)}
-      />
-    ) : (
-      <SelectionPanel
-        image={selectedImage}
-        display={selectedImage ? display.images.value.get(selectedImage.file) : undefined}
-        readOnly={readOnly}
-        busy={busy}
-        actions={actions}
-        onReplace={onReplace}
-        onDelete={setDeleteTarget}
-      />
-    );
-  const panel = (
-    <>
-      <PanelTabs tab={panelTab} onChange={setPanelTab} />
-      <div role="tabpanel" class="tab-panel">
-        {panelTab === 'details' ? (
-          details
-        ) : (
-          <MarkingTree project={project} selection={selection} onSelect={onTreeSelect} />
-        )}
-      </div>
-    </>
-  );
-  const sheetTitle =
-    selected?.kind === 'marking'
-      ? markingPath(project, selected.marking)
-      : selectedImage
-        ? imageLabel(selectedImage)
-        : t('panel.nothingSelected');
 
   return (
     <div class={desktop ? 'editor editor-desktop' : 'editor editor-mobile'}>
-      <header class="topbar editor-bar">
-        {desktop && (
-          <button type="button" class="button" onClick={() => void onClose()}>
-            {t('common.close')}
-          </button>
-        )}
-        <h1 class="project-title">{project.project.name}</h1>
-        {activeLayer && (
-          <button
-            type="button"
-            class="button layer-chip"
-            style={{ '--layer-color': activeLayer.color }}
-            aria-label={t('layer.chipLabel', { name: activeLayer.name })}
-            title={t('layer.chipLabel', { name: activeLayer.name })}
-            onClick={() => setLayersOpen(true)}
-          >
-            <span class="layer-dot" aria-hidden="true" />
-            <span class="layer-chip-name">{activeLayer.name}</span>
-          </button>
-        )}
-        <SaveStatus open={open} />
-        {desktop && (
-          <div class="toolbar">
-            {modeButtons}
-            {addButton}
-            {historyButtons}
-            {semanticButton}
-            {listButton}
-            <button
-              type="button"
-              class="button"
-              disabled={busy}
-              onClick={() => void onExport()}
-            >
-              {t('editor.export')}
-            </button>
-          </div>
-        )}
-        <ToolButton
-          icon={<MenuIcon />}
-          label={t('editor.menu')}
-          onClick={() => setMenuOpen(true)}
-        />
-      </header>
+      <EditorTopBar
+        desktop={desktop}
+        busy={busy}
+        listOpen={listOpen}
+        onToggleList={() => setListOpen(!listOpen)}
+        onAdd={intake.onAddClick}
+        dialogs={dialogs}
+        commands={commands}
+      />
 
       <div class="editor-body">
         <main
           class="canvas-area"
           aria-label={t('editor.canvasLabel')}
           hidden={mobileList}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
+          {...intake.dropHandlers}
         >
-          <CanvasHost
-            store={store}
-            actions={actions}
-            display={display}
-            ui={ui}
-            derived={derived}
-            onReady={(c) => (controller.current = c)}
-          />
-          <div class="canvas-overlay">
-            {readOnly && <p class="notice">{t('editor.readOnlyNotice')}</p>}
-            {backupSaved !== null && !backupNoticeDismissed && (
-              <p class="notice notice-info" role="status">
-                {t('editor.migrationBackup', { version: backupSaved })}{' '}
-                <button
-                  type="button"
-                  class="link"
-                  onClick={() => setBackupNoticeDismissed(true)}
-                >
-                  {t('editor.dismiss')}
-                </button>
-              </p>
-            )}
-            {message && (
-              <p class="notice notice-error" role="alert">
-                {message}{' '}
-                <button type="button" class="link" onClick={() => setMessage(null)}>
-                  {t('editor.dismiss')}
-                </button>
-              </p>
-            )}
-            {mode === 'draw' && !readOnly && project.images.length > 0 && (
-              <p class="notice notice-info canvas-hint">{t('editor.drawHint')}</p>
-            )}
-            {progress && (
-              <p class="notice notice-info" aria-live="polite">
-                {progress}
-              </p>
-            )}
-          </div>
-          {!desktop && <div class="canvas-float">{semanticButton}</div>}
+          <CanvasHost />
+          <CanvasNotices notices={notices} />
+          {!desktop && (
+            <div class="canvas-float">
+              <SemanticTextButton />
+            </div>
+          )}
           {project.images.length === 0 && (
             <div class="canvas-empty">
               <p class="muted">{t('editor.emptyCanvas')}</p>
               <button
                 type="button"
                 class="button button-primary"
-                disabled={readOnly || busy}
-                onClick={onAddClick}
+                disabled={store.readOnly.value || busy}
+                onClick={intake.onAddClick}
               >
                 {t('editor.addImages')}
               </button>
@@ -601,278 +151,33 @@ export function Editor({ open }: { readonly open: OpenProject }) {
             {list}
           </aside>
         )}
-        {desktop && <aside class="side-panel">{panel}</aside>}
+        {desktop && (
+          <aside class="side-panel">
+            <EditorPanel {...panelProps} />
+          </aside>
+        )}
       </div>
 
       {!desktop && (
         <>
           {!mobileList && (
-            <BottomSheet
-              title={sheetTitle}
+            <EditorSheet
+              {...panelProps}
               expanded={sheetExpanded}
               onToggle={() => setSheetExpanded(!sheetExpanded)}
-            >
-              {panel}
-            </BottomSheet>
+            />
           )}
-          <div class="viewtabs">
-            <div class="tabs" role="tablist" aria-label={t('view.tabsLabel')}>
-              {(['canvas', 'list'] as const).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  class="tab"
-                  aria-selected={view === id}
-                  onClick={() => setView(id)}
-                >
-                  {t(id === 'canvas' ? 'view.canvas' : 'view.list')}
-                </button>
-              ))}
-            </div>
-          </div>
-          <nav class="bottombar">
-            {modeButtons}
-            {addButton}
-            {historyButtons}
-          </nav>
+          <EditorBottomBar
+            view={view}
+            onViewChange={setView}
+            busy={busy}
+            onAdd={intake.onAddClick}
+          />
         </>
       )}
 
-      <input
-        ref={imageInput}
-        type="file"
-        accept="image/*"
-        multiple
-        hidden
-        onChange={(e) => void onImagesChosen(e.currentTarget)}
-      />
-      <input
-        ref={replaceInput}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => void onReplaceChosen(e.currentTarget)}
-      />
-
-      {addMenuOpen && (
-        <Dialog
-          title={t('editor.addImages')}
-          onCancel={() => setAddMenuOpen(false)}
-          actions={
-            <button type="button" class="button" onClick={() => setAddMenuOpen(false)}>
-              {t('common.cancel')}
-            </button>
-          }
-        >
-          <div class="dialog-stack">
-            <button
-              type="button"
-              class="button"
-              onClick={() => {
-                setAddMenuOpen(false);
-                imageInput.current?.click();
-              }}
-            >
-              {t('editor.addFromDevice')}
-            </button>
-            <button type="button" class="button" onClick={() => void onPasteImage()}>
-              {t('editor.pasteImage')}
-            </button>
-          </div>
-        </Dialog>
-      )}
-
-      {menuOpen && (
-        <Dialog
-          title={t('editor.menu')}
-          onCancel={() => setMenuOpen(false)}
-          actions={
-            <button type="button" class="button" onClick={() => setMenuOpen(false)}>
-              {t('common.close')}
-            </button>
-          }
-        >
-          <div class="menu-actions">
-            <button
-              type="button"
-              class="button"
-              disabled={busy}
-              onClick={() => void onExport()}
-            >
-              {t('editor.export')}
-            </button>
-            <button
-              type="button"
-              class="button"
-              onClick={() => {
-                setMenuOpen(false);
-                setSpecsOpen(true);
-              }}
-            >
-              {t('spec.menu')}
-            </button>
-            <button
-              type="button"
-              class="button"
-              onClick={() => {
-                setMenuOpen(false);
-                setHelpOpen(true);
-              }}
-            >
-              {t('help.open')}
-            </button>
-            <button
-              type="button"
-              class="button"
-              onClick={() => {
-                setMenuOpen(false);
-                setDiagnosticsOpen(true);
-              }}
-            >
-              {t('diagnostics.open')}
-            </button>
-            <button type="button" class="button" onClick={() => void onClose()}>
-              {t('editor.closeProject')}
-            </button>
-          </div>
-          <SettingsBar />
-        </Dialog>
-      )}
-
-      {specsOpen && (
-        <SpecsDialog
-          project={project}
-          actions={actions}
-          readOnly={readOnly}
-          onClose={() => setSpecsOpen(false)}
-        />
-      )}
-
-      {helpOpen && <SpecHelpDialog onClose={() => setHelpOpen(false)} />}
-
-      {diagnosticsOpen && <DiagnosticsDialog onClose={() => setDiagnosticsOpen(false)} />}
-
-      {layersOpen && (
-        <LayersDialog
-          project={project}
-          ui={ui}
-          actions={actions}
-          readOnly={readOnly}
-          onClose={() => setLayersOpen(false)}
-        />
-      )}
-
-      {deleteTarget && (
-        <Dialog
-          title={t('image.deleteTitle')}
-          onCancel={() => setDeleteTarget(null)}
-          actions={
-            <>
-              <button type="button" class="button" onClick={() => setDeleteTarget(null)}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                class="button button-danger"
-                onClick={() => onDeleteConfirmed(deleteTarget)}
-              >
-                {t('common.delete')}
-              </button>
-            </>
-          }
-        >
-          <p>
-            {t('image.deleteMessage', {
-              file: deleteTarget.file,
-              ...imageDeletionImpact(project, deleteTarget.id),
-            })}
-          </p>
-        </Dialog>
-      )}
-
-      {deleteMarking && (
-        <Dialog
-          title={t('marking.deleteTitle')}
-          onCancel={() => setDeleteMarking(null)}
-          actions={
-            <>
-              <button type="button" class="button" onClick={() => setDeleteMarking(null)}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                class="button button-danger"
-                onClick={() => onMarkingDeleteConfirmed(deleteMarking)}
-              >
-                {t('common.delete')}
-              </button>
-            </>
-          }
-        >
-          <p>
-            {t('marking.deleteMessage', {
-              name: markingLabel(deleteMarking),
-              ...markingDeletionImpact(project, deleteMarking.id),
-            })}
-          </p>
-        </Dialog>
-      )}
-
-      {aspectPrompt && (
-        <Dialog
-          title={t('image.aspectTitle')}
-          onCancel={() => answerAspect(false)}
-          actions={
-            <>
-              <button type="button" class="button" onClick={() => answerAspect(false)}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                class="button button-primary"
-                onClick={() => answerAspect(true)}
-              >
-                {t('image.aspectConfirm')}
-              </button>
-            </>
-          }
-        >
-          <p>
-            {t('image.aspectMessage', {
-              from: formatSize(aspectPrompt.change.from),
-              to: formatSize(aspectPrompt.change.to),
-            })}
-          </p>
-        </Dialog>
-      )}
-
-      {exportFile && (
-        <ExportDialog file={exportFile} onDone={() => setExportFile(null)} />
-      )}
-
-      {confirmClose && (
-        <Dialog
-          title={t('editor.closeUnsavedTitle')}
-          onCancel={() => setConfirmClose(false)}
-          actions={
-            <>
-              <button type="button" class="button" onClick={() => setConfirmClose(false)}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                class="button button-danger"
-                onClick={() => void closeProject()}
-              >
-                {t('editor.closeAnyway')}
-              </button>
-            </>
-          }
-        >
-          <p>{t('editor.closeUnsavedMessage')}</p>
-        </Dialog>
-      )}
+      <ImageInputs intake={intake} />
+      <EditorDialogs dialogs={dialogs} busy={busy} intake={intake} commands={commands} />
     </div>
   );
 }
