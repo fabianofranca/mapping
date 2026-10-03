@@ -1323,7 +1323,7 @@ Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E
   - criar projeto local, adicionar uma imagem de fixture, desenhar uma marcação, anotar, exportar o zip e conferir o `mapping.json`;
   - celular: pan sobre marcação selecionada não move; segurar e arrastar move;
   - aplicar o exemplo SDUI, criar um Input com `dado` apontando para uma tupla livre.
-- **Desempenho por quadro**: novo fixture com 500 marcações, 1.500 anotações (metade tipadas) e 500 referências. Orçamentos (Node): `projectIndex` + pendências + indicadores + visibilidade < 8 ms (no CI o limite é 16 ms, um quadro: o runner é ~2× mais lento que o desktop); uma renderização do canvas com o projeto já indexado < 16 ms (jsdom, Konva com canvas falso, se viável; senão só a parte de dados derivados).
+- **Desempenho por quadro**: novo fixture com 500 marcações, 1.500 anotações (metade tipadas) e 500 referências. Orçamentos (Node): `projectIndex` + pendências + indicadores + visibilidade < 8 ms; uma renderização do canvas com o projeto já indexado < 16 ms (jsdom, Konva com canvas falso, se viável; senão só a parte de dados derivados).
 - Relatório de cobertura (`@vitest/coverage-v8`) no CI, sem limite mínimo por enquanto.
 
 **Documentação (14, 15, 16)**
