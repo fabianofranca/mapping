@@ -49,7 +49,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
   - nada de import de módulos externos em runtime nem requisições de rede;
   - o service worker só é registrado quando `location.protocol === 'https:'`;
   - detecte os recursos em runtime (`showDirectoryPicker`, IndexedDB, `navigator.canShare`) e degrade com elegância.
-- **Mobile-first**: teste os layouts em 380 px de largura. Áreas de toque de pelo menos 24 px (alças) e 44 px (botões).
+- **Desktop primeiro, utilizável no celular**: o layout principal é o de desktop (≥ 900 px, mouse e teclado). Todo layout também precisa funcionar em 380 px de largura com toque, com áreas de toque de pelo menos 24 px (alças) e 44 px (botões) no celular. Uma mudança só está pronta quando funciona nos dois.
 - Envolva todo acesso a `localStorage`/IndexedDB em try/catch.
 
 ## Código
@@ -65,13 +65,14 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - Um branch e um PR por fase (ou por parte de uma fase, se ela for grande).
 - Toda descrição de PR contém:
   1. **Resumo** do que mudou;
-  2. **Como testar no celular**: passos manuais objetivos, lembrando que o deploy do branch pode ser disparado pelo `workflow_dispatch`;
+  2. **Como testar**: passos manuais objetivos no desktop e no celular, lembrando que o deploy do branch pode ser disparado pelo `workflow_dispatch`;
   3. **Decisões tomadas** que não estavam no `PLAN.md`.
 - Se algo no `PLAN.md` estiver ambíguo ou for inviável, registre a dúvida no PR em vez de inventar comportamento grande. Para detalhes pequenos, decida, siga e documente.
 
 ## Etapa atual e etapas futuras
 
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
-- **Etapa 2.1 — Revisão técnica (atual):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`; só a 25 está no `PLAN.md`). Refatorações desta etapa **não podem mudar comportamento visível**: todos os testes verdes e o roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) precisam continuar passando.
+- **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
+- **Etapa 2.2 — Segunda revisão técnica (atual):** fases 26 a 28, no `PLAN.md`. Refatorações desta etapa **não podem mudar comportamento visível** (exceto a da Fase 26: campos numéricos do painel atualizando ao soltar o gesto): todos os testes verdes e o roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) precisam continuar passando.
 - **Etapa 3 — Servidor MCP (futura, não implementar):** servidor em Node/TypeScript, no mesmo repositório, que reutiliza o `src/model/` para um agente criar projetos, aplicar especializações e adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
 - **Etapa 4 — Editor de especializações (futura, não implementar):** criar e editar especializações dentro da app.
