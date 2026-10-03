@@ -13,6 +13,7 @@ import {
 import type { ProjectActions } from '../store/project';
 import { Dialog } from './Dialog';
 import { labelTexts } from './typedText';
+import { reportError } from '../utils/report';
 
 const MAX_ERRORS = 8;
 
@@ -49,7 +50,8 @@ export function SpecsDialog({ project, actions, readOnly, onClose }: SpecsDialog
     let text: string;
     try {
       text = await file.text();
-    } catch {
+    } catch (e) {
+      reportError('spec.readFile', e);
       setMessage(t('spec.readFailed'));
       return;
     }

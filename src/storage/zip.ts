@@ -7,6 +7,7 @@ import {
   isImageFileName,
   isSpecPath,
 } from './types';
+import { reportError } from '../utils/report';
 
 /** Conteúdo de um projeto em memória, no formato da pasta (ver PLAN.md 5.1 e 13.3). */
 export interface ProjectFiles {
@@ -29,7 +30,8 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
   let zip: JSZip;
   try {
     zip = await JSZip.loadAsync(await data.arrayBuffer());
-  } catch {
+  } catch (e) {
+    reportError('zip.read', e);
     return { ok: false, error: 'invalid-zip' };
   }
   const mappingPaths = Object.keys(zip.files)

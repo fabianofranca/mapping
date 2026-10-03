@@ -106,6 +106,7 @@ export function referencedSpecFiles(text: string): string[] {
       isRecord(s) && typeof s.file === 'string' ? [s.file] : [],
     );
   } catch {
+    // Só descobre quais cópias de `specs/` ler; o JSON inválido é tratado em `deserialize`.
     return [];
   }
 }

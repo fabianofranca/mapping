@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SCHEMA_VERSION, deserialize, serialize } from '../../src/model';
 import { createFolderStorage } from '../../src/storage/folder';
 import type { PreparedImage } from '../../src/storage/imageImport';
+import { HISTORY_LIMIT } from '../../src/store/history';
 import { openSession, type ProjectSession } from '../../src/store/session';
+import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
 import { loadExample } from '../model/specFixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
@@ -242,6 +244,94 @@ describe('sessão de projeto', () => {
         height: 100,
       });
     });
+  });
+
+  describe('memória: conteúdo das imagens removidas', () => {
+    async function removedImage() {
+      const root = new MemoryDirectory('p');
+      const s = start(root);
+      session = s;
+      await s.addImages([file('a.jpg', '400x300')]);
+      await s.flush();
+      const imageId = s.store.project.value?.images[0]?.id ?? '';
+      s.actions.removeImage(imageId);
+      await s.flush();
+      return { root, s };
+    }
+    const bump = (s: ProjectSession, n: number) => {
+      for (let i = 0; i < n; i++) s.actions.renameProject(`nome ${i}`);
+    };
+
+    it('mantém o conteúdo enquanto o desfazer ainda restauraria a imagem', async () => {
+      const { root, s } = await removedImage();
+      bump(s, 5);
+      await s.flush();
+      expect(await root.read('images/a.jpg')).toBeNull();
+      expect(await (await s.readImage('images/a.jpg'))?.text()).toBe('400x300');
+      for (let i = 0; i < 6; i++) s.store.undo();
+      await s.flush();
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+    });
+
+    it('solta o conteúdo quando nenhum snapshot do histórico referencia o arquivo', async () => {
+      const { s } = await removedImage();
+      expect(await s.readImage('images/a.jpg')).not.toBeNull();
+      // Passa do limite do histórico: o snapshot com a imagem sai de `past`.
+      bump(s, HISTORY_LIMIT + 1);
+      await s.flush();
+      expect(await s.readImage('images/a.jpg')).toBeNull();
+    });
+
+    it('solta o conteúdo quando uma nova alteração descarta o "refazer"', async () => {
+      const root = new MemoryDirectory('p');
+      const s = start(root);
+      session = s;
+      await s.addImages([file('a.jpg', '400x300')]);
+      await s.flush();
+      // Desfaz a adição: a imagem sai do projeto, mas o "refazer" ainda a restauraria.
+      s.store.undo();
+      await s.flush();
+      expect(await root.read('images/a.jpg')).toBeNull();
+      expect(await s.readImage('images/a.jpg')).not.toBeNull();
+      s.store.redo();
+      await s.flush();
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+
+      s.store.undo();
+      await s.flush();
+      bump(s, 1);
+      await s.flush();
+      expect(await s.readImage('images/a.jpg')).toBeNull();
+    });
+
+    it('não chega a guardar o conteúdo de um arquivo que o histórico nunca restauraria', async () => {
+      const root = new MemoryDirectory('p');
+      const s = start(root);
+      session = s;
+      await s.addImages([file('a.jpg', '400x300')]);
+      s.actions.removeImage(s.store.project.value?.images[0]?.id ?? '');
+      bump(s, HISTORY_LIMIT + 1);
+      await s.flush();
+      expect(await root.read('images/a.jpg')).toBeNull();
+      expect(await s.readImage('images/a.jpg')).toBeNull();
+    });
+  });
+
+  it('registra no Diagnóstico a falha de gravação e a de importação', async () => {
+    clearReportedErrors();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const root = new MemoryDirectory('p');
+    session = start(root);
+    await session.addImages([file('ruim.jpg', 'ruim')]);
+    session.actions.renameProject('Outro nome');
+    root.failWrites = new Error('sem permissão');
+    await vi.advanceTimersByTimeAsync(800);
+    expect(reportedErrors.value.map((e) => [e.context, e.message])).toEqual([
+      ['session.addImage', 'decode'],
+      ['save', 'sem permissão'],
+    ]);
+    root.failWrites = null;
+    vi.restoreAllMocks();
   });
 
   it('com erro de gravação mostra o status e tenta de novo', async () => {

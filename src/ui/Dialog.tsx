@@ -21,6 +21,7 @@ export function Dialog({ title, onCancel, children, actions }: DialogProps) {
     try {
       dialog.showModal();
     } catch {
+      // Detecção de recurso: sem `showModal` (navegador antigo) abre sem modal.
       dialog.setAttribute('open', '');
     }
   }, []);

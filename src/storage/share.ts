@@ -1,3 +1,5 @@
+import { reportError } from '../utils/report';
+
 /** `true` se o navegador consegue compartilhar este arquivo pela Web Share API. */
 export function canShareFile(file: File): boolean {
   try {
@@ -5,6 +7,7 @@ export function canShareFile(file: File): boolean {
       typeof navigator.share === 'function' && !!navigator.canShare?.({ files: [file] })
     );
   } catch {
+    // Detecção de recurso: `canShare` pode lançar com tipos de arquivo não suportados.
     return false;
   }
 }
@@ -18,6 +21,7 @@ export async function shareFile(file: File, title: string): Promise<ShareResult>
     return 'shared';
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
+    reportError('share', e);
     return 'failed';
   }
 }

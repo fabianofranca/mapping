@@ -96,6 +96,40 @@ describe('store: actions e histórico', () => {
     expect(project(store).layers[0]?.name).toBe('n19');
   });
 
+  it('referencedImageFiles junta as imagens do projeto e de todo o histórico', () => {
+    const store = createProjectStore({ now: () => NOW });
+    let seq = 0;
+    const actions = createProjectActions(store, { newId: () => `id${++seq}` });
+    store.load(emptyProject());
+    expect(actions.addImage({ file: 'images/a.jpg', width: 10, height: 10 }).ok).toBe(
+      true,
+    );
+    expect(actions.addImage({ file: 'images/b.jpg', width: 10, height: 10 }).ok).toBe(
+      true,
+    );
+    const imageId = (file: string) =>
+      project(store).images.find((i) => i.file === file)?.id ?? '';
+    actions.removeImage(imageId('images/a.jpg'));
+    expect(project(store).images.map((i) => i.file)).toEqual(['images/b.jpg']);
+    // a.jpg saiu do projeto, mas o desfazer ainda a restauraria.
+    expect([...store.referencedImageFiles()].sort()).toEqual([
+      'images/a.jpg',
+      'images/b.jpg',
+    ]);
+
+    // Desfazer tudo: a.jpg e b.jpg ficam só no "refazer".
+    while (store.undo());
+    expect(project(store).images).toEqual([]);
+    expect([...store.referencedImageFiles()].sort()).toEqual([
+      'images/a.jpg',
+      'images/b.jpg',
+    ]);
+
+    // Uma nova alteração descarta o "refazer": nada mais referencia as imagens.
+    store.apply((p) => renameLayer(p, 'L1', 'novo'));
+    expect(store.referencedImageFiles().size).toBe(0);
+  });
+
   it('modo somente leitura bloqueia alterações', () => {
     const store = createProjectStore();
     store.load(emptyProject(), { readOnly: true });

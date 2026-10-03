@@ -32,6 +32,7 @@ import type { ProjectStorage, StorageKind } from '../storage/types';
 import { readProjectZip, writeProjectZip, zipFileName } from '../storage/zip';
 import { createDisplayImages, type DisplayImages } from '../store/displayImages';
 import { openSession, type ProjectSession } from '../store/session';
+import { reportError } from '../utils/report';
 
 export interface Features {
   /** File System Access API disponível (modo Pasta). */
@@ -99,7 +100,8 @@ export async function initApp(): Promise<void> {
 export async function refreshLocalProjects(): Promise<void> {
   try {
     localProjects.value = library ? await library.list() : [];
-  } catch {
+  } catch (e) {
+    reportError('local.list', e);
     localProjects.value = [];
   }
 }
@@ -151,7 +153,10 @@ async function openFromStorage(
   if (text === null) return err('not-found');
   const specs = new Map<string, string>();
   for (const file of referencedSpecFiles(text)) {
-    const spec = await storage.readSpec(file).catch(() => null);
+    const spec = await storage.readSpec(file).catch((e: unknown) => {
+      reportError('open.readSpec', e);
+      return null;
+    });
     if (spec !== null) specs.set(file, spec);
   }
   const result = deserialize(text, migrations, specs);
@@ -172,7 +177,8 @@ async function openFromStorage(
 async function guarded<T>(action: () => Promise<AppResult<T>>): Promise<AppResult<T>> {
   try {
     return await action();
-  } catch {
+  } catch (e) {
+    reportError('storage', e);
     return err('storage-failed');
   }
 }
@@ -300,8 +306,9 @@ export async function markExported(): Promise<void> {
   current.unexported.value = false;
   try {
     await library?.setUnexported(current.localId, false);
-  } catch {
+  } catch (e) {
     // O indicador volta a aparecer na próxima abertura; nada se perde.
+    reportError('local.setUnexported', e);
   }
 }
 

@@ -35,6 +35,7 @@ function formatDate(iso: string): string {
       timeStyle: 'short',
     }).format(new Date(iso));
   } catch {
+    // Data ilegível: mostra o texto como está.
     return iso;
   }
 }

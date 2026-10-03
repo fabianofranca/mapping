@@ -1,6 +1,7 @@
 // PWA: registro do service worker, aviso de nova versão e convite para instalar.
 import { signal } from '@preact/signals';
 import { readSetting, writeSetting } from '../utils/safeStorage';
+import { reportError } from '../utils/report';
 
 /** Há uma versão nova baixada, esperando o usuário aceitar. */
 export const updateReady = signal(false);
@@ -70,10 +71,12 @@ export async function registerServiceWorker(): Promise<void> {
     });
     // App instalada raramente recarrega: procura versão nova ao voltar para ela.
     document.addEventListener('visibilitychange', () => {
+      // Offline não consegue verificar versão nova: não é falha a registrar.
       if (document.visibilityState === 'visible') void registration.update().catch(noop);
     });
-  } catch {
+  } catch (e) {
     // Sem service worker a app funciona igual, só não fica offline.
+    reportError('pwa.register', e);
   }
 }
 

@@ -38,6 +38,13 @@ export interface ProjectStore {
   readonly revision: ReadonlySignal<number>;
   readonly gestureActive: ReadonlySignal<boolean>;
 
+  /**
+   * Arquivos de imagem referenciados pelo projeto atual ou por qualquer
+   * snapshot do histórico (desfazer/refazer/gesto). Quem guarda o conteúdo de
+   * imagens removidas só precisa dele enquanto o arquivo estiver neste conjunto.
+   */
+  referencedImageFiles(): ReadonlySet<string>;
+
   load(project: Project, options?: LoadOptions): void;
   close(): void;
   /** Aplica a operação e cria uma entrada no histórico. */
@@ -99,6 +106,22 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     canUndo: computed(() => past.value.length > 0 && gestureBase.value === null),
     canRedo: computed(() => future.value.length > 0 && gestureBase.value === null),
     gestureActive: computed(() => gestureBase.value !== null),
+
+    referencedImageFiles() {
+      const files = new Set<string>();
+      // Snapshots vizinhos costumam compartilhar o mesmo array de imagens.
+      const seen = new Set<readonly unknown[]>();
+      const collect = (p: Project | null) => {
+        if (!p || seen.has(p.images)) return;
+        seen.add(p.images);
+        for (const image of p.images) files.add(image.file);
+      };
+      collect(project.peek());
+      collect(gestureBase.peek());
+      for (const p of past.peek()) collect(p);
+      for (const p of future.peek()) collect(p);
+      return files;
+    },
 
     load(p, options = {}) {
       project.value = p;

@@ -2,13 +2,16 @@ import type { ComponentChildren } from 'preact';
 import { useErrorBoundary } from 'preact/hooks';
 import { t } from '../i18n';
 import { openProject } from './controller';
+import { reportError } from '../utils/report';
 
 /** Último recurso: em vez de uma tela em branco, avisa e oferece recarregar. */
 export function ErrorBoundary({ children }: { readonly children: ComponentChildren }) {
   const [error] = useErrorBoundary((caught) => {
-    console.error(caught);
+    reportError('crash', caught);
     // Tenta gravar o que já estava no projeto antes de o usuário recarregar.
-    void openProject.value?.session.flush().catch(() => undefined);
+    void openProject.value?.session
+      .flush()
+      .catch((e: unknown) => reportError('crash.flush', e));
   });
   if (!error) return <>{children}</>;
   return (

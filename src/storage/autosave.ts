@@ -1,4 +1,5 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
+import { reportError } from '../utils/report';
 
 /** Debounce entre a última alteração e a gravação. */
 export const AUTOSAVE_DELAY_MS = 800;
@@ -43,7 +44,8 @@ export function createAutoSaver(
       try {
         await save();
         if (!dirty && timer === undefined) status.value = 'saved';
-      } catch {
+      } catch (e) {
+        reportError('save', e);
         dirty = true;
         status.value = 'error';
       }
