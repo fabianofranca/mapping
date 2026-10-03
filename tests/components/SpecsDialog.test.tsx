@@ -48,12 +48,7 @@ function setup(project: Project = freeProject(), readOnly = false) {
   const harness: Harness = createHarness(project, readOnly);
   const onClose = vi.fn();
   const view = renderLive(harness, (p) => (
-    <SpecsDialog
-      project={p}
-      actions={harness.actions}
-      readOnly={readOnly}
-      onClose={onClose}
-    />
+    <SpecsDialog project={p} readOnly={readOnly} onClose={onClose} />
   ));
   const fileInput = () => {
     const input = document.querySelector<HTMLInputElement>('input[type="file"]');

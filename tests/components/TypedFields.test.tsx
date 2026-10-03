@@ -31,7 +31,6 @@ function setup(
         field={field}
         project={p}
         annotation={annotation}
-        actions={harness.actions}
         readOnly={false}
         onGoToAnnotation={onGoToAnnotation}
       />

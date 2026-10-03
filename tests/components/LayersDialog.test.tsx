@@ -17,13 +17,7 @@ function setup(project: Project = cadastroProject(), readOnly = false) {
   const harness = createHarness(project, readOnly);
   const onClose = vi.fn();
   renderLive(harness, (p) => (
-    <LayersDialog
-      project={p}
-      ui={harness.ui}
-      actions={harness.actions}
-      readOnly={readOnly}
-      onClose={onClose}
-    />
+    <LayersDialog project={p} readOnly={readOnly} onClose={onClose} />
   ));
   return { harness, onClose, user: userEvent.setup() };
 }
@@ -136,13 +130,7 @@ describe('LayersDialog', () => {
       annotations: [],
     });
     renderLive(only, (p) => (
-      <LayersDialog
-        project={p}
-        ui={only.ui}
-        actions={only.actions}
-        readOnly={false}
-        onClose={() => undefined}
-      />
+      <LayersDialog project={p} readOnly={false} onClose={() => undefined} />
     ));
     expect(screen.getByRole('button', { name: 'Excluir camada' })).toHaveProperty(
       'disabled',

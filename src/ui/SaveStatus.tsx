@@ -1,9 +1,9 @@
 import { t } from '../i18n';
-import type { OpenProject } from '../app/controller';
+import { useEditor } from './EditorContext';
 
 /** "Salvo" / "Salvando…" / "Erro ao salvar" (com tentar de novo) e "não exportado". */
-export function SaveStatus({ open }: { readonly open: OpenProject }) {
-  const { session } = open;
+export function SaveStatus() {
+  const { open, session } = useEditor();
   if (session.store.readOnly.value) {
     return <span class="status">{t('status.readOnly')}</span>;
   }

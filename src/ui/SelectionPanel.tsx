@@ -2,7 +2,7 @@ import { t } from '../i18n';
 import type { ProjectImage } from '../model';
 import { imageLabel } from './labels';
 import type { DisplayImage } from '../store/displayImages';
-import type { ProjectActions } from '../store/project';
+import { useEditor } from './EditorContext';
 import { CommitInput } from './CommitInput';
 import { IdField } from './IdField';
 import { MarkingColorField } from './MarkingColorField';
@@ -12,7 +12,6 @@ interface SelectionPanelProps {
   readonly display: DisplayImage<unknown> | undefined;
   readonly readOnly: boolean;
   readonly busy: boolean;
-  readonly actions: ProjectActions;
   readonly onReplace: (image: ProjectImage) => void;
   readonly onDelete: (image: ProjectImage) => void;
 }
@@ -23,10 +22,10 @@ export function SelectionPanel({
   display,
   readOnly,
   busy,
-  actions,
   onReplace,
   onDelete,
 }: SelectionPanelProps) {
+  const { actions } = useEditor();
   if (!image) return <p class="muted">{t('panel.empty')}</p>;
   const missing = display?.status === 'missing';
   const broken = missing || display?.status === 'error';
@@ -55,7 +54,7 @@ export function SelectionPanel({
           }}
         />
       </label>
-      <MarkingColorField image={image} actions={actions} disabled={disabled} />
+      <MarkingColorField image={image} disabled={disabled} />
       <IdField id={image.id} />
       {broken && (
         <p class="notice" role="status">

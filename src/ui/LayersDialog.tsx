@@ -8,7 +8,6 @@ import {
   type Layer,
   type Project,
 } from '../model';
-import type { ProjectActions } from '../store/project';
 import {
   isMarkingDisplayMode,
   markingDisplay,
@@ -19,28 +18,21 @@ import {
   setActiveLayer,
   showAllLayers,
   toggleLayerVisible,
-  type EditorUi,
 } from '../store/ui';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
+import { useEditor } from './EditorContext';
 import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from './icons';
 
 interface LayersDialogProps {
   readonly project: Project;
-  readonly ui: EditorUi;
-  readonly actions: ProjectActions;
   readonly readOnly: boolean;
   readonly onClose: () => void;
 }
 
 /** Folha de camadas: visibilidade, camada ativa, nome, cor, ordem e exclusão. */
-export function LayersDialog({
-  project,
-  ui,
-  actions,
-  readOnly,
-  onClose,
-}: LayersDialogProps) {
+export function LayersDialog({ project, readOnly, onClose }: LayersDialogProps) {
+  const { ui, actions } = useEditor();
   const [colorFor, setColorFor] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Layer | null>(null);
 
