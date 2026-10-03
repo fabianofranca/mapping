@@ -56,8 +56,13 @@ function serviceWorker(): Plugin {
 /**
  * Com `--coverage` o código roda instrumentado e bem mais lento: os orçamentos de
  * desempenho por quadro ficam de fora (o CI os mede num passo sem cobertura).
+ * `PERF_BUDGETS=off` também os desliga: o deploy roda a suíte em paralelo e mede
+ * os orçamentos depois, sozinhos (`npm run test:perf`), sem disputar CPU.
  */
-const perfBudgets = process.argv.includes('--coverage') ? 'off' : 'on';
+const perfBudgets =
+  process.argv.includes('--coverage') || process.env.PERF_BUDGETS === 'off'
+    ? 'off'
+    : 'on';
 const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {

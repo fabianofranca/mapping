@@ -41,10 +41,15 @@ jobs:
 
       - name: Versão principal
         working-directory: main
+        # Orçamentos de desempenho fora da suíte paralela (disputam CPU com ela): no
+        # push da main, medidos depois, sozinhos. Ao publicar um preview, a main já
+        # foi medida no push dela: só os testes funcionais. O `--exclude` vale também
+        # para versões da main anteriores ao `PERF_BUDGETS=off` do vite.config.ts.
         run: |
           npm ci
           npm run lint
-          npm test
+          PERF_BUDGETS=off npm test -- --exclude tests/model/performance.test.ts
+          if [ -z "$PREVIEW_REF" ]; then npm run test:perf; fi
           npm run build
 
       - name: Decide se há preview
@@ -68,7 +73,8 @@ jobs:
         run: |
           npm ci
           npm run lint
-          npm test
+          PERF_BUDGETS=off npm test
+          npm run test:perf
           VITE_CHANNEL=preview npm run build
 
       - name: Monta o site
