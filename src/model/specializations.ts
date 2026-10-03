@@ -6,7 +6,7 @@ import { annotationsOfSpec, freeVersionOf } from './typed';
 import type { Annotation, Layer, Project, ProjectSpecialization } from './types';
 
 // Ciclo de vida da especialização no projeto: aplicar, atualizar e remover.
-// Ver PLAN.md 13.4. O conteúdo fica em `specializations[].spec` (em memória) e é
+// Ver docs/history/PLAN-etapas-1-2.md 13.4. O conteúdo fica em `specializations[].spec` (em memória) e é
 // gravado em `specs/<id>.json` pelo armazenamento; por isso o desfazer cobre tudo.
 
 /** Pasta das cópias das especializações, relativa à raiz do projeto. */

@@ -59,7 +59,7 @@ export function validateEntries<T extends Pick<Entry, 'key'>>(
 
 /**
  * Checa os invariantes que o schema zod não expressa. Lista vazia = projeto válido.
- * Ver "Regras do modelo" no PLAN.md. As regras das especializações (camada × tipo,
+ * Ver "Regras do modelo" no docs/history/PLAN-etapas-1-2.md. As regras das especializações (camada × tipo,
  * `allowedChildren`, referências) não bloqueiam a abertura: viram pendências
  * (`getAnnotationIssues`). Só a unicidade dos ids de tupla e de linha fica aqui.
  */

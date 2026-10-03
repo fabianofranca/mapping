@@ -1,17 +1,22 @@
 # Formato da especialização (`formatVersion` 1)
 
+O formato do arquivo que define camadas e tipos de anotação. A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+
+## O que é uma especialização
+
 Uma **especialização** é um arquivo JSON que define **camadas obrigatórias** e os **tipos de anotação** que podem ser criados nelas. Ex: a especialização **SDUI** traz a camada Componentes (Button, Input…) e a camada Eventos (onClick, onHold…). Ao criar um Button, as chaves já vêm definidas e só falta preencher os valores.
 
 - Um projeto pode aplicar **várias** especializações, a qualquer momento.
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
+- A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido.
 
 Arquivos de apoio:
 
 - `docs/spec.schema.json`: JSON Schema (draft 2020-12). Valida só a **estrutura**; as regras entre elementos (ids únicos, `allowedChildren`, `requiresOwner`, `labelField`, `rowLabel`, `default` compatível) só são verificadas pelo validador da app (`src/model/spec.ts`, que é a fonte da verdade).
 - `examples/specs/sdui.json` e `examples/specs/modelo-de-dados.json`: exemplos completos.
 
-## Estrutura
+## Formato do arquivo
 
 ```json
 {
@@ -124,7 +129,79 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `color` no formato `#RRGGBB`;
 - propriedades desconhecidas são rejeitadas.
 
-## Exemplos
+## Exemplo comentado: SDUI
+
+```json
+{
+  "format": "mapeador-spec",
+  "formatVersion": 1,
+  "id": "sdui",
+  "name": "SDUI",
+  "version": 1,
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": ["onClick"],
+          "fields": [
+            { "key": "id", "type": "string", "required": true },
+            {
+              "key": "estilo",
+              "type": "enum",
+              "options": ["primary", "secondary"],
+              "default": "primary"
+            }
+          ]
+        },
+        {
+          "id": "input",
+          "name": "Input",
+          "fields": [
+            { "key": "id", "type": "string", "required": true },
+            {
+              "key": "dado",
+              "type": "ref",
+              "accepts": { "tags": ["data-field"], "free": true }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#FB8C00",
+      "annotationTypes": [
+        {
+          "id": "onClick",
+          "name": "onClick",
+          "requiresOwner": true,
+          "fields": [
+            {
+              "key": "acao",
+              "type": "enum",
+              "options": ["navigate", "submit"],
+              "required": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+- Duas camadas: Componentes e Eventos, cada uma com seus tipos.
+- `Button`: `id` é obrigatório (sem ele a anotação fica incompleta) e `estilo` já vem como `primary` (`default`).
+- `Button` lista `onClick` em `allowedChildren`, e `onClick` tem `requiresOwner`: um `onClick` só existe ligado a um `Button`.
+- `Input.dado` é um `ref`: aceita atributos com a etiqueta `data-field` (ex: as linhas de atributos da Classe, do Modelo de dados) e também tuplas de anotações livres.
+
+## Exemplos completos
 
 - [`examples/specs/sdui.json`](../examples/specs/sdui.json): `string`, `number`, `enum`, `table` e `ref`; `required`, `default`, `label`, `description`; `allowedChildren` e `requiresOwner`; referência por etiqueta (`dado`) que também aceita tuplas livres.
 - [`examples/specs/modelo-de-dados.json`](../examples/specs/modelo-de-dados.json): `date`, `labelField`, `table` com etiqueta `data-field` e `rowLabel` (cada atributo vira um alvo de referência).

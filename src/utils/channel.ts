@@ -1,6 +1,6 @@
 // Canal do build: `main` (produção) ou `preview` (um branch publicado em /preview/
 // pelo `workflow_dispatch`). O preview usa armazenamento separado para nunca migrar
-// nem apagar os projetos da versão principal (ver PLAN.md 14.3, "Preview isolado").
+// nem apagar os projetos da versão principal (ver docs/history/PLAN-etapa-2-1.md 14.3, "Preview isolado").
 
 export type Channel = 'main' | 'preview';
 

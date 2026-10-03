@@ -1,6 +1,11 @@
 import { render } from 'preact';
 import './theme/tokens.css';
-import './theme/global.css';
+import './theme/base.css';
+import './theme/layout.css';
+import './theme/panels.css';
+import './theme/canvas.css';
+import './theme/forms.css';
+import './theme/dialogs.css';
 import { App } from './app/App';
 import { ErrorBoundary } from './app/ErrorBoundary';
 import { initApp } from './app/controller';

@@ -12,7 +12,7 @@ import {
 test('pan sobre a marcação selecionada não a move; segurar e arrastar move', async ({
   page,
 }, info) => {
-  // Gestos de toque (PLAN.md 12.2): só fazem sentido no celular emulado.
+  // Gestos de toque (docs/history/PLAN-etapas-1-2.md 12.2): só fazem sentido no celular emulado.
   test.skip(!isMobile(info), 'gestos de toque: só no projeto "mobile"');
   await createProject(page, 'Gestos');
   await addImage(page);

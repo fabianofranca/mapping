@@ -152,7 +152,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     moveEntry: (annotationId: string, entryId: string, to: number) =>
       store.apply((p) => model.moveEntry(p, annotationId, entryId, to)),
 
-    // Especializações (PLAN.md 13.4): cada operação é uma entrada no histórico.
+    // Especializações (docs/history/PLAN-etapas-1-2.md 13.4): cada operação é uma entrada no histórico.
     applySpecialization: (spec: Spec) =>
       store.apply((p) => model.applySpecialization(p, spec, { newId })),
     updateSpecialization: (spec: Spec, texts?: LabelTexts) =>

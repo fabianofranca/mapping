@@ -28,7 +28,7 @@ type Step =
   | { readonly kind: 'update'; readonly spec: Spec }
   | { readonly kind: 'remove'; readonly entry: ProjectSpecialization };
 
-/** Menu Especializações: aplicar, atualizar versão e remover (PLAN.md 13.4). */
+/** Menu Especializações: aplicar, atualizar versão e remover (docs/history/PLAN-etapas-1-2.md 13.4). */
 export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   const { actions } = useEditor();
   const [step, setStep] = useState<Step | null>(null);

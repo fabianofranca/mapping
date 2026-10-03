@@ -1,4 +1,4 @@
-// Entrada de imagens por colar e arrastar-e-soltar (PLAN.md 12.6).
+// Entrada de imagens por colar e arrastar-e-soltar (docs/history/PLAN-etapas-1-2.md 12.6).
 import { extensionForMime, pastedFileName } from '../model';
 import { isImageFileName } from '../storage/types';
 
