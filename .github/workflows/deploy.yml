@@ -44,7 +44,8 @@ jobs:
         run: |
           npm ci
           npm run lint
-          npm test
+          PERF_BUDGETS=off npm test
+          npm run test:perf
           npm run build
 
       - name: Decide se há preview
@@ -68,7 +69,8 @@ jobs:
         run: |
           npm ci
           npm run lint
-          npm test
+          PERF_BUDGETS=off npm test
+          npm run test:perf
           VITE_CHANNEL=preview npm run build
 
       - name: Monta o site
