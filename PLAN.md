@@ -58,8 +58,8 @@ Estado: **etapas 1, 1.1, 2 e 2.1 concluídas**; **etapa 2.2 (segunda revisão t�
 - `controller.ts`: abrir projeto v1 em pasta e em local (fixture `tests/fixtures/mapping-v1.json`) → backup gravado antes do primeiro salvamento; zip inválido e zip sem `mapping.json` → erro correto; exportar → zip com `specs/` e sem `backups/`; fechar → `flush` antes de liberar. Usar `memoryFs`, `fake-indexeddb` e os helpers existentes.
 - `useImageIntake.tsx`: vários arquivos (progresso e falhas), colar sem imagem, soltar sobre imagem (troca), em área vazia (adiciona) e vários sobre imagem (adiciona todos).
 
-- [ ] Testes do `controller.ts`
-- [ ] Testes do `useImageIntake.tsx`
+- [x] Testes do `controller.ts`
+- [x] Testes do `useImageIntake.tsx`
 
 **Aceite**: `src/app/` acima de 60% de linhas no resumo de cobertura do CI.
 
