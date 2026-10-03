@@ -2,7 +2,7 @@
 
 Aplicação web para marcar **áreas retangulares** em imagens, organizá-las em **camadas** e anotá-las com pares chave-valor (livres) ou com **anotações tipadas** definidas por uma _especialização_ (ex: SDUI, modelo de dados). Tudo é salvo num `mapping.json` ao lado das imagens, num formato pensado para ser lido por um agente de IA: as coordenadas são pixels da imagem original, então o agente recorta exatamente a área marcada.
 
-- **Mobile-first**: feito para ser usado no celular (toque, gaveta inferior, pan e zoom), com layout de desktop.
+- **Desktop primeiro, utilizável no celular**: o uso principal é no desktop (mouse, teclado, painéis lado a lado), e a app continua funcionando no celular (toque, gaveta inferior, pan e zoom).
 - **Um único arquivo**: o build gera `dist/index.html` autocontido; funciona aberto por `file://` (Chrome/Edge desktop) e hospedado no GitHub Pages, sem requisições de rede.
 - **Dois modos de armazenamento**: _pasta_ no disco (File System Access API, Chrome/Edge desktop) ou _projeto local_ no navegador (IndexedDB). Qualquer projeto pode ser exportado em `.zip`.
 - Tema claro/escuro, português (pt-BR) e inglês (en-US), instalável como PWA (só em `https:`).
