@@ -85,8 +85,15 @@ function median(values: number[]): number {
   return sorted[Math.floor(sorted.length / 2)] ?? 0;
 }
 
-function medianMs(fn: (p: Project) => unknown, p: Project, runs = 7): number {
-  fn({ ...p }); // Aquece o JIT.
+/**
+ * As primeiras rodadas medem o JIT, não o código: caem de ~13 ms para ~3 ms até
+ * estabilizar (no app, isso acontece nos primeiros quadros). Aquece até lá antes
+ * de medir; senão um runner mais lento estoura o orçamento só no aquecimento.
+ */
+const WARMUP_RUNS = 12;
+
+function medianMs(fn: (p: Project) => unknown, p: Project, runs = 9): number {
+  for (let i = 0; i < WARMUP_RUNS; i++) fn({ ...p });
   return median(Array.from({ length: runs }, () => time(() => fn({ ...p })).ms));
 }
 
