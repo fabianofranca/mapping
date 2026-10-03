@@ -108,3 +108,18 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
     dado: { annotationId: free?.id, entryId: free?.entries[0]?.id },
   });
 });
+
+test('caixa de seleção e texto de "Texto no canvas" ficam na mesma linha', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const check = page.getByLabel('Texto no canvas');
+  const text = page.locator('label.field-check span').first();
+  await expect(check).toBeVisible();
+  const [c, s] = await Promise.all([check.boundingBox(), text.boundingBox()]);
+  if (!c || !s) throw new Error('sem bounding box');
+  // Mesma faixa vertical (as caixas se sobrepõem) e a caixa fica à esquerda do texto.
+  expect(c.y).toBeLessThan(s.y + s.height);
+  expect(s.y).toBeLessThan(c.y + c.height);
+  expect(c.x + c.width).toBeLessThanOrEqual(s.x + 1);
+});
