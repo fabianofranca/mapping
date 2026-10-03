@@ -1,3 +1,4 @@
+import { useComputed } from '@preact/signals';
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
@@ -9,7 +10,10 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
   const [backupDismissed, setBackupDismissed] = useState(false);
   const backupSaved = session.backupSaved.value;
   const readOnly = store.readOnly.value;
-  const hasImages = (store.project.value?.images.length ?? 0) > 0;
+  const hasImagesSignal = useComputed(
+    () => (store.committed.value?.images.length ?? 0) > 0,
+  );
+  const hasImages = hasImagesSignal.value;
   const { message, progress } = notices;
 
   return (

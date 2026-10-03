@@ -46,10 +46,10 @@ Estado: **etapas 1, 1.1, 2 e 2.1 concluídas**; **etapa 2.2 (segunda revisão t�
 - Componentes que só precisam de uma fatia (ex: "há projeto?", "há seleção?") usam `useComputed`, sem assinar o projeto inteiro.
 - **Única mudança visível da etapa:** os campos x/y/largura/altura do painel passam a atualizar **ao soltar**, não durante o arrasto.
 
-- [ ] `committed` no store + testes (gesto, commit, cancel, desfazer/refazer)
-- [ ] `derived.ts` e componentes da interface lendo `committed`; `useComputed` nas fatias
-- [ ] Teste de contagem de renderizações: arrasto simulado com 30 movimentos renderiza `EditorScreen`, `EditorPanel` e `EditorTopBar` no máximo 2 vezes cada
-- [ ] `docs/ARCHITECTURE.md` atualizado (projeto confirmado × prévia)
+- [x] `committed` no store + testes (gesto, commit, cancel, desfazer/refazer)
+- [x] `derived.ts` e componentes da interface lendo `committed`; `useComputed` nas fatias
+- [x] Teste de contagem de renderizações: arrasto simulado com 30 movimentos renderiza `EditorScreen`, `EditorPanel` e `EditorTopBar` no máximo 2 vezes cada
+- [x] `docs/ARCHITECTURE.md` atualizado (projeto confirmado × prévia)
 
 **Aceite**: teste de contagem verde; orçamentos de desempenho mantidos; roteiro 13.9 sem diferenças além dos campos numéricos atualizando ao soltar.
 

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
-import type { Project } from '../model';
 import { toggleLayerVisible, type Selection } from '../store/ui';
 import { AnnotationLines, AnnotationTitle, IssueBadge } from './AnnotationSummary';
 import { useEditor } from './EditorContext';
@@ -8,8 +7,6 @@ import { imageLabel, markingLabel, markingPath } from './labels';
 import { annotationDisplayName } from './typedText';
 
 interface ListViewProps {
-  readonly project: Project;
-  readonly selection: Selection;
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }
 
@@ -18,9 +15,11 @@ interface ListViewProps {
  * seus pares. Tocar num item seleciona a marcação. Os filtros são as camadas
  * visíveis (compartilhadas com o canvas e o painel) e "marcações sem anotação".
  */
-export function ListView({ project, selection, onSelect }: ListViewProps) {
+export function ListView({ onSelect }: ListViewProps) {
   // Camadas visíveis (a lista respeita esse filtro) e os dados já montados da lista.
-  const { ui, derived } = useEditor();
+  const { store, ui, derived } = useEditor();
+  const project = store.committed.value;
+  const selection: Selection = ui.selection.value;
   const showEmpty = ui.listShowEmpty.value;
   const incompleteOnly = ui.listIncompleteOnly.value;
   const layers = derived.visibleLayers.value;
@@ -37,6 +36,8 @@ export function ListView({ project, selection, onSelect }: ListViewProps) {
       block: 'nearest',
     });
   }, [selectedId, listing.length]);
+
+  if (!project) return null;
 
   const shownIds = new Set(layers.map((l) => l.id));
   const ownerLabel = (ownerId: string | null): string | null => {

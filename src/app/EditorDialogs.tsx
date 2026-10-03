@@ -159,7 +159,7 @@ function renderDialog(
   ctx: EditorContextValue,
 ) {
   const { store, actions, ui } = ctx;
-  const project = store.project.value;
+  const project = store.committed.value;
   if (!project) return null;
   const readOnly = store.readOnly.value;
   const { close } = dialogs;

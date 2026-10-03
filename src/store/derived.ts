@@ -54,7 +54,9 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
 }
 
 export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDerived {
-  const project = store.project;
+  // Projeto confirmado (sem prévia de gesto): nada daqui depende de geometria, então
+  // arrastar/redimensionar não recalcula nada.
+  const project = store.committed;
 
   const activeLayerId = computed(() =>
     resolveActiveLayerId(project.value, ui.activeLayer.value),
