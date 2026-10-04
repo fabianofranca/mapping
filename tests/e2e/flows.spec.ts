@@ -332,8 +332,11 @@ test('celular: menu Painéis, gaveta de três alturas e 380px sem rolagem latera
   const peek = await sheet.boundingBox();
   expect(peek?.height).toBeLessThanOrEqual(72);
   await page.getByRole('button', { name: 'Mostrar detalhes', exact: true }).tap();
-  const open = await sheet.boundingBox();
-  expect(open?.height).toBeGreaterThan(200);
+  // `boundingBox` não espera: só mede depois que a gaveta aparece aberta.
+  await expect(page.getByRole('button', { name: 'Esconder detalhes' })).toBeVisible();
+  await expect
+    .poll(async () => (await sheet.boundingBox())?.height ?? 0)
+    .toBeGreaterThan(200);
   await expect(page.getByLabel('X', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Abrir Detalhes em tela cheia' }).tap();
   await expect(page.getByRole('tab', { name: 'Detalhes' })).toHaveAttribute(
