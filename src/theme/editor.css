@@ -128,6 +128,31 @@
   margin-top: auto;
 }
 
+/*
+ * O botão da faixa é discreto (DS 2.0, ToolStripButton): ícone esmaecido e, com a
+ * janela aberta, a seleção fraca — e não o azul cheio da alternância comum.
+ */
+.tool-strip .icon-button {
+  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+}
+
+.tool-strip .icon-button:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-hover);
+}
+
+.tool-strip .icon-button[aria-pressed='true'],
+.tool-strip .icon-button[aria-pressed='true']:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-selection-muted);
+}
+
+.tool-strip .icon-button:active:not(:disabled),
+.tool-strip .icon-button[aria-pressed='true']:active:not(:disabled) {
+  background: var(--color-pressed);
+}
+
 /* Área com as janelas e o canvas */
 .editor-panes {
   flex: 1;
@@ -162,6 +187,19 @@
 
 .tool-window-bottom {
   border-top: 1px solid var(--color-border);
+}
+
+/*
+ * Janela inativa (sem foco dentro): a linha selecionada esmaece, para a seleção forte
+ * marcar a janela em que você está (DS 2.0, estado inativo da ToolWindow).
+ */
+.tool-window:not(:focus-within) .tree-item[aria-current='true'] {
+  color: var(--color-text);
+  background: var(--color-selection-muted);
+}
+
+.tool-window:not(:focus-within) .tree-item[aria-current='true'] .muted {
+  color: var(--color-text-muted);
 }
 
 .tool-window-head {
