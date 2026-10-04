@@ -7,20 +7,25 @@ import type { Layer, Project } from './types';
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
 
 /** Cor da primeira camada de um projeto novo. */
-export const DEFAULT_LAYER_COLOR = '#E53935';
+export const DEFAULT_LAYER_COLOR = '#D32F2F';
 
-/** Paleta de sugestões de cor para camadas (a cor também pode ser livre). */
+/**
+ * Paleta de sugestões de cor para camadas (a cor também pode ser livre).
+ * Espelha os tokens `layer-01`…`layer-10` do tema (`src/theme/tokens.ts`; o
+ * `tests/theme/layerPalette.test.ts` confere). Em maiúsculas, como `nextLayerColor` compara.
+ * Só vale para camadas novas: as existentes mantêm a cor salva no projeto.
+ */
 export const LAYER_PALETTE: readonly string[] = [
   DEFAULT_LAYER_COLOR,
-  '#FB8C00',
-  '#FDD835',
-  '#43A047',
-  '#00ACC1',
   '#1E88E5',
-  '#5E35B1',
+  '#2E7D32',
+  '#E65100',
+  '#7E57C2',
+  '#A07800',
+  '#00838F',
   '#D81B60',
-  '#6D4C41',
-  '#546E7A',
+  '#8D6E63',
+  '#607D8B',
 ];
 
 /** Primeira cor da paleta ainda não usada por uma camada (recomeça quando todas estão em uso). */

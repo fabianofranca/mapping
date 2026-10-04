@@ -135,7 +135,7 @@ describe('aplicar especialização', () => {
       { id: 'modelo-dados', version: 1, file: 'specs/modelo-dados.json' },
     ]);
     expect(p.layers.map((l) => [l.id, l.name, l.color, l.spec])).toEqual([
-      ['L1', 'Lataria', '#E53935', null],
+      ['L1', 'Lataria', '#D32F2F', null],
       ['LM', 'Model', '#757575', null],
       ['LS1', 'Componentes', '#1E88E5', { specId: 'sdui', layerId: 'componentes' }],
       ['LS2', 'Eventos', '#FB8C00', { specId: 'sdui', layerId: 'eventos' }],
