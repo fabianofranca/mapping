@@ -8,10 +8,17 @@ import { readSetting, writeSetting } from '../utils/safeStorage';
 // `mapping.json` nem no histórico de desfazer.
 
 /**
- * Janelas disponíveis. Camadas (esquerda), Incompletas e Diagnóstico (inferior)
- * entram nas fases R6 e R7, que só acrescentam ids nesta lista.
+ * Janelas disponíveis. A janela inferior tem uma aba por janela: Lista, Incompletas
+ * e Diagnóstico.
  */
-export const TOOL_WINDOWS = ['tree', 'details', 'list'] as const;
+export const TOOL_WINDOWS = [
+  'tree',
+  'layers',
+  'details',
+  'list',
+  'incomplete',
+  'diagnostics',
+] as const;
 
 export type ToolWindowId = (typeof TOOL_WINDOWS)[number];
 
@@ -20,19 +27,25 @@ export type ToolWindowSide = 'left' | 'right' | 'bottom';
 /** Lado de cada janela: esquerda e direita são colunas; a inferior tem abas. */
 export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   tree: 'left',
+  layers: 'left',
   details: 'right',
   list: 'bottom',
+  incomplete: 'bottom',
+  diagnostics: 'bottom',
 };
 
 /**
  * Número do atalho de cada janela (Ctrl+Shift+N, e Alt+N onde o navegador deixa).
- * A numeração é a da seção Atalhos do DS 2.0, com os buracos das janelas que
- * chegam nas fases R6 e R7: Camadas 2, Incompletas 5 e Diagnóstico 6.
+ * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
+ * janela inferior Lista 4, Incompletas 5 e Diagnóstico 6.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
+  layers: 2,
   details: 3,
   list: 4,
+  incomplete: 5,
+  diagnostics: 6,
 };
 
 /** Janela do atalho Ctrl+Shift+N (`null` se o número não tem janela ainda). */
@@ -63,6 +76,20 @@ export const WINDOW_LIMITS: Readonly<
 
 const BOTTOM_MAX_FRACTION = 0.6;
 
+const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
+
+/** Altura mínima de cada janela da coluna da esquerda quando Árvore e Camadas dividem. */
+const SPLIT_MIN = 96;
+
+/**
+ * Altura da janela Camadas quando está empilhada embaixo da Árvore: nenhuma das duas
+ * fica abaixo de `SPLIT_MIN` (nem passa do espaço da coluna). Função pura.
+ */
+export function clampLayersHeight(size: number, columnHeight: number): number {
+  const max = Math.max(SPLIT_MIN, columnHeight - SPLIT_MIN);
+  return clamp(size, SPLIT_MIN, max);
+}
+
 /** Passo do Ctrl+Shift+setas (B2). */
 export const RESIZE_STEP = 16;
 
@@ -73,8 +100,6 @@ export interface LayoutSpace {
   /** Largura da outra janela lateral aberta (0 se ela estiver recolhida). */
   readonly otherWidth: number;
 }
-
-const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
 /**
  * Tamanho válido para a janela: entre o mínimo e o máximo do lado, sem deixar o
@@ -100,6 +125,7 @@ interface StoredLayout {
   readonly left?: number;
   readonly right?: number;
   readonly bottom?: number;
+  readonly layersHeight?: number;
 }
 
 const KEY = 'mapping.toolWindows';
@@ -126,8 +152,8 @@ function storedSize(value: unknown, side: ToolWindowSide): number {
     : WINDOW_LIMITS[side].default;
 }
 
-/** Abertas por padrão: Árvore e Detalhes (a Lista abre pela faixa). */
-const DEFAULT_OPEN: readonly ToolWindowId[] = ['tree', 'details'];
+/** Abertas por padrão: Árvore, Camadas e Detalhes (a Lista abre pela faixa). */
+const DEFAULT_OPEN: readonly ToolWindowId[] = ['tree', 'layers', 'details'];
 
 const stored = readStored();
 /** Havia layout guardado: o desktop compacto não mexe no que o usuário escolheu. */
@@ -143,6 +169,15 @@ const sizes = signal<Readonly<Record<ToolWindowSide, number>>>({
   bottom: storedSize(stored.bottom, 'bottom'),
 });
 
+/** Altura da janela Camadas quando ela divide a coluna da esquerda com a Árvore. */
+const layersSplit = signal<number>(
+  typeof stored.layersHeight === 'number' &&
+    Number.isFinite(stored.layersHeight) &&
+    stored.layersHeight > 0
+    ? stored.layersHeight
+    : px('size-tw-layers'),
+);
+
 /** Aba ativa da janela inferior (uma por vez, como numa IDE). */
 const bottomTab = signal<ToolWindowId>(
   isToolWindow(stored.bottomTab) && WINDOW_SIDE[stored.bottomTab] === 'bottom'
@@ -154,20 +189,29 @@ export const openToolWindows: ReadonlySignal<ReadonlySet<ToolWindowId>> = openId
 export const toolWindowSizes: ReadonlySignal<Readonly<Record<ToolWindowSide, number>>> =
   sizes;
 export const bottomToolWindow: ReadonlySignal<ToolWindowId> = bottomTab;
+export const layersWindowHeight: ReadonlySignal<number> = layersSplit;
 
-/** Janela visível de um lado (a inferior respeita a aba ativa); `null` se recolhido. */
-export function openWindowOf(side: ToolWindowSide): ToolWindowId | null {
+/**
+ * Janelas visíveis de um lado, na ordem das janelas. A esquerda empilha Árvore e
+ * Camadas; a direita tem uma só; a inferior mostra a aba ativa.
+ */
+export function openWindowsOf(side: ToolWindowSide): readonly ToolWindowId[] {
   const open = openToolWindows.value;
   if (side === 'bottom') {
     const tab = bottomToolWindow.value;
-    return open.has(tab) ? tab : null;
+    return open.has(tab) ? [tab] : [];
   }
-  return TOOL_WINDOWS.find((id) => WINDOW_SIDE[id] === side && open.has(id)) ?? null;
+  return TOOL_WINDOWS.filter((id) => WINDOW_SIDE[id] === side && open.has(id));
+}
+
+/** Primeira janela visível de um lado; `null` se o lado está recolhido. */
+export function openWindowOf(side: ToolWindowSide): ToolWindowId | null {
+  return openWindowsOf(side)[0] ?? null;
 }
 
 /** A janela está visível (e, na inferior, é a aba ativa). */
 export function isToolWindowOpen(id: ToolWindowId): boolean {
-  return openWindowOf(WINDOW_SIDE[id]) === id;
+  return openWindowsOf(WINDOW_SIDE[id]).includes(id);
 }
 
 /** Largura que cada lateral ocupa agora (0 quando recolhida). */
@@ -182,6 +226,7 @@ function persist(): void {
       open: [...openIds.value],
       bottomTab: bottomTab.value,
       ...sizes.value,
+      layersHeight: layersSplit.value,
     } satisfies StoredLayout),
   );
 }
@@ -190,8 +235,10 @@ export function showToolWindow(id: ToolWindowId): void {
   const side = WINDOW_SIDE[id];
   if (side === 'bottom') bottomTab.value = id;
   const next = new Set(openIds.value);
-  // Um lado mostra uma janela por vez (a divisória entre Árvore e Camadas vem na R6).
-  for (const other of next) if (WINDOW_SIDE[other] === side) next.delete(other);
+  // A esquerda empilha Árvore e Camadas; os outros lados mostram uma janela por vez.
+  if (side !== 'left') {
+    for (const other of next) if (WINDOW_SIDE[other] === side) next.delete(other);
+  }
   next.add(id);
   openIds.value = next;
   persist();
@@ -221,6 +268,19 @@ export function resizeToolWindow(
   if (next === sizes.value[side]) return;
   sizes.value = { ...sizes.value, [side]: next };
   persist();
+}
+
+/** Grava a altura da janela Camadas, limitada ao espaço da coluna da esquerda. */
+export function resizeLayersWindow(size: number, columnHeight: number): void {
+  const next = clampLayersHeight(size, columnHeight);
+  if (next === layersSplit.value) return;
+  layersSplit.value = next;
+  persist();
+}
+
+/** Duplo clique na divisória entre Árvore e Camadas: volta à altura padrão. */
+export function resetLayersWindowHeight(columnHeight: number): void {
+  resizeLayersWindow(px('size-tw-layers'), columnHeight);
 }
 
 /** Duplo clique na divisória: volta ao tamanho padrão do lado. */

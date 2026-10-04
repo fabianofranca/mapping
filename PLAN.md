@@ -85,7 +85,7 @@ Barra principal, faixas, janelas de ferramenta, breadcrumbs e barra de status. M
 - [x] Minimapa (P3)
 - [x] Campo de zoom (P4)
 
-As janelas Camadas, Incompletas e Diagnóstico (e os atalhos 2, 5 e 6) chegam com as fases R6 e R7; até lá, Camadas e Diagnóstico continuam nos diálogos atuais. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
+As janelas Camadas (atalho 2), Incompletas (5) e Diagnóstico (6) vieram com as fases R6 e R7. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
 
 **Aceite**: abrir, fechar, redimensionar e persistir cada janela; nenhuma função atual sumiu.
 
@@ -93,21 +93,23 @@ As janelas Camadas, Incompletas e Diagnóstico (e os atalhos 2, 5 e 6) chegam co
 
 Painel de detalhes (inspetor) redesenhado. Muda comportamento (B14, B15, P5, P6).
 
-- [ ] Identidade e PropertyGrid
-- [ ] LayerGroup recolhível (B15)
-- [ ] KeyValueGrid, com reordenar pares por arrasto (P6)
-- [ ] Campos tipados e DataGrid, com reordenar linhas por arrasto (P6)
-- [ ] ReferenceField e seletor de referência (B14), com filtro por etiqueta (P5)
-- [ ] Pendências com links para o campo
+- [x] Identidade e PropertyGrid
+- [x] LayerGroup recolhível (B15)
+- [x] KeyValueGrid, com reordenar pares por arrasto (P6)
+- [x] Campos tipados e DataGrid, com reordenar linhas por arrasto (P6)
+- [x] ReferenceField e seletor de referência (B14), com filtro por etiqueta (P5)
+- [x] Pendências com links para o campo
+
+Os atalhos Ctrl+B (escolher o alvo da referência em foco), Alt+N (nova anotação na camada ativa) e Alt+Enter (novo par ou nova linha) vieram nesta fase, com Alt+Shift+↑/↓ para mover o par ou a linha em foco.
 
 **Aceite**: edição, validação e desfazer iguais aos atuais.
 
 #### R6 — Árvore e Camadas
 
-Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3).
+Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3). No celular as camadas seguem no diálogo até a R8.
 
-- [ ] Janela Árvore
-- [ ] Camadas como janela, com paleta em popover e modo "sem anotação" (B3)
+- [x] Janela Árvore
+- [x] Camadas como janela, com paleta em popover e modo "sem anotação" (B3)
 
 **Aceite**: todas as ações do `LayersDialog` disponíveis.
 
@@ -115,9 +117,9 @@ Painel de detalhes (inspetor) redesenhado. Muda comportamento (B14, B15, P5, P6)
 
 Lista, Incompletas e Diagnóstico na janela inferior. Muda comportamento (B4, B5, P7).
 
-- [ ] Lista em tabela (P7)
-- [ ] Incompletas (B5)
-- [ ] Diagnóstico (B4)
+- [x] Lista em tabela (P7)
+- [x] Incompletas (B5)
+- [x] Diagnóstico (B4)
 
 **Aceite**: filtros atuais preservados.
 
@@ -145,7 +147,7 @@ Diálogos novos, tela inicial e faixas. Muda comportamento (B9, B10, B16, P8, P1
 - [x] Tela inicial (B10)
 - [x] Faixa de preview dispensável na sessão, com o selo PREVIEW permanente (B9, P8)
 
-Fica para a R8 o que depende do layout do celular: o Menu do celular ainda reúne Exportar, Especializações, Ajuda e Diagnóstico (a barra de cima e os Painéis o substituem). O Diagnóstico segue em diálogo até a R7.
+Fica para a R8 o que depende do layout do celular: o Menu do celular ainda reúne Exportar, Especializações, Ajuda, Diagnóstico e Configurações (a barra de cima e os Painéis o substituem).
 
 **Aceite**: roteiro 13.9 completo nos dois layouts e temas.
 

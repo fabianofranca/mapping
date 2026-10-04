@@ -93,9 +93,10 @@ describe('AnnotationEditor — anotação livre', () => {
     ]);
   });
 
-  it('reordena os pares com os botões', async () => {
+  it('reordena os pares pelo menu ⋯ da linha', async () => {
     const { harness, user } = setup('AU');
-    await user.click(screen.getAllByRole('button', { name: 'Descer par' })[0]!);
+    await user.click(screen.getByRole('button', { name: 'Ações do par name' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Descer par' }));
     expect(annotationOf(harness.project(), 'AU').entries.map((e) => e.id)).toEqual([
       'EA',
       'EN',
@@ -109,8 +110,8 @@ describe('AnnotationEditor — anotação livre', () => {
     const key = screen.getAllByLabelText('Chave')[2];
     if (!key) throw new Error('sem campo novo');
     await user.type(key, 'tmp{Enter}');
-    const removes = screen.getAllByRole('button', { name: 'Remover par' });
-    await user.click(removes[2]!);
+    await user.click(screen.getByRole('button', { name: 'Ações do par tmp' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Remover par' }));
     expect(annotationOf(harness.project(), 'AU').entries.map((e) => e.key)).toEqual([
       'name',
       'age',
@@ -119,14 +120,18 @@ describe('AnnotationEditor — anotação livre', () => {
 
   it('remover um par que é alvo de referência pede confirmação', async () => {
     const { harness, user } = setup('AU');
-    await user.click(screen.getAllByRole('button', { name: 'Remover par' })[0]!);
+    const removeFirst = async () => {
+      await user.click(screen.getByRole('button', { name: 'Ações do par name' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Remover par' }));
+    };
+    await removeFirst();
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('Referências vão quebrar')).toBeTruthy();
     // Cancelar mantém o par.
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
     expect(annotationOf(harness.project(), 'AU').entries).toHaveLength(2);
 
-    await user.click(screen.getAllByRole('button', { name: 'Remover par' })[0]!);
+    await removeFirst();
     const again = await screen.findByRole('dialog');
     await user.click(within(again).getByRole('button', { name: 'Excluir' }));
     expect(annotationOf(harness.project(), 'AU').entries.map((e) => e.id)).toEqual([

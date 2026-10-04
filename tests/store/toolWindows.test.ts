@@ -3,11 +3,16 @@ import {
   RESIZE_STEP,
   WINDOW_LIMITS,
   bottomToolWindow,
+  clampLayersHeight,
   clampWindowSize,
   hideToolWindow,
   isToolWindowOpen,
+  layersWindowHeight,
   openWindowOf,
+  openWindowsOf,
+  resetLayersWindowHeight,
   resetToolWindowSize,
+  resizeLayersWindow,
   resizeToolWindow,
   showToolWindow,
   sideWidth,
@@ -23,7 +28,9 @@ const SPACE = { width: 1400, height: 800, otherWidth: 0 };
 
 function reset(): void {
   showToolWindow('tree');
+  showToolWindow('layers');
   showToolWindow('details');
+  resetLayersWindowHeight(800);
   hideToolWindow('list');
   resetToolWindowSize('left', SPACE);
   resetToolWindowSize('right', SPACE);
@@ -33,6 +40,17 @@ function reset(): void {
 beforeEach(reset);
 
 describe('abrir e fechar janelas', () => {
+  it('a esquerda empilha Árvore e Camadas; os outros lados mostram uma só', () => {
+    expect(openWindowsOf('left')).toEqual(['tree', 'layers']);
+    hideToolWindow('tree');
+    expect(openWindowsOf('left')).toEqual(['layers']);
+    expect(openWindowOf('left')).toBe('layers');
+    // Esconder uma não esconde a outra, e voltar mantém a ordem.
+    showToolWindow('tree');
+    expect(openWindowsOf('left')).toEqual(['tree', 'layers']);
+    expect(isToolWindowOpen('layers')).toBe(true);
+  });
+
   it('cada lado mostra a janela aberta', () => {
     expect(openWindowOf('left')).toBe('tree');
     expect(openWindowOf('right')).toBe('details');
@@ -59,9 +77,21 @@ describe('abrir e fechar janelas', () => {
     expect(toolWindowByNumber(1)).toBe('tree');
     expect(toolWindowByNumber(3)).toBe('details');
     expect(toolWindowByNumber(4)).toBe('list');
-    // Camadas (2), Incompletas (5) e Diagnóstico (6) entram nas fases R6 e R7.
-    expect(toolWindowByNumber(2)).toBeNull();
-    expect(toolWindowByNumber(6)).toBeNull();
+    expect(toolWindowByNumber(2)).toBe('layers');
+    expect(toolWindowByNumber(5)).toBe('incomplete');
+    expect(toolWindowByNumber(6)).toBe('diagnostics');
+  });
+
+  it('a janela inferior mostra uma aba por vez', () => {
+    showToolWindow('list');
+    showToolWindow('incomplete');
+    expect(openWindowOf('bottom')).toBe('incomplete');
+    expect(isToolWindowOpen('list')).toBe(false);
+    showToolWindow('diagnostics');
+    expect(bottomToolWindow.value).toBe('diagnostics');
+    expect(isToolWindowOpen('incomplete')).toBe(false);
+    hideToolWindow('diagnostics');
+    expect(openWindowOf('bottom')).toBeNull();
   });
 });
 
@@ -95,5 +125,25 @@ describe('tamanhos', () => {
     expect(toolWindowSizes.value.left).toBe(480);
     resetToolWindowSize('left', SPACE);
     expect(toolWindowSizes.value.left).toBe(WINDOW_LIMITS.left.default);
+  });
+});
+
+describe('divisória entre Árvore e Camadas', () => {
+  it('nenhuma das duas janelas fica abaixo do mínimo', () => {
+    expect(clampLayersHeight(10, 800)).toBe(96);
+    expect(clampLayersHeight(900, 800)).toBe(704);
+    expect(clampLayersHeight(300, 800)).toBe(300);
+    // Coluna menor que as duas alturas mínimas: vale o mínimo.
+    expect(clampLayersHeight(300, 150)).toBe(96);
+  });
+
+  it('redimensiona, limita e volta ao padrão', () => {
+    const initial = layersWindowHeight.value;
+    resizeLayersWindow(initial + RESIZE_STEP, 800);
+    expect(layersWindowHeight.value).toBe(initial + RESIZE_STEP);
+    resizeLayersWindow(10_000, 800);
+    expect(layersWindowHeight.value).toBe(704);
+    resetLayersWindowHeight(800);
+    expect(layersWindowHeight.value).toBe(initial);
   });
 });

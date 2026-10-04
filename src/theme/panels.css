@@ -8,21 +8,11 @@
 .panel-details {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .panel-details .notice {
   margin: 0;
-}
-
-.panel-heading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.panel-name {
-  overflow-wrap: anywhere;
 }
 
 .tab-panel > p {
@@ -40,32 +30,71 @@
   padding: 0;
 }
 
-.tree-item {
+/* Linha da árvore (TreeRow): 28px no desktop, 44px no celular. */
+.tree-row {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  width: 100%;
-  min-height: var(--size-touch);
-  padding: 0 var(--space-2) 0 calc(var(--space-2) + var(--depth, 0) * var(--space-4));
-  font: inherit;
-  text-align: left;
+  gap: var(--space-0-5);
+  min-height: var(--row-height);
+  padding: 0 var(--space-1) 0 calc(var(--space-1) + var(--depth, 0) * var(--space-4));
   color: var(--color-text);
-  background: none;
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
+  border-radius: var(--radius-md);
 }
 
-.tree-item:hover {
-  background: var(--color-bg);
+.tree-row:hover {
+  background: var(--color-hover);
 }
 
-.tree-item[aria-current='true'] {
+.tree-row-current,
+.tree-row-current:hover {
   color: var(--color-accent-text);
   background: var(--color-accent);
 }
 
-.tree-item[aria-current='true'] .muted {
+.tree-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+}
+
+button.tree-toggle {
+  cursor: pointer;
+}
+
+button.tree-toggle:hover {
+  background: var(--color-pressed);
+}
+
+.tree-row-current button.tree-toggle:hover {
+  background: var(--color-accent-hover);
+}
+
+.tree-item {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.tree-row-current .muted {
   color: inherit;
 }
 
@@ -84,8 +113,29 @@
   color: var(--color-warning);
 }
 
-.tree-item[aria-current='true'] .tree-warning {
+.tree-row-current .tree-warning {
   color: inherit;
+}
+
+/* Bolinhas das camadas visíveis que chegam à marcação (as herdadas, esmaecidas). */
+.tree-dots {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  margin-left: auto;
+}
+
+.tree-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  background: var(--layer-color);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-full);
+}
+
+.tree-dot-inherited {
+  opacity: var(--opacity-inherited);
 }
 
 /* As abas ficam visíveis ao rolar a gaveta. */
@@ -112,66 +162,108 @@
   border-radius: 50%;
 }
 
-.layer-list {
+/* Janela Camadas e lista de camadas do diálogo */
+.layers-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  min-height: 0;
+}
+
+.layer-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
   margin: 0;
   padding: 0;
+  overflow: auto;
   list-style: none;
 }
 
-.layer-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-.layer-main,
-.layer-actions,
-.layer-order {
-  display: flex;
+.layer-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: var(--space-2);
+  column-gap: var(--space-1);
+  min-height: var(--row-height);
+  padding: 0 var(--space-1);
+  border-left: 3px solid var(--layer-color);
+  border-radius: var(--radius-md);
 }
 
-.layer-actions {
-  justify-content: space-between;
+.layer-row:hover {
+  background: var(--color-hover);
 }
 
-.layer-order {
-  gap: var(--space-1);
+/* Camada ativa: seleção fraca (color-selection-muted). */
+.layer-row-active,
+.layer-row-active:hover {
+  background: var(--color-selection-muted);
 }
 
 .layer-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--size-touch);
-  height: var(--size-touch);
-  flex: none;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
 }
 
 .layer-visible input {
-  width: var(--size-target-min);
-  height: var(--size-target-min);
+  width: var(--control-check);
+  height: var(--control-check);
+  margin: 0;
 }
 
 .layer-swatch {
-  flex: none;
-  width: var(--size-touch);
-  height: var(--size-touch);
-  border: 2px solid var(--color-border-control);
-  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
+.layer-swatch:hover:not(:disabled) {
+  background: var(--color-pressed);
+}
+
+.layer-swatch:disabled {
+  cursor: default;
+}
+
+.layer-swatch .layer-dot {
+  width: var(--control-check);
+  height: var(--control-check);
+}
+
 .layer-name {
-  flex: 1;
   min-width: 0;
+  background: transparent;
+  border-color: transparent;
+}
+
+.layer-name:hover:not(:disabled),
+.layer-name:focus-visible {
+  background: var(--color-surface);
+  border-color: var(--color-border-control);
+}
+
+.layer-row .layer-badge {
+  grid-column: 3 / -1;
+  justify-self: start;
+  margin: 0 0 var(--space-1);
+}
+
+.layers-footer {
+  flex: none;
+  padding: var(--space-2) var(--space-1) var(--space-1);
+  border-top: 1px solid var(--color-border);
 }
 
 .palette {
@@ -207,60 +299,45 @@
   cursor: pointer;
 }
 
-.annotations {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+/* Paleta dentro do popover da camada: grade de 5 colunas e a cor livre embaixo. */
+.popover .palette {
+  display: grid;
+  grid-template-columns: repeat(5, var(--control-height));
+  gap: var(--space-1);
 }
 
-.annotations-heading,
-.layer-section-header,
-.annotation-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.popover .palette-color {
+  width: var(--control-height);
+  height: var(--control-height);
 }
 
-.annotations-heading {
+.popover .palette-custom {
+  grid-column: 1 / -1;
   justify-content: space-between;
 }
 
-.annotations-heading h3 {
-  margin: 0;
-  font: var(--t-text-heading);
+.popover .palette-custom input {
+  width: var(--control-height);
+  height: var(--control-height);
 }
 
-.layer-section {
+.annotations {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding-left: var(--space-2);
-  border-left: 4px solid var(--layer-color);
-}
-
-.layer-section-header {
-  padding: var(--space-1) var(--space-2);
-  border-bottom: 2px solid var(--layer-color);
-}
-
-.layer-section-name {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.layer-section p {
-  margin: 0;
 }
 
 .annotation {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-2);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+}
+
+.annotation-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
 .annotation-name {
@@ -268,61 +345,49 @@
   min-width: 0;
 }
 
-.entries {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.entry {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-/* Celular: chave em cima e valor embaixo. */
-.entry-fields {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-1);
-}
-
-.entry-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-1);
-}
-
-.entry .field-error {
-  font: var(--t-text-small);
-}
-
-/* Visão de Lista e zoom semântico */
+/* Janela inferior: Lista (P7), Incompletas (B5) e Diagnóstico (B4) */
 .list-screen {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-4);
   background: var(--color-surface);
 }
 
-.list-view {
+.list-view,
+.diagnostics-view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  height: 100%;
+}
+
+/* Os filtros ficam parados e só a tabela rola (o cabeçalho dela fica no topo). */
+.list-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .list-view p {
   margin: 0;
 }
 
+.list-message,
+.diagnostics-empty,
+.diagnostics-intro {
+  padding: var(--space-3);
+}
+
+.diagnostics-intro {
+  padding-bottom: 0;
+}
+
 .list-filters {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .list-layers {
@@ -331,99 +396,203 @@
   gap: var(--space-1) var(--space-4);
 }
 
-.list-layer,
-.list-check {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--size-touch);
-  cursor: pointer;
+/* Tabela: cabeçalho fixo, uma linha por anotação, grupos por imagem */
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--t-text);
 }
 
-.list-layer input,
-.list-check input {
-  flex: none;
-  width: var(--size-target-min);
-  height: var(--size-target-min);
-  margin: 0;
+.list-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-canvas-overlay);
+  height: var(--size-row);
+  padding: 0 var(--space-3);
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  text-align: left;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.list-image-row th {
+  height: var(--size-row);
+  padding: 0 var(--space-3);
+  font: var(--t-text-small);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: left;
+  background: var(--color-bg);
+  overflow-wrap: anywhere;
+}
+
+.list-row {
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.list-row:hover {
+  background: var(--color-hover);
+}
+
+.list-row[data-selected] {
+  background: var(--color-selection);
+}
+
+.list-table:not(:focus-within) .list-row[data-selected] {
+  background: var(--color-selection-muted);
+}
+
+.list-cell {
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.list-cell-marking {
+  width: 25%;
+  min-width: 12em;
+}
+
+.list-cell-layer {
+  width: 1%;
+  white-space: nowrap;
 }
 
 .list-layer-name {
-  overflow-wrap: anywhere;
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.list-images,
-.list-markings {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.list-images {
-  gap: var(--space-4);
-}
-
-.list-image {
-  margin: 0 0 var(--space-2);
-  font: var(--t-text-small);
-  color: var(--color-text-muted);
-  overflow-wrap: anywhere;
+.list-cell-content {
+  width: 40%;
 }
 
 .list-marking {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  width: 100%;
-  min-height: var(--size-touch);
-  padding: var(--space-2);
+  display: inline;
+  min-height: var(--size-target-min);
+  padding: 0;
   font: inherit;
+  font-weight: 600;
   text-align: left;
   color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-control);
-  border-radius: var(--radius-lg);
+  background: none;
+  border: none;
   cursor: pointer;
 }
 
-.list-marking[aria-current='true'] {
-  border-color: var(--color-accent);
-  box-shadow: inset 0 0 0 2px var(--color-accent);
-}
-
-.list-path {
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.list-layer-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding-left: var(--space-2);
-  border-left: 4px solid var(--layer-color);
-}
-
-.list-layer-header {
-  display: flex;
+.list-layer-tag {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  font: var(--t-text-small);
-  font-weight: 600;
+  gap: var(--space-1-5);
 }
 
-.list-annotation {
-  display: flex;
-  flex-direction: column;
-  padding-left: var(--space-2);
-  overflow-wrap: anywhere;
+.list-none {
+  font-style: italic;
+}
+
+.list-annotation-name {
+  display: block;
+}
+
+.list-entry {
+  display: block;
 }
 
 .list-key {
   color: var(--color-text-muted);
+}
+
+.incomplete-reasons {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+/* Diagnóstico */
+.diagnostics-status {
+  font: var(--t-text-small);
+}
+
+.diagnostics-table .list-row {
+  cursor: default;
+}
+
+.diagnostics-table .list-row:hover {
+  background: none;
+}
+
+.diagnostics-message {
+  width: 100%;
+}
+
+/* No celular a tabela vira cartões: uma linha por cartão, rótulo antes de cada valor. */
+@media (max-width: 899px) {
+  .list-view,
+  .diagnostics-view {
+    height: auto;
+  }
+
+  .list-scroll {
+    overflow: visible;
+  }
+
+  .list-cell-layer {
+    width: auto;
+    white-space: normal;
+  }
+
+  .list-cell-marking {
+    min-width: 0;
+  }
+
+  .list-table,
+  .list-table tbody,
+  .list-table tr,
+  .list-table td,
+  .list-table th {
+    display: block;
+  }
+
+  .list-table thead {
+    display: none;
+  }
+
+  .list-image-row th {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-canvas-overlay);
+  }
+
+  .list-row {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .list-cell {
+    width: auto;
+    padding: var(--space-0-5) 0;
+  }
+
+  .list-cell:empty {
+    display: none;
+  }
+
+  .list-cell[data-label]:not(.list-cell-marking)::before {
+    display: block;
+    font: var(--t-text-small);
+    color: var(--color-text-muted);
+    content: attr(data-label);
+  }
+
+  .list-marking {
+    min-height: var(--size-touch);
+  }
+
+  .list-filters {
+    padding: var(--space-2) var(--space-4);
+  }
 }
 
 /* Herança e vínculos (fase 10) */
@@ -434,9 +603,16 @@
 
 .annotation-linked-summary {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  padding-top: var(--space-1);
   font: var(--t-text-small);
+  border-top: 1px solid var(--color-border);
+}
+
+.annotation-linked-summary > .props-label {
+  padding-top: 0;
 }
 
 .linked-group {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cardRows, cardSections, type CardLabels } from '../../src/canvas/semanticText';
 import { removeTableRow, type Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
-import { parseNumberInput } from '../../src/ui/TypedFields';
+import { parseNumberInput } from '../../src/ui/FieldEditors';
 import {
   annotationDisplayName,
   annotationSourceLabel,

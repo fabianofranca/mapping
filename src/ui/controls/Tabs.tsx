@@ -6,6 +6,10 @@ export interface TabItem<T extends string> {
   /** Dica nativa (`title`). */
   readonly title?: string;
   readonly disabled?: boolean;
+  /** Contador ao lado do rótulo (ex.: quantas pendências). */
+  readonly badge?: string;
+  /** Ponto de alerta ao lado do rótulo (ex.: erro novo). */
+  readonly alert?: boolean;
 }
 
 interface TabsProps<T extends string> {
@@ -45,7 +49,7 @@ export function Tabs<T extends string>({
 
   return (
     <div class="tabs" role="tablist" aria-label={label}>
-      {tabs.map(({ id, label: text, title, disabled }, i) => (
+      {tabs.map(({ id, label: text, title, disabled, badge, alert }, i) => (
         <button
           key={id}
           type="button"
@@ -59,6 +63,8 @@ export function Tabs<T extends string>({
           onClick={() => onChange(id)}
         >
           {text}
+          {badge && <span class="tab-badge">{badge}</span>}
+          {alert && <span class="tab-alert" aria-hidden="true" />}
         </button>
       ))}
     </div>

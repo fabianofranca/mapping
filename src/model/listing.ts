@@ -1,3 +1,4 @@
+import type { AnnotationIssue } from './issues';
 import { projectIndex } from './projectIndex';
 import type { Annotation, Layer, Marking, Project, ProjectImage } from './types';
 
@@ -133,6 +134,57 @@ export function buildListing(
     };
     for (const root of roots) if (root.imageId === image.id) visit(root, []);
     if (showEmpty || markings.length > 0) result.push({ image, markings });
+  }
+  return result;
+}
+
+/** Anotação incompleta com o contexto para achá-la: onde está e por quê. */
+export interface IncompleteItem {
+  readonly annotation: Annotation;
+  readonly marking: Marking;
+  /** Da marcação raiz até ela mesma (o último item é `marking`). */
+  readonly path: readonly Marking[];
+  readonly layer: Layer;
+  readonly issues: readonly AnnotationIssue[];
+}
+
+export interface IncompleteImage {
+  readonly image: ProjectImage;
+  readonly items: readonly IncompleteItem[];
+}
+
+/**
+ * Pendências agrupadas por imagem (janela "Incompletas"): imagens na ordem do projeto,
+ * marcações em profundidade (o pai antes das filhas) e, em cada uma, as anotações na
+ * ordem do projeto. Com `onlyLayers`, só entram anotações dessas camadas (as
+ * visíveis); sem ele, todas. Imagens sem pendência ficam de fora.
+ */
+export function buildIncompleteList(
+  p: Project,
+  issues: ReadonlyMap<string, readonly AnnotationIssue[]>,
+  onlyLayers?: readonly Layer[],
+): IncompleteImage[] {
+  if (issues.size === 0) return [];
+  const index = projectIndex(p);
+  const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
+  const result: IncompleteImage[] = [];
+
+  for (const image of p.images) {
+    const items: IncompleteItem[] = [];
+    const visit = (marking: Marking, parents: readonly Marking[]) => {
+      const path = [...parents, marking];
+      for (const annotation of index.annotationsByMarking.get(marking.id) ?? []) {
+        const found = issues.get(annotation.id);
+        const layer = index.layers.get(annotation.layerId);
+        if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
+        items.push({ annotation, marking, path, layer, issues: found });
+      }
+      for (const child of index.children.get(marking.id) ?? []) visit(child, path);
+    };
+    for (const root of index.children.get(null) ?? []) {
+      if (root.imageId === image.id) visit(root, []);
+    }
+    if (items.length > 0) result.push({ image, items });
   }
   return result;
 }

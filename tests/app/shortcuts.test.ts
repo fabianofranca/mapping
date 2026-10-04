@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { altNumbersAvailable, isTextInput, shortcutFor } from '../../src/app/shortcuts';
+import {
+  altNumbersAvailable,
+  isTextInput,
+  shortcutFor,
+  worksInTextInput,
+} from '../../src/app/shortcuts';
 
 const key = (
   k: string,
@@ -15,6 +20,18 @@ const key = (
 });
 
 describe('atalhos do editor', () => {
+  // R5: Alt+N cria uma anotação na camada ativa, também com o foco num campo.
+  it('Alt+N: nova anotação (pela tecla física, por causa do Option no macOS)', () => {
+    expect(shortcutFor(key('n', { alt: true }))).toEqual({ kind: 'new-annotation' });
+    expect(shortcutFor(key('˜', { alt: true }, 'KeyN'))).toEqual({
+      kind: 'new-annotation',
+    });
+    expect(shortcutFor(key('n', { alt: true, shift: true }))).toBeNull();
+    expect(shortcutFor(key('n', { alt: true, ctrl: true }))).toBeNull();
+    expect(worksInTextInput({ kind: 'new-annotation' })).toBe(true);
+    expect(worksInTextInput({ kind: 'undo' })).toBe(false);
+  });
+
   it('desfazer e refazer', () => {
     expect(shortcutFor(key('z', { ctrl: true }))).toEqual({ kind: 'undo' });
     expect(shortcutFor(key('z', { meta: true }))).toEqual({ kind: 'undo' });
@@ -52,8 +69,18 @@ describe('atalhos do editor', () => {
       kind: 'toggle-window',
       window: 'list',
     });
-    // 2, 5 e 6 só ganham janela nas fases R6 e R7.
-    expect(shortcutFor(key('2', { ctrl: true, shift: true }))).toBeNull();
+    expect(shortcutFor(key('2', { ctrl: true, shift: true }))).toEqual({
+      kind: 'toggle-window',
+      window: 'layers',
+    });
+    expect(shortcutFor(key('5', { ctrl: true, shift: true }))).toEqual({
+      kind: 'toggle-window',
+      window: 'incomplete',
+    });
+    expect(shortcutFor(key('6', { ctrl: true, shift: true }))).toEqual({
+      kind: 'toggle-window',
+      window: 'diagnostics',
+    });
     // Alt+número desligado (Chrome no Linux troca de aba).
     expect(shortcutFor(key('4', { alt: true }), false)).toBeNull();
     expect(shortcutFor(key('4', { ctrl: true, shift: true }), false)).toEqual({

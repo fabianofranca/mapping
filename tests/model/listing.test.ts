@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   annotationsByMarking,
+  buildIncompleteList,
   buildListing,
   layerSections,
   removeMarking,
@@ -81,5 +82,39 @@ describe('visão de lista', () => {
       'L1',
     ]);
     expect(layerSections(index, 'M3', both)).toEqual([]);
+  });
+});
+
+describe('lista de incompletas', () => {
+  const p = sampleProject();
+  // A2 (M1/L2) e A3 (M2/L1) em I1; A4 (M4/L2) em I2.
+  const issues = new Map([
+    ['A4', [{ code: 'layer-mismatch' as const }]],
+    ['A3', [{ code: 'required-empty' as const, key: 'id' }]],
+    ['A2', [{ code: 'unknown-type' as const }]],
+  ]);
+
+  it('agrupa por imagem, em profundidade, com camada e motivos', () => {
+    const list = buildIncompleteList(p, issues);
+    expect(list.map((i) => i.image.id)).toEqual(['I1', 'I2']);
+    expect(
+      list[0]?.items.map((i) => [i.marking.id, i.annotation.id, i.layer.id]),
+    ).toEqual([
+      ['M1', 'A2', 'L2'],
+      ['M2', 'A3', 'L1'],
+    ]);
+    expect(list[0]?.items[1]?.path.map((m) => m.id)).toEqual(['M1', 'M2']);
+    expect(list[0]?.items[1]?.issues).toEqual([{ code: 'required-empty', key: 'id' }]);
+  });
+
+  it('só nas camadas dadas (as visíveis); imagem sem pendência some', () => {
+    const l1 = p.layers.filter((l) => l.id === 'L1');
+    const list = buildIncompleteList(p, issues, l1);
+    expect(list.map((i) => i.items.map((x) => x.annotation.id))).toEqual([['A3']]);
+    expect(buildIncompleteList(p, issues, [])).toEqual([]);
+  });
+
+  it('sem pendências a lista é vazia', () => {
+    expect(buildIncompleteList(p, new Map())).toEqual([]);
   });
 });

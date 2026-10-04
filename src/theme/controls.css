@@ -322,6 +322,41 @@
   cursor: default;
 }
 
+/* Contador e ponto de alerta da aba */
+.tab-badge {
+  margin-left: var(--space-1-5);
+  padding: 0 var(--space-1-5);
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  background: var(--color-selection-muted);
+  border-radius: var(--radius-full);
+}
+
+.tab-alert {
+  display: inline-block;
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  margin-left: var(--space-1-5);
+  vertical-align: middle;
+  background: var(--color-danger);
+  border-radius: var(--radius-full);
+}
+
+/* Ponto de alerta do botão de ícone */
+.icon-button {
+  position: relative;
+}
+
+.icon-button-alert {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  background: var(--color-danger);
+  border-radius: var(--radius-full);
+}
+
 @media (max-width: 899px) {
   .tab {
     border-bottom-width: 3px;
