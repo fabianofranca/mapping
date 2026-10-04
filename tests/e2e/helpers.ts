@@ -22,11 +22,13 @@ export interface MappingJson {
     readonly file: string;
     readonly width: number;
     readonly height: number;
+    readonly locked: boolean;
   }[];
   readonly markings: readonly {
     readonly id: string;
     readonly imageId: string;
     readonly rect: Rect;
+    readonly locked: boolean;
   }[];
   readonly annotations: readonly {
     readonly id: string;

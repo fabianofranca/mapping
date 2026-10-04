@@ -76,5 +76,6 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
 - **Etapa 2.2 — Segunda revisão técnica (concluída):** fases 26 e 27 concluídas, 28 dispensada (histórico em `docs/history/PLAN-etapa-2-2.md`).
 - **Etapa 2.3 — Redesign da interface (concluída):** fases R1 a R9 concluídas e R10 movida para Evoluções no ROADMAP (histórico em `docs/history/PLAN-etapa-2-3.md`; especificação em `docs/redesign/HANDOFF.md`).
-- **Etapa atual:** 2.4 (CSP) e 2.5 (trava), detalhadas no [`docs/ROADMAP.md`](docs/ROADMAP.md).
-- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (3 servidor MCP, 4 Figma, marco de uso real e evoluções, depois da 2.4 e da 2.5). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.
+- **Etapa 2.5 — Trava de marcações e imagens (concluída):** `locked` no schema v5, regras em `src/model/locks.ts`, cadeado na interface e no canvas (fases F1 a F6 no `PLAN.md`).
+- **Etapa atual:** 2.4 (CSP), detalhada no [`docs/ROADMAP.md`](docs/ROADMAP.md).
+- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (3 servidor MCP, 4 Figma, marco de uso real e evoluções, depois da 2.4). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.

@@ -21,7 +21,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - Testes: o build falha se a CSP faltar ou se os hashes não baterem com os blocos embutidos; um teste Playwright confirma que uma requisição para um host externo é bloqueada.
 - **Depende de:** nada. Pode rodar em paralelo com as fases do redesign.
 
-## Etapa 2.5 — Trava de marcações e imagens (depois do redesign)
+## Etapa 2.5 — Trava de marcações e imagens (concluída)
 
 - **Objetivo:** proteger marcações e imagens já revisadas contra alterações acidentais, sem impedir a navegação nem a seleção.
 - **Entra:**
@@ -36,6 +36,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - no campo "Pertence a", uma linha de ajuda explicando que só aparecem anotações da mesma marcação em outras camadas, e uma mensagem quando não houver nenhuma opção;
   - testes para os atalhos de teclado (`useEditorShortcuts`).
 - **Depende de:** etapa 2.3 (Árvore e Detalhes do redesign).
+- **Entregue:** schema v5 (`locked`, migração e backup), regras em `src/model/locks.ts`, cadeado na Árvore, em Detalhes e no canvas, atalho `Alt+L`, "Trancar todas as marcações desta imagem" e os ajustes listados acima. Referência: [`FORMAT.md`](FORMAT.md) (campos da v5) e [`ARCHITECTURE.md`](ARCHITECTURE.md); o plano da etapa fica em [`PLAN.md`](../PLAN.md) até ser movido para o histórico.
 
 ## Etapa 3 — Servidor MCP
 
