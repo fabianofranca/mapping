@@ -24,7 +24,6 @@ describe('dicionários', () => {
       'language.pt-BR',
       'language.en-US',
       'image.dimensions',
-      'common.id',
       'editor.menu',
       'view.canvas',
       'marking.pathSeparator',
@@ -36,6 +35,11 @@ describe('dicionários', () => {
       'zoom.value',
       'status.empty',
       'status.schema',
+      'marking.rectSummary',
+      'details.summary',
+      'details.summarySeparator',
+      'issue.item',
+      'ref.fieldButton',
     ]);
     const same = entries.filter(([key, pt]) => enUS[key] === pt && !allowed.has(key));
     expect(same.map(([key]) => key)).toEqual([]);

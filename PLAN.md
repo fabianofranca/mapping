@@ -93,12 +93,14 @@ As janelas Camadas, Incompletas e Diagnóstico (e os atalhos 2, 5 e 6) chegam co
 
 Painel de detalhes (inspetor) redesenhado. Muda comportamento (B14, B15, P5, P6).
 
-- [ ] Identidade e PropertyGrid
-- [ ] LayerGroup recolhível (B15)
-- [ ] KeyValueGrid, com reordenar pares por arrasto (P6)
-- [ ] Campos tipados e DataGrid, com reordenar linhas por arrasto (P6)
-- [ ] ReferenceField e seletor de referência (B14), com filtro por etiqueta (P5)
-- [ ] Pendências com links para o campo
+- [x] Identidade e PropertyGrid
+- [x] LayerGroup recolhível (B15)
+- [x] KeyValueGrid, com reordenar pares por arrasto (P6)
+- [x] Campos tipados e DataGrid, com reordenar linhas por arrasto (P6)
+- [x] ReferenceField e seletor de referência (B14), com filtro por etiqueta (P5)
+- [x] Pendências com links para o campo
+
+Os atalhos Ctrl+B (escolher o alvo da referência em foco), Alt+N (nova anotação na camada ativa) e Alt+Enter (novo par ou nova linha) vieram nesta fase, com Alt+Shift+↑/↓ para mover o par ou a linha em foco.
 
 **Aceite**: edição, validação e desfazer iguais aos atuais.
 

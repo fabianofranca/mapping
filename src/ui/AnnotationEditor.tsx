@@ -1,10 +1,10 @@
-import { useState } from 'preact/hooks';
+import { useId, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationDeletionImpact,
   childTypesOf,
-  getBacklinks,
   getLinkedAnnotations,
+  projectIndex,
   rawValueLines,
   refsBrokenBy,
   removeEntry,
@@ -12,19 +12,26 @@ import {
   validAnnotationOwners,
   type Annotation,
   type ChildType,
-  type Entry,
   type Layer,
   type Project,
 } from '../model';
-import type { AnnotationLocation } from '../store/ui';
-import { IssueBadge, IssueList } from './AnnotationSummary';
+import { isSectionCollapsed, toggleSection, type AnnotationLocation } from '../store/ui';
+import { IssueBadge } from './AnnotationSummary';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
-import { Button, Choice, IconButton, Select, TextField } from './controls';
-import { annotationErrorMessage, annotationLabel } from './labels';
-import { BacklinkList, TypedField } from './TypedFields';
-import { annotationDisplayName, labelTexts } from './typedText';
+import { Button, Choice, IconButton, Select } from './controls';
+import { KeyValueGrid } from './KeyValueGrid';
+import { annotationLabel } from './labels';
+import { Property, PropertyGrid } from './PropertyGrid';
+import { TypedField } from './TypedFields';
+import {
+  annotationDisplayName,
+  annotationSummary,
+  issueReason,
+  issuesOf,
+  labelTexts,
+} from './typedText';
 
 interface AnnotationEditorProps {
   readonly project: Project;
@@ -36,131 +43,6 @@ interface AnnotationEditorProps {
   readonly readOnly: boolean;
 }
 
-interface EntryRowProps {
-  /** `null` = par novo, ainda não gravado (só existe na tela até ter chave válida). */
-  readonly entry: Entry | null;
-  readonly index: number;
-  readonly count: number;
-  readonly annotationId: string;
-  readonly readOnly: boolean;
-  /** Descarta o par novo. */
-  readonly onDiscard: () => void;
-  /** Par novo gravado. */
-  readonly onCreated: () => void;
-  /** Remove o par gravado (com confirmação se ele for alvo de referências). */
-  readonly onRemove: () => void;
-}
-
-/**
- * Um par chave-valor. Grava ao sair do campo. Se a chave for vazia ou repetida,
- * mostra o erro na linha e mantém o texto digitado, sem gravar o par.
- */
-function EntryRow({
-  entry,
-  index,
-  count,
-  annotationId,
-  readOnly,
-  onDiscard,
-  onCreated,
-  onRemove,
-}: EntryRowProps) {
-  const { actions } = useEditor();
-  const base = entry ? `${entry.key}\u0000${entry.value}` : '';
-  const [draft, setDraft] = useState({
-    base,
-    key: entry?.key ?? '',
-    value: entry?.value ?? '',
-  });
-  const [error, setError] = useState<string | null>(null);
-  // O rascunho vale só enquanto o par gravado for o mesmo (ex.: some após desfazer).
-  const current =
-    draft.base === base
-      ? draft
-      : { base, key: entry?.key ?? '', value: entry?.value ?? '' };
-
-  const edit = (patch: Partial<Pick<typeof draft, 'key' | 'value'>>) =>
-    setDraft({ ...current, ...patch });
-
-  const commit = () => {
-    if (entry && current.key === entry.key && current.value === entry.value) {
-      setError(null);
-      return;
-    }
-    // Par novo ainda vazio: nada a gravar nem a reclamar.
-    if (!entry && current.key.trim() === '' && current.value === '') return;
-    const next = { key: current.key, value: current.value };
-    const result = entry
-      ? actions.updateEntry(annotationId, entry.id, next)
-      : actions.addEntry(annotationId, next);
-    if (result.ok) {
-      setError(null);
-      if (!entry) onCreated();
-    } else {
-      setError(annotationErrorMessage(result.error));
-    }
-  };
-
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') (e.currentTarget as HTMLElement).blur();
-  };
-
-  return (
-    <>
-      <div class="entry-fields">
-        <TextField
-          invalid={error !== null}
-          aria-label={t('annotation.key')}
-          placeholder={t('annotation.key')}
-          disabled={readOnly}
-          value={current.key}
-          onInput={(e) => edit({ key: e.currentTarget.value })}
-          onChange={commit}
-          onKeyDown={onKeyDown}
-        />
-        <TextField
-          aria-label={t('annotation.value')}
-          placeholder={t('annotation.value')}
-          disabled={readOnly}
-          value={current.value}
-          onInput={(e) => edit({ value: e.currentTarget.value })}
-          onChange={commit}
-          onKeyDown={onKeyDown}
-        />
-      </div>
-      <div class="entry-actions">
-        {entry && (
-          <>
-            <IconButton
-              icon="arrowUp"
-              label={t('annotation.moveEntryUp')}
-              disabled={readOnly || index === 0}
-              onClick={() => actions.moveEntry(annotationId, entry.id, index - 1)}
-            />
-            <IconButton
-              icon="arrowDown"
-              label={t('annotation.moveEntryDown')}
-              disabled={readOnly || index === count - 1}
-              onClick={() => actions.moveEntry(annotationId, entry.id, index + 1)}
-            />
-          </>
-        )}
-        <IconButton
-          icon="close"
-          label={t('annotation.removeEntry')}
-          disabled={readOnly}
-          onClick={() => (entry ? onRemove() : onDiscard())}
-        />
-      </div>
-      {error && (
-        <p class="field-error" role="alert">
-          {error}
-        </p>
-      )}
-    </>
-  );
-}
-
 /** Confirmação de exclusão que quebra referências (anotação ou tupla). */
 type PendingDelete =
   | { readonly kind: 'annotation'; readonly brokenRefs: number; readonly linked: number }
@@ -170,75 +52,6 @@ type PendingDelete =
       readonly key: string;
       readonly brokenRefs: number;
     };
-
-/** Pares de uma anotação livre, com as referências recebidas por tupla. */
-function FreeEntries({
-  project,
-  annotation,
-  readOnly,
-  onGoToAnnotation,
-  onRemoveEntry,
-}: {
-  readonly project: Project;
-  readonly annotation: Annotation;
-  readonly readOnly: boolean;
-  readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
-  readonly onRemoveEntry: (entryId: string) => void;
-}) {
-  const [adding, setAdding] = useState(false);
-  const count = annotation.entries.length;
-  const backlinks = getBacklinks(project, annotation.id);
-
-  // Lista única, com o par novo na posição que terá depois de gravado: a linha
-  // mantém a mesma chave (e o foco) quando a chave é gravada ao passar para o valor.
-  const rows = annotation.entries.map((entry, index) => (
-    <li key={`${annotation.id}:${index}`} class="entry">
-      <EntryRow
-        entry={entry}
-        index={index}
-        count={count}
-        annotationId={annotation.id}
-        readOnly={readOnly}
-        onDiscard={() => undefined}
-        onCreated={() => undefined}
-        onRemove={() => onRemoveEntry(entry.id)}
-      />
-      <BacklinkList
-        project={project}
-        backlinks={backlinks.filter(
-          (b) => 'entryId' in b.ref && b.ref.entryId === entry.id,
-        )}
-        onGoToAnnotation={onGoToAnnotation}
-      />
-    </li>
-  ));
-  if (adding) {
-    rows.push(
-      <li key={`${annotation.id}:${count}`} class="entry">
-        <EntryRow
-          entry={null}
-          index={count}
-          count={count}
-          annotationId={annotation.id}
-          readOnly={readOnly}
-          onDiscard={() => setAdding(false)}
-          onCreated={() => setAdding(false)}
-          onRemove={() => undefined}
-        />
-      </li>,
-    );
-  }
-  return (
-    <>
-      <ul class="entries">{rows}</ul>
-      <div class="row">
-        <Button disabled={readOnly || adding} onClick={() => setAdding(true)}>
-          {t('annotation.addEntry')}
-        </Button>
-      </div>
-    </>
-  );
-}
 
 /** Campos da anotação tipada; tipo inexistente: valores somente leitura e "Converter". */
 function TypedBody({
@@ -284,16 +97,20 @@ function TypedBody({
       {resolved.type.description && (
         <p class="muted typed-description">{resolved.type.description}</p>
       )}
-      <div class="typed-fields">
+      <PropertyGrid>
         {resolved.type.fields.map((field) => (
           <TypedField key={field.key} field={field} {...ctx} />
         ))}
-      </div>
+      </PropertyGrid>
     </>
   );
 }
 
-/** Uma anotação: livre (nome + pares) ou tipada (campos do tipo). */
+/**
+ * Uma anotação dentro do LayerGroup: cabeçalho recolhível (tipo, rótulo ou nome,
+ * excluir) e o corpo, livre (KeyValueGrid) ou tipado (campos na grade de
+ * propriedades), com herança, dono e vinculadas.
+ */
 export function AnnotationEditor({
   project,
   annotation,
@@ -302,7 +119,8 @@ export function AnnotationEditor({
   onShowLayer,
   readOnly,
 }: AnnotationEditorProps) {
-  const { actions } = useEditor();
+  const { actions, ui } = useEditor();
+  const ownerId = useId();
   const [pending, setPending] = useState<PendingDelete | null>(null);
   /** Filho criado numa camada oculta: oferece mostrá-la. */
   const [hiddenChild, setHiddenChild] = useState<{
@@ -311,24 +129,19 @@ export function AnnotationEditor({
   } | null>(null);
   const typed = annotation.type !== null;
   const resolved = typeOfAnnotation(project, annotation);
+  const section = { kind: 'annotation', id: annotation.id } as const;
+  const collapsed = isSectionCollapsed(ui, section);
+  const index = projectIndex(project);
 
-  const layerOf = (id: string): Layer | undefined =>
-    project.layers.find((l) => l.id === id);
-  const owners = validAnnotationOwners(project, annotation.id);
+  const layerOf = (id: string): Layer | undefined => index.layers.get(id);
   const owner = annotation.parentAnnotationId
-    ? project.annotations.find((a) => a.id === annotation.parentAnnotationId)
+    ? index.annotations.get(annotation.parentAnnotationId)
     : undefined;
-  const linked = getLinkedAnnotations(project, annotation.id);
-  // Resumo das vinculadas, agrupado por camada na ordem das camadas.
-  const linkedGroups = project.layers
-    .map((layer) => ({
-      layer,
-      items: linked.filter((a) => a.layerId === layer.id),
-    }))
-    .filter((g) => g.items.length > 0);
-  const children = typed ? childTypesOf(project, annotation.id) : [];
   const ownerRequired = resolved?.type.requiresOwner === true;
   const name = (a: Annotation) => annotationDisplayName(project, a);
+  const ownerIssue = issuesOf(project, annotation.id).find(
+    (i) => i.code === 'missing-owner' || i.code === 'owner-not-allowed',
+  );
 
   const requestDelete = () => {
     const impact = annotationDeletionImpact(project, annotation.id);
@@ -388,16 +201,21 @@ export function AnnotationEditor({
       class={typed ? 'annotation annotation-typed' : 'annotation'}
       data-annotation={annotation.id}
     >
-      {typed && (
-        <div class="annotation-title">
-          <IssueBadge project={project} annotation={annotation} />
-          <strong>{name(annotation)}</strong>
-        </div>
-      )}
       <div class="annotation-header">
-        {!typed && <IssueBadge project={project} annotation={annotation} />}
+        <IconButton
+          icon={collapsed ? 'chevronRight' : 'chevronDown'}
+          label={t(collapsed ? 'annotation.expand' : 'annotation.collapse', {
+            name: name(annotation),
+          })}
+          aria-expanded={!collapsed}
+          onClick={() => toggleSection(ui, section)}
+        />
+        {typed && (
+          <span class="type">{resolved?.type.name ?? annotation.type?.typeId}</span>
+        )}
+        <IssueBadge project={project} annotation={annotation} />
         <CommitInput
-          class="input annotation-name"
+          class="input input-sm annotation-name"
           aria-label={typed ? t('typed.instanceName') : t('annotation.name')}
           placeholder={
             typed
@@ -420,141 +238,104 @@ export function AnnotationEditor({
         />
       </div>
 
-      {owner && (
-        <p class="annotation-linked muted">
-          {t('annotation.linkedTo', { name: name(owner) })}
-        </p>
-      )}
-
-      <IssueList project={project} annotation={annotation} />
-
-      {typed ? (
-        <TypedBody
-          project={project}
-          annotation={annotation}
-          readOnly={readOnly}
-          onGoToAnnotation={onGoToAnnotation}
-        />
+      {collapsed ? (
+        <p class="annotation-summary">{annotationSummary(project, annotation)}</p>
       ) : (
-        <FreeEntries
-          project={project}
-          annotation={annotation}
-          readOnly={readOnly}
-          onGoToAnnotation={onGoToAnnotation}
-          onRemoveEntry={requestRemoveEntry}
-        />
-      )}
+        <>
+          {owner && (
+            <p class="annotation-linked muted">
+              {t('annotation.linkedTo', { name: name(owner) })}
+            </p>
+          )}
 
-      {children.length > 0 && (
-        <div class="row child-actions">
-          {children.map((child) => (
-            <Button
-              key={child.type.typeId}
+          {typed ? (
+            <TypedBody
+              project={project}
+              annotation={annotation}
+              readOnly={readOnly}
+              onGoToAnnotation={onGoToAnnotation}
+            />
+          ) : (
+            <KeyValueGrid
+              project={project}
+              annotation={annotation}
+              readOnly={readOnly}
+              onGoToAnnotation={onGoToAnnotation}
+              onRemoveEntry={requestRemoveEntry}
+            />
+          )}
 
-              title={t('typed.addChildIn', {
-                type: child.definition.name,
-                layer: child.layer?.name ?? '',
-              })}
-              disabled={readOnly || !child.layer}
-              onClick={() => addChild(child)}
+          <PropertyGrid>
+            <Property label={t('annotation.inheritLabel')}>
+              <Choice
+                label={t('annotation.inherit')}
+                checked={annotation.inherit}
+                disabled={readOnly}
+                onChange={(e) =>
+                  actions.setAnnotationInherit(annotation.id, e.currentTarget.checked)
+                }
+              />
+            </Property>
+            <Property
+              label={t('annotation.owner')}
+              for={ownerId}
+              focusKey="owner"
+              issue={ownerIssue ? issueReason(project, annotation, ownerIssue) : null}
             >
-              {t('typed.addChild', { type: child.definition.name })}
-            </Button>
-          ))}
-        </div>
-      )}
-      {hiddenChild && (
-        <p class="notice notice-info" role="status">
-          {t('typed.childHidden', {
-            type: hiddenChild.child.definition.name,
-            layer: hiddenChild.layer.name,
-          })}{' '}
-          <button
-            type="button"
-            class="link-button"
-            onClick={() => {
-              onShowLayer(hiddenChild.layer.id);
-              setHiddenChild(null);
-            }}
-          >
-            {t('typed.showLayer', { layer: hiddenChild.layer.name })}
-          </button>
-        </p>
-      )}
+              <Select
+                id={ownerId}
+                size="sm"
+                invalid={ownerIssue !== undefined}
+                value={annotation.parentAnnotationId ?? ''}
+                disabled={readOnly}
+                onChange={(e) => {
+                  const value = e.currentTarget.value;
+                  actions.setAnnotationParent(annotation.id, value === '' ? null : value);
+                }}
+              >
+                {(!ownerRequired || annotation.parentAnnotationId === null) && (
+                  <option value="">{t('annotation.noOwner')}</option>
+                )}
+                {validAnnotationOwners(project, annotation.id).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {t('annotation.ownerOption', {
+                      layer: layerOf(a.layerId)?.name ?? '',
+                      name: name(a),
+                    })}
+                  </option>
+                ))}
+              </Select>
+            </Property>
+          </PropertyGrid>
 
-      <Choice
-        label={t('annotation.inherit')}
-        checked={annotation.inherit}
-        disabled={readOnly}
-        onChange={(e) =>
-          actions.setAnnotationInherit(annotation.id, e.currentTarget.checked)
-        }
-      />
-
-      <Select
-        label={t('annotation.owner')}
-        value={annotation.parentAnnotationId ?? ''}
-        disabled={readOnly}
-        onChange={(e) => {
-          const value = e.currentTarget.value;
-          actions.setAnnotationParent(annotation.id, value === '' ? null : value);
-        }}
-      >
-        {(!ownerRequired || annotation.parentAnnotationId === null) && (
-          <option value="">{t('annotation.noOwner')}</option>
-        )}
-        {owners.map((a) => (
-          <option key={a.id} value={a.id}>
-            {t('annotation.ownerOption', {
-              layer: layerOf(a.layerId)?.name ?? '',
-              name: name(a),
-            })}
-          </option>
-        ))}
-      </Select>
-
-      {linkedGroups.length > 0 && (
-        <div class="annotation-linked-summary">
-          <strong class="annotation-linked-title">{t('annotation.linkedHeading')}</strong>
-          {linkedGroups.map(({ layer, items }) => (
-            <div
-              key={layer.id}
-              class="linked-group"
-              style={{ '--layer-color': layer.color }}
-            >
-              <span class="linked-layer">
-                <span class="layer-dot" aria-hidden="true" />
-                {layer.name}:
-              </span>
-              {items.map((a) =>
-                visibleLayerIds.has(layer.id) ? (
-                  <button
-                    key={a.id}
-                    type="button"
-                    class="link-button"
-                    title={t('annotation.goToAnnotation', { name: name(a) })}
-                    onClick={() => onGoToAnnotation(a)}
-                  >
-                    {name(a)}
-                  </button>
-                ) : (
-                  <button
-                    key={a.id}
-                    type="button"
-                    class="link-button"
-                    title={t('annotation.showLayer', { layer: layer.name })}
-                    onClick={() => {
-                      onShowLayer(layer.id);
-                      onGoToAnnotation(a);
-                    }}
-                  >
-                    {name(a)} ({t('annotation.showLayer', { layer: layer.name })})
-                  </button>
-                ),
-              )}
-            </div>
-          ))}
-        </div>
+          <LinkedRow
+            project={project}
+            annotation={annotation}
+            visibleLayerIds={visibleLayerIds}
+            readOnly={readOnly}
+            onGoToAnnotation={onGoToAnnotation}
+            onShowLayer={onShowLayer}
+            onAddChild={addChild}
+          />
+          {hiddenChild && (
+            <p class="notice notice-info" role="status">
+              {t('typed.childHidden', {
+                type: hiddenChild.child.definition.name,
+                layer: hiddenChild.layer.name,
+              })}{' '}
+              <button
+                type="button"
+                class="link-button"
+                onClick={() => {
+                  onShowLayer(hiddenChild.layer.id);
+                  setHiddenChild(null);
+                }}
+              >
+                {t('typed.showLayer', { layer: hiddenChild.layer.name })}
+              </button>
+            </p>
+          )}
+        </>
       )}
 
       {pending && (
@@ -588,6 +369,99 @@ export function AnnotationEditor({
             </p>
           )}
         </Dialog>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Linha "Vinculadas": as anotações que pertencem a esta, por camada (na ordem das
+ * camadas), e os botões para criar os filhos que o tipo permite.
+ */
+function LinkedRow({
+  project,
+  annotation,
+  visibleLayerIds,
+  readOnly,
+  onGoToAnnotation,
+  onShowLayer,
+  onAddChild,
+}: {
+  readonly project: Project;
+  readonly annotation: Annotation;
+  readonly visibleLayerIds: ReadonlySet<string>;
+  readonly readOnly: boolean;
+  readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
+  readonly onShowLayer: (layerId: string) => void;
+  readonly onAddChild: (child: ChildType) => void;
+}) {
+  const linked = getLinkedAnnotations(project, annotation.id);
+  const groups = project.layers
+    .map((layer) => ({ layer, items: linked.filter((a) => a.layerId === layer.id) }))
+    .filter((g) => g.items.length > 0);
+  const children = annotation.type ? childTypesOf(project, annotation.id) : [];
+  if (groups.length === 0 && children.length === 0) return null;
+  const name = (a: Annotation) => annotationDisplayName(project, a);
+
+  return (
+    <div class="annotation-linked-summary">
+      <span class="props-label">{t('annotation.linkedHeading')}</span>
+      {groups.map(({ layer, items }) => (
+        <span
+          key={layer.id}
+          class="linked-group"
+          style={{ '--layer-color': layer.color }}
+        >
+          <span class="linked-layer">
+            <span class="layer-dot" aria-hidden="true" />
+            {layer.name}:
+          </span>
+          {items.map((a) =>
+            visibleLayerIds.has(layer.id) ? (
+              <button
+                key={a.id}
+                type="button"
+                class="link-button"
+                title={t('annotation.goToAnnotation', { name: name(a) })}
+                onClick={() => onGoToAnnotation(a)}
+              >
+                {name(a)}
+              </button>
+            ) : (
+              <button
+                key={a.id}
+                type="button"
+                class="link-button"
+                title={t('annotation.showLayer', { layer: layer.name })}
+                onClick={() => {
+                  onShowLayer(layer.id);
+                  onGoToAnnotation(a);
+                }}
+              >
+                {name(a)} ({t('annotation.showLayer', { layer: layer.name })})
+              </button>
+            ),
+          )}
+        </span>
+      ))}
+      {children.length > 0 && (
+        <span class="child-actions">
+          {children.map((child) => (
+            <Button
+              key={child.type.typeId}
+              size="sm"
+              class="button-link"
+              title={t('typed.addChildIn', {
+                type: child.definition.name,
+                layer: child.layer?.name ?? '',
+              })}
+              disabled={readOnly || !child.layer}
+              onClick={() => onAddChild(child)}
+            >
+              {t('typed.addChild', { type: child.definition.name })}
+            </Button>
+          ))}
+        </span>
       )}
     </div>
   );

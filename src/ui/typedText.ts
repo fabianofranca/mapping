@@ -70,11 +70,16 @@ export function ownerTypeNames(p: Project, a: Pick<Annotation, 'type'>): string 
     .join(t('typed.ownersJoin'));
 }
 
-/** Motivo da pendência, com o campo (e a linha/coluna da tabela) envolvido. */
-export function issueMessage(p: Project, a: Annotation, issue: AnnotationIssue): string {
-  const reason = t(`issue.${issue.code}` satisfies TranslationKey, {
+/** Só o motivo da pendência (embaixo do próprio campo, o nome dele já está ao lado). */
+export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): string {
+  return t(`issue.${issue.code}` satisfies TranslationKey, {
     owners: ownerTypeNames(p, a),
   });
+}
+
+/** Motivo da pendência, com o campo (e a linha/coluna da tabela) envolvido. */
+export function issueMessage(p: Project, a: Annotation, issue: AnnotationIssue): string {
+  const reason = issueReason(p, a, issue);
   if (!issue.key) return reason;
   const type = typeOfAnnotation(p, a)?.type;
   const field = type?.fields.find((f) => f.key === issue.key);
@@ -93,4 +98,37 @@ export function issueMessage(p: Project, a: Annotation, issue: AnnotationIssue):
     });
   }
   return t('issue.line', { where, reason });
+}
+
+/**
+ * Resumo de uma linha da anotação (cabeçalho recolhido): "Revisão — status: pendente".
+ * Na livre sem nome, o primeiro par já é o nome.
+ */
+export function annotationSummary(p: Project, a: Annotation): string {
+  const name = annotationDisplayName(p, a);
+  const values = a.type
+    ? displayLines(p, a, 'summary').map((line) =>
+        line.kind === 'value' ? `${line.label}: ${line.text}` : line.label,
+      )
+    : (a.name === null ? a.entries.slice(1) : a.entries).map(
+        (e) => `${e.key}: ${e.value}`,
+      );
+  if (values.length === 0) return name;
+  return t('details.summary', {
+    name,
+    values: values.slice(0, 3).join(t('details.summarySeparator')),
+  });
+}
+
+/**
+ * Alvo do link de uma pendência (`data-focus` do campo em Detalhes): o dono, a célula
+ * da tabela ou o campo; `null` quando a pendência não aponta um campo.
+ */
+export function issueFocusKey(issue: AnnotationIssue): string | null {
+  if (issue.code === 'missing-owner' || issue.code === 'owner-not-allowed')
+    return 'owner';
+  if (issue.code === 'unknown-field' || !issue.key) return null;
+  if (issue.rowId !== undefined)
+    return `${issue.key}:${issue.rowId}:${issue.column ?? ''}`;
+  return issue.key;
 }
