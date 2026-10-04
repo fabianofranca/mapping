@@ -4,6 +4,7 @@ import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { readFileSync } from 'node:fs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
+import { applyCsp } from './pwa/csp';
 import { renderTokensCss } from './src/theme/tokens';
 
 /** `VITE_CHANNEL=preview` no build do branch publicado em /preview/ (deploy.yml). */
@@ -16,6 +17,29 @@ function hash(text: string): string {
     h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
   }
   return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+/**
+ * Content Security Policy do `index.html` (etapa 2.4). Roda depois do
+ * vite-plugin-singlefile (que tem `enforce: 'post'`, então embute o JS e o CSS antes
+ * deste `generateBundle`) e antes do `serviceWorker()`, cujo hash do build precisa
+ * enxergar o HTML já com a CSP. Se a política não bater com os blocos embutidos,
+ * o build falha.
+ */
+function contentSecurityPolicy(): Plugin {
+  return {
+    name: 'content-security-policy',
+    apply: 'build',
+    generateBundle: {
+      order: 'post',
+      handler(_options, bundle) {
+        const html = bundle['index.html'];
+        if (html?.type !== 'asset')
+          throw new Error('index.html não encontrado no bundle');
+        html.source = applyCsp(String(html.source));
+      },
+    },
+  };
 }
 
 /**
@@ -81,7 +105,13 @@ const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {
   base: './',
-  plugins: [tokensCss(), preact(), viteSingleFile(), serviceWorker()],
+  plugins: [
+    tokensCss(),
+    preact(),
+    viteSingleFile(),
+    contentSecurityPolicy(),
+    serviceWorker(),
+  ],
 };
 
 export default defineConfig({
