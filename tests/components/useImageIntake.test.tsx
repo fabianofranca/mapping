@@ -1,5 +1,6 @@
 import { cleanup, render, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { t } from '../../src/i18n';
 import { useImageIntake, type ImageIntake } from '../../src/app/useImageIntake';
 import type { EditorDialogs } from '../../src/app/useEditorDialogs';
 import type { EditorNotices } from '../../src/app/useEditorNotices';
@@ -253,6 +254,15 @@ describe('useImageIntake: soltar arquivos', () => {
     s.canvas.imageIdAt.mockReturnValue('I1');
     s.intake().dropHandlers.onDrop(dropEvent([png('nova.png')]));
     await settled(() => expect(s.messages.at(-1)).toBeTruthy());
+    expect(s.progress.at(-1)).toBeNull();
+  });
+
+  it('trocar uma imagem trancada avisa o motivo', async () => {
+    const s = setup();
+    s.replaceImage.mockResolvedValue('locked');
+    s.canvas.imageIdAt.mockReturnValue('I1');
+    s.intake().dropHandlers.onDrop(dropEvent([png('nova.png')]));
+    await settled(() => expect(s.messages.at(-1)).toBe(t('image.replaceLocked')));
     expect(s.progress.at(-1)).toBeNull();
   });
 

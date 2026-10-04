@@ -543,4 +543,29 @@ export const enUS: Dictionary = {
   'ref.keyChoose': 'choose',
   'ref.keyGoTo': 'go to target',
   'ref.keyClose': 'close',
+
+  // Lock (stage 2.5)
+  'lock.markingLock': 'Lock marking',
+  'lock.markingUnlock': 'Unlock marking',
+  'lock.imageLock': 'Lock image',
+  'lock.imageUnlock': 'Unlock image',
+  'lock.treeLock': 'Lock {name}',
+  'lock.treeUnlock': 'Unlock {name}',
+  'lock.inherited': 'Position and size are locked: the parent marking is locked',
+  'lock.markingNotice':
+    'Locked: it cannot be moved, resized or deleted. Selection and annotations stay free.',
+  'lock.inheritedNotice':
+    'Position and size are locked because "{parent}" is locked. Unlock it to move or resize this marking.',
+  'lock.childrenNotice':
+    'Some markings inside this one are locked: it can only be resized, not moved.',
+  'lock.imageNotice':
+    'Locked: it cannot be moved, resized or deleted. Its markings stay editable.',
+  'lock.deleteBlocked': 'Unlock to delete',
+  'lock.deleteBlockedInside': 'There are locked items inside. Unlock them to delete.',
+  'lock.lockAll': 'Lock all markings in this image',
+  'lock.unlockAll': 'Unlock all markings in this image',
+  'image.replaceLocked':
+    'The image or one of its markings is locked: it can only be replaced by a file of the same size.',
+  'marking.error.locked': 'The marking is locked. Unlock it to change it.',
+  'shortcuts.toggleLock': 'Lock or unlock the selected item',
 };

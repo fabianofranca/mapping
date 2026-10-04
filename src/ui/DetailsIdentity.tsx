@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { Icon, type IconName } from './icons';
@@ -11,15 +12,18 @@ interface DetailsIdentityProps {
   /** Linha de baixo: onde o item está (imagem e caminho, ou arquivo e tamanho). */
   readonly sub: string;
   readonly id: string;
+  /** Botões ao lado do ID (ex.: o cadeado). */
+  readonly actions?: ComponentChildren;
 }
 
-export function DetailsIdentity({ icon, name, sub, id }: DetailsIdentityProps) {
+export function DetailsIdentity({ icon, name, sub, id, actions }: DetailsIdentityProps) {
   return (
     <div class="identity">
       <div class="identity-main">
         <Icon name={icon} />
         <strong class="identity-name">{name}</strong>
         <CopyIdButton id={id} />
+        {actions}
       </div>
       <span class="identity-sub">{sub}</span>
     </div>

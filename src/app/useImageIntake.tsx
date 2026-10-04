@@ -86,6 +86,7 @@ export function useImageIntake({
     const result = await session.replaceImage(imageId, file, askAspectChange);
     setProgress(null);
     if (result === 'failed') setMessage(t('image.replaceFailed'));
+    else if (result === 'locked') setMessage(t('image.replaceLocked'));
   };
 
   // Ctrl/Cmd+V com o foco fora de campos de texto adiciona a imagem copiada.

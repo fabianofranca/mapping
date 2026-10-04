@@ -546,6 +546,31 @@ export const ptBR = {
   'ref.keyChoose': 'escolher',
   'ref.keyGoTo': 'ir para o alvo',
   'ref.keyClose': 'fechar',
+
+  // Trava (etapa 2.5)
+  'lock.markingLock': 'Trancar marcação',
+  'lock.markingUnlock': 'Destrancar marcação',
+  'lock.imageLock': 'Trancar imagem',
+  'lock.imageUnlock': 'Destrancar imagem',
+  'lock.treeLock': 'Trancar {name}',
+  'lock.treeUnlock': 'Destrancar {name}',
+  'lock.inherited': 'Posição e tamanho travados: a marcação pai está trancada',
+  'lock.markingNotice':
+    'Trancada: não pode ser movida, redimensionada nem excluída. A seleção e as anotações continuam livres.',
+  'lock.inheritedNotice':
+    'Posição e tamanho travados porque "{parent}" está trancada. Destranque-a para mover ou redimensionar esta marcação.',
+  'lock.childrenNotice':
+    'Há marcações trancadas dentro desta: ela só pode ser redimensionada, não movida.',
+  'lock.imageNotice':
+    'Trancada: não pode ser movida, redimensionada nem excluída. As marcações dela continuam editáveis.',
+  'lock.deleteBlocked': 'Destranque para excluir',
+  'lock.deleteBlockedInside': 'Há itens trancados aqui dentro. Destranque-os para excluir.',
+  'lock.lockAll': 'Trancar todas as marcações desta imagem',
+  'lock.unlockAll': 'Destrancar todas as marcações desta imagem',
+  'image.replaceLocked':
+    'A imagem ou uma marcação dela está trancada: só dá para trocar por um arquivo do mesmo tamanho.',
+  'marking.error.locked': 'A marcação está trancada. Destranque para alterar.',
+  'shortcuts.toggleLock': 'Trancar ou destrancar o item selecionado',
 } as const;
 
 export type Dictionary = Record<keyof typeof ptBR, string>;

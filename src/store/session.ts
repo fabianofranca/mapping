@@ -1,5 +1,6 @@
 import { effect, signal, type ReadonlySignal } from '@preact/signals';
 import {
+  canReplaceImage,
   isSameAspect,
   serialize,
   specFiles,
@@ -43,7 +44,8 @@ export interface AspectChange {
   readonly to: { readonly width: number; readonly height: number };
 }
 
-export type ReplaceImageResult = 'replaced' | 'cancelled' | 'failed';
+/** `locked`: a imagem (ou uma marcação dela) está trancada e o arquivo novo mudaria a geometria. */
+export type ReplaceImageResult = 'replaced' | 'cancelled' | 'failed' | 'locked';
 
 export interface AddImagesOptions {
   /** Ponto do canvas onde o centro de cada imagem deve ficar (espaço livre mais próximo). */
@@ -223,6 +225,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         const image = currentProject(store).images.find((i) => i.id === imageId);
         if (!image) return 'failed';
         const next = { width: prepared.width, height: prepared.height };
+        if (!canReplaceImage(currentProject(store), imageId, next)) return 'locked';
         const sameAspect = isSameAspect(image, next);
         if (!sameAspect) {
           const from = { width: image.width, height: image.height };

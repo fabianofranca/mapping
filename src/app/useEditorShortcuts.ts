@@ -71,7 +71,7 @@ export function useEditorShortcuts(
   commands: ProjectCommands,
   desktop = true,
 ): void {
-  const { store, ui, canvas } = useEditor();
+  const { store, ui, canvas, actions } = useEditor();
   const dialogsRef = useRef(dialogs);
   dialogsRef.current = dialogs;
   const commandsRef = useRef(commands);
@@ -131,6 +131,17 @@ export function useEditorShortcuts(
             dialogsRef.current.requestDeleteImage(current.image);
           } else if (current?.kind === 'marking') {
             dialogsRef.current.requestDeleteMarking(current.marking);
+          }
+          return;
+        }
+        case 'toggle-lock': {
+          // Só a trava muda: seleção e anotações seguem livres, mas o somente leitura vale.
+          if (store.readOnly.peek()) return;
+          const current = resolveSelection(store.project.peek(), ui.selection.peek());
+          if (current?.kind === 'image') {
+            actions.setImageLocked(current.image.id, !current.image.locked);
+          } else if (current?.kind === 'marking') {
+            actions.setMarkingLocked(current.marking.id, !current.marking.locked);
           }
           return;
         }
@@ -207,5 +218,5 @@ export function useEditorShortcuts(
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [store, ui, canvas]);
+  }, [store, ui, canvas, actions]);
 }

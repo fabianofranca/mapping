@@ -31,7 +31,7 @@ Objetivo: proteger marcações e imagens já revisadas contra alterações acide
 - [x] **F1. Schema v5 e modelo** — `locked` em imagens e marcações, migração (`false`), regras em `src/model/locks.ts` (mover, redimensionar e excluir bloqueados; pai trancado trava a geometria dos descendentes), testes.
 - [x] **F2. Store e estado derivado** — actions de trancar/destrancar (uma entrada de desfazer, inclusive "trancar todas") e conjunto derivado de marcações com geometria trancada.
 - [x] **F3. Canvas** — sem alças no item trancado, cadeado na seleção e sob o cursor, cursor "não permitido", segurar no celular não pega o item trancado.
-- [ ] **F4. Interface** — cadeado na Árvore e em Detalhes, "Trancar todas as marcações desta imagem", atalho de teclado na Ajuda, textos pt-BR/en-US.
+- [x] **F4. Interface** — cadeado na Árvore e em Detalhes, "Trancar todas as marcações desta imagem", atalho de teclado na Ajuda, textos pt-BR/en-US.
 - [ ] **F5. Ajustes** — `.gitignore` com `backups/` ao criar projeto em pasta, texto sobre git na tela inicial, ajuda e lista vazia em "Pertence a", testes de `useEditorShortcuts`.
 - [ ] **F6. Documentação e verificação** — `FORMAT.md`, `ARCHITECTURE.md`, `ROADMAP.md`, e2e e PR.
 

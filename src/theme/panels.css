@@ -118,6 +118,50 @@ button.tree-toggle:hover {
   color: inherit;
 }
 
+/*
+ * Cadeado da linha da árvore. Fica escondido (mas focável) até o mouse, o foco ou a linha
+ * selecionada o chamarem; trancado, fica sempre visível. O herdado do pai é só um sinal.
+ */
+.tree-lock {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.tree-row:hover .tree-lock,
+.tree-row:focus-within .tree-lock,
+.tree-row-current .tree-lock,
+.tree-lock-on {
+  opacity: 1;
+}
+
+.tree-lock:disabled {
+  cursor: default;
+}
+
+.tree-lock:hover:not(:disabled) {
+  background: var(--color-pressed);
+}
+
+.tree-row-current .tree-lock:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.tree-lock-inherited {
+  opacity: var(--opacity-inherited);
+  cursor: default;
+}
+
 /* Bolinhas das camadas visíveis que chegam à marcação (as herdadas, esmaecidas). */
 .tree-dots {
   flex: none;

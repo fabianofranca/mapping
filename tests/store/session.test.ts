@@ -221,6 +221,31 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/b.jpg')).toBeNull();
     });
 
+    it('imagem trancada: trocar por outro tamanho é recusado sem perguntar nem gravar; do mesmo tamanho, não', async () => {
+      const { root, s, imageId } = await withImage();
+      s.actions.setImageLocked(imageId, true);
+      const before = current(s);
+      const confirm = vi.fn(async () => true);
+      expect(await s.replaceImage(imageId, file('b.jpg', '400x400'), confirm)).toBe(
+        'locked',
+      );
+      expect(confirm).not.toHaveBeenCalled();
+      expect(current(s)).toBe(before);
+      expect(await root.read('images/b.jpg')).toBeNull();
+      expect(await s.replaceImage(imageId, file('c.jpg', '400x300'), confirm)).toBe(
+        'replaced',
+      );
+      expect(current(s).images[0]).toMatchObject({ file: 'images/c.jpg', locked: true });
+    });
+
+    it('marcação trancada: trocar por outro tamanho é recusado', async () => {
+      const { s, imageId } = await withImage();
+      s.actions.setMarkingLocked(current(s).markings[0]?.id ?? '', true);
+      expect(
+        await s.replaceImage(imageId, file('b.jpg', '800x600'), async () => true),
+      ).toBe('locked');
+    });
+
     it('arquivo ilegível falha sem alterar o projeto', async () => {
       const { s, imageId } = await withImage();
       const before = current(s);
