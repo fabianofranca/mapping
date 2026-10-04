@@ -46,6 +46,14 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     renameImage: (imageId: string, name: string | null) =>
       store.apply((p) => model.renameImage(p, imageId, name)),
 
+    // Trava (etapa 2.5): cada chamada é uma entrada no histórico, inclusive "trancar todas".
+    setMarkingLocked: (markingId: string, locked: boolean) =>
+      store.apply((p) => model.setMarkingLocked(p, markingId, locked)),
+    setImageLocked: (imageId: string, locked: boolean) =>
+      store.apply((p) => model.setImageLocked(p, imageId, locked)),
+    setImageMarkingsLocked: (imageId: string, locked: boolean) =>
+      store.apply((p) => model.setImageMarkingsLocked(p, imageId, locked)),
+
     // Camadas
     addLayer: (name: string, color: string) =>
       create((id) => (p) => model.addLayer(p, { id, name, color })),

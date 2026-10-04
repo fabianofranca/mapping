@@ -1,7 +1,8 @@
 import { fail } from './errors';
 import { ancestorsOf, descendantsOf } from './hierarchy';
+import { projectIndex } from './projectIndex';
 import { findById, updateById } from './project';
-import type { Project } from './types';
+import type { Marking, Project } from './types';
 
 // Trava (etapa 2.5): `locked` em marcações e imagens bloqueia mover, redimensionar e
 // excluir. Selecionar, renomear e anotar seguem livres. Trancar um pai trava a
@@ -11,6 +12,27 @@ import type { Project } from './types';
 export function isMarkingGeometryLocked(p: Project, markingId: string): boolean {
   const marking = findById(p.markings, markingId);
   return marking.locked || ancestorsOf(p, markingId).some((a) => a.locked);
+}
+
+/** Por que a geometria da marcação está travada: trava própria ou herdada de um ancestral. */
+export type MarkingLockState = 'self' | 'inherited';
+
+/**
+ * Estado de trava de cada marcação com a geometria travada (as livres não aparecem),
+ * numa passada só: serve à Árvore e ao canvas sem subir a hierarquia a cada linha.
+ */
+export function markingLockStates(p: Project): Map<string, MarkingLockState> {
+  const children = projectIndex(p).children;
+  const states = new Map<string, MarkingLockState>();
+  const visit = (parentLocked: boolean, markings: readonly Marking[] | undefined) => {
+    for (const m of markings ?? []) {
+      if (m.locked) states.set(m.id, 'self');
+      else if (parentLocked) states.set(m.id, 'inherited');
+      visit(parentLocked || m.locked, children.get(m.id));
+    }
+  };
+  visit(false, children.get(null));
+  return states;
 }
 
 /** Algum descendente está trancado (mover o pai o arrastaria junto). */
@@ -66,20 +88,18 @@ export function setMarkingLocked(
   markingId: string,
   locked: boolean,
 ): Project {
+  if (findById(p.markings, markingId).locked === locked) return p;
   return {
     ...p,
-    markings: updateById(p.markings, markingId, (m) =>
-      m.locked === locked ? m : { ...m, locked },
-    ),
+    markings: updateById(p.markings, markingId, (m) => ({ ...m, locked })),
   };
 }
 
 export function setImageLocked(p: Project, imageId: string, locked: boolean): Project {
+  if (findById(p.images, imageId).locked === locked) return p;
   return {
     ...p,
-    images: updateById(p.images, imageId, (i) =>
-      i.locked === locked ? i : { ...i, locked },
-    ),
+    images: updateById(p.images, imageId, (i) => ({ ...i, locked })),
   };
 }
 

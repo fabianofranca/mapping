@@ -70,9 +70,12 @@ describe('trava: trancar e destrancar', () => {
 
   it('repetir o mesmo estado devolve o mesmo projeto (sem entrada de histórico)', () => {
     const p = sampleProject();
-    expect(setMarkingLocked(p, 'M1', false).markings).toEqual(p.markings);
+    expect(setMarkingLocked(p, 'M1', false)).toBe(p);
+    expect(setImageLocked(p, 'I1', false)).toBe(p);
     const locked = setMarkingLocked(p, 'M1', true);
-    expect(setMarkingLocked(locked, 'M1', true).markings[0]).toBe(locked.markings[0]);
+    expect(setMarkingLocked(locked, 'M1', true)).toBe(locked);
+    const lockedImage = setImageLocked(p, 'I1', true);
+    expect(setImageLocked(lockedImage, 'I1', true)).toBe(lockedImage);
   });
 
   it('falha com id inexistente', () => {
