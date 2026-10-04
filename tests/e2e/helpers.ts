@@ -150,15 +150,14 @@ export async function drawMarking(
   await setMode(page, 'Navegar');
 }
 
-/** No celular o painel de detalhes fica recolhido numa folha: abre para editar. */
+/** No celular Detalhes fica numa gaveta recolhida (B7): abre para editar. */
 export async function openDetails(page: Page): Promise<void> {
-  // O nome acessível do botão é o título da folha; "Mostrar detalhes" é só o `title`.
-  const expand = page.locator('button.sheet-header[aria-expanded="false"]');
+  const expand = page.getByRole('button', { name: 'Mostrar detalhes', exact: true });
   if (await expand.isVisible()) await expand.click();
 }
 
 export async function closeDetails(page: Page): Promise<void> {
-  const collapse = page.locator('button.sheet-header[aria-expanded="true"]');
+  const collapse = page.getByRole('button', { name: 'Esconder detalhes', exact: true });
   if (await collapse.isVisible()) await collapse.click();
 }
 
@@ -179,7 +178,7 @@ export async function selectedRect(page: Page): Promise<Rect> {
 
 /**
  * Aciona uma ação do projeto: no desktop ela está na barra principal (R4); no celular,
- * dentro do Menu.
+ * no menu Painéis (R8), aberto pelo botão da barra de baixo.
  */
 async function projectAction(page: Page, name: string): Promise<void> {
   const inBar = page.locator('.main-bar').getByRole('button', { name, exact: true });
@@ -187,8 +186,11 @@ async function projectAction(page: Page, name: string): Promise<void> {
     await inBar.click();
     return;
   }
-  await page.getByRole('button', { name: 'Menu', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name, exact: true }).click();
+  await page.getByRole('button', { name: /^Painéis/ }).click();
+  await page
+    .getByRole('dialog', { name: 'Painéis e ações' })
+    .getByRole('button', { name, exact: true })
+    .click();
 }
 
 /** Abre o diálogo Exportar (o zip já está pronto nele). */

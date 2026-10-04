@@ -7,6 +7,7 @@ import {
   type Project,
   type ProjectImage,
 } from '../model';
+import type { ToolWindowId } from './toolWindows';
 
 /** Item selecionado no editor. */
 export type Selection =
@@ -16,6 +17,12 @@ export type Selection =
 
 /** Navegar: tocar seleciona, arrastar move ou faz pan. Desenhar: arrastar cria marcações. */
 export type EditorMode = 'navigate' | 'draw';
+
+/**
+ * Altura da gaveta do celular (B7): recolhida (64px, só o cabeçalho) ou aberta (72%).
+ * A terceira altura, tela cheia, é a janela Detalhes em tela cheia (`mobileWindow`).
+ */
+export type SheetHeight = 'peek' | 'open';
 
 /**
  * Estado da UI do editor: não vai para o JSON nem entra no desfazer.
@@ -52,6 +59,10 @@ export interface EditorUi {
    * todas as marcações.
    */
   readonly collapsed: Signal<ReadonlySet<string>>;
+  /** Celular (B6): janela aberta em tela cheia; `null` mostra o canvas. */
+  readonly mobileWindow: Signal<ToolWindowId | null>;
+  /** Celular (B7): altura da gaveta de Detalhes sobre o canvas. */
+  readonly sheet: Signal<SheetHeight>;
 }
 
 export function createEditorUi(): EditorUi {
@@ -67,6 +78,8 @@ export function createEditorUi(): EditorUi {
     collapsedTree: signal<ReadonlySet<string>>(new Set()),
     focusField: signal<string | null>(null),
     collapsed: signal<ReadonlySet<string>>(new Set()),
+    mobileWindow: signal<ToolWindowId | null>(null),
+    sheet: signal<SheetHeight>('peek'),
   };
 }
 

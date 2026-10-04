@@ -54,6 +54,10 @@ function fakeDialogs(): EditorDialogs {
   };
 }
 
+function fakeCommands(): ProjectCommands {
+  return { exportProject: vi.fn(), closeProject: vi.fn() } as unknown as ProjectCommands;
+}
+
 function fakeNotices(over: Partial<EditorNotices> = {}): EditorNotices {
   return {
     progress: null,
@@ -411,55 +415,78 @@ describe('barras do editor', () => {
     expect(dialogs.show).not.toHaveBeenCalled();
   });
 
-  it('topo (celular): o chip da camada ativa segue abrindo o diálogo de camadas', async () => {
+  it('topo (celular): o chip da camada ativa abre Camadas em tela cheia', async () => {
     const harness = createHarness(sampleProject());
     const dialogs = fakeDialogs();
-    withContext(harness, <EditorTopBar dialogs={dialogs} />);
+    withContext(
+      harness,
+      <EditorTopBar dialogs={dialogs} commands={fakeCommands()} busy={false} />,
+    );
     const name = harness.project().layers[0]?.name ?? '';
     await userEvent.click(
       screen.getByRole('button', { name: t('layer.chipLabel', { name }) }),
     );
-    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'layers' });
+    expect(harness.ui.mobileWindow.value).toBe('layers');
+    expect(dialogs.show).not.toHaveBeenCalled();
   });
 
-  it('topo (celular): título, camada ativa e Menu', async () => {
+  it('topo (celular): projeto ▾, salvamento e ⋯ abre o menu Painéis', async () => {
     const harness = createHarness(sampleProject());
     const dialogs = fakeDialogs();
-    withContext(harness, <EditorTopBar dialogs={dialogs} />);
-    const user = userEvent.setup();
-    harness.actions.renameProject('Novo');
-    expect((await screen.findByRole('heading')).textContent).toBe('Novo');
-    expect(screen.queryByRole('button', { name: t('editor.export') })).toBeNull();
-    await user.click(screen.getByRole('button', { name: t('editor.menu') }));
-    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'menu' });
-  });
-
-  it('inferior (celular): abas Canvas | Lista e adicionar imagens', async () => {
-    const harness = createHarness(sampleProject());
-    const onViewChange = vi.fn();
-    const onAdd = vi.fn();
+    const commands = fakeCommands();
     withContext(
       harness,
-      <EditorBottomBar
-        view="canvas"
-        onViewChange={onViewChange}
-        busy={false}
-        onAdd={onAdd}
-      />,
+      <EditorTopBar dialogs={dialogs} commands={commands} busy={false} />,
     );
     const user = userEvent.setup();
-    await user.click(screen.getByRole('tab', { name: t('view.list') }));
-    expect(onViewChange).toHaveBeenCalledWith('list');
+    // O salvamento fica só no ícone (o texto é o nome acessível).
+    expect(screen.getByText(t('status.saved'))).toBeTruthy();
+    harness.actions.renameProject('Novo');
+    const trigger = await screen.findByRole('button', { name: t('editor.projectMenu') });
+    expect(trigger.textContent).toContain('Novo');
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: t('editor.export') }));
+    expect(commands.exportProject).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('button', { name: t('panels.more') }));
+    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'panels' });
+  });
+
+  it('topo (celular): erro ao salvar vira botão que tenta de novo', async () => {
+    const harness = createHarness(sampleProject());
+    const flush = vi.spyOn(harness.context.session, 'flush').mockResolvedValue();
+    Object.defineProperty(harness.context.session, 'saveStatus', {
+      value: signal('error'),
+    });
+    withContext(
+      harness,
+      <EditorTopBar dialogs={fakeDialogs()} commands={fakeCommands()} busy={false} />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: t('status.errorRetry') }));
+    expect(flush).toHaveBeenCalledOnce();
+  });
+
+  it('inferior (celular): ferramentas, adicionar imagens e Painéis (sem abas)', async () => {
+    const harness = createHarness(sampleProject());
+    const onAdd = vi.fn();
+    const onPanels = vi.fn();
+    withContext(
+      harness,
+      <EditorBottomBar busy={false} onAdd={onAdd} onPanels={onPanels} />,
+    );
+    const user = userEvent.setup();
+    expect(screen.queryByRole('tab')).toBeNull();
     await user.click(screen.getByRole('button', { name: t('editor.addImages') }));
     expect(onAdd).toHaveBeenCalledOnce();
+    // O nome ganha "(há erros novos)" quando o Diagnóstico tem erro não visto.
+    await user.click(
+      screen.getByRole('button', { name: new RegExp(`^${t('panels.open')}`) }),
+    );
+    expect(onPanels).toHaveBeenCalledOnce();
   });
 
   it('somente leitura ou ocupado desabilita desenhar e adicionar', () => {
     const harness = createHarness(sampleProject(), true);
-    withContext(
-      harness,
-      <EditorBottomBar view="canvas" onViewChange={vi.fn()} busy onAdd={vi.fn()} />,
-    );
+    withContext(harness, <EditorBottomBar busy onAdd={vi.fn()} onPanels={vi.fn()} />);
     expect(
       screen.getByRole('button', { name: t('editor.modeDraw') }).hasAttribute('disabled'),
     ).toBe(true);

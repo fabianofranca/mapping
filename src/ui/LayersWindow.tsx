@@ -15,7 +15,7 @@ export function LayersWindow({ stacked }: { readonly stacked: boolean }) {
     <ToolWindow
       id="layers"
       stacked={stacked}
-      actions={<LayerActions project={project} readOnly={readOnly} variant="icons" />}
+      actions={<LayerActions project={project} readOnly={readOnly} />}
     >
       <LayersPanel project={project} readOnly={readOnly} />
     </ToolWindow>

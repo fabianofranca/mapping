@@ -1,6 +1,7 @@
-/* Títulos dentro das janelas de ferramenta e da gaveta. */
+/* Títulos dentro das janelas de ferramenta, da gaveta e das telas cheias. */
 .tool-window-body h2,
-.sheet-content h2 {
+.sheet-content h2,
+.mobile-window-body h2 {
   margin: 0 0 var(--space-4);
   font: var(--t-text-heading);
 }
@@ -136,14 +137,6 @@ button.tree-toggle:hover {
 
 .tree-dot-inherited {
   opacity: var(--opacity-inherited);
-}
-
-/* As abas ficam visíveis ao rolar a gaveta. */
-.sheet-content .tabs {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-canvas-overlay);
-  background: var(--color-surface);
 }
 
 .layer-chip-name {
@@ -346,13 +339,6 @@ button.tree-toggle:hover {
 }
 
 /* Janela inferior: Lista (P7), Incompletas (B5) e Diagnóstico (B4) */
-.list-screen {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  background: var(--color-surface);
-}
-
 .list-view,
 .diagnostics-view {
   display: flex;

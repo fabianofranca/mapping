@@ -106,7 +106,7 @@ Os atalhos Ctrl+B (escolher o alvo da referência em foco), Alt+N (nova anotaç�
 
 #### R6 — Árvore e Camadas
 
-Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3). No celular as camadas seguem no diálogo até a R8.
+Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3). No celular as camadas seguiram no diálogo até a R8 (agora, tela cheia).
 
 - [x] Janela Árvore
 - [x] Camadas como janela, com paleta em popover e modo "sem anotação" (B3)
@@ -127,11 +127,13 @@ Lista, Incompletas e Diagnóstico na janela inferior. Muda comportamento (B4, B5
 
 Layout do celular com Painéis, telas cheias e gaveta de três alturas. Muda comportamento (B6, B7).
 
-- [ ] Barra de cima
-- [ ] Barra de baixo com Painéis
-- [ ] Menu Painéis
-- [ ] Telas cheias com faixa de abas
-- [ ] Gaveta com três alturas (B6, B7)
+- [x] Barra de cima
+- [x] Barra de baixo com Painéis
+- [x] Menu Painéis
+- [x] Telas cheias com faixa de abas
+- [x] Gaveta com três alturas (B6, B7)
+
+A barra de cima e o menu Painéis substituem o Menu e o diálogo de Camadas do celular; a aba Canvas | Lista e as abas Detalhes | Árvore da gaveta saíram (cada janela abre em tela cheia).
 
 **Aceite**: toda função do desktop alcançável em 380px; gestos de toque mantidos.
 
@@ -147,7 +149,7 @@ Diálogos novos, tela inicial e faixas. Muda comportamento (B9, B10, B16, P8, P1
 - [x] Tela inicial (B10)
 - [x] Faixa de preview dispensável na sessão, com o selo PREVIEW permanente (B9, P8)
 
-Fica para a R8 o que depende do layout do celular: o Menu do celular ainda reúne Exportar, Especializações, Ajuda, Diagnóstico e Configurações (a barra de cima e os Painéis o substituem).
+O que dependia do layout do celular veio com a R8: o Menu do celular deu lugar à barra de cima e ao menu Painéis.
 
 **Aceite**: roteiro 13.9 completo nos dois layouts e temas.
 

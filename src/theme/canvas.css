@@ -70,13 +70,27 @@
   outline-offset: -3px;
 }
 
-/* Botão "T" do celular: flutua no canto do canvas, longe das abas e da barra inferior. */
+/*
+ * Celular: o botão "T" flutua no canto direito do canvas e a pílula de zoom (P4) no
+ * esquerdo, logo acima da gaveta.
+ */
 .canvas-float {
   position: absolute;
   right: var(--space-2);
   bottom: var(--space-2);
   display: flex;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-popup);
+}
+
+.canvas-float-start {
+  right: auto;
+  left: var(--space-2);
+}
+
+.canvas-float .icon-button,
+.canvas-float .zoom-field {
+  border-radius: var(--radius-full);
 }

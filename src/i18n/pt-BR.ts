@@ -76,7 +76,6 @@ export const ptBR = {
   'editor.undo': 'Desfazer',
   'editor.redo': 'Refazer',
   'editor.fitAll': 'Enquadrar tudo',
-  'editor.menu': 'Menu',
   'editor.closeProject': 'Fechar projeto',
   'editor.emptyCanvas': 'Nenhuma imagem ainda. Adicione fotos para montar o canvas.',
   'editor.canvasLabel': 'Canvas do projeto',
@@ -92,7 +91,6 @@ export const ptBR = {
   'editor.modeNavigate': 'Navegar',
   'editor.modeDraw': 'Desenhar',
   'editor.drawHint': 'Arraste sobre uma imagem para criar uma marcação.',
-  'panel.tabsLabel': 'Painel',
   'panel.tree': 'Árvore',
   'panel.treeTitle': 'Árvore de marcações',
   'panel.treeEmpty': 'Nenhuma imagem ainda.',
@@ -219,6 +217,17 @@ export const ptBR = {
   'window.resize': 'Arraste para redimensionar {name} (duplo clique volta ao padrão)',
   'window.closeWindow': 'Fechar a janela {name}',
   'window.bottomTabs': 'Janelas inferiores',
+  'sheet.full': 'Abrir Detalhes em tela cheia',
+  'sheet.incomplete': 'Marcação com pendências',
+  'status.errorRetry': 'Erro ao salvar: tocar para tentar de novo',
+  'panels.title': 'Painéis e ações',
+  'panels.open': 'Painéis',
+  'panels.more': 'Mais: painéis e ações',
+  'panels.windows': 'Janelas',
+  'panels.project': 'Projeto',
+  'panels.pending': '{count} pendentes',
+  'mobile.back': 'Voltar ao canvas',
+  'mobile.toolbar': 'Ferramentas',
 
   'crumbs.label': 'Caminho da seleção',
   'crumbs.image': 'Imagem {name}',
@@ -249,9 +258,7 @@ export const ptBR = {
   'editor.appName': 'Mapeador de imagens',
   'editor.fitAllShort': 'Enquadrar',
 
-  'view.canvas': 'Canvas',
   'view.list': 'Lista',
-  'view.tabsLabel': 'Visualização',
   'view.semanticText': 'Texto no canvas',
   'view.semanticTextHint':
     'Mostra as anotações dentro das marcações ao aproximar o zoom.',
@@ -366,7 +373,6 @@ export const ptBR = {
     'Camada de especialização: não pode ser renomeada nem excluída. Só dá para remover a especialização.',
   'annotation.untitled': 'Anotação',
   'ref.broken': '(referência quebrada)',
-  'diagnostics.open': 'Diagnóstico',
   'diagnostics.title': 'Diagnóstico',
   'diagnostics.intro':
     'Últimos erros tratados pelo app nesta sessão. Copie e cole numa conversa para pedir ajuda.',
@@ -429,7 +435,7 @@ export const ptBR = {
     'Baixar exemplo Modelo de dados (modelo-de-dados.json)',
   'help.specs.download.schema': 'Baixar JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
-    'Para usar um exemplo: abra um projeto, escolha Especializações (botão da barra principal no desktop, Menu no celular) → Aplicar e selecione o arquivo baixado.',
+    'Para usar um exemplo: abra um projeto, escolha Especializações (botão da barra principal no desktop, Painéis no celular) → Aplicar e selecione o arquivo baixado.',
   'typed.chooseTypeTitle': 'Nova anotação em {layer}',
   'typed.chooseTypeHint':
     'Escolha o tipo. Os campos já vêm definidos; é só preencher os valores.',

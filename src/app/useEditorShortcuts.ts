@@ -76,7 +76,7 @@ export function useEditorShortcuts(
   dialogsRef.current = dialogs;
   const commandsRef = useRef(commands);
   commandsRef.current = commands;
-  // No celular as camadas seguem em diálogo (até a R8); no desktop são uma janela.
+  // No desktop as janelas ficam encaixadas; no celular abrem em tela cheia (B6).
   const desktopRef = useRef(desktop);
   desktopRef.current = desktop;
 
@@ -135,12 +135,20 @@ export function useEditorShortcuts(
           return;
         }
         case 'hide-window': {
+          if (!desktopRef.current) {
+            ui.mobileWindow.value = null;
+            return;
+          }
           const focused = focusedWindow();
           if (focused) hideToolWindow(focused.id);
           return;
         }
         case 'toggle-window': {
           const { window } = shortcut;
+          if (!desktopRef.current) {
+            ui.mobileWindow.value = ui.mobileWindow.peek() === window ? null : window;
+            return;
+          }
           // Fechada ou sem foco dentro: abre e foca; já em foco: esconde.
           if (focusedWindow()?.id === window) toggleToolWindow(window);
           else showAndFocusToolWindow(window);
@@ -160,7 +168,8 @@ export function useEditorShortcuts(
           return void commandsRef.current.exportProject();
         case 'layers':
           if (desktopRef.current) return showAndFocusToolWindow('layers');
-          return dialogsRef.current.show({ kind: 'layers' });
+          ui.mobileWindow.value = 'layers';
+          return;
         case 'help':
           return dialogsRef.current.show({ kind: 'help' });
         case 'settings':
@@ -178,7 +187,9 @@ export function useEditorShortcuts(
             'marking'
           )
             return;
-          showToolWindow('details');
+          // Celular: a gaveta abre (ela só monta Detalhes aberta).
+          if (desktopRef.current) showToolWindow('details');
+          else ui.sheet.value = 'open';
           requestAnimationFrame(() => button()?.click());
           return;
         }

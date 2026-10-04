@@ -24,8 +24,6 @@ describe('dicionários', () => {
       'language.pt-BR',
       'language.en-US',
       'image.dimensions',
-      'editor.menu',
-      'view.canvas',
       'marking.pathSeparator',
       'marking.x',
       'marking.y',

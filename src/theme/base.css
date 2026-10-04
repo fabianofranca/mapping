@@ -54,28 +54,6 @@ body {
   background: var(--color-success-bg);
 }
 
-.status-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font: var(--t-text-small);
-  color: var(--color-text-muted);
-}
-
-.status-error {
-  color: var(--color-danger);
-}
-
-.status-warning {
-  color: var(--color-warning);
-}
-
 /* Foco visível para quem usa teclado (o contraste do acento passa de 3:1 nos dois temas). */
 :focus-visible {
   outline: 2px solid var(--color-focus);

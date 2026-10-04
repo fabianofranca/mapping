@@ -3,7 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { createAutoSaver } from '../../src/storage/autosave';
-import { DiagnosticsDialog } from '../../src/ui/DiagnosticsDialog';
+import {
+  DiagnosticsActions,
+  DiagnosticsView,
+  useCopyErrors,
+} from '../../src/ui/DiagnosticsView';
 import { clearReportedErrors, reportError } from '../../src/utils/report';
 
 beforeEach(() => {
@@ -16,9 +20,19 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('DiagnosticsDialog', () => {
+/** Registro com Copiar e Limpar, como no cabeçalho da janela (desktop e celular). */
+function Diagnostics() {
+  return (
+    <>
+      <DiagnosticsActions {...useCopyErrors()} />
+      <DiagnosticsView />
+    </>
+  );
+}
+
+describe('Diagnóstico: registro, Copiar e Limpar', () => {
   it('sem erros, avisa e não oferece copiar', () => {
-    render(<DiagnosticsDialog onClose={() => undefined} />);
+    render(<Diagnostics />);
     expect(screen.getByText(t('diagnostics.empty'))).toBeTruthy();
     expect(
       screen.getByRole<HTMLButtonElement>('button', { name: t('diagnostics.copy') })
@@ -36,7 +50,7 @@ describe('DiagnosticsDialog', () => {
     expect(saver.status.value).toBe('error');
     vi.useRealTimers();
 
-    render(<DiagnosticsDialog onClose={() => undefined} />);
+    render(<Diagnostics />);
     expect(screen.getByText('save')).toBeTruthy();
     expect(screen.getByText('sem permissão de escrita')).toBeTruthy();
   });
@@ -49,7 +63,7 @@ describe('DiagnosticsDialog', () => {
       configurable: true,
     });
     reportError('local.open', new Error('bloqueado'));
-    render(<DiagnosticsDialog onClose={() => undefined} />);
+    render(<Diagnostics />);
 
     await user.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
     expect(writeText).toHaveBeenCalledWith(

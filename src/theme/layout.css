@@ -1,19 +1,3 @@
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.topbar h1 {
-  margin: 0;
-  font: var(--t-text-title);
-}
-
 .settings {
   display: flex;
   flex-direction: column;
@@ -312,29 +296,6 @@
   overflow: hidden;
 }
 
-.editor-bar {
-  flex-wrap: nowrap;
-  padding: var(--space-1) var(--space-2);
-}
-
-.editor-bar .status-group {
-  flex: none;
-}
-
-.editor-mobile .editor-bar .status-group {
-  flex-direction: column;
-  gap: 0;
-  font: var(--t-text-small);
-}
-
-.project-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .toolbar {
   display: flex;
   align-items: center;
@@ -345,73 +306,6 @@
   flex: 1;
   min-height: 0;
   display: flex;
-}
-
-.sheet {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  max-height: 50dvh;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-
-.sheet-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--size-touch);
-  padding: 0 var(--space-4);
-  font: inherit;
-  font-weight: 600;
-  color: var(--color-text);
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.sheet-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sheet-header .icon {
-  transition: transform var(--duration-base) var(--easing-standard);
-}
-
-.sheet-expanded .sheet-header .icon {
-  transform: rotate(180deg);
-}
-
-.sheet-content {
-  overflow-y: auto;
-  padding: 0 var(--space-4) var(--space-4);
-}
-
-.sheet-content > p {
-  margin: 0;
-}
-
-.bottombar {
-  flex: none;
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  padding-bottom: max(var(--space-1), env(safe-area-inset-bottom));
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-}
-
-.menu-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 
 /*
@@ -440,20 +334,6 @@
   gap: var(--space-2);
   max-width: 40%;
   padding: 0 var(--space-2);
-}
-
-/* Barra de visualização do celular: Canvas | Lista. */
-.viewtabs {
-  flex: none;
-  display: flex;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-}
-
-.viewtabs .tabs {
-  flex: 1;
-  margin: 0;
-  border-bottom: none;
 }
 
 /* Faixa no topo (`mp-banner` do DS 2.0): aviso do canal de preview e nova versão. */
@@ -513,4 +393,364 @@
 
 .install-hint h2 {
   margin-top: 0;
+}
+
+/*
+ * Celular (R8, B6 e B7): barra de cima (52px), breadcrumbs (44px), canvas com a gaveta
+ * e barra de baixo (60px). Uma janela aberta ocupa a tela toda, com a faixa de abas.
+ */
+.mobile-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  height: var(--size-m-bar);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.editor-top .project-menu {
+  flex: 1 1 auto;
+}
+
+.editor-top .layer-chip {
+  flex: 0 1 auto;
+  border-radius: var(--radius-full);
+}
+
+.mobile-save {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--size-touch);
+  min-height: var(--size-touch);
+  color: var(--color-text-muted);
+}
+
+.mobile-save-ok {
+  color: var(--color-success);
+}
+
+.mobile-save-error .icon-button {
+  color: var(--color-danger);
+}
+
+.mobile-crumbs {
+  flex: none;
+  display: flex;
+  align-items: center;
+  min-height: var(--size-touch);
+  padding: 0 var(--space-1);
+  overflow-x: auto;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mobile-crumbs .crumbs {
+  overflow: visible;
+}
+
+.editor-mobile .editor-body {
+  position: relative;
+  flex-direction: column;
+}
+
+.editor-body[hidden] {
+  display: none;
+}
+
+/* Gaveta (B7): recolhida mostra só o cabeçalho (64px); aberta, 72% do corpo. */
+.sheet {
+  position: relative;
+  z-index: var(--z-sheet);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--size-sheet-peek);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-sheet);
+}
+
+.sheet-open {
+  height: 72%;
+}
+
+/* O cabeçalho é a área de arraste: o navegador não rola nem dá zoom nele. */
+.sheet-header {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.sheet-handle {
+  align-self: center;
+  flex: none;
+  width: var(--space-8);
+  height: var(--space-1);
+  margin: var(--space-1-5) 0;
+  background: var(--color-border-control);
+  border-radius: var(--radius-full);
+}
+
+.sheet-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-touch);
+  padding: 0 var(--space-1) 0 var(--space-4);
+}
+
+.sheet-bar .tree-dots {
+  margin-left: 0;
+}
+
+.sheet-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheet-warning {
+  flex: none;
+  display: inline-flex;
+  color: var(--color-warning);
+}
+
+.sheet-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.sheet-content > p {
+  margin: 0;
+}
+
+.bottombar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  min-height: var(--size-m-toolbar);
+  padding: 0 var(--space-1-5);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Tela cheia (B6): voltar, título e ações; a faixa de abas; o conteúdo rola. */
+.mobile-window {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+}
+
+.mobile-window-back {
+  flex: none;
+  display: flex;
+}
+
+.mobile-window-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: var(--t-text-title);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-strip {
+  flex: none;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mobile-strip .tabs {
+  margin: 0;
+  padding: 0 var(--space-2);
+  border-bottom: none;
+}
+
+.mobile-strip .tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  white-space: nowrap;
+}
+
+.mobile-strip .tab .icon {
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+
+.mobile-window-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+}
+
+.mobile-window-hint {
+  margin: 0 0 var(--space-3);
+}
+
+/* As visões de tabela (Lista, Incompletas, Diagnóstico) cuidam da própria margem. */
+.mobile-window-body:has(.list-view, .diagnostics-view) {
+  padding: 0;
+}
+
+/* Menu Painéis (B6): folha que sobe de baixo, sobre o fundo escurecido. */
+.action-sheet {
+  width: 100%;
+  max-width: 100%;
+  max-height: 88dvh;
+  margin: auto 0 0;
+  padding: 0;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: none;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-sheet);
+}
+
+.action-sheet[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-sheet::backdrop {
+  background: var(--color-backdrop);
+}
+
+.action-sheet-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  padding: 0 var(--space-1);
+}
+
+.action-sheet-head .sheet-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.action-sheet-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  padding: 0 var(--space-3) var(--space-4);
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+}
+
+.action-sheet-heading {
+  margin: 0;
+  padding: var(--space-2) var(--space-1) 0;
+  font: var(--t-text-small);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.panel-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-1-5);
+}
+
+.panel-tile {
+  position: relative;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: var(--size-panel-tile);
+  padding: var(--space-1-5) var(--space-1);
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.panel-tile-label {
+  font: var(--t-text-small);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.panel-tile-badge {
+  position: absolute;
+  top: var(--space-1-5);
+  right: var(--space-1-5);
+  min-width: var(--space-4);
+  padding: 0 var(--space-1);
+  font: var(--t-micro);
+  font-weight: 700;
+  color: var(--color-surface);
+  background: var(--color-warning);
+  border-radius: var(--radius-full);
+}
+
+.panel-tile .icon-button-alert {
+  top: var(--space-1-5);
+  right: var(--space-1-5);
+}
+
+.menu-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  min-height: var(--size-touch);
+  padding: 0 var(--space-2);
+  text-align: left;
+  border-color: transparent;
+}
+
+.menu-row-label {
+  flex: 1;
+}
+
+.menu-row-choice .choice {
+  flex: 1;
+}
+
+.status-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-1) 0;
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+}
+
+.status-summary .status-item {
+  padding: 0;
+  white-space: normal;
 }

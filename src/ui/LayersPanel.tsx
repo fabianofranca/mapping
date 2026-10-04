@@ -27,19 +27,15 @@ import { Button, IconButton, Select } from './controls';
 
 // Conteúdo das camadas: a lista (visibilidade, camada ativa, nome, cor, ordem e
 // exclusão) e o modo de exibição das marcações sem anotação. É o miolo da janela
-// Camadas (desktop, `LayersWindow`) e do diálogo do celular (`LayersDialog`, até a R8).
+// Camadas (desktop, `LayersWindow`; no celular, a tela cheia de `MobileWindow`).
 
 interface LayersProps {
   readonly project: Project;
   readonly readOnly: boolean;
 }
 
-/** Nova camada e Mostrar todas: ícones no cabeçalho da janela, botões no diálogo. */
-export function LayerActions({
-  project,
-  readOnly,
-  variant,
-}: LayersProps & { readonly variant: 'icons' | 'buttons' }) {
+/** Nova camada e Mostrar todas: ícones no cabeçalho da janela (e da tela cheia). */
+export function LayerActions({ project, readOnly }: LayersProps) {
   const { ui, actions } = useEditor();
   const onAdd = () => {
     actions.addLayer(
@@ -47,16 +43,6 @@ export function LayerActions({
       nextLayerColor(project),
     );
   };
-  if (variant === 'buttons') {
-    return (
-      <div class="row">
-        <Button disabled={readOnly} onClick={onAdd}>
-          + {t('layer.add')}
-        </Button>
-        <Button onClick={() => showAllLayers(ui)}>{t('layer.showAll')}</Button>
-      </div>
-    );
-  }
   return (
     <>
       <IconButton
