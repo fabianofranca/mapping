@@ -12,6 +12,12 @@ import {
   translateRect,
 } from './geometry';
 import { childrenOf, depthOf, descendantIds } from './hierarchy';
+import {
+  canDeleteMarking,
+  canMoveMarking,
+  canResizeMarking,
+  requireUnlocked,
+} from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
 import type { Marking, Project, Rect } from './types';
@@ -93,6 +99,7 @@ export function createMarking(p: Project, args: NewMarkingArgs): Project {
       height: args.rect.height,
     },
     needsReview: false,
+    locked: false,
   };
   return { ...p, markings: [...p.markings, marking] };
 }
@@ -115,6 +122,7 @@ export function renameMarking(
  */
 export function setMarkingRect(p: Project, markingId: string, rect: Rect): Project {
   checkRectShape(rect);
+  requireUnlocked(canResizeMarking(p, markingId));
   const { outer, inner } = markingRectLimits(p, markingId);
   const marking = findById(p.markings, markingId);
   if (!containsRect(outer, rect)) {
@@ -154,6 +162,7 @@ export function moveMarking(
 ): Project {
   if (!Number.isInteger(dx) || !Number.isInteger(dy)) fail('rect-not-integer');
   const marking = findById(p.markings, markingId);
+  requireUnlocked(canMoveMarking(p, markingId));
   const moved = translateRect(marking.rect, dx, dy);
   if (!containsRect(containerOf(p, marking), moved)) {
     fail(marking.parentId === null ? 'rect-out-of-image' : 'rect-outside-parent');
@@ -255,13 +264,19 @@ export function markingDeletionImpact(
   return {
     descendants,
     annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
-    brokenRefs: countBrokenRefs(p, removeMarking(p, markingId)),
+    brokenRefs: countBrokenRefs(p, cascadeRemove(p, markingId)),
   };
 }
 
-/** Exclui a marcação, os descendentes e as anotações de todos eles. */
+/** Exclui a marcação, os descendentes e as anotações de todos eles. Falha se algo estiver trancado. */
 export function removeMarking(p: Project, markingId: string): Project {
   findById(p.markings, markingId);
+  requireUnlocked(canDeleteMarking(p, markingId));
+  return cascadeRemove(p, markingId);
+}
+
+/** A exclusão em si, sem a trava: também serve para contar o impacto. */
+function cascadeRemove(p: Project, markingId: string): Project {
   const ids = descendantIds(p, markingId).add(markingId);
   return {
     ...p,

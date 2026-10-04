@@ -182,6 +182,7 @@ describe('sessão de projeto', () => {
       expect(p.markings[0]).toMatchObject({
         rect: { x: 200, y: 200, width: 400, height: 200 },
         needsReview: false,
+        locked: false,
       });
       await s.flush();
       expect(await root.read('images/b.jpg')).toBe('800x600');

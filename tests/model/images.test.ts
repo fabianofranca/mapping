@@ -123,6 +123,7 @@ describe('imagens: trocar', () => {
       id: 'I1',
       name: null,
       markingColor: null,
+      locked: false,
       file: 'images/nova.jpg',
       width: 2000,
       height: 1500,

@@ -24,6 +24,8 @@ export type ModelErrorCode =
   | 'empty-key'
   | 'duplicate-key'
   | 'duplicate-id'
+  // Trava (etapa 2.5)
+  | 'locked'
   // Especializações (docs/history/PLAN-etapas-1-2.md 13)
   | 'spec-layer'
   | 'typed-layer'

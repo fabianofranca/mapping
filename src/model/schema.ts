@@ -7,7 +7,7 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v4. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json v5. Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`.
 
 const id = z.string().min(1);
@@ -42,6 +42,7 @@ const imageSchema = z.object({
   height: z.number().int().positive(),
   placement: placementSchema,
   markingColor: hexColor.nullable(),
+  locked: z.boolean(),
 });
 
 const markingSchema = z.object({
@@ -51,6 +52,7 @@ const markingSchema = z.object({
   name: z.string().nullable(),
   rect: rectSchema,
   needsReview: z.boolean(),
+  locked: z.boolean(),
 });
 
 const entrySchema = z.object({ id, key: z.string(), value: z.string() });
