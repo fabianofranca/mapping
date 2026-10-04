@@ -12,7 +12,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Entra:** fases R1 a R9 (histórico em [`docs/history/PLAN-etapa-2-3.md`](history/PLAN-etapa-2-3.md)). A R10 (paleta de comandos e busca global) sai do caminho crítico e vai para [Evoluções](#evoluções).
 - **Depende de:** nada (etapas 1 a 2.2 concluídas).
 
-## Etapa 2.4 — Privacidade garantida por CSP
+## Etapa 2.4 — Privacidade garantida por CSP (concluída)
 
 - **Objetivo:** a app já não faz nenhuma requisição de rede com dados do usuário; esta etapa transforma isso em regra imposta pelo navegador.
 - **Entra:**
@@ -20,6 +20,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - Precisa continuar funcionando em `file://`, no GitHub Pages, no preview e com o service worker.
   - Testes: o build falha se a CSP faltar ou se os hashes não baterem com os blocos embutidos; um teste Playwright confirma que uma requisição para um host externo é bloqueada.
 - **Depende de:** nada. Pode rodar em paralelo com as fases do redesign.
+- **Resultado:** `pwa/csp.ts` + plugin `contentSecurityPolicy` (`vite.config.ts`); o build falha sem CSP ou com hash divergente; testes em `tests/app/cspBuild.test.ts`, `tests/e2e/csp.spec.ts` e `tests/e2e/cspServiceWorker.spec.ts`. Documentação em [`ARCHITECTURE.md`](ARCHITECTURE.md#content-security-policy-etapa-24) e no README. O zod passou a rodar em `jitless` (sem `eval`).
 
 ## Etapa 2.5 — Trava de marcações e imagens (concluída)
 

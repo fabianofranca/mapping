@@ -49,7 +49,8 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - O `index.html` precisa funcionar em **`file://` no Chrome/Edge desktop** e hospedado no **GitHub Pages**:
   - nada de import de módulos externos em runtime nem requisições de rede;
   - o service worker só é registrado quando `location.protocol === 'https:'`;
-  - detecte os recursos em runtime (`showDirectoryPicker`, IndexedDB, `navigator.canShare`) e degrade com elegância.
+  - detecte os recursos em runtime (`showDirectoryPicker`, IndexedDB, `navigator.canShare`) e degrade com elegância;
+  - o `dist/index.html` leva uma **CSP** em `<meta>` gerada no build (`pwa/csp.ts`; hashes dos blocos embutidos, sem `'unsafe-inline'`/`'unsafe-eval'`, `connect-src 'none'`). Por isso: sem `style=""` nem handlers inline no HTML, sem `eval`/`new Function`, sem `setAttribute('style')`, sem `fetch`/XHR/WebSocket (estilo dinâmico só por JS: `el.style.x`, objeto `style` do Preact). Não escreva a CSP à mão no `index.html`. Detalhes em `docs/ARCHITECTURE.md`.
 - **Desktop primeiro, utilizável no celular**: o layout principal é o de desktop (≥ 900 px, mouse e teclado). Todo layout também precisa funcionar em 380 px de largura com toque, com áreas de toque de pelo menos 24 px (alças) e 44 px (botões) no celular. Uma mudança só está pronta quando funciona nos dois.
 - Envolva todo acesso a `localStorage`/IndexedDB em try/catch.
 
@@ -76,6 +77,6 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
 - **Etapa 2.2 — Segunda revisão técnica (concluída):** fases 26 e 27 concluídas, 28 dispensada (histórico em `docs/history/PLAN-etapa-2-2.md`).
 - **Etapa 2.3 — Redesign da interface (concluída):** fases R1 a R9 concluídas e R10 movida para Evoluções no ROADMAP (histórico em `docs/history/PLAN-etapa-2-3.md`; especificação em `docs/redesign/HANDOFF.md`).
+- **Etapa 2.4 — Privacidade garantida por CSP (concluída):** CSP gerada no build; ver `docs/ARCHITECTURE.md`.
 - **Etapa 2.5 — Trava de marcações e imagens (concluída):** `locked` no schema v5, regras em `src/model/locks.ts`, cadeado na interface e no canvas (fases F1 a F6 no `PLAN.md`).
-- **Etapa atual:** 2.4 (CSP), detalhada no [`docs/ROADMAP.md`](docs/ROADMAP.md).
-- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (3 servidor MCP, 4 Figma, marco de uso real e evoluções, depois da 2.4). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.
+- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (3 servidor MCP, 4 Figma, marco de uso real e evoluções). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.
