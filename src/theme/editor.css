@@ -221,11 +221,34 @@
   white-space: nowrap;
 }
 
+.tool-window-tabs {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+}
+
+.tool-window-tabs .tabs {
+  gap: var(--space-0-5);
+  margin: 0;
+  border-bottom: none;
+}
+
+.tool-window-tabs .tab {
+  flex: none;
+  height: 100%;
+}
+
 .tool-window-body {
   flex: 1;
   min-height: 0;
   overflow: auto;
   padding: 0 var(--space-3) var(--space-3);
+}
+
+/* As tabelas da janela inferior ocupam a largura toda. */
+.tool-window-bottom .tool-window-body {
+  padding: 0;
 }
 
 /* Divisória de arraste (8px de área, 1px visível pela borda da janela) */

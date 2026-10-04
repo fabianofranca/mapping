@@ -1,5 +1,6 @@
 import { computed, type ReadonlySignal } from '@preact/signals';
 import {
+  buildIncompleteList,
   buildListing,
   layerDotsByMarking,
   markingVisibility,
@@ -7,6 +8,7 @@ import {
   projectIssues,
   type Annotation,
   type AnnotationIssue,
+  type IncompleteImage,
   type Layer,
   type LayerDot,
   type ListedImage,
@@ -40,6 +42,10 @@ export interface EditorDerived {
   readonly incompleteMarkings: ReadonlySignal<ReadonlySet<string>>;
   /** Dados da Visão de Lista, com os filtros dela. */
   readonly listing: ReadonlySignal<readonly ListedImage[]>;
+  /** Pendências agrupadas por imagem, para a janela Incompletas (B5). */
+  readonly incompleteList: ReadonlySignal<readonly IncompleteImage[]>;
+  /** Quantas anotações estão incompletas no projeto (todas as camadas). */
+  readonly incompleteCount: ReadonlySignal<number>;
 }
 
 const NO_ISSUES: ReadonlyMap<string, readonly AnnotationIssue[]> = new Map();
@@ -133,6 +139,19 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
     });
   });
 
+  // Com "Só camadas visíveis" a lista acompanha o filtro de camadas do canvas.
+  const incompleteList = computed((): readonly IncompleteImage[] => {
+    const p = project.value;
+    if (!p) return [];
+    return buildIncompleteList(
+      p,
+      issues.value,
+      ui.incompleteVisibleOnly.value ? visible.value : undefined,
+    );
+  });
+
+  const incompleteCount = computed(() => issues.value.size);
+
   return {
     activeLayerId,
     activeLayer,
@@ -143,5 +162,7 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
     markingVisibility: visibility,
     incompleteMarkings,
     listing,
+    incompleteList,
+    incompleteCount,
   };
 }

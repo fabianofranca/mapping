@@ -26,7 +26,7 @@ ação do usuário
   → action (store/project.ts)
   → operação pura (model/…): (Project) => Project
   → snapshot no histórico (store/history.ts) + project signal (e committed)
-  → derived (store/derived.ts): camadas visíveis, indicadores, pendências, lista…
+  → derived (store/derived.ts): camadas visíveis, indicadores, pendências, lista, lista de incompletas…
   → canvas (um desenho por quadro; geometria de `project`) e UI (`committed` e os computed)
   → autosave (storage/autosave.ts) → mapping.json (pasta ou IndexedDB)
 ```
@@ -38,7 +38,7 @@ ação do usuário
 - **Índice** (`projectIndex(p)`): mapas por id e agrupamentos (marcações filhas, anotações por marcação e por dono, backlinks), memoizados em `WeakMap<Project, …>`: um projeto novo (nova versão) reconstrói o índice uma vez; leituras seguintes são O(1).
 - **Persistência** (`openSession`): serializa depois de cada mudança (autosave com atraso e escritas em fila), grava as imagens e as cópias de `specs/`, e nunca deixa o `mapping.json` apontar para um arquivo apagado: arquivos removidos vão para uma `trash` e só são descartados quando nenhum snapshot do histórico os referencia.
 - **Bitmaps** (`displayImages.ts`): as imagens exibidas são carregadas sob demanda; `retain(paths)` fecha os bitmaps que o projeto não usa mais. Um arquivo que volta pelo desfazer é recarregado.
-- **Erros**: `reportError(contexto, erro)` registra no console e guarda os últimos 20; o menu "Diagnóstico" os lista com botão "Copiar".
+- **Erros**: `reportError(contexto, erro)` registra no console e guarda os últimos 20; a janela inferior "Diagnóstico" (desktop; no celular, o diálogo do Menu) os lista em tabela, com "Copiar" e "Limpar"; o ponto de alerta da faixa usa o "visto até" de `store/diagnostics.ts`.
 
 ## Regras e o porquê
 
@@ -98,7 +98,7 @@ ação do usuário
 - `ui/EditorContext.tsx`: contexto Preact com `session`, `store`, `actions`, `ui`, `derived` e o `CanvasController`; os componentes filhos o leem em vez de receber esses objetos por props.
 - `app/useEditorDialogs.ts` (um estado com união discriminada para todos os diálogos), `useImageIntake.tsx` (adicionar, colar, arrastar, trocar imagens), `useEditorShortcuts.ts`.
 - `ui/controls/`: controles base da interface 2.0 — `Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs` e `Tooltip`. Componentes novos usam estes em vez de `<button class="button">`, `<input class="input">` ou `<select>` cruos; os estados (hover, pressionado, foco, desabilitado, alternância, inválido, somente leitura) vêm do CSS e dos tokens. `ui/icons.tsx` tem o conjunto de ícones (`<Icon name="…" />`, grade de 16px, traço de 1,25, `currentColor`); um ícone novo entra na tabela `SHAPES`.
-- `ui/`: painéis (`SelectionPanel`, `AnnotationsPanel`, `MarkingTree`), `AnnotationEditor`, `TypedFields`, `LayersDialog`, `SpecsDialog`, `ListView`, `DiagnosticsDialog`, `Breadcrumbs`, `StatusBar`, `Minimap`, `ZoomField`, `MenuPopover`…
+- `ui/`: painéis (`SelectionPanel`, `AnnotationsPanel`, `MarkingTree`), `AnnotationEditor`, `TypedFields`, `LayersDialog`, `SpecsDialog`, `ListView` (tabela), `IncompleteView`, `DiagnosticsView`, `BottomTabs`, `DiagnosticsDialog` (celular), `Breadcrumbs`, `StatusBar`, `Minimap`, `ZoomField`, `MenuPopover`…
 
 ### Estilos (`src/theme/`)
 

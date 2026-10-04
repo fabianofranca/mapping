@@ -52,7 +52,15 @@ describe('atalhos do editor', () => {
       kind: 'toggle-window',
       window: 'list',
     });
-    // 2, 5 e 6 só ganham janela nas fases R6 e R7.
+    expect(shortcutFor(key('5', { ctrl: true, shift: true }))).toEqual({
+      kind: 'toggle-window',
+      window: 'incomplete',
+    });
+    expect(shortcutFor(key('6', { ctrl: true, shift: true }))).toEqual({
+      kind: 'toggle-window',
+      window: 'diagnostics',
+    });
+    // O 2 só ganha janela na fase R6 (Camadas).
     expect(shortcutFor(key('2', { ctrl: true, shift: true }))).toBeNull();
     // Alt+número desligado (Chrome no Linux troca de aba).
     expect(shortcutFor(key('4', { alt: true }), false)).toBeNull();

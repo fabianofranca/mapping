@@ -151,6 +151,15 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   await page.keyboard.press('Control+Shift+Digit4');
   await expect(list).toBeVisible();
 
+  // A janela inferior tem uma aba por janela (R7): Incompletas (5) e Diagnóstico (6).
+  await page.keyboard.press('Control+Shift+Digit5');
+  await expect(page.getByRole('region', { name: 'Incompletas' })).toBeVisible();
+  await expect(list).toBeHidden();
+  await page.keyboard.press('Control+Shift+Digit6');
+  await expect(page.getByRole('region', { name: 'Diagnóstico' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Lista' }).click();
+  await expect(list).toBeVisible();
+
   // Ctrl+Shift+setas redimensionam a janela em foco, em passos de 16px.
   const width = () =>
     tree.evaluate((el: HTMLElement) => el.getBoundingClientRect().width);

@@ -9,11 +9,13 @@ import {
   type ToolWindowId,
   type ToolWindowSide,
 } from '../store/toolWindows';
+import { BottomTabs } from './BottomTabs';
 import { IconButton } from './controls';
 import { spaceFor } from './toolWindowLayout';
 import { toolWindowMeta } from './toolWindowMeta';
 
-// Janela de ferramenta encaixada (B1 e B2): cabeçalho de 32px com título e ações,
+// Janela de ferramenta encaixada (B1 e B2): cabeçalho de 32px com título (ou, na
+// inferior, as abas) e ações,
 // corpo com rolagem e divisória de arraste de 8px. O tamanho fica no estado de UI
 // (`store/toolWindows`), não no projeto.
 
@@ -39,7 +41,13 @@ export function ToolWindow({ id, actions, children }: ToolWindowProps) {
     >
       <ToolResizer side={side} name={title} />
       <header class="tool-window-head">
-        <h2 class="tool-window-title">{title}</h2>
+        {side === 'bottom' ? (
+          <div class="tool-window-tabs">
+            <BottomTabs active={id} />
+          </div>
+        ) : (
+          <h2 class="tool-window-title">{title}</h2>
+        )}
         {actions}
         <IconButton
           icon="close"
@@ -47,7 +55,13 @@ export function ToolWindow({ id, actions, children }: ToolWindowProps) {
           onClick={() => hideToolWindow(id)}
         />
       </header>
-      <div class="tool-window-body">{children}</div>
+      <div
+        class="tool-window-body"
+        role={side === 'bottom' ? 'tabpanel' : undefined}
+        aria-label={side === 'bottom' ? title : undefined}
+      >
+        {children}
+      </div>
     </section>
   );
 }

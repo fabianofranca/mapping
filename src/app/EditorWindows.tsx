@@ -1,7 +1,13 @@
 import type { ComponentChildren } from 'preact';
-import { openWindowOf, type ToolWindowId } from '../store/toolWindows';
+import { openWindowOf, showToolWindow, type ToolWindowId } from '../store/toolWindows';
 import type { Selection } from '../store/ui';
 import { Breadcrumbs } from '../ui/Breadcrumbs';
+import {
+  DiagnosticsActions,
+  DiagnosticsView,
+  useCopyErrors,
+} from '../ui/DiagnosticsView';
+import { IncompleteView } from '../ui/IncompleteView';
 import { ListView } from '../ui/ListView';
 import { MarkingTree } from '../ui/MarkingTree';
 import { ToolStrip } from '../ui/ToolStrip';
@@ -22,7 +28,7 @@ interface EditorWindowsProps {
   readonly canvas: ComponentChildren;
 }
 
-/** Conteúdo de cada janela. Camadas, Incompletas e Diagnóstico entram nas R6 e R7. */
+/** Conteúdo de cada janela. Camadas entra na R6. */
 function WindowContent({
   id,
   panel,
@@ -35,6 +41,15 @@ function WindowContent({
   const { store, ui } = useEditor();
   if (id === 'details') return <EditorPanel {...panel} />;
   if (id === 'list') return <ListView onSelect={onSelect} />;
+  if (id === 'incomplete') {
+    // Ir até a anotação precisa do painel de Detalhes à vista.
+    const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
+      showToolWindow('details');
+      panel.onGoToAnnotation(annotation);
+    };
+    return <IncompleteView onGoToAnnotation={goTo} />;
+  }
+  if (id === 'diagnostics') return <DiagnosticsView />;
   const project = store.committed.value;
   if (!project) return null;
   return (
@@ -42,12 +57,20 @@ function WindowContent({
   );
 }
 
+/** Copiar e Limpar ficam no cabeçalho da janela Diagnóstico (B4). */
+function DiagnosticsHeaderActions() {
+  return <DiagnosticsActions {...useCopyErrors()} />;
+}
+
 export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
   const left = openWindowOf('left');
   const right = openWindowOf('right');
   const bottom = openWindowOf('bottom');
   const window = (id: ToolWindowId) => (
-    <ToolWindow id={id}>
+    <ToolWindow
+      id={id}
+      actions={id === 'diagnostics' ? <DiagnosticsHeaderActions /> : undefined}
+    >
       <WindowContent id={id} panel={panel} onSelect={onSelect} />
     </ToolWindow>
   );

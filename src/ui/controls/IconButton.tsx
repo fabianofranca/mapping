@@ -20,6 +20,8 @@ interface IconButtonProps extends NativeButton {
   readonly shortcut?: string;
   /** Botão de alternância (ex.: modo): `aria-pressed` e destaque visual. */
   readonly pressed?: boolean;
+  /** Ponto de alerta no canto do ícone (ex.: erro novo no Diagnóstico). */
+  readonly alert?: boolean;
 }
 
 /** Botão de ícone (28px no desktop, 44px no celular), com dica. */
@@ -31,6 +33,7 @@ export function IconButton({
   text,
   shortcut,
   pressed,
+  alert,
   type = 'button',
   ...rest
 }: IconButtonProps) {
@@ -45,6 +48,7 @@ export function IconButton({
         aria-keyshortcuts={shortcut}
       >
         <Icon name={icon} />
+        {alert && <span class="icon-button-alert" aria-hidden="true" />}
         {text && <span class="icon-button-text">{text}</span>}
       </button>
     </Tooltip>
