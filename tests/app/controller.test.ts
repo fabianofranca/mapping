@@ -183,6 +183,43 @@ describe('projeto em pasta', () => {
     expect(await app.openFolder()).toEqual({ ok: false, error: 'storage-failed' });
   });
 
+  it('ao criar o projeto na pasta, grava um .gitignore com backups/', async () => {
+    const root = new MemoryDirectory('minha-pasta');
+    await app.createFolderProject(root, 'P', []);
+    expect(await root.files.get('.gitignore')?.text()).toBe('backups/\n');
+  });
+
+  it('o .gitignore que já existe na pasta é preservado, só ganha a linha', async () => {
+    const root = new MemoryDirectory('minha-pasta');
+    root.files.set('.gitignore', new Blob(['dist/\n']));
+    await app.createFolderProject(root, 'P', []);
+    expect(await root.files.get('.gitignore')?.text()).toBe('dist/\nbackups/\n');
+  });
+
+  it('falha ao gravar o .gitignore não impede a criação do projeto', async () => {
+    const root = new MemoryDirectory('minha-pasta');
+    // A pasta aceita o mapping.json, mas não o .gitignore.
+    const getFileHandle = root.getFileHandle.bind(root);
+    vi.spyOn(root, 'getFileHandle').mockImplementation(async (name, options) => {
+      if (name === '.gitignore' && options?.create) throw new Error('sem permissão');
+      return getFileHandle(name, options);
+    });
+    const result = await app.createFolderProject(root, 'P', []);
+    expect(result.ok).toBe(true);
+    expect(await root.files.get('mapping.json')?.text()).toContain('"P"');
+    expect((await openedOf(app)).kind).toBe('folder');
+  });
+
+  it('abrir uma pasta que já tem projeto não cria .gitignore', async () => {
+    const root = new MemoryDirectory('minha-pasta');
+    await app.createFolderProject(root, 'P', []);
+    root.files.delete('.gitignore');
+    await app.closeProject();
+    pickDirectory.mockResolvedValue(root);
+    expect((await app.openFolder()).ok).toBe(true);
+    expect(root.files.has('.gitignore')).toBe(false);
+  });
+
   it('cria o projeto na pasta usando o nome da pasta quando o nome vem vazio', async () => {
     const root = new MemoryDirectory('minha-pasta');
     const result = await app.createFolderProject(root, ' ', []);

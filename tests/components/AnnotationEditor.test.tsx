@@ -2,8 +2,10 @@ import { cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Project } from '../../src/model';
+import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
+import { sampleProject } from '../model/fixtures';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
 
@@ -197,5 +199,44 @@ describe('AnnotationEditor — anotação tipada', () => {
     const dialog = await screen.findByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'Excluir' }));
     expect(harness.project().annotations.some((a) => a.id === 'AU')).toBe(false);
+  });
+});
+
+describe('AnnotationEditor — "Pertence a"', () => {
+  const owner = () => screen.getByLabelText('Pertence a') as HTMLSelectElement;
+
+  it('explica que só aparecem anotações da mesma marcação em outras camadas', () => {
+    // A1 (M1, camada L1) pode pertencer a A2 (M1, camada L2).
+    setup('A1', sampleProject());
+    expect(screen.getByText(t('annotation.ownerHelp'))).toBeTruthy();
+    expect(screen.queryByText(t('annotation.ownerEmpty'))).toBeNull();
+    expect(owner().disabled).toBe(false);
+    const options = [...owner().options].map((o) => o.textContent);
+    expect(options).toEqual(['Nenhuma', 'Vidros: tipo: trinca']);
+  });
+
+  it('sem nenhuma opção: mostra a mensagem e deixa o campo desabilitado', () => {
+    // A3 é a única anotação de M2: não há outra camada com anotação para ser a dona.
+    setup('A3', sampleProject());
+    expect(screen.getByText(t('annotation.ownerHelp'))).toBeTruthy();
+    expect(screen.getByText(t('annotation.ownerEmpty'))).toBeTruthy();
+    expect(owner().disabled).toBe(true);
+    expect([...owner().options].map((o) => o.textContent)).toEqual(['Nenhuma']);
+  });
+
+  it('a dica também vai no título do rótulo', () => {
+    setup('A1', sampleProject());
+    expect(screen.getByText('Pertence a').getAttribute('title')).toBe(
+      t('annotation.ownerHelp'),
+    );
+  });
+
+  it('com a lista vazia mas um dono já definido, o campo continua habilitado', async () => {
+    const { harness, user } = setup('A1', sampleProject());
+    await user.selectOptions(owner(), 'A2');
+    expect(annotationOf(harness.project(), 'A1').parentAnnotationId).toBe('A2');
+    expect(screen.queryByText(t('annotation.ownerEmpty'))).toBeNull();
+    // A2 passa a ter a A1 vinculada: nada para escolher, mas não é a lista vazia.
+    expect(owner().disabled).toBe(false);
   });
 });

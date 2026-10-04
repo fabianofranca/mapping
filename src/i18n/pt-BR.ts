@@ -203,6 +203,10 @@ export const ptBR = {
   'annotation.owner': 'Pertence a',
   'annotation.noOwner': 'Nenhuma',
   'annotation.ownerOption': '{layer}: {name}',
+  'annotation.ownerHelp':
+    'Só aparecem anotações desta mesma marcação que estão em outras camadas (e, nas tipadas, de um tipo que aceite esta).',
+  'annotation.ownerEmpty':
+    'Nenhuma opção: crie, nesta marcação, uma anotação em outra camada para poder vincular esta a ela.',
   'annotation.linkedTo': '↳ de {name}',
   'annotation.linkedHeading': 'Vinculadas',
   'annotation.goToAnnotation': 'Ir para a anotação {name}',
@@ -422,6 +426,8 @@ export const ptBR = {
   'home.colActions': 'Ações',
   'home.folderUnavailable':
     'Este navegador não deixa abrir pastas. Use o Chrome ou o Edge no computador.',
+  'home.gitHint':
+    'Usa git? Prefira Abrir pasta: o projeto vira arquivos comuns (mapping.json e images/) que você pode versionar. Ao criar o projeto na pasta, a app também grava um .gitignore com backups/.',
   'pwa.previewBadge': 'PREVIEW',
   'export.fileMeta': 'Arquivo zip · {size}',
   'help.specs.intro':

@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { createFolderStorage, findExistingImages } from '../../src/storage/folder';
+import {
+  createFolderStorage,
+  ensureGitignore,
+  findExistingImages,
+} from '../../src/storage/folder';
 import { MemoryDirectory } from './memoryFs';
 
 describe('FolderStorage', () => {
@@ -87,5 +91,45 @@ describe('FolderStorage', () => {
       { path: 'images/b.png', name: 'b.png' },
       { path: 'raiz.jpeg', name: 'raiz.jpeg' },
     ]);
+  });
+});
+
+describe('ensureGitignore', () => {
+  it('cria o .gitignore com backups/ numa pasta sem ele', async () => {
+    const root = new MemoryDirectory('projeto');
+    expect(await ensureGitignore(root)).toBe(true);
+    expect(await root.read('.gitignore')).toBe('backups/\n');
+  });
+
+  it('acrescenta a linha ao .gitignore existente, sem apagar o que já havia', async () => {
+    const root = new MemoryDirectory('projeto');
+    root.files.set('.gitignore', new Blob(['node_modules/\n.DS_Store']));
+    expect(await ensureGitignore(root)).toBe(true);
+    expect(await root.read('.gitignore')).toBe('node_modules/\n.DS_Store\nbackups/\n');
+  });
+
+  it.each(['backups/', '/backups/', 'backups', '  backups/  '])(
+    'não mexe se o .gitignore já cobre backups (%j)',
+    async (line) => {
+      const root = new MemoryDirectory('projeto');
+      const text = `dist/\r\n${line}\r\n`;
+      root.files.set('.gitignore', new Blob([text]));
+      expect(await ensureGitignore(root)).toBe(false);
+      expect(await root.read('.gitignore')).toBe(text);
+    },
+  );
+
+  it('não confunde outra pasta com backups', async () => {
+    const root = new MemoryDirectory('projeto');
+    root.files.set('.gitignore', new Blob(['my-backups/\n']));
+    expect(await ensureGitignore(root)).toBe(true);
+    expect(await root.read('.gitignore')).toBe('my-backups/\nbackups/\n');
+  });
+
+  it('rodar duas vezes grava uma vez só', async () => {
+    const root = new MemoryDirectory('projeto');
+    expect(await ensureGitignore(root)).toBe(true);
+    expect(await ensureGitignore(root)).toBe(false);
+    expect(await root.read('.gitignore')).toBe('backups/\n');
   });
 });

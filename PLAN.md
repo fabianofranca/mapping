@@ -32,7 +32,7 @@ Objetivo: proteger marcações e imagens já revisadas contra alterações acide
 - [x] **F2. Store e estado derivado** — actions de trancar/destrancar (uma entrada de desfazer, inclusive "trancar todas") e conjunto derivado de marcações com geometria trancada.
 - [x] **F3. Canvas** — sem alças no item trancado, cadeado na seleção e sob o cursor, cursor "não permitido", segurar no celular não pega o item trancado.
 - [x] **F4. Interface** — cadeado na Árvore e em Detalhes, "Trancar todas as marcações desta imagem", atalho de teclado na Ajuda, textos pt-BR/en-US.
-- [ ] **F5. Ajustes** — `.gitignore` com `backups/` ao criar projeto em pasta, texto sobre git na tela inicial, ajuda e lista vazia em "Pertence a", testes de `useEditorShortcuts`.
+- [x] **F5. Ajustes** — `.gitignore` com `backups/` ao criar projeto em pasta, texto sobre git na tela inicial, ajuda e lista vazia em "Pertence a", testes de `useEditorShortcuts`.
 - [ ] **F6. Documentação e verificação** — `FORMAT.md`, `ARCHITECTURE.md`, `ROADMAP.md`, e2e e PR.
 
 ## Etapas futuras

@@ -192,6 +192,16 @@
   font: var(--t-text-small);
 }
 
+.props-note > span {
+  display: block;
+}
+
+/* A mensagem de lista vazia ("Pertence a") fica um tom acima da ajuda. */
+.props-note > [data-owner-empty] {
+  margin-top: var(--space-0-5);
+  color: var(--color-text);
+}
+
 .props-text {
   padding-top: var(--space-1);
   overflow-wrap: anywhere;

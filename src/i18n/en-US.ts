@@ -203,6 +203,10 @@ export const enUS: Dictionary = {
   'annotation.owner': 'Belongs to',
   'annotation.noOwner': 'None',
   'annotation.ownerOption': '{layer}: {name}',
+  'annotation.ownerHelp':
+    'Only annotations of this same marking that are in other layers appear (and, for typed ones, of a type that accepts this one).',
+  'annotation.ownerEmpty':
+    'No options: create an annotation in another layer on this marking so you can link this one to it.',
   'annotation.linkedTo': '↳ of {name}',
   'annotation.linkedHeading': 'Linked',
   'annotation.goToAnnotation': 'Go to annotation {name}',
@@ -420,6 +424,8 @@ export const enUS: Dictionary = {
   'home.colActions': 'Actions',
   'home.folderUnavailable':
     'This browser cannot open folders. Use Chrome or Edge on a computer.',
+  'home.gitHint':
+    'Using git? Prefer Open folder: the project becomes plain files (mapping.json and images/) you can version. When you create the project in a folder, the app also writes a .gitignore with backups/.',
   'pwa.previewBadge': 'PREVIEW',
   'export.fileMeta': 'Zip file · {size}',
   'help.specs.intro':

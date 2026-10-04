@@ -232,6 +232,19 @@ describe('Home no desktop (B10)', () => {
     expect(screen.queryByRole('table')).toBeNull();
   });
 
+  it('com a pasta disponível, recomenda o formato pasta para quem usa git', () => {
+    render(<Home />);
+    expect(screen.getByText(t('home.gitHint'))).toBeTruthy();
+    expect(screen.getByText(t('home.gitHint')).textContent).toContain('.gitignore');
+    expect(screen.queryByText(t('home.folderUnavailable'))).toBeNull();
+  });
+
+  it('sem suporte a pasta, mostra o motivo no lugar da recomendação', () => {
+    features.value = { folder: false, local: true, fileProtocol: false };
+    render(<Home />);
+    expect(screen.queryByText(t('home.gitHint'))).toBeNull();
+  });
+
   it('Abrir pasta desabilitado diz o motivo na tela', () => {
     features.value = { folder: false, local: true, fileProtocol: false };
     render(<Home />);
@@ -254,6 +267,11 @@ describe('Home no celular (B10)', () => {
     expect(screen.queryByRole('table')).toBeNull();
     expect(screen.getByRole('button', { name: t('help.open') })).toBeTruthy();
     expect(screen.getByRole('button', { name: t('settings.title') })).toBeTruthy();
+  });
+
+  it('com a pasta disponível, o texto sobre git aparece também no celular', () => {
+    render(<Home />);
+    expect(screen.getByText(t('home.gitHint'))).toBeTruthy();
   });
 
   it('com a pasta disponível o botão abre normalmente', () => {
