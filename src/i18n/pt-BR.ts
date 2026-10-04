@@ -564,7 +564,8 @@ export const ptBR = {
   'lock.imageNotice':
     'Trancada: não pode ser movida, redimensionada nem excluída. As marcações dela continuam editáveis.',
   'lock.deleteBlocked': 'Destranque para excluir',
-  'lock.deleteBlockedInside': 'Há itens trancados aqui dentro. Destranque-os para excluir.',
+  'lock.deleteBlockedInside':
+    'Há itens trancados aqui dentro. Destranque-os para excluir.',
   'lock.lockAll': 'Trancar todas as marcações desta imagem',
   'lock.unlockAll': 'Destrancar todas as marcações desta imagem',
   'image.replaceLocked':
