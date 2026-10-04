@@ -1,5 +1,5 @@
 import { render } from 'preact';
-import './theme/tokens.css';
+import 'virtual:tokens.css';
 import './theme/base.css';
 import './theme/layout.css';
 import './theme/panels.css';

@@ -2,6 +2,7 @@ import { useComputed } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { CanvasHost } from '../canvas/CanvasHost';
 import { t } from '../i18n';
+import { DESKTOP_QUERY } from '../theme/breakpoints';
 import { goToAnnotation, resolveSelection, type Selection } from '../store/ui';
 import type { AnnotationLocation } from '../store/ui';
 import { EditorProvider, useEditor } from '../ui/EditorContext';
@@ -20,9 +21,6 @@ import { useEditorNotices } from './useEditorNotices';
 import { useEditorShortcuts } from './useEditorShortcuts';
 import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
-
-/** Largura a partir da qual o layout de desktop é usado (docs/history/PLAN-etapas-1-2.md, 7.1). */
-const DESKTOP_QUERY = '(min-width: 900px)';
 
 export function Editor({ open }: { readonly open: OpenProject }) {
   // Um contexto (e um estado de UI) novo por projeto aberto: o Editor não é remontado ao trocar.
