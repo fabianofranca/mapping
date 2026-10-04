@@ -313,19 +313,15 @@ test('celular: Camadas em tela cheia, com a paleta e o menu da linha', async ({
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
 });
 
-test('celular: menu Painéis, gaveta de três alturas e 380px sem rolagem lateral', async ({
+// O `tap` do Playwright e o arraste por CDP do helper `drag` não se misturam num mesmo
+// teste: um deixa estado de toque que atrapalha o outro (o toque some, ou o arraste
+// vira pinça). Por isso os toques ficam num teste e o desenho, com `click`, no outro.
+test('celular: gaveta de três alturas e menu Painéis, com toque', async ({
   page,
 }, info) => {
   test.skip(!isMobile(info), 'layout do celular');
   await createProject(page, 'Painéis');
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
-
-  // Nada passa da largura da tela.
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - window.innerWidth,
-  );
-  expect(overflow).toBeLessThanOrEqual(0);
 
   // Gaveta: recolhida (64px), aberta (72%) e tela cheia (Detalhes).
   const sheet = page.getByRole('region', { name: 'Detalhes' });
@@ -337,20 +333,16 @@ test('celular: menu Painéis, gaveta de três alturas e 380px sem rolagem latera
   await expect
     .poll(async () => (await sheet.boundingBox())?.height ?? 0)
     .toBeGreaterThan(200);
-  await expect(page.getByLabel('X', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Abrir Detalhes em tela cheia' }).tap();
   await expect(page.getByRole('tab', { name: 'Detalhes' })).toHaveAttribute(
     'aria-selected',
     'true',
   );
-  await expect(page.getByLabel('X', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Voltar ao canvas' }).tap();
-  await expect(page.getByRole('button', { name: 'Esconder detalhes' })).toBeVisible();
-
-  // Breadcrumbs abaixo da barra de cima.
+  await page.getByRole('button', { name: 'Esconder detalhes' }).tap();
   await expect(
-    page.getByRole('navigation', { name: 'Caminho da seleção' }),
-  ).toContainText('images/tela.webp');
+    page.getByRole('button', { name: 'Mostrar detalhes', exact: true }),
+  ).toBeVisible();
 
   // Painéis: as seis janelas e as ações do projeto.
   await page.getByRole('button', { name: /^Painéis/ }).tap();
@@ -363,15 +355,44 @@ test('celular: menu Painéis, gaveta de três alturas e 380px sem rolagem latera
   await expect(menu).toBeHidden();
   const tree = page.getByRole('region', { name: 'Árvore de marcações' });
   await expect(tree).toBeVisible();
-  // Escolher na árvore seleciona e volta ao canvas.
+  // Escolher na árvore seleciona e volta ao canvas, com o caminho nos breadcrumbs.
   await tree.getByRole('button', { name: /^images\/tela/ }).tap();
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'Caminho da seleção' }),
+  ).toContainText('images/tela.webp');
 
   // O ⋯ da barra de cima abre o mesmo menu.
   await page.getByRole('button', { name: 'Mais: painéis e ações' }).tap();
   await expect(menu).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
+});
+
+test('celular: marcação em Detalhes na gaveta e em tela cheia, sem rolagem lateral', async ({
+  page,
+}, info) => {
+  test.skip(!isMobile(info), 'layout do celular');
+  await createProject(page, 'Gaveta');
+  await addImage(page);
+  await drawMarking(page, info, await canvasPoint(page));
+
+  // Nada passa da largura da tela.
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+
+  await page.getByRole('button', { name: 'Mostrar detalhes', exact: true }).click();
+  await expect(page.getByLabel('X', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir Detalhes em tela cheia' }).click();
+  await expect(page.getByLabel('X', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar ao canvas' }).click();
+  // A gaveta volta aberta, e os breadcrumbs mostram o caminho da marcação.
+  await expect(page.getByRole('button', { name: 'Esconder detalhes' })).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'Caminho da seleção' }),
+  ).toContainText('images/tela.webp');
 });
 
 // R5: Detalhes redesenhado (B15, P6 e os atalhos Alt+N e Alt+Enter).
