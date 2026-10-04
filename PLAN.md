@@ -47,12 +47,12 @@ Regras da etapa:
 
 Tokens de design a partir de uma fonte única. Não muda comportamento.
 
-- [ ] `tokens.css` gerado de uma fonte única (sem bloco escuro duplicado)
-- [ ] Todas as famílias de tokens da seção 2 do HANDOFF
-- [ ] `--space-3` → `--space-4` em todo o CSS, no mesmo commit em que `space-3` passa a valer 12px
-- [ ] `color-border-control` em todo limite de controle
-- [ ] `theme-color` claro e escuro
-- [ ] Constante TS dos breakpoints
+- [x] Tokens gerados de uma fonte única (`src/theme/tokens.ts` → `virtual:tokens.css`, sem bloco escuro duplicado)
+- [x] Todas as famílias de tokens da seção 2 do HANDOFF
+- [x] `--space-3` → `--space-4` em todo o CSS, no mesmo commit em que `space-3` passa a valer 12px
+- [x] `color-border-control` em todo limite de controle
+- [x] `theme-color` claro e escuro
+- [x] Constante TS dos breakpoints
 
 **Aceite**: nenhum valor de espaço, raio, opacidade, duração, z-index ou fonte fixo fora de `tokens.css` (lint de CSS ou teste que procura literais); contrastes da seção Contraste do DS 2.0.
 
