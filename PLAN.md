@@ -84,3 +84,5 @@ Estado: **etapas 1, 1.1, 2 e 2.1 concluídas**; **etapa 2.2 (segunda revisão t�
 ## Próximo: redesign da interface
 
 Depois da Fase 26, a interface será redesenhada com o Claude Design (desktop primeiro, utilizável no celular). As fases de implementação serão definidas a partir do resultado do design.
+
+O design está pronto: o documento de passagem [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) traz a correspondência de componentes, o comparativo de tokens, as mudanças de comportamento separadas das visuais, as decisões pendentes e a ordem sugerida (fases R1 a R10).
