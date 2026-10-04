@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { removeLayer, removeMarking } from '../../src/model';
 import {
   createEditorUi,
+  expandSections,
+  goToAnnotation,
+  isSectionCollapsed,
+  sectionKey,
+  toggleSection,
   resolveActiveLayerId,
   resolveSelection,
   setActiveLayer,
@@ -95,5 +100,41 @@ describe('estado da UI do editor', () => {
       expect(resolveActiveLayerId(p, ui.activeLayer.value)).toBe('L1');
       expect(visibleLayers(p, new Set(['L1']), 'L1').map((l) => l.id)).toEqual(['L1']);
     });
+  });
+
+  // B15: seções recolhíveis de Detalhes, estado da UI (fora do projeto e do desfazer).
+  it('recolhe e abre seções de Detalhes', () => {
+    const ui = createEditorUi();
+    const layer = { kind: 'layer', id: 'L1' } as const;
+    expect(sectionKey(layer)).toBe('layer:L1');
+    expect(sectionKey({ kind: 'marking' })).toBe('marking');
+    expect(isSectionCollapsed(ui, layer)).toBe(false);
+    toggleSection(ui, layer);
+    expect(isSectionCollapsed(ui, layer)).toBe(true);
+    toggleSection(ui, layer);
+    expect(isSectionCollapsed(ui, layer)).toBe(false);
+
+    toggleSection(ui, { kind: 'marking' });
+    const before = ui.collapsed.value;
+    // Abrir o que já está aberto não troca o conjunto (nada re-renderiza).
+    expandSections(ui, [layer]);
+    expect(ui.collapsed.value).toBe(before);
+    expandSections(ui, [{ kind: 'marking' }]);
+    expect(ui.collapsed.value.size).toBe(0);
+  });
+
+  it('ir até uma anotação abre a camada e a anotação recolhidas e pede o foco no campo', () => {
+    const ui = createEditorUi();
+    toggleSection(ui, { kind: 'annotations' });
+    toggleSection(ui, { kind: 'layer', id: 'L1' });
+    toggleSection(ui, { kind: 'annotation', id: 'A1' });
+    toggleSection(ui, { kind: 'layer', id: 'L2' });
+    ui.hiddenLayers.value = new Set(['L1']);
+    goToAnnotation(ui, { id: 'A1', markingId: 'M1', layerId: 'L1' }, 'owner');
+    expect([...ui.collapsed.value]).toEqual(['layer:L2']);
+    expect(ui.hiddenLayers.value.has('L1')).toBe(false);
+    expect(ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    expect(ui.focusAnnotation.value).toBe('A1');
+    expect(ui.focusField.value).toBe('owner');
   });
 });

@@ -20,7 +20,9 @@ export type Shortcut =
   | { readonly kind: 'export' }
   | { readonly kind: 'layers' }
   | { readonly kind: 'help' }
-  | { readonly kind: 'settings' };
+  | { readonly kind: 'settings' }
+  /** Alt+N: nova anotação na camada ativa (vale também com o foco num campo). */
+  | { readonly kind: 'new-annotation' };
 
 /**
  * Texto dos atalhos nas dicas dos botões. Nas janelas e no redimensionar é sempre
@@ -33,6 +35,9 @@ export const SHORTCUT_LABELS = {
   layers: 'Ctrl+L',
   help: 'F1',
   settings: 'Ctrl+,',
+  newAnnotation: 'Alt+N',
+  newRow: 'Alt+Enter',
+  pickRef: 'Ctrl+B',
 } as const;
 
 type KeyInfo = Pick<
@@ -77,7 +82,7 @@ function numberOf(e: KeyInfo): number | null {
  * tecla "delete" do Mac) exclui; Esc cancela/desseleciona; Shift+Esc esconde a
  * janela em foco. Ctrl+Shift+número abre e fecha as janelas (Alt+número é o extra,
  * ligado por `altNumbers`), Ctrl+Shift+setas as redimensiona, Alt+↑/↓ anda na
- * seleção e Ctrl+=/−/0 controlam o zoom.
+ * seleção, Alt+N cria uma anotação na camada ativa e Ctrl+=/−/0 controlam o zoom.
  */
 export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   const key = e.key.toLowerCase();
@@ -85,6 +90,9 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
 
   if (e.altKey) {
     if (mod) return null;
+    // Com Alt (Option no macOS) o `key` vira outro caractere: a tecla física manda.
+    if (!e.shiftKey && (e.code === 'KeyN' || key === 'n'))
+      return { kind: 'new-annotation' };
     if (key === 'arrowup') return { kind: 'select-parent' };
     if (key === 'arrowdown') return { kind: 'select-child' };
     const n = altNumbers ? numberOf(e) : null;
@@ -119,6 +127,11 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   if (key === 'delete' || key === 'backspace') return { kind: 'delete' };
   if (key === 'escape') return { kind: 'escape' };
   return null;
+}
+
+/** Atalhos que valem também com o foco num campo de texto (os "de campo"). */
+export function worksInTextInput(shortcut: Shortcut): boolean {
+  return shortcut.kind === 'new-annotation';
 }
 
 /** Alvos em que o teclado pertence ao campo, não ao editor. */

@@ -30,6 +30,17 @@ export interface EditorUi {
   readonly listIncompleteOnly: Signal<boolean>;
   /** Anotação para rolar até (e focar) no painel assim que ela aparecer. */
   readonly focusAnnotation: Signal<string | null>;
+  /**
+   * Campo da anotação em `focusAnnotation` que recebe o foco (link de uma pendência):
+   * o `data-focus` do campo (`owner`, a chave do campo ou `chave:linha:coluna`).
+   */
+  readonly focusField: Signal<string | null>;
+  /**
+   * Seções recolhidas de Detalhes (B15): a da marcação, a das anotações, cada camada
+   * e cada anotação (`sectionKey`). Vale para a sessão: recolher uma camada vale em
+   * todas as marcações.
+   */
+  readonly collapsed: Signal<ReadonlySet<string>>;
 }
 
 export function createEditorUi(): EditorUi {
@@ -41,7 +52,41 @@ export function createEditorUi(): EditorUi {
     listShowEmpty: signal<boolean>(false),
     listIncompleteOnly: signal<boolean>(false),
     focusAnnotation: signal<string | null>(null),
+    focusField: signal<string | null>(null),
+    collapsed: signal<ReadonlySet<string>>(new Set()),
   };
+}
+
+/** Seções recolhíveis de Detalhes. */
+export type DetailsSection =
+  | { readonly kind: 'marking' | 'image' | 'annotations' }
+  | { readonly kind: 'layer' | 'annotation'; readonly id: string };
+
+/** Chave da seção no conjunto `collapsed`. */
+export function sectionKey(section: DetailsSection): string {
+  return 'id' in section ? `${section.kind}:${section.id}` : section.kind;
+}
+
+export function isSectionCollapsed(ui: EditorUi, section: DetailsSection): boolean {
+  return ui.collapsed.value.has(sectionKey(section));
+}
+
+/** Recolhe ou abre a seção. */
+export function toggleSection(ui: EditorUi, section: DetailsSection): void {
+  const next = new Set(ui.collapsed.peek());
+  const key = sectionKey(section);
+  if (!next.delete(key)) next.add(key);
+  ui.collapsed.value = next;
+}
+
+/** Abre as seções (ex.: para mostrar uma anotação pedida por um link). */
+export function expandSections(ui: EditorUi, sections: readonly DetailsSection[]): void {
+  const current = ui.collapsed.peek();
+  const keys = sections.map(sectionKey).filter((key) => current.has(key));
+  if (keys.length === 0) return;
+  const next = new Set(current);
+  for (const key of keys) next.delete(key);
+  ui.collapsed.value = next;
 }
 
 /** Camada ativa efetiva: a escolhida, se ainda existir; senão a primeira do projeto. */
@@ -99,12 +144,23 @@ export function showLayer(ui: EditorUi, layerId: string): void {
 export type AnnotationLocation = Pick<Annotation, 'id' | 'markingId' | 'layerId'>;
 
 /**
- * Vai até a anotação (backlinks, "Ir para o alvo", vinculadas): mostra a camada
- * dela, seleciona a marcação e pede ao painel para rolar até ela.
+ * Vai até a anotação (backlinks, "Ir para o alvo", vinculadas, pendências): mostra a
+ * camada dela, abre as seções recolhidas que a escondem, seleciona a marcação e pede
+ * ao painel para rolar até ela (e focar `field`, se houver).
  */
-export function goToAnnotation(ui: EditorUi, annotation: AnnotationLocation): void {
+export function goToAnnotation(
+  ui: EditorUi,
+  annotation: AnnotationLocation,
+  field: string | null = null,
+): void {
   showLayer(ui, annotation.layerId);
+  expandSections(ui, [
+    { kind: 'annotations' },
+    { kind: 'layer', id: annotation.layerId },
+    { kind: 'annotation', id: annotation.id },
+  ]);
   ui.selection.value = { kind: 'marking', id: annotation.markingId };
+  ui.focusField.value = field;
   ui.focusAnnotation.value = annotation.id;
 }
 

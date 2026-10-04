@@ -421,6 +421,12 @@ describe('referências', () => {
       ['User.age', 'AU'],
       ['Contato.email', 'AC'],
     ]);
+    // Por que cada alvo é aceito: tupla livre (sem etiqueta) ou a etiqueta da linha.
+    expect(findRefTargets(p, 'AIN', 'dado').map((t) => t.tags)).toEqual([
+      [],
+      [],
+      ['data-field'],
+    ]);
     // Campo que não é ref não tem alvos.
     expect(findRefTargets(p, 'AIN', 'id')).toEqual([]);
   });
