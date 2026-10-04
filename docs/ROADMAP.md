@@ -21,6 +21,18 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - Testes: o build falha se a CSP faltar ou se os hashes não baterem com os blocos embutidos; um teste Playwright confirma que uma requisição para um host externo é bloqueada.
 - **Depende de:** nada. Pode rodar em paralelo com as fases do redesign.
 
+## Etapa 2.5 — Trava de marcações e imagens (depois do redesign)
+
+- **Objetivo:** proteger marcações e imagens já revisadas contra alterações acidentais, sem impedir a navegação nem a seleção.
+- **Entra:**
+  - cadeado por marcação e por imagem, na Árvore e nos Detalhes, com atalho de teclado e a ação "Trancar todas as marcações desta imagem";
+  - a trava bloqueia mover, redimensionar e excluir; a seleção continua livre;
+  - trancar um pai trava a geometria dos descendentes;
+  - cadeado visível no canvas, na seleção e sob o cursor;
+  - gravado no `mapping.json` (`locked`), com nova versão de schema e migração, e com desfazer;
+  - itens vindos do Figma (etapa 4) já são somente leitura; a trava é para os itens manuais.
+- **Depende de:** etapa 2.3 (Árvore e Detalhes do redesign).
+
 ## Etapa 3 — Servidor MCP
 
 - **Objetivo:** um agente criar e consultar projetos direto na pasta, reutilizando o modelo da app.
