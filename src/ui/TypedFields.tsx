@@ -21,10 +21,9 @@ import {
 } from '../model';
 import type { ActionResult } from '../store/history';
 import type { AnnotationLocation } from '../store/ui';
-import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
-import { ArrowDownIcon, ArrowUpIcon, CloseIcon } from './icons';
+import { Button, IconButton, Segmented, Select, TextField } from './controls';
 import { imageLabel, markingLabel, markingPath } from './labels';
 import { annotationSourceLabel, labelTexts } from './typedText';
 
@@ -85,8 +84,7 @@ export function SimpleEditor({
   switch (field.type) {
     case 'string':
       editor = (
-        <CommitInput
-          class="input"
+        <TextField
           aria-label={label}
           aria-required={required}
           disabled={readOnly}
@@ -97,8 +95,8 @@ export function SimpleEditor({
       break;
     case 'number':
       editor = (
-        <CommitInput
-          class={error ? 'input input-invalid' : 'input'}
+        <TextField
+          invalid={Boolean(error)}
           aria-label={label}
           aria-required={required}
           inputMode="decimal"
@@ -117,8 +115,7 @@ export function SimpleEditor({
       break;
     case 'date':
       editor = (
-        <input
-          class="input"
+        <TextField
           type="date"
           aria-label={label}
           aria-required={required}
@@ -134,27 +131,19 @@ export function SimpleEditor({
     case 'enum':
       editor =
         field.options.length <= SEGMENTED_MAX ? (
-          <div class="segmented typed-options" role="group" aria-label={label}>
-            {field.options.map((option) => (
-              <button
-                key={option}
-                type="button"
-                class="button"
-                aria-pressed={text === option}
-                disabled={readOnly}
-                // Opcional: tocar na opção escolhida limpa o campo.
-                onClick={() => {
-                  if (text !== option) report(onSet(option));
-                  else if (!required) report(onSet(null));
-                }}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            label={label}
+            items={field.options.map((option) => ({ id: option, label: option }))}
+            value={field.options.includes(text) ? text : null}
+            disabled={readOnly}
+            // Opcional: tocar na opção escolhida limpa o campo.
+            onSelect={(option) => {
+              if (text !== option) report(onSet(option));
+              else if (!required) report(onSet(null));
+            }}
+          />
         ) : (
-          <select
-            class="input"
+          <Select
             aria-label={label}
             aria-required={required}
             disabled={readOnly}
@@ -170,7 +159,7 @@ export function SimpleEditor({
                 {option}
               </option>
             ))}
-          </select>
+          </Select>
         );
       break;
   }
@@ -328,40 +317,28 @@ function TableField({ field, ...ctx }: FieldContext & { readonly field: TableFie
                 <div class="typed-row-header">
                   <strong>{rowName(row, index)}</strong>
                   <div class="typed-row-actions">
-                    <button
-                      type="button"
-                      class="button"
-                      aria-label={t('typed.moveRowUp')}
-                      title={t('typed.moveRowUp')}
+                    <IconButton
+                      icon="arrowUp"
+                      label={t('typed.moveRowUp')}
                       disabled={readOnly || index === 0}
                       onClick={() =>
                         actions.moveTableRow(annotation.id, field.key, row._id, index - 1)
                       }
-                    >
-                      <ArrowUpIcon />
-                    </button>
-                    <button
-                      type="button"
-                      class="button"
-                      aria-label={t('typed.moveRowDown')}
-                      title={t('typed.moveRowDown')}
+                    />
+                    <IconButton
+                      icon="arrowDown"
+                      label={t('typed.moveRowDown')}
                       disabled={readOnly || index === rows.length - 1}
                       onClick={() =>
                         actions.moveTableRow(annotation.id, field.key, row._id, index + 1)
                       }
-                    >
-                      <ArrowDownIcon />
-                    </button>
-                    <button
-                      type="button"
-                      class="button"
-                      aria-label={t('typed.removeRow')}
-                      title={t('typed.removeRow')}
+                    />
+                    <IconButton
+                      icon="close"
+                      label={t('typed.removeRow')}
                       disabled={readOnly}
                       onClick={() => remove(row)}
-                    >
-                      <CloseIcon />
-                    </button>
+                    />
                   </div>
                 </div>
                 <div class="typed-cells">
@@ -405,14 +382,12 @@ function TableField({ field, ...ctx }: FieldContext & { readonly field: TableFie
         </>
       )}
       <div class="row">
-        <button
-          type="button"
-          class="button"
+        <Button
           disabled={readOnly}
           onClick={() => actions.addTableRow(annotation.id, field.key)}
         >
           {t('typed.addRow')}
-        </button>
+        </Button>
       </div>
       {confirm && (
         <Dialog
@@ -420,19 +395,16 @@ function TableField({ field, ...ctx }: FieldContext & { readonly field: TableFie
           onCancel={() => setConfirm(null)}
           actions={
             <>
-              <button type="button" class="button" onClick={() => setConfirm(null)}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                class="button button-danger"
+              <Button onClick={() => setConfirm(null)}>{t('common.cancel')}</Button>
+              <Button
+                variant="danger"
                 onClick={() => {
                   actions.removeTableRow(annotation.id, field.key, confirm.row._id);
                   setConfirm(null);
                 }}
               >
                 {t('common.delete')}
-              </button>
+              </Button>
             </>
           }
         >
@@ -467,30 +439,21 @@ function RefField({ field, ...ctx }: FieldContext & { readonly field: RefFieldDe
           : `→ ${ref && target ? refLabel(project, ref, labelTexts()) : t('ref.broken')}`}
       </p>
       <div class="row">
-        <button
-          type="button"
-          class="button"
-          disabled={readOnly}
-          onClick={() => setPicking(true)}
-        >
+        <Button disabled={readOnly} onClick={() => setPicking(true)}>
           {t('ref.choose')}
-        </button>
-        <button
-          type="button"
-          class="button"
+        </Button>
+        <Button
           disabled={readOnly || !hasValue}
           onClick={() => actions.setFieldValue(annotation.id, field.key, null)}
         >
           {t('ref.clear')}
-        </button>
-        <button
-          type="button"
-          class="button"
+        </Button>
+        <Button
           disabled={!target}
           onClick={() => target && ctx.onGoToAnnotation(target.annotation)}
         >
           {t('ref.goTo')}
-        </button>
+        </Button>
       </div>
       {picking && (
         <RefPicker
@@ -581,18 +544,13 @@ function RefPicker({
     <Dialog
       title={t('ref.pickerTitle', { field: fieldLabel(field) })}
       onCancel={onCancel}
-      actions={
-        <button type="button" class="button" onClick={onCancel}>
-          {t('common.cancel')}
-        </button>
-      }
+      actions={<Button onClick={onCancel}>{t('common.cancel')}</Button>}
     >
       {targets.length === 0 ? (
         <p class="notice notice-info">{noTargetsMessage(field)}</p>
       ) : (
         <div class="ref-picker">
-          <input
-            class="input"
+          <TextField
             type="search"
             aria-label={t('ref.search')}
             placeholder={t('ref.search')}
@@ -610,14 +568,13 @@ function RefPicker({
                 <ul class="ref-options">
                   {group.items.map((item) => (
                     <li key={JSON.stringify(item.ref)}>
-                      <button
-                        type="button"
-                        class="button ref-option"
+                      <Button
+                        class="ref-option"
                         aria-pressed={isCurrent(item)}
                         onClick={() => onPick(item)}
                       >
                         {item.label}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>

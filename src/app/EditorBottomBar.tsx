@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { Tabs } from '../ui/controls';
 import { AddImagesButton, HistoryButtons, ModeButtons } from './EditorTools';
 
 export type EditorView = 'canvas' | 'list';
@@ -20,20 +21,15 @@ export function EditorBottomBar({
   return (
     <>
       <div class="viewtabs">
-        <div class="tabs" role="tablist" aria-label={t('view.tabsLabel')}>
-          {(['canvas', 'list'] as const).map((id) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              class="tab"
-              aria-selected={view === id}
-              onClick={() => onViewChange(id)}
-            >
-              {t(id === 'canvas' ? 'view.canvas' : 'view.list')}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          label={t('view.tabsLabel')}
+          value={view}
+          onChange={onViewChange}
+          tabs={[
+            { id: 'canvas', label: t('view.canvas') },
+            { id: 'list', label: t('view.list') },
+          ]}
+        />
       </div>
       <nav class="bottombar">
         <ModeButtons />

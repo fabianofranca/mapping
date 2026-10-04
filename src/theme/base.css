@@ -26,41 +26,10 @@ body {
   gap: var(--space-2);
 }
 
-.button,
-.link {
-  font: inherit;
-  cursor: pointer;
-}
-
-.button {
-  min-height: var(--size-touch);
-  min-width: var(--size-touch);
-  padding: 0 var(--space-4);
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-control);
-  border-radius: var(--radius-lg);
-}
-
-.button:disabled,
-.action-card:disabled {
-  opacity: var(--opacity-disabled);
-  cursor: default;
-}
-
-.button-primary {
-  color: var(--color-accent-text);
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.button-danger {
-  color: var(--color-danger);
-  border-color: var(--color-danger);
-}
-
 .link {
   min-height: var(--size-target-min);
+  font: inherit;
+  cursor: pointer;
   padding: 0 var(--space-1);
   color: inherit;
   text-decoration: underline;
@@ -102,27 +71,9 @@ body {
   color: var(--color-warning);
 }
 
-.tool-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
-  padding: 0 var(--space-2);
-}
-
-.icon {
-  flex: none;
-}
-
-.tool-button-pressed {
-  color: var(--color-accent-text);
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
 /* Foco visível para quem usa teclado (o contraste do acento passa de 3:1 nos dois temas). */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 

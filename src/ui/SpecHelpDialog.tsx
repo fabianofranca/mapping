@@ -3,6 +3,7 @@ import { specHelpSections, type HelpBlock } from '../i18n/specHelp';
 import { locale } from '../store/settings';
 import { Dialog } from './Dialog';
 import { downloadHelpAsset, HELP_ASSETS } from './helpAssets';
+import { Button } from './controls';
 
 function Block({ block }: { readonly block: HelpBlock }) {
   switch (block.kind) {
@@ -45,11 +46,7 @@ export function SpecHelpDialog({ onClose }: { readonly onClose: () => void }) {
     <Dialog
       title={t('help.specs.title')}
       onCancel={onClose}
-      actions={
-        <button type="button" class="button" onClick={onClose}>
-          {t('common.close')}
-        </button>
-      }
+      actions={<Button onClick={onClose}>{t('common.close')}</Button>}
     >
       <div class="help">
         <p class="muted">{t('help.specs.intro')}</p>
@@ -82,14 +79,9 @@ export function SpecHelpDialog({ onClose }: { readonly onClose: () => void }) {
           <p>{t('help.specs.downloadsHint')}</p>
           <div class="dialog-stack">
             {HELP_ASSETS.map((asset) => (
-              <button
-                type="button"
-                class="button"
-                key={asset.id}
-                onClick={() => downloadHelpAsset(asset)}
-              >
+              <Button key={asset.id} onClick={() => downloadHelpAsset(asset)}>
                 {t(`help.specs.download.${asset.id}` satisfies TranslationKey)}
-              </button>
+              </Button>
             ))}
           </div>
           <p class="muted">{t('help.specs.applyHint')}</p>

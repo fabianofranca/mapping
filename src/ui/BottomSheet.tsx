@@ -1,7 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useId } from 'preact/hooks';
 import { t } from '../i18n';
-import { ChevronIcon } from './icons';
+import { Icon } from './icons';
 
 interface BottomSheetProps {
   readonly title: string;
@@ -24,7 +24,7 @@ export function BottomSheet({ title, expanded, onToggle, children }: BottomSheet
         onClick={onToggle}
       >
         <span class="sheet-title">{title}</span>
-        <ChevronIcon />
+        <Icon name="chevronUp" />
       </button>
       <div id={contentId} class="sheet-content" hidden={!expanded}>
         {children}

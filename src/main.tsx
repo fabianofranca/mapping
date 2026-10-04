@@ -1,6 +1,7 @@
 import { render } from 'preact';
 import 'virtual:tokens.css';
 import './theme/base.css';
+import './theme/controls.css';
 import './theme/layout.css';
 import './theme/panels.css';
 import './theme/canvas.css';

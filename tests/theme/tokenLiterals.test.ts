@@ -56,10 +56,14 @@ function declarations(file: string): Declaration[] {
 
 const all = files.flatMap(declarations);
 
-/** `font: inherit` e `font: var(--t-…)` são os únicos valores aceitos. */
+/**
+ * `font: inherit` e `font: var(--t-…)` são os únicos valores aceitos. Opacidade `0` e `1`
+ * (mostrar ou esconder) não é valor de design: só os intermediários vêm dos tokens.
+ */
 function allowed(d: Declaration, category: string): boolean {
   if (category === 'fonte')
     return d.value === 'inherit' || /^var\(--[\w-]+\)$/.test(d.value);
+  if (category === 'opacidade') return d.value === '0' || d.value === '1';
   return false;
 }
 

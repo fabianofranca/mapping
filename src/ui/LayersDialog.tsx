@@ -22,7 +22,7 @@ import {
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
-import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from './icons';
+import { Button, Choice, IconButton } from './controls';
 
 interface LayersDialogProps {
   readonly project: Project;
@@ -58,38 +58,31 @@ export function LayersDialog({ project, readOnly, onClose }: LayersDialogProps) 
       <Dialog
         title={t('layer.title')}
         onCancel={onClose}
-        actions={
-          <button type="button" class="button" onClick={onClose}>
-            {t('common.close')}
-          </button>
-        }
+        actions={<Button onClick={onClose}>{t('common.close')}</Button>}
       >
         <p class="muted">{t('layer.hint')}</p>
         <div class="row">
-          <button type="button" class="button" disabled={readOnly} onClick={onAdd}>
+          <Button disabled={readOnly} onClick={onAdd}>
             + {t('layer.add')}
-          </button>
-          <button type="button" class="button" onClick={() => showAllLayers(ui)}>
-            {t('layer.showAll')}
-          </button>
+          </Button>
+          <Button onClick={() => showAllLayers(ui)}>{t('layer.showAll')}</Button>
         </div>
 
         <fieldset class="display-mode">
           <legend>{t('layer.displayMode')}</legend>
           {MARKING_DISPLAY_MODES.map((mode) => (
-            <label key={mode} class="field field-check">
-              <input
-                type="radio"
-                name="marking-display"
-                value={mode}
-                checked={markingDisplay.value === mode}
-                onChange={(e) => {
-                  const v = e.currentTarget.value;
-                  if (isMarkingDisplayMode(v)) setMarkingDisplay(v);
-                }}
-              />
-              <span>{t(`layer.display.${mode}` satisfies TranslationKey)}</span>
-            </label>
+            <Choice
+              key={mode}
+              type="radio"
+              name="marking-display"
+              value={mode}
+              label={t(`layer.display.${mode}` satisfies TranslationKey)}
+              checked={markingDisplay.value === mode}
+              onChange={(e) => {
+                const v = e.currentTarget.value;
+                if (isMarkingDisplayMode(v)) setMarkingDisplay(v);
+              }}
+            />
           ))}
           <small class="muted">{t('layer.displayHint')}</small>
         </fieldset>
@@ -170,40 +163,31 @@ export function LayersDialog({ project, readOnly, onClose }: LayersDialogProps) 
                 )}
 
                 <div class="layer-actions">
-                  <button
-                    type="button"
-                    class={active ? 'button button-primary' : 'button'}
+                  <Button
+                    variant={active ? 'primary' : 'default'}
                     aria-pressed={active}
                     onClick={() => setActiveLayer(ui, layer.id)}
                   >
                     {t(active ? 'layer.isActive' : 'layer.makeActive')}
-                  </button>
+                  </Button>
                   <span class="layer-order">
-                    <button
-                      type="button"
-                      class="button"
-                      aria-label={t('layer.moveUp')}
-                      title={t('layer.moveUp')}
+                    <IconButton
+                      icon="arrowUp"
+                      label={t('layer.moveUp')}
                       disabled={readOnly || index === 0}
                       onClick={() => actions.moveLayer(layer.id, index - 1)}
-                    >
-                      <ArrowUpIcon />
-                    </button>
-                    <button
-                      type="button"
-                      class="button"
-                      aria-label={t('layer.moveDown')}
-                      title={t('layer.moveDown')}
+                    />
+                    <IconButton
+                      icon="arrowDown"
+                      label={t('layer.moveDown')}
                       disabled={readOnly || index === last}
                       onClick={() => actions.moveLayer(layer.id, index + 1)}
-                    >
-                      <ArrowDownIcon />
-                    </button>
-                    <button
-                      type="button"
-                      class="button button-danger"
-                      aria-label={t('layer.delete')}
-                      title={
+                    />
+                    <IconButton
+                      icon="trash"
+                      variant="danger"
+                      label={t('layer.delete')}
+                      tooltip={
                         layer.spec
                           ? t('layer.specLocked')
                           : project.layers.length === 1
@@ -214,9 +198,7 @@ export function LayersDialog({ project, readOnly, onClose }: LayersDialogProps) 
                         readOnly || layer.spec !== null || project.layers.length === 1
                       }
                       onClick={() => setDeleting(layer)}
-                    >
-                      <TrashIcon />
-                    </button>
+                    />
                   </span>
                 </div>
               </li>
@@ -231,16 +213,10 @@ export function LayersDialog({ project, readOnly, onClose }: LayersDialogProps) 
           onCancel={() => setDeleting(null)}
           actions={
             <>
-              <button type="button" class="button" onClick={() => setDeleting(null)}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                class="button button-danger"
-                onClick={() => onDeleteConfirmed(deleting)}
-              >
+              <Button onClick={() => setDeleting(null)}>{t('common.cancel')}</Button>
+              <Button variant="danger" onClick={() => onDeleteConfirmed(deleting)}>
                 {t('common.delete')}
-              </button>
+              </Button>
             </>
           }
         >
