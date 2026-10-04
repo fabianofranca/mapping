@@ -1,15 +1,14 @@
 import { cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LAYER_PALETTE, type Project } from '../../src/model';
 import { locale, markingDisplay, setMarkingDisplay } from '../../src/store/settings';
 import { resolveActiveLayerId } from '../../src/store/ui';
-import { LayersDialog } from '../../src/ui/LayersDialog';
 import { LayerActions, LayersPanel } from '../../src/ui/LayersPanel';
 import { cadastroProject } from '../model/specFixtures';
 import { createHarness, renderLive } from './harness';
 
-// Camadas (B3): o conteúdo da janela do desktop e do diálogo do celular é o mesmo
+// Camadas (B3): o conteúdo da janela do desktop e da tela cheia do celular é o mesmo
 // `LayersPanel`; Nova camada e Mostrar todas vêm de `LayerActions`.
 
 beforeEach(() => {
@@ -21,7 +20,7 @@ function setup(project: Project = cadastroProject(), readOnly = false) {
   const harness = createHarness(project, readOnly);
   renderLive(harness, (p) => (
     <>
-      <LayerActions project={p} readOnly={readOnly} variant="icons" />
+      <LayerActions project={p} readOnly={readOnly} />
       <LayersPanel project={p} readOnly={readOnly} />
     </>
   ));
@@ -262,22 +261,5 @@ describe('LayersPanel', () => {
       );
       await user.keyboard('{Escape}');
     }
-  });
-});
-
-describe('LayersDialog (celular)', () => {
-  it('reúne a dica, as ações em botões e a lista, e fecha pelo botão', async () => {
-    const harness = createHarness(cadastroProject());
-    const onClose = vi.fn();
-    renderLive(harness, (p) => (
-      <LayersDialog project={p} readOnly={false} onClose={onClose} />
-    ));
-    expect(screen.getByRole('button', { name: '+ Nova camada' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Mostrar todas' })).toBeTruthy();
-    expect(screen.getAllByLabelText('Nome da camada')).toHaveLength(
-      harness.project().layers.length,
-    );
-    await userEvent.click(screen.getByRole('button', { name: 'Fechar' }));
-    expect(onClose).toHaveBeenCalledOnce();
   });
 });

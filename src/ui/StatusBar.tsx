@@ -8,7 +8,7 @@ import { Icon } from './icons';
 import { imageLabel, markingLabel } from './labels';
 import { ZoomField } from './ZoomField';
 
-// Barra de status do desktop (B8): salvamento, destino e "não exportado" à esquerda;
+// Barra de status do desktop (B8; no celular, o resumo `StatusSummary`): salvamento, destino e "não exportado" à esquerda;
 // seleção, cursor, zoom, schema e canal à direita. O cursor vem do canvas num signal
 // de UI próprio, atualizado no máximo uma vez por quadro (HANDOFF, seção 6).
 
@@ -75,19 +75,25 @@ function CursorItem() {
 
 const Separator = () => <span class="status-sep" aria-hidden="true" />;
 
-export function StatusBar() {
+/** Destino do salvamento, "não exportado", schema e canal: comuns às duas barras. */
+function useStatusTexts() {
   const { open } = useEditor();
-  const target = t(open.kind === 'folder' ? 'status.targetFolder' : 'status.targetLocal');
-  const channel = t(
-    CHANNEL === 'preview' ? 'status.channelPreview' : 'status.channelMain',
-  );
+  return {
+    target: t(open.kind === 'folder' ? 'status.targetFolder' : 'status.targetLocal'),
+    unexported: open.kind === 'local' && open.unexported.value,
+    channel: t(CHANNEL === 'preview' ? 'status.channelPreview' : 'status.channelMain'),
+  };
+}
+
+export function StatusBar() {
+  const { target, unexported, channel } = useStatusTexts();
   return (
     <footer class="statusbar" aria-label={t('statusbar.label')}>
       <SaveItem />
       <span class="status-item" title={t('status.targetLabel', { target })}>
         {target}
       </span>
-      {open.kind === 'local' && open.unexported.value && (
+      {unexported && (
         <span class="status-item status-item-warn">{t('status.unexported')}</span>
       )}
       <span class="statusbar-gap" />
@@ -107,6 +113,25 @@ export function StatusBar() {
       <span class="status-item" title={t('status.channelLabel', { channel })}>
         {channel}
       </span>
+    </footer>
+  );
+}
+
+/**
+ * Celular: o resumo da barra de status (salvamento, destino, não exportado, schema e
+ * canal), no rodapé do menu Painéis. Seleção e zoom já estão à vista no canvas.
+ */
+export function StatusSummary() {
+  const { target, unexported, channel } = useStatusTexts();
+  return (
+    <footer class="status-summary" aria-label={t('statusbar.label')}>
+      <SaveItem />
+      <span class="status-item">{t('status.targetLabel', { target })}</span>
+      {unexported && (
+        <span class="status-item status-item-warn">{t('status.unexported')}</span>
+      )}
+      <span class="status-item">{t('status.schema', { version: SCHEMA_VERSION })}</span>
+      <span class="status-item">{t('status.channelLabel', { channel })}</span>
     </footer>
   );
 }

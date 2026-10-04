@@ -198,6 +198,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-sheet-peek': '64px',
   'size-m-bar': '52px',
   'size-m-toolbar': '60px',
+  /** Botão de janela no menu Painéis do celular (B6). */
+  'size-panel-tile': '68px',
   // Opacidades
   'opacity-disabled': '0.45',
   'opacity-dimmed': '0.35',

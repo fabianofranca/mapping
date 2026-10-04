@@ -1,8 +1,11 @@
 import type { JSX } from 'preact';
+import { Icon, type IconName } from '../icons';
 
 export interface TabItem<T extends string> {
   readonly id: T;
   readonly label: string;
+  /** Ícone antes do rótulo (faixa de abas do celular). */
+  readonly icon?: IconName;
   /** Dica nativa (`title`). */
   readonly title?: string;
   readonly disabled?: boolean;
@@ -49,7 +52,7 @@ export function Tabs<T extends string>({
 
   return (
     <div class="tabs" role="tablist" aria-label={label}>
-      {tabs.map(({ id, label: text, title, disabled, badge, alert }, i) => (
+      {tabs.map(({ id, label: text, icon, title, disabled, badge, alert }, i) => (
         <button
           key={id}
           type="button"
@@ -62,6 +65,7 @@ export function Tabs<T extends string>({
           onKeyDown={(e) => move(e, i)}
           onClick={() => onChange(id)}
         >
+          {icon && <Icon name={icon} />}
           {text}
           {badge && <span class="tab-badge">{badge}</span>}
           {alert && <span class="tab-alert" aria-hidden="true" />}

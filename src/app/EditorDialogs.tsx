@@ -2,16 +2,14 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { t } from '../i18n';
 import { imageDeletionImpact, markingDeletionImpact } from '../model';
 import { Dialog } from '../ui/Dialog';
-import { DiagnosticsDialog } from '../ui/DiagnosticsDialog';
 import { useEditor, type EditorContextValue } from '../ui/EditorContext';
 import { markingLabel } from '../ui/labels';
-import { LayersDialog } from '../ui/LayersDialog';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
-import { SettingsBar } from '../ui/SettingsBar';
 import { SettingsDialog } from '../ui/SettingsDialog';
 import { SpecsDialog } from '../ui/SpecsDialog';
 import { closeProject } from './controller';
 import { ExportDialog } from './ExportDialog';
+import { PanelsMenu } from './PanelsMenu';
 import type { EditorDialog, EditorDialogs as Dialogs } from './useEditorDialogs';
 import type { ImageIntake } from './useImageIntake';
 import type { ProjectCommands } from './useProjectCommands';
@@ -61,26 +59,6 @@ function ConfirmDialog({
   );
 }
 
-function CloseOnlyDialog({
-  title,
-  onClose,
-  children,
-}: {
-  readonly title: string;
-  readonly onClose: () => void;
-  readonly children: ComponentChildren;
-}) {
-  return (
-    <Dialog
-      title={title}
-      onCancel={onClose}
-      actions={<Button onClick={onClose}>{t('common.close')}</Button>}
-    >
-      {children}
-    </Dialog>
-  );
-}
-
 function AddMenuDialog({
   dialogs,
   intake,
@@ -102,34 +80,6 @@ function AddMenuDialog({
   );
 }
 
-function MenuDialog({
-  dialogs,
-  busy,
-  commands,
-}: {
-  readonly dialogs: Dialogs;
-  readonly busy: boolean;
-  readonly commands: ProjectCommands;
-}) {
-  const open = (kind: 'specs' | 'help' | 'diagnostics') => () => dialogs.show({ kind });
-  return (
-    <CloseOnlyDialog title={t('editor.menu')} onClose={dialogs.close}>
-      <div class="menu-actions">
-        <Button disabled={busy} onClick={() => void commands.exportProject()}>
-          {t('editor.export')}
-        </Button>
-        <Button onClick={open('specs')}>{t('spec.menu')}</Button>
-        <Button onClick={open('help')}>{t('help.open')}</Button>
-        <Button onClick={open('diagnostics')}>{t('diagnostics.open')}</Button>
-        <Button onClick={() => void commands.closeProject()}>
-          {t('editor.closeProject')}
-        </Button>
-      </div>
-      <SettingsBar />
-    </CloseOnlyDialog>
-  );
-}
-
 function renderDialog(
   dialog: EditorDialog,
   { dialogs, busy, intake, commands }: EditorDialogsProps,
@@ -144,8 +94,8 @@ function renderDialog(
   switch (dialog.kind) {
     case 'addMenu':
       return <AddMenuDialog dialogs={dialogs} intake={intake} />;
-    case 'menu':
-      return <MenuDialog dialogs={dialogs} busy={busy} commands={commands} />;
+    case 'panels':
+      return <PanelsMenu dialogs={dialogs} busy={busy} commands={commands} />;
     case 'specs':
       return <SpecsDialog project={project} readOnly={readOnly} onClose={close} />;
     case 'settings':
@@ -157,10 +107,6 @@ function renderDialog(
       );
     case 'help':
       return <HelpDialog onClose={close} section={dialog.section} />;
-    case 'diagnostics':
-      return <DiagnosticsDialog onClose={close} />;
-    case 'layers':
-      return <LayersDialog project={project} readOnly={readOnly} onClose={close} />;
     case 'deleteImage': {
       const { image } = dialog;
       return (

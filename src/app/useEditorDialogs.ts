@@ -6,13 +6,12 @@ import { useEditor } from '../ui/EditorContext';
 /** O diálogo aberto no editor (só um por vez), com os dados que ele precisa. */
 export type EditorDialog =
   | { readonly kind: 'addMenu' }
-  | { readonly kind: 'menu' }
+  /** Celular: menu Painéis e ações (B6). */
+  | { readonly kind: 'panels' }
   /** `section`: id da seção em que a Ajuda abre (ex.: os atalhos, pelas Configurações). */
   | { readonly kind: 'help'; readonly section?: string }
-  | { readonly kind: 'diagnostics' }
   | { readonly kind: 'specs' }
   | { readonly kind: 'settings' }
-  | { readonly kind: 'layers' }
   | { readonly kind: 'deleteImage'; readonly image: ProjectImage }
   | { readonly kind: 'deleteMarking'; readonly marking: Marking }
   | {

@@ -4,27 +4,22 @@ import type { ProjectImage } from '../model';
 import { resolveSelection, type AnnotationLocation, type Selection } from '../store/ui';
 import { BottomSheet } from '../ui/BottomSheet';
 import { useEditor } from '../ui/EditorContext';
+import { Icon } from '../ui/icons';
 import { imageLabel, markingPath } from '../ui/labels';
 import { MarkingPanel } from '../ui/MarkingPanel';
-import { MarkingTree } from '../ui/MarkingTree';
-import { PanelTabs, type PanelTab } from '../ui/PanelTabs';
+import { LayerDots } from '../ui/MarkingTree';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import type { EditorDialogs } from './useEditorDialogs';
 
 export interface EditorPanelProps {
-  /** Abas Detalhes | Árvore (celular). Sem elas, o painel mostra só os detalhes. */
-  readonly tab?: PanelTab;
-  readonly onTabChange?: (tab: PanelTab) => void;
   readonly busy: boolean;
   readonly dialogs: EditorDialogs;
   readonly onReplace: (image: ProjectImage) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-/** Janela Detalhes (desktop) ou conteúdo da gaveta (celular, com as abas). */
+/** Detalhes: janela da direita (desktop), gaveta ou tela cheia (celular). */
 export function EditorPanel({
-  tab,
-  onTabChange,
   busy,
   dialogs,
   onReplace,
@@ -35,72 +30,85 @@ export function EditorPanel({
   const project = store.committed.value;
   if (!project) return null;
   const readOnly = store.readOnly.value;
-  const selection = ui.selection.value;
-  const selected = resolveSelection(project, selection);
+  const selected = resolveSelection(project, ui.selection.value);
   const selectedImage = selected?.kind === 'image' ? selected.image : null;
 
-  const onTreeSelect = (next: NonNullable<Selection>) => {
+  const onSelectMarking = (id: string) => {
+    const next: NonNullable<Selection> = { kind: 'marking', id };
     ui.selection.value = next;
     canvas.current?.focusSelection();
   };
 
-  const details =
-    selected?.kind === 'marking' ? (
-      <MarkingPanel
-        key={selected.marking.id}
-        project={project}
-        marking={selected.marking}
-        image={selected.image}
-        readOnly={readOnly || busy}
-        onDelete={dialogs.requestDeleteMarking}
-        onSelectMarking={(id) => onTreeSelect({ kind: 'marking', id })}
-        onGoToAnnotation={onGoToAnnotation}
-      />
-    ) : (
-      <SelectionPanel
-        image={selectedImage}
-        display={selectedImage ? display.images.value.get(selectedImage.file) : undefined}
-        readOnly={readOnly}
-        busy={busy}
-        onReplace={onReplace}
-        onDelete={dialogs.requestDeleteImage}
-      />
-    );
-
-  if (tab === undefined || !onTabChange) return <div class="tab-panel">{details}</div>;
   return (
-    <>
-      <PanelTabs tab={tab} onChange={onTabChange} />
-      <div role="tabpanel" class="tab-panel">
-        {tab === 'details' ? (
-          details
-        ) : (
-          <MarkingTree project={project} selection={selection} onSelect={onTreeSelect} />
-        )}
-      </div>
-    </>
+    <div class="tab-panel">
+      {selected?.kind === 'marking' ? (
+        <MarkingPanel
+          key={selected.marking.id}
+          project={project}
+          marking={selected.marking}
+          image={selected.image}
+          readOnly={readOnly || busy}
+          onDelete={dialogs.requestDeleteMarking}
+          onSelectMarking={onSelectMarking}
+          onGoToAnnotation={onGoToAnnotation}
+        />
+      ) : (
+        <SelectionPanel
+          image={selectedImage}
+          display={
+            selectedImage ? display.images.value.get(selectedImage.file) : undefined
+          }
+          readOnly={readOnly}
+          busy={busy}
+          onReplace={onReplace}
+          onDelete={dialogs.requestDeleteImage}
+        />
+      )}
+    </div>
   );
 }
 
-/** Celular: a gaveta inferior com o painel; recolhida mostra só o nome do item selecionado. */
-export function EditorSheet({
-  expanded,
-  onToggle,
-  ...panel
-}: EditorPanelProps & { readonly expanded: boolean; readonly onToggle: () => void }) {
-  const { store, ui } = useEditor();
-  // Só o título da gaveta: um texto, para não renderizar a cada edição do projeto.
-  const titleSignal = useComputed(() => {
+/**
+ * Celular: a gaveta de Detalhes (B7). Recolhida mostra as bolinhas das camadas, o nome
+ * do item selecionado e o aviso de pendência; aberta, o painel; a tela cheia é a janela
+ * Detalhes em tela cheia.
+ */
+export function EditorSheet(panel: EditorPanelProps) {
+  const { store, ui, derived } = useEditor();
+  // Só o cabeçalho: textos e ids, para não renderizar a cada edição do projeto.
+  const header = useComputed(() => {
     const project = store.committed.value;
     const selected = resolveSelection(project, ui.selection.value);
     if (project && selected?.kind === 'marking') {
-      return markingPath(project, selected.marking);
+      return {
+        title: markingPath(project, selected.marking),
+        markingId: selected.marking.id,
+      };
     }
-    return selected?.kind === 'image' ? imageLabel(selected.image) : null;
+    return {
+      title: selected?.kind === 'image' ? imageLabel(selected.image) : null,
+      markingId: null,
+    };
   });
-  const title = titleSignal.value ?? t('panel.nothingSelected');
+  const { title, markingId } = header.value;
+  const dots = markingId ? (derived.layerDots.value.get(markingId) ?? []) : [];
+  const incomplete = markingId ? derived.incompleteMarkings.value.has(markingId) : false;
   return (
-    <BottomSheet title={title} expanded={expanded} onToggle={onToggle}>
+    <BottomSheet
+      title={title ?? t('panel.nothingSelected')}
+      leading={dots.length > 0 && <LayerDots dots={dots} />}
+      trailing={
+        incomplete && (
+          <span class="sheet-warning" title={t('sheet.incomplete')}>
+            <Icon name="warning" />
+            <span class="visually-hidden">{t('sheet.incomplete')}</span>
+          </span>
+        )
+      }
+      height={ui.sheet.value}
+      onHeightChange={(height) => (ui.sheet.value = height)}
+      onFull={() => (ui.mobileWindow.value = 'details')}
+    >
       <EditorPanel {...panel} />
     </BottomSheet>
   );

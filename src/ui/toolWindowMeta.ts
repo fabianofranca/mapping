@@ -15,12 +15,12 @@ export interface ToolWindowMeta {
   readonly icon: IconName;
   /** Título mostrado no cabeçalho e no botão da faixa. */
   title(): string;
-  /** Texto curto da aba (janela inferior); sem ele vale o título. */
+  /** Texto curto da aba (janela inferior e faixa do celular); sem ele vale o título. */
   tab?(): string;
 }
 
 const META: Readonly<Record<ToolWindowId, ToolWindowMeta>> = {
-  tree: { icon: 'tree', title: () => t('panel.treeTitle') },
+  tree: { icon: 'tree', title: () => t('panel.treeTitle'), tab: () => t('panel.tree') },
   layers: { icon: 'layers', title: () => t('layer.title') },
   details: { icon: 'panelRight', title: () => t('panel.details') },
   list: { icon: 'list', title: () => t('list.title'), tab: () => t('view.list') },

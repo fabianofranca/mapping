@@ -31,7 +31,7 @@ export function afterPaint(callback: () => void): void {
 }
 
 /** Bolinhas das camadas visíveis que chegam à marcação; as herdadas ficam esmaecidas. */
-function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
+export function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
   return (
     <span class="tree-dots" aria-hidden="true">
       {dots.map(({ layer, inheritedOnly }) => (

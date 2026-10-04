@@ -1,5 +1,5 @@
 import { useComputed } from '@preact/signals';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import { CanvasHost } from '../canvas/CanvasHost';
 import { t } from '../i18n';
 import { BREAKPOINTS, DESKTOP_QUERY } from '../theme/breakpoints';
@@ -7,20 +7,21 @@ import { collapseDetailsOnCompact } from '../store/toolWindows';
 import { goToAnnotation, resolveSelection, type Selection } from '../store/ui';
 import type { AnnotationLocation } from '../store/ui';
 import { EditorProvider, useEditor } from '../ui/EditorContext';
-import { ListView } from '../ui/ListView';
+import { Breadcrumbs } from '../ui/Breadcrumbs';
 import { Minimap } from '../ui/Minimap';
-import type { PanelTab } from '../ui/PanelTabs';
 import { StatusBar } from '../ui/StatusBar';
 import { useMediaQuery } from '../ui/useMediaQuery';
+import { ZoomField } from '../ui/ZoomField';
 import type { OpenProject } from './controller';
 import { CanvasNotices } from './CanvasNotices';
 import { SemanticTextButton } from './EditorTools';
-import { EditorBottomBar, type EditorView } from './EditorBottomBar';
+import { EditorBottomBar } from './EditorBottomBar';
 import { EditorDialogs } from './EditorDialogs';
 import { EditorMainBar } from './EditorMainBar';
 import { EditorSheet, type EditorPanelProps } from './EditorPanel';
 import { EditorTopBar } from './EditorTopBar';
 import { EditorWindows } from './EditorWindows';
+import { MobileWindow } from './MobileWindow';
 import { useEditorDialogs } from './useEditorDialogs';
 import { useEditorNotices } from './useEditorNotices';
 import { useEditorShortcuts } from './useEditorShortcuts';
@@ -48,11 +49,9 @@ export function EditorScreen() {
   const commands = useProjectCommands(dialogs, notices);
   useEditorShortcuts(dialogs, commands, desktop);
 
-  const [panelTab, setPanelTab] = useState<PanelTab>('details');
-  const [sheetExpanded, setSheetExpanded] = useState(false);
-  /** Celular: aba ativa (Canvas | Lista). No desktop a Lista é a janela inferior. */
-  const [view, setView] = useState<EditorView>('canvas');
+  /** Celular: centralizar a seleção quando o canvas voltar a aparecer. */
   const focusAfterView = useRef(false);
+  const mobileWindow = ui.mobileWindow.value;
 
   // Só fatias do projeto confirmado (ver `ProjectStore.committed`): a tela não
   // renderiza de novo a cada prévia de gesto, nem a cada edição que não as muda.
@@ -70,38 +69,53 @@ export function EditorScreen() {
 
   // Celular: sem seleção, a gaveta recolhe (ao selecionar algo ela abre recolhida).
   useEffect(() => {
-    if (!hasSelection.value) setSheetExpanded(false);
-  }, [hasSelection.value]);
+    if (!hasSelection.value) ui.sheet.value = 'peek';
+  }, [hasSelection.value, ui]);
 
-  // Voltar da lista para o canvas (celular): centraliza depois que o canvas reaparece.
+  // Voltar de uma tela cheia para o canvas (celular): centraliza depois que o canvas
+  // reaparece.
   useEffect(() => {
-    if (view === 'canvas' && focusAfterView.current) {
+    if (mobileWindow === null && focusAfterView.current) {
       focusAfterView.current = false;
       canvas.current?.focusSelection();
     }
-  }, [view, canvas]);
+  }, [mobileWindow, canvas]);
 
   if (!hasProject.value) return null;
 
-  /** Backlinks, "Ir para o alvo" e vinculadas: em qualquer marcação. */
+  /** Volta ao canvas (celular), centralizando a seleção. */
+  const backToCanvas = () => {
+    focusAfterView.current = true;
+    ui.mobileWindow.value = null;
+  };
+
+  /** Backlinks, "Ir para o alvo", vinculadas e Incompletas: em qualquer marcação. */
   const onGoToAnnotation = (annotation: AnnotationLocation) => {
     const selection = ui.selection.peek();
     const sameMarking =
       selection?.kind === 'marking' && selection.id === annotation.markingId;
     goToAnnotation(ui, annotation);
+    const screen = ui.mobileWindow.peek();
+    // Celular: Detalhes em tela cheia continua nela; nas outras telas, a anotação
+    // aparece na gaveta aberta, com a marcação no canvas.
+    if (!desktop && screen !== 'details') {
+      ui.sheet.value = 'open';
+      if (screen !== null) {
+        backToCanvas();
+        return;
+      }
+    }
     if (!sameMarking) canvas.current?.focusSelection();
-    if (!desktop) setSheetExpanded(true);
   };
 
   /** Escolher na árvore, na lista ou nos breadcrumbs seleciona e centraliza o canvas. */
   const onSelect = (next: NonNullable<Selection>) => {
     ui.selection.value = next;
-    if (desktop) {
+    if (desktop || ui.mobileWindow.peek() === null) {
       canvas.current?.focusSelection();
       return;
     }
-    focusAfterView.current = true;
-    setView('canvas');
+    backToCanvas();
   };
 
   const panel: EditorPanelProps = {
@@ -110,37 +124,18 @@ export function EditorScreen() {
     onReplace: intake.requestReplace,
     onGoToAnnotation,
   };
-  const mobileList = !desktop && view === 'list';
 
-  const canvasArea = (
-    <main
-      class="canvas-area"
-      aria-label={t('editor.canvasLabel')}
-      hidden={mobileList}
-      {...intake.dropHandlers}
-    >
-      <CanvasHost />
-      <CanvasNotices notices={notices} />
-      {desktop ? (
-        <Minimap />
-      ) : (
-        <div class="canvas-float">
-          <SemanticTextButton />
-        </div>
-      )}
-      {noImages.value && (
-        <div class="canvas-empty">
-          <p class="muted">{t('editor.emptyCanvas')}</p>
-          <Button
-            variant="primary"
-            disabled={store.readOnly.value || busy}
-            onClick={intake.onAddClick}
-          >
-            {t('editor.addImages')}
-          </Button>
-        </div>
-      )}
-    </main>
+  const emptyCanvas = noImages.value && (
+    <div class="canvas-empty">
+      <p class="muted">{t('editor.emptyCanvas')}</p>
+      <Button
+        variant="primary"
+        disabled={store.readOnly.value || busy}
+        onClick={intake.onAddClick}
+      >
+        {t('editor.addImages')}
+      </Button>
+    </div>
   );
 
   if (desktop) {
@@ -152,7 +147,22 @@ export function EditorScreen() {
           dialogs={dialogs}
           commands={commands}
         />
-        <EditorWindows panel={panel} onSelect={onSelect} canvas={canvasArea} />
+        <EditorWindows
+          panel={panel}
+          onSelect={onSelect}
+          canvas={
+            <main
+              class="canvas-area"
+              aria-label={t('editor.canvasLabel')}
+              {...intake.dropHandlers}
+            >
+              <CanvasHost />
+              <CanvasNotices notices={notices} />
+              <Minimap />
+              {emptyCanvas}
+            </main>
+          }
+        />
         <StatusBar />
         <ImageInputs intake={intake} />
         <EditorDialogs
@@ -165,34 +175,53 @@ export function EditorScreen() {
     );
   }
 
+  // Celular: barra de cima, breadcrumbs, canvas com a gaveta e barra de baixo; uma
+  // janela aberta ocupa a tela toda (o canvas continua montado, escondido).
+  const full = mobileWindow !== null;
   return (
     <div class="editor editor-mobile">
-      <EditorTopBar dialogs={dialogs} />
+      {full ? (
+        <MobileWindow
+          id={mobileWindow}
+          panel={panel}
+          onSelect={onSelect}
+          onBack={backToCanvas}
+        />
+      ) : (
+        <>
+          <EditorTopBar dialogs={dialogs} commands={commands} busy={busy} />
+          <div class="mobile-crumbs">
+            <Breadcrumbs onSelect={onSelect} />
+          </div>
+        </>
+      )}
 
-      <div class="editor-body">
-        {canvasArea}
-        {mobileList && (
-          <section class="list-screen" aria-label={t('list.title')}>
-            <ListView onSelect={onSelect} />
-          </section>
-        )}
+      <div class="editor-body" hidden={full}>
+        <main
+          class="canvas-area"
+          aria-label={t('editor.canvasLabel')}
+          hidden={full}
+          {...intake.dropHandlers}
+        >
+          <CanvasHost />
+          <CanvasNotices notices={notices} />
+          <div class="canvas-float canvas-float-start">
+            <ZoomField />
+          </div>
+          <div class="canvas-float">
+            <SemanticTextButton />
+          </div>
+          {emptyCanvas}
+        </main>
+        {!full && <EditorSheet {...panel} />}
       </div>
-
-      {!mobileList && (
-        <EditorSheet
-          {...panel}
-          tab={panelTab}
-          onTabChange={setPanelTab}
-          expanded={sheetExpanded}
-          onToggle={() => setSheetExpanded(!sheetExpanded)}
+      {!full && (
+        <EditorBottomBar
+          busy={busy}
+          onAdd={intake.onAddClick}
+          onPanels={() => dialogs.show({ kind: 'panels' })}
         />
       )}
-      <EditorBottomBar
-        view={view}
-        onViewChange={setView}
-        busy={busy}
-        onAdd={intake.onAddClick}
-      />
 
       <ImageInputs intake={intake} />
       <EditorDialogs dialogs={dialogs} busy={busy} intake={intake} commands={commands} />
