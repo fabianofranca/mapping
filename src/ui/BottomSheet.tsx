@@ -7,7 +7,7 @@ import { IconButton } from './controls';
 // Gaveta do celular (B7): três alturas. Recolhida (64px) mostra só o cabeçalho; aberta
 // ocupa 72% do corpo do editor; tela cheia é a janela Detalhes em tela cheia (quem a
 // abre é `onFull`). Tocar no cabeçalho alterna entre recolhida e aberta; arrastar o
-// cabeçalho para cima sobe uma altura, para baixo desce uma.
+// cabeçalho (alça e título) para cima sobe uma altura, para baixo desce uma.
 
 /** Deslocamento (px) a partir do qual o arrasto no cabeçalho conta como gesto. */
 export const SHEET_SWIPE = 24;
@@ -78,12 +78,16 @@ export function BottomSheet({
 
   return (
     <section class={open ? 'sheet sheet-open' : 'sheet'} aria-label={t('panel.details')}>
-      <div class="sheet-header" onPointerDown={onPointerDown}>
+      <div class="sheet-header">
         <span class="sheet-handle" aria-hidden="true" />
-        <div class="sheet-bar">
+        {/* Só a alça e o título são área de arraste: os botões ficam fora dela, com o
+            toque normal do navegador. */}
+        <div class="sheet-grip" onPointerDown={onPointerDown}>
           {leading}
           <span class="sheet-title">{title}</span>
           {trailing}
+        </div>
+        <div class="sheet-actions">
           {open && (
             <IconButton icon="maximize" label={t('sheet.full')} onClick={onFull} />
           )}

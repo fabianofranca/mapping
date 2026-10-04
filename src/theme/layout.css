@@ -479,36 +479,57 @@
   height: 72%;
 }
 
-/* O cabeçalho é a área de arraste: o navegador não rola nem dá zoom nele. */
+/*
+ * Cabeçalho: a alça centralizada no topo; a área de arraste (bolinhas e título) à
+ * esquerda e os botões à direita. Só a área de arraste tem `touch-action: none`: os
+ * botões mantêm o toque normal do navegador.
+ */
 .sheet-header {
+  position: relative;
   flex: none;
   display: flex;
-  flex-direction: column;
+  align-items: stretch;
+  min-height: var(--size-sheet-peek);
+}
+
+.sheet-handle {
+  flex: none;
+  width: var(--space-8);
+  height: var(--space-1);
+  background: var(--color-border-control);
+  border-radius: var(--radius-full);
+}
+
+.sheet-header > .sheet-handle {
+  position: absolute;
+  top: var(--space-1-5);
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.sheet-grip {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0 0 var(--space-4);
   touch-action: none;
   user-select: none;
   cursor: grab;
 }
 
-.sheet-handle {
-  align-self: center;
-  flex: none;
-  width: var(--space-8);
-  height: var(--space-1);
-  margin: var(--space-1-5) 0;
-  background: var(--color-border-control);
-  border-radius: var(--radius-full);
+.sheet-grip .tree-dots {
+  margin-left: 0;
 }
 
-.sheet-bar {
+.sheet-actions {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-height: var(--size-touch);
-  padding: 0 var(--space-1) 0 var(--space-4);
-}
-
-.sheet-bar .tree-dots {
-  margin-left: 0;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-1) 0 0;
 }
 
 .sheet-title {
@@ -651,7 +672,7 @@
 
 .action-sheet-head .sheet-handle {
   position: absolute;
-  top: 0;
+  top: var(--space-1-5);
   left: 50%;
   transform: translateX(-50%);
 }

@@ -262,7 +262,7 @@ describe('gaveta (B7)', () => {
   it('arrastar o cabeçalho sobe ou desce uma altura; tocar alterna', () => {
     const { onHeightChange, onFull, rerender, view } = setup();
     const header = () => {
-      const el = view.container.querySelector('.sheet-header');
+      const el = view.container.querySelector('.sheet-grip');
       if (!el) throw new Error('sem cabeçalho');
       return el;
     };
