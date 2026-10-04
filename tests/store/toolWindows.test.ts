@@ -78,9 +78,20 @@ describe('abrir e fechar janelas', () => {
     expect(toolWindowByNumber(3)).toBe('details');
     expect(toolWindowByNumber(4)).toBe('list');
     expect(toolWindowByNumber(2)).toBe('layers');
-    // Incompletas (5) e Diagnóstico (6) entram na fase R7.
-    expect(toolWindowByNumber(5)).toBeNull();
-    expect(toolWindowByNumber(6)).toBeNull();
+    expect(toolWindowByNumber(5)).toBe('incomplete');
+    expect(toolWindowByNumber(6)).toBe('diagnostics');
+  });
+
+  it('a janela inferior mostra uma aba por vez', () => {
+    showToolWindow('list');
+    showToolWindow('incomplete');
+    expect(openWindowOf('bottom')).toBe('incomplete');
+    expect(isToolWindowOpen('list')).toBe(false);
+    showToolWindow('diagnostics');
+    expect(bottomToolWindow.value).toBe('diagnostics');
+    expect(isToolWindowOpen('incomplete')).toBe(false);
+    hideToolWindow('diagnostics');
+    expect(openWindowOf('bottom')).toBeNull();
   });
 });
 

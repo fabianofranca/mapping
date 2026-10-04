@@ -345,29 +345,49 @@ button.tree-toggle:hover {
   min-width: 0;
 }
 
-/* Visão de Lista e zoom semântico */
+/* Janela inferior: Lista (P7), Incompletas (B5) e Diagnóstico (B4) */
 .list-screen {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-4);
   background: var(--color-surface);
 }
 
-.list-view {
+.list-view,
+.diagnostics-view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  height: 100%;
+}
+
+/* Os filtros ficam parados e só a tabela rola (o cabeçalho dela fica no topo). */
+.list-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .list-view p {
   margin: 0;
 }
 
+.list-message,
+.diagnostics-empty,
+.diagnostics-intro {
+  padding: var(--space-3);
+}
+
+.diagnostics-intro {
+  padding-bottom: 0;
+}
+
 .list-filters {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .list-layers {
@@ -376,99 +396,203 @@ button.tree-toggle:hover {
   gap: var(--space-1) var(--space-4);
 }
 
-.list-layer,
-.list-check {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--size-touch);
-  cursor: pointer;
+/* Tabela: cabeçalho fixo, uma linha por anotação, grupos por imagem */
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--t-text);
 }
 
-.list-layer input,
-.list-check input {
-  flex: none;
-  width: var(--size-target-min);
-  height: var(--size-target-min);
-  margin: 0;
+.list-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-canvas-overlay);
+  height: var(--size-row);
+  padding: 0 var(--space-3);
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  text-align: left;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.list-image-row th {
+  height: var(--size-row);
+  padding: 0 var(--space-3);
+  font: var(--t-text-small);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: left;
+  background: var(--color-bg);
+  overflow-wrap: anywhere;
+}
+
+.list-row {
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.list-row:hover {
+  background: var(--color-hover);
+}
+
+.list-row[data-selected] {
+  background: var(--color-selection);
+}
+
+.list-table:not(:focus-within) .list-row[data-selected] {
+  background: var(--color-selection-muted);
+}
+
+.list-cell {
+  min-width: 0;
+  padding: var(--space-1) var(--space-3);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.list-cell-marking {
+  width: 25%;
+  min-width: 12em;
+}
+
+.list-cell-layer {
+  width: 1%;
+  white-space: nowrap;
 }
 
 .list-layer-name {
-  overflow-wrap: anywhere;
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.list-images,
-.list-markings {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.list-images {
-  gap: var(--space-4);
-}
-
-.list-image {
-  margin: 0 0 var(--space-2);
-  font: var(--t-text-small);
-  color: var(--color-text-muted);
-  overflow-wrap: anywhere;
+.list-cell-content {
+  width: 40%;
 }
 
 .list-marking {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  width: 100%;
-  min-height: var(--size-touch);
-  padding: var(--space-2);
+  display: inline;
+  min-height: var(--size-target-min);
+  padding: 0;
   font: inherit;
+  font-weight: 600;
   text-align: left;
   color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-control);
-  border-radius: var(--radius-lg);
+  background: none;
+  border: none;
   cursor: pointer;
 }
 
-.list-marking[aria-current='true'] {
-  border-color: var(--color-accent);
-  box-shadow: inset 0 0 0 2px var(--color-accent);
-}
-
-.list-path {
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.list-layer-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding-left: var(--space-2);
-  border-left: 4px solid var(--layer-color);
-}
-
-.list-layer-header {
-  display: flex;
+.list-layer-tag {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  font: var(--t-text-small);
-  font-weight: 600;
+  gap: var(--space-1-5);
 }
 
-.list-annotation {
-  display: flex;
-  flex-direction: column;
-  padding-left: var(--space-2);
-  overflow-wrap: anywhere;
+.list-none {
+  font-style: italic;
+}
+
+.list-annotation-name {
+  display: block;
+}
+
+.list-entry {
+  display: block;
 }
 
 .list-key {
   color: var(--color-text-muted);
+}
+
+.incomplete-reasons {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+/* Diagnóstico */
+.diagnostics-status {
+  font: var(--t-text-small);
+}
+
+.diagnostics-table .list-row {
+  cursor: default;
+}
+
+.diagnostics-table .list-row:hover {
+  background: none;
+}
+
+.diagnostics-message {
+  width: 100%;
+}
+
+/* No celular a tabela vira cartões: uma linha por cartão, rótulo antes de cada valor. */
+@media (max-width: 899px) {
+  .list-view,
+  .diagnostics-view {
+    height: auto;
+  }
+
+  .list-scroll {
+    overflow: visible;
+  }
+
+  .list-cell-layer {
+    width: auto;
+    white-space: normal;
+  }
+
+  .list-cell-marking {
+    min-width: 0;
+  }
+
+  .list-table,
+  .list-table tbody,
+  .list-table tr,
+  .list-table td,
+  .list-table th {
+    display: block;
+  }
+
+  .list-table thead {
+    display: none;
+  }
+
+  .list-image-row th {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-canvas-overlay);
+  }
+
+  .list-row {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .list-cell {
+    width: auto;
+    padding: var(--space-0-5) 0;
+  }
+
+  .list-cell:empty {
+    display: none;
+  }
+
+  .list-cell[data-label]:not(.list-cell-marking)::before {
+    display: block;
+    font: var(--t-text-small);
+    color: var(--color-text-muted);
+    content: attr(data-label);
+  }
+
+  .list-marking {
+    min-height: var(--size-touch);
+  }
+
+  .list-filters {
+    padding: var(--space-2) var(--space-4);
+  }
 }
 
 /* Herança e vínculos (fase 10) */

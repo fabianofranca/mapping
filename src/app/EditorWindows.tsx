@@ -2,11 +2,18 @@ import type { ComponentChildren } from 'preact';
 import {
   openWindowOf,
   openWindowsOf,
+  showToolWindow,
   toolWindowSizes,
   type ToolWindowId,
 } from '../store/toolWindows';
 import type { Selection } from '../store/ui';
 import { Breadcrumbs } from '../ui/Breadcrumbs';
+import {
+  DiagnosticsActions,
+  DiagnosticsView,
+  useCopyErrors,
+} from '../ui/DiagnosticsView';
+import { IncompleteView } from '../ui/IncompleteView';
 import { ListView } from '../ui/ListView';
 import { LayersWindow } from '../ui/LayersWindow';
 import { ToolStrip } from '../ui/ToolStrip';
@@ -28,7 +35,7 @@ interface EditorWindowsProps {
 }
 
 /**
- * Cada janela, com o próprio cabeçalho. Incompletas e Diagnóstico entram na R7.
+ * Cada janela, com o próprio cabeçalho.
  * `stacked`: a janela divide a coluna com outra (Camadas embaixo da Árvore).
  */
 function Window({
@@ -59,7 +66,30 @@ function Window({
           <ListView onSelect={onSelect} />
         </ToolWindow>
       );
+    case 'incomplete': {
+      // Ir até a anotação precisa do painel de Detalhes à vista.
+      const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
+        showToolWindow('details');
+        panel.onGoToAnnotation(annotation);
+      };
+      return (
+        <ToolWindow id={id}>
+          <IncompleteView onGoToAnnotation={goTo} />
+        </ToolWindow>
+      );
+    }
+    case 'diagnostics':
+      return (
+        <ToolWindow id={id} actions={<DiagnosticsHeaderActions />}>
+          <DiagnosticsView />
+        </ToolWindow>
+      );
   }
+}
+
+/** Copiar e Limpar ficam no cabeçalho da janela Diagnóstico (B4). */
+function DiagnosticsHeaderActions() {
+  return <DiagnosticsActions {...useCopyErrors()} />;
 }
 
 export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {

@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { diagnosticsUnseen } from '../store/diagnostics';
 import {
   isToolWindowOpen,
   toggleToolWindow,
@@ -15,10 +16,14 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
   const { icon, title } = toolWindowMeta(id);
   const name = title();
   const open = isToolWindowOpen(id);
+  // Erro novo no registro e a janela Diagnóstico fechada: ponto de alerta (B4).
+  const alert = id === 'diagnostics' && diagnosticsUnseen.value && !open;
+  const label = t(open ? 'window.hide' : 'window.show', { name });
   return (
     <IconButton
       icon={icon}
-      label={t(open ? 'window.hide' : 'window.show', { name })}
+      label={alert ? `${label} (${t('diagnostics.unseen')})` : label}
+      alert={alert}
       tooltip={name}
       shortcut={toolWindowShortcut(id)}
       pressed={open}

@@ -85,7 +85,7 @@ Barra principal, faixas, janelas de ferramenta, breadcrumbs e barra de status. M
 - [x] Minimapa (P3)
 - [x] Campo de zoom (P4)
 
-As janelas Camadas (atalho 2), Incompletas (5) e Diagnóstico (6) chegam com as fases R6 e R7; a Camadas veio na R6, e até a R7 o Diagnóstico continua no diálogo atual. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
+As janelas Camadas (atalho 2), Incompletas (5) e Diagnóstico (6) vieram com as fases R6 e R7. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
 
 **Aceite**: abrir, fechar, redimensionar e persistir cada janela; nenhuma função atual sumiu.
 
@@ -117,9 +117,9 @@ Os atalhos Ctrl+B (escolher o alvo da referência em foco), Alt+N (nova anotaç�
 
 Lista, Incompletas e Diagnóstico na janela inferior. Muda comportamento (B4, B5, P7).
 
-- [ ] Lista em tabela (P7)
-- [ ] Incompletas (B5)
-- [ ] Diagnóstico (B4)
+- [x] Lista em tabela (P7)
+- [x] Incompletas (B5)
+- [x] Diagnóstico (B4)
 
 **Aceite**: filtros atuais preservados.
 

@@ -8,10 +8,17 @@ import { readSetting, writeSetting } from '../utils/safeStorage';
 // `mapping.json` nem no histórico de desfazer.
 
 /**
- * Janelas disponíveis. Incompletas e Diagnóstico (inferior) entram na fase R7, que só
- * acrescenta ids nesta lista.
+ * Janelas disponíveis. A janela inferior tem uma aba por janela: Lista, Incompletas
+ * e Diagnóstico.
  */
-export const TOOL_WINDOWS = ['tree', 'layers', 'details', 'list'] as const;
+export const TOOL_WINDOWS = [
+  'tree',
+  'layers',
+  'details',
+  'list',
+  'incomplete',
+  'diagnostics',
+] as const;
 
 export type ToolWindowId = (typeof TOOL_WINDOWS)[number];
 
@@ -23,18 +30,22 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   layers: 'left',
   details: 'right',
   list: 'bottom',
+  incomplete: 'bottom',
+  diagnostics: 'bottom',
 };
 
 /**
  * Número do atalho de cada janela (Ctrl+Shift+N, e Alt+N onde o navegador deixa).
- * A numeração é a da seção Atalhos do DS 2.0, com os buracos das janelas que
- * chegam na fase R7: Incompletas 5 e Diagnóstico 6.
+ * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
+ * janela inferior Lista 4, Incompletas 5 e Diagnóstico 6.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
   layers: 2,
   details: 3,
   list: 4,
+  incomplete: 5,
+  diagnostics: 6,
 };
 
 /** Janela do atalho Ctrl+Shift+N (`null` se o número não tem janela ainda). */

@@ -35,6 +35,8 @@ export interface EditorUi {
   readonly listShowEmpty: Signal<boolean>;
   /** Visão de Lista: só anotações incompletas (docs/history/PLAN-etapas-1-2.md 13.5). */
   readonly listIncompleteOnly: Signal<boolean>;
+  /** Janela Incompletas: só as pendências das camadas visíveis (B5). */
+  readonly incompleteVisibleOnly: Signal<boolean>;
   /** Anotação para rolar até (e focar) no painel assim que ela aparecer. */
   readonly focusAnnotation: Signal<string | null>;
   /** Nós recolhidos da janela Árvore (`treeKey`); vazio = tudo aberto. */
@@ -60,6 +62,7 @@ export function createEditorUi(): EditorUi {
     activeLayer: signal<string | null>(null),
     listShowEmpty: signal<boolean>(false),
     listIncompleteOnly: signal<boolean>(false),
+    incompleteVisibleOnly: signal<boolean>(false),
     focusAnnotation: signal<string | null>(null),
     collapsedTree: signal<ReadonlySet<string>>(new Set()),
     focusField: signal<string | null>(null),

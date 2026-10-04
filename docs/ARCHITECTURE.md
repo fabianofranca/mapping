@@ -26,7 +26,7 @@ ação do usuário
   → action (store/project.ts)
   → operação pura (model/…): (Project) => Project
   → snapshot no histórico (store/history.ts) + project signal (e committed)
-  → derived (store/derived.ts): camadas visíveis, indicadores, pendências, lista…
+  → derived (store/derived.ts): camadas visíveis, indicadores, pendências, lista, lista de incompletas…
   → canvas (um desenho por quadro; geometria de `project`) e UI (`committed` e os computed)
   → autosave (storage/autosave.ts) → mapping.json (pasta ou IndexedDB)
 ```
@@ -38,7 +38,7 @@ ação do usuário
 - **Índice** (`projectIndex(p)`): mapas por id e agrupamentos (marcações filhas, anotações por marcação e por dono, backlinks), memoizados em `WeakMap<Project, …>`: um projeto novo (nova versão) reconstrói o índice uma vez; leituras seguintes são O(1).
 - **Persistência** (`openSession`): serializa depois de cada mudança (autosave com atraso e escritas em fila), grava as imagens e as cópias de `specs/`, e nunca deixa o `mapping.json` apontar para um arquivo apagado: arquivos removidos vão para uma `trash` e só são descartados quando nenhum snapshot do histórico os referencia.
 - **Bitmaps** (`displayImages.ts`): as imagens exibidas são carregadas sob demanda; `retain(paths)` fecha os bitmaps que o projeto não usa mais. Um arquivo que volta pelo desfazer é recarregado.
-- **Erros**: `reportError(contexto, erro)` registra no console e guarda os últimos 20; o menu "Diagnóstico" os lista com botão "Copiar".
+- **Erros**: `reportError(contexto, erro)` registra no console e guarda os últimos 20; a janela inferior "Diagnóstico" (desktop; no celular, o diálogo do Menu) os lista em tabela, com "Copiar" e "Limpar"; o ponto de alerta da faixa usa o "visto até" de `store/diagnostics.ts`.
 
 ## Regras e o porquê
 
@@ -99,7 +99,7 @@ ação do usuário
 - `app/useEditorDialogs.ts` (um estado com união discriminada para todos os diálogos), `useImageIntake.tsx` (adicionar, colar, arrastar, trocar imagens), `useEditorShortcuts.ts`.
 - `ui/controls/`: controles base da interface 2.0 — `Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs` e `Tooltip`. Componentes novos usam estes em vez de `<button class="button">`, `<input class="input">` ou `<select>` cruos; os estados (hover, pressionado, foco, desabilitado, alternância, inválido, somente leitura) vêm do CSS e dos tokens. `ui/icons.tsx` tem o conjunto de ícones (`<Icon name="…" />`, grade de 16px, traço de 1,25, `currentColor`); um ícone novo entra na tabela `SHAPES`.
 - **Detalhes (inspetor, R5)**: `ui/MarkingPanel.tsx` e `ui/SelectionPanel.tsx` montam a janela com `DetailsIdentity` (nome, caminho e ID com copiar), `DetailsSection` (seção recolhível com resumo) e `PropertyGrid` (rótulo | controle; no celular, rótulo acima). As anotações ficam em `AnnotationsPanel` (pendências com links para o campo e um LayerGroup por camada visível) e `AnnotationEditor`; o corpo livre é `KeyValueGrid`, o tipado é `TypedFields` (campos simples em `FieldEditors`, tabela em `TableField`, referência com o seletor `RefPicker`). Reordenar por arrasto usa `ui/rowDrag.ts` (alça com eventos de ponteiro; a lista só muda ao soltar, com uma action, então o gesto é uma entrada de desfazer) e o menu ⋯ das linhas é `ui/ActionMenu.tsx`. Um link de pendência chama `goToAnnotation(ui, anotação, campo)`: abre as seções recolhidas e o painel foca o elemento com aquele `data-focus`.
-- `ui/`: painéis (`SelectionPanel`, `AnnotationsPanel`, `MarkingTree`), `AnnotationEditor`, `TypedFields`, `LayersPanel` (janela `LayersWindow` no desktop, `LayersDialog` no celular), `TreeWindow`, `SpecsDialog`, `ListView`, `DiagnosticsDialog`, `Breadcrumbs`, `StatusBar`, `Minimap`, `ZoomField`, `MenuPopover`, `Popover`…
+- `ui/`: painéis (`SelectionPanel`, `AnnotationsPanel`, `MarkingTree`), `AnnotationEditor`, `TypedFields`, `LayersPanel` (janela `LayersWindow` no desktop, `LayersDialog` no celular), `TreeWindow`, `SpecsDialog`, `ListView` (tabela), `IncompleteView`, `DiagnosticsView`, `BottomTabs`, `DiagnosticsDialog` (celular), `Breadcrumbs`, `StatusBar`, `Minimap`, `ZoomField`, `MenuPopover`, `Popover`…
 
 ### Estilos (`src/theme/`)
 
