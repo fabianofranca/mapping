@@ -14,6 +14,7 @@ import { ExportDialog } from './ExportDialog';
 import type { EditorDialog, EditorDialogs as Dialogs } from './useEditorDialogs';
 import type { ImageIntake } from './useImageIntake';
 import type { ProjectCommands } from './useProjectCommands';
+import { Button } from '../ui/controls';
 
 interface EditorDialogsProps {
   readonly dialogs: Dialogs;
@@ -47,12 +48,10 @@ function ConfirmDialog({
       onCancel={onCancel}
       actions={
         <>
-          <button type="button" class="button" onClick={onCancel}>
-            {t('common.cancel')}
-          </button>
-          <button type="button" class={`button button-${tone}`} onClick={onConfirm}>
+          <Button onClick={onCancel}>{t('common.cancel')}</Button>
+          <Button variant={tone} onClick={onConfirm}>
             {confirmLabel}
-          </button>
+          </Button>
         </>
       }
     >
@@ -74,11 +73,7 @@ function CloseOnlyDialog({
     <Dialog
       title={title}
       onCancel={onClose}
-      actions={
-        <button type="button" class="button" onClick={onClose}>
-          {t('common.close')}
-        </button>
-      }
+      actions={<Button onClick={onClose}>{t('common.close')}</Button>}
     >
       {children}
     </Dialog>
@@ -96,19 +91,11 @@ function AddMenuDialog({
     <Dialog
       title={t('editor.addImages')}
       onCancel={dialogs.close}
-      actions={
-        <button type="button" class="button" onClick={dialogs.close}>
-          {t('common.cancel')}
-        </button>
-      }
+      actions={<Button onClick={dialogs.close}>{t('common.cancel')}</Button>}
     >
       <div class="dialog-stack">
-        <button type="button" class="button" onClick={intake.pickFromDevice}>
-          {t('editor.addFromDevice')}
-        </button>
-        <button type="button" class="button" onClick={() => void intake.pasteImage()}>
-          {t('editor.pasteImage')}
-        </button>
+        <Button onClick={intake.pickFromDevice}>{t('editor.addFromDevice')}</Button>
+        <Button onClick={() => void intake.pasteImage()}>{t('editor.pasteImage')}</Button>
       </div>
     </Dialog>
   );
@@ -127,26 +114,15 @@ function MenuDialog({
   return (
     <CloseOnlyDialog title={t('editor.menu')} onClose={dialogs.close}>
       <div class="menu-actions">
-        <button
-          type="button"
-          class="button"
-          disabled={busy}
-          onClick={() => void commands.exportProject()}
-        >
+        <Button disabled={busy} onClick={() => void commands.exportProject()}>
           {t('editor.export')}
-        </button>
-        <button type="button" class="button" onClick={open('specs')}>
-          {t('spec.menu')}
-        </button>
-        <button type="button" class="button" onClick={open('help')}>
-          {t('help.open')}
-        </button>
-        <button type="button" class="button" onClick={open('diagnostics')}>
-          {t('diagnostics.open')}
-        </button>
-        <button type="button" class="button" onClick={() => void commands.closeProject()}>
+        </Button>
+        <Button onClick={open('specs')}>{t('spec.menu')}</Button>
+        <Button onClick={open('help')}>{t('help.open')}</Button>
+        <Button onClick={open('diagnostics')}>{t('diagnostics.open')}</Button>
+        <Button onClick={() => void commands.closeProject()}>
           {t('editor.closeProject')}
-        </button>
+        </Button>
       </div>
       <SettingsBar />
     </CloseOnlyDialog>

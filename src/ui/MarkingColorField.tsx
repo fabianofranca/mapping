@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { MARKING_COLOR_PALETTE, type ProjectImage } from '../model';
 import { useEditor } from './EditorContext';
+import { Button } from './controls';
 
 interface MarkingColorFieldProps {
   readonly image: ProjectImage;
@@ -16,15 +17,14 @@ export function MarkingColorField({ image, disabled }: MarkingColorFieldProps) {
     <div class="field">
       <span>{t('image.markingColor')}</span>
       <div class="palette" role="group" aria-label={t('image.markingColor')}>
-        <button
-          type="button"
-          class={current === null ? 'button button-primary' : 'button'}
+        <Button
+          variant={current === null ? 'primary' : 'default'}
           aria-pressed={current === null}
           disabled={disabled}
           onClick={() => set(null)}
         >
           {t('image.markingColorTheme')}
-        </button>
+        </Button>
         {MARKING_COLOR_PALETTE.map((color) => (
           <button
             key={color}

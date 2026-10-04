@@ -8,6 +8,7 @@ import {
   type ReportedError,
 } from '../utils/report';
 import { Dialog } from './Dialog';
+import { Button } from './controls';
 
 function formatTime(iso: string): string {
   try {
@@ -55,25 +56,13 @@ export function DiagnosticsDialog({ onClose }: { readonly onClose: () => void })
       onCancel={onClose}
       actions={
         <>
-          <button
-            type="button"
-            class="button"
-            disabled={errors.length === 0}
-            onClick={clearReportedErrors}
-          >
+          <Button disabled={errors.length === 0} onClick={clearReportedErrors}>
             {t('diagnostics.clear')}
-          </button>
-          <button
-            type="button"
-            class="button"
-            disabled={errors.length === 0}
-            onClick={() => void copy()}
-          >
+          </Button>
+          <Button disabled={errors.length === 0} onClick={() => void copy()}>
             {t('diagnostics.copy')}
-          </button>
-          <button type="button" class="button" onClick={onClose}>
-            {t('common.close')}
-          </button>
+          </Button>
+          <Button onClick={onClose}>{t('common.close')}</Button>
         </>
       }
     >

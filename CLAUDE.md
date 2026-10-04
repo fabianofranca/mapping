@@ -42,6 +42,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - As coordenadas das marcações são **sempre** em pixels da imagem original. Conversões de tela/canvas ficam só em `src/canvas/`.
 - Nenhuma string de UI hardcoded: tudo via `t()` com chaves em `src/i18n/pt-BR.ts` e `src/i18n/en-US.ts`.
 - Nenhum valor de design fixo (cor, espaço, raio, fonte, opacidade, duração, z-index) fora dos tokens: use `var(--…)` dos tokens de `src/theme/tokens.ts` (fonte única, temas claro e escuro). Borda de controle usa `--color-border-control`; `--color-border` é só divisória. O canvas lê os tokens do tema. Um teste (`tests/theme/tokenLiterals.test.ts`) procura literais no CSS.
+- Controles de formulário e botões vêm de `src/ui/controls/` (`Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`) e ícones de `<Icon name="…" />` (`src/ui/icons.tsx`); não crie botão, campo ou ícone avulso. Altura, raio e ícone seguem a densidade (`--control-*`): 28px/16px no desktop, 44px/20px no celular.
 
 ## Restrições do ambiente de execução
 
@@ -74,7 +75,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
 - **Etapa 2.2 — Segunda revisão técnica (concluída):** fases 26 e 27 concluídas, 28 dispensada (histórico em `docs/history/PLAN-etapa-2-2.md`).
-- **Etapa 2.3 — Redesign da interface (atual):** fases R1 a R10, no `PLAN.md`; especificação em `docs/redesign/HANDOFF.md`. Regras da etapa:
+- **Etapa 2.3 — Redesign da interface (atual):** fases R1 a R10 (R1 e R2 concluídas), no `PLAN.md`; especificação em `docs/redesign/HANDOFF.md`. Regras da etapa:
   - R1 a R3 **não mudam comportamento**;
   - da R4 em diante, cada PR lista no "Como testar" as mudanças B# e P# que entrega;
   - os testes e2e afetados são atualizados no mesmo PR;

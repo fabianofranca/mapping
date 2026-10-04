@@ -6,6 +6,7 @@ import {
 } from '../app/pwa';
 import { t } from '../i18n';
 import { detectPlatform, isStandalone } from '../utils/platform';
+import { Button } from './controls';
 
 /**
  * Orientação para instalar a app (Android/iOS/desktop) e, no iOS, o aviso de que
@@ -32,17 +33,11 @@ export function InstallHint() {
       {platform !== 'ios' && canPrompt && <p>{t('pwa.installOffline')}</p>}
       <div class="row">
         {canPrompt && (
-          <button
-            type="button"
-            class="button button-primary"
-            onClick={() => void promptInstall()}
-          >
+          <Button variant="primary" onClick={() => void promptInstall()}>
             {t('pwa.install')}
-          </button>
+          </Button>
         )}
-        <button type="button" class="button" onClick={dismissInstallHint}>
-          {t('pwa.dismiss')}
-        </button>
+        <Button onClick={dismissInstallHint}>{t('pwa.dismiss')}</Button>
       </div>
     </section>
   );

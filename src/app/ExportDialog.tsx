@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import { canShareFile, downloadFile, shareFile } from '../storage/share';
 import { Dialog } from '../ui/Dialog';
 import { markExported } from './controller';
+import { Button } from '../ui/controls';
 
 /**
  * O zip é gerado antes de abrir este diálogo; o toque em "Compartilhar" é um
@@ -40,24 +41,17 @@ export function ExportDialog({
       onCancel={onDone}
       actions={
         <>
-          <button type="button" class="button" onClick={onDone}>
-            {t('common.cancel')}
-          </button>
-          <button
-            type="button"
-            class={shareable ? 'button' : 'button button-primary'}
+          <Button onClick={onDone}>{t('common.cancel')}</Button>
+          <Button
+            variant={shareable ? 'default' : 'primary'}
             onClick={() => void onDownload()}
           >
             {t('export.download')}
-          </button>
+          </Button>
           {shareable && (
-            <button
-              type="button"
-              class="button button-primary"
-              onClick={() => void onShare()}
-            >
+            <Button variant="primary" onClick={() => void onShare()}>
               {t('export.share')}
-            </button>
+            </Button>
           )}
         </>
       }

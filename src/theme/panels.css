@@ -32,31 +32,6 @@
   overflow-wrap: anywhere;
 }
 
-.tabs {
-  display: flex;
-  gap: var(--space-1);
-  margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.tab {
-  flex: 1;
-  min-height: var(--size-touch);
-  padding: 0 var(--space-2);
-  font: inherit;
-  color: var(--color-text-muted);
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-}
-
-.tab[aria-selected='true'] {
-  color: var(--color-text);
-  font-weight: 600;
-  border-bottom-color: var(--color-accent);
-}
-
 .tab-panel > p {
   margin: 0;
 }

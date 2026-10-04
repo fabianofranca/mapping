@@ -208,7 +208,7 @@
 
 /* Desktop estreito: botões da barra só com ícone, para o título do projeto caber. */
 @media (max-width: 1199px) {
-  .toolbar .tool-button span {
+  .toolbar .icon-button-text {
     display: none;
   }
 }

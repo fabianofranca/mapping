@@ -81,6 +81,14 @@ describe('tokens', () => {
     expect(tokenValue('t-text', 'light')).toBe('var(--t-body)');
   });
 
+  it('a densidade troca de 28px/16px (desktop) para 44px/20px (celular)', () => {
+    expect(tokenValue('control-height', 'light')).toBe('var(--size-control-lg)');
+    expect(tokenValue('control-icon', 'light')).toBe('var(--size-icon)');
+    expect(css).toMatch(
+      /@media \(max-width: 899px\) \{\s*:root \{[^}]*--control-height: var\(--size-touch\)[^}]*--control-icon: var\(--size-icon-touch\)/,
+    );
+  });
+
   it('nomes de token são válidos como variável CSS', () => {
     for (const name of Object.keys(TOKENS)) expect(name).toMatch(/^[a-z][a-z0-9-]*$/);
   });
