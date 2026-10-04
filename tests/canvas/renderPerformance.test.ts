@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
+import { createCanvasViewState } from '../../src/canvas/viewState';
 import { projectIndex, projectIssues } from '../../src/model';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
@@ -58,6 +59,7 @@ describe('renderização do canvas com o projeto grande', () => {
       display,
       ui,
       derived,
+      view: createCanvasViewState(),
     });
     // Já indexado: o orçamento é o do desenho, não o do índice (medido no modelo).
     projectIndex(project);

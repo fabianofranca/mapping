@@ -47,9 +47,9 @@ export function AddImagesButton({
   );
 }
 
-/** Desfazer, refazer e enquadrar tudo. */
+/** Desfazer e refazer. */
 export function HistoryButtons() {
-  const { store, canvas } = useEditor();
+  const { store } = useEditor();
   return (
     <>
       <IconButton
@@ -66,12 +66,19 @@ export function HistoryButtons() {
         disabled={!store.canRedo.value}
         onClick={() => store.redo()}
       />
-      <IconButton
-        icon="fit"
-        label={t('editor.fitAll')}
-        onClick={() => canvas.current?.fitAll()}
-      />
     </>
+  );
+}
+
+/** Enquadrar tudo: na barra dos breadcrumbs (desktop) e na barra de baixo (celular). */
+export function FitButton() {
+  const { canvas } = useEditor();
+  return (
+    <IconButton
+      icon="fit"
+      label={t('editor.fitAll')}
+      onClick={() => canvas.current?.fitAll()}
+    />
   );
 }
 

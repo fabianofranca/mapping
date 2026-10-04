@@ -206,10 +206,22 @@
   gap: var(--space-2);
 }
 
-/* Desktop estreito: botões da barra só com ícone, para o título do projeto caber. */
+/*
+ * Desktop estreito: botões da barra só com ícone, para o título do projeto caber.
+ * O texto continua no DOM (só fora da vista): é dele que vem o nome acessível.
+ */
 @media (max-width: 1199px) {
   .toolbar .icon-button-text {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .toolbar .icon-button:has(.icon-button-text) {
+    padding: 0;
   }
 }
 

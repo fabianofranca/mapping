@@ -1,6 +1,6 @@
 import { t } from '../i18n';
 import { Tabs } from '../ui/controls';
-import { AddImagesButton, HistoryButtons, ModeButtons } from './EditorTools';
+import { AddImagesButton, FitButton, HistoryButtons, ModeButtons } from './EditorTools';
 
 export type EditorView = 'canvas' | 'list';
 
@@ -35,6 +35,7 @@ export function EditorBottomBar({
         <ModeButtons />
         <AddImagesButton desktop={false} busy={busy} onAdd={onAdd} />
         <HistoryButtons />
+        <FitButton />
       </nav>
     </>
   );

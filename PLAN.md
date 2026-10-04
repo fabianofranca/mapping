@@ -81,14 +81,16 @@ Desenho do canvas lendo os tokens novos. Não muda comportamento.
 
 Barra principal, faixas, janelas de ferramenta, breadcrumbs e barra de status. Muda comportamento.
 
-- [ ] Barra principal
-- [ ] Faixas laterais e inferior
-- [ ] Contêiner de janelas com redimensionar e recolher (B1, B2)
-- [ ] Breadcrumbs (B11)
-- [ ] Barra de status (B8, B13)
-- [ ] Atalhos (B12): Ctrl+Shift+número como atalho oficial das janelas, Alt+número como extra, e Ctrl (não Cmd) no macOS
-- [ ] Minimapa (P3)
-- [ ] Campo de zoom (P4)
+- [x] Barra principal
+- [x] Faixas laterais e inferior
+- [x] Contêiner de janelas com redimensionar e recolher (B1, B2)
+- [x] Breadcrumbs (B11)
+- [x] Barra de status (B8, B13)
+- [x] Atalhos (B12): Ctrl+Shift+número como atalho oficial das janelas, Alt+número como extra, e Ctrl (não Cmd) no macOS
+- [x] Minimapa (P3)
+- [x] Campo de zoom (P4)
+
+As janelas Camadas, Incompletas e Diagnóstico (e os atalhos 2, 5 e 6) chegam com as fases R6 e R7; até lá, Camadas e Diagnóstico continuam nos diálogos atuais. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
 
 **Aceite**: abrir, fechar, redimensionar e persistir cada janela; nenhuma função atual sumiu.
 

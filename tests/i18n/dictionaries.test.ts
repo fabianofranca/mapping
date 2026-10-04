@@ -33,6 +33,9 @@ describe('dicionários', () => {
       'layer.deleteCount',
       'annotation.ownerOption',
       'help.specs.downloads',
+      'zoom.value',
+      'status.empty',
+      'status.schema',
     ]);
     const same = entries.filter(([key, pt]) => enUS[key] === pt && !allowed.has(key));
     expect(same.map(([key]) => key)).toEqual([]);

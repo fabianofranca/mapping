@@ -23,6 +23,7 @@ vi.mock('../../src/app/controller', async () => {
 
 import { CanvasNotices } from '../../src/app/CanvasNotices';
 import { EditorBottomBar } from '../../src/app/EditorBottomBar';
+import { EditorMainBar } from '../../src/app/EditorMainBar';
 import { EditorTopBar } from '../../src/app/EditorTopBar';
 import { ErrorBoundary } from '../../src/app/ErrorBoundary';
 import { ExportDialog } from '../../src/app/ExportDialog';
@@ -155,12 +156,16 @@ describe('useEditorShortcuts', () => {
     const dialogs = fakeDialogs();
     const cancelInteraction = vi.fn(() => false);
     harness.context.canvas.current = { cancelInteraction } as unknown as CanvasController;
+    const commands: ProjectCommands = {
+      exportProject: vi.fn(),
+      closeProject: vi.fn(),
+    };
     function Probe() {
-      useEditorShortcuts(dialogs);
+      useEditorShortcuts(dialogs, commands);
       return null;
     }
     withContext(harness, <Probe />);
-    return { harness, dialogs, cancelInteraction };
+    return { harness, dialogs, cancelInteraction, commands };
   }
 
   it('Ctrl+Z desfaz e Ctrl+Shift+Z refaz', () => {
@@ -311,18 +316,14 @@ describe('ExportDialog', () => {
 });
 
 describe('barras do editor', () => {
-  it('topo (desktop): modo, desfazer e menu', async () => {
+  it('principal (desktop): modo, desfazer, exportar e os diálogos da barra', async () => {
     const harness = createHarness(sampleProject());
     const dialogs = fakeDialogs();
     const commands = { exportProject: vi.fn(), closeProject: vi.fn() };
-    const onToggleList = vi.fn();
     withContext(
       harness,
-      <EditorTopBar
-        desktop
+      <EditorMainBar
         busy={false}
-        listOpen={false}
-        onToggleList={onToggleList}
         onAdd={vi.fn()}
         dialogs={dialogs}
         commands={commands as unknown as ProjectCommands}
@@ -331,35 +332,52 @@ describe('barras do editor', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: t('editor.modeDraw') }));
     expect(harness.ui.mode.value).toBe('draw');
-    harness.actions.renameProject('Novo');
-    expect((await screen.findByRole('heading')).textContent).toBe('Novo');
     await user.click(screen.getByRole('button', { name: t('editor.undo') }));
-    expect(harness.project().project.name).not.toBe('Novo');
-    await user.click(screen.getByRole('button', { name: t('editor.menu') }));
-    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'menu' });
+    expect(harness.ui.mode.value).toBe('draw');
     await user.click(screen.getByRole('button', { name: t('editor.export') }));
     expect(commands.exportProject).toHaveBeenCalledOnce();
-    await user.click(screen.getByRole('button', { name: t('common.close') }));
-    expect(commands.closeProject).toHaveBeenCalledOnce();
-    await user.click(screen.getByRole('button', { name: t('view.list') }));
-    expect(onToggleList).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('button', { name: t('spec.menu') }));
+    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'specs' });
+    await user.click(screen.getByRole('button', { name: t('help.open') }));
+    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'help' });
+    await user.click(screen.getByRole('button', { name: t('settings.title') }));
+    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'settings' });
+    // O estado do salvamento saiu da barra (foi para a barra de status).
+    expect(screen.queryByText(t('status.saved'))).toBeNull();
   });
 
-  it('topo (celular) não mostra as ferramentas de desktop', () => {
+  it('menu do projeto (desktop): exportar e fechar', async () => {
     const harness = createHarness(sampleProject());
+    const commands = { exportProject: vi.fn(), closeProject: vi.fn() };
     withContext(
       harness,
-      <EditorTopBar
-        desktop={false}
+      <EditorMainBar
         busy={false}
-        listOpen={false}
-        onToggleList={vi.fn()}
         onAdd={vi.fn()}
         dialogs={fakeDialogs()}
-        commands={{ exportProject: vi.fn(), closeProject: vi.fn() }}
+        commands={commands as unknown as ProjectCommands}
       />,
     );
+    const user = userEvent.setup();
+    const trigger = screen.getByRole('button', { name: t('editor.projectMenu') });
+    expect(trigger.textContent).toContain(harness.project().project.name);
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: t('editor.closeProject') }));
+    expect(commands.closeProject).toHaveBeenCalledOnce();
+    // O menu fecha ao escolher.
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('topo (celular): título, camada ativa e Menu', async () => {
+    const harness = createHarness(sampleProject());
+    const dialogs = fakeDialogs();
+    withContext(harness, <EditorTopBar dialogs={dialogs} />);
+    const user = userEvent.setup();
+    harness.actions.renameProject('Novo');
+    expect((await screen.findByRole('heading')).textContent).toBe('Novo');
     expect(screen.queryByRole('button', { name: t('editor.export') })).toBeNull();
+    await user.click(screen.getByRole('button', { name: t('editor.menu') }));
+    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'menu' });
   });
 
   it('inferior (celular): abas Canvas | Lista e adicionar imagens', async () => {

@@ -4,9 +4,13 @@ import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import type { EditorNotices } from './useEditorNotices';
 
-/** Avisos sobre o canvas: somente leitura, backup da migração, erros, dica de desenho e progresso. */
+/**
+ * Avisos sobre o canvas: somente leitura, backup da migração, erro ao salvar (B13),
+ * erros de operação, dica de desenho e progresso.
+ */
 export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) {
   const { session, store, ui } = useEditor();
+  const saveFailed = session.saveStatus.value === 'error';
   const [backupDismissed, setBackupDismissed] = useState(false);
   const backupSaved = session.backupSaved.value;
   const readOnly = store.readOnly.value;
@@ -24,6 +28,14 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
           {t('editor.migrationBackup', { version: backupSaved })}{' '}
           <button type="button" class="link" onClick={() => setBackupDismissed(true)}>
             {t('editor.dismiss')}
+          </button>
+        </p>
+      )}
+      {saveFailed && (
+        <p class="notice notice-error" role="alert">
+          {t('status.error')}{' '}
+          <button type="button" class="link" onClick={() => void session.flush()}>
+            {t('status.retry')}
           </button>
         </p>
       )}

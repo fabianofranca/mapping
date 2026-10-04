@@ -10,6 +10,7 @@ export type EditorDialog =
   | { readonly kind: 'help' }
   | { readonly kind: 'diagnostics' }
   | { readonly kind: 'specs' }
+  | { readonly kind: 'settings' }
   | { readonly kind: 'layers' }
   | { readonly kind: 'deleteImage'; readonly image: ProjectImage }
   | { readonly kind: 'deleteMarking'; readonly marking: Marking }

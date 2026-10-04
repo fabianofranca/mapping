@@ -3,6 +3,7 @@ import 'virtual:tokens.css';
 import './theme/base.css';
 import './theme/controls.css';
 import './theme/layout.css';
+import './theme/editor.css';
 import './theme/panels.css';
 import './theme/canvas.css';
 import './theme/forms.css';

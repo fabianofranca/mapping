@@ -64,6 +64,18 @@ export class ViewportController {
     this.viewport.value = centerOn(this.viewport.peek(), rect, size);
   }
 
+  /** Centraliza a vista em `point` (canvas), mantendo o zoom (clique no minimapa). */
+  centerOnPoint(point: Point): void {
+    const size = this.size.peek();
+    if (size.width === 0) return;
+    const { scale } = this.viewport.peek();
+    this.viewport.value = {
+      x: size.width / 2 - point.x * scale,
+      y: size.height / 2 - point.y * scale,
+      scale,
+    };
+  }
+
   /** Centro da área visível, em unidades do canvas. */
   center(): Point {
     this.measure();

@@ -207,6 +207,41 @@ export const ptBR = {
   'annotation.inheritedFrom': 'herdado de {name}',
   'annotation.goToMarking': 'Ir para {name}',
 
+  'window.stripLabel': 'Janelas de ferramenta',
+  'window.show': 'Mostrar {name}',
+  'window.hide': 'Esconder {name}',
+  'window.resize': 'Arraste para redimensionar {name} (duplo clique volta ao padrão)',
+  'window.closeWindow': 'Fechar a janela {name}',
+
+  'crumbs.label': 'Caminho da seleção',
+  'crumbs.image': 'Imagem {name}',
+  'crumbs.marking': 'Marcação {name}',
+
+  'zoom.value': '{percent}%',
+  'zoom.reset': 'Zoom em {percent}%; clique para voltar a 100%',
+  'zoom.in': 'Aproximar',
+  'zoom.out': 'Afastar',
+
+  'minimap.label': 'Minimapa do canvas',
+  'minimap.goTo': 'Clique para mover a vista',
+
+  'statusbar.label': 'Barra de status',
+  'status.targetFolder': 'Pasta',
+  'status.targetLocal': 'Neste dispositivo',
+  'status.targetLabel': 'Onde o projeto é salvo: {target}',
+  'status.selectionLabel': 'Seleção: {name}',
+  'status.cursorLabel': 'Cursor na imagem: {position}',
+  'status.empty': '—',
+  'status.schema': 'schema v{version}',
+  'status.schemaLabel': 'Versão do formato: {version}',
+  'status.channelMain': 'estável',
+  'status.channelPreview': 'prévia',
+  'status.channelLabel': 'Canal deste build: {channel}',
+
+  'editor.projectMenu': 'Ações do projeto',
+  'editor.appName': 'Mapeador de imagens',
+  'editor.fitAllShort': 'Enquadrar',
+
   'view.canvas': 'Canvas',
   'view.list': 'Lista',
   'view.tabsLabel': 'Visualização',
