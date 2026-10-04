@@ -53,8 +53,8 @@ export interface Rect {
 export const isMobile = (info: TestInfo): boolean => info.project.name === 'mobile';
 
 /** Abre a app e cria um projeto local (guardado no IndexedDB do navegador de teste). */
-export async function createProject(page: Page, name: string): Promise<void> {
-  await page.goto('/');
+export async function createProject(page: Page, name: string, url = '/'): Promise<void> {
+  await page.goto(url);
   await page.getByRole('button', { name: /Novo projeto/ }).click();
   await page.getByRole('textbox').fill(name);
   await page.getByRole('button', { name: 'Criar' }).click();
@@ -224,4 +224,27 @@ export async function applySpecialization(page: Page, file: string): Promise<voi
     .getByRole('dialog')
     .getByRole('button', { name: 'Fechar', exact: true })
     .click();
+}
+
+export interface Violation {
+  readonly directive: string;
+  readonly blocked: string;
+}
+
+/**
+ * Registra os `securitypolicyviolation` de todos os documentos da página (inclusive depois
+ * de navegar ou recarregar). O script de inicialização do Playwright não sofre a CSP.
+ */
+export async function watchViolations(page: Page): Promise<() => readonly Violation[]> {
+  const found: Violation[] = [];
+  await page.exposeFunction('__reportCsp', (directive: string, blocked: string) => {
+    found.push({ directive, blocked });
+  });
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (e) => {
+      const report = (window as unknown as Record<string, unknown>).__reportCsp;
+      if (typeof report === 'function') report(e.effectiveDirective, e.blockedURI);
+    });
+  });
+  return () => found;
 }

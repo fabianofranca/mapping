@@ -1,4 +1,5 @@
 import { render } from 'preact';
+import './utils/zodConfig';
 import 'virtual:tokens.css';
 import './theme/base.css';
 import './theme/controls.css';
