@@ -75,9 +75,6 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
 - **Etapa 2.2 — Segunda revisão técnica (concluída):** fases 26 e 27 concluídas, 28 dispensada (histórico em `docs/history/PLAN-etapa-2-2.md`).
-- **Etapa 2.3 — Redesign da interface (atual):** fases R1 a R10 (R1 a R9 concluídas; falta a R10, propostas adiadas), no `PLAN.md`; especificação em `docs/redesign/HANDOFF.md`. Regras da etapa:
-  - R1 a R3 **não mudam comportamento**;
-  - da R4 em diante, cada PR lista no "Como testar" as mudanças B# e P# que entrega;
-  - os testes e2e afetados são atualizados no mesmo PR;
-  - o roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) continua passando nos dois layouts (desktop e 380 px) e nos dois temas.
-- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (2.4 CSP, 3 servidor MCP, 4 Figma, marco de uso real e evoluções). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.
+- **Etapa 2.3 — Redesign da interface (concluída):** fases R1 a R9 concluídas e R10 movida para Evoluções no ROADMAP (histórico em `docs/history/PLAN-etapa-2-3.md`; especificação em `docs/redesign/HANDOFF.md`).
+- **Etapa atual:** 2.4 (CSP) e 2.5 (trava), detalhadas no [`docs/ROADMAP.md`](docs/ROADMAP.md).
+- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (3 servidor MCP, 4 Figma, marco de uso real e evoluções, depois da 2.4 e da 2.5). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.
