@@ -111,6 +111,7 @@ export default defineConfig({
           name: 'app',
           environment: 'jsdom',
           env: testEnv,
+          setupFiles: ['tests/setup.ts'],
           include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
           exclude: ['tests/model/**'],
         },

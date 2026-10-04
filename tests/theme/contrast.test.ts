@@ -48,9 +48,19 @@ const PAIRS: readonly [string, string, number][] = [
   ['border-control', 'hover', 3],
   ['accent', 'surface', 3],
   ['accent', 'bg', 3],
-  // Removido na R3 junto com `color-marking`.
-  ['marking', 'canvas-bg', 3],
 ];
+
+describe('canvas (iguais nos dois temas)', () => {
+  const cv = (name: string) => tokenValue(name, 'light');
+
+  it('texto da etiqueta do nome sobre cv-name-tag ≥ 4,5', () => {
+    expect(contrast(cv('cv-name-tag-text'), cv('cv-select'))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('cv-name-tag segue cv-select', () => {
+    expect(cv('cv-name-tag')).toBe('var(--cv-select)');
+  });
+});
 
 describe.each(['light', 'dark'] as const)('contraste no tema %s', (theme) => {
   const color = (name: string) => tokenValue(`color-${name}`, theme);

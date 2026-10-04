@@ -63,8 +63,6 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'color-tooltip': { light: '#1b1f24', dark: '#e8eaed' },
   'color-tooltip-text': { light: '#ffffff', dark: '#12151a' },
   'color-card': { light: 'rgba(255, 255, 255, 0.92)', dark: 'rgba(28, 32, 39, 0.92)' },
-  /** Substituído por `cv-line` + `cv-halo`; o canvas ainda o lê até a R3. */
-  'color-marking': { light: '#2b2f36', dark: '#d5d9df' },
   // Canvas: iguais nos dois temas, porque ficam sobre a imagem.
   'cv-line': '#ffffff',
   'cv-halo': 'rgba(10, 12, 16, 0.72)',
@@ -72,6 +70,8 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-invalid': '#ff6b6b',
   'cv-warning': '#ffc247',
   'cv-name-tag': 'var(--cv-select)',
+  /** Texto da etiqueta do nome (≥ 4,5:1 sobre `cv-name-tag`); não está no DS 2.0. */
+  'cv-name-tag-text': '#0b1220',
   ...Object.fromEntries(
     LAYER_COLORS.map((c, i) => [`layer-${String(i + 1).padStart(2, '0')}`, c]),
   ),

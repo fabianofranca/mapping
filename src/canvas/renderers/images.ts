@@ -8,9 +8,9 @@ import { imageCanvasRect, type Placement, type ProjectImage } from '../../model'
 import type { DisplayImage } from '../../store/displayImages';
 import type { Frame } from '../frame';
 import type { CanvasTokens } from '../theme';
+import { fontStyle } from './metrics';
 
-/** Rótulo da imagem (px de tela): fonte, distância da borda e largura mínima para aparecer. */
-const IMAGE_TITLE_FONT_SIZE = 12;
+/** Rótulo da imagem (px de tela): distância da borda e largura mínima (a fonte é `t-cv-image`). */
 const IMAGE_TITLE_GAP = 4;
 const IMAGE_TITLE_MIN_WIDTH = 48;
 
@@ -75,7 +75,7 @@ export class ImageRenderer {
       bitmap: new KonvaImage({ image: undefined }),
       placeholder: new KonvaRect(),
       label: new KonvaText({ align: 'center', verticalAlign: 'middle', wrap: 'char' }),
-      title: new KonvaText({ wrap: 'none', ellipsis: true, fontStyle: 'bold' }),
+      title: new KonvaText({ wrap: 'none', ellipsis: true }),
     };
     node.group.add(node.placeholder, node.bitmap, node.label, node.title);
     this.layer.add(node.group);
@@ -108,7 +108,7 @@ function updateNode(
     ...box,
     visible: !ready,
     fill: tokens.surface,
-    stroke: broken ? tokens.warning : tokens.border,
+    stroke: broken ? tokens.warningText : tokens.border,
     strokeWidth: (broken ? 2 : 1) / zoom,
     dash: broken ? [8 / zoom, 6 / zoom] : [],
   });
@@ -133,8 +133,12 @@ function updateNode(
     y: padding,
     width: Math.max(0, rect.width - 2 * padding),
     height: Math.max(0, rect.height - 2 * padding),
-    fontSize: Math.max(Math.min(rect.width, rect.height) * 0.06, 12 / zoom),
-    fill: broken ? tokens.warning : tokens.textMuted,
+    fontSize: Math.max(
+      Math.min(rect.width, rect.height) * 0.06,
+      tokens.type.image.size / zoom,
+    ),
+    fontFamily: tokens.fontFamily,
+    fill: broken ? tokens.warningText : tokens.textMuted,
   });
 }
 
@@ -151,15 +155,17 @@ function updateTitle(
     node.title.visible(false);
     return;
   }
-  const fontSize = IMAGE_TITLE_FONT_SIZE / zoom;
+  const { size, line, weight } = tokens.type.image;
   node.title.setAttrs({
     visible: true,
     text: image.name ?? image.file,
     x: 0,
-    y: -(IMAGE_TITLE_FONT_SIZE + IMAGE_TITLE_GAP) / zoom,
+    y: -(line + IMAGE_TITLE_GAP) / zoom,
     width,
-    height: fontSize * 1.2,
-    fontSize,
+    height: line / zoom,
+    fontSize: size / zoom,
+    fontFamily: tokens.fontFamily,
+    fontStyle: fontStyle(weight),
     fill: image.name === null ? tokens.textMuted : tokens.text,
   });
 }

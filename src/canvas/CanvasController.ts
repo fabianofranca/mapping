@@ -246,7 +246,13 @@ export class CanvasController {
       this.placements = this.images.render(frame);
     }
     this.markings.render(frame, this.placements);
-    if (scaleChanged || !sameFrame(last, frame, OVERLAY_KEYS)) {
+    // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela.
+    const viewMoved = last?.viewport !== v || last?.size !== size;
+    if (
+      scaleChanged ||
+      !sameFrame(last, frame, OVERLAY_KEYS) ||
+      (viewMoved && this.overlay.followsView)
+    ) {
       this.overlay.render(frame, this.placements);
     }
     this.stage.batchDraw();

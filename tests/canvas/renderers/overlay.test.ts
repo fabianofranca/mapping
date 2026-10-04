@@ -44,15 +44,17 @@ describe('OverlayRenderer', () => {
       y: 0,
       width: 500,
       height: 500,
-      stroke: TOKENS.accent,
+      stroke: TOKENS.select,
       strokeWidth: 1,
     });
     expect(handles().filter((h) => h.visible())).toHaveLength(4);
-    // Alça de 14 px de tela centrada no canto.
+    // Alça de `size-handle` (10 px de tela) centrada no canto, com a cor de seleção.
     expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({
-      x: 1600 - 3.5,
-      y: 500 - 3.5,
-      width: 7,
+      x: 1600 - 2.5,
+      y: 500 - 2.5,
+      width: 5,
+      fill: TOKENS.line,
+      stroke: TOKENS.select,
     });
   });
 
@@ -66,7 +68,7 @@ describe('OverlayRenderer', () => {
       },
       new Map([...PLACEMENTS, ['I2', placement]]),
     );
-    expect(overlay.selectionOutline.stroke()).toBe(TOKENS.danger);
+    expect(overlay.selectionOutline.stroke()).toBe(TOKENS.invalid);
     expect(overlay.selectionOutline.strokeWidth()).toBe(4);
     expect(overlay.selectionOutline.x()).toBe(500);
   });
@@ -75,8 +77,82 @@ describe('OverlayRenderer', () => {
     const { overlay, render, handles } = setup();
     render({ selection: { kind: 'marking', id: 'M2' } });
     expect(overlay.selectionOutline.visible()).toBe(false);
-    expect(overlay.handles.get('nw')?.getAttrs()).toMatchObject({ x: 193, y: 193 });
+    expect(overlay.handles.get('nw')?.getAttrs()).toMatchObject({ x: 195, y: 195 });
     expect(handles().every((h) => h.visible())).toBe(true);
+  });
+
+  it('alça maior com toque (size-handle-touch)', () => {
+    const { overlay, render } = setup();
+    render({
+      selection: { kind: 'marking', id: 'M2' },
+      tokens: { ...TOKENS, handleSize: 14 },
+    });
+    expect(overlay.handles.get('nw')?.getAttrs()).toMatchObject({
+      x: 193,
+      y: 193,
+      width: 14,
+    });
+  });
+
+  describe('etiqueta do nome da marcação selecionada', () => {
+    const SELECTED = { kind: 'marking', id: 'M2' } as const;
+    /** Tela 380×700 com a imagem I1 deslocada: o topo de M2 (y = 200) fica em `top`. */
+    const at = (top: number, scale = 1) => ({ x: 0, y: top - 200 * scale, scale });
+
+    it('acima do canto superior esquerdo, com as cores da etiqueta', () => {
+      const { overlay, render } = setup();
+      render({ selection: SELECTED, viewport: at(100) });
+      expect(overlay.nameTag.visible()).toBe(true);
+      expect(overlay.nameTagText.text()).toBe('Maçaneta');
+      expect(overlay.nameTagText.getAttrs()).toMatchObject({
+        fill: TOKENS.nameTagText,
+        fontFamily: TOKENS.fontFamily,
+        fontSize: TOKENS.type.name.size,
+      });
+      expect(overlay.nameTagBox.getAttrs()).toMatchObject({ fill: TOKENS.nameTag });
+      // Altura de 16 + 2·1 de halo e vão de 2 px: o fundo termina 2 px acima da borda.
+      expect(overlay.nameTag.x()).toBe(200);
+      expect(overlay.nameTag.y()).toBe(200 - 20);
+    });
+
+    it('mantém o tamanho em px de tela com zoom', () => {
+      const { overlay, render } = setup();
+      render({ selection: SELECTED, viewport: at(100, 2) });
+      expect(overlay.nameTag.scaleX()).toBe(0.5);
+      expect(overlay.nameTag.y()).toBe(200 - 20 / 2);
+    });
+
+    it('sem espaço acima na tela: por dentro da marcação', () => {
+      const { overlay, render } = setup();
+      render({ selection: SELECTED, viewport: at(5) });
+      expect(overlay.nameTag.y()).toBe(200 + 2);
+    });
+
+    it('canto fora da tela: ancorada na borda visível', () => {
+      const { overlay, render } = setup();
+      // M2 começa em x = 200 e y = 200; a tela mostra de (250, 250) em diante.
+      render({ selection: SELECTED, viewport: { x: -250, y: -250, scale: 1 } });
+      expect(overlay.nameTag.x()).toBe(250);
+      expect(overlay.nameTag.y()).toBe(250 + 2);
+    });
+
+    it('sem nome, imagem selecionada ou sem seleção: sem etiqueta', () => {
+      const { overlay, render } = setup();
+      render({ selection: { kind: 'marking', id: 'M3' }, viewport: at(100) });
+      expect(overlay.nameTag.visible()).toBe(false);
+      render({ selection: { kind: 'image', id: 'I1' } });
+      expect(overlay.nameTag.visible()).toBe(false);
+      render({ selection: SELECTED, viewport: at(100) });
+      render();
+      expect(overlay.nameTag.visible()).toBe(false);
+    });
+
+    it('followsView só enquanto a etiqueta aparece (pan precisa redesenhá-la)', () => {
+      const { overlay, render } = setup();
+      expect(overlay.followsView).toBe(false);
+      render({ selection: SELECTED, viewport: at(100) });
+      expect(overlay.followsView).toBe(true);
+    });
   });
 
   it('sem alças no modo Desenhar e só em leitura', () => {
@@ -97,7 +173,9 @@ describe('OverlayRenderer', () => {
       visible: true,
       x: 200,
       width: 100,
-      shadowColor: TOKENS.accent,
+      opacity: TOKENS.opacity.grabbed,
+      shadowColor: TOKENS.grabShadow.color,
+      shadowBlur: TOKENS.grabShadow.blur,
     });
   });
 
@@ -105,9 +183,9 @@ describe('OverlayRenderer', () => {
     const { overlay, render } = setup();
     render({ draft: { imageId: 'I1', rect: { x: 10, y: 10, width: 2, height: 2 } } });
     expect(overlay.draftRect.visible()).toBe(true);
-    expect(overlay.draftRect.stroke()).toBe(TOKENS.danger);
+    expect(overlay.draftRect.stroke()).toBe(TOKENS.invalid);
     render({ draft: { imageId: 'I1', rect: { x: 10, y: 10, width: 80, height: 60 } } });
-    expect(overlay.draftRect.stroke()).toBe(TOKENS.accent);
+    expect(overlay.draftRect.stroke()).toBe(TOKENS.select);
     expect(overlay.draftRect.dash()).toEqual([6, 4]);
     render();
     expect(overlay.draftRect.visible()).toBe(false);

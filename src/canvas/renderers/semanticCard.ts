@@ -16,12 +16,11 @@ import {
   MAX_DOTS,
   MORE_WIDTH,
   REVIEW_BADGE_SIZE,
+  fontStyle,
   intersectRects,
 } from './metrics';
 
-/** Zoom semântico: fonte e altura de linha (px de tela) e margem interna do texto. */
-const TEXT_FONT_SIZE = 12;
-const TEXT_LINE_HEIGHT = 15;
+/** Margem interna do texto do cabeçalho (px de tela); fonte e linha vêm de `t-cv-name`. */
 const TEXT_PADDING = 4;
 /** Altura da linha de cabeçalho (onde ficam o alerta, as bolinhas e o nome). */
 const TEXT_HEADER_HEIGHT = 2 * DOT_MARGIN + 2 * DOT_RADIUS;
@@ -31,22 +30,19 @@ const CARD_PADDING = 6;
 const CARD_MAX_WIDTH = 300;
 /** Mais estreito que isso (ex: área quase toda fora da tela), o cartão não aparece. */
 const CARD_MIN_WIDTH = 120;
-const CARD_RADIUS = 6;
-/** Fundo semiopaco (cor de superfície do tema) e barra da camada à esquerda. */
-const CARD_OPACITY = 0.88;
+/** Barra da camada à esquerda (o fundo e o raio vêm de `color-card` e `radius-md`). */
 const CARD_BAR_WIDTH = 3;
 const CARD_BAR_GAP = 6;
 /** Recuo dos pares sob o nome da anotação. */
 const CARD_ENTRY_INDENT = 10;
-/** Herdadas: itálico e esmaecidas. */
-const CARD_INHERITED_OPACITY = 0.7;
-const CARD_FONT: Readonly<Record<CardRow['kind'], number>> = {
-  layer: 10,
-  title: 12,
-  note: 10,
-  entry: 12,
-  separator: 0,
-  more: 12,
+/** Estilo de cada tipo de linha: nome da camada e notas em `t-cv-caption`, o resto em `t-cv-card`. */
+const CARD_TYPE: Readonly<Record<CardRow['kind'], 'card' | 'caption'>> = {
+  layer: 'caption',
+  title: 'card',
+  note: 'caption',
+  entry: 'card',
+  separator: 'card',
+  more: 'card',
 };
 
 /** Nós do texto do zoom semântico de uma marcação, recortados no retângulo dela. */
@@ -54,7 +50,7 @@ export interface SemanticNode {
   readonly group: Konva.Group;
   /** Nome da marcação na linha de cabeçalho, ao lado das bolinhas. */
   readonly header: KonvaText;
-  /** Fundo do cartão (cor de superfície do tema, semiopaco). */
+  /** Fundo do cartão (`color-card`, já semiopaco). */
   readonly card: KonvaRect;
   /** Linhas do cartão, uma por nó. Crescem sob demanda. */
   readonly lines: KonvaText[];
@@ -68,7 +64,6 @@ export function createSemanticNode(): SemanticNode {
     header: new KonvaText({
       wrap: 'none',
       ellipsis: true,
-      fontStyle: 'bold',
       fillAfterStrokeEnabled: true,
     }),
     card: new KonvaRect(),
@@ -115,6 +110,7 @@ export function updateSemanticText(
     return;
   }
   const px = (n: number) => n / zoom;
+  const name = tokens.type.name;
   node.group.setAttrs({
     visible: true,
     clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
@@ -149,12 +145,14 @@ export function updateSemanticText(
       visible: true,
       text: headerText,
       x: headerX,
-      y: rect.y + px((TEXT_HEADER_HEIGHT - TEXT_FONT_SIZE) / 2),
+      y: rect.y + px((TEXT_HEADER_HEIGHT - name.size) / 2),
       width: Math.max(0, rect.x + rect.width - headerX - px(TEXT_PADDING)),
-      height: px(TEXT_LINE_HEIGHT),
-      fontSize: px(TEXT_FONT_SIZE),
-      fill: tokens.marking,
-      stroke: tokens.surface,
+      height: px(name.line),
+      fontSize: px(name.size),
+      fontFamily: tokens.fontFamily,
+      fontStyle: fontStyle(name.weight),
+      fill: tokens.line,
+      stroke: tokens.halo,
       strokeWidth: 2.5 / zoom,
     });
   }
@@ -200,9 +198,8 @@ function updateCard(
     y: top,
     width,
     height: px(layout.height + 2 * CARD_PADDING),
-    fill: tokens.surface,
-    opacity: CARD_OPACITY,
-    cornerRadius: px(CARD_RADIUS),
+    fill: tokens.card,
+    cornerRadius: px(tokens.radius.md),
     stroke: tokens.border,
     strokeWidth: px(1),
   });
@@ -226,7 +223,7 @@ function updateCard(
       y: rowY(from),
       width: px(CARD_BAR_WIDTH),
       height: px(to - from),
-      fill: card.layers[section]?.color ?? tokens.marking,
+      fill: card.layers[section]?.color ?? tokens.textMuted,
     });
   }
   type Line = {
@@ -235,6 +232,7 @@ function updateCard(
     y: number;
     height: number;
     fontSize: number;
+    fontFamily: string;
     fontStyle: string;
     fill: string;
     opacity: number;
@@ -254,6 +252,7 @@ function updateCard(
     const inherited = 'inherited' in row && row.inherited;
     const italic = inherited || (row.kind === 'title' && row.untitled);
     const bold = row.kind === 'title' && !row.untitled;
+    const style = tokens.type[CARD_TYPE[row.kind]];
     const muted =
       row.kind === 'layer' ||
       row.kind === 'note' ||
@@ -264,16 +263,17 @@ function updateCard(
       x: contentX + (row.kind === 'entry' ? px(CARD_ENTRY_INDENT) : 0),
       y: rowY(row.y),
       height: px(row.height),
-      fontSize: px(CARD_FONT[row.kind]),
-      fontStyle:
-        [italic ? 'italic' : '', bold ? 'bold' : ''].join(' ').trim() || 'normal',
+      fontSize: px(style.size),
+      fontFamily: tokens.fontFamily,
+      // Título da anotação em negrito (o peso do cabeçalho do canvas), o resto no peso do estilo.
+      fontStyle: fontStyle(bold ? tokens.type.name.weight : style.weight, italic),
       fill:
         'alert' in row && row.alert
-          ? tokens.warning
+          ? tokens.warningText
           : muted
             ? tokens.textMuted
             : tokens.text,
-      opacity: inherited ? CARD_INHERITED_OPACITY : 1,
+      opacity: inherited ? tokens.opacity.inherited : 1,
     });
   }
 
