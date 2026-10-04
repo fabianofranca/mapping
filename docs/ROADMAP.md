@@ -6,10 +6,10 @@ Ordem das etapas do Mapeador de Imagens. Este documento só dá a direção: o d
 
 O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotações, componentes e telas. Todo conceito de domínio (SDUI, plataformas, Figma, contratos) entra por **especializações**, para a mesma ferramenta servir a N aplicações.
 
-## Etapa 2.3 — Redesign da interface (atual)
+## Etapa 2.3 — Redesign da interface (concluída)
 
 - **Objetivo:** renovar a interface com os tokens e o design system 2.0, sem quebrar o uso no desktop nem no celular.
-- **Entra:** fases R1 a R9 do `PLAN.md`. A R10 (paleta de comandos e busca global) sai do caminho crítico e vai para [Evoluções](#evoluções).
+- **Entra:** fases R1 a R9 (histórico em [`docs/history/PLAN-etapa-2-3.md`](history/PLAN-etapa-2-3.md)). A R10 (paleta de comandos e busca global) sai do caminho crítico e vai para [Evoluções](#evoluções).
 - **Depende de:** nada (etapas 1 a 2.2 concluídas).
 
 ## Etapa 2.4 — Privacidade garantida por CSP
@@ -30,7 +30,11 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - trancar um pai trava a geometria dos descendentes;
   - cadeado visível no canvas, na seleção e sob o cursor;
   - gravado no `mapping.json` (`locked`), com nova versão de schema e migração, e com desfazer;
-  - itens vindos do Figma (etapa 4) já são somente leitura; a trava é para os itens manuais.
+  - itens vindos do Figma (etapa 4) já são somente leitura; a trava é para os itens manuais;
+  - ao criar um projeto numa pasta, gravar também um `.gitignore` com `backups/`;
+  - na tela inicial, um texto curto recomendando o formato pasta para quem versiona com git;
+  - no campo "Pertence a", uma linha de ajuda explicando que só aparecem anotações da mesma marcação em outras camadas, e uma mensagem quando não houver nenhuma opção;
+  - testes para os atalhos de teclado (`useEditorShortcuts`).
 - **Depende de:** etapa 2.3 (Árvore e Detalhes do redesign).
 
 ## Etapa 3 — Servidor MCP
