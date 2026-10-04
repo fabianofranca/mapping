@@ -1,33 +1,97 @@
 .dialog {
   width: min(var(--size-dialog), calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100dvh - 2 * var(--space-4));
   padding: 0;
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-popup);
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-md {
+  width: min(var(--size-dialog-md), calc(100vw - 2 * var(--space-4)));
+}
+
+/* Ajuda: altura fixa, para o diálogo não pular ao buscar. */
+.dialog-lg {
+  width: min(var(--size-dialog-lg), calc(100vw - 2 * var(--space-4)));
+  height: min(var(--size-dialog-lg-height), calc(100dvh - 2 * var(--space-4)));
 }
 
 .dialog::backdrop {
   background: var(--color-backdrop);
 }
 
+/* Cabeçalho de 44px: título e fechar. */
+.dialog-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--size-touch);
+  padding: 0 var(--space-1) 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dialog-title {
+  min-width: 0;
+  margin: 0;
+  font: var(--t-text-title);
+  overflow-wrap: anywhere;
+}
+
 .dialog-body {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
+  overflow-y: auto;
 }
 
-.dialog-body h2,
+.dialog-body-flush {
+  padding: 0;
+  overflow: hidden;
+}
+
 .dialog-body p {
   margin: 0;
 }
 
 .dialog-actions {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Celular: o diálogo ocupa a tela toda. */
+@media (max-width: 899px) {
+  .dialog,
+  .dialog-md,
+  .dialog-lg {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: none;
+    border-radius: 0;
+  }
+
+  .dialog-actions {
+    padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  }
 }
 
 .dialog-stack {
@@ -36,40 +100,99 @@
   gap: var(--space-2);
 }
 
-/* Ajuda → Especializações */
-.dialog:has(.help) {
-  width: min(var(--size-dialog-lg), calc(100vw - 2 * var(--space-4)));
+/* Exportar: o arquivo gerado */
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
-.help {
+.file-card-icon {
+  display: flex;
+  color: var(--color-accent);
+}
+
+.file-card-info {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  max-height: 65dvh;
-  overflow-y: auto;
+  min-width: 0;
+  font: var(--t-text-small);
+}
+
+.file-card-name {
+  font: var(--t-body-strong);
   overflow-wrap: anywhere;
+}
+
+/* Ajuda: índice lateral com busca e conteúdo que rola sozinho. */
+.help {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: var(--size-help-nav) minmax(0, 1fr);
+  overflow-wrap: anywhere;
+}
+
+.help-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  padding: var(--space-3);
+  overflow-y: auto;
+  border-right: 1px solid var(--color-border);
+}
+
+.help-content {
+  min-height: 0;
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.help-content > section + section {
+  margin-top: var(--space-6);
 }
 
 .help h3 {
   margin: 0 0 var(--space-2);
+  font: var(--t-text-title);
 }
 
-.help p,
-.help ul {
+.help-content p,
+.help-content ul {
   margin: 0 0 var(--space-2);
 }
 
 .help-toc {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  padding-left: var(--space-4);
+  gap: var(--space-0-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .help-toc a {
-  display: inline-block;
-  min-height: var(--size-target-min);
-  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  color: var(--color-text);
+  text-decoration: none;
+  border-radius: var(--control-radius);
+}
+
+.help-toc a:hover {
+  background: var(--color-hover);
+}
+
+.help-toc a[aria-current='true'] {
+  font-weight: 600;
+  background: var(--color-selection);
 }
 
 .help-terms {
@@ -94,6 +217,95 @@
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+}
+
+/* Seção Atalhos (P10) */
+.help-shortcuts {
+  width: 100%;
+  margin: var(--space-3) 0 0;
+  border-collapse: collapse;
+}
+
+.help-shortcuts caption {
+  padding: var(--space-1) 0;
+  font: var(--t-text-heading);
+  text-align: left;
+}
+
+.help-shortcuts th,
+.help-shortcuts td {
+  padding: var(--space-1-5) var(--space-2);
+  font: var(--t-text);
+  text-align: left;
+  vertical-align: top;
+  border-top: 1px solid var(--color-border);
+}
+
+.help-shortcuts th {
+  font-weight: 400;
+}
+
+.help-shortcuts td {
+  text-align: right;
+}
+
+.help-keys {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-2);
+}
+
+.help-combo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.help-combo-keys {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 0 var(--space-1-5);
+  font: var(--t-kbd);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-xs);
+}
+
+/* Celular: o índice vira uma fileira rolável acima do conteúdo. */
+@media (max-width: 899px) {
+  .help {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .help-side {
+    flex: none;
+    padding: var(--space-2) var(--space-3);
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .help-toc {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .help-toc a {
+    min-height: var(--size-touch);
+    white-space: nowrap;
+  }
+
+  .help-content {
+    flex: 1;
+  }
 }
 
 .diagnostics-list {

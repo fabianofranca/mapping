@@ -1,6 +1,7 @@
 import { applyUpdate, updateReady } from '../app/pwa';
 import { openProject } from '../app/controller';
 import { t } from '../i18n';
+import { Banner } from './Banner';
 import { Button } from './controls';
 
 /** "Nova versão disponível — atualizar". Grava o projeto aberto antes de recarregar. */
@@ -14,11 +15,17 @@ export function UpdateBanner() {
     }
   };
   return (
-    <div class="notice notice-info update-banner" role="status">
-      <span>{t('pwa.updateAvailable')}</span>
-      <Button variant="primary" onClick={() => void update()}>
-        {t('pwa.update')}
-      </Button>
-    </div>
+    <Banner
+      tone="info"
+      role="status"
+      class="update-banner"
+      action={
+        <Button variant="primary" size="sm" onClick={() => void update()}>
+          {t('pwa.update')}
+        </Button>
+      }
+    >
+      {t('pwa.updateAvailable')}
+    </Banner>
   );
 }

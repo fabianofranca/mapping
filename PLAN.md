@@ -137,13 +137,15 @@ Layout do celular com Painéis, telas cheias e gaveta de três alturas. Muda com
 
 Diálogos novos, tela inicial e faixas. Muda comportamento (B9, B10, B16, P8, P10).
 
-- [ ] Dialog novo
-- [ ] Especializações
-- [ ] Ajuda, com a seção Atalhos (P10)
-- [ ] Configurações
-- [ ] Exportar (B16)
-- [ ] Tela inicial (B10)
-- [ ] Faixa de preview dispensável na sessão, com o selo PREVIEW permanente (B9, P8)
+- [x] Dialog novo
+- [x] Especializações
+- [x] Ajuda, com a seção Atalhos (P10)
+- [x] Configurações
+- [x] Exportar (B16)
+- [x] Tela inicial (B10)
+- [x] Faixa de preview dispensável na sessão, com o selo PREVIEW permanente (B9, P8)
+
+Fica para a R8 o que depende do layout do celular: o Menu do celular ainda reúne Exportar, Especializações, Ajuda e Diagnóstico (a barra de cima e os Painéis o substituem). O Diagnóstico segue em diálogo até a R7.
 
 **Aceite**: roteiro 13.9 completo nos dois layouts e temas.
 

@@ -75,7 +75,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
 - **Etapa 2.2 — Segunda revisão técnica (concluída):** fases 26 e 27 concluídas, 28 dispensada (histórico em `docs/history/PLAN-etapa-2-2.md`).
-- **Etapa 2.3 — Redesign da interface (atual):** fases R1 a R10 (R1 e R2 concluídas), no `PLAN.md`; especificação em `docs/redesign/HANDOFF.md`. Regras da etapa:
+- **Etapa 2.3 — Redesign da interface (atual):** fases R1 a R10 (R1 a R4 e R9 concluídas), no `PLAN.md`; especificação em `docs/redesign/HANDOFF.md`. Regras da etapa:
   - R1 a R3 **não mudam comportamento**;
   - da R4 em diante, cada PR lista no "Como testar" as mudanças B# e P# que entrega;
   - os testes e2e afetados são atualizados no mesmo PR;

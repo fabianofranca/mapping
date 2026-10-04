@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import { Icon } from '../ui/icons';
 import { MenuPopover } from '../ui/MenuPopover';
+import { PreviewBadge } from '../ui/PreviewBanner';
 import { Button, IconButton } from '../ui/controls';
 import { AddImagesButton, HistoryButtons, ModeButtons } from './EditorTools';
 import { SHORTCUT_LABELS } from './shortcuts';
@@ -30,6 +31,7 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
       <span class="main-bar-logo" aria-hidden="true">
         <Icon name="marking" />
       </span>
+      <PreviewBadge />
       <MenuPopover
         class="project-menu"
         label={projectName.value}

@@ -81,7 +81,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'Um projeto pode aplicar várias especializações, a qualquer momento (menu do projeto → Especializações).',
+          'Um projeto pode aplicar várias especializações, a qualquer momento (botão Especializações).',
           'Uma especialização não cita outra pelo nome. A ligação entre elas é feita por referências fortes (tipo ref), que escolhem os alvos por etiquetas.',
           'Camadas da especialização só aceitam anotações tipadas, sem chaves extras. Camadas criadas por você continuam livres.',
           'A especialização aplicada é copiada para specs/<id>.json dentro do projeto, que fica autocontido.',
@@ -289,7 +289,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'A project can apply several specializations, at any time (project menu → Specializations).',
+          'A project can apply several specializations, at any time (Specializations button).',
           'A specialization never names another one. They are linked through strong references (ref type), which pick their targets by tags.',
           'Specialization layers only accept typed annotations, with no extra keys. Layers you create yourself stay free-form.',
           'The applied specialization is copied to specs/<id>.json inside the project, which stays self-contained.',

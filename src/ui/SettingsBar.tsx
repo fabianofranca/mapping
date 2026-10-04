@@ -11,8 +11,9 @@ import {
   setTheme,
   theme,
 } from '../store/settings';
-import { Choice, Select } from './controls';
+import { Choice, Segmented, Select } from './controls';
 
+/** Idioma, tema (segmentado) e texto no canvas. Vive no diálogo Configurações e no Menu do celular. */
 export function SettingsBar() {
   return (
     <div class="settings" role="group" aria-label={t('settings.title')}>
@@ -30,20 +31,20 @@ export function SettingsBar() {
           </option>
         ))}
       </Select>
-      <Select
-        label={t('settings.theme')}
-        value={theme.value}
-        onChange={(e) => {
-          const v = e.currentTarget.value;
-          if (isTheme(v)) setTheme(v);
-        }}
-      >
-        {THEMES.map((th) => (
-          <option value={th} key={th}>
-            {t(`theme.${th}` satisfies TranslationKey)}
-          </option>
-        ))}
-      </Select>
+      <div class="field">
+        {t('settings.theme')}
+        <Segmented
+          label={t('settings.theme')}
+          value={theme.value}
+          items={THEMES.map((th) => ({
+            id: th,
+            label: t(`theme.${th}` satisfies TranslationKey),
+          }))}
+          onSelect={(id) => {
+            if (isTheme(id)) setTheme(id);
+          }}
+        />
+      </div>
       <Choice
         label={t('view.semanticText')}
         hint={t('view.semanticTextHint')}

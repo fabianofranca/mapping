@@ -306,6 +306,18 @@ describe('ExportDialog', () => {
     Reflect.deleteProperty(navigator, 'share');
   });
 
+  it('mostra o arquivo gerado, com o tamanho', () => {
+    render(
+      <ExportDialog
+        file={new File([new Uint8Array(2048)], 'projeto.zip')}
+        onDone={vi.fn()}
+      />,
+    );
+    const card = document.querySelector('.file-card') as HTMLElement;
+    expect(card.textContent).toContain('projeto.zip');
+    expect(card.textContent).toContain(t('export.fileMeta', { size: '2 KB' }));
+  });
+
   it('cancelar só fecha', async () => {
     const onDone = vi.fn();
     render(<ExportDialog file={new File(['z'], 'p.zip')} onDone={onDone} />);

@@ -48,7 +48,7 @@ Para ver um branch no celular antes do merge: em **Actions → Deploy → Run wo
 - a `main`, intacta, em `/`;
 - o branch em **`/preview/`**, construído com `VITE_CHANNEL=preview`.
 
-O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service worker próprios): ele não enxerga nem migra os projetos locais da versão principal. Uma faixa fixa no topo avisa que é uma versão de teste, e o manifest tem outro nome, para instalar os dois lado a lado.
+O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service worker próprios): ele não enxerga nem migra os projetos locais da versão principal. Uma faixa no topo avisa que é uma versão de teste (dá para dispensá-la na sessão; o selo PREVIEW na barra e o canal na barra de status ficam sempre), e o manifest tem outro nome, para instalar os dois lado a lado.
 
 ## Documentação
 

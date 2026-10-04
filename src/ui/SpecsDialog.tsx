@@ -24,16 +24,32 @@ interface SpecsDialogProps {
   readonly onClose: () => void;
 }
 
+/** Resultado da última operação: sucesso (verde) ou erro (vermelho). */
+interface Feedback {
+  readonly tone: 'success' | 'error';
+  readonly text: string;
+}
+
 type Step =
   | { readonly kind: 'info'; readonly title: string; readonly lines: readonly string[] }
   | { readonly kind: 'update'; readonly spec: Spec }
   | { readonly kind: 'remove'; readonly entry: ProjectSpecialization };
 
+/** Sucesso com o texto dado; erro com o código da action. */
+function feedback(
+  result: { readonly ok: true } | { readonly ok: false; readonly error: string },
+  success: string,
+): Feedback {
+  return result.ok
+    ? { tone: 'success', text: success }
+    : { tone: 'error', text: t('spec.failed', { code: result.error }) };
+}
+
 /** Menu Especializações: aplicar, atualizar versão e remover (docs/history/PLAN-etapas-1-2.md 13.4). */
 export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   const { actions } = useEditor();
   const [step, setStep] = useState<Step | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<Feedback | null>(null);
   const input = useRef<HTMLInputElement>(null);
   /** Especialização esperada ao escolher o arquivo (`null`: qualquer uma). */
   const expected = useRef<string | null>(null);
@@ -53,7 +69,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
       text = await file.text();
     } catch (e) {
       reportError('spec.readFile', e);
-      setMessage(t('spec.readFailed'));
+      setMessage({ tone: 'error', text: t('spec.readFailed') });
       return;
     }
     const parsed = parseSpecText(text);
@@ -89,9 +105,10 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     } else {
       const result = actions.applySpecialization(spec);
       setMessage(
-        result.ok
-          ? t('spec.appliedMessage', { name: spec.name, layers: spec.layers.length })
-          : t('spec.failed', { code: result.error }),
+        feedback(
+          result,
+          t('spec.appliedMessage', { name: spec.name, layers: spec.layers.length }),
+        ),
       );
     }
   };
@@ -100,9 +117,10 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     setStep(null);
     const result = actions.updateSpecialization(spec, labelTexts());
     setMessage(
-      result.ok
-        ? t('spec.updatedMessage', { name: spec.name, version: spec.version })
-        : t('spec.failed', { code: result.error }),
+      feedback(
+        result,
+        t('spec.updatedMessage', { name: spec.name, version: spec.version }),
+      ),
     );
   };
 
@@ -110,9 +128,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     setStep(null);
     const result = actions.removeSpecialization(entry.id, mode, labelTexts());
     setMessage(
-      result.ok
-        ? t('spec.removedMessage', { name: entry.spec?.name ?? entry.id })
-        : t('spec.failed', { code: result.error }),
+      feedback(result, t('spec.removedMessage', { name: entry.spec?.name ?? entry.id })),
     );
   };
 
@@ -120,13 +136,19 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     <>
       <Dialog
         title={t('spec.title')}
+        size="md"
         onCancel={onClose}
         actions={<Button onClick={onClose}>{t('common.close')}</Button>}
       >
         <p class="muted">{t('spec.hint')}</p>
         {message && (
-          <p class="notice notice-info" role="status">
-            {message}
+          <p
+            class={
+              message.tone === 'success' ? 'notice notice-success' : 'notice notice-error'
+            }
+            role={message.tone === 'success' ? 'status' : 'alert'}
+          >
+            {message.text}
           </p>
         )}
         <input

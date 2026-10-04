@@ -36,6 +36,8 @@ describe('dicionários', () => {
       'zoom.value',
       'status.empty',
       'status.schema',
+      'pwa.previewBadge',
+      'shortcuts.group.view',
     ]);
     const same = entries.filter(([key, pt]) => enUS[key] === pt && !allowed.has(key));
     expect(same.map(([key]) => key)).toEqual([]);

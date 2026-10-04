@@ -1,6 +1,7 @@
 import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
+import { PreviewBadge } from '../ui/PreviewBanner';
 import { SaveStatus } from '../ui/SaveStatus';
 import { Button, IconButton } from '../ui/controls';
 import type { EditorDialogs } from './useEditorDialogs';
@@ -15,6 +16,7 @@ export function EditorTopBar({ dialogs }: { readonly dialogs: EditorDialogs }) {
   const activeLayer = derived.activeLayer.value;
   return (
     <header class="topbar editor-bar">
+      <PreviewBadge />
       <h1 class="project-title">{projectName.value}</h1>
       {activeLayer && (
         <Button

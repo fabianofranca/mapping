@@ -368,6 +368,8 @@
 .tooltip .kbd {
   padding: 0 var(--space-1);
   font: var(--t-kbd);
+  color: inherit;
+  background: none;
   border: 1px solid currentcolor;
   border-radius: var(--radius-xs);
   opacity: var(--opacity-ancestor);
