@@ -134,6 +134,8 @@ const ROLES: Readonly<Record<string, { desktop: string; mobile: string }>> = {
   'control-icon': { desktop: 'size-icon', mobile: 'size-icon-touch' },
   /** Lado da caixa de seleção e do rádio. */
   'control-check': { desktop: 'size-icon', mobile: 'size-target-min' },
+  /** Altura de uma linha de árvore ou de lista (TreeRow). */
+  'row-height': { desktop: 'size-row', mobile: 'size-touch' },
 };
 
 const SCALES: Readonly<Record<string, TokenValue>> = {
@@ -180,6 +182,7 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-tw-left': '264px',
   'size-tw-right': '360px',
   'size-tw-bottom': '208px',
+  'size-tw-layers': '224px',
   'size-canvas-min': '320px',
   'size-resize-hit': '8px',
   'size-label-col': '92px',

@@ -1,5 +1,12 @@
 import { signal, type Signal } from '@preact/signals';
-import type { Annotation, Layer, Marking, Project, ProjectImage } from '../model';
+import {
+  projectIndex,
+  type Annotation,
+  type Layer,
+  type Marking,
+  type Project,
+  type ProjectImage,
+} from '../model';
 
 /** Item selecionado no editor. */
 export type Selection =
@@ -30,6 +37,8 @@ export interface EditorUi {
   readonly listIncompleteOnly: Signal<boolean>;
   /** Anotação para rolar até (e focar) no painel assim que ela aparecer. */
   readonly focusAnnotation: Signal<string | null>;
+  /** Nós recolhidos da janela Árvore (`treeKey`); vazio = tudo aberto. */
+  readonly collapsedTree: Signal<ReadonlySet<string>>;
   /**
    * Campo da anotação em `focusAnnotation` que recebe o foco (link de uma pendência):
    * o `data-focus` do campo (`owner`, a chave do campo ou `chave:linha:coluna`).
@@ -52,6 +61,7 @@ export function createEditorUi(): EditorUi {
     listShowEmpty: signal<boolean>(false),
     listIncompleteOnly: signal<boolean>(false),
     focusAnnotation: signal<string | null>(null),
+    collapsedTree: signal<ReadonlySet<string>>(new Set()),
     focusField: signal<string | null>(null),
     collapsed: signal<ReadonlySet<string>>(new Set()),
   };
@@ -190,4 +200,60 @@ export function resolveSelection(
   const marking = project.markings.find((m) => m.id === selection.id);
   const image = marking && project.images.find((i) => i.id === marking.imageId);
   return marking && image ? { kind: 'marking', marking, image } : null;
+}
+
+// Árvore de marcações: quais nós estão recolhidos. Estado de UI, fora do projeto e do
+// desfazer. As chaves levam o tipo do nó porque ids de imagem e de marcação vêm de
+// geradores diferentes.
+
+export function treeKey(kind: 'image' | 'marking', id: string): string {
+  return `${kind}:${id}`;
+}
+
+/** Recolhe ou abre um nó da árvore. */
+export function toggleTreeNode(ui: EditorUi, key: string): void {
+  const next = new Set(ui.collapsedTree.peek());
+  if (!next.delete(key)) next.add(key);
+  ui.collapsedTree.value = next;
+}
+
+/** Recolhe todos os nós que têm filhos (as imagens e as marcações com filhas). */
+export function collapseTree(ui: EditorUi, project: Project | null): void {
+  if (!project) return;
+  const next = new Set<string>();
+  const parents = new Set<string>();
+  for (const m of project.markings) {
+    next.add(treeKey('image', m.imageId));
+    if (m.parentId !== null) parents.add(m.parentId);
+  }
+  for (const id of parents) next.add(treeKey('marking', id));
+  ui.collapsedTree.value = next;
+}
+
+/**
+ * Abre os ancestrais do item para ele aparecer na árvore (a imagem e as marcações
+ * acima). Devolve se algo mudou, para não regravar o signal à toa.
+ */
+export function revealInTree(
+  ui: EditorUi,
+  project: Project | null,
+  selection: Selection,
+): boolean {
+  const collapsed = ui.collapsedTree.peek();
+  if (collapsed.size === 0 || !project || !selection || selection.kind === 'image') {
+    return false;
+  }
+  const byId = projectIndex(project).markings;
+  const next = new Set(collapsed);
+  let current = byId.get(selection.id);
+  if (!current) return false;
+  next.delete(treeKey('image', current.imageId));
+  // O limite evita laço em dados corrompidos (a hierarquia é validada no modelo).
+  for (let guard = byId.size; current?.parentId != null && guard > 0; guard--) {
+    next.delete(treeKey('marking', current.parentId));
+    current = byId.get(current.parentId);
+  }
+  if (next.size === collapsed.size) return false;
+  ui.collapsedTree.value = next;
+  return true;
 }

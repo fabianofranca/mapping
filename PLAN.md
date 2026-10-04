@@ -85,7 +85,7 @@ Barra principal, faixas, janelas de ferramenta, breadcrumbs e barra de status. M
 - [x] Minimapa (P3)
 - [x] Campo de zoom (P4)
 
-As janelas Camadas, Incompletas e Diagnóstico (e os atalhos 2, 5 e 6) chegam com as fases R6 e R7; até lá, Camadas e Diagnóstico continuam nos diálogos atuais. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
+As janelas Camadas (atalho 2), Incompletas (5) e Diagnóstico (6) chegam com as fases R6 e R7; a Camadas veio na R6, e até a R7 o Diagnóstico continua no diálogo atual. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
 
 **Aceite**: abrir, fechar, redimensionar e persistir cada janela; nenhuma função atual sumiu.
 
@@ -106,10 +106,10 @@ Os atalhos Ctrl+B (escolher o alvo da referência em foco), Alt+N (nova anotaç�
 
 #### R6 — Árvore e Camadas
 
-Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3).
+Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3). No celular as camadas seguem no diálogo até a R8.
 
-- [ ] Janela Árvore
-- [ ] Camadas como janela, com paleta em popover e modo "sem anotação" (B3)
+- [x] Janela Árvore
+- [x] Camadas como janela, com paleta em popover e modo "sem anotação" (B3)
 
 **Aceite**: todas as ações do `LayersDialog` disponíveis.
 

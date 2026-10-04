@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { removeLayer, removeMarking } from '../../src/model';
 import {
+  collapseTree,
   createEditorUi,
   expandSections,
   goToAnnotation,
@@ -9,9 +10,12 @@ import {
   toggleSection,
   resolveActiveLayerId,
   resolveSelection,
+  revealInTree,
   setActiveLayer,
   showAllLayers,
   toggleLayerVisible,
+  toggleTreeNode,
+  treeKey,
   visibleLayers,
 } from '../../src/store/ui';
 import { sampleProject } from '../model/fixtures';
@@ -99,6 +103,56 @@ describe('estado da UI do editor', () => {
       const p = removeLayer(sampleProject(), 'L2');
       expect(resolveActiveLayerId(p, ui.activeLayer.value)).toBe('L1');
       expect(visibleLayers(p, new Set(['L1']), 'L1').map((l) => l.id)).toEqual(['L1']);
+    });
+  });
+
+  describe('nós recolhidos da árvore', () => {
+    it('começa com tudo aberto e alterna um nó', () => {
+      const ui = createEditorUi();
+      expect(ui.collapsedTree.value.size).toBe(0);
+      toggleTreeNode(ui, treeKey('marking', 'M1'));
+      expect(ui.collapsedTree.value.has('marking:M1')).toBe(true);
+      toggleTreeNode(ui, treeKey('marking', 'M1'));
+      expect(ui.collapsedTree.value.size).toBe(0);
+    });
+
+    it('as chaves distinguem imagem e marcação com o mesmo id', () => {
+      expect(treeKey('image', 'X')).not.toBe(treeKey('marking', 'X'));
+    });
+
+    it('recolher tudo fecha só os nós com filhos', () => {
+      const ui = createEditorUi();
+      collapseTree(ui, sampleProject());
+      // I1 e I2 têm marcações; M1 e M2 têm filhas; M3 e M4 não têm.
+      expect([...ui.collapsedTree.value].sort()).toEqual([
+        'image:I1',
+        'image:I2',
+        'marking:M1',
+        'marking:M2',
+      ]);
+      collapseTree(ui, null);
+      expect(ui.collapsedTree.value.size).toBe(4);
+    });
+
+    it('revelar abre a imagem e os ancestrais da marcação, e só eles', () => {
+      const ui = createEditorUi();
+      const p = sampleProject();
+      collapseTree(ui, p);
+      expect(revealInTree(ui, p, { kind: 'marking', id: 'M3' })).toBe(true);
+      expect([...ui.collapsedTree.value].sort()).toEqual(['image:I2']);
+    });
+
+    it('revelar não mexe em nada quando não há o que abrir', () => {
+      const ui = createEditorUi();
+      const p = sampleProject();
+      expect(revealInTree(ui, p, { kind: 'marking', id: 'M3' })).toBe(false);
+      collapseTree(ui, p);
+      const before = ui.collapsedTree.value;
+      // Imagem selecionada e seleção que não existe mais: nada a abrir.
+      expect(revealInTree(ui, p, { kind: 'image', id: 'I1' })).toBe(false);
+      expect(revealInTree(ui, p, { kind: 'marking', id: 'X' })).toBe(false);
+      expect(revealInTree(ui, p, null)).toBe(false);
+      expect(ui.collapsedTree.value).toBe(before);
     });
   });
 

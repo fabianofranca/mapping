@@ -1,5 +1,5 @@
-import type { LayoutSpace, ToolWindowSide } from '../store/toolWindows';
-import { sideWidth } from '../store/toolWindows';
+import type { LayoutSpace, ToolWindowId, ToolWindowSide } from '../store/toolWindows';
+import { showToolWindow, sideWidth } from '../store/toolWindows';
 
 // Espaço disponível para as janelas, medido no DOM. Fica fora dos componentes para o
 // arrasto da divisória e o Ctrl+Shift+setas usarem a mesma conta (B2).
@@ -20,4 +20,18 @@ export function spaceFor(el: Element | null, side: ToolWindowSide): LayoutSpace 
     otherWidth:
       side === 'left' ? sideWidth('right') : side === 'right' ? sideWidth('left') : 0,
   };
+}
+
+/** Foca a janela de ferramenta (a seção dela é focável), se ela estiver desenhada. */
+export function focusToolWindow(id: ToolWindowId): void {
+  document.querySelector<HTMLElement>(`.tool-window[data-window="${id}"]`)?.focus();
+}
+
+/**
+ * Abre a janela e leva o foco para ela (o chip da camada ativa e o Ctrl+L). O foco
+ * espera a janela ser desenhada: abrir é só uma mudança de signal.
+ */
+export function showAndFocusToolWindow(id: ToolWindowId): void {
+  showToolWindow(id);
+  queueMicrotask(() => focusToolWindow(id));
 }

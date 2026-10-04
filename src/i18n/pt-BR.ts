@@ -148,6 +148,13 @@ export const ptBR = {
   'image.replacing': 'Trocando imagem…',
   'image.replaceFailed': 'Não foi possível trocar a imagem.',
 
+  'tree.locate': 'Localizar a seleção na árvore',
+  'tree.collapseAll': 'Recolher tudo',
+  'tree.expand': 'Expandir {name}',
+  'tree.collapse': 'Recolher {name}',
+  'tree.layerDot': 'Camada {name}',
+  'tree.layerDotInherited': 'Camada {name} (herdada)',
+
   'layer.newName': 'Camada {n}',
   'layer.title': 'Camadas',
   'layer.chipLabel': 'Camadas (ativa: {name})',
@@ -159,6 +166,7 @@ export const ptBR = {
   'layer.name': 'Nome da camada',
   'layer.color': 'Cor da camada {name}',
   'layer.customColor': 'Outra cor',
+  'layer.more': 'Mais ações da camada {name}',
   'layer.isActive': 'Ativa',
   'layer.makeActive': 'Tornar ativa',
   'layer.moveUp': 'Subir camada',

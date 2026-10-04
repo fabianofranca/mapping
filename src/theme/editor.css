@@ -193,13 +193,99 @@
  * Janela inativa (sem foco dentro): a linha selecionada esmaece, para a seleção forte
  * marcar a janela em que você está (DS 2.0, estado inativo da ToolWindow).
  */
-.tool-window:not(:focus-within) .tree-item[aria-current='true'] {
+.tool-window:not(:focus-within) .tree-row-current,
+.tool-window:not(:focus-within) .tree-row-current:hover {
   color: var(--color-text);
   background: var(--color-selection-muted);
 }
 
-.tool-window:not(:focus-within) .tree-item[aria-current='true'] .muted {
+.tool-window:not(:focus-within) .tree-row-current .muted {
   color: var(--color-text-muted);
+}
+
+.tool-window:not(:focus-within) .tree-row-current button.tree-toggle:hover {
+  background: var(--color-pressed);
+}
+
+/*
+ * Coluna da esquerda: Árvore em cima e Camadas embaixo dividem a mesma largura. A
+ * Árvore ocupa o que sobra; as Camadas têm altura própria (divisória de arraste).
+ */
+.tool-column {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tool-column > .tool-window {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.tool-column > .tool-window-stacked {
+  flex: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.tool-splitter {
+  position: absolute;
+  top: calc(-1 * var(--size-resize-hit) / 2);
+  left: 0;
+  right: 0;
+  z-index: var(--z-toolwindow);
+  height: var(--size-resize-hit);
+  cursor: row-resize;
+}
+
+.tool-splitter:hover,
+.tool-splitter:active {
+  background: var(--color-accent);
+}
+
+/* Árvore e Camadas: as linhas ocupam a largura toda da janela. */
+.tool-window[data-window='tree'] .tool-window-body,
+.tool-window[data-window='layers'] .tool-window-body {
+  padding: 0 var(--space-1) var(--space-1);
+}
+
+.tool-window[data-window='layers'] .tool-window-body {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.tool-window[data-window='layers'] .layers-panel {
+  flex: 1;
+}
+
+/* Popover ancorado num botão (paleta e ações da camada) */
+.popover-host {
+  position: relative;
+  display: inline-flex;
+}
+
+.popover {
+  position: fixed;
+  z-index: var(--z-popover);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popup);
+}
+
+.menu-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 160px;
+}
+
+.menu-items .button {
+  justify-content: flex-start;
+  border-color: transparent;
 }
 
 .tool-window-head {

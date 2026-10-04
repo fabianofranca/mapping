@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/preact';
+import { cleanup, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CanvasController } from '../../src/canvas/CanvasController';
@@ -12,6 +12,7 @@ import {
 } from '../../src/store/toolWindows';
 import { Breadcrumbs } from '../../src/ui/Breadcrumbs';
 import { EditorContext } from '../../src/ui/EditorContext';
+import { LayersWindow } from '../../src/ui/LayersWindow';
 import { Minimap } from '../../src/ui/Minimap';
 import { StatusBar } from '../../src/ui/StatusBar';
 import { ToolStrip } from '../../src/ui/ToolStrip';
@@ -27,6 +28,7 @@ const SPACE = { width: 1400, height: 800, otherWidth: 0 };
 
 beforeEach(() => {
   showToolWindow('tree');
+  showToolWindow('layers');
   showToolWindow('details');
   hideToolWindow('list');
   resetToolWindowSize('left', SPACE);
@@ -98,6 +100,70 @@ describe('faixas e janelas', () => {
       screen.getByRole('button', { name: t('window.closeWindow', { name: title }) }),
     );
     expect(isToolWindowOpen('tree')).toBe(false);
+  });
+});
+
+describe('Camadas como janela (B3)', () => {
+  it('a faixa esquerda também abre e esconde as Camadas', async () => {
+    const harness = createHarness(sampleProject());
+    withContext(harness, <ToolStrip side="left" />);
+    const name = t('layer.title');
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: t('window.hide', { name }) }));
+    expect(isToolWindowOpen('layers')).toBe(false);
+    // Esconder as Camadas não esconde a Árvore: elas dividem a coluna da esquerda.
+    expect(isToolWindowOpen('tree')).toBe(true);
+    await user.click(screen.getByRole('button', { name: t('window.show', { name }) }));
+    expect(isToolWindowOpen('layers')).toBe(true);
+    expect(isToolWindowOpen('tree')).toBe(true);
+  });
+
+  it('a janela traz Nova camada e Mostrar todas no cabeçalho e a lista no corpo', async () => {
+    const harness = createHarness(sampleProject());
+    withContext(harness, <LayersWindow stacked />);
+    const region = screen.getByRole('region', { name: t('layer.title') });
+    const head = region.querySelector<HTMLElement>('.tool-window-head');
+    if (!head) throw new Error('sem cabeçalho');
+    expect(within(head).getByRole('button', { name: t('layer.add') })).toBeTruthy();
+    expect(within(head).getByRole('button', { name: t('layer.showAll') })).toBeTruthy();
+    expect(screen.getAllByLabelText(t('layer.name'))).toHaveLength(2);
+    expect(screen.getByLabelText(t('layer.displayMode'))).toBeTruthy();
+
+    const before = harness.project().layers.length;
+    await userEvent.click(within(head).getByRole('button', { name: t('layer.add') }));
+    expect(harness.project().layers).toHaveLength(before + 1);
+    // A lista acompanha o projeto sem o editor reabrir nada.
+    expect(isToolWindowOpen('layers')).toBe(true);
+  });
+
+  it('empilhada tem a divisória com a Árvore; sozinha, não', () => {
+    const harness = createHarness(sampleProject());
+    const { unmount } = withContext(harness, <LayersWindow stacked />);
+    const name = t('layer.title');
+    const label = t('window.resize', { name });
+    // Duas divisórias: a lateral (largura da coluna) e a horizontal (altura).
+    expect(screen.getAllByRole('separator', { name: label })).toHaveLength(2);
+    expect(
+      screen
+        .getAllByRole('separator', { name: label })
+        .map((s) => s.getAttribute('aria-orientation'))
+        .sort(),
+    ).toEqual(['horizontal', 'vertical']);
+    unmount();
+    withContext(harness, <LayersWindow stacked={false} />);
+    expect(screen.getAllByRole('separator', { name: label })).toHaveLength(1);
+  });
+
+  it('fecha pelo cabeçalho sem tocar na Árvore', async () => {
+    const harness = createHarness(sampleProject());
+    withContext(harness, <LayersWindow stacked />);
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: t('window.closeWindow', { name: t('layer.title') }),
+      }),
+    );
+    expect(isToolWindowOpen('layers')).toBe(false);
+    expect(isToolWindowOpen('tree')).toBe(true);
   });
 });
 

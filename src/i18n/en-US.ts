@@ -148,6 +148,13 @@ export const enUS: Dictionary = {
   'image.replacing': 'Replacing image…',
   'image.replaceFailed': 'Could not replace the image.',
 
+  'tree.locate': 'Locate the selection in the tree',
+  'tree.collapseAll': 'Collapse all',
+  'tree.expand': 'Expand {name}',
+  'tree.collapse': 'Collapse {name}',
+  'tree.layerDot': 'Layer {name}',
+  'tree.layerDotInherited': 'Layer {name} (inherited)',
+
   'layer.newName': 'Layer {n}',
   'layer.title': 'Layers',
   'layer.chipLabel': 'Layers (active: {name})',
@@ -159,6 +166,7 @@ export const enUS: Dictionary = {
   'layer.name': 'Layer name',
   'layer.color': 'Color of layer {name}',
   'layer.customColor': 'Other color',
+  'layer.more': 'More actions for layer {name}',
   'layer.isActive': 'Active',
   'layer.makeActive': 'Make active',
   'layer.moveUp': 'Move layer up',

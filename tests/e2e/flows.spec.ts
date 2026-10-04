@@ -171,6 +171,127 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   expect(await width()).toBe(before + 16);
 });
 
+// R6: Árvore e Camadas como janelas à esquerda (B3).
+test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page }, info) => {
+  test.skip(isMobile(info), 'janelas de ferramenta: só no layout de desktop');
+  await createProject(page, 'Camadas');
+  await addImage(page);
+  await drawMarking(page, info, await canvasPoint(page));
+
+  const tree = page.getByRole('region', { name: 'Árvore de marcações' });
+  const layers = page.getByRole('region', { name: 'Camadas', exact: true });
+  await expect(tree).toBeVisible();
+  await expect(layers).toBeVisible();
+  const [t, l] = await Promise.all([tree.boundingBox(), layers.boundingBox()]);
+  if (!t || !l) throw new Error('janelas sem tamanho');
+  // Mesma largura e Camadas embaixo da Árvore.
+  expect(l.width).toBe(t.width);
+  expect(l.y).toBeGreaterThanOrEqual(t.y + t.height - 1);
+
+  // Nova camada pelo cabeçalho; renomear na própria linha.
+  await layers.getByRole('button', { name: 'Nova camada' }).click();
+  const names = layers.getByLabel('Nome da camada');
+  await expect(names).toHaveCount(2);
+  await names.nth(1).fill('Pintura');
+  await names.nth(1).press('Enter');
+  await expect(names.nth(1)).toHaveValue('Pintura');
+
+  // A paleta abre em popover, troca a cor e fecha.
+  await layers.getByRole('button', { name: 'Cor da camada Pintura' }).click();
+  const palette = page.getByRole('group', { name: 'Cor da camada Pintura' });
+  await expect(palette).toBeVisible();
+  await palette.getByRole('button', { name: '#1E88E5' }).click();
+  await expect(palette).toBeHidden();
+
+  // A camada ativa muda pelo botão da linha; o chip da barra acompanha.
+  await layers.getByRole('button', { name: 'Tornar ativa' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Camadas (ativa: Pintura)' }),
+  ).toBeVisible();
+
+  // Excluir fica no menu da linha e pede confirmação.
+  await layers.getByRole('button', { name: 'Mais ações da camada Pintura' }).click();
+  await page.getByRole('button', { name: 'Excluir camada' }).click();
+  await page.getByRole('button', { name: 'Excluir', exact: true }).click();
+  await expect(names).toHaveCount(1);
+
+  // O modo "sem anotação" fica no rodapé da janela.
+  const mode = layers.getByLabel('Marcações sem anotação');
+  await mode.selectOption('hide');
+  await expect(mode).toHaveValue('hide');
+  await mode.selectOption('dim');
+
+  // Fechar as Camadas deixa a Árvore sozinha; Ctrl+Shift+2 as reabre e foca.
+  await page.getByRole('button', { name: 'Fechar a janela Camadas' }).click();
+  await expect(layers).toBeHidden();
+  await expect(tree).toBeVisible();
+  await page.keyboard.press('Control+Shift+Digit2');
+  await expect(layers).toBeVisible();
+  await expect(layers).toBeFocused();
+  // O chip da barra leva o foco de volta para a janela.
+  await tree.focus();
+  await page.getByRole('button', { name: /^Camadas \(ativa/ }).click();
+  await expect(layers).toBeFocused();
+});
+
+test('desktop: a árvore recolhe nós, recolhe tudo e localiza a seleção', async ({
+  page,
+}, info) => {
+  test.skip(isMobile(info), 'janelas de ferramenta: só no layout de desktop');
+  await createProject(page, 'Árvore');
+  await addImage(page);
+  await drawMarking(page, info, await canvasPoint(page), { width: 160, height: 160 });
+  await drawMarking(page, info, await canvasPoint(page, 0.7), { width: 80, height: 60 });
+
+  const tree = page.getByRole('region', { name: 'Árvore de marcações' });
+  const rows = tree.locator('.tree-item');
+  await expect(rows).toHaveCount(3);
+  // A altura da linha segue a densidade do desktop (28px).
+  const box = await rows.first().boundingBox();
+  expect(box?.height).toBe(28);
+
+  await tree.getByRole('button', { name: /^Recolher images\/tela/ }).click();
+  await expect(rows).toHaveCount(1);
+  await tree.getByRole('button', { name: /^Expandir images\/tela/ }).click();
+  await expect(rows).toHaveCount(3);
+
+  await tree.getByRole('button', { name: 'Recolher tudo' }).click();
+  await expect(rows).toHaveCount(1);
+  // Localizar abre os ancestrais da seleção e põe o foco na linha dela.
+  await tree.getByRole('button', { name: 'Localizar a seleção na árvore' }).click();
+  await expect(rows).toHaveCount(3);
+  await expect(tree.locator('.tree-item[aria-current="true"]')).toBeFocused();
+});
+
+test('celular: as camadas seguem num diálogo, com a paleta e o menu da linha', async ({
+  page,
+}, info) => {
+  test.skip(!isMobile(info), 'diálogo de camadas: só no celular (até a R8)');
+  await createProject(page, 'Camadas celular');
+  await page.getByRole('button', { name: /^Camadas \(ativa/ }).tap();
+  const dialog = page.getByRole('dialog', { name: 'Camadas' });
+  await expect(dialog).toBeVisible();
+
+  await dialog.getByRole('button', { name: '+ Nova camada' }).tap();
+  const names = dialog.getByLabel('Nome da camada');
+  await expect(names).toHaveCount(2);
+  // Área de toque de 44px nos botões da linha.
+  const more = await dialog
+    .getByRole('button', { name: /^Mais ações da camada/ })
+    .first()
+    .boundingBox();
+  expect(more?.height).toBeGreaterThanOrEqual(44);
+
+  await dialog
+    .getByRole('button', { name: /^Cor da camada/ })
+    .first()
+    .tap();
+  const palette = page.getByRole('group', { name: /^Cor da camada/ });
+  await expect(palette).toBeVisible();
+  await palette.getByRole('button', { name: '#1E88E5' }).tap();
+  await expect(palette).toBeHidden();
+});
+
 // R5: Detalhes redesenhado (B15, P6 e os atalhos Alt+N e Alt+Enter).
 test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', async ({
   page,
