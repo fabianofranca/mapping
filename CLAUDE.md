@@ -80,5 +80,4 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
   - da R4 em diante, cada PR lista no "Como testar" as mudanças B# e P# que entrega;
   - os testes e2e afetados são atualizados no mesmo PR;
   - o roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) continua passando nos dois layouts (desktop e 380 px) e nos dois temas.
-- **Etapa 3 — Servidor MCP (futura, não implementar):** servidor em Node/TypeScript, no mesmo repositório, que reutiliza o `src/model/` para um agente criar projetos, aplicar especializações e adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
-- **Etapa 4 — Editor de especializações (futura, não implementar):** criar e editar especializações dentro da app.
+- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (2.4 CSP, 3 servidor MCP, 4 Figma, marco de uso real e evoluções). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.

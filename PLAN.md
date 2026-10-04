@@ -20,17 +20,12 @@ Estado: **etapas 1, 1.1, 2, 2.1 e 2.2 concluídas**; **etapa 2.3 (redesign da in
 | [`docs/history/PLAN-etapas-1-2.md`](docs/history/PLAN-etapas-1-2.md) | Histórico: seções 1 a 13 do plano antigo (inclui o roteiro de teste manual, 13.9) |
 | [`docs/history/PLAN-etapa-2-1.md`](docs/history/PLAN-etapa-2-1.md)   | Histórico: etapa 2.1, revisão técnica (achados, decisões e fases 18 a 25)       |
 | [`docs/history/PLAN-etapa-2-2.md`](docs/history/PLAN-etapa-2-2.md) | Histórico: etapa 2.2, segunda revisão técnica (fases 26 e 27 concluídas; 28 dispensada) |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das etapas (2.3, 2.4, 3, 4), marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3): componentes, tokens, mudanças B#, propostas P# e decisões |
 
-## Etapas futuras (não implementar ainda)
+## Etapas futuras
 
-- **Etapa 3 — Servidor MCP:** servidor em Node/TypeScript, no mesmo repositório, que reutiliza `src/model/` para um agente criar projetos, aplicar especializações e adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
-  - Sincronização com o Figma: identidade e dono dos dados vindos do Figma; reexportação por página ou nó, com relatório e pendências.
-  - Mapeamento Figma e código por plataforma nas especializações.
-  - Campo de referência de código nas instâncias.
-  - Telas para isso, a desenhar no Claude Design com o design system 2.0.
-  - Só itens registrados por enquanto; o plano detalhado vem depois.
-- **Etapa 4 — Editor de especializações:** criar e editar especializações dentro da app.
+A ordem das próximas etapas está em [`docs/ROADMAP.md`](docs/ROADMAP.md). O detalhamento das fases entra aqui quando a etapa começar.
 
 ## Fases pendentes — Etapa 2.3: redesign da interface
 
@@ -154,7 +149,7 @@ Diálogos novos, tela inicial e faixas. Muda comportamento (B9, B10, B16, P8, P1
 
 #### R10 — Propostas adiadas
 
-Propostas adiadas, a decidir. Muda comportamento.
+Propostas adiadas, a decidir. Muda comportamento. Fora do caminho crítico: no [`ROADMAP`](docs/ROADMAP.md) ficam em Evoluções.
 
 - [ ] P1 — paleta de comandos
 - [ ] P2 — busca global
