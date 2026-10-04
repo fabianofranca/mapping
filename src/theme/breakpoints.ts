@@ -1,6 +1,6 @@
 /**
  * Breakpoints do layout, em px. Media queries não aceitam `var()`, então o CSS repete
- * estes números; `tests/theme/breakpoints.test.ts` confere que os dois batem.
+ * estes números; `tests/theme/tokenLiterals.test.ts` confere que os dois batem.
  */
 export const BREAKPOINTS = {
   /** Maior largura do layout de celular. */

@@ -57,7 +57,7 @@
 .canvas-overlay .canvas-hint {
   align-self: center;
   pointer-events: none;
-  font-size: 0.85rem;
+  font: var(--t-text-small);
 }
 
 .canvas-area[hidden] {
