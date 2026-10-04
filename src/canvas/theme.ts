@@ -53,6 +53,12 @@ export interface CanvasTokens {
   readonly handleSize: number;
   /** Raios (px de tela): `sm` na etiqueta do nome, `md` no cartão do zoom semântico. */
   readonly radius: { readonly sm: number; readonly md: number };
+  /** Emblema do cadeado: fundo, traço e lado (px de tela; maior com toque). */
+  readonly lock: {
+    readonly fill: string;
+    readonly glyph: string;
+    readonly size: number;
+  };
   /** Sombra do item pego (`shadow-grabbed`). */
   readonly grabShadow: { readonly blur: number; readonly color: string };
 }
@@ -109,6 +115,11 @@ export function canvasTokensFrom(read: TokenReader, coarsePointer = false): Canv
     },
     handleSize: number(read, coarsePointer ? '--size-handle-touch' : '--size-handle'),
     radius: { sm: number(read, '--radius-sm'), md: number(read, '--radius-md') },
+    lock: {
+      fill: read('--cv-lock'),
+      glyph: read('--cv-lock-glyph'),
+      size: number(read, coarsePointer ? '--size-lock-badge-touch' : '--size-lock-badge'),
+    },
     grabShadow: parseShadow(read('--shadow-grabbed')),
   };
 }

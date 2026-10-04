@@ -4,7 +4,12 @@
 // `ViewportController`. Único lugar (com `CanvasHost`) que conhece o Konva.
 import { computed, effect, signal, untracked } from '@preact/signals';
 import Konva from 'konva/lib/Core';
-import { imageCanvasRect, type Placement } from '../model';
+import {
+  imageCanvasRect,
+  isMarkingGeometryLocked,
+  projectIndex,
+  type Placement,
+} from '../model';
 import type { EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
@@ -21,13 +26,15 @@ import {
   type DropTarget,
   type Frame,
   type Grabbed,
+  type HoverLock,
   type ImagePreview,
   type InteractionState,
 } from './frame';
 import { imageAt, imagesBounds } from './imageGeometry';
 import { watchSpaceKey } from './input/keyboard';
 import { PointerInput } from './input/pointer';
-import { canvasToImagePixel, markingCanvasRect } from './markingGeometry';
+import { selectableMarkings } from './input/intents';
+import { canvasToImagePixel, markingCanvasRect, markingChainAt } from './markingGeometry';
 import { ImageRenderer } from './renderers/images';
 import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
@@ -64,6 +71,7 @@ export class CanvasController {
     preview: signal<ImagePreview | null>(null),
     draft: signal<Draft | null>(null),
     grabbed: signal<Grabbed | null>(null),
+    hoverLock: signal<HoverLock | null>(null),
   };
   private readonly dropTarget = signal<DropTarget>(null);
   private readonly tokens = signal<CanvasTokens>(readCanvasTokens());
@@ -94,6 +102,7 @@ export class CanvasController {
     draft: this.state.draft.value,
     dropTarget: this.dropTarget.value,
     grabbed: this.state.grabbed.value,
+    hoverLock: this.state.hoverLock.value,
     tokens: this.tokens.value,
     size: this.view.size.value,
     viewport: this.view.viewport.value,
@@ -288,7 +297,37 @@ export class CanvasController {
       if (!sameCursor(this.viewState.cursor.peek(), next)) {
         this.viewState.cursor.value = next;
       }
+      this.updateHoverLock(image ? image.id : null, pixel);
     });
+  }
+
+  /**
+   * Item travado sob o mouse (para o emblema do cadeado): a marcação mais interna sob o
+   * ponto, ou a imagem se não houver marcação. Só escreve o signal quando o item muda, e
+   * nada é calculado em projetos sem itens trancados.
+   */
+  private updateHoverLock(imageId: string | null, pixel: Point | null): void {
+    const project = this.store.project.peek();
+    let next: HoverLock | null = null;
+    if (project && imageId !== null && pixel && this.derived.hasLocks.peek()) {
+      const visibility = this.derived.markingVisibility.peek();
+      const chain = markingChainAt(
+        selectableMarkings(project, visibility),
+        imageId,
+        pixel,
+      );
+      const top = chain[0];
+      if (top) {
+        if (isMarkingGeometryLocked(project, top.id))
+          next = { kind: 'marking', id: top.id };
+      } else if (projectIndex(project).images.get(imageId)?.locked) {
+        next = { kind: 'image', id: imageId };
+      }
+    }
+    const current = this.state.hoverLock.peek();
+    if (current?.id !== next?.id || current?.kind !== next?.kind) {
+      this.state.hoverLock.value = next;
+    }
   }
 
   private loadBitmaps(): void {

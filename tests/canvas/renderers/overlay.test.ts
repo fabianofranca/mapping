@@ -206,3 +206,155 @@ describe('OverlayRenderer', () => {
     expect(container.classList.contains('canvas-host--drop')).toBe(false);
   });
 });
+
+describe('OverlayRenderer: trava (etapa 2.5)', () => {
+  const lock = (
+    editor: ReturnType<typeof editorFor>,
+    kind: 'marking' | 'image',
+    id: string,
+  ) =>
+    expect(
+      (kind === 'marking'
+        ? editor.actions.setMarkingLocked(id, true)
+        : editor.actions.setImageLocked(id, true)
+      ).ok,
+    ).toBe(true);
+
+  function lockedSetup() {
+    const container = document.createElement('div');
+    const overlay = new OverlayRenderer(new Konva.Layer(), container);
+    const editor = editorFor();
+    const render = (overrides: Partial<Frame> = {}, placements = PLACEMENTS) =>
+      overlay.render(frameOf(editor, overrides), placements);
+    return { overlay, editor, render };
+  }
+
+  it('marcação trancada e selecionada: sem alças, com o cadeado no canto superior direito', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'marking', 'M2');
+    render({ selection: { kind: 'marking', id: 'M2' } });
+    expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
+    const badge = overlay.selectionLock.group;
+    expect(badge.visible()).toBe(true);
+    // M2 mede 100×100 e o cadeado tem 20 px: cabe por dentro, com vão de 2 px.
+    expect(badge.x()).toBe(300 - 20 - 2);
+    expect(badge.y()).toBe(200 + 2);
+    expect(badge.opacity()).toBe(1);
+    expect(overlay.hoverLockBadge.group.visible()).toBe(false);
+  });
+
+  it('o cadeado usa os tokens e mantém o tamanho em px de tela com o zoom', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'marking', 'M1');
+    render({
+      selection: { kind: 'marking', id: 'M1' },
+      viewport: { x: 0, y: 0, scale: 2 },
+    });
+    const badge = overlay.selectionLock.group;
+    expect(badge.scaleX()).toBe(0.5);
+    const [box, glyph] = badge.getChildren();
+    expect(box?.getAttrs()).toMatchObject({
+      width: TOKENS.lock.size,
+      height: TOKENS.lock.size,
+      fill: TOKENS.lock.fill,
+      cornerRadius: TOKENS.radius.sm,
+    });
+    const paths = (glyph as Konva.Group).getChildren();
+    expect(paths).toHaveLength(2);
+    expect(paths.every((p) => p.getAttrs().stroke === TOKENS.lock.glyph)).toBe(true);
+  });
+
+  it('descendente de um pai trancado: sem alças e com o cadeado esmaecido', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'marking', 'M1');
+    render({ selection: { kind: 'marking', id: 'M2' } });
+    expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(overlay.selectionLock.group.opacity()).toBe(TOKENS.opacity.inherited);
+  });
+
+  it('marcação pequena na tela: o cadeado fica por fora, acima do canto', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'marking', 'M2');
+    render({
+      selection: { kind: 'marking', id: 'M2' },
+      viewport: { x: 0, y: 0, scale: 0.25 },
+    });
+    // 100 unidades a 0,25 = 25 px de tela: menos que dois cadeados de 20 px.
+    const badge = overlay.selectionLock.group;
+    expect(badge.x()).toBe(300 - 20 / 0.25);
+    expect(badge.y()).toBe(200 - (20 + 2) / 0.25);
+  });
+
+  it('imagem trancada e selecionada: sem alças e com o cadeado', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'image', 'I2');
+    // Metade da escala: I2 (1100–1600) cabe na tela de 380 px; o cadeado mede 40 unidades.
+    render({
+      selection: { kind: 'image', id: 'I2' },
+      viewport: { x: -500, y: 0, scale: 0.5 },
+    });
+    expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(overlay.selectionLock.group.x()).toBe(1600 - 40 - 4);
+  });
+
+  it('item livre: alças e nenhum cadeado; destrancar traz as alças de volta', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'marking', 'M2');
+    render({ selection: { kind: 'marking', id: 'M2' } });
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    editor.actions.setMarkingLocked('M2', false);
+    render({ selection: { kind: 'marking', id: 'M2' } });
+    expect(overlay.selectionLock.group.visible()).toBe(false);
+    expect([...overlay.handles.values()].every((h) => h.visible())).toBe(true);
+  });
+
+  it('cadeado sob o mouse: aparece no item trancado que não é o selecionado', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'marking', 'M1');
+    render({ hoverLock: { kind: 'marking', id: 'M1' } });
+    expect(overlay.hoverLockBadge.group.visible()).toBe(true);
+    expect(overlay.selectionLock.group.visible()).toBe(false);
+    // Selecionado, o item usa o cadeado da seleção e o do mouse some.
+    render({
+      selection: { kind: 'marking', id: 'M1' },
+      hoverLock: { kind: 'marking', id: 'M1' },
+    });
+    expect(overlay.hoverLockBadge.group.visible()).toBe(false);
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    render({ hoverLock: null });
+    expect(overlay.hoverLockBadge.group.visible()).toBe(false);
+  });
+
+  it('o cadeado acompanha a parte visível: pan precisa redesenhar', () => {
+    const { overlay, editor, render } = lockedSetup();
+    expect(overlay.followsView).toBe(false);
+    lock(editor, 'image', 'I1');
+    render({ selection: { kind: 'image', id: 'I1' } });
+    expect(overlay.followsView).toBe(true);
+    render({ selection: null });
+    expect(overlay.followsView).toBe(false);
+  });
+
+  it('o cadeado do item grande é ancorado na borda visível', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'image', 'I1');
+    // Metade direita de I1 fora da tela (tela de 380 px): o cadeado fica na borda da tela.
+    render({
+      selection: { kind: 'image', id: 'I1' },
+      viewport: { x: 0, y: 0, scale: 1 },
+    });
+    expect(overlay.selectionLock.group.x()).toBe(380 - 20 - 2);
+  });
+
+  it('em tela estreita com o topo fora da tela: ancora no topo visível', () => {
+    const { overlay, editor, render } = lockedSetup();
+    lock(editor, 'image', 'I1');
+    render({
+      selection: { kind: 'image', id: 'I1' },
+      viewport: { x: 0, y: -100, scale: 1 },
+    });
+    expect(overlay.selectionLock.group.y()).toBe(100 + 2);
+  });
+});

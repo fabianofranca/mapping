@@ -33,6 +33,9 @@ export interface Grabbed {
   readonly id: string;
 }
 
+/** Item trancado sob o mouse: recebe o emblema do cadeado enquanto o cursor está nele. */
+export type HoverLock = Grabbed;
+
 /** Retângulo sendo desenhado (modo Desenhar), em pixels da imagem. */
 export interface Draft {
   readonly imageId: string;
@@ -44,6 +47,8 @@ export interface InteractionState {
   readonly preview: Signal<ImagePreview | null>;
   readonly draft: Signal<Draft | null>;
   readonly grabbed: Signal<Grabbed | null>;
+  /** Marcação (ou imagem) com a geometria travada sob o mouse; `null` se não há nenhum ou se ele é livre. */
+  readonly hoverLock: Signal<HoverLock | null>;
 }
 
 /** Tudo o que um quadro desenha. Mudar qualquer item agenda um novo quadro. */
@@ -55,6 +60,7 @@ export interface Frame {
   readonly draft: Draft | null;
   readonly dropTarget: DropTarget;
   readonly grabbed: Grabbed | null;
+  readonly hoverLock: HoverLock | null;
   readonly tokens: CanvasTokens;
   readonly size: Size;
   readonly viewport: Viewport;
@@ -88,6 +94,7 @@ export const OVERLAY_KEYS = [
   'draft',
   'dropTarget',
   'grabbed',
+  'hoverLock',
   'tokens',
   'selection',
   'mode',

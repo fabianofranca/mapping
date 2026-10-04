@@ -44,6 +44,8 @@ export interface EditorDerived {
   readonly incompleteMarkings: ReadonlySignal<ReadonlySet<string>>;
   /** Marcações com a geometria travada (própria ou herdada do pai); as livres não aparecem. */
   readonly markingLocks: ReadonlySignal<ReadonlyMap<string, MarkingLockState>>;
+  /** Há alguma imagem ou marcação com a geometria travada (atalho para não calcular à toa). */
+  readonly hasLocks: ReadonlySignal<boolean>;
   /** Dados da Visão de Lista, com os filtros dela. */
   readonly listing: ReadonlySignal<readonly ListedImage[]>;
   /** Pendências agrupadas por imagem, para a janela Incompletas (B5). */
@@ -138,6 +140,11 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
     return p ? markingLockStates(p) : NO_LOCKS;
   });
 
+  const hasLocks = computed(() => {
+    const p = project.value;
+    return markingLocks.value.size > 0 || (p?.images.some((i) => i.locked) ?? false);
+  });
+
   const listing = computed((): readonly ListedImage[] => {
     const p = project.value;
     if (!p) return [];
@@ -172,6 +179,7 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
     markingVisibility: visibility,
     incompleteMarkings,
     markingLocks,
+    hasLocks,
     listing,
     incompleteList,
     incompleteCount,

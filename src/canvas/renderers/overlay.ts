@@ -3,11 +3,19 @@
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
-import { imageCanvasRect, projectIndex, type Placement, type Rect } from '../../model';
+import {
+  canEditImagePlacement,
+  canResizeMarking,
+  imageCanvasRect,
+  projectIndex,
+  type Placement,
+  type Rect,
+} from '../../model';
 import { resolveSelection } from '../../store/ui';
 import { visibleArea, type Frame } from '../frame';
 import { CORNERS, cornerPoint, type Corner } from '../imageGeometry';
 import { isDrawableRect, markingCanvasRect } from '../markingGeometry';
+import { LockBadge } from './lockBadge';
 import { HALO_WIDTH, SELECTION_STROKE, fontStyle } from './metrics';
 
 /** Etiqueta do nome (px de tela): recuo interno, vão até a borda e largura máxima. */
@@ -23,6 +31,7 @@ export type OverlayFrame = Pick<
   | 'draft'
   | 'dropTarget'
   | 'grabbed'
+  | 'hoverLock'
   | 'tokens'
   | 'selection'
   | 'mode'
@@ -42,6 +51,9 @@ export class OverlayRenderer {
   readonly nameTag = new Konva.Group({ visible: false });
   readonly nameTagBox = new KonvaRect();
   readonly nameTagText = new KonvaText({ wrap: 'none', ellipsis: true });
+  /** Emblema do cadeado: um no item selecionado e outro no item trancado sob o mouse. */
+  readonly selectionLock = new LockBadge();
+  readonly hoverLockBadge = new LockBadge();
 
   constructor(layer: Konva.Layer, container: HTMLElement) {
     this.container = container;
@@ -52,18 +64,45 @@ export class OverlayRenderer {
       this.handles.set(corner, handle);
       layer.add(handle);
     }
-    layer.add(this.nameTag);
+    layer.add(this.nameTag, this.selectionLock.group, this.hoverLockBadge.group);
   }
 
-  /** Há algo ancorado na parte visível da tela (a etiqueta do nome): pan precisa redesenhar. */
+  /** Há algo ancorado na parte visível da tela (a etiqueta do nome, o cadeado): pan precisa redesenhar. */
   get followsView(): boolean {
-    return this.nameTag.visible();
+    return (
+      this.nameTag.visible() ||
+      this.selectionLock.group.visible() ||
+      this.hoverLockBadge.group.visible()
+    );
   }
 
   render(frame: OverlayFrame, placements: ReadonlyMap<string, Placement>): void {
     this.renderDraft(frame, placements);
     this.renderSelection(frame, placements);
+    this.renderHoverLock(frame, placements);
     this.renderDropTarget(frame);
+  }
+
+  /** Cadeado no item trancado sob o mouse (a menos que seja o selecionado, que já tem o dele). */
+  private renderHoverLock(
+    frame: OverlayFrame,
+    placements: ReadonlyMap<string, Placement>,
+  ): void {
+    const { project, hoverLock: hover, selection } = frame;
+    const same = hover && selection?.kind === hover.kind && selection.id === hover.id;
+    const target =
+      hover && !same && project ? lockedRect(project, hover, placements) : null;
+    if (!target || !hover) {
+      this.hoverLockBadge.hide();
+      return;
+    }
+    this.hoverLockBadge.show(
+      target.rect,
+      visibleArea(frame.size, frame.viewport),
+      frame.viewport.scale,
+      frame.tokens,
+      target.inherited,
+    );
   }
 
   private renderDropTarget(frame: OverlayFrame): void {
@@ -114,9 +153,10 @@ export class OverlayRenderer {
     const { preview, grabbed, tokens } = frame;
     const zoom = frame.viewport.scale;
     const selected = resolveSelection(frame.project, frame.selection);
-    // Alças só no modo Navegar (em Desenhar, arrastar sempre desenha).
-    const showHandles = !frame.readOnly && frame.mode === 'navigate';
+    // Alças só no modo Navegar (em Desenhar, arrastar sempre desenha) e se o item pode mudar.
+    const handlesAllowed = !frame.readOnly && frame.mode === 'navigate';
     if (!selected) {
+      this.selectionLock.hide();
       this.grabRect.visible(false);
       this.selectionOutline.visible(false);
       this.nameTag.visible(false);
@@ -148,6 +188,22 @@ export class OverlayRenderer {
 
     const selectedId =
       selected.kind === 'image' ? selected.image.id : selected.marking.id;
+    const lock = frame.project
+      ? lockedRect(frame.project, { kind: selected.kind, id: selectedId }, placements)
+      : null;
+    // Sem alças no item trancado; com o cadeado na seleção (esmaecido se vem do pai).
+    const showHandles = handlesAllowed && lock === null;
+    if (lock) {
+      this.selectionLock.show(
+        lock.rect,
+        visibleArea(frame.size, frame.viewport),
+        zoom,
+        tokens,
+        lock.inherited,
+      );
+    } else {
+      this.selectionLock.hide();
+    }
     const isGrabbed = grabbed?.kind === selected.kind && grabbed.id === selectedId;
     this.grabRect.setAttrs({
       ...rect,
@@ -225,4 +281,32 @@ export class OverlayRenderer {
       scaleY: 1 / zoom,
     });
   }
+}
+
+/**
+ * Retângulo (canvas) do item se a geometria dele está travada, com `inherited` quando a
+ * trava vem de um ancestral; `null` se ele é livre. Marcação: ela ou um ancestral
+ * trancado; imagem: a própria.
+ */
+function lockedRect(
+  project: NonNullable<OverlayFrame['project']>,
+  item: { readonly kind: 'image' | 'marking'; readonly id: string },
+  placements: ReadonlyMap<string, Placement>,
+): { readonly rect: Rect; readonly inherited: boolean } | null {
+  const index = projectIndex(project);
+  if (item.kind === 'image') {
+    const image = index.images.get(item.id);
+    if (!image || canEditImagePlacement(project, image.id)) return null;
+    return {
+      rect: imageCanvasRect(image, placements.get(image.id) ?? image.placement),
+      inherited: false,
+    };
+  }
+  const marking = index.markings.get(item.id);
+  const image = marking && index.images.get(marking.imageId);
+  if (!marking || !image || canResizeMarking(project, marking.id)) return null;
+  return {
+    rect: markingCanvasRect(placements.get(image.id) ?? image.placement, marking.rect),
+    inherited: !marking.locked,
+  };
 }

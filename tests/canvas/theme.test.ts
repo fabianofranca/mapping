@@ -83,3 +83,18 @@ describe('readCanvasTokens', () => {
     expect(t.select).toBe('#4d8dff');
   });
 });
+
+describe('tokens do cadeado', () => {
+  it('fundo e traço vêm do par da etiqueta do nome, nos dois temas', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      const t = canvasTokensFrom(reader(theme));
+      expect(t.lock.fill).toBe(t.nameTag);
+      expect(t.lock.glyph).toBe(t.nameTagText);
+    }
+  });
+
+  it('o lado é 20 px, e 24 px (alvo mínimo) com toque', () => {
+    expect(canvasTokensFrom(reader('light')).lock.size).toBe(20);
+    expect(canvasTokensFrom(reader('light'), true).lock.size).toBe(24);
+  });
+});

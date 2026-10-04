@@ -20,6 +20,7 @@ function setup(readOnly = false) {
     preview: signal<ImagePreview | null>(null),
     draft: signal<Draft | null>(null),
     grabbed: signal<Grabbed | null>(null),
+    hoverLock: signal<Grabbed | null>(null),
   };
   let spaceDown = false;
   const input = new PointerInput({
@@ -246,6 +247,137 @@ describe('PointerInput', () => {
     s.drag([400, 400], [450, 430]);
     expect(s.markingRect('M1')).toEqual({ x: 100, y: 100, width: 600, height: 500 });
     expect(s.viewport.viewport.value).toMatchObject({ x: 50, y: 30 });
+    s.cleanup();
+  });
+});
+
+describe('PointerInput: trava (etapa 2.5)', () => {
+  const lockMarking = (s: ReturnType<typeof setup>, id: string) => {
+    expect(s.actions.setMarkingLocked(id, true).ok).toBe(true);
+  };
+
+  it('mouse: arrastar o item trancado não faz nada (nem pan), sem entrada no desfazer', () => {
+    const s = setup();
+    lockMarking(s, 'M1');
+    const revision = s.store.revision.value;
+    s.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.fire('pointermove', 400, 400); // o mouse passa por cima antes de apertar
+    expect(s.container.style.cursor).toBe('not-allowed');
+    s.fire('pointerdown', 400, 400);
+    s.fire('pointermove', 450, 430);
+    expect(s.container.style.cursor).toBe('not-allowed');
+    s.fire('pointermove', 500, 450);
+    s.fire('pointerup', 500, 450);
+    expect(s.markingRect('M1')).toEqual({ x: 100, y: 100, width: 600, height: 500 });
+    expect(s.viewport.viewport.value).toMatchObject({ x: 0, y: 0 });
+    expect(s.store.revision.value).toBe(revision);
+    expect(s.store.gestureActive.value).toBe(false);
+    s.cleanup();
+  });
+
+  it('mouse: os cantos do item trancado não redimensionam', () => {
+    const s = setup();
+    lockMarking(s, 'M2');
+    s.ui.selection.value = { kind: 'marking', id: 'M2' };
+    s.drag([300, 300], [340, 360]);
+    expect(s.markingRect('M2')).toEqual({ x: 200, y: 200, width: 100, height: 100 });
+    s.cleanup();
+  });
+
+  it('mouse: o cursor sobre o item selecionado e trancado é "não permitido"', () => {
+    const s = setup();
+    lockMarking(s, 'M1');
+    s.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.fire('pointermove', 400, 400);
+    expect(s.container.style.cursor).toBe('not-allowed');
+    s.fire('pointermove', 700, 600);
+    expect(s.container.style.cursor).toBe('not-allowed');
+    s.fire('pointermove', 900, 700);
+    expect(s.container.style.cursor).toBe('');
+    s.cleanup();
+  });
+
+  it('clicar no item trancado o seleciona', () => {
+    const s = setup();
+    lockMarking(s, 'M2');
+    s.fire('pointerdown', 250, 250);
+    s.fire('pointerup', 250, 250);
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+    s.cleanup();
+  });
+
+  it('mouse: a imagem trancada não se move', () => {
+    const s = setup();
+    expect(s.actions.setImageLocked('I2', true).ok).toBe(true);
+    s.ui.selection.value = { kind: 'image', id: 'I2' };
+    s.drag([1300, 300], [1400, 300]);
+    const p = s.store.project.peek();
+    expect(p && projectIndex(p).images.get('I2')?.placement.x).toBe(1100);
+    s.cleanup();
+  });
+
+  it('toque: segurar sobre o item trancado não o pega (sem sinal visual nem vibração)', () => {
+    vi.useFakeTimers();
+    const s = setup();
+    lockMarking(s, 'M2');
+    const vibrate = vi.fn();
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
+    s.fire('pointerdown', 250, 250, { kind: 'touch' });
+    vi.advanceTimersByTime(HOLD_MS);
+    expect(s.state.grabbed.value).toBeNull();
+    expect(vibrate).not.toHaveBeenCalled();
+    s.fire('pointermove', 260, 260, { kind: 'touch' });
+    s.fire('pointermove', 280, 290, { kind: 'touch' });
+    s.fire('pointerup', 280, 290, { kind: 'touch' });
+    expect(s.markingRect('M2')).toEqual({ x: 200, y: 200, width: 100, height: 100 });
+    expect(s.store.canUndo.value).toBe(true); // só a própria trava
+    s.cleanup();
+  });
+
+  it('toque: segurar sobre o item trancado e selecionado também não o pega', () => {
+    vi.useFakeTimers();
+    const s = setup();
+    lockMarking(s, 'M1');
+    s.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.fire('pointerdown', 400, 400, { kind: 'touch' });
+    vi.advanceTimersByTime(HOLD_MS);
+    expect(s.state.grabbed.value).toBeNull();
+    s.fire('pointerup', 400, 400, { kind: 'touch' });
+    s.cleanup();
+  });
+
+  it('toque: arrastar sobre o item trancado faz pan e tocar o seleciona', () => {
+    const s = setup();
+    lockMarking(s, 'M1');
+    s.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.drag([400, 400], [450, 430], { kind: 'touch' });
+    expect(s.viewport.viewport.value).toMatchObject({ x: 50, y: 30 });
+    expect(s.markingRect('M1')).toEqual({ x: 100, y: 100, width: 600, height: 500 });
+    s.fire('pointerdown', 250, 250, { kind: 'touch', id: 2 });
+    s.fire('pointerup', 250, 250, { kind: 'touch', id: 2 });
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+    s.cleanup();
+  });
+
+  it('toque: segurar numa marcação livre continua pegando', () => {
+    vi.useFakeTimers();
+    const s = setup();
+    lockMarking(s, 'M2');
+    s.fire('pointerdown', 1200, 100, { kind: 'touch' });
+    vi.advanceTimersByTime(HOLD_MS);
+    expect(s.state.grabbed.value).toEqual({ kind: 'marking', id: 'M3' });
+    s.fire('pointerup', 1200, 100, { kind: 'touch' });
+    s.cleanup();
+  });
+
+  it('segurar numa imagem trancada (fora das marcações) não a pega', () => {
+    vi.useFakeTimers();
+    const s = setup();
+    expect(s.actions.setImageLocked('I1', true).ok).toBe(true);
+    s.fire('pointerdown', 900, 700, { kind: 'touch' });
+    vi.advanceTimersByTime(HOLD_MS);
+    expect(s.state.grabbed.value).toBeNull();
+    s.fire('pointerup', 900, 700, { kind: 'touch' });
     s.cleanup();
   });
 });

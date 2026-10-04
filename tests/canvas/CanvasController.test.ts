@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import { createDisplayImages } from '../../src/store/displayImages';
+import type { InteractionState } from '../../src/canvas/frame';
 import { editorFor, installFakeCanvas } from './harness';
 
 describe('CanvasController', () => {
@@ -129,5 +130,57 @@ describe('CanvasController', () => {
     );
     expect(ui.selection.value).toBeNull();
     expect(controller.cancelInteraction()).toBe(false);
+  });
+
+  it('cadeado sob o mouse: só em itens trancados, escrito uma vez por quadro', () => {
+    const { container, controller, actions } = setup();
+    const hover = () =>
+      (controller as unknown as { state: InteractionState }).state.hoverLock.value;
+    const move = (x: number, y: number) => {
+      container.dispatchEvent(
+        new PointerEvent('pointermove', {
+          pointerId: 1,
+          pointerType: 'mouse',
+          clientX: x,
+          clientY: y,
+        }),
+      );
+      flush();
+    };
+    flush();
+    controller.zoomTo(1);
+    controller.centerOnPoint({ x: 250, y: 250 }); // o centro de M2 fica no centro da tela
+    const [x, y] = [190, 350];
+
+    move(x, y);
+    expect(hover()).toBeNull(); // projeto sem trava: nem calcula
+
+    actions.setMarkingLocked('M2', true);
+    move(x, y);
+    expect(hover()).toEqual({ kind: 'marking', id: 'M2' });
+
+    // Sobre a marcação livre (o pai, fora da filha): sem cadeado.
+    controller.centerOnPoint({ x: 150, y: 150 });
+    move(x, y);
+    expect(hover()).toBeNull();
+
+    // Pai trancado: a filha herda e o cadeado aparece nela.
+    actions.setMarkingLocked('M1', true);
+    controller.centerOnPoint({ x: 250, y: 250 });
+    move(x, y);
+    expect(hover()).toEqual({ kind: 'marking', id: 'M2' });
+
+    // Imagem trancada, fora das marcações.
+    actions.setMarkingLocked('M1', false);
+    actions.setMarkingLocked('M2', false);
+    actions.setImageLocked('I1', true);
+    controller.centerOnPoint({ x: 900, y: 700 });
+    move(x, y);
+    expect(hover()).toEqual({ kind: 'image', id: 'I1' });
+
+    container.dispatchEvent(new PointerEvent('pointerleave', { pointerId: 1 }));
+    flush();
+    expect(hover()).toBeNull();
+    controller.destroy();
   });
 });

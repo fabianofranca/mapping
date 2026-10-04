@@ -2,6 +2,7 @@
 // Conjunto original da interface 2.0: grade de 16px, traço de 1,25 e pontas redondas.
 // O tamanho em tela vem do CSS (`--density-icon`: 16px no desktop, 20px no celular).
 import type { JSX } from 'preact';
+import { LOCK_PATHS, UNLOCK_PATHS } from '../utils/lockGlyph';
 
 interface IconShape {
   /** Traços (atributo `d` de cada `<path>`), na grade de 16 x 16. */
@@ -227,12 +228,8 @@ const SHAPES = {
       'm3 2.5 10 11',
     ],
   },
-  lock: {
-    d: [
-      'M4.5 7.5h7a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1Z',
-      'M5.5 7.5v-2a2.5 2.5 0 0 1 5 0v2',
-    ],
-  },
+  lock: { d: LOCK_PATHS },
+  unlock: { d: UNLOCK_PATHS },
   info: { d: [circle(8, 8, 6), 'M8 7.5V11'], dots: [[8, 5.2]] },
   warning: { d: ['M8 2.5 14 13H2Z', 'M8 6.5v3'], dots: [[8, 11.2]] },
   error: { d: [circle(8, 8, 6), 'M8 5v3.5'], dots: [[8, 10.8]] },

@@ -61,6 +61,8 @@ export type Gesture =
       readonly image: ProjectImage;
       readonly startPixel: Point;
     }
+  /** Arrasto do mouse sobre o item trancado: não faz nada até soltar (cursor "não permitido"). */
+  | { readonly kind: 'blocked'; readonly pointerId: number }
   /** Dois dedos. Termina quando todos saem da tela. */
   | { readonly kind: 'pinch' };
 
@@ -98,6 +100,9 @@ export function startGesture(
   beginGesture: () => boolean,
 ): StartedGesture | null {
   if (!project || intent.kind === 'pan') return null;
+  if (intent.kind === 'locked') {
+    return { gesture: { kind: 'blocked', pointerId }, draft: null };
+  }
   const index = projectIndex(project);
 
   if (intent.kind === 'draw') {
