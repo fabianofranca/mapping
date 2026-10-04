@@ -41,7 +41,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - Konva fica isolado em `src/canvas/` (`CanvasController` imperativo). Componentes Preact não importam Konva, exceto `CanvasHost`. Não usar `react-konva`.
 - As coordenadas das marcações são **sempre** em pixels da imagem original. Conversões de tela/canvas ficam só em `src/canvas/`.
 - Nenhuma string de UI hardcoded: tudo via `t()` com chaves em `src/i18n/pt-BR.ts` e `src/i18n/en-US.ts`.
-- Nenhuma cor hardcoded: use as variáveis CSS do tema (claro e escuro). O canvas lê os tokens do tema.
+- Nenhum valor de design fixo (cor, espaço, raio, fonte, opacidade, duração, z-index) fora dos tokens: use `var(--…)` dos tokens de `src/theme/tokens.ts` (fonte única, temas claro e escuro). Borda de controle usa `--color-border-control`; `--color-border` é só divisória. O canvas lê os tokens do tema. Um teste (`tests/theme/tokenLiterals.test.ts`) procura literais no CSS.
 
 ## Restrições do ambiente de execução
 

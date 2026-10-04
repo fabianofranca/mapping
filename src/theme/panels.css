@@ -1,21 +1,21 @@
 .side-panel {
   flex: none;
-  width: 320px;
+  width: var(--size-tw-right);
   overflow-y: auto;
-  padding: var(--space-3);
+  padding: var(--space-4);
   background: var(--color-surface);
   border-left: 1px solid var(--color-border);
 }
 
 .side-panel h2 {
-  margin: 0 0 var(--space-3);
-  font-size: 1rem;
+  margin: 0 0 var(--space-4);
+  font: var(--t-text-heading);
 }
 
 .panel-details {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .panel-details .notice {
@@ -35,13 +35,13 @@
 .tabs {
   display: flex;
   gap: var(--space-1);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
 .tab {
   flex: 1;
-  min-height: var(--touch-target);
+  min-height: var(--size-touch);
   padding: 0 var(--space-2);
   font: inherit;
   color: var(--color-text-muted);
@@ -77,14 +77,14 @@
   align-items: center;
   gap: var(--space-1);
   width: 100%;
-  min-height: var(--touch-target);
-  padding: 0 var(--space-2) 0 calc(var(--space-2) + var(--depth, 0) * var(--space-3));
+  min-height: var(--size-touch);
+  padding: 0 var(--space-2) 0 calc(var(--space-2) + var(--depth, 0) * var(--space-4));
   font: inherit;
   text-align: left;
   color: var(--color-text);
   background: none;
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   cursor: pointer;
 }
 
@@ -124,7 +124,7 @@
 .sheet-content .tabs {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-canvas-overlay);
   background: var(--color-surface);
 }
 
@@ -137,10 +137,10 @@
 
 .layer-dot {
   flex: none;
-  width: 12px;
-  height: 12px;
+  width: var(--space-3);
+  height: var(--space-3);
   background: var(--layer-color);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-control);
   border-radius: 50%;
 }
 
@@ -159,7 +159,7 @@
   gap: var(--space-2);
   padding: var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .layer-main,
@@ -182,22 +182,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--touch-target);
-  height: var(--touch-target);
+  width: var(--size-touch);
+  height: var(--size-touch);
   flex: none;
 }
 
 .layer-visible input {
-  width: 22px;
-  height: 22px;
+  width: var(--size-target-min);
+  height: var(--size-target-min);
 }
 
 .layer-swatch {
   flex: none;
-  width: var(--touch-target);
-  height: var(--touch-target);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius);
+  width: var(--size-touch);
+  height: var(--size-touch);
+  border: 2px solid var(--color-border-control);
+  border-radius: var(--radius-lg);
   cursor: pointer;
 }
 
@@ -214,9 +214,9 @@
 }
 
 .palette-color {
-  width: var(--touch-target);
-  height: var(--touch-target);
-  border: 2px solid var(--color-border);
+  width: var(--size-touch);
+  height: var(--size-touch);
+  border: 2px solid var(--color-border-control);
   border-radius: 50%;
   cursor: pointer;
 }
@@ -229,12 +229,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.85rem;
+  font: var(--t-text-small);
 }
 
 .palette-custom input {
-  width: var(--touch-target);
-  height: var(--touch-target);
+  width: var(--size-touch);
+  height: var(--size-touch);
   padding: 0;
   cursor: pointer;
 }
@@ -242,7 +242,7 @@
 .annotations {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .annotations-heading,
@@ -259,7 +259,7 @@
 
 .annotations-heading h3 {
   margin: 0;
-  font-size: 1rem;
+  font: var(--t-text-heading);
 }
 
 .layer-section {
@@ -292,7 +292,7 @@
   padding: var(--space-2);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .annotation-name {
@@ -329,15 +329,15 @@
 }
 
 .entry .field-error {
-  font-size: 0.85rem;
+  font: var(--t-text-small);
 }
 
 /* Visão de Lista e zoom semântico */
 .list-pane {
   flex: none;
-  width: 320px;
+  width: var(--size-tw-right);
   overflow-y: auto;
-  padding: var(--space-3);
+  padding: var(--space-4);
   background: var(--color-surface);
   border-left: 1px solid var(--color-border);
 }
@@ -346,14 +346,14 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-3);
+  padding: var(--space-4);
   background: var(--color-surface);
 }
 
 .list-view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .list-view p {
@@ -369,7 +369,7 @@
 .list-layers {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
+  gap: var(--space-1) var(--space-4);
 }
 
 .list-layer,
@@ -377,15 +377,15 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: var(--touch-target);
+  min-height: var(--size-touch);
   cursor: pointer;
 }
 
 .list-layer input,
 .list-check input {
   flex: none;
-  width: 24px;
-  height: 24px;
+  width: var(--size-target-min);
+  height: var(--size-target-min);
   margin: 0;
 }
 
@@ -404,12 +404,12 @@
 }
 
 .list-images {
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .list-image {
   margin: 0 0 var(--space-2);
-  font-size: 0.9rem;
+  font: var(--t-text-small);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
 }
@@ -419,14 +419,14 @@
   flex-direction: column;
   gap: var(--space-2);
   width: 100%;
-  min-height: var(--touch-target);
+  min-height: var(--size-touch);
   padding: var(--space-2);
   font: inherit;
   text-align: left;
   color: var(--color-text);
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-lg);
   cursor: pointer;
 }
 
@@ -452,7 +452,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.85rem;
+  font: var(--t-text-small);
   font-weight: 600;
 }
 
@@ -470,14 +470,14 @@
 /* Herança e vínculos (fase 10) */
 .annotation-linked {
   margin: 0;
-  font-size: 0.85rem;
+  font: var(--t-text-small);
 }
 
 .annotation-linked-summary {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  font-size: 0.9rem;
+  font: var(--t-text-small);
 }
 
 .linked-group {
@@ -495,7 +495,7 @@
 }
 
 .link-button {
-  min-height: 24px;
+  min-height: var(--size-target-min);
   padding: 0 var(--space-1);
   font: inherit;
   color: var(--color-accent);
@@ -514,12 +514,12 @@
   font-style: italic;
   color: var(--color-text-muted);
   border: 1px dashed var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .inherited-heading {
   margin: 0;
-  font-size: 0.85rem;
+  font: var(--t-text-small);
 }
 
 .inherited-item {
@@ -529,7 +529,7 @@
 }
 
 .inherited-source {
-  font-size: 0.85rem;
+  font: var(--t-text-small);
 }
 
 .display-mode {
@@ -539,29 +539,29 @@
   margin: var(--space-2) 0;
   padding: var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .list-inherited {
   font-style: italic;
-  opacity: 0.85;
+  opacity: var(--opacity-inherited);
 }
 
 .list-linked {
-  font-size: 0.85rem;
+  font: var(--t-text-small);
 }
 
 .layer-badge {
   flex: none;
   max-width: 8em;
   overflow: hidden;
-  padding: 2px var(--space-2);
+  padding: var(--space-0-5) var(--space-2);
   color: var(--color-text-muted);
-  font-size: 0.75rem;
+  font: var(--t-text-small);
   text-overflow: ellipsis;
   white-space: nowrap;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-full);
 }
 
 .issue-badge {
@@ -575,10 +575,10 @@
 .issues {
   padding: var(--space-2);
   color: var(--color-text);
-  font-size: 0.9rem;
+  font: var(--t-text-small);
   background: var(--color-warning-bg);
   border: 1px solid var(--color-warning);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .issues strong {
@@ -587,7 +587,7 @@
 
 .issues ul {
   margin: var(--space-1) 0 0;
-  padding-left: var(--space-3);
+  padding-left: var(--space-4);
   overflow-wrap: anywhere;
 }
 

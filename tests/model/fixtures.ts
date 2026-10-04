@@ -14,7 +14,7 @@ export function emptyProject(): Project {
   return createProject({
     name: 'Teste',
     now: NOW,
-    firstLayer: { id: 'L1', name: 'Lataria', color: '#E53935' },
+    firstLayer: { id: 'L1', name: 'Lataria', color: '#D32F2F' },
   });
 }
 

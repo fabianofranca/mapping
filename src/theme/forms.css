@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  font-size: 0.8rem;
+  font: var(--t-text-small);
   color: var(--color-text-muted);
 }
 
@@ -10,14 +10,14 @@
   flex-direction: row;
   align-items: flex-start;
   gap: var(--space-2);
-  min-height: var(--touch-target);
+  min-height: var(--size-touch);
 }
 
 .field-check input {
   flex: none;
-  width: 24px;
-  height: 24px;
-  margin: 10px 0;
+  width: var(--size-target-min);
+  height: var(--size-target-min);
+  margin: calc((var(--size-touch) - var(--size-target-min)) / 2) 0;
 }
 
 .field-check span {
@@ -25,23 +25,23 @@
 }
 
 .field select {
-  min-height: var(--touch-target);
+  min-height: var(--size-touch);
   padding: 0 var(--space-2);
-  font-size: 1rem;
+  font: var(--t-text-input);
   color: var(--color-text);
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-lg);
 }
 
 .input {
-  min-height: var(--touch-target);
+  min-height: var(--size-touch);
   padding: 0 var(--space-2);
-  font-size: 1rem;
+  font: var(--t-text-input);
   color: var(--color-text);
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-lg);
 }
 
 .input::placeholder {
@@ -50,7 +50,7 @@
 
 .segmented {
   display: flex;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 
 .rect-fields {
@@ -60,12 +60,12 @@
   margin: 0;
   padding: var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .rect-fields legend {
   padding: 0 var(--space-1);
-  font-size: 0.8rem;
+  font: var(--t-text-small);
   color: var(--color-text-muted);
 }
 
@@ -101,19 +101,19 @@
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
-  font-size: 0.8em;
+  font: var(--t-code);
   user-select: all;
 }
 
 .typed-description {
   margin: 0;
-  font-size: 0.85rem;
+  font: var(--t-text-small);
 }
 
 .typed-fields {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .typed-field {
@@ -169,7 +169,7 @@
   padding: var(--space-2);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .typed-row-header {
@@ -197,7 +197,7 @@
   flex-direction: column;
   gap: var(--space-1);
   min-width: 0;
-  font-size: 0.9rem;
+  font: var(--t-text-small);
 }
 
 /* Desktop: uma linha por registro, com os nomes das colunas no topo. */
@@ -212,7 +212,7 @@
   .typed-table-head {
     padding: 0 var(--space-2);
     color: var(--color-text-muted);
-    font-size: 0.85rem;
+    font: var(--t-text-small);
     font-weight: 600;
   }
 
@@ -261,7 +261,7 @@
 }
 
 .ref-groups {
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .ref-group-title {
@@ -282,7 +282,7 @@
 }
 
 .backlinks {
-  font-size: 0.9rem;
+  font: var(--t-text-small);
 }
 
 .type-option {
@@ -290,7 +290,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   text-align: left;
 }
 
@@ -300,7 +300,7 @@
 
 .raw-values {
   margin: 0;
-  padding-left: var(--space-3);
+  padding-left: var(--space-4);
   overflow-wrap: anywhere;
 }
 
@@ -308,10 +308,10 @@
 .mini-table {
   display: grid;
   grid-template-columns: repeat(var(--cols), minmax(0, auto));
-  margin: 2px 0 0 var(--space-2);
-  font-size: 0.85rem;
+  margin: var(--space-0-5) 0 0 var(--space-2);
+  font: var(--t-text-small);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .mini-row {
@@ -320,7 +320,7 @@
 
 .mini-head,
 .mini-cell {
-  padding: 1px var(--space-1);
+  padding: var(--space-0-5) var(--space-1);
   overflow-wrap: anywhere;
   border-bottom: 1px solid var(--color-border);
 }

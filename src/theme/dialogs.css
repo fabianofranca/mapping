@@ -1,10 +1,10 @@
 .dialog {
-  width: min(480px, calc(100vw - 2 * var(--space-3)));
+  width: min(var(--size-dialog), calc(100vw - 2 * var(--space-4)));
   padding: 0;
   color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .dialog::backdrop {
@@ -14,8 +14,8 @@
 .dialog-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3);
+  gap: var(--space-4);
+  padding: var(--space-4);
 }
 
 .dialog-body h2,
@@ -33,18 +33,18 @@
 .dialog-stack {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Ajuda → Especializações */
 .dialog:has(.help) {
-  width: min(720px, calc(100vw - 2 * var(--space-3)));
+  width: min(var(--size-dialog-lg), calc(100vw - 2 * var(--space-4)));
 }
 
 .help {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
   max-height: 65dvh;
   overflow-y: auto;
   overflow-wrap: anywhere;
@@ -63,12 +63,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  padding-left: var(--space-3);
+  padding-left: var(--space-4);
 }
 
 .help-toc a {
   display: inline-block;
-  min-height: 24px;
+  min-height: var(--size-target-min);
   color: var(--color-accent);
 }
 
@@ -80,12 +80,11 @@
 }
 
 .help-terms dd {
-  margin: 0 0 0 var(--space-3);
+  margin: 0 0 0 var(--space-4);
 }
 
 .help code {
-  font-family: ui-monospace, monospace;
-  font-size: 0.9em;
+  font: var(--t-code);
 }
 
 .help-code {
@@ -94,7 +93,7 @@
   overflow-x: auto;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .diagnostics-list {
@@ -110,7 +109,7 @@
   padding: var(--space-2);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .diagnostics-head {
@@ -127,7 +126,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  margin: var(--space-3) 0 0;
+  margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
 }
@@ -138,5 +137,5 @@
   gap: var(--space-2);
   padding: var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }

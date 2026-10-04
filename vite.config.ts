@@ -4,6 +4,7 @@ import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { readFileSync } from 'node:fs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
+import { renderTokensCss } from './src/theme/tokens';
 
 /** `VITE_CHANNEL=preview` no build do branch publicado em /preview/ (deploy.yml). */
 const channel: BuildChannel = process.env.VITE_CHANNEL === 'preview' ? 'preview' : 'main';
@@ -54,6 +55,19 @@ function serviceWorker(): Plugin {
 }
 
 /**
+ * Entrega `src/theme/tokens.ts` como CSS (`import 'virtual:tokens.css'`): os tokens têm
+ * uma fonte só e não há arquivo gerado para ficar desatualizado.
+ */
+function tokensCss(): Plugin {
+  const id = 'virtual:tokens.css';
+  return {
+    name: 'tokens-css',
+    resolveId: (source) => (source === id ? `\0${id}` : undefined),
+    load: (loaded) => (loaded === `\0${id}` ? renderTokensCss() : undefined),
+  };
+}
+
+/**
  * Com `--coverage` o código roda instrumentado e bem mais lento: os orçamentos de
  * desempenho por quadro ficam de fora (o CI os mede num passo sem cobertura).
  * `PERF_BUDGETS=off` também os desliga: o deploy roda a suíte em paralelo e mede
@@ -67,7 +81,7 @@ const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {
   base: './',
-  plugins: [preact(), viteSingleFile(), serviceWorker()],
+  plugins: [tokensCss(), preact(), viteSingleFile(), serviceWorker()],
 };
 
 export default defineConfig({
