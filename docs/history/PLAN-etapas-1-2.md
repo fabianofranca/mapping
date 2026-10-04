@@ -1172,7 +1172,7 @@ Mostra: `date`, `number` com `default`, `labelField` (a Classe é rotulada pelo 
 
 Use um print de uma **tela de cadastro** com os campos **Nome**, **Idade** e **E-mail**, um botão **Cadastrar** e um título **Crie sua conta**.
 
-1. **Especializações**: criar um projeto, adicionar o print e criar uma **camada livre "Model"**. Aplicar **SDUI** e **Modelo de dados** (menu → Especializações). Conferir as quatro camadas novas com o selo, que não dá para renomear nem excluir nenhuma delas, e que dá para trocar a cor.
+1. **Especializações**: criar um projeto, adicionar o print e criar uma **camada livre "Model"**. Aplicar **SDUI** e **Modelo de dados** (Especializações: botão da barra principal no desktop, Menu no celular). Conferir as quatro camadas novas com o selo, que não dá para renomear nem excluir nenhuma delas, e que dá para trocar a cor.
 2. **Marcações**: **Formulário** (envolvendo os campos e o botão) › **Nome**, **Idade**, **E-mail**, **Cadastrar**; e **Título**.
 3. **Modelo**, na marcação **Formulário**:
    - camada **Model** (livre): anotação **User** com as tuplas `name: string` e `age: number`;

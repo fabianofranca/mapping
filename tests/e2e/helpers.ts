@@ -177,19 +177,25 @@ export async function selectedRect(page: Page): Promise<Rect> {
   return rect;
 }
 
-async function openMenu(page: Page): Promise<void> {
+/**
+ * Aciona uma ação do projeto: no desktop ela está na barra principal (R4); no celular,
+ * dentro do Menu.
+ */
+async function projectAction(page: Page, name: string): Promise<void> {
+  const inBar = page.locator('.main-bar').getByRole('button', { name, exact: true });
+  if (await inBar.count()) {
+    await inBar.click();
+    return;
+  }
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name, exact: true }).click();
 }
 
-/** Menu → Exportar → Baixar: devolve o conteúdo do `mapping.json` do zip e os arquivos dele. */
+/** Exportar → Baixar: devolve o conteúdo do `mapping.json` do zip e os arquivos dele. */
 export async function exportMapping(
   page: Page,
 ): Promise<{ readonly mapping: MappingJson; readonly files: readonly string[] }> {
-  await openMenu(page);
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'Exportar', exact: true })
-    .click();
+  await projectAction(page, 'Exportar');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Baixar' }).click();
   const path = await (await download).path();
@@ -199,16 +205,15 @@ export async function exportMapping(
   return { mapping: JSON.parse(text) as MappingJson, files: Object.keys(zip.files) };
 }
 
-/** Menu → Especializações → Aplicar: escolhe o arquivo e fecha o diálogo. */
+/** Especializações → Aplicar: escolhe o arquivo e fecha o diálogo. */
 export async function applySpecialization(page: Page, file: string): Promise<void> {
-  await openMenu(page);
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'Especializações', exact: true })
-    .click();
+  await projectAction(page, 'Especializações');
   await page
     .locator('input[type=file][accept=".json,application/json"]')
     .setInputFiles(file);
   await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
-  await page.getByRole('button', { name: 'Fechar' }).last().click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Fechar', exact: true })
+    .click();
 }

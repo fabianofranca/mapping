@@ -3,44 +3,18 @@ import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import { SaveStatus } from '../ui/SaveStatus';
 import { Button, IconButton } from '../ui/controls';
-import {
-  AddImagesButton,
-  HistoryButtons,
-  ListToggleButton,
-  ModeButtons,
-  SemanticTextButton,
-} from './EditorTools';
 import type { EditorDialogs } from './useEditorDialogs';
-import type { ProjectCommands } from './useProjectCommands';
 
-interface EditorTopBarProps {
-  readonly desktop: boolean;
-  readonly busy: boolean;
-  readonly listOpen: boolean;
-  readonly onToggleList: () => void;
-  readonly onAdd: () => void;
-  readonly dialogs: EditorDialogs;
-  readonly commands: ProjectCommands;
-}
-
-/** Barra do topo: título, camada ativa, estado do salvamento e (desktop) as ferramentas. */
-export function EditorTopBar({
-  desktop,
-  busy,
-  listOpen,
-  onToggleList,
-  onAdd,
-  dialogs,
-  commands,
-}: EditorTopBarProps) {
+/**
+ * Barra de cima do celular: título, camada ativa, estado do salvamento e o Menu.
+ * No desktop quem manda é a `EditorMainBar` (a barra do celular é redesenhada na R8).
+ */
+export function EditorTopBar({ dialogs }: { readonly dialogs: EditorDialogs }) {
   const { store, derived } = useEditor();
   const projectName = useComputed(() => store.committed.value?.project.name);
   const activeLayer = derived.activeLayer.value;
   return (
     <header class="topbar editor-bar">
-      {desktop && (
-        <Button onClick={() => void commands.closeProject()}>{t('common.close')}</Button>
-      )}
       <h1 class="project-title">{projectName.value}</h1>
       {activeLayer && (
         <Button
@@ -55,18 +29,6 @@ export function EditorTopBar({
         </Button>
       )}
       <SaveStatus />
-      {desktop && (
-        <div class="toolbar">
-          <ModeButtons />
-          <AddImagesButton desktop busy={busy} onAdd={onAdd} />
-          <HistoryButtons />
-          <SemanticTextButton />
-          <ListToggleButton open={listOpen} onToggle={onToggleList} />
-          <Button disabled={busy} onClick={() => void commands.exportProject()}>
-            {t('editor.export')}
-          </Button>
-        </div>
-      )}
       <IconButton
         icon="menu"
         label={t('editor.menu')}

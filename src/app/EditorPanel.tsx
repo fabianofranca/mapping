@@ -11,16 +11,17 @@ import { PanelTabs, type PanelTab } from '../ui/PanelTabs';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import type { EditorDialogs } from './useEditorDialogs';
 
-interface EditorPanelProps {
-  readonly tab: PanelTab;
-  readonly onTabChange: (tab: PanelTab) => void;
+export interface EditorPanelProps {
+  /** Abas Detalhes | Árvore (celular). Sem elas, o painel mostra só os detalhes. */
+  readonly tab?: PanelTab;
+  readonly onTabChange?: (tab: PanelTab) => void;
   readonly busy: boolean;
   readonly dialogs: EditorDialogs;
   readonly onReplace: (image: ProjectImage) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-/** Painel lateral (desktop) ou conteúdo da gaveta (celular): Detalhes | Árvore. */
+/** Janela Detalhes (desktop) ou conteúdo da gaveta (celular, com as abas). */
 export function EditorPanel({
   tab,
   onTabChange,
@@ -66,6 +67,7 @@ export function EditorPanel({
       />
     );
 
+  if (tab === undefined || !onTabChange) return <div class="tab-panel">{details}</div>;
   return (
     <>
       <PanelTabs tab={tab} onChange={onTabChange} />

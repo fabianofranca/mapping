@@ -37,3 +37,19 @@ describe('alvos de toque', () => {
     },
   );
 });
+
+// R4 (seção Layouts e ToolStripButton do DS 2.0): a faixa é discreta e a janela sem
+// foco esmaece a seleção.
+describe('janelas de ferramenta', () => {
+  it('o botão da faixa com a janela aberta usa a seleção fraca, não o azul de alternância', () => {
+    expect(css['editor.css']).toMatch(
+      /\.tool-strip \.icon-button\[aria-pressed='true'\][^{]*\{[^}]*background: var\(--color-selection-muted\)/,
+    );
+  });
+
+  it('a janela sem foco esmaece a linha selecionada', () => {
+    expect(css['editor.css']).toMatch(
+      /\.tool-window:not\(:focus-within\)[^{]*\{[^}]*background: var\(--color-selection-muted\)/,
+    );
+  });
+});

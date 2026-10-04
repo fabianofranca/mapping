@@ -2,6 +2,7 @@ import { createContext, type ComponentChildren } from 'preact';
 import { useContext, useMemo } from 'preact/hooks';
 import type { OpenProject } from '../app/controller';
 import type { CanvasController } from '../canvas/CanvasController';
+import { createCanvasViewState, type CanvasViewState } from '../canvas/viewState';
 import { createEditorDerived, type EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
@@ -20,6 +21,8 @@ export interface EditorContextValue {
   readonly derived: EditorDerived;
   /** Controller do canvas montado (`CanvasHost` o preenche); `null` fora do editor. */
   readonly canvas: { current: CanvasController | null };
+  /** Zoom, cursor e área das imagens, escritos pelo canvas e lidos pela interface. */
+  readonly view: CanvasViewState;
 }
 
 /** Monta o contexto de um projeto aberto. `ui` pode ser injetado (testes). */
@@ -38,6 +41,7 @@ export function createEditorContextValue(
     ui,
     derived: createEditorDerived(store, ui),
     canvas: { current: null },
+    view: createCanvasViewState(),
   };
 }
 

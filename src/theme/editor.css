@@ -1,0 +1,456 @@
+/*
+ * Estrutura do editor no desktop (fase R4): barra principal, faixas, janelas de
+ * ferramenta, breadcrumbs, barra de status e minimapa. Medidas e cores só dos tokens
+ * (seção Layouts do DS 2.0).
+ */
+
+.editor-desktop {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Barra principal (40px) */
+.main-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--size-toolbar);
+  padding: 0 var(--space-2);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.main-bar-logo {
+  display: flex;
+  color: var(--color-accent);
+}
+
+.main-bar .toolbar {
+  gap: var(--space-1);
+}
+
+.main-bar-end {
+  margin-left: auto;
+}
+
+/* Menu em popover (projeto ▾) */
+.menu-popover {
+  position: relative;
+  min-width: 0;
+}
+
+.menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  font: var(--t-text-title);
+  color: var(--color-text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  cursor: pointer;
+}
+
+.menu-trigger:hover {
+  background: var(--color-hover);
+}
+
+.menu-trigger:active {
+  background: var(--color-pressed);
+}
+
+.menu-trigger-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-trigger .icon {
+  flex: none;
+}
+
+.menu-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 200px;
+  margin-top: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popup);
+}
+
+.menu-list .button {
+  justify-content: flex-start;
+  border-color: transparent;
+}
+
+.project-menu {
+  flex: 0 1 auto;
+}
+
+/* Faixas laterais (40px) */
+.tool-strip {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: var(--size-stripe);
+  padding: var(--space-1-5) 0;
+  background: var(--color-surface);
+}
+
+.tool-strip-left {
+  border-right: 1px solid var(--color-border);
+}
+
+.tool-strip-right {
+  border-left: 1px solid var(--color-border);
+}
+
+.tool-strip-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.tool-strip-end {
+  margin-top: auto;
+}
+
+/*
+ * O botão da faixa é discreto (DS 2.0, ToolStripButton): ícone esmaecido e, com a
+ * janela aberta, a seleção fraca — e não o azul cheio da alternância comum.
+ */
+.tool-strip .icon-button {
+  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+}
+
+.tool-strip .icon-button:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-hover);
+}
+
+.tool-strip .icon-button[aria-pressed='true'],
+.tool-strip .icon-button[aria-pressed='true']:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-selection-muted);
+}
+
+.tool-strip .icon-button:active:not(:disabled),
+.tool-strip .icon-button[aria-pressed='true']:active:not(:disabled) {
+  background: var(--color-pressed);
+}
+
+/* Área com as janelas e o canvas */
+.editor-panes {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.editor-center {
+  flex: 1;
+  min-width: var(--size-canvas-min);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Janelas de ferramenta */
+.tool-window {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-surface);
+}
+
+.tool-window-left {
+  border-right: 1px solid var(--color-border);
+}
+
+.tool-window-right {
+  border-left: 1px solid var(--color-border);
+}
+
+.tool-window-bottom {
+  border-top: 1px solid var(--color-border);
+}
+
+/*
+ * Janela inativa (sem foco dentro): a linha selecionada esmaece, para a seleção forte
+ * marcar a janela em que você está (DS 2.0, estado inativo da ToolWindow).
+ */
+.tool-window:not(:focus-within) .tree-item[aria-current='true'] {
+  color: var(--color-text);
+  background: var(--color-selection-muted);
+}
+
+.tool-window:not(:focus-within) .tree-item[aria-current='true'] .muted {
+  color: var(--color-text-muted);
+}
+
+.tool-window-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  height: var(--size-tw-header);
+  padding: 0 var(--space-1) 0 var(--space-3);
+}
+
+.tool-window-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: var(--t-text-heading);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-window-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+/* Divisória de arraste (8px de área, 1px visível pela borda da janela) */
+.tool-resizer {
+  position: absolute;
+  z-index: var(--z-toolwindow);
+}
+
+.tool-resizer:hover,
+.tool-resizer:active {
+  background: var(--color-accent);
+}
+
+.tool-window-left .tool-resizer,
+.tool-window-right .tool-resizer {
+  top: 0;
+  bottom: 0;
+  width: var(--size-resize-hit);
+  cursor: col-resize;
+}
+
+.tool-window-left .tool-resizer {
+  right: calc(-1 * var(--size-resize-hit) / 2);
+}
+
+.tool-window-right .tool-resizer {
+  left: calc(-1 * var(--size-resize-hit) / 2);
+}
+
+.tool-window-bottom .tool-resizer {
+  top: calc(-1 * var(--size-resize-hit) / 2);
+  left: 0;
+  right: 0;
+  height: var(--size-resize-hit);
+  cursor: row-resize;
+}
+
+/* Breadcrumbs e ações do canvas (32px) */
+.canvas-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--size-tw-header);
+  padding: 0 var(--space-1-5);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.crumbs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.crumbs-empty {
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  padding: 0 var(--space-1-5);
+}
+
+.crumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  min-width: 0;
+  height: var(--control-height);
+  padding: 0 var(--space-1-5);
+  font: var(--t-text);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--control-radius);
+  cursor: pointer;
+}
+
+.crumb:hover {
+  color: var(--color-text);
+  background: var(--color-hover);
+}
+
+.crumb[aria-current] {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.crumb-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumb .icon {
+  flex: none;
+}
+
+.crumb-sep {
+  color: var(--color-text-muted);
+}
+
+.canvas-bar-end {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Campo de zoom (P4) */
+.zoom-field {
+  min-width: 56px;
+  height: var(--control-height);
+  padding: 0 var(--space-2);
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--control-radius);
+  cursor: pointer;
+}
+
+.zoom-field:hover {
+  color: var(--color-text);
+  background: var(--color-hover);
+}
+
+/* Barra de status (26px) */
+.statusbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  height: var(--size-statusbar);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.statusbar-gap {
+  flex: 1;
+  min-width: var(--space-2);
+}
+
+.status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 320px;
+  overflow: hidden;
+  padding: 0 var(--space-1-5);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-item .icon {
+  flex: none;
+}
+
+.status-item-mono {
+  font-family: var(--font-mono);
+}
+
+.status-item-ok {
+  color: var(--color-success);
+}
+
+.status-item-error {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.status-item-warn {
+  color: var(--color-warning);
+}
+
+.status-sep {
+  flex: none;
+  width: 1px;
+  height: var(--space-3);
+  background: var(--color-border);
+}
+
+.statusbar .zoom-field {
+  height: var(--space-6);
+}
+
+/* Minimapa (P3) */
+.minimap {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  z-index: var(--z-canvas-overlay);
+  padding: 0;
+  background: var(--color-card);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.minimap-image,
+.minimap-view {
+  position: absolute;
+}
+
+.minimap-image {
+  background: var(--color-text-muted);
+  opacity: var(--opacity-ancestor);
+}
+
+.minimap-view {
+  border: 1px solid var(--color-accent);
+  background: var(--color-selection);
+  opacity: var(--opacity-grabbed);
+}

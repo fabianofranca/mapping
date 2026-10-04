@@ -7,7 +7,7 @@ import { CanvasController } from './CanvasController';
  * (comandos como "enquadrar"). Único componente que conhece o Konva.
  */
 export function CanvasHost() {
-  const { store, actions, display, ui, derived, canvas } = useEditor();
+  const { store, actions, display, ui, derived, canvas, view } = useEditor();
   const ref = useRef<HTMLDivElement>(null);
 
   // O controller vive enquanto o projeto estiver aberto.
@@ -21,13 +21,14 @@ export function CanvasHost() {
       display,
       ui,
       derived,
+      view,
     });
     canvas.current = controller;
     return () => {
       canvas.current = null;
       controller.destroy();
     };
-  }, [store, actions, display, ui, derived, canvas]);
+  }, [store, actions, display, ui, derived, canvas, view]);
 
   return <div ref={ref} class="canvas-host" />;
 }

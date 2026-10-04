@@ -12,6 +12,7 @@ import {
 import type { Frame } from '../../src/canvas/frame';
 import { cardCache } from '../../src/canvas/renderers/cards';
 import type { CanvasTokens } from '../../src/canvas/theme';
+import { createCanvasViewState } from '../../src/canvas/viewState';
 import { createEditorDerived } from '../../src/store/derived';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
@@ -134,7 +135,7 @@ export function editorFor(project: Project = canvasProject(), readOnly = false) 
   const actions = createProjectActions(store);
   const ui = createEditorUi();
   const derived = createEditorDerived(store, ui);
-  return { store, actions, ui, derived };
+  return { store, actions, ui, derived, view: createCanvasViewState() };
 }
 
 export type Editor = ReturnType<typeof editorFor>;

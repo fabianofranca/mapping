@@ -78,6 +78,46 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
+  it('publica zoom, área das imagens e cursor em pixels da imagem (B8, P3 e P4)', () => {
+    const { container, controller, view } = setup();
+    flush();
+    // O viewport e a área das imagens chegam à interface (barra de status, minimapa).
+    expect(view.size.value).toEqual({ width: 380, height: 700 });
+    expect(view.bounds.value).toEqual({ x: 0, y: 0, width: 1600, height: 800 });
+
+    controller.zoomTo(1);
+    expect(view.viewport.value.scale).toBeCloseTo(1);
+    controller.zoomBy(2);
+    expect(view.viewport.value.scale).toBeCloseTo(2);
+    controller.zoomTo(1);
+    controller.centerOnPoint({ x: 500, y: 400 });
+    expect(controller.viewportCenter().x).toBeCloseTo(500);
+    expect(controller.viewportCenter().y).toBeCloseTo(400);
+
+    // O cursor só muda no quadro seguinte (uma escrita por quadro, HANDOFF seção 6).
+    container.dispatchEvent(
+      new PointerEvent('pointermove', {
+        pointerId: 1,
+        pointerType: 'mouse',
+        clientX: 10,
+        clientY: 20,
+      }),
+    );
+    expect(view.cursor.value).toBeNull();
+    flush();
+    const canvasPoint = controller.canvasPointAt(10, 20);
+    expect(view.cursor.value).toEqual({
+      imageId: 'I1',
+      x: Math.floor(canvasPoint.x),
+      y: Math.floor(canvasPoint.y),
+    });
+
+    container.dispatchEvent(new PointerEvent('pointerleave', { pointerId: 1 }));
+    flush();
+    expect(view.cursor.value).toBeNull();
+    controller.destroy();
+  });
+
   it('depois de destruído, não escuta mais o ponteiro', () => {
     const { container, controller, ui } = setup();
     controller.destroy();

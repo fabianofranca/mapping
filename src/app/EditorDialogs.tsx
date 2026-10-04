@@ -147,6 +147,12 @@ function renderDialog(
       return <MenuDialog dialogs={dialogs} busy={busy} commands={commands} />;
     case 'specs':
       return <SpecsDialog project={project} readOnly={readOnly} onClose={close} />;
+    case 'settings':
+      return (
+        <CloseOnlyDialog title={t('settings.title')} onClose={close}>
+          <SettingsBar />
+        </CloseOnlyDialog>
+      );
     case 'help':
       return <SpecHelpDialog onClose={close} />;
     case 'diagnostics':

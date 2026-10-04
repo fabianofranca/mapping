@@ -207,6 +207,41 @@ export const enUS: Dictionary = {
   'annotation.inheritedFrom': 'inherited from {name}',
   'annotation.goToMarking': 'Go to {name}',
 
+  'window.stripLabel': 'Tool windows',
+  'window.show': 'Show {name}',
+  'window.hide': 'Hide {name}',
+  'window.resize': 'Drag to resize {name} (double click resets it)',
+  'window.closeWindow': 'Close the {name} window',
+
+  'crumbs.label': 'Selection path',
+  'crumbs.image': 'Image {name}',
+  'crumbs.marking': 'Marking {name}',
+
+  'zoom.value': '{percent}%',
+  'zoom.reset': 'Zoom at {percent}%; click to go back to 100%',
+  'zoom.in': 'Zoom in',
+  'zoom.out': 'Zoom out',
+
+  'minimap.label': 'Canvas minimap',
+  'minimap.goTo': 'Click to move the view',
+
+  'statusbar.label': 'Status bar',
+  'status.targetFolder': 'Folder',
+  'status.targetLocal': 'On this device',
+  'status.targetLabel': 'Where the project is saved: {target}',
+  'status.selectionLabel': 'Selection: {name}',
+  'status.cursorLabel': 'Cursor on the image: {position}',
+  'status.empty': '—',
+  'status.schema': 'schema v{version}',
+  'status.schemaLabel': 'Format version: {version}',
+  'status.channelMain': 'stable',
+  'status.channelPreview': 'preview',
+  'status.channelLabel': 'Build channel: {channel}',
+
+  'editor.projectMenu': 'Project actions',
+  'editor.appName': 'Image mapper',
+  'editor.fitAllShort': 'Fit',
+
   'view.canvas': 'Canvas',
   'view.list': 'List',
   'view.tabsLabel': 'View',

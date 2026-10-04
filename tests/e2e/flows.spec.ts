@@ -7,6 +7,7 @@ import {
   createProject,
   drawMarking,
   exportMapping,
+  isMobile,
   openDetails,
 } from './helpers';
 
@@ -122,4 +123,47 @@ test('caixa de seleção e texto de "Texto no canvas" ficam na mesma linha', asy
   expect(c.y).toBeLessThan(s.y + s.height);
   expect(s.y).toBeLessThan(c.y + c.height);
   expect(c.x + c.width).toBeLessThanOrEqual(s.x + 1);
+});
+
+// R4: estrutura do editor no desktop (B1, B2, B8, B11, P4).
+test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', async ({
+  page,
+}, info) => {
+  test.skip(isMobile(info), 'janelas de ferramenta: só no layout de desktop');
+  await createProject(page, 'Janelas');
+
+  // Barra de status e breadcrumbs sem seleção.
+  await expect(page.getByText('schema v4')).toBeVisible();
+  await expect(page.locator('.crumbs')).toContainText('Nada selecionado');
+
+  // Árvore e Detalhes abrem por padrão; a Lista abre pela faixa.
+  const tree = page.getByRole('region', { name: 'Árvore de marcações' });
+  const list = page.getByRole('region', { name: 'Lista de anotações' });
+  await expect(tree).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Detalhes' })).toBeVisible();
+  await expect(list).toBeHidden();
+  await page.getByRole('button', { name: 'Mostrar Lista de anotações' }).click();
+  await expect(list).toBeVisible();
+
+  // Fechar pelo cabeçalho; reabrir pelo atalho oficial (Ctrl+Shift+4).
+  await page.getByRole('button', { name: 'Fechar a janela Lista de anotações' }).click();
+  await expect(list).toBeHidden();
+  await page.keyboard.press('Control+Shift+Digit4');
+  await expect(list).toBeVisible();
+
+  // Ctrl+Shift+setas redimensionam a janela em foco, em passos de 16px.
+  const width = () =>
+    tree.evaluate((el: HTMLElement) => el.getBoundingClientRect().width);
+  const before = await width();
+  await tree.focus();
+  await page.keyboard.press('Control+Shift+ArrowRight');
+  expect(await width()).toBe(before + 16);
+
+  // O layout fica guardado: volta à tela inicial e abre o projeto de novo.
+  await page.getByRole('button', { name: 'Ações do projeto' }).click();
+  await page.getByRole('button', { name: 'Fechar projeto', exact: true }).click();
+  await page.getByRole('button', { name: 'Abrir', exact: true }).first().click();
+  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(list).toBeVisible();
+  expect(await width()).toBe(before + 16);
 });

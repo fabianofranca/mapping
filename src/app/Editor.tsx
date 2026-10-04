@@ -2,20 +2,25 @@ import { useComputed } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { CanvasHost } from '../canvas/CanvasHost';
 import { t } from '../i18n';
-import { DESKTOP_QUERY } from '../theme/breakpoints';
+import { BREAKPOINTS, DESKTOP_QUERY } from '../theme/breakpoints';
+import { collapseDetailsOnCompact } from '../store/toolWindows';
 import { goToAnnotation, resolveSelection, type Selection } from '../store/ui';
 import type { AnnotationLocation } from '../store/ui';
 import { EditorProvider, useEditor } from '../ui/EditorContext';
 import { ListView } from '../ui/ListView';
+import { Minimap } from '../ui/Minimap';
 import type { PanelTab } from '../ui/PanelTabs';
+import { StatusBar } from '../ui/StatusBar';
 import { useMediaQuery } from '../ui/useMediaQuery';
 import type { OpenProject } from './controller';
 import { CanvasNotices } from './CanvasNotices';
 import { SemanticTextButton } from './EditorTools';
 import { EditorBottomBar, type EditorView } from './EditorBottomBar';
 import { EditorDialogs } from './EditorDialogs';
-import { EditorPanel, EditorSheet } from './EditorPanel';
+import { EditorMainBar } from './EditorMainBar';
+import { EditorSheet, type EditorPanelProps } from './EditorPanel';
 import { EditorTopBar } from './EditorTopBar';
+import { EditorWindows } from './EditorWindows';
 import { useEditorDialogs } from './useEditorDialogs';
 import { useEditorNotices } from './useEditorNotices';
 import { useEditorShortcuts } from './useEditorShortcuts';
@@ -36,17 +41,17 @@ export function Editor({ open }: { readonly open: OpenProject }) {
 export function EditorScreen() {
   const { store, ui, canvas } = useEditor();
   const desktop = useMediaQuery(DESKTOP_QUERY);
+  const compact = useMediaQuery(`(max-width: ${BREAKPOINTS.compact}px)`);
   const dialogs = useEditorDialogs();
   const notices = useEditorNotices();
   const intake = useImageIntake({ desktop, dialogs, notices });
   const commands = useProjectCommands(dialogs, notices);
-  useEditorShortcuts(dialogs);
+  useEditorShortcuts(dialogs, commands);
 
   const [panelTab, setPanelTab] = useState<PanelTab>('details');
   const [sheetExpanded, setSheetExpanded] = useState(false);
-  /** Celular: aba ativa (Canvas | Lista). Desktop: lista lado a lado com o canvas. */
+  /** Celular: aba ativa (Canvas | Lista). No desktop a Lista é a janela inferior. */
   const [view, setView] = useState<EditorView>('canvas');
-  const [listOpen, setListOpen] = useState(false);
   const focusAfterView = useRef(false);
 
   // Só fatias do projeto confirmado (ver `ProjectStore.committed`): a tela não
@@ -57,6 +62,11 @@ export function EditorScreen() {
   );
   const noImages = useComputed(() => (store.committed.value?.images.length ?? 0) === 0);
   const { busy } = notices;
+
+  // Desktop compacto (abaixo de 1200px): Detalhes começa recolhido (B2).
+  useEffect(() => {
+    if (desktop && compact) collapseDetailsOnCompact();
+  }, [desktop, compact]);
 
   // Celular: sem seleção, a gaveta recolhe (ao selecionar algo ela abre recolhida).
   useEffect(() => {
@@ -83,8 +93,8 @@ export function EditorScreen() {
     if (!desktop) setSheetExpanded(true);
   };
 
-  /** Tocar na lista seleciona a marcação e centraliza o canvas (no celular, muda para ele). */
-  const onListSelect = (next: NonNullable<Selection>) => {
+  /** Escolher na árvore, na lista ou nos breadcrumbs seleciona e centraliza o canvas. */
+  const onSelect = (next: NonNullable<Selection>) => {
     ui.selection.value = next;
     if (desktop) {
       canvas.current?.focusSelection();
@@ -94,90 +104,95 @@ export function EditorScreen() {
     setView('canvas');
   };
 
-  const panelProps = {
-    tab: panelTab,
-    onTabChange: setPanelTab,
+  const panel: EditorPanelProps = {
     busy,
     dialogs,
     onReplace: intake.requestReplace,
     onGoToAnnotation,
   };
-  const list = <ListView onSelect={onListSelect} />;
   const mobileList = !desktop && view === 'list';
 
+  const canvasArea = (
+    <main
+      class="canvas-area"
+      aria-label={t('editor.canvasLabel')}
+      hidden={mobileList}
+      {...intake.dropHandlers}
+    >
+      <CanvasHost />
+      <CanvasNotices notices={notices} />
+      {desktop ? (
+        <Minimap />
+      ) : (
+        <div class="canvas-float">
+          <SemanticTextButton />
+        </div>
+      )}
+      {noImages.value && (
+        <div class="canvas-empty">
+          <p class="muted">{t('editor.emptyCanvas')}</p>
+          <Button
+            variant="primary"
+            disabled={store.readOnly.value || busy}
+            onClick={intake.onAddClick}
+          >
+            {t('editor.addImages')}
+          </Button>
+        </div>
+      )}
+    </main>
+  );
+
+  if (desktop) {
+    return (
+      <div class="editor editor-desktop">
+        <EditorMainBar
+          busy={busy}
+          onAdd={intake.onAddClick}
+          dialogs={dialogs}
+          commands={commands}
+        />
+        <EditorWindows panel={panel} onSelect={onSelect} canvas={canvasArea} />
+        <StatusBar />
+        <ImageInputs intake={intake} />
+        <EditorDialogs
+          dialogs={dialogs}
+          busy={busy}
+          intake={intake}
+          commands={commands}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div class={desktop ? 'editor editor-desktop' : 'editor editor-mobile'}>
-      <EditorTopBar
-        desktop={desktop}
-        busy={busy}
-        listOpen={listOpen}
-        onToggleList={() => setListOpen(!listOpen)}
-        onAdd={intake.onAddClick}
-        dialogs={dialogs}
-        commands={commands}
-      />
+    <div class="editor editor-mobile">
+      <EditorTopBar dialogs={dialogs} />
 
       <div class="editor-body">
-        <main
-          class="canvas-area"
-          aria-label={t('editor.canvasLabel')}
-          hidden={mobileList}
-          {...intake.dropHandlers}
-        >
-          <CanvasHost />
-          <CanvasNotices notices={notices} />
-          {!desktop && (
-            <div class="canvas-float">
-              <SemanticTextButton />
-            </div>
-          )}
-          {noImages.value && (
-            <div class="canvas-empty">
-              <p class="muted">{t('editor.emptyCanvas')}</p>
-              <Button
-                variant="primary"
-                disabled={store.readOnly.value || busy}
-                onClick={intake.onAddClick}
-              >
-                {t('editor.addImages')}
-              </Button>
-            </div>
-          )}
-        </main>
+        {canvasArea}
         {mobileList && (
           <section class="list-screen" aria-label={t('list.title')}>
-            {list}
+            <ListView onSelect={onSelect} />
           </section>
-        )}
-        {desktop && listOpen && (
-          <aside class="list-pane" aria-label={t('list.title')}>
-            {list}
-          </aside>
-        )}
-        {desktop && (
-          <aside class="side-panel">
-            <EditorPanel {...panelProps} />
-          </aside>
         )}
       </div>
 
-      {!desktop && (
-        <>
-          {!mobileList && (
-            <EditorSheet
-              {...panelProps}
-              expanded={sheetExpanded}
-              onToggle={() => setSheetExpanded(!sheetExpanded)}
-            />
-          )}
-          <EditorBottomBar
-            view={view}
-            onViewChange={setView}
-            busy={busy}
-            onAdd={intake.onAddClick}
-          />
-        </>
+      {!mobileList && (
+        <EditorSheet
+          {...panel}
+          tab={panelTab}
+          onTabChange={setPanelTab}
+          expanded={sheetExpanded}
+          onToggle={() => setSheetExpanded(!sheetExpanded)}
+        />
       )}
+      <EditorBottomBar
+        view={view}
+        onViewChange={setView}
+        busy={busy}
+        onAdd={intake.onAddClick}
+      />
 
       <ImageInputs intake={intake} />
       <EditorDialogs dialogs={dialogs} busy={busy} intake={intake} commands={commands} />

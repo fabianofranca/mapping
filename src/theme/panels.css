@@ -1,13 +1,6 @@
-.side-panel {
-  flex: none;
-  width: var(--size-tw-right);
-  overflow-y: auto;
-  padding: var(--space-4);
-  background: var(--color-surface);
-  border-left: 1px solid var(--color-border);
-}
-
-.side-panel h2 {
+/* Títulos dentro das janelas de ferramenta e da gaveta. */
+.tool-window-body h2,
+.sheet-content h2 {
   margin: 0 0 var(--space-4);
   font: var(--t-text-heading);
 }
@@ -308,15 +301,6 @@
 }
 
 /* Visão de Lista e zoom semântico */
-.list-pane {
-  flex: none;
-  width: var(--size-tw-right);
-  overflow-y: auto;
-  padding: var(--space-4);
-  background: var(--color-surface);
-  border-left: 1px solid var(--color-border);
-}
-
 .list-screen {
   flex: 1;
   min-height: 0;
