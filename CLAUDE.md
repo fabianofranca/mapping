@@ -73,6 +73,11 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
-- **Etapa 2.2 — Segunda revisão técnica (atual):** fases 26 a 28, no `PLAN.md`. Refatorações desta etapa **não podem mudar comportamento visível** (exceto a da Fase 26: campos numéricos do painel atualizando ao soltar o gesto): todos os testes verdes e o roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) precisam continuar passando.
+- **Etapa 2.2 — Segunda revisão técnica (concluída):** fases 26 e 27 concluídas, 28 dispensada (histórico em `docs/history/PLAN-etapa-2-2.md`).
+- **Etapa 2.3 — Redesign da interface (atual):** fases R1 a R10, no `PLAN.md`; especificação em `docs/redesign/HANDOFF.md`. Regras da etapa:
+  - R1 a R3 **não mudam comportamento**;
+  - da R4 em diante, cada PR lista no "Como testar" as mudanças B# e P# que entrega;
+  - os testes e2e afetados são atualizados no mesmo PR;
+  - o roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) continua passando nos dois layouts (desktop e 380 px) e nos dois temas.
 - **Etapa 3 — Servidor MCP (futura, não implementar):** servidor em Node/TypeScript, no mesmo repositório, que reutiliza o `src/model/` para um agente criar projetos, aplicar especializações e adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
 - **Etapa 4 — Editor de especializações (futura, não implementar):** criar e editar especializações dentro da app.

@@ -6,7 +6,7 @@
 
 Aplicação web para mapear áreas de imagens com **marcações retangulares**, organizar informações em **camadas** e registrar **anotações** (pares chave-valor livres ou anotações **tipadas** definidas por uma **especialização**). Tudo é salvo num `mapping.json` ao lado das imagens (pasta ou zip), num formato pensado para ser lido por um agente de IA, que deve conseguir recortar, na imagem original, a área exata de cada marcação.
 
-Estado: **etapas 1, 1.1, 2 e 2.1 concluídas**; **etapa 2.2 (segunda revisão técnica)** em andamento, fases abaixo. O `index.html` é um único arquivo autocontido (funciona em `file://` e no GitHub Pages), **desktop primeiro e utilizável no celular**, com tema claro/escuro e pt-BR/en-US.
+Estado: **etapas 1, 1.1, 2, 2.1 e 2.2 concluídas**; **etapa 2.3 (redesign da interface)** em andamento, fases abaixo. O `index.html` é um único arquivo autocontido (funciona em `file://` e no GitHub Pages), **desktop primeiro e utilizável no celular**, com tema claro/escuro e pt-BR/en-US.
 
 ## Documentação
 
@@ -19,70 +19,144 @@ Estado: **etapas 1, 1.1, 2 e 2.1 concluídas**; **etapa 2.2 (segunda revisão t�
 | [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md)             | Formato do arquivo de especialização (e `docs/spec.schema.json`)               |
 | [`docs/history/PLAN-etapas-1-2.md`](docs/history/PLAN-etapas-1-2.md) | Histórico: seções 1 a 13 do plano antigo (inclui o roteiro de teste manual, 13.9) |
 | [`docs/history/PLAN-etapa-2-1.md`](docs/history/PLAN-etapa-2-1.md)   | Histórico: etapa 2.1, revisão técnica (achados, decisões e fases 18 a 25)       |
+| [`docs/history/PLAN-etapa-2-2.md`](docs/history/PLAN-etapa-2-2.md) | Histórico: etapa 2.2, segunda revisão técnica (fases 26 e 27 concluídas; 28 dispensada) |
+| [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3): componentes, tokens, mudanças B#, propostas P# e decisões |
 
 ## Etapas futuras (não implementar ainda)
 
 - **Etapa 3 — Servidor MCP:** servidor em Node/TypeScript, no mesmo repositório, que reutiliza `src/model/` para um agente criar projetos, aplicar especializações e adicionar imagens, camadas, marcações e anotações direto na pasta. WebMCP pode vir depois, como adaptador sobre as mesmas funções.
+  - Sincronização com o Figma: identidade e dono dos dados vindos do Figma; reexportação por página ou nó, com relatório e pendências.
+  - Mapeamento Figma e código por plataforma nas especializações.
+  - Campo de referência de código nas instâncias.
+  - Telas para isso, a desenhar no Claude Design com o design system 2.0.
+  - Só itens registrados por enquanto; o plano detalhado vem depois.
 - **Etapa 4 — Editor de especializações:** criar e editar especializações dentro da app.
 
-## Fases pendentes — Etapa 2.2: segunda revisão técnica
+## Fases pendentes — Etapa 2.3: redesign da interface
 
-> Revisão feita com a etapa 2.1 concluída: lint, typecheck, 946 testes e build passando; orçamentos de desempenho estáveis em execuções seguidas; `npm audit` sem vulnerabilidades; `dist/index.html` com 607 kB (178 kB gzip). Cobertura de linhas: 76% no total (model 97%, canvas 96%, store 93%, storage 71%, ui 56%, **app 7%**).
->
-> Regra da etapa: **nenhuma mudança de comportamento visível**, exceto a indicada na Fase 26. Todos os testes verdes e o roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) continuam passando.
+A especificação completa está em [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) e nos dois artifacts do Claude Design citados nele (canvas "Mapeador — Redesign" e design system "Mapeador de Imagens 2.0"). Os códigos **B#** (mudanças de comportamento) e **P#** (propostas) abaixo são os do HANDOFF; as decisões tomadas estão na seção 5 dele.
 
-### Achados
+Regras da etapa:
 
-1. **(P1) A interface inteira renderiza de novo a cada movimento de um gesto.** `store.updateGesture` troca `store.project` a cada `pointermove` (prévia do arrastar/redimensionar). `EditorScreen`, `EditorTopBar`, `EditorPanel`, `EditorDialogs` e `CanvasNotices` leem `store.project.value` diretamente, então renderizam a cada evento do dedo (o canvas está limitado a um quadro por `requestAnimationFrame`, a árvore Preact não). Os `computed` de `store/derived.ts` que dependem do projeto (pendências, indicadores, visibilidade e a Lista, quando aberta lado a lado no desktop) também são recalculados a cada evento, embora mover ou redimensionar não mude nenhuma anotação. O teste `renderPerformance` mede só o canvas, então esse custo não aparece nos orçamentos.
-2. **(P2) `src/app/` sem testes unitários (7% de linhas).** `controller.ts` (abrir pasta/local/zip, migração com backup, exportar, fechar) e `useImageIntake.tsx` (adicionar, colar, arrastar, trocar) estão em 0%. O Playwright cobre só caminhos felizes, e só no CI. O caminho "abrir projeto antigo → backup antes de gravar" passa pelo `controller.ts`.
-3. **(P2) Desempenho nunca medido num aparelho real.** Os orçamentos rodam em Node e jsdom, e não há como carregar o projeto grande de teste dentro da app.
-4. **(P3) Playwright só com Chromium**: toque e armazenamento do Safari do iOS não são exercitados.
-5. **(P3) Atualizações maiores disponíveis** (Preact 11, TypeScript 7): **não** atualizar nesta etapa; avaliar depois, num branch próprio.
+- R1 a R3 **não mudam comportamento**.
+- Da R4 em diante, cada PR lista no "Como testar" as mudanças **B#** e **P#** que entrega.
+- Os testes e2e afetados são atualizados no mesmo PR.
+- O roteiro da 13.9 (`docs/history/PLAN-etapas-1-2.md`) continua passando nos dois layouts (desktop e 380 px) e nos dois temas.
 
-#### Fase 26 — Projeto confirmado durante gestos (achado 1)
+#### R1 — Tokens
 
-- O store passa a expor **`committed`**: o projeto sem as prévias de gesto. Fora de um gesto, `committed` e `project` são o mesmo objeto; durante o gesto, `committed` fica no projeto do início (`gestureBase`) e só muda no `commitGesture`/`cancelGesture`.
-- A **interface** (`Editor*`, painéis, lista, diálogos, avisos) e os `computed` de `derived.ts` que **não dependem de geometria** (pendências, anotações por marcação, indicadores, visibilidade, listagem) leem `committed`. O **canvas** continua lendo `project` para a geometria durante o gesto.
-- Componentes que só precisam de uma fatia (ex: "há projeto?", "há seleção?") usam `useComputed`, sem assinar o projeto inteiro.
-- **Única mudança visível da etapa:** os campos x/y/largura/altura do painel passam a atualizar **ao soltar**, não durante o arrasto.
+Tokens de design a partir de uma fonte única. Não muda comportamento.
 
-- [x] `committed` no store + testes (gesto, commit, cancel, desfazer/refazer)
-- [x] `derived.ts` e componentes da interface lendo `committed`; `useComputed` nas fatias
-- [x] Teste de contagem de renderizações: arrasto simulado com 30 movimentos renderiza `EditorScreen`, `EditorPanel` e `EditorTopBar` no máximo 2 vezes cada
-- [x] `docs/ARCHITECTURE.md` atualizado (projeto confirmado × prévia)
+- [ ] `tokens.css` gerado de uma fonte única (sem bloco escuro duplicado)
+- [ ] Todas as famílias de tokens da seção 2 do HANDOFF
+- [ ] `--space-3` → `--space-4` em todo o CSS, no mesmo commit em que `space-3` passa a valer 12px
+- [ ] `color-border-control` em todo limite de controle
+- [ ] `theme-color` claro e escuro
+- [ ] Constante TS dos breakpoints
 
-**Aceite**: teste de contagem verde; orçamentos de desempenho mantidos; roteiro 13.9 sem diferenças além dos campos numéricos atualizando ao soltar.
+**Aceite**: nenhum valor de espaço, raio, opacidade, duração, z-index ou fonte fixo fora de `tokens.css` (lint de CSS ou teste que procura literais); contrastes da seção Contraste do DS 2.0.
 
-#### Fase 27 — Testes de `src/app/` (achado 2)
+#### R2 — Ícones e controles base
 
-- `controller.ts`: abrir projeto v1 em pasta e em local (fixture `tests/fixtures/mapping-v1.json`) → backup gravado antes do primeiro salvamento; zip inválido e zip sem `mapping.json` → erro correto; exportar → zip com `specs/` e sem `backups/`; fechar → `flush` antes de liberar. Usar `memoryFs`, `fake-indexeddb` e os helpers existentes.
-- `useImageIntake.tsx`: vários arquivos (progresso e falhas), colar sem imagem, soltar sobre imagem (troca), em área vazia (adiciona) e vários sobre imagem (adiciona todos).
+Conjunto de ícones e controles novos, com todos os estados. Não muda comportamento.
 
-- [x] Testes do `controller.ts`
-- [x] Testes do `useImageIntake.tsx`
+- [ ] Ícones novos em `ui/icons.tsx`
+- [ ] Button, IconButton, TextField, Select, Choice, Segmented, Tabs e Tooltip com todos os estados
+- [ ] Densidade do desktop
 
-**Aceite**: `src/app/` acima de 60% de linhas no resumo de cobertura do CI.
+**Aceite**: prévias do DS 2.0 reproduzidas; foco visível em tudo; 44px no celular.
 
-#### Fase 28 — Ferramentas do preview e medição no aparelho (achados 3 e 4) — opcional
+#### R3 — Canvas
 
-> Opcional desde que o desktop passou a ser o uso principal: fazer só se houver lentidão perceptível no celular.
+Desenho do canvas lendo os tokens novos. Não muda comportamento.
 
-- Só no canal `preview` (`isPreview`), um item de menu **"Ferramentas"**:
-  - **Carregar projeto grande**: cria um projeto local com o fixture de desempenho (500 marcações, 1.500 anotações, 500 referências) e imagens geradas na hora (retângulos coloridos, sem arquivos no repositório);
-  - **Medidor**: sobreposição com quadros por segundo do canvas e contagem de renderizações por componente do editor nos últimos 2 s.
-- Nada disso entra no build principal (removido em tempo de build via `isPreview`).
-- Roteiro de medição no README: com o projeto grande, fazer pan, zoom, arrastar e redimensionar uma marcação, e anotar quadros por segundo e contagens.
+- [ ] `readCanvasTokens` com `cv-*`, `color-card`, opacidades e `--font-sans`
+- [ ] Renderers sem constantes fixas
+- [ ] Halo nas linhas
+- [ ] Etiqueta do nome da marcação selecionada
 
-- [ ] "Ferramentas" só no preview: projeto grande e medidor + teste garantindo que o build principal não os contém
-- [ ] Roteiro de medição no README + resultados do aparelho registrados no PR
-- [ ] (Opcional) Projeto `webkit` (celular emulado) no Playwright do CI, com `continue-on-error`
+**Aceite**: testes de canvas atualizados; orçamentos de desempenho estáveis.
 
-**Aceite**: o menu não existe no build principal; no celular, o projeto grande carrega pelo preview e os números ficam registrados no PR.
+#### R4 — Estrutura do editor (desktop)
 
-> **Dependências**: 26 e 27 são independentes e podem rodar em paralelo. 28 depois da 26 (para medir já com a correção).
+Barra principal, faixas, janelas de ferramenta, breadcrumbs e barra de status. Muda comportamento.
 
-## Próximo: redesign da interface
+- [ ] Barra principal
+- [ ] Faixas laterais e inferior
+- [ ] Contêiner de janelas com redimensionar e recolher (B1, B2)
+- [ ] Breadcrumbs (B11)
+- [ ] Barra de status (B8, B13)
+- [ ] Atalhos (B12): Ctrl+Shift+número como atalho oficial das janelas, Alt+número como extra, e Ctrl (não Cmd) no macOS
+- [ ] Minimapa (P3)
+- [ ] Campo de zoom (P4)
 
-Depois da Fase 26, a interface será redesenhada com o Claude Design (desktop primeiro, utilizável no celular). As fases de implementação serão definidas a partir do resultado do design.
+**Aceite**: abrir, fechar, redimensionar e persistir cada janela; nenhuma função atual sumiu.
 
-O design está pronto: o documento de passagem [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) traz a correspondência de componentes, o comparativo de tokens, as mudanças de comportamento separadas das visuais, as decisões pendentes e a ordem sugerida (fases R1 a R10).
+#### R5 — Detalhes
+
+Painel de detalhes (inspetor) redesenhado. Muda comportamento (B14, B15, P5, P6).
+
+- [ ] Identidade e PropertyGrid
+- [ ] LayerGroup recolhível (B15)
+- [ ] KeyValueGrid, com reordenar pares por arrasto (P6)
+- [ ] Campos tipados e DataGrid, com reordenar linhas por arrasto (P6)
+- [ ] ReferenceField e seletor de referência (B14), com filtro por etiqueta (P5)
+- [ ] Pendências com links para o campo
+
+**Aceite**: edição, validação e desfazer iguais aos atuais.
+
+#### R6 — Árvore e Camadas
+
+Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3).
+
+- [ ] Janela Árvore
+- [ ] Camadas como janela, com paleta em popover e modo "sem anotação" (B3)
+
+**Aceite**: todas as ações do `LayersDialog` disponíveis.
+
+#### R7 — Janela inferior
+
+Lista, Incompletas e Diagnóstico na janela inferior. Muda comportamento (B4, B5, P7).
+
+- [ ] Lista em tabela (P7)
+- [ ] Incompletas (B5)
+- [ ] Diagnóstico (B4)
+
+**Aceite**: filtros atuais preservados.
+
+#### R8 — Celular
+
+Layout do celular com Painéis, telas cheias e gaveta de três alturas. Muda comportamento (B6, B7).
+
+- [ ] Barra de cima
+- [ ] Barra de baixo com Painéis
+- [ ] Menu Painéis
+- [ ] Telas cheias com faixa de abas
+- [ ] Gaveta com três alturas (B6, B7)
+
+**Aceite**: toda função do desktop alcançável em 380px; gestos de toque mantidos.
+
+#### R9 — Diálogos e tela inicial
+
+Diálogos novos, tela inicial e faixas. Muda comportamento (B9, B10, B16, P8, P10).
+
+- [ ] Dialog novo
+- [ ] Especializações
+- [ ] Ajuda, com a seção Atalhos (P10)
+- [ ] Configurações
+- [ ] Exportar (B16)
+- [ ] Tela inicial (B10)
+- [ ] Faixa de preview dispensável na sessão, com o selo PREVIEW permanente (B9, P8)
+
+**Aceite**: roteiro 13.9 completo nos dois layouts e temas.
+
+#### R10 — Propostas adiadas
+
+Propostas adiadas, a decidir. Muda comportamento.
+
+- [ ] P1 — paleta de comandos
+- [ ] P2 — busca global
+
+**Aceite**: uma proposta por PR. (P9 e P11 estão fora do escopo por enquanto.)
+
+> **Ordem e paralelismo**: R1; depois R2 e R3 em paralelo; depois R4; depois R5, R6, R7 e R9 em paralelo (a R9 só depende da R2 e pode começar antes); depois R8; R10 quando decidido.
