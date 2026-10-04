@@ -35,6 +35,8 @@ describe('dicionários', () => {
       'zoom.value',
       'status.empty',
       'status.schema',
+      'pwa.previewBadge',
+      'shortcuts.group.view',
       'marking.rectSummary',
       'details.summary',
       'details.summarySeparator',

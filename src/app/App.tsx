@@ -1,6 +1,4 @@
-import { t } from '../i18n';
 import { PreviewBanner } from '../ui/PreviewBanner';
-import { SettingsBar } from '../ui/SettingsBar';
 import { UpdateBanner } from '../ui/UpdateBanner';
 import { openProject } from './controller';
 import { Editor } from './Editor';
@@ -21,10 +19,6 @@ export function App() {
     <div class="app">
       <PreviewBanner />
       <UpdateBanner />
-      <header class="topbar">
-        <h1>{t('app.title')}</h1>
-        <SettingsBar />
-      </header>
       <Home />
     </div>
   );

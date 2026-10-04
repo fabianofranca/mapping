@@ -6,8 +6,9 @@ import { DiagnosticsDialog } from '../ui/DiagnosticsDialog';
 import { useEditor, type EditorContextValue } from '../ui/EditorContext';
 import { markingLabel } from '../ui/labels';
 import { LayersDialog } from '../ui/LayersDialog';
+import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
 import { SettingsBar } from '../ui/SettingsBar';
-import { SpecHelpDialog } from '../ui/SpecHelpDialog';
+import { SettingsDialog } from '../ui/SettingsDialog';
 import { SpecsDialog } from '../ui/SpecsDialog';
 import { closeProject } from './controller';
 import { ExportDialog } from './ExportDialog';
@@ -149,12 +150,13 @@ function renderDialog(
       return <SpecsDialog project={project} readOnly={readOnly} onClose={close} />;
     case 'settings':
       return (
-        <CloseOnlyDialog title={t('settings.title')} onClose={close}>
-          <SettingsBar />
-        </CloseOnlyDialog>
+        <SettingsDialog
+          onClose={close}
+          onShowShortcuts={() => dialogs.show({ kind: 'help', section: HELP_SHORTCUTS })}
+        />
       );
     case 'help':
-      return <SpecHelpDialog onClose={close} />;
+      return <HelpDialog onClose={close} section={dialog.section} />;
     case 'diagnostics':
       return <DiagnosticsDialog onClose={close} />;
     case 'layers':

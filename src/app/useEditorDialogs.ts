@@ -7,7 +7,8 @@ import { useEditor } from '../ui/EditorContext';
 export type EditorDialog =
   | { readonly kind: 'addMenu' }
   | { readonly kind: 'menu' }
-  | { readonly kind: 'help' }
+  /** `section`: id da seção em que a Ajuda abre (ex.: os atalhos, pelas Configurações). */
+  | { readonly kind: 'help'; readonly section?: string }
   | { readonly kind: 'diagnostics' }
   | { readonly kind: 'specs' }
   | { readonly kind: 'settings' }

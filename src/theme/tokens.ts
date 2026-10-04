@@ -189,6 +189,10 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-dialog': '480px',
   'size-dialog-md': '560px',
   'size-dialog-lg': '820px',
+  'size-dialog-lg-height': '640px',
+  'size-help-nav': '200px',
+  'size-home-side': '240px',
+  'size-home-main': '960px',
   /** Seletor de referência (popup no topo, B14). */
   'size-picker': '600px',
   'size-sheet-peek': '64px',

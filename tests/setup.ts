@@ -10,5 +10,9 @@ if (typeof document !== 'undefined') {
 
 // jsdom não implementa a rolagem: os painéis chamam `scrollIntoView` ao focar um item.
 if (typeof Element !== 'undefined' && !('scrollIntoView' in Element.prototype)) {
-  Object.defineProperty(Element.prototype, 'scrollIntoView', { value() {} });
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    value() {},
+    writable: true,
+    configurable: true,
+  });
 }

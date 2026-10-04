@@ -9,6 +9,7 @@ import {
   exportMapping,
   isMobile,
   openDetails,
+  openExport,
 } from './helpers';
 
 const SDUI = join(process.cwd(), 'examples', 'specs', 'sdui.json');
@@ -117,6 +118,8 @@ test('caixa de seleção e texto de "Texto no canvas" ficam na mesma linha', asy
   page,
 }) => {
   await page.goto('/');
+  // Configurações é um diálogo: botão da coluna lateral (desktop) ou da barra (celular).
+  await page.getByRole('button', { name: 'Configurações', exact: true }).click();
   const check = page.getByLabel('Texto no canvas');
   const text = page.locator('label.choice .choice-label').first();
   await expect(check).toBeVisible();
@@ -350,4 +353,76 @@ test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', 
 
   const { mapping } = await exportMapping(page);
   expect(mapping.annotations[0]?.entries.map((e) => e.key)).toEqual(['b', 'a']);
+});
+
+// R9: diálogos e tela inicial (B9, B10, B16, P8, P10).
+test('tela inicial: ações, busca e tabela de recentes (desktop) ou cartões (celular)', async ({
+  page,
+}, info) => {
+  await createProject(page, 'Carro');
+  await page
+    .getByRole('button', { name: 'Ações do projeto' })
+    .or(page.getByRole('button', { name: 'Menu', exact: true }))
+    .click();
+  await page.getByRole('button', { name: 'Fechar projeto', exact: true }).click();
+
+  await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Abrir zip/ })).toBeVisible();
+  if (isMobile(info)) {
+    await expect(page.locator('.action-card')).toHaveCount(3);
+    await expect(page.getByRole('table')).toHaveCount(0);
+  } else {
+    await expect(page.getByRole('table')).toContainText('Neste dispositivo');
+    await expect(page.getByRole('complementary', { name: 'Tela inicial' })).toBeVisible();
+  }
+
+  // A busca ignora acentos e maiúsculas.
+  await page.getByRole('searchbox', { name: 'Buscar projetos' }).fill('CARRO');
+  await expect(page.getByText('Carro', { exact: true })).toBeVisible();
+  await page.getByRole('searchbox', { name: 'Buscar projetos' }).fill('zzz');
+  await expect(page.getByText('Nenhum projeto encontrado para "zzz".')).toBeVisible();
+});
+
+test('Ajuda: busca e seção Atalhos; Configurações leva até ela', async ({
+  page,
+}, info) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Configurações', exact: true }).click();
+  const settings = page.getByRole('dialog');
+
+  // Tema em segmentado.
+  const theme = settings.getByRole('group', { name: 'Tema' });
+  await theme.getByRole('button', { name: 'Escuro' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await theme.getByRole('button', { name: 'Claro' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+  // No celular o diálogo ocupa a tela toda.
+  if (isMobile(info)) {
+    const box = await settings.boundingBox();
+    expect(box?.width).toBe(380);
+  }
+
+  await settings.getByRole('button', { name: 'Ver os atalhos de teclado' }).click();
+  const help = page.getByRole('dialog');
+  await expect(
+    help.getByRole('heading', { name: 'Atalhos de teclado' }),
+  ).toBeInViewport();
+  await expect(help.getByText('Ctrl', { exact: true }).first()).toBeVisible();
+
+  await help.getByRole('searchbox', { name: 'Buscar na ajuda' }).fill('referencia');
+  await expect(help.getByRole('link', { name: 'Atalhos de teclado' })).toHaveCount(0);
+  await help.getByRole('button', { name: 'Fechar diálogo' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('Exportar: o diálogo mostra o arquivo e fecha pelo cabeçalho', async ({ page }) => {
+  await createProject(page, 'Exporta');
+  await addImage(page);
+  await openExport(page);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.locator('.file-card')).toContainText('.zip');
+  await expect(dialog.locator('.file-card')).toContainText('Arquivo zip');
+  await dialog.getByRole('button', { name: 'Fechar diálogo' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });

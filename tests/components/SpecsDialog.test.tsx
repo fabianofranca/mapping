@@ -88,6 +88,14 @@ describe('SpecsDialog', () => {
     expect(screen.getByText('v1 · 2 camada(s)')).toBeTruthy();
   });
 
+  it('o resultado de uma operação bem-sucedida usa o aviso de sucesso', async () => {
+    const { choose } = setup();
+    choose(exampleText('sdui'));
+    const notice = await screen.findByRole('status');
+    expect(notice.classList.contains('notice-success')).toBe(true);
+    expect(notice.closest('dialog')?.classList.contains('dialog-md')).toBe(true);
+  });
+
   it('arquivo inválido mostra os problemas e não altera o projeto', async () => {
     const { harness, choose } = setup();
     choose('{ "isto não é uma especialização": true }');

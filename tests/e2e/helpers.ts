@@ -191,11 +191,17 @@ async function projectAction(page: Page, name: string): Promise<void> {
   await page.getByRole('dialog').getByRole('button', { name, exact: true }).click();
 }
 
+/** Abre o diálogo Exportar (o zip já está pronto nele). */
+export async function openExport(page: Page): Promise<void> {
+  await projectAction(page, 'Exportar');
+  await expect(page.getByRole('button', { name: 'Baixar' })).toBeVisible();
+}
+
 /** Exportar → Baixar: devolve o conteúdo do `mapping.json` do zip e os arquivos dele. */
 export async function exportMapping(
   page: Page,
 ): Promise<{ readonly mapping: MappingJson; readonly files: readonly string[] }> {
-  await projectAction(page, 'Exportar');
+  await openExport(page);
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Baixar' }).click();
   const path = await (await download).path();

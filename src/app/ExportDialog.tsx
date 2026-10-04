@@ -2,6 +2,8 @@ import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { canShareFile, downloadFile, shareFile } from '../storage/share';
 import { Dialog } from '../ui/Dialog';
+import { formatBytes } from '../ui/formatBytes';
+import { Icon } from '../ui/icons';
 import { markExported } from './controller';
 import { Button } from '../ui/controls';
 
@@ -57,6 +59,17 @@ export function ExportDialog({
       }
     >
       <p>{t('export.ready', { file: file.name })}</p>
+      <div class="file-card">
+        <span class="file-card-icon" aria-hidden="true">
+          <Icon name="file" />
+        </span>
+        <span class="file-card-info">
+          <strong class="file-card-name">{file.name}</strong>
+          <span class="muted">
+            {t('export.fileMeta', { size: formatBytes(file.size) })}
+          </span>
+        </span>
+      </div>
       {error && (
         <p class="notice notice-error" role="alert">
           {error}
