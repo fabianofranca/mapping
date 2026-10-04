@@ -115,15 +115,25 @@ const TEXT_STYLES: readonly TextStyle[] = [
 ];
 
 /**
- * Papéis de texto da interface: o desktop usa a escala `t-*` e o celular a `t-m-*`
- * (o bloco `@media` abaixo troca os alias). O CSS dos componentes usa só estes.
+ * Papéis da interface que dependem da densidade: o desktop usa a escala `t-*` e controles
+ * de 28px; o celular usa a `t-m-*` e alvos de 44px (o bloco `@media` abaixo troca os alias).
+ * O CSS dos componentes usa só os papéis, nunca a escala direta.
  */
-const TEXT_ROLES: Readonly<Record<string, { desktop: string; mobile: string }>> = {
+const ROLES: Readonly<Record<string, { desktop: string; mobile: string }>> = {
   't-text': { desktop: 't-body', mobile: 't-m-body' },
   't-text-small': { desktop: 't-small', mobile: 't-m-small' },
   't-text-heading': { desktop: 't-heading', mobile: 't-m-title' },
   't-text-title': { desktop: 't-title', mobile: 't-m-title' },
   't-text-input': { desktop: 't-body', mobile: 't-m-input' },
+  /** Altura de Button, TextField, Select, Segmented e IconButton. */
+  'control-height': { desktop: 'size-control-lg', mobile: 'size-touch' },
+  /** Altura dos controles compactos (`size="sm"`). */
+  'control-height-sm': { desktop: 'size-control', mobile: 'size-touch' },
+  'control-radius': { desktop: 'radius-sm', mobile: 'radius-lg' },
+  /** Lado do ícone. */
+  'control-icon': { desktop: 'size-icon', mobile: 'size-icon-touch' },
+  /** Lado da caixa de seleção e do rádio. */
+  'control-check': { desktop: 'size-icon', mobile: 'size-target-min' },
 };
 
 const SCALES: Readonly<Record<string, TokenValue>> = {
@@ -235,7 +245,7 @@ export const TOKENS: Readonly<Record<string, TokenValue>> = {
   ...FONTS,
   ...textTokens(),
   ...Object.fromEntries(
-    Object.entries(TEXT_ROLES).map(([role, { desktop }]) => [role, `var(--${desktop})`]),
+    Object.entries(ROLES).map(([role, { desktop }]) => [role, `var(--${desktop})`]),
   ),
   ...SCALES,
 };
@@ -256,7 +266,7 @@ export function renderTokensCss(): string {
   const all = Object.entries(TOKENS);
   const light = all.map(([name, v]) => [name, isThemed(v) ? v.light : v] as const);
   const dark = all.flatMap(([name, v]) => (isThemed(v) ? [[name, v.dark] as const] : []));
-  const roles = Object.entries(TEXT_ROLES).map(
+  const roles = Object.entries(ROLES).map(
     ([role, { mobile }]) => [role, `var(--${mobile})`] as const,
   );
   const indent = (block: string) => block.replaceAll(/^ {4}/gm, '  ');

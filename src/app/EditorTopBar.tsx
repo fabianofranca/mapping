@@ -1,9 +1,8 @@
 import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
-import { MenuIcon } from '../ui/icons';
 import { useEditor } from '../ui/EditorContext';
 import { SaveStatus } from '../ui/SaveStatus';
-import { ToolButton } from '../ui/ToolButton';
+import { Button, IconButton } from '../ui/controls';
 import {
   AddImagesButton,
   HistoryButtons,
@@ -40,15 +39,12 @@ export function EditorTopBar({
   return (
     <header class="topbar editor-bar">
       {desktop && (
-        <button type="button" class="button" onClick={() => void commands.closeProject()}>
-          {t('common.close')}
-        </button>
+        <Button onClick={() => void commands.closeProject()}>{t('common.close')}</Button>
       )}
       <h1 class="project-title">{projectName.value}</h1>
       {activeLayer && (
-        <button
-          type="button"
-          class="button layer-chip"
+        <Button
+          class="layer-chip"
           style={{ '--layer-color': activeLayer.color }}
           aria-label={t('layer.chipLabel', { name: activeLayer.name })}
           title={t('layer.chipLabel', { name: activeLayer.name })}
@@ -56,7 +52,7 @@ export function EditorTopBar({
         >
           <span class="layer-dot" aria-hidden="true" />
           <span class="layer-chip-name">{activeLayer.name}</span>
-        </button>
+        </Button>
       )}
       <SaveStatus />
       {desktop && (
@@ -66,18 +62,13 @@ export function EditorTopBar({
           <HistoryButtons />
           <SemanticTextButton />
           <ListToggleButton open={listOpen} onToggle={onToggleList} />
-          <button
-            type="button"
-            class="button"
-            disabled={busy}
-            onClick={() => void commands.exportProject()}
-          >
+          <Button disabled={busy} onClick={() => void commands.exportProject()}>
             {t('editor.export')}
-          </button>
+          </Button>
         </div>
       )}
-      <ToolButton
-        icon={<MenuIcon />}
+      <IconButton
+        icon="menu"
         label={t('editor.menu')}
         onClick={() => dialogs.show({ kind: 'menu' })}
       />

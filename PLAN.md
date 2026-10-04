@@ -60,9 +60,9 @@ Tokens de design a partir de uma fonte única. Não muda comportamento.
 
 Conjunto de ícones e controles novos, com todos os estados. Não muda comportamento.
 
-- [ ] Ícones novos em `ui/icons.tsx`
-- [ ] Button, IconButton, TextField, Select, Choice, Segmented, Tabs e Tooltip com todos os estados
-- [ ] Densidade do desktop
+- [x] Ícones novos em `ui/icons.tsx`
+- [x] Button, IconButton, TextField, Select, Choice, Segmented, Tabs e Tooltip com todos os estados
+- [x] Densidade do desktop
 
 **Aceite**: prévias do DS 2.0 reproduzidas; foco visível em tudo; 44px no celular.
 

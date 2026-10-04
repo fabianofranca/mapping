@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
+import { Button } from './controls';
 
 /** `id` do item (somente leitura) com botão de copiar, para citá-lo numa conversa com um agente. */
 export function IdField({ id }: { readonly id: string }) {
@@ -20,9 +21,7 @@ export function IdField({ id }: { readonly id: string }) {
     <div class="id-field">
       <span class="muted id-label">{t('common.id')}</span>
       <code class="id-value">{id}</code>
-      <button type="button" class="button" onClick={() => void copy()}>
-        {t('common.copyId')}
-      </button>
+      <Button onClick={() => void copy()}>{t('common.copyId')}</Button>
       <span class="muted" role="status">
         {copied === 'ok'
           ? t('common.copied')

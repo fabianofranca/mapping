@@ -6,53 +6,6 @@
   color: var(--color-text-muted);
 }
 
-.field-check {
-  flex-direction: row;
-  align-items: flex-start;
-  gap: var(--space-2);
-  min-height: var(--size-touch);
-}
-
-.field-check input {
-  flex: none;
-  width: var(--size-target-min);
-  height: var(--size-target-min);
-  margin: calc((var(--size-touch) - var(--size-target-min)) / 2) 0;
-}
-
-.field-check span {
-  padding-top: var(--space-2);
-}
-
-.field select {
-  min-height: var(--size-touch);
-  padding: 0 var(--space-2);
-  font: var(--t-text-input);
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-control);
-  border-radius: var(--radius-lg);
-}
-
-.input {
-  min-height: var(--size-touch);
-  padding: 0 var(--space-2);
-  font: var(--t-text-input);
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-control);
-  border-radius: var(--radius-lg);
-}
-
-.input::placeholder {
-  color: var(--color-text-muted);
-}
-
-.segmented {
-  display: flex;
-  gap: var(--space-0-5);
-}
-
 .rect-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -77,10 +30,6 @@
 .field-error {
   margin: 0;
   color: var(--color-danger);
-}
-
-.input-invalid {
-  border-color: var(--color-danger);
 }
 
 /* Desktop: chave e valor lado a lado. */
@@ -130,16 +79,6 @@
 
 .required {
   color: var(--color-danger);
-}
-
-.typed-options .button[aria-pressed='true'] {
-  color: var(--color-accent-text);
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.typed-options {
-  flex-wrap: wrap;
 }
 
 /* Tabela: cartões empilhados no celular. */

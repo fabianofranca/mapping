@@ -114,7 +114,7 @@ test('caixa de seleção e texto de "Texto no canvas" ficam na mesma linha', asy
 }) => {
   await page.goto('/');
   const check = page.getByLabel('Texto no canvas');
-  const text = page.locator('label.field-check span').first();
+  const text = page.locator('label.choice .choice-label').first();
   await expect(check).toBeVisible();
   const [c, s] = await Promise.all([check.boundingBox(), text.boundingBox()]);
   if (!c || !s) throw new Error('sem bounding box');

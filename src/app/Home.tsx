@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import type { LocalProjectMeta } from '../storage/local';
 import { locale } from '../store/settings';
+import { Button, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
 import { InstallHint } from '../ui/InstallHint';
 import { SpecHelpDialog } from '../ui/SpecHelpDialog';
@@ -101,9 +102,7 @@ export function Home() {
         </p>
       )}
       <InstallHint />
-      <button type="button" class="button" onClick={() => setDialog({ kind: 'help' })}>
-        {t('help.open')}
-      </button>
+      <Button onClick={() => setDialog({ kind: 'help' })}>{t('help.open')}</Button>
 
       <div class="home-actions">
         {available.local && (
@@ -170,22 +169,19 @@ export function Home() {
                     )}
                   </div>
                   <div class="row">
-                    <button
-                      type="button"
-                      class="button"
+                    <Button
                       disabled={busy}
                       onClick={() => void run(() => openLocalProject(project.id))}
                     >
                       {t('common.open')}
-                    </button>
-                    <button
-                      type="button"
-                      class="button button-danger"
+                    </Button>
+                    <Button
+                      variant="danger"
                       disabled={busy}
                       onClick={() => setDialog({ kind: 'delete', project })}
                     >
                       {t('common.delete')}
-                    </button>
+                    </Button>
                   </div>
                 </li>
               ))}
@@ -202,17 +198,15 @@ export function Home() {
           onCancel={closeDialog}
           actions={
             <>
-              <button type="button" class="button" onClick={closeDialog}>
-                {t('common.cancel')}
-              </button>
-              <button
+              <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+              <Button
                 type="submit"
                 form="new-project-form"
-                class="button button-primary"
+                variant="primary"
                 disabled={busy}
               >
                 {t('common.create')}
-              </button>
+              </Button>
             </>
           }
         >
@@ -239,17 +233,15 @@ export function Home() {
           onCancel={closeDialog}
           actions={
             <>
-              <button type="button" class="button" onClick={closeDialog}>
-                {t('common.cancel')}
-              </button>
-              <button
+              <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+              <Button
                 type="submit"
                 form="folder-setup-form"
-                class="button button-primary"
+                variant="primary"
                 disabled={busy}
               >
                 {t('common.create')}
-              </button>
+              </Button>
             </>
           }
         >
@@ -285,12 +277,9 @@ export function Home() {
           onCancel={closeDialog}
           actions={
             <>
-              <button type="button" class="button" onClick={closeDialog}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                class="button button-danger"
+              <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+              <Button
+                variant="danger"
                 disabled={busy}
                 onClick={() => {
                   const { id } = dialog.project;
@@ -299,7 +288,7 @@ export function Home() {
                 }}
               >
                 {t('common.delete')}
-              </button>
+              </Button>
             </>
           }
         >
@@ -324,16 +313,13 @@ function NameField({
   // `autoFocus` nem sempre vale dentro de um <dialog> reaberto; foca na montagem.
   useEffect(() => input.current?.focus(), []);
   return (
-    <label class="field">
-      {t('project.name')}
-      <input
-        ref={input}
-        type="text"
-        class="input"
-        value={value}
-        placeholder={placeholder}
-        onInput={(e) => onInput(e.currentTarget.value)}
-      />
-    </label>
+    <TextField
+      label={t('project.name')}
+      inputRef={input}
+      type="text"
+      value={value}
+      placeholder={placeholder}
+      onInput={(e) => onInput(e.currentTarget.value)}
+    />
   );
 }

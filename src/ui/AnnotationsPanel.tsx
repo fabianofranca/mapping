@@ -19,6 +19,7 @@ import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { markingPath } from './labels';
 import { annotationDisplayName, ownerTypeNames } from './typedText';
+import { Button } from './controls';
 
 interface AnnotationsPanelProps {
   readonly project: Project;
@@ -132,16 +133,15 @@ export function AnnotationsPanel({
       <div class="annotations-heading">
         <h3>{t('annotation.heading')}</h3>
         {activeLayer && (
-          <button
-            type="button"
-            class="button button-primary"
+          <Button
+            variant="primary"
             aria-label={t('annotation.addIn', { layer: activeLayer.name })}
             title={t('annotation.addIn', { layer: activeLayer.name })}
             disabled={readOnly}
             onClick={() => add(activeLayer)}
           >
             {t('annotation.add')}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -156,16 +156,14 @@ export function AnnotationsPanel({
             <div class="layer-section-header">
               <span class="layer-dot" aria-hidden="true" />
               <strong class="layer-section-name">{layer.name}</strong>
-              <button
-                type="button"
-                class="button"
+              <Button
                 aria-label={t('annotation.addIn', { layer: layer.name })}
                 title={t('annotation.addIn', { layer: layer.name })}
                 disabled={readOnly}
                 onClick={() => add(layer)}
               >
                 {t('annotation.add')}
-              </button>
+              </Button>
             </div>
             {annotations.length === 0 ? (
               <p class="muted">{t('annotation.emptySection')}</p>
@@ -196,11 +194,7 @@ export function AnnotationsPanel({
         <Dialog
           title={t('typed.chooseTypeTitle', { layer: step.layer.name })}
           onCancel={() => setStep(null)}
-          actions={
-            <button type="button" class="button" onClick={() => setStep(null)}>
-              {t('common.cancel')}
-            </button>
-          }
+          actions={<Button onClick={() => setStep(null)}>{t('common.cancel')}</Button>}
         >
           <TypeList
             types={layerAnnotationTypes(project, step.layer.id)}
@@ -213,25 +207,20 @@ export function AnnotationsPanel({
         <Dialog
           title={t('typed.chooseOwnerTitle', { type: step.definition.name })}
           onCancel={() => setStep(null)}
-          actions={
-            <button type="button" class="button" onClick={() => setStep(null)}>
-              {t('common.cancel')}
-            </button>
-          }
+          actions={<Button onClick={() => setStep(null)}>{t('common.cancel')}</Button>}
         >
           <p class="muted">
             {t('typed.chooseOwnerHint', { type: step.definition.name })}
           </p>
           <div class="dialog-stack">
             {step.owners.map((owner) => (
-              <button
+              <Button
                 key={owner.id}
-                type="button"
-                class="button"
+
                 onClick={() => createTyped(step.layer, step.type, owner.id)}
               >
                 {annotationDisplayName(project, owner)}
-              </button>
+              </Button>
             ))}
           </div>
         </Dialog>
@@ -241,11 +230,7 @@ export function AnnotationsPanel({
         <Dialog
           title={t('typed.chooseOwnerTitle', { type: step.definition.name })}
           onCancel={() => setStep(null)}
-          actions={
-            <button type="button" class="button" onClick={() => setStep(null)}>
-              {t('common.close')}
-            </button>
-          }
+          actions={<Button onClick={() => setStep(null)}>{t('common.close')}</Button>}
         >
           <p role="alert">
             {t('typed.noOwner', { type: step.definition.name, owners: step.owners })}
@@ -270,15 +255,10 @@ function TypeList({
       <p class="muted">{t('typed.chooseTypeHint')}</p>
       <div class="dialog-stack">
         {types.map((type) => (
-          <button
-            key={type.id}
-            type="button"
-            class="button type-option"
-            onClick={() => onChoose(type)}
-          >
+          <Button key={type.id} class="type-option" onClick={() => onChoose(type)}>
             <strong>{type.name}</strong>
             {type.description && <small class="muted">{type.description}</small>}
-          </button>
+          </Button>
         ))}
       </div>
     </>

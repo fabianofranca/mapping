@@ -2,6 +2,9 @@
 
 export type Shortcut = 'undo' | 'redo' | 'delete' | 'escape';
 
+/** Texto dos atalhos nas dicas dos botões (o Cmd do Mac também funciona, mas a dica diz Ctrl). */
+export const SHORTCUT_LABELS = { undo: 'Ctrl+Z', redo: 'Ctrl+Shift+Z' } as const;
+
 type KeyInfo = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'>;
 
 /**

@@ -21,6 +21,7 @@ import { useEditorNotices } from './useEditorNotices';
 import { useEditorShortcuts } from './useEditorShortcuts';
 import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
+import { Button } from '../ui/controls';
 
 export function Editor({ open }: { readonly open: OpenProject }) {
   // Um contexto (e um estado de UI) novo por projeto aberto: o Editor não é remontado ao trocar.
@@ -133,14 +134,13 @@ export function EditorScreen() {
           {noImages.value && (
             <div class="canvas-empty">
               <p class="muted">{t('editor.emptyCanvas')}</p>
-              <button
-                type="button"
-                class="button button-primary"
+              <Button
+                variant="primary"
                 disabled={store.readOnly.value || busy}
                 onClick={intake.onAddClick}
               >
                 {t('editor.addImages')}
-              </button>
+              </Button>
             </div>
           )}
         </main>

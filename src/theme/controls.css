@@ -1,0 +1,401 @@
+/*
+ * Controles base (fase R2): Button, IconButton, TextField, Select, Choice, Segmented, Tabs
+ * e Tooltip. Altura, raio e ícone seguem a densidade (`--control-*`): 28px e 16px no desktop,
+ * 44px e 20px no celular (tokens.ts, papéis). Todo estado usa tokens:
+ * hover, pressionado, foco, desabilitado, alternância ligada, inválido e somente leitura.
+ */
+
+/* Botões, botões de ícone e itens do segmentado: base comum */
+.button,
+.icon-button,
+.segmented-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1-5);
+  min-height: var(--control-height);
+  min-width: var(--control-height);
+  font: var(--t-text);
+  color: var(--color-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.button {
+  padding: 0 var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--control-radius);
+}
+
+.button-sm {
+  min-height: var(--control-height-sm);
+  min-width: var(--control-height-sm);
+  padding: 0 var(--space-2);
+}
+
+.icon-button,
+.segmented-item {
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+}
+
+.icon-button:has(.icon-button-text) {
+  padding: 0 var(--space-2);
+}
+
+.segmented-item {
+  border-radius: 0;
+}
+
+.segmented-item:not(.segmented-item-icon) {
+  padding: 0 var(--space-3);
+}
+
+/* Hover e pressionado */
+.button:hover:not(:disabled),
+.icon-button:hover:not(:disabled),
+.segmented-item:hover:not(:disabled) {
+  background: var(--color-hover);
+}
+
+.button:active:not(:disabled),
+.icon-button:active:not(:disabled),
+.segmented-item:active:not(:disabled) {
+  background: var(--color-pressed);
+}
+
+/* Alternância ligada (modo, "Texto no canvas", opção do segmentado) */
+.icon-button[aria-pressed='true'],
+.segmented-item[aria-pressed='true'] {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+}
+
+.icon-button[aria-pressed='true']:hover:not(:disabled),
+.segmented-item[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.icon-button[aria-pressed='true']:active:not(:disabled),
+.segmented-item[aria-pressed='true']:active:not(:disabled) {
+  background: var(--color-accent-pressed);
+}
+
+/* Variantes do botão */
+.button-primary {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.button-primary:active:not(:disabled) {
+  background: var(--color-accent-pressed);
+  border-color: var(--color-accent-pressed);
+}
+
+.button-danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.button-danger:hover:not(:disabled),
+.button-danger:active:not(:disabled) {
+  background: var(--color-danger-bg);
+}
+
+.icon-button-danger {
+  color: var(--color-danger);
+}
+
+.icon-button-danger:hover:not(:disabled),
+.icon-button-danger:active:not(:disabled) {
+  background: var(--color-danger-bg);
+}
+
+/* Desabilitado */
+.button:disabled,
+.icon-button:disabled,
+.segmented-item:disabled,
+.action-card:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}
+
+/* Foco: anel por dentro nos controles unidos ou que ficam rente a outro elemento. */
+.segmented-item:focus-visible,
+.tab:focus-visible {
+  outline-offset: calc(-1 * var(--space-0-5));
+}
+
+/* Ícones dos botões acompanham a densidade. */
+.icon {
+  flex: none;
+  width: var(--control-icon);
+  height: var(--control-icon);
+}
+
+/* Segmentado: botões unidos numa borda só (o `overflow: clip` arredonda os cantos dos itens) */
+.segmented {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--control-radius);
+  overflow: clip;
+}
+
+.segmented > * + * .segmented-item {
+  border-left: 1px solid var(--color-border-control);
+}
+
+.segmented-cell,
+.segmented .tooltip-anchor {
+  display: flex;
+}
+
+/* Campos de texto, número e data */
+.input {
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  font: var(--t-text-input);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--control-radius);
+}
+
+.input-sm {
+  min-height: var(--control-height-sm);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:hover:not(:disabled, :read-only) {
+  border-color: var(--color-text-muted);
+}
+
+.input:focus-visible {
+  border-color: var(--color-focus);
+  outline-offset: -1px;
+}
+
+.input:read-only:not(select) {
+  background: var(--color-selection-muted);
+  border-color: var(--color-border);
+}
+
+.input:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+.input-invalid {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+}
+
+.input-invalid:hover:not(:disabled, :read-only) {
+  border-color: var(--color-danger);
+}
+
+/* Select: a seta do desenho novo no lugar da nativa */
+.select {
+  position: relative;
+  display: flex;
+}
+
+.select-control {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  padding-right: calc(var(--control-icon) + var(--space-3));
+  cursor: pointer;
+}
+
+.select-control:disabled {
+  cursor: default;
+}
+
+.select-chevron {
+  position: absolute;
+  top: 0;
+  right: var(--space-2);
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.select-control:disabled + .select-chevron {
+  opacity: var(--opacity-disabled);
+}
+
+/* Caixa de seleção e rádio: rótulo na mesma linha */
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+  font: var(--t-text);
+  color: var(--color-text);
+  border-radius: var(--control-radius);
+  cursor: pointer;
+}
+
+.choice:hover:not(:has(:disabled)) {
+  background: var(--color-hover);
+}
+
+.choice:has(:disabled) {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}
+
+.choice-input {
+  flex: none;
+  width: var(--control-check);
+  height: var(--control-check);
+  margin: calc((var(--control-height) - var(--control-check)) / 2) 0;
+  accent-color: var(--color-accent);
+  cursor: inherit;
+}
+
+.choice-hint {
+  display: block;
+}
+
+.choice-label {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Abas */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+  flex: 1;
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  font: var(--t-text);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--control-radius) var(--control-radius) 0 0;
+  cursor: pointer;
+}
+
+.tab:hover:not(:disabled, [aria-selected='true']) {
+  color: var(--color-text);
+  background: var(--color-hover);
+}
+
+.tab:active:not(:disabled) {
+  background: var(--color-pressed);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--color-text);
+  font-weight: 600;
+  border-bottom-color: var(--color-accent);
+}
+
+.tab:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}
+
+@media (max-width: 899px) {
+  .tab {
+    border-bottom-width: 3px;
+  }
+}
+
+/* Dica */
+.tooltip-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip {
+  position: absolute;
+  left: 50%;
+  z-index: var(--z-tooltip);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  font: var(--t-small);
+  white-space: nowrap;
+  color: var(--color-tooltip-text);
+  background: var(--color-tooltip);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-popup);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition:
+    opacity var(--duration-fast) var(--easing-standard),
+    visibility var(--duration-instant) linear var(--duration-fast);
+}
+
+.tooltip-bottom .tooltip {
+  top: calc(100% + var(--space-1));
+}
+
+.tooltip-top .tooltip {
+  bottom: calc(100% + var(--space-1));
+}
+
+.tooltip .kbd {
+  padding: 0 var(--space-1);
+  font: var(--t-kbd);
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-xs);
+  opacity: var(--opacity-ancestor);
+}
+
+/* Aparece depois de uma pausa; o foco só mostra a dica no teclado. */
+.tooltip-anchor:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: var(--duration-slow), var(--duration-slow);
+}
+
+.tooltip-anchor:has(:focus-visible) .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: var(--duration-instant), var(--duration-instant);
+}
+
+.tooltip-dismissed .tooltip,
+.tooltip-dismissed:hover .tooltip {
+  opacity: 0;
+  visibility: hidden;
+  transition-delay: var(--duration-instant), var(--duration-instant);
+}
+
+/* Sem mouse não há hover: a dica não aparece. */
+@media (hover: none) {
+  .tooltip {
+    display: none;
+  }
+}

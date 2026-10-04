@@ -21,7 +21,7 @@ import { IssueBadge, IssueList } from './AnnotationSummary';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
-import { ArrowDownIcon, ArrowUpIcon, CloseIcon, TrashIcon } from './icons';
+import { Button, Choice, IconButton, Select, TextField } from './controls';
 import { annotationErrorMessage, annotationLabel } from './labels';
 import { BacklinkList, TypedField } from './TypedFields';
 import { annotationDisplayName, labelTexts } from './typedText';
@@ -108,19 +108,17 @@ function EntryRow({
   return (
     <>
       <div class="entry-fields">
-        <input
-          class={error ? 'input input-invalid' : 'input'}
+        <TextField
+          invalid={error !== null}
           aria-label={t('annotation.key')}
           placeholder={t('annotation.key')}
-          aria-invalid={error !== null}
           disabled={readOnly}
           value={current.key}
           onInput={(e) => edit({ key: e.currentTarget.value })}
           onChange={commit}
           onKeyDown={onKeyDown}
         />
-        <input
-          class="input"
+        <TextField
           aria-label={t('annotation.value')}
           placeholder={t('annotation.value')}
           disabled={readOnly}
@@ -133,38 +131,26 @@ function EntryRow({
       <div class="entry-actions">
         {entry && (
           <>
-            <button
-              type="button"
-              class="button"
-              aria-label={t('annotation.moveEntryUp')}
-              title={t('annotation.moveEntryUp')}
+            <IconButton
+              icon="arrowUp"
+              label={t('annotation.moveEntryUp')}
               disabled={readOnly || index === 0}
               onClick={() => actions.moveEntry(annotationId, entry.id, index - 1)}
-            >
-              <ArrowUpIcon />
-            </button>
-            <button
-              type="button"
-              class="button"
-              aria-label={t('annotation.moveEntryDown')}
-              title={t('annotation.moveEntryDown')}
+            />
+            <IconButton
+              icon="arrowDown"
+              label={t('annotation.moveEntryDown')}
               disabled={readOnly || index === count - 1}
               onClick={() => actions.moveEntry(annotationId, entry.id, index + 1)}
-            >
-              <ArrowDownIcon />
-            </button>
+            />
           </>
         )}
-        <button
-          type="button"
-          class="button"
-          aria-label={t('annotation.removeEntry')}
-          title={t('annotation.removeEntry')}
+        <IconButton
+          icon="close"
+          label={t('annotation.removeEntry')}
           disabled={readOnly}
           onClick={() => (entry ? onRemove() : onDiscard())}
-        >
-          <CloseIcon />
-        </button>
+        />
       </div>
       {error && (
         <p class="field-error" role="alert">
@@ -246,14 +232,9 @@ function FreeEntries({
     <>
       <ul class="entries">{rows}</ul>
       <div class="row">
-        <button
-          type="button"
-          class="button"
-          disabled={readOnly || adding}
-          onClick={() => setAdding(true)}
-        >
+        <Button disabled={readOnly || adding} onClick={() => setAdding(true)}>
           {t('annotation.addEntry')}
-        </button>
+        </Button>
       </div>
     </>
   );
@@ -287,14 +268,12 @@ function TypedBody({
           ))}
         </ul>
         <div class="row">
-          <button
-            type="button"
-            class="button"
+          <Button
             disabled={readOnly}
             onClick={() => actions.convertAnnotationToFree(annotation.id, labelTexts())}
           >
             {t('typed.convertToFree')}
-          </button>
+          </Button>
         </div>
       </>
     );
@@ -432,16 +411,13 @@ export function AnnotationEditor({
             return actions.renameAnnotation(annotation.id, text).ok;
           }}
         />
-        <button
-          type="button"
-          class="button button-danger"
-          aria-label={t('annotation.delete')}
-          title={t('annotation.delete')}
+        <IconButton
+          icon="trash"
+          label={t('annotation.delete')}
+          variant="danger"
           disabled={readOnly}
           onClick={requestDelete}
-        >
-          <TrashIcon />
-        </button>
+        />
       </div>
 
       {owner && (
@@ -472,10 +448,9 @@ export function AnnotationEditor({
       {children.length > 0 && (
         <div class="row child-actions">
           {children.map((child) => (
-            <button
+            <Button
               key={child.type.typeId}
-              type="button"
-              class="button"
+
               title={t('typed.addChildIn', {
                 type: child.definition.name,
                 layer: child.layer?.name ?? '',
@@ -484,7 +459,7 @@ export function AnnotationEditor({
               onClick={() => addChild(child)}
             >
               {t('typed.addChild', { type: child.definition.name })}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -507,42 +482,36 @@ export function AnnotationEditor({
         </p>
       )}
 
-      <label class="field field-check">
-        <input
-          type="checkbox"
-          checked={annotation.inherit}
-          disabled={readOnly}
-          onChange={(e) =>
-            actions.setAnnotationInherit(annotation.id, e.currentTarget.checked)
-          }
-        />
-        <span>{t('annotation.inherit')}</span>
-      </label>
+      <Choice
+        label={t('annotation.inherit')}
+        checked={annotation.inherit}
+        disabled={readOnly}
+        onChange={(e) =>
+          actions.setAnnotationInherit(annotation.id, e.currentTarget.checked)
+        }
+      />
 
-      <label class="field">
-        {t('annotation.owner')}
-        <select
-          class="input"
-          value={annotation.parentAnnotationId ?? ''}
-          disabled={readOnly}
-          onChange={(e) => {
-            const value = e.currentTarget.value;
-            actions.setAnnotationParent(annotation.id, value === '' ? null : value);
-          }}
-        >
-          {(!ownerRequired || annotation.parentAnnotationId === null) && (
-            <option value="">{t('annotation.noOwner')}</option>
-          )}
-          {owners.map((a) => (
-            <option key={a.id} value={a.id}>
-              {t('annotation.ownerOption', {
-                layer: layerOf(a.layerId)?.name ?? '',
-                name: name(a),
-              })}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        label={t('annotation.owner')}
+        value={annotation.parentAnnotationId ?? ''}
+        disabled={readOnly}
+        onChange={(e) => {
+          const value = e.currentTarget.value;
+          actions.setAnnotationParent(annotation.id, value === '' ? null : value);
+        }}
+      >
+        {(!ownerRequired || annotation.parentAnnotationId === null) && (
+          <option value="">{t('annotation.noOwner')}</option>
+        )}
+        {owners.map((a) => (
+          <option key={a.id} value={a.id}>
+            {t('annotation.ownerOption', {
+              layer: layerOf(a.layerId)?.name ?? '',
+              name: name(a),
+            })}
+          </option>
+        ))}
+      </Select>
 
       {linkedGroups.length > 0 && (
         <div class="annotation-linked-summary">
@@ -594,12 +563,10 @@ export function AnnotationEditor({
           onCancel={() => setPending(null)}
           actions={
             <>
-              <button type="button" class="button" onClick={() => setPending(null)}>
-                {t('common.cancel')}
-              </button>
-              <button type="button" class="button button-danger" onClick={confirmDelete}>
+              <Button onClick={() => setPending(null)}>{t('common.cancel')}</Button>
+              <Button variant="danger" onClick={confirmDelete}>
                 {t('common.delete')}
-              </button>
+              </Button>
             </>
           }
         >

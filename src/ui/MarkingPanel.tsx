@@ -10,7 +10,7 @@ import {
 import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
-import { CommitInput } from './CommitInput';
+import { Button, Select, TextField } from './controls';
 import { useEditor } from './EditorContext';
 import { IdField } from './IdField';
 import { imageLabel, markingErrorMessage, markingPath } from './labels';
@@ -76,31 +76,27 @@ export function MarkingPanel({
         <div class="notice" role="status">
           <strong>⚠ {t('marking.needsReview')}</strong>
           <p>{t('marking.reviewMessage')}</p>
-          <button
-            type="button"
-            class="button button-primary"
+          <Button
+            variant="primary"
             disabled={readOnly}
             onClick={() => report(actions.confirmMarkingReview(marking.id))}
           >
             {t('marking.confirmReview')}
-          </button>
+          </Button>
         </div>
       )}
 
-      <label class="field">
-        {t('marking.name')}
-        <CommitInput
-          class="input"
-          value={marking.name ?? ''}
-          placeholder={t('marking.namePlaceholder')}
-          disabled={readOnly}
-          onCommit={(text) => {
-            // Espaços em volta não contam como alteração.
-            if ((text.trim() || null) === marking.name) return false;
-            return report(actions.renameMarking(marking.id, text));
-          }}
-        />
-      </label>
+      <TextField
+        label={t('marking.name')}
+        value={marking.name ?? ''}
+        placeholder={t('marking.namePlaceholder')}
+        disabled={readOnly}
+        onCommit={(text) => {
+          // Espaços em volta não contam como alteração.
+          if ((text.trim() || null) === marking.name) return false;
+          return report(actions.renameMarking(marking.id, text));
+        }}
+      />
 
       <AnnotationsPanel
         project={project}
@@ -118,40 +114,35 @@ export function MarkingPanel({
       <fieldset class="rect-fields" disabled={readOnly}>
         <legend>{t('marking.rect')}</legend>
         {RECT_FIELDS.map(({ key, label }) => (
-          <label key={key} class="field">
-            {t(label)}
-            <CommitInput
-              class="input"
-              type="number"
-              inputMode="numeric"
-              step={1}
-              min={0}
-              value={String(marking.rect[key])}
-              onCommit={(text) => commitRect(key, text)}
-            />
-          </label>
+          <TextField
+            key={key}
+            label={t(label)}
+            type="number"
+            inputMode="numeric"
+            step={1}
+            min={0}
+            value={String(marking.rect[key])}
+            onCommit={(text) => commitRect(key, text)}
+          />
         ))}
       </fieldset>
 
-      <label class="field">
-        {t('marking.parent')}
-        <select
-          class="input"
-          value={marking.parentId ?? ''}
-          disabled={readOnly}
-          onChange={(e) => {
-            const value = e.currentTarget.value;
-            report(actions.setMarkingParent(marking.id, value === '' ? null : value));
-          }}
-        >
-          <option value="">{t('marking.noParent')}</option>
-          {candidates.map((m) => (
-            <option key={m.id} value={m.id}>
-              {markingPath(project, m)}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        label={t('marking.parent')}
+        value={marking.parentId ?? ''}
+        disabled={readOnly}
+        onChange={(e) => {
+          const value = e.currentTarget.value;
+          report(actions.setMarkingParent(marking.id, value === '' ? null : value));
+        }}
+      >
+        <option value="">{t('marking.noParent')}</option>
+        {candidates.map((m) => (
+          <option key={m.id} value={m.id}>
+            {markingPath(project, m)}
+          </option>
+        ))}
+      </Select>
 
       {error && (
         <p class="field-error" role="alert">
@@ -160,14 +151,9 @@ export function MarkingPanel({
       )}
 
       <div class="row">
-        <button
-          type="button"
-          class="button button-danger"
-          disabled={readOnly}
-          onClick={() => onDelete(marking)}
-        >
+        <Button variant="danger" disabled={readOnly} onClick={() => onDelete(marking)}>
           {t('marking.delete')}
-        </button>
+        </Button>
       </div>
     </div>
   );

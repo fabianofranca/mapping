@@ -10,6 +10,7 @@ import {
   type Spec,
   type SpecRemovalMode,
 } from '../model';
+import { Button, Choice } from './controls';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { labelTexts } from './typedText';
@@ -120,11 +121,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
       <Dialog
         title={t('spec.title')}
         onCancel={onClose}
-        actions={
-          <button type="button" class="button" onClick={onClose}>
-            {t('common.close')}
-          </button>
-        }
+        actions={<Button onClick={onClose}>{t('common.close')}</Button>}
       >
         <p class="muted">{t('spec.hint')}</p>
         {message && (
@@ -143,14 +140,9 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
             if (file) void onFile(file);
           }}
         />
-        <button
-          type="button"
-          class="button button-primary"
-          disabled={readOnly}
-          onClick={() => pick(null)}
-        >
+        <Button variant="primary" disabled={readOnly} onClick={() => pick(null)}>
           {t('spec.apply')}
-        </button>
+        </Button>
 
         {project.specializations.length === 0 ? (
           <p class="muted">{t('spec.none')}</p>
@@ -168,22 +160,16 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
                     : t('spec.fileMissing')}
                 </span>
                 <div class="row">
-                  <button
-                    type="button"
-                    class="button"
-                    disabled={readOnly}
-                    onClick={() => pick(entry.id)}
-                  >
+                  <Button disabled={readOnly} onClick={() => pick(entry.id)}>
                     {t('spec.update')}
-                  </button>
-                  <button
-                    type="button"
-                    class="button button-danger"
+                  </Button>
+                  <Button
+                    variant="danger"
                     disabled={readOnly || !entry.spec}
                     onClick={() => setStep({ kind: 'remove', entry })}
                   >
                     {t('spec.remove')}
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}
@@ -195,11 +181,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
         <Dialog
           title={step.title}
           onCancel={() => setStep(null)}
-          actions={
-            <button type="button" class="button" onClick={() => setStep(null)}>
-              {t('common.close')}
-            </button>
-          }
+          actions={<Button onClick={() => setStep(null)}>{t('common.close')}</Button>}
         >
           {step.lines.map((line, i) => (
             <p key={i} class="wrap-anywhere">
@@ -249,12 +231,10 @@ function UpdateConfirm({
       onCancel={onCancel}
       actions={
         <>
-          <button type="button" class="button" onClick={onCancel}>
-            {t('common.cancel')}
-          </button>
-          <button type="button" class="button button-primary" onClick={onConfirm}>
+          <Button onClick={onCancel}>{t('common.cancel')}</Button>
+          <Button variant="primary" onClick={onConfirm}>
             {t('spec.updateConfirm')}
-          </button>
+          </Button>
         </>
       }
     >
@@ -311,45 +291,36 @@ function RemoveDialog({
       onCancel={onCancel}
       actions={
         <>
-          <button type="button" class="button" onClick={onCancel}>
-            {t('common.cancel')}
-          </button>
-          <button
-            type="button"
-            class={mode === 'delete' ? 'button button-danger' : 'button button-primary'}
+          <Button onClick={onCancel}>{t('common.cancel')}</Button>
+          <Button
+            variant={mode === 'delete' ? 'danger' : 'primary'}
             disabled={mode === null || blocked}
             onClick={() => mode && onConfirm(mode)}
           >
             {mode === 'delete'
               ? t('spec.removeConfirmDelete')
               : t('spec.removeConfirmConvert')}
-          </button>
+          </Button>
         </>
       }
     >
       <fieldset class="display-mode">
         <legend>{t('spec.removeChoose')}</legend>
         {modes.map((m) => (
-          <label key={m} class="field field-check">
-            <input
-              type="radio"
-              name="spec-remove-mode"
-              value={m}
-              checked={mode === m}
-              onChange={() => setMode(m)}
-            />
-            <span>
-              {t(
-                `spec.remove${m === 'delete' ? 'Delete' : 'Convert'}` satisfies TranslationKey,
-              )}
-              <br />
-              <small class="muted">
-                {t(
-                  `spec.remove${m === 'delete' ? 'Delete' : 'Convert'}Hint` satisfies TranslationKey,
-                )}
-              </small>
-            </span>
-          </label>
+          <Choice
+            key={m}
+            type="radio"
+            name="spec-remove-mode"
+            value={m}
+            label={t(
+              `spec.remove${m === 'delete' ? 'Delete' : 'Convert'}` satisfies TranslationKey,
+            )}
+            hint={t(
+              `spec.remove${m === 'delete' ? 'Delete' : 'Convert'}Hint` satisfies TranslationKey,
+            )}
+            checked={mode === m}
+            onChange={() => setMode(m)}
+          />
         ))}
       </fieldset>
       {mode && !blocked && (

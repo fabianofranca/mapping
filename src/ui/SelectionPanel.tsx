@@ -3,7 +3,7 @@ import type { ProjectImage } from '../model';
 import { imageLabel } from './labels';
 import type { DisplayImage } from '../store/displayImages';
 import { useEditor } from './EditorContext';
-import { CommitInput } from './CommitInput';
+import { Button, TextField } from './controls';
 import { IdField } from './IdField';
 import { MarkingColorField } from './MarkingColorField';
 
@@ -40,20 +40,17 @@ export function SelectionPanel({
           {t('image.dimensions', { width: image.width, height: image.height })}
         </span>
       </div>
-      <label class="field">
-        {t('image.name')}
-        <CommitInput
-          class="input"
-          value={image.name ?? ''}
-          placeholder={image.file}
-          disabled={disabled}
-          onCommit={(text) => {
-            // Espaços em volta não contam como alteração.
-            if ((text.trim() || null) === image.name) return false;
-            return actions.renameImage(image.id, text).ok;
-          }}
-        />
-      </label>
+      <TextField
+        label={t('image.name')}
+        value={image.name ?? ''}
+        placeholder={image.file}
+        disabled={disabled}
+        onCommit={(text) => {
+          // Espaços em volta não contam como alteração.
+          if ((text.trim() || null) === image.name) return false;
+          return actions.renameImage(image.id, text).ok;
+        }}
+      />
       <MarkingColorField image={image} disabled={disabled} />
       <IdField id={image.id} />
       {broken && (
@@ -66,22 +63,16 @@ export function SelectionPanel({
         </p>
       )}
       <div class="row">
-        <button
-          type="button"
-          class={broken ? 'button button-primary' : 'button'}
+        <Button
+          variant={broken ? 'primary' : 'default'}
           disabled={disabled}
           onClick={() => onReplace(image)}
         >
           {t(missing ? 'image.repoint' : 'image.replace')}
-        </button>
-        <button
-          type="button"
-          class="button button-danger"
-          disabled={disabled}
-          onClick={() => onDelete(image)}
-        >
+        </Button>
+        <Button variant="danger" disabled={disabled} onClick={() => onDelete(image)}>
           {t('image.delete')}
-        </button>
+        </Button>
       </div>
     </div>
   );
