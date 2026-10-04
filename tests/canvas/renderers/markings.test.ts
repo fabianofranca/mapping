@@ -53,23 +53,28 @@ describe('MarkingRenderer', () => {
       y: 100,
       width: 600,
       height: 500,
-      stroke: TOKENS.marking,
+      stroke: TOKENS.line,
       strokeWidth: 1,
     });
-    expect(m1.halo.visible()).toBe(false);
+    // Halo em toda marcação: um traço 2 px mais largo (1 px de cada lado) por baixo da linha.
+    expect(m1.halo.getAttrs()).toMatchObject({
+      visible: true,
+      stroke: TOKENS.halo,
+      strokeWidth: 3,
+    });
     expect(node(renderer, 'M2').group.zIndex()).toBeGreaterThan(m1.group.zIndex());
   });
 
-  it('selecionada: borda mais grossa e contorno claro', () => {
+  it('selecionada: linha em cv-select, mais grossa, com halo', () => {
     const { renderer, render } = setup();
     render({
       selection: { kind: 'marking', id: 'M1' },
       viewport: { x: 0, y: 0, scale: 2 },
     });
     const m1 = node(renderer, 'M1');
-    expect(m1.border.strokeWidth()).toBe(1);
-    expect(m1.halo.visible()).toBe(true);
-    expect(m1.halo.stroke()).toBe(TOKENS.surface);
+    // 2 px de tela com zoom 2; o halo soma 1 px de cada lado.
+    expect(m1.border.getAttrs()).toMatchObject({ stroke: TOKENS.select, strokeWidth: 1 });
+    expect(m1.halo.getAttrs()).toMatchObject({ stroke: TOKENS.halo, strokeWidth: 2 });
   });
 
   it('cor de borda escolhida para a imagem', () => {
@@ -94,10 +99,10 @@ describe('MarkingRenderer', () => {
         ['M2', 'dim' as const],
       ]),
     });
-    expect(node(renderer, 'M1').group.opacity()).toBe(0.75);
+    expect(node(renderer, 'M1').group.opacity()).toBe(TOKENS.opacity.ancestor);
     expect(node(renderer, 'M1').indicators.visible()).toBe(false);
     expect(node(renderer, 'M1').text.group.visible()).toBe(false);
-    expect(node(renderer, 'M2').group.opacity()).toBe(0.35);
+    expect(node(renderer, 'M2').group.opacity()).toBe(TOKENS.opacity.dimmed);
   });
 
   it('uma bolinha por camada; depois de quatro, "+N"; vazada se só herdada', () => {
@@ -116,10 +121,15 @@ describe('MarkingRenderer', () => {
     }));
     render({ dots: new Map([['M1', dots]]) });
     expect(m1.dots.filter((d) => d.visible())).toHaveLength(4);
-    expect(m1.dots[0]?.fill()).toBe(TOKENS.surface);
+    expect(m1.dots[0]?.fill()).toBe(TOKENS.halo);
     expect(m1.dots[0]?.stroke()).toBe('#E53935');
     expect(m1.more.visible()).toBe(true);
     expect(m1.more.text()).toBe('+2');
+    expect(m1.more.getAttrs()).toMatchObject({
+      fill: TOKENS.line,
+      stroke: TOKENS.halo,
+      fontFamily: TOKENS.fontFamily,
+    });
   });
 
   it('alerta de incompleta e selo de revisão', () => {
@@ -130,8 +140,12 @@ describe('MarkingRenderer', () => {
     });
     const m1 = node(renderer, 'M1');
     expect(m1.alert.visible()).toBe(true);
-    expect(m1.alert.fill()).toBe(TOKENS.warning);
+    expect(m1.alert.getAttrs()).toMatchObject({
+      fill: TOKENS.warning,
+      stroke: TOKENS.halo,
+    });
     expect(m1.badge.visible()).toBe(true);
+    expect(m1.badge.fill()).toBe(TOKENS.warning);
     expect(m1.border.dash()).toEqual([6, 4]);
   });
 
@@ -151,7 +165,19 @@ describe('MarkingRenderer', () => {
     const text = node(renderer, 'M1').text;
     expect(text.group.visible()).toBe(true);
     expect(text.header.text()).toBe('Porta');
-    expect(text.card.visible()).toBe(true);
+    expect(text.header.getAttrs()).toMatchObject({
+      fill: TOKENS.line,
+      stroke: TOKENS.halo,
+      fontFamily: TOKENS.fontFamily,
+      fontSize: TOKENS.type.name.size,
+    });
+    // Cartão: `color-card` (já semiopaco, sem `opacity`) com o raio do token.
+    expect(text.card.getAttrs()).toMatchObject({
+      visible: true,
+      fill: TOKENS.card,
+      cornerRadius: TOKENS.radius.md,
+    });
+    expect(text.card.opacity()).toBe(1);
     const lines = text.lines.filter((l) => l.visible()).map((l) => l.text());
     expect(lines).toEqual(
       expect.arrayContaining([
@@ -163,6 +189,17 @@ describe('MarkingRenderer', () => {
     );
     // Barra da camada na cor dela.
     expect(text.shapes.some((s) => s.visible() && s.fill() === '#E53935')).toBe(true);
+    // Nome da camada em `t-cv-caption`, título e pares em `t-cv-card`, na fonte da app.
+    const sized = (text: string) => cardLine(text)?.fontSize();
+    expect(sized('Lataria')).toBe(TOKENS.type.caption.size);
+    expect(sized('tipo: amassado')).toBe(TOKENS.type.card.size);
+    expect(cardLine('tipo: amassado')?.fontFamily()).toBe(TOKENS.fontFamily);
+
+    function cardLine(text: string) {
+      return node(renderer, 'M1').text.lines.find(
+        (l) => l.visible() && l.text() === text,
+      );
+    }
   });
 
   it('zoom semântico: área pequena só mostra o nome com "…"; desligado, nada', () => {

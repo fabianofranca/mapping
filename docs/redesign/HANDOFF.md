@@ -119,26 +119,27 @@ Os nomes de cor continuam `--color-*` (o código já usa). O bloco escuro duplic
 
 ### Cores novas
 
-| Token                     | Claro                   | Escuro                | Uso                                                |
-| ------------------------- | ----------------------- | --------------------- | -------------------------------------------------- |
-| `color-border-control`    | `#7d8590`               | `#6b7480`             | Borda de campos, botões, segmentados, selos (≥3:1) |
-| `color-hover`             | `#eef1f4`               | `#262b33`             | Hover                                              |
-| `color-pressed`           | `#e3e7ec`               | `#2f353f`             | Pressionado                                        |
-| `color-accent-hover`      | `#1757b5`               | `#7aaeff`             | Hover do primário e da alternância ligada          |
-| `color-accent-pressed`    | `#134a99`               | `#9cc3ff`             | Primário pressionado                               |
-| `color-focus`             | = `color-accent`        | = `color-accent`      | Anel de foco                                       |
-| `color-selection`         | `#dce8fb`               | `#1f3354`             | Linha selecionada, célula em edição                |
-| `color-selection-muted`   | `#eceff3`               | `#2a2f38`             | Seleção sem foco, camada ativa, esqueleto          |
-| `color-success` / `-bg`   | `#1e7a46` / `#e3f4ea`   | `#7ad3a0` / `#163325` | Salvo, operação concluída                          |
-| `color-tooltip` / `-text` | `#1b1f24` / `#ffffff`   | `#e8eaed` / `#12151a` | Dica                                               |
-| `color-card`              | `rgba(255,255,255,.92)` | `rgba(28,32,39,.92)`  | Cartão do zoom semântico                           |
-| `cv-line`                 | `#ffffff`               | =                     | Linha da marcação                                  |
-| `cv-halo`                 | `rgba(10,12,16,.72)`    | =                     | Contorno de linhas, nomes, bolinhas e ⚠ no canvas  |
-| `cv-select`               | `#4d8dff`               | =                     | Seleção, alças, rascunho, alvo de soltar           |
-| `cv-invalid`              | `#ff6b6b`               | =                     | Gesto inválido                                     |
-| `cv-warning`              | `#ffc247`               | =                     | ⚠ no canvas                                        |
-| `cv-name-tag`             | = `cv-select`           | =                     | Etiqueta do nome selecionado                       |
-| `layer-01`…`layer-10`     | ver tabela              | =                     | Paleta padrão de camadas (dado, não tema)          |
+| Token                     | Claro                   | Escuro                | Uso                                                                                        |
+| ------------------------- | ----------------------- | --------------------- | ------------------------------------------------------------------------------------------ |
+| `color-border-control`    | `#7d8590`               | `#6b7480`             | Borda de campos, botões, segmentados, selos (≥3:1)                                         |
+| `color-hover`             | `#eef1f4`               | `#262b33`             | Hover                                                                                      |
+| `color-pressed`           | `#e3e7ec`               | `#2f353f`             | Pressionado                                                                                |
+| `color-accent-hover`      | `#1757b5`               | `#7aaeff`             | Hover do primário e da alternância ligada                                                  |
+| `color-accent-pressed`    | `#134a99`               | `#9cc3ff`             | Primário pressionado                                                                       |
+| `color-focus`             | = `color-accent`        | = `color-accent`      | Anel de foco                                                                               |
+| `color-selection`         | `#dce8fb`               | `#1f3354`             | Linha selecionada, célula em edição                                                        |
+| `color-selection-muted`   | `#eceff3`               | `#2a2f38`             | Seleção sem foco, camada ativa, esqueleto                                                  |
+| `color-success` / `-bg`   | `#1e7a46` / `#e3f4ea`   | `#7ad3a0` / `#163325` | Salvo, operação concluída                                                                  |
+| `color-tooltip` / `-text` | `#1b1f24` / `#ffffff`   | `#e8eaed` / `#12151a` | Dica                                                                                       |
+| `color-card`              | `rgba(255,255,255,.92)` | `rgba(28,32,39,.92)`  | Cartão do zoom semântico                                                                   |
+| `cv-line`                 | `#ffffff`               | =                     | Linha da marcação                                                                          |
+| `cv-halo`                 | `rgba(10,12,16,.72)`    | =                     | Contorno de linhas, nomes, bolinhas e ⚠ no canvas                                          |
+| `cv-select`               | `#4d8dff`               | =                     | Seleção, alças, rascunho, alvo de soltar                                                   |
+| `cv-invalid`              | `#ff6b6b`               | =                     | Gesto inválido                                                                             |
+| `cv-warning`              | `#ffc247`               | =                     | ⚠ no canvas                                                                                |
+| `cv-name-tag`             | = `cv-select`           | =                     | Etiqueta do nome selecionado                                                               |
+| `cv-name-tag-text`        | `#0b1220`               | =                     | Texto da etiqueta (4,5:1+ sobre `cv-name-tag`); **acrescentado na R3**, não está no DS 2.0 |
+| `layer-01`…`layer-10`     | ver tabela              | =                     | Paleta padrão de camadas (dado, não tema)                                                  |
 
 ### Paleta de camadas (`src/model/layers.ts`)
 

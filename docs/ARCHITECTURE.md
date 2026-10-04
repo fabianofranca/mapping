@@ -85,10 +85,10 @@ ação do usuário
 ### `src/canvas/`
 
 - `CanvasController.ts`: orquestrador fino; monta o quadro, agenda a renderização e conecta os módulos. `CanvasHost.tsx`: ponte com o Preact.
-- `renderers/`: `images`, `markings`, `semanticCard`, `overlay` (seleção, alças, rascunho, alvo de soltar). Recebem dados prontos e só atualizam nós do Konva (com pool de nós reaproveitado).
+- `renderers/`: `images`, `markings`, `semanticCard`, `overlay` (seleção, alças, etiqueta do nome, rascunho, alvo de soltar). Recebem dados prontos e só atualizam nós do Konva (com pool de nós reaproveitado). Nenhuma cor, família de fonte, opacidade, raio ou tamanho de alça fixos: tudo vem de `frame.tokens`; `tests/theme/canvasLiterals.test.ts` procura literais.
 - `input/`: `pointer` (eventos → `gestureMachine` → intenções), `keyboard`. `gestureMachine.ts` é uma máquina de estados pura e testada.
 - `viewportController.ts`, `viewport.ts`: pan, zoom, enquadrar, centralizar.
-- `markingGeometry.ts`, `imageGeometry.ts`, `semanticText.ts`, `theme.ts`: geometria, zoom semântico e leitura dos tokens do tema.
+- `markingGeometry.ts`, `imageGeometry.ts`, `semanticText.ts`, `theme.ts`: geometria, zoom semântico e leitura dos tokens do tema. `readCanvasTokens` lê do CSS (`--cv-*`, `--color-card`, `--opacity-*`, `--t-cv-*`, `--font-sans`, `--radius-*`, `--shadow-grabbed`, `--size-handle`, ou `--size-handle-touch` com `(pointer: coarse)`) e é relido quando o tema muda; `canvasTokensFrom(leitor)` é a versão pura, usada nos testes. Linha da marcação: `cv-line` (ou a cor escolhida para a imagem) sobre um halo `cv-halo` por fora e por dentro; selecionada, `cv-select` com a etiqueta do nome (`cv-name-tag`). A etiqueta se ancora na parte visível, então o overlay é redesenhado no pan enquanto ela aparece (`followsView`).
 
 ### `src/app/` e `src/ui/`
 

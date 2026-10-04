@@ -66,7 +66,7 @@ describe('ImageRenderer', () => {
     const bitmaps = new Map([['images/a.jpg', { status: 'missing' as const }]]);
     renderer.render(frameOf(editor, { bitmaps }));
     const node = renderer.node('I1');
-    expect(node?.placeholder.stroke()).toBe(TOKENS.warning);
+    expect(node?.placeholder.stroke()).toBe(TOKENS.warningText);
     expect(node?.placeholder.dash()).toEqual([8, 6]);
     expect(node?.label.visible()).toBe(true);
     expect(node?.label.text()).toBe(`⚠ ${t('canvas.imageMissing')}\nimages/a.jpg`);

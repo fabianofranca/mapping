@@ -25,8 +25,10 @@ import {
   DOT_MARGIN,
   DOT_RADIUS,
   MAX_DOTS,
+  HALO_WIDTH,
   MORE_WIDTH,
   REVIEW_BADGE_SIZE,
+  fontStyle,
   intersectRects,
   sameInputs,
 } from './metrics';
@@ -40,12 +42,6 @@ import {
 /** Espessura da borda das marcações (px de tela): normal e selecionada. */
 const MARKING_STROKE = 1;
 const MARKING_SELECTED_STROKE = 2;
-/** Contorno claro em volta da borda da selecionada, para ela aparecer em fotos escuras. */
-const MARKING_HALO = 0.75;
-/** Opacidade das marcações sem anotação em nenhuma camada visível. */
-const DIMMED_OPACITY = 0.35;
-/** Borda de contexto dos pais no modo Ocultar: esmaecida, mas legível sobre fotos. */
-const OUTLINE_OPACITY = 0.75;
 
 export interface MarkingNode {
   readonly group: Konva.Group;
@@ -124,7 +120,7 @@ export class MarkingRenderer {
       index++;
       if (!onScreen) continue;
       const selected = selection?.kind === 'marking' && selection.id === marking.id;
-      // Cor da borda escolhida para a imagem (sem escolha, a neutra do tema).
+      // Cor da borda escolhida para a imagem (sem escolha, `cv-line`).
       const lineColor = lookup?.images.get(marking.imageId)?.markingColor ?? null;
       const markingDots = dots.get(marking.id) ?? NO_LAYER_DOTS;
       const markingIncomplete = incomplete.has(marking.id);
@@ -150,7 +146,8 @@ export class MarkingRenderer {
           visibility,
           markingDots,
           markingIncomplete,
-          lineColor ? { ...tokens, marking: lineColor } : tokens,
+          lineColor ?? tokens.line,
+          tokens,
           zoom,
         );
       }
@@ -191,11 +188,11 @@ export class MarkingRenderer {
       group: new Konva.Group(),
       halo: new KonvaRect(),
       border: new KonvaRect(),
-      badge: new KonvaText({ text: '⚠', fontStyle: 'bold' }),
+      badge: new KonvaText({ text: '⚠' }),
       indicators: new Konva.Group(),
       dots,
-      more: new KonvaText({ fontStyle: 'bold' }),
-      alert: new KonvaText({ text: ALERT_GLYPH, fontStyle: 'bold' }),
+      more: new KonvaText(),
+      alert: new KonvaText({ text: ALERT_GLYPH }),
       text: createSemanticNode(),
       drawn: null,
     };
@@ -215,6 +212,7 @@ function updateMarkingNode(
   visibility: MarkingVisibility,
   dots: readonly LayerDot[],
   incomplete: boolean,
+  lineColor: string,
   tokens: CanvasTokens,
   zoom: number,
 ): void {
@@ -222,22 +220,28 @@ function updateMarkingNode(
   // Sem anotação (própria ou herdada) nas camadas visíveis: esmaecida (a selecionada, nunca).
   node.group.opacity(
     visibility === 'dim'
-      ? DIMMED_OPACITY
+      ? tokens.opacity.dimmed
       : visibility === 'outline'
-        ? OUTLINE_OPACITY
+        ? tokens.opacity.ancestor
         : 1,
   );
   const stroke = (selected ? MARKING_SELECTED_STROKE : MARKING_STROKE) / zoom;
   const dash = marking.needsReview ? [6 / zoom, 4 / zoom] : [];
-  // Contorno claro só na selecionada; as demais ficam com a linha de 1 px.
+  // Halo por fora e por dentro da linha (um traço mais largo por baixo), em toda marcação:
+  // a linha aparece sobre fotos claras e escuras.
   node.halo.setAttrs({
     ...rect,
-    visible: selected,
-    stroke: tokens.surface,
-    strokeWidth: stroke + (2 * MARKING_HALO) / zoom,
-    opacity: 0.7,
+    visible: true,
+    stroke: tokens.halo,
+    strokeWidth: stroke + (2 * HALO_WIDTH) / zoom,
+    dash,
   });
-  node.border.setAttrs({ ...rect, stroke: tokens.marking, strokeWidth: stroke, dash });
+  node.border.setAttrs({
+    ...rect,
+    stroke: selected ? tokens.select : lineColor,
+    strokeWidth: stroke,
+    dash,
+  });
   // Texto do Konva remede a cada mudança de atributo: só mexe nos que aparecem.
   // Ancestral de contexto (modo Ocultar): só a borda, sem alerta nem bolinhas.
   const outline = visibility === 'outline';
@@ -248,8 +252,10 @@ function updateMarkingNode(
       x: rect.x + badge / 3,
       y: rect.y + badge / 3,
       fontSize: badge,
+      fontFamily: tokens.fontFamily,
+      fontStyle: fontStyle(tokens.type.name.weight),
       fill: tokens.warning,
-      stroke: tokens.surface,
+      stroke: tokens.halo,
       strokeWidth: 3 / zoom,
       fillAfterStrokeEnabled: true,
     });
@@ -303,13 +309,14 @@ function updateIndicators(
     // Só por herança: bolinha vazada (contorno na cor da camada).
     const item = layers[i];
     const hollow = item?.inheritedOnly ?? false;
+    const color = item?.layer.color ?? tokens.line;
     dot.setAttrs({
       visible: true,
       x: x0 + i * step,
       y: cy,
       radius: hollow ? radius - 0.5 / zoom : radius,
-      fill: hollow ? tokens.surface : (item?.layer.color ?? tokens.marking),
-      stroke: hollow ? (item?.layer.color ?? tokens.marking) : tokens.surface,
+      fill: hollow ? tokens.halo : color,
+      stroke: hollow ? color : tokens.halo,
       strokeWidth: (hollow ? 2 : 1) / zoom,
     });
   });
@@ -322,8 +329,10 @@ function updateIndicators(
       x: afterDots + (extra > 0 ? MORE_WIDTH / zoom : 0),
       y: cy - size / 2,
       fontSize: size,
+      fontFamily: tokens.fontFamily,
+      fontStyle: fontStyle(tokens.type.name.weight),
       fill: tokens.warning,
-      stroke: tokens.surface,
+      stroke: tokens.halo,
       strokeWidth: 3 / zoom,
       fillAfterStrokeEnabled: true,
     });
@@ -334,15 +343,17 @@ function updateIndicators(
     node.more.visible(false);
     return;
   }
-  const fontSize = 11 / zoom;
+  const fontSize = tokens.type.name.size / zoom;
   node.more.setAttrs({
     visible: true,
     text: `+${extra}`,
     x: afterDots,
     y: cy - fontSize / 2,
     fontSize,
-    fill: tokens.marking,
-    stroke: tokens.surface,
+    fontFamily: tokens.fontFamily,
+    fontStyle: fontStyle(tokens.type.name.weight),
+    fill: tokens.line,
+    stroke: tokens.halo,
     strokeWidth: 3 / zoom,
     fillAfterStrokeEnabled: true,
   });

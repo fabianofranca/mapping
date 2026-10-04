@@ -1,18 +1,19 @@
 // Sobreposições: contorno e alças da seleção, destaque do item pego, rascunho
 // do desenho e alvo de um arrastar-e-soltar de arquivos.
-import type Konva from 'konva/lib/Core';
+import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
+import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { imageCanvasRect, projectIndex, type Placement, type Rect } from '../../model';
 import { resolveSelection } from '../../store/ui';
-import type { Frame } from '../frame';
+import { visibleArea, type Frame } from '../frame';
 import { CORNERS, cornerPoint, type Corner } from '../imageGeometry';
 import { isDrawableRect, markingCanvasRect } from '../markingGeometry';
-import { SELECTION_STROKE } from './metrics';
+import { HALO_WIDTH, SELECTION_STROKE, fontStyle } from './metrics';
 
-/** Lado visível da alça de redimensionamento (px de tela). */
-const HANDLE_SIZE = 14;
-/** Sombra do item "pego" pelo segurar-e-mover (px de tela). */
-const GRAB_SHADOW_BLUR = 14;
+/** Etiqueta do nome (px de tela): recuo interno, vão até a borda e largura máxima. */
+const NAME_TAG_PADDING = 4;
+const NAME_TAG_GAP = 2;
+const NAME_TAG_MAX_WIDTH = 240;
 
 export type OverlayFrame = Pick<
   Frame,
@@ -26,6 +27,7 @@ export type OverlayFrame = Pick<
   | 'selection'
   | 'mode'
   | 'viewport'
+  | 'size'
 >;
 
 export class OverlayRenderer {
@@ -36,15 +38,26 @@ export class OverlayRenderer {
   readonly dropRect = new KonvaRect({ visible: false });
   readonly grabRect = new KonvaRect({ visible: false });
   readonly handles = new Map<Corner, KonvaRect>();
+  /** Etiqueta com o nome da marcação selecionada, acima do canto superior esquerdo. */
+  readonly nameTag = new Konva.Group({ visible: false });
+  readonly nameTagBox = new KonvaRect();
+  readonly nameTagText = new KonvaText({ wrap: 'none', ellipsis: true });
 
   constructor(layer: Konva.Layer, container: HTMLElement) {
     this.container = container;
+    this.nameTag.add(this.nameTagBox, this.nameTagText);
     layer.add(this.selectionOutline, this.draftRect, this.dropRect, this.grabRect);
     for (const corner of CORNERS) {
       const handle = new KonvaRect({ visible: false });
       this.handles.set(corner, handle);
       layer.add(handle);
     }
+    layer.add(this.nameTag);
+  }
+
+  /** Há algo ancorado na parte visível da tela (a etiqueta do nome): pan precisa redesenhar. */
+  get followsView(): boolean {
+    return this.nameTag.visible();
   }
 
   render(frame: OverlayFrame, placements: ReadonlyMap<string, Placement>): void {
@@ -67,7 +80,7 @@ export class OverlayRenderer {
     this.dropRect.setAttrs({
       ...imageCanvasRect(image, image.placement),
       visible: true,
-      stroke: tokens.accent,
+      stroke: tokens.select,
       strokeWidth: (3 * SELECTION_STROKE) / zoom,
       dash: [10 / zoom, 6 / zoom],
     });
@@ -88,7 +101,7 @@ export class OverlayRenderer {
     this.draftRect.setAttrs({
       ...markingCanvasRect(placement, draft.rect),
       visible: true,
-      stroke: valid ? tokens.accent : tokens.danger,
+      stroke: valid ? tokens.select : tokens.invalid,
       strokeWidth: SELECTION_STROKE / zoom,
       dash: [6 / zoom, 4 / zoom],
     });
@@ -106,16 +119,17 @@ export class OverlayRenderer {
     if (!selected) {
       this.grabRect.visible(false);
       this.selectionOutline.visible(false);
+      this.nameTag.visible(false);
       for (const handle of this.handles.values()) handle.visible(false);
       return;
     }
 
     let rect: Rect;
-    let color = tokens.accent;
+    let color = tokens.select;
     if (selected.kind === 'image') {
       const { image } = selected;
       const invalid = preview?.imageId === image.id && !preview.valid;
-      if (invalid) color = tokens.danger;
+      if (invalid) color = tokens.invalid;
       rect = imageCanvasRect(image, placements.get(image.id) ?? image.placement);
       this.selectionOutline.setAttrs({
         ...rect,
@@ -123,11 +137,13 @@ export class OverlayRenderer {
         stroke: color,
         strokeWidth: (SELECTION_STROKE * (invalid ? 2 : 1)) / zoom,
       });
+      this.nameTag.visible(false);
     } else {
       // A borda da marcação selecionada já fica mais grossa; aqui só as alças.
       const placement = placements.get(selected.image.id) ?? selected.image.placement;
       rect = markingCanvasRect(placement, selected.marking.rect);
       this.selectionOutline.visible(false);
+      this.renderNameTag(frame, rect, selected.marking.name);
     }
 
     const selectedId =
@@ -136,16 +152,15 @@ export class OverlayRenderer {
     this.grabRect.setAttrs({
       ...rect,
       visible: isGrabbed,
-      fill: tokens.accent,
-      opacity: 0.25,
-      stroke: tokens.accent,
+      fill: tokens.select,
+      opacity: tokens.opacity.grabbed,
+      stroke: tokens.select,
       strokeWidth: (2 * SELECTION_STROKE) / zoom,
-      shadowColor: tokens.accent,
-      shadowBlur: GRAB_SHADOW_BLUR / zoom,
-      shadowOpacity: 0.8,
+      shadowColor: tokens.grabShadow.color,
+      shadowBlur: tokens.grabShadow.blur / zoom,
     });
 
-    const side = HANDLE_SIZE / zoom;
+    const side = tokens.handleSize / zoom;
     for (const [corner, handle] of this.handles) {
       const c = cornerPoint(rect, corner);
       handle.setAttrs({
@@ -154,10 +169,60 @@ export class OverlayRenderer {
         y: c.y - side / 2,
         width: side,
         height: side,
-        fill: tokens.surface,
+        fill: tokens.line,
         stroke: color,
         strokeWidth: SELECTION_STROKE / zoom,
       });
     }
+  }
+
+  /**
+   * Nome da marcação selecionada numa etiqueta acima do canto superior esquerdo (por dentro
+   * quando não há espaço acima na tela). Com o canto fora da tela, a etiqueta fica ancorada
+   * na borda visível. Sem nome, sem etiqueta.
+   */
+  private renderNameTag(frame: OverlayFrame, rect: Rect, name: string | null): void {
+    const { tokens, viewport } = frame;
+    const zoom = viewport.scale;
+    if (name === null || name === '') {
+      this.nameTag.visible(false);
+      return;
+    }
+    const { size, line, weight } = tokens.type.name;
+    const height = line + 2 * HALO_WIDTH;
+    this.nameTagText.setAttrs({
+      text: name,
+      fontSize: size,
+      fontFamily: tokens.fontFamily,
+      fontStyle: fontStyle(weight),
+      fill: tokens.nameTagText,
+      x: NAME_TAG_PADDING,
+      y: (height - size) / 2,
+      width: undefined,
+    });
+    const width = Math.min(
+      this.nameTagText.width() + 2 * NAME_TAG_PADDING,
+      NAME_TAG_MAX_WIDTH,
+    );
+    this.nameTagText.width(width - 2 * NAME_TAG_PADDING);
+    this.nameTagText.height(size);
+    this.nameTagBox.setAttrs({
+      width,
+      height,
+      fill: tokens.nameTag,
+      stroke: tokens.halo,
+      strokeWidth: HALO_WIDTH,
+      cornerRadius: tokens.radius.sm,
+    });
+    const view = visibleArea(frame.size, viewport);
+    const above = rect.y - view.y >= (height + NAME_TAG_GAP) / zoom;
+    const top = Math.max(rect.y, view.y);
+    this.nameTag.setAttrs({
+      visible: true,
+      x: Math.max(rect.x, view.x),
+      y: above ? rect.y - (height + NAME_TAG_GAP) / zoom : top + NAME_TAG_GAP / zoom,
+      scaleX: 1 / zoom,
+      scaleY: 1 / zoom,
+    });
   }
 }

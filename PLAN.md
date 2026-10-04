@@ -70,10 +70,10 @@ Conjunto de ícones e controles novos, com todos os estados. Não muda comportam
 
 Desenho do canvas lendo os tokens novos. Não muda comportamento.
 
-- [ ] `readCanvasTokens` com `cv-*`, `color-card`, opacidades e `--font-sans`
-- [ ] Renderers sem constantes fixas
-- [ ] Halo nas linhas
-- [ ] Etiqueta do nome da marcação selecionada
+- [x] `readCanvasTokens` com `cv-*`, `color-card`, opacidades e `--font-sans`
+- [x] Renderers sem constantes fixas
+- [x] Halo nas linhas
+- [x] Etiqueta do nome da marcação selecionada
 
 **Aceite**: testes de canvas atualizados; orçamentos de desempenho estáveis.
 

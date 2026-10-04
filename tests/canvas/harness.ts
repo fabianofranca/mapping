@@ -52,15 +52,32 @@ export function installFakeCanvas(): void {
   );
 }
 
+/** Valores de teste distintos entre si, para as asserções saberem de qual token veio a cor. */
 export const TOKENS: CanvasTokens = {
-  accent: '#0057b8',
-  danger: '#c62828',
-  warning: '#b26a00',
+  line: '#fefefe',
+  halo: 'rgba(1, 2, 3, 0.7)',
+  select: '#0057b8',
+  invalid: '#cc0000',
+  warning: '#ffc247',
+  nameTag: '#0057b9',
+  nameTagText: '#010203',
   surface: '#ffffff',
+  card: 'rgba(250, 250, 250, 0.9)',
   border: '#cccccc',
   text: '#111111',
   textMuted: '#666666',
-  marking: '#333333',
+  warningText: '#b26a00',
+  opacity: { dimmed: 0.3, ancestor: 0.7, inherited: 0.65, grabbed: 0.2 },
+  fontFamily: 'TestSans, sans-serif',
+  type: {
+    name: { size: 11, line: 16, weight: 600 },
+    image: { size: 12, line: 16, weight: 600 },
+    card: { size: 11, line: 15, weight: 400 },
+    caption: { size: 10, line: 14, weight: 400 },
+  },
+  handleSize: 10,
+  radius: { sm: 4, md: 6 },
+  grabShadow: { blur: 14, color: 'rgba(77, 141, 255, 0.8)' },
 };
 
 export const NOW = '2026-10-02T12:00:00.000Z';
