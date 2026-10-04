@@ -23,6 +23,8 @@ interface SegmentedProps<T extends string> {
   /** Nome acessível do grupo. */
   readonly label?: string;
   readonly disabled?: boolean;
+  /** Estado inválido (ex.: opção obrigatória sem escolha): borda de erro. */
+  readonly invalid?: boolean;
 }
 
 /** Grupo de botões de alternância unidos (modo, opções de enum). */
@@ -32,9 +34,15 @@ export function Segmented<T extends string>({
   onSelect,
   label,
   disabled,
+  invalid,
 }: SegmentedProps<T>): JSX.Element {
   return (
-    <div class="segmented" role="group" aria-label={label}>
+    <div
+      class={classes('segmented', invalid && 'segmented-invalid')}
+      role="group"
+      aria-label={label}
+      aria-invalid={invalid}
+    >
       {items.map((item) => {
         const text = item.icon === undefined || item.showLabel === true;
         const button = (

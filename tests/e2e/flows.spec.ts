@@ -92,9 +92,12 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
   await page.getByRole('button', { name: /^Input/ }).click();
   await page.getByLabel('id', { exact: true }).fill('input_nome');
   await page.getByLabel('id', { exact: true }).press('Enter');
-  await page.getByRole('button', { name: 'Escolher' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: /name/ }).click();
-  await expect(page.getByText(/^→ /)).toContainText('name');
+  // Seletor de referência em popup (B14): busca e Enter escolhe.
+  const dado = page.getByRole('button', { name: /^dado: / });
+  await dado.click();
+  await page.getByRole('combobox', { name: 'Buscar alvo' }).fill('name');
+  await page.getByRole('combobox', { name: 'Buscar alvo' }).press('Enter');
+  await expect(dado).toContainText('→ User.name');
 
   const { mapping } = await exportMapping(page);
   expect(mapping.specializations).toEqual(
@@ -287,4 +290,55 @@ test('celular: as camadas seguem num diálogo, com a paleta e o menu da linha', 
   await expect(palette).toBeVisible();
   await palette.getByRole('button', { name: '#1E88E5' }).tap();
   await expect(palette).toBeHidden();
+});
+
+// R5: Detalhes redesenhado (B15, P6 e os atalhos Alt+N e Alt+Enter).
+test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', async ({
+  page,
+}, info) => {
+  test.skip(isMobile(info), 'atalhos de teclado e arrasto com mouse: layout de desktop');
+  await createProject(page, 'Detalhes');
+  await addImage(page);
+  await drawMarking(page, info, await canvasPoint(page));
+  const details = page.getByRole('region', { name: 'Detalhes' });
+
+  // Alt+N: nova anotação na camada ativa, com o foco no nome.
+  await page.keyboard.press('Alt+KeyN');
+  const name = details.getByLabel('Nome da anotação');
+  await expect(name).toBeFocused();
+  await name.fill('Botão');
+  await name.press('Enter');
+
+  // + Par e Alt+Enter criam pares.
+  await details.getByRole('button', { name: '+ Par' }).click();
+  await details.getByLabel('Chave').fill('a');
+  await details.getByLabel('Chave').press('Tab');
+  await details.getByLabel('Valor').fill('1');
+  await details.getByLabel('Valor').press('Alt+Enter');
+  const keys = details.getByLabel('Chave');
+  await expect(keys.nth(1)).toBeFocused();
+  await keys.nth(1).fill('b');
+  await keys.nth(1).press('Enter');
+  await expect(keys).toHaveCount(2);
+
+  // Arrastar o par "b" pela alça para cima de "a" (P6).
+  const grip = details.getByRole('button', { name: 'Mover o par b' });
+  const target = details.getByRole('button', { name: 'Mover o par a' });
+  const from = await grip.boundingBox();
+  const to = await target.boundingBox();
+  if (!from || !to) throw new Error('sem alças');
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + 2, { steps: 5 });
+  await page.mouse.up();
+  await expect(keys.nth(0)).toHaveValue('b');
+  await expect(keys.nth(1)).toHaveValue('a');
+
+  // Seção Marcação recolhida: mostra o resumo e esconde os campos (B15).
+  await details.getByRole('button', { name: /^Marcação/ }).click();
+  await expect(details.getByLabel('X', { exact: true })).toBeHidden();
+  await expect(details.getByText(/^X \d+ · Y \d+ · \d+ × \d+ px$/)).toBeVisible();
+
+  const { mapping } = await exportMapping(page);
+  expect(mapping.annotations[0]?.entries.map((e) => e.key)).toEqual(['b', 'a']);
 });

@@ -8,6 +8,7 @@ import {
   layersWindowHeight,
   resizeLayersWindow,
   resizeToolWindow,
+  showToolWindow,
   toggleToolWindow,
   toolWindowSizes,
   type ToolWindowId,
@@ -23,8 +24,10 @@ import {
   altNumbersAvailable,
   isTextInput,
   shortcutFor,
+  worksInTextInput,
   type Shortcut,
 } from './shortcuts';
+import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
 
 interface FocusedWindow {
   readonly id: ToolWindowId;
@@ -162,14 +165,32 @@ export function useEditorShortcuts(
           return dialogsRef.current.show({ kind: 'help' });
         case 'settings':
           return dialogsRef.current.show({ kind: 'settings' });
+        case 'new-annotation': {
+          // O botão "+ Anotação" de Detalhes sabe a camada ativa, o tipo e o modo
+          // somente leitura: o atalho só o aciona (abrindo Detalhes, se recolhido).
+          const button = () =>
+            document.querySelector<HTMLButtonElement>(
+              `[data-action="${ADD_ANNOTATION_ACTION}"]`,
+            );
+          if (button()) return button()?.click();
+          if (
+            resolveSelection(store.project.peek(), ui.selection.peek())?.kind !==
+            'marking'
+          )
+            return;
+          showToolWindow('details');
+          requestAnimationFrame(() => button()?.click());
+          return;
+        }
       }
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || isTextInput(e.target)) return;
+      if (e.defaultPrevented) return;
       if (document.querySelector('dialog[open]')) return;
       const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
+      if (isTextInput(e.target) && !worksInTextInput(shortcut)) return;
       e.preventDefault();
       run(shortcut);
     };
