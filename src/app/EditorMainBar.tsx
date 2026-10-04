@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import { Icon } from '../ui/icons';
 import { MenuPopover } from '../ui/MenuPopover';
+import { showAndFocusToolWindow } from '../ui/toolWindowLayout';
 import { Button, IconButton } from '../ui/controls';
 import { AddImagesButton, HistoryButtons, ModeButtons } from './EditorTools';
 import { SHORTCUT_LABELS } from './shortcuts';
@@ -55,7 +56,7 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
           style={{ '--layer-color': activeLayer.color }}
           aria-label={t('layer.chipLabel', { name: activeLayer.name })}
           title={t('layer.chipLabel', { name: activeLayer.name })}
-          onClick={() => dialogs.show({ kind: 'layers' })}
+          onClick={() => showAndFocusToolWindow('layers')}
         >
           <span class="layer-dot" aria-hidden="true" />
           <span class="layer-chip-name">{activeLayer.name}</span>

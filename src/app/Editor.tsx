@@ -46,7 +46,7 @@ export function EditorScreen() {
   const notices = useEditorNotices();
   const intake = useImageIntake({ desktop, dialogs, notices });
   const commands = useProjectCommands(dialogs, notices);
-  useEditorShortcuts(dialogs, commands);
+  useEditorShortcuts(dialogs, commands, desktop);
 
   const [panelTab, setPanelTab] = useState<PanelTab>('details');
   const [sheetExpanded, setSheetExpanded] = useState(false);

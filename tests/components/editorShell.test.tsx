@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { signal } from '@preact/signals';
 import { t } from '../../src/i18n';
 import type { CanvasController } from '../../src/canvas/CanvasController';
+import { hideToolWindow, isToolWindowOpen } from '../../src/store/toolWindows';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { sampleProject } from '../model/fixtures';
 import { createHarness } from './harness';
@@ -198,6 +199,15 @@ describe('useEditorShortcuts', () => {
     expect(dialogs.requestDeleteImage).toHaveBeenCalledOnce();
   });
 
+  it('Ctrl+L abre e foca a janela Camadas no desktop', async () => {
+    const { dialogs } = setup();
+    hideToolWindow('layers');
+    expect(isToolWindowOpen('layers')).toBe(false);
+    fireEvent.keyDown(window, { key: 'l', ctrlKey: true });
+    expect(isToolWindowOpen('layers')).toBe(true);
+    expect(dialogs.show).not.toHaveBeenCalled();
+  });
+
   it('somente leitura não exclui', () => {
     const { harness, dialogs } = setup(true);
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
@@ -366,6 +376,38 @@ describe('barras do editor', () => {
     expect(commands.closeProject).toHaveBeenCalledOnce();
     // O menu fecha ao escolher.
     expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('barra principal: o chip da camada ativa abre a janela Camadas (sem diálogo)', async () => {
+    const harness = createHarness(sampleProject());
+    const dialogs = fakeDialogs();
+    hideToolWindow('layers');
+    withContext(
+      harness,
+      <EditorMainBar
+        busy={false}
+        onAdd={vi.fn()}
+        dialogs={dialogs}
+        commands={{ exportProject: vi.fn(), closeProject: vi.fn() } as ProjectCommands}
+      />,
+    );
+    const name = harness.project().layers[0]?.name ?? '';
+    await userEvent.click(
+      screen.getByRole('button', { name: t('layer.chipLabel', { name }) }),
+    );
+    expect(isToolWindowOpen('layers')).toBe(true);
+    expect(dialogs.show).not.toHaveBeenCalled();
+  });
+
+  it('topo (celular): o chip da camada ativa segue abrindo o diálogo de camadas', async () => {
+    const harness = createHarness(sampleProject());
+    const dialogs = fakeDialogs();
+    withContext(harness, <EditorTopBar dialogs={dialogs} />);
+    const name = harness.project().layers[0]?.name ?? '';
+    await userEvent.click(
+      screen.getByRole('button', { name: t('layer.chipLabel', { name }) }),
+    );
+    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'layers' });
   });
 
   it('topo (celular): título, camada ativa e Menu', async () => {
