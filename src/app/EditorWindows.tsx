@@ -1,5 +1,11 @@
 import type { ComponentChildren } from 'preact';
-import { openWindowOf, showToolWindow, type ToolWindowId } from '../store/toolWindows';
+import {
+  openWindowOf,
+  openWindowsOf,
+  showToolWindow,
+  toolWindowSizes,
+  type ToolWindowId,
+} from '../store/toolWindows';
 import type { Selection } from '../store/ui';
 import { Breadcrumbs } from '../ui/Breadcrumbs';
 import {
@@ -9,10 +15,10 @@ import {
 } from '../ui/DiagnosticsView';
 import { IncompleteView } from '../ui/IncompleteView';
 import { ListView } from '../ui/ListView';
-import { MarkingTree } from '../ui/MarkingTree';
+import { LayersWindow } from '../ui/LayersWindow';
 import { ToolStrip } from '../ui/ToolStrip';
 import { ToolWindow } from '../ui/ToolWindow';
-import { useEditor } from '../ui/EditorContext';
+import { TreeWindow } from '../ui/TreeWindow';
 import { PANES_CLASS } from '../ui/toolWindowLayout';
 import { ZoomField } from '../ui/ZoomField';
 import { FitButton, SemanticTextButton } from './EditorTools';
@@ -28,33 +34,57 @@ interface EditorWindowsProps {
   readonly canvas: ComponentChildren;
 }
 
-/** Conteúdo de cada janela. Camadas entra na R6. */
-function WindowContent({
+/**
+ * Cada janela, com o próprio cabeçalho.
+ * `stacked`: a janela divide a coluna com outra (Camadas embaixo da Árvore).
+ */
+function Window({
   id,
+  stacked,
   panel,
   onSelect,
 }: {
   readonly id: ToolWindowId;
+  readonly stacked: boolean;
   readonly panel: EditorPanelProps;
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }) {
-  const { store, ui } = useEditor();
-  if (id === 'details') return <EditorPanel {...panel} />;
-  if (id === 'list') return <ListView onSelect={onSelect} />;
-  if (id === 'incomplete') {
-    // Ir até a anotação precisa do painel de Detalhes à vista.
-    const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
-      showToolWindow('details');
-      panel.onGoToAnnotation(annotation);
-    };
-    return <IncompleteView onGoToAnnotation={goTo} />;
+  switch (id) {
+    case 'tree':
+      return <TreeWindow onSelect={onSelect} />;
+    case 'layers':
+      return <LayersWindow stacked={stacked} />;
+    case 'details':
+      return (
+        <ToolWindow id={id}>
+          <EditorPanel {...panel} />
+        </ToolWindow>
+      );
+    case 'list':
+      return (
+        <ToolWindow id={id}>
+          <ListView onSelect={onSelect} />
+        </ToolWindow>
+      );
+    case 'incomplete': {
+      // Ir até a anotação precisa do painel de Detalhes à vista.
+      const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
+        showToolWindow('details');
+        panel.onGoToAnnotation(annotation);
+      };
+      return (
+        <ToolWindow id={id}>
+          <IncompleteView onGoToAnnotation={goTo} />
+        </ToolWindow>
+      );
+    }
+    case 'diagnostics':
+      return (
+        <ToolWindow id={id} actions={<DiagnosticsHeaderActions />}>
+          <DiagnosticsView />
+        </ToolWindow>
+      );
   }
-  if (id === 'diagnostics') return <DiagnosticsView />;
-  const project = store.committed.value;
-  if (!project) return null;
-  return (
-    <MarkingTree project={project} selection={ui.selection.value} onSelect={onSelect} />
-  );
 }
 
 /** Copiar e Limpar ficam no cabeçalho da janela Diagnóstico (B4). */
@@ -63,23 +93,23 @@ function DiagnosticsHeaderActions() {
 }
 
 export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
-  const left = openWindowOf('left');
+  const left = openWindowsOf('left');
   const right = openWindowOf('right');
   const bottom = openWindowOf('bottom');
-  const window = (id: ToolWindowId) => (
-    <ToolWindow
-      id={id}
-      actions={id === 'diagnostics' ? <DiagnosticsHeaderActions /> : undefined}
-    >
-      <WindowContent id={id} panel={panel} onSelect={onSelect} />
-    </ToolWindow>
+  const window = (id: ToolWindowId, stacked = false) => (
+    <Window key={id} id={id} stacked={stacked} panel={panel} onSelect={onSelect} />
   );
 
   return (
     <div class="editor-body">
       <ToolStrip side="left" />
       <div class={PANES_CLASS}>
-        {left && window(left)}
+        {left.length > 0 && (
+          // A largura é da coluna: Árvore e Camadas empilhadas dividem a mesma.
+          <div class="tool-column" style={{ width: `${toolWindowSizes.value.left}px` }}>
+            {left.map((id, i) => window(id, i > 0))}
+          </div>
+        )}
         <div class="editor-center">
           <div class="canvas-bar">
             <Breadcrumbs onSelect={onSelect} />

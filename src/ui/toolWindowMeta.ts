@@ -21,6 +21,7 @@ export interface ToolWindowMeta {
 
 const META: Readonly<Record<ToolWindowId, ToolWindowMeta>> = {
   tree: { icon: 'tree', title: () => t('panel.treeTitle') },
+  layers: { icon: 'layers', title: () => t('layer.title') },
   details: { icon: 'panelRight', title: () => t('panel.details') },
   list: { icon: 'list', title: () => t('list.title'), tab: () => t('view.list') },
   incomplete: { icon: 'checklist', title: () => t('incomplete.title') },

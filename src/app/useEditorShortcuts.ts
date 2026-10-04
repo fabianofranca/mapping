@@ -5,6 +5,8 @@ import {
   TOOL_WINDOWS,
   WINDOW_SIDE,
   hideToolWindow,
+  layersWindowHeight,
+  resizeLayersWindow,
   resizeToolWindow,
   showToolWindow,
   toggleToolWindow,
@@ -14,7 +16,7 @@ import {
 } from '../store/toolWindows';
 import { resolveSelection, type Selection } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
-import { spaceFor } from '../ui/toolWindowLayout';
+import { showAndFocusToolWindow, spaceFor } from '../ui/toolWindowLayout';
 import { isStandalone } from '../utils/platform';
 import type { EditorDialogs } from './useEditorDialogs';
 import type { ProjectCommands } from './useProjectCommands';
@@ -22,8 +24,10 @@ import {
   altNumbersAvailable,
   isTextInput,
   shortcutFor,
+  worksInTextInput,
   type Shortcut,
 } from './shortcuts';
+import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
 
 interface FocusedWindow {
   readonly id: ToolWindowId;
@@ -39,11 +43,19 @@ function focusedWindow(): FocusedWindow | null {
   return el && id ? { id, side: WINDOW_SIDE[id], el } : null;
 }
 
-/** Redimensiona a janela em foco em 16px no sentido das setas (B2). */
+/**
+ * Redimensiona a janela em foco em 16px no sentido das setas (B2). Nas Camadas
+ * empilhadas, ↑/↓ mexem na divisória com a Árvore e ←/→ na largura da coluna.
+ */
 function resizeFocused(dx: number, dy: number): void {
   const focused = focusedWindow();
   if (!focused) return;
-  const { side, el } = focused;
+  const { id, side, el } = focused;
+  if (id === 'layers' && dy !== 0 && el.classList.contains('tool-window-stacked')) {
+    const column = el.closest('.tool-column')?.getBoundingClientRect().height || 0;
+    resizeLayersWindow(layersWindowHeight.peek() - dy * RESIZE_STEP, column);
+    return;
+  }
   const delta = side === 'bottom' ? -dy : side === 'left' ? dx : -dx;
   if (delta === 0) return;
   const size = toolWindowSizes.peek()[side];
@@ -57,12 +69,16 @@ function resizeFocused(dx: number, dy: number): void {
 export function useEditorShortcuts(
   dialogs: EditorDialogs,
   commands: ProjectCommands,
+  desktop = true,
 ): void {
   const { store, ui, canvas } = useEditor();
   const dialogsRef = useRef(dialogs);
   dialogsRef.current = dialogs;
   const commandsRef = useRef(commands);
   commandsRef.current = commands;
+  // No celular as camadas seguem em diálogo (até a R8); no desktop são uma janela.
+  const desktopRef = useRef(desktop);
+  desktopRef.current = desktop;
 
   useEffect(() => {
     const altNumbers = altNumbersAvailable(
@@ -127,12 +143,7 @@ export function useEditorShortcuts(
           const { window } = shortcut;
           // Fechada ou sem foco dentro: abre e foca; já em foco: esconde.
           if (focusedWindow()?.id === window) toggleToolWindow(window);
-          else showToolWindow(window);
-          queueMicrotask(() => {
-            document
-              .querySelector<HTMLElement>(`.tool-window[data-window="${window}"]`)
-              ?.focus();
-          });
+          else showAndFocusToolWindow(window);
           return;
         }
         case 'resize-window':
@@ -148,19 +159,38 @@ export function useEditorShortcuts(
         case 'export':
           return void commandsRef.current.exportProject();
         case 'layers':
+          if (desktopRef.current) return showAndFocusToolWindow('layers');
           return dialogsRef.current.show({ kind: 'layers' });
         case 'help':
           return dialogsRef.current.show({ kind: 'help' });
         case 'settings':
           return dialogsRef.current.show({ kind: 'settings' });
+        case 'new-annotation': {
+          // O botão "+ Anotação" de Detalhes sabe a camada ativa, o tipo e o modo
+          // somente leitura: o atalho só o aciona (abrindo Detalhes, se recolhido).
+          const button = () =>
+            document.querySelector<HTMLButtonElement>(
+              `[data-action="${ADD_ANNOTATION_ACTION}"]`,
+            );
+          if (button()) return button()?.click();
+          if (
+            resolveSelection(store.project.peek(), ui.selection.peek())?.kind !==
+            'marking'
+          )
+            return;
+          showToolWindow('details');
+          requestAnimationFrame(() => button()?.click());
+          return;
+        }
       }
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || isTextInput(e.target)) return;
+      if (e.defaultPrevented) return;
       if (document.querySelector('dialog[open]')) return;
       const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
+      if (isTextInput(e.target) && !worksInTextInput(shortcut)) return;
       e.preventDefault();
       run(shortcut);
     };

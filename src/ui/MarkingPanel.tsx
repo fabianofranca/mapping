@@ -1,6 +1,7 @@
-import { useState } from 'preact/hooks';
-import { t, type TranslationKey } from '../i18n';
+import { useId, useState } from 'preact/hooks';
+import { t } from '../i18n';
 import {
+  ancestorsOf,
   parentCandidates,
   type Marking,
   type Project,
@@ -11,9 +12,11 @@ import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { Button, Select, TextField } from './controls';
+import { DetailsIdentity } from './DetailsIdentity';
+import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
-import { IdField } from './IdField';
-import { imageLabel, markingErrorMessage, markingPath } from './labels';
+import { imageLabel, markingErrorMessage, markingLabel, markingPath } from './labels';
+import { Property, PropertyGrid } from './PropertyGrid';
 
 interface MarkingPanelProps {
   readonly project: Project;
@@ -25,14 +28,20 @@ interface MarkingPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-const RECT_FIELDS: readonly { key: keyof Rect; label: TranslationKey }[] = [
-  { key: 'x', label: 'marking.x' },
-  { key: 'y', label: 'marking.y' },
-  { key: 'width', label: 'marking.width' },
-  { key: 'height', label: 'marking.height' },
-];
+/** Resumo da seção Marcação recolhida: "X 112 · Y 236 · 346 × 84 px". */
+export function rectSummary(rect: Rect): string {
+  return t('marking.rectSummary', {
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+  });
+}
 
-/** Detalhes da marcação: nome, ajuste fino do retângulo, pai, revisão e exclusão. */
+/**
+ * Detalhes da marcação: identidade, seção Marcação (nome, pai, posição e tamanho),
+ * revisão, anotações por camada e exclusão.
+ */
 export function MarkingPanel({
   project,
   marking,
@@ -45,6 +54,8 @@ export function MarkingPanel({
   const { actions, ui, derived } = useEditor();
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
+  const nameId = useId();
+  const parentId = useId();
 
   const report = (result: ActionResult): boolean => {
     setError(result.ok ? null : markingErrorMessage(result.error));
@@ -62,15 +73,39 @@ export function MarkingPanel({
     return false;
   };
 
+  const rectField = (key: keyof Rect, short: string, label: string) => (
+    <label class="props-pair-item" title={label}>
+      <span class="props-pair-label" aria-hidden="true">
+        {short}
+      </span>
+      <TextField
+        size="sm"
+        type="number"
+        inputMode="numeric"
+        step={1}
+        min={0}
+        aria-label={label}
+        disabled={readOnly}
+        value={String(marking.rect[key])}
+        onCommit={(text) => commitRect(key, text)}
+      />
+    </label>
+  );
+
   const candidates = parentCandidates(project, marking.id);
+  const where = [
+    imageLabel(image),
+    ...ancestorsOf(project, marking.id).reverse().map(markingLabel),
+  ].join(t('marking.pathSeparator'));
 
   return (
     <div class="panel-details">
-      <div class="panel-heading">
-        <strong class="panel-name">{markingPath(project, marking)}</strong>
-        <span class="muted">{t('marking.inImage', { file: imageLabel(image) })}</span>
-      </div>
-      <IdField id={marking.id} />
+      <DetailsIdentity
+        icon="marking"
+        name={markingLabel(marking)}
+        sub={t('marking.inImage', { file: where })}
+        id={marking.id}
+      />
 
       {marking.needsReview && (
         <div class="notice" role="status">
@@ -86,17 +121,65 @@ export function MarkingPanel({
         </div>
       )}
 
-      <TextField
-        label={t('marking.name')}
-        value={marking.name ?? ''}
-        placeholder={t('marking.namePlaceholder')}
-        disabled={readOnly}
-        onCommit={(text) => {
-          // Espaços em volta não contam como alteração.
-          if ((text.trim() || null) === marking.name) return false;
-          return report(actions.renameMarking(marking.id, text));
-        }}
-      />
+      <Section
+        section={{ kind: 'marking' }}
+        title={t('marking.section')}
+        summary={rectSummary(marking.rect)}
+      >
+        <PropertyGrid>
+          <Property label={t('marking.name')} for={nameId}>
+            <TextField
+              id={nameId}
+              size="sm"
+              value={marking.name ?? ''}
+              placeholder={t('marking.namePlaceholder')}
+              disabled={readOnly}
+              onCommit={(text) => {
+                // Espaços em volta não contam como alteração.
+                if ((text.trim() || null) === marking.name) return false;
+                return report(actions.renameMarking(marking.id, text));
+              }}
+            />
+          </Property>
+          <Property label={t('marking.parent')} for={parentId}>
+            <Select
+              id={parentId}
+              size="sm"
+              value={marking.parentId ?? ''}
+              disabled={readOnly}
+              onChange={(e) => {
+                const value = e.currentTarget.value;
+                report(actions.setMarkingParent(marking.id, value === '' ? null : value));
+              }}
+            >
+              <option value="">{t('marking.noParent')}</option>
+              {candidates.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {markingPath(project, m)}
+                </option>
+              ))}
+            </Select>
+          </Property>
+          <Property label={t('marking.position')} hint={t('marking.pixelsHint')}>
+            <div class="props-pair">
+              {rectField('x', t('marking.x'), t('marking.x'))}
+              {rectField('y', t('marking.y'), t('marking.y'))}
+            </div>
+          </Property>
+          <Property label={t('marking.size')} hint={t('marking.pixelsHint')}>
+            <div class="props-pair">
+              {rectField('width', t('marking.widthShort'), t('marking.width'))}
+              {rectField('height', t('marking.heightShort'), t('marking.height'))}
+            </div>
+          </Property>
+        </PropertyGrid>
+      </Section>
+
+      {error && (
+        <p class="field-error" role="alert">
+          {error}
+        </p>
+      )}
 
       <AnnotationsPanel
         project={project}
@@ -110,45 +193,6 @@ export function MarkingPanel({
         focusAnnotation={ui.focusAnnotation.value}
         onFocusDone={() => (ui.focusAnnotation.value = null)}
       />
-
-      <fieldset class="rect-fields" disabled={readOnly}>
-        <legend>{t('marking.rect')}</legend>
-        {RECT_FIELDS.map(({ key, label }) => (
-          <TextField
-            key={key}
-            label={t(label)}
-            type="number"
-            inputMode="numeric"
-            step={1}
-            min={0}
-            value={String(marking.rect[key])}
-            onCommit={(text) => commitRect(key, text)}
-          />
-        ))}
-      </fieldset>
-
-      <Select
-        label={t('marking.parent')}
-        value={marking.parentId ?? ''}
-        disabled={readOnly}
-        onChange={(e) => {
-          const value = e.currentTarget.value;
-          report(actions.setMarkingParent(marking.id, value === '' ? null : value));
-        }}
-      >
-        <option value="">{t('marking.noParent')}</option>
-        {candidates.map((m) => (
-          <option key={m.id} value={m.id}>
-            {markingPath(project, m)}
-          </option>
-        ))}
-      </Select>
-
-      {error && (
-        <p class="field-error" role="alert">
-          {error}
-        </p>
-      )}
 
       <div class="row">
         <Button variant="danger" disabled={readOnly} onClick={() => onDelete(marking)}>

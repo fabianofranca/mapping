@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
@@ -12,14 +13,29 @@ import {
   type Project,
   type SpecAnnotationType,
 } from '../model';
-import type { AnnotationLocation } from '../store/ui';
+import { SHORTCUT_LABELS } from '../app/shortcuts';
+import {
+  goToAnnotation,
+  isSectionCollapsed,
+  toggleSection,
+  type AnnotationLocation,
+} from '../store/ui';
 import { AnnotationEditor } from './AnnotationEditor';
 import { AnnotationLines, AnnotationTitle } from './AnnotationSummary';
 import { Dialog } from './Dialog';
+import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
+import { Icon } from './icons';
 import { markingPath } from './labels';
-import { annotationDisplayName, ownerTypeNames } from './typedText';
-import { Button } from './controls';
+import {
+  annotationDisplayName,
+  annotationSummary,
+  issueFocusKey,
+  issueMessage,
+  issuesOf,
+  ownerTypeNames,
+} from './typedText';
+import { Button, IconButton } from './controls';
 
 interface AnnotationsPanelProps {
   readonly project: Project;
@@ -56,7 +72,13 @@ type CreateStep =
       readonly owners: string;
     };
 
-/** Anotações da marcação, agrupadas por camada visível (cabeçalho na cor da camada). */
+/** Atributo do botão "+ Anotação" (o Alt+N o aciona). */
+export const ADD_ANNOTATION_ACTION = 'add-annotation';
+
+/**
+ * Anotações da marcação: pendências com links para o campo e um LayerGroup por camada
+ * visível (cabeçalho na cor da camada, recolhível).
+ */
 export function AnnotationsPanel({
   project,
   marking,
@@ -69,8 +91,8 @@ export function AnnotationsPanel({
   focusAnnotation,
   onFocusDone,
 }: AnnotationsPanelProps) {
-  const { actions } = useEditor();
-  const root = useRef<HTMLElement>(null);
+  const { actions, ui } = useEditor();
+  const root = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<CreateStep | null>(null);
   // A função muda a cada renderização do pai; o efeito só deve reagir ao foco pedido.
   const onFocusDoneRef = useRef(onFocusDone);
@@ -78,6 +100,12 @@ export function AnnotationsPanel({
   const visibleLayerIds = new Set(layers.map((l) => l.id));
   const inherited = getInheritedAnnotations(project, marking.id);
   const sourceOf = (a: Annotation) => project.markings.find((m) => m.id === a.markingId);
+  const collapsed = ui.collapsed.value;
+  const byLayer = layers.map((layer) => ({
+    layer,
+    annotations: annotationsOf(project, marking.id, layer.id),
+  }));
+  const count = byLayer.reduce((n, g) => n + g.annotations.length, 0);
 
   useEffect(() => {
     if (focusAnnotation === null) return;
@@ -86,9 +114,21 @@ export function AnnotationsPanel({
     ].find((el) => el.dataset.annotation === focusAnnotation);
     if (!target) return;
     onFocusDoneRef.current();
-    target.scrollIntoView({ block: 'nearest' });
-    target.querySelector<HTMLElement>('input, select')?.focus({ preventScroll: true });
-  }, [focusAnnotation, layers.length, project]);
+    const field = ui.focusField.peek();
+    ui.focusField.value = null;
+    const scope =
+      (field !== null &&
+        [...target.querySelectorAll<HTMLElement>('[data-focus]')].find(
+          (el) => el.dataset.focus === field,
+        )) ||
+      target;
+    scope.scrollIntoView({ block: 'nearest' });
+    // Campo de texto ou lista primeiro; senão o botão (referência, segmentado).
+    (
+      scope.querySelector<HTMLElement>('input, select, textarea') ??
+      scope.querySelector<HTMLElement>('.props-value button')
+    )?.focus({ preventScroll: true });
+  }, [focusAnnotation, layers.length, project, collapsed, ui]);
 
   const created = (layerId: string, result: { ok: boolean; value?: string }) => {
     if (result.ok && result.value) {
@@ -129,46 +169,43 @@ export function AnnotationsPanel({
   };
 
   return (
-    <section class="annotations" ref={root} aria-label={t('annotation.heading')}>
-      <div class="annotations-heading">
-        <h3>{t('annotation.heading')}</h3>
-        {activeLayer && (
-          <Button
-            variant="primary"
-            aria-label={t('annotation.addIn', { layer: activeLayer.name })}
-            title={t('annotation.addIn', { layer: activeLayer.name })}
-            disabled={readOnly}
-            onClick={() => add(activeLayer)}
-          >
-            {t('annotation.add')}
-          </Button>
-        )}
-      </div>
-
-      {layers.map((layer) => {
-        const annotations = annotationsOf(project, marking.id, layer.id);
-        return (
-          <div
-            key={layer.id}
-            class="layer-section"
-            style={{ '--layer-color': layer.color }}
-          >
-            <div class="layer-section-header">
-              <span class="layer-dot" aria-hidden="true" />
-              <strong class="layer-section-name">{layer.name}</strong>
-              <Button
-                aria-label={t('annotation.addIn', { layer: layer.name })}
-                title={t('annotation.addIn', { layer: layer.name })}
-                disabled={readOnly}
-                onClick={() => add(layer)}
-              >
-                {t('annotation.add')}
-              </Button>
-            </div>
-            {annotations.length === 0 ? (
-              <p class="muted">{t('annotation.emptySection')}</p>
-            ) : (
-              annotations.map((annotation) => (
+    <div class="annotations" ref={root}>
+      <IssuesNotice project={project} groups={byLayer} />
+      <Section
+        section={{ kind: 'annotations' }}
+        title={t('annotation.heading')}
+        count={count}
+        actions={
+          activeLayer && (
+            <Button
+              variant="primary"
+              size="sm"
+              data-action={ADD_ANNOTATION_ACTION}
+              aria-label={t('annotation.addIn', { layer: activeLayer.name })}
+              aria-keyshortcuts={SHORTCUT_LABELS.newAnnotation}
+              title={`${t('annotation.addIn', { layer: activeLayer.name })}  ${SHORTCUT_LABELS.newAnnotation}`}
+              disabled={readOnly}
+              onClick={() => add(activeLayer)}
+            >
+              {t('annotation.add')}
+            </Button>
+          )
+        }
+      >
+        {byLayer.map(({ layer, annotations }) => {
+          const inheritedHere = inherited.filter((a) => a.layerId === layer.id);
+          return (
+            <LayerGroup
+              key={layer.id}
+              hasBody={annotations.length > 0 || inheritedHere.length > 0}
+              project={project}
+              layer={layer}
+              active={layer.id === activeLayer?.id}
+              annotations={annotations}
+              readOnly={readOnly}
+              onAdd={() => add(layer)}
+            >
+              {annotations.map((annotation) => (
                 <AnnotationEditor
                   key={annotation.id}
                   project={project}
@@ -178,17 +215,17 @@ export function AnnotationsPanel({
                   onShowLayer={onShowLayer}
                   readOnly={readOnly}
                 />
-              ))
-            )}
-            <InheritedList
-              project={project}
-              items={inherited.filter((a) => a.layerId === layer.id)}
-              sourceOf={sourceOf}
-              onSelectMarking={onSelectMarking}
-            />
-          </div>
-        );
-      })}
+              ))}
+              <InheritedList
+                project={project}
+                items={inheritedHere}
+                sourceOf={sourceOf}
+                onSelectMarking={onSelectMarking}
+              />
+            </LayerGroup>
+          );
+        })}
+      </Section>
 
       {step?.kind === 'type' && (
         <Dialog
@@ -216,7 +253,6 @@ export function AnnotationsPanel({
             {step.owners.map((owner) => (
               <Button
                 key={owner.id}
-
                 onClick={() => createTyped(step.layer, step.type, owner.id)}
               >
                 {annotationDisplayName(project, owner)}
@@ -237,7 +273,163 @@ export function AnnotationsPanel({
           </p>
         </Dialog>
       )}
-    </section>
+    </div>
+  );
+}
+
+interface LayerGroupProps {
+  readonly project: Project;
+  readonly layer: Layer;
+  readonly active: boolean;
+  readonly annotations: readonly Annotation[];
+  readonly readOnly: boolean;
+  readonly onAdd: () => void;
+  /** Há conteúdo (anotações próprias ou herdadas) para mostrar ao abrir. */
+  readonly hasBody: boolean;
+  readonly children: ComponentChildren;
+}
+
+/**
+ * Grupo de uma camada (LayerGroup do DS 2.0): borda, faixa de 3px na cor da camada,
+ * selo da especialização, "· ativa", contagem e ⚠. Recolhido, resume a primeira
+ * anotação e não monta as anotações.
+ */
+function LayerGroup({
+  project,
+  layer,
+  active,
+  annotations,
+  readOnly,
+  onAdd,
+  hasBody,
+  children,
+}: LayerGroupProps) {
+  const { ui } = useEditor();
+  const section = { kind: 'layer', id: layer.id } as const;
+  const collapsed = isSectionCollapsed(ui, section);
+  const empty = annotations.length === 0;
+  const incomplete = annotations.some((a) => issuesOf(project, a.id).length > 0);
+  const spec = layer.spec
+    ? project.specializations.find((s) => s.id === layer.spec?.specId)
+    : undefined;
+  const first = annotations[0];
+  const meta = [
+    active ? t('layerGroup.active') : null,
+    annotations.length > 1 ? String(annotations.length) : null,
+  ].filter((s) => s !== null);
+
+  const heading = (
+    <>
+      <span class="layer-dot" aria-hidden="true" />
+      <strong class="layer-group-name">{layer.name}</strong>
+      {spec && <span class="tag">{spec.spec?.name ?? spec.id}</span>}
+      {meta.length > 0 && (
+        <span class="layer-group-meta">{` · ${meta.join(' · ')}`}</span>
+      )}
+      <span class="layer-group-summary">
+        {empty
+          ? t('annotation.emptySection')
+          : collapsed && first
+            ? annotationSummary(project, first)
+            : ''}
+      </span>
+      {incomplete && (
+        <span
+          class="issue-badge"
+          role="img"
+          aria-label={t('issue.badge')}
+          title={t('issue.badge')}
+        >
+          ⚠
+        </span>
+      )}
+    </>
+  );
+
+  return (
+    <div
+      class="layer-group"
+      style={{ '--layer-color': layer.color }}
+      data-layer={layer.id}
+    >
+      <div class="layer-group-head">
+        {!hasBody ? (
+          <span class="layer-group-label">
+            <span class="layer-group-chevron" aria-hidden="true" />
+            {heading}
+          </span>
+        ) : (
+          <button
+            type="button"
+            class="layer-group-label"
+            aria-expanded={!collapsed}
+            onClick={() => toggleSection(ui, section)}
+          >
+            <Icon name={collapsed ? 'chevronRight' : 'chevronDown'} />
+            {heading}
+          </button>
+        )}
+        <IconButton
+          icon="plus"
+          label={t('annotation.addIn', { layer: layer.name })}
+          disabled={readOnly}
+          onClick={onAdd}
+        />
+      </div>
+      {hasBody && !collapsed && <div class="layer-group-body">{children}</div>}
+    </div>
+  );
+}
+
+/**
+ * Pendências da marcação (nas camadas visíveis): cada motivo é um link que abre a
+ * camada e a anotação e leva o foco ao campo.
+ */
+function IssuesNotice({
+  project,
+  groups,
+}: {
+  readonly project: Project;
+  readonly groups: readonly { layer: Layer; annotations: readonly Annotation[] }[];
+}) {
+  const { ui } = useEditor();
+  const items = groups.flatMap(({ layer, annotations }) =>
+    annotations.flatMap((annotation) =>
+      issuesOf(project, annotation.id).map((issue, i) => ({
+        key: `${annotation.id}:${i}`,
+        layer,
+        annotation,
+        issue,
+      })),
+    ),
+  );
+  if (items.length === 0) return null;
+  return (
+    <div class="issues" role="status">
+      <strong class="issues-title">
+        <Icon name="warning" />
+        {items.length === 1
+          ? t('issue.headingOne')
+          : t('issue.headingMany', { count: items.length })}
+      </strong>
+      <ul>
+        {items.map(({ key, layer, annotation, issue }) => (
+          <li key={key} style={{ '--layer-color': layer.color }}>
+            <button
+              type="button"
+              class="issue-link"
+              onClick={() => goToAnnotation(ui, annotation, issueFocusKey(issue))}
+            >
+              <span class="layer-dot" aria-hidden="true" />
+              {t('issue.item', {
+                annotation: annotationDisplayName(project, annotation),
+                reason: issueMessage(project, annotation, issue),
+              })}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -272,7 +464,7 @@ interface InheritedListProps {
   readonly onSelectMarking: (markingId: string) => void;
 }
 
-/** Seção "Herdadas" de uma camada: anotações dos ancestrais, somente leitura. */
+/** Herdadas de uma camada: anotações dos ancestrais, somente leitura (caixa tracejada). */
 function InheritedList({
   project,
   items,
@@ -291,7 +483,10 @@ function InheritedList({
           a.type || a.name !== null ? a : { ...a, entries: a.entries.slice(1) };
         return (
           <div key={a.id} class="inherited-item">
-            <AnnotationTitle project={project} annotation={a} class="inherited-name" />
+            <span class="inherited-head">
+              <span class="layer-dot layer-dot-inherited" aria-hidden="true" />
+              <AnnotationTitle project={project} annotation={a} class="inherited-name" />
+            </span>
             <AnnotationLines
               project={project}
               annotation={lines}

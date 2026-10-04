@@ -195,6 +195,11 @@ export interface RefTarget {
   /** Anotação que contém o alvo (para agrupar e mostrar imagem › marcação). */
   readonly annotation: Annotation;
   readonly label: string;
+  /**
+   * Por que o alvo é aceito: as etiquetas do campo que o campo `ref` aceita (linha de
+   * tabela ou campo simples); vazio na tupla livre. Serve ao filtro do seletor.
+   */
+  readonly tags: readonly string[];
 }
 
 /**
@@ -211,8 +216,8 @@ export function findRefTargets(
   if (!field) return [];
   const { accepts } = field;
   const targets: RefTarget[] = [];
-  const push = (ref: RefValue, annotation: Annotation) =>
-    targets.push({ ref, annotation, label: refLabel(p, ref, texts) });
+  const push = (ref: RefValue, annotation: Annotation, tags: readonly string[] = []) =>
+    targets.push({ ref, annotation, label: refLabel(p, ref, texts), tags });
 
   for (const a of p.annotations) {
     if (a.id === sourceAnnotationId) continue;
@@ -225,12 +230,13 @@ export function findRefTargets(
     if (!type || !a.values) continue;
     for (const f of type.fields) {
       if (!sharesTag(f.tags, accepts.tags)) continue;
+      const tags = (f.tags ?? []).filter((tag) => accepts.tags?.includes(tag));
       if (f.type === 'table') {
         for (const row of tableRows(a.values[f.key])) {
-          push({ annotationId: a.id, key: f.key, rowId: row._id }, a);
+          push({ annotationId: a.id, key: f.key, rowId: row._id }, a, tags);
         }
       } else if (SIMPLE_TYPES.has(f.type)) {
-        push({ annotationId: a.id, key: f.key }, a);
+        push({ annotationId: a.id, key: f.key }, a, tags);
       }
     }
   }

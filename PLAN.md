@@ -85,7 +85,7 @@ Barra principal, faixas, janelas de ferramenta, breadcrumbs e barra de status. M
 - [x] Minimapa (P3)
 - [x] Campo de zoom (P4)
 
-A janela Camadas (e o atalho 2) chega com a fase R6; até lá, Camadas continua no diálogo atual. Incompletas e Diagnóstico (atalhos 5 e 6) chegaram com a R7. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
+As janelas Camadas (atalho 2), Incompletas (5) e Diagnóstico (6) vieram com as fases R6 e R7. Do B12, vieram os atalhos ligados a esta fase (janelas, redimensionar, breadcrumbs, zoom, Ctrl+E, Ctrl+L, F1 e Ctrl+,); Ctrl+B, Alt+N e Alt+Enter vêm com a R5.
 
 **Aceite**: abrir, fechar, redimensionar e persistir cada janela; nenhuma função atual sumiu.
 
@@ -93,21 +93,23 @@ A janela Camadas (e o atalho 2) chega com a fase R6; até lá, Camadas continua 
 
 Painel de detalhes (inspetor) redesenhado. Muda comportamento (B14, B15, P5, P6).
 
-- [ ] Identidade e PropertyGrid
-- [ ] LayerGroup recolhível (B15)
-- [ ] KeyValueGrid, com reordenar pares por arrasto (P6)
-- [ ] Campos tipados e DataGrid, com reordenar linhas por arrasto (P6)
-- [ ] ReferenceField e seletor de referência (B14), com filtro por etiqueta (P5)
-- [ ] Pendências com links para o campo
+- [x] Identidade e PropertyGrid
+- [x] LayerGroup recolhível (B15)
+- [x] KeyValueGrid, com reordenar pares por arrasto (P6)
+- [x] Campos tipados e DataGrid, com reordenar linhas por arrasto (P6)
+- [x] ReferenceField e seletor de referência (B14), com filtro por etiqueta (P5)
+- [x] Pendências com links para o campo
+
+Os atalhos Ctrl+B (escolher o alvo da referência em foco), Alt+N (nova anotação na camada ativa) e Alt+Enter (novo par ou nova linha) vieram nesta fase, com Alt+Shift+↑/↓ para mover o par ou a linha em foco.
 
 **Aceite**: edição, validação e desfazer iguais aos atuais.
 
 #### R6 — Árvore e Camadas
 
-Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3).
+Árvore e Camadas viram janelas à esquerda. Muda comportamento (B3). No celular as camadas seguem no diálogo até a R8.
 
-- [ ] Janela Árvore
-- [ ] Camadas como janela, com paleta em popover e modo "sem anotação" (B3)
+- [x] Janela Árvore
+- [x] Camadas como janela, com paleta em popover e modo "sem anotação" (B3)
 
 **Aceite**: todas as ações do `LayersDialog` disponíveis.
 

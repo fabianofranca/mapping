@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { removeLayer, removeMarking } from '../../src/model';
 import {
+  collapseTree,
   createEditorUi,
+  expandSections,
+  goToAnnotation,
+  isSectionCollapsed,
+  sectionKey,
+  toggleSection,
   resolveActiveLayerId,
   resolveSelection,
+  revealInTree,
   setActiveLayer,
   showAllLayers,
   toggleLayerVisible,
+  toggleTreeNode,
+  treeKey,
   visibleLayers,
 } from '../../src/store/ui';
 import { sampleProject } from '../model/fixtures';
@@ -95,5 +104,91 @@ describe('estado da UI do editor', () => {
       expect(resolveActiveLayerId(p, ui.activeLayer.value)).toBe('L1');
       expect(visibleLayers(p, new Set(['L1']), 'L1').map((l) => l.id)).toEqual(['L1']);
     });
+  });
+
+  describe('nós recolhidos da árvore', () => {
+    it('começa com tudo aberto e alterna um nó', () => {
+      const ui = createEditorUi();
+      expect(ui.collapsedTree.value.size).toBe(0);
+      toggleTreeNode(ui, treeKey('marking', 'M1'));
+      expect(ui.collapsedTree.value.has('marking:M1')).toBe(true);
+      toggleTreeNode(ui, treeKey('marking', 'M1'));
+      expect(ui.collapsedTree.value.size).toBe(0);
+    });
+
+    it('as chaves distinguem imagem e marcação com o mesmo id', () => {
+      expect(treeKey('image', 'X')).not.toBe(treeKey('marking', 'X'));
+    });
+
+    it('recolher tudo fecha só os nós com filhos', () => {
+      const ui = createEditorUi();
+      collapseTree(ui, sampleProject());
+      // I1 e I2 têm marcações; M1 e M2 têm filhas; M3 e M4 não têm.
+      expect([...ui.collapsedTree.value].sort()).toEqual([
+        'image:I1',
+        'image:I2',
+        'marking:M1',
+        'marking:M2',
+      ]);
+      collapseTree(ui, null);
+      expect(ui.collapsedTree.value.size).toBe(4);
+    });
+
+    it('revelar abre a imagem e os ancestrais da marcação, e só eles', () => {
+      const ui = createEditorUi();
+      const p = sampleProject();
+      collapseTree(ui, p);
+      expect(revealInTree(ui, p, { kind: 'marking', id: 'M3' })).toBe(true);
+      expect([...ui.collapsedTree.value].sort()).toEqual(['image:I2']);
+    });
+
+    it('revelar não mexe em nada quando não há o que abrir', () => {
+      const ui = createEditorUi();
+      const p = sampleProject();
+      expect(revealInTree(ui, p, { kind: 'marking', id: 'M3' })).toBe(false);
+      collapseTree(ui, p);
+      const before = ui.collapsedTree.value;
+      // Imagem selecionada e seleção que não existe mais: nada a abrir.
+      expect(revealInTree(ui, p, { kind: 'image', id: 'I1' })).toBe(false);
+      expect(revealInTree(ui, p, { kind: 'marking', id: 'X' })).toBe(false);
+      expect(revealInTree(ui, p, null)).toBe(false);
+      expect(ui.collapsedTree.value).toBe(before);
+    });
+  });
+
+  // B15: seções recolhíveis de Detalhes, estado da UI (fora do projeto e do desfazer).
+  it('recolhe e abre seções de Detalhes', () => {
+    const ui = createEditorUi();
+    const layer = { kind: 'layer', id: 'L1' } as const;
+    expect(sectionKey(layer)).toBe('layer:L1');
+    expect(sectionKey({ kind: 'marking' })).toBe('marking');
+    expect(isSectionCollapsed(ui, layer)).toBe(false);
+    toggleSection(ui, layer);
+    expect(isSectionCollapsed(ui, layer)).toBe(true);
+    toggleSection(ui, layer);
+    expect(isSectionCollapsed(ui, layer)).toBe(false);
+
+    toggleSection(ui, { kind: 'marking' });
+    const before = ui.collapsed.value;
+    // Abrir o que já está aberto não troca o conjunto (nada re-renderiza).
+    expandSections(ui, [layer]);
+    expect(ui.collapsed.value).toBe(before);
+    expandSections(ui, [{ kind: 'marking' }]);
+    expect(ui.collapsed.value.size).toBe(0);
+  });
+
+  it('ir até uma anotação abre a camada e a anotação recolhidas e pede o foco no campo', () => {
+    const ui = createEditorUi();
+    toggleSection(ui, { kind: 'annotations' });
+    toggleSection(ui, { kind: 'layer', id: 'L1' });
+    toggleSection(ui, { kind: 'annotation', id: 'A1' });
+    toggleSection(ui, { kind: 'layer', id: 'L2' });
+    ui.hiddenLayers.value = new Set(['L1']);
+    goToAnnotation(ui, { id: 'A1', markingId: 'M1', layerId: 'L1' }, 'owner');
+    expect([...ui.collapsed.value]).toEqual(['layer:L2']);
+    expect(ui.hiddenLayers.value.has('L1')).toBe(false);
+    expect(ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    expect(ui.focusAnnotation.value).toBe('A1');
+    expect(ui.focusField.value).toBe('owner');
   });
 });

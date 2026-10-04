@@ -185,6 +185,8 @@ As 8 cores de linha por imagem (`src/model/images.ts`) não mudam; ganham o halo
 | Z-index     | `z-canvas` 0 … `z-banner` 80 (9 níveis)                                                                                                                                                                                                                                                                                               | `z-index: 10` e `1` fixos                                                                                                    |
 | Sombras     | `shadow-popup`, `shadow-sheet`, `shadow-grabbed`                                                                                                                                                                                                                                                                                      | Só a sombra do item pego existia                                                                                             |
 
+`size-picker` (600px, largura do seletor de referência da seção Layouts) foi **acrescentado na R5**: o DS 2.0 cita a medida, mas não tem o token.
+
 Também: `theme-color` do `index.html` e do manifest passa a seguir `color-accent` do claro (`#1a63cc`), com um `<meta name="theme-color" media="(prefers-color-scheme: dark)">` para o escuro.
 
 ---

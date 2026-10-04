@@ -25,28 +25,6 @@ export function IssueBadge({
   );
 }
 
-/** Lista dos motivos de uma anotação incompleta. */
-export function IssueList({
-  project,
-  annotation,
-}: {
-  readonly project: Project;
-  readonly annotation: Annotation;
-}) {
-  const issues = issuesOf(project, annotation.id);
-  if (issues.length === 0) return null;
-  return (
-    <div class="issues" role="status">
-      <strong>⚠ {t('issue.heading')}</strong>
-      <ul>
-        {issues.map((issue, i) => (
-          <li key={i}>{issueMessage(project, annotation, issue)}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 interface AnnotationLinesProps {
   readonly project: Project;
   readonly annotation: Annotation;
