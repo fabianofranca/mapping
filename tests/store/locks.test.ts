@@ -71,9 +71,40 @@ describe('store: trava', () => {
       error: 'locked',
     });
     expect(actions.removeMarking('M2')).toEqual({ ok: false, error: 'locked' });
-    expect(actions.removeMarking('M1')).toEqual({ ok: false, error: 'locked' });
     expect(actions.removeImage('I2')).toEqual({ ok: false, error: 'locked' });
     expect(current(store)).toBe(before);
+  });
+
+  it('descendente trancado não impede o pai: mover leva o filho junto e excluir o leva embora, com um desfazer cada', () => {
+    const { store, actions } = setup();
+    actions.setMarkingLocked('M3', true);
+    const rect = (id: string) => current(store).markings.find((m) => m.id === id)?.rect;
+    const before = rect('M3');
+    expect(actions.moveMarking('M1', 10, 5).ok).toBe(true);
+    expect(rect('M3')).toEqual({
+      ...before,
+      x: (before?.x ?? 0) + 10,
+      y: (before?.y ?? 0) + 5,
+    });
+    expect(store.undo()).toBe(true);
+    expect(rect('M3')).toEqual(before);
+
+    expect(actions.removeMarking('M1').ok).toBe(true);
+    expect(current(store).markings.map((m) => m.id)).toEqual(['M4']);
+    expect(store.undo()).toBe(true);
+    expect(current(store).markings.map((m) => m.id)).toEqual(['M1', 'M2', 'M3', 'M4']);
+    expect(current(store).markings.find((m) => m.id === 'M3')?.locked).toBe(true);
+  });
+
+  it('um gesto de mover o pai leva o descendente trancado e vira uma entrada só', () => {
+    const { store, actions } = setup();
+    actions.setMarkingLocked('M3', true);
+    const revision = store.revision.value;
+    expect(actions.beginGesture().ok).toBe(true);
+    expect(actions.previewMarkingMove('M1', 20, 0).ok).toBe(true);
+    actions.commitGesture();
+    expect(store.revision.value).toBe(revision + 1);
+    expect(current(store).markings.find((m) => m.id === 'M3')?.rect.x).toBe(1320);
   });
 
   it('um gesto sobre item trancado não gera prévia nem entrada de desfazer', () => {

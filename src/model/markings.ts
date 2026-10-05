@@ -11,13 +11,8 @@ import {
   right,
   translateRect,
 } from './geometry';
-import { childrenOf, depthOf, descendantIds } from './hierarchy';
-import {
-  canDeleteMarking,
-  canMoveMarking,
-  canResizeMarking,
-  requireUnlocked,
-} from './locks';
+import { childrenOf, depthOf, descendantIds, descendantsOf } from './hierarchy';
+import { canDeleteMarking, canEditMarkingGeometry, requireUnlocked } from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
 import type { Marking, Project, Rect } from './types';
@@ -122,7 +117,7 @@ export function renameMarking(
  */
 export function setMarkingRect(p: Project, markingId: string, rect: Rect): Project {
   checkRectShape(rect);
-  requireUnlocked(canResizeMarking(p, markingId));
+  requireUnlocked(canEditMarkingGeometry(p, markingId));
   const { outer, inner } = markingRectLimits(p, markingId);
   const marking = findById(p.markings, markingId);
   if (!containsRect(outer, rect)) {
@@ -153,7 +148,10 @@ export function clampMarkingDelta(
   };
 }
 
-/** Move a marcação e todos os descendentes pelo mesmo deslocamento (inteiro). */
+/**
+ * Move a marcação e todos os descendentes pelo mesmo deslocamento (inteiro). Descendentes
+ * trancados vão junto: a posição relativa entre eles e o pai não muda.
+ */
 export function moveMarking(
   p: Project,
   markingId: string,
@@ -162,7 +160,7 @@ export function moveMarking(
 ): Project {
   if (!Number.isInteger(dx) || !Number.isInteger(dy)) fail('rect-not-integer');
   const marking = findById(p.markings, markingId);
-  requireUnlocked(canMoveMarking(p, markingId));
+  requireUnlocked(canEditMarkingGeometry(p, markingId));
   const moved = translateRect(marking.rect, dx, dy);
   if (!containsRect(containerOf(p, marking), moved)) {
     fail(marking.parentId === null ? 'rect-out-of-image' : 'rect-outside-parent');
@@ -256,19 +254,30 @@ export function confirmMarkingReview(p: Project, markingId: string): Project {
 export function markingDeletionImpact(
   p: Project,
   markingId: string,
-): { descendants: number; annotations: number; brokenRefs: number } {
+): {
+  descendants: number;
+  /** Quantos dos descendentes estão trancados (serão excluídos junto). */
+  lockedDescendants: number;
+  annotations: number;
+  brokenRefs: number;
+} {
   findById(p.markings, markingId);
   const ids = descendantIds(p, markingId);
   const descendants = ids.size;
+  const lockedDescendants = descendantsOf(p, markingId).filter((m) => m.locked).length;
   ids.add(markingId);
   return {
     descendants,
+    lockedDescendants,
     annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
     brokenRefs: countBrokenRefs(p, cascadeRemove(p, markingId)),
   };
 }
 
-/** Exclui a marcação, os descendentes e as anotações de todos eles. Falha se algo estiver trancado. */
+/**
+ * Exclui a marcação, os descendentes (trancados ou não) e as anotações de todos eles.
+ * Falha só se a própria marcação estiver trancada.
+ */
 export function removeMarking(p: Project, markingId: string): Project {
   findById(p.markings, markingId);
   requireUnlocked(canDeleteMarking(p, markingId));

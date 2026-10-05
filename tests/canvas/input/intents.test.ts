@@ -179,10 +179,13 @@ describe('trava (etapa 2.5)', () => {
     expect(intentAt(c, { x: 202, y: 202 })).toEqual({ kind: 'locked' });
   });
 
-  it('pai com um descendente trancado: redimensiona pelas alças, mas não move', () => {
+  it('pai com um descendente trancado: redimensiona e move normalmente', () => {
     const c = ctx({ project: lockedMarking('M2'), selection: select('M1') });
     expect(intentAt(c, { x: 102, y: 98 })).toMatchObject({ kind: 'resize-marking' });
-    expect(intentAt(c, { x: 500, y: 450 })).toEqual({ kind: 'locked' });
+    expect(intentAt(c, { x: 500, y: 450 })).toEqual({
+      kind: 'move-marking',
+      markingId: 'M1',
+    });
   });
 
   it('imagem selecionada e trancada: sem alças e sem mover', () => {
@@ -212,8 +215,11 @@ describe('trava (etapa 2.5)', () => {
   it('segurar-e-mover não pega item trancado (nem a imagem trancada)', () => {
     const p = lockedMarking('M2');
     expect(grabIntentAt(p, null, NONE, { x: 250, y: 250 })).toBeNull();
-    // O pai de uma marcação trancada também não é pego: moveria a filha junto.
-    expect(grabIntentAt(p, null, NONE, { x: 150, y: 150 })).toBeNull();
+    // O pai de uma marcação trancada é pego: mover o pai leva a filha trancada junto.
+    expect(grabIntentAt(p, null, NONE, { x: 150, y: 150 })).toEqual({
+      kind: 'move-marking',
+      markingId: 'M1',
+    });
     // Uma marcação livre (de outra imagem) continua pegável.
     expect(grabIntentAt(p, null, NONE, { x: 1200, y: 100 })).toEqual({
       kind: 'move-marking',

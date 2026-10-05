@@ -158,11 +158,13 @@ describe('marcações: excluir e revisão', () => {
     const p = sampleProject();
     expect(markingDeletionImpact(p, 'M1')).toEqual({
       descendants: 2,
+      lockedDescendants: 0,
       annotations: 3,
       brokenRefs: 0,
     });
     expect(markingDeletionImpact(p, 'M2')).toEqual({
       descendants: 1,
+      lockedDescendants: 0,
       annotations: 1,
       brokenRefs: 0,
     });

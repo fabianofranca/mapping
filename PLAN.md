@@ -28,7 +28,7 @@ Estado: **etapas 1, 1.1, 2, 2.1, 2.2, 2.3 (redesign da interface) e 2.4 (privaci
 
 Objetivo: proteger marcações e imagens já revisadas contra alterações acidentais, sem impedir a navegação nem a seleção. Decisões: ver a descrição do PR.
 
-- [x] **F1. Schema v5 e modelo** — `locked` em imagens e marcações, migração (`false`), regras em `src/model/locks.ts` (mover, redimensionar e excluir bloqueados; pai trancado trava a geometria dos descendentes), testes.
+- [x] **F1. Schema v5 e modelo** — `locked` em imagens e marcações, migração (`false`), regras em `src/model/locks.ts` (mover, redimensionar e excluir bloqueados; pai trancado trava a geometria dos descendentes; descendente trancado não impede o pai: mover o leva junto e excluir o pai o exclui), testes.
 - [x] **F2. Store e estado derivado** — actions de trancar/destrancar (uma entrada de desfazer, inclusive "trancar todas") e conjunto derivado de marcações com geometria trancada.
 - [x] **F3. Canvas** — sem alças no item trancado, cadeado na seleção e sob o cursor, cursor "não permitido", segurar no celular não pega o item trancado.
 - [x] **F4. Interface** — cadeado na Árvore e em Detalhes, "Trancar todas as marcações desta imagem", atalho de teclado na Ajuda, textos pt-BR/en-US.

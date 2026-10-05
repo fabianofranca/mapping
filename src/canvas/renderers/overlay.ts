@@ -5,7 +5,7 @@ import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import {
   canEditImagePlacement,
-  canResizeMarking,
+  canEditMarkingGeometry,
   imageCanvasRect,
   projectIndex,
   type Placement,
@@ -304,7 +304,7 @@ function lockedRect(
   }
   const marking = index.markings.get(item.id);
   const image = marking && index.images.get(marking.imageId);
-  if (!marking || !image || canResizeMarking(project, marking.id)) return null;
+  if (!marking || !image || canEditMarkingGeometry(project, marking.id)) return null;
   return {
     rect: markingCanvasRect(placements.get(image.id) ?? image.placement, marking.rect),
     inherited: !marking.locked,

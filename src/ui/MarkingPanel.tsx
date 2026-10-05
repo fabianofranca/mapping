@@ -3,8 +3,7 @@ import { t } from '../i18n';
 import {
   ancestorsOf,
   canDeleteMarking,
-  canMoveMarking,
-  canResizeMarking,
+  canEditMarkingGeometry,
   parentCandidates,
   type Marking,
   type Project,
@@ -77,19 +76,16 @@ export function MarkingPanel({
     return false;
   };
 
-  // Trava: própria, herdada do pai ou de um descendente (que impede só mover).
+  // Trava: própria ou herdada de um ancestral (descendentes trancados não impedem nada).
   const ancestors = ancestorsOf(project, marking.id);
   const lockedAncestor = ancestors.find((a) => a.locked) ?? null;
-  const resizable = canResizeMarking(project, marking.id);
-  const movable = canMoveMarking(project, marking.id);
+  const geometryEditable = canEditMarkingGeometry(project, marking.id);
   const deletable = canDeleteMarking(project, marking.id);
   const lockNotice = marking.locked
     ? t('lock.markingNotice')
     : lockedAncestor
       ? t('lock.inheritedNotice', { parent: markingLabel(lockedAncestor) })
-      : movable
-        ? null
-        : t('lock.childrenNotice');
+      : null;
 
   const rectField = (key: keyof Rect, short: string, label: string) => (
     <label class="props-pair-item" title={label}>
@@ -103,7 +99,7 @@ export function MarkingPanel({
         step={1}
         min={0}
         aria-label={label}
-        disabled={readOnly || !(key === 'x' || key === 'y' ? movable : resizable)}
+        disabled={readOnly || !geometryEditable}
         value={String(marking.rect[key])}
         onCommit={(text) => commitRect(key, text)}
       />
@@ -233,11 +229,7 @@ export function MarkingPanel({
         <Button
           variant="danger"
           disabled={readOnly || !deletable}
-          title={
-            deletable
-              ? undefined
-              : t(marking.locked ? 'lock.deleteBlocked' : 'lock.deleteBlockedInside')
-          }
+          title={deletable ? undefined : t('lock.deleteBlocked')}
           onClick={() => onDelete(marking)}
         >
           {t('marking.delete')}

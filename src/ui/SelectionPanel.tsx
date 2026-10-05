@@ -136,11 +136,7 @@ export function SelectionPanel({
         <Button
           variant="danger"
           disabled={disabled || !deletable}
-          title={
-            deletable
-              ? undefined
-              : t(image.locked ? 'lock.deleteBlocked' : 'lock.deleteBlockedInside')
-          }
+          title={deletable ? undefined : t('lock.deleteBlocked')}
           onClick={() => onDelete(image)}
         >
           {t('image.delete')}

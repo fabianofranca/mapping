@@ -116,15 +116,27 @@ describe('Detalhes da marcação: cadeado', () => {
     expect(marking(harness.project(), 'M2').locked).toBe(true);
   });
 
-  it('pai com um filho trancado: pode redimensionar, não mover nem excluir', () => {
+  it('pai com um filho trancado: nada fica bloqueado nem avisado', () => {
     renderMarkingPanel('M1', { setup: (h) => h.actions.setMarkingLocked('M3', true) });
-    expect(screen.getByText(t('lock.childrenNotice'))).toBeTruthy();
-    expect((screen.getByLabelText('X') as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByLabelText('Y') as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByLabelText('Largura') as HTMLInputElement).disabled).toBe(false);
+    expect(document.querySelector('.notice')).toBeNull();
+    expect(screen.queryByText(t('lock.markingNotice'))).toBeNull();
+    for (const label of ['X', 'Y', 'Largura', 'Altura']) {
+      expect((screen.getByLabelText(label) as HTMLInputElement).disabled).toBe(false);
+    }
     const remove = screen.getByRole('button', { name: t('marking.delete') });
-    expect((remove as HTMLButtonElement).disabled).toBe(true);
-    expect(remove.getAttribute('title')).toBe(t('lock.deleteBlockedInside'));
+    expect((remove as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('mover o pai pelo X leva o filho trancado junto', async () => {
+    const { harness, user } = renderMarkingPanel('M1', {
+      setup: (h) => h.actions.setMarkingLocked('M3', true),
+    });
+    const before = marking(harness.project(), 'M3').rect;
+    const x = screen.getByLabelText('X');
+    await user.clear(x);
+    await user.type(x, '1010{Enter}');
+    expect(marking(harness.project(), 'M1').rect.x).toBe(1010);
+    expect(marking(harness.project(), 'M3').rect.x).toBe(before.x + 10);
   });
 
   it('somente leitura: o cadeado fica desabilitado', () => {
@@ -202,11 +214,10 @@ describe('Detalhes da imagem: cadeado', () => {
     expect(screen.queryByRole('button', { name: t('lock.lockAll') })).toBeNull();
   });
 
-  it('com uma marcação trancada, a imagem não pode ser excluída', () => {
+  it('com uma marcação trancada, a imagem ainda pode ser excluída', () => {
     renderImagePanel('I1', { setup: (h) => h.actions.setMarkingLocked('M3', true) });
     const remove = screen.getByRole('button', { name: t('image.delete') });
-    expect((remove as HTMLButtonElement).disabled).toBe(true);
-    expect(remove.getAttribute('title')).toBe(t('lock.deleteBlockedInside'));
+    expect((remove as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('somente leitura: os botões de trava ficam desabilitados', () => {

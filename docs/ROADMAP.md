@@ -28,7 +28,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Entra:**
   - cadeado por marcação e por imagem, na Árvore e nos Detalhes, com atalho de teclado e a ação "Trancar todas as marcações desta imagem";
   - a trava bloqueia mover, redimensionar e excluir; a seleção continua livre;
-  - trancar um pai trava a geometria dos descendentes;
+  - trancar um pai trava a geometria dos descendentes; já um descendente trancado nunca impede o pai: mover o pai leva os descendentes trancados junto (mantendo a posição relativa) e excluir o pai com descendentes trancados é permitido, com a confirmação informando quantos itens trancados serão excluídos;
   - cadeado visível no canvas, na seleção e sob o cursor;
   - gravado no `mapping.json` (`locked`), com nova versão de schema e migração, e com desfazer;
   - itens vindos do Figma (etapa 4) já são somente leitura; a trava é para os itens manuais;

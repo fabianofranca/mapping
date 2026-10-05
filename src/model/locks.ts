@@ -1,12 +1,14 @@
 import { fail } from './errors';
-import { ancestorsOf, descendantsOf } from './hierarchy';
+import { ancestorsOf } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import { findById, updateById } from './project';
 import type { Marking, Project } from './types';
 
 // Trava (etapa 2.5): `locked` em marcações e imagens bloqueia mover, redimensionar e
-// excluir. Selecionar, renomear e anotar seguem livres. Trancar um pai trava a
-// geometria dos descendentes sem mexer no `locked` deles.
+// excluir **o próprio item**. Selecionar, renomear e anotar seguem livres. Trancar um pai
+// trava a geometria dos descendentes sem mexer no `locked` deles. Um descendente trancado
+// nunca impede o pai: mover o pai leva os descendentes trancados junto (a posição relativa
+// se mantém) e excluir o pai exclui os descendentes trancados (a confirmação informa quantos).
 
 /** A marcação ou algum ancestral está trancado: a geometria dela não pode mudar. */
 export function isMarkingGeometryLocked(p: Project, markingId: string): boolean {
@@ -35,24 +37,20 @@ export function markingLockStates(p: Project): Map<string, MarkingLockState> {
   return states;
 }
 
-/** Algum descendente está trancado (mover o pai o arrastaria junto). */
-function hasLockedDescendant(p: Project, markingId: string): boolean {
-  return descendantsOf(p, markingId).some((d) => d.locked);
-}
-
-/** Redimensionar: o item ou um ancestral trancado bloqueia. As filhas não se movem. */
-export function canResizeMarking(p: Project, markingId: string): boolean {
+/**
+ * Mover ou redimensionar a marcação: só o item ou um ancestral trancado bloqueia. Descendentes
+ * trancados não contam: mover o pai os leva junto, e redimensionar o pai não os move.
+ */
+export function canEditMarkingGeometry(p: Project, markingId: string): boolean {
   return !isMarkingGeometryLocked(p, markingId);
 }
 
-/** Mover (leva os descendentes junto): também bloqueia se algum descendente estiver trancado. */
-export function canMoveMarking(p: Project, markingId: string): boolean {
-  return canResizeMarking(p, markingId) && !hasLockedDescendant(p, markingId);
-}
-
-/** Excluir (leva os descendentes): o item ou qualquer descendente trancado bloqueia. */
+/**
+ * Excluir (leva os descendentes): só a própria marcação trancada bloqueia. A trava de um
+ * ancestral é de geometria, e descendentes trancados são excluídos junto com o pai.
+ */
 export function canDeleteMarking(p: Project, markingId: string): boolean {
-  return !findById(p.markings, markingId).locked && !hasLockedDescendant(p, markingId);
+  return !findById(p.markings, markingId).locked;
 }
 
 /** Mover ou redimensionar a imagem no canvas. */
@@ -60,18 +58,16 @@ export function canEditImagePlacement(p: Project, imageId: string): boolean {
   return !findById(p.images, imageId).locked;
 }
 
-/** Excluir a imagem leva as marcações: ela ou qualquer marcação dela trancada bloqueia. */
+/** Excluir a imagem leva as marcações, trancadas ou não: só a imagem trancada bloqueia. */
 export function canDeleteImage(p: Project, imageId: string): boolean {
-  return (
-    !findById(p.images, imageId).locked &&
-    !p.markings.some((m) => m.imageId === imageId && m.locked)
-  );
+  return !findById(p.images, imageId).locked;
 }
 
 /**
  * Trocar o arquivo reescala as marcações quando as dimensões mudam: bloqueia se a
- * imagem ou alguma marcação dela estiver trancada. Reapontar um arquivo do mesmo
- * tamanho não muda a geometria e fica livre.
+ * imagem ou alguma marcação dela estiver trancada (a troca mexeria na geometria de
+ * marcações revisadas). Reapontar um arquivo do mesmo tamanho não muda a geometria e
+ * fica livre.
  */
 export function canReplaceImage(
   p: Project,
@@ -80,7 +76,7 @@ export function canReplaceImage(
 ): boolean {
   const image = findById(p.images, imageId);
   if (image.width === next.width && image.height === next.height) return true;
-  return canDeleteImage(p, imageId);
+  return !image.locked && !p.markings.some((m) => m.imageId === imageId && m.locked);
 }
 
 export function setMarkingLocked(

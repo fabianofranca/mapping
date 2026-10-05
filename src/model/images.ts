@@ -216,17 +216,25 @@ export function resizeImage(p: Project, imageId: string, placement: Placement): 
 export function imageDeletionImpact(
   p: Project,
   imageId: string,
-): { markings: number; annotations: number; brokenRefs: number } {
+): {
+  markings: number;
+  /** Quantas das marcações estão trancadas (serão excluídas junto). */
+  lockedMarkings: number;
+  annotations: number;
+  brokenRefs: number;
+} {
   findById(p.images, imageId);
-  const ids = new Set(p.markings.filter((m) => m.imageId === imageId).map((m) => m.id));
+  const own = p.markings.filter((m) => m.imageId === imageId);
+  const ids = new Set(own.map((m) => m.id));
   return {
     markings: ids.size,
+    lockedMarkings: own.filter((m) => m.locked).length,
     annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
     brokenRefs: countBrokenRefs(p, cascadeRemoveImage(p, imageId)),
   };
 }
 
-/** Exclui a imagem com as marcações e anotações dela. Falha se ela ou uma marcação estiver trancada. */
+/** Exclui a imagem com as marcações (trancadas ou não) e anotações dela. Falha só se a própria imagem estiver trancada. */
 export function removeImage(p: Project, imageId: string): Project {
   findById(p.images, imageId);
   requireUnlocked(canDeleteImage(p, imageId));

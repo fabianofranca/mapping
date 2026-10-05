@@ -3,8 +3,7 @@
 // Funções puras (sem DOM nem Konva), testadas em `tests/canvas/input/`.
 import {
   canEditImagePlacement,
-  canMoveMarking,
-  canResizeMarking,
+  canEditMarkingGeometry,
   imageCanvasRect,
   type Marking,
   type MarkingVisibility,
@@ -74,16 +73,13 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
     const rect = markingCanvasRect(selected.image.placement, selected.marking.rect);
     const radius = handleHitRadius(Math.min(rect.width, rect.height) * zoom) / zoom;
     const markingId = selected.marking.id;
-    // Trancada (ela ou um ancestral): sem alças. Com um descendente trancado, ela só
-    // redimensiona: mover levaria o descendente junto.
-    const corner = canResizeMarking(project, markingId)
-      ? cornerAt(rect, c, radius)
-      : null;
+    // Trancada (ela ou um ancestral): sem alças e sem mover. Descendentes trancados não
+    // contam: mover o pai os leva junto.
+    const editable = canEditMarkingGeometry(project, markingId);
+    const corner = editable ? cornerAt(rect, c, radius) : null;
     if (corner) return { kind: 'resize-marking', markingId, corner };
     if (pointInRect(c, rect)) {
-      return canMoveMarking(project, markingId)
-        ? { kind: 'move-marking', markingId }
-        : LOCKED;
+      return editable ? { kind: 'move-marking', markingId } : LOCKED;
     }
   }
   if (selected?.kind === 'image') {
@@ -117,7 +113,7 @@ export function selectableMarkings(
 /**
  * Item que o segurar-e-mover pega em `c` (canvas): a marcação selecionada, se o
  * dedo estiver nela; senão a mais interna sob o dedo; senão a imagem. Um item
- * trancado (ou que não pode ser movido) não é pego: o resultado é `null`.
+ * trancado (ele ou um ancestral) não é pego: o resultado é `null`.
  */
 export function grabIntentAt(
   project: Project | null,
@@ -136,7 +132,7 @@ export function grabIntentAt(
   const picked =
     chain.find((m) => selection?.kind === 'marking' && selection.id === m.id) ?? chain[0];
   if (picked) {
-    return canMoveMarking(project, picked.id)
+    return canEditMarkingGeometry(project, picked.id)
       ? { kind: 'move-marking', markingId: picked.id }
       : null;
   }

@@ -196,13 +196,16 @@ Anotação tipada (Classe da especialização `modelo-dados`):
 contra alterações acidentais. Quem **lê** o arquivo (um agente que recorta a imagem) pode ignorá-los:
 a trava não muda o significado dos dados, só o que a app deixa **alterar**.
 
-- Item trancado **não pode ser movido, redimensionado nem excluído**. A seleção continua livre, e nome,
-  pai, anotações e "Confirmar posição" continuam editáveis.
+- A trava vale para **a manipulação direta do próprio item trancado**: ele **não pode ser movido,
+  redimensionado nem excluído**. A seleção continua livre, e nome, pai, anotações e "Confirmar posição"
+  continuam editáveis.
 - Trancar uma marcação **trava a geometria dos descendentes** (mover e redimensionar), sem alterar o
   `locked` deles: destrancar o pai libera todos. Excluir um descendente solto continua permitido.
-- Mover uma marcação leva os descendentes junto: por isso ela não pode ser movida se algum descendente
-  estiver trancado (redimensionar o pai, que não move os filhos, continua livre). Excluir uma marcação
-  ou imagem também é bloqueado se algum item dentro dela estiver trancado.
+- Um descendente trancado **nunca impede o pai**. Mover o pai **leva junto** os descendentes trancados,
+  mantendo a posição relativa (o pai e os descendentes se movem pelo mesmo deslocamento); redimensionar o
+  pai não move os filhos. Excluir o pai (ou uma imagem) com descendentes trancados é permitido: eles são
+  excluídos junto, e a confirmação informa **quantos itens trancados** serão excluídos. Só a própria
+  marcação (ou imagem) trancada bloqueia a exclusão.
 - Imagem trancada: não pode ser movida nem redimensionada no canvas. As marcações dela seguem a regra
   própria (as coordenadas são em pixels da imagem, então mover a imagem não as muda). Trocar o arquivo
   por outro de **tamanho diferente** (o que reescala as marcações) é bloqueado se a imagem ou alguma
@@ -214,7 +217,7 @@ a trava não muda o significado dos dados, só o que a app deixa **alterar**.
 - Os itens vindos do Figma (etapa 4) serão somente leitura por outro mecanismo; a trava é para os itens
   manuais.
 
-As regras ficam em `src/model/locks.ts` (`canMoveMarking`, `canResizeMarking`, `canDeleteMarking`,
+As regras ficam em `src/model/locks.ts` (`canEditMarkingGeometry`, `canDeleteMarking`,
 `canEditImagePlacement`, `canDeleteImage`, `canReplaceImage`); as operações do modelo lançam o erro
 `locked` se alguém tentar contorná-las.
 

@@ -565,13 +565,11 @@ export const ptBR = {
     'Trancada: não pode ser movida, redimensionada nem excluída. A seleção e as anotações continuam livres.',
   'lock.inheritedNotice':
     'Posição e tamanho travados porque "{parent}" está trancada. Destranque-a para mover ou redimensionar esta marcação.',
-  'lock.childrenNotice':
-    'Há marcações trancadas dentro desta: ela só pode ser redimensionada, não movida.',
   'lock.imageNotice':
     'Trancada: não pode ser movida, redimensionada nem excluída. As marcações dela continuam editáveis.',
   'lock.deleteBlocked': 'Destranque para excluir',
-  'lock.deleteBlockedInside':
-    'Há itens trancados aqui dentro. Destranque-os para excluir.',
+  'lock.deleteWarning':
+    'Atenção: {locked} item(ns) trancado(s) será(ão) excluído(s) junto.',
   'lock.lockAll': 'Trancar todas as marcações desta imagem',
   'lock.unlockAll': 'Destrancar todas as marcações desta imagem',
   'image.replaceLocked':

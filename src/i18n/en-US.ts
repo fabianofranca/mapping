@@ -562,12 +562,10 @@ export const enUS: Dictionary = {
     'Locked: it cannot be moved, resized or deleted. Selection and annotations stay free.',
   'lock.inheritedNotice':
     'Position and size are locked because "{parent}" is locked. Unlock it to move or resize this marking.',
-  'lock.childrenNotice':
-    'Some markings inside this one are locked: it can only be resized, not moved.',
   'lock.imageNotice':
     'Locked: it cannot be moved, resized or deleted. Its markings stay editable.',
   'lock.deleteBlocked': 'Unlock to delete',
-  'lock.deleteBlockedInside': 'There are locked items inside. Unlock them to delete.',
+  'lock.deleteWarning': 'Warning: {locked} locked item(s) will be deleted too.',
   'lock.lockAll': 'Lock all markings in this image',
   'lock.unlockAll': 'Unlock all markings in this image',
   'image.replaceLocked':
