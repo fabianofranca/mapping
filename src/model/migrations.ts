@@ -51,11 +51,19 @@ export const migrateFrom3To4: Migration = (data) => ({
   })),
 });
 
+/** v4 → v5 (trava): imagens e marcações ganham `locked: false`. */
+export const migrateFrom4To5: Migration = (data) => ({
+  ...data,
+  images: mapItems(data.images, (i) => ({ locked: false, ...i })),
+  markings: mapItems(data.markings, (m) => ({ locked: false, ...m })),
+});
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
   [2, migrateFrom2To3],
   [3, migrateFrom3To4],
+  [4, migrateFrom4To5],
 ]);
 
 export type MigrationResult =

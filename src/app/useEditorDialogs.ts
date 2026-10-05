@@ -1,5 +1,11 @@
 import { useState } from 'preact/hooks';
-import { markingDeletionImpact, type Marking, type ProjectImage } from '../model';
+import {
+  canDeleteImage,
+  canDeleteMarking,
+  markingDeletionImpact,
+  type Marking,
+  type ProjectImage,
+} from '../model';
 import type { AspectChange } from '../store/session';
 import { useEditor } from '../ui/EditorContext';
 
@@ -27,7 +33,7 @@ export interface EditorDialogs {
   show(dialog: EditorDialog): void;
   close(): void;
   requestDeleteImage(image: ProjectImage): void;
-  /** Em cascata pede confirmação; simples, não (o desfazer cobre). */
+  /** Em cascata pede confirmação; simples, não (o desfazer cobre). Item trancado: não faz nada. */
   requestDeleteMarking(marking: Marking): void;
 }
 
@@ -40,10 +46,15 @@ export function useEditorDialogs(): EditorDialogs {
     current,
     show,
     close: () => setCurrent(null),
-    requestDeleteImage: (image) => show({ kind: 'deleteImage', image }),
+    requestDeleteImage: (image) => {
+      const project = store.project.peek();
+      // Trancada (ou com marcação trancada): nada a confirmar, o modelo recusaria.
+      if (!project || !canDeleteImage(project, image.id)) return;
+      show({ kind: 'deleteImage', image });
+    },
     requestDeleteMarking: (marking) => {
       const project = store.project.peek();
-      if (!project) return;
+      if (!project || !canDeleteMarking(project, marking.id)) return;
       const impact = markingDeletionImpact(project, marking.id);
       if (impact.descendants > 0 || impact.annotations > 0) {
         show({ kind: 'deleteMarking', marking });

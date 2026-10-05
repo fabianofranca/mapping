@@ -35,7 +35,7 @@ test('projeto novo → imagem → marcação → anotação → zip com o mappin
   await page.getByLabel('Valor').press('Enter');
 
   const { mapping, files } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(4);
+  expect(mapping.schemaVersion).toBe(5);
   expect(files).toContain('images/tela.webp');
   expect(mapping.images).toHaveLength(1);
   expect(mapping.images[0]).toMatchObject({
@@ -139,7 +139,7 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   await createProject(page, 'Janelas');
 
   // Barra de status e breadcrumbs sem seleção.
-  await expect(page.getByText('schema v4')).toBeVisible();
+  await expect(page.getByText('schema v5')).toBeVisible();
   await expect(page.locator('.crumbs')).toContainText('Nada selecionado');
 
   // Árvore e Detalhes abrem por padrão; a Lista abre pela faixa.

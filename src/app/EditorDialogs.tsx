@@ -109,6 +109,7 @@ function renderDialog(
       return <HelpDialog onClose={close} section={dialog.section} />;
     case 'deleteImage': {
       const { image } = dialog;
+      const impact = imageDeletionImpact(project, image.id);
       return (
         <ConfirmDialog
           title={t('image.deleteTitle')}
@@ -123,14 +124,22 @@ function renderDialog(
           <p>
             {t('image.deleteMessage', {
               file: image.file,
-              ...imageDeletionImpact(project, image.id),
+              ...impact,
             })}
           </p>
+          {impact.lockedMarkings > 0 && (
+            <p role="alert">
+              <strong>
+                {t('lock.deleteWarning', { locked: impact.lockedMarkings })}
+              </strong>
+            </p>
+          )}
         </ConfirmDialog>
       );
     }
     case 'deleteMarking': {
       const { marking } = dialog;
+      const impact = markingDeletionImpact(project, marking.id);
       return (
         <ConfirmDialog
           title={t('marking.deleteTitle')}
@@ -145,9 +154,16 @@ function renderDialog(
           <p>
             {t('marking.deleteMessage', {
               name: markingLabel(marking),
-              ...markingDeletionImpact(project, marking.id),
+              ...impact,
             })}
           </p>
+          {impact.lockedDescendants > 0 && (
+            <p role="alert">
+              <strong>
+                {t('lock.deleteWarning', { locked: impact.lockedDescendants })}
+              </strong>
+            </p>
+          )}
         </ConfirmDialog>
       );
     }

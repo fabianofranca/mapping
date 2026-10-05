@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v4). Ver docs/history/PLAN-etapas-1-2.md, seções 4, 12.1 e 13.3.
+// Tipos do `mapping.json` (schema v5). Ver docs/history/PLAN-etapas-1-2.md, seções 4, 12.1 e 13.3.
 // Tudo é `readonly`: o modelo é imutável e as operações sempre devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 export const APP_ID = 'mapeador-imagens';
 export const COORDINATE_SYSTEM = 'image-pixels-exif-oriented';
 
@@ -55,6 +55,8 @@ export interface ProjectImage {
   readonly placement: Placement;
   /** Cor da borda das marcações desta imagem (`#RRGGBB`); `null` = cor neutra do tema. */
   readonly markingColor: string | null;
+  /** Trancada (v5): não pode ser movida, redimensionada nem excluída. A seleção segue livre. */
+  readonly locked: boolean;
 }
 
 export interface Marking {
@@ -64,6 +66,11 @@ export interface Marking {
   readonly name: string | null;
   readonly rect: Rect;
   readonly needsReview: boolean;
+  /**
+   * Trancada (v5): não pode ser movida, redimensionada nem excluída, e trancar o pai
+   * trava a geometria dos descendentes. A seleção e as anotações seguem livres.
+   */
+  readonly locked: boolean;
 }
 
 export interface Entry {

@@ -16,6 +16,11 @@ export const ALERT_SIZE = 13;
 /** Largura reservada para o "+N" depois das bolinhas (px de tela). */
 export const MORE_WIDTH = 22;
 export const ELLIPSIS = '…';
+/** Emblema do cadeado: o traço ocupa esta fração do lado, a grade do ícone tem 16 unidades. */
+export const LOCK_GLYPH_RATIO = 0.7;
+export const LOCK_GLYPH_GRID = 16;
+/** Vão entre o emblema do cadeado e a borda do item (px de tela). */
+export const LOCK_BADGE_GAP = 2;
 
 /** `fontStyle` do Konva para um peso numérico (os pesos 400 e 600 vêm de `--t-cv-*-weight`). */
 export function fontStyle(weight: number, italic = false): string {

@@ -91,6 +91,7 @@ describe('imagens: excluir em cascata', () => {
     const p = sampleProject();
     expect(imageDeletionImpact(p, 'I1')).toEqual({
       markings: 3,
+      lockedMarkings: 0,
       annotations: 3,
       brokenRefs: 0,
     });
@@ -123,6 +124,7 @@ describe('imagens: trocar', () => {
       id: 'I1',
       name: null,
       markingColor: null,
+      locked: false,
       file: 'images/nova.jpg',
       width: 2000,
       height: 1500,

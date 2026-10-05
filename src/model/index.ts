@@ -18,6 +18,7 @@ export * from './layers';
 export * from './images';
 export * from './imageOptimization';
 export * from './markings';
+export * from './locks';
 export * from './annotations';
 export * from './links';
 export * from './listing';

@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v4)
+# Formato do `mapping.json` (schema v5)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` e,
 se houver especializações aplicadas, `specs/`. Todas as coordenadas das marcações são
@@ -6,6 +6,7 @@ se houver especializações aplicadas, `specs/`. Todas as coordenadas das marca�
 
 ```
 meu-projeto/
+├── .gitignore        # só no modo pasta, criado com o projeto: ignora backups/
 ├── mapping.json
 ├── images/
 ├── specs/            # cópias das especializações aplicadas (ver SPEC-FORMAT.md)
@@ -17,12 +18,14 @@ meu-projeto/
 
 Ao abrir um `mapping.json` de versão antiga, a app migra em memória e, **antes do primeiro
 salvamento**, guarda o texto original em `backups/mapping.v<versão>.<AAAAMMDD-HHMMSS>.json`
-(horário local). No modo local, o backup fica no armazenamento do navegador (os 3 mais recentes
+(horário local). Ao **criar** um projeto numa pasta, a app grava também um `.gitignore` com `backups/`
+(ou acrescenta a linha a um `.gitignore` que já exista, sem sobrescrevê-lo), para quem versiona a pasta
+com git. No modo local, o backup fica no armazenamento do navegador (os 3 mais recentes
 por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não a inclui.
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "app": "mapeador-imagens",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": { "name": "Carro", "createdAt": "…", "updatedAt": "…" },
@@ -36,7 +39,8 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "width": 1182,
       "height": 2560,
       "placement": { "x": 0, "y": 0, "scale": 0.4 },
-      "markingColor": null
+      "markingColor": null,
+      "locked": false
     }
   ],
   "markings": [
@@ -46,7 +50,8 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "parentId": null,
       "name": "Botão",
       "rect": { "x": 10, "y": 20, "width": 300, "height": 80 },
-      "needsReview": false
+      "needsReview": false,
+      "locked": false
     }
   ],
   "annotations": [
@@ -75,7 +80,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo   | Descrição                                                                 |
 | ------------------ | ------ | ------------------------------------------------------------------------- |
-| `schemaVersion`    | `4`    | Versão do schema.                                                         |
+| `schemaVersion`    | `5`    | Versão do schema.                                                         |
 | `app`              | string | Sempre `"mapeador-imagens"`.                                              |
 | `coordinateSystem` | string | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
 | `project`          | objeto | `name` (texto), `createdAt` e `updatedAt` (ISO 8601).                     |
@@ -90,11 +95,11 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 **`images[]`**: `id`; `name` (`string` ou `null`); `file` (caminho relativo, ex: `images/home.webp`, único
 no projeto); `width` e `height` (pixels inteiros, com a orientação EXIF já aplicada);
 `placement` (`{ x, y, scale }` — posição e escala da imagem no canvas, só para a interface);
-`markingColor` (`null` ou cor).
+`markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo).
 
 **`markings[]`**: `id`; `imageId`; `parentId` (marcação-pai ou `null`); `name` (`string` ou `null`);
 `rect` (`{ x, y, width, height }`, **inteiros em pixels da imagem original**, `x`/`y` ≥ 0);
-`needsReview` (booleano, só para a interface).
+`needsReview` (booleano, só para a interface); `locked` (booleano, v5: ver abaixo).
 
 **`annotations[]`**: `id`; `markingId`; `layerId`; `name` (`string` ou `null`); `inherit`;
 `parentAnnotationId`; `type`, `values` e `entries` (ver v4). Livre: `type` e `values` são `null`.
@@ -185,6 +190,37 @@ Anotação tipada (Classe da especialização `modelo-dados`):
 }
 ```
 
+## Campos da v5 (trava)
+
+`images[].locked` e `markings[].locked` (`true`/`false`, obrigatórios) protegem itens já revisados
+contra alterações acidentais. Quem **lê** o arquivo (um agente que recorta a imagem) pode ignorá-los:
+a trava não muda o significado dos dados, só o que a app deixa **alterar**.
+
+- A trava vale para **a manipulação direta do próprio item trancado**: ele **não pode ser movido,
+  redimensionado nem excluído**. A seleção continua livre, e nome, pai, anotações e "Confirmar posição"
+  continuam editáveis.
+- Trancar uma marcação **trava a geometria dos descendentes** (mover e redimensionar), sem alterar o
+  `locked` deles: destrancar o pai libera todos. Excluir um descendente solto continua permitido.
+- Um descendente trancado **nunca impede o pai**. Mover o pai **leva junto** os descendentes trancados,
+  mantendo a posição relativa (o pai e os descendentes se movem pelo mesmo deslocamento); redimensionar o
+  pai não move os filhos. Excluir o pai (ou uma imagem) com descendentes trancados é permitido: eles são
+  excluídos junto, e a confirmação informa **quantos itens trancados** serão excluídos. Só a própria
+  marcação (ou imagem) trancada bloqueia a exclusão.
+- Imagem trancada: não pode ser movida nem redimensionada no canvas. As marcações dela seguem a regra
+  própria (as coordenadas são em pixels da imagem, então mover a imagem não as muda). Trocar o arquivo
+  por outro de **tamanho diferente** (o que reescala as marcações) é bloqueado se a imagem ou alguma
+  marcação dela estiver trancada; reapontar um arquivo do mesmo tamanho é livre.
+- Criar marcações novas dentro de um pai ou imagem trancados continua permitido, e o `locked` delas
+  começa em `false`.
+- "Trancar todas as marcações desta imagem" muda o `locked` de todas as marcações da imagem de uma só vez
+  (uma entrada no desfazer). Trancar e destrancar entram no desfazer.
+- Os itens vindos do Figma (etapa 4) serão somente leitura por outro mecanismo; a trava é para os itens
+  manuais.
+
+As regras ficam em `src/model/locks.ts` (`canEditMarkingGeometry`, `canDeleteMarking`,
+`canEditImagePlacement`, `canDeleteImage`, `canReplaceImage`); as operações do modelo lançam o erro
+`locked` se alguém tentar contorná-las.
+
 ### Ids estáveis
 
 Os ids de par (`entries[].id`) e de linha (`_id`) são UUIDs que **não mudam** ao editar a chave
@@ -250,5 +286,7 @@ Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, ma
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
 `inherit: false` e `parentAnnotationId: null`. Arquivos v2 recebem `markingColor: null` em cada imagem.
 Arquivos v3 recebem `specializations: []`, `spec: null` em cada camada, `type: null` e
-`values: null` em cada anotação e um `id` novo em cada par. Ao salvar, o arquivo passa a ser v4.
+`values: null` em cada anotação e um `id` novo em cada par. Arquivos v4 recebem `locked: false` em cada
+imagem e em cada marcação. Ao salvar, o arquivo passa a ser v5 (e, no modo pasta, o original vai antes
+para `backups/`, como em qualquer migração).
 Arquivos de versão mais nova abrem somente para leitura.

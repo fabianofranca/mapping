@@ -22,13 +22,13 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Depende de:** nada. Pode rodar em paralelo com as fases do redesign.
 - **Resultado:** `pwa/csp.ts` + plugin `contentSecurityPolicy` (`vite.config.ts`); o build falha sem CSP ou com hash divergente; testes em `tests/app/cspBuild.test.ts`, `tests/e2e/csp.spec.ts` e `tests/e2e/cspServiceWorker.spec.ts`. Documentação em [`ARCHITECTURE.md`](ARCHITECTURE.md#content-security-policy-etapa-24) e no README. O zod passou a rodar em `jitless` (sem `eval`).
 
-## Etapa 2.5 — Trava de marcações e imagens (depois do redesign)
+## Etapa 2.5 — Trava de marcações e imagens (concluída)
 
 - **Objetivo:** proteger marcações e imagens já revisadas contra alterações acidentais, sem impedir a navegação nem a seleção.
 - **Entra:**
   - cadeado por marcação e por imagem, na Árvore e nos Detalhes, com atalho de teclado e a ação "Trancar todas as marcações desta imagem";
   - a trava bloqueia mover, redimensionar e excluir; a seleção continua livre;
-  - trancar um pai trava a geometria dos descendentes;
+  - trancar um pai trava a geometria dos descendentes; já um descendente trancado nunca impede o pai: mover o pai leva os descendentes trancados junto (mantendo a posição relativa) e excluir o pai com descendentes trancados é permitido, com a confirmação informando quantos itens trancados serão excluídos;
   - cadeado visível no canvas, na seleção e sob o cursor;
   - gravado no `mapping.json` (`locked`), com nova versão de schema e migração, e com desfazer;
   - itens vindos do Figma (etapa 4) já são somente leitura; a trava é para os itens manuais;
@@ -37,6 +37,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - no campo "Pertence a", uma linha de ajuda explicando que só aparecem anotações da mesma marcação em outras camadas, e uma mensagem quando não houver nenhuma opção;
   - testes para os atalhos de teclado (`useEditorShortcuts`).
 - **Depende de:** etapa 2.3 (Árvore e Detalhes do redesign).
+- **Entregue:** schema v5 (`locked`, migração e backup), regras em `src/model/locks.ts`, cadeado na Árvore, em Detalhes e no canvas, atalho `Alt+L`, "Trancar todas as marcações desta imagem" e os ajustes listados acima. Referência: [`FORMAT.md`](FORMAT.md) (campos da v5) e [`ARCHITECTURE.md`](ARCHITECTURE.md); o plano da etapa fica em [`PLAN.md`](../PLAN.md) até ser movido para o histórico.
 
 ## Etapa 3 — Servidor MCP
 

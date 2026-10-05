@@ -22,7 +22,9 @@ export type Shortcut =
   | { readonly kind: 'help' }
   | { readonly kind: 'settings' }
   /** Alt+N: nova anotação na camada ativa (vale também com o foco num campo). */
-  | { readonly kind: 'new-annotation' };
+  | { readonly kind: 'new-annotation' }
+  /** Alt+L: tranca ou destranca o item selecionado. */
+  | { readonly kind: 'toggle-lock' };
 
 /**
  * Texto dos atalhos nas dicas dos botões. Nas janelas e no redimensionar é sempre
@@ -36,6 +38,7 @@ export const SHORTCUT_LABELS = {
   help: 'F1',
   settings: 'Ctrl+,',
   newAnnotation: 'Alt+N',
+  toggleLock: 'Alt+L',
   newRow: 'Alt+Enter',
   pickRef: 'Ctrl+B',
 } as const;
@@ -82,7 +85,8 @@ function numberOf(e: KeyInfo): number | null {
  * tecla "delete" do Mac) exclui; Esc cancela/desseleciona; Shift+Esc esconde a
  * janela em foco. Ctrl+Shift+número abre e fecha as janelas (Alt+número é o extra,
  * ligado por `altNumbers`), Ctrl+Shift+setas as redimensiona, Alt+↑/↓ anda na
- * seleção, Alt+N cria uma anotação na camada ativa e Ctrl+=/−/0 controlam o zoom.
+ * seleção, Alt+N cria uma anotação na camada ativa, Alt+L tranca/destranca o item
+ * selecionado e Ctrl+=/−/0 controlam o zoom.
  */
 export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   const key = e.key.toLowerCase();
@@ -93,6 +97,7 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
     // Com Alt (Option no macOS) o `key` vira outro caractere: a tecla física manda.
     if (!e.shiftKey && (e.code === 'KeyN' || key === 'n'))
       return { kind: 'new-annotation' };
+    if (!e.shiftKey && (e.code === 'KeyL' || key === 'l')) return { kind: 'toggle-lock' };
     if (key === 'arrowup') return { kind: 'select-parent' };
     if (key === 'arrowdown') return { kind: 'select-child' };
     const n = altNumbers ? numberOf(e) : null;

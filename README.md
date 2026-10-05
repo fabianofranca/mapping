@@ -64,7 +64,7 @@ O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service wo
 ## Documentação
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
-- [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v4).
+- [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v5).
 - [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): formato do arquivo de especialização (e [`docs/spec.schema.json`](docs/spec.schema.json)); exemplos em [`examples/specs/`](examples/specs/).
 - [`PLAN.md`](PLAN.md): resumo do produto e fases pendentes; o histórico está em [`docs/history/`](docs/history/).
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code.

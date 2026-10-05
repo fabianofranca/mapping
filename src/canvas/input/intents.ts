@@ -2,6 +2,8 @@
 // o item selecionado, desenhar, pegar um item ou selecionar pelo toque.
 // Funções puras (sem DOM nem Konva), testadas em `tests/canvas/input/`.
 import {
+  canEditImagePlacement,
+  canEditMarkingGeometry,
   imageCanvasRect,
   type Marking,
   type MarkingVisibility,
@@ -34,9 +36,12 @@ export type Intent =
       readonly markingId: string;
       readonly corner: Corner;
     }
-  | { readonly kind: 'draw'; readonly imageId: string };
+  | { readonly kind: 'draw'; readonly imageId: string }
+  /** Sobre o item selecionado e trancado: arrastar não faz nada (cursor "não permitido"). */
+  | { readonly kind: 'locked' };
 
 const PAN: Intent = { kind: 'pan' };
+const LOCKED: Intent = { kind: 'locked' };
 
 /** Estado do editor que decide a intenção (lido sem assinar, no momento do evento). */
 export interface IntentContext {
@@ -67,14 +72,22 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
   if (selected?.kind === 'marking') {
     const rect = markingCanvasRect(selected.image.placement, selected.marking.rect);
     const radius = handleHitRadius(Math.min(rect.width, rect.height) * zoom) / zoom;
-    const corner = cornerAt(rect, c, radius);
     const markingId = selected.marking.id;
+    // Trancada (ela ou um ancestral): sem alças e sem mover. Descendentes trancados não
+    // contam: mover o pai os leva junto.
+    const editable = canEditMarkingGeometry(project, markingId);
+    const corner = editable ? cornerAt(rect, c, radius) : null;
     if (corner) return { kind: 'resize-marking', markingId, corner };
-    if (pointInRect(c, rect)) return { kind: 'move-marking', markingId };
+    if (pointInRect(c, rect)) {
+      return editable ? { kind: 'move-marking', markingId } : LOCKED;
+    }
   }
   if (selected?.kind === 'image') {
     const { image } = selected;
     const rect = imageCanvasRect(image, image.placement);
+    if (!canEditImagePlacement(project, image.id)) {
+      return pointInRect(c, rect) ? LOCKED : PAN;
+    }
     const corner = cornerAt(rect, c, HANDLE_HIT_RADIUS / zoom);
     if (corner) return { kind: 'resize-image', imageId: image.id, corner };
     if (pointInRect(c, rect)) return { kind: 'move-image', imageId: image.id };
@@ -99,7 +112,8 @@ export function selectableMarkings(
 
 /**
  * Item que o segurar-e-mover pega em `c` (canvas): a marcação selecionada, se o
- * dedo estiver nela; senão a mais interna sob o dedo; senão a imagem.
+ * dedo estiver nela; senão a mais interna sob o dedo; senão a imagem. Um item
+ * trancado (ele ou um ancestral) não é pego: o resultado é `null`.
  */
 export function grabIntentAt(
   project: Project | null,
@@ -117,9 +131,14 @@ export function grabIntentAt(
   );
   const picked =
     chain.find((m) => selection?.kind === 'marking' && selection.id === m.id) ?? chain[0];
-  return picked
-    ? { kind: 'move-marking', markingId: picked.id }
-    : { kind: 'move-image', imageId: image.id };
+  if (picked) {
+    return canEditMarkingGeometry(project, picked.id)
+      ? { kind: 'move-marking', markingId: picked.id }
+      : null;
+  }
+  return canEditImagePlacement(project, image.id)
+    ? { kind: 'move-image', imageId: image.id }
+    : null;
 }
 
 /** O toque em `c` foi perto do anterior (`last`), em px de tela? */
@@ -158,7 +177,9 @@ export function tapSelection(
 
 export function dragModeOf(intent: Intent): DragMode {
   if (intent.kind === 'pan' || intent.kind === 'draw') return intent.kind;
-  return intent.kind === 'move-image' || intent.kind === 'move-marking'
+  return intent.kind === 'move-image' ||
+    intent.kind === 'move-marking' ||
+    intent.kind === 'locked'
     ? 'move'
     : 'resize';
 }
@@ -176,6 +197,8 @@ export function cursorFor(intent: Intent): string {
         : 'nesw-resize';
     case 'draw':
       return 'crosshair';
+    case 'locked':
+      return 'not-allowed';
     case 'pan':
       return '';
   }

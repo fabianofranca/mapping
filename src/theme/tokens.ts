@@ -72,6 +72,9 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-name-tag': 'var(--cv-select)',
   /** Texto da etiqueta do nome (≥ 4,5:1 sobre `cv-name-tag`); não está no DS 2.0. */
   'cv-name-tag-text': '#0b1220',
+  /** Emblema do cadeado sobre a imagem: fundo e traço (mesmo par da etiqueta do nome). */
+  'cv-lock': 'var(--cv-name-tag)',
+  'cv-lock-glyph': 'var(--cv-name-tag-text)',
   ...Object.fromEntries(
     LAYER_COLORS.map((c, i) => [`layer-${String(i + 1).padStart(2, '0')}`, c]),
   ),
@@ -179,6 +182,9 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-icon-touch': '20px',
   'size-handle': '10px',
   'size-handle-touch': '14px',
+  /** Emblema do cadeado no canvas (px de tela). */
+  'size-lock-badge': '20px',
+  'size-lock-badge-touch': '24px',
   'size-tw-left': '264px',
   'size-tw-right': '360px',
   'size-tw-bottom': '208px',

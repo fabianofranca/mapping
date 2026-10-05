@@ -44,6 +44,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
       id: imageId,
       name: null,
       markingColor: null,
+      locked: false,
       file: `images/foto-${i}.jpg`,
       width: imageWidth,
       height: imageHeight,
@@ -65,6 +66,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         name: `Marcação ${i}-${g}`,
         rect: parent,
         needsReview: false,
+        locked: false,
       });
       for (let c = 0; c < 4; c++) {
         markings.push({
@@ -79,6 +81,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
             height: Math.floor(parent.height / 2) - 20,
           },
           needsReview: false,
+          locked: false,
         });
       }
     }

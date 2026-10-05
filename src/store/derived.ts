@@ -3,6 +3,7 @@ import {
   buildIncompleteList,
   buildListing,
   layerDotsByMarking,
+  markingLockStates,
   markingVisibility,
   projectIndex,
   projectIssues,
@@ -12,6 +13,7 @@ import {
   type Layer,
   type LayerDot,
   type ListedImage,
+  type MarkingLockState,
   type MarkingVisibility,
 } from '../model';
 import type { ProjectStore } from './history';
@@ -40,6 +42,10 @@ export interface EditorDerived {
   readonly markingVisibility: ReadonlySignal<ReadonlyMap<string, MarkingVisibility>>;
   /** Marcações com anotação incompleta numa camada visível (alerta no canvas). */
   readonly incompleteMarkings: ReadonlySignal<ReadonlySet<string>>;
+  /** Marcações com a geometria travada (própria ou herdada do pai); as livres não aparecem. */
+  readonly markingLocks: ReadonlySignal<ReadonlyMap<string, MarkingLockState>>;
+  /** Há alguma imagem ou marcação com a geometria travada (atalho para não calcular à toa). */
+  readonly hasLocks: ReadonlySignal<boolean>;
   /** Dados da Visão de Lista, com os filtros dela. */
   readonly listing: ReadonlySignal<readonly ListedImage[]>;
   /** Pendências agrupadas por imagem, para a janela Incompletas (B5). */
@@ -53,6 +59,7 @@ const NO_ANNOTATIONS: ReadonlyMap<string, readonly Annotation[]> = new Map();
 const NO_DOTS: ReadonlyMap<string, readonly LayerDot[]> = new Map();
 const NO_VISIBILITY: ReadonlyMap<string, MarkingVisibility> = new Map();
 const NO_MARKINGS: ReadonlySet<string> = new Set();
+const NO_LOCKS: ReadonlyMap<string, MarkingLockState> = new Map();
 
 /** Mesmos itens na mesma ordem. */
 function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
@@ -128,6 +135,16 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
     return result;
   });
 
+  const markingLocks = computed(() => {
+    const p = project.value;
+    return p ? markingLockStates(p) : NO_LOCKS;
+  });
+
+  const hasLocks = computed(() => {
+    const p = project.value;
+    return markingLocks.value.size > 0 || (p?.images.some((i) => i.locked) ?? false);
+  });
+
   const listing = computed((): readonly ListedImage[] => {
     const p = project.value;
     if (!p) return [];
@@ -161,6 +178,8 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
     layerDots,
     markingVisibility: visibility,
     incompleteMarkings,
+    markingLocks,
+    hasLocks,
     listing,
     incompleteList,
     incompleteCount,

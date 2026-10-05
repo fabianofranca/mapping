@@ -15,6 +15,7 @@ import {
 import { importExistingImages } from '../storage/existingImages';
 import {
   createFolderStorage,
+  ensureGitignore,
   findExistingImages,
   isFolderModeSupported,
   pickDirectory,
@@ -276,6 +277,10 @@ export function createFolderProject(
       { readSize: readImageSize, newId: () => crypto.randomUUID() },
     );
     await storage.saveMapping(serialize(imported.project));
+    // Para quem versiona a pasta com git: os backups de migração não entram no repositório.
+    await ensureGitignore(handle).catch((e: unknown) =>
+      reportError('folder.gitignore', e),
+    );
     start(storage, imported.project, {
       readOnly: false,
       localId: null,

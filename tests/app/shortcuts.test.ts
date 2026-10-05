@@ -20,6 +20,21 @@ const key = (
 });
 
 describe('atalhos do editor', () => {
+  // Etapa 2.5: Alt+L tranca ou destranca o item selecionado.
+  it('Alt+L: trancar/destrancar (pela tecla física, por causa do Option no macOS)', () => {
+    expect(shortcutFor(key('l', { alt: true }))).toEqual({ kind: 'toggle-lock' });
+    expect(shortcutFor(key('¬', { alt: true }, 'KeyL'))).toEqual({ kind: 'toggle-lock' });
+    expect(shortcutFor(key('l', { alt: true, shift: true }))).toBeNull();
+    expect(shortcutFor(key('l', { alt: true, ctrl: true }))).toBeNull();
+    // O Ctrl+L continua sendo a janela Camadas e o L sozinho não faz nada.
+    expect(shortcutFor(key('l', { ctrl: true }))).toEqual({ kind: 'layers' });
+    expect(shortcutFor(key('l'))).toBeNull();
+  });
+
+  it('Alt+L não vale com o foco num campo de texto (o campo é do usuário)', () => {
+    expect(worksInTextInput({ kind: 'toggle-lock' })).toBe(false);
+  });
+
   // R5: Alt+N cria uma anotação na camada ativa, também com o foco num campo.
   it('Alt+N: nova anotação (pela tecla física, por causa do Option no macOS)', () => {
     expect(shortcutFor(key('n', { alt: true }))).toEqual({ kind: 'new-annotation' });

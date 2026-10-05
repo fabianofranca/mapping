@@ -8,6 +8,12 @@ import {
   right,
 } from './geometry';
 import { topDown } from './hierarchy';
+import {
+  canDeleteImage,
+  canEditImagePlacement,
+  canReplaceImage,
+  requireUnlocked,
+} from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
 import type { Marking, Placement, Project, ProjectImage, Rect } from './types';
@@ -135,6 +141,7 @@ export function addImage(
     id: args.id,
     name: null,
     markingColor: null,
+    locked: false,
     file: args.file,
     width: args.width,
     height: args.height,
@@ -187,6 +194,7 @@ export function setImagePlacement(
   placement: Placement,
 ): Project {
   checkPlacement(placement);
+  requireUnlocked(canEditImagePlacement(p, imageId));
   if (!canPlaceImage(p, imageId, placement)) fail('image-overlap');
   const copy: Placement = { x: placement.x, y: placement.y, scale: placement.scale };
   return {
@@ -208,19 +216,33 @@ export function resizeImage(p: Project, imageId: string, placement: Placement): 
 export function imageDeletionImpact(
   p: Project,
   imageId: string,
-): { markings: number; annotations: number; brokenRefs: number } {
+): {
+  markings: number;
+  /** Quantas das marcações estão trancadas (serão excluídas junto). */
+  lockedMarkings: number;
+  annotations: number;
+  brokenRefs: number;
+} {
   findById(p.images, imageId);
-  const ids = new Set(p.markings.filter((m) => m.imageId === imageId).map((m) => m.id));
+  const own = p.markings.filter((m) => m.imageId === imageId);
+  const ids = new Set(own.map((m) => m.id));
   return {
     markings: ids.size,
+    lockedMarkings: own.filter((m) => m.locked).length,
     annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
-    brokenRefs: countBrokenRefs(p, removeImage(p, imageId)),
+    brokenRefs: countBrokenRefs(p, cascadeRemoveImage(p, imageId)),
   };
 }
 
-/** Exclui a imagem com as marcações e anotações dela. */
+/** Exclui a imagem com as marcações (trancadas ou não) e anotações dela. Falha só se a própria imagem estiver trancada. */
 export function removeImage(p: Project, imageId: string): Project {
   findById(p.images, imageId);
+  requireUnlocked(canDeleteImage(p, imageId));
+  return cascadeRemoveImage(p, imageId);
+}
+
+/** A exclusão em si, sem a trava: também serve para contar o impacto. */
+function cascadeRemoveImage(p: Project, imageId: string): Project {
   const ids = new Set(p.markings.filter((m) => m.imageId === imageId).map((m) => m.id));
   return {
     ...p,
@@ -314,6 +336,7 @@ export function replaceImage(
 ): Project {
   checkDimensions(next);
   const image = findById(p.images, imageId);
+  requireUnlocked(canReplaceImage(p, imageId, next));
   if (p.images.some((i) => i.id !== imageId && i.file === next.file))
     fail('duplicate-file');
   const sameAspect = isSameAspect(image, next);
@@ -342,6 +365,7 @@ export function replaceImage(
     id: image.id,
     name: image.name,
     markingColor: image.markingColor,
+    locked: image.locked,
     file: next.file,
     width: next.width,
     height: next.height,

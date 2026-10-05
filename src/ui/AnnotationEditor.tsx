@@ -138,6 +138,9 @@ export function AnnotationEditor({
     ? index.annotations.get(annotation.parentAnnotationId)
     : undefined;
   const ownerRequired = resolved?.type.requiresOwner === true;
+  const owners = validAnnotationOwners(project, annotation.id);
+  /** Sem dono e sem ninguém que possa sê-lo: a lista só teria "Nenhuma". */
+  const noOwnerOptions = owners.length === 0 && annotation.parentAnnotationId === null;
   const name = (a: Annotation) => annotationDisplayName(project, a);
   const ownerIssue = issuesOf(project, annotation.id).find(
     (i) => i.code === 'missing-owner' || i.code === 'owner-not-allowed',
@@ -280,6 +283,15 @@ export function AnnotationEditor({
               label={t('annotation.owner')}
               for={ownerId}
               focusKey="owner"
+              hint={t('annotation.ownerHelp')}
+              note={
+                <>
+                  <span>{t('annotation.ownerHelp')}</span>
+                  {noOwnerOptions && (
+                    <span data-owner-empty>{t('annotation.ownerEmpty')}</span>
+                  )}
+                </>
+              }
               issue={ownerIssue ? issueReason(project, annotation, ownerIssue) : null}
             >
               <Select
@@ -287,7 +299,7 @@ export function AnnotationEditor({
                 size="sm"
                 invalid={ownerIssue !== undefined}
                 value={annotation.parentAnnotationId ?? ''}
-                disabled={readOnly}
+                disabled={readOnly || noOwnerOptions}
                 onChange={(e) => {
                   const value = e.currentTarget.value;
                   actions.setAnnotationParent(annotation.id, value === '' ? null : value);
@@ -296,7 +308,7 @@ export function AnnotationEditor({
                 {(!ownerRequired || annotation.parentAnnotationId === null) && (
                   <option value="">{t('annotation.noOwner')}</option>
                 )}
-                {validAnnotationOwners(project, annotation.id).map((a) => (
+                {owners.map((a) => (
                   <option key={a.id} value={a.id}>
                     {t('annotation.ownerOption', {
                       layer: layerOf(a.layerId)?.name ?? '',

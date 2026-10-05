@@ -233,7 +233,7 @@ export function Home() {
         ) : (
           <HomeCards {...actions} />
         )}
-        {desktop && <FolderReason {...actions} />}
+        <FolderReason {...actions} />
         {notices}
         {!desktop && <InstallHint />}
         {list}
@@ -415,9 +415,13 @@ function HomeButtons({ busy, available, onNew, onOpenFolder, onOpenZip }: HomeAc
   );
 }
 
-/** Abrir pasta indisponível: o motivo fica escrito na tela (um botão desabilitado não explica). */
+/**
+ * Abaixo das ações. Abrir pasta indisponível: o motivo fica escrito na tela (um botão
+ * desabilitado não explica); disponível: a recomendação do formato pasta para quem usa git.
+ */
 function FolderReason({ available }: HomeActions) {
-  if (available.folder || !available.local) return null;
+  if (available.folder) return <p class="muted home-reason">{t('home.gitHint')}</p>;
+  if (!available.local) return null;
   return <p class="muted home-reason">{t('home.folderUnavailable')}</p>;
 }
 

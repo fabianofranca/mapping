@@ -54,7 +54,9 @@ export function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
  * lista, breadcrumbs), a árvore abre os ancestrais e rola até a linha.
  */
 export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) {
-  const { ui, derived } = useEditor();
+  const { ui, derived, store, actions } = useEditor();
+  const readOnly = store.readOnly.value;
+  const locks = derived.markingLocks.value;
   const collapsed = ui.collapsedTree.value;
   const dots = derived.layerDots.value;
   const index = projectIndex(project).children;
@@ -73,6 +75,32 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     afterPaint(() => scrollToSelected(list.current));
   }, [selectionKey, ui]);
 
+  /** Cadeado da linha: botão para a trava própria; esmaecido, sem ação, se vem do pai. */
+  const lockControl = (
+    name: string,
+    locked: boolean,
+    inherited: boolean,
+    toggle: () => void,
+  ) =>
+    inherited ? (
+      <span class="tree-lock tree-lock-inherited" title={t('lock.inherited')}>
+        <Icon name="lock" />
+        <span class="visually-hidden">{t('lock.inherited')}</span>
+      </span>
+    ) : (
+      <button
+        type="button"
+        class={locked ? 'tree-lock tree-lock-on' : 'tree-lock'}
+        aria-pressed={locked}
+        aria-label={t('lock.treeLock', { name })}
+        title={t(locked ? 'lock.treeUnlock' : 'lock.treeLock', { name })}
+        disabled={readOnly}
+        onClick={toggle}
+      >
+        <Icon name={locked ? 'lock' : 'unlock'} />
+      </button>
+    );
+
   const row = (
     key: string,
     depth: number,
@@ -80,6 +108,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     name: string,
     current: boolean,
     item: ComponentChildren,
+    lock: ComponentChildren,
   ) => (
     <div
       class={current ? 'tree-row tree-row-current' : 'tree-row'}
@@ -99,6 +128,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
         <span class="tree-toggle tree-toggle-empty" aria-hidden="true" />
       )}
       {item}
+      {lock}
     </div>
   );
 
@@ -133,6 +163,12 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                   </span>
                   <LayerDots dots={dots.get(m.id) ?? []} />
                 </button>,
+                lockControl(
+                  markingLabel(m),
+                  m.locked,
+                  locks.get(m.id) === 'inherited',
+                  () => actions.setMarkingLocked(m.id, !m.locked),
+                ),
               )}
               {!collapsed.has(key) && branch(children, depth + 1)}
             </li>
@@ -164,6 +200,9 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
               >
                 <span class="tree-label">{imageLabel(image)}</span>
               </button>,
+              lockControl(imageLabel(image), image.locked, false, () =>
+                actions.setImageLocked(image.id, !image.locked),
+              ),
             )}
             {!collapsed.has(key) && branch(roots, 1)}
           </li>

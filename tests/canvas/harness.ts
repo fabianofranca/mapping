@@ -77,6 +77,7 @@ export const TOKENS: CanvasTokens = {
     caption: { size: 10, line: 14, weight: 400 },
   },
   handleSize: 10,
+  lock: { fill: '#0057ba', glyph: '#010204', size: 20 },
   radius: { sm: 4, md: 6 },
   grabShadow: { blur: 14, color: 'rgba(77, 141, 255, 0.8)' },
 };
@@ -151,6 +152,7 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     draft: null,
     dropTarget: null,
     grabbed: null,
+    hoverLock: null,
     tokens: TOKENS,
     size: { width: 380, height: 700 },
     viewport: { x: 0, y: 0, scale: 1 },

@@ -9,6 +9,7 @@ import {
   tapSelection,
   type IntentContext,
 } from '../../../src/canvas/input/intents';
+import { setImageLocked, setMarkingLocked } from '../../../src/model';
 import { canvasProject } from '../harness';
 
 const project = canvasProject();
@@ -158,5 +159,85 @@ describe('dragModeOf e cursorFor', () => {
       'nesw-resize',
     );
     expect(cursorFor({ kind: 'draw', imageId: 'I1' })).toBe('crosshair');
+  });
+});
+
+describe('trava (etapa 2.5)', () => {
+  const lockedMarking = (id: string) => setMarkingLocked(project, id, true);
+  const select = (id: string) => ({ kind: 'marking', id }) as const;
+
+  it('marcação selecionada e trancada: sem alças, e arrastar dentro dela é "locked"', () => {
+    const c = ctx({ project: lockedMarking('M1'), selection: select('M1') });
+    // O canto onde ficaria a alça também é só "locked".
+    expect(intentAt(c, { x: 102, y: 102 })).toEqual({ kind: 'locked' });
+    expect(intentAt(c, { x: 400, y: 400 })).toEqual({ kind: 'locked' });
+    expect(intentAt(c, { x: 900, y: 700 })).toEqual({ kind: 'pan' });
+  });
+
+  it('descendente de um pai trancado também fica sem alças', () => {
+    const c = ctx({ project: lockedMarking('M1'), selection: select('M2') });
+    expect(intentAt(c, { x: 202, y: 202 })).toEqual({ kind: 'locked' });
+  });
+
+  it('pai com um descendente trancado: redimensiona e move normalmente', () => {
+    const c = ctx({ project: lockedMarking('M2'), selection: select('M1') });
+    expect(intentAt(c, { x: 102, y: 98 })).toMatchObject({ kind: 'resize-marking' });
+    expect(intentAt(c, { x: 500, y: 450 })).toEqual({
+      kind: 'move-marking',
+      markingId: 'M1',
+    });
+  });
+
+  it('imagem selecionada e trancada: sem alças e sem mover', () => {
+    const c = ctx({
+      project: setImageLocked(project, 'I2', true),
+      selection: { kind: 'image', id: 'I2' },
+    });
+    expect(intentAt(c, { x: 1600, y: 500 })).toEqual({ kind: 'locked' });
+    expect(intentAt(c, { x: 1300, y: 300 })).toEqual({ kind: 'locked' });
+    expect(intentAt(c, { x: 1050, y: 300 })).toEqual({ kind: 'pan' });
+  });
+
+  it('o modo Desenhar não é afetado pela trava', () => {
+    const c = ctx({
+      project: lockedMarking('M1'),
+      mode: 'draw',
+      selection: select('M1'),
+    });
+    expect(intentAt(c, { x: 400, y: 400 })).toEqual({ kind: 'draw', imageId: 'I1' });
+  });
+
+  it('cursor "não permitido" e arrastar tentaria mover', () => {
+    expect(cursorFor({ kind: 'locked' })).toBe('not-allowed');
+    expect(dragModeOf({ kind: 'locked' })).toBe('move');
+  });
+
+  it('segurar-e-mover não pega item trancado (nem a imagem trancada)', () => {
+    const p = lockedMarking('M2');
+    expect(grabIntentAt(p, null, NONE, { x: 250, y: 250 })).toBeNull();
+    // O pai de uma marcação trancada é pego: mover o pai leva a filha trancada junto.
+    expect(grabIntentAt(p, null, NONE, { x: 150, y: 150 })).toEqual({
+      kind: 'move-marking',
+      markingId: 'M1',
+    });
+    // Uma marcação livre (de outra imagem) continua pegável.
+    expect(grabIntentAt(p, null, NONE, { x: 1200, y: 100 })).toEqual({
+      kind: 'move-marking',
+      markingId: 'M3',
+    });
+    const image = setImageLocked(project, 'I1', true);
+    expect(grabIntentAt(image, null, NONE, { x: 900, y: 700 })).toBeNull();
+  });
+
+  it('segurar numa marcação sob um pai trancado não a pega', () => {
+    expect(grabIntentAt(lockedMarking('M1'), null, NONE, { x: 250, y: 250 })).toBeNull();
+  });
+
+  it('tocar continua selecionando o item trancado', () => {
+    const p = lockedMarking('M2');
+    expect(tapSelection(p, null, NONE, { x: 250, y: 250 }, false)).toEqual({
+      kind: 'marking',
+      id: 'M2',
+    });
   });
 });

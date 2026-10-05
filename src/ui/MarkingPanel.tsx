@@ -2,6 +2,8 @@ import { useId, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   ancestorsOf,
+  canDeleteMarking,
+  canEditMarkingGeometry,
   parentCandidates,
   type Marking,
   type Project,
@@ -11,7 +13,8 @@ import {
 import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
-import { Button, Select, TextField } from './controls';
+import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { Button, IconButton, Select, TextField } from './controls';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
@@ -73,6 +76,17 @@ export function MarkingPanel({
     return false;
   };
 
+  // Trava: própria ou herdada de um ancestral (descendentes trancados não impedem nada).
+  const ancestors = ancestorsOf(project, marking.id);
+  const lockedAncestor = ancestors.find((a) => a.locked) ?? null;
+  const geometryEditable = canEditMarkingGeometry(project, marking.id);
+  const deletable = canDeleteMarking(project, marking.id);
+  const lockNotice = marking.locked
+    ? t('lock.markingNotice')
+    : lockedAncestor
+      ? t('lock.inheritedNotice', { parent: markingLabel(lockedAncestor) })
+      : null;
+
   const rectField = (key: keyof Rect, short: string, label: string) => (
     <label class="props-pair-item" title={label}>
       <span class="props-pair-label" aria-hidden="true">
@@ -85,7 +99,7 @@ export function MarkingPanel({
         step={1}
         min={0}
         aria-label={label}
-        disabled={readOnly}
+        disabled={readOnly || !geometryEditable}
         value={String(marking.rect[key])}
         onCommit={(text) => commitRect(key, text)}
       />
@@ -105,7 +119,24 @@ export function MarkingPanel({
         name={markingLabel(marking)}
         sub={t('marking.inImage', { file: where })}
         id={marking.id}
+        actions={
+          <IconButton
+            icon={marking.locked ? 'lock' : 'unlock'}
+            label={t('lock.markingLock')}
+            tooltip={t(marking.locked ? 'lock.markingUnlock' : 'lock.markingLock')}
+            shortcut={SHORTCUT_LABELS.toggleLock}
+            pressed={marking.locked}
+            disabled={readOnly}
+            onClick={() => report(actions.setMarkingLocked(marking.id, !marking.locked))}
+          />
+        }
       />
+
+      {lockNotice && (
+        <p class="notice notice-info" role="status">
+          {lockNotice}
+        </p>
+      )}
 
       {marking.needsReview && (
         <div class="notice" role="status">
@@ -195,7 +226,12 @@ export function MarkingPanel({
       />
 
       <div class="row">
-        <Button variant="danger" disabled={readOnly} onClick={() => onDelete(marking)}>
+        <Button
+          variant="danger"
+          disabled={readOnly || !deletable}
+          title={deletable ? undefined : t('lock.deleteBlocked')}
+          onClick={() => onDelete(marking)}
+        >
           {t('marking.delete')}
         </Button>
       </div>

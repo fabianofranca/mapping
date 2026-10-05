@@ -70,3 +70,13 @@ describe('startGesture', () => {
     ).toBeNull();
   });
 });
+
+describe('startGesture: item trancado', () => {
+  it('o arrasto sobre o item trancado vira um gesto "blocked", sem abrir gesto no store', () => {
+    const begin = vi.fn(() => true);
+    const started = startGesture(project, 7, at, { kind: 'locked' }, begin);
+    expect(started).toEqual({ gesture: { kind: 'blocked', pointerId: 7 }, draft: null });
+    expect(isStoreGesture(started?.gesture ?? null)).toBe(false);
+    expect(begin).not.toHaveBeenCalled();
+  });
+});

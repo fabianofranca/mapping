@@ -109,6 +109,7 @@ export class PointerInput {
     if (g?.kind === 'pan') cursor = 'grabbing';
     else if (g?.kind === 'move-image' || g?.kind === 'move-marking') cursor = 'move';
     else if (g?.kind === 'draw') cursor = 'crosshair';
+    else if (g?.kind === 'blocked') cursor = 'not-allowed';
     else if (this.o.spaceDown()) cursor = 'grab';
     else if (p) cursor = cursorFor(this.intentAt(p));
     this.o.container.style.cursor = cursor;
@@ -151,7 +152,9 @@ export class PointerInput {
       }).state;
       return;
     }
-    const intent: Intent = e.button === 1 ? { kind: 'pan' } : this.intentAt(p);
+    let intent: Intent = e.button === 1 ? { kind: 'pan' } : this.intentAt(p);
+    // No toque, arrastar sobre o item trancado faz pan (o mouse fica sem efeito).
+    if (intent.kind === 'locked' && e.pointerType === 'touch') intent = { kind: 'pan' };
     // No toque, arrastar sempre faz pan; para mover um item é preciso segurar antes.
     // Alças (resize) e o modo Desenhar continuam diretos, e o mouse não muda.
     const holdable =
@@ -258,6 +261,8 @@ export class PointerInput {
       case 'pan':
         viewport.panBy(p.x - g.last.x, p.y - g.last.y);
         g.last = p;
+        return;
+      case 'blocked':
         return;
       case 'move-image': {
         const c = viewport.toCanvas(p);

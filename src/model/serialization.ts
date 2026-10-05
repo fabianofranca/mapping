@@ -53,6 +53,7 @@ export function serialize(p: Project): string {
       height: i.height,
       placement: { x: i.placement.x, y: i.placement.y, scale: i.placement.scale },
       markingColor: i.markingColor,
+      locked: i.locked,
     })),
     markings: p.markings.map((m) => ({
       id: m.id,
@@ -61,6 +62,7 @@ export function serialize(p: Project): string {
       name: m.name,
       rect: { x: m.rect.x, y: m.rect.y, width: m.rect.width, height: m.rect.height },
       needsReview: m.needsReview,
+      locked: m.locked,
     })),
     annotations: p.annotations.map((a) => ({
       id: a.id,

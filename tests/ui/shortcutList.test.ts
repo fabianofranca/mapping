@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { shortcutFor } from '../../src/app/shortcuts';
+import { t } from '../../src/i18n';
 import { TOOL_WINDOWS, WINDOW_NUMBER } from '../../src/store/toolWindows';
 import { comboText, shortcutGroups } from '../../src/ui/shortcutList';
 
@@ -32,6 +33,23 @@ describe('lista de atalhos da Ajuda (P10)', () => {
         }),
       ).toEqual({ kind: 'toggle-window', window: id });
     }
+  });
+
+  it('lista o Alt+L de trancar na seção de edição, e ele dispara de verdade', () => {
+    const edit = groups.find((g) => g.id === 'edit');
+    const row = edit?.rows.find((r) => r.combos.some((c) => comboText(c) === 'Alt + L'));
+    expect(row).toBeDefined();
+    expect(row?.label).toBe(t('shortcuts.toggleLock'));
+    expect(
+      shortcutFor({
+        key: 'l',
+        code: 'KeyL',
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: false,
+        altKey: true,
+      }),
+    ).toEqual({ kind: 'toggle-lock' });
   });
 
   it('nenhuma linha vazia e nenhum texto repetido', () => {

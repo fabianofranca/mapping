@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { ancestorsOf } from '../../src/model';
 import { locale } from '../../src/store/settings';
+import { t } from '../../src/i18n';
 import { markingErrorMessage, markingLabel, markingPath } from '../../src/ui/labels';
 import { marking, sampleProject } from '../model/fixtures';
 
@@ -29,6 +30,7 @@ describe('rótulos de marcações', () => {
     expect(markingErrorMessage('rect-too-small')).toBe(
       'Cada lado precisa ter pelo menos 8 px.',
     );
+    expect(markingErrorMessage('locked')).toBe(t('marking.error.locked'));
     expect(markingErrorMessage('no-project')).toBe(
       'Não foi possível alterar a marcação.',
     );

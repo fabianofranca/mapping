@@ -94,12 +94,12 @@ describe('migração v3 → v4', () => {
     return JSON.stringify({ ...data, schemaVersion: 3, layers, annotations });
   }
 
-  it('abre um v3 como v4: camadas livres, anotações livres e ids nas tuplas', () => {
+  it('abre um v3 como v5: camadas livres, anotações livres e ids nas tuplas', () => {
     const result = deserialize(v3Text());
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(3);
     const p = result.project;
-    expect(p.schemaVersion).toBe(4);
+    expect(p.schemaVersion).toBe(5);
     expect(p.specializations).toEqual([]);
     expect(p.layers.every((l) => l.spec === null)).toBe(true);
     expect(p.annotations.every((a) => a.type === null && a.values === null)).toBe(true);
@@ -114,11 +114,11 @@ describe('migração v3 → v4', () => {
     ]);
   });
 
-  it('o v3 migrado salva como v4 estável', () => {
+  it('o v3 migrado salva como v5 estável', () => {
     const first = deserialize(v3Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(4);
+    expect(JSON.parse(saved).schemaVersion).toBe(5);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);

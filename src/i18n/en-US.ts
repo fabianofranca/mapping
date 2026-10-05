@@ -203,6 +203,10 @@ export const enUS: Dictionary = {
   'annotation.owner': 'Belongs to',
   'annotation.noOwner': 'None',
   'annotation.ownerOption': '{layer}: {name}',
+  'annotation.ownerHelp':
+    'Only annotations of this same marking that are in other layers appear (and, for typed ones, of a type that accepts this one).',
+  'annotation.ownerEmpty':
+    'No options: create an annotation in another layer on this marking so you can link this one to it.',
   'annotation.linkedTo': '↳ of {name}',
   'annotation.linkedHeading': 'Linked',
   'annotation.goToAnnotation': 'Go to annotation {name}',
@@ -420,6 +424,8 @@ export const enUS: Dictionary = {
   'home.colActions': 'Actions',
   'home.folderUnavailable':
     'This browser cannot open folders. Use Chrome or Edge on a computer.',
+  'home.gitHint':
+    'Using git? Prefer Open folder: the project becomes plain files (mapping.json and images/) you can version. When you create the project in a folder, the app also writes a .gitignore with backups/.',
   'pwa.previewBadge': 'PREVIEW',
   'export.fileMeta': 'Zip file · {size}',
   'help.specs.intro':
@@ -543,4 +549,27 @@ export const enUS: Dictionary = {
   'ref.keyChoose': 'choose',
   'ref.keyGoTo': 'go to target',
   'ref.keyClose': 'close',
+
+  // Lock (stage 2.5)
+  'lock.markingLock': 'Lock marking',
+  'lock.markingUnlock': 'Unlock marking',
+  'lock.imageLock': 'Lock image',
+  'lock.imageUnlock': 'Unlock image',
+  'lock.treeLock': 'Lock {name}',
+  'lock.treeUnlock': 'Unlock {name}',
+  'lock.inherited': 'Position and size are locked: the parent marking is locked',
+  'lock.markingNotice':
+    'Locked: it cannot be moved, resized or deleted. Selection and annotations stay free.',
+  'lock.inheritedNotice':
+    'Position and size are locked because "{parent}" is locked. Unlock it to move or resize this marking.',
+  'lock.imageNotice':
+    'Locked: it cannot be moved, resized or deleted. Its markings stay editable.',
+  'lock.deleteBlocked': 'Unlock to delete',
+  'lock.deleteWarning': 'Warning: {locked} locked item(s) will be deleted too.',
+  'lock.lockAll': 'Lock all markings in this image',
+  'lock.unlockAll': 'Unlock all markings in this image',
+  'image.replaceLocked':
+    'The image or one of its markings is locked: it can only be replaced by a file of the same size.',
+  'marking.error.locked': 'The marking is locked. Unlock it to change it.',
+  'shortcuts.toggleLock': 'Lock or unlock the selected item',
 };
