@@ -368,7 +368,7 @@ describe('referências', () => {
     );
     // Campo simples com etiqueta: um "glossário" com o campo `nome` etiquetado.
     const glossario: Spec = {
-      format: 'mapeador-spec',
+      format: 'mapping-spec',
       formatVersion: 1,
       id: 'glossario',
       name: 'Glossário',

@@ -20,7 +20,7 @@ Arquivos de apoio:
 
 ```json
 {
-  "format": "mapeador-spec",
+  "format": "mapping-spec",
   "formatVersion": 1,
   "id": "sdui",
   "name": "SDUI",
@@ -59,7 +59,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapeador-spec"`), `formatVersion` (`1`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description` é opcional. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description` é opcional. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -133,7 +133,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 
 ```json
 {
-  "format": "mapeador-spec",
+  "format": "mapping-spec",
   "formatVersion": 1,
   "id": "sdui",
   "name": "SDUI",

@@ -1,5 +1,5 @@
 export const ptBR = {
-  'app.title': 'Mapeador de Imagens',
+  'app.title': 'Mapping',
   'app.loading': 'Carregando…',
   'settings.title': 'Configurações',
   'settings.language': 'Idioma',
@@ -259,7 +259,7 @@ export const ptBR = {
   'status.channelLabel': 'Canal deste build: {channel}',
 
   'editor.projectMenu': 'Ações do projeto',
-  'editor.appName': 'Mapeador de imagens',
+  'editor.appName': 'Mapping',
   'editor.fitAllShort': 'Enquadrar',
 
   'view.list': 'Lista',

@@ -115,6 +115,30 @@ describe('serialização', () => {
   });
 });
 
+describe('nome do produto (app)', () => {
+  it('grava `app: "mapping"`', () => {
+    expect(JSON.parse(serialize(emptyProject())).app).toBe('mapping');
+  });
+
+  it('lê o valor antigo `mapeador-imagens` e a próxima gravação usa `mapping`', () => {
+    const legacy = JSON.stringify({
+      ...JSON.parse(serialize(emptyProject())),
+      app: 'mapeador-imagens',
+    });
+    const loaded = ok(legacy);
+    expect(loaded.project.app).toBe('mapping');
+    expect(JSON.parse(serialize(loaded.project)).app).toBe('mapping');
+  });
+
+  it('rejeita um `app` desconhecido', () => {
+    const other = JSON.stringify({
+      ...JSON.parse(serialize(emptyProject())),
+      app: 'outro',
+    });
+    expect(deserialize(other).ok).toBe(false);
+  });
+});
+
 describe('migrações', () => {
   it('registro atual não tem migrações pendentes', () => {
     expect(SCHEMA_VERSION).toBe(5);

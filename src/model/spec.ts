@@ -4,7 +4,9 @@ import { z } from 'zod';
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 
-export const SPEC_FORMAT = 'mapeador-spec';
+export const SPEC_FORMAT = 'mapping-spec';
+/** Valor usado antes do renome do produto: a importação ainda o aceita. */
+export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 export const SPEC_FORMAT_VERSION = 1;
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -52,7 +54,7 @@ export interface SpecLayer {
 }
 
 export interface Spec {
-  format: typeof SPEC_FORMAT;
+  format: typeof SPEC_FORMAT | typeof LEGACY_SPEC_FORMAT;
   formatVersion: typeof SPEC_FORMAT_VERSION;
   id: string;
   name: string;
@@ -309,7 +311,7 @@ const layerShape = z
 
 export const specSchema = z
   .object({
-    format: z.literal(SPEC_FORMAT, {
+    format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
       error: `deve ser "${SPEC_FORMAT}"`,
     }),
     formatVersion: z.literal(SPEC_FORMAT_VERSION, {

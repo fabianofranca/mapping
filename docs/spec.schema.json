@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mapeador.local/spec.schema.json",
-  "title": "Mapeador de Imagens — especialização (formatVersion 1)",
+  "$id": "https://mapping.local/spec.schema.json",
+  "title": "Mapping — especialização (formatVersion 1)",
   "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags) só são verificadas pelo validador da app; veja SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
   "properties": {
     "format": {
-      "const": "mapeador-spec"
+      "enum": ["mapping-spec", "mapeador-spec"]
     },
     "formatVersion": {
       "const": 1

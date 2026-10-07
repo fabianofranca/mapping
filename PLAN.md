@@ -1,4 +1,4 @@
-# Mapeador de Imagens — Plano de desenvolvimento
+# Mapping — Plano de desenvolvimento
 
 > Este documento guarda o resumo do produto e **só as fases pendentes** (hoje nenhuma). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 

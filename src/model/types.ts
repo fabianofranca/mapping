@@ -4,7 +4,9 @@ import type { Spec } from './spec';
 // Tudo é `readonly`: o modelo é imutável e as operações sempre devolvem um novo projeto.
 
 export const SCHEMA_VERSION = 5;
-export const APP_ID = 'mapeador-imagens';
+export const APP_ID = 'mapping';
+/** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
+export const LEGACY_APP_ID = 'mapeador-imagens';
 export const COORDINATE_SYSTEM = 'image-pixels-exif-oriented';
 
 /** Retângulo em pixels inteiros da imagem original. */

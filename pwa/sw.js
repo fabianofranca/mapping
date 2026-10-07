@@ -1,4 +1,4 @@
-// Service worker do Mapeador de Imagens: cache-first do app (funciona offline).
+// Service worker do Mapping: cache-first do app (funciona offline).
 // `__BUILD_ID__` é trocado no build (vite.config.ts) por um hash do index.html;
 // cada build novo gera um sw.js diferente, o que dispara o aviso de nova versão.
 // `__CHANNEL__` vira `preview` no build do branch publicado em /preview/.
@@ -6,6 +6,8 @@ const VERSION = '__BUILD_ID__';
 const PREVIEW = '__CHANNEL__' === 'preview';
 // Os caches são da origem inteira: a versão principal e o preview usam prefixos
 // distintos para um não apagar o cache do outro ao ativar.
+// Os prefixos `mapeador-` são os de antes do renome para "Mapping" e ficam: trocá-los
+// deixaria os caches antigos órfãos (o `activate` só apaga os que começam com o prefixo atual).
 const PREVIEW_PREFIX = 'mapeador-preview-';
 const CACHE = PREVIEW ? `${PREVIEW_PREFIX}${VERSION}` : `mapeador-${VERSION}`;
 const ownsCache = (name) =>

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   APP_ID,
+  LEGACY_APP_ID,
   COORDINATE_SYSTEM,
   SCHEMA_VERSION,
   type JsonValue,
@@ -107,7 +108,10 @@ const specializationSchema = z.object({
 
 export const projectSchema: z.ZodType<ProjectFile> = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
-  app: z.literal(APP_ID),
+  // Aceita o valor antigo e normaliza: a próxima gravação já sai como `APP_ID`.
+  app: z
+    .union([z.literal(APP_ID), z.literal(LEGACY_APP_ID)])
+    .transform((): typeof APP_ID => APP_ID),
   coordinateSystem: z.literal(COORDINATE_SYSTEM),
   project: z.object({
     name: z.string(),

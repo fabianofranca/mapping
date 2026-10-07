@@ -1,7 +1,7 @@
 import type { Dictionary } from './pt-BR';
 
 export const enUS: Dictionary = {
-  'app.title': 'Image Mapper',
+  'app.title': 'Mapping',
   'app.loading': 'Loading…',
   'settings.title': 'Settings',
   'settings.language': 'Language',
@@ -259,7 +259,7 @@ export const enUS: Dictionary = {
   'status.channelLabel': 'Build channel: {channel}',
 
   'editor.projectMenu': 'Project actions',
-  'editor.appName': 'Image mapper',
+  'editor.appName': 'Mapping',
   'editor.fitAllShort': 'Fit',
 
   'view.list': 'List',
