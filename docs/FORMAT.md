@@ -26,7 +26,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 ```json
 {
   "schemaVersion": 5,
-  "app": "mapeador-imagens",
+  "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": { "name": "Carro", "createdAt": "…", "updatedAt": "…" },
   "specializations": [],
@@ -81,7 +81,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 | Campo              | Tipo   | Descrição                                                                 |
 | ------------------ | ------ | ------------------------------------------------------------------------- |
 | `schemaVersion`    | `5`    | Versão do schema.                                                         |
-| `app`              | string | Sempre `"mapeador-imagens"`.                                              |
+| `app`              | string | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).        |
 | `coordinateSystem` | string | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
 | `project`          | objeto | `name` (texto), `createdAt` e `updatedAt` (ISO 8601).                     |
 | `specializations`  | array  | Especializações aplicadas (ver v4).                                       |

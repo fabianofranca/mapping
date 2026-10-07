@@ -41,6 +41,8 @@ ação do usuário
 - **Bitmaps** (`displayImages.ts`): as imagens exibidas são carregadas sob demanda; `retain(paths)` fecha os bitmaps que o projeto não usa mais. Um arquivo que volta pelo desfazer é recarregado.
 - **Erros**: `reportError(contexto, erro)` registra no console e guarda os últimos 20; a janela "Diagnóstico" (inferior no desktop; tela cheia no celular) os lista em tabela, com "Copiar" e "Limpar"; o ponto de alerta da faixa usa o "visto até" de `store/diagnostics.ts`.
 
+**Nomes internos antigos.** O produto se chama "Mapping", mas dois nomes invisíveis ao usuário mantêm o antigo `mapeador`, para não exigir migração dos dados já guardados nos navegadores: o banco IndexedDB (`mapeador-imagens`, em `storage/local.ts`) e os caches do service worker (`mapeador-…`, em `pwa/sw.js`). As chaves do `localStorage` já usam o prefixo `mapping.`. Nos arquivos, `app: "mapeador-imagens"` e `format: "mapeador-spec"` ainda são lidos; o `app` é normalizado para `"mapping"` ao ler, então a próxima gravação já usa o valor novo.
+
 ## Regras e o porquê
 
 | Regra                                                                                                                                                                                                                                                                                                                                                                                 | Por quê                                                                                                                                                                                                                 |

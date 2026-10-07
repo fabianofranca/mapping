@@ -18,7 +18,7 @@ export interface HelpSection {
 
 /** Trecho do exemplo SDUI (igual nos dois idiomas: é o formato do arquivo). */
 const SDUI_EXCERPT = `{
-  "format": "mapeador-spec",
+  "format": "mapping-spec",
   "formatVersion": 1,
   "id": "sdui",
   "name": "SDUI",
@@ -95,7 +95,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapeador-spec"), formatVersion (1), id, name e version (inteiro ≥ 1) são obrigatórios; description é opcional. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1), id, name e version (inteiro ≥ 1) são obrigatórios; description é opcional. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -303,7 +303,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapeador-spec"), formatVersion (1), id, name and version (integer ≥ 1) are required; description is optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1), id, name and version (integer ≥ 1) are required; description is optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {

@@ -1,6 +1,6 @@
 {
-  "name": "Mapeador de Imagens",
-  "short_name": "Mapeador",
+  "name": "Mapping",
+  "short_name": "Mapping",
   "description": "Marque áreas em imagens, organize em camadas e anote com pares chave-valor.",
   "lang": "pt-BR",
   "start_url": "./",

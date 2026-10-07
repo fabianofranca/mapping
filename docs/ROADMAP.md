@@ -1,6 +1,6 @@
 # Roadmap
 
-Ordem das etapas do Mapeador de Imagens. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar.
+Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar.
 
 ## Princípio
 
@@ -42,7 +42,15 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 ## Etapa 3 — Servidor MCP
 
 - **Objetivo:** um agente criar e consultar projetos direto na pasta, reutilizando o modelo da app.
-- **Decisões técnicas em discussão:** onde roda (local por stdio, remoto ou WebMCP); linguagem (TypeScript reaproveitando `src/model/` ou outra); concorrência entre a app e o MCP no mesmo projeto; formato das tools (leitura granular e escrita em lote com prévia); imagens no servidor; distribuição.
+- **Decisões técnicas (tomadas):**
+  - **Servidor:** MCP local em TypeScript, rodando por linha de comando (stdio) com o Node, lendo e gravando direto na pasta do projeto, sempre pelo `src/model/`.
+  - **Onde ficam os mapeamentos:** dentro do repositório do app (ex: `design/mapeamentos/`), com um `.mcp.json` versionado que registra o servidor e a pasta raiz relativa (`--root`, com apelidos se houver mais de uma raiz).
+  - **Distribuição:** um arquivo único `mapping-mcp.js` publicado nas Releases do GitHub; cada repositório de app guarda uma cópia em `tools/`.
+  - **Alcance:** só projetos em pasta ficam ao alcance do MCP.
+  - **Referência copiável:** `mapping://<projeto>/<m|i|a>/<código curto> (<caminho legível>)` para marcações, imagens e anotações. O código curto tem 8 caracteres derivados do id (mais caracteres se houver colisão) e é aceito por todas as tools. Na app, a ação "Copiar referência" fica na Árvore, nos Detalhes e no menu de contexto do canvas.
+  - **Recorte:** tool `get_marking_image` (margem, destaque na imagem inteira, contorno das filhas, tamanho máximo), com biblioteca de imagem em WebAssembly. Na app, a ação "Copiar recorte" põe a imagem na área de transferência.
+  - **Formato das tools:** leitura granular e escrita em lote com prévia e confirmação.
+  - **Concorrência:** número de revisão no `mapping.json` para evitar sobrescrita entre a app e o MCP; a app percebe mudanças externas e recarrega.
 - **Entra:**
   - **3a, Base:** criar e abrir projetos, aplicar especializações, adicionar imagens, camadas, marcações e anotações, leitura com recorte por marcação, especializações expostas para orientar o agente.
   - **3b, Referências de código:** especialização v2 com plataformas e mapeamento de código por tipo, campo `codeRef` nas instâncias, repositório por plataforma no projeto.

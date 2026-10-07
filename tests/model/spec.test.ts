@@ -269,6 +269,24 @@ const structural: [string, (s: Json) => void][] = [
   ['propriedade desconhecida', (s) => (s.layers[0].annotationTypes[0].extra = 1)],
 ];
 
+describe('nome do produto (format)', () => {
+  it('os exemplos usam `mapping-spec`', () => {
+    expect(base().format).toBe('mapping-spec');
+  });
+
+  it('a importação ainda aceita `mapeador-spec`, no zod e no JSON Schema', () => {
+    const spec = { ...base(), format: 'mapeador-spec' };
+    expect(parseSpec(spec).ok).toBe(true);
+    expect(jsonValidator.safeParse(spec).success).toBe(true);
+  });
+
+  it('rejeita outro `format`', () => {
+    const spec = { ...base(), format: 'outro' };
+    expect(parseSpec(spec).ok).toBe(false);
+    expect(jsonValidator.safeParse(spec).success).toBe(false);
+  });
+});
+
 describe('consistência zod × JSON Schema', () => {
   it.each(structural)('os dois rejeitam: %s', (_name, mutate) => {
     const spec = base();

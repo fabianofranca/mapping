@@ -3,7 +3,7 @@
 export type BuildChannel = 'main' | 'preview';
 
 /** Nome da app instalada a partir do preview (PLAN.md 14.3). */
-export const PREVIEW_APP_NAME = 'Mapeador (preview)';
+export const PREVIEW_APP_NAME = 'Mapping (preview)';
 
 /** Carimba o sw.js com o id do build e o canal. */
 export function stampServiceWorker(

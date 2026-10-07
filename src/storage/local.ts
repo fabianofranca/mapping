@@ -5,6 +5,8 @@ import { BACKUPS_DIR, backupTimestamp, type ProjectStorage } from './types';
 import { reportError } from '../utils/report';
 
 /** O preview usa outro banco (`-preview`): nunca enxerga os projetos da versão principal. */
+// O nome do banco continua o de antes do renome para "Mapping": mudá-lo faria os
+// projetos locais já salvos nos navegadores dos usuários sumirem sem uma migração.
 const DB_NAME = channelDbName('mapeador-imagens');
 const DB_VERSION = 1;
 /** Tempo máximo para abrir o banco (em `file://` alguns navegadores nunca respondem). */

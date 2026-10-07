@@ -2,7 +2,7 @@
 
 ## Projeto
 
-Mapeador de Imagens: app web para marcar áreas retangulares em imagens, organizar em camadas e anotar com pares chave-valor, salvando tudo num `mapping.json` ao lado das imagens.
+Mapping: app web para marcar áreas retangulares em imagens, organizar em camadas e anotar com pares chave-valor, salvando tudo num `mapping.json` ao lado das imagens.
 
 **Leia o `PLAN.md` antes de qualquer tarefa** (resumo do produto e fases pendentes). Trabalhe **uma fase por vez**, na ordem, e marque os checkboxes concluídos no próprio PR. A referência atual está em `docs/` (`ARCHITECTURE.md`, `FORMAT.md`, `SPEC-FORMAT.md`); o plano das etapas concluídas está em `docs/history/` (inclui o roteiro de teste manual, seção 13.9).
 
