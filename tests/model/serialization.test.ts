@@ -27,9 +27,10 @@ describe('serialização', () => {
   it('usa 2 espaços, ordem fixa de chaves e quebra de linha final', () => {
     const text = serialize(emptyProject());
     expect(text.endsWith('}\n')).toBe(true);
-    expect(text.split('\n')[1]).toBe('  "schemaVersion": 5,');
+    expect(text.split('\n')[1]).toBe('  "schemaVersion": 6,');
     expect(Object.keys(JSON.parse(text))).toEqual([
       'schemaVersion',
+      'revision',
       'app',
       'coordinateSystem',
       'project',
@@ -53,6 +54,7 @@ describe('serialização', () => {
       coordinateSystem: p.coordinateSystem,
       app: p.app,
       schemaVersion: p.schemaVersion,
+      revision: p.revision,
     });
     expect(serialize(ok(shuffled).project)).toBe(serialize(p));
   });
@@ -141,8 +143,8 @@ describe('nome do produto (app)', () => {
 
 describe('migrações', () => {
   it('registro atual não tem migrações pendentes', () => {
-    expect(SCHEMA_VERSION).toBe(5);
-    expect(migrate({ a: 1 }, 5)).toEqual({ ok: true, data: { a: 1 } });
+    expect(SCHEMA_VERSION).toBe(6);
+    expect(migrate({ a: 1 }, 6)).toEqual({ ok: true, data: { a: 1 } });
   });
 
   it('aplica as migrações registradas em sequência', () => {

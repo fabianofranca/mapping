@@ -4,7 +4,7 @@ import { t } from '../i18n';
 import {
   fieldLabel,
   getBacklinks,
-  parseRef,
+  parseRefValue,
   projectIndex,
   refLabel,
   resolveRef,
@@ -103,7 +103,7 @@ function RefField({
   const { project, annotation, readOnly } = ctx;
   const [picking, setPicking] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
-  const ref = parseRef(annotation.values?.[field.key]);
+  const ref = parseRefValue(annotation.values?.[field.key]);
   const target = ref ? resolveRef(project, ref) : null;
   const hasValue = annotation.values?.[field.key] != null;
   const broken = hasValue && !target;

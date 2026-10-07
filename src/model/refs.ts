@@ -36,7 +36,7 @@ function nonEmptyString(value: unknown): value is string {
 }
 
 /** Interpreta um valor como referência; `null` se não tiver um dos três formatos. */
-export function parseRef(value: JsonValue | undefined): RefValue | null {
+export function parseRefValue(value: JsonValue | undefined): RefValue | null {
   if (!isRecord(value) || !nonEmptyString(value.annotationId)) return null;
   const keys = Object.keys(value).sort().join(',');
   const { annotationId } = value;
@@ -262,7 +262,7 @@ export function refsOf(p: Project, a: Annotation): AnnotationRef[] {
     : Object.keys(values);
   const result: AnnotationRef[] = [];
   for (const key of keys) {
-    const ref = parseRef(values[key]);
+    const ref = parseRefValue(values[key]);
     if (ref) result.push({ key, ref });
   }
   return result;

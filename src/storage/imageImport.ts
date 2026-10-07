@@ -1,8 +1,11 @@
 import {
   chooseOutputFormat,
   encodedAsRequested,
+  isJpegSource,
+  isPngSource,
   planOutputSize,
   shouldUseEncoded,
+  withExtension,
   type OutputMime,
 } from '../model';
 import { readExifOrientation } from './exif';
@@ -79,15 +82,6 @@ function supportsWebp(): Promise<boolean> {
   return webpSupport;
 }
 
-function withExtension(name: string, extension: string): string {
-  const dot = name.lastIndexOf('.');
-  return `${dot > 0 ? name.slice(0, dot) : name}.${extension}`;
-}
-
-function isPngFile(file: File): boolean {
-  return file.type === 'image/png' || /\.png$/i.test(file.name);
-}
-
 /**
  * Prepara e otimiza uma imagem que entra pela app (arquivo, câmera, colar,
  * arrastar, troca): aplica a orientação EXIF, limita o lado maior a
@@ -107,11 +101,15 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   }
   const { width, height } = bitmap;
   try {
-    const isJpeg = file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name);
-    const orientation = isJpeg ? readExifOrientation(await file.arrayBuffer()) : 1;
+    const orientation = isJpegSource(file)
+      ? readExifOrientation(await file.arrayBuffer())
+      : 1;
     try {
       const plan = planOutputSize({ width, height });
-      const format = chooseOutputFormat({ isPng: isPngFile(file) }, await supportsWebp());
+      const format = chooseOutputFormat(
+        { isPng: isPngSource(file) },
+        await supportsWebp(),
+      );
       const canvas = drawToCanvas(bitmap, plan.width, plan.height, format.mime);
       const encoded = await canvasToBlob(canvas, format.mime, format.quality);
       if (

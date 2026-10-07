@@ -28,5 +28,6 @@ export * from './specLookup';
 export * from './specializations';
 export * from './typed';
 export * from './refs';
+export * from './itemRef';
 export * from './issues';
 export * from './typedDisplay';

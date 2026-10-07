@@ -18,6 +18,7 @@ export interface NewProjectArgs {
 export function createProject({ name, now, firstLayer }: NewProjectArgs): Project {
   return {
     schemaVersion: SCHEMA_VERSION,
+    revision: 0,
     app: APP_ID,
     coordinateSystem: COORDINATE_SYSTEM,
     project: { name: name.trim(), createdAt: now, updatedAt: now },

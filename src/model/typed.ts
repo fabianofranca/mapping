@@ -6,7 +6,7 @@ import {
   DEFAULT_LABEL_TEXTS,
   isRecord,
   isRefAccepted,
-  parseRef,
+  parseRefValue,
   refLabel,
   instanceLabel,
   type LabelTexts,
@@ -216,7 +216,7 @@ export function setFieldValue(
       if (isEmptyValue(value)) {
         next = null;
       } else {
-        const ref = parseRef(value) ?? fail('invalid-value', key);
+        const ref = parseRefValue(value) ?? fail('invalid-value', key);
         if (ref.annotationId === a.id) fail('self-ref', key);
         if (!isRefAccepted(p, a.id, field.accepts, ref)) fail('ref-not-accepted', key);
         next = { ...ref };
@@ -349,7 +349,7 @@ export function typedValuesToPairs(
     const value = values[key];
     if (value === undefined || isEmptyValue(value)) continue;
     const field = fields.get(key);
-    const ref = field?.type === 'ref' || !field ? parseRef(value) : null;
+    const ref = field?.type === 'ref' || !field ? parseRefValue(value) : null;
     if (ref || field?.type === 'ref') {
       pairs.push({ key, value: `→ ${ref ? refLabel(p, ref, texts) : texts.broken}` });
     } else if (Array.isArray(value)) {

@@ -1,0 +1,13 @@
+{
+  // Servidor MCP (etapa 3a): roda no Node, sem DOM. Compila também o `src/model/`,
+  // o que prova que ele não depende de tipos de navegador.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "jsx": "preserve",
+    "types": ["node"],
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": ["./**/*.ts", "../src/model/**/*.ts", "../tests/mcp/**/*.ts"]
+}

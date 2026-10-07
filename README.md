@@ -31,8 +31,9 @@ npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a 
 ## Como testar
 
 ```bash
+npm run build:mcp    # gera dist-mcp/mapping-mcp.js (servidor MCP em arquivo único; etapa 3a)
 npm run lint         # eslint + prettier --check
-npm run typecheck    # tsc --noEmit
+npm run typecheck    # tsc --noEmit (app e servidor MCP)
 npm test             # Vitest: modelo (Node), store, storage, canvas e componentes
 npm run test:coverage # com relatório de cobertura em coverage/ (pula os orçamentos de desempenho)
 npm run test:perf    # só os orçamentos de desempenho por quadro

@@ -23,8 +23,9 @@ npm test          # vitest (modelo, store, storage, canvas e componentes)
 npm run test:coverage # vitest com relatório de cobertura (coverage/); pula os orçamentos de desempenho
 npm run test:perf # só os orçamentos de desempenho (sem cobertura; o CI roda separado)
 npm run test:e2e  # Playwright contra dist/index.html; roda no CI (localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
+npm run build:mcp # gera dist-mcp/mapping-mcp.js (servidor MCP, etapa 3a)
 npm run lint      # eslint + prettier --check
-npm run typecheck # tsc --noEmit
+npm run typecheck # tsc --noEmit (app e mcp/)
 ```
 
 Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm test && npm run build` precisam passar.

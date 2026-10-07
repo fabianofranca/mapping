@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v5). Ver docs/history/PLAN-etapas-1-2.md, seções 4, 12.1 e 13.3.
+// Tipos do `mapping.json` (schema v6). Ver docs/history/PLAN-etapas-1-2.md, seções 4, 12.1 e 13.3.
 // Tudo é `readonly`: o modelo é imutável e as operações sempre devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -158,6 +158,12 @@ export interface ProjectInfo {
 
 export interface Project {
   readonly schemaVersion: typeof SCHEMA_VERSION;
+  /**
+   * Contador de gravações do arquivo (v6). Quem grava (app ou MCP) confere se o
+   * valor no disco ainda é o que carregou e grava `revision + 1`; assim percebe
+   * uma alteração feita por outro processo. As operações do modelo não o alteram.
+   */
+  readonly revision: number;
   readonly app: typeof APP_ID;
   readonly coordinateSystem: typeof COORDINATE_SYSTEM;
   readonly project: ProjectInfo;

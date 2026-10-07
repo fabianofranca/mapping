@@ -2,7 +2,7 @@ import {
   DEFAULT_LABEL_TEXTS,
   instanceLabel,
   isRecord,
-  parseRef,
+  parseRefValue,
   refLabel,
   resolveRef,
   tableRows,
@@ -183,7 +183,7 @@ export function typedDisplayLines(
       continue;
     }
     if (field.type === 'ref') {
-      const ref = parseRef(value);
+      const ref = parseRefValue(value);
       const target = ref ? resolveRef(p, ref) : null;
       lines.push({
         kind: 'value',

@@ -3,7 +3,7 @@ import { t } from '../i18n';
 import {
   fieldLabel,
   findRefTargets,
-  parseRef,
+  parseRefValue,
   projectIndex,
   type Annotation,
   type Project,
@@ -118,7 +118,7 @@ export function RefPicker({
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>({ kind: 'all' });
   const targets = findRefTargets(project, annotation.id, field.key, labelTexts());
-  const current = parseRef(annotation.values?.[field.key]);
+  const current = parseRefValue(annotation.values?.[field.key]);
   const isCurrent = (target: RefTarget) =>
     current !== null && JSON.stringify(current) === JSON.stringify(target.ref);
   const [active, setActive] = useState(() => Math.max(0, targets.findIndex(isCurrent)));

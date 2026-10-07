@@ -58,12 +58,16 @@ export const migrateFrom4To5: Migration = (data) => ({
   markings: mapItems(data.markings, (m) => ({ locked: false, ...m })),
 });
 
+/** v5 → v6 (revisão): `revision: 0`. Um valor já presente é preservado. */
+export const migrateFrom5To6: Migration = (data) => ({ revision: 0, ...data });
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
   [2, migrateFrom2To3],
   [3, migrateFrom3To4],
   [4, migrateFrom4To5],
+  [5, migrateFrom5To6],
 ]);
 
 export type MigrationResult =
