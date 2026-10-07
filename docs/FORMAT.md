@@ -198,8 +198,10 @@ Anotação tipada (Classe da especialização `modelo-dados`):
 grava (a app ou o servidor MCP) relê o arquivo antes, confere se a `revision` no disco é a que carregou e
 grava `revision + 1`; se for outra, alguém alterou o `mapping.json` por fora e a gravação é recusada ou
 confirmada pelo usuário. Quem edita o arquivo à mão não precisa mexer no campo, mas o valor só sobe
-quando a app ou o MCP gravam. As operações do `src/model/` não alteram a `revision`: ela é do arquivo, não
-do conteúdo. (A conferência na gravação entra na fase 3a.2; a v6 só traz o campo.)
+quando a app ou o MCP gravam; a app percebe a edição à mão pelo conteúdo (e pela data do arquivo), não só
+pela `revision`. As operações do `src/model/` não alteram a `revision`: ela é do arquivo, não do conteúdo
+(a app a guarda na sessão e a incrementa a cada gravação). Um arquivo sem o campo (v5) vale `0`, como na
+migração.
 
 ## Campos da v5 (trava)
 

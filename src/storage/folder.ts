@@ -18,7 +18,8 @@ export interface WritableLike {
 export interface FileHandleLike {
   readonly kind: 'file';
   readonly name: string;
-  getFile(): Promise<Blob>;
+  /** O `File` real tem `lastModified`; os mocks dos testes podem devolver só um `Blob`. */
+  getFile(): Promise<Blob & { readonly lastModified?: number }>;
   createWritable(): Promise<WritableLike>;
 }
 
@@ -94,7 +95,10 @@ async function resolveDir(
   return dir;
 }
 
-async function readFile(root: DirectoryHandleLike, path: string): Promise<Blob | null> {
+async function readFile(
+  root: DirectoryHandleLike,
+  path: string,
+): Promise<(Blob & { readonly lastModified?: number }) | null> {
   const { dirs, name } = splitPath(path);
   const dir = await resolveDir(root, dirs, false);
   if (!dir) return null;
@@ -146,12 +150,21 @@ async function removeFile(root: DirectoryHandleLike, path: string): Promise<void
 export function createFolderStorage(root: DirectoryHandleLike): ProjectStorage {
   return {
     kind: 'folder',
+    folderName: root.name,
     async loadMapping() {
       const blob = await readFile(root, MAPPING_FILE);
       return blob ? blob.text() : null;
     },
     saveMapping: (text) => writeFile(root, MAPPING_FILE, text),
+    async statMapping() {
+      const file = await readFile(root, MAPPING_FILE);
+      return file ? (file.lastModified ?? 0) : null;
+    },
     readImage: (path) => readFile(root, path),
+    async statImage(path) {
+      const file = await readFile(root, path);
+      return file ? `${file.size}:${file.lastModified ?? 0}` : null;
+    },
     writeImage: (path, data) => writeFile(root, path, data),
     removeImage: (path) => removeFile(root, path),
     async readSpec(path) {

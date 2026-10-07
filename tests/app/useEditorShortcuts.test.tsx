@@ -4,6 +4,9 @@ import type { CanvasController } from '../../src/canvas/CanvasController';
 import type { EditorDialogs } from '../../src/app/useEditorDialogs';
 import type { ProjectCommands } from '../../src/app/useProjectCommands';
 import { useEditorShortcuts } from '../../src/app/useEditorShortcuts';
+import { t } from '../../src/i18n';
+import { ITEM_CLIPBOARD_MIME, parseRef } from '../../src/model';
+import * as imageCrop from '../../src/storage/imageCrop';
 import {
   RESIZE_STEP,
   hideToolWindow,
@@ -537,5 +540,185 @@ describe('useEditorShortcuts: quando as teclas não valem', () => {
     s.press('F1');
     expect(next.show).toHaveBeenCalledWith({ kind: 'help' });
     expect(s.dialogs.show).not.toHaveBeenCalled();
+  });
+});
+
+// Etapa 3a.2: Ctrl+C copia a referência e Ctrl+Alt+C o recorte, sem tirar o copiar nativo
+// dos campos de texto nem do texto selecionado na página.
+describe('useEditorShortcuts: copiar referência e recorte', () => {
+  function mockClipboard(custom = false) {
+    const writeText = vi.fn((text: string) => {
+      void text;
+      return Promise.resolve();
+    });
+    const write = vi.fn((items: unknown[]) => {
+      void items;
+      return Promise.resolve();
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText, write },
+      configurable: true,
+    });
+    if (custom) {
+      class FakeItem {
+        static supports = (type: string) => type === `web ${ITEM_CLIPBOARD_MIME}`;
+        constructor(readonly data: Record<string, unknown>) {}
+      }
+      vi.stubGlobal('ClipboardItem', FakeItem);
+    }
+    return { writeText, write };
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, 'clipboard');
+    window.getSelection()?.removeAllRanges();
+  });
+
+  it('com uma marcação selecionada, copia a referência e avisa', async () => {
+    const { writeText } = mockClipboard();
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
+
+    expect(s.press('c', { ctrl: true }).defaultPrevented).toBe(true);
+
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const text = String(writeText.mock.calls[0]?.[0]);
+    expect(text).toBe(
+      `mapping://projeto/m/m2 (images/lateral.jpg${t('marking.pathSeparator')}Porta${t('marking.pathSeparator')}Maçaneta)`,
+    );
+    expect(parseRef(text)).toEqual({ project: 'projeto', kind: 'm', code: 'm2' });
+    await vi.waitFor(() =>
+      expect(s.harness.ui.toast.value).toBe(t('copy.referenceDone')),
+    );
+  });
+
+  it('Cmd+C (macOS) também copia', async () => {
+    const { writeText } = mockClipboard();
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    expect(s.press('c', { meta: true }).defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+  });
+
+  it('imagem selecionada: a referência é do tipo i', async () => {
+    const { writeText } = mockClipboard();
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'image', id: 'I2' };
+    s.press('c', { ctrl: true });
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    expect(parseRef(String(writeText.mock.calls[0]?.[0]))).toMatchObject({
+      kind: 'i',
+      code: 'i2',
+    });
+  });
+
+  it('grava também os dados do item, no formato web próprio, quando o navegador deixa', async () => {
+    const { write, writeText } = mockClipboard(true);
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.press('c', { ctrl: true });
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    expect(writeText).not.toHaveBeenCalled();
+    const item = write.mock.calls[0]?.[0][0] as { data: Record<string, Blob> };
+    expect(Object.keys(item.data).sort()).toEqual([
+      'text/plain',
+      `web ${ITEM_CLIPBOARD_MIME}`,
+    ]);
+    const data = JSON.parse(await item.data[`web ${ITEM_CLIPBOARD_MIME}`]!.text());
+    expect(data).toMatchObject({ format: 'mapping-item', kind: 'm', project: 'projeto' });
+    expect(data.item.id).toBe('M1');
+    expect(await item.data['text/plain']!.text()).toBe(data.ref);
+  });
+
+  it('sem nada selecionado, o copiar nativo continua', () => {
+    const { writeText } = mockClipboard();
+    const s = setup();
+    expect(s.press('c', { ctrl: true }).defaultPrevented).toBe(false);
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it('com o foco num campo de texto, o copiar nativo continua', () => {
+    const { writeText } = mockClipboard();
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    const input = document.body.appendChild(document.createElement('input'));
+    input.focus();
+    expect(pressOn(input, 'c', { ctrl: true }).defaultPrevented).toBe(false);
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it('com texto selecionado na página, o copiar nativo continua', () => {
+    const { writeText } = mockClipboard();
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    const p = document.body.appendChild(document.createElement('p'));
+    p.textContent = 'texto da página';
+    window.getSelection()?.selectAllChildren(p);
+    expect(s.press('c', { ctrl: true }).defaultPrevented).toBe(false);
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it('com o foco num cartão de anotação (fora dos campos), copia a referência dela', async () => {
+    const { writeText } = mockClipboard();
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    const card = document.body.appendChild(document.createElement('div'));
+    card.setAttribute('data-annotation', 'A1');
+    const button = card.appendChild(document.createElement('button'));
+    button.focus();
+    expect(pressOn(button, 'c', { ctrl: true }).defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const ref = parseRef(String(writeText.mock.calls[0]?.[0]));
+    expect(ref).toMatchObject({ kind: 'a', code: 'a1' });
+  });
+
+  it('Ctrl+Alt+C copia o recorte da marcação selecionada como PNG', async () => {
+    const { write } = mockClipboard(true);
+    const s = setup();
+    const png = new Blob(['png'], { type: 'image/png' });
+    const crop = vi.spyOn(imageCrop, 'cropToPng').mockResolvedValue(png);
+    vi.spyOn(s.harness.context.session, 'readImage').mockResolvedValue(new Blob(['jpg']));
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
+
+    expect(
+      s.press('c', { ctrl: true, alt: true }, { code: 'KeyC' }).defaultPrevented,
+    ).toBe(true);
+
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    const item = write.mock.calls[0]?.[0][0] as { data: Record<string, Promise<Blob>> };
+    expect(Object.keys(item.data)).toEqual(['image/png']);
+    await expect(item.data['image/png']).resolves.toBe(png);
+    // O recorte é em pixels da imagem original: o rect da marcação.
+    expect(crop).toHaveBeenCalledWith(expect.any(Blob), marking(s.harness, 'M2').rect);
+    await vi.waitFor(() => expect(s.harness.ui.toast.value).toBe(t('copy.cropDone')));
+  });
+
+  it('o recorte avisa quando a imagem não pode ser lida', async () => {
+    const { write } = mockClipboard(true);
+    write.mockRejectedValue(new Error('recusado'));
+    const s = setup();
+    vi.spyOn(s.harness.context.session, 'readImage').mockResolvedValue(null);
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
+    s.press('c', { ctrl: true, alt: true });
+    await vi.waitFor(() => expect(s.harness.ui.toast.value).toBe(t('copy.cropFailed')));
+  });
+
+  it('Ctrl+Alt+C com uma imagem (ou nada) selecionado não faz nada', () => {
+    const { write } = mockClipboard(true);
+    const s = setup();
+    expect(s.press('c', { ctrl: true, alt: true }).defaultPrevented).toBe(false);
+    s.harness.ui.selection.value = { kind: 'image', id: 'I1' };
+    expect(s.press('c', { ctrl: true, alt: true }).defaultPrevented).toBe(false);
+    expect(write).not.toHaveBeenCalled();
+  });
+
+  it('se a área de transferência recusar, avisa que não copiou', async () => {
+    const { writeText } = mockClipboard();
+    writeText.mockRejectedValue(new Error('negado'));
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.press('c', { ctrl: true });
+    await vi.waitFor(() => expect(s.harness.ui.toast.value).toBe(t('copy.failed')));
   });
 });

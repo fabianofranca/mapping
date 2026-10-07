@@ -142,11 +142,11 @@ Nomes em inglês. Respostas em JSON compacto, sempre com as referências `mappin
 **Aceite**: testes do modelo verdes; `npm run build:mcp` gera `dist-mcp/mapping-mcp.js` que inicia por stdio.
 
 #### 3a.2 — App: revisão, mudanças externas e cópias
-- [ ] Gravação com conferência de `revision` + diálogo "Projeto alterado fora da app"
-- [ ] Detecção de mudança externa em projetos de pasta, recarga automática sem pendências locais e invalidação de bitmaps
-- [ ] Ctrl+C / Cmd+C copiando a referência (imagem, marcação, anotação em foco), sem interferir no copiar de campos de texto e de texto selecionado; formato próprio da app gravado junto
-- [ ] "Copiar referência" nos menus (Árvore, Detalhes, canvas) e "Copiar recorte" (Ctrl+Alt+C e menus)
-- [ ] Textos pt-BR/en-US e Ajuda → Atalhos
+- [x] Gravação com conferência de `revision` + diálogo "Projeto alterado fora da app"
+- [x] Detecção de mudança externa em projetos de pasta, recarga automática sem pendências locais e invalidação de bitmaps
+- [x] Ctrl+C / Cmd+C copiando a referência (imagem, marcação, anotação em foco), sem interferir no copiar de campos de texto e de texto selecionado; formato próprio da app gravado junto
+- [x] "Copiar referência" nos menus (Árvore, Detalhes, canvas) e "Copiar recorte" (Ctrl+Alt+C e menus)
+- [x] Textos pt-BR/en-US e Ajuda → Atalhos
 
 **Aceite**: editar o `mapping.json` por fora com a app aberta faz a app recarregar; editar dos dois lados abre o diálogo; com uma marcação selecionada, Ctrl+C e colar num editor de texto produz a referência no formato definido; com o foco num campo de texto, Ctrl+C copia o texto do campo; o recorte colado num chat aparece como imagem.
 

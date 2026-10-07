@@ -6,6 +6,7 @@ import { imageLabel } from './labels';
 import type { DisplayImage } from '../store/displayImages';
 import { useEditor } from './EditorContext';
 import { Button, IconButton, TextField } from './controls';
+import { CopyButtons } from './CopyActions';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
 import { Icon } from './icons';
@@ -59,15 +60,18 @@ export function SelectionPanel({
         sub={`${image.file} · ${dimensions}`}
         id={image.id}
         actions={
-          <IconButton
-            icon={image.locked ? 'lock' : 'unlock'}
-            label={t('lock.imageLock')}
-            tooltip={t(image.locked ? 'lock.imageUnlock' : 'lock.imageLock')}
-            shortcut={SHORTCUT_LABELS.toggleLock}
-            pressed={image.locked}
-            disabled={readOnly}
-            onClick={() => actions.setImageLocked(image.id, !image.locked)}
-          />
+          <>
+            <CopyButtons target={{ kind: 'i', id: image.id }} />
+            <IconButton
+              icon={image.locked ? 'lock' : 'unlock'}
+              label={t('lock.imageLock')}
+              tooltip={t(image.locked ? 'lock.imageUnlock' : 'lock.imageLock')}
+              shortcut={SHORTCUT_LABELS.toggleLock}
+              pressed={image.locked}
+              disabled={readOnly}
+              onClick={() => actions.setImageLocked(image.id, !image.locked)}
+            />
+          </>
         }
       />
       {image.locked && (

@@ -7,7 +7,6 @@ import {
   createProject,
   deserialize,
   migrations,
-  referencedSpecFiles,
   serialize,
   type DeserializeError,
   type Project,
@@ -23,6 +22,7 @@ import {
   type ExistingImage,
 } from '../storage/folder';
 import { createDisplayBitmap, prepareImage, readImageSize } from '../storage/imageImport';
+import { loadProject } from '../storage/loadProject';
 import {
   openLocalLibrary,
   requestPersistentStorage,
@@ -115,6 +115,8 @@ function start(
     localId: string | null;
     unexported: boolean;
     migratedFrom?: { version: number; text: string };
+    /** O `mapping.json` como foi lido (ver `SessionOptions.loadedText`). */
+    loadedText?: string;
   },
 ): void {
   const unexported = signal(options.unexported);
@@ -123,9 +125,14 @@ function start(
     project,
     readOnly: options.readOnly,
     migratedFrom: options.migratedFrom,
+    loadedText: options.loadedText,
     prepareImage,
     onSaved: () => {
       unexported.value = true;
+    },
+    // Arquivos trocados por fora: o bitmap guardado é do conteúdo antigo.
+    onImagesChanged: (paths) => {
+      for (const path of paths) display.invalidate(path);
     },
   });
   const display = createDisplayImages(async (path) => {
@@ -150,26 +157,17 @@ async function openFromStorage(
   storage: ProjectStorage,
   localId: string | null,
 ): Promise<AppResult> {
-  const text = await storage.loadMapping();
-  if (text === null) return err('not-found');
-  const specs = new Map<string, string>();
-  for (const file of referencedSpecFiles(text)) {
-    const spec = await storage.readSpec(file).catch((e: unknown) => {
-      reportError('open.readSpec', e);
-      return null;
-    });
-    if (spec !== null) specs.set(file, spec);
-  }
-  const result = deserialize(text, migrations, specs);
-  if (!result.ok) return err(result.error.code);
+  const loaded = await loadProject(storage);
+  if (!loaded.ok) return err(loaded.error);
   const meta = localId ? await library?.get(localId) : undefined;
-  start(storage, result.project, {
-    readOnly: result.readOnly,
+  start(storage, loaded.project, {
+    readOnly: loaded.readOnly,
     localId,
     unexported: meta?.unexported ?? false,
+    loadedText: loaded.text,
     // Schema antigo: o original vai para `backups/` antes do primeiro salvamento.
-    ...(result.migratedFrom !== null
-      ? { migratedFrom: { version: result.migratedFrom, text } }
+    ...(loaded.migratedFrom !== null
+      ? { migratedFrom: { version: loaded.migratedFrom, text: loaded.text } }
       : {}),
   });
   return ok(undefined);
@@ -276,7 +274,8 @@ export function createFolderProject(
       images,
       { readSize: readImageSize, newId: () => crypto.randomUUID() },
     );
-    await storage.saveMapping(serialize(imported.project));
+    const mappingText = serialize(imported.project);
+    await storage.saveMapping(mappingText);
     // Para quem versiona a pasta com git: os backups de migração não entram no repositório.
     await ensureGitignore(handle).catch((e: unknown) =>
       reportError('folder.gitignore', e),
@@ -285,6 +284,7 @@ export function createFolderProject(
       readOnly: false,
       localId: null,
       unexported: false,
+      loadedText: mappingText,
     });
     return ok({ skipped: imported.skipped });
   });

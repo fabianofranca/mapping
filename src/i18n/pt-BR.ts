@@ -576,6 +576,24 @@ export const ptBR = {
     'A imagem ou uma marcação dela está trancada: só dá para trocar por um arquivo do mesmo tamanho.',
   'marking.error.locked': 'A marcação está trancada. Destranque para alterar.',
   'shortcuts.toggleLock': 'Trancar ou destrancar o item selecionado',
+  'editor.externalUpdated': 'Projeto atualizado por fora.',
+  'external.title': 'Projeto alterado fora da app',
+  'external.message':
+    'O mapping.json foi alterado por outro programa (o servidor MCP, um editor de texto, o git…) desde que você o abriu. "Recarregar" descarta as suas alterações ainda não gravadas e abre o arquivo como está. "Manter as minhas" grava por cima, com a revisão nova.',
+  'external.reload': 'Recarregar',
+  'external.keep': 'Manter as minhas',
+  'external.reloadFailed':
+    'Não foi possível recarregar o arquivo (ele sumiu ou está ilegível). Escolha "Manter as minhas" ou corrija o arquivo.',
+  'copy.reference': 'Copiar referência',
+  'copy.crop': 'Copiar recorte',
+  'copy.referenceDone': 'Referência copiada',
+  'copy.cropDone': 'Recorte copiado',
+  'copy.failed': 'Não foi possível copiar.',
+  'copy.cropFailed': 'Não foi possível copiar o recorte.',
+  'copy.itemActions': 'Ações de {name}',
+  'copy.canvasMenu': 'Menu do item no canvas',
+  'shortcuts.copyReference': 'Copiar a referência do item selecionado',
+  'shortcuts.copyCrop': 'Copiar o recorte da marcação selecionada',
 } as const;
 
 export type Dictionary = Record<keyof typeof ptBR, string>;

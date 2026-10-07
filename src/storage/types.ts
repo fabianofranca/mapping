@@ -16,12 +16,28 @@ export type StorageKind = 'folder' | 'local';
  */
 export interface ProjectStorage {
   readonly kind: StorageKind;
+  /**
+   * Nome da pasta do projeto no disco (o `<projeto>` das referências `mapping://`).
+   * Só existe no modo pasta: é o que o MCP alcança.
+   */
+  readonly folderName?: string;
   /** Texto do `mapping.json`, ou `null` se ele não existir. */
   loadMapping(): Promise<string | null>;
   saveMapping(text: string): Promise<void>;
+  /**
+   * `lastModified` do `mapping.json` (ms), ou `null` se ele não existir. Só os
+   * armazenamentos que podem mudar por fora (a pasta) implementam; é o que a app
+   * confere a cada poucos segundos para perceber uma alteração externa.
+   */
+  statMapping?(): Promise<number | null>;
   /** Conteúdo da imagem, ou `null` se o arquivo não existir. */
   readImage(path: string): Promise<Blob | null>;
   writeImage(path: string, data: Blob): Promise<void>;
+  /**
+   * Carimbo do arquivo da imagem (tamanho e `lastModified`), ou `null` se ele não existir.
+   * Mudou entre duas leituras = o arquivo foi trocado por fora. Opcional, como `statMapping`.
+   */
+  statImage?(path: string): Promise<string | null>;
   /** Remove a imagem. Não falha se ela já não existir. */
   removeImage(path: string): Promise<void>;
   /** Texto da cópia de uma especialização (`specs/sdui.json`), ou `null` se não existir. */

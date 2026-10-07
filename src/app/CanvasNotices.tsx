@@ -10,7 +10,9 @@ import type { EditorNotices } from './useEditorNotices';
  */
 export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) {
   const { session, store, ui } = useEditor();
-  const saveFailed = session.saveStatus.value === 'error';
+  // Com o diálogo de alteração externa aberto, o erro de gravação já está explicado nele.
+  const saveFailed =
+    session.saveStatus.value === 'error' && session.conflict.value === null;
   const [backupDismissed, setBackupDismissed] = useState(false);
   const backupSaved = session.backupSaved.value;
   const readOnly = store.readOnly.value;
@@ -19,6 +21,7 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
   );
   const hasImages = hasImagesSignal.value;
   const { message, progress } = notices;
+  const toast = ui.toast.value;
 
   return (
     <div class="canvas-overlay">
@@ -49,6 +52,11 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
       )}
       {ui.mode.value === 'draw' && !readOnly && hasImages && (
         <p class="notice notice-info canvas-hint">{t('editor.drawHint')}</p>
+      )}
+      {toast && (
+        <p class="notice notice-info" role="status">
+          {toast}
+        </p>
       )}
       {progress && (
         <p class="notice notice-info" aria-live="polite">
