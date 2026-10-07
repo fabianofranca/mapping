@@ -498,7 +498,8 @@ test('Ajuda: busca e seção Atalhos; Configurações leva até ela', async ({
   ).toBeInViewport();
   await expect(help.getByText('Ctrl', { exact: true }).first()).toBeVisible();
 
-  await help.getByRole('searchbox', { name: 'Buscar na ajuda' }).fill('referencia');
+  // "referência" agora também está nos atalhos (copiar referência): usa um termo só de outras seções.
+  await help.getByRole('searchbox', { name: 'Buscar na ajuda' }).fill('especializacao');
   await expect(help.getByRole('link', { name: 'Atalhos de teclado' })).toHaveCount(0);
   await help.getByRole('button', { name: 'Fechar diálogo' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);

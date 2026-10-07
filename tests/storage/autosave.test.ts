@@ -83,3 +83,39 @@ describe('salvamento automático', () => {
     expect(save).not.toHaveBeenCalled();
   });
 });
+
+describe('salvamento automático: reset', () => {
+  it('descarta a gravação agendada e volta a "saved" (recarregar do disco)', async () => {
+    const save = vi.fn(async () => undefined);
+    const saver = createAutoSaver(save, 800);
+    saver.schedule();
+    expect(saver.status.value).toBe('saving');
+    saver.reset();
+    expect(saver.status.value).toBe('saved');
+    await vi.advanceTimersByTimeAsync(2000);
+    await saver.flush();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('descarta também o erro pendente', async () => {
+    const save = vi.fn<() => Promise<void>>().mockRejectedValue(new Error('x'));
+    const saver = createAutoSaver(save, 800);
+    saver.schedule();
+    await vi.advanceTimersByTimeAsync(800);
+    expect(saver.status.value).toBe('error');
+    saver.reset();
+    expect(saver.status.value).toBe('saved');
+    await saver.flush();
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it('uma alteração depois do reset grava normalmente', async () => {
+    const save = vi.fn(async () => undefined);
+    const saver = createAutoSaver(save, 800);
+    saver.schedule();
+    saver.reset();
+    saver.schedule();
+    await vi.advanceTimersByTimeAsync(800);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+});

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import { projectIndex, type LayerDot, type Marking, type Project } from '../model';
 import { revealInTree, toggleTreeNode, treeKey, type Selection } from '../store/ui';
+import { ItemMenu } from './CopyActions';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { imageLabel, markingLabel } from './labels';
@@ -109,6 +110,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     current: boolean,
     item: ComponentChildren,
     lock: ComponentChildren,
+    menu: ComponentChildren,
   ) => (
     <div
       class={current ? 'tree-row tree-row-current' : 'tree-row'}
@@ -129,6 +131,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
       )}
       {item}
       {lock}
+      {menu}
     </div>
   );
 
@@ -169,6 +172,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                   locks.get(m.id) === 'inherited',
                   () => actions.setMarkingLocked(m.id, !m.locked),
                 ),
+                <ItemMenu target={{ kind: 'm', id: m.id }} name={markingLabel(m)} />,
               )}
               {!collapsed.has(key) && branch(children, depth + 1)}
             </li>
@@ -203,6 +207,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
               lockControl(imageLabel(image), image.locked, false, () =>
                 actions.setImageLocked(image.id, !image.locked),
               ),
+              <ItemMenu target={{ kind: 'i', id: image.id }} name={imageLabel(image)} />,
             )}
             {!collapsed.has(key) && branch(roots, 1)}
           </li>

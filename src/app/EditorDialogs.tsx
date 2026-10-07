@@ -206,10 +206,49 @@ function renderDialog(
   }
 }
 
+/**
+ * "Projeto alterado fora da app": a gravação foi recusada porque o `mapping.json` mudou por
+ * fora. Sem botão de fechar: é preciso escolher (Esc e toque fora não fazem nada).
+ */
+function ExternalChangeDialog() {
+  const { session } = useEditor();
+  const conflict = session.conflict.value;
+  if (!conflict) return null;
+  return (
+    <Dialog
+      title={t('external.title')}
+      onCancel={() => undefined}
+      actions={
+        <>
+          <Button onClick={() => void session.resolveConflict('reload')}>
+            {t('external.reload')}
+          </Button>
+          <Button variant="primary" onClick={() => void session.resolveConflict('keep')}>
+            {t('external.keep')}
+          </Button>
+        </>
+      }
+    >
+      <p>{t('external.message')}</p>
+      {conflict.reloadFailed && (
+        <p role="alert">
+          <strong>{t('external.reloadFailed')}</strong>
+        </p>
+      )}
+    </Dialog>
+  );
+}
+
 /** O diálogo aberto no editor (`dialogs.current`), se houver. */
 export function EditorDialogs(props: EditorDialogsProps) {
   const ctx = useEditor();
   const { current } = props.dialogs;
-  if (!current) return null;
-  return <Fragment key={current.kind}>{renderDialog(current, props, ctx)}</Fragment>;
+  return (
+    <>
+      {current && (
+        <Fragment key={current.kind}>{renderDialog(current, props, ctx)}</Fragment>
+      )}
+      <ExternalChangeDialog />
+    </>
+  );
 }

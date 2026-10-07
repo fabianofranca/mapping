@@ -8,6 +8,7 @@ import { goToAnnotation, resolveSelection, type Selection } from '../store/ui';
 import type { AnnotationLocation } from '../store/ui';
 import { EditorProvider, useEditor } from '../ui/EditorContext';
 import { Breadcrumbs } from '../ui/Breadcrumbs';
+import { CanvasContextMenu } from '../ui/CanvasContextMenu';
 import { Minimap } from '../ui/Minimap';
 import { StatusBar } from '../ui/StatusBar';
 import { useMediaQuery } from '../ui/useMediaQuery';
@@ -25,6 +26,7 @@ import { MobileWindow } from './MobileWindow';
 import { useEditorDialogs } from './useEditorDialogs';
 import { useEditorNotices } from './useEditorNotices';
 import { useEditorShortcuts } from './useEditorShortcuts';
+import { useExternalChanges } from './useExternalChanges';
 import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
 import { Button } from '../ui/controls';
@@ -48,6 +50,7 @@ export function EditorScreen() {
   const intake = useImageIntake({ desktop, dialogs, notices });
   const commands = useProjectCommands(dialogs, notices);
   useEditorShortcuts(dialogs, commands, desktop);
+  useExternalChanges();
 
   /** Celular: centralizar a seleção quando o canvas voltar a aparecer. */
   const focusAfterView = useRef(false);
@@ -158,6 +161,7 @@ export function EditorScreen() {
             >
               <CanvasHost />
               <CanvasNotices notices={notices} />
+              <CanvasContextMenu />
               <Minimap />
               {emptyCanvas}
             </main>
@@ -205,6 +209,7 @@ export function EditorScreen() {
         >
           <CanvasHost />
           <CanvasNotices notices={notices} />
+          <CanvasContextMenu />
           <div class="canvas-float canvas-float-start">
             <ZoomField />
           </div>

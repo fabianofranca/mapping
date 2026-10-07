@@ -24,7 +24,11 @@ export type Shortcut =
   /** Alt+N: nova anotação na camada ativa (vale também com o foco num campo). */
   | { readonly kind: 'new-annotation' }
   /** Alt+L: tranca ou destranca o item selecionado. */
-  | { readonly kind: 'toggle-lock' };
+  | { readonly kind: 'toggle-lock' }
+  /** Ctrl/Cmd+C: copia a referência do item (fora de campos de texto e sem texto selecionado). */
+  | { readonly kind: 'copy-reference' }
+  /** Ctrl+Alt+C: copia como PNG o recorte da marcação selecionada. */
+  | { readonly kind: 'copy-crop' };
 
 /**
  * Texto dos atalhos nas dicas dos botões. Nas janelas e no redimensionar é sempre
@@ -41,6 +45,8 @@ export const SHORTCUT_LABELS = {
   toggleLock: 'Alt+L',
   newRow: 'Alt+Enter',
   pickRef: 'Ctrl+B',
+  copyReference: 'Ctrl+C',
+  copyCrop: 'Ctrl+Alt+C',
 } as const;
 
 type KeyInfo = Pick<
@@ -86,14 +92,21 @@ function numberOf(e: KeyInfo): number | null {
  * janela em foco. Ctrl+Shift+número abre e fecha as janelas (Alt+número é o extra,
  * ligado por `altNumbers`), Ctrl+Shift+setas as redimensiona, Alt+↑/↓ anda na
  * seleção, Alt+N cria uma anotação na camada ativa, Alt+L tranca/destranca o item
- * selecionado e Ctrl+=/−/0 controlam o zoom.
+ * selecionado, Ctrl/Cmd+C copia a referência do item, Ctrl+Alt+C copia o recorte da
+ * marcação e Ctrl+=/−/0 controlam o zoom.
  */
 export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   const key = e.key.toLowerCase();
   const mod = e.ctrlKey || e.metaKey;
 
   if (e.altKey) {
-    if (mod) return null;
+    // Ctrl+Alt+C (a tecla física: com Alt o `key` vira outro caractere). Não usar Ctrl+Shift+C,
+    // que abre as ferramentas de desenvolvedor no Chrome.
+    if (mod) {
+      return !e.shiftKey && (e.code === 'KeyC' || key === 'c')
+        ? { kind: 'copy-crop' }
+        : null;
+    }
     // Com Alt (Option no macOS) o `key` vira outro caractere: a tecla física manda.
     if (!e.shiftKey && (e.code === 'KeyN' || key === 'n'))
       return { kind: 'new-annotation' };
@@ -118,6 +131,7 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   if (mod) {
     if (key === 'z') return { kind: 'undo' };
     if (e.ctrlKey && !e.metaKey && key === 'y') return { kind: 'redo' };
+    if (key === 'c') return { kind: 'copy-reference' };
     if (key === 'e') return { kind: 'export' };
     if (key === 'l') return { kind: 'layers' };
     if (key === ',') return { kind: 'settings' };

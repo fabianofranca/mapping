@@ -37,6 +37,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - Toda mutação do projeto passa por uma action do store. Nunca altere o estado diretamente num componente.
 - O estado do projeto (JSON + undo) é separado do estado da UI (seleção, visibilidade, modo, viewport).
 - Consultas por id e agrupamentos do projeto usam `projectIndex(p)` (`src/model/projectIndex.ts`, memoizado por versão do projeto), nunca `find`/`filter` dentro de laços. O estado derivado do editor (camadas visíveis, indicadores, visibilidade, pendências, lista) fica em `src/store/derived.ts` e é lido por canvas, painel e lista, sem recalcular.
+- O `mapping.json` só é gravado pela sessão (`src/store/session.ts`): ela confere o arquivo (`revision` e conteúdo) antes de gravar e grava `revision + 1`; nenhum outro código escreve no armazenamento do projeto. Alterações externas (MCP, editor de texto) viram recarga ou o diálogo "Projeto alterado fora da app" (`docs/ARCHITECTURE.md`).
 - O canvas desenha no máximo uma vez por quadro (`requestAnimationFrame`); pan e zoom não recalculam dados que dependem só do projeto.
 - Um gesto (arrastar/redimensionar) gera **uma** entrada no histórico de undo.
 - Konva fica isolado em `src/canvas/` (`CanvasController` imperativo). Componentes Preact não importam Konva, exceto `CanvasHost`. Não usar `react-konva`.

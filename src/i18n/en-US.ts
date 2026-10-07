@@ -572,4 +572,22 @@ export const enUS: Dictionary = {
     'The image or one of its markings is locked: it can only be replaced by a file of the same size.',
   'marking.error.locked': 'The marking is locked. Unlock it to change it.',
   'shortcuts.toggleLock': 'Lock or unlock the selected item',
+  'editor.externalUpdated': 'Project updated from outside.',
+  'external.title': 'Project changed outside the app',
+  'external.message':
+    'mapping.json was changed by another program (the MCP server, a text editor, git…) since you opened it. "Reload" discards your changes that were not saved yet and opens the file as it is. "Keep mine" saves over it, with the new revision.',
+  'external.reload': 'Reload',
+  'external.keep': 'Keep mine',
+  'external.reloadFailed':
+    'Could not reload the file (it is gone or unreadable). Choose "Keep mine" or fix the file.',
+  'copy.reference': 'Copy reference',
+  'copy.crop': 'Copy crop',
+  'copy.referenceDone': 'Reference copied',
+  'copy.cropDone': 'Crop copied',
+  'copy.failed': 'Could not copy.',
+  'copy.cropFailed': 'Could not copy the crop.',
+  'copy.itemActions': 'Actions for {name}',
+  'copy.canvasMenu': 'Canvas item menu',
+  'shortcuts.copyReference': 'Copy the reference of the selected item',
+  'shortcuts.copyCrop': 'Copy the crop of the selected marking',
 };

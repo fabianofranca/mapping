@@ -28,6 +28,13 @@ import {
   type Shortcut,
 } from './shortcuts';
 import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
+import {
+  canCopyItems,
+  copyCrop,
+  copyReference,
+  copyShortcutTarget,
+  type CopyTarget,
+} from './itemClipboard';
 
 interface FocusedWindow {
   readonly id: ToolWindowId;
@@ -71,7 +78,8 @@ export function useEditorShortcuts(
   commands: ProjectCommands,
   desktop = true,
 ): void {
-  const { store, ui, canvas, actions } = useEditor();
+  const editor = useEditor();
+  const { store, ui, canvas, actions } = editor;
   const dialogsRef = useRef(dialogs);
   dialogsRef.current = dialogs;
   const commandsRef = useRef(commands);
@@ -115,8 +123,32 @@ export function useEditorShortcuts(
       canvas.current?.focusSelection();
     };
 
+    /**
+     * Item que Ctrl+C / Ctrl+Alt+C copiariam agora, ou `null` quando o copiar fica com o
+     * navegador: projeto fora de uma pasta, nada selecionado, ou texto selecionado na página.
+     */
+    const copyTarget = (shortcut: Shortcut): CopyTarget | null => {
+      if (!canCopyItems(editor)) return null;
+      if (shortcut.kind === 'copy-crop') {
+        const target = copyShortcutTarget(editor);
+        return target?.kind === 'm' ? target : null;
+      }
+      if (globalThis.getSelection?.()?.toString()) return null;
+      return copyShortcutTarget(editor);
+    };
+
     const run = (shortcut: Shortcut) => {
       switch (shortcut.kind) {
+        case 'copy-reference': {
+          const target = copyTarget(shortcut);
+          if (target) void copyReference(editor, target);
+          return;
+        }
+        case 'copy-crop': {
+          const target = copyTarget(shortcut);
+          if (target) void copyCrop(editor, target.id);
+          return;
+        }
         case 'undo':
           return store.undo();
         case 'redo':
@@ -213,10 +245,17 @@ export function useEditorShortcuts(
       const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
       if (isTextInput(e.target) && !worksInTextInput(shortcut)) return;
+      // Copiar: só assume o atalho com um item para copiar; senão o copiar nativo continua.
+      if (
+        (shortcut.kind === 'copy-reference' || shortcut.kind === 'copy-crop') &&
+        !copyTarget(shortcut)
+      ) {
+        return;
+      }
       e.preventDefault();
       run(shortcut);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [store, ui, canvas, actions]);
+  }, [editor, store, ui, canvas, actions]);
 }

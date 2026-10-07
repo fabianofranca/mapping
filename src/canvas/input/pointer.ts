@@ -54,6 +54,8 @@ export class PointerInput {
   private holdTimer: ReturnType<typeof setTimeout> | null = null;
   /** Último toque (canvas), para o ciclo "tocar de novo sobe para o pai". */
   private lastTap: Point | null = null;
+  /** Tipo do último ponteiro apertado: o `contextmenu` do toque longo não é do mouse. */
+  private lastPointerType = 'mouse';
 
   constructor(options: PointerInputOptions) {
     this.o = options;
@@ -76,7 +78,10 @@ export class PointerInput {
     on('pointerup', (e) => this.onPointerUp(e, false));
     on('pointercancel', (e) => this.onPointerUp(e, true));
     on('wheel', (e) => this.onWheel(e), { passive: false });
-    on('contextmenu', (e) => e.preventDefault());
+    on('contextmenu', (e) => {
+      e.preventDefault();
+      this.openContextMenu(e);
+    });
     return () => {
       for (const cleanup of cleanups.splice(0)) cleanup();
     };
@@ -133,6 +138,7 @@ export class PointerInput {
   }
 
   private onPointerDown(e: PointerEvent): void {
+    this.lastPointerType = e.pointerType;
     if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
     const p = this.o.viewport.screenPoint(e);
     this.pointers.set(e.pointerId, p);
@@ -388,6 +394,31 @@ export class PointerInput {
       c,
       repeat,
     );
+  }
+
+  /**
+   * Botão direito do mouse: seleciona o item sob o cursor (a marcação mais interna, ou a
+   * imagem) e abre o menu de contexto dele. Um toque longo também dispara `contextmenu`, mas
+   * é o "segurar e mover": não abre o menu (no celular, as ações ficam na Árvore e em Detalhes).
+   */
+  private openContextMenu(e: MouseEvent): void {
+    const { store, ui, derived, viewport } = this.o;
+    ui.canvasMenu.value = null;
+    if (this.lastPointerType === 'touch' || this.gesture !== null) return;
+    const picked = tapSelection(
+      store.project.peek(),
+      ui.selection.peek(),
+      derived.markingVisibility.peek(),
+      viewport.toCanvas(viewport.screenPoint(e)),
+      false,
+    );
+    if (!picked) return;
+    ui.selection.value = picked;
+    ui.canvasMenu.value = {
+      x: e.clientX,
+      y: e.clientY,
+      target: { kind: picked.kind === 'image' ? 'i' : 'm', id: picked.id },
+    };
   }
 
   private onWheel(e: WheelEvent): void {

@@ -144,3 +144,32 @@ describe('atalhos do editor', () => {
     expect(isTextInput(null)).toBe(false);
   });
 });
+
+describe('atalhos de copiar (etapa 3a.2)', () => {
+  it('Ctrl+C e Cmd+C copiam a referência', () => {
+    expect(shortcutFor(key('c', { ctrl: true }))).toEqual({ kind: 'copy-reference' });
+    expect(shortcutFor(key('c', { meta: true }))).toEqual({ kind: 'copy-reference' });
+    expect(shortcutFor(key('C', { ctrl: true }))).toEqual({ kind: 'copy-reference' });
+    expect(shortcutFor(key('c'))).toBeNull();
+  });
+
+  it('Ctrl+Alt+C copia o recorte (pela tecla física, por causa do Option no macOS)', () => {
+    expect(shortcutFor(key('c', { ctrl: true, alt: true }))).toEqual({
+      kind: 'copy-crop',
+    });
+    expect(shortcutFor(key('ç', { meta: true, alt: true }, 'KeyC'))).toEqual({
+      kind: 'copy-crop',
+    });
+    expect(shortcutFor(key('c', { alt: true }))).toBeNull();
+  });
+
+  it('Ctrl+Shift+C continua livre: é o das ferramentas de desenvolvedor do Chrome', () => {
+    expect(shortcutFor(key('c', { ctrl: true, shift: true }))).toBeNull();
+    expect(shortcutFor(key('c', { ctrl: true, alt: true, shift: true }))).toBeNull();
+  });
+
+  it('não valem como atalhos de campo: no campo de texto, o copiar é do navegador', () => {
+    expect(worksInTextInput({ kind: 'copy-reference' })).toBe(false);
+    expect(worksInTextInput({ kind: 'copy-crop' })).toBe(false);
+  });
+});

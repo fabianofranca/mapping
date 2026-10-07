@@ -6,10 +6,15 @@ import type {
 
 const notFound = (name: string) => new DOMException(`${name} not found`, 'NotFoundError');
 
+/** Relógio dos arquivos em memória: cada gravação (ou `touch`) avança um tique. */
+let clock = 1_700_000_000_000;
+
 /** Pasta em memória que imita a File System Access API. */
 export class MemoryDirectory implements DirectoryHandleLike {
   readonly kind = 'directory';
   readonly files = new Map<string, Blob>();
+  /** `lastModified` de cada arquivo (nome → ms), como o do `File` da File System Access API. */
+  readonly modified = new Map<string, number>();
   readonly dirs = new Map<string, MemoryDirectory>();
   /** Se definido, toda escrita falha com este erro. */
   failWrites: Error | null = null;
@@ -33,6 +38,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
     if (!this.files.has(name)) {
       if (!options.create) throw notFound(name);
       this.files.set(name, new Blob([]));
+      this.modified.set(name, ++clock);
     }
     return this.fileHandle(name);
   }
@@ -48,6 +54,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
 
   private fileHandle(name: string): FileHandleLike {
     const files = this.files;
+    const modified = this.modified;
     const failWrites = () => this.failWrites;
     const onAbort = () => this.abortedWrites++;
     return {
@@ -56,7 +63,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
       getFile: async () => {
         const blob = files.get(name);
         if (!blob) throw notFound(name);
-        return blob;
+        return new File([blob], name, { lastModified: modified.get(name) ?? 0 });
       },
       createWritable: async (): Promise<WritableLike> => {
         const parts: (Blob | string)[] = [];
@@ -71,6 +78,7 @@ export class MemoryDirectory implements DirectoryHandleLike {
             if (done) throw new TypeError('closed');
             done = true;
             files.set(name, new Blob(parts));
+            modified.set(name, ++clock);
           },
           abort: async () => {
             if (done) throw new TypeError('closed');
@@ -98,21 +106,30 @@ export class MemoryDirectory implements DirectoryHandleLike {
     return blob ? blob.text() : null;
   }
 
+  private dirAt(parts: readonly string[], create: boolean): MemoryDirectory | undefined {
+    const [first, ...rest] = parts;
+    if (first === undefined) return this;
+    let next = this.dirs.get(first);
+    if (!next && create) {
+      next = new MemoryDirectory(first);
+      this.dirs.set(first, next);
+    }
+    return next?.dirAt(rest, create);
+  }
+
   /** Atalho para os testes: grava um arquivo por caminho, criando as pastas. */
   put(path: string, content: string): void {
     const parts = path.split('/');
     const fileName = parts.pop() ?? '';
-    let dirs = this.dirs;
-    let files = this.files;
-    for (const part of parts) {
-      let next = dirs.get(part);
-      if (!next) {
-        next = new MemoryDirectory(part);
-        dirs.set(part, next);
-      }
-      dirs = next.dirs;
-      files = next.files;
-    }
-    files.set(fileName, new Blob([content]));
+    const dir = this.dirAt(parts, true);
+    dir?.files.set(fileName, new Blob([content]));
+    dir?.modified.set(fileName, ++clock);
+  }
+
+  /** Atalho para os testes: muda só o `lastModified` do arquivo (um `touch`). */
+  touch(path: string): void {
+    const parts = path.split('/');
+    const fileName = parts.pop() ?? '';
+    this.dirAt(parts, false)?.modified.set(fileName, ++clock);
   }
 }

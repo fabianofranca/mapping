@@ -18,6 +18,7 @@ import {
 import { isSectionCollapsed, toggleSection, type AnnotationLocation } from '../store/ui';
 import { IssueBadge } from './AnnotationSummary';
 import { CommitInput } from './CommitInput';
+import { CopyButtons } from './CopyActions';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { Button, Choice, IconButton, Select } from './controls';
@@ -232,6 +233,7 @@ export function AnnotationEditor({
             return actions.renameAnnotation(annotation.id, text).ok;
           }}
         />
+        <CopyButtons target={{ kind: 'a', id: annotation.id }} />
         <IconButton
           icon="trash"
           label={t('annotation.delete')}

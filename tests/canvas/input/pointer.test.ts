@@ -381,3 +381,66 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     s.cleanup();
   });
 });
+
+describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
+  const contextMenu = (s: ReturnType<typeof setup>, x: number, y: number) => {
+    const event = new MouseEvent('contextmenu', {
+      clientX: x,
+      clientY: y,
+      bubbles: true,
+      cancelable: true,
+    });
+    s.container.dispatchEvent(event);
+    return event;
+  };
+
+  it('botão direito sobre uma marcação a seleciona e abre o menu dela', () => {
+    const s = setup();
+    s.fire('pointerdown', 250, 250, { button: 2 });
+    const event = contextMenu(s, 250, 250);
+    s.fire('pointerup', 250, 250, { button: 2 });
+    expect(event.defaultPrevented).toBe(true);
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+    expect(s.ui.canvasMenu.value).toEqual({
+      x: 250,
+      y: 250,
+      target: { kind: 'm', id: 'M2' },
+    });
+  });
+
+  it('sobre a imagem, fora das marcações, o menu é da imagem', () => {
+    const s = setup();
+    s.fire('pointerdown', 20, 20, { button: 2 });
+    contextMenu(s, 20, 20);
+    expect(s.ui.selection.value).toMatchObject({ kind: 'image' });
+    expect(s.ui.canvasMenu.value?.target.kind).toBe('i');
+  });
+
+  it('fora das imagens não abre nada, mas o menu do navegador continua suprimido', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.fire('pointerdown', 1050, 50, { button: 2 });
+    const event = contextMenu(s, 1050, 50);
+    expect(event.defaultPrevented).toBe(true);
+    expect(s.ui.canvasMenu.value).toBeNull();
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+  });
+
+  it('o contextmenu de um toque longo é o "segurar e mover": não abre o menu', () => {
+    const s = setup();
+    s.fire('pointerdown', 250, 250, { kind: 'touch' });
+    const event = contextMenu(s, 250, 250);
+    expect(event.defaultPrevented).toBe(true);
+    expect(s.ui.canvasMenu.value).toBeNull();
+  });
+
+  it('um novo botão direito troca o menu; com o toque no meio, fecha o aberto', () => {
+    const s = setup();
+    s.fire('pointerdown', 250, 250, { button: 2 });
+    contextMenu(s, 250, 250);
+    expect(s.ui.canvasMenu.value).not.toBeNull();
+    s.fire('pointerdown', 250, 250, { kind: 'touch', id: 2 });
+    contextMenu(s, 250, 250);
+    expect(s.ui.canvasMenu.value).toBeNull();
+  });
+});

@@ -63,6 +63,17 @@ export interface EditorUi {
   readonly mobileWindow: Signal<ToolWindowId | null>;
   /** Celular (B7): altura da gaveta de Detalhes sobre o canvas. */
   readonly sheet: Signal<SheetHeight>;
+  /** Aviso curto sobre o canvas ("Referência copiada"); some sozinho (`showToast`). */
+  readonly toast: Signal<string | null>;
+  /** Menu de contexto do canvas (botão direito): onde abrir (tela) e o item sob o cursor. */
+  readonly canvasMenu: Signal<CanvasMenu | null>;
+}
+
+export interface CanvasMenu {
+  /** Posição do cursor na janela (`clientX`/`clientY`). */
+  readonly x: number;
+  readonly y: number;
+  readonly target: { readonly kind: 'i' | 'm'; readonly id: string };
 }
 
 export function createEditorUi(): EditorUi {
@@ -80,7 +91,27 @@ export function createEditorUi(): EditorUi {
     collapsed: signal<ReadonlySet<string>>(new Set()),
     mobileWindow: signal<ToolWindowId | null>(null),
     sheet: signal<SheetHeight>('peek'),
+    toast: signal<string | null>(null),
+    canvasMenu: signal<CanvasMenu | null>(null),
   };
+}
+
+/** Quanto tempo o aviso curto fica na tela. */
+export const TOAST_MS = 2500;
+
+const toastTimers = new WeakMap<EditorUi, ReturnType<typeof setTimeout>>();
+
+/** Mostra um aviso curto sobre o canvas; um novo aviso substitui o anterior. */
+export function showToast(ui: EditorUi, text: string, duration = TOAST_MS): void {
+  clearTimeout(toastTimers.get(ui));
+  ui.toast.value = text;
+  toastTimers.set(
+    ui,
+    setTimeout(() => {
+      ui.toast.value = null;
+      toastTimers.delete(ui);
+    }, duration),
+  );
 }
 
 /** Seções recolhíveis de Detalhes. */

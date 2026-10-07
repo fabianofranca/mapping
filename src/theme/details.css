@@ -39,8 +39,9 @@
 
 .identity-main {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1-5);
+  gap: var(--space-1) var(--space-1-5);
   min-width: 0;
 }
 
@@ -49,7 +50,8 @@
 }
 
 .identity-name {
-  flex: 1;
+  /* Base no tamanho do texto: sem espaço para o ID e os botões, eles descem para a linha de baixo. */
+  flex: 1 1 auto;
   min-width: 0;
   font: var(--t-text-title);
   overflow-wrap: anywhere;

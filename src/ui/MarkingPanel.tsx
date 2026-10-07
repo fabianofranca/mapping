@@ -15,6 +15,7 @@ import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { Button, IconButton, Select, TextField } from './controls';
+import { CopyButtons } from './CopyActions';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
@@ -120,15 +121,20 @@ export function MarkingPanel({
         sub={t('marking.inImage', { file: where })}
         id={marking.id}
         actions={
-          <IconButton
-            icon={marking.locked ? 'lock' : 'unlock'}
-            label={t('lock.markingLock')}
-            tooltip={t(marking.locked ? 'lock.markingUnlock' : 'lock.markingLock')}
-            shortcut={SHORTCUT_LABELS.toggleLock}
-            pressed={marking.locked}
-            disabled={readOnly}
-            onClick={() => report(actions.setMarkingLocked(marking.id, !marking.locked))}
-          />
+          <>
+            <CopyButtons target={{ kind: 'm', id: marking.id }} />
+            <IconButton
+              icon={marking.locked ? 'lock' : 'unlock'}
+              label={t('lock.markingLock')}
+              tooltip={t(marking.locked ? 'lock.markingUnlock' : 'lock.markingLock')}
+              shortcut={SHORTCUT_LABELS.toggleLock}
+              pressed={marking.locked}
+              disabled={readOnly}
+              onClick={() =>
+                report(actions.setMarkingLocked(marking.id, !marking.locked))
+              }
+            />
+          </>
         }
       />
 

@@ -133,3 +133,39 @@ describe('ensureGitignore', () => {
     expect(await root.read('.gitignore')).toBe('backups/\n');
   });
 });
+
+describe('FolderStorage: o que a app confere por fora (etapa 3a.2)', () => {
+  it('folderName é o nome da pasta (o <projeto> das referências)', () => {
+    expect(createFolderStorage(new MemoryDirectory('mapeamento-carro')).folderName).toBe(
+      'mapeamento-carro',
+    );
+  });
+
+  it('statMapping devolve o lastModified, ou null sem o arquivo', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    expect(await storage.statMapping?.()).toBeNull();
+    await storage.saveMapping('{}');
+    const first = await storage.statMapping?.();
+    expect(first).toEqual(expect.any(Number));
+    // Regravar (ou um touch por fora) muda o valor.
+    await storage.saveMapping('{}');
+    const second = await storage.statMapping?.();
+    expect(second).toBeGreaterThan(first ?? 0);
+    root.touch('mapping.json');
+    expect(await storage.statMapping?.()).toBeGreaterThan(second ?? 0);
+  });
+
+  it('statImage muda quando o arquivo é trocado e é null se ele não existe', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    expect(await storage.statImage?.('images/a.jpg')).toBeNull();
+    await storage.writeImage('images/a.jpg', new Blob(['AAA']));
+    const first = await storage.statImage?.('images/a.jpg');
+    expect(first).toMatch(/^3:\d+$/);
+    await storage.writeImage('images/a.jpg', new Blob(['AAAA']));
+    const second = await storage.statImage?.('images/a.jpg');
+    expect(second).toMatch(/^4:\d+$/);
+    expect(second).not.toBe(first);
+  });
+});

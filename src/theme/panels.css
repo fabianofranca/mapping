@@ -118,6 +118,24 @@ button.tree-toggle:hover {
   color: inherit;
 }
 
+/* Menu ⋯ da linha da árvore: aparece com o mouse, o foco ou a linha selecionada. */
+.tree-menu {
+  flex: none;
+  opacity: 0;
+}
+
+.tree-row:hover .tree-menu,
+.tree-row:focus-within .tree-menu,
+.tree-row-current .tree-menu {
+  opacity: 1;
+}
+
+.tree-menu .icon-button {
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  color: inherit;
+}
+
 /*
  * Cadeado da linha da árvore. Fica escondido (mas focável) até o mouse, o foco ou a linha
  * selecionada o chamarem; trancado, fica sempre visível. O herdado do pai é só um sinal.

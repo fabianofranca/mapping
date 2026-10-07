@@ -13,6 +13,8 @@ export interface AutoSaver {
   schedule(): void;
   /** Grava agora o que estiver pendente (ou tenta de novo após um erro). */
   flush(): Promise<void>;
+  /** Descarta o que estiver pendente (recarregar o projeto do disco) e volta a `saved`. */
+  reset(): void;
   dispose(): void;
 }
 
@@ -65,6 +67,11 @@ export function createAutoSaver(
     flush() {
       if (dirty && status.value === 'error') status.value = 'saving';
       return flush();
+    },
+    reset() {
+      clearTimer();
+      dirty = false;
+      status.value = 'saved';
     },
     dispose() {
       disposed = true;

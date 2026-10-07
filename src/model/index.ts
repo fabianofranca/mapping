@@ -29,5 +29,7 @@ export * from './specializations';
 export * from './typed';
 export * from './refs';
 export * from './itemRef';
+export * from './clipboard';
+export * from './revision';
 export * from './issues';
 export * from './typedDisplay';
