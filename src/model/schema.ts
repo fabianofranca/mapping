@@ -108,6 +108,7 @@ const specializationSchema = z.object({
 
 export const projectSchema: z.ZodType<ProjectFile> = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
+  revision: z.number().int().min(0),
   // Aceita o valor antigo e normaliza: a próxima gravação já sai como `APP_ID`.
   app: z
     .union([z.literal(APP_ID), z.literal(LEGACY_APP_ID)])

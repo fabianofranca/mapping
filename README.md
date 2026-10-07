@@ -31,8 +31,9 @@ npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a 
 ## Como testar
 
 ```bash
+npm run build:mcp    # gera dist-mcp/mapping-mcp.js (servidor MCP em arquivo único; etapa 3a)
 npm run lint         # eslint + prettier --check
-npm run typecheck    # tsc --noEmit
+npm run typecheck    # tsc --noEmit (app e servidor MCP)
 npm test             # Vitest: modelo (Node), store, storage, canvas e componentes
 npm run test:coverage # com relatório de cobertura em coverage/ (pula os orçamentos de desempenho)
 npm run test:perf    # só os orçamentos de desempenho por quadro
@@ -47,7 +48,7 @@ O E2E roda no CI. Localmente, rode `npm run build` e informe o Chrome com `PLAYW
 
 Dois workflows em `.github/workflows/`:
 
-- **`ci.yml`**: em todo PR e em push de branches (menos a `main`): lint, typecheck, testes com cobertura, orçamentos de desempenho, build e E2E.
+- **`ci.yml`**: em todo PR e em push de branches (menos a `main`): lint, typecheck, testes com cobertura, orçamentos de desempenho, build (app e servidor MCP) e E2E.
 - **`deploy.yml`**: um push na `main` roda lint, testes e build e publica a versão principal no GitHub Pages (em `/`).
 
 O `index.html` avulso também sai como artefato do workflow, para abrir por `file://`.
@@ -64,7 +65,7 @@ O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service wo
 ## Documentação
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
-- [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v5).
+- [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v6).
 - [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): formato do arquivo de especialização (e [`docs/spec.schema.json`](docs/spec.schema.json)); exemplos em [`examples/specs/`](examples/specs/).
 - [`PLAN.md`](PLAN.md): resumo do produto e fases pendentes; o histórico está em [`docs/history/`](docs/history/).
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code.

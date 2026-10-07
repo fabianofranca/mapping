@@ -74,6 +74,28 @@ export function shouldUseEncoded(args: {
   return args.encodedBytes < args.originalBytes;
 }
 
+/** Troca a extensão do nome de arquivo (`foto.png` + `webp` → `foto.webp`; sem extensão, acrescenta). */
+export function withExtension(name: string, extension: string): string {
+  const dot = name.lastIndexOf('.');
+  return `${dot > 0 ? name.slice(0, dot) : name}.${extension}`;
+}
+
+/** A origem é PNG (pelo tipo MIME ou pela extensão)? Define o formato de saída em `chooseOutputFormat`. */
+export function isPngSource(file: {
+  readonly type: string;
+  readonly name: string;
+}): boolean {
+  return file.type === 'image/png' || /\.png$/i.test(file.name);
+}
+
+/** A origem é JPEG (pelo tipo MIME ou pela extensão)? Só JPEG tem orientação EXIF a corrigir. */
+export function isJpegSource(file: {
+  readonly type: string;
+  readonly name: string;
+}): boolean {
+  return file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name);
+}
+
 const pad = (n: number, width = 2) => String(n).padStart(width, '0');
 
 /** `img-AAAAMMDD-HHMMSS.<ext>` (hora local), para imagens coladas. */

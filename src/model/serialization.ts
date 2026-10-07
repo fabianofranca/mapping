@@ -27,6 +27,7 @@ function cloneJson(value: JsonValue): JsonValue {
 export function serialize(p: Project): string {
   const canonical: ProjectFile = {
     schemaVersion: p.schemaVersion,
+    revision: p.revision,
     app: p.app,
     coordinateSystem: p.coordinateSystem,
     project: {

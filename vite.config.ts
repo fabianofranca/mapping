@@ -137,13 +137,24 @@ export default defineConfig({
       },
       {
         ...base,
+        // Servidor MCP (etapa 3a): também em Node puro.
+        test: {
+          name: 'mcp',
+          environment: 'node',
+          env: testEnv,
+          include: ['tests/mcp/**/*.test.ts'],
+          testTimeout: 30_000,
+        },
+      },
+      {
+        ...base,
         test: {
           name: 'app',
           environment: 'jsdom',
           env: testEnv,
           setupFiles: ['tests/setup.ts'],
           include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
-          exclude: ['tests/model/**'],
+          exclude: ['tests/model/**', 'tests/mcp/**'],
         },
       },
     ],

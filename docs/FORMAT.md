@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v5)
+# Formato do `mapping.json` (schema v6)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` e,
 se houver especializações aplicadas, `specs/`. Todas as coordenadas das marcações são
@@ -25,7 +25,8 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
+  "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": { "name": "Carro", "createdAt": "…", "updatedAt": "…" },
@@ -78,17 +79,18 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 **Raiz**
 
-| Campo              | Tipo   | Descrição                                                                 |
-| ------------------ | ------ | ------------------------------------------------------------------------- |
-| `schemaVersion`    | `5`    | Versão do schema.                                                         |
-| `app`              | string | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).        |
-| `coordinateSystem` | string | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
-| `project`          | objeto | `name` (texto), `createdAt` e `updatedAt` (ISO 8601).                     |
-| `specializations`  | array  | Especializações aplicadas (ver v4).                                       |
-| `layers`           | array  | Camadas, **globais** (valem para todas as imagens), na ordem de exibição. |
-| `images`           | array  | Imagens do projeto.                                                       |
-| `markings`         | array  | Marcações retangulares.                                                   |
-| `annotations`      | array  | Anotações (livres ou tipadas).                                            |
+| Campo              | Tipo    | Descrição                                                                 |
+| ------------------ | ------- | ------------------------------------------------------------------------- |
+| `schemaVersion`    | `6`     | Versão do schema.                                                         |
+| `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                   |
+| `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).        |
+| `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
+| `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601).                     |
+| `specializations`  | array   | Especializações aplicadas (ver v4).                                       |
+| `layers`           | array   | Camadas, **globais** (valem para todas as imagens), na ordem de exibição. |
+| `images`           | array   | Imagens do projeto.                                                       |
+| `markings`         | array   | Marcações retangulares.                                                   |
+| `annotations`      | array   | Anotações (livres ou tipadas).                                            |
 
 **`layers[]`**: `id`; `name` (não vazio); `color`; `spec` (`null` ou `{ specId, layerId }`).
 
@@ -190,6 +192,15 @@ Anotação tipada (Classe da especialização `modelo-dados`):
 }
 ```
 
+## Campos da v6 (revisão)
+
+`revision` (inteiro ≥ 0, obrigatório, logo depois de `schemaVersion`) conta as gravações do arquivo. Quem
+grava (a app ou o servidor MCP) relê o arquivo antes, confere se a `revision` no disco é a que carregou e
+grava `revision + 1`; se for outra, alguém alterou o `mapping.json` por fora e a gravação é recusada ou
+confirmada pelo usuário. Quem edita o arquivo à mão não precisa mexer no campo, mas o valor só sobe
+quando a app ou o MCP gravam. As operações do `src/model/` não alteram a `revision`: ela é do arquivo, não
+do conteúdo. (A conferência na gravação entra na fase 3a.2; a v6 só traz o campo.)
+
 ## Campos da v5 (trava)
 
 `images[].locked` e `markings[].locked` (`true`/`false`, obrigatórios) protegem itens já revisados
@@ -287,6 +298,6 @@ Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anota
 `inherit: false` e `parentAnnotationId: null`. Arquivos v2 recebem `markingColor: null` em cada imagem.
 Arquivos v3 recebem `specializations: []`, `spec: null` em cada camada, `type: null` e
 `values: null` em cada anotação e um `id` novo em cada par. Arquivos v4 recebem `locked: false` em cada
-imagem e em cada marcação. Ao salvar, o arquivo passa a ser v5 (e, no modo pasta, o original vai antes
+imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Ao salvar, o arquivo passa a ser v6 (e, no modo pasta, o original vai antes
 para `backups/`, como em qualquer migração).
 Arquivos de versão mais nova abrem somente para leitura.

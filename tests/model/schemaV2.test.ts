@@ -37,13 +37,13 @@ function load(text: string): Project {
 }
 
 describe('migração v1 → v2', () => {
-  it('abre um v1 real como v5 sem perder nada', () => {
+  it('abre um v1 real como v6 sem perder nada', () => {
     const result = deserialize(v1Text);
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(5);
+    expect(p.schemaVersion).toBe(6);
     expect(p.images.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => !a.inherit && a.parentAnnotationId === null)).toBe(
       true,
@@ -64,9 +64,9 @@ describe('migração v1 → v2', () => {
     ).toEqual(original.annotations);
   });
 
-  it('salvar o v1 migrado gera v5 estável (round-trip)', () => {
+  it('salvar o v1 migrado gera v6 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(5);
+    expect(JSON.parse(saved).schemaVersion).toBe(6);
     expect(serialize(load(saved))).toBe(saved);
   });
 

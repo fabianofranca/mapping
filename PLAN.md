@@ -134,10 +134,10 @@ Nomes em inglês. Respostas em JSON compacto, sempre com as referências `mappin
 ### Fases
 
 #### 3a.1 — Base compartilhada (modelo)
-- [ ] Schema v6 com `revision` + migração
-- [ ] `shortCode`, `formatRef`, `parseRef` no `src/model/` + testes (colisões, os três tipos, formatos aceitos)
-- [ ] Lógica pura de otimização de imagem movida para o `src/model/` (se ainda não estiver)
-- [ ] Estrutura `mcp/` com tsconfig, regra de ESLint de importação e build do arquivo único (servidor vazio respondendo `list_projects`)
+- [x] Schema v6 com `revision` + migração
+- [x] `shortCode`, `formatRef`, `parseRef` no `src/model/` + testes (colisões, os três tipos, formatos aceitos)
+- [x] Lógica pura de otimização de imagem movida para o `src/model/` (se ainda não estiver)
+- [x] Estrutura `mcp/` com tsconfig, regra de ESLint de importação e build do arquivo único (servidor vazio respondendo `list_projects`)
 
 **Aceite**: testes do modelo verdes; `npm run build:mcp` gera `dist-mcp/mapping-mcp.js` que inicia por stdio.
 

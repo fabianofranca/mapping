@@ -5,10 +5,13 @@ import {
   chooseOutputFormat,
   createProject,
   extensionForMime,
+  isJpegSource,
+  isPngSource,
   pastedFileName,
   placementNear,
   planOutputSize,
   shouldUseEncoded,
+  withExtension,
 } from '../../src/model';
 
 describe('planOutputSize', () => {
@@ -140,5 +143,24 @@ describe('placementNear', () => {
       a!.placement.y < b!.placement.y + 500 * b!.placement.scale &&
       b!.placement.y < a!.placement.y + 1000 * a!.placement.scale;
     expect(overlap).toBe(false);
+  });
+});
+
+describe('nomes e origem do arquivo', () => {
+  it('withExtension troca ou acrescenta a extensão', () => {
+    expect(withExtension('foto.png', 'webp')).toBe('foto.webp');
+    expect(withExtension('a.b.jpeg', 'webp')).toBe('a.b.webp');
+    expect(withExtension('semextensao', 'webp')).toBe('semextensao.webp');
+    expect(withExtension('.oculto', 'png')).toBe('.oculto.png');
+  });
+
+  it('isPngSource e isJpegSource olham o tipo MIME e a extensão', () => {
+    expect(isPngSource({ type: 'image/png', name: 'x' })).toBe(true);
+    expect(isPngSource({ type: '', name: 'Print.PNG' })).toBe(true);
+    expect(isPngSource({ type: 'image/jpeg', name: 'x.jpg' })).toBe(false);
+    expect(isJpegSource({ type: 'image/jpeg', name: 'x' })).toBe(true);
+    expect(isJpegSource({ type: '', name: 'foto.JPEG' })).toBe(true);
+    expect(isJpegSource({ type: '', name: 'foto.jpg' })).toBe(true);
+    expect(isJpegSource({ type: 'image/png', name: 'x.png' })).toBe(false);
   });
 });

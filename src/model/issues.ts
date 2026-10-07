@@ -1,6 +1,6 @@
 import { findById } from './project';
 import { memoByProject, projectIndex } from './projectIndex';
-import { isTargetAccepted, parseRef, resolveRef, tableRows } from './refs';
+import { isTargetAccepted, parseRefValue, resolveRef, tableRows } from './refs';
 import { fieldOf, isAllowedOwner, specLayerOf, typeOfAnnotation } from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Project } from './types';
@@ -104,7 +104,7 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
       continue;
     }
     if (field.type === 'ref') {
-      const ref = parseRef(value);
+      const ref = parseRefValue(value);
       const target = ref && resolveRef(p, ref);
       if (!ref) issues.push({ code: 'invalid-value', key });
       else if (!target) issues.push({ code: 'broken-ref', key });

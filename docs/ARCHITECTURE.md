@@ -70,14 +70,19 @@ ação do usuário
 
 ### `src/model/`
 
-- `types.ts`, `schema.ts`, `serialization.ts`, `migrations.ts`: tipos do `mapping.json` v5, validação (zod), (de)serialização e migração de versões antigas.
+- `types.ts`, `schema.ts`, `serialization.ts`, `migrations.ts`: tipos do `mapping.json` v6, validação (zod), (de)serialização e migração de versões antigas.
 - `invariants.ts`: `validateProject` (regras entre coleções: ids únicos, contenção, hierarquia sem ciclos, vínculos).
 - `layers.ts`, `images.ts`, `markings.ts`, `annotations.ts`, `hierarchy.ts`, `geometry.ts`: operações puras por entidade.
 - `locks.ts`: a trava (etapa 2.5). `setMarkingLocked`, `setImageLocked` e `setImageMarkingsLocked` (uma operação só para "trancar todas"); as consultas `canEditMarkingGeometry`, `canDeleteMarking`, `canEditImagePlacement`, `canDeleteImage` e `canReplaceImage`, que a interface usa para desabilitar controles e as operações de `markings.ts`/`images.ts` usam para lançar o erro `locked`; e `markingLockStates` (trava própria ou herdada do pai, de cada marcação, numa passada).
 - `spec.ts`, `specLookup.ts`, `specializations.ts`: formato e validação da especialização, resolução de tipos e ciclo de vida no projeto (aplicar, atualizar, remover).
 - `typed.ts`, `typedDisplay.ts`, `refs.ts`, `links.ts`, `issues.ts`: anotações tipadas, referências fortes e pendências ("incompletas", calculadas e nunca gravadas).
 - `projectIndex.ts`, `display.ts`, `listing.ts`: índice e dados de exibição (visibilidade, indicadores, lista).
-- `imageOptimization.ts`: decisões de otimização na importação (funções puras).
+- `imageOptimization.ts`: decisões de otimização na importação (funções puras: tamanho, formato, nome e origem do arquivo). A recodificação em si (canvas) fica em `storage/imageImport.ts`; o MCP reaproveita as mesmas decisões.
+- `itemRef.ts`: a referência copiável `mapping://<projeto>/<m|i|a>/<código>`: `shortCode`/`shortCodes` (8 caracteres do id, crescendo de 4 em 4 se houver colisão, memoizado por projeto), `matchShortCode`, `formatRef` e `parseRef`. Não confundir com `refs.ts` (referências fortes entre anotações, `parseRefValue`).
+
+### `mcp/` (servidor MCP, etapa 3a)
+
+Servidor em Node (stdio) fora de `src/`, com `tsconfig.json` próprio (sem DOM). Só pode importar `src/model/`: o ESLint recusa `src/ui`, `src/canvas`, `src/app`, `src/storage`, `src/store`, `src/i18n`, `src/theme`, `src/utils`, as bibliotecas de navegador e qualquer módulo de rede (`node:http`, `fetch`…). `main.ts` lê os argumentos (`args.ts`, `--root` repetível) e liga o transporte stdio; `server.ts` registra as tools (hoje só `list_projects`). `npm run build:mcp` (`mcp/build.mjs`, esbuild) gera `dist-mcp/mapping-mcp.js`: um arquivo CommonJS único, com as dependências embutidas, mais um `dist-mcp/package.json` `{"type":"commonjs"}` (este repositório é `"type": "module"`). Testes em `tests/mcp/` (projeto `mcp` do Vitest, ambiente `node`).
 
 ### `src/store/`
 

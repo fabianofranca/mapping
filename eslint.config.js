@@ -19,8 +19,32 @@ const restrictedGlobals = [
   message: 'src/model/ não pode depender de APIs de navegador (veja CLAUDE.md).',
 }));
 
+// mcp/ roda só no Node e não faz rede: ele lê e grava arquivos locais (veja PLAN.md, etapa 3a).
+const networkGlobals = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map(
+  (name) => ({ name, message: 'mcp/ não faz requisições de rede.' }),
+);
+const mcpOnlyFromModel = [
+  'ui',
+  'canvas',
+  'app',
+  'storage',
+  'store',
+  'i18n',
+  'theme',
+  'utils',
+];
+
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'coverage', 'playwright-report', 'test-results'] },
+  {
+    ignores: [
+      'dist',
+      'dist-mcp',
+      'node_modules',
+      'coverage',
+      'playwright-report',
+      'test-results',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -68,6 +92,53 @@ export default tseslint.config(
       ],
     },
   },
+  // Servidor MCP: Node puro. Do app só pode importar `src/model/`.
+  {
+    files: ['mcp/**/*.{ts,mjs}'],
+    languageOptions: { globals: globals.node },
+    rules: {
+      'no-restricted-globals': ['error', ...restrictedGlobals, ...networkGlobals],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: mcpOnlyFromModel.flatMap((dir) => [
+                `**/src/${dir}`,
+                `**/src/${dir}/**`,
+              ]),
+              message: 'mcp/ só pode importar src/model/ (veja PLAN.md, etapa 3a).',
+            },
+            {
+              group: [
+                'konva',
+                'konva/*',
+                'idb',
+                'jszip',
+                'preact',
+                'preact/*',
+                '@preact/*',
+              ],
+              message: 'mcp/ não pode importar UI, canvas nem storage.',
+            },
+            {
+              group: [
+                'node:http',
+                'node:https',
+                'node:http2',
+                'node:net',
+                'node:tls',
+                'node:dns',
+                'node:dgram',
+              ],
+              message: 'mcp/ não faz requisições de rede.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  { files: ['tests/mcp/**/*.ts'], languageOptions: { globals: globals.node } },
   { files: ['pwa/**/*.js'], languageOptions: { globals: globals.serviceworker } },
   { files: ['*.config.{js,ts}'], languageOptions: { globals: globals.node } },
   prettier,

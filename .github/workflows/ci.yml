@@ -48,6 +48,7 @@ jobs:
       # Orçamentos de desempenho por quadro: sem cobertura (ela deixa o código mais lento).
       - run: npm run test:perf
       - run: npm run build
+      - run: npm run build:mcp
 
   # Ponta a ponta no `dist/index.html` final, em desktop e celular emulado (toque).
   # Só roda aqui: o ambiente de desenvolvimento pode não conseguir baixar o navegador.
