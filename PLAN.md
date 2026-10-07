@@ -17,6 +17,7 @@ Estado: **etapas 1, 1.1, 2, 2.1, 2.2, 2.3 (redesign da interface) e 2.4 (privaci
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)           | Camadas, fluxo de dados, regras (com o porquê) e onde fica cada coisa          |
 | [`docs/FORMAT.md`](docs/FORMAT.md)                       | Referência do `mapping.json` (schema v5)                                       |
 | [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md)             | Formato do arquivo de especialização (e `docs/spec.schema.json`)               |
+| [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md)             | Guia do agente: como usar as tools do servidor MCP (também servido como recurso) |
 | [`docs/history/PLAN-etapas-1-2.md`](docs/history/PLAN-etapas-1-2.md) | Histórico: seções 1 a 13 do plano antigo (inclui o roteiro de teste manual, 13.9) |
 | [`docs/history/PLAN-etapa-2-1.md`](docs/history/PLAN-etapa-2-1.md)   | Histórico: etapa 2.1, revisão técnica (achados, decisões e fases 18 a 25)       |
 | [`docs/history/PLAN-etapa-2-2.md`](docs/history/PLAN-etapa-2-2.md) | Histórico: etapa 2.2, segunda revisão técnica (fases 26 e 27 concluídas; 28 dispensada) |
@@ -151,9 +152,9 @@ Nomes em inglês. Respostas em JSON compacto, sempre com as referências `mappin
 **Aceite**: editar o `mapping.json` por fora com a app aberta faz a app recarregar; editar dos dois lados abre o diálogo; com uma marcação selecionada, Ctrl+C e colar num editor de texto produz a referência no formato definido; com o foco num campo de texto, Ctrl+C copia o texto do campo; o recorte colado num chat aparece como imagem.
 
 #### 3a.3 — MCP: leitura
-- [ ] Raízes, segurança de caminhos e descoberta de projetos
-- [ ] `list_projects`, `create_project`, `get_project`, `list_markings`, `get_marking`, `get_annotation`, `get_image`, `resolve`, `get_specialization`
-- [ ] Recursos MCP com a documentação + `docs/AGENT-GUIDE.md`
+- [x] Raízes, segurança de caminhos e descoberta de projetos
+- [x] `list_projects`, `create_project`, `get_project`, `list_markings`, `get_marking`, `get_annotation`, `get_image`, `resolve`, `get_specialization`
+- [x] Recursos MCP com a documentação + `docs/AGENT-GUIDE.md`
 
 **Aceite**: testes de integração que sobem o servidor por stdio com o cliente do SDK MCP, sobre uma pasta temporária com o projeto de teste do roteiro 13.9, e conferem cada tool, inclusive herdadas, vínculos, referências e backlinks em `get_marking`; caminhos fora das raízes são recusados.
 
