@@ -22,6 +22,10 @@ afterEach(cleanup);
 const exampleText = (name: string) =>
   readFileSync(join(process.cwd(), 'examples', 'specs', `${name}.json`), 'utf8');
 
+/** Versão do conteúdo do exemplo SDUI e quantas camadas ele cria (Componentes, Eventos e Telas). */
+const SDUI_VERSION = (JSON.parse(exampleText('sdui')) as { version: number }).version;
+const SDUI_LAYERS = 3;
+
 /** Mesma especialização com a versão alterada. */
 function withVersion(name: string, version: number): string {
   const spec = JSON.parse(exampleText(name)) as { version: number };
@@ -81,11 +85,15 @@ describe('SpecsDialog', () => {
   it('aplica uma especialização: cria as camadas e mostra a mensagem', async () => {
     const { harness, choose } = setup();
     choose(exampleText('sdui'));
-    await screen.findByText(/"SDUI" aplicada: 2 camada\(s\) criada\(s\)\./);
+    await screen.findByText(
+      new RegExp(`"SDUI" aplicada: ${SDUI_LAYERS} camada\\(s\\) criada\\(s\\)\\.`),
+    );
     const p = harness.project();
-    expect(p.specializations.map((s) => [s.id, s.version])).toEqual([['sdui', 1]]);
-    expect(p.layers.filter((l) => l.spec?.specId === 'sdui')).toHaveLength(2);
-    expect(screen.getByText('v1 · 2 camada(s)')).toBeTruthy();
+    expect(p.specializations.map((s) => [s.id, s.version])).toEqual([
+      ['sdui', SDUI_VERSION],
+    ]);
+    expect(p.layers.filter((l) => l.spec?.specId === 'sdui')).toHaveLength(SDUI_LAYERS);
+    expect(screen.getByText(`v${SDUI_VERSION} · ${SDUI_LAYERS} camada(s)`)).toBeTruthy();
   });
 
   it('o resultado de uma operação bem-sucedida usa o aviso de sucesso', async () => {
@@ -110,8 +118,12 @@ describe('SpecsDialog', () => {
     await screen.findByText(/aplicada/);
     choose(exampleText('sdui'));
     const dialog = await dialogTitled('Nada a fazer');
-    expect(within(dialog).getByText(/já está no projeto na versão 1/)).toBeTruthy();
-    expect(harness.project().specializations[0]?.version).toBe(1);
+    expect(
+      within(dialog).getByText(
+        new RegExp(`já está no projeto na versão ${SDUI_VERSION}`),
+      ),
+    ).toBeTruthy();
+    expect(harness.project().specializations[0]?.version).toBe(SDUI_VERSION);
   });
 
   it('versão maior: pede confirmação e atualiza', async () => {
@@ -119,18 +131,20 @@ describe('SpecsDialog', () => {
     choose(exampleText('sdui'));
     await screen.findByText(/aplicada/);
 
-    choose(withVersion('sdui', 2));
+    choose(withVersion('sdui', SDUI_VERSION + 1));
     const dialog = await dialogTitled('Atualizar "SDUI"?');
-    expect(within(dialog).getByText('Da versão 1 para a 2.')).toBeTruthy();
+    expect(
+      within(dialog).getByText(`Da versão ${SDUI_VERSION} para a ${SDUI_VERSION + 1}.`),
+    ).toBeTruthy();
     // Cancelar não muda nada.
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
-    expect(harness.project().specializations[0]?.version).toBe(1);
+    expect(harness.project().specializations[0]?.version).toBe(SDUI_VERSION);
 
-    choose(withVersion('sdui', 2));
+    choose(withVersion('sdui', SDUI_VERSION + 1));
     const again = await dialogTitled('Atualizar "SDUI"?');
     await user.click(within(again).getByRole('button', { name: 'Atualizar' }));
-    await screen.findByText('"SDUI" atualizada para a versão 2.');
-    expect(harness.project().specializations[0]?.version).toBe(2);
+    await screen.findByText(`"SDUI" atualizada para a versão ${SDUI_VERSION + 1}.`);
+    expect(harness.project().specializations[0]?.version).toBe(SDUI_VERSION + 1);
   });
 
   it('"Atualizar versão" só aceita o arquivo da própria especialização', async () => {
@@ -166,7 +180,7 @@ describe('SpecsDialog', () => {
     const p = harness.project();
     expect(p.specializations).toHaveLength(0);
     expect(p.layers.every((l) => l.spec === null)).toBe(true);
-    expect(p.layers.length).toBe(3);
+    expect(p.layers.length).toBe(SDUI_LAYERS + 1); // + a camada livre inicial
   });
 
   it('remover e apagar: as camadas da especialização somem', async () => {

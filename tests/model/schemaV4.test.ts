@@ -51,6 +51,9 @@ import {
   specProject,
 } from './specFixtures';
 
+/** Versão do conteúdo do exemplo SDUI (os testes de atualização usam a seguinte). */
+const SDUI_VERSION = loadExample('sdui').version;
+
 function annotation(p: Project, id: string): Annotation {
   const a = p.annotations.find((x) => x.id === id);
   if (!a) throw new Error(`anotação ${id} não encontrada`);
@@ -131,7 +134,7 @@ describe('aplicar especialização', () => {
     expect(
       p.specializations.map(({ id, version, file }) => ({ id, version, file })),
     ).toEqual([
-      { id: 'sdui', version: 1, file: 'specs/sdui.json' },
+      { id: 'sdui', version: SDUI_VERSION, file: 'specs/sdui.json' },
       { id: 'modelo-dados', version: 1, file: 'specs/modelo-dados.json' },
     ]);
     expect(p.layers.map((l) => [l.id, l.name, l.color, l.spec])).toEqual([
@@ -139,6 +142,7 @@ describe('aplicar especialização', () => {
       ['LM', 'Model', '#757575', null],
       ['LS1', 'Componentes', '#1E88E5', { specId: 'sdui', layerId: 'componentes' }],
       ['LS2', 'Eventos', '#FB8C00', { specId: 'sdui', layerId: 'eventos' }],
+      ['LS3', 'Telas', '#00897B', { specId: 'sdui', layerId: 'telas' }],
       ['LD1', 'Classes', '#43A047', { specId: 'modelo-dados', layerId: 'classes' }],
       ['LD2', 'Endpoints', '#8E24AA', { specId: 'modelo-dados', layerId: 'endpoints' }],
     ]);
@@ -156,7 +160,7 @@ describe('aplicar especialização', () => {
     const sdui = loadExample('sdui');
     expect(checkSpecApply(sampleProject(), sdui)).toBe('apply');
     expect(checkSpecApply(p, sdui)).toBe('not-newer');
-    expect(checkSpecApply(p, { ...sdui, version: 2 })).toBe('update');
+    expect(checkSpecApply(p, { ...sdui, version: SDUI_VERSION + 1 })).toBe('update');
     expect(codeOf(() => applySpecialization(p, sdui))).toBe('spec-already-applied');
   });
 
@@ -439,7 +443,7 @@ describe('referências', () => {
       const text = s.layers[0]?.annotationTypes[2];
       const dadoText = text?.fields.find((f) => f.key === 'dado');
       if (dadoText?.type === 'ref') dadoText.accepts = { free: true };
-      s.version = 2;
+      s.version = SDUI_VERSION + 1;
     });
     const p = updateSpecialization(cadastroProject(), sdui);
     expect(findRefTargets(p, 'AIN', 'dado').map((t) => t.label)).toEqual([
@@ -625,7 +629,7 @@ describe('atualizar especialização', () => {
   /** SDUI v2: camada "Estados" nova, "Eventos" removida, "Componentes" renomeada. */
   function sduiV2(): Spec {
     return withChanges(loadExample('sdui'), (s) => {
-      s.version = 2;
+      s.version = SDUI_VERSION + 1;
       const componentes = s.layers[0];
       if (!componentes) throw new Error('sem camada');
       componentes.name = 'Componentes de tela';
@@ -646,9 +650,11 @@ describe('atualizar especialização', () => {
     let p = setLayerColor(cadastroProject(), 'LS1', '#000000');
     const impact = specializationUpdateImpact(p, sduiV2());
     expect(impact.addedLayers.map((l) => l.id)).toEqual(['estados']);
-    expect(impact.freedLayers.map((l) => l.id)).toEqual(['LS2']);
+    expect(impact.freedLayers.map((l) => l.id)).toEqual(['LS2', 'LS3']);
     p = expectValid(updateSpecialization(p, sduiV2(), { newId: idGen('N') }));
-    expect(p.specializations.find((s) => s.id === 'sdui')?.version).toBe(2);
+    expect(p.specializations.find((s) => s.id === 'sdui')?.version).toBe(
+      SDUI_VERSION + 1,
+    );
     expect(
       p.layers
         .filter((l) => l.id.startsWith('LS') || l.id.startsWith('N'))
@@ -656,6 +662,7 @@ describe('atualizar especialização', () => {
     ).toEqual([
       ['LS1', 'Componentes de tela', '#000000', 'componentes'],
       ['LS2', 'Eventos', '#FB8C00', null],
+      ['LS3', 'Telas', '#00897B', null],
       // N1…N8 foram para as tuplas dos eventos convertidos.
       ['N9', 'Estados', '#5E35B1', 'estados'],
     ]);
@@ -670,7 +677,7 @@ describe('atualizar especialização', () => {
 
   it('anotações que ficaram inválidas não mudam: viram pendências', () => {
     const v2 = withChanges(loadExample('sdui'), (s) => {
-      s.version = 2;
+      s.version = SDUI_VERSION + 1;
       const [button, input, , image] = s.layers[0]?.annotationTypes ?? [];
       if (!button || !input || !image) throw new Error('tipos');
       // Campo obrigatório novo e opção removida.
@@ -703,7 +710,7 @@ describe('atualizar especialização', () => {
 
   it('alvo que perdeu a etiqueta deixa a referência "não aceita"', () => {
     const v2 = withChanges(loadExample('modelo-de-dados'), (s) => {
-      s.version = 2;
+      s.version = SDUI_VERSION + 1;
       const atributos = s.layers[0]?.annotationTypes[0]?.fields.find(
         (f) => f.key === 'atributos',
       );
@@ -795,7 +802,7 @@ describe('serialização v4', () => {
     const text = serialize(p);
     const data = JSON.parse(text);
     expect(data.specializations).toEqual([
-      { id: 'sdui', version: 1, file: 'specs/sdui.json' },
+      { id: 'sdui', version: SDUI_VERSION, file: 'specs/sdui.json' },
       { id: 'modelo-dados', version: 1, file: 'specs/modelo-dados.json' },
     ]);
     const classe = data.annotations.find((a: { id: string }) => a.id === 'AC');

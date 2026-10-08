@@ -152,9 +152,9 @@ describe('list_projects e descoberta', () => {
       projectName: 'Teste',
       schemaVersion: 6,
       revision: 0,
-      counts: { images: 1, markings: 6, annotations: 11, layers: 6 },
+      counts: { images: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
-        { id: 'sdui', version: 1 },
+        { id: 'sdui', version: loadExample('sdui').version },
         { id: 'modelo-dados', version: 1 },
       ],
     });
@@ -208,6 +208,7 @@ describe('get_project', () => {
       ['Model', 1],
       ['Componentes', 5],
       ['Eventos', 3],
+      ['Telas', 0],
       ['Classes', 1],
       ['Endpoints', 1],
     ]);
@@ -709,11 +710,16 @@ describe('get_specialization', () => {
     const data = ok(
       await mcp.call('get_specialization', { project: 'cadastro', specId: 'sdui' }),
     );
-    expect(data).toMatchObject({ id: 'sdui', version: 1, file: 'specs/sdui.json' });
+    expect(data).toMatchObject({
+      id: 'sdui',
+      version: loadExample('sdui').version,
+      file: 'specs/sdui.json',
+    });
     expect(data.spec).toEqual(loadExample('sdui'));
     expect((data.projectLayers as { name: string }[]).map((l) => l.name)).toEqual([
       'Componentes',
       'Eventos',
+      'Telas',
     ]);
   });
 

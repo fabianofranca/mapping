@@ -103,6 +103,8 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
       if (field.required) issues.push({ code: 'required-empty', key });
       continue;
     }
+    // Valor e pendências do `codeRef` (entradas, plataforma, caminho): fase 3b.2.
+    if (field.type === 'codeRef') continue;
     if (field.type === 'ref') {
       const ref = parseRefValue(value);
       const target = ref && resolveRef(p, ref);

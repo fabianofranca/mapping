@@ -182,6 +182,8 @@ export function typedDisplayLines(
       }
       continue;
     }
+    // Exibição do `codeRef` (Detalhes, Lista, zoom semântico): fase 3b.3.
+    if (field.type === 'codeRef') continue;
     if (field.type === 'ref') {
       const ref = parseRefValue(value);
       const target = ref ? resolveRef(p, ref) : null;

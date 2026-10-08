@@ -1,10 +1,15 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "id": "sdui",
   "name": "SDUI",
-  "version": 1,
+  "version": 2,
   "description": "Componentes de tela e seus eventos para Server-Driven UI.",
+  "platforms": [
+    { "id": "android", "name": "Android", "language": "kotlin" },
+    { "id": "ios", "name": "iOS", "language": "swift" },
+    { "id": "bff", "name": "Contrato SDUI", "language": "json" }
+  ],
   "layers": [
     {
       "id": "componentes",
@@ -30,7 +35,47 @@
               "options": ["sim", "não"],
               "default": "sim"
             }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.DSButton",
+              "params": { "texto": "text", "estilo": "style", "habilitado": "enabled" },
+              "values": {
+                "estilo": {
+                  "primary": "ButtonStyle.Primary",
+                  "secondary": "ButtonStyle.Secondary",
+                  "text": "ButtonStyle.Text"
+                },
+                "habilitado": { "sim": "true", "não": "false" }
+              },
+              "notes": "Use o modifier de testTag com o valor do campo id."
+            },
+            "ios": {
+              "symbol": "DSButton",
+              "params": {
+                "texto": "title",
+                "estilo": "style",
+                "habilitado": "isEnabled"
+              },
+              "values": {
+                "estilo": {
+                  "primary": ".primary",
+                  "secondary": ".secondary",
+                  "text": ".text"
+                },
+                "habilitado": { "sim": "true", "não": "false" }
+              }
+            },
+            "bff": {
+              "symbol": "button",
+              "params": {
+                "id": "id",
+                "texto": "label",
+                "estilo": "variant",
+                "habilitado": "enabled"
+              }
+            }
+          }
         },
         {
           "id": "input",
@@ -60,7 +105,58 @@
               "accepts": { "tags": ["data-field"], "free": true },
               "description": "Atributo do modelo de dados exibido e editado por este campo"
             }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.DSTextField",
+              "params": {
+                "tipo": "keyboardType",
+                "placeholder": "placeholder",
+                "obrigatorio": "required",
+                "maxLength": "maxLength"
+              },
+              "values": {
+                "tipo": {
+                  "text": "KeyboardType.Text",
+                  "email": "KeyboardType.Email",
+                  "password": "KeyboardType.Password",
+                  "number": "KeyboardType.Number",
+                  "phone": "KeyboardType.Phone"
+                },
+                "obrigatorio": { "sim": "true", "não": "false" }
+              },
+              "notes": "O campo dado indica o atributo do modelo de dados ligado ao valor digitado."
+            },
+            "ios": {
+              "symbol": "DSTextField",
+              "params": {
+                "tipo": "keyboardType",
+                "placeholder": "placeholder",
+                "obrigatorio": "isRequired",
+                "maxLength": "maxLength"
+              },
+              "values": {
+                "tipo": {
+                  "text": ".default",
+                  "email": ".emailAddress",
+                  "password": ".default",
+                  "number": ".numberPad",
+                  "phone": ".phonePad"
+                },
+                "obrigatorio": { "sim": "true", "não": "false" }
+              }
+            },
+            "bff": {
+              "symbol": "input",
+              "params": {
+                "id": "id",
+                "tipo": "type",
+                "placeholder": "placeholder",
+                "obrigatorio": "required",
+                "maxLength": "maxLength"
+              }
+            }
+          }
         },
         {
           "id": "text",
@@ -85,7 +181,31 @@
               "accepts": { "tags": ["data-field"], "free": true },
               "description": "Atributo exibido por este texto (opcional)"
             }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.DSText",
+              "params": { "conteudo": "text", "estilo": "style" },
+              "values": {
+                "estilo": {
+                  "titulo": "TextStyle.Title",
+                  "corpo": "TextStyle.Body",
+                  "legenda": "TextStyle.Caption"
+                }
+              }
+            },
+            "ios": {
+              "symbol": "DSText",
+              "params": { "conteudo": "text", "estilo": "style" },
+              "values": {
+                "estilo": { "titulo": ".title", "corpo": ".body", "legenda": ".caption" }
+              }
+            },
+            "bff": {
+              "symbol": "text",
+              "params": { "id": "id", "conteudo": "content", "estilo": "variant" }
+            }
+          }
         },
         {
           "id": "image",
@@ -100,7 +220,21 @@
               "required": true
             },
             { "key": "url", "type": "string" }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.DSImage",
+              "params": { "descricao": "contentDescription", "url": "url" }
+            },
+            "ios": {
+              "symbol": "DSImage",
+              "params": { "descricao": "accessibilityLabel", "url": "url" }
+            },
+            "bff": {
+              "symbol": "image",
+              "params": { "id": "id", "descricao": "accessibilityLabel", "url": "url" }
+            }
+          }
         }
       ]
     },
@@ -131,7 +265,26 @@
                 { "key": "valor", "type": "string" }
               ]
             }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.OnClick",
+              "params": { "acao": "action", "destino": "target", "parametros": "params" },
+              "notes": "Associe o evento ao componente dono por meio do parâmetro onClick."
+            },
+            "ios": {
+              "symbol": "OnClick",
+              "params": { "acao": "action", "destino": "target", "parametros": "params" }
+            },
+            "bff": {
+              "symbol": "onClick",
+              "params": {
+                "acao": "action",
+                "destino": "target",
+                "parametros": "parameters"
+              }
+            }
+          }
         },
         {
           "id": "onHold",
@@ -151,7 +304,21 @@
               "type": "number",
               "default": 500
             }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.OnHold",
+              "params": { "acao": "action", "duracaoMs": "durationMs" }
+            },
+            "ios": {
+              "symbol": "OnHold",
+              "params": { "acao": "action", "duracaoMs": "duration" }
+            },
+            "bff": {
+              "symbol": "onHold",
+              "params": { "acao": "action", "duracaoMs": "durationMs" }
+            }
+          }
         },
         {
           "id": "onChange",
@@ -170,6 +337,37 @@
               "type": "string",
               "description": "Ex: email, cpf, minLength:8"
             }
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.OnChange",
+              "params": { "acao": "action", "regra": "rule" }
+            },
+            "ios": {
+              "symbol": "OnChange",
+              "params": { "acao": "action", "regra": "rule" }
+            },
+            "bff": {
+              "symbol": "onChange",
+              "params": { "acao": "action", "regra": "rule" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "telas",
+      "name": "Telas",
+      "color": "#00897B",
+      "annotationTypes": [
+        {
+          "id": "screen",
+          "name": "Screen",
+          "labelField": "nome",
+          "fields": [
+            { "key": "nome", "type": "string", "required": true },
+            { "key": "rota", "type": "string" },
+            { "key": "implementacao", "label": "implementação", "type": "codeRef" }
           ]
         }
       ]

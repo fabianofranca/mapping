@@ -68,7 +68,7 @@ describe('sessão de projeto', () => {
     const copy = await root.read('specs/sdui.json');
     expect(JSON.parse(copy ?? '')).toEqual(sdui);
     expect((await savedProject(root)).specializations).toEqual([
-      { id: 'sdui', version: 1, file: 'specs/sdui.json', spec: null },
+      { id: 'sdui', version: sdui.version, file: 'specs/sdui.json', spec: null },
     ]);
 
     expect(session.actions.removeSpecialization('sdui', 'convert').ok).toBe(true);

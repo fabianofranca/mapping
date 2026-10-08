@@ -35,6 +35,8 @@ export function TypedField({
   const { project, annotation, readOnly } = ctx;
 
   if (field.type === 'table') return <TableField field={field} {...ctx} />;
+  // Editor do `codeRef`: fase 3b.3.
+  if (field.type === 'codeRef') return null;
 
   const value = annotation.values?.[field.key];
   const backlinks = getBacklinks(project, annotation.id).filter(
