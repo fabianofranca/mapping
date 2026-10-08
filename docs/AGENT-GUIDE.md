@@ -4,7 +4,7 @@ Este guia é para o agente de IA (Claude Code, Claude Desktop ou outro cliente M
 
 O Mapping marca **áreas retangulares** em imagens, organiza as informações em **camadas** e as descreve com **anotações** (pares chave-valor livres ou anotações **tipadas** de uma especialização). O servidor lê projetos guardados **em pasta** dentro das raízes configuradas (`--root`). Projetos guardados só no navegador não são alcançáveis.
 
-> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`) e **altera** projetos em lote com prévia (`plan_changes` + `apply_changes`).
+> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`), **liga o mapeamento ao código** (`get_code_hints`, `find_by_code`, campos `codeRef`) e **altera** projetos em lote com prévia (`plan_changes` + `apply_changes`).
 
 ## Conceitos que importam
 
@@ -15,6 +15,7 @@ O Mapping marca **áreas retangulares** em imagens, organiza as informações em
 - **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), na mesma marcação e em outra camada (ex: um evento `onClick` vinculado ao `Button`). `linked` lista as vinculadas e `linkTree` mostra a árvore.
 - **Referências fortes.** Campos do tipo `ref` apontam para uma tupla, uma linha de tabela ou um campo de outra anotação. Em `refs` você vê para onde cada campo aponta; em `backlinks`, quem aponta para a anotação.
 - **Pendências.** Anotação incompleta (`issues`): campo obrigatório vazio, valor inválido, referência quebrada, tipo inexistente etc. São calculadas na leitura, não gravadas.
+- **Plataformas e código.** Uma especialização pode declarar **plataformas** e dizer como cada tipo vira código nelas (`code`: componente, parâmetros, orientações). O campo `codeRef` de uma anotação guarda **onde ela foi implementada**; `platformRepos` (no projeto) diz onde fica o repositório de cada plataforma. Veja "Do mapeamento ao código".
 - **Trava.** `lock.locked` indica marcação trancada; `lock.geometryLocked`, geometria travada (por ela ou por um ancestral trancado). Item trancado não pode ser movido, redimensionado nem excluído.
 
 ## Referências
@@ -41,6 +42,7 @@ Toda tool que recebe um item (`ref`) aceita: a referência completa (a que o dev
 6. **`get_annotation(ref)`** / **`get_image(ref)`** — o detalhe de uma anotação ou de uma imagem (o `path` absoluto do arquivo, se existir).
 7. **`resolve(ref)`** — quando só há uma referência e não se sabe o que ela é.
 8. **`get_marking_image(ref, …)`** — **veja** a marcação (ver "Vendo as imagens").
+9. **`get_code_hints(ref, platform)`** / **`find_by_code(…)`** — do mapeamento para o código e de volta (ver "Do mapeamento ao código").
 
 Quando o dev cola uma referência no chat, chame `get_marking` (ou `resolve`) com ela: não é preciso informar o projeto.
 
@@ -67,6 +69,7 @@ Toda alteração passa por duas chamadas:
    - `summary`: uma linha legível por operação válida (mostre ao dev antes de gravar quando a mudança for grande);
    - `changes`: quantos itens serão criados, alterados e excluídos por coleção;
    - `issues`: pendências antes e depois, e as anotações que ficam incompletas (`new`);
+   - `warnings` (só se houver): avisos do projeto resultante, como plataforma usada em `codeRef` sem repositório configurado (`missing-repo`);
    - `created`: as referências `mapping://` dos itens que serão criados (as definitivas), com o apelido de cada um;
    - `planId` (só se o lote for válido), que vale **10 minutos** e só para a revisão atual do projeto.
 2. **`apply_changes(planId)`** grava tudo de uma vez: imagens novas, cópias de `specs/` e o `mapping.json` com `revision + 1`. Se o arquivo mudou desde o plano (a app ou outro processo gravou, ou alguém editou à mão), a gravação é recusada com `revision-conflict`: **releia e gere um novo plano**. Um plano só é aplicado uma vez.
@@ -109,6 +112,8 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 
 | `op`                    | Campos                                                                                    | Observações                                                                                                                              |
 | ----------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `set_platform_repo`     | `platform`, `urlTemplate?`, `localPath?`                                                  | Repositório da plataforma (ver "Do mapeamento ao código"). Campo omitido mantém; `null` remove.                                          |
+| `remove_platform_repo`  | `platform`                                                                                | Remove a configuração do repositório da plataforma.                                                                                      |
 | `create_layer`          | `name`, `color?`, `as?`                                                                   | Camada livre; cor padrão: a próxima da paleta.                                                                                           |
 | `update_layer`          | `layer`, `name?`, `color?`                                                                | Camada de especialização não é renomeada.                                                                                                |
 | `move_layer`            | `layer`, `index`                                                                          | Reordena (0 = primeira).                                                                                                                 |
@@ -130,6 +135,7 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 **Valores tipados** (`values`): por `key` do campo (veja `get_specialization`); `null` limpa.
 
 - Campo `table`: a lista de linhas, que **substitui** a tabela. `{"_id": "…"}` mantém uma linha existente (com as células informadas alteradas); `"_as": "$linha"` dá um apelido à linha, para uma referência no mesmo lote.
+- Campo `codeRef`: a lista completa de entradas `{"platform", "path", "symbol?", "line?", "_id?"}` (ver "Do mapeamento ao código").
 - Campo `ref`: `{"annotation": "$user", "entry": "name"}` (par de anotação livre, pela chave ou id), `{"annotation": "$contato", "key": "atributos", "row": "$linha"}` (linha de tabela, pelo id, apelido ou índice) ou `{"annotation": "…", "key": "id"}` (campo).
 
 **Imagens.** Como na app: a orientação EXIF é aplicada, o lado maior fica em no máximo 2560 px e o arquivo é recodificado em WebP (sem perdas para PNG; com perdas, qualidade 0,85, para fotos), sem metadados. Sem redução nem rotação, o original é mantido se o WebP não ficar menor. `width` e `height` da imagem (e as coordenadas das marcações) são os do arquivo gravado. O nome em `images/` nunca sobrescreve um arquivo existente (`foto-2.webp`…). `file` é relativo à pasta do projeto ou a uma raiz, ou absoluto dentro das raízes.
@@ -142,26 +148,111 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 - Anotação **tipada**: `type` (`specId`, `typeId`, `name`) e `values`, com os valores nativos de JSON (números como número, datas em ISO, tabelas como lista de linhas com `_id`). Os campos `ref` aparecem em `values` como objetos com o id do alvo; o campo `refs` da resposta os resolve em texto (`to: "User.name"`) e na referência da anotação alvo.
 - `title` é o rótulo que a app mostra (ex: `Classe · Contato`, `Input · input_nome`).
 
+## Do mapeamento ao código
+
+Quando o projeto aplica uma especialização com **plataformas** (veja `platforms` em `get_project`), dá para implementar o que foi mapeado e registrar onde.
+
+### Fluxo: implementar uma tela
+
+1. **Receba a referência** `mapping://…/m/…` (o dev a cola do app) e chame **`get_marking(ref, { platform })`** e **`get_marking_image(ref)`**: o primeiro dá as anotações e os `codeRefs` existentes; o segundo, o que a tela parece.
+2. **`get_code_hints(ref, platform)`** devolve a **planta de código**: uma árvore que espelha a marcação e as descendentes. Em cada marcação, as anotações tipadas com:
+   - `symbol`: o componente ou tipo da plataforma (`null` = o tipo **não tem mapeamento** nessa plataforma; a resposta lista esses tipos em `unmappedTypes`);
+   - `params`: `{ field, name, value }` — o parâmetro no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary` do código). Campo que não está em `params` não é passado;
+   - `notes`: a orientação da especialização (leia: ela costuma dizer detalhes como "use o valor do campo id");
+   - `values`: os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex: `dado: "User.name"`);
+   - `linked`: as anotações vinculadas, sob a dona (o `onClick` sob o `Button`);
+   - `codeRefs`: onde essa instância já foi implementada nessa plataforma.
+3. **Implemente** no repositório com as suas ferramentas. O servidor **não lê nem grava código**: use os `localFile` para achar os arquivos.
+4. **Registre onde implementou** com `plan_changes` + `apply_changes`: um `update_annotation` do `codeRef` (e, se faltar, um `set_platform_repo`), como abaixo.
+
+### `codeRefs`: onde já foi implementado
+
+Em `get_marking`, `get_annotation`, `get_code_hints` e `find_by_code`, cada entrada vem resolvida:
+
+```json
+{
+  "field": "implementacao",
+  "id": "7c1f…",
+  "platform": "android",
+  "path": "app/src/main/java/com/app/cadastro/CadastroScreen.kt",
+  "symbol": "CadastroScreen",
+  "line": null,
+  "url": "https://github.com/org/app-android/blob/main/app/src/main/java/com/app/cadastro/CadastroScreen.kt",
+  "localFile": "app/src/main/java/com/app/cadastro/CadastroScreen.kt",
+  "exists": true
+}
+```
+
+- `path` é relativo à **raiz do repositório da plataforma**, com `/`.
+- `url` vem do `urlTemplate` da plataforma (`null` sem ele).
+- `localFile` é o caminho **relativo ao diretório de trabalho do cliente** (o repositório, no Claude Code), calculado com o `localPath` da plataforma; `exists` diz se o arquivo está lá. Sem `localPath`, os dois são `null`. Se o `localPath` leva para fora do diretório de trabalho, vêm `null` e `localFileProblem: "outside-workdir"`: por segurança, o servidor não confere (nem revela) o que está fora.
+- Os campos `codeRef` **saem de `values`** nessas respostas e aparecem só em `codeRefs`. `get_marking(ref, { platform })` filtra `codeRefs` e `code` por plataforma. O `code` de uma anotação tipada é o mapeamento do tipo por plataforma (`symbol`, `params`, `values`, `notes`), como na especialização.
+
+### `find_by_code`: do código para o mapeamento
+
+`find_by_code({ project?, path?, symbol? })` acha as entradas de `codeRef` que apontam para um arquivo ou símbolo, com as referências `mapping://` da marcação e da anotação. `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`CadastroScreen.kt` acha `app/…/CadastroScreen.kt`; `Screen.kt` não); `symbol`, por igualdade; informando os dois, ambos precisam casar. Sem `project`, procura em todos os projetos das raízes. Sem `path` nem `symbol` falha com `missing-query`. Use para ir de "estou mexendo neste arquivo" para "o que o design diz sobre ele".
+
+### Registrando o `codeRef`
+
+O valor de um campo `codeRef` é a **lista completa** de entradas, em `values` de `create_annotation` ou `update_annotation`:
+
+```json
+[
+  {
+    "op": "update_annotation",
+    "annotation": "mapping://cadastro/a/d00bb3f3",
+    "values": {
+      "implementacao": [
+        { "_id": "7c1f…" },
+        {
+          "platform": "android",
+          "path": "app/src/main/java/com/app/cadastro/CadastroViewModel.kt",
+          "symbol": "CadastroViewModel",
+          "line": 42
+        }
+      ]
+    }
+  },
+  {
+    "op": "set_platform_repo",
+    "platform": "ios",
+    "urlTemplate": "https://github.com/org/app-ios/blob/main/{path}#L{line}",
+    "localPath": "../../.."
+  }
+]
+```
+
+- Cada entrada tem `platform` (declarada pela especialização do tipo e, se o campo restringe, em `platforms` do campo), `path`, e opcionalmente `symbol` e `line` (inteiro ≥ 1). O `path` é normalizado (`\` vira `/`), relativo, sem `.`, `..` nem `/` no começo.
+- `_id` mantém uma entrada existente (as propriedades omitidas ficam como estão; copie o `id` de `codeRefs`). Sem `_id`, a entrada é nova. **Entradas que você não repete são removidas**: para acrescentar uma, envie todas as existentes com o `_id` mais a nova (o resumo do plano mostra `+N, -N entrada(s)`: confira). Parta de `get_annotation`, que traz todas as entradas; `get_marking` com `platform` esconde as das outras plataformas. `null` ou `[]` limpa.
+- `set_platform_repo { platform, urlTemplate?, localPath? }` configura o repositório da plataforma (campo omitido mantém; `null` remove; sem nenhum dos dois, a configuração sai). `remove_platform_repo { platform }` a remove. `urlTemplate` precisa ser `http(s)://…` com `{path}` (`{line}` é opcional); `localPath` é relativo à pasta do projeto (ex: `../../..`).
+- Plataforma usada em algum `codeRef` sem repositório configurado é só um **aviso** (`warnings`, em `get_project` e `plan_changes`); entrada com plataforma não permitida ou sem caminho deixa a anotação **incompleta** (`issues`).
+
+### O que o servidor nunca faz
+
+Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas; o servidor guarda no `mapping.json` apenas **onde** você implementou.
+
 ## Erros
 
 As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}`. Os códigos que você mais verá:
 
-| `code`                                           | Significado                                                                 |
-| ------------------------------------------------ | --------------------------------------------------------------------------- |
-| `project-not-found`, `ambiguous-project`         | Projeto inexistente, ou nome repetido (a resposta lista as candidatas).     |
-| `invalid-ref`, `not-found`, `ambiguous-ref`      | Referência mal formada, sem item correspondente, ou com mais de um.         |
-| `wrong-kind`                                     | A referência é de outro tipo (ex: anotação passada a `get_marking`).        |
-| `outside-roots`                                  | Caminho com `..`, absoluto fora das raízes ou link simbólico que sai delas. |
-| `invalid-project`                                | O `mapping.json` não passa na validação (a resposta traz o motivo).         |
-| `spec-unavailable`                               | A cópia da especialização em `specs/` está ausente ou inválida.             |
-| `image-file-missing`                             | O arquivo da imagem não existe (ou aponta para fora das raízes).            |
-| `unsupported-image`, `invalid-image`             | O arquivo não é PNG, JPEG nem WebP, ou está corrompido.                     |
-| `image-too-large`                                | Arquivo maior que 64 MB ou imagem com mais de 100 megapixels.               |
-| `marking-outside-image`                          | O retângulo da marcação não toca a imagem: não há o que recortar.           |
-| `revision-conflict`                              | `apply_changes`: o projeto mudou desde o plano. Releia e gere outro plano.  |
-| `plan-not-found`                                 | `apply_changes`: plano inexistente, já aplicado ou expirado (10 min).       |
-| `unknown-alias`, `alias-unavailable`             | Apelido não criado antes no lote, ou criado por uma operação que falhou.    |
-| `locked`, `rect-out-of-image`, `owner-required`… | Regras do modelo: a `message` explica o que corrigir.                       |
+| `code`                                           | Significado                                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `project-not-found`, `ambiguous-project`         | Projeto inexistente, ou nome repetido (a resposta lista as candidatas).              |
+| `invalid-ref`, `not-found`, `ambiguous-ref`      | Referência mal formada, sem item correspondente, ou com mais de um.                  |
+| `wrong-kind`                                     | A referência é de outro tipo (ex: anotação passada a `get_marking`).                 |
+| `outside-roots`                                  | Caminho com `..`, absoluto fora das raízes ou link simbólico que sai delas.          |
+| `invalid-project`                                | O `mapping.json` não passa na validação (a resposta traz o motivo).                  |
+| `spec-unavailable`                               | A cópia da especialização em `specs/` está ausente ou inválida.                      |
+| `image-file-missing`                             | O arquivo da imagem não existe (ou aponta para fora das raízes).                     |
+| `unsupported-image`, `invalid-image`             | O arquivo não é PNG, JPEG nem WebP, ou está corrompido.                              |
+| `image-too-large`                                | Arquivo maior que 64 MB ou imagem com mais de 100 megapixels.                        |
+| `marking-outside-image`                          | O retângulo da marcação não toca a imagem: não há o que recortar.                    |
+| `revision-conflict`                              | `apply_changes`: o projeto mudou desde o plano. Releia e gere outro plano.           |
+| `plan-not-found`                                 | `apply_changes`: plano inexistente, já aplicado ou expirado (10 min).                |
+| `unknown-alias`, `alias-unavailable`             | Apelido não criado antes no lote, ou criado por uma operação que falhou.             |
+| `unknown-platform`, `platform-not-allowed`       | Plataforma não declarada pelas especializações, ou não permitida no campo `codeRef`. |
+| `missing-query`                                  | `find_by_code` sem `path` nem `symbol`.                                              |
+| `locked`, `rect-out-of-image`, `owner-required`… | Regras do modelo: a `message` explica o que corrigir.                                |
 
 ## Boas práticas
 

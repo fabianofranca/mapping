@@ -14,6 +14,7 @@ import {
   BACKUPS_DIR,
   SPECS_DIR,
   backupFileName,
+  platformRepoWarnings,
   readRevision,
   serialize,
   specFiles,
@@ -191,6 +192,8 @@ export class ChangePlans {
     };
     const result = await runBatch(loaded, operations, io);
     const refs = new Refs({ ...loaded, project: result.project });
+    // Avisos (não impedem nada): plataforma usada em `codeRef` sem repositório configurado.
+    const repoWarnings = platformRepoWarnings(result.project);
     const valid = result.errors.length === 0 && result.invariantIssues.length === 0;
     const response: Record<string, unknown> = {
       valid,
@@ -204,6 +207,7 @@ export class ChangePlans {
       summary: result.steps.map((s) => `${s.index}. ${s.description}`),
       changes: changeCounts(result.before, result.project),
       issues: issueChanges(refs, result.before),
+      ...(repoWarnings.length > 0 ? { warnings: repoWarnings } : {}),
       created: createdRefs(refs, result),
     };
     if (!valid) {

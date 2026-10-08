@@ -1,13 +1,17 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { projectIndex } from '../src/model';
+import { ModelError, projectIndex } from '../src/model';
 import { ChangePlans } from './changes';
+import { LocalFileChecker } from './codeFiles';
+import { codeHintsView, type CodeContext } from './codeViews';
 import { createProjectFolder } from './createProject';
 import { ToolError } from './errors';
 import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
 import { imageFile, markingImage, type ImageResult } from './imageTools';
+import { findByCodeResult } from './findByCode';
 import { Refs, resolveItem } from './items';
 import { listMarkings } from './markingList';
+import { modelToolError } from './modelErrors';
 import { operationSchema } from './operations';
 import type { Roots } from './paths';
 import { discoverProjects, findProject, loadProject } from './projects';
@@ -119,7 +123,18 @@ const formatArg = z
     'Formato da imagem devolvida. Padrão: jpeg se o arquivo original é JPEG, senão png (sem perdas, bom para telas e texto).',
   );
 
+const platformArg = z
+  .string()
+  .describe(
+    'Id da plataforma declarada pelas especializações aplicadas (veja `platforms` em get_project).',
+  );
+
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
+
+/** Visões que resolvem `codeRef`: o `workDir` do cliente limita a conferência de arquivos locais. */
+function codeContext(roots: Roots, refs: Refs): CodeContext {
+  return { refs, files: new LocalFileChecker(roots.workDir) };
+}
 
 export function registerTools(server: McpServer, roots: Roots): void {
   server.registerTool(
@@ -193,7 +208,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_project',
     {
       description:
-        'Resumo do projeto: imagens, camadas, especializações (com a situação da cópia), contagens e pendências (anotações incompletas).',
+        'Resumo do projeto: imagens, camadas, especializações (com a situação da cópia), plataformas de código (`platforms`), repositórios por plataforma (`platformRepos`), avisos de repositório ausente (`warnings`), contagens e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -264,17 +279,72 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_marking',
     {
       description:
-        'Tudo sobre uma marcação: caminho, imagem, retângulo em pixels da imagem original, trava, filhas, anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências.',
-      inputSchema: { ref: refArg, project: optionalProjectArg },
+        'Tudo sobre uma marcação: caminho, imagem, retângulo em pixels da imagem original, trava, filhas, anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências. ' +
+        'Nas anotações tipadas, `codeRefs` traz onde foram implementadas (plataforma, caminho, símbolo, linha, `url` do repositório, `localFile` relativo ao diretório de trabalho do cliente e `exists`) e `code` o mapeamento do tipo por plataforma. O servidor só confere se o arquivo existe: nunca lê código.',
+      inputSchema: {
+        ref: refArg,
+        project: optionalProjectArg,
+        platform: platformArg
+          .optional()
+          .describe(
+            'Só os `codeRefs` e o `code` desta plataforma (ex: a que você vai implementar). Atenção: as entradas das outras plataformas ficam de fora; para alterar um `codeRef`, parta de get_annotation, que traz todas.',
+          ),
+      },
       annotations: READ_ONLY,
     },
-    ({ ref, project }) =>
+    ({ ref, project, platform }) =>
       respond(async () => {
         const item = await resolveItem(roots, ref, project, 'm');
         const marking = projectIndex(item.refs.project).markings.get(item.id);
         if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
-        return markingView(item.refs, marking);
+        return markingView(codeContext(roots, item.refs), marking, platform);
       }),
+  );
+
+  server.registerTool(
+    'get_code_hints',
+    {
+      description:
+        'O que implementar numa plataforma a partir de uma marcação: a árvore da marcação e das descendentes, e em cada uma as anotações tipadas com o componente de código da plataforma (`symbol`), os parâmetros com os valores já traduzidos (`params`), as orientações (`notes`), os eventos vinculados sob a dona (`linked`), os valores de referência resolvidos (ex: `User.name`) e onde já foi implementado (`codeRefs`). ' +
+        'Tipos com `symbol: null` não têm mapeamento nesta plataforma. Depois de implementar, registre onde com plan_changes (campo `codeRef` da anotação).',
+      inputSchema: { ref: refArg, platform: platformArg, project: optionalProjectArg },
+      annotations: READ_ONLY,
+    },
+    ({ ref, platform, project }) =>
+      respond(async () => {
+        const item = await resolveItem(roots, ref, project, 'm');
+        try {
+          return await codeHintsView(codeContext(roots, item.refs), item.id, platform);
+        } catch (error) {
+          if (error instanceof ModelError) throw modelToolError(error);
+          throw error;
+        }
+      }),
+  );
+
+  server.registerTool(
+    'find_by_code',
+    {
+      description:
+        'Do código para o mapeamento: as marcações cujo `codeRef` aponta para um arquivo e/ou símbolo. `path` casa com o caminho inteiro ou com os últimos segmentos (`CheckoutScreen.kt` casa com `app/…/CheckoutScreen.kt`; `Screen.kt` não); `symbol` casa por igualdade; com os dois, ambos precisam casar. Sem `project`, procura em todos os projetos das raízes. Devolve as referências `mapping://` da marcação e da anotação. Não abre arquivos de código.',
+      inputSchema: {
+        project: projectArg
+          .optional()
+          .describe('Projeto onde procurar. Sem ele, procura em todos os das raízes.'),
+        path: z
+          .string()
+          .optional()
+          .describe(
+            'Arquivo: caminho inteiro (relativo à raiz do repositório) ou só o final por segmentos inteiros (ex: "CheckoutScreen.kt").',
+          ),
+        symbol: z
+          .string()
+          .optional()
+          .describe('Símbolo exato (classe, componente ou função).'),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => findByCodeResult(roots, args)),
   );
 
   server.registerTool(
@@ -291,7 +361,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
         const annotation = projectIndex(item.refs.project).annotations.get(item.id);
         if (!annotation)
           throw new ToolError('not-found', `anotação não encontrada: ${ref}`);
-        return annotationDetail(item.refs, annotation);
+        return annotationDetail(codeContext(roots, item.refs), annotation);
       }),
   );
 
