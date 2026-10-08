@@ -3,6 +3,8 @@ import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { wasmFiles } from './mcp/wasmFiles.mjs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
 import { applyCsp } from './pwa/csp';
 import { renderTokensCss } from './src/theme/tokens';
@@ -101,6 +103,22 @@ const perfBudgets =
   process.argv.includes('--coverage') || process.env.PERF_BUDGETS === 'off'
     ? 'off'
     : 'on';
+/** Nos testes do `mcp`, `import bytes from 'wasm:png'` (codecs de imagem) lê o `.wasm` do pacote, como o esbuild faz no build. */
+function wasmBytes(): Plugin {
+  const require = createRequire(import.meta.url);
+  const prefix = '\0wasm-bytes:';
+  return {
+    name: 'wasm-bytes',
+    resolveId: (id) => (id.startsWith('wasm:') ? prefix + id : null),
+    load(id) {
+      if (!id.startsWith(prefix)) return null;
+      const file = wasmFiles[id.slice(prefix.length) as keyof typeof wasmFiles];
+      const base64 = readFileSync(require.resolve(file)).toString('base64');
+      return `export default new Uint8Array(Buffer.from('${base64}', 'base64'));`;
+    },
+  };
+}
+
 const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {
@@ -137,6 +155,7 @@ export default defineConfig({
       },
       {
         ...base,
+        plugins: [...base.plugins, wasmBytes()],
         // Servidor MCP (etapa 3a): também em Node puro.
         test: {
           name: 'mcp',

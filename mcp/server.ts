@@ -10,7 +10,7 @@ export interface ServerConfig {
 }
 
 const INSTRUCTIONS = `Servidor do Mapping: lê projetos de mapeamento de imagens (marcações retangulares, camadas e anotações) guardados em pasta.
-Comece por list_projects. Itens são citados por referências mapping://<projeto>/<m|i|a>/<código>; passe-as a get_marking, get_annotation, get_image e resolve.
+Comece por list_projects. Itens são citados por referências mapping://<projeto>/<m|i|a>/<código>; passe-as a get_marking, get_annotation, get_image e resolve. Para ver uma marcação, use get_marking_image (recorte, ou a imagem inteira com a marcação contornada) e get_image_file.
 Coordenadas das marcações são sempre em pixels da imagem original. Leia o recurso mapping-docs://AGENT-GUIDE.md para o fluxo típico.`;
 
 export function createServer(config: ServerConfig): McpServer {
