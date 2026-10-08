@@ -92,6 +92,22 @@ function tokensCss(): Plugin {
 }
 
 /**
+ * `import bytes from './codec.wasm?binary'` (os codecs de imagem do servidor MCP) nos testes:
+ * os bytes do arquivo como `Uint8Array`. No build do servidor quem faz isso é o mcp/build.mjs.
+ */
+function binaryImports(): Plugin {
+  return {
+    name: 'binary-imports',
+    enforce: 'pre',
+    load(id) {
+      if (!id.endsWith('?binary')) return undefined;
+      const base64 = readFileSync(id.slice(0, -'?binary'.length)).toString('base64');
+      return `export default new Uint8Array(Buffer.from(${JSON.stringify(base64)}, 'base64'));`;
+    },
+  };
+}
+
+/**
  * Com `--coverage` o código roda instrumentado e bem mais lento: os orçamentos de
  * desempenho por quadro ficam de fora (o CI os mede num passo sem cobertura).
  * `PERF_BUDGETS=off` também os desliga: o deploy roda a suíte em paralelo e mede
@@ -137,6 +153,7 @@ export default defineConfig({
       },
       {
         ...base,
+        plugins: [...base.plugins, binaryImports()],
         // Servidor MCP (etapa 3a): também em Node puro.
         test: {
           name: 'mcp',
@@ -146,6 +163,8 @@ export default defineConfig({
           // Gera dist-mcp/mapping-mcp.js uma vez: os testes de integração sobem esse arquivo por stdio.
           globalSetup: ['tests/mcp/globalSetup.ts'],
           testTimeout: 30_000,
+          // Os `.wasm?binary` dos codecs passam pelo plugin acima, não pelo import nativo do Node.
+          server: { deps: { inline: [/@jsquash/] } },
         },
       },
       {

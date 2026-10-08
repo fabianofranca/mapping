@@ -15,5 +15,12 @@
     "noEmit": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "tests", "pwa", "vite.config.ts", "eslint.config.js"]
+  "include": [
+    "src",
+    "tests",
+    "pwa",
+    "mcp/binary.d.ts",
+    "vite.config.ts",
+    "eslint.config.js"
+  ]
 }

@@ -21,9 +21,28 @@ const rawText = {
   },
 };
 
+// `import bytes from './codec.wasm?binary'` embute os bytes (os codecs de imagem em WebAssembly).
+const binary = {
+  name: 'binary',
+  setup(esbuild) {
+    esbuild.onResolve({ filter: /\?binary$/ }, async (args) => {
+      const result = await esbuild.resolve(args.path.slice(0, -'?binary'.length), {
+        kind: args.kind,
+        resolveDir: args.resolveDir,
+      });
+      return { path: result.path, namespace: 'binary', errors: result.errors };
+    });
+    esbuild.onLoad({ filter: /.*/, namespace: 'binary' }, async (args) => ({
+      contents: await readFile(args.path),
+      loader: 'binary',
+      watchFiles: [args.path],
+    }));
+  },
+};
+
 await build({
   entryPoints: ['mcp/main.ts'],
-  plugins: [rawText],
+  plugins: [rawText, binary],
   outfile: 'dist-mcp/mapping-mcp.js',
   bundle: true,
   platform: 'node',

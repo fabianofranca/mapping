@@ -165,8 +165,8 @@ Nomes em inglês. Respostas em JSON compacto, sempre com as referências `mappin
 **Aceite**: testes com imagens de fixture (PNG, JPEG, WebP) conferindo dimensões, `padding`, `maxSize` e a legenda das filhas; o arquivo único continua funcionando sem instalar nada além do Node.
 
 #### 3a.5 — MCP: escrita em lote
-- [ ] `plan_changes` e `apply_changes` com todas as operações, apelidos temporários e conferência de `revision`
-- [ ] Adição de imagens com a otimização da app
+- [x] `plan_changes` e `apply_changes` com todas as operações, apelidos temporários e conferência de `revision`
+- [x] Adição de imagens com a otimização da app
 
 **Aceite**: testes criando, pelo MCP, o projeto inteiro do roteiro 13.9 (imagens, especializações, marcações, anotações tipadas, eventos vinculados, referências); o resultado abre na app sem pendências inesperadas; um lote com uma operação inválida não grava nada; um lote sobre uma `revision` desatualizada é recusado.
 
