@@ -5,8 +5,10 @@ import {
   getSpec,
   isMarkingGeometryLocked,
   markingLockStates,
+  platformRepoWarnings,
   projectIndex,
   projectIssues,
+  projectPlatforms,
   refLabel,
   refsOf,
   resolveRef,
@@ -21,6 +23,13 @@ import {
   type ProjectImage,
   type ResolvedRef,
 } from '../src/model';
+import {
+  annotationCode,
+  annotationCodeRefs,
+  assertPlatform,
+  codeRefKeys,
+  type CodeContext,
+} from './codeViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
@@ -102,7 +111,13 @@ function refTarget(refs: Refs, target: ResolvedRef): Json {
 export function annotationView(
   refs: Refs,
   annotation: Annotation,
-  options: { readonly withMarking?: boolean } = {},
+  options: {
+    readonly withMarking?: boolean;
+    /** `codeRef` resolvidos da anotação (`annotationCodeRefs`); eles saem de `values`. */
+    readonly codeRefs?: readonly Json[];
+    /** Só o `code` dessa plataforma. */
+    readonly platform?: string;
+  } = {},
 ): Json {
   const p = refs.project;
   const layer = projectIndex(p).layers.get(annotation.layerId);
@@ -123,6 +138,15 @@ export function annotationView(
     to: refLabel(p, link.ref),
   }));
   const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.bare('a', a.id));
+  const code = annotation.type
+    ? annotationCode(refs, annotation, options.platform)
+    : null;
+  const inCodeRefs = codeRefKeys(refs, annotation);
+  const values = annotation.values
+    ? Object.fromEntries(
+        Object.entries(annotation.values).filter(([key]) => !inCodeRefs.has(key)),
+      )
+    : annotation.values;
 
   return {
     ref: refs.ref('a', annotation.id),
@@ -144,7 +168,11 @@ export function annotationView(
             typeId: annotation.type.typeId,
             name: resolvedType?.type.name ?? null,
           },
-          values: annotation.values,
+          values,
+          ...(options.codeRefs && options.codeRefs.length > 0
+            ? { codeRefs: options.codeRefs }
+            : {}),
+          ...(code ? { code } : {}),
         }
       : { entries: annotation.entries }),
     ...(outgoing.length > 0 ? { refs: outgoing } : {}),
@@ -181,8 +209,17 @@ function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
   return own.filter((a) => a.parentAnnotationId === null).map(node);
 }
 
-/** Tudo sobre a marcação (`get_marking`). */
-export function markingView(refs: Refs, marking: Marking): Json {
+/**
+ * Tudo sobre a marcação (`get_marking`). Com `platform`, os `codeRef` e o `code` mostram só
+ * essa plataforma.
+ */
+export async function markingView(
+  ctx: CodeContext,
+  marking: Marking,
+  platform?: string,
+): Promise<Json> {
+  const { refs } = ctx;
+  if (platform !== undefined) assertPlatform(refs, platform);
   const p = refs.project;
   const index = projectIndex(p);
   const image = index.images.get(marking.imageId);
@@ -199,6 +236,17 @@ export function markingView(refs: Refs, marking: Marking): Json {
       inheritedBy.set(annotation.layerId, list);
     }
   }
+  const shown = [...own, ...[...inheritedBy.values()].flat().map((i) => i.annotation)];
+  const codeRefs = new Map<string, readonly Json[]>(
+    await Promise.all(
+      shown.map(async (a) => [a.id, await annotationCodeRefs(ctx, a, platform)] as const),
+    ),
+  );
+  const view = (a: Annotation) =>
+    annotationView(refs, a, {
+      codeRefs: codeRefs.get(a.id) ?? [],
+      ...(platform !== undefined ? { platform } : {}),
+    });
   const layers = p.layers.flatMap((layer) => {
     const mine = own.filter((a) => a.layerId === layer.id);
     const inherited = inheritedBy.get(layer.id) ?? [];
@@ -206,12 +254,12 @@ export function markingView(refs: Refs, marking: Marking): Json {
     return [
       {
         layer: { id: layer.id, name: layer.name },
-        annotations: mine.map((a) => annotationView(refs, a)),
+        annotations: mine.map(view),
         ...(inherited.length > 0
           ? {
               inherited: inherited.map((i) => ({
                 from: refs.ref('m', i.source.id),
-                annotation: annotationView(refs, i.annotation),
+                annotation: view(i.annotation),
               })),
             }
           : {}),
@@ -248,6 +296,7 @@ export function markingView(refs: Refs, marking: Marking): Json {
       rect: rectOf(c),
     })),
     ...(children.length > LIST_LIMIT ? { childrenTotal: children.length } : {}),
+    ...(platform !== undefined ? { platform } : {}),
     layers,
     ...(tree ? { linkTree: tree } : {}),
     incompleteAnnotations: own.filter((a) => issues.has(a.id)).length,
@@ -288,8 +337,14 @@ export async function imageView(
 }
 
 /** Dados da anotação (`get_annotation`). */
-export function annotationDetail(refs: Refs, annotation: Annotation): Json {
-  return annotationView(refs, annotation, { withMarking: true });
+export async function annotationDetail(
+  ctx: CodeContext,
+  annotation: Annotation,
+): Promise<Json> {
+  return annotationView(ctx.refs, annotation, {
+    withMarking: true,
+    codeRefs: await annotationCodeRefs(ctx, annotation),
+  });
 }
 
 /** Linha de `list_projects`. */
@@ -355,6 +410,7 @@ export function projectDetail(refs: Refs): Json {
     markingsByImage.set(m.imageId, (markingsByImage.get(m.imageId) ?? 0) + 1);
   }
   const warnings = new Map(loaded.specWarnings.map((w) => [w.specId, w]));
+  const repoWarnings = platformRepoWarnings(p);
 
   return {
     ...projectSummary(loaded),
@@ -380,6 +436,14 @@ export function projectDetail(refs: Refs): Json {
         annotations: annotationsBySpec.get(s.id) ?? 0,
       };
     }),
+    platforms: projectPlatforms(p).map((platform) => ({
+      id: platform.id,
+      name: platform.name,
+      language: platform.language,
+      specs: platform.specIds,
+    })),
+    platformRepos: p.platformRepos,
+    ...(repoWarnings.length > 0 ? { warnings: repoWarnings } : {}),
     lockedMarkings: p.markings.filter((m) => m.locked).length,
     needsReview: p.markings.filter((m) => m.needsReview).length,
     issues: {

@@ -9,6 +9,7 @@ import {
   annotationShortLabel,
   applySpecialization,
   checkSpecApply,
+  codeRefEntries,
   confirmMarkingReview,
   createMarking,
   extensionForMime,
@@ -31,6 +32,7 @@ import {
   removeImage,
   removeLayer,
   removeMarking,
+  removePlatformRepo,
   removeSpecialization,
   removeTableRow,
   renameAnnotation,
@@ -50,6 +52,7 @@ import {
   setMarkingLocked,
   setMarkingParent,
   setMarkingRect,
+  setPlatformRepo,
   setTableCell,
   specializationRemovalImpact,
   tableRows,
@@ -652,6 +655,38 @@ class Batch {
   private async apply(op: Operation): Promise<Step> {
     const p = this.p;
     switch (op.op) {
+      case 'set_platform_repo': {
+        if (op.urlTemplate === undefined && op.localPath === undefined) {
+          throw new ToolError(
+            'nothing-to-change',
+            'informe `urlTemplate` e/ou `localPath` (ou use remove_platform_repo)',
+          );
+        }
+        const project = setPlatformRepo(p, op.platform, {
+          ...(op.urlTemplate !== undefined ? { urlTemplate: op.urlTemplate } : {}),
+          ...(op.localPath !== undefined ? { localPath: op.localPath } : {}),
+        });
+        const repo = project.platformRepos[op.platform];
+        const changes = [
+          op.urlTemplate !== undefined
+            ? `urlTemplate ${repo?.urlTemplate ? `"${repo.urlTemplate}"` : 'removido'}`
+            : null,
+          op.localPath !== undefined
+            ? `localPath ${repo?.localPath ? `"${repo.localPath}"` : 'removido'}`
+            : null,
+        ].filter((change) => change !== null);
+        return {
+          project,
+          description: `Configurar o repositório da plataforma "${op.platform}": ${changes.join(', ')}${
+            repo ? '' : ' (sem urlTemplate nem localPath: configuração removida)'
+          }`,
+        };
+      }
+      case 'remove_platform_repo':
+        return {
+          project: removePlatformRepo(p, op.platform),
+          description: `Remover o repositório da plataforma "${op.platform}"`,
+        };
       case 'create_layer': {
         const id = crypto.randomUUID();
         const project = addLayer(p, {
@@ -1016,8 +1051,13 @@ class Batch {
       changes.push(`${op.entries.length} par(es)`);
     }
     if (op.values !== undefined) {
+      const before = project;
       project = this.setValues(project, id, op.values, rowAliases);
-      changes.push(`campos ${Object.keys(op.values).join(', ')}`);
+      changes.push(
+        `campos ${Object.keys(op.values)
+          .map((key) => `${key}${codeRefDiff(before, project, id, key)}`)
+          .join(', ')}`,
+      );
     }
     if (op.owner !== undefined) {
       const ownerId = op.owner === null ? null : this.item(op.owner, 'a', project);
@@ -1038,6 +1078,28 @@ class Batch {
       rowAliases,
     };
   }
+}
+
+/**
+ * Campo `codeRef`: o valor enviado substitui a lista, então o resumo diz quantas entradas
+ * entram e quantas saem (` (+1, -2 entrada(s))`). Vazio para outros campos ou sem diferença.
+ */
+function codeRefDiff(before: Project, after: Project, annotationId: string, key: string) {
+  const idsOf = (p: Project) => {
+    const a = projectIndex(p).annotations.get(annotationId);
+    const type = a ? typeOfAnnotation(p, a)?.type : undefined;
+    return type && fieldOf(type, key)?.type === 'codeRef'
+      ? new Set(codeRefEntries(a?.values?.[key]).map((e) => e._id))
+      : null;
+  };
+  const [old, next] = [idsOf(before), idsOf(after)];
+  if (old === null || next === null) return '';
+  const added = [...next].filter((id) => !old.has(id)).length;
+  const removed = [...old].filter((id) => !next.has(id)).length;
+  if (added === 0 && removed === 0) return '';
+  return ` (${[added > 0 ? `+${added}` : null, removed > 0 ? `-${removed}` : null]
+    .filter((part) => part !== null)
+    .join(', ')} entrada(s))`;
 }
 
 function kindLabel(kind: AliasTarget['kind']): string {
@@ -1074,12 +1136,15 @@ export function changeCounts(before: Project, after: Project): Record<string, un
   };
   const specs = (p: Project) =>
     p.specializations.map((s) => ({ id: s.id, version: s.version, file: s.file }));
+  const repos = (p: Project) =>
+    Object.entries(p.platformRepos).map(([id, repo]) => ({ id, ...repo }));
   return {
     specializations: count(specs(before), specs(after)),
     layers: count(before.layers, after.layers),
     images: count(before.images, after.images),
     markings: count(before.markings, after.markings),
     annotations: count(before.annotations, after.annotations),
+    platformRepos: count(repos(before), repos(after)),
   };
 }
 

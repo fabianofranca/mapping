@@ -890,7 +890,9 @@ describe('recursos e instruções', () => {
     expect(tools.map((t) => t.name).sort()).toEqual([
       'apply_changes',
       'create_project',
+      'find_by_code',
       'get_annotation',
+      'get_code_hints',
       'get_image',
       'get_image_file',
       'get_marking',
@@ -907,6 +909,8 @@ describe('recursos e instruções', () => {
     expect(readOnly).not.toContain('apply_changes');
     // plan_changes só valida: nada é gravado até apply_changes.
     expect(readOnly).toContain('plan_changes');
+    // As tools de código só conferem a existência de arquivos: são de leitura.
+    expect(readOnly).toEqual(expect.arrayContaining(['get_code_hints', 'find_by_code']));
     expect(mcp.client.getInstructions()).toContain('mapping-docs://AGENT-GUIDE.md');
   });
 });

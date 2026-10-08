@@ -236,11 +236,11 @@ Use o projeto do roteiro 13.9 ([`docs/history/PLAN-etapas-1-2.md`](docs/history/
 **Aceite**: passos 1 a 5 do roteiro no desktop e no celular, nos dois temas.
 
 #### 3b.4 — MCP
-- [ ] `get_marking` e `get_project` com os dados novos
-- [ ] `get_code_hints` e `find_by_code`
-- [ ] `set_platform_repo` e `remove_platform_repo` no lote
-- [ ] Testes de integração por stdio sobre o projeto de teste
-- [ ] `docs/MCP.md` e `docs/AGENT-GUIDE.md`
+- [x] `get_marking` e `get_project` com os dados novos
+- [x] `get_code_hints` e `find_by_code`
+- [x] `set_platform_repo` e `remove_platform_repo` no lote
+- [x] Testes de integração por stdio sobre o projeto de teste
+- [x] `docs/MCP.md` e `docs/AGENT-GUIDE.md`
 
 **Aceite**: passo 6 do roteiro coberto por testes de integração; o servidor não abre nenhum arquivo de código (teste garantindo que só há verificação de existência).
 

@@ -18,7 +18,7 @@ import { cadastroProject } from '../model/specFixtures';
 const bundle = resolve('dist-mcp/mapping-mcp.js');
 
 /** PNG de 1×1 pixel: o servidor só confere a existência do arquivo. */
-const PNG_1X1 = Buffer.from(
+export const PNG_1X1 = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
   'base64',
 );
@@ -41,7 +41,7 @@ export function codeOf(uuid: string): string {
 }
 
 /** Ids do `cadastroProject` (`MF`, `AU`…) trocados por UUIDs estáveis, como os da app. */
-function withUuids(text: string, ids: Iterable<string>, salt = ''): string {
+export function withUuids(text: string, ids: Iterable<string>, salt = ''): string {
   let result = text;
   for (const id of ids) result = result.replaceAll(`"${id}"`, `"${uuidFor(id, salt)}"`);
   return result;
@@ -87,7 +87,7 @@ function collidingProject(): Project {
   return p;
 }
 
-function allIds(p: Project): Set<string> {
+export function allIds(p: Project): Set<string> {
   const ids = new Set<string>();
   for (const l of p.layers) ids.add(l.id);
   for (const i of p.images) ids.add(i.id);
@@ -263,11 +263,15 @@ export interface Connection {
 }
 
 /** Sobe o `dist-mcp/mapping-mcp.js` por stdio, como um cliente MCP faz. */
-export async function connect(roots: readonly string[]): Promise<Connection> {
+export async function connect(
+  roots: readonly string[],
+  options: { readonly cwd?: string } = {},
+): Promise<Connection> {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [bundle, ...roots.flatMap((root) => ['--root', root])],
     stderr: 'pipe',
+    ...(options.cwd !== undefined ? { cwd: options.cwd } : {}),
   });
   const client = new Client({ name: 'teste', version: '0' });
   await client.connect(transport);

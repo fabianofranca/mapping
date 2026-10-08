@@ -70,7 +70,10 @@ const values = z
     'Valores dos campos da anotação tipada, por `key` (veja get_specialization). `null` limpa. ' +
       'Campo `table`: a lista de linhas, que substitui a tabela (`{"_id": "…"}` mantém uma linha existente; `"_as": "$linha"` dá um apelido à linha). ' +
       'Campo `ref`: `{"annotation": <anotação>, "entry": <chave ou id do par>}` (par de anotação livre), ' +
-      '`{"annotation": <anotação>, "key": <campo table>, "row": <id, apelido ou índice da linha>}` ou `{"annotation": <anotação>, "key": <campo>}`.',
+      '`{"annotation": <anotação>, "key": <campo table>, "row": <id, apelido ou índice da linha>}` ou `{"annotation": <anotação>, "key": <campo>}`. ' +
+      'Campo `codeRef` (onde a instância foi implementada): a lista COMPLETA de entradas `{"platform": "<id da plataforma>", "path": "<arquivo relativo à raiz do repositório, com />", "symbol": "<opcional>", "line": <opcional, inteiro ≥ 1>}` ' +
+      '(`"_id"` mantém uma entrada existente, com as propriedades omitidas como estão; entrada sem `_id` é nova; uma lista vazia ou `null` limpa). ' +
+      'Para acrescentar uma entrada, envie TODAS as existentes (com o `_id` de `codeRefs` em get_annotation, que não filtra por plataforma) mais a nova: as que faltarem na lista são removidas (o resumo do plano mostra `+N, -N entrada(s)`).',
   );
 
 const owner = item('Anotação dona (mesma marcação, outra camada)')
@@ -81,6 +84,33 @@ const owner = item('Anotação dona (mesma marcação, outra camada)')
   );
 
 export const operationSchema = z.discriminatedUnion('op', [
+  // Repositórios por plataforma
+  z.object({
+    op: z.literal('set_platform_repo'),
+    platform: z
+      .string()
+      .describe(
+        'Id de uma plataforma declarada pelas especializações aplicadas (veja `platforms` em get_project).',
+      ),
+    urlTemplate: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        'URL de um arquivo no repositório, com `{path}` e, opcional, `{line}` (ex: `https://github.com/org/app/blob/main/{path}#L{line}`). `null` ou vazio remove; omitido mantém.',
+      ),
+    localPath: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        'Raiz do repositório da plataforma, relativa à pasta do projeto (ex: `../../..`). `null` ou vazio remove; omitido mantém. Sem `urlTemplate` nem `localPath`, a configuração é removida.',
+      ),
+  }),
+  z.object({
+    op: z.literal('remove_platform_repo'),
+    platform: z.string().describe('Plataforma cuja configuração de repositório sai.'),
+  }),
   // Camadas
   z.object({
     op: z.literal('create_layer'),

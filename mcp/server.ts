@@ -7,10 +7,13 @@ import { SERVER_NAME, SERVER_VERSION } from './version';
 export interface ServerConfig {
   /** Raízes já resolvidas (caminhos absolutos). */
   readonly roots: readonly string[];
+  /** Diretório de trabalho do cliente (padrão: o do processo). Limita a conferência de arquivos de código. */
+  readonly workDir?: string;
 }
 
 const INSTRUCTIONS = `Servidor do Mapping: lê e altera projetos de mapeamento de imagens (marcações retangulares, camadas e anotações) guardados em pasta.
 Comece por list_projects. Itens são citados por referências mapping://<projeto>/<m|i|a>/<código>; passe-as a get_marking, get_annotation, get_image e resolve. Para ver uma marcação, use get_marking_image (recorte, ou a imagem inteira com a marcação contornada) e get_image_file.
+Para implementar uma marcação no código, use get_code_hints(ref, plataforma); para achar a marcação de um arquivo ou símbolo, find_by_code. O servidor nunca lê nem grava arquivos de código: só confere se existem.
 Para alterar, valide o lote com plan_changes (nada é gravado) e grave com apply_changes(planId).
 Coordenadas das marcações são sempre em pixels da imagem original. Leia o recurso mapping-docs://AGENT-GUIDE.md para o fluxo típico.`;
 
@@ -19,7 +22,7 @@ export function createServer(config: ServerConfig): McpServer {
     { name: SERVER_NAME, version: SERVER_VERSION },
     { instructions: INSTRUCTIONS },
   );
-  registerTools(server, new Roots(config.roots));
+  registerTools(server, new Roots(config.roots, config.workDir));
   for (const doc of DOC_RESOURCES) {
     server.registerResource(
       doc.name,

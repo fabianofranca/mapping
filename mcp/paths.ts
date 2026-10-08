@@ -45,8 +45,15 @@ export interface InsideRoot {
 }
 
 export class Roots {
-  /** `roots` já resolvidas (absolutas). */
-  constructor(readonly roots: readonly string[]) {}
+  /**
+   * `roots` já resolvidas (absolutas). `workDir` é o diretório de trabalho do cliente (o do
+   * processo do servidor): os caminhos relativos das raízes valem a partir dele, e é o limite
+   * da conferência de arquivos de código (`codeFiles.ts`).
+   */
+  constructor(
+    readonly roots: readonly string[],
+    readonly workDir: string = process.cwd(),
+  ) {}
 
   /** Caminho real de cada raiz; `null` para a que não existe (ela pode ser criada depois da partida). */
   realRoots(): Promise<readonly (string | null)[]> {
