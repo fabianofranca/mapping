@@ -102,8 +102,16 @@ interface CodeEntriesProps {
 /** Campo `codeRef` na Lista e nas herdadas: uma linha por entrada, com as ações. */
 export function CodeEntries({ project, line, lineClass, keyClass }: CodeEntriesProps) {
   return (
-    <span class={line.alert ? `${lineClass} value-alert` : lineClass}>
-      <span class={keyClass}>{line.label}:</span>
+    <span class={lineClass}>
+      <span
+        class={
+          line.alert && !line.entries.some((e) => e.alert)
+            ? `${keyClass ?? ''} value-alert`
+            : keyClass
+        }
+      >
+        {line.label}:
+      </span>
       <span class="code-entries">
         {line.entries.map((entry) => (
           <span

@@ -11,6 +11,7 @@ import {
   type Marking,
   type Project,
 } from '../../../src/model';
+import { codeProject } from '../../model/specFixtures';
 import { canvasProject, editorFor } from '../harness';
 
 function markingOf(p: Project, id: string): Marking {
@@ -108,6 +109,17 @@ describe('semanticPlacement', () => {
   it('cabe o nome, mas não o cartão: só o cabeçalho', () => {
     expect(semanticPlacement(m1, placement, 0.31, true, [m2], visible).mode).toBe(
       'header',
+    );
+  });
+});
+
+describe('cartão do zoom semântico: codeRef', () => {
+  it('só o resumo das plataformas, na ordem de aparição', () => {
+    const p = codeProject();
+    const card = cardsFor(p);
+    const rows = card(markingOf(p, 'MF')).rows.filter((r) => r.kind === 'entry');
+    expect(rows.map((r) => (r.kind === 'entry' ? r.text : ''))).toContain(
+      'implementação: Android, iOS',
     );
   });
 });

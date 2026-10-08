@@ -51,8 +51,9 @@ async function sduiV1(): Promise<Buffer> {
     .map((layer) => ({
       ...layer,
       annotationTypes: layer.annotationTypes.map((type) => {
-        const { code: _code, ...rest } = type as Record<string, unknown>;
-        return rest;
+        const copy = { ...(type as Record<string, unknown>) };
+        delete copy.code;
+        return copy;
       }),
     }));
   delete spec.platforms;
