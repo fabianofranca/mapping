@@ -37,11 +37,11 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - no campo "Pertence a", uma linha de ajuda explicando que só aparecem anotações da mesma marcação em outras camadas, e uma mensagem quando não houver nenhuma opção;
   - testes para os atalhos de teclado (`useEditorShortcuts`).
 - **Depende de:** etapa 2.3 (Árvore e Detalhes do redesign).
-- **Entregue:** schema v5 (`locked`, migração e backup), regras em `src/model/locks.ts`, cadeado na Árvore, em Detalhes e no canvas, atalho `Alt+L`, "Trancar todas as marcações desta imagem" e os ajustes listados acima. Referência: [`FORMAT.md`](FORMAT.md) (campos da v5) e [`ARCHITECTURE.md`](ARCHITECTURE.md); o plano da etapa fica em [`PLAN.md`](../PLAN.md) até ser movido para o histórico.
+- **Entregue:** schema v5 (`locked`, migração e backup), regras em `src/model/locks.ts`, cadeado na Árvore, em Detalhes e no canvas, atalho `Alt+L`, "Trancar todas as marcações desta imagem" e os ajustes listados acima. Referência: [`FORMAT.md`](FORMAT.md) (campos da v5) e [`ARCHITECTURE.md`](ARCHITECTURE.md); histórico em [`history/PLAN-etapa-2-5.md`](history/PLAN-etapa-2-5.md).
 
-## Etapa 3 — Servidor MCP
+## Etapa 3 — Servidor MCP (concluída)
 
-- **Estado:** a **3a (base) está concluída** (fases 3a.1 a 3a.6; uso em [`MCP.md`](MCP.md); histórico em [`history/PLAN-etapa-3a.md`](history/PLAN-etapa-3a.md)). A **3b (referências de código) está em andamento**, com as fases 3b.1 a 3b.5 detalhadas no [`PLAN.md`](../PLAN.md).
+- **Estado:** a **etapa 3 está concluída**: a **3a (base)** (fases 3a.1 a 3a.6; uso em [`MCP.md`](MCP.md); histórico em [`history/PLAN-etapa-3a.md`](history/PLAN-etapa-3a.md)) e a **3b (referências de código)** (fases 3b.1 a 3b.5; histórico em [`history/PLAN-etapa-3b.md`](history/PLAN-etapa-3b.md)).
 - **Objetivo:** um agente criar e consultar projetos direto na pasta, reutilizando o modelo da app.
 - **Decisões técnicas (tomadas):**
   - **Servidor:** MCP local em TypeScript, rodando por linha de comando (stdio) com o Node, lendo e gravando direto na pasta do projeto, sempre pelo `src/model/`.
@@ -57,6 +57,8 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - **3b, Referências de código:** especialização v2 com plataformas e mapeamento de código por tipo, campo `codeRef` nas instâncias, repositório por plataforma no projeto.
   - Telas novas desenhadas no Claude Design com o design system 2.0.
 - **Depende de:** etapa 2.3 (design system 2.0 para as telas novas). O `src/model/` já é independente de navegador.
+- **Entregue (3a):** servidor `mapping-mcp.js` (stdio, arquivo único), referências `mapping://`, leitura granular, recorte (`get_marking_image`), escrita em lote com prévia (`plan_changes` + `apply_changes`) e número de revisão para convivência com a app.
+- **Entregue (3b):** especialização `formatVersion` 2 (`platforms`, `code` por tipo e campo `codeRef`; a v1 continua aceita), schema v7 (`platformRepos` e o valor do `codeRef` com `_id` por entrada), funções puras `codeLink`, `codeBlueprint` e `findByCode`, pendências de `codeRef` (incompleta) e aviso de plataforma sem repositório, editor e exibição do `codeRef` na app com "Abrir no repositório" e "Copiar caminho", repositórios por plataforma nas Configurações, e no MCP `get_code_hints`, `find_by_code`, `codeRefs` resolvidos em `get_marking` (com `localFile`/`exists`, sem nunca ler código) e `set_platform_repo`/`remove_platform_repo` no lote. O princípio se manteve: nenhum nome de plataforma no código do núcleo (`src/` e `mcp/`). Referência: [`SPEC-FORMAT.md`](SPEC-FORMAT.md), [`FORMAT.md`](FORMAT.md), [`MCP.md`](MCP.md) e [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
 ## Etapa 4 — Sincronização com o Figma
 
@@ -70,7 +72,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - pendência "removida no Figma";
   - relatório na app e skill de exportação para o agente;
   - telas no Claude Design.
-- **Depende de:** etapa 3 (servidor MCP e referências de código nas especializações).
+- **Depende de:** etapa 3 (servidor MCP e referências de código nas especializações; concluída).
 
 ## Marco — Uso real
 

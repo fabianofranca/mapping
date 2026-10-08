@@ -7,6 +7,7 @@ Aplicação web para marcar **áreas retangulares** em imagens, organizá-las em
 - **Dois modos de armazenamento**: _pasta_ no disco (File System Access API, Chrome/Edge desktop) ou _projeto local_ no navegador (IndexedDB). Qualquer projeto pode ser exportado em `.zip`.
 - Tema claro/escuro, português (pt-BR) e inglês (en-US), instalável como PWA (só em `https:`).
 - **Servidor MCP** para agentes de IA lerem e alterarem projetos em pasta, com o Ctrl+C da app copiando a referência do item selecionado. Instalação e uso em [`docs/MCP.md`](docs/MCP.md).
+- **Referências de código**: uma especialização pode declarar _plataformas_ e dizer como cada tipo vira código nelas (`code`); as anotações guardam **onde foram implementadas** (campo `codeRef`) e o projeto guarda o repositório de cada plataforma (`platformRepos`), com "Abrir no repositório" e "Copiar caminho" na app. O agente recebe a planta de código de uma marcação (`get_code_hints`) e acha o mapeamento a partir de um arquivo (`find_by_code`). O núcleo continua genérico: nenhum nome de plataforma no código da app nem do servidor MCP. Formato em [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md) e [`docs/FORMAT.md`](docs/FORMAT.md).
 
 ## Privacidade e seus dados
 
@@ -32,7 +33,7 @@ npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a 
 ## Como testar
 
 ```bash
-npm run build:mcp    # gera dist-mcp/mapping-mcp.js (servidor MCP em arquivo único; etapa 3a)
+npm run build:mcp    # gera dist-mcp/mapping-mcp.js (servidor MCP em arquivo único)
 npm run lint         # eslint + prettier --check
 npm run typecheck    # tsc --noEmit (app e servidor MCP)
 npm test             # Vitest: modelo (Node), store, storage, canvas e componentes
