@@ -1,6 +1,6 @@
 name: MCP release
 
-# Tag `mcp-v<versão>` (ex: mcp-v0.1.0): gera o `mapping-mcp.js` e o anexa à Release.
+# Tag `mcp-v<versão>` (ex: mcp-v0.2.0): gera o `mapping-mcp.js` e o anexa à Release.
 # A versão da tag precisa ser a de `SERVER_VERSION` em `mcp/version.ts`.
 on:
   push:
