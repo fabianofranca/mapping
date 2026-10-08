@@ -17,6 +17,7 @@ Estado: **etapas 1, 1.1, 2, 2.1, 2.2, 2.3 (redesign da interface) e 2.4 (privaci
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)           | Camadas, fluxo de dados, regras (com o porquê) e onde fica cada coisa          |
 | [`docs/FORMAT.md`](docs/FORMAT.md)                       | Referência do `mapping.json` (schema v5)                                       |
 | [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md)             | Formato do arquivo de especialização (e `docs/spec.schema.json`)               |
+| [`docs/MCP.md`](docs/MCP.md)                             | Servidor MCP: instalação, `.mcp.json`, raízes, tools, referências, problemas   |
 | [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md)             | Guia do agente: como usar as tools do servidor MCP (também servido como recurso) |
 | [`docs/history/PLAN-etapas-1-2.md`](docs/history/PLAN-etapas-1-2.md) | Histórico: seções 1 a 13 do plano antigo (inclui o roteiro de teste manual, 13.9) |
 | [`docs/history/PLAN-etapa-2-1.md`](docs/history/PLAN-etapa-2-1.md)   | Histórico: etapa 2.1, revisão técnica (achados, decisões e fases 18 a 25)       |
@@ -171,9 +172,9 @@ Nomes em inglês. Respostas em JSON compacto, sempre com as referências `mappin
 **Aceite**: testes criando, pelo MCP, o projeto inteiro do roteiro 13.9 (imagens, especializações, marcações, anotações tipadas, eventos vinculados, referências); o resultado abre na app sem pendências inesperadas; um lote com uma operação inválida não grava nada; um lote sobre uma `revision` desatualizada é recusado.
 
 #### 3a.6 — Distribuição e documentação
-- [ ] Workflow que, ao criar uma tag `mcp-v*`, gera o `mapping-mcp.js` e o anexa à Release
-- [ ] `docs/MCP.md`: instalação, `.mcp.json`, raízes, referência das tools, formato das referências, solução de problemas
-- [ ] README e ROADMAP atualizados
+- [x] Workflow que, ao criar uma tag `mcp-v*`, gera o `mapping-mcp.js` e o anexa à Release
+- [x] `docs/MCP.md`: instalação, `.mcp.json`, raízes, referência das tools, formato das referências, solução de problemas
+- [x] README e ROADMAP atualizados
 
 **Aceite**: num repositório de teste, copiar o arquivo da Release para `tools/` e o `.mcp.json` de exemplo basta para o Claude Code listar as tools e ler um projeto.
 

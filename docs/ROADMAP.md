@@ -41,7 +41,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 
 ## Etapa 3 — Servidor MCP
 
-- **Estado:** a **3a (base) está em andamento**, com as fases detalhadas no [`PLAN.md`](../PLAN.md) (3a.1 a 3a.6); a 3b (referências de código) fica para um plano próprio, depois da 3a.
+- **Estado:** a **3a (base) está concluída** (fases 3a.1 a 3a.6; uso em [`MCP.md`](MCP.md), plano no [`PLAN.md`](../PLAN.md) até ser movido para o histórico); a 3b (referências de código) fica para um plano próprio, depois da 3a.
 - **Objetivo:** um agente criar e consultar projetos direto na pasta, reutilizando o modelo da app.
 - **Decisões técnicas (tomadas):**
   - **Servidor:** MCP local em TypeScript, rodando por linha de comando (stdio) com o Node, lendo e gravando direto na pasta do projeto, sempre pelo `src/model/`.
