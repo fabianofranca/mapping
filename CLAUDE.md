@@ -75,13 +75,14 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 ## Etapa atual e etapas futuras
 
-**Etapa atual: 3a — Servidor MCP (base).** As fases (3a.1 a 3a.6) estão em "Fases pendentes — Etapa 3a" no `PLAN.md`; siga a ordem e o paralelismo indicados lá.
+**Etapa atual: 3b — Referências de código.** As fases (3b.1 a 3b.5) estão em "Fases pendentes — Etapa 3b" no `PLAN.md`; siga a ordem e o paralelismo indicados lá. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
 
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
 - **Etapa 2.2 — Segunda revisão técnica (concluída):** fases 26 e 27 concluídas, 28 dispensada (histórico em `docs/history/PLAN-etapa-2-2.md`).
 - **Etapa 2.3 — Redesign da interface (concluída):** fases R1 a R9 concluídas e R10 movida para Evoluções no ROADMAP (histórico em `docs/history/PLAN-etapa-2-3.md`; especificação em `docs/redesign/HANDOFF.md`).
 - **Etapa 2.4 — Privacidade garantida por CSP (concluída):** CSP gerada no build; ver `docs/ARCHITECTURE.md`.
-- **Etapa 2.5 — Trava de marcações e imagens (concluída):** `locked` no schema v5, regras em `src/model/locks.ts`, cadeado na interface e no canvas (fases F1 a F6 no `PLAN.md`).
-- **Etapa 3a — Servidor MCP, base (em andamento):** fases 3a.1 a 3a.6 no `PLAN.md`; decisões em `docs/ROADMAP.md`.
-- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (3b referências de código, 4 Figma, marco de uso real e evoluções). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.
+- **Etapa 2.5 — Trava de marcações e imagens (concluída):** `locked` no schema v5, regras em `src/model/locks.ts`, cadeado na interface e no canvas (histórico em `docs/history/PLAN-etapa-2-5.md`).
+- **Etapa 3a — Servidor MCP, base (concluída):** histórico em `docs/history/PLAN-etapa-3a.md`; uso em `docs/MCP.md` e `docs/AGENT-GUIDE.md`.
+- **Etapa 3b — Referências de código (em andamento):** fases 3b.1 a 3b.5 no `PLAN.md`.
+- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (4 Figma, marco de uso real e evoluções). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.
