@@ -10,6 +10,7 @@ import {
   resolveRef,
   type SpecField,
 } from '../model';
+import { CodeRefField } from './CodeRefField';
 import { BacklinkList, SimpleEditor, type FieldContext } from './FieldEditors';
 import { IconButton } from './controls';
 import { classes } from './controls/classes';
@@ -35,8 +36,7 @@ export function TypedField({
   const { project, annotation, readOnly } = ctx;
 
   if (field.type === 'table') return <TableField field={field} {...ctx} />;
-  // Editor do `codeRef`: fase 3b.3.
-  if (field.type === 'codeRef') return null;
+  if (field.type === 'codeRef') return <CodeRefField field={field} {...ctx} />;
 
   const value = annotation.values?.[field.key];
   const backlinks = getBacklinks(project, annotation.id).filter(

@@ -7,11 +7,12 @@ import {
   ownerTypesOf,
   removeTableRow,
   renameAnnotation,
+  setFieldValue,
   typedDisplayLines,
   updateEntry,
   type Project,
 } from '../../src/model';
-import { cadastroProject } from './specFixtures';
+import { CADASTRO_SCREEN_KT, cadastroProject, codeProject } from './specFixtures';
 
 function annotation(p: Project, id: string) {
   const a = p.annotations.find((x) => x.id === id);
@@ -112,5 +113,70 @@ describe('Lista: filtro Incompletas', () => {
     expect(markings[0]?.sections.flatMap((s) => s.annotations.map((a) => a.id))).toEqual([
       'AT',
     ]);
+  });
+});
+
+describe('exibição do codeRef', () => {
+  it('Detalhes e Lista: uma entrada por linha, com o nome da plataforma e o arquivo', () => {
+    const p = codeProject();
+    const lines = typedDisplayLines(p, annotation(p, 'AS'), { tables: 'full' });
+    const code = lines.find((l) => l.kind === 'code');
+    if (code?.kind !== 'code') throw new Error('sem linha de código');
+    expect(code.label).toBe('implementação');
+    expect(code.alert).toBe(false);
+    expect(
+      code.entries.map((e) => [e.id, e.platformName, e.fileName, e.line, e.alert]),
+    ).toEqual([
+      ['C1', 'Android', 'CadastroScreen.kt', null, false],
+      ['C2', 'Android', 'CadastroViewModel.kt', 42, false],
+      ['C3', 'iOS', 'CadastroView.swift', null, false],
+    ]);
+    expect(code.entries[0]?.path).toBe(CADASTRO_SCREEN_KT);
+  });
+
+  it('zoom semântico: só as plataformas distintas, na ordem de aparição', () => {
+    const p = codeProject();
+    expect(texts(p, 'AS')).toEqual([
+      'nome: Cadastro',
+      'rota: /cadastro',
+      'implementação: Android, iOS',
+    ]);
+  });
+
+  it('vazio: o opcional não aparece', () => {
+    let p = codeProject();
+    p = setFieldValue(p, 'AS', 'implementacao', []);
+    expect(texts(p, 'AS')).toEqual(['nome: Cadastro', 'rota: /cadastro']);
+  });
+
+  it('entrada sem caminho ou de plataforma não declarada: alerta na entrada e no campo', () => {
+    let p = codeProject();
+    p = {
+      ...p,
+      annotations: p.annotations.map((a) =>
+        a.id === 'AS'
+          ? {
+              ...a,
+              values: {
+                ...(a.values ?? {}),
+                implementacao: [
+                  { _id: 'X1', platform: 'web', path: 'src/Web.ts' },
+                  { _id: 'X2', platform: 'android', path: null },
+                ],
+              },
+            }
+          : a,
+      ),
+    };
+    const full = typedDisplayLines(p, annotation(p, 'AS'), { tables: 'full' });
+    const code = full.find((l) => l.kind === 'code');
+    if (code?.kind !== 'code') throw new Error('sem linha de código');
+    // Plataforma não declarada: o nome exibido é o id.
+    expect(code.entries.map((e) => [e.platformName, e.alert])).toEqual([
+      ['web', true],
+      ['Android', true],
+    ]);
+    expect(code.alert).toBe(true);
+    expect(texts(p, 'AS').at(-1)).toBe('implementação: web, Android !');
   });
 });

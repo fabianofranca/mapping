@@ -1156,3 +1156,111 @@ button.layer-group-label:hover {
     display: none;
   }
 }
+
+/* Referências de código (etapa 3b): editor do campo codeRef (cartão por entrada) e a
+   exibição na Lista e nas herdadas (uma linha por entrada, com as ações). */
+.code-grid .code-entry {
+  grid-template-columns: var(--size-target-min) minmax(0, 1fr) auto;
+  gap: 0 var(--space-1);
+  padding-bottom: var(--space-1-5);
+}
+
+.code-entry-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.code-entry-title .tooltip-anchor {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.code-entry-title .code-entry-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.code-entry-actions {
+  display: flex;
+  align-items: center;
+}
+
+.code-entry-fields {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 0.6fr);
+  gap: var(--space-2);
+  padding: 0 var(--space-1-5);
+}
+
+.code-entry-field {
+  display: block;
+  min-width: 0;
+}
+
+/* O caminho ocupa a linha toda; embaixo, plataforma, símbolo e linha. */
+.code-entry-field-path {
+  grid-column: 1 / -1;
+}
+
+.code-entry-issues {
+  grid-column: 1 / -1;
+  padding: var(--space-1) var(--space-1-5) 0;
+}
+
+/* O caminho completo: no desktop vai na dica; no celular (sem hover) fica visível. */
+.code-entry-path {
+  display: none;
+  font: var(--t-text-small);
+  overflow-wrap: anywhere;
+}
+
+.code-entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  margin: var(--space-0-5) 0 0 var(--space-2);
+}
+
+.code-entry-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.code-entry-line .code-entry-name {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 899px) {
+  .code-grid .grid-row {
+    grid-template-columns: var(--size-touch) minmax(0, 1fr) auto;
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .code-grid .grid-row:last-child {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .code-entry-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 0 var(--space-1);
+  }
+
+  /* Plataforma e linha lado a lado; o símbolo ocupa a linha toda. */
+  .code-entry-field-symbol {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .code-entry-path {
+    display: block;
+    flex-basis: 100%;
+  }
+}

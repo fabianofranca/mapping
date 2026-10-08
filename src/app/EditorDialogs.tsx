@@ -102,6 +102,8 @@ function renderDialog(
       return (
         <SettingsDialog
           onClose={close}
+          project={project}
+          readOnly={readOnly}
           onShowShortcuts={() => dialogs.show({ kind: 'help', section: HELP_SHORTCUTS })}
         />
       );

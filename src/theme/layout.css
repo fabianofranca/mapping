@@ -775,3 +775,59 @@
   padding: 0;
   white-space: normal;
 }
+
+/* Repositórios de código por plataforma (Configurações do editor) */
+.repos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.repos-title {
+  margin: 0;
+  font: var(--t-text-title);
+}
+
+.repos > p {
+  margin: 0;
+}
+
+.repo-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.repo-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.repo-head strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.repo-head .tooltip-anchor {
+  margin-left: auto;
+}
+
+.repo-row .field {
+  align-items: stretch;
+}
+
+.repo-row small {
+  overflow-wrap: anywhere;
+}
+
+.repo-warning {
+  margin: 0;
+}

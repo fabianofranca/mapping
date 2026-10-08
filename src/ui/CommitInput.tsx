@@ -28,7 +28,11 @@ export function CommitInput({ value, onCommit, ...rest }: CommitInputProps) {
   // Lê o texto do próprio campo: o `change` pode chegar antes da renderização que
   // acompanha o `input`, e `text` ainda seria o valor antigo.
   const commit = (typed: string) => {
-    if (typed !== value && !onCommit(typed)) setText(value);
+    if (typed === value) return;
+    // Gravado: o rascunho passa a ser o texto gravado. Sem isto, voltar depois ao valor de
+    // antes (desfazer, limpar por outro botão) reaproveitaria o rascunho antigo.
+    if (onCommit(typed)) setDraft({ base: typed, text: typed });
+    else setText(value);
   };
 
   return (

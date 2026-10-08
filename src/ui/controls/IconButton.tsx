@@ -54,3 +54,40 @@ export function IconButton({
     </Tooltip>
   );
 }
+
+interface IconLinkProps {
+  readonly icon: IconName;
+  /** Nome acessível (e texto da dica, se não houver `tooltip`). */
+  readonly label: string;
+  /** Texto da dica quando difere do nome. */
+  readonly tooltip?: string;
+  /** Endereço do link: sempre abre em outra aba e sem enviar o endereço da app (`noreferrer`). */
+  readonly href: string;
+  readonly variant?: 'default' | 'danger';
+}
+
+/**
+ * Link com a aparência do botão de ícone (mesmo tamanho, hover e foco): um `<a>` comum,
+ * sem nenhuma requisição feita pela app (quem navega é o navegador, ao clicar).
+ */
+export function IconLink({
+  icon,
+  label,
+  tooltip,
+  href,
+  variant = 'default',
+}: IconLinkProps) {
+  return (
+    <Tooltip label={tooltip ?? label}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        class={variant === 'danger' ? 'icon-button icon-button-danger' : 'icon-button'}
+        aria-label={label}
+      >
+        <Icon name={icon} />
+      </a>
+    </Tooltip>
+  );
+}
