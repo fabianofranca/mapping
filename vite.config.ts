@@ -143,6 +143,8 @@ export default defineConfig({
           environment: 'node',
           env: testEnv,
           include: ['tests/mcp/**/*.test.ts'],
+          // Gera dist-mcp/mapping-mcp.js uma vez: os testes de integração sobem esse arquivo por stdio.
+          globalSetup: ['tests/mcp/globalSetup.ts'],
           testTimeout: 30_000,
         },
       },

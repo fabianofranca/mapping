@@ -3,15 +3,11 @@ import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 const bundle = resolve('dist-mcp/mapping-mcp.js');
 
 describe('dist-mcp/mapping-mcp.js (arquivo único, por stdio)', () => {
-  beforeAll(() => {
-    execFileSync(process.execPath, ['mcp/build.mjs'], { stdio: 'pipe' });
-  });
-
   it('gera o arquivo único', () => {
     expect(statSync(bundle).isFile()).toBe(true);
   });
@@ -26,7 +22,8 @@ describe('dist-mcp/mapping-mcp.js (arquivo único, por stdio)', () => {
     await client.connect(transport);
     try {
       const result = await client.callTool({ name: 'list_projects', arguments: {} });
-      expect(result.structuredContent).toMatchObject({
+      const text = (result.content as { type: string; text: string }[])[0]!.text;
+      expect(JSON.parse(text)).toMatchObject({
         roots: [resolve('design/mapeamentos')],
         projects: [],
       });
