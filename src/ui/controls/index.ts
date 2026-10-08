@@ -2,7 +2,7 @@
 // `src/theme/controls.css`; os estados vêm dos tokens, não do componente.
 export { Button, type ButtonVariant } from './Button';
 export { Choice } from './Choice';
-export { IconButton } from './IconButton';
+export { IconButton, IconLink } from './IconButton';
 export { Segmented, type SegmentedItem } from './Segmented';
 export { Select } from './Select';
 export { Tabs, type TabItem } from './Tabs';

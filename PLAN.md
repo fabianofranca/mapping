@@ -227,11 +227,11 @@ Use o projeto do roteiro 13.9 ([`docs/history/PLAN-etapas-1-2.md`](docs/history/
 **Aceite**: testes da migração, das três funções (inclusive blueprint com hierarquia, eventos vinculados, `ref` resolvido e tipo sem `code`), das pendências e do round-trip pelo zip com um projeto usando SDUI v2 e Modelo de dados v1.
 
 #### 3b.3 — App
-- [ ] Editor do `codeRef` e exibição nos Detalhes, na Lista e no zoom semântico
-- [ ] "Abrir no repositório" e "Copiar caminho"
-- [ ] Repositórios por plataforma nas configurações do projeto, com o aviso
-- [ ] Plataformas no diálogo de especializações; Ajuda; textos pt-BR/en-US
-- [ ] e2e cobrindo os passos 1 a 5 do roteiro
+- [x] Editor do `codeRef` e exibição nos Detalhes, na Lista e no zoom semântico
+- [x] "Abrir no repositório" e "Copiar caminho"
+- [x] Repositórios por plataforma nas configurações do projeto, com o aviso
+- [x] Plataformas no diálogo de especializações; Ajuda; textos pt-BR/en-US
+- [x] e2e cobrindo os passos 1 a 5 do roteiro
 
 **Aceite**: passos 1 a 5 do roteiro no desktop e no celular, nos dois temas.
 

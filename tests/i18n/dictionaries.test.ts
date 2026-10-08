@@ -40,6 +40,9 @@ describe('dicionários', () => {
       'details.summarySeparator',
       'issue.item',
       'ref.fieldButton',
+      'repos.platform',
+      'spec.platformItem',
+      'spec.platformItemLanguage',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',
       'editor.appName',

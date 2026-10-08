@@ -182,7 +182,7 @@ export async function selectedRect(page: Page): Promise<Rect> {
  * Aciona uma ação do projeto: no desktop ela está na barra principal (R4); no celular,
  * no menu Painéis (R8), aberto pelo botão da barra de baixo.
  */
-async function projectAction(page: Page, name: string): Promise<void> {
+export async function projectAction(page: Page, name: string): Promise<void> {
   const inBar = page.locator('.main-bar').getByRole('button', { name, exact: true });
   if (await inBar.count()) {
     await inBar.click();

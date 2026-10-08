@@ -65,6 +65,16 @@ describe('CommitInput', () => {
     expect(input.value).toBe('b');
   });
 
+  it('depois de gravar, voltar ao valor de antes (desfazer, limpar) mostra o valor, não o rascunho', async () => {
+    const { rerender, input, user } = setup(() => true, '');
+    await user.type(input, 'gravado');
+    await user.keyboard('{Enter}');
+    rerender(<CommitInput aria-label="campo" value="gravado" onCommit={() => true} />);
+    expect(input.value).toBe('gravado');
+    rerender(<CommitInput aria-label="campo" value="" onCommit={() => true} />);
+    expect(input.value).toBe('');
+  });
+
   it('grava o texto do campo mesmo se o `change` vier antes da renderização', () => {
     const onCommit = vi.fn(() => true);
     const { input } = setup(onCommit, 'a');

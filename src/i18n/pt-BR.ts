@@ -597,6 +597,69 @@ export const ptBR = {
   'copy.canvasMenu': 'Menu do item no canvas',
   'shortcuts.copyReference': 'Copiar a referência do item selecionado',
   'shortcuts.copyCrop': 'Copiar o recorte da marcação selecionada',
+  'code.platform': 'Plataforma',
+  'code.path': 'Caminho',
+  'code.symbol': 'Símbolo',
+  'code.line': 'Linha',
+  'code.pathPlaceholder': 'pasta/arquivo.ext',
+  'code.addEntry': '+ Entrada',
+  'code.entriesOne': '1 entrada',
+  'code.entriesMany': '{count} entradas',
+  'code.noEntries': 'Nenhuma entrada. Adicione onde isto foi implementado.',
+  'code.noPlatforms': 'A especialização não declara plataformas para este campo.',
+  'code.noPath': '(sem caminho)',
+  'code.entry': 'Entrada {n}',
+  'code.dragEntry': 'Mover a entrada {entry}',
+  'code.entryActions': 'Ações da entrada {entry}',
+  'code.removeEntry': 'Remover entrada',
+  'code.moveUp': 'Subir entrada',
+  'code.moveDown': 'Descer entrada',
+  'code.open': 'Abrir no repositório',
+  'code.openNamed': 'Abrir no repositório: {file}',
+  'code.copyPath': 'Copiar caminho',
+  'code.copyPathNamed': 'Copiar caminho: {path}',
+  'code.pathCopied': 'Caminho copiado',
+  'code.copyFailed': 'Não foi possível copiar o caminho.',
+  'code.invalidPath':
+    'Use um caminho relativo à raiz do repositório, com "/" e sem "." nem "..".',
+  'code.invalidLine': 'A linha precisa ser um número inteiro a partir de 1.',
+  'code.invalidValue': 'Valor inválido para este campo.',
+  'repos.title': 'Repositórios de código',
+  'repos.intro':
+    'Para cada plataforma, diga onde fica o código. O endereço permite abrir os arquivos no repositório; o caminho local ajuda o agente a encontrá-los.',
+  'repos.platform': '{name} ({id})',
+  'repos.urlTemplate': 'Endereço do arquivo',
+  'repos.urlTemplateHint':
+    'Use {path} para o caminho do arquivo e {line} para a linha. Ex.: https://github.com/org/app/blob/main/{path}#L{line}',
+  'repos.localPath': 'Caminho local da raiz',
+  'repos.localPathHint': 'Da pasta deste projeto até a raiz do repositório. Ex.: ../..',
+  'repos.clear': 'Limpar repositório de {name}',
+  'repos.invalidUrlTemplate':
+    'O endereço precisa começar com http:// ou https://, não ter espaços e conter {path}.',
+  'repos.invalidLocalPath':
+    'Use um caminho relativo à pasta do projeto (".." vale), sem começar por "/" nem por letra de unidade.',
+  'repos.invalidValue': 'Não foi possível gravar o repositório.',
+  'repos.missingOne':
+    '{name} sem repositório: 1 referência de código usa esta plataforma.',
+  'repos.missingMany':
+    '{name} sem repositório: {count} referências de código usam esta plataforma.',
+  'spec.platforms': 'Plataformas',
+  'spec.platformItem': '{name} · {id}',
+  'spec.platformItemLanguage': '{name} · {id} · {language}',
+  'help.code.title': 'Plataformas e referências de código',
+  'help.code.intro':
+    'Quando a especialização declara plataformas, os campos do tipo codeRef guardam onde cada item foi implementado: plataforma, caminho do arquivo, símbolo e linha.',
+  'help.code.editor':
+    'Editar: no campo, use "+ Entrada" (ou Alt+Enter) para adicionar. Escolha a plataforma, informe o caminho relativo à raiz do repositório (com "/") e, se quiser, o símbolo e a linha. Dá para reordenar (alça ou menu ⋯) e remover; cada ação é uma entrada do desfazer.',
+  'help.code.issues':
+    'Pendências: plataforma não declarada ou fora do campo, e entrada sem caminho, deixam a anotação incompleta.',
+  'help.code.open':
+    'Abrir no repositório: aparece quando a plataforma tem endereço configurado e abre o arquivo (na linha, se houver) em outra aba. A app não faz nenhuma requisição: quem navega é o navegador, ao clicar.',
+  'help.code.copy': 'Copiar caminho: copia o caminho do arquivo no repositório.',
+  'help.code.repos':
+    'Repositórios: em Configurações (engrenagem), na seção "Repositórios de código", informe para cada plataforma o endereço do arquivo, com {path} e {line}, e o caminho local da raiz do repositório, relativo à pasta do projeto. Plataforma usada sem repositório gera um aviso, sem deixar a anotação incompleta.',
+  'help.code.display':
+    'Exibição: Detalhes e Lista mostram uma linha por entrada, como "Plataforma · Arquivo.ext", com o caminho completo na dica. No canvas, o zoom semântico mostra só o resumo, como "implementação: Plataforma A, Plataforma B".',
 } as const;
 
 export type Dictionary = Record<keyof typeof ptBR, string>;
