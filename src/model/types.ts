@@ -1,9 +1,10 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v6). Ver docs/history/PLAN-etapas-1-2.md, seções 4, 12.1 e 13.3.
-// Tudo é `readonly`: o modelo é imutável e as operações sempre devolvem um novo projeto.
+// Tipos do `mapping.json` (schema v7). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
+// seções 4, 12.1 e 13.3. Tudo é `readonly`: o modelo é imutável e as operações sempre
+// devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -116,6 +117,34 @@ export interface FieldRef {
 /** Valor de um campo `ref`: um dos três formatos da 13.3. */
 export type RefValue = EntryRef | RowRef | FieldRef;
 
+/**
+ * Entrada de um campo `codeRef` (v7): onde a instância foi implementada numa plataforma.
+ * O valor do campo é uma lista delas; `_id` é estável e único dentro da lista, como o
+ * das linhas de `table`.
+ */
+export type CodeRefEntry = {
+  readonly _id: string;
+  /** Id de uma plataforma declarada pela especialização do tipo. */
+  readonly platform: string;
+  /** Arquivo relativo à raiz do repositório da plataforma, com `/`; `null` = sem caminho (pendência). */
+  readonly path: string | null;
+  /** Componente, classe ou função no arquivo; `null` quando vazio. */
+  readonly symbol: string | null;
+  /** Linha (inteiro ≥ 1); `null` quando vazia. */
+  readonly line: number | null;
+};
+
+/** Repositório do código de uma plataforma (v7), no nível do projeto. */
+export interface PlatformRepo {
+  /** URL de um arquivo, com `{path}` e (opcional) `{line}`; `null` = sem link. */
+  readonly urlTemplate: string | null;
+  /** Raiz do repositório, relativa à pasta do projeto (ex: `../..`); `null` = não informada. */
+  readonly localPath: string | null;
+}
+
+/** `platformRepos` do `mapping.json`: repositório por id de plataforma. */
+export type PlatformRepos = { readonly [platformId: string]: PlatformRepo };
+
 export interface Annotation {
   readonly id: string;
   readonly markingId: string;
@@ -168,6 +197,12 @@ export interface Project {
   readonly coordinateSystem: typeof COORDINATE_SYSTEM;
   readonly project: ProjectInfo;
   readonly specializations: readonly ProjectSpecialization[];
+  /**
+   * Repositório de cada plataforma (v7). Fica no projeto, não na especialização: a mesma
+   * especialização serve a produtos diferentes. Plataformas de mesmo id em especializações
+   * diferentes são a mesma e usam a mesma configuração.
+   */
+  readonly platformRepos: PlatformRepos;
   readonly layers: readonly Layer[];
   readonly images: readonly ProjectImage[];
   readonly markings: readonly Marking[];

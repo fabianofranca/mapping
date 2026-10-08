@@ -61,6 +61,12 @@ export const migrateFrom4To5: Migration = (data) => ({
 /** v5 → v6 (revisão): `revision: 0`. Um valor já presente é preservado. */
 export const migrateFrom5To6: Migration = (data) => ({ revision: 0, ...data });
 
+/**
+ * v6 → v7 (referências de código): `platformRepos: {}`. Um valor já presente é
+ * preservado. Nada mais muda: o valor de um campo `codeRef` já é JSON livre em `values`.
+ */
+export const migrateFrom6To7: Migration = (data) => ({ platformRepos: {}, ...data });
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -68,6 +74,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [3, migrateFrom3To4],
   [4, migrateFrom4To5],
   [5, migrateFrom5To6],
+  [6, migrateFrom6To7],
 ]);
 
 export type MigrationResult =

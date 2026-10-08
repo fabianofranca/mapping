@@ -85,6 +85,7 @@ describe('migração v3 → v4', () => {
   function v3Text(): string {
     const data = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
     delete data.specializations;
+    delete data.platformRepos;
     const drop = (item: Record<string, unknown>, keys: string[]) =>
       Object.fromEntries(Object.entries(item).filter(([k]) => !keys.includes(k)));
     const layers = (data.layers as Record<string, unknown>[]).map((l) =>
@@ -97,12 +98,12 @@ describe('migração v3 → v4', () => {
     return JSON.stringify({ ...data, schemaVersion: 3, layers, annotations });
   }
 
-  it('abre um v3 como v6: camadas livres, anotações livres e ids nas tuplas', () => {
+  it('abre um v3 como v7: camadas livres, anotações livres e ids nas tuplas', () => {
     const result = deserialize(v3Text());
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(3);
     const p = result.project;
-    expect(p.schemaVersion).toBe(6);
+    expect(p.schemaVersion).toBe(7);
     expect(p.specializations).toEqual([]);
     expect(p.layers.every((l) => l.spec === null)).toBe(true);
     expect(p.annotations.every((a) => a.type === null && a.values === null)).toBe(true);
@@ -117,11 +118,11 @@ describe('migração v3 → v4', () => {
     ]);
   });
 
-  it('o v3 migrado salva como v6 estável', () => {
+  it('o v3 migrado salva como v7 estável', () => {
     const first = deserialize(v3Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(6);
+    expect(JSON.parse(saved).schemaVersion).toBe(7);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);

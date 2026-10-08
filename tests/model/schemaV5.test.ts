@@ -5,11 +5,11 @@ import { sampleProject } from './fixtures';
 const strip = (item: Record<string, unknown>, key: string) =>
   Object.fromEntries(Object.entries(item).filter(([k]) => k !== key));
 
-/** Um mapping.json v4: sem `locked` nas imagens nem nas marcações. */
+/** Um mapping.json v4: sem `locked` nas imagens nem nas marcações (nem `platformRepos`). */
 function v4Text(): string {
   const data = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
   return JSON.stringify({
-    ...data,
+    ...strip(data, 'platformRepos'),
     schemaVersion: 4,
     images: (data.images as Record<string, unknown>[]).map((i) => strip(i, 'locked')),
     markings: (data.markings as Record<string, unknown>[]).map((m) => strip(m, 'locked')),
@@ -22,17 +22,17 @@ describe('migração v4 → v5 (trava)', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(4);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(6);
+    expect(result.project.schemaVersion).toBe(7);
     expect(result.project.images.every((i) => i.locked === false)).toBe(true);
     expect(result.project.markings.every((m) => m.locked === false)).toBe(true);
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('o v4 migrado salva como v6 estável (round-trip)', () => {
+  it('o v4 migrado salva como v7 estável (round-trip)', () => {
     const first = deserialize(v4Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(6);
+    expect(JSON.parse(saved).schemaVersion).toBe(7);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);

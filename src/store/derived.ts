@@ -5,6 +5,7 @@ import {
   layerDotsByMarking,
   markingLockStates,
   markingVisibility,
+  platformRepoWarnings,
   projectIndex,
   projectIssues,
   type Annotation,
@@ -15,6 +16,7 @@ import {
   type ListedImage,
   type MarkingLockState,
   type MarkingVisibility,
+  type PlatformRepoWarning,
 } from '../model';
 import type { ProjectStore } from './history';
 import { markingDisplay } from './settings';
@@ -52,6 +54,8 @@ export interface EditorDerived {
   readonly incompleteList: ReadonlySignal<readonly IncompleteImage[]>;
   /** Quantas anotações estão incompletas no projeto (todas as camadas). */
   readonly incompleteCount: ReadonlySignal<number>;
+  /** Plataformas usadas em `codeRef` sem repositório configurado (aviso, não pendência). */
+  readonly platformRepoWarnings: ReadonlySignal<readonly PlatformRepoWarning[]>;
 }
 
 const NO_ISSUES: ReadonlyMap<string, readonly AnnotationIssue[]> = new Map();
@@ -60,6 +64,7 @@ const NO_DOTS: ReadonlyMap<string, readonly LayerDot[]> = new Map();
 const NO_VISIBILITY: ReadonlyMap<string, MarkingVisibility> = new Map();
 const NO_MARKINGS: ReadonlySet<string> = new Set();
 const NO_LOCKS: ReadonlyMap<string, MarkingLockState> = new Map();
+const NO_WARNINGS: readonly PlatformRepoWarning[] = [];
 
 /** Mesmos itens na mesma ordem. */
 function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
@@ -169,6 +174,11 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
 
   const incompleteCount = computed(() => issues.value.size);
 
+  const repoWarnings = computed(() => {
+    const p = project.value;
+    return p ? platformRepoWarnings(p) : NO_WARNINGS;
+  });
+
   return {
     activeLayerId,
     activeLayer,
@@ -183,5 +193,6 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
     listing,
     incompleteList,
     incompleteCount,
+    platformRepoWarnings: repoWarnings,
   };
 }

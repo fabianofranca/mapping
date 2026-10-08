@@ -40,6 +40,12 @@ export function serialize(p: Project): string {
       version: s.version,
       file: s.file,
     })),
+    platformRepos: Object.fromEntries(
+      Object.entries(p.platformRepos).map(([platform, repo]) => [
+        platform,
+        { urlTemplate: repo.urlTemplate, localPath: repo.localPath },
+      ]),
+    ),
     layers: p.layers.map((l) => ({
       id: l.id,
       name: l.name,

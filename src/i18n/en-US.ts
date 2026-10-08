@@ -506,6 +506,9 @@ export const enUS: Dictionary = {
   'issue.owner-not-allowed': 'owner type not allowed',
   'issue.broken-ref': 'broken reference',
   'issue.ref-not-accepted': 'target not accepted (lost the tag or is no longer free)',
+  'issue.unknown-platform': 'platform not declared by the specialization',
+  'issue.platform-not-allowed': 'platform not allowed in this field',
+  'issue.missing-path': 'no file path',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
   // Detalhes (R5)

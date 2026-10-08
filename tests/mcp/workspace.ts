@@ -190,12 +190,13 @@ export function createWorkspace(): Workspace {
   mkdirSync(join(root, 'quebrado'));
   writeFileSync(join(root, 'quebrado', 'mapping.json'), '{ isto não é JSON');
 
-  // Schema v5 (sem `revision`): lido com migração em memória, nunca regravado.
+  // Schema v5 (sem `revision` nem `platformRepos`): lido com migração em memória, nunca regravado.
   write(
     join(root, 'legado'),
     mappingText((doc) => {
       doc.schemaVersion = 5;
       delete doc.revision;
+      delete doc.platformRepos;
     }),
     {},
   );

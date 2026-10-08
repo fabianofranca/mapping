@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v6)
+# Formato do `mapping.json` (schema v7)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` e,
 se houver especializações aplicadas, `specs/`. Todas as coordenadas das marcações são
@@ -25,12 +25,13 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": { "name": "Carro", "createdAt": "…", "updatedAt": "…" },
   "specializations": [],
+  "platformRepos": {},
   "layers": [{ "id": "L1", "name": "Componentes", "color": "#E53935", "spec": null }],
   "images": [
     {
@@ -81,12 +82,13 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                 |
 | ------------------ | ------- | ------------------------------------------------------------------------- |
-| `schemaVersion`    | `6`     | Versão do schema.                                                         |
+| `schemaVersion`    | `7`     | Versão do schema.                                                         |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                   |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).        |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
 | `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601).                     |
 | `specializations`  | array   | Especializações aplicadas (ver v4).                                       |
+| `platformRepos`    | objeto  | Repositório do código de cada plataforma (v7, ver abaixo).                |
 | `layers`           | array   | Camadas, **globais** (valem para todas as imagens), na ordem de exibição. |
 | `images`           | array   | Imagens do projeto.                                                       |
 | `markings`         | array   | Marcações retangulares.                                                   |
@@ -120,7 +122,9 @@ recusa o arquivo e informa o problema, sem alterá-lo.
 - As imagens **não se sobrepõem** no canvas (`placement` × tamanho × escala).
 - Toda anotação aponta para uma marcação e uma camada existentes.
 - Pares (`entries`): chave não vazia (após `trim`) e única dentro da anotação; ids de par únicos no projeto.
-- Linhas de `table`: `_id` único dentro da tabela.
+- Linhas de `table` e entradas de `codeRef`: `_id` único dentro da lista.
+- `platformRepos`: chaves no formato `[a-z0-9-]+`; cada valor com `urlTemplate` e `localPath` (texto ou
+  `null`). Configuração de uma plataforma que nenhuma especialização declara não impede a abertura.
 - Anotação "dona" (`parentAnnotationId`): existe, está na **mesma marcação** e em **outra camada**, e a
   cadeia não tem ciclos.
 
@@ -157,7 +161,8 @@ o projeto fica autocontido e quem lê entende o significado das camadas e chaves
   - `string` e `enum`: texto; `number`: número; `date`: texto ISO `AAAA-MM-DD`;
   - `table`: array de linhas; cada linha tem as chaves das colunas e um id interno `_id`;
   - `ref`: objeto de referência (abaixo);
-  - campo vazio: `null` (ou ausente); `table` vazia: `[]`.
+  - `codeRef` (v7): array de entradas, cada uma com um id interno `_id` (ver "Campos da v7");
+  - campo vazio: `null` (ou ausente); `table` e `codeRef` vazios: `[]` (`null` também vale).
 - `annotations[].entries`: pares da anotação livre; sempre `[]` na tipada. Cada par tem um `id`.
 - O rótulo de uma anotação tipada é o `name`; se vazio, o valor do campo `labelField` do tipo;
   se vazio, o nome do tipo. Ex.: uma Classe com `nome: "Contato"` aparece como `Contato`.
@@ -236,9 +241,9 @@ As regras ficam em `src/model/locks.ts` (`canEditMarkingGeometry`, `canDeleteMar
 
 ### Ids estáveis
 
-Os ids de par (`entries[].id`) e de linha (`_id`) são UUIDs que **não mudam** ao editar a chave
-ou os valores. É neles que as referências se apoiam. São únicos: ids de par no projeto inteiro,
-ids de linha dentro da tabela.
+Os ids de par (`entries[].id`), de linha e de entrada de `codeRef` (`_id`) são UUIDs que **não
+mudam** ao editar a chave ou os valores. É neles que as referências se apoiam. São únicos: ids de par
+no projeto inteiro, ids de linha dentro da tabela e ids de entrada dentro da lista do `codeRef`.
 
 ### Referências (`ref`)
 
@@ -276,8 +281,93 @@ O estado "incompleta" **não é gravado**: é calculado a partir do projeto e da
 (`getAnnotationIssues` em `src/model/`). Motivos: campo obrigatório vazio (inclusive coluna
 obrigatória numa linha), valor incompatível com o tipo, opção inexistente, chave fora do tipo,
 tipo inexistente, anotação fora da camada do seu tipo, dono ausente (`requiresOwner`), dono de
-tipo não permitido (`allowedChildren`), referência quebrada e alvo não aceito. Nenhum deles
-impede a abertura do projeto.
+tipo não permitido (`allowedChildren`), referência quebrada, alvo não aceito e, nas entradas de
+`codeRef` (v7), plataforma não declarada ou fora do `platforms` do campo e entrada sem caminho.
+Nenhum deles impede a abertura do projeto.
+
+## Campos da v7 (referências de código)
+
+A v7 liga o mapeamento ao código das plataformas que as especializações declaram
+([`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas, code e codeRef"): cada instância guarda **onde
+foi implementada** (campo `codeRef`) e o projeto guarda **onde fica o repositório** de cada
+plataforma (`platformRepos`).
+
+### Valor de um campo `codeRef`
+
+Uma lista de entradas, em `values` da anotação tipada. Pode haver mais de uma entrada por plataforma.
+
+```json
+"implementacao": [
+  { "_id": "c1", "platform": "android", "path": "app/src/main/java/com/app/checkout/CheckoutScreen.kt", "symbol": "CheckoutScreen", "line": null },
+  { "_id": "c2", "platform": "android", "path": "app/src/main/java/com/app/checkout/CheckoutViewModel.kt", "symbol": "CheckoutViewModel", "line": null },
+  { "_id": "c3", "platform": "ios", "path": "App/Checkout/CheckoutView.swift", "symbol": "CheckoutView", "line": 12 }
+]
+```
+
+| Campo      | Tipo              | Descrição                                                                                                                                                         |
+| ---------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `_id`      | string            | Id estável da entrada (como o das linhas de tabela), único dentro da lista.                                                                                       |
+| `platform` | string            | Id de uma plataforma declarada pela especialização do tipo (e no `platforms` do campo, se houver).                                                                |
+| `path`     | string ou `null`  | Arquivo relativo à **raiz do repositório** da plataforma, com `/`, sem `/` no começo, sem `.`, `..` nem segmentos vazios. `null` = ainda sem caminho (pendência). |
+| `symbol`   | string ou `null`  | Componente, classe ou função no arquivo (ex: `CheckoutScreen`).                                                                                                   |
+| `line`     | inteiro ou `null` | Linha (≥ 1).                                                                                                                                                      |
+
+A app e o MCP gravam as entradas com as chaves nessa ordem. Quem edita à mão pode omitir `symbol` e
+`line` (valem `null`).
+
+### Repositórios por plataforma (`platformRepos`)
+
+No nível do projeto, não da especialização, porque a mesma especialização serve a produtos diferentes.
+
+```json
+"platformRepos": {
+  "android": { "urlTemplate": "https://github.com/org/app-android/blob/main/{path}#L{line}", "localPath": "../../.." },
+  "ios": { "urlTemplate": "https://github.com/org/app-ios/blob/main/{path}#L{line}", "localPath": null }
+}
+```
+
+- A chave é o id da plataforma. Plataformas com o **mesmo id** em especializações diferentes são a
+  mesma plataforma e usam a mesma configuração (o nome exibido é o da primeira especialização aplicada).
+- **`urlTemplate`** (`null` = sem link): URL de um arquivo, com `{path}` e, opcional, `{line}`. Serve a
+  GitHub, GitLab, Bitbucket ou um servidor interno. A app e o MCP só aceitam `http://` ou `https://`
+  com `{path}` (outro valor, editado à mão, fica sem link).
+- **`localPath`** (`null` = não informado): raiz do repositório da plataforma, **relativa à pasta do
+  projeto** (ex: `../../..` quando o projeto fica em `docs/mapping/telas/` dentro do repositório do app).
+- A app não grava configuração vazia: sem `urlTemplate` nem `localPath`, a plataforma sai do objeto.
+  Remover uma especialização não apaga a configuração.
+
+### Como montar a URL de uma entrada
+
+1. Pegue `platformRepos[entry.platform].urlTemplate`. Sem ele, não há link.
+2. Troque `{path}` pelo `path`, codificando **cada segmento** (`encodeURIComponent`) e mantendo as `/`
+   (ex: `Minha Tela.kt` → `Minha%20Tela.kt`).
+3. Com `line`, troque `{line}` pelo número. Sem `line`, remova o trecho a partir do **último `#`** se ele
+   contém `{line}` (e não `{path}`): `…/{path}#L{line}` → `…/{path}`; `…#lines-{line}` → sem o fragmento.
+   Se `{line}` não estiver num fragmento assim (ex: `?linha={line}`), ele vira vazio.
+
+Ex.: `https://github.com/org/app-android/blob/main/{path}#L{line}` com `path: "app/Main.kt"` dá
+`…/blob/main/app/Main.kt#L12` (linha 12) ou `…/blob/main/app/Main.kt` (sem linha).
+
+### Como achar o arquivo local
+
+Junte `localPath` e `path` com `/`: o resultado é relativo à **pasta do projeto** (a do `mapping.json`).
+Ex.: `localPath: "../../.."` e `path: "app/Main.kt"` → `../../../app/Main.kt`. Sem `localPath`, não há
+caminho local.
+
+### Pendências e aviso
+
+- Entrada com plataforma não declarada pela especialização do tipo (`unknown-platform`) ou fora do
+  `platforms` do campo (`platform-not-allowed`): **incompleta**.
+- Entrada sem caminho (`missing-path`): **incompleta**. Caminho, símbolo ou linha com formato errado,
+  chave desconhecida ou entrada sem `_id`: **incompleta** (`invalid-value`, `unknown-field`).
+- Plataforma declarada e usada em algum `codeRef`, sem `urlTemplate` nem `localPath` em
+  `platformRepos`: **aviso** (`missing-repo`), não incompleta. Aparece na configuração de
+  repositórios da app e no `get_project` do MCP.
+
+Em código TypeScript, `src/model/` oferece `codeLink` (a URL), `codeLocalPath` (o caminho relativo à
+pasta do projeto), `findByCode` (entradas que apontam para um arquivo ou símbolo), `codeBlueprint`
+(o que implementar numa plataforma a partir de uma marcação), `projectPlatforms` (plataformas das
+especializações aplicadas, sem repetir id) e `platformRepoWarnings` (o aviso acima).
 
 ## Como um agente lê o `mapping.json`
 
@@ -290,9 +380,17 @@ impede a abertura do projeto.
    `layers[].id == layer.spec.layerId`, tipo `annotationTypes[].id == type.typeId`). Os campos
    (`fields`) dizem o `label`, o tipo e a descrição de cada chave de `values`.
 6. **Referências**: campos `ref` em `values` apontam para outras anotações (ver acima).
+7. **Código** (v7): campos `codeRef` dizem onde a instância foi implementada em cada plataforma.
+   Para abrir no repositório, monte a URL com o `urlTemplate` de `platformRepos[platform]`; para ler
+   o arquivo na máquina, junte o `localPath` e o `path` (relativos à pasta do projeto; ver "Campos da
+   v7"). Para ir do código ao mapeamento, procure as entradas cujo `path` é igual ao arquivo ou termina
+   com ele por segmentos inteiros (`CheckoutScreen.kt` casa com `app/…/CheckoutScreen.kt`, `Screen.kt`
+   não) ou cujo `symbol` é igual. Como o tipo vira código (`symbol`, `params`, `values`, `notes`) está
+   em `code`, no tipo da especialização.
 
-Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, markingId)` e
-`getLinkedAnnotations(project, annotationId)`.
+Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, markingId)`,
+`getLinkedAnnotations(project, annotationId)` e, para o código, `codeLink`, `codeLocalPath`,
+`findByCode` e `codeBlueprint`.
 
 ## Migração
 
@@ -300,6 +398,7 @@ Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anota
 `inherit: false` e `parentAnnotationId: null`. Arquivos v2 recebem `markingColor: null` em cada imagem.
 Arquivos v3 recebem `specializations: []`, `spec: null` em cada camada, `type: null` e
 `values: null` em cada anotação e um `id` novo em cada par. Arquivos v4 recebem `locked: false` em cada
-imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Ao salvar, o arquivo passa a ser v6 (e, no modo pasta, o original vai antes
-para `backups/`, como em qualquer migração).
+imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 recebem `platformRepos: {}` (nada
+mais muda: um `codeRef` gravado antes continua como está). Ao salvar, o arquivo passa a ser v7 (e, no modo
+pasta, o original vai antes para `backups/`, como em qualquer migração).
 Arquivos de versão mais nova abrem somente para leitura.

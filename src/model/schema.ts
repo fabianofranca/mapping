@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PLATFORM_ID_RE } from './spec';
 import {
   APP_ID,
   LEGACY_APP_ID,
@@ -8,8 +9,10 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v5. Valida a forma; os invariantes entre coleções
-// (referências, contenção, sobreposição) ficam em `invariants.ts`.
+// Schema zod do mapping.json v7. Valida a forma; os invariantes entre coleções
+// (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
+// anotações tipadas (inclusive as entradas de `codeRef`) são JSON livre aqui: a
+// conferência contra o tipo vira pendência (`issues.ts`).
 
 const id = z.string().min(1);
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
@@ -106,6 +109,12 @@ const specializationSchema = z.object({
   file: z.string().min(1),
 });
 
+/** Repositório de uma plataforma (v7). Texto vazio vale como `null` na leitura. */
+const platformRepoSchema = z.object({
+  urlTemplate: z.string().nullable(),
+  localPath: z.string().nullable(),
+});
+
 export const projectSchema: z.ZodType<ProjectFile> = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   revision: z.number().int().min(0),
@@ -120,6 +129,7 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
     updatedAt: z.iso.datetime(),
   }),
   specializations: z.array(specializationSchema),
+  platformRepos: z.record(z.string().regex(PLATFORM_ID_RE), platformRepoSchema),
   layers: z.array(layerSchema),
   images: z.array(imageSchema),
   markings: z.array(markingSchema),

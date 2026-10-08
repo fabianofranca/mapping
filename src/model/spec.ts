@@ -96,7 +96,8 @@ export interface Spec {
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
 const TAG_RE = /^[a-z0-9-]+$/;
-const PLATFORM_ID_RE = /^[a-z0-9-]+$/;
+/** Formato do id de uma plataforma (`platforms[].id`, chaves de `code` e de `platformRepos`). */
+export const PLATFORM_ID_RE = /^[a-z0-9-]+$/;
 const COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 

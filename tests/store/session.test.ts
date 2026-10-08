@@ -1,14 +1,14 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SCHEMA_VERSION, deserialize, serialize } from '../../src/model';
+import { SCHEMA_VERSION, deserialize, serialize, specFiles } from '../../src/model';
 import { createFolderStorage } from '../../src/storage/folder';
 import type { PreparedImage } from '../../src/storage/imageImport';
 import { HISTORY_LIMIT } from '../../src/store/history';
 import { openSession, type ProjectSession } from '../../src/store/session';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
-import { loadExample } from '../model/specFixtures';
+import { cadastroProject, loadExample } from '../model/specFixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 
 beforeEach(() => vi.useFakeTimers());
@@ -492,6 +492,45 @@ describe('sessão de projeto', () => {
       expect(session.saveStatus.value).toBe('saved');
       expect(await root.read(backupPath())).toBe(v1Text);
       expect((await savedProject(root)).project.name).toBe('Migrado');
+    });
+
+    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v7', async () => {
+      const root = new MemoryDirectory('p');
+      const project = cadastroProject();
+      const data = JSON.parse(serialize(project)) as Record<string, unknown>;
+      delete data.platformRepos;
+      const v6Text = `${JSON.stringify({ ...data, schemaVersion: 6 }, null, 2)}\n`;
+      root.put('mapping.json', v6Text);
+      const specs = specFiles(project);
+      for (const [path, text] of specs) root.put(path, text);
+      const loaded = deserialize(v6Text, undefined, specs);
+      if (!loaded.ok || loaded.migratedFrom !== 6) throw new Error('fixture v6');
+      session = openSession({
+        storage: createFolderStorage(root),
+        project: loaded.project,
+        migratedFrom: { version: loaded.migratedFrom, text: v6Text },
+        prepareImage,
+        now: () => NOW,
+        newId: ids(),
+      });
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(root.dirs.has('backups')).toBe(false);
+
+      session.actions.setPlatformRepo('android', { localPath: '../..' });
+      await session.flush();
+      const backup = backupPath().replace('mapping.v1.', 'mapping.v6.');
+      expect(await root.read(backup)).toBe(v6Text);
+      const saved = JSON.parse((await root.read('mapping.json')) ?? '') as {
+        schemaVersion: number;
+        revision: number;
+        platformRepos: unknown;
+      };
+      expect(saved.schemaVersion).toBe(7);
+      expect(saved.revision).toBe(1);
+      expect(saved.platformRepos).toEqual({
+        android: { urlTemplate: null, localPath: '../..' },
+      });
+      expect(session.backupSaved.value).toBe(6);
     });
 
     it('projeto já na versão atual não gera backup', async () => {

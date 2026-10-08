@@ -45,4 +45,13 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'ref-not-accepted': 'o campo não aceita esse alvo de referência',
   'spec-already-applied': 'a especialização já está aplicada',
   'spec-not-newer': 'a versão não é maior que a aplicada',
+  'unknown-platform': 'plataforma não declarada pelas especializações aplicadas',
+  'platform-not-allowed':
+    'plataforma não permitida no campo codeRef: precisa estar nas plataformas da especialização do tipo (e no `platforms` do campo, se houver)',
+  'invalid-path':
+    'caminho inválido: relativo à raiz do repositório, com `/`, sem `.`, `..` nem segmentos vazios',
+  'invalid-url-template':
+    'urlTemplate inválido: precisa começar com http:// ou https:// e conter {path} ({line} é opcional)',
+  'invalid-local-path':
+    'localPath inválido: caminho relativo à pasta do projeto (ex: ../..), não absoluto',
 };

@@ -509,6 +509,9 @@ export const ptBR = {
   'issue.owner-not-allowed': 'dono de tipo não permitido',
   'issue.broken-ref': 'referência quebrada',
   'issue.ref-not-accepted': 'alvo não aceito (perdeu a etiqueta ou deixou de ser livre)',
+  'issue.unknown-platform': 'plataforma não declarada pela especialização',
+  'issue.platform-not-allowed': 'plataforma não permitida neste campo',
+  'issue.missing-path': 'sem caminho do arquivo',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
   // Detalhes (R5)
