@@ -1,0 +1,55 @@
+name: MCP release
+
+# Tag `mcp-v<versão>` (ex: mcp-v0.1.0): gera o `mapping-mcp.js` e o anexa à Release.
+# A versão da tag precisa ser a de `SERVER_VERSION` em `mcp/version.ts`.
+on:
+  push:
+    tags: ['mcp-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Conferir a versão da tag
+        run: |
+          tag_version="${GITHUB_REF_NAME#mcp-v}"
+          code_version="$(sed -n "s/.*SERVER_VERSION = '\(.*\)';/\1/p" mcp/version.ts)"
+          if [ "$tag_version" != "$code_version" ]; then
+            echo "A tag $GITHUB_REF_NAME não bate com SERVER_VERSION ($code_version) em mcp/version.ts." >&2
+            exit 1
+          fi
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build:mcp
+
+      - name: Testar o arquivo gerado fora do repositório
+        run: |
+          mkdir -p "$RUNNER_TEMP/smoke"
+          cp dist-mcp/mapping-mcp.js "$RUNNER_TEMP/smoke/"
+          cd "$RUNNER_TEMP/smoke"
+          node mapping-mcp.js --version
+
+      - name: Checksum
+        working-directory: dist-mcp
+        run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+
+      - name: Publicar a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
+            --title "Servidor MCP ${GITHUB_REF_NAME#mcp-v}" \
+            --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Instruções em docs/MCP.md."
