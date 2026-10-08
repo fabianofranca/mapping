@@ -181,6 +181,27 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
                       })
                     : t('spec.fileMissing')}
                 </span>
+                {entry.spec?.platforms && entry.spec.platforms.length > 0 && (
+                  <div class="spec-platforms">
+                    <small class="muted">{t('spec.platforms')}</small>
+                    <ul>
+                      {entry.spec.platforms.map((platform) => (
+                        <li key={platform.id}>
+                          {platform.language
+                            ? t('spec.platformItemLanguage', {
+                                name: platform.name,
+                                id: platform.id,
+                                language: platform.language,
+                              })
+                            : t('spec.platformItem', {
+                                name: platform.name,
+                                id: platform.id,
+                              })}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div class="row">
                   <Button disabled={readOnly} onClick={() => pick(entry.id)}>
                     {t('spec.update')}

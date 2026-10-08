@@ -54,6 +54,12 @@
   padding: 0 var(--space-3);
 }
 
+/* Link com a aparência do botão de ícone */
+a.icon-button {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
 /* Hover e pressionado */
 .button:hover:not(:disabled),
 .icon-button:hover:not(:disabled),

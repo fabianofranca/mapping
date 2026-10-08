@@ -89,6 +89,29 @@ function Shortcuts() {
   );
 }
 
+const CODE_HELP_KEYS = [
+  'help.code.editor',
+  'help.code.issues',
+  'help.code.open',
+  'help.code.copy',
+  'help.code.repos',
+  'help.code.display',
+] as const satisfies readonly TranslationKey[];
+
+/** Uso das plataformas, de `code` e do `codeRef` no app (o formato fica nas Especializações). */
+function CodeUsage() {
+  return (
+    <>
+      <p>{t('help.code.intro')}</p>
+      <ul>
+        {CODE_HELP_KEYS.map((key) => (
+          <li key={key}>{t(key)}</li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 function Downloads() {
   return (
     <>
@@ -135,6 +158,12 @@ function topics(): readonly Topic[] {
   );
   return [
     ...specs,
+    {
+      id: 'code-usage',
+      title: t('help.code.title'),
+      text: [t('help.code.intro'), ...CODE_HELP_KEYS.map((key) => t(key))].join(' '),
+      body: <CodeUsage />,
+    },
     {
       id: 'downloads',
       title: t('help.specs.downloads'),

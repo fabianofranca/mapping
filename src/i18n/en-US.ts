@@ -593,4 +593,66 @@ export const enUS: Dictionary = {
   'copy.canvasMenu': 'Canvas item menu',
   'shortcuts.copyReference': 'Copy the reference of the selected item',
   'shortcuts.copyCrop': 'Copy the crop of the selected marking',
+  'code.platform': 'Platform',
+  'code.path': 'Path',
+  'code.symbol': 'Symbol',
+  'code.line': 'Line',
+  'code.pathPlaceholder': 'folder/file.ext',
+  'code.addEntry': '+ Entry',
+  'code.entriesOne': '1 entry',
+  'code.entriesMany': '{count} entries',
+  'code.noEntries': 'No entries. Add where this was implemented.',
+  'code.noPlatforms': 'The specialization declares no platforms for this field.',
+  'code.noPath': '(no path)',
+  'code.entry': 'Entry {n}',
+  'code.dragEntry': 'Move entry {entry}',
+  'code.entryActions': 'Actions for entry {entry}',
+  'code.removeEntry': 'Remove entry',
+  'code.moveUp': 'Move entry up',
+  'code.moveDown': 'Move entry down',
+  'code.open': 'Open in repository',
+  'code.openNamed': 'Open in repository: {file}',
+  'code.copyPath': 'Copy path',
+  'code.copyPathNamed': 'Copy path: {path}',
+  'code.pathCopied': 'Path copied',
+  'code.copyFailed': 'Could not copy the path.',
+  'code.invalidPath':
+    'Use a path relative to the repository root, with "/" and without "." or "..".',
+  'code.invalidLine': 'The line must be a whole number from 1.',
+  'code.invalidValue': 'Invalid value for this field.',
+  'repos.title': 'Code repositories',
+  'repos.intro':
+    'For each platform, say where the code lives. The address lets you open files in the repository; the local path helps the agent find them.',
+  'repos.platform': '{name} ({id})',
+  'repos.urlTemplate': 'File address',
+  'repos.urlTemplateHint':
+    'Use {path} for the file path and {line} for the line. E.g. https://github.com/org/app/blob/main/{path}#L{line}',
+  'repos.localPath': 'Local path of the root',
+  'repos.localPathHint': "From this project's folder to the repository root. E.g. ../..",
+  'repos.clear': 'Clear the repository of {name}',
+  'repos.invalidUrlTemplate':
+    'The address must start with http:// or https://, have no spaces and contain {path}.',
+  'repos.invalidLocalPath':
+    'Use a path relative to the project folder (".." is fine), not starting with "/" or a drive letter.',
+  'repos.invalidValue': 'Could not save the repository.',
+  'repos.missingOne': '{name} has no repository: 1 code reference uses this platform.',
+  'repos.missingMany':
+    '{name} has no repository: {count} code references use this platform.',
+  'spec.platforms': 'Platforms',
+  'spec.platformItem': '{name} · {id}',
+  'spec.platformItemLanguage': '{name} · {id} · {language}',
+  'help.code.title': 'Platforms and code references',
+  'help.code.intro':
+    'When the specialization declares platforms, fields of type codeRef record where each item was implemented: platform, file path, symbol and line.',
+  'help.code.editor':
+    'Edit: in the field, use "+ Entry" (or Alt+Enter) to add. Choose the platform, enter the path relative to the repository root (with "/") and, if you want, the symbol and the line. You can reorder (handle or ⋯ menu) and remove; each action is one undo step.',
+  'help.code.issues':
+    'Issues: a platform that is not declared or not allowed in the field, and an entry without a path, make the annotation incomplete.',
+  'help.code.open':
+    'Open in repository: shown when the platform has an address configured; it opens the file (at the line, if any) in another tab. The app makes no request: the browser navigates when you click.',
+  'help.code.copy': 'Copy path: copies the file path in the repository.',
+  'help.code.repos':
+    'Repositories: in Settings (gear), in the "Code repositories" section, give each platform the file address, with {path} and {line}, and the local path of the repository root, relative to the project folder. A platform used without a repository raises a warning, without making the annotation incomplete.',
+  'help.code.display':
+    'Display: Details and List show one line per entry, like "Platform · File.ext", with the full path in the tooltip. On the canvas, semantic zoom shows only the summary, like "implementation: Platform A, Platform B".',
 };
