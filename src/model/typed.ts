@@ -1,3 +1,10 @@
+import {
+  CODE_REF_KEYS,
+  codeRefPlatforms,
+  isCodeLine,
+  isValidCodePath,
+  normalizeCodePath,
+} from './codeRefs';
 import { fail } from './errors';
 import { annotationWithLinked } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
@@ -13,6 +20,7 @@ import {
 } from './refs';
 import {
   isIsoDate,
+  type Spec,
   type SpecAnnotationType,
   type SpecColumn,
   type SpecField,
@@ -28,6 +36,7 @@ import {
 import type {
   Annotation,
   AnnotationTypeRef,
+  CodeRefEntry,
   Entry,
   JsonValue,
   Layer,
@@ -37,8 +46,8 @@ import type {
 } from './types';
 
 // Anotações tipadas: criação com defaults, edição de valores, linhas de tabela,
-// vínculos com `allowedChildren`/`requiresOwner` e conversão em anotação livre.
-// Ver docs/history/PLAN-etapas-1-2.md 13.2 a 13.5.
+// entradas de `codeRef`, vínculos com `allowedChildren`/`requiresOwner` e conversão em
+// anotação livre. Ver docs/history/PLAN-etapas-1-2.md 13.2 a 13.5 e a etapa 3b do PLAN.md.
 
 /** Campo vazio: `null`, ausente ou texto vazio. */
 export function isEmptyValue(value: JsonValue | undefined): boolean {
@@ -65,10 +74,10 @@ export function checkSimpleValue(
   }
 }
 
-/** Valor inicial do campo: o `default`, `[]` para `table` e `null` no resto. */
+/** Valor inicial do campo: o `default`, `[]` para `table` e `codeRef` e `null` no resto. */
 export function defaultFieldValue(field: SpecField): JsonValue {
-  if (field.type === 'table') return [];
-  if (field.type === 'ref' || field.type === 'codeRef') return null;
+  if (field.type === 'table' || field.type === 'codeRef') return [];
+  if (field.type === 'ref') return null;
   return field.default ?? null;
 }
 
@@ -178,13 +187,18 @@ export function addTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Pr
 function updateValues(
   p: Project,
   annotationId: string,
-  update: (values: TypedValues, type: SpecAnnotationType, a: Annotation) => TypedValues,
+  update: (
+    values: TypedValues,
+    type: SpecAnnotationType,
+    a: Annotation,
+    resolved: ResolvedType,
+  ) => TypedValues,
 ): Project {
   return {
     ...p,
     annotations: updateById(p.annotations, annotationId, (a) => {
-      const { type } = requireType(p, a);
-      return { ...a, values: update(a.values ?? {}, type, a) };
+      const resolved = requireType(p, a);
+      return { ...a, values: update(a.values ?? {}, resolved.type, a, resolved) };
     }),
   };
 }
@@ -197,22 +211,31 @@ function checkedSimple(field: SpecColumn, value: JsonValue): JsonValue {
   return value;
 }
 
+export interface SetFieldValueOptions {
+  /** Id das entradas novas de `codeRef` (sem `_id`); padrão: `crypto.randomUUID()`. */
+  readonly newId?: () => string;
+}
+
 /**
- * Define o valor de um campo simples ou `ref` (`null` limpa). `table` usa as
- * operações de linha. A referência precisa existir e ser aceita pelo campo.
+ * Define o valor de um campo simples, `ref` ou `codeRef` (`null` limpa). `table` usa as
+ * operações de linha. A referência precisa existir e ser aceita pelo campo. No `codeRef`,
+ * o valor é a lista inteira de entradas (ver `checkedCodeRefList`).
  */
 export function setFieldValue(
   p: Project,
   annotationId: string,
   key: string,
   value: JsonValue,
+  options: SetFieldValueOptions = {},
 ): Project {
-  return updateValues(p, annotationId, (values, type, a) => {
+  return updateValues(p, annotationId, (values, type, a, resolved) => {
     const field = fieldOf(type, key) ?? fail('unknown-field', key);
     let next: JsonValue;
-    if (field.type === 'table' || field.type === 'codeRef') {
-      // `codeRef` ganha operações próprias na fase 3b.2.
+    if (field.type === 'table') {
       fail('invalid-value', key);
+    } else if (field.type === 'codeRef') {
+      const newId = options.newId ?? (() => crypto.randomUUID());
+      next = checkedCodeRefList(resolved.spec, field, values[key], value, newId);
     } else if (field.type === 'ref') {
       if (isEmptyValue(value)) {
         next = null;
@@ -311,6 +334,227 @@ export function moveTableRow(
     tableField(type, key);
     const rows = rawRows(values, key);
     return { ...values, [key]: moveItem(rows, rowIndex(rows, rowId), toIndex) };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Entradas de `codeRef` (etapa 3b): como as linhas de tabela, cada uma tem um `_id`
+// estável e único na lista. As entradas malformadas (editadas à mão) são mantidas, para
+// não perder dados: viram pendências.
+
+/** Propriedades de uma entrada de `codeRef` a gravar (ver `CodeRefEntry`). */
+export interface CodeRefEntryInput {
+  readonly platform: string;
+  readonly path?: string | null;
+  readonly symbol?: string | null;
+  readonly line?: number | null;
+}
+
+type CodeRefField = Extract<SpecField, { type: 'codeRef' }>;
+type EntryChanges = {
+  -readonly [K in keyof Omit<CodeRefEntry, '_id'>]?: CodeRefEntry[K];
+};
+
+function codeRefField(type: SpecAnnotationType, key: string): CodeRefField {
+  const field = fieldOf(type, key) ?? fail('unknown-field', key);
+  if (field.type !== 'codeRef') fail('invalid-value', key);
+  return field;
+}
+
+/**
+ * Valida e normaliza as propriedades informadas: a plataforma precisa ser permitida no
+ * campo (`codeRefPlatforms`); o caminho é normalizado (`\` → `/`, sem `./` no começo nem `/`
+ * no fim) e precisa ser relativo, sem `.`/`..`; texto vazio vira `null`; a linha é um
+ * inteiro ≥ 1. Caminho vazio é permitido (fica pendente, como uma célula obrigatória vazia).
+ */
+function checkedEntryChanges(
+  spec: Spec,
+  field: CodeRefField,
+  input: Partial<CodeRefEntryInput>,
+): EntryChanges {
+  const changes: EntryChanges = {};
+  if (input.platform !== undefined) {
+    if (!codeRefPlatforms(spec, field).includes(input.platform)) {
+      fail('platform-not-allowed', input.platform);
+    }
+    changes.platform = input.platform;
+  }
+  if (input.path !== undefined) {
+    const path = input.path === null ? null : normalizeCodePath(input.path);
+    if (path !== null && !isValidCodePath(path)) fail('invalid-path', path);
+    changes.path = path;
+  }
+  if (input.symbol !== undefined) {
+    const symbol = input.symbol?.trim() ?? '';
+    changes.symbol = symbol === '' ? null : symbol;
+  }
+  if (input.line !== undefined) {
+    if (input.line !== null && !isCodeLine(input.line)) fail('invalid-value', 'line');
+    changes.line = input.line;
+  }
+  return changes;
+}
+
+/** Lê as propriedades de uma entrada em JSON (só tipos; as regras ficam em `checkedEntryChanges`). */
+function entryInputOf(
+  item: { readonly [key: string]: JsonValue },
+  key: string,
+): Partial<CodeRefEntryInput> {
+  const allowed: readonly string[] = CODE_REF_KEYS;
+  for (const k of Object.keys(item)) {
+    if (!allowed.includes(k)) fail('invalid-value', `${key}: ${k}`);
+  }
+  const { platform, path, symbol, line } = item;
+  const input: { -readonly [K in keyof CodeRefEntryInput]?: CodeRefEntryInput[K] } = {};
+  if (platform !== undefined) {
+    if (typeof platform !== 'string') fail('invalid-value', `${key}: platform`);
+    input.platform = platform;
+  }
+  if (path !== undefined) {
+    if (path !== null && typeof path !== 'string') fail('invalid-value', `${key}: path`);
+    input.path = path;
+  }
+  if (symbol !== undefined) {
+    if (symbol !== null && typeof symbol !== 'string') {
+      fail('invalid-value', `${key}: symbol`);
+    }
+    input.symbol = symbol;
+  }
+  if (line !== undefined) {
+    if (line !== null && typeof line !== 'number') fail('invalid-value', `${key}: line`);
+    input.line = line;
+  }
+  return input;
+}
+
+function newEntry(id: string, changes: EntryChanges, key: string): CodeRefEntry {
+  if (changes.platform === undefined) fail('invalid-value', `${key}: platform`);
+  return {
+    _id: id,
+    platform: changes.platform,
+    path: changes.path ?? null,
+    symbol: changes.symbol ?? null,
+    line: changes.line ?? null,
+  };
+}
+
+/**
+ * Valor completo de um campo `codeRef` a partir de uma lista (o caminho do
+ * `setFieldValue`, usado também pelo MCP): vazio limpa (`[]`). Cada item é um objeto
+ * só com `_id`, `platform`, `path`, `symbol` e `line`.
+ * - sem `_id`: entrada nova, com `newId()` e `platform` obrigatória;
+ * - `_id` de uma entrada existente: mantém a identidade, e as propriedades ausentes
+ *   ficam como estão (como as linhas de tabela no MCP);
+ * - outro `_id`: entrada nova com esse id. Ids repetidos na lista falham.
+ */
+function checkedCodeRefList(
+  spec: Spec,
+  field: CodeRefField,
+  current: JsonValue | undefined,
+  value: JsonValue,
+  newId: () => string,
+): JsonValue {
+  if (isEmptyValue(value)) return [];
+  if (!Array.isArray(value)) fail('invalid-value', field.key);
+  const existing = new Map<string, { readonly [key: string]: JsonValue }>();
+  for (const item of Array.isArray(current) ? current : []) {
+    if (isRecord(item) && typeof item._id === 'string') existing.set(item._id, item);
+  }
+  const seen = new Set<string>();
+  return value.map((item: JsonValue): JsonValue => {
+    if (!isRecord(item)) fail('invalid-value', field.key);
+    const given = item._id;
+    if (given !== undefined && (typeof given !== 'string' || given === '')) {
+      fail('invalid-value', `${field.key}: _id`);
+    }
+    const id = given ?? newId();
+    if (seen.has(id)) fail('duplicate-id', id);
+    seen.add(id);
+    const changes = checkedEntryChanges(spec, field, entryInputOf(item, field.key));
+    const base = existing.get(id);
+    return base ? { ...base, ...changes } : newEntry(id, changes, field.key);
+  });
+}
+
+/** Adiciona uma entrada no fim da lista. Sem `path`, a entrada fica pendente. */
+export function addCodeRefEntry(
+  p: Project,
+  annotationId: string,
+  key: string,
+  entryId: string,
+  input: CodeRefEntryInput,
+): Project {
+  return updateValues(p, annotationId, (values, type, _a, resolved) => {
+    const field = codeRefField(type, key);
+    const entries = rawRows(values, key);
+    if (entryId === '') fail('invalid-value', `${key}: _id`);
+    if (entries.some((r) => isRecord(r) && r._id === entryId)) {
+      fail('duplicate-id', entryId);
+    }
+    const entry = newEntry(
+      entryId,
+      checkedEntryChanges(resolved.spec, field, input),
+      key,
+    );
+    return { ...values, [key]: [...entries, entry] };
+  });
+}
+
+/** Altera as propriedades informadas da entrada `entryId`; as outras ficam como estão. */
+export function updateCodeRefEntry(
+  p: Project,
+  annotationId: string,
+  key: string,
+  entryId: string,
+  changes: Partial<CodeRefEntryInput>,
+): Project {
+  const a = findById(p.annotations, annotationId);
+  const resolved = requireType(p, a);
+  const field = codeRefField(resolved.type, key);
+  const entries = rawRows(a.values ?? {}, key);
+  const index = rowIndex(entries, entryId);
+  const checked = checkedEntryChanges(resolved.spec, field, changes);
+  const current = entries[index];
+  if (
+    isRecord(current) &&
+    Object.entries(checked).every(
+      ([k, v]) => Object.hasOwn(current, k) && current[k] === v,
+    )
+  ) {
+    return p;
+  }
+  return updateValues(p, annotationId, (values) => ({
+    ...values,
+    [key]: entries.map((r, i) => (i === index && isRecord(r) ? { ...r, ...checked } : r)),
+  }));
+}
+
+export function removeCodeRefEntry(
+  p: Project,
+  annotationId: string,
+  key: string,
+  entryId: string,
+): Project {
+  return updateValues(p, annotationId, (values, type) => {
+    codeRefField(type, key);
+    const entries = rawRows(values, key);
+    const index = rowIndex(entries, entryId);
+    return { ...values, [key]: entries.filter((_, i) => i !== index) };
+  });
+}
+
+/** Reordena a entrada `entryId` para a posição `toIndex`. */
+export function moveCodeRefEntry(
+  p: Project,
+  annotationId: string,
+  key: string,
+  entryId: string,
+  toIndex: number,
+): Project {
+  return updateValues(p, annotationId, (values, type) => {
+    codeRefField(type, key);
+    const entries = rawRows(values, key);
+    return { ...values, [key]: moveItem(entries, rowIndex(entries, entryId), toIndex) };
   });
 }
 

@@ -1,6 +1,14 @@
+import {
+  CODE_REF_KEYS,
+  codeRefPlatforms,
+  isCodeLine,
+  isValidCodePath,
+  normalizeCodePath,
+} from './codeRefs';
 import { findById } from './project';
 import { memoByProject, projectIndex } from './projectIndex';
-import { isTargetAccepted, parseRefValue, resolveRef, tableRows } from './refs';
+import { isRecord, isTargetAccepted, parseRefValue, resolveRef, tableRows } from './refs';
+import type { Spec, SpecField } from './spec';
 import { fieldOf, isAllowedOwner, specLayerOf, typeOfAnnotation } from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Project } from './types';
@@ -28,16 +36,78 @@ export type AnnotationIssueCode =
   /** O alvo da referência não existe mais. */
   | 'broken-ref'
   /** O alvo existe, mas não é aceito pelo campo (perdeu a etiqueta, deixou de ser livre). */
-  | 'ref-not-accepted';
+  | 'ref-not-accepted'
+  /** Entrada de `codeRef` com plataforma não declarada pela especialização do tipo. */
+  | 'unknown-platform'
+  /** Entrada de `codeRef` com plataforma declarada, mas fora do `platforms` do campo. */
+  | 'platform-not-allowed'
+  /** Entrada de `codeRef` sem caminho. */
+  | 'missing-path';
 
 export interface AnnotationIssue {
   readonly code: AnnotationIssueCode;
   /** Campo envolvido. */
   readonly key?: string;
-  /** Linha da tabela envolvida. */
+  /** Linha da tabela ou entrada do `codeRef` envolvida (o `_id`). */
   readonly rowId?: string;
-  /** Coluna da tabela envolvida. */
+  /**
+   * Coluna da tabela envolvida; no `codeRef`, a propriedade da entrada (`platform`,
+   * `path`, `symbol`, `line` ou uma chave desconhecida).
+   */
   readonly column?: string;
+}
+
+const CODE_REF_KEY_SET: ReadonlySet<string> = new Set(CODE_REF_KEYS);
+
+/**
+ * Pendências de um campo `codeRef`: valor que não é lista, obrigatório vazio, entrada
+ * malformada, chave desconhecida, plataforma não declarada ou fora do campo, caminho
+ * ausente ou inválido, símbolo que não é texto e linha que não é inteiro ≥ 1.
+ */
+function codeRefIssues(
+  spec: Spec,
+  field: SpecField,
+  value: JsonValue | undefined,
+): AnnotationIssue[] {
+  const { key } = field;
+  if (value !== undefined && value !== null && !Array.isArray(value)) {
+    return [{ code: 'invalid-value', key }];
+  }
+  const items: readonly JsonValue[] = Array.isArray(value) ? value : [];
+  const issues: AnnotationIssue[] = [];
+  if (items.length === 0 && field.required) issues.push({ code: 'required-empty', key });
+  const malformed = items.some(
+    (item) => !isRecord(item) || typeof item._id !== 'string' || item._id === '',
+  );
+  if (malformed) issues.push({ code: 'invalid-value', key });
+
+  const declared = new Set((spec.platforms ?? []).map((platform) => platform.id));
+  const allowed = new Set(codeRefPlatforms(spec, field));
+  for (const item of items) {
+    if (!isRecord(item) || typeof item._id !== 'string' || item._id === '') continue;
+    const rowId = item._id;
+    const push = (code: AnnotationIssueCode, column: string) =>
+      issues.push({ code, key, rowId, column });
+    for (const column of Object.keys(item)) {
+      if (!CODE_REF_KEY_SET.has(column)) push('unknown-field', column);
+    }
+    const { platform, path, symbol, line } = item;
+    if (typeof platform !== 'string' || platform === '')
+      push('invalid-value', 'platform');
+    else if (!declared.has(platform)) push('unknown-platform', 'platform');
+    else if (!allowed.has(platform)) push('platform-not-allowed', 'platform');
+    if (path === undefined || path === null) push('missing-path', 'path');
+    else if (typeof path !== 'string') push('invalid-value', 'path');
+    else if (normalizeCodePath(path) === null) push('missing-path', 'path');
+    else if (!isValidCodePath(path)) push('invalid-value', 'path');
+    if (symbol !== undefined && symbol !== null && typeof symbol !== 'string') {
+      push('invalid-value', 'symbol');
+    }
+    if (line !== undefined && line !== null && !isCodeLine(line)) {
+      push('invalid-value', 'line');
+    }
+  }
+  return issues;
 }
 
 function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
@@ -52,7 +122,7 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
 
   const resolved = typeOfAnnotation(p, a);
   if (!resolved) return [{ code: 'unknown-type' }];
-  const { type } = resolved;
+  const { type, spec } = resolved;
   const values = a.values;
 
   if (!layer || !layer.spec || layer.spec.specId !== a.type.specId) {
@@ -99,12 +169,14 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
       }
       continue;
     }
+    if (field.type === 'codeRef') {
+      issues.push(...codeRefIssues(spec, field, value));
+      continue;
+    }
     if (value === undefined || isEmptyValue(value)) {
       if (field.required) issues.push({ code: 'required-empty', key });
       continue;
     }
-    // Valor e pendências do `codeRef` (entradas, plataforma, caminho): fase 3b.2.
-    if (field.type === 'codeRef') continue;
     if (field.type === 'ref') {
       const ref = parseRefValue(value);
       const target = ref && resolveRef(p, ref);

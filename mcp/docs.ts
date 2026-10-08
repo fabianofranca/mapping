@@ -25,7 +25,7 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     uri: 'mapping-docs://FORMAT.md',
     title: 'Formato do mapping.json',
     description:
-      'Referência do mapping.json (schema v6): imagens, marcações, camadas e anotações.',
+      'Referência do mapping.json (schema v7): imagens, marcações, camadas, anotações e referências de código.',
     text: format,
   },
   {

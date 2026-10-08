@@ -1,9 +1,18 @@
 // @vitest-environment node
 import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
-import { serialize } from '../../src/model';
+import {
+  codeLink,
+  deserialize,
+  findByCode,
+  getProjectIssues,
+  migrations,
+  serialize,
+  specFiles,
+} from '../../src/model';
 import { readProjectZip, writeProjectZip, zipFileName } from '../../src/storage/zip';
 import { sampleProject } from '../model/fixtures';
+import { CADASTRO_VIEW_MODEL_KT, codeProject } from '../model/specFixtures';
 
 async function blobText(blob: Blob | undefined): Promise<string | undefined> {
   return blob?.text();
@@ -30,6 +39,56 @@ describe('zip do projeto', () => {
     expect(await blobText(read.files.images.get('images/lateral.jpg'))).toBe('LATERAL');
     expect(read.files.images.get('images/frente.jpg')?.type).toBe('image/jpeg');
     expect(read.files.specs).toEqual(specs);
+  });
+
+  it('round-trip v7: SDUI v2 e Modelo de dados v1 juntos, com platformRepos e os _id do codeRef', async () => {
+    const project = codeProject();
+    const mapping = serialize(project);
+    const images = new Map([
+      ['images/cadastro.png', new Blob(['PNG'], { type: 'image/png' })],
+    ]);
+    const zip = await writeProjectZip({ mapping, images, specs: specFiles(project) });
+
+    const read = await readProjectZip(zip);
+    if (!read.ok) throw new Error(read.error);
+    expect(read.files.mapping).toBe(mapping);
+    const formatVersions = [...read.files.specs].map(([file, text]) => [
+      file,
+      (JSON.parse(text) as { formatVersion: number }).formatVersion,
+    ]);
+    expect(formatVersions).toEqual([
+      ['specs/sdui.json', 2],
+      ['specs/modelo-dados.json', 1],
+    ]);
+
+    const loaded = deserialize(read.files.mapping, migrations, read.files.specs);
+    if (!loaded.ok) throw new Error(JSON.stringify(loaded.error));
+    expect(loaded.specWarnings).toEqual([]);
+    expect(loaded.migratedFrom).toBeNull();
+    expect(loaded.project).toEqual(project);
+    expect(serialize(loaded.project)).toBe(mapping);
+
+    const data = JSON.parse(read.files.mapping);
+    expect(data.schemaVersion).toBe(7);
+    expect(data.platformRepos).toEqual({
+      android: {
+        urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
+        localPath: '../../..',
+      },
+    });
+    const screen = data.annotations.find((a: { id: string }) => a.id === 'AS');
+    expect(screen.values.implementacao.map((e: { _id: string }) => e._id)).toEqual([
+      'C1',
+      'C2',
+      'C3',
+    ]);
+    // O projeto lido do zip responde igual: link, busca e pendências.
+    const [found] = findByCode(loaded.project, { path: 'CadastroViewModel.kt' });
+    expect(found?.entry._id).toBe('C2');
+    expect(found && codeLink(loaded.project, found.entry)).toBe(
+      `https://github.com/org/app-android/blob/main/${CADASTRO_VIEW_MODEL_KT}#L42`,
+    );
+    expect([...getProjectIssues(loaded.project).keys()]).toEqual(['AT']);
   });
 
   it('aceita o projeto dentro de uma pasta no zip', async () => {

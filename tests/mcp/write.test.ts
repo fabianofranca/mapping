@@ -646,7 +646,7 @@ describe('imagens pelo lote', () => {
 });
 
 describe('projeto de schema antigo', () => {
-  it('a primeira gravação guarda o backup do original e grava v6 com revision 1', async () => {
+  it('a primeira gravação guarda o backup do original e grava v7 com revision 1', async () => {
     const dir = ws.projectDir('legado');
     const original = readFileSync(join(dir, 'mapping.json'), 'utf8');
     const plan = await mcp.call<Plan>('plan_changes', {
@@ -663,7 +663,8 @@ describe('projeto de schema antigo', () => {
     expect(backups[0]).toMatch(/^mapping\.v5\.\d{8}-\d{6}\.json$/);
     expect(readFileSync(join(dir, 'backups', backups[0]!), 'utf8')).toBe(original);
     const saved = readProject(dir);
-    expect(saved.schemaVersion).toBe(6);
+    expect(saved.schemaVersion).toBe(7);
+    expect(saved.platformRepos).toEqual({});
     expect(saved.layers.at(-1)!.name).toBe('Notas');
   });
 });

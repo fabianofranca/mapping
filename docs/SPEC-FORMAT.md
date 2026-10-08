@@ -100,7 +100,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` ou `2`), `id`,
 - `enum`: uma das `options`. Booleanos são `enum` (ex: `["sim", "não"]`).
 - `table`: lista de linhas; cada linha é um objeto com as chaves das `columns` (mais o id interno `_id`).
 - `ref`: **referência forte** a uma tupla de outra anotação. O valor do campo é a referência.
-- `codeRef`: **onde a instância foi implementada**, por plataforma (caminho do arquivo, símbolo e linha). Só existe na `formatVersion` 2; o formato do valor é descrito em [`FORMAT.md`](FORMAT.md) a partir da etapa 3b.2.
+- `codeRef`: **onde a instância foi implementada**, por plataforma (caminho do arquivo, símbolo e linha). Só existe na `formatVersion` 2; o valor (uma lista de entradas) é descrito em [`FORMAT.md`](FORMAT.md), "Campos da v7".
 
 ## Relações entre anotações
 
@@ -197,7 +197,7 @@ A `formatVersion` 2 liga a especialização ao código: ela declara as **platafo
 ```
 
 - Plataformas com o **mesmo id** em especializações diferentes são a mesma plataforma (a configuração do repositório fica no projeto, não na especialização).
-- O valor de um `codeRef` e o uso de `code` por agentes e pelo servidor MCP chegam nas fases seguintes da etapa 3b; por enquanto a app só valida o formato da especialização.
+- O valor de um `codeRef` e o repositório de cada plataforma (`platformRepos`, no projeto) estão em [`FORMAT.md`](FORMAT.md), "Campos da v7". O editor do `codeRef` na app e o uso de `code` pelo servidor MCP chegam nas fases seguintes da etapa 3b.
 
 ## Regras de validação
 

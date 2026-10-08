@@ -23,6 +23,7 @@ export function createProject({ name, now, firstLayer }: NewProjectArgs): Projec
     coordinateSystem: COORDINATE_SYSTEM,
     project: { name: name.trim(), createdAt: now, updatedAt: now },
     specializations: [],
+    platformRepos: {},
     layers: [{ ...firstLayer, spec: null }],
     images: [],
     markings: [],

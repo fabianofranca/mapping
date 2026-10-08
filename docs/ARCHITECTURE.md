@@ -72,12 +72,13 @@ ação do usuário
 
 ### `src/model/`
 
-- `types.ts`, `schema.ts`, `serialization.ts`, `migrations.ts`: tipos do `mapping.json` v6, validação (zod), (de)serialização e migração de versões antigas.
+- `types.ts`, `schema.ts`, `serialization.ts`, `migrations.ts`: tipos do `mapping.json` v7, validação (zod), (de)serialização e migração de versões antigas.
 - `invariants.ts`: `validateProject` (regras entre coleções: ids únicos, contenção, hierarquia sem ciclos, vínculos).
 - `layers.ts`, `images.ts`, `markings.ts`, `annotations.ts`, `hierarchy.ts`, `geometry.ts`: operações puras por entidade.
 - `locks.ts`: a trava (etapa 2.5). `setMarkingLocked`, `setImageLocked` e `setImageMarkingsLocked` (uma operação só para "trancar todas"); as consultas `canEditMarkingGeometry`, `canDeleteMarking`, `canEditImagePlacement`, `canDeleteImage` e `canReplaceImage`, que a interface usa para desabilitar controles e as operações de `markings.ts`/`images.ts` usam para lançar o erro `locked`; e `markingLockStates` (trava própria ou herdada do pai, de cada marcação, numa passada).
 - `spec.ts`, `specLookup.ts`, `specializations.ts`: formato e validação da especialização, resolução de tipos e ciclo de vida no projeto (aplicar, atualizar, remover).
 - `typed.ts`, `typedDisplay.ts`, `refs.ts`, `links.ts`, `issues.ts`: anotações tipadas, referências fortes e pendências ("incompletas", calculadas e nunca gravadas).
+- `codeRefs.ts`, `codeBlueprint.ts` (etapa 3b): plataformas das especializações aplicadas (`projectPlatforms`, a primeira declaração de cada id vale), repositório por plataforma (`setPlatformRepo`, `removePlatformRepo`), leitura das entradas de `codeRef` (as operações de entrada ficam em `typed.ts`, ao lado das de linha de tabela), `codeLink` (URL pelo `urlTemplate`), `codeLocalPath`, `findByCode` (caminho por sufixo de segmentos inteiros ou símbolo), `platformRepoWarnings` (aviso de plataforma sem repositório, também em `derived.platformRepoWarnings`) e `codeBlueprint` (a planta de código de uma marcação numa plataforma). Nenhum nome de plataforma no código: elas vêm só das especializações.
 - `projectIndex.ts`, `display.ts`, `listing.ts`: índice e dados de exibição (visibilidade, indicadores, lista).
 - `imageOptimization.ts`: decisões de otimização na importação (funções puras: tamanho, formato, nome e origem do arquivo). A recodificação em si (canvas) fica em `storage/imageImport.ts`; o MCP reaproveita as mesmas decisões (`mcp/imagePrepare.ts`).
 - `exif.ts`: `readExifOrientation` (a orientação EXIF de um JPEG, lida dos bytes; usada pela importação da app e pelo MCP). `backups.ts`: `BACKUPS_DIR`, `backupFileName` e `backupTimestamp` (o nome da cópia do original antes de gravar um arquivo migrado, app e MCP).

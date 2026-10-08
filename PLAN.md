@@ -15,7 +15,7 @@ Estado: **etapas 1 a 2.5 e 3a (servidor MCP, base) concluídas**; a **etapa 3b (
 | [`README.md`](README.md)                                 | O que é, como rodar, testar, publicar e usar o preview                         |
 | [`CLAUDE.md`](CLAUDE.md)                                 | Regras de trabalho e de arquitetura para o Claude Code                         |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)           | Camadas, fluxo de dados, regras (com o porquê) e onde fica cada coisa          |
-| [`docs/FORMAT.md`](docs/FORMAT.md)                       | Referência do `mapping.json` (schema v6; v7 na etapa 3b)                                       |
+| [`docs/FORMAT.md`](docs/FORMAT.md)                       | Referência do `mapping.json` (schema v7)                                       |
 | [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md)             | Formato do arquivo de especialização (e `docs/spec.schema.json`)               |
 | [`docs/MCP.md`](docs/MCP.md)                             | Servidor MCP: instalação, `.mcp.json`, raízes, tools, referências, problemas   |
 | [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md)             | Guia do agente: como usar as tools do servidor MCP (também servido como recurso) |
@@ -218,11 +218,11 @@ Use o projeto do roteiro 13.9 ([`docs/history/PLAN-etapas-1-2.md`](docs/history/
 **Aceite**: os dois exemplos validam; arquivos com cada erro novo da validação são rejeitados com o caminho correto; especializações v1 continuam abrindo.
 
 #### 3b.2 — Schema v7, pendências e funções puras (modelo)
-- [ ] Schema v7 (`platformRepos`, valor de `codeRef` com `_id`) + migração v6 → v7
-- [ ] Operações do modelo: configurar e remover repositório; criar, alterar, remover e reordenar entradas de `codeRef`
-- [ ] `codeLink`, `codeBlueprint`, `findByCode` + testes
-- [ ] Pendências e aviso novos
-- [ ] `docs/FORMAT.md` (v7, com "Como um agente lê" os `codeRef`)
+- [x] Schema v7 (`platformRepos`, valor de `codeRef` com `_id`) + migração v6 → v7
+- [x] Operações do modelo: configurar e remover repositório; criar, alterar, remover e reordenar entradas de `codeRef`
+- [x] `codeLink`, `codeBlueprint`, `findByCode` + testes
+- [x] Pendências e aviso novos
+- [x] `docs/FORMAT.md` (v7, com "Como um agente lê" os `codeRef`)
 
 **Aceite**: testes da migração, das três funções (inclusive blueprint com hierarquia, eventos vinculados, `ref` resolvido e tipo sem `code`), das pendências e do round-trip pelo zip com um projeto usando SDUI v2 e Modelo de dados v1.
 

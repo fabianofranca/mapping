@@ -11,6 +11,7 @@ import {
   parseSpecText,
   projectLayerFor,
   setFieldValue,
+  setPlatformRepo,
   setTableCell,
   type JsonValue,
   type Project,
@@ -68,6 +69,7 @@ function typed(
     onClick: 'eventos',
     onHold: 'eventos',
     onChange: 'eventos',
+    screen: 'telas',
     classe: 'classes',
     endpoint: 'endpoints',
   };
@@ -205,6 +207,52 @@ export function cadastroProject(): Project {
     path: '/v1/usuarios',
     request: 'User',
     response: 'User',
+  });
+  return p;
+}
+
+/** Caminhos do Screen `Cadastro` em `codeProject` (passo 3 do roteiro da 3b). */
+export const CADASTRO_SCREEN_KT = 'app/src/main/java/com/app/cadastro/CadastroScreen.kt';
+export const CADASTRO_VIEW_MODEL_KT =
+  'app/src/main/java/com/app/cadastro/CadastroViewModel.kt';
+export const CADASTRO_VIEW_SWIFT = 'App/Cadastro/CadastroView.swift';
+
+/**
+ * `cadastroProject` com o roteiro da 3b (passos 2 e 3): o Screen `AS` (`Cadastro`,
+ * `rota: /cadastro`) no Formulário, com duas entradas Android em `implementacao` (C1,
+ * C2 com linha) e uma iOS (C3); repositório configurado só para `android`.
+ */
+export function codeProject(): Project {
+  let p = typed(cadastroProject(), 'AS', 'MF', 'sdui', 'screen', {
+    nome: 'Cadastro',
+    rota: '/cadastro',
+    implementacao: [
+      {
+        _id: 'C1',
+        platform: 'android',
+        path: CADASTRO_SCREEN_KT,
+        symbol: 'CadastroScreen',
+        line: null,
+      },
+      {
+        _id: 'C2',
+        platform: 'android',
+        path: CADASTRO_VIEW_MODEL_KT,
+        symbol: 'CadastroViewModel',
+        line: 42,
+      },
+      {
+        _id: 'C3',
+        platform: 'ios',
+        path: CADASTRO_VIEW_SWIFT,
+        symbol: 'CadastroView',
+        line: null,
+      },
+    ],
+  });
+  p = setPlatformRepo(p, 'android', {
+    urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
+    localPath: '../../..',
   });
   return p;
 }

@@ -40,7 +40,13 @@ export type ModelErrorCode =
   | 'self-ref'
   | 'ref-not-accepted'
   | 'spec-already-applied'
-  | 'spec-not-newer';
+  | 'spec-not-newer'
+  // Referências de código (etapa 3b)
+  | 'unknown-platform'
+  | 'platform-not-allowed'
+  | 'invalid-path'
+  | 'invalid-url-template'
+  | 'invalid-local-path';
 
 export class ModelError extends Error {
   constructor(
