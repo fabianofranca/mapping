@@ -69,6 +69,65 @@ const SDUI_EXCERPT = `{
   ]
 }`;
 
+/** Trecho de uma especialização v2: plataforma, `code` de um tipo e um campo `codeRef`. */
+const CODE_EXCERPT = `{
+  "format": "mapping-spec",
+  "formatVersion": 2,
+  "id": "sdui",
+  "name": "SDUI",
+  "version": 2,
+  "platforms": [
+    { "id": "app", "name": "App", "language": "typescript" }
+  ],
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "fields": [
+            { "key": "texto", "type": "string", "required": true },
+            { "key": "estilo", "type": "enum",
+              "options": ["primary", "secondary"], "default": "primary" }
+          ],
+          "code": {
+            "app": {
+              "symbol": "DSButton",
+              "params": { "texto": "text", "estilo": "style" },
+              "values": {
+                "estilo": {
+                  "primary": "ButtonStyle.Primary",
+                  "secondary": "ButtonStyle.Secondary"
+                }
+              },
+              "notes": "Passe o id como testId."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "telas",
+      "name": "Telas",
+      "color": "#00897B",
+      "annotationTypes": [
+        {
+          "id": "screen",
+          "name": "Screen",
+          "labelField": "nome",
+          "fields": [
+            { "key": "nome", "type": "string", "required": true },
+            { "key": "implementacao", "type": "codeRef" }
+          ]
+        }
+      ]
+    }
+  ]
+}`;
+
 const ptBR: readonly HelpSection[] = [
   {
     id: 'concept',
@@ -95,7 +154,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1), id, name e version (inteiro ≥ 1) são obrigatórios; description é opcional. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 ou 2), id, name e version (inteiro ≥ 1) são obrigatórios; description e platforms são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -117,6 +176,10 @@ const ptBR: readonly HelpSection[] = [
             text: 'Ids dos tipos que podem ser vinculados a este.',
           },
           { term: 'fields', text: 'Obrigatório. Lista de campos (pode ser vazia).' },
+          {
+            term: 'code',
+            text: 'Opcional (formatVersion 2). Como o tipo vira código em cada plataforma declarada.',
+          },
         ],
       },
       { kind: 'p', text: 'Campo (fields):' },
@@ -130,7 +193,7 @@ const ptBR: readonly HelpSection[] = [
           { term: 'label', text: 'Rótulo exibido (pode ter acentos). Padrão: a key.' },
           {
             term: 'type',
-            text: 'Obrigatório: string, number, date, enum, table ou ref.',
+            text: 'Obrigatório: string, number, date, enum, table, ref ou codeRef.',
           },
           {
             term: 'required',
@@ -138,7 +201,7 @@ const ptBR: readonly HelpSection[] = [
           },
           {
             term: 'default',
-            text: 'Valor inicial, válido para o tipo. Não existe para table nem ref.',
+            text: 'Valor inicial, válido para o tipo. Não existe para table, ref nem codeRef.',
           },
           { term: 'options', text: 'Só enum: lista não vazia de strings únicas.' },
           {
@@ -156,6 +219,10 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'accepts',
             text: 'Só ref: { "tags": [...], "free": true|false }. Precisa de pelo menos uma etiqueta ou free: true.',
+          },
+          {
+            term: 'platforms',
+            text: 'Só codeRef: subconjunto das plataformas declaradas (padrão: todas).',
           },
           { term: 'description', text: 'Texto de ajuda exibido no editor.' },
         ],
@@ -183,6 +250,10 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'ref',
             text: 'Referência forte a uma tupla de outra anotação. O valor do campo é a referência.',
+          },
+          {
+            term: 'codeRef',
+            text: 'Onde a instância foi implementada, por plataforma (caminho do arquivo, símbolo e linha).',
           },
         ],
       },
@@ -235,6 +306,51 @@ const ptBR: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'code',
+    title: 'Plataformas, code e codeRef',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A formatVersion 2 liga a especialização ao código: ela declara as plataformas (um app, um contrato de API…) e como cada tipo vira código em cada uma. A formatVersion 1 continua válida (é a 2 sem plataformas e sem code).',
+      },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'platforms',
+            text: 'Na raiz, opcional. Lista de { id, name, language }: id no formato [a-z0-9-]+ e único; name é exibido; language é informativo (ajuda o agente).',
+          },
+          {
+            term: 'code',
+            text: 'Em cada tipo de anotação, opcional, por id de plataforma declarada, com as propriedades abaixo.',
+          },
+          {
+            term: 'symbol',
+            text: 'Obrigatório em cada entrada de code: componente ou tipo que implementa o tipo naquela plataforma.',
+          },
+          {
+            term: 'params',
+            text: 'Chave do campo do tipo → nome do parâmetro no código. Campos fora de params não são passados.',
+          },
+          {
+            term: 'values',
+            text: 'Só para campos enum: valor no mapping → valor no código. Valor sem tradução é passado como está.',
+          },
+          { term: 'notes', text: 'Orientação livre para o agente.' },
+          {
+            term: 'codeRef',
+            text: 'Tipo de campo que registra onde a instância foi implementada. O platforms do campo é opcional e restringe as plataformas permitidas. Não é permitido em colunas de table nem como default.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'code e codeRef só valem em especializações que declaram platforms; os ids citados precisam estar em platforms, e as chaves de params e values precisam ser campos do tipo.',
+      },
+      { kind: 'code', code: CODE_EXCERPT },
+    ],
+  },
+  {
     id: 'validation',
     title: 'Regras de validação',
     blocks: [
@@ -245,14 +361,17 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion, id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 ou 2), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
-          'default compatível com o tipo (e presente em options no enum); ref sem default;',
-          'columns só com tipos simples; rowLabel obrigatório em table com tags e apontando para uma coluna string;',
+          'default compatível com o tipo (e presente em options no enum); ref e codeRef sem default;',
+          'columns só com tipos simples (codeRef não pode ser coluna); rowLabel obrigatório em table com tags e apontando para uma coluna string;',
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
+          'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms, code e codeRef só na formatVersion 2;',
+          'code e codeRef só em especializações com platforms; os ids de code e do platforms do campo precisam existir em platforms;',
+          'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório;',
           'color no formato #RRGGBB; propriedades desconhecidas são rejeitadas.',
         ],
       },
@@ -303,7 +422,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1), id, name and version (integer ≥ 1) are required; description is optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 or 2), id, name and version (integer ≥ 1) are required; description and platforms are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -328,6 +447,10 @@ const enUS: readonly HelpSection[] = [
             text: 'Ids of the types that can be linked to this one.',
           },
           { term: 'fields', text: 'Required. List of fields (may be empty).' },
+          {
+            term: 'code',
+            text: 'Optional (formatVersion 2). How the type becomes code on each declared platform.',
+          },
         ],
       },
       { kind: 'p', text: 'Field (fields):' },
@@ -341,7 +464,7 @@ const enUS: readonly HelpSection[] = [
           { term: 'label', text: 'Display label (may have accents). Defaults to key.' },
           {
             term: 'type',
-            text: 'Required: string, number, date, enum, table or ref.',
+            text: 'Required: string, number, date, enum, table, ref or codeRef.',
           },
           {
             term: 'required',
@@ -349,7 +472,7 @@ const enUS: readonly HelpSection[] = [
           },
           {
             term: 'default',
-            text: 'Initial value, valid for the type. Does not exist for table or ref.',
+            text: 'Initial value, valid for the type. Does not exist for table, ref or codeRef.',
           },
           { term: 'options', text: 'enum only: non-empty list of unique strings.' },
           {
@@ -367,6 +490,10 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'accepts',
             text: 'ref only: { "tags": [...], "free": true|false }. Needs at least one tag or free: true.',
+          },
+          {
+            term: 'platforms',
+            text: 'codeRef only: a subset of the declared platforms (default: all).',
           },
           { term: 'description', text: 'Help text shown in the editor.' },
         ],
@@ -394,6 +521,10 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'ref',
             text: 'Strong reference to a tuple of another annotation. The field value is the reference.',
+          },
+          {
+            term: 'codeRef',
+            text: 'Where the instance was implemented, per platform (file path, symbol and line).',
           },
         ],
       },
@@ -446,6 +577,51 @@ const enUS: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'code',
+    title: 'Platforms, code and codeRef',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'formatVersion 2 links the specialization to code: it declares the platforms (an app, an API contract…) and how each type becomes code on each one. formatVersion 1 is still valid (it is version 2 without platforms and without code).',
+      },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'platforms',
+            text: 'At the root, optional. List of { id, name, language }: id in the [a-z0-9-]+ format and unique; name is displayed; language is informational (it helps the agent).',
+          },
+          {
+            term: 'code',
+            text: 'On each annotation type, optional, by declared platform id, with the properties below.',
+          },
+          {
+            term: 'symbol',
+            text: 'Required in each code entry: the component or type that implements the type on that platform.',
+          },
+          {
+            term: 'params',
+            text: 'Key of a type field → parameter name in the code. Fields outside params are not passed.',
+          },
+          {
+            term: 'values',
+            text: 'Only for enum fields: value in the mapping → value in the code. A value without a translation is passed as is.',
+          },
+          { term: 'notes', text: 'Free-form guidance for the agent.' },
+          {
+            term: 'codeRef',
+            text: 'Field type that records where the instance was implemented. The field’s platforms is optional and restricts the allowed platforms. It is not allowed as a table column or as a default.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'code and codeRef only work in specializations that declare platforms; the ids they cite must exist in platforms, and the keys of params and values must be fields of the type.',
+      },
+      { kind: 'code', code: CODE_EXCERPT },
+    ],
+  },
+  {
     id: 'validation',
     title: 'Validation rules',
     blocks: [
@@ -456,14 +632,17 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion, id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 or 2), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
-          'default compatible with the type (and present in options for enum); ref without default;',
-          'columns with simple types only; rowLabel required on a table with tags and pointing to a string column;',
+          'default compatible with the type (and present in options for enum); ref and codeRef without default;',
+          'columns with simple types only (codeRef cannot be a column); rowLabel required on a table with tags and pointing to a string column;',
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
+          'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms, code and codeRef only in formatVersion 2;',
+          'code and codeRef only in specializations with platforms; the ids in code and in the field’s platforms must exist in platforms;',
+          'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required;',
           'color in the #RRGGBB format; unknown properties are rejected.',
         ],
       },

@@ -68,7 +68,7 @@ export function checkSimpleValue(
 /** Valor inicial do campo: o `default`, `[]` para `table` e `null` no resto. */
 export function defaultFieldValue(field: SpecField): JsonValue {
   if (field.type === 'table') return [];
-  if (field.type === 'ref') return null;
+  if (field.type === 'ref' || field.type === 'codeRef') return null;
   return field.default ?? null;
 }
 
@@ -210,7 +210,8 @@ export function setFieldValue(
   return updateValues(p, annotationId, (values, type, a) => {
     const field = fieldOf(type, key) ?? fail('unknown-field', key);
     let next: JsonValue;
-    if (field.type === 'table') {
+    if (field.type === 'table' || field.type === 'codeRef') {
+      // `codeRef` ganha operações próprias na fase 3b.2.
       fail('invalid-value', key);
     } else if (field.type === 'ref') {
       if (isEmptyValue(value)) {

@@ -210,10 +210,10 @@ Use o projeto do roteiro 13.9 ([`docs/history/PLAN-etapas-1-2.md`](docs/history/
 ### Fases
 
 #### 3b.1 — Formato da especialização v2 (modelo)
-- [ ] Tipos e schema zod do `formatVersion` 2 (`platforms`, `code`, campo `codeRef`), aceitando o 1, com mensagens de erro por caminho
-- [ ] `docs/spec.schema.json` e teste de consistência com o zod
-- [ ] `examples/specs/sdui.json` v2 (o `modelo-de-dados.json` fica v1) + testes de validação
-- [ ] `docs/SPEC-FORMAT.md` e a Ajuda (resumo) atualizados; teste de consistência da Ajuda continua verde
+- [x] Tipos e schema zod do `formatVersion` 2 (`platforms`, `code`, campo `codeRef`), aceitando o 1, com mensagens de erro por caminho
+- [x] `docs/spec.schema.json` e teste de consistência com o zod
+- [x] `examples/specs/sdui.json` v2 (o `modelo-de-dados.json` fica v1) + testes de validação
+- [x] `docs/SPEC-FORMAT.md` e a Ajuda (resumo) atualizados; teste de consistência da Ajuda continua verde
 
 **Aceite**: os dois exemplos validam; arquivos com cada erro novo da validação são rejeitados com o caminho correto; especializações v1 continuam abrindo.
 

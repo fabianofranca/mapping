@@ -325,7 +325,7 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     expect(plan.summary[9]).toContain('Formulário › Cadastrar');
     expect(plan.changes).toMatchObject({
       specializations: { created: 2 },
-      layers: { created: 5 },
+      layers: { created: 6 },
       images: { created: 1 },
       markings: { created: 6 },
       annotations: { created: 11 },

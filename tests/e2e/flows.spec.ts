@@ -102,7 +102,7 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
 
   const { mapping } = await exportMapping(page);
   expect(mapping.specializations).toEqual(
-    [{ id: 'sdui', version: 1 }].map((s) => expect.objectContaining(s)),
+    [{ id: 'sdui', version: 2 }].map((s) => expect.objectContaining(s)),
   );
   const free = mapping.annotations.find((a) => a.type === null);
   const input = mapping.annotations.find((a) => a.type?.typeId === 'input');

@@ -1,16 +1,44 @@
 import { z } from 'zod';
 
-// Formato da especialização (`formatVersion` 1), seção 13.2 do docs/history/PLAN-etapas-1-2.md.
+// Formato da especialização (`formatVersion` 1 e 2), seção 13.2 do docs/history/PLAN-etapas-1-2.md
+// e etapa 3b do PLAN.md. A versão 2 acrescenta `platforms`, `code` e o campo `codeRef`;
+// a versão 1 é a 2 sem plataformas e sem `code`.
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 
 export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
-export const SPEC_FORMAT_VERSION = 1;
+/** Versão atual do formato (a que a documentação e os exemplos novos usam). */
+export const SPEC_FORMAT_VERSION = 2;
+/** Versões aceitas na importação. */
+export const SPEC_FORMAT_VERSIONS = [1, 2] as const;
+export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
-export type FieldType = SimpleFieldType | 'table' | 'ref';
+export type FieldType = SimpleFieldType | 'table' | 'ref' | 'codeRef';
+
+/** Plataforma declarada pela especialização (ex: um app, um contrato de API). */
+export interface SpecPlatform {
+  id: string;
+  name: string;
+  /** Informativo: ajuda o agente a saber em que linguagem o código está. */
+  language?: string;
+}
+
+/** Como um tipo de anotação vira código em uma plataforma. */
+export interface SpecCode {
+  /** Componente ou tipo que implementa o tipo de anotação na plataforma. */
+  symbol: string;
+  /** Chave do campo do tipo → nome do parâmetro no código. */
+  params?: Record<string, string>;
+  /** Chave de um campo `enum` → (valor no mapping → valor no código). */
+  values?: Record<string, Record<string, string>>;
+  notes?: string;
+}
+
+/** `code` de um tipo de anotação, por id de plataforma. */
+export type SpecCodeMap = Record<string, SpecCode>;
 
 export interface SpecRefAccepts {
   tags?: string[];
@@ -34,7 +62,8 @@ export type SpecColumn =
 export type SpecField =
   | SpecColumn
   | (SpecFieldBase & { type: 'table'; columns: SpecColumn[]; rowLabel?: string })
-  | (SpecFieldBase & { type: 'ref'; accepts: SpecRefAccepts });
+  | (SpecFieldBase & { type: 'ref'; accepts: SpecRefAccepts })
+  | (SpecFieldBase & { type: 'codeRef'; platforms?: string[] });
 
 export interface SpecAnnotationType {
   id: string;
@@ -44,6 +73,7 @@ export interface SpecAnnotationType {
   requiresOwner?: boolean;
   allowedChildren?: string[];
   fields: SpecField[];
+  code?: SpecCodeMap;
 }
 
 export interface SpecLayer {
@@ -55,16 +85,18 @@ export interface SpecLayer {
 
 export interface Spec {
   format: typeof SPEC_FORMAT | typeof LEGACY_SPEC_FORMAT;
-  formatVersion: typeof SPEC_FORMAT_VERSION;
+  formatVersion: SpecFormatVersion;
   id: string;
   name: string;
   version: number;
   description?: string;
+  platforms?: SpecPlatform[];
   layers: SpecLayer[];
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
 const TAG_RE = /^[a-z0-9-]+$/;
+const PLATFORM_ID_RE = /^[a-z0-9-]+$/;
 const COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -78,12 +110,19 @@ const key = z
   .regex(KEY_RE, 'chave inválida; use apenas [A-Za-z0-9_], sem espaços')
   .refine((k) => !k.startsWith('_'), 'chave não pode começar com "_" (reservado)');
 
-const fieldType = z.enum(['string', 'number', 'date', 'enum', 'table', 'ref'], {
-  error: (issue) =>
-    typeof issue.input === 'string'
-      ? `"${issue.input}" inválido; use "string", "number", "date", "enum", "table" ou "ref"`
-      : 'obrigatório',
-});
+const platformId = z
+  .string()
+  .regex(PLATFORM_ID_RE, 'id de plataforma inválido; use [a-z0-9-]+');
+
+const fieldType = z.enum(
+  ['string', 'number', 'date', 'enum', 'table', 'ref', 'codeRef'],
+  {
+    error: (issue) =>
+      typeof issue.input === 'string'
+        ? `"${issue.input}" inválido; use "string", "number", "date", "enum", "table", "ref" ou "codeRef"`
+        : 'obrigatório',
+  },
+);
 
 /** `true` para uma data existente no formato ISO `AAAA-MM-DD`. */
 export function isIsoDate(s: string): boolean {
@@ -118,6 +157,7 @@ const fieldShape = z
     tags: tags.optional(),
     rowLabel: z.string().optional(),
     accepts: acceptsSchema.optional(),
+    platforms: z.array(platformId).optional(),
     description: z.string().optional(),
   })
   .strict();
@@ -135,7 +175,7 @@ function checkField(
     ctx.addIssue({ code: 'custom', path: [...path, sub], message });
 
   const { type } = field;
-  if (column && (type === 'table' || type === 'ref')) {
+  if (column && (type === 'table' || type === 'ref' || type === 'codeRef')) {
     add(
       'type',
       `"${type}" não é permitido dentro de table; use "string", "number", "date" ou "enum"`,
@@ -160,6 +200,9 @@ function checkField(
   }
   if (type !== 'ref' && field.accepts !== undefined) {
     add('accepts', 'só é permitido em ref');
+  }
+  if (type !== 'codeRef' && field.platforms !== undefined) {
+    add('platforms', 'só é permitido em codeRef');
   }
 
   if (field.default !== undefined) {
@@ -186,12 +229,24 @@ function checkField(
       case 'ref':
         add('default', 'não existe para ref');
         break;
+      case 'codeRef':
+        add('default', 'não existe para codeRef');
+        break;
     }
   }
 
   if (type === 'ref') {
     if (!field.accepts) add('accepts', 'obrigatório em ref');
     if (field.tags !== undefined) add('tags', 'ref não pode ter etiquetas');
+  }
+  if (type === 'codeRef' && field.tags !== undefined) {
+    add('tags', 'codeRef não pode ter etiquetas');
+  }
+  if (type === 'codeRef' && field.platforms !== undefined) {
+    if (field.platforms.length === 0) add('platforms', 'não pode ser vazio');
+    else if (new Set(field.platforms).size !== field.platforms.length) {
+      add('platforms', 'plataformas repetidas');
+    }
   }
   if (type === 'table' && column) return;
   if (column && field.tags !== undefined) {
@@ -275,6 +330,56 @@ function checkFields(
   });
 }
 
+const codeEntryShape = z
+  .object({
+    symbol: z
+      .string({
+        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+      })
+      .min(1, 'não pode ser vazio'),
+    params: z.record(z.string(), nonEmpty).optional(),
+    values: z.record(z.string(), z.record(z.string(), nonEmpty)).optional(),
+    notes: z.string().optional(),
+  })
+  .strict();
+
+/** `params` e `values` de cada plataforma do `code` só citam campos (e opções) do tipo. */
+function checkCode(
+  type: { fields: RawField[]; code?: Record<string, z.infer<typeof codeEntryShape>> },
+  ctx: z.RefinementCtx,
+): void {
+  const fields = new Map(type.fields.map((f) => [f.key, f]));
+  const add = (path: (string | number)[], message: string) =>
+    ctx.addIssue({ code: 'custom', path, message });
+
+  for (const [platform, entry] of Object.entries(type.code ?? {})) {
+    for (const k of Object.keys(entry.params ?? {})) {
+      if (!fields.has(k)) {
+        add(['code', platform, 'params', k], `"${k}" não é um campo do tipo`);
+      }
+    }
+    for (const [k, translation] of Object.entries(entry.values ?? {})) {
+      const field = fields.get(k);
+      if (!field) {
+        add(['code', platform, 'values', k], `"${k}" não é um campo do tipo`);
+        continue;
+      }
+      if (field.type !== 'enum') {
+        add(['code', platform, 'values', k], `"${k}" deve ser um campo enum do tipo`);
+        continue;
+      }
+      for (const option of Object.keys(translation)) {
+        if (!(field.options ?? []).includes(option)) {
+          add(
+            ['code', platform, 'values', k, option],
+            `"${option}" não está nas options de "${k}"`,
+          );
+        }
+      }
+    }
+  }
+}
+
 const annotationTypeShape = z
   .object({
     id: nonEmpty,
@@ -284,10 +389,12 @@ const annotationTypeShape = z
     requiresOwner: z.boolean().optional(),
     allowedChildren: z.array(nonEmpty).optional(),
     fields: z.array(fieldShape),
+    code: z.record(z.string(), codeEntryShape).optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
     checkFields(type.fields, ctx, ['fields']);
+    checkCode(type, ctx);
     if (type.labelField != null) {
       const f = type.fields.find((x) => x.key === type.labelField);
       if (!f || f.type !== 'string') {
@@ -309,22 +416,50 @@ const layerShape = z
   })
   .strict();
 
+const platformShape = z
+  .object({
+    id: platformId,
+    name: nonEmpty,
+    language: nonEmpty.optional(),
+  })
+  .strict();
+
 export const specSchema = z
   .object({
     format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
       error: `deve ser "${SPEC_FORMAT}"`,
     }),
-    formatVersion: z.literal(SPEC_FORMAT_VERSION, {
-      error: `deve ser ${SPEC_FORMAT_VERSION}`,
+    formatVersion: z.union([z.literal(1), z.literal(2)], {
+      error: `deve ser ${SPEC_FORMAT_VERSIONS.join(' ou ')}`,
     }),
     id: nonEmpty,
     name: nonEmpty,
     version: z.number().int('deve ser inteiro').min(1, 'deve ser >= 1'),
     description: z.string().optional(),
+    platforms: z.array(platformShape).optional(),
     layers: z.array(layerShape),
   })
   .strict()
   .superRefine((spec, ctx) => {
+    if (spec.platforms !== undefined && spec.formatVersion < 2) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['platforms'],
+        message: 'só é permitido com formatVersion 2',
+      });
+    }
+    const platformIds = new Set<string>();
+    (spec.platforms ?? []).forEach((platform, pi) => {
+      if (platformIds.has(platform.id)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['platforms', pi, 'id'],
+          message: `id "${platform.id}" repetido`,
+        });
+      }
+      platformIds.add(platform.id);
+    });
+    const hasPlatforms = platformIds.size > 0;
     const layerIds = new Set<string>();
     /** id do tipo → índice da camada onde está definido. */
     const typeLayer = new Map<string, number>();
@@ -372,6 +507,51 @@ export const specSchema = z
           } else {
             owned.add(childId);
           }
+        });
+      });
+    });
+
+    spec.layers.forEach((layer, li) => {
+      layer.annotationTypes.forEach((type, ti) => {
+        const tp = ['layers', li, 'annotationTypes', ti];
+        if (type.code !== undefined) {
+          if (!hasPlatforms) {
+            ctx.addIssue({
+              code: 'custom',
+              path: [...tp, 'code'],
+              message: 'só é permitido em especializações que declaram platforms',
+            });
+          } else {
+            for (const id of Object.keys(type.code)) {
+              if (platformIds.has(id)) continue;
+              ctx.addIssue({
+                code: 'custom',
+                path: [...tp, 'code', id],
+                message: `plataforma "${id}" não declarada em platforms`,
+              });
+            }
+          }
+        }
+        type.fields.forEach((field, fi) => {
+          if (field.type !== 'codeRef') return;
+          const fp = [...tp, 'fields', fi];
+          if (!hasPlatforms) {
+            ctx.addIssue({
+              code: 'custom',
+              path: [...fp, 'type'],
+              message:
+                '"codeRef" só é permitido em especializações que declaram platforms',
+            });
+            return;
+          }
+          (field.platforms ?? []).forEach((id, i) => {
+            if (platformIds.has(id)) return;
+            ctx.addIssue({
+              code: 'custom',
+              path: [...fp, 'platforms', i],
+              message: `plataforma "${id}" não declarada em platforms`,
+            });
+          });
         });
       });
     });
