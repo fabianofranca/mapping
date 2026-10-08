@@ -60,7 +60,7 @@ beforeAll(async () => {
       join(sources, `${name}.json`),
     );
   }
-  writeFileSync(join(sources, 'cadastro.png'), encodePng(quadrants(1000, 2000)));
+  writeFileSync(join(sources, 'cadastro.png'), await encodePng(quadrants(1000, 2000)));
   mcp = await connect([ws.root]);
 });
 
@@ -552,7 +552,7 @@ describe('imagens pelo lote', () => {
       join(dir, 'foto.jpg'),
       await encodeJpegWithExif(quadrants(300, 200), 6),
     );
-    const wide = encodePng(quadrants(3000, 1000)).toString('base64');
+    const wide = (await encodePng(quadrants(3000, 1000))).toString('base64');
 
     const plan = await mcp.call<Plan>('plan_changes', {
       project: 'imagens',
@@ -605,7 +605,7 @@ describe('imagens pelo lote', () => {
         {
           op: 'replace_image',
           image: foto,
-          base64: encodePng(quadrants(200, 300)).toString('base64'),
+          base64: (await encodePng(quadrants(200, 300))).toString('base64'),
           fileName: 'foto.png',
         },
       ],
@@ -619,7 +619,7 @@ describe('imagens pelo lote', () => {
         {
           op: 'replace_image',
           image: foto,
-          base64: encodePng(quadrants(200, 300)).toString('base64'),
+          base64: (await encodePng(quadrants(200, 300))).toString('base64'),
           fileName: 'foto.png',
         },
       ],

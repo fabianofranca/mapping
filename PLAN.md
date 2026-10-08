@@ -159,8 +159,8 @@ Nomes em inglês. Respostas em JSON compacto, sempre com as referências `mappin
 **Aceite**: testes de integração que sobem o servidor por stdio com o cliente do SDK MCP, sobre uma pasta temporária com o projeto de teste do roteiro 13.9, e conferem cada tool, inclusive herdadas, vínculos, referências e backlinks em `get_marking`; caminhos fora das raízes são recusados.
 
 #### 3a.4 — MCP: imagens
-- [ ] Decodificação, recorte, destaque, contorno das filhas e codificação em WebAssembly
-- [ ] `get_marking_image` e `get_image_file`
+- [x] Decodificação, recorte, destaque, contorno das filhas e codificação em WebAssembly
+- [x] `get_marking_image` e `get_image_file`
 
 **Aceite**: testes com imagens de fixture (PNG, JPEG, WebP) conferindo dimensões, `padding`, `maxSize` e a legenda das filhas; o arquivo único continua funcionando sem instalar nada além do Node.
 

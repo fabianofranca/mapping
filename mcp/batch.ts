@@ -70,7 +70,7 @@ import {
   type SpecField,
 } from '../src/model';
 import { ToolError } from './errors';
-import { MIME_OF, sniffFormat } from './imageCodec';
+import { MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
 import { KIND_NAMES, Refs } from './items';
 import { MODEL_ERROR_MESSAGES } from './modelErrors';
@@ -411,11 +411,8 @@ class Batch {
       name = read.name;
     } else if (source.base64 !== undefined) {
       bytes = decodeBase64(source.base64);
-      const format = sniffFormat(bytes);
-      name = pastedFileName(
-        this.io.now(),
-        extensionForMime(format ? MIME_OF[format] : ''),
-      );
+      const format = detectFormat(bytes);
+      name = pastedFileName(this.io.now(), extensionForMime(format ? MIME[format] : ''));
     } else {
       throw new ToolError('invalid-image-source', 'informe `file` ou `base64` da imagem');
     }

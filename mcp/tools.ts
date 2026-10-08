@@ -4,6 +4,8 @@ import { projectIndex } from '../src/model';
 import { ChangePlans } from './changes';
 import { createProjectFolder } from './createProject';
 import { ToolError } from './errors';
+import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
+import { imageFile, markingImage, type ImageResult } from './imageTools';
 import { Refs, resolveItem } from './items';
 import { listMarkings } from './markingList';
 import { operationSchema } from './operations';
@@ -22,7 +24,9 @@ type Json = Record<string, unknown>;
 
 interface ToolResult {
   [key: string]: unknown;
-  content: { type: 'text'; text: string }[];
+  content: (
+    { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }
+  )[];
   isError?: boolean;
 }
 
@@ -34,28 +38,53 @@ async function respond(produce: () => Promise<Json>): Promise<ToolResult> {
   try {
     return { content: [{ type: 'text', text: JSON.stringify(await produce()) }] };
   } catch (error) {
-    if (error instanceof ToolError) {
-      return { isError: true, content: [{ type: 'text', text: JSON.stringify(error) }] };
-    }
-    // O stdout é do protocolo: o diagnóstico vai para o stderr.
-    process.stderr.write(
-      `mapping-mcp: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
-    );
+    return failure(error);
+  }
+}
+
+/** Como `respond`, mas a tool devolve também uma imagem (o texto vem antes: descreve a imagem). */
+async function respondWithImage(
+  produce: () => Promise<ImageResult>,
+): Promise<ToolResult> {
+  try {
+    const { json, image } = await produce();
     return {
-      isError: true,
       content: [
+        { type: 'text', text: JSON.stringify(json) },
         {
-          type: 'text',
-          text: JSON.stringify({
-            error: {
-              code: 'internal-error',
-              message: error instanceof Error ? error.message : String(error),
-            },
-          }),
+          type: 'image',
+          data: Buffer.from(image.bytes).toString('base64'),
+          mimeType: image.mimeType,
         },
       ],
     };
+  } catch (error) {
+    return failure(error);
   }
+}
+
+function failure(error: unknown): ToolResult {
+  if (error instanceof ToolError) {
+    return { isError: true, content: [{ type: 'text', text: JSON.stringify(error) }] };
+  }
+  // O stdout é do protocolo: o diagnóstico vai para o stderr.
+  process.stderr.write(
+    `mapping-mcp: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
+  );
+  return {
+    isError: true,
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({
+          error: {
+            code: 'internal-error',
+            message: error instanceof Error ? error.message : String(error),
+          },
+        }),
+      },
+    ],
+  };
 }
 
 const projectArg = z
@@ -72,6 +101,22 @@ const refArg = z
   .string()
   .describe(
     'Referência copiada da app (`mapping://projeto/m/3f2a9c1e (caminho)`), `m/3f2a9c1e` (com `project`) ou o id completo.',
+  );
+
+const maxSizeArg = z
+  .number()
+  .int()
+  .min(MIN_MAX_SIZE)
+  .max(MAX_MAX_SIZE)
+  .optional()
+  .describe(
+    `Lado maior máximo da imagem devolvida, em pixels (padrão ${DEFAULT_MAX_SIZE}; nunca amplia). Quanto maior, mais contexto o agente gasta.`,
+  );
+const formatArg = z
+  .enum(['png', 'jpeg', 'webp'])
+  .optional()
+  .describe(
+    'Formato da imagem devolvida. Padrão: jpeg se o arquivo original é JPEG, senão png (sem perdas, bom para telas e texto).',
   );
 
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
@@ -325,6 +370,71 @@ export function registerTools(server: McpServer, roots: Roots): void {
       respond(async () => {
         const loaded = await loadProject(roots, await findProject(roots, project));
         return specializationView(new Refs(loaded), specId);
+      }),
+  );
+
+  server.registerTool(
+    'get_marking_image',
+    {
+      description:
+        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels da imagem original) ou a imagem inteira com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida.',
+      inputSchema: {
+        ref: refArg,
+        project: optionalProjectArg,
+        padding: z
+          .number()
+          .int()
+          .min(0)
+          .max(4096)
+          .optional()
+          .describe(
+            'Margem em volta da marcação, em pixels da imagem original (padrão 0; limitada às bordas da imagem). Só no modo "crop".',
+          ),
+        mode: z
+          .enum(['crop', 'context'])
+          .optional()
+          .describe(
+            '"crop" (padrão): só o recorte. "context": a imagem inteira com a marcação destacada.',
+          ),
+        outlineChildren: z
+          .boolean()
+          .optional()
+          .describe(
+            'Contorna as marcações filhas com cores diferentes e devolve a legenda em texto.',
+          ),
+        maxSize: maxSizeArg,
+        format: formatArg,
+      },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project, ...options }) =>
+      respondWithImage(async () => {
+        const item = await resolveItem(roots, ref, project, 'm');
+        const marking = projectIndex(item.refs.project).markings.get(item.id);
+        if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
+        return markingImage(roots, item.refs, marking, options);
+      }),
+  );
+
+  server.registerTool(
+    'get_image_file',
+    {
+      description:
+        'Devolve a imagem inteira de uma imagem do projeto, reduzida se o lado maior passar de `maxSize`. Para ver só uma marcação, use get_marking_image.',
+      inputSchema: {
+        ref: refArg,
+        project: optionalProjectArg,
+        maxSize: maxSizeArg,
+        format: formatArg,
+      },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project, ...options }) =>
+      respondWithImage(async () => {
+        const item = await resolveItem(roots, ref, project, 'i');
+        const image = projectIndex(item.refs.project).images.get(item.id);
+        if (!image) throw new ToolError('not-found', `imagem não encontrada: ${ref}`);
+        return imageFile(roots, item.refs, image, options);
       }),
   );
 

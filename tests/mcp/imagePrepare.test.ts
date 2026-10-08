@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { decodeImage, sniffFormat } from '../../mcp/imageCodec';
+import { decodeImage } from '../../mcp/image/codecs';
+import { detectFormat } from '../../mcp/image/formats';
 import { prepareImage } from '../../mcp/imagePrepare';
-import { downscale, orient } from '../../mcp/pixels';
+import { orient } from '../../mcp/image/orientation';
 import { ToolError } from '../../mcp/errors';
 import {
   encodeJpegWithExif,
@@ -17,7 +18,7 @@ const GREEN = [0, 255, 0];
 const BLUE = [0, 0, 255];
 const YELLOW = [255, 255, 0];
 
-describe('pixels', () => {
+describe('orientação EXIF', () => {
   it('orient aplica as 8 orientações EXIF (cantos da imagem de quadrantes)', () => {
     // Original 4×2: vermelho e verde em cima, azul e amarelo embaixo.
     const source = quadrants(4, 2);
@@ -81,46 +82,54 @@ describe('pixels', () => {
       bottomLeft: RED,
     });
   });
+});
 
-  it('downscale faz a média das áreas e respeita a transparência', () => {
-    const p = quadrants(4, 4);
-    const small = downscale(p, 2, 2);
-    expect([small.width, small.height]).toEqual([2, 2]);
-    expect(pixelAt(small, 0, 0)).toEqual(RED);
-    expect(pixelAt(small, 1, 1)).toEqual(YELLOW);
-    const mixed = downscale(p, 1, 1);
-    // Média dos quatro quadrantes.
-    expect(pixelAt(mixed, 0, 0)).toEqual([128, 128, 64]);
+describe('decodeImage', () => {
+  it('aplica a orientação EXIF do JPEG (as coordenadas das marcações são da imagem girada)', async () => {
+    const plain = await decodeImage(await encodeJpegWithExif(quadrants(300, 200)));
+    expect([plain.raster.width, plain.raster.height, plain.orientation]).toEqual([
+      300, 200, 1,
+    ]);
+    const rotated = await decodeImage(await encodeJpegWithExif(quadrants(300, 200), 6));
+    expect([rotated.raster.width, rotated.raster.height, rotated.orientation]).toEqual([
+      200, 300, 6,
+    ]);
+    // Girada no sentido horário: o canto de cima à esquerda era o de baixo à esquerda (azul).
+    const [r, g, b] = pixelAt(rotated.raster, 10, 10);
+    expect(b).toBeGreaterThan(200);
+    expect(r! + g!).toBeLessThan(60);
+  });
 
-    // Um pixel transparente não escurece o vizinho opaco.
-    const alpha = {
-      data: new Uint8ClampedArray([0, 0, 0, 0, 200, 100, 50, 255]),
-      width: 2,
-      height: 1,
-    };
-    const one = downscale(alpha, 1, 1);
-    expect([...one.data]).toEqual([200, 100, 50, 128]);
-    expect(() => downscale(p, 8, 8)).toThrow();
+  it('lê um Buffer do pool do Node (o slice de um Buffer não copia)', async () => {
+    const png = await encodePng(quadrants(8, 8));
+    // Buffer pequeno: fica no pool compartilhado, com outros bytes antes e depois.
+    const pooled = Buffer.from(png);
+    expect(pooled.buffer.byteLength).toBeGreaterThan(pooled.byteLength);
+    const { raster } = await decodeImage(pooled);
+    expect([raster.width, raster.height]).toEqual([8, 8]);
   });
 });
 
 describe('prepareImage (as decisões de otimização da app)', () => {
   it('PNG vira WebP sem perdas com os mesmos pixels', async () => {
     const source = quadrants(64, 32);
-    const result = await prepareImage(encodePng(source), 'tela.png');
+    const result = await prepareImage(await encodePng(source), 'tela.png');
     expect(result).toMatchObject({
       name: 'tela.webp',
       width: 64,
       height: 32,
       optimized: true,
     });
-    expect(sniffFormat(result.data)).toBe('webp');
-    const back = await decodeImage(result.data, 'webp');
+    expect(detectFormat(result.data)).toBe('webp');
+    const { raster: back } = await decodeImage(result.data);
     expect(Buffer.from(back.data).equals(Buffer.from(source.data))).toBe(true);
   });
 
   it('reduz o lado maior a 2560 px', async () => {
-    const result = await prepareImage(encodePng(quadrants(3000, 1000)), 'larga.png');
+    const result = await prepareImage(
+      await encodePng(quadrants(3000, 1000)),
+      'larga.png',
+    );
     expect([result.width, result.height]).toEqual([2560, 853]);
     expect(result.original).toEqual({ width: 3000, height: 1000 });
     expect(webpSize(result.data)).toEqual({ width: 2560, height: 853 });
@@ -135,7 +144,7 @@ describe('prepareImage (as decisões de otimização da app)', () => {
       height: 300,
       optimized: true,
     });
-    const back = await decodeImage(result.data, 'webp');
+    const { raster: back } = await decodeImage(result.data);
     // Girada no sentido horário: o canto de cima à esquerda era o de baixo à esquerda (azul).
     const [r, g, b] = pixelAt(back, 10, 10);
     expect(b).toBeGreaterThan(200);
@@ -159,7 +168,7 @@ describe('prepareImage (as decisões de otimização da app)', () => {
     await expect(prepareImage(gif, 'a.gif')).rejects.toMatchObject({
       code: 'unsupported-image',
     });
-    const broken = Buffer.concat([encodePng(quadrants(4, 4)).subarray(0, 40)]);
+    const broken = (await encodePng(quadrants(4, 4))).subarray(0, 40);
     await expect(prepareImage(broken, 'quebrado.png')).rejects.toMatchObject({
       code: 'invalid-image',
     });

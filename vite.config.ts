@@ -3,6 +3,8 @@ import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { wasmFiles } from './mcp/wasmFiles.mjs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
 import { applyCsp } from './pwa/csp';
 import { renderTokensCss } from './src/theme/tokens';
@@ -92,22 +94,6 @@ function tokensCss(): Plugin {
 }
 
 /**
- * `import bytes from './codec.wasm?binary'` (os codecs de imagem do servidor MCP) nos testes:
- * os bytes do arquivo como `Uint8Array`. No build do servidor quem faz isso é o mcp/build.mjs.
- */
-function binaryImports(): Plugin {
-  return {
-    name: 'binary-imports',
-    enforce: 'pre',
-    load(id) {
-      if (!id.endsWith('?binary')) return undefined;
-      const base64 = readFileSync(id.slice(0, -'?binary'.length)).toString('base64');
-      return `export default new Uint8Array(Buffer.from(${JSON.stringify(base64)}, 'base64'));`;
-    },
-  };
-}
-
-/**
  * Com `--coverage` o código roda instrumentado e bem mais lento: os orçamentos de
  * desempenho por quadro ficam de fora (o CI os mede num passo sem cobertura).
  * `PERF_BUDGETS=off` também os desliga: o deploy roda a suíte em paralelo e mede
@@ -117,6 +103,22 @@ const perfBudgets =
   process.argv.includes('--coverage') || process.env.PERF_BUDGETS === 'off'
     ? 'off'
     : 'on';
+/** Nos testes do `mcp`, `import bytes from 'wasm:png'` (codecs de imagem) lê o `.wasm` do pacote, como o esbuild faz no build. */
+function wasmBytes(): Plugin {
+  const require = createRequire(import.meta.url);
+  const prefix = '\0wasm-bytes:';
+  return {
+    name: 'wasm-bytes',
+    resolveId: (id) => (id.startsWith('wasm:') ? prefix + id : null),
+    load(id) {
+      if (!id.startsWith(prefix)) return null;
+      const file = wasmFiles[id.slice(prefix.length) as keyof typeof wasmFiles];
+      const base64 = readFileSync(require.resolve(file)).toString('base64');
+      return `export default new Uint8Array(Buffer.from('${base64}', 'base64'));`;
+    },
+  };
+}
+
 const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {
@@ -153,7 +155,7 @@ export default defineConfig({
       },
       {
         ...base,
-        plugins: [...base.plugins, binaryImports()],
+        plugins: [...base.plugins, wasmBytes()],
         // Servidor MCP (etapa 3a): também em Node puro.
         test: {
           name: 'mcp',
@@ -163,8 +165,6 @@ export default defineConfig({
           // Gera dist-mcp/mapping-mcp.js uma vez: os testes de integração sobem esse arquivo por stdio.
           globalSetup: ['tests/mcp/globalSetup.ts'],
           testTimeout: 30_000,
-          // Os `.wasm?binary` dos codecs passam pelo plugin acima, não pelo import nativo do Node.
-          server: { deps: { inline: [/@jsquash/] } },
         },
       },
       {

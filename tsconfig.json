@@ -19,7 +19,7 @@
     "src",
     "tests",
     "pwa",
-    "mcp/binary.d.ts",
+    "mcp/image/wasm.d.ts",
     "vite.config.ts",
     "eslint.config.js"
   ]

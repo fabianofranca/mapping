@@ -1,15 +1,13 @@
 import {
   chooseOutputFormat,
-  isJpegSource,
   isPngSource,
   planOutputSize,
-  readExifOrientation,
   shouldUseEncoded,
   withExtension,
 } from '../src/model';
-import { MIME_OF, decodeImage, encodeWebp, sniffFormat } from './imageCodec';
-import { ToolError } from './errors';
-import { downscale, orient } from './pixels';
+import { decodeImage, encodeImage } from './image/codecs';
+import { MIME } from './image/formats';
+import { resize } from './image/raster';
 
 /** Imagem pronta para `images/`, com as mesmas decisões da app (`src/storage/imageImport.ts`). */
 export interface PreparedImage {
@@ -25,51 +23,32 @@ export interface PreparedImage {
   readonly original: { readonly width: number; readonly height: number };
 }
 
-function arrayBufferOf(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
-}
-
 /**
  * Prepara a imagem que entra pelo MCP como a app faz ao importar: aplica a orientação EXIF,
  * limita o lado maior a `MAX_IMAGE_SIDE` e recodifica em WebP (origem PNG: sem perdas; demais:
  * com perdas, qualidade 0,85), sem os metadados. Sem redução nem rotação, só usa o recodificado
- * se ficar menor que o original. Aceita PNG, JPEG e WebP (reconhecidos pelo conteúdo).
+ * se ficar menor que o original. Aceita PNG, JPEG e WebP (reconhecidos pelo conteúdo, com os
+ * limites e os erros de `decodeImage`).
  */
 export async function prepareImage(
   bytes: Uint8Array,
   name: string,
 ): Promise<PreparedImage> {
-  const format = sniffFormat(bytes);
-  if (!format) {
-    throw new ToolError(
-      'unsupported-image',
-      `formato de imagem não suportado: ${name} (aceitos: PNG, JPEG e WebP)`,
-      { file: name },
-    );
-  }
-  let decoded;
-  try {
-    decoded = await decodeImage(bytes, format);
-  } catch {
-    throw new ToolError('invalid-image', `não foi possível ler a imagem: ${name}`, {
-      file: name,
-    });
-  }
+  // A orientação EXIF já vem aplicada; `orientation` diz se a foto precisou girar.
+  const { format, raster: oriented, orientation } = await decodeImage(bytes);
   // Pelo conteúdo, não pelo nome: um `.png` que na verdade é JPEG é tratado como foto.
-  const source = { type: MIME_OF[format], name: '' };
-  const orientation = isJpegSource(source)
-    ? readExifOrientation(arrayBufferOf(bytes))
-    : 1;
-  const oriented = orient(decoded, orientation);
+  const source = { type: MIME[format], name: '' };
   const original = { width: oriented.width, height: oriented.height };
 
   const plan = planOutputSize(original);
   const output = chooseOutputFormat({ isPng: isPngSource(source) }, true);
-  const resized = downscale(oriented, plan.width, plan.height);
-  const encoded = await encodeWebp(resized, output.quality ?? 1);
+  const resized = resize(oriented, plan.width, plan.height);
+  // Qualidade 1 do `canvas.toBlob` (origem PNG) é o WebP sem perdas do Chrome.
+  const lossless = (output.quality ?? 1) >= 1;
+  const encoded = await encodeImage(resized, 'webp', {
+    lossless,
+    quality: lossless ? 100 : Math.round((output.quality ?? 1) * 100),
+  });
   if (
     shouldUseEncoded({
       resized: plan.resized,

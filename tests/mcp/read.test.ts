@@ -879,14 +879,16 @@ describe('recursos e instruções', () => {
     }
   });
 
-  it('anuncia as tools e as instruções apontam o guia', async () => {
+  it('anuncia as tools de leitura, de imagem e de escrita e as instruções apontam o guia', async () => {
     const { tools } = await mcp.client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       'apply_changes',
       'create_project',
       'get_annotation',
       'get_image',
+      'get_image_file',
       'get_marking',
+      'get_marking_image',
       'get_project',
       'get_specialization',
       'list_markings',
