@@ -2,8 +2,31 @@
 // CommonJS de propósito: o `.js` roda com `node` em qualquer repositório, a menos que
 // ele declare `"type": "module"` (nesse caso, ponha um package.json `{"type":"commonjs"}` em tools/).
 import { readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { build } from 'esbuild';
+import { wasmFiles } from './wasmFiles.mjs';
+
+// `import bytes from 'wasm:<codec>'` embute os bytes do módulo WebAssembly do codec de imagem
+// (@jsquash). Os pacotes têm um `.d.ts` ao lado de cada `.wasm`, então o import passa por este
+// nome virtual (tipado em mcp/image/wasm.d.ts).
+const require = createRequire(import.meta.url);
+const wasmModules = {
+  name: 'wasm-modules',
+  setup(esbuild) {
+    esbuild.onResolve({ filter: /^wasm:/ }, (args) => {
+      const file = wasmFiles[args.path];
+      if (!file)
+        return { errors: [{ text: `módulo WebAssembly desconhecido: ${args.path}` }] };
+      return { path: require.resolve(file), namespace: 'wasm-bytes' };
+    });
+    esbuild.onLoad({ filter: /.*/, namespace: 'wasm-bytes' }, async (args) => ({
+      contents: await readFile(args.path),
+      loader: 'binary',
+      watchFiles: [args.path],
+    }));
+  },
+};
 
 // `import texto from './arquivo.md?raw'` embute o texto do arquivo (a documentação servida como recurso).
 const rawText = {
@@ -23,7 +46,7 @@ const rawText = {
 
 await build({
   entryPoints: ['mcp/main.ts'],
-  plugins: [rawText],
+  plugins: [rawText, wasmModules],
   outfile: 'dist-mcp/mapping-mcp.js',
   bundle: true,
   platform: 'node',
