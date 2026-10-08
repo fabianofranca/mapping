@@ -1,12 +1,14 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { projectIndex } from '../src/model';
+import { ChangePlans } from './changes';
 import { createProjectFolder } from './createProject';
 import { ToolError } from './errors';
 import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
 import { imageFile, markingImage, type ImageResult } from './imageTools';
 import { Refs, resolveItem } from './items';
 import { listMarkings } from './markingList';
+import { operationSchema } from './operations';
 import type { Roots } from './paths';
 import { discoverProjects, findProject, loadProject } from './projects';
 import {
@@ -434,5 +436,39 @@ export function registerTools(server: McpServer, roots: Roots): void {
         if (!image) throw new ToolError('not-found', `imagem não encontrada: ${ref}`);
         return imageFile(roots, item.refs, image, options);
       }),
+  );
+
+  const plans = new ChangePlans(roots);
+
+  server.registerTool(
+    'plan_changes',
+    {
+      description:
+        'Valida um lote de alterações contra as regras do Mapping, sem gravar nada, e devolve: se é válido, os erros por operação, um resumo legível, as contagens, as pendências novas, as referências dos itens que serão criados e um planId (vale 10 min e só para a revisão atual do projeto). ' +
+        'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. Grave com apply_changes.',
+      inputSchema: {
+        project: projectArg,
+        operations: z
+          .array(operationSchema)
+          .min(1)
+          .max(1000)
+          .describe('Operações, aplicadas em ordem. Veja o recurso AGENT-GUIDE.md.'),
+      },
+      annotations: READ_ONLY,
+    },
+    ({ project, operations }) => respond(() => plans.plan(project, operations)),
+  );
+
+  server.registerTool(
+    'apply_changes',
+    {
+      description:
+        'Grava um plano validado por plan_changes: imagens novas, cópias de especializações e o mapping.json (com revision + 1), tudo de uma vez. Recusa se o projeto mudou desde o plano (outro processo ou a app gravou). Devolve as referências dos itens criados, por apelido.',
+      inputSchema: {
+        planId: z.string().describe('O planId devolvido por plan_changes.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+    },
+    ({ planId }) => respond(() => plans.apply(planId)),
   );
 }

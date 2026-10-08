@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backupFileName, backupTimestamp } from '../../src/storage/types';
+import { backupFileName, backupTimestamp } from '../../src/model';
 
 describe('nome do backup do mapping', () => {
   it('mapping.v<versão>.<AAAAMMDD-HHMMSS>.json no horário local', () => {

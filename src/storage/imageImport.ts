@@ -3,12 +3,12 @@ import {
   encodedAsRequested,
   isJpegSource,
   isPngSource,
+  readExifOrientation,
   planOutputSize,
   shouldUseEncoded,
   withExtension,
   type OutputMime,
 } from '../model';
-import { readExifOrientation } from './exif';
 import { reportError } from '../utils/report';
 
 /** Lado maior do bitmap usado para exibir a imagem (as coordenadas não mudam). */

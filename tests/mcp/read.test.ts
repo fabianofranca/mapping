@@ -879,9 +879,10 @@ describe('recursos e instruções', () => {
     }
   });
 
-  it('anuncia as tools de leitura e de imagem e as instruções apontam o guia', async () => {
+  it('anuncia as tools de leitura, de imagem e de escrita e as instruções apontam o guia', async () => {
     const { tools } = await mcp.client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
+      'apply_changes',
       'create_project',
       'get_annotation',
       'get_image',
@@ -892,10 +893,14 @@ describe('recursos e instruções', () => {
       'get_specialization',
       'list_markings',
       'list_projects',
+      'plan_changes',
       'resolve',
     ]);
     const readOnly = tools.filter((t) => t.annotations?.readOnlyHint).map((t) => t.name);
     expect(readOnly).not.toContain('create_project');
+    expect(readOnly).not.toContain('apply_changes');
+    // plan_changes só valida: nada é gravado até apply_changes.
+    expect(readOnly).toContain('plan_changes');
     expect(mcp.client.getInstructions()).toContain('mapping-docs://AGENT-GUIDE.md');
   });
 });

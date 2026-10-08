@@ -11,6 +11,7 @@ import jpegDecoderWasm from 'wasm:jpeg-decoder';
 import jpegEncoderWasm from 'wasm:jpeg-encoder';
 import webpDecoderWasm from 'wasm:webp-decoder';
 import webpEncoderWasm from 'wasm:webp-encoder';
+import { readExifOrientation, type ExifOrientation } from '../../src/model';
 import { ToolError } from '../errors';
 import {
   MAX_FILE_BYTES,
@@ -19,11 +20,13 @@ import {
   readSize,
   type ImageFormat,
 } from './formats';
+import { orient } from './orientation';
 import { flattenOnWhite, type Raster } from './raster';
 
 // Codecs em WebAssembly (@jsquash: libpng, mozjpeg e libwebp), embutidos no arquivo único e
 // instanciados sob demanda a partir dos bytes: nada é lido do disco nem da rede em runtime.
-// Na decodificação do JPEG, a orientação EXIF é aplicada, como o navegador faz na app.
+// Na decodificação do JPEG, a orientação EXIF é aplicada (`orientation.ts`), como o navegador
+// faz na app.
 
 type Wasm = WebAssembly.Module;
 const modules = new Map<Uint8Array, Wasm>();
@@ -46,18 +49,27 @@ function once<T>(key: string, start: () => Promise<T>): Promise<T> {
   return promise;
 }
 
-/** Cópia dos bytes como `ArrayBuffer` (o que os decodificadores do @jsquash aceitam). */
+/**
+ * Cópia dos bytes como `ArrayBuffer` (o que os decodificadores do @jsquash aceitam). `new
+ * Uint8Array(bytes)` copia sempre; o `slice()` de um `Buffer` do Node não copia e o `.buffer`
+ * seria o pool inteiro de memória compartilhada, com bytes de outros dados em volta.
+ */
 const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
-  bytes.slice().buffer as ArrayBuffer;
+  new Uint8Array(bytes).buffer as ArrayBuffer;
 
 type Encoded = { data: Uint8ClampedArray; width: number; height: number };
 // Os tipos dos pacotes referenciam `ImageData` do DOM, que o tsconfig do `mcp/` não tem.
 const asImageData = (r: Raster) => r as unknown as Parameters<typeof encodePng>[0];
 
-/** Decodifica PNG, JPEG ou WebP para RGBA, recusando arquivos grandes ou com pixels demais. */
+/**
+ * Decodifica PNG, JPEG ou WebP para RGBA, recusando arquivos grandes ou com pixels demais. No
+ * JPEG, aplica a orientação EXIF (o mozjpeg entrega os pixels como estão no arquivo), como o
+ * navegador faz na app: o `raster` está no sistema de coordenadas das marcações.
+ * `orientation` é a lida do arquivo (1 = sem rotação; sempre 1 em PNG e WebP).
+ */
 export async function decodeImage(
   bytes: Uint8Array,
-): Promise<{ format: ImageFormat; raster: Raster }> {
+): Promise<{ format: ImageFormat; raster: Raster; orientation: ExifOrientation }> {
   if (bytes.length > MAX_FILE_BYTES) {
     throw new ToolError(
       'image-too-large',
@@ -93,10 +105,9 @@ export async function decodeImage(
       await once('webp-dec', async () => initWebpDecoder(compiled(webpDecoderWasm)));
       decoded = (await decodeWebp(toArrayBuffer(bytes))) as Encoded;
     }
-    return {
-      format,
-      raster: { width: decoded.width, height: decoded.height, data: decoded.data },
-    };
+    const raster = { width: decoded.width, height: decoded.height, data: decoded.data };
+    const orientation = format === 'jpeg' ? readExifOrientation(toArrayBuffer(bytes)) : 1;
+    return { format, raster: orient(raster, orientation), orientation };
   } catch (error) {
     throw new ToolError(
       'invalid-image',

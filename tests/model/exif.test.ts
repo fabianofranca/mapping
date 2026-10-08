@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { readExifOrientation, swapsAxes } from '../../src/storage/exif';
+import { readExifOrientation, swapsAxes } from '../../src/model/exif';
 
 /** JPEG mínimo: SOI + (APP0 opcional) + APP1 Exif com a tag de orientação + SOS. */
 function jpegWithOrientation(

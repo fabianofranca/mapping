@@ -17,6 +17,7 @@ export {
 export * from './layers';
 export * from './images';
 export * from './imageOptimization';
+export * from './exif';
 export * from './markings';
 export * from './locks';
 export * from './annotations';
@@ -31,5 +32,6 @@ export * from './refs';
 export * from './itemRef';
 export * from './clipboard';
 export * from './revision';
+export * from './backups';
 export * from './issues';
 export * from './typedDisplay';
