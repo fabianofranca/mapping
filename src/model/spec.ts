@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
-// Formato da especialização (`formatVersion` 1 e 2), seção 13.2 do docs/history/PLAN-etapas-1-2.md
-// e etapa 3b do PLAN.md. A versão 2 acrescenta `platforms`, `code` e o campo `codeRef`;
-// a versão 1 é a 2 sem plataformas e sem `code`.
+// Formato da especialização (`formatVersion` 1, 2 e 3), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
+// etapas 3b e 4 do plano. A versão 2 acrescenta `platforms`, `code` e o campo `codeRef`;
+// a versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
+// externas nos tipos e nos campos, inclusive nas colunas de `table`).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 
@@ -10,9 +11,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 2;
+export const SPEC_FORMAT_VERSION = 3;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -40,6 +41,26 @@ export interface SpecCode {
 /** `code` de um tipo de anotação, por id de plataforma. */
 export type SpecCodeMap = Record<string, SpecCode>;
 
+/**
+ * Elemento de um sistema externo a que um tipo de anotação corresponde (v3), ex:
+ * `{ system: "figma", name: "DS/Button" }`. Tem `id`, `name` ou os dois.
+ */
+export interface SpecTypeSource {
+  system: string;
+  id?: string;
+  name?: string;
+}
+
+/**
+ * Propriedade de origem de um campo (v3), ex: `{ system: "figma", name: "Style" }`.
+ * `values` (só em `enum`) traduz o valor de origem para uma das `options`.
+ */
+export interface SpecFieldSource {
+  system: string;
+  name: string;
+  values?: Record<string, string>;
+}
+
 export interface SpecRefAccepts {
   tags?: string[];
   free?: boolean;
@@ -51,6 +72,8 @@ interface SpecFieldBase {
   required?: boolean;
   description?: string;
   tags?: string[];
+  /** Propriedades de origem (só `formatVersion` 3). */
+  sources?: SpecFieldSource[];
 }
 
 export type SpecColumn =
@@ -74,6 +97,8 @@ export interface SpecAnnotationType {
   allowedChildren?: string[];
   fields: SpecField[];
   code?: SpecCodeMap;
+  /** Elementos de origem a que o tipo corresponde (só `formatVersion` 3). */
+  sources?: SpecTypeSource[];
 }
 
 export interface SpecLayer {
@@ -137,6 +162,19 @@ const dateString = z
   .regex(DATE_RE, 'data inválida; use AAAA-MM-DD')
   .refine(isIsoDate, 'data inexistente');
 
+const typeSourceShape = z
+  .object({ system: nonEmpty, id: nonEmpty.optional(), name: nonEmpty.optional() })
+  .strict()
+  .refine((s) => s.id !== undefined || s.name !== undefined, 'precisa de "id" ou "name"');
+
+const fieldSourceShape = z
+  .object({
+    system: nonEmpty,
+    name: nonEmpty,
+    values: z.record(z.string(), nonEmpty).optional(),
+  })
+  .strict();
+
 const acceptsSchema = z
   .object({ tags: tags.optional(), free: z.boolean().optional() })
   .strict()
@@ -160,6 +198,7 @@ const fieldShape = z
     accepts: acceptsSchema.optional(),
     platforms: z.array(platformId).optional(),
     description: z.string().optional(),
+    sources: z.array(fieldSourceShape).optional(),
   })
   .strict();
 
@@ -174,6 +213,8 @@ function checkField(
 ): void {
   const add = (sub: string, message: string) =>
     ctx.addIssue({ code: 'custom', path: [...path, sub], message });
+  const add2 = (sub: (string | number)[], message: string) =>
+    ctx.addIssue({ code: 'custom', path: [...path, ...sub], message });
 
   const { type } = field;
   if (column && (type === 'table' || type === 'ref' || type === 'codeRef')) {
@@ -249,6 +290,19 @@ function checkField(
       add('platforms', 'plataformas repetidas');
     }
   }
+  (field.sources ?? []).forEach((source, i) => {
+    if (source.values === undefined) return;
+    if (type !== 'enum') {
+      add2(['sources', i, 'values'], 'só é permitido em campos enum');
+      return;
+    }
+    for (const [from, to] of Object.entries(source.values)) {
+      if (!(field.options ?? []).includes(to)) {
+        add2(['sources', i, 'values', from], `"${to}" não está nas options`);
+      }
+    }
+  });
+
   if (type === 'table' && column) return;
   if (column && field.tags !== undefined) {
     add('tags', 'colunas não têm etiquetas; use "tags" na table');
@@ -391,6 +445,7 @@ const annotationTypeShape = z
     allowedChildren: z.array(nonEmpty).optional(),
     fields: z.array(fieldShape),
     code: z.record(z.string(), codeEntryShape).optional(),
+    sources: z.array(typeSourceShape).optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
@@ -425,13 +480,39 @@ const platformShape = z
   })
   .strict();
 
+/** `sources` só existe na `formatVersion` 3: aponta cada uso numa versão anterior. */
+function checkNoSources(
+  layers: readonly {
+    annotationTypes: readonly { sources?: unknown; fields: readonly RawField[] }[];
+  }[],
+  ctx: z.RefinementCtx,
+): void {
+  const add = (path: (string | number)[]) =>
+    ctx.addIssue({ code: 'custom', path, message: 'só é permitido com formatVersion 3' });
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      const tp = ['layers', li, 'annotationTypes', ti];
+      if (type.sources !== undefined) add([...tp, 'sources']);
+      type.fields.forEach((field, fi) => {
+        const fp = [...tp, 'fields', fi];
+        if (field.sources !== undefined) add([...fp, 'sources']);
+        (field.columns ?? []).forEach((column, ci) => {
+          if (typeof column === 'object' && column !== null && 'sources' in column) {
+            add([...fp, 'columns', ci, 'sources']);
+          }
+        });
+      });
+    });
+  });
+}
+
 export const specSchema = z
   .object({
     format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
       error: `deve ser "${SPEC_FORMAT}"`,
     }),
-    formatVersion: z.union([z.literal(1), z.literal(2)], {
-      error: `deve ser ${SPEC_FORMAT_VERSIONS.join(' ou ')}`,
+    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3)], {
+      error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
     }),
     id: nonEmpty,
     name: nonEmpty,
@@ -461,6 +542,7 @@ export const specSchema = z
       platformIds.add(platform.id);
     });
     const hasPlatforms = platformIds.size > 0;
+    if (spec.formatVersion < 3) checkNoSources(spec.layers, ctx);
     const layerIds = new Set<string>();
     /** id do tipo → índice da camada onde está definido. */
     const typeLayer = new Map<string, number>();

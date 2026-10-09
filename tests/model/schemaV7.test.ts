@@ -52,7 +52,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     const result = load(v6Text(sampleProject()), sampleProject());
     expect(result.migratedFrom).toBe(6);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(7);
+    expect(result.project.schemaVersion).toBe(8);
     expect(result.project.platformRepos).toEqual({});
     expect(result.project).toEqual(sampleProject());
   });
@@ -74,11 +74,11 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(result.project.images[0]?.locked).toBe(true);
   });
 
-  it('o v6 migrado salva como v7 estável (round-trip)', () => {
+  it('o v6 migrado salva como v8 estável (round-trip)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
-    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 7, platformRepos: {} });
+    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 8, platformRepos: {} });
     const again = load(saved, p);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -98,9 +98,9 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(load(text, p).project.platformRepos).toEqual(repos);
   });
 
-  it('o registro tem as migrações de cada versão até a v7', () => {
-    expect(SCHEMA_VERSION).toBe(7);
-    expect([...migrations.keys()]).toEqual([1, 2, 3, 4, 5, 6]);
+  it('o registro tem a migração da v6', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(7);
+    expect(migrations.get(6)).toBe(migrateFrom6To7);
   });
 });
 
@@ -166,7 +166,10 @@ describe('schema v7', () => {
 
   it('versão mais nova com platformRepos abre somente leitura', () => {
     const p = codeProject();
-    const text = JSON.stringify({ ...JSON.parse(serialize(p)), schemaVersion: 8 });
+    const text = JSON.stringify({
+      ...JSON.parse(serialize(p)),
+      schemaVersion: SCHEMA_VERSION + 1,
+    });
     const loaded = load(text, p);
     expect(loaded.readOnly).toBe(true);
     expect(loaded.project.platformRepos).toEqual(p.platformRepos);

@@ -37,13 +37,13 @@ function load(text: string): Project {
 }
 
 describe('migração v1 → v2', () => {
-  it('abre um v1 real como v7 sem perder nada', () => {
+  it('abre um v1 real como v8 sem perder nada', () => {
     const result = deserialize(v1Text);
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(7);
+    expect(p.schemaVersion).toBe(8);
     expect(p.images.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => !a.inherit && a.parentAnnotationId === null)).toBe(
       true,
@@ -51,11 +51,13 @@ describe('migração v1 → v2', () => {
     // Os dados originais continuam idênticos.
     const original = JSON.parse(v1Text) as Project;
     expect(p.layers.map((l) => omit(l, ['spec']))).toEqual(original.layers);
-    expect(p.markings.map((m) => omit(m, ['locked']))).toEqual(original.markings);
-    expect(p.project).toEqual(original.project);
-    expect(p.images.map((i) => omit(i, ['name', 'markingColor', 'locked']))).toEqual(
-      original.images,
+    expect(p.markings.map((m) => omit(m, ['locked', 'source']))).toEqual(
+      original.markings,
     );
+    expect(p.project).toEqual(original.project);
+    expect(
+      p.images.map((i) => omit(i, ['name', 'markingColor', 'locked', 'source'])),
+    ).toEqual(original.images);
     expect(
       p.annotations.map((a) => ({
         ...omit(a, ['inherit', 'parentAnnotationId', 'type', 'values']),
@@ -64,9 +66,9 @@ describe('migração v1 → v2', () => {
     ).toEqual(original.annotations);
   });
 
-  it('salvar o v1 migrado gera v7 estável (round-trip)', () => {
+  it('salvar o v1 migrado gera v8 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(7);
+    expect(JSON.parse(saved).schemaVersion).toBe(8);
     expect(serialize(load(saved))).toBe(saved);
   });
 
@@ -82,6 +84,7 @@ describe('migração v1 → v2', () => {
       'placement',
       'markingColor',
       'locked',
+      'source',
     ]);
     expect(Object.keys(data.annotations[0])).toEqual([
       'id',

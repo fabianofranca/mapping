@@ -9,7 +9,7 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v7. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json v8. Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
 // anotações tipadas (inclusive as entradas de `codeRef`) são JSON livre aqui: a
 // conferência contra o tipo vira pendência (`issues.ts`).
@@ -18,27 +18,34 @@ const id = z.string().min(1);
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
 const finite = z.number().finite();
 
-const rectSchema = z.object({
+export const rectSchema = z.object({
   x: z.number().int().min(0),
   y: z.number().int().min(0),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
 });
 
-const placementSchema = z.object({
+export const placementSchema = z.object({
   x: finite,
   y: finite,
   scale: finite.positive(),
 });
 
-const layerSchema = z.object({
+/** Identidade no sistema de origem (v8): `system` e `id` não vazios, `url` opcional (`null`). */
+export const sourceSchema = z.object({
+  system: z.string().min(1),
+  id: z.string().min(1),
+  url: z.string().nullable(),
+});
+
+export const layerSchema = z.object({
   id,
   name: z.string().trim().min(1),
   color: hexColor,
   spec: z.object({ specId: id, layerId: id }).nullable(),
 });
 
-const imageSchema = z.object({
+export const imageSchema = z.object({
   id,
   name: z.string().nullable(),
   file: z.string().min(1),
@@ -47,9 +54,10 @@ const imageSchema = z.object({
   placement: placementSchema,
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
+  source: sourceSchema.nullable(),
 });
 
-const markingSchema = z.object({
+export const markingSchema = z.object({
   id,
   imageId: id,
   parentId: id.nullable(),
@@ -57,12 +65,13 @@ const markingSchema = z.object({
   rect: rectSchema,
   needsReview: z.boolean(),
   locked: z.boolean(),
+  source: sourceSchema.nullable(),
 });
 
-const entrySchema = z.object({ id, key: z.string(), value: z.string() });
+export const entrySchema = z.object({ id, key: z.string(), value: z.string() });
 
 /** Qualquer valor JSON. A conferência contra o tipo vira pendência (`issues.ts`), não erro. */
-const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
+export const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
     z.string(),
     finite,
@@ -73,7 +82,7 @@ const jsonValue: z.ZodType<JsonValue> = z.lazy(() =>
   ]),
 );
 
-const annotationSchema = z
+export const annotationSchema = z
   .object({
     id,
     markingId: id,
@@ -110,7 +119,7 @@ const specializationSchema = z.object({
 });
 
 /** Repositório de uma plataforma (v7). Texto vazio vale como `null` na leitura. */
-const platformRepoSchema = z.object({
+export const platformRepoSchema = z.object({
   urlTemplate: z.string().nullable(),
   localPath: z.string().nullable(),
 });

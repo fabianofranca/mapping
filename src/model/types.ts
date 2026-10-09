@@ -1,10 +1,10 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v7). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
+// Tipos do `mapping.json` (schema v8). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
 // seções 4, 12.1 e 13.3. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -23,6 +23,19 @@ export interface Placement {
   readonly x: number;
   readonly y: number;
   readonly scale: number;
+}
+
+/**
+ * Identidade do item num sistema externo (v8), para uma reexportação reconhecer os mesmos
+ * elementos. O núcleo não interpreta `system` (ex: `"figma"`): é só um texto.
+ */
+export interface ExternalSource {
+  /** Sistema de origem (texto livre, não vazio). */
+  readonly system: string;
+  /** Id do elemento no sistema de origem (não vazio). */
+  readonly id: string;
+  /** Endereço do elemento na origem; `null` quando não há. */
+  readonly url: string | null;
 }
 
 /** Valor JSON nativo (valores das anotações tipadas). */
@@ -60,6 +73,8 @@ export interface ProjectImage {
   readonly markingColor: string | null;
   /** Trancada (v5): não pode ser movida, redimensionada nem excluída. A seleção segue livre. */
   readonly locked: boolean;
+  /** Identidade no sistema de origem (v8); `null` = sem origem. */
+  readonly source: ExternalSource | null;
 }
 
 export interface Marking {
@@ -74,6 +89,8 @@ export interface Marking {
    * trava a geometria dos descendentes. A seleção e as anotações seguem livres.
    */
   readonly locked: boolean;
+  /** Identidade no sistema de origem (v8); `null` = sem origem. */
+  readonly source: ExternalSource | null;
 }
 
 export interface Entry {

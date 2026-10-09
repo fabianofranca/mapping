@@ -55,6 +55,7 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
     'urlTemplate inválido: precisa começar com http:// ou https:// e conter {path} ({line} é opcional)',
   'invalid-local-path':
     'localPath inválido: caminho relativo à pasta do projeto (ex: ../..), não absoluto',
+  'invalid-source': 'source inválido: informe system e id não vazios (url é opcional)',
 };
 
 /** Erro de regra do modelo numa tool de leitura → `ToolError` com a explicação e o detalhe. */

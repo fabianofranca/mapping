@@ -154,7 +154,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 ou 2), id, name e version (inteiro ≥ 1) são obrigatórios; description e platforms são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1, 2 ou 3), id, name e version (inteiro ≥ 1) são obrigatórios; description e platforms são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -361,7 +361,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 ou 2), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1, 2 ou 3), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
@@ -369,7 +369,7 @@ const ptBR: readonly HelpSection[] = [
           'columns só com tipos simples (codeRef não pode ser coluna); rowLabel obrigatório em table com tags e apontando para uma coluna string;',
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
-          'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms, code e codeRef só na formatVersion 2;',
+          'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms, code e codeRef a partir da formatVersion 2; sources (origens externas) só na formatVersion 3;',
           'code e codeRef só em especializações com platforms; os ids de code e do platforms do campo precisam existir em platforms;',
           'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório;',
           'color no formato #RRGGBB; propriedades desconhecidas são rejeitadas.',
@@ -422,7 +422,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 or 2), id, name and version (integer ≥ 1) are required; description and platforms are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1, 2 or 3), id, name and version (integer ≥ 1) are required; description and platforms are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -632,7 +632,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 or 2), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1, 2 or 3), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
@@ -640,7 +640,7 @@ const enUS: readonly HelpSection[] = [
           'columns with simple types only (codeRef cannot be a column); rowLabel required on a table with tags and pointing to a string column;',
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
-          'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms, code and codeRef only in formatVersion 2;',
+          'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms, code and codeRef from formatVersion 2 on; sources (external origins) only in formatVersion 3;',
           'code and codeRef only in specializations with platforms; the ids in code and in the field’s platforms must exist in platforms;',
           'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required;',
           'color in the #RRGGBB format; unknown properties are rejected.',

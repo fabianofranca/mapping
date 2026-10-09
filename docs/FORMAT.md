@@ -1,7 +1,7 @@
-# Formato do `mapping.json` (schema v7)
+# Formato do `mapping.json` (schema v8)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` e,
-se houver especializações aplicadas, `specs/`. Todas as coordenadas das marcações são
+se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
 **pixels inteiros da imagem original** (`images[].file`, com a orientação EXIF já aplicada).
 
 ```
@@ -12,6 +12,10 @@ meu-projeto/
 ├── specs/            # cópias das especializações aplicadas (ver SPEC-FORMAT.md)
 │   ├── sdui.json
 │   └── modelo-dados.json
+├── proposals/        # propostas de alteração (ver PROPOSAL-FORMAT.md)
+│   └── 8c1f…/
+│       ├── proposal.json
+│       └── images/   # imagens novas ou trocadas, até serem aceitas
 └── backups/          # só no modo pasta: originais guardados antes de migrar o schema
     └── mapping.v1.20260930-143015.json
 ```
@@ -25,7 +29,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -42,7 +46,8 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "height": 2560,
       "placement": { "x": 0, "y": 0, "scale": 0.4 },
       "markingColor": null,
-      "locked": false
+      "locked": false,
+      "source": null
     }
   ],
   "markings": [
@@ -53,7 +58,8 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "name": "Botão",
       "rect": { "x": 10, "y": 20, "width": 300, "height": 80 },
       "needsReview": false,
-      "locked": false
+      "locked": false,
+      "source": { "system": "figma", "id": "12:34", "url": null }
     }
   ],
   "annotations": [
@@ -82,7 +88,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                 |
 | ------------------ | ------- | ------------------------------------------------------------------------- |
-| `schemaVersion`    | `7`     | Versão do schema.                                                         |
+| `schemaVersion`    | `8`     | Versão do schema.                                                         |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                   |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).        |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
@@ -99,11 +105,13 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 **`images[]`**: `id`; `name` (`string` ou `null`); `file` (caminho relativo, ex: `images/home.webp`, único
 no projeto); `width` e `height` (pixels inteiros, com a orientação EXIF já aplicada);
 `placement` (`{ x, y, scale }` — posição e escala da imagem no canvas, só para a interface);
-`markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo).
+`markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo); `source` (`null` ou origem, v8:
+ver abaixo).
 
 **`markings[]`**: `id`; `imageId`; `parentId` (marcação-pai ou `null`); `name` (`string` ou `null`);
 `rect` (`{ x, y, width, height }`, **inteiros em pixels da imagem original**, `x`/`y` ≥ 0);
-`needsReview` (booleano, só para a interface); `locked` (booleano, v5: ver abaixo).
+`needsReview` (booleano, só para a interface); `locked` (booleano, v5: ver abaixo); `source` (`null`
+ou origem, v8: ver abaixo).
 
 **`annotations[]`**: `id`; `markingId`; `layerId`; `name` (`string` ou `null`); `inherit`;
 `parentAnnotationId`; `type`, `values` e `entries` (ver v4). Livre: `type` e `values` são `null`.
@@ -123,6 +131,8 @@ recusa o arquivo e informa o problema, sem alterá-lo.
 - Toda anotação aponta para uma marcação e uma camada existentes.
 - Pares (`entries`): chave não vazia (após `trim`) e única dentro da anotação; ids de par únicos no projeto.
 - Linhas de `table` e entradas de `codeRef`: `_id` único dentro da lista.
+- `source` (v8): `null` ou `{ system, id, url }`, com `system` e `id` textos não vazios e `url` texto ou
+  `null` (as três chaves presentes).
 - `platformRepos`: chaves no formato `[a-z0-9-]+`; cada valor com `urlTemplate` e `localPath` (texto ou
   `null`). Configuração de uma plataforma que nenhuma especialização declara não impede a abertura.
 - Anotação "dona" (`parentAnnotationId`): existe, está na **mesma marcação** e em **outra camada**, e a
@@ -232,8 +242,9 @@ a trava não muda o significado dos dados, só o que a app deixa **alterar**.
   começa em `false`.
 - "Trancar todas as marcações desta imagem" muda o `locked` de todas as marcações da imagem de uma só vez
   (uma entrada no desfazer). Trancar e destrancar entram no desfazer.
-- Os itens vindos do Figma (etapa 4) serão somente leitura por outro mecanismo; a trava é para os itens
-  manuais.
+- Os itens que chegam de outra ferramenta (etapa 4) entram por **propostas de alteração** revisadas
+  ([`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)); aceitar numa revisão uma mudança de geometria ou a
+  remoção de um item trancado é permitido (com aviso), e a trava continua ligada depois.
 
 As regras ficam em `src/model/locks.ts` (`canEditMarkingGeometry`, `canDeleteMarking`,
 `canEditImagePlacement`, `canDeleteImage`, `canReplaceImage`); as operações do modelo lançam o erro
@@ -369,6 +380,27 @@ pasta do projeto), `findByCode` (entradas que apontam para um arquivo ou símbol
 (o que implementar numa plataforma a partir de uma marcação), `projectPlatforms` (plataformas das
 especializações aplicadas, sem repetir id) e `platformRepoWarnings` (o aviso acima).
 
+## Campos da v8 (origem externa)
+
+`images[].source` e `markings[].source` guardam a **identidade do item num sistema externo**, para que
+uma reexportação reconheça os mesmos elementos (ex: a mesma tela ou o mesmo componente exportados de
+novo de uma ferramenta de design) e proponha só o que mudou.
+
+```json
+"source": { "system": "figma", "id": "12:34", "url": "https://www.figma.com/design/abc?node-id=12-34" }
+```
+
+| Campo    | Tipo             | Descrição                                                              |
+| -------- | ---------------- | ---------------------------------------------------------------------- |
+| `system` | string           | Sistema de origem (texto livre, não vazio). O núcleo não o interpreta. |
+| `id`     | string           | Id do elemento no sistema de origem (não vazio).                       |
+| `url`    | string ou `null` | Endereço do elemento na origem, se houver.                             |
+
+- `null` = item sem origem (criado à mão). A origem não muda o significado dos dados nem a trava.
+- O formato não exige origens únicas: a busca (`findBySource(project, system, id)` em `src/model/`)
+  devolve todas as imagens e marcações com a mesma origem, imagens primeiro.
+- Quem atribui a origem é quem importa (um agente, por uma proposta); a app a mostra e a preserva.
+
 ## Como um agente lê o `mapping.json`
 
 1. **Recorte da marcação**: `rect` em pixels da imagem em `images[].file` (orientação EXIF aplicada).
@@ -399,6 +431,7 @@ Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anota
 Arquivos v3 recebem `specializations: []`, `spec: null` em cada camada, `type: null` e
 `values: null` em cada anotação e um `id` novo em cada par. Arquivos v4 recebem `locked: false` em cada
 imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 recebem `platformRepos: {}` (nada
-mais muda: um `codeRef` gravado antes continua como está). Ao salvar, o arquivo passa a ser v7 (e, no modo
-pasta, o original vai antes para `backups/`, como em qualquer migração).
+mais muda: um `codeRef` gravado antes continua como está). Arquivos v7 recebem `source: null` em cada imagem e
+em cada marcação. Ao salvar, o arquivo passa a ser v8 (e, no modo pasta, o original vai antes para
+`backups/`, como em qualquer migração).
 Arquivos de versão mais nova abrem somente para leitura.

@@ -72,7 +72,7 @@ ação do usuário
 
 ### `src/model/`
 
-- `types.ts`, `schema.ts`, `serialization.ts`, `migrations.ts`: tipos do `mapping.json` v7, validação (zod), (de)serialização e migração de versões antigas.
+- `types.ts`, `schema.ts`, `serialization.ts`, `migrations.ts`: tipos do `mapping.json` v8, validação (zod), (de)serialização e migração de versões antigas.
 - `invariants.ts`: `validateProject` (regras entre coleções: ids únicos, contenção, hierarquia sem ciclos, vínculos).
 - `layers.ts`, `images.ts`, `markings.ts`, `annotations.ts`, `hierarchy.ts`, `geometry.ts`: operações puras por entidade.
 - `locks.ts`: a trava (etapa 2.5). `setMarkingLocked`, `setImageLocked` e `setImageMarkingsLocked` (uma operação só para "trancar todas"); as consultas `canEditMarkingGeometry`, `canDeleteMarking`, `canEditImagePlacement`, `canDeleteImage` e `canReplaceImage`, que a interface usa para desabilitar controles e as operações de `markings.ts`/`images.ts` usam para lançar o erro `locked`; e `markingLockStates` (trava própria ou herdada do pai, de cada marcação, numa passada).
@@ -83,6 +83,8 @@ ação do usuário
 - `imageOptimization.ts`: decisões de otimização na importação (funções puras: tamanho, formato, nome e origem do arquivo). A recodificação em si (canvas) fica em `storage/imageImport.ts`; o MCP reaproveita as mesmas decisões (`mcp/imagePrepare.ts`).
 - `exif.ts`: `readExifOrientation` (a orientação EXIF de um JPEG, lida dos bytes; usada pela importação da app e pelo MCP). `backups.ts`: `BACKUPS_DIR`, `backupFileName` e `backupTimestamp` (o nome da cópia do original antes de gravar um arquivo migrado, app e MCP).
 - `revision.ts`: `readRevision(texto)` (a `revision` de um `mapping.json`; `0` sem o campo, `null` se não for um objeto JSON). `clipboard.ts`: `itemClipboardData`, os dados do item que o Ctrl+C grava no formato próprio da app.
+- `sources.ts` (etapa 4): origem externa (`source`, v8) de imagens e marcações (`setImageSource`, `setMarkingSource`, `findBySource`) e a busca de tipos pelas origens das especializações `formatVersion` 3 (`findTypesBySource`). O núcleo não interpreta `system`.
+- `proposal.ts`, `proposalValues.ts`, `proposalChanges.ts`, `proposalReview.ts`, `proposalApply.ts`, `proposalCompare.ts` (etapa 4): propostas de alteração ([`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)). Formato (zod, erros por caminho) e caminhos em `proposals/`; cálculo das mudanças comparando o projeto antes e depois das operações (`computeChanges`, `buildProposal`: quem aplica as operações é o chamador, com as operações puras de sempre); revisão (dependências entre mudanças, níveis, decisões de três estados com "parcial", conflitos e aviso de item trancado); aplicação das aceitas (`applyAccepted`: um patch direto, sem as operações do modelo, validado pelas invariantes) e a visão "como ficaria" (`previewProject`); comparação com a proposta que substitui (`compareProposals`).
 - `itemRef.ts`: a referência copiável `mapping://<projeto>/<m|i|a>/<código>`: `shortCode`/`shortCodes` (8 caracteres do id, crescendo de 4 em 4 se houver colisão, memoizado por projeto), `matchShortCode`, `formatRef` e `parseRef`. Não confundir com `refs.ts` (referências fortes entre anotações, `parseRefValue`).
 
 ### `mcp/` (servidor MCP, etapa 3a)

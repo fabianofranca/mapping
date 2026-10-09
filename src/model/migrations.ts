@@ -67,6 +67,16 @@ export const migrateFrom5To6: Migration = (data) => ({ revision: 0, ...data });
  */
 export const migrateFrom6To7: Migration = (data) => ({ platformRepos: {}, ...data });
 
+/**
+ * v7 → v8 (origem externa): imagens e marcações ganham `source: null`. Valores já
+ * presentes são preservados.
+ */
+export const migrateFrom7To8: Migration = (data) => ({
+  ...data,
+  images: mapItems(data.images, (i) => ({ source: null, ...i })),
+  markings: mapItems(data.markings, (m) => ({ source: null, ...m })),
+});
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -75,6 +85,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [4, migrateFrom4To5],
   [5, migrateFrom5To6],
   [6, migrateFrom6To7],
+  [7, migrateFrom7To8],
 ]);
 
 export type MigrationResult =

@@ -494,7 +494,7 @@ describe('sessão de projeto', () => {
       expect((await savedProject(root)).project.name).toBe('Migrado');
     });
 
-    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v7', async () => {
+    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v8', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -525,7 +525,7 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(7);
+      expect(saved.schemaVersion).toBe(8);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({
         android: { urlTemplate: null, localPath: '../..' },

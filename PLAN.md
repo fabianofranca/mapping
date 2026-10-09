@@ -15,7 +15,8 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base) e 3b (referências de código)
 | [`README.md`](README.md)                                 | O que é, como rodar, testar, publicar e usar o preview                         |
 | [`CLAUDE.md`](CLAUDE.md)                                 | Regras de trabalho e de arquitetura para o Claude Code                         |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)           | Camadas, fluxo de dados, regras (com o porquê) e onde fica cada coisa          |
-| [`docs/FORMAT.md`](docs/FORMAT.md)                       | Referência do `mapping.json` (schema v7)                                       |
+| [`docs/FORMAT.md`](docs/FORMAT.md)                       | Referência do `mapping.json` (schema v8)                                       |
+| [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md)     | Formato da proposta de alteração e regras da revisão (etapa 4)                 |
 | [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md)             | Formato do arquivo de especialização (e `docs/spec.schema.json`)               |
 | [`docs/MCP.md`](docs/MCP.md)                             | Servidor MCP: instalação, `.mcp.json`, raízes, tools, referências, problemas   |
 | [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md)             | Guia do agente: como usar as tools do servidor MCP (também servido como recurso) |
@@ -196,15 +197,15 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 > **Estado**: concluída. Telas (rodadas 1 a 3: desktop, retomada, vazio, grande e celular) e decisões 1 a 7 da seção 8 do `HANDOFF-PROPOSALS.md` aprovadas pelo dono em 2026-10-09. A 4.4 segue a ordem da seção 9 desse documento.
 
 #### 4.1 — Modelo
-- [ ] Schema v8 (`source`) + migração; `findBySource`
-- [ ] Especialização `formatVersion` 3 (`sources` nos tipos e nos campos), `findTypesBySource`, schema JSON e `SPEC-FORMAT.md`
-- [ ] Formato da proposta (zod), com mensagens de erro por caminho
-- [ ] Cálculo das mudanças (operações → mudanças com `from`/`to`, ids definitivos para criações)
-- [ ] Decisões em níveis (três estados, "parcial", dependências)
-- [ ] Conflitos, aviso de item trancado e validação do conjunto aceito
-- [ ] Comparação entre propostas para a substituída (por mudança: igual, diferente ou não consta na nova), função pura
-- [ ] Aplicação do conjunto aceito (puro: projeto atual + proposta + decisões → novo projeto + mudanças aplicadas)
-- [ ] `docs/FORMAT.md` (v8) e `docs/PROPOSAL-FORMAT.md`
+- [x] Schema v8 (`source`) + migração; `findBySource`
+- [x] Especialização `formatVersion` 3 (`sources` nos tipos e nos campos), `findTypesBySource`, schema JSON e `SPEC-FORMAT.md`
+- [x] Formato da proposta (zod), com mensagens de erro por caminho
+- [x] Cálculo das mudanças (operações → mudanças com `from`/`to`, ids definitivos para criações)
+- [x] Decisões em níveis (três estados, "parcial", dependências)
+- [x] Conflitos, aviso de item trancado e validação do conjunto aceito
+- [x] Comparação entre propostas para a substituída (por mudança: igual, diferente ou não consta na nova), função pura
+- [x] Aplicação do conjunto aceito (puro: projeto atual + proposta + decisões → novo projeto + mudanças aplicadas)
+- [x] `docs/FORMAT.md` (v8) e `docs/PROPOSAL-FORMAT.md`
 
 **Aceite**: testes cobrindo cada tipo de mudança, as quatro regras de dependência, conflito após alteração externa, item trancado, conjunto inválido bloqueado, aplicação parcial seguida de outra aplicação, uma importação inteira (projeto vazio + proposta com tudo), e especializações v3 com `sources` válidas e inválidas (destino de `values` fora de `options`, `values` em campo que não é `enum`, origem sem `id` nem `name`), além de v1 e v2 continuarem abrindo.
 

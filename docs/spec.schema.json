@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
-  "title": "Mapping — especialização (formatVersion 1 e 2)",
-  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code/codeRef só no formatVersion 2) só são verificadas pelo validador da app; veja SPEC-FORMAT.md.",
+  "title": "Mapping — especialização (formatVersion 1, 2 e 3)",
+  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code/codeRef a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) só são verificadas pelo validador da app; veja SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -11,7 +11,7 @@
       "enum": ["mapping-spec", "mapeador-spec"]
     },
     "formatVersion": {
-      "enum": [1, 2]
+      "enum": [1, 2, 3]
     },
     "id": {
       "type": "string",
@@ -121,6 +121,12 @@
           "additionalProperties": {
             "$ref": "#/$defs/codeEntry"
           }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/typeSource"
+          }
         }
       }
     },
@@ -171,6 +177,12 @@
             },
             "default": {
               "type": ["string", "number"]
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/fieldSource"
+              }
             }
           }
         },
@@ -212,6 +224,12 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/fieldSource"
+              }
             }
           }
         }
@@ -242,6 +260,12 @@
             },
             "default": {
               "type": ["string", "number"]
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/fieldSource"
+              }
             }
           }
         },
@@ -276,6 +300,12 @@
               "items": {
                 "type": "string",
                 "minLength": 1
+              }
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/fieldSource"
               }
             }
           }
@@ -318,6 +348,12 @@
         },
         "rowLabel": {
           "type": "string"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fieldSource"
+          }
         }
       }
     },
@@ -378,6 +414,12 @@
               }
             }
           ]
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fieldSource"
+          }
         }
       }
     },
@@ -461,6 +503,76 @@
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/platformId"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fieldSource"
+          }
+        }
+      }
+    },
+    "typeSource": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["system", "id"],
+          "properties": {
+            "system": {
+              "type": "string",
+              "minLength": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["system", "name"],
+          "properties": {
+            "system": {
+              "type": "string",
+              "minLength": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "fieldSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "name"],
+      "properties": {
+        "system": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "values": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
           }
         }
       }
