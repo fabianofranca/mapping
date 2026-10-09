@@ -217,15 +217,15 @@ Agem sobre o nível selecionado (proposta, imagem, item ou mudança). **`R` pass
 
 ## 8. Decisões e pontos em aberto
 
-Itens 1 a 3 já estão desenhados e precisam só de confirmação do dono; 4 em diante pedem decisão técnica antes da 4.3 ou da 4.4.
+**Aprovação:** as telas (rodadas 1 a 3) e as decisões 1 a 7, como desenhadas, foram aprovadas pelo dono em 2026-10-09. O item 4 ainda pede trabalho na fase 4.1; o 8 é decidido ao implementar; 9 e 10 são só registro.
 
-1. **`R` vira Rejeitar na revisão.** Justificativa: projeto somente leitura. Alternativa: `X`. Confirmar.
+1. **`R` vira Rejeitar na revisão.** Justificativa: projeto somente leitura. Alternativa descartada: `X`.
 2. **Atalho da janela Propostas:** Ctrl+Shift+7 oficial e Alt+7 extra, seguindo a decisão 1 do `HANDOFF.md`.
 3. **“Desfazer” dos lotes é do nível da tela**, não o desfazer do projeto: guarda o mapa de decisões anterior e regrava a proposta numa única escrita. Alternativa: sem desfazer, só confirmação (descartada porque decidir deve ser barato).
 4. **Comparação “igual / diferente / não consta na nova”** (proposta substituída) exige comparar as mudanças da proposta antiga com as da nova (por entidade, campo e valor `to`). Sugestão: função pura em `src/model/` na 4.1, usada pela 4.3. O desenho assume esse resultado pronto.
-5. **Rejeitadas não aparecem na visão Proposto**, só na Atual (fantasma e ✕). Confirmar.
+5. **Rejeitadas não aparecem na visão Proposto**, só na Atual (fantasma e ✕).
 6. **Aceitar o que ainda vale numa proposta substituída:** as aceitas continuam aplicáveis e as pendentes não; o botão Aplicar conta só as aceitas. Já está no `PLAN.md` (decisão 6); o desenho só o torna visível.
-7. **Linha tracejada de “criada” × “a revisar”** (seção 4): distinguidas pelo selo + e pelo ⚠. Se o dono achar confuso, trocar a criada por linha cheia mais selo.
+7. **Linha tracejada de “criada” × “a revisar”** (seção 4): distinguidas pelo selo + e pelo ⚠. Se na prática ficar confuso, trocar a criada por linha cheia mais selo.
 8. **Colunas e alturas fixas** (seção 3.3): decidir token ou derivação ao implementar.
 9. **Estado “Retirada”** (`withdrawn`) aparece só na lista, com `Flag` neutra e ação Ver. Não há tela de revisão para ela.
 10. **Fora do desenho:** navegação do canvas por teclado (P11 do `HANDOFF.md`), animações além das durações do design system, telas do lado do MCP.

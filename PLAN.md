@@ -193,7 +193,7 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 
 **Aceite**: telas aprovadas pelo dono; nenhum componente novo sem justificativa no documento.
 
-> **Estado**: rodada 1 (modo revisão no desktop) aprovada pelo dono; rodadas 2 (Propostas, retomada, vazio, grande) e 3 (celular) entregues no canvas, **aguardando aprovação**. Pontos em aberto na seção 8 do `HANDOFF-PROPOSALS.md`.
+> **Estado**: concluída. Telas (rodadas 1 a 3: desktop, retomada, vazio, grande e celular) e decisões 1 a 7 da seção 8 do `HANDOFF-PROPOSALS.md` aprovadas pelo dono em 2026-10-09. A 4.4 segue a ordem da seção 9 desse documento.
 
 #### 4.1 — Modelo
 - [ ] Schema v8 (`source`) + migração; `findBySource`
@@ -202,6 +202,7 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 - [ ] Cálculo das mudanças (operações → mudanças com `from`/`to`, ids definitivos para criações)
 - [ ] Decisões em níveis (três estados, "parcial", dependências)
 - [ ] Conflitos, aviso de item trancado e validação do conjunto aceito
+- [ ] Comparação entre propostas para a substituída (por mudança: igual, diferente ou não consta na nova), função pura
 - [ ] Aplicação do conjunto aceito (puro: projeto atual + proposta + decisões → novo projeto + mudanças aplicadas)
 - [ ] `docs/FORMAT.md` (v8) e `docs/PROPOSAL-FORMAT.md`
 
