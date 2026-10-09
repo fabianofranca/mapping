@@ -204,7 +204,7 @@ test('passo 1: atualizar a SDUI para a v2 mostra a camada Telas e as plataformas
   ).toBeVisible();
   const { mapping } = await exportMapping(page);
   expect(mapping.layers.map((l) => l.name)).toContain('Telas');
-  expect(mapping.schemaVersion).toBe(7);
+  expect(mapping.schemaVersion).toBe(8);
 });
 
 test('passo 2: repositórios por plataforma, com os erros da validação', async ({
@@ -357,7 +357,7 @@ test('passo 4: "Abrir no repositório" (href certo, com e sem linha) e "Copiar c
   // O que foi gravado: ids estáveis e platformRepos.
   const { mapping } = await exportMapping(page);
   expect(mapping).toMatchObject({
-    schemaVersion: 7,
+    schemaVersion: 8,
     platformRepos: { android: { urlTemplate: ANDROID_URL, localPath: '../../..' } },
   });
   const screen = mapping.annotations.find((a) => a.type?.typeId === 'screen');

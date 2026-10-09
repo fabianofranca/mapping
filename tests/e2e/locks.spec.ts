@@ -93,7 +93,7 @@ test('o atalho Alt+L tranca e destranca a seleção, e o locked vai para o mappi
 
   await page.keyboard.press('Alt+L');
   const locked = await exportMapping(page);
-  expect(locked.mapping.schemaVersion).toBe(7);
+  expect(locked.mapping.schemaVersion).toBe(8);
   expect(locked.mapping.markings.map((m) => m.locked)).toEqual([true]);
   expect(locked.mapping.images.map((i) => i.locked)).toEqual([false]);
   // Baixar fecha o diálogo de exportação; a seleção continua na marcação.
