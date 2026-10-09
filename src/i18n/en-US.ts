@@ -1,6 +1,8 @@
 import type { Dictionary } from './pt-BR';
+import { reviewEnUS } from './review';
 
 export const enUS: Dictionary = {
+  ...reviewEnUS,
   'app.title': 'Mapping',
   'app.loading': 'Loading…',
   'settings.title': 'Settings',
