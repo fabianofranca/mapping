@@ -44,6 +44,7 @@ A funcionalidade é **genérica**: não sabe de onde vêm os dados. Importar do 
 - **Granularidade:** decisões em quatro níveis, **proposta → imagem → item → mudança**, mais um grupo **Projeto** para o que não pertence a uma imagem (camadas, especializações, repositórios por plataforma). Decidir num nível vale para tudo abaixo; um nível menor pode contrariar o maior; o nível de cima mostra "parcial" quando os de baixo divergem.
 - **Aplicar parcialmente:** "Aplicar aceitas" efetiva só o que foi aceito, numa única entrada de desfazer. O que está sem decisão continua pendente na mesma proposta.
 - **Identidade externa genérica (`source`)** em imagens e marcações, para reexportações reconhecerem os mesmos elementos. O núcleo não interpreta `system`: é só um texto (ex: `"figma"`).
+- **Origens também nas especializações (`sources`)**: um tipo de anotação pode declarar a que elementos de um sistema externo corresponde (ex: o componente `DS/Button` do Figma), e cada campo, de que propriedade de origem vem e como os valores se traduzem. É o que um agente de importação usa para saber que componente vira que tipo, sem deduzir pelo nome.
 - **Propostas ficam na pasta do projeto** (`proposals/`), versionadas no git junto com o resto. O zip exportado as inclui.
 
 ### Unidades da revisão
@@ -128,6 +129,31 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 
 **Schema v8 do projeto:** imagens e marcações ganham `source` (`{ "system", "id", "url" }` ou `null`). Migração v7 → v8 com `source: null` e o backup que já existe. Função pura `findBySource(project, system, id)`.
 
+**Especialização `formatVersion` 3** (a importação continua aceitando 1 e 2; a 3 é a 2 mais `sources`):
+
+```json
+{
+  "id": "button",
+  "name": "Button",
+  "sources": [{ "system": "figma", "id": "3f2a9c…", "name": "DS/Button" }],
+  "fields": [
+    {
+      "key": "estilo",
+      "type": "enum",
+      "options": ["primary", "secondary", "text"],
+      "sources": [{ "system": "figma", "name": "Style", "values": { "Primary": "primary", "Secondary": "secondary", "Text": "text" } }]
+    },
+    { "key": "texto", "type": "string", "sources": [{ "system": "figma", "name": "Label" }] }
+  ]
+}
+```
+
+- **No tipo de anotação**, `sources` (opcional): lista de `{ system, id?, name? }`, com pelo menos `id` ou `name`. Um tipo pode corresponder a vários elementos (ex: variantes antigas e novas do mesmo componente).
+- **No campo** (inclusive nas colunas de `table`), `sources` (opcional): lista de `{ system, name, values? }`; `values` traduz valor de origem → opção do `enum` (só em campos `enum`, com destinos que existam em `options`).
+- O núcleo não interpreta `system` nem os nomes: só valida a estrutura e devolve os dados a quem pedir (app, `get_specialization` e as funções puras).
+- Função pura `findTypesBySource(specs, system, { id?, name? })`, para o agente achar o tipo a partir do elemento de origem.
+- Validação, `docs/spec.schema.json` e `docs/SPEC-FORMAT.md` atualizados; os exemplos de `examples/specs/` continuam válidos sem `sources`.
+
 ### MCP
 
 - **`propose_changes(project, { title, description, origin, supersedes? }, operations[])`**: valida como o `plan_changes`, calcula as mudanças, grava a proposta e devolve a referência `mapping://<projeto>/p/<código>` e um resumo por nível. Com `supersedes`, a proposta anterior passa a `superseded` (as decisões dela continuam guardadas); se ela ainda tiver mudanças sem decisão ou aceitas sem aplicar, a resposta traz um aviso.
@@ -135,6 +161,8 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 - **`get_proposal_review(ref)`**: só o que importa para a próxima rodada: mudanças rejeitadas com as notas, notas gerais e conflitos, de forma compacta.
 - **`withdraw_proposal(ref)`**: o agente retira uma proposta aberta.
 - **`find_by_source({ project?, system, id })`**.
+- **`find_types_by_source({ project, system, id?, name? })`**: os tipos das especializações aplicadas que correspondem a um elemento de origem.
+- **`validate_specialization({ path? | text? })`**: valida um arquivo de especialização (dentro das raízes) ou um texto JSON, sem aplicar a nenhum projeto, e devolve os erros com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary`) e avisos (ex: plataforma declarada e não usada, tipo sem `code`). É o ciclo "gerar, validar, corrigir" de um agente que cria especializações.
 - Operações aceitam `source` em imagens e marcações.
 - **Sai `apply_changes`.** `SERVER_VERSION` vai para `0.3.0`.
 - **`docs/AGENT-GUIDE.md`:** fluxo "ler o projeto → `propose_changes` → avisar o usuário → esperar a revisão terminar (`get_proposal`: nada pendente nem aceito sem aplicar) → `get_proposal_review` → nova proposta com `supersedes`, só com as correções". Para reexportações: usar `source` para casar os elementos e propor só o que mudou.
@@ -166,6 +194,7 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 
 #### 4.1 — Modelo
 - [ ] Schema v8 (`source`) + migração; `findBySource`
+- [ ] Especialização `formatVersion` 3 (`sources` nos tipos e nos campos), `findTypesBySource`, schema JSON e `SPEC-FORMAT.md`
 - [ ] Formato da proposta (zod), com mensagens de erro por caminho
 - [ ] Cálculo das mudanças (operações → mudanças com `from`/`to`, ids definitivos para criações)
 - [ ] Decisões em níveis (três estados, "parcial", dependências)
@@ -173,15 +202,16 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 - [ ] Aplicação do conjunto aceito (puro: projeto atual + proposta + decisões → novo projeto + mudanças aplicadas)
 - [ ] `docs/FORMAT.md` (v8) e `docs/PROPOSAL-FORMAT.md`
 
-**Aceite**: testes cobrindo cada tipo de mudança, as quatro regras de dependência, conflito após alteração externa, item trancado, conjunto inválido bloqueado, aplicação parcial seguida de outra aplicação, e uma importação inteira (projeto vazio + proposta com tudo).
+**Aceite**: testes cobrindo cada tipo de mudança, as quatro regras de dependência, conflito após alteração externa, item trancado, conjunto inválido bloqueado, aplicação parcial seguida de outra aplicação, uma importação inteira (projeto vazio + proposta com tudo), e especializações v3 com `sources` válidas e inválidas (destino de `values` fora de `options`, `values` em campo que não é `enum`, origem sem `id` nem `name`), além de v1 e v2 continuarem abrindo.
 
 #### 4.2 — MCP
 - [ ] `propose_changes`, `list_proposals`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`, `find_by_source`; `source` nas operações
+- [ ] `find_types_by_source` e `validate_specialization` (arquivo ou texto, erros com caminho e avisos)
 - [ ] Remoção do `apply_changes`; `SERVER_VERSION` 0.3.0
 - [ ] Testes de integração por stdio: importação inteira, revisão simulada (editando decisões no arquivo), nova proposta com `supersedes`
 - [ ] `docs/MCP.md` e `docs/AGENT-GUIDE.md`
 
-**Aceite**: o agente nunca altera o `mapping.json` (teste); a proposta gerada abre e é aplicada pela app.
+**Aceite**: o agente nunca altera o `mapping.json` (teste); a proposta gerada abre e é aplicada pela app; `validate_specialization` devolve os mesmos erros que a importação da app para os mesmos arquivos.
 
 #### 4.3 — App: armazenamento e estado
 - [ ] Leitura e gravação de `proposals/` na pasta, no IndexedDB e no zip
@@ -219,6 +249,8 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 4. Nota em rejeição sugerida, não obrigatória.
 5. `plan_changes` continua como prévia sem gravar.
 6. Proposta substituída (`superseded`) mantém as decisões e notas, mas as mudanças pendentes dela deixam de poder ser aplicadas (a app avisa, e o agente é orientado a só substituir depois da revisão concluída).
+7. `sources` só em especializações `formatVersion` 3 (e não como campo opcional da 2), para versões antigas da app recusarem o arquivo com uma mensagem clara em vez de erro genérico.
+8. `validate_specialization` aceita caminho (dentro das raízes) ou texto JSON.
 
 ### Roteiro de teste manual da etapa 4
 
