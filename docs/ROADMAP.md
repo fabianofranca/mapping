@@ -60,19 +60,13 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Entregue (3a):** servidor `mapping-mcp.js` (stdio, arquivo único), referências `mapping://`, leitura granular, recorte (`get_marking_image`), escrita em lote com prévia (`plan_changes` + `apply_changes`) e número de revisão para convivência com a app.
 - **Entregue (3b):** especialização `formatVersion` 2 (`platforms`, `code` por tipo e campo `codeRef`; a v1 continua aceita), schema v7 (`platformRepos` e o valor do `codeRef` com `_id` por entrada), funções puras `codeLink`, `codeBlueprint` e `findByCode`, pendências de `codeRef` (incompleta) e aviso de plataforma sem repositório, editor e exibição do `codeRef` na app com "Abrir no repositório" e "Copiar caminho", repositórios por plataforma nas Configurações, e no MCP `get_code_hints`, `find_by_code`, `codeRefs` resolvidos em `get_marking` (com `localFile`/`exists`, sem nunca ler código) e `set_platform_repo`/`remove_platform_repo` no lote. O princípio se manteve: nenhum nome de plataforma no código do núcleo (`src/` e `mcp/`). Referência: [`SPEC-FORMAT.md`](SPEC-FORMAT.md), [`FORMAT.md`](FORMAT.md), [`MCP.md`](MCP.md) e [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
-## Etapa 4 — Sincronização com o Figma
+## Etapa 4 — Propostas de alteração com revisão (em andamento)
 
-- **Objetivo:** trazer para o projeto os dados do Figma e mantê-los em sincronia, sem perder o que foi anotado.
-- **Entra:**
-  - identidade e dono dos dados vindos do Figma (`source`);
-  - dados do Figma somente leitura ou editáveis com controle de divergência (opção por projeto);
-  - mapeamento Figma → tipos na especialização, só com a hierarquia significativa;
-  - pendência "fora do design system";
-  - tools `preview_sync` e `apply_sync`, por página ou nó;
-  - pendência "removida no Figma";
-  - relatório na app e skill de exportação para o agente;
-  - telas no Claude Design.
-- **Depende de:** etapa 3 (servidor MCP e referências de código nas especializações; concluída).
+- **Objetivo:** toda alteração feita por um agente chega como uma proposta (um "pull request" dentro da ferramenta). O usuário vê o projeto como ficaria, aceita ou rejeita em qualquer nível (proposta, imagem, item ou mudança), deixa notas no que rejeitou, e o agente manda uma nova proposta corrigida. Vale para a primeira importação e para as atualizações.
+- **Genérica:** não sabe de onde vêm os dados. Importar do Figma, migrar telas antigas ou corrigir anotações são usos conduzidos por skills dos agentes (ver Evoluções).
+- **Entra:** formato de proposta em `proposals/`, `source` genérico em imagens e marcações (schema v8), tools `propose_changes`, `list_proposals`, `get_proposal`, `get_proposal_review`, `withdraw_proposal` e `find_by_source` (sai o `apply_changes`), janela Propostas e modo revisão na app, telas desenhadas no Claude Design.
+- **Fases:** 4.0 a 4.5 no [`PLAN.md`](../PLAN.md).
+- **Depende de:** etapa 3 (concluída).
 
 ## Marco — Uso real
 
@@ -87,5 +81,7 @@ Só depois do marco, se a ferramenta se provar útil.
 
 - Biblioteca de componentes do DS importada do Figma e telas compostas (núcleo agnóstico; saídas como SDUI ou código definidas por especializações).
 - Agentes gerando telas a partir da biblioteca e migração de Figmas antigos para o DS novo por inferência sobre as imagens.
+- Skills para agentes que usam as propostas: importação e reexportação a partir do Figma (com `source` para reconhecer os elementos e o mapeamento componente → tipo vindo da especialização), migração de telas antigas por inferência sobre as imagens.
+- Reverter, depois de aplicada, uma mudança específica de uma proposta.
 - Editor de especializações dentro da app.
 - Paleta de comandos e busca global (antiga R10).
