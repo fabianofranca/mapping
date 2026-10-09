@@ -75,7 +75,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 ## Etapa atual e etapas futuras
 
-**Etapa atual: nenhuma em andamento.** A etapa 3b foi a última detalhada no `PLAN.md`; a ordem das próximas está em [`docs/ROADMAP.md`](docs/ROADMAP.md). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
+**Etapa atual: 4 — Propostas de alteração com revisão.** As fases (4.0 a 4.5) estão em "Fases pendentes — Etapa 4" no `PLAN.md`; siga a ordem e o paralelismo indicados lá. A funcionalidade é genérica: nada específico de Figma ou de outra origem no núcleo. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
 
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
@@ -85,4 +85,5 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - **Etapa 2.5 — Trava de marcações e imagens (concluída):** `locked` no schema v5, regras em `src/model/locks.ts`, cadeado na interface e no canvas (histórico em `docs/history/PLAN-etapa-2-5.md`).
 - **Etapa 3a — Servidor MCP, base (concluída):** histórico em `docs/history/PLAN-etapa-3a.md`; uso em `docs/MCP.md` e `docs/AGENT-GUIDE.md`.
 - **Etapa 3b — Referências de código (concluída):** histórico em `docs/history/PLAN-etapa-3b.md`; formato em `docs/SPEC-FORMAT.md` e `docs/FORMAT.md` (schema v7), uso em `docs/MCP.md` e `docs/AGENT-GUIDE.md`.
-- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (4 Figma, marco de uso real e evoluções).
+- **Etapa 4 — Propostas de alteração com revisão (em andamento):** fases 4.0 a 4.5 no `PLAN.md`.
+- **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (marco de uso real e evoluções).
