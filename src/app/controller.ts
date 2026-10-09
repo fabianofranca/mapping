@@ -24,6 +24,11 @@ import {
 import { createDisplayBitmap, prepareImage, readImageSize } from '../storage/imageImport';
 import { loadProject } from '../storage/loadProject';
 import {
+  loadProposals,
+  NO_PROPOSALS,
+  type LoadedProposals,
+} from '../storage/loadProposals';
+import {
   openLocalLibrary,
   requestPersistentStorage,
   type LocalLibrary,
@@ -117,6 +122,8 @@ function start(
     migratedFrom?: { version: number; text: string };
     /** O `mapping.json` como foi lido (ver `SessionOptions.loadedText`). */
     loadedText?: string;
+    /** As propostas de alteração lidas do armazenamento. */
+    proposals?: LoadedProposals;
   },
 ): void {
   const unexported = signal(options.unexported);
@@ -126,6 +133,7 @@ function start(
     readOnly: options.readOnly,
     migratedFrom: options.migratedFrom,
     loadedText: options.loadedText,
+    proposals: options.proposals ?? NO_PROPOSALS,
     prepareImage,
     onSaved: () => {
       unexported.value = true;
@@ -165,6 +173,7 @@ async function openFromStorage(
     localId,
     unexported: meta?.unexported ?? false,
     loadedText: loaded.text,
+    proposals: await loadProposals(storage),
     // Schema antigo: o original vai para `backups/` antes do primeiro salvamento.
     ...(loaded.migratedFrom !== null
       ? { migratedFrom: { version: loaded.migratedFrom, text: loaded.text } }
@@ -193,6 +202,8 @@ export function createLocalProject(name: string): Promise<AppResult> {
       mapping: serialize(project),
       images: new Map(),
       specs: new Map(),
+      proposals: new Map(),
+      proposalImages: new Map(),
     });
     void requestPersistentStorage();
     return openFromStorage(library.open(id), id);
@@ -285,6 +296,8 @@ export function createFolderProject(
       localId: null,
       unexported: false,
       loadedText: mappingText,
+      // A pasta pode já ter propostas (ex: restauradas do git sem o mapping.json).
+      proposals: await loadProposals(storage),
     });
     return ok({ skipped: imported.skipped });
   });

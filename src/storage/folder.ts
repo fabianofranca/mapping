@@ -1,3 +1,4 @@
+import { PROPOSALS_DIR, PROPOSAL_FILE, PROPOSAL_ID_RE, proposalFilePath } from '../model';
 import {
   BACKUPS_DIR,
   IMAGES_DIR,
@@ -173,6 +174,30 @@ export function createFolderStorage(root: DirectoryHandleLike): ProjectStorage {
     },
     writeSpec: (path, text) => writeFile(root, path, text),
     removeSpec: (path) => removeFile(root, path),
+    async listProposals() {
+      const dir = await resolveDir(root, [PROPOSALS_DIR], false);
+      if (!dir) return [];
+      const ids: string[] = [];
+      for await (const entry of dir.values()) {
+        if (entry.kind !== 'directory' || !PROPOSAL_ID_RE.test(entry.name)) continue;
+        try {
+          await entry.getFileHandle(PROPOSAL_FILE);
+          ids.push(entry.name);
+        } catch (e) {
+          if (!isNotFound(e)) throw e;
+        }
+      }
+      return ids.sort();
+    },
+    async readProposal(id) {
+      const blob = await readFile(root, proposalFilePath(id));
+      return blob ? blob.text() : null;
+    },
+    writeProposal: (id, text) => writeFile(root, proposalFilePath(id), text),
+    async statProposal(id) {
+      const file = await readFile(root, proposalFilePath(id));
+      return file ? `${file.size}:${file.lastModified ?? 0}` : null;
+    },
     writeBackup: (name, text) => writeFile(root, `${BACKUPS_DIR}/${name}`, text),
   };
 }

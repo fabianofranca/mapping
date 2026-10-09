@@ -9,6 +9,8 @@ import {
   type ProjectImage,
 } from '../model';
 import type { StoreErrorCode } from '../store/history';
+import type { ProposalActionError } from '../store/proposalActions';
+import type { ProposalNotice } from '../store/proposals';
 
 /** Nome da imagem; sem nome, o nome do arquivo. */
 export function imageLabel(image: Pick<ProjectImage, 'name' | 'file'>): string {
@@ -34,6 +36,7 @@ const MARKING_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   'rect-excludes-children': 'marking.error.rect-excludes-children',
   'invalid-parent': 'marking.error.invalid-parent',
   locked: 'marking.error.locked',
+  reviewing: 'review.readOnly',
 };
 
 export function markingErrorMessage(code: StoreErrorCode): string {
@@ -54,4 +57,32 @@ export function annotationErrorMessage(code: StoreErrorCode): string {
   if (code === 'empty-key') return t('annotation.error.empty-key');
   if (code === 'duplicate-key') return t('annotation.error.duplicate-key');
   return t('annotation.error.generic');
+}
+
+const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
+  'unknown-proposal': 'proposal.error.unknown',
+  gone: 'proposal.error.gone',
+  unreadable: 'proposal.error.unreadable',
+  'write-failed': 'proposal.error.writeFailed',
+  'not-open': 'proposal.error.notOpen',
+  'unknown-target': 'proposal.error.noTarget',
+  'unknown-note': 'proposal.error.noTarget',
+  'empty-note': 'proposal.error.emptyNote',
+  'no-project': 'proposal.error.generic',
+  'read-only': 'proposal.error.readOnly',
+  blocked: 'proposal.error.blocked',
+  stale: 'proposal.error.stale',
+  'image-missing': 'proposal.error.imageMissing',
+  'image-exists': 'proposal.error.imageExists',
+  failed: 'proposal.error.generic',
+};
+
+/** Mensagem de uma ação recusada na revisão (`path`: a imagem de `image-missing` e `image-exists`). */
+export function proposalErrorMessage(code: ProposalActionError, path = ''): string {
+  return t(PROPOSAL_ERRORS[code], { path });
+}
+
+/** Aviso de uma proposta que chegou, mudou ou sumiu por fora da app. */
+export function proposalNoticeMessage(notice: ProposalNotice): string {
+  return t(`proposal.notice.${notice.kind}`, { title: notice.title });
 }

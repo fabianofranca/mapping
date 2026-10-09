@@ -1,10 +1,13 @@
 import JSZip from 'jszip';
+import { PROPOSALS_DIR } from '../model';
 import {
   IMAGES_DIR,
   MAPPING_FILE,
   SPECS_DIR,
   imageMimeType,
   isImageFileName,
+  isProposalFilePath,
+  isProposalImagePath,
   isSpecPath,
 } from './types';
 import { reportError } from '../utils/report';
@@ -16,6 +19,10 @@ export interface ProjectFiles {
   readonly images: ReadonlyMap<string, Blob>;
   /** Cópias das especializações: caminho relativo (`specs/sdui.json`) → texto. */
   readonly specs: ReadonlyMap<string, string>;
+  /** Propostas de alteração: `proposals/<id>/proposal.json` → texto (como está, sem validar). */
+  readonly proposals: ReadonlyMap<string, string>;
+  /** Imagens aguardando a aceitação de uma proposta: `proposals/<id>/images/…` → conteúdo. */
+  readonly proposalImages: ReadonlyMap<string, Blob>;
 }
 
 export type ReadZipResult =
@@ -60,18 +67,38 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
     const relative = path.slice(root.length);
     if (isSpecPath(relative)) specs.set(relative, await entry.async('string'));
   }
+  const proposals = new Map<string, string>();
+  const proposalImages = new Map<string, Blob>();
+  const proposalsPrefix = `${root}${PROPOSALS_DIR}/`;
+  for (const [path, entry] of Object.entries(zip.files)) {
+    if (entry.dir || !path.startsWith(proposalsPrefix)) continue;
+    const relative = path.slice(root.length);
+    if (isProposalFilePath(relative)) {
+      proposals.set(relative, await entry.async('string'));
+    } else if (isProposalImagePath(relative)) {
+      const bytes = await entry.async('arraybuffer');
+      proposalImages.set(relative, new Blob([bytes], { type: imageMimeType(relative) }));
+    }
+  }
   return {
     ok: true,
-    files: { mapping: await mappingEntry.async('string'), images, specs },
+    files: {
+      mapping: await mappingEntry.async('string'),
+      images,
+      specs,
+      proposals,
+      proposalImages,
+    },
   };
 }
 
-/** Gera o zip com `mapping.json`, `images/` e `specs/` na raiz. */
+/** Gera o zip com `mapping.json`, `images/`, `specs/` e `proposals/` na raiz. */
 export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   const zip = new JSZip();
   zip.file(MAPPING_FILE, files.mapping);
   for (const [path, text] of files.specs) zip.file(path, text);
-  for (const [path, blob] of files.images) {
+  for (const [path, text] of files.proposals) zip.file(path, text);
+  for (const [path, blob] of [...files.images, ...files.proposalImages]) {
     // Imagens já são comprimidas: guardar sem recomprimir é mais rápido.
     zip.file(path, await blob.arrayBuffer(), { compression: 'STORE' });
   }

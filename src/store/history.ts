@@ -2,6 +2,7 @@ import { batch, computed, signal, type ReadonlySignal } from '@preact/signals';
 import { ModelError, type ModelErrorCode } from '../model/errors';
 import { touchProject } from '../model/project';
 import type { Project } from '../model/types';
+import { reportError } from '../utils/report';
 
 /** Limite de entradas na pilha de desfazer. */
 export const HISTORY_LIMIT = 100;
@@ -10,7 +11,29 @@ export const HISTORY_LIMIT = 100;
 export type Operation = (p: Project) => Project;
 
 export type StoreErrorCode =
-  ModelErrorCode | 'no-project' | 'read-only' | 'gesture-active';
+  ModelErrorCode | 'no-project' | 'read-only' | 'gesture-active' | 'reviewing';
+
+/**
+ * Efeito fora do projeto ligado a uma entrada do histórico (etapa 4): aplicar as aceitas
+ * de uma proposta também marca a proposta como aplicada, e desfazer/refazer essa entrada
+ * precisa desfazer/refazer isso junto. `tag` identifica o dono (o id da proposta). Uma
+ * entrada com `link` nasce da revisão, então passa pelo bloqueio de somente leitura dela.
+ */
+export interface HistoryLink {
+  readonly tag: string;
+  readonly undo: () => void;
+  readonly redo: () => void;
+}
+
+export interface ApplyOptions {
+  readonly link?: HistoryLink;
+}
+
+/** Uma entrada do histórico: o projeto de antes da transição e o efeito dela. */
+interface Frame {
+  readonly project: Project;
+  readonly link: HistoryLink | null;
+}
 
 export type ActionResult<T = void> =
   | { readonly ok: true; readonly value: T }
@@ -44,6 +67,11 @@ export interface ProjectStore {
   /** Incrementa a cada alteração do projeto (útil para o salvamento automático). */
   readonly revision: ReadonlySignal<number>;
   readonly gestureActive: ReadonlySignal<boolean>;
+  /**
+   * Revisão de uma proposta aberta (etapa 4): o projeto fica somente leitura, e só as
+   * entradas ligadas à revisão (`ApplyOptions.link`) podem ser aplicadas, desfeitas e refeitas.
+   */
+  readonly reviewing: ReadonlySignal<boolean>;
 
   /**
    * Arquivos de imagem referenciados pelo projeto atual ou por qualquer
@@ -54,8 +82,14 @@ export interface ProjectStore {
 
   load(project: Project, options?: LoadOptions): void;
   close(): void;
+  setReviewing(reviewing: boolean): void;
   /** Aplica a operação e cria uma entrada no histórico. */
-  apply(op: Operation): ActionResult;
+  apply(op: Operation, options?: ApplyOptions): ActionResult;
+  /**
+   * Descarta o "refazer" se alguma entrada dele tem o efeito de `tag`: a proposta mudou
+   * depois do desfazer, então refazer deixaria projeto e proposta em desacordo.
+   */
+  discardRedoOf(tag: string): void;
   undo(): boolean;
   redo(): boolean;
 
@@ -86,21 +120,31 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
 
   const project = signal<Project | null>(null);
   const readOnly = signal(false);
-  const past = signal<readonly Project[]>([]);
-  const future = signal<readonly Project[]>([]);
+  const past = signal<readonly Frame[]>([]);
+  const future = signal<readonly Frame[]>([]);
+  const reviewing = signal(false);
   const revision = signal(0);
   /** Projeto no início do gesto em andamento; `null` quando não há gesto. */
   const gestureBase = signal<Project | null>(null);
 
-  const guard = (): ActionResult<Project> => {
+  const guard = (fromReview = false): ActionResult<Project> => {
     const current = project.value;
     if (!current) return { ok: false, error: 'no-project' };
     if (readOnly.value) return { ok: false, error: 'read-only' };
+    if (reviewing.value && !fromReview) return { ok: false, error: 'reviewing' };
     return { ok: true, value: current };
   };
 
-  const commit = (before: Project, after: Project) => {
-    past.value = [...past.value, before].slice(-HISTORY_LIMIT);
+  const runLink = (run: () => void) => {
+    try {
+      run();
+    } catch (e) {
+      reportError('history.link', e);
+    }
+  };
+
+  const commit = (before: Project, after: Project, link: HistoryLink | null = null) => {
+    past.value = [...past.value, { project: before, link }].slice(-HISTORY_LIMIT);
     future.value = [];
     project.value = touchProject(after, now());
     revision.value++;
@@ -113,9 +157,24 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     committed,
     readOnly,
     revision,
-    canUndo: computed(() => past.value.length > 0 && gestureBase.value === null),
-    canRedo: computed(() => future.value.length > 0 && gestureBase.value === null),
+    canUndo: computed(() => {
+      const top = past.value.at(-1);
+      return (
+        top !== undefined &&
+        gestureBase.value === null &&
+        (!reviewing.value || top.link !== null)
+      );
+    }),
+    canRedo: computed(() => {
+      const top = future.value[0];
+      return (
+        top !== undefined &&
+        gestureBase.value === null &&
+        (!reviewing.value || top.link !== null)
+      );
+    }),
     gestureActive: computed(() => gestureBase.value !== null),
+    reviewing,
 
     referencedImageFiles() {
       const files = new Set<string>();
@@ -128,8 +187,8 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       };
       collect(project.peek());
       collect(gestureBase.peek());
-      for (const p of past.peek()) collect(p);
-      for (const p of future.peek()) collect(p);
+      for (const frame of past.peek()) collect(frame.project);
+      for (const frame of future.peek()) collect(frame.project);
       return files;
     },
 
@@ -148,30 +207,43 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       batch(() => {
         project.value = null;
         readOnly.value = false;
+        reviewing.value = false;
         past.value = [];
         future.value = [];
         gestureBase.value = null;
       });
     },
 
-    apply(op) {
+    setReviewing(value) {
+      reviewing.value = value;
+    },
+
+    apply(op, options = {}) {
       if (gestureBase.value) return { ok: false, error: 'gesture-active' };
-      const current = guard();
+      const link = options.link ?? null;
+      const current = guard(link !== null);
       if (!current.ok) return current;
       const result = run(op, current.value);
       if (!result.ok) return result;
-      if (result.value !== current.value) commit(current.value, result.value);
+      if (result.value !== current.value) commit(current.value, result.value, link);
       return { ok: true, value: undefined };
+    },
+
+    discardRedoOf(tag) {
+      if (future.value.some((frame) => frame.link?.tag === tag)) future.value = [];
     },
 
     undo() {
       const previous = past.value.at(-1);
       const current = project.value;
       if (!previous || !current || gestureBase.value || readOnly.value) return false;
+      if (reviewing.value && previous.link === null) return false;
       past.value = past.value.slice(0, -1);
-      future.value = [current, ...future.value];
-      project.value = touchProject(previous, now());
+      future.value = [{ project: current, link: previous.link }, ...future.value];
+      project.value = touchProject(previous.project, now());
       revision.value++;
+      const link = previous.link;
+      if (link) runLink(link.undo);
       return true;
     },
 
@@ -179,10 +251,15 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       const [next, ...rest] = future.value;
       const current = project.value;
       if (!next || !current || gestureBase.value || readOnly.value) return false;
+      if (reviewing.value && next.link === null) return false;
       future.value = rest;
-      past.value = [...past.value, current].slice(-HISTORY_LIMIT);
-      project.value = touchProject(next, now());
+      past.value = [...past.value, { project: current, link: next.link }].slice(
+        -HISTORY_LIMIT,
+      );
+      project.value = touchProject(next.project, now());
       revision.value++;
+      const link = next.link;
+      if (link) runLink(link.redo);
       return true;
     },
 

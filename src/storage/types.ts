@@ -4,6 +4,7 @@ export const MAPPING_FILE = 'mapping.json';
 export const IMAGES_DIR = 'images';
 /** Pasta das cópias das especializações aplicadas (`specs/<id>.json`). */
 export const SPECS_DIR = 'specs';
+import { PROPOSALS_DIR, PROPOSAL_FILE, PROPOSAL_ID_RE } from '../model';
 export { BACKUPS_DIR, backupFileName, backupTimestamp } from '../model';
 
 export type StorageKind = 'folder' | 'local';
@@ -45,6 +46,21 @@ export interface ProjectStorage {
   /** Remove a cópia da especialização. Não falha se ela já não existir. */
   removeSpec(path: string): Promise<void>;
   /**
+   * Ids das propostas (`proposals/<id>/proposal.json`, etapa 4), em ordem alfabética.
+   * O conteúdo das imagens de uma proposta usa `readImage`/`writeImage`/`removeImage`
+   * com o caminho completo (`proposals/<id>/images/tela.webp`).
+   */
+  listProposals(): Promise<string[]>;
+  /** Texto do `proposal.json`, ou `null` se ele não existir. */
+  readProposal(id: string): Promise<string | null>;
+  writeProposal(id: string, text: string): Promise<void>;
+  /**
+   * Carimbo (tamanho e `lastModified`) do `proposal.json`, ou `null` se ele não existir.
+   * Só a pasta implementa, como `statMapping`: é como a app percebe propostas novas ou
+   * alteradas por fora.
+   */
+  statProposal?(id: string): Promise<string | null>;
+  /**
    * Guarda uma cópia do `mapping.json` original (antes de migrar o schema).
    * `name` é o nome do arquivo (ver `backupFileName`), sem a pasta.
    */
@@ -54,6 +70,35 @@ export interface ProjectStorage {
 /** `true` para `specs/<nome>.json` (sem subpastas). */
 export function isSpecPath(path: string): boolean {
   return /^specs\/[^/]+\.json$/.test(path);
+}
+
+const PROPOSAL_PATH_RE = new RegExp(`^${PROPOSALS_DIR}/([^/]+)/(.+)$`);
+
+/** Id da proposta de um caminho `proposals/<id>/…`; `null` se não for um. */
+export function proposalIdOfPath(path: string): string | null {
+  const id = PROPOSAL_PATH_RE.exec(path)?.[1];
+  return id !== undefined && PROPOSAL_ID_RE.test(id) ? id : null;
+}
+
+/** `true` para `proposals/<id>/proposal.json`. */
+export function isProposalFilePath(path: string): boolean {
+  const match = PROPOSAL_PATH_RE.exec(path);
+  return (
+    match !== null && match[2] === PROPOSAL_FILE && PROPOSAL_ID_RE.test(match[1] ?? '')
+  );
+}
+
+/**
+ * `true` para uma imagem de proposta (`proposals/<id>/images/tela.webp`): imagem
+ * dentro da pasta da proposta, sem `..`.
+ */
+export function isProposalImagePath(path: string): boolean {
+  const match = PROPOSAL_PATH_RE.exec(path);
+  if (!match || !PROPOSAL_ID_RE.test(match[1] ?? '')) return false;
+  const rest = match[2] ?? '';
+  return (
+    isImageFileName(rest) && !rest.split('/').some((part) => part === '..' || part === '')
+  );
 }
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'];

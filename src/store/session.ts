@@ -11,11 +11,14 @@ import {
 import { createAutoSaver, type SaveStatus } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
+import type { LoadedProposals } from '../storage/loadProposals';
 import { backupFileName, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
 import { reportError } from '../utils/report';
 import { createProjectStore, type ProjectStore } from './history';
 import { createProjectActions, type ProjectActions } from './project';
+import { createProposalActions, type ProposalActions } from './proposalActions';
+import { createProposalStore, type ProposalStore } from './proposals';
 
 export interface SessionOptions {
   readonly storage: ProjectStorage;
@@ -36,6 +39,8 @@ export interface SessionOptions {
    * (alguém editou o JSON à mão). Sem ele, só a `revision` é conferida.
    */
   readonly loadedText?: string;
+  /** As propostas de alteração lidas do armazenamento ao abrir (ver `loadProposals`). */
+  readonly proposals?: LoadedProposals;
   /**
    * Arquivos de imagem trocados ou adicionados por fora (ao recarregar o projeto ou ao
    * conferir os arquivos): quem guarda os bitmaps os descarta para carregar de novo.
@@ -93,6 +98,10 @@ export interface ProjectSession {
   readonly storage: ProjectStorage;
   readonly store: ProjectStore;
   readonly actions: ProjectActions;
+  /** Propostas de alteração do projeto (etapa 4): lista, problemas, avisos e conferência da pasta. */
+  readonly proposals: ProposalStore;
+  /** Decidir, anotar e aplicar as aceitas: as únicas ações que mudam uma proposta. */
+  readonly proposalActions: ProposalActions;
   readonly saveStatus: ReadonlySignal<SaveStatus>;
   /** Versão de origem, depois que o backup do original pré-migração foi gravado. */
   readonly backupSaved: ReadonlySignal<number | null>;
@@ -103,8 +112,9 @@ export interface ProjectSession {
   /** O armazenamento permite perceber mudanças externas (hoje, só a pasta). */
   readonly watchable: boolean;
   /**
-   * Confere o `mapping.json` (e, com `images`, os arquivos de imagem). Sem alterações locais
-   * pendentes, recarrega o projeto do disco se ele mudou por fora; senão devolve `busy`.
+   * Confere o `mapping.json` (e, com `images`, os arquivos de imagem) e a pasta `proposals/`
+   * (propostas novas, alteradas ou apagadas por fora: `proposals.notices`). Sem alterações
+   * locais pendentes, recarrega o projeto do disco se ele mudou por fora; senão devolve `busy`.
    */
   sync(options?: { readonly images?: boolean }): Promise<SyncResult>;
   /**
@@ -126,7 +136,10 @@ export interface ProjectSession {
   readImage(path: string): Promise<Blob | null>;
   /** Grava agora o que estiver pendente (também serve para "tentar de novo"). */
   flush(): Promise<void>;
-  /** `mapping.json` atual, as imagens existentes e as cópias de `specs/`, para exportar. */
+  /**
+   * `mapping.json` atual, as imagens existentes, as cópias de `specs/` e as propostas (com
+   * as imagens que aguardam aceitação), para exportar.
+   */
   collectFiles(): Promise<ProjectFiles>;
   close(): Promise<void>;
 }
@@ -158,6 +171,8 @@ export function openSession(options: SessionOptions): ProjectSession {
   const store = createProjectStore({ now: options.now });
   const actions = createProjectActions(store, { newId: options.newId });
   store.load(options.project, { readOnly: options.readOnly });
+  const now = options.now ?? (() => new Date().toISOString());
+  const proposals = createProposalStore({ storage, initial: options.proposals, now });
 
   // Arquivos de imagem que a sessão sabe estarem gravados e referenciados.
   const stored = new Set(options.project.images.map((i) => i.file));
@@ -286,6 +301,24 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
 
   const saver = createAutoSaver(persist, options.autosaveDelay);
+  const proposalActions = createProposalActions({
+    store,
+    proposals,
+    storage,
+    now,
+    newId: options.newId ?? (() => crypto.randomUUID()),
+    // A imagem aceita entra no projeto como as da importação: a sessão passa a geri-la
+    // (e o desfazer a remove e restaura pelo mesmo caminho das demais imagens).
+    putProjectImage: async (path, data) => {
+      await putImage(path, data);
+      stored.add(path);
+    },
+    dropProjectImage: async (path) => {
+      if (stored.delete(path)) await storage.removeImage(path);
+      imageStamps.delete(path);
+    },
+    flush: () => saver.flush(),
+  });
   let lastRevision = store.revision.peek();
   const stopWatching = effect(() => {
     const revision = store.revision.value;
@@ -346,34 +379,46 @@ export function openSession(options: SessionOptions): ProjectSession {
   /** Sem nada local a perder: nenhuma gravação pendente e nenhum gesto em andamento. */
   const idle = () => saver.status.value === 'saved' && !store.gestureActive.peek();
 
+  /** O `mapping.json` e as imagens: recarrega o projeto se mudou por fora e não há nada local a perder. */
+  const syncProject = async (syncOptions: {
+    readonly images?: boolean;
+  }): Promise<SyncResult> => {
+    if (conflict.peek()) return 'unchanged';
+    if (!idle()) return 'busy';
+    const modified = await statMapping();
+    let result: SyncResult = 'unchanged';
+    if (modified !== null && modified !== disk.lastModified) {
+      const text = await storage.loadMapping();
+      if (text !== null && changedExternally(text)) {
+        if (!idle()) return 'busy';
+        const loaded = await loadProject(storage);
+        // Ilegível (um editor ainda escrevendo): tenta de novo no próximo ciclo.
+        if (!loaded.ok) return 'unchanged';
+        if (!idle()) return 'busy';
+        await adopt(loaded);
+        result = 'reloaded';
+      } else {
+        // Só a data mudou (um `touch`, a sincronização de uma nuvem): o conteúdo é o mesmo.
+        disk = { ...disk, lastModified: modified };
+      }
+    }
+    if (result === 'reloaded' || syncOptions.images)
+      await checkImages(result === 'reloaded');
+    return result;
+  };
+
   const sync = async (
     syncOptions: { readonly images?: boolean } = {},
   ): Promise<SyncResult> => {
-    if (!watchable || syncing || closed || conflict.peek() || !store.project.peek()) {
-      return 'unchanged';
-    }
-    if (!idle()) return 'busy';
+    if (!watchable || syncing || closed || !store.project.peek()) return 'unchanged';
     syncing = true;
     try {
-      const modified = await statMapping();
-      let result: SyncResult = 'unchanged';
-      if (modified !== null && modified !== disk.lastModified) {
-        const text = await storage.loadMapping();
-        if (text !== null && changedExternally(text)) {
-          if (!idle()) return 'busy';
-          const loaded = await loadProject(storage);
-          // Ilegível (um editor ainda escrevendo): tenta de novo no próximo ciclo.
-          if (!loaded.ok) return 'unchanged';
-          if (!idle()) return 'busy';
-          await adopt(loaded);
-          result = 'reloaded';
-        } else {
-          // Só a data mudou (um `touch`, a sincronização de uma nuvem): o conteúdo é o mesmo.
-          disk = { ...disk, lastModified: modified };
-        }
+      const result = await syncProject(syncOptions);
+      // As propostas não esperam o projeto: decisões e notas são gravadas na hora e
+      // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
+      if (storage.statProposal) {
+        await proposals.scan().catch((e: unknown) => reportError('proposals.scan', e));
       }
-      if (result === 'reloaded' || syncOptions.images)
-        await checkImages(result === 'reloaded');
       return result;
     } finally {
       syncing = false;
@@ -409,6 +454,8 @@ export function openSession(options: SessionOptions): ProjectSession {
     storage,
     store,
     actions,
+    proposals,
+    proposalActions,
     saveStatus: saver.status,
     backupSaved,
     conflict,
@@ -420,7 +467,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     async addImages(files, addOptions = {}) {
       const added: string[] = [];
       const failed: string[] = [];
-      if (store.readOnly.value || !store.project.value) {
+      if (store.readOnly.value || store.reviewing.value || !store.project.value) {
         return { added, failed: files.map((f) => f.name) };
       }
       // Uma por vez: fotos grandes decodificadas em paralelo estouram a memória do celular.
@@ -449,7 +496,9 @@ export function openSession(options: SessionOptions): ProjectSession {
     },
 
     async replaceImage(imageId, file, confirmAspectChange) {
-      if (store.readOnly.value || !store.project.value) return 'failed';
+      if (store.readOnly.value || store.reviewing.value || !store.project.value) {
+        return 'failed';
+      }
       let path: string | null = null;
       try {
         const prepared = await prepareImage(file);
@@ -495,16 +544,20 @@ export function openSession(options: SessionOptions): ProjectSession {
         const blob = await storage.readImage(image.file);
         if (blob) images.set(image.file, blob);
       }
+      const withProposals = await proposals.collect();
       return {
         mapping: serialize({ ...p, revision: disk.revision }),
         images,
         specs: specFiles(p),
+        proposals: withProposals.proposals,
+        proposalImages: withProposals.images,
       };
     },
 
     async close() {
       closed = true;
       stopWatching();
+      await proposals.settled();
       await saver.flush();
       saver.dispose();
       store.close();

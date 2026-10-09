@@ -219,11 +219,11 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 **Aceite**: o agente nunca altera o `mapping.json` (teste); a proposta gerada abre e é aplicada pela app; `validate_specialization` devolve os mesmos erros que a importação da app para os mesmos arquivos.
 
 #### 4.3 — App: armazenamento e estado
-- [ ] Leitura e gravação de `proposals/` na pasta, no IndexedDB e no zip
-- [ ] Detecção de proposta nova e de proposta alterada por fora
-- [ ] Estado da revisão (proposta aberta, decisões, notas, filtros) e estado derivado ("como ficaria", contagens, níveis, aceitas aguardando aplicação)
-- [ ] Retomar a revisão: último item, filtros e Atual/Proposto por dispositivo; conflitos recalculados ao reabrir; aviso de proposta substituída
-- [ ] Aplicar aceitas pela sessão (uma entrada de desfazer, imagens movidas, proposta atualizada)
+- [x] Leitura e gravação de `proposals/` na pasta, no IndexedDB e no zip
+- [x] Detecção de proposta nova e de proposta alterada por fora
+- [x] Estado da revisão (proposta aberta, decisões, notas, filtros) e estado derivado ("como ficaria", contagens, níveis, aceitas aguardando aplicação)
+- [x] Retomar a revisão: último item, filtros e Atual/Proposto por dispositivo; conflitos recalculados ao reabrir; aviso de proposta substituída
+- [x] Aplicar aceitas pela sessão (uma entrada de desfazer, imagens movidas, proposta atualizada)
 
 **Aceite**: testes de store e storage; zip com propostas faz round-trip sem perdas.
 

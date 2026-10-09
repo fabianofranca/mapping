@@ -26,7 +26,13 @@ describe('zip do projeto', () => {
       ['images/frente.jpg', new Blob(['FRENTE'], { type: 'image/jpeg' })],
     ]);
     const specs = new Map([['specs/sdui.json', '{"id":"sdui"}\n']]);
-    const zip = await writeProjectZip({ mapping, images, specs });
+    const zip = await writeProjectZip({
+      mapping,
+      images,
+      specs,
+      proposals: new Map(),
+      proposalImages: new Map(),
+    });
     expect(zip.type).toBe('application/zip');
 
     const read = await readProjectZip(zip);
@@ -47,7 +53,13 @@ describe('zip do projeto', () => {
     const images = new Map([
       ['images/cadastro.png', new Blob(['PNG'], { type: 'image/png' })],
     ]);
-    const zip = await writeProjectZip({ mapping, images, specs: specFiles(project) });
+    const zip = await writeProjectZip({
+      mapping,
+      images,
+      specs: specFiles(project),
+      proposals: new Map(),
+      proposalImages: new Map(),
+    });
 
     const read = await readProjectZip(zip);
     if (!read.ok) throw new Error(read.error);
