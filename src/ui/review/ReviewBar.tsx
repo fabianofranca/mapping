@@ -65,6 +65,8 @@ export function useApplyState() {
 export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
   const { review } = useEditor();
   const compact = useMediaQuery(`(max-width: ${BREAKPOINTS.compact}px)`);
+  // Abaixo da largura de referência (1440px), as contagens ficam só com ícone e número.
+  const narrow = useMediaQuery(`(max-width: ${BREAKPOINTS.design - 1}px)`);
   const d = review.derived;
   const p = d.proposal.value;
   const decideVisible = useDecideVisible();
@@ -135,38 +137,27 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
             {p.origin}
           </span>
         )}
-        <Flag icon="lock" title={t('review.readOnlyTip')}>
-          {t('review.readOnlyFlag')}
-        </Flag>
       </div>
       <div class="review-bar-stats">
         <ProgressBar summary={counts} />
         <Stat
           label={t('review.count.undecided')}
           value={counts.undecided}
-          compact={compact}
+          compact={narrow}
         >
           <DecisionMark state="undecided" decorative />
         </Stat>
-        <Stat
-          label={t('review.count.accepted')}
-          value={counts.accepted}
-          compact={compact}
-        >
+        <Stat label={t('review.count.accepted')} value={counts.accepted} compact={narrow}>
           <DecisionMark state="accepted" decorative />
         </Stat>
-        <Stat
-          label={t('review.count.rejected')}
-          value={counts.rejected}
-          compact={compact}
-        >
+        <Stat label={t('review.count.rejected')} value={counts.rejected} compact={narrow}>
           <DecisionMark state="rejected" decorative />
         </Stat>
         {counts.conflicts > 0 && (
           <Stat
             label={t('review.count.conflicts')}
             value={counts.conflicts}
-            compact={compact}
+            compact={narrow}
             warn
           >
             <Icon name="warning" />

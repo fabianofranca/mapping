@@ -170,6 +170,7 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
       derived.visibleLayers.peek(),
       derived.annotationsByMarking.peek(),
     ),
+    review: null,
     ...overrides,
   };
 }

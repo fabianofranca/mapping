@@ -31,6 +31,7 @@ import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
 import { useReviewSync } from './useReviewSync';
 import { ReviewBar } from '../ui/review/ReviewBar';
+import { CompareDialog, ReviewLegend } from '../ui/review/ReviewCanvasControls';
 import { Button } from '../ui/controls';
 
 export function Editor({ open }: { readonly open: OpenProject }) {
@@ -168,12 +169,14 @@ export function EditorScreen() {
               <CanvasHost />
               <CanvasNotices notices={notices} />
               <CanvasContextMenu />
+              <ReviewLegend />
               <Minimap />
               {emptyCanvas}
             </main>
           }
         />
         <StatusBar />
+        <CompareDialog />
         <ImageInputs intake={intake} />
         <EditorDialogs
           dialogs={dialogs}
@@ -216,6 +219,7 @@ export function EditorScreen() {
           <CanvasHost />
           <CanvasNotices notices={notices} />
           <CanvasContextMenu />
+          <ReviewLegend />
           <div class="canvas-float canvas-float-start">
             <ZoomField />
           </div>
@@ -234,6 +238,7 @@ export function EditorScreen() {
         />
       )}
 
+      <CompareDialog />
       <ImageInputs intake={intake} />
       <EditorDialogs dialogs={dialogs} busy={busy} intake={intake} commands={commands} />
     </div>

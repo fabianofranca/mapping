@@ -127,7 +127,6 @@ describe('faixa de revisão', () => {
     );
     const bar = screen.getByRole('region', { name: 'Revisão da proposta' });
     expect(within(bar).getByText('Checkout')).toBeTruthy();
-    expect(within(bar).getByText('Somente leitura')).toBeTruthy();
     const apply = within(bar).getByRole('button', { name: /Aplicar aceitas · 0/ });
     expect((apply as HTMLButtonElement).disabled).toBe(true);
     expect(apply.getAttribute('title')).toBe('Nada aceito ainda  Ctrl+Enter');

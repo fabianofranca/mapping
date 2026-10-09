@@ -23,6 +23,7 @@ import { PANES_CLASS } from '../ui/toolWindowLayout';
 import { ZoomField } from '../ui/ZoomField';
 import { HELP_PROPOSALS } from '../ui/HelpDialog';
 import { ProposalsHeaderActions, ProposalsWindow } from '../ui/review/ProposalsWindow';
+import { ReviewCanvasControls } from '../ui/review/ReviewCanvasControls';
 import { FitButton, SemanticTextButton } from './EditorTools';
 import { EditorPanel, type EditorPanelProps } from './EditorPanel';
 
@@ -124,6 +125,7 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
           <div class="canvas-bar">
             <Breadcrumbs onSelect={onSelect} />
             <div class="canvas-bar-end">
+              <ReviewCanvasControls />
               <SemanticTextButton />
               <FitButton />
               <ZoomField />

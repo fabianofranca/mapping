@@ -16,6 +16,7 @@ import {
   type Rect,
 } from '../../model';
 import { visibleArea, type Frame } from '../frame';
+import type { MarkingReviewMark } from '../reviewMarks';
 import { markingCanvasRect } from '../markingGeometry';
 import type { CanvasTokens } from '../theme';
 import {
@@ -42,11 +43,15 @@ import {
 /** Espessura da borda das marcações (px de tela): normal e selecionada. */
 const MARKING_STROKE = 1;
 const MARKING_SELECTED_STROKE = 2;
+/** Linha dupla da marcação alterada na revisão (px de tela). */
+const REVIEW_DOUBLE_STROKE = 3;
 
 export interface MarkingNode {
   readonly group: Konva.Group;
   readonly halo: KonvaRect;
   readonly border: KonvaRect;
+  /** Linha do meio da "linha dupla" (alterada, na revisão de propostas). */
+  readonly inner: KonvaRect;
   readonly badge: KonvaText;
   /** Bolinhas das camadas visíveis com anotação, recortadas no retângulo da marcação. */
   readonly indicators: Konva.Group;
@@ -72,6 +77,7 @@ export type MarkingFrame = Pick<
   | 'visibility'
   | 'tokens'
   | 'card'
+  | 'review'
 >;
 
 const NO_LAYER_DOTS: readonly LayerDot[] = [];
@@ -96,7 +102,7 @@ export class MarkingRenderer {
 
   /** Marcações de cima para baixo na hierarquia: as filhas ficam por cima dos pais. */
   render(frame: MarkingFrame, placements: ReadonlyMap<string, Placement>): void {
-    const { project, selection, semantic, dots, incomplete, tokens } = frame;
+    const { project, selection, semantic, dots, incomplete, tokens, review } = frame;
     const zoom = frame.viewport.scale;
     const view = visibleArea(frame.size, frame.viewport);
     const lookup = project ? projectIndex(project) : null;
@@ -124,8 +130,10 @@ export class MarkingRenderer {
       const lineColor = lookup?.images.get(marking.imageId)?.markingColor ?? null;
       const markingDots = dots.get(marking.id) ?? NO_LAYER_DOTS;
       const markingIncomplete = incomplete.has(marking.id);
+      const reviewMark = review?.markings.get(marking.id) ?? null;
       // Pan sem mudar nada da marcação (o caso comum): borda e indicadores ficam.
       const inputs = [
+        reviewMark,
         marking,
         placement,
         selected,
@@ -149,6 +157,7 @@ export class MarkingRenderer {
           lineColor ?? tokens.line,
           tokens,
           zoom,
+          reviewMark,
         );
       }
       // Ancestral de contexto (modo Ocultar): só a borda, sem cartão nem nome.
@@ -188,6 +197,7 @@ export class MarkingRenderer {
       group: new Konva.Group(),
       halo: new KonvaRect(),
       border: new KonvaRect(),
+      inner: new KonvaRect(),
       badge: new KonvaText({ text: '⚠' }),
       indicators: new Konva.Group(),
       dots,
@@ -197,7 +207,14 @@ export class MarkingRenderer {
       drawn: null,
     };
     node.indicators.add(...dots, node.more, node.alert);
-    node.group.add(node.halo, node.border, node.badge, node.indicators, node.text.group);
+    node.group.add(
+      node.halo,
+      node.border,
+      node.inner,
+      node.badge,
+      node.indicators,
+      node.text.group,
+    );
     this.layer.add(node.group);
     this.nodes.set(id, node);
     return node;
@@ -215,18 +232,34 @@ function updateMarkingNode(
   lineColor: string,
   tokens: CanvasTokens,
   zoom: number,
+  review: MarkingReviewMark | null = null,
 ): void {
   const rect = markingCanvasRect(placement, marking.rect);
   // Sem anotação (própria ou herdada) nas camadas visíveis: esmaecida (a selecionada, nunca).
+  // Na revisão, a rejeitada (visão Atual) também.
   node.group.opacity(
     visibility === 'dim'
       ? tokens.opacity.dimmed
-      : visibility === 'outline'
+      : visibility === 'outline' || review?.dim
         ? tokens.opacity.ancestor
         : 1,
   );
-  const stroke = (selected ? MARKING_SELECTED_STROKE : MARKING_STROKE) / zoom;
-  const dash = marking.needsReview ? [6 / zoom, 4 / zoom] : [];
+  const line = review?.line ?? null;
+  const base = selected
+    ? MARKING_SELECTED_STROKE
+    : line === 'changed'
+      ? REVIEW_DOUBLE_STROKE
+      : line === 'invalid'
+        ? MARKING_SELECTED_STROKE
+        : MARKING_STROKE;
+  const stroke = base / zoom;
+  // Tracejada: "a revisar" (reescalada) e, na revisão, criada e inválida; pontilhada: rejeitada.
+  const dash =
+    line === 'rejected'
+      ? [1.5 / zoom, 2.5 / zoom]
+      : marking.needsReview || line === 'created' || line === 'invalid'
+        ? [6 / zoom, 4 / zoom]
+        : [];
   // Halo por fora e por dentro da linha (um traço mais largo por baixo), em toda marcação:
   // a linha aparece sobre fotos claras e escuras.
   node.halo.setAttrs({
@@ -238,10 +271,22 @@ function updateMarkingNode(
   });
   node.border.setAttrs({
     ...rect,
-    stroke: selected ? tokens.select : lineColor,
+    stroke: selected ? tokens.select : line === 'invalid' ? tokens.invalid : lineColor,
     strokeWidth: stroke,
     dash,
   });
+  // Alterada: linha dupla (o traço de 3px com um fio do halo no meio).
+  if (line === 'changed') {
+    node.inner.setAttrs({
+      ...rect,
+      visible: true,
+      stroke: tokens.halo,
+      strokeWidth: 1 / zoom,
+      dash,
+    });
+  } else {
+    node.inner.visible(false);
+  }
   // Texto do Konva remede a cada mudança de atributo: só mexe nos que aparecem.
   // Ancestral de contexto (modo Ocultar): só a borda, sem alerta nem bolinhas.
   const outline = visibility === 'outline';

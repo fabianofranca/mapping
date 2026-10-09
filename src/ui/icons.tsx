@@ -3,6 +3,15 @@
 // O tamanho em tela vem do CSS (`--density-icon`: 16px no desktop, 20px no celular).
 import type { JSX } from 'preact';
 import { LOCK_PATHS, UNLOCK_PATHS } from '../utils/lockGlyph';
+import {
+  CHANGED_PATHS,
+  CLOSE_PATHS,
+  MINUS_PATHS,
+  MOVED_PATHS,
+  PLUS_PATHS,
+  REPLACED_PATHS,
+  WARNING_PATHS,
+} from '../utils/reviewGlyphs';
 
 interface IconShape {
   /** Traços (atributo `d` de cada `<path>`), na grade de 16 x 16. */
@@ -38,10 +47,10 @@ const SHAPES = {
       'M6 4.5v-2h4v2',
     ],
   },
-  plus: { d: ['M8 3v10', 'M3 8h10'] },
-  minus: { d: ['M3 8h10'] },
+  plus: { d: PLUS_PATHS },
+  minus: { d: MINUS_PATHS },
   check: { d: ['m3 8.5 3.2 3.2L13 4.8'] },
-  close: { d: ['m3.5 3.5 9 9', 'm12.5 3.5-9 9'] },
+  close: { d: CLOSE_PATHS },
   refresh: { d: ['M13 3.5v3h-3', 'M12.6 6.5A5 5 0 1 0 13 8.5'] },
 
   // Ferramentas
@@ -231,7 +240,7 @@ const SHAPES = {
   lock: { d: LOCK_PATHS },
   unlock: { d: UNLOCK_PATHS },
   info: { d: [circle(8, 8, 6), 'M8 7.5V11'], dots: [[8, 5.2]] },
-  warning: { d: ['M8 2.5 14 13H2Z', 'M8 6.5v3'], dots: [[8, 11.2]] },
+  warning: { d: WARNING_PATHS, dots: [[8, 11.2]] },
   error: { d: [circle(8, 8, 6), 'M8 5v3.5'], dots: [[8, 10.8]] },
   help: {
     d: [circle(8, 8, 6), 'M6.5 6.3a1.5 1.5 0 1 1 2.2 1.3c-.5.3-.7.6-.7 1.2'],
@@ -286,11 +295,9 @@ const SHAPES = {
       'm10 2.5-1.8 2 1.8 2',
     ],
   },
-  moved: { d: ['M2.5 5.5h9', 'm9 3 2.5 2.5L9 8', 'M13.5 10.5h-9', 'm7 8-2.5 2.5L7 13'] },
-  changed: {
-    d: ['M1.5 8c1.25-3 2.5-3 3.75 0s2.5 3 3.75 0 2.5-3 3.75 0 1.25 1.5 1.75 1.5'],
-  },
-  replaced: { d: ['M3 3.5h7v5H3Z', 'M6 7.5h7v5H6Z'] },
+  moved: { d: MOVED_PATHS },
+  changed: { d: CHANGED_PATHS },
+  replaced: { d: REPLACED_PATHS },
   compare: {
     d: [
       'M2.5 3h11v10h-11Z',
