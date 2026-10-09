@@ -14,7 +14,7 @@ export interface ServerConfig {
 const INSTRUCTIONS = `Servidor do Mapping: lê e altera projetos de mapeamento de imagens (marcações retangulares, camadas e anotações) guardados em pasta.
 Comece por list_projects. Itens são citados por referências mapping://<projeto>/<m|i|a>/<código>; passe-as a get_marking, get_annotation, get_image e resolve. Para ver uma marcação, use get_marking_image (recorte, ou a imagem inteira com a marcação contornada) e get_image_file.
 Para implementar uma marcação no código, use get_code_hints(ref, plataforma); para achar a marcação de um arquivo ou símbolo, find_by_code. O servidor nunca lê nem grava arquivos de código: só confere se existem.
-Para alterar, valide o lote com plan_changes (nada é gravado) e grave com apply_changes(planId).
+Você nunca grava o projeto: para alterar, valide o lote com plan_changes (prévia, nada é gravado) e envie com propose_changes, que grava uma PROPOSTA (mapping://<projeto>/p/<código>) para o usuário revisar na app. Avise-o, espere a revisão terminar (get_proposal), leia get_proposal_review e corrija enviando outra proposta com supersedes. Em reexportações, use source nas imagens e marcações e find_by_source / find_types_by_source. validate_specialization valida um arquivo de especialização.
 Coordenadas das marcações são sempre em pixels da imagem original. Leia o recurso mapping-docs://AGENT-GUIDE.md para o fluxo típico.`;
 
 export function createServer(config: ServerConfig): McpServer {

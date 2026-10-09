@@ -262,6 +262,8 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `color` no formato `#RRGGBB`;
 - propriedades desconhecidas são rejeitadas.
 
+**Validar antes de importar.** A importação da app e o servidor MCP usam a mesma validação (`parseSpecText`, em `src/model/`). A tool `validate_specialization` do servidor (um `path` dentro das raízes ou o `text` JSON) devolve exatamente esses erros, com o caminho, sem aplicar a nenhum projeto, e ainda avisa o que não impede a importação mas costuma ser descuido: plataforma declarada e não usada, tipo sem `code` numa especialização com plataformas e o `format` antigo (`mapeador-spec`).
+
 ## Exemplo comentado: SDUI
 
 ```json

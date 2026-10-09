@@ -40,17 +40,12 @@ const cache = new WeakMap<
 >();
 
 /**
- * Código curto de todos os itens de um tipo, numa passada (O(n log n)): os 8
- * primeiros caracteres do id normalizado; se outro item do mesmo tipo começar
- * igual, 12, depois 16 e assim por diante, até ficar único. Memoizado por projeto.
+ * Código curto de cada id de uma lista, numa passada (O(n log n)): os 8 primeiros
+ * caracteres do id normalizado; se outro id da lista começar igual, 12, depois 16 e assim
+ * por diante, até ficar único. Serve a qualquer conjunto de ids (itens do projeto, propostas).
  */
-export function shortCodes(p: Project, kind: ItemKind): ReadonlyMap<string, string> {
-  const slot = cache.get(p) ?? {};
-  cache.set(p, slot);
-  const cached = slot[kind];
-  if (cached) return cached;
-
-  const entries = idsOf(p, kind)
+export function shortCodesFor(ids: readonly string[]): ReadonlyMap<string, string> {
+  const entries = ids
     .map((id) => ({ id, norm: normalizeId(id) }))
     .sort((a, b) => (a.norm < b.norm ? -1 : a.norm > b.norm ? 1 : 0));
   const codes = new Map<string, string>();
@@ -64,6 +59,19 @@ export function shortCodes(p: Project, kind: ItemKind): ReadonlyMap<string, stri
     while (length <= shared) length += SHORT_CODE_STEP;
     codes.set(entry.id, entry.norm.slice(0, length));
   });
+  return codes;
+}
+
+/**
+ * Código curto de todos os itens de um tipo (`shortCodesFor` sobre os ids do tipo).
+ * Memoizado por projeto.
+ */
+export function shortCodes(p: Project, kind: ItemKind): ReadonlyMap<string, string> {
+  const slot = cache.get(p) ?? {};
+  cache.set(p, slot);
+  const cached = slot[kind];
+  if (cached) return cached;
+  const codes = shortCodesFor(idsOf(p, kind));
   slot[kind] = codes;
   return codes;
 }

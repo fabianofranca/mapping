@@ -44,3 +44,4 @@ export * from './proposalReview';
 export * from './proposalApply';
 export * from './proposalCompare';
 export * from './proposalView';
+export * from './specWarnings';

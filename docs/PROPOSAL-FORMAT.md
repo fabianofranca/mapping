@@ -21,6 +21,11 @@ meu-projeto/
 - Imagem nova ou trocada: a mudança traz o caminho definitivo (`images/checkout.webp`) e o arquivo espera em `proposals/<id>/` mais esse caminho (`proposals/<id>/images/checkout.webp`). Ao aplicar, ele é movido para o lugar definitivo.
 - As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado.
 
+## Quem grava o quê
+
+- **Servidor MCP** (`propose_changes`, `withdraw_proposal`): cria a pasta e o `proposal.json` (`status: open`, `revision: 0`, sem decisões nem notas) e, depois, só muda o `status` (`superseded` ao ser substituída, `withdrawn` ao ser retirada), sempre relendo o arquivo antes de gravar e com `revision + 1`. Nunca grava o `mapping.json`. No campo `operations` o conteúdo `base64` das imagens é trocado por um marcador (a imagem já está em `proposals/<id>/images/`).
+- **App**: grava `decisions`, `notes`, `applied` e o `status` à medida que o usuário revisa e aplica; é a única que grava o `mapping.json`.
+
 ## Exemplo
 
 ```json

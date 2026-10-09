@@ -210,13 +210,15 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 **Aceite**: testes cobrindo cada tipo de mudança, as quatro regras de dependência, conflito após alteração externa, item trancado, conjunto inválido bloqueado, aplicação parcial seguida de outra aplicação, uma importação inteira (projeto vazio + proposta com tudo), e especializações v3 com `sources` válidas e inválidas (destino de `values` fora de `options`, `values` em campo que não é `enum`, origem sem `id` nem `name`), além de v1 e v2 continuarem abrindo.
 
 #### 4.2 — MCP
-- [ ] `propose_changes`, `list_proposals`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`, `find_by_source`; `source` nas operações
-- [ ] `find_types_by_source` e `validate_specialization` (arquivo ou texto, erros com caminho e avisos)
-- [ ] Remoção do `apply_changes`; `SERVER_VERSION` 0.3.0
-- [ ] Testes de integração por stdio: importação inteira, revisão simulada (editando decisões no arquivo), nova proposta com `supersedes`
-- [ ] `docs/MCP.md` e `docs/AGENT-GUIDE.md`
+- [x] `propose_changes`, `list_proposals`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`, `find_by_source`; `source` nas operações
+- [x] `find_types_by_source` e `validate_specialization` (arquivo ou texto, erros com caminho e avisos)
+- [x] Remoção do `apply_changes`; `SERVER_VERSION` 0.3.0
+- [x] Testes de integração por stdio: importação inteira, revisão simulada (editando decisões no arquivo), nova proposta com `supersedes`
+- [x] `docs/MCP.md` e `docs/AGENT-GUIDE.md`
 
 **Aceite**: o agente nunca altera o `mapping.json` (teste); a proposta gerada abre e é aplicada pela app; `validate_specialization` devolve os mesmos erros que a importação da app para os mesmos arquivos.
+
+> **Estado**: implementada. O aceite está coberto por testes: `tests/mcp/proposals.test.ts` (hash do `mapping.json` conferido depois de cada tool; a proposta do MCP é aceita e aplicada por `applyAccepted`, a função que a app usa), `tests/mcp/specValidation.test.ts` (erros iguais aos de `parseSpecText`, a validação da importação da app). Decisões de detalhe no PR: `author` padrão é o nome do cliente MCP; lote sem mudanças é recusado (`no-changes`); `withdraw_proposal` só retira proposta aberta e não apaga os arquivos; o `base64` das operações não vai para o `proposal.json`; o estado de uma mudança em `get_proposal` é `pending`, `accepted`, `rejected` ou `applied`, com `conflict` e `locked` à parte.
 
 #### 4.3 — App: armazenamento e estado
 - [x] Leitura e gravação de `proposals/` na pasta, no IndexedDB e no zip

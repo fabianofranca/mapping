@@ -143,7 +143,8 @@ describe('o servidor não abre arquivos de código (estático)', () => {
     const importers = sources.filter((file) =>
       FS_IMPORT.test(readFileSync(join(dir, file), 'utf8')),
     );
-    // Quem entra aqui lê/grava `mapping.json`, `specs/`, imagens ou `backups/`, nunca código. Um módulo novo
+    // Quem entra aqui lê/grava `mapping.json`, `specs/`, imagens, `proposals/` ou arquivos de
+    // especialização (`validate_specialization`), nunca código. Um módulo novo
     // que precise do disco entra nesta lista de propósito, depois de conferir que não toca em código.
     expect(importers).toEqual([
       'changes.ts',
@@ -152,6 +153,8 @@ describe('o servidor não abre arquivos de código (estático)', () => {
       'imageTools.ts',
       'paths.ts',
       'projects.ts',
+      'proposalStore.ts',
+      'specValidation.ts',
     ]);
   });
 
