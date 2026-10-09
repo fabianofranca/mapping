@@ -113,6 +113,16 @@ Itens criados recebem o **id definitivo** já na proposta, para notas, dependên
 - `operations`: as operações enviadas pelo agente, guardadas para referência; o que a revisão e a aplicação usam são as `changes`.
 - `status`: `open`, `applied` (tudo decidido, aceitas aplicadas), `superseded` (substituída por outra proposta), `withdrawn` (retirada pelo agente).
 - Decisões e notas são gravadas pela app à medida que o usuário revisa (a revisão sobrevive a fechar a app). O arquivo tem `revision` própria, com a mesma conferência do `mapping.json`.
+
+### Retomar a revisão
+
+A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inclusive depois de fechar a app (e por outra pessoa, se a pasta estiver num repositório git):
+
+- **Decidir e aplicar são separados.** Sair da revisão mantém tudo como está: o que foi aceito continua aceito (e não aplicado), o que foi rejeitado continua rejeitado com as notas, e o que está sem decisão continua pendente.
+- **Aceitas aguardando aplicação** ficam visíveis: a janela Propostas mostra a contagem ("5 aceitas aguardando aplicação"), e "Sair da revisão" lembra disso quando houver alguma, oferecendo "Aplicar agora" ou "Sair mesmo assim".
+- **Voltar ao ponto onde parou:** ao reabrir, a revisão volta ao último item visto, com os mesmos filtros e a mesma alternância Atual/Proposto. É estado de interface, guardado por dispositivo (`localStorage` com try/catch), fora da proposta e do desfazer.
+- **Projeto editado entre uma sessão e outra:** ao reabrir, as mudanças afetadas aparecem como **conflito** (o `from` deixou de bater com o valor atual), sem perder as decisões já tomadas nas demais.
+- **Proposta substituída no meio da revisão:** se o agente enviar uma proposta com `supersedes` enquanto a anterior ainda tem mudanças sem decisão ou aceitas sem aplicar, a app avisa ("esta proposta foi substituída por outra") e mostra o que ficou para trás. O guia do agente orienta a **só substituir uma proposta depois que a revisão dela estiver concluída** (nada pendente nem aceito sem aplicar); o `propose_changes` com `supersedes` devolve um aviso quando isso não for verdade.
 - Imagens novas ou trocadas ficam em `proposals/<id>/images/` até serem aceitas; ao aplicar, são movidas para `images/`.
 - Notas: `target.level` é `proposal`, `project`, `image`, `item` ou `change`.
 
@@ -120,14 +130,14 @@ Itens criados recebem o **id definitivo** já na proposta, para notas, dependên
 
 ### MCP
 
-- **`propose_changes(project, { title, description, origin, supersedes? }, operations[])`**: valida como o `plan_changes`, calcula as mudanças, grava a proposta e devolve a referência `mapping://<projeto>/p/<código>` e um resumo por nível. Com `supersedes`, a proposta anterior passa a `superseded` (as decisões dela continuam guardadas).
+- **`propose_changes(project, { title, description, origin, supersedes? }, operations[])`**: valida como o `plan_changes`, calcula as mudanças, grava a proposta e devolve a referência `mapping://<projeto>/p/<código>` e um resumo por nível. Com `supersedes`, a proposta anterior passa a `superseded` (as decisões dela continuam guardadas); se ela ainda tiver mudanças sem decisão ou aceitas sem aplicar, a resposta traz um aviso.
 - **`list_proposals(project, status?)`** e **`get_proposal(ref)`**: a proposta com as mudanças, o estado de cada uma (pendente, aceita, rejeitada, aplicada, conflito) e as notas.
 - **`get_proposal_review(ref)`**: só o que importa para a próxima rodada: mudanças rejeitadas com as notas, notas gerais e conflitos, de forma compacta.
 - **`withdraw_proposal(ref)`**: o agente retira uma proposta aberta.
 - **`find_by_source({ project?, system, id })`**.
 - Operações aceitam `source` em imagens e marcações.
 - **Sai `apply_changes`.** `SERVER_VERSION` vai para `0.3.0`.
-- **`docs/AGENT-GUIDE.md`:** fluxo "ler o projeto → `propose_changes` → avisar o usuário → `get_proposal_review` → nova proposta com `supersedes`, só com as correções". Para reexportações: usar `source` para casar os elementos e propor só o que mudou.
+- **`docs/AGENT-GUIDE.md`:** fluxo "ler o projeto → `propose_changes` → avisar o usuário → esperar a revisão terminar (`get_proposal`: nada pendente nem aceito sem aplicar) → `get_proposal_review` → nova proposta com `supersedes`, só com as correções". Para reexportações: usar `source` para casar os elementos e propor só o que mudou.
 
 ### App
 
@@ -176,13 +186,14 @@ Itens criados recebem o **id definitivo** já na proposta, para notas, dependên
 #### 4.3 — App: armazenamento e estado
 - [ ] Leitura e gravação de `proposals/` na pasta, no IndexedDB e no zip
 - [ ] Detecção de proposta nova e de proposta alterada por fora
-- [ ] Estado da revisão (proposta aberta, decisões, notas, filtros) e estado derivado ("como ficaria", contagens, níveis)
+- [ ] Estado da revisão (proposta aberta, decisões, notas, filtros) e estado derivado ("como ficaria", contagens, níveis, aceitas aguardando aplicação)
+- [ ] Retomar a revisão: último item, filtros e Atual/Proposto por dispositivo; conflitos recalculados ao reabrir; aviso de proposta substituída
 - [ ] Aplicar aceitas pela sessão (uma entrada de desfazer, imagens movidas, proposta atualizada)
 
 **Aceite**: testes de store e storage; zip com propostas faz round-trip sem perdas.
 
 #### 4.4 — App: interface
-- [ ] Janela Propostas e modo revisão conforme a fase 4.0
+- [ ] Janela Propostas e modo revisão conforme a fase 4.0, com a contagem de aceitas aguardando aplicação e o lembrete ao sair da revisão
 - [ ] Canvas com as diferenças e a alternância Atual/Proposto
 - [ ] Detalhes com antes/depois, decisões e notas; filtros; atalhos
 - [ ] Celular
@@ -207,7 +218,7 @@ Itens criados recebem o **id definitivo** já na proposta, para notas, dependên
 3. Propostas incluídas no zip exportado.
 4. Nota em rejeição sugerida, não obrigatória.
 5. `plan_changes` continua como prévia sem gravar.
-6. Proposta substituída (`superseded`) mantém as decisões e notas, mas as mudanças pendentes dela deixam de poder ser aplicadas.
+6. Proposta substituída (`superseded`) mantém as decisões e notas, mas as mudanças pendentes dela deixam de poder ser aplicadas (a app avisa, e o agente é orientado a só substituir depois da revisão concluída).
 
 ### Roteiro de teste manual da etapa 4
 
@@ -217,9 +228,10 @@ Use uma pasta de projeto dentro de um repositório git e o Claude Code com o MCP
 2. Abra a proposta: o canvas mostra o projeto como ficaria, tudo como criado. Alterne Atual/Proposto.
 3. **Aceite a tela 1 inteira.** Na tela 2, aceite tudo, **rejeite um item** com uma nota e, noutro item, **rejeite só a mudança de tipo** de uma anotação, com uma nota. Confira o estado "parcial" na tela 2 e na proposta.
 4. **Aplicar aceitas:** confira o projeto, as imagens em `images/` e que um único desfazer volta tudo. Refaça.
-5. Peça ao agente para ler a revisão e corrigir: a nova proposta substitui a anterior e traz só as correções. Aceite e aplique.
-6. **Atualização:** edite à mão uma marcação e peça ao agente uma atualização que mexa nela: a mudança aparece como **conflito**, com os três valores.
-7. **Dependências:** numa proposta com uma marcação criada e anotações nela, rejeite a criação e confira que as anotações foram rejeitadas junto; aceite uma anotação e confira que a criação voltou a ser aceita.
-8. **Item trancado:** tranque uma marcação e receba uma proposta que a move: aparece o aviso, e aceitar mantém a trava.
-9. **Reexportação:** uma segunda proposta com os mesmos elementos (mesmo `source`) só traz o que mudou.
-10. Exporte o zip e confira `proposals/` com as decisões e notas; reimporte e confira a revisão preservada.
+5. **Retomar:** numa proposta nova, decida metade das mudanças, aceite algumas sem aplicar e feche a app. Reabra: a revisão volta ao mesmo item, com os mesmos filtros, as decisões e notas preservadas e a contagem de "aceitas aguardando aplicação". Clique em "Sair da revisão" e confira o lembrete.
+6. Peça ao agente para ler a revisão e corrigir: a nova proposta substitui a anterior e traz só as correções. Aceite e aplique. Repita pedindo uma substituição antes de terminar a revisão: confira o aviso na app e na resposta do agente.
+7. **Atualização:** edite à mão uma marcação e peça ao agente uma atualização que mexa nela: a mudança aparece como **conflito**, com os três valores.
+8. **Dependências:** numa proposta com uma marcação criada e anotações nela, rejeite a criação e confira que as anotações foram rejeitadas junto; aceite uma anotação e confira que a criação voltou a ser aceita.
+9. **Item trancado:** tranque uma marcação e receba uma proposta que a move: aparece o aviso, e aceitar mantém a trava.
+10. **Reexportação:** uma segunda proposta com os mesmos elementos (mesmo `source`) só traz o que mudou.
+11. Exporte o zip e confira `proposals/` com as decisões e notas; reimporte e confira a revisão preservada.
