@@ -72,6 +72,11 @@ export interface ProjectStore {
    * entradas ligadas à revisão (`ApplyOptions.link`) podem ser aplicadas, desfeitas e refeitas.
    */
   readonly reviewing: ReadonlySignal<boolean>;
+  /**
+   * Edição bloqueada por qualquer motivo: somente leitura ou revisão aberta. A interface
+   * usa este para desabilitar o que seria recusado (desenhar, adicionar imagens, travar…).
+   */
+  readonly locked: ReadonlySignal<boolean>;
 
   /**
    * Arquivos de imagem referenciados pelo projeto atual ou por qualquer
@@ -175,6 +180,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     }),
     gestureActive: computed(() => gestureBase.value !== null),
     reviewing,
+    locked: computed(() => readOnly.value || reviewing.value),
 
     referencedImageFiles() {
       const files = new Set<string>();

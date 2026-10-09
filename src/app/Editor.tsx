@@ -29,6 +29,8 @@ import { useEditorShortcuts } from './useEditorShortcuts';
 import { useExternalChanges } from './useExternalChanges';
 import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
+import { useReviewSync } from './useReviewSync';
+import { ReviewBar } from '../ui/review/ReviewBar';
 import { Button } from '../ui/controls';
 
 export function Editor({ open }: { readonly open: OpenProject }) {
@@ -42,7 +44,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
 
 /** Exportado para o teste de contagem de renderizações (tests/components/editorRenders.test.tsx). */
 export function EditorScreen() {
-  const { store, ui, canvas } = useEditor();
+  const { store, ui, canvas, review } = useEditor();
   const desktop = useMediaQuery(DESKTOP_QUERY);
   const compact = useMediaQuery(`(max-width: ${BREAKPOINTS.compact}px)`);
   const dialogs = useEditorDialogs();
@@ -51,6 +53,9 @@ export function EditorScreen() {
   const commands = useProjectCommands(dialogs, notices);
   useEditorShortcuts(dialogs, commands, desktop);
   useExternalChanges();
+  useReviewSync();
+  const reviewing = review.proposalId.value !== null;
+  const exitReview = () => review.close();
 
   /** Celular: centralizar a seleção quando o canvas voltar a aparecer. */
   const focusAfterView = useRef(false);
@@ -133,7 +138,7 @@ export function EditorScreen() {
       <p class="muted">{t('editor.emptyCanvas')}</p>
       <Button
         variant="primary"
-        disabled={store.readOnly.value || busy}
+        disabled={store.locked.value || busy}
         onClick={intake.onAddClick}
       >
         {t('editor.addImages')}
@@ -150,6 +155,7 @@ export function EditorScreen() {
           dialogs={dialogs}
           commands={commands}
         />
+        {reviewing && <ReviewBar onExit={exitReview} />}
         <EditorWindows
           panel={panel}
           onSelect={onSelect}

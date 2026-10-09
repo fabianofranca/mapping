@@ -94,7 +94,7 @@ export function MobileWindow({ id, panel, onSelect, onBack }: MobileWindowProps)
   const back = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const project = store.committed.value;
-  const readOnly = store.readOnly.value;
+  const readOnly = store.locked.value;
   const title = toolWindowMeta(id).title();
 
   // Ao abrir, o foco vai para o "voltar" (o canvas por baixo fica escondido).

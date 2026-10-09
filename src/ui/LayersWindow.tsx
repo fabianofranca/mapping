@@ -10,7 +10,7 @@ export function LayersWindow({ stacked }: { readonly stacked: boolean }) {
   const { store } = useEditor();
   const project = store.committed.value;
   if (!project) return null;
-  const readOnly = store.readOnly.value;
+  const readOnly = store.locked.value;
   return (
     <ToolWindow
       id="layers"

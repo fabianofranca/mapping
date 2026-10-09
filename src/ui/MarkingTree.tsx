@@ -56,7 +56,7 @@ export function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
  */
 export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) {
   const { ui, derived, store, actions } = useEditor();
-  const readOnly = store.readOnly.value;
+  const readOnly = store.locked.value;
   const locks = derived.markingLocks.value;
   const collapsed = ui.collapsedTree.value;
   const dots = derived.layerDots.value;

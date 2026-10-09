@@ -29,7 +29,7 @@ export function EditorPanel({
   // Projeto confirmado: os campos do painel atualizam ao soltar o gesto, não durante.
   const project = store.committed.value;
   if (!project) return null;
-  const readOnly = store.readOnly.value;
+  const readOnly = store.locked.value;
   const selected = resolveSelection(project, ui.selection.value);
   const selectedImage = selected?.kind === 'image' ? selected.image : null;
 

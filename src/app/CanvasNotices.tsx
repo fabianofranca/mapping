@@ -17,6 +17,7 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
   const [backupDismissed, setBackupDismissed] = useState(false);
   const backupSaved = session.backupSaved.value;
   const readOnly = store.readOnly.value;
+  const locked = store.locked.value;
   const hasImagesSignal = useComputed(
     () => (store.committed.value?.images.length ?? 0) > 0,
   );
@@ -53,7 +54,7 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
             </button>
           </p>
         )}
-        {ui.mode.value === 'draw' && !readOnly && hasImages && (
+        {ui.mode.value === 'draw' && !locked && hasImages && (
           <p class="notice notice-info canvas-hint">{t('editor.drawHint')}</p>
         )}
         {toast && (

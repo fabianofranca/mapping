@@ -43,6 +43,11 @@ describe('dicionários', () => {
       'repos.platform',
       'spec.platformItem',
       'spec.platformItemLanguage',
+      // Eixos da posição na revisão de propostas.
+      'review.rect.x',
+      'review.rect.y',
+      'review.placement.x',
+      'review.placement.y',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',
       'editor.appName',

@@ -88,7 +88,7 @@ function renderDialog(
   const { store, actions, ui } = ctx;
   const project = store.committed.value;
   if (!project) return null;
-  const readOnly = store.readOnly.value;
+  const readOnly = store.locked.value;
   const { close } = dialogs;
 
   switch (dialog.kind) {

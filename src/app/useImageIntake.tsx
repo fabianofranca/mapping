@@ -46,7 +46,7 @@ export function useImageIntake({
 }: ImageIntakeOptions): ImageIntake {
   const { session, store, ui, canvas } = useEditor();
   const { busy, setProgress, setMessage } = notices;
-  const readOnly = store.readOnly.value;
+  const readOnly = store.locked.value;
   const imageInput = useRef<HTMLInputElement>(null);
   const replaceInput = useRef<HTMLInputElement>(null);
   const replaceTarget = useRef<string | null>(null);
@@ -97,7 +97,7 @@ export function useImageIntake({
     const onPaste = (e: ClipboardEvent) => {
       if (isTextInput(e.target) || document.querySelector('dialog[open]')) return;
       const files = imagesFromPaste(e.clipboardData);
-      if (files.length === 0 || !store.project.peek() || store.readOnly.peek()) return;
+      if (files.length === 0 || !store.project.peek() || store.locked.peek()) return;
       e.preventDefault();
       pasteFiles.current(files);
     };

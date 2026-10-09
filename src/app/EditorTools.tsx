@@ -17,7 +17,7 @@ export function ModeButtons() {
           id: 'draw',
           label: t('editor.modeDraw'),
           icon: 'draw',
-          disabled: store.readOnly.value,
+          disabled: store.locked.value,
         },
       ]}
       value={ui.mode.value}
@@ -41,7 +41,7 @@ export function AddImagesButton({
       icon="addImage"
       label={t('editor.addImages')}
       text={desktop ? t('editor.addImages') : undefined}
-      disabled={store.readOnly.value || busy}
+      disabled={store.locked.value || busy}
       onClick={onAdd}
     />
   );

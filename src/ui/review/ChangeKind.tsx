@@ -22,18 +22,22 @@ export function changeKindLabel(type: ChangeType): string {
 export function ChangeKind({
   type,
   size = 'md',
+  decorative,
 }: {
   readonly type: ChangeType;
   /** `sm`: 18px, nas linhas e cartões. */
   readonly size?: 'md' | 'sm';
+  /** O tipo já está escrito ao lado (ex.: nos filtros). */
+  readonly decorative?: boolean;
 }) {
   const label = changeKindLabel(type);
   return (
     <span
       class={size === 'sm' ? 'change-kind change-kind-sm' : 'change-kind'}
-      role="img"
-      aria-label={label}
-      title={label}
+      role={decorative ? undefined : 'img'}
+      aria-label={decorative ? undefined : label}
+      aria-hidden={decorative ? 'true' : undefined}
+      title={decorative ? undefined : label}
       data-kind={type}
     >
       <Icon name={ICONS[type]} />

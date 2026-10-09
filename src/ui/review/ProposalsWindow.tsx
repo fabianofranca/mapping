@@ -2,7 +2,11 @@ import { t } from '../../i18n';
 import { showToast } from '../../store/ui';
 import { useEditor } from '../EditorContext';
 import { IconButton } from '../controls';
+import { DESKTOP_QUERY } from '../../theme/breakpoints';
+import { useMediaQuery } from '../useMediaQuery';
+import { REVIEW_KEYS } from './DecisionControl';
 import { ProposalList } from './ProposalList';
+import { ReviewLevels } from './ReviewLevels';
 
 // Conteúdo da janela Propostas (inferior no desktop; tela cheia no celular): a lista de
 // propostas fora da revisão e os níveis da proposta aberta em modo revisão.
@@ -31,13 +35,34 @@ export function useScanProposals(): () => void {
   };
 }
 
-/** Ações do cabeçalho da janela fora da revisão: "Verificar a pasta agora". */
+/**
+ * Ações do cabeçalho: fora da revisão, "Verificar a pasta agora"; na revisão, "Próxima
+ * pendente" (N).
+ */
 export function ProposalsHeaderActions() {
+  const { review, canvas } = useEditor();
   const scan = useScanProposals();
+  if (review.proposalId.value !== null) {
+    return (
+      <IconButton
+        icon="arrowDown"
+        label={t('review.nextPending')}
+        shortcut={REVIEW_KEYS.nextPending}
+        disabled={review.derived.pendingIds.value.length === 0}
+        onClick={() => {
+          if (review.step('pending', 1)) canvas.current?.focusSelection();
+        }}
+      />
+    );
+  }
   return <IconButton icon="refresh" label={t('proposals.scan')} onClick={scan} />;
 }
 
 export function ProposalsWindow({ onHelp }: ProposalsWindowProps) {
+  const { review } = useEditor();
   const scan = useScanProposals();
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+  const id = review.proposalId.value;
+  if (id !== null) return <ReviewLevels key={id} desktop={desktop} />;
   return <ProposalList onHelp={onHelp} onScan={scan} />;
 }

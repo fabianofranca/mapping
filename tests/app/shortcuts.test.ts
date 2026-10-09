@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   altNumbersAvailable,
   isTextInput,
+  reviewShortcutFor,
   shortcutFor,
   worksInTextInput,
 } from '../../src/app/shortcuts';
@@ -171,5 +172,58 @@ describe('atalhos de copiar (etapa 3a.2)', () => {
   it('não valem como atalhos de campo: no campo de texto, o copiar é do navegador', () => {
     expect(worksInTextInput({ kind: 'copy-reference' })).toBe(false);
     expect(worksInTextInput({ kind: 'copy-crop' })).toBe(false);
+  });
+});
+
+// Etapa 4 (HANDOFF-PROPOSALS 6): atalhos da revisão de propostas.
+describe('atalhos da revisão', () => {
+  it('A / R / Backspace decidem o nível selecionado (R é Rejeitar na revisão)', () => {
+    expect(reviewShortcutFor(key('a'))).toEqual({ kind: 'decide', state: 'accepted' });
+    expect(reviewShortcutFor(key('R'))).toEqual({ kind: 'decide', state: 'rejected' });
+    expect(reviewShortcutFor(key('Backspace'))).toEqual({ kind: 'decide', state: null });
+  });
+
+  it('N / Shift+N e C / Shift+C andam nas pendentes e nos conflitos', () => {
+    expect(reviewShortcutFor(key('n'))).toEqual({
+      kind: 'step',
+      target: 'pending',
+      direction: 1,
+    });
+    expect(reviewShortcutFor(key('N', { shift: true }, 'KeyN'))).toEqual({
+      kind: 'step',
+      target: 'pending',
+      direction: -1,
+    });
+    expect(reviewShortcutFor(key('c'))).toEqual({
+      kind: 'step',
+      target: 'conflict',
+      direction: 1,
+    });
+    expect(reviewShortcutFor(key('C', { shift: true }, 'KeyC'))).toEqual({
+      kind: 'step',
+      target: 'conflict',
+      direction: -1,
+    });
+  });
+
+  it('P alterna Atual/Proposto, L a legenda e Ctrl+Enter aplica', () => {
+    expect(reviewShortcutFor(key('p'))).toEqual({ kind: 'toggle-view' });
+    expect(reviewShortcutFor(key('l'))).toEqual({ kind: 'legend' });
+    expect(reviewShortcutFor(key('Enter', { ctrl: true }))).toEqual({ kind: 'apply' });
+    expect(reviewShortcutFor(key('Enter'))).toBeNull();
+  });
+
+  it('não pega os atalhos do editor (Ctrl+Z, Ctrl+Shift+7, Alt+…)', () => {
+    expect(reviewShortcutFor(key('z', { ctrl: true }))).toBeNull();
+    expect(reviewShortcutFor(key('&', { ctrl: true, shift: true }, 'Digit7'))).toBeNull();
+    expect(reviewShortcutFor(key('a', { alt: true }))).toBeNull();
+    expect(shortcutFor(key('&', { ctrl: true, shift: true }, 'Digit7'))).toEqual({
+      kind: 'toggle-window',
+      window: 'proposals',
+    });
+    expect(shortcutFor(key('7', { alt: true }))).toEqual({
+      kind: 'toggle-window',
+      window: 'proposals',
+    });
   });
 });
