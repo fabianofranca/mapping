@@ -3,15 +3,16 @@ import { diagnosticsUnseen } from '../store/diagnostics';
 import { showToolWindow, type ToolWindowId } from '../store/toolWindows';
 import { Tabs, type TabItem } from './controls';
 import { useEditor } from './EditorContext';
-import { toolWindowMeta, windowsOfSide } from './toolWindowMeta';
+import { toolWindowMeta, windowBadge, windowsOfSide } from './toolWindowMeta';
 
 /**
  * Abas da janela inferior (Lista | Incompletas | Diagnóstico). Incompletas mostra
  * quantas anotações estão pendentes; Diagnóstico, o ponto de alerta de erro novo (B4).
  */
 export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
-  const { derived } = useEditor();
+  const { derived, review } = useEditor();
   const incomplete = derived.incompleteCount.value;
+  const fresh = review.derived.freshIds.value.length;
   const unseen = diagnosticsUnseen.value;
 
   const tabs: TabItem<ToolWindowId>[] = windowsOfSide('bottom').map((id) => {
@@ -21,7 +22,7 @@ export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
       id,
       label: meta.tab?.() ?? title,
       title,
-      badge: id === 'incomplete' && incomplete > 0 ? String(incomplete) : undefined,
+      ...windowBadge(id, incomplete, fresh),
       alert: id === 'diagnostics' && unseen,
     };
   });

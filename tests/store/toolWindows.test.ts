@@ -14,6 +14,8 @@ import {
   resetToolWindowSize,
   resizeLayersWindow,
   resizeToolWindow,
+  REVIEW_BOTTOM_DEFAULT,
+  setReviewLayout,
   showToolWindow,
   sideWidth,
   toggleToolWindow,
@@ -145,5 +147,31 @@ describe('divisória entre Árvore e Camadas', () => {
     expect(layersWindowHeight.value).toBe(704);
     resetLayersWindowHeight(800);
     expect(layersWindowHeight.value).toBe(initial);
+  });
+});
+
+describe('janela inferior em modo revisão (size-tw-bottom-review)', () => {
+  it('Propostas é a 7ª janela, na faixa inferior', () => {
+    expect(toolWindowByNumber(7)).toBe('proposals');
+    showToolWindow('proposals');
+    expect(bottomToolWindow.value).toBe('proposals');
+    hideToolWindow('proposals');
+  });
+
+  it('começa maior na revisão e guarda a altura de cada modo à parte', () => {
+    const normal = toolWindowSizes.value.bottom;
+    setReviewLayout(true);
+    expect(toolWindowSizes.value.bottom).toBe(REVIEW_BOTTOM_DEFAULT);
+    expect(REVIEW_BOTTOM_DEFAULT).toBe(344);
+    resizeToolWindow('bottom', 300, SPACE);
+    expect(toolWindowSizes.value.bottom).toBe(300);
+    setReviewLayout(false);
+    expect(toolWindowSizes.value.bottom).toBe(normal);
+    setReviewLayout(true);
+    expect(toolWindowSizes.value.bottom).toBe(300);
+    // Duplo clique na divisória volta ao padrão do modo.
+    resetToolWindowSize('bottom', SPACE);
+    expect(toolWindowSizes.value.bottom).toBe(REVIEW_BOTTOM_DEFAULT);
+    setReviewLayout(false);
   });
 });

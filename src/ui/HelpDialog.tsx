@@ -12,6 +12,8 @@ import { comboText, shortcutGroups, type KeyCombo } from './shortcutList';
 
 /** Id da seção Atalhos, para abrir a Ajuda direto nela (Configurações → atalhos). */
 export const HELP_SHORTCUTS = 'shortcuts';
+/** Id da seção das propostas de alteração ("Como o agente envia propostas"). */
+export const HELP_PROPOSALS = 'proposals';
 
 function Block({ block }: { readonly block: HelpBlock }) {
   switch (block.kind) {

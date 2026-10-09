@@ -8,8 +8,8 @@ import { readSetting, writeSetting } from '../utils/safeStorage';
 // `mapping.json` nem no histórico de desfazer.
 
 /**
- * Janelas disponíveis. A janela inferior tem uma aba por janela: Lista, Incompletas
- * e Diagnóstico.
+ * Janelas disponíveis. A janela inferior tem uma aba por janela: Lista, Incompletas,
+ * Diagnóstico e Propostas (etapa 4).
  */
 export const TOOL_WINDOWS = [
   'tree',
@@ -18,6 +18,7 @@ export const TOOL_WINDOWS = [
   'list',
   'incomplete',
   'diagnostics',
+  'proposals',
 ] as const;
 
 export type ToolWindowId = (typeof TOOL_WINDOWS)[number];
@@ -32,12 +33,13 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   list: 'bottom',
   incomplete: 'bottom',
   diagnostics: 'bottom',
+  proposals: 'bottom',
 };
 
 /**
  * Número do atalho de cada janela (Ctrl+Shift+N, e Alt+N onde o navegador deixa).
  * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
- * janela inferior Lista 4, Incompletas 5 e Diagnóstico 6.
+ * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
@@ -46,6 +48,7 @@ export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   list: 4,
   incomplete: 5,
   diagnostics: 6,
+  proposals: 7,
 };
 
 /** Janela do atalho Ctrl+Shift+N (`null` se o número não tem janela ainda). */
@@ -125,6 +128,8 @@ interface StoredLayout {
   readonly left?: number;
   readonly right?: number;
   readonly bottom?: number;
+  /** Altura da janela inferior em modo revisão (guardada à parte da normal). */
+  readonly bottomReview?: number;
   readonly layersHeight?: number;
 }
 
@@ -163,10 +168,28 @@ const openIds = signal<ReadonlySet<ToolWindowId>>(
   new Set(stored.open?.filter(isToolWindow) ?? DEFAULT_OPEN),
 );
 
+/** Altura inicial da janela inferior em modo revisão (`--size-tw-bottom-review`). */
+export const REVIEW_BOTTOM_DEFAULT = px('size-tw-bottom-review');
+
+/**
+ * A janela inferior tem duas alturas guardadas: a normal e a do modo revisão, que começa
+ * maior (filtros, cerca de nove linhas e o rodapé de atalhos). `sizes.bottom` é a da vez.
+ */
+let bottomHeights = {
+  normal: storedSize(stored.bottom, 'bottom'),
+  review:
+    typeof stored.bottomReview === 'number' &&
+    Number.isFinite(stored.bottomReview) &&
+    stored.bottomReview > 0
+      ? stored.bottomReview
+      : REVIEW_BOTTOM_DEFAULT,
+};
+let reviewLayout = false;
+
 const sizes = signal<Readonly<Record<ToolWindowSide, number>>>({
   left: storedSize(stored.left, 'left'),
   right: storedSize(stored.right, 'right'),
-  bottom: storedSize(stored.bottom, 'bottom'),
+  bottom: bottomHeights.normal,
 });
 
 /** Altura da janela Camadas quando ela divide a coluna da esquerda com a Árvore. */
@@ -220,15 +243,35 @@ export function sideWidth(side: 'left' | 'right'): number {
 }
 
 function persist(): void {
+  bottomHeights = reviewLayout
+    ? { ...bottomHeights, review: sizes.value.bottom }
+    : { ...bottomHeights, normal: sizes.value.bottom };
   writeSetting(
     KEY,
     JSON.stringify({
       open: [...openIds.value],
       bottomTab: bottomTab.value,
-      ...sizes.value,
+      left: sizes.value.left,
+      right: sizes.value.right,
+      bottom: bottomHeights.normal,
+      bottomReview: bottomHeights.review,
       layersHeight: layersSplit.value,
     } satisfies StoredLayout),
   );
+}
+
+/**
+ * Entra ou sai do layout da revisão: a janela inferior troca para a altura guardada do
+ * modo (a da revisão começa em `size-tw-bottom-review`). Redimensionar depois grava na
+ * altura do modo atual.
+ */
+export function setReviewLayout(on: boolean): void {
+  if (reviewLayout === on) return;
+  reviewLayout = on;
+  sizes.value = {
+    ...sizes.value,
+    bottom: on ? bottomHeights.review : bottomHeights.normal,
+  };
 }
 
 export function showToolWindow(id: ToolWindowId): void {
@@ -283,9 +326,13 @@ export function resetLayersWindowHeight(columnHeight: number): void {
   resizeLayersWindow(px('size-tw-layers'), columnHeight);
 }
 
-/** Duplo clique na divisória: volta ao tamanho padrão do lado. */
+/** Duplo clique na divisória: volta ao tamanho padrão do lado (o da revisão, nela). */
 export function resetToolWindowSize(side: ToolWindowSide, space: LayoutSpace): void {
-  resizeToolWindow(side, WINDOW_LIMITS[side].default, space);
+  const size =
+    side === 'bottom' && reviewLayout
+      ? REVIEW_BOTTOM_DEFAULT
+      : WINDOW_LIMITS[side].default;
+  resizeToolWindow(side, size, space);
 }
 
 /**

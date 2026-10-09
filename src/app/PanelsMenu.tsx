@@ -28,14 +28,19 @@ function WindowTile({
   readonly id: ToolWindowId;
   readonly onOpen: (id: ToolWindowId) => void;
 }) {
-  const { derived } = useEditor();
+  const { derived, review } = useEditor();
   const meta = toolWindowMeta(id);
   const label = meta.tab?.() ?? meta.title();
-  const count = id === 'incomplete' ? derived.incompleteCount.value : 0;
+  const count =
+    id === 'incomplete'
+      ? derived.incompleteCount.value
+      : id === 'proposals'
+        ? review.derived.freshIds.value.length
+        : 0;
   const alert = id === 'diagnostics' && diagnosticsUnseen.value;
   const extra =
     count > 0
-      ? ` (${t('panels.pending', { count })})`
+      ? ` (${t(id === 'proposals' ? 'proposals.newCount' : 'panels.pending', { count })})`
       : alert
         ? ` (${t('diagnostics.unseen')})`
         : '';
