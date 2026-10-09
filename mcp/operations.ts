@@ -33,6 +33,21 @@ const rect = z
 
 const name = z.string().nullable().describe('Nome; vazio ou `null` remove o nome.');
 
+const externalSource = z
+  .object({
+    system: z.string().describe('Sistema de origem (texto livre, ex: "figma").'),
+    id: z.string().describe('Id do elemento no sistema de origem.'),
+    url: z
+      .string()
+      .nullable()
+      .optional()
+      .describe('Link para o elemento na origem (opcional).'),
+  })
+  .nullable()
+  .describe(
+    'Identidade externa do elemento, para as reexportações reconhecerem o mesmo item (veja find_by_source). `null` limpa.',
+  );
+
 const imageSource = {
   file: z
     .string()
@@ -166,6 +181,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     as: alias,
     ...imageSource,
     name: z.string().optional().describe('Nome de exibição (padrão: o do arquivo).'),
+    source: externalSource.optional(),
     center: z
       .object({ x: z.number(), y: z.number() })
       .optional()
@@ -177,6 +193,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     op: z.literal('update_image'),
     image: item('Imagem'),
     name: name.optional(),
+    source: externalSource.optional(),
     x: z.number().optional().describe('Posição no canvas (unidades do canvas).'),
     y: z.number().optional(),
     scale: z
@@ -198,6 +215,9 @@ export const operationSchema = z.discriminatedUnion('op', [
     op: z.literal('replace_image'),
     image: item('Imagem'),
     ...imageSource,
+    source: externalSource
+      .optional()
+      .describe('Nova origem da imagem; omitida, a origem atual é mantida.'),
     confirmAspectChange: z
       .boolean()
       .optional()
@@ -213,6 +233,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     image: item('Imagem'),
     rect,
     name: name.optional(),
+    source: externalSource.optional(),
     parent: item('Marcação pai')
       .nullable()
       .optional()
@@ -224,6 +245,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     op: z.literal('update_marking'),
     marking: item('Marcação'),
     name: name.optional(),
+    source: externalSource.optional(),
     rect: rect
       .optional()
       .describe('Novo retângulo (as filhas não se movem e precisam continuar dentro).'),

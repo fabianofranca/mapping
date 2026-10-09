@@ -48,10 +48,12 @@ import {
   setImageMarkingColor,
   setImageMarkingsLocked,
   setImagePlacement,
+  setImageSource,
   setLayerColor,
   setMarkingLocked,
   setMarkingParent,
   setMarkingRect,
+  setMarkingSource,
   setPlatformRepo,
   setTableCell,
   specializationRemovalImpact,
@@ -64,6 +66,7 @@ import {
   type Annotation,
   type AnnotationTypeRef,
   type EntryInput,
+  type ExternalSource,
   type ItemKind,
   type JsonValue,
   type Layer,
@@ -171,6 +174,20 @@ function decodeBase64(text: string): Uint8Array {
     throw new ToolError('invalid-base64', 'conteúdo base64 vazio ou inválido');
   }
   return new Uint8Array(Buffer.from(payload, 'base64'));
+}
+
+/** `source` da operação → `ExternalSource` do modelo (`url` omitida = sem link). */
+function toSource(
+  input: { system: string; id: string; url?: string | null | undefined } | null,
+): ExternalSource | null {
+  return input === null
+    ? null
+    : { system: input.system, id: input.id, url: input.url ?? null };
+}
+
+/** Rótulo curto da origem nos resumos: `figma:3f2a` ou `sem origem`. */
+function sourceLabel(source: ExternalSource | null): string {
+  return source === null ? 'sem origem' : `origem ${source.system}:${source.id}`;
 }
 
 class Batch {
@@ -797,9 +814,14 @@ class Batch {
           ...(op.center ? { center: op.center } : {}),
         });
         if (op.name !== undefined) project = renameImage(project, id, op.name);
+        if (op.source !== undefined) {
+          project = setImageSource(project, id, toSource(op.source));
+        }
         return {
           project,
-          description: `Adicionar a imagem ${image.file} (${image.width}×${image.height} px, ${image.note})`,
+          description: `Adicionar a imagem ${image.file} (${image.width}×${image.height} px, ${image.note}${
+            op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
+          })`,
           created: [{ kind: 'i', id }],
           imageFiles: [[image.file, image.data]],
         };
@@ -815,6 +837,10 @@ class Batch {
         if (op.name !== undefined) {
           project = renameImage(project, id, op.name);
           changes.push(`nome ${quoted(projectIndex(project).images.get(id)!.name)}`);
+        }
+        if (op.source !== undefined) {
+          project = setImageSource(project, id, toSource(op.source));
+          changes.push(sourceLabel(projectIndex(project).images.get(id)!.source));
         }
         if (op.x !== undefined || op.y !== undefined || op.scale !== undefined) {
           const { placement } = projectIndex(project).images.get(id)!;
@@ -850,12 +876,15 @@ class Batch {
       case 'replace_image': {
         const id = this.item(op.image, 'i');
         const image = await this.image(op, p);
-        const project = replaceImage(
+        let project = replaceImage(
           p,
           id,
           { file: image.file, width: image.width, height: image.height },
           { confirmAspectChange: op.confirmAspectChange === true },
         );
+        if (op.source !== undefined) {
+          project = setImageSource(project, id, toSource(op.source));
+        }
         const old = projectIndex(p).images.get(id)!;
         return {
           project,
@@ -886,10 +915,15 @@ class Batch {
             project = setMarkingParent(project, id, parentId);
           }
         }
+        if (op.source !== undefined) {
+          project = setMarkingSource(project, id, toSource(op.source));
+        }
         const { rect } = op;
         return {
           project,
-          description: `Criar a marcação "${this.markingLabel(project, id)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height})`,
+          description: `Criar a marcação "${this.markingLabel(project, id)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
+            op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
+          })`,
           created: [{ kind: 'm', id }],
         };
       }
@@ -905,6 +939,10 @@ class Batch {
         if (op.name !== undefined) {
           project = renameMarking(project, id, op.name);
           changes.push(`nome ${quoted(projectIndex(project).markings.get(id)!.name)}`);
+        }
+        if (op.source !== undefined) {
+          project = setMarkingSource(project, id, toSource(op.source));
+          changes.push(sourceLabel(projectIndex(project).markings.get(id)!.source));
         }
         if (op.parent !== undefined) {
           const parentId = op.parent === null ? null : this.item(op.parent, 'm', project);

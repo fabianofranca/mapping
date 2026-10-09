@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { ModelError, projectIndex } from '../src/model';
-import { ChangePlans } from './changes';
+import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
 import { createProjectFolder } from './createProject';
@@ -13,6 +13,9 @@ import { Refs, resolveItem } from './items';
 import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
 import { operationSchema } from './operations';
+import { Proposals } from './proposals';
+import { findBySourceResult, findTypesBySourceResult } from './sourceTools';
+import { validateSpecialization } from './specValidation';
 import type { Roots } from './paths';
 import { discoverProjects, findProject, loadProject } from './projects';
 import {
@@ -106,6 +109,18 @@ const refArg = z
   .describe(
     'Referência copiada da app (`mapping://projeto/m/3f2a9c1e (caminho)`), `m/3f2a9c1e` (com `project`) ou o id completo.',
   );
+
+const proposalRefArg = z
+  .string()
+  .describe(
+    'Referência da proposta (`mapping://projeto/p/3f2a9c1e`, a que propose_changes e list_proposals devolvem), `p/3f2a9c1e` (com `project`) ou o id completo.',
+  );
+
+const operationsArg = z
+  .array(operationSchema)
+  .min(1)
+  .max(1000)
+  .describe('Operações, aplicadas em ordem. Veja o recurso AGENT-GUIDE.md.');
 
 const maxSizeArg = z
   .number()
@@ -508,37 +523,190 @@ export function registerTools(server: McpServer, roots: Roots): void {
       }),
   );
 
-  const plans = new ChangePlans(roots);
-
   server.registerTool(
     'plan_changes',
     {
       description:
-        'Valida um lote de alterações contra as regras do Mapping, sem gravar nada, e devolve: se é válido, os erros por operação, um resumo legível, as contagens, as pendências novas, as referências dos itens que serão criados e um planId (vale 10 min e só para a revisão atual do projeto). ' +
-        'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. Grave com apply_changes.',
+        'Prévia de um lote de alterações: valida contra as regras do Mapping e devolve se é válido, os erros por operação, um resumo legível, as contagens, as pendências novas, as referências dos itens que serão criados e quantas mudanças o usuário teria de revisar. NÃO grava nada (nem proposta). ' +
+        'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. Para enviar a alteração ao usuário, use propose_changes (o agente nunca grava o projeto direto).',
       inputSchema: {
         project: projectArg,
-        operations: z
-          .array(operationSchema)
-          .min(1)
-          .max(1000)
-          .describe('Operações, aplicadas em ordem. Veja o recurso AGENT-GUIDE.md.'),
+        operations: operationsArg,
       },
       annotations: READ_ONLY,
     },
-    ({ project, operations }) => respond(() => plans.plan(project, operations)),
+    ({ project, operations }) =>
+      respond(async () =>
+        planChanges(roots, await findProject(roots, project), operations, Date.now),
+      ),
+  );
+
+  const proposals = new Proposals(
+    roots,
+    Date.now,
+    () => server.server.getClientVersion()?.name,
   );
 
   server.registerTool(
-    'apply_changes',
+    'propose_changes',
     {
       description:
-        'Grava um plano validado por plan_changes: imagens novas, cópias de especializações e o mapping.json (com revision + 1), tudo de uma vez. Recusa se o projeto mudou desde o plano (outro processo ou a app gravou). Devolve as referências dos itens criados, por apelido.',
+        'Envia uma alteração ao usuário como PROPOSTA para revisão: valida o lote como o plan_changes, calcula as mudanças (criações, alterações campo a campo, remoções) e grava `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). O `mapping.json` NÃO é alterado: o usuário revisa na app, aceita ou rejeita em qualquer nível (proposta, imagem, item, mudança), deixa notas e aplica o que aceitou. ' +
+        'Devolve a referência `mapping://<projeto>/p/<código>`, um resumo por nível e as referências definitivas dos itens criados. Depois, avise o usuário e espere a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar); leia o resultado com get_proposal_review e, para corrigir, envie outra proposta com `supersedes` só com as correções. Reexportações: use `source` nas imagens e marcações e find_by_source para propor só o que mudou.',
       inputSchema: {
-        planId: z.string().describe('O planId devolvido por plan_changes.'),
+        project: projectArg,
+        title: z
+          .string()
+          .describe('Título da proposta (aparece na janela Propostas da app).'),
+        description: z
+          .string()
+          .optional()
+          .describe('Descrição: o que a proposta faz e por quê.'),
+        origin: z
+          .string()
+          .optional()
+          .describe(
+            'De onde vieram os dados (texto livre, ex: "Figma: Loja v3 › Checkout").',
+          ),
+        author: z
+          .string()
+          .optional()
+          .describe('Quem envia (padrão: o nome do cliente MCP, ex: o agente).'),
+        supersedes: z
+          .string()
+          .optional()
+          .describe(
+            'Proposta que esta substitui (referência `mapping://projeto/p/código`, `p/código` ou id). A anterior passa a `superseded` (decisões e notas continuam guardadas). Se a revisão dela não tinha terminado, a resposta traz um aviso.',
+          ),
+        operations: operationsArg,
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    },
+    (args) => respond(() => proposals.propose(args)),
+  );
+
+  server.registerTool(
+    'list_proposals',
+    {
+      description:
+        'Lista as propostas do projeto (abertas e fechadas): referência, título, origem, autor, data, estado, progresso da revisão (pendentes, aceitas sem aplicar, rejeitadas, aplicadas), conflitos e a relação de substituição.',
+      inputSchema: {
+        project: projectArg,
+        status: z
+          .enum(['open', 'applied', 'superseded', 'withdrawn'])
+          .optional()
+          .describe('Só as propostas neste estado.'),
+      },
+      annotations: READ_ONLY,
+    },
+    ({ project, status }) => respond(() => proposals.list(project, status)),
+  );
+
+  server.registerTool(
+    'get_proposal',
+    {
+      description:
+        'Uma proposta: progresso da revisão (`progress.complete` = nada pendente nem aceito sem aplicar), resumo por nível (Projeto e imagens), as mudanças com o estado de cada uma (pending, accepted, rejected, applied), conflitos (o projeto mudou depois da proposta), aviso de item trancado e as notas. Use para saber se a revisão terminou.',
+      inputSchema: {
+        ref: proposalRefArg,
+        project: optionalProjectArg,
+        state: z
+          .enum(['pending', 'accepted', 'rejected', 'applied', 'conflict'])
+          .optional()
+          .describe(
+            'Só as mudanças neste estado (`conflict` = valor atual diferente do antes).',
+          ),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe('Mudanças por página (padrão 200).'),
+        offset: z.number().int().min(0).optional().describe('Quantas mudanças pular.'),
+      },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project, ...options }) => respond(() => proposals.get(ref, project, options)),
+  );
+
+  server.registerTool(
+    'get_proposal_review',
+    {
+      description:
+        'O resultado da revisão, só o que importa para a próxima rodada: as mudanças rejeitadas (com o alvo, antes/depois e as notas do usuário), as notas gerais (proposta, projeto, imagem, item), os conflitos e se a revisão terminou (`ready`). Corrija só isso e envie com propose_changes e `supersedes`.',
+      inputSchema: { ref: proposalRefArg, project: optionalProjectArg },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project }) => respond(() => proposals.review(ref, project)),
+  );
+
+  server.registerTool(
+    'withdraw_proposal',
+    {
+      description:
+        'Retira uma proposta aberta (estado `withdrawn`): nada mais dela será aplicado; o que já foi aplicado continua no projeto. Os arquivos ficam em proposals/ para o histórico.',
+      inputSchema: { ref: proposalRefArg, project: optionalProjectArg },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
     },
-    ({ planId }) => respond(() => plans.apply(planId)),
+    ({ ref, project }) => respond(() => proposals.withdraw(ref, project)),
+  );
+
+  server.registerTool(
+    'find_by_source',
+    {
+      description:
+        'Acha as imagens e marcações cuja origem (`source`) é `system` + `id` (comparação exata), para uma reexportação casar os elementos que já existem em vez de duplicá-los. Sem `project`, procura em todos os projetos das raízes. Também lista (`proposed`) as propostas ainda abertas que criam um elemento com essa origem.',
+      inputSchema: {
+        project: projectArg
+          .optional()
+          .describe('Projeto onde procurar. Sem ele, procura em todos os das raízes.'),
+        system: z.string().describe('Sistema de origem (ex: "figma").'),
+        id: z.string().describe('Id do elemento no sistema de origem.'),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => findBySourceResult(roots, args)),
+  );
+
+  server.registerTool(
+    'find_types_by_source',
+    {
+      description:
+        'Do elemento de origem para o tipo de anotação: os tipos das especializações aplicadas ao projeto cujo `sources` declara o elemento (ex: o componente `DS/Button` do Figma), pelo `id` (mais forte) e/ou pelo `name`. Cada tipo vem com os campos que têm propriedade de origem do sistema (e como os valores se traduzem), para você preencher `values` sem deduzir pelo nome.',
+      inputSchema: {
+        project: projectArg,
+        system: z.string().describe('Sistema de origem (ex: "figma").'),
+        id: z
+          .string()
+          .optional()
+          .describe('Id do elemento (ou do componente) na origem.'),
+        name: z
+          .string()
+          .optional()
+          .describe('Nome do elemento na origem (ex: "DS/Button").'),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => findTypesBySourceResult(roots, args)),
+  );
+
+  server.registerTool(
+    'validate_specialization',
+    {
+      description:
+        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto. Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (plataforma declarada e não usada, tipo sem `code`). É o ciclo gerar, validar, corrigir.',
+      inputSchema: {
+        path: z
+          .string()
+          .optional()
+          .describe(
+            'Arquivo da especialização (JSON), relativo a uma raiz ou absoluto dentro delas.',
+          ),
+        text: z.string().optional().describe('O conteúdo JSON da especialização.'),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => validateSpecialization(roots, args)),
   );
 }

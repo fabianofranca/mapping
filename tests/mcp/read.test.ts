@@ -888,9 +888,10 @@ describe('recursos e instruções', () => {
   it('anuncia as tools de leitura, de imagem e de escrita e as instruções apontam o guia', async () => {
     const { tools } = await mcp.client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
-      'apply_changes',
       'create_project',
       'find_by_code',
+      'find_by_source',
+      'find_types_by_source',
       'get_annotation',
       'get_code_hints',
       'get_image',
@@ -898,19 +899,42 @@ describe('recursos e instruções', () => {
       'get_marking',
       'get_marking_image',
       'get_project',
+      'get_proposal',
+      'get_proposal_review',
       'get_specialization',
       'list_markings',
       'list_projects',
+      'list_proposals',
       'plan_changes',
+      'propose_changes',
       'resolve',
+      'validate_specialization',
+      'withdraw_proposal',
     ]);
     const readOnly = tools.filter((t) => t.annotations?.readOnlyHint).map((t) => t.name);
     expect(readOnly).not.toContain('create_project');
-    expect(readOnly).not.toContain('apply_changes');
-    // plan_changes só valida: nada é gravado até apply_changes.
+    // As únicas tools que gravam algo: o projeto vazio e as propostas (nunca o mapping.json).
+    const writers = tools.filter((t) => !t.annotations?.readOnlyHint).map((t) => t.name);
+    expect(writers.sort()).toEqual([
+      'create_project',
+      'propose_changes',
+      'withdraw_proposal',
+    ]);
+    // plan_changes só valida: nada é gravado, nem proposta.
     expect(readOnly).toContain('plan_changes');
-    // As tools de código só conferem a existência de arquivos: são de leitura.
-    expect(readOnly).toEqual(expect.arrayContaining(['get_code_hints', 'find_by_code']));
+    // As tools de código e de origem só leem (a de código só confere a existência de arquivos).
+    expect(readOnly).toEqual(
+      expect.arrayContaining([
+        'get_code_hints',
+        'find_by_code',
+        'find_by_source',
+        'find_types_by_source',
+        'validate_specialization',
+        'list_proposals',
+        'get_proposal',
+        'get_proposal_review',
+      ]),
+    );
     expect(mcp.client.getInstructions()).toContain('mapping-docs://AGENT-GUIDE.md');
   });
 });

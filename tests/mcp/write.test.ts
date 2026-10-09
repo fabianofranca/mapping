@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   copyFileSync,
   existsSync,
@@ -10,10 +9,8 @@ import {
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  deserialize,
   projectIndex,
   projectIssues,
-  referencedSpecFiles,
   annotationShortLabel,
   parseRefValue,
   resolveRef,
@@ -21,14 +18,26 @@ import {
 } from '../../src/model';
 import { cadastroProject } from '../model/specFixtures';
 import { encodeJpegWithExif, encodePng, quadrants, webpSize } from './images';
+import {
+  hashOf,
+  propose,
+  readProject,
+  readProposal,
+  acceptAllAndApply,
+  type Proposed,
+} from './proposalSupport';
 import { connect, createWorkspace, type Connection, type Workspace } from './workspace';
 
-// Escrita em lote (etapa 3a.5): plan_changes + apply_changes pelo dist-mcp/mapping-mcp.js, por
-// stdio, numa pasta temporária. O aceite: criar pelo MCP o projeto inteiro do roteiro 13.9.
+// Escrita em lote: plan_changes (prévia) e propose_changes (proposta que o usuário revisa)
+// pelo dist-mcp/mapping-mcp.js, por stdio, numa pasta temporária. O aceite da 3a.5: criar
+// pelo MCP o projeto inteiro do roteiro 13.9; na etapa 4, a proposta é aceita e aplicada pelas
+// funções do modelo que a app usa (`applyAccepted`), sem o agente tocar o mapping.json.
 
 interface Plan {
   valid: boolean;
   planId?: string;
+  reviewChanges?: number;
+  hint?: string;
   revision: number;
   errors?: { index: number; op: string; code: string; message: string }[];
   summary: string[];
@@ -36,17 +45,6 @@ interface Plan {
   issues: { before: number; after: number; resolved: number; new: unknown[] };
   created: { op: number; alias?: string; kind: string; ref?: string; id?: string }[];
 }
-interface Applied {
-  applied: boolean;
-  revision: number;
-  created: Plan['created'];
-  files: { written: string[]; removed: string[] };
-  migratedFrom?: number;
-}
-interface Failure {
-  error: { code: string; message: string };
-}
-
 let ws: Workspace;
 let mcp: Connection;
 
@@ -67,23 +65,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await mcp?.close();
 });
-
-const hashOf = (path: string) =>
-  createHash('sha256').update(readFileSync(path)).digest('hex');
-
-function readProject(dir: string): Project {
-  const text = readFileSync(join(dir, 'mapping.json'), 'utf8');
-  const specs = new Map(
-    referencedSpecFiles(text).map((file) => [
-      file,
-      readFileSync(join(dir, file), 'utf8'),
-    ]),
-  );
-  const result = deserialize(text, undefined, specs);
-  if (!result.ok) throw new Error(JSON.stringify(result.error));
-  expect(result.specWarnings).toEqual([]);
-  return result.project;
-}
 
 /** O projeto sem ids: nomes, retângulos, hierarquia, anotações e referências por rótulo. */
 function normalize(p: Project) {
@@ -296,6 +277,7 @@ const CADASTRO_OPERATIONS = [
 
 describe('roteiro 13.9 criado pelo MCP', () => {
   let plan: Plan;
+  let proposed: Proposed;
   let dir: string;
 
   it('create_project + plan_changes valida o lote inteiro sem gravar', async () => {
@@ -316,7 +298,11 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     plan = result.data;
     expect(plan.errors).toBeUndefined();
     expect(plan.valid).toBe(true);
-    expect(plan.planId).toMatch(/^[0-9a-f-]{36}$/);
+    // A prévia não tem plano para gravar: o caminho é propose_changes.
+    expect(plan.planId).toBeUndefined();
+    // Uma mudança por criação: 2 especializações, 6 camadas, 1 imagem, 6 marcações e 11 anotações.
+    expect(plan.reviewChanges).toBe(26);
+    expect(plan.hint).toContain('propose_changes');
     expect(plan.revision).toBe(0);
     expect(plan.summary).toHaveLength(CADASTRO_OPERATIONS.length);
     expect(plan.summary[3]).toMatch(
@@ -347,28 +333,59 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     expect(existsSync(join(dir, 'specs'))).toBe(false);
   });
 
-  it('apply_changes grava tudo, com revision 1, e o resultado é o projeto do roteiro', async () => {
-    const result = await mcp.call<Applied>('apply_changes', { planId: plan.planId });
-    expect(result.isError).toBe(false);
-    expect(result.data).toMatchObject({ applied: true, revision: 1 });
-    expect(result.data.files.written).toEqual(['images/cadastro.webp']);
-    // As referências do plano são as definitivas.
-    expect(result.data.created.map((c) => c.ref ?? c.id)).toEqual(
-      plan.created.map((c) => c.ref ?? c.id),
+  it('propose_changes grava a proposta e não toca o mapping.json', async () => {
+    const before = hashOf(join(dir, 'mapping.json'));
+    proposed = await propose(mcp, 'cadastro-mcp', CADASTRO_OPERATIONS, {
+      title: 'Cadastro a partir do roteiro',
+      origin: 'roteiro 13.9',
+    });
+    expect(proposed.proposed).toBe(true);
+    expect(proposed.proposal).toMatchObject({
+      status: 'open',
+      title: 'Cadastro a partir do roteiro',
+      baseRevision: 0,
+      supersedes: null,
+    });
+    expect(proposed.proposal.ref).toMatch(
+      /^mapping:\/\/cadastro-mcp\/p\/[0-9a-f]{8} \(Cadastro a partir do roteiro\)$/,
     );
+    // Os itens criados trazem as referências definitivas (os ids mudam a cada cálculo, o resto não).
+    const shape = (list: Plan['created']) => list.map((c) => [c.op, c.alias, c.kind]);
+    expect(shape(proposed.created)).toEqual(shape(plan.created));
+    expect(proposed.reviewChanges.total).toBe(plan.reviewChanges);
 
-    const saved = readProject(dir);
+    // O mapping.json não mudou; a proposta e a imagem nova estão em proposals/<id>/.
+    expect(hashOf(join(dir, 'mapping.json'))).toBe(before);
+    expect(readdirSync(join(dir, 'images'))).toEqual([]);
+    expect(existsSync(join(dir, 'specs'))).toBe(false);
+    const stored = readProposal(dir, proposed.proposal.id);
+    expect(stored).toMatchObject({ status: 'open', revision: 0, author: 'teste' });
+    expect(stored.changes).toHaveLength(plan.reviewChanges!);
+    expect(proposed.files.images).toEqual([
+      `proposals/${stored.id}/images/cadastro.webp`,
+    ]);
+    expect(
+      webpSize(
+        readFileSync(join(dir, 'proposals', stored.id, 'images', 'cadastro.webp')),
+      ),
+    ).toEqual({ width: 1000, height: 2000 });
+  });
+
+  it('aceitar tudo e aplicar (como a app) dá o projeto do roteiro, com revision 1', () => {
+    const saved = acceptAllAndApply(dir, proposed.proposal.id);
     expect(saved.revision).toBe(1);
-    expect(saved.images[0]!.file).toBe('images/cadastro.webp');
+    const onDisk = readProject(dir);
+    expect(onDisk.images[0]!.file).toBe('images/cadastro.webp');
     expect(webpSize(readFileSync(join(dir, 'images', 'cadastro.webp')))).toEqual({
       width: 1000,
       height: 2000,
     });
-    expect(normalize(saved)).toEqual(normalize(cadastroProject()));
+    expect(normalize(onDisk)).toEqual(normalize(cadastroProject()));
+    expect(readProposal(dir, proposed.proposal.id).status).toBe('applied');
   });
 
   it('o resultado é lido pelo próprio servidor (get_marking com vínculos e backlinks)', async () => {
-    const form = plan.created.find((c) => c.alias === '$form')!.ref!;
+    const form = proposed.created.find((c) => c.alias === '$form')!.ref!;
     const result = await mcp.call<{ children: unknown[]; layers: unknown[] }>(
       'get_marking',
       {
@@ -379,10 +396,9 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     expect(result.data.children).toHaveLength(4);
   });
 
-  it('um plano só é aplicado uma vez', async () => {
-    const again = await mcp.call<Failure>('apply_changes', { planId: plan.planId });
-    expect(again.isError).toBe(true);
-    expect(again.data.error.code).toBe('plan-not-found');
+  it('apply_changes não existe mais', async () => {
+    const { tools } = await mcp.client.listTools();
+    expect(tools.map((t) => t.name)).not.toContain('apply_changes');
   });
 });
 
@@ -425,45 +441,21 @@ describe('lote inválido e revisão desatualizada', () => {
     expect(hashOf(join(dir(), 'mapping.json'))).toBe(before);
   });
 
-  it('um lote sobre uma revision desatualizada é recusado', async () => {
-    const result = await mcp.call<Plan>('plan_changes', {
+  it('propose_changes com lote inválido não grava proposta nenhuma', async () => {
+    const before = hashOf(join(dir(), 'mapping.json'));
+    const result = await mcp.call<Proposed>('propose_changes', {
       project: 'unico',
-      operations: [{ op: 'update_marking', marking: ref('MN'), name: 'Nome completo' }],
+      title: 'Inválida',
+      operations: [
+        { op: 'update_marking', marking: ref('MN'), name: 'Nome completo' },
+        { op: 'create_annotation', marking: '$naoexiste', type: 'text' },
+      ],
     });
-    expect(result.data.valid).toBe(true);
-
-    // Outro processo (a app) grava o projeto enquanto isso.
-    const path = join(dir(), 'mapping.json');
-    const doc = JSON.parse(readFileSync(path, 'utf8')) as { revision: number };
-    doc.revision += 1;
-    writeFileSync(path, `${JSON.stringify(doc, null, 2)}\n`);
-    const changed = hashOf(path);
-
-    const applied = await mcp.call<Failure & { error: { diskRevision: number } }>(
-      'apply_changes',
-      { planId: result.data.planId },
-    );
-    expect(applied.isError).toBe(true);
-    expect(applied.data.error).toMatchObject({
-      code: 'revision-conflict',
-      message: 'o projeto foi alterado por outro processo; releia e gere um novo plano',
-      planRevision: 0,
-      diskRevision: 1,
-    });
-    expect(hashOf(path)).toBe(changed);
-  });
-
-  it('uma edição à mão que não muda a revision também é percebida', async () => {
-    const result = await mcp.call<Plan>('plan_changes', {
-      project: 'unico',
-      operations: [{ op: 'update_marking', marking: ref('MN'), name: 'Outro nome' }],
-    });
-    const path = join(dir(), 'mapping.json');
-    writeFileSync(path, readFileSync(path, 'utf8').replace('"Idade"', '"Idade (anos)"'));
-    const applied = await mcp.call<Failure>('apply_changes', {
-      planId: result.data.planId,
-    });
-    expect(applied.data.error.code).toBe('revision-conflict');
+    expect(result.isError).toBe(false);
+    expect(result.data).toMatchObject({ valid: false, proposed: false });
+    expect(result.data.errors?.map((e) => e.code)).toEqual(['unknown-alias']);
+    expect(existsSync(join(dir(), 'proposals'))).toBe(false);
+    expect(hashOf(join(dir(), 'mapping.json'))).toBe(before);
   });
 });
 
@@ -554,23 +546,25 @@ describe('imagens pelo lote', () => {
     );
     const wide = (await encodePng(quadrants(3000, 1000))).toString('base64');
 
+    const firstOps = [
+      { op: 'add_image', as: '$foto', file: 'foto.jpg', name: 'Foto' },
+      {
+        op: 'add_image',
+        as: '$larga',
+        base64: `data:image/png;base64,${wide}`,
+        fileName: 'larga.png',
+      },
+      {
+        op: 'create_marking',
+        image: '$foto',
+        rect: { x: 10, y: 10, width: 100, height: 200 },
+      },
+      { op: 'update_image', image: '$larga', locked: true },
+    ];
+    const replacement = (await encodePng(quadrants(200, 300))).toString('base64');
     const plan = await mcp.call<Plan>('plan_changes', {
       project: 'imagens',
-      operations: [
-        { op: 'add_image', as: '$foto', file: 'foto.jpg', name: 'Foto' },
-        {
-          op: 'add_image',
-          as: '$larga',
-          base64: `data:image/png;base64,${wide}`,
-          fileName: 'larga.png',
-        },
-        {
-          op: 'create_marking',
-          image: '$foto',
-          rect: { x: 10, y: 10, width: 100, height: 200 },
-        },
-        { op: 'update_image', image: '$larga', locked: true },
-      ],
+      operations: firstOps,
     });
     expect(plan.data.errors).toBeUndefined();
     expect(plan.data.summary[0]).toContain(
@@ -579,10 +573,17 @@ describe('imagens pelo lote', () => {
     expect(plan.data.summary[1]).toContain(
       'images/larga.webp (2560×853 px, otimizada: 3000×1000 → 2560×853, WebP)',
     );
-    const applied = await mcp.call<Applied>('apply_changes', {
-      planId: plan.data.planId,
-    });
-    expect(applied.data.files.written).toEqual(['images/foto.webp', 'images/larga.webp']);
+    // Enviada como proposta, as imagens esperam em proposals/<id>/images/ até a aceitação.
+    const first = await propose(mcp, 'imagens', firstOps);
+    expect(first.files.images.map((f) => f.split('/').slice(2).join('/'))).toEqual([
+      'images/foto.webp',
+      'images/larga.webp',
+    ]);
+    expect(readdirSync(join(dir, 'images'))).toEqual([]);
+    // O conteúdo base64 não é copiado para o proposal.json (a imagem já está em images/).
+    const stored = readProposal(dir, first.proposal.id);
+    expect(JSON.stringify(stored.operations)).not.toContain(wide.slice(0, 200));
+    acceptAllAndApply(dir, first.proposal.id);
     let saved = readProject(dir);
     expect(
       saved.images.map((i) => [i.file, i.width, i.height, i.name, i.locked]),
@@ -595,8 +596,8 @@ describe('imagens pelo lote', () => {
       height: 853,
     });
 
-    const foto = applied.data.created.find((c) => c.alias === '$foto')!.ref!;
-    const larga = applied.data.created.find((c) => c.alias === '$larga')!.ref!;
+    const foto = first.created.find((c) => c.alias === '$foto')!.ref!;
+    const larga = first.created.find((c) => c.alias === '$larga')!.ref!;
     // A imagem trancada não é trocada nem excluída; a outra, sim. O nome livre não reaproveita o do disco.
     const second = await mcp.call<Plan>('plan_changes', {
       project: 'imagens',
@@ -605,31 +606,28 @@ describe('imagens pelo lote', () => {
         {
           op: 'replace_image',
           image: foto,
-          base64: (await encodePng(quadrants(200, 300))).toString('base64'),
+          base64: replacement,
           fileName: 'foto.png',
         },
       ],
     });
     expect(second.data.errors?.map((e) => [e.index, e.code])).toEqual([[0, 'locked']]);
+    const thirdOps = [
+      { op: 'update_image', image: larga, locked: false },
+      { op: 'delete_image', image: larga },
+      { op: 'replace_image', image: foto, base64: replacement, fileName: 'foto.png' },
+    ];
     const third = await mcp.call<Plan>('plan_changes', {
       project: 'imagens',
-      operations: [
-        { op: 'update_image', image: larga, locked: false },
-        { op: 'delete_image', image: larga },
-        {
-          op: 'replace_image',
-          image: foto,
-          base64: (await encodePng(quadrants(200, 300))).toString('base64'),
-          fileName: 'foto.png',
-        },
-      ],
+      operations: thirdOps,
     });
     expect(third.data.errors).toBeUndefined();
-    const done = await mcp.call<Applied>('apply_changes', { planId: third.data.planId });
-    expect(done.data.files).toEqual({
-      written: ['images/foto-2.webp'],
-      removed: ['images/foto.webp', 'images/larga.webp'],
-    });
+    // O nome livre não reaproveita o do disco: a imagem trocada vira foto-2.webp.
+    const done = await propose(mcp, 'imagens', thirdOps);
+    expect(done.files.images.map((f) => f.split('/').slice(2).join('/'))).toEqual([
+      'images/foto-2.webp',
+    ]);
+    acceptAllAndApply(dir, done.proposal.id);
     saved = readProject(dir);
     expect(saved.images.map((i) => i.file)).toEqual(['images/foto-2.webp']);
     expect(saved.markings).toHaveLength(1);
@@ -646,23 +644,20 @@ describe('imagens pelo lote', () => {
 });
 
 describe('projeto de schema antigo', () => {
-  it('a primeira gravação guarda o backup do original e grava v8 com revision 1', async () => {
+  it('a proposta é calculada sobre o projeto migrado em memória e o arquivo continua intacto', async () => {
     const dir = ws.projectDir('legado');
-    const original = readFileSync(join(dir, 'mapping.json'), 'utf8');
-    const plan = await mcp.call<Plan>('plan_changes', {
-      project: 'legado',
-      operations: [{ op: 'create_layer', name: 'Notas' }],
-    });
-    expect(plan.data.valid).toBe(true);
-    const applied = await mcp.call<Applied>('apply_changes', {
-      planId: plan.data.planId,
-    });
-    expect(applied.data).toMatchObject({ applied: true, revision: 1, migratedFrom: 5 });
-    const backups = readdirSync(join(dir, 'backups'));
-    expect(backups).toHaveLength(1);
-    expect(backups[0]).toMatch(/^mapping\.v5\.\d{8}-\d{6}\.json$/);
-    expect(readFileSync(join(dir, 'backups', backups[0]!), 'utf8')).toBe(original);
-    const saved = readProject(dir);
+    const path = join(dir, 'mapping.json');
+    const before = hashOf(path);
+    const proposed = await propose(mcp, 'legado', [
+      { op: 'create_layer', name: 'Notas' },
+    ]);
+    expect(proposed.proposed).toBe(true);
+    // Nem a migração nem o backup são do agente: ficam para a primeira gravação da app.
+    expect(hashOf(path)).toBe(before);
+    expect(existsSync(join(dir, 'backups'))).toBe(false);
+    expect(readProposal(dir, proposed.proposal.id).baseRevision).toBe(0);
+
+    const saved = acceptAllAndApply(dir, proposed.proposal.id);
     expect(saved.schemaVersion).toBe(8);
     expect(saved.platformRepos).toEqual({});
     expect(saved.layers.at(-1)!.name).toBe('Notas');
