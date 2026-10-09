@@ -298,7 +298,9 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
       project,
     };
   }
-  const { project: result, problems } = patchProject(project, pending);
+  // Nada a aplicar: o mesmo projeto (o store não cria entrada de desfazer).
+  const { project: result, problems } =
+    pending.length === 0 ? { project, problems: [] } : patchProject(project, pending);
   const byEntity = new Map<string, Change[]>();
   for (const c of p.changes) {
     if (Object.hasOwn(p.applied, c.id)) continue;

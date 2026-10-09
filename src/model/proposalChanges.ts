@@ -1,4 +1,3 @@
-import { topDown } from './hierarchy';
 import {
   ENTRIES_FIELD_PREFIX,
   PROPOSAL_FORMAT,
@@ -23,7 +22,7 @@ import {
   specializationValue,
   toJson,
 } from './proposalValues';
-import type { Annotation, JsonValue, Marking, Project } from './types';
+import type { Annotation, JsonValue, Project } from './types';
 
 // Cálculo das mudanças (etapa 4): quem envia a proposta aplica as operações a uma cópia
 // do projeto com as operações puras do modelo (o lote do MCP, `mcp/batch.ts`) e entrega
@@ -141,26 +140,15 @@ function annotationChanges(
   );
 }
 
-/** Ordem de saída das marcações de uma imagem: as de depois de cima para baixo, depois as removidas. */
-function markingOrder(
-  imageId: string,
-  base: readonly Marking[],
-  after: readonly Marking[],
-  afterIds: ReadonlySet<string>,
-): Marking[] {
-  return [
-    ...topDown(after.filter((m) => m.imageId === imageId)),
-    ...topDown(base.filter((m) => m.imageId === imageId && !afterIds.has(m.id))),
-  ];
-}
-
 /**
  * Compara o projeto antes e depois das operações e devolve as mudanças, com ids
- * `c1`, `c2`… na ordem: grupo Projeto (especializações, repositórios, camadas) e, por
- * imagem, a própria imagem e as marcações de cima para baixo, cada uma seguida das
- * anotações dela. A ordem dos pares e das marcações dentro da lista não vira mudança;
- * a das camadas vira (`position`, só para as que mudam de ordem relativa). `needsReview`
- * não vira mudança: a revisão é a própria conferência (a criação leva o valor de depois).
+ * `c1`, `c2`… na ordem: grupo Projeto (especializações, repositórios, camadas), imagens,
+ * marcações e anotações; em cada coleção, a ordem de depois e, no fim, as removidas. A
+ * revisão agrupa por imagem e item (`reviewTree`), então essa ordem só garante que
+ * aplicar tudo acrescenta as entidades criadas na mesma ordem do projeto proposto.
+ * A ordem dos pares e das marcações dentro da lista não vira mudança; a das camadas vira
+ * (`position`, só para as que mudam de ordem relativa). `needsReview` não vira mudança:
+ * a revisão é a própria conferência (a criação leva o valor de depois).
  */
 export function computeChanges(base: Project, after: Project): Change[] {
   const diff = new Diff();
@@ -273,40 +261,33 @@ export function computeChanges(base: Project, after: Project): Change[] {
   const keep = longestIncreasing(seq);
   after.layers.forEach((l, i) => {
     if (keep.has(i)) return;
-    const from = base.layers.findIndex((b) => b.id === l.id);
+    const from = baseLayers.has(l.id) ? (rank.get(l.id) ?? null) : null;
     diff.push({
       entity: 'layer',
       entityId: l.id,
       ...projectLevel,
       kind: 'update',
       field: 'position',
-      from: from < 0 ? null : from,
+      from,
       to: i,
     });
   });
 
-  // Imagens, marcações e anotações.
+  // Imagens, marcações e anotações, cada coleção na ordem de depois e, em seguida, as
+  // removidas na ordem de antes: aplicar tudo acrescenta as criadas na mesma ordem.
   const baseImages = byId(base.images);
   const afterImages = byId(after.images);
   const baseMarkings = byId(base.markings);
   const afterMarkings = byId(after.markings);
   const baseAnnotations = byId(base.annotations);
   const afterAnnotations = byId(after.annotations);
-  // Anotações por marcação: as de depois (na ordem do projeto) e as removidas.
-  const byMarking = new Map<string, Annotation[]>();
-  const add = (a: Annotation) => {
-    const list = byMarking.get(a.markingId);
-    if (list) list.push(a);
-    else byMarking.set(a.markingId, [a]);
-  };
-  after.annotations.forEach(add);
-  base.annotations.filter((a) => !afterAnnotations.has(a.id)).forEach(add);
-  const afterMarkingIds = new Set(afterMarkings.keys());
+  const union = <T extends { readonly id: string }>(
+    next: readonly T[],
+    previous: readonly T[],
+    nextIds: ReadonlyMap<string, T>,
+  ): T[] => [...next, ...previous.filter((item) => !nextIds.has(item.id))];
 
-  for (const image of [
-    ...after.images,
-    ...base.images.filter((i) => !afterImages.has(i.id)),
-  ]) {
+  for (const image of union(after.images, base.images, afterImages)) {
     diff.entity(
       'image',
       image.id,
@@ -317,32 +298,27 @@ export function computeChanges(base: Project, after: Project): Change[] {
       COMPARED_FIELDS.image,
       imageField,
     );
-    for (const m of markingOrder(
-      image.id,
-      base.markings,
-      after.markings,
-      afterMarkingIds,
-    )) {
-      const where = { imageId: image.id, markingId: m.id };
-      diff.entity(
-        'marking',
-        m.id,
-        where,
-        baseMarkings.get(m.id),
-        afterMarkings.get(m.id),
-        markingValue,
-        COMPARED_FIELDS.marking,
-        markingField,
-      );
-      for (const a of byMarking.get(m.id) ?? []) {
-        annotationChanges(
-          diff,
-          where,
-          baseAnnotations.get(a.id),
-          afterAnnotations.get(a.id),
-        );
-      }
-    }
+  }
+  for (const m of union(after.markings, base.markings, afterMarkings)) {
+    diff.entity(
+      'marking',
+      m.id,
+      { imageId: m.imageId, markingId: m.id },
+      baseMarkings.get(m.id),
+      afterMarkings.get(m.id),
+      markingValue,
+      COMPARED_FIELDS.marking,
+      markingField,
+    );
+  }
+  for (const a of union(after.annotations, base.annotations, afterAnnotations)) {
+    const marking = afterMarkings.get(a.markingId) ?? baseMarkings.get(a.markingId);
+    annotationChanges(
+      diff,
+      { imageId: marking?.imageId ?? '', markingId: a.markingId },
+      baseAnnotations.get(a.id),
+      afterAnnotations.get(a.id),
+    );
   }
 
   return diff.out.map((draft, i) => ({ id: `c${i + 1}`, ...draft }));
