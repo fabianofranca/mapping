@@ -7,6 +7,7 @@ import {
   parseRef,
   shortCode,
   shortCodes,
+  shortCodesFor,
   type Project,
 } from '../../src/model';
 import { emptyProject, sampleProject } from './fixtures';
@@ -88,6 +89,19 @@ describe('shortCode', () => {
     const p = sampleProject();
     expect(shortCodes(p, 'm')).toBe(shortCodes(p, 'm'));
     expect(shortCodes({ ...p }, 'm')).not.toBe(shortCodes(p, 'm'));
+  });
+});
+
+describe('shortCodesFor', () => {
+  it('vale para qualquer lista de ids (ex: as propostas de um projeto)', () => {
+    const a = '3f2a9c1e-1000-4000-8000-000000000001';
+    const b = '3f2a9c1e-2000-4000-8000-000000000001';
+    const c = '9b1c0000-0000-4000-8000-000000000003';
+    const codes = shortCodesFor([a, b, c]);
+    expect(codes.get(a)).toBe('3f2a9c1e1000');
+    expect(codes.get(b)).toBe('3f2a9c1e2000');
+    expect(codes.get(c)).toBe('9b1c0000');
+    expect(shortCodesFor([]).size).toBe(0);
   });
 });
 
