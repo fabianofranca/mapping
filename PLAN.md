@@ -28,6 +28,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base) e 3b (referências de código)
 | [`docs/history/PLAN-etapa-3b.md`](docs/history/PLAN-etapa-3b.md) | Histórico: etapa 3b, referências de código (fases 3b.1 a 3b.5 concluídas; inclui o roteiro de teste manual da 3b) |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das etapas, marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3, concluída; referência): componentes, tokens, mudanças B#, propostas P# e decisões |
+| [`docs/redesign/HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) | Design das propostas de alteração (fase 4.0): telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto |
 
 ## Fases pendentes — Etapa 4: propostas de alteração com revisão
 
@@ -159,10 +160,12 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 ### Fases
 
 #### 4.0 — Design (Claude Design)
-- [ ] Telas: janela Propostas, modo revisão (faixa, canvas com diferenças, Atual/Proposto, Árvore com selos, níveis com decisão de três estados, Detalhes com antes/depois, notas, filtros, conflitos, aviso de item trancado), no desktop e no celular, temas claro e escuro
-- [ ] Documento de passagem em `docs/redesign/HANDOFF-PROPOSALS.md` (componentes novos e reaproveitados, tokens novos, comportamento)
+- [x] Telas: janela Propostas, modo revisão (faixa, canvas com diferenças, Atual/Proposto, Árvore com selos, níveis com decisão de três estados, Detalhes com antes/depois, notas, filtros, conflitos, aviso de item trancado), no desktop e no celular, temas claro e escuro
+- [x] Documento de passagem em `docs/redesign/HANDOFF-PROPOSALS.md` (componentes novos e reaproveitados, tokens novos, comportamento)
 
 **Aceite**: telas aprovadas pelo dono; nenhum componente novo sem justificativa no documento.
+
+> **Estado**: rodada 1 (modo revisão no desktop) aprovada pelo dono; rodadas 2 (Propostas, retomada, vazio, grande) e 3 (celular) entregues no canvas, **aguardando aprovação**. Pontos em aberto na seção 8 do `HANDOFF-PROPOSALS.md`.
 
 #### 4.1 — Modelo
 - [ ] Schema v8 (`source`) + migração; `findBySource`
