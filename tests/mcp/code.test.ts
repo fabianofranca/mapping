@@ -9,10 +9,11 @@ import {
   createCodeWorkspace,
   type CodeWorkspace,
 } from './codeWorkspace';
+import { acceptAllAndApply, hashOf, propose } from './proposalSupport';
 import { codeOf, connect, type Call, type Connection } from './workspace';
 
 // Etapa 3b.4, passo 6 do roteiro: get_code_hints, get_marking com os codeRef, find_by_code e
-// um lote com codeRef + repositório, pelo dist-mcp/mapping-mcp.js por stdio. O cenário é o
+// um lote com codeRef + repositório (enviado como proposta e aplicado pelo modelo), pelo dist-mcp/mapping-mcp.js por stdio. O cenário é o
 // repositório do app com o projeto dentro (`repo/design/mapeamentos/<projeto>`), e o cliente
 // (diretório de trabalho do servidor) na raiz do repositório.
 
@@ -85,10 +86,6 @@ interface Plan {
   summary: string[];
   changes: Record<string, { created: number; updated: number; deleted: number }>;
   warnings?: { code: string; platform: string; entries: number }[];
-}
-interface Applied {
-  applied: boolean;
-  revision: number;
 }
 interface Failure {
   error: { code: string; message: string; [key: string]: unknown };
@@ -604,31 +601,30 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     const dir = ws.projectDir('escrita');
     const screen = screenRef();
     const existing = existingEntries();
-    const result = ok(
-      await plan([
-        {
-          op: 'update_annotation',
-          annotation: screen,
-          values: {
-            implementacao: [
-              ...existing,
-              {
-                platform: 'ios',
-                path: 'App/Cadastro/CadastroViewModel.swift',
-                symbol: 'CadastroViewModel',
-                line: 7,
-              },
-            ],
-          },
+    const operations = [
+      {
+        op: 'update_annotation',
+        annotation: screen,
+        values: {
+          implementacao: [
+            ...existing,
+            {
+              platform: 'ios',
+              path: 'App/Cadastro/CadastroViewModel.swift',
+              symbol: 'CadastroViewModel',
+              line: 7,
+            },
+          ],
         },
-        {
-          op: 'set_platform_repo',
-          platform: 'ios',
-          urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}#L{line}',
-          localPath: '../../..',
-        },
-      ]),
-    );
+      },
+      {
+        op: 'set_platform_repo',
+        platform: 'ios',
+        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}#L{line}',
+        localPath: '../../..',
+      },
+    ];
+    const result = ok(await plan(operations));
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
     expect(result.revision).toBe(0);
@@ -637,10 +633,13 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     expect(result.changes.platformRepos).toEqual({ created: 1, updated: 0, deleted: 0 });
     expect(result.warnings).toBeUndefined();
 
-    const applied = ok(
-      await mcp.call<Applied>('apply_changes', { planId: result.planId }),
-    );
-    expect(applied).toMatchObject({ applied: true, revision: 1 });
+    // O agente propõe; o mapping.json só muda quando o usuário aceita e a app aplica.
+    const mappingPath = join(dir, 'mapping.json');
+    const untouched = hashOf(mappingPath);
+    const proposed = await propose(mcp, 'escrita', operations);
+    expect(proposed.proposed).toBe(true);
+    expect(hashOf(mappingPath)).toBe(untouched);
+    acceptAllAndApply(dir, proposed.proposal.id);
 
     const text = readFileSync(join(dir, 'mapping.json'), 'utf8');
     const specs = new Map([
@@ -716,16 +715,11 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     expect(project.revision).toBe(1);
     expect(project.warnings).toBeUndefined();
 
-    // Um plano feito sobre a revisão antiga é recusado (a conferência de revision continua valendo).
-    const stale = ok(await plan([{ op: 'remove_platform_repo', platform: 'ios' }]));
-    const fresh = ok(
-      await plan([{ op: 'set_platform_repo', platform: 'ios', localPath: null }]),
-    );
-    expect(fresh.revision).toBe(1);
-    ok(await mcp.call<Applied>('apply_changes', { planId: fresh.planId }));
-    expect(errorOf(await mcp.call('apply_changes', { planId: stale.planId })).code).toBe(
-      'revision-conflict',
-    );
+    // Uma proposta nova parte da revisão gravada pela app.
+    const fresh = await propose(mcp, 'escrita', [
+      { op: 'set_platform_repo', platform: 'ios', localPath: null },
+    ]);
+    expect(fresh.proposal.baseRevision).toBe(1);
   });
 
   it('as tools novas e as operações aparecem no servidor', async () => {
