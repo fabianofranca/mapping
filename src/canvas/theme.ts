@@ -24,6 +24,8 @@ export interface CanvasTokens {
   readonly warning: string;
   readonly nameTag: string;
   readonly nameTagText: string;
+  /** Fundo dos selos de revisão sobre a foto (`cv-badge`, revisão de propostas). */
+  readonly badge: string;
   // Superfícies do tema (cartão, espaço reservado das imagens, rótulos).
   readonly surface: string;
   readonly card: string;
@@ -94,6 +96,7 @@ export function canvasTokensFrom(read: TokenReader, coarsePointer = false): Canv
     warning: read('--cv-warning'),
     nameTag: read('--cv-name-tag'),
     nameTagText: read('--cv-name-tag-text'),
+    badge: read('--cv-badge'),
     surface: read('--color-surface'),
     card: read('--color-card'),
     border: read('--color-border'),

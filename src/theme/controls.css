@@ -117,6 +117,64 @@ a.icon-button {
   background: var(--color-danger-bg);
 }
 
+/* "Fantasma": sem borda nem fundo em repouso (ex.: "Sair da revisão") */
+.button-ghost {
+  background: none;
+  border-color: transparent;
+}
+
+/*
+ * Decisão da revisão (HANDOFF-PROPOSALS 2.2): `button-accept`/`button-reject` ("Aceitar
+ * item") e `icon-button-accept`/`icon-button-reject` (o par ✓ ✕ do DecisionControl). Em
+ * repouso, neutros; o hover antecipa a cor; marcado (`aria-pressed`), cheio de
+ * `color-success` ou `color-danger` com o ícone em `color-surface`.
+ */
+.icon-button-accept,
+.icon-button-reject {
+  color: var(--color-text-muted);
+}
+
+.button-accept:hover:not(:disabled),
+.icon-button-accept:hover:not(:disabled) {
+  color: var(--color-success);
+}
+
+.button-reject:hover:not(:disabled),
+.icon-button-reject:hover:not(:disabled) {
+  color: var(--color-danger);
+}
+
+.button-accept[aria-pressed='true'],
+.button-accept[aria-pressed='true']:hover:not(:disabled),
+.icon-button-accept[aria-pressed='true'],
+.icon-button-accept[aria-pressed='true']:hover:not(:disabled),
+.icon-button-accept[aria-pressed='true']:active:not(:disabled) {
+  color: var(--color-surface);
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.button-reject[aria-pressed='true'],
+.button-reject[aria-pressed='true']:hover:not(:disabled),
+.icon-button-reject[aria-pressed='true'],
+.icon-button-reject[aria-pressed='true']:hover:not(:disabled),
+.icon-button-reject[aria-pressed='true']:active:not(:disabled) {
+  color: var(--color-surface);
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.button-accept[aria-pressed='true'],
+.button-reject[aria-pressed='true'] {
+  font-weight: 600;
+}
+
+/* Botão de ícone compacto (24px no desktop; no celular a densidade o leva a 44px) */
+.icon-button-sm {
+  min-height: var(--control-height-sm);
+  min-width: var(--control-height-sm);
+}
+
 .icon-button-danger {
   color: var(--color-danger);
 }
@@ -179,6 +237,15 @@ a.icon-button {
 
 .input-sm {
   min-height: var(--control-height-sm);
+}
+
+/* Várias linhas (`mp-field--area`): a nota da revisão */
+.input-area {
+  display: block;
+  width: 100%;
+  min-height: calc(2 * var(--control-height));
+  padding: var(--space-1-5);
+  resize: vertical;
 }
 
 .input::placeholder {
@@ -338,6 +405,12 @@ a.icon-button {
   border-radius: var(--radius-full);
 }
 
+/* Contador de novidade (ex.: propostas novas): `mp-count--info` do DS */
+.tab-badge-info {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+}
+
 .tab-alert {
   display: inline-block;
   width: var(--space-1-5);
@@ -360,6 +433,19 @@ a.icon-button {
   width: var(--space-1-5);
   height: var(--space-1-5);
   background: var(--color-danger);
+  border-radius: var(--radius-full);
+}
+
+/* Selo numérico do botão de ícone (`mp-sb__badge--info`: novidade na faixa lateral) */
+.icon-button-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: var(--space-4);
+  padding: 0 var(--space-1);
+  font: var(--t-micro);
+  color: var(--color-accent-text);
+  background: var(--color-accent);
   border-radius: var(--radius-full);
 }
 

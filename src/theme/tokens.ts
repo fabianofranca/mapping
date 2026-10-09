@@ -75,6 +75,11 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   /** Emblema do cadeado sobre a imagem: fundo e traço (mesmo par da etiqueta do nome). */
   'cv-lock': 'var(--cv-name-tag)',
   'cv-lock-glyph': 'var(--cv-name-tag-text)',
+  /**
+   * Fundo do selo de tipo de mudança sobre a foto (revisão de propostas, etapa 4): mais
+   * opaco que `cv-halo` para o `cv-invalid` passar de 3:1 sobre foto branca.
+   */
+  'cv-badge': 'rgba(10, 12, 16, 0.9)',
   ...Object.fromEntries(
     LAYER_COLORS.map((c, i) => [`layer-${String(i + 1).padStart(2, '0')}`, c]),
   ),
@@ -189,6 +194,15 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-tw-right': '360px',
   'size-tw-bottom': '208px',
   'size-tw-layers': '224px',
+  /** Altura inicial da janela inferior em modo revisão (filtros, ~9 linhas e o rodapé de atalhos). */
+  'size-tw-bottom-review': '344px',
+  /**
+   * Colunas de resumo da revisão (decisão 8 do HANDOFF-PROPOSALS): o resumo das linhas
+   * dos níveis (`ReviewRow`) e as contagens da lista de propostas (`ProposalRow`). As
+   * colunas de ação são derivadas do tamanho dos controles.
+   */
+  'size-review-col-summary': '232px',
+  'size-proposal-col-counts': '236px',
   'size-canvas-min': '320px',
   'size-resize-hit': '8px',
   'size-label-col': '92px',

@@ -6,5 +6,5 @@ export { IconButton, IconLink } from './IconButton';
 export { Segmented, type SegmentedItem } from './Segmented';
 export { Select } from './Select';
 export { Tabs, type TabItem } from './Tabs';
-export { TextField } from './TextField';
+export { TextArea, TextField } from './TextField';
 export { Tooltip } from './Tooltip';

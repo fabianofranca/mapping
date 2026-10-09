@@ -62,3 +62,55 @@ export function TextField(props: TextFieldProps) {
     </label>
   );
 }
+
+type NativeTextArea = Omit<
+  JSX.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  'class' | 'value' | 'onInput' | 'onChange' | 'onBlur'
+>;
+
+interface TextAreaProps extends NativeTextArea {
+  /** Rótulo visível; sem ele, passe `aria-label`. */
+  readonly label?: ComponentChildren;
+  readonly value: string;
+  readonly invalid?: boolean;
+  readonly onInput?: (text: string) => void;
+  /** Ao sair do campo (grava a nota, por exemplo). */
+  readonly onCommit?: (text: string) => void;
+  readonly textAreaRef?: Ref<HTMLTextAreaElement>;
+}
+
+/**
+ * Campo de texto em várias linhas (variante `mp-field--area` do TextField, revisão de
+ * propostas): mesma borda, foco e estados do campo de uma linha, altura livre.
+ */
+export function TextArea({
+  label,
+  value,
+  invalid,
+  onInput,
+  onCommit,
+  textAreaRef,
+  rows = 3,
+  ...rest
+}: TextAreaProps) {
+  const control = (
+    <textarea
+      {...rest}
+      ref={textAreaRef}
+      rows={rows}
+      value={value}
+      class={classes('input', 'input-area', invalid === true && 'input-invalid')}
+      aria-invalid={invalid}
+      onInput={(e) => onInput?.(e.currentTarget.value)}
+      onBlur={(e) => onCommit?.(e.currentTarget.value)}
+    />
+  );
+  return label === undefined ? (
+    control
+  ) : (
+    <label class="field">
+      {label}
+      {control}
+    </label>
+  );
+}

@@ -62,6 +62,7 @@ export const TOKENS: CanvasTokens = {
   warning: '#ffc247',
   nameTag: '#0057b9',
   nameTagText: '#010203',
+  badge: '#0a0c10',
   surface: '#ffffff',
   card: 'rgba(250, 250, 250, 0.9)',
   border: '#cccccc',

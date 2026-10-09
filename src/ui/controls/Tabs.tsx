@@ -11,6 +11,8 @@ export interface TabItem<T extends string> {
   readonly disabled?: boolean;
   /** Contador ao lado do rótulo (ex.: quantas pendências). */
   readonly badge?: string;
+  /** `info`: contador que avisa uma novidade (ex.: propostas novas), em destaque. */
+  readonly badgeTone?: 'muted' | 'info';
   /** Ponto de alerta ao lado do rótulo (ex.: erro novo). */
   readonly alert?: boolean;
 }
@@ -52,25 +54,33 @@ export function Tabs<T extends string>({
 
   return (
     <div class="tabs" role="tablist" aria-label={label}>
-      {tabs.map(({ id, label: text, icon, title, disabled, badge, alert }, i) => (
-        <button
-          key={id}
-          type="button"
-          role="tab"
-          class="tab"
-          aria-selected={value === id}
-          tabIndex={value === id ? 0 : -1}
-          title={title}
-          disabled={disabled}
-          onKeyDown={(e) => move(e, i)}
-          onClick={() => onChange(id)}
-        >
-          {icon && <Icon name={icon} />}
-          {text}
-          {badge && <span class="tab-badge">{badge}</span>}
-          {alert && <span class="tab-alert" aria-hidden="true" />}
-        </button>
-      ))}
+      {tabs.map(
+        ({ id, label: text, icon, title, disabled, badge, badgeTone, alert }, i) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            class="tab"
+            aria-selected={value === id}
+            tabIndex={value === id ? 0 : -1}
+            title={title}
+            disabled={disabled}
+            onKeyDown={(e) => move(e, i)}
+            onClick={() => onChange(id)}
+          >
+            {icon && <Icon name={icon} />}
+            {text}
+            {badge && (
+              <span
+                class={badgeTone === 'info' ? 'tab-badge tab-badge-info' : 'tab-badge'}
+              >
+                {badge}
+              </span>
+            )}
+            {alert && <span class="tab-alert" aria-hidden="true" />}
+          </button>
+        ),
+      )}
     </div>
   );
 }

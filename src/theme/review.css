@@ -1,0 +1,227 @@
+/*
+ * Revisão de propostas (etapa 4, docs/redesign/HANDOFF-PROPOSALS.md): componentes
+ * novos (DecisionMark, ChangeKind, Flag, DecisionControl, DiffValue, ChangeCard,
+ * ReviewRow, ProposalRow, ReviewBar, ImageCompare), o aviso em caixa (Notice) e as
+ * janelas da revisão. Cores, espaços e tamanhos só dos tokens; verde e vermelho só
+ * para aceita e rejeitada.
+ */
+
+/* ---------- Notice (caixa): info, warning, error, success; compacto ---------- */
+.notice-box {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font: var(--t-text);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.notice-box-icon {
+  display: flex;
+  padding-top: var(--space-0-5);
+}
+
+.notice-box-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.notice-box-title {
+  font-weight: 600;
+}
+
+.notice-box-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.notice-box-info {
+  background: var(--color-selection);
+  border-color: transparent;
+}
+
+.notice-box-info .notice-box-icon {
+  color: var(--color-accent);
+}
+
+.notice-box-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+}
+
+.notice-box-warning .notice-box-icon {
+  color: var(--color-warning);
+}
+
+.notice-box-error {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+}
+
+.notice-box-error .notice-box-icon {
+  color: var(--color-danger);
+}
+
+.notice-box-success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+}
+
+.notice-box-success .notice-box-icon {
+  color: var(--color-success);
+}
+
+.notice-box-sm {
+  padding: var(--space-1-5) var(--space-2);
+  font: var(--t-text-small);
+}
+
+.notice-box-sm .notice-box-actions {
+  margin-top: var(--space-1);
+}
+
+/* ---------- DecisionMark: o estado pela forma ---------- */
+.decision-mark {
+  flex: none;
+  display: inline-flex;
+}
+
+.decision-mark-undecided {
+  color: var(--color-text-muted);
+}
+
+.decision-mark-accepted {
+  color: var(--color-success);
+}
+
+.decision-mark-rejected {
+  color: var(--color-danger);
+}
+
+.decision-mark-partial {
+  color: var(--color-text);
+}
+
+.decision-mark-dashed {
+  stroke-dasharray: 2.1 2.1;
+}
+
+.decision-mark-fill {
+  fill: currentcolor;
+  stroke: none;
+}
+
+.decision-mark-glyph {
+  stroke: var(--color-surface);
+  stroke-width: 1.5;
+}
+
+/* ---------- ChangeKind: selo neutro do tipo ---------- */
+.change-kind {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--size-icon) + var(--space-1));
+  height: calc(var(--size-icon) + var(--space-1));
+  color: var(--color-text);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+}
+
+.change-kind .icon {
+  width: var(--space-3);
+  height: var(--space-3);
+  stroke-width: 1.5;
+}
+
+.change-kind-sm {
+  width: calc(var(--size-icon) + var(--space-0-5));
+  height: calc(var(--size-icon) + var(--space-0-5));
+}
+
+/* ---------- Flag: pílula de um fato ---------- */
+.flag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: calc(var(--size-icon) + var(--space-0-5));
+  padding: 0 var(--space-1-5);
+  font: var(--t-micro);
+  white-space: nowrap;
+  color: var(--color-text);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-full);
+}
+
+.flag .icon {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
+.flag-warn {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+}
+
+.flag-danger {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+}
+
+.flag-ok {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+}
+
+.flag-new {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* ---------- DecisionControl ---------- */
+.decision-control {
+  flex: none;
+  display: inline-flex;
+  gap: var(--space-0-5);
+}
+
+.decision-control-text {
+  display: flex;
+  gap: var(--space-1-5);
+}
+
+.decision-control-text .button {
+  flex: 1;
+}
+
+@media (max-width: 899px) {
+  .change-kind {
+    width: calc(var(--size-icon-touch) + var(--space-0-5));
+    height: calc(var(--size-icon-touch) + var(--space-0-5));
+    border-radius: var(--radius-md);
+  }
+
+  .change-kind .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .flag {
+    height: var(--size-icon-touch);
+    font: var(--t-text-small);
+  }
+}

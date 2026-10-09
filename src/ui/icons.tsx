@@ -273,6 +273,34 @@ const SHAPES = {
     ],
   },
   moon: { d: ['M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z'] },
+
+  // Revisão de propostas (etapa 4, docs/redesign/HANDOFF-PROPOSALS.md 3.2). Os estados de
+  // decisão não são ícones: são o `DecisionMark`.
+  proposal: {
+    d: [
+      circle(4, 4, 1.5),
+      circle(4, 12, 1.5),
+      'M4 5.5v5',
+      circle(12, 12, 1.5),
+      'M12 10.5V6.5a2 2 0 0 0-2-2H8.5',
+      'm10 2.5-1.8 2 1.8 2',
+    ],
+  },
+  moved: { d: ['M2.5 5.5h9', 'm9 3 2.5 2.5L9 8', 'M13.5 10.5h-9', 'm7 8-2.5 2.5L7 13'] },
+  changed: {
+    d: ['M1.5 8c1.25-3 2.5-3 3.75 0s2.5 3 3.75 0 2.5-3 3.75 0 1.25 1.5 1.75 1.5'],
+  },
+  replaced: { d: ['M3 3.5h7v5H3Z', 'M6 7.5h7v5H6Z'] },
+  compare: {
+    d: [
+      'M2.5 3h11v10h-11Z',
+      'M8 1.5v13',
+      'm5.5 6.5-2 1.5 2 1.5',
+      'm10.5 6.5 2 1.5-2 1.5',
+    ],
+  },
+  note: { d: ['M2.5 3h11v8H8l-3 2.5V11H2.5Z', 'M5 6h6', 'M5 8.2h3.5'] },
+  blocked: { d: [circle(8, 8, 6), 'm3.8 12.2 8.4-8.4'] },
   globe: {
     d: [
       circle(8, 8, 6),

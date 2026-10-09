@@ -9,6 +9,7 @@ import {
   Segmented,
   Select,
   Tabs,
+  TextArea,
   TextField,
 } from '../../src/ui/controls';
 
@@ -240,5 +241,74 @@ describe('Tabs', () => {
     render(<Harness onChange={onChange} />);
     await userEvent.setup().click(screen.getByRole('tab', { name: 'C' }));
     expect(onChange).toHaveBeenCalledWith('c');
+  });
+});
+
+// Variantes da revisão de propostas (HANDOFF-PROPOSALS 2.2).
+describe('variantes da revisão', () => {
+  it('Button accept/reject e fantasma', () => {
+    render(
+      <>
+        <Button variant="accept" aria-pressed={true}>
+          Aceitar item
+        </Button>
+        <Button variant="reject">Rejeitar item</Button>
+        <Button variant="ghost">Sair</Button>
+      </>,
+    );
+    const accept = screen.getByRole('button', { name: 'Aceitar item' });
+    expect(accept.className).toBe('button button-accept');
+    expect(accept.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Rejeitar item' }).className).toBe(
+      'button button-reject',
+    );
+    expect(screen.getByRole('button', { name: 'Sair' }).className).toBe(
+      'button button-ghost',
+    );
+  });
+
+  it('IconButton accept/reject compacto e com selo numérico', () => {
+    render(
+      <>
+        <IconButton icon="check" variant="accept" size="sm" label="Aceitar" />
+        <IconButton icon="proposal" label="Propostas" badge="2" />
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Aceitar' }).className).toBe(
+      'icon-button icon-button-accept icon-button-sm',
+    );
+    const proposals = screen.getByRole('button', { name: 'Propostas' });
+    expect(proposals.querySelector('.icon-button-badge')?.textContent).toBe('2');
+  });
+
+  it('Tabs com contador informativo', () => {
+    render(
+      <Tabs
+        label="Janelas"
+        value="a"
+        onChange={() => {}}
+        tabs={[
+          { id: 'a', label: 'Lista', badge: '3' },
+          { id: 'b', label: 'Propostas', badge: '1', badgeTone: 'info' },
+        ]}
+      />,
+    );
+    expect(
+      screen.getByRole('tab', { name: /^Propostas/ }).querySelector('.tab-badge-info'),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('tab', { name: /^Lista/ }).querySelector('.tab-badge-info'),
+    ).toBeNull();
+  });
+
+  it('TextArea: várias linhas, grava ao sair do campo', () => {
+    const onCommit = vi.fn();
+    render(<TextArea aria-label="Nota" value="" onCommit={onCommit} />);
+    const area = screen.getByRole('textbox', { name: 'Nota' });
+    expect(area.tagName).toBe('TEXTAREA');
+    expect(area.className).toBe('input input-area');
+    fireEvent.input(area, { target: { value: 'linha 1\nlinha 2' } });
+    fireEvent.blur(area);
+    expect(onCommit).toHaveBeenCalledWith('linha 1\nlinha 2');
   });
 });
