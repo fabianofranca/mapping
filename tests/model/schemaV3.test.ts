@@ -51,18 +51,18 @@ function load(text: string): Project {
 }
 
 describe('migração v2 → v3', () => {
-  it('abre um v2 como v7 com markingColor nulo e sem perder nada', () => {
+  it('abre um v2 como v8 com markingColor nulo e sem perder nada', () => {
     const result = deserialize(v2Text());
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(2);
-    expect(result.project.schemaVersion).toBe(7);
+    expect(result.project.schemaVersion).toBe(8);
     expect(result.project.images.every((i) => i.markingColor === null)).toBe(true);
     expect(withoutEntryIds(result.project)).toEqual(withoutEntryIds(sampleProject()));
   });
 
-  it('salvar o v2 migrado gera v7 estável (round-trip)', () => {
+  it('salvar o v2 migrado gera v8 estável (round-trip)', () => {
     const saved = serialize(load(v2Text()));
-    expect(JSON.parse(saved).schemaVersion).toBe(7);
+    expect(JSON.parse(saved).schemaVersion).toBe(8);
     expect(serialize(load(saved))).toBe(saved);
   });
 });

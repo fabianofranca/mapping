@@ -95,6 +95,7 @@ export function createMarking(p: Project, args: NewMarkingArgs): Project {
     },
     needsReview: false,
     locked: false,
+    source: null,
   };
   return { ...p, markings: [...p.markings, marking] };
 }

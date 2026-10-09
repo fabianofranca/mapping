@@ -46,7 +46,9 @@ export type ModelErrorCode =
   | 'platform-not-allowed'
   | 'invalid-path'
   | 'invalid-url-template'
-  | 'invalid-local-path';
+  | 'invalid-local-path'
+  // Propostas de alteração (etapa 4)
+  | 'invalid-source';
 
 export class ModelError extends Error {
   constructor(

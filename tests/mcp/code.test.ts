@@ -410,7 +410,7 @@ describe('get_marking, get_annotation e get_project', () => {
 
   it('get_project traz as plataformas, os platformRepos e o aviso de repositório ausente', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
-    expect(data.schemaVersion).toBe(7);
+    expect(data.schemaVersion).toBe(8);
     expect(data.platforms).toEqual([
       { id: 'android', name: 'Android', language: 'kotlin', specs: ['sdui'] },
       { id: 'ios', name: 'iOS', language: 'swift', specs: ['sdui'] },
@@ -600,7 +600,7 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     );
   });
 
-  it('o lote do roteiro (nova entrada no codeRef + repositório do ios) é aplicado e grava v7 com revision + 1', async () => {
+  it('o lote do roteiro (nova entrada no codeRef + repositório do ios) é aplicado e grava v8 com revision + 1', async () => {
     const dir = ws.projectDir('escrita');
     const screen = screenRef();
     const existing = existingEntries();
@@ -654,7 +654,7 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     const saved = parsed.project;
-    expect(saved.schemaVersion).toBe(7);
+    expect(saved.schemaVersion).toBe(8);
     expect(saved.revision).toBe(1);
     expect(saved.platformRepos).toEqual({
       android: { urlTemplate: `${REPO_URL}/{path}#L{line}`, localPath: '../../..' },
