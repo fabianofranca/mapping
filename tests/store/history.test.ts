@@ -379,3 +379,106 @@ describe('store: projeto confirmado (committed)', () => {
     expect(store.committed.value).toBeNull();
   });
 });
+
+describe('store: revisão de propostas (etapa 4)', () => {
+  function linked() {
+    const calls: string[] = [];
+    const link = {
+      tag: 'P1',
+      undo: () => calls.push('undo'),
+      redo: () => calls.push('redo'),
+    };
+    return { calls, link };
+  }
+
+  it('durante a revisão o projeto é somente leitura: apply, gestos e desfazer são recusados', () => {
+    const { store, actions } = setup();
+    actions.renameLayer('L1', 'Antes');
+    store.setReviewing(true);
+
+    expect(store.reviewing.value).toBe(true);
+    expect(actions.renameLayer('L1', 'Depois')).toEqual({
+      ok: false,
+      error: 'reviewing',
+    });
+    expect(store.beginGesture()).toEqual({ ok: false, error: 'reviewing' });
+    expect(store.canUndo.value).toBe(false);
+    expect(store.undo()).toBe(false);
+    expect(project(store).layers[0]?.name).toBe('Antes');
+
+    store.setReviewing(false);
+    expect(actions.renameLayer('L1', 'Depois')).toEqual({ ok: true, value: undefined });
+    expect(store.undo()).toBe(true);
+  });
+
+  it('uma entrada com efeito (a aplicação das aceitas) passa pelo bloqueio e desfaz e refaz o efeito junto', () => {
+    const { store } = setup();
+    const { calls, link } = linked();
+    store.setReviewing(true);
+    const original = project(store);
+
+    const result = store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(project(store).layers[0]?.name).toBe('Aplicado');
+    expect(store.canUndo.value).toBe(true);
+
+    expect(store.undo()).toBe(true);
+    expect(calls).toEqual(['undo']);
+    expect(project(store).layers[0]?.name).toBe(original.layers[0]?.name);
+    expect(store.canRedo.value).toBe(true);
+
+    expect(store.redo()).toBe(true);
+    expect(calls).toEqual(['undo', 'redo']);
+    expect(project(store).layers[0]?.name).toBe('Aplicado');
+  });
+
+  it('na revisão só dá para desfazer entradas da própria revisão, não as de antes', () => {
+    const { store, actions } = setup();
+    actions.renameLayer('L1', 'De antes');
+    store.setReviewing(true);
+    const { calls, link } = linked();
+    store.apply((p) => renameLayer(p, 'L2', 'Da revisão'), { link });
+
+    expect(store.undo()).toBe(true);
+    expect(calls).toEqual(['undo']);
+    // A entrada anterior é de uma edição normal: fica para depois da revisão.
+    expect(store.canUndo.value).toBe(false);
+    expect(store.undo()).toBe(false);
+    store.setReviewing(false);
+    expect(store.undo()).toBe(true);
+    expect(calls).toEqual(['undo']);
+  });
+
+  it('o projeto só leitura (schema novo) continua recusando até as entradas da revisão', () => {
+    const store = createProjectStore();
+    store.load(sampleProject(), { readOnly: true });
+    const { link } = linked();
+    expect(store.apply((p) => p, { link })).toEqual({ ok: false, error: 'read-only' });
+  });
+
+  it('discardRedoOf descarta o "refazer" que tem o efeito da proposta, e só ele', () => {
+    const { store, actions } = setup();
+    actions.renameLayer('L1', 'Normal');
+    store.undo();
+    store.discardRedoOf('P1');
+    expect(store.canRedo.value).toBe(true);
+
+    const { link } = linked();
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
+    store.undo();
+    expect(store.canRedo.value).toBe(true);
+    store.discardRedoOf('outra');
+    expect(store.canRedo.value).toBe(true);
+    store.discardRedoOf('P1');
+    expect(store.canRedo.value).toBe(false);
+  });
+
+  it('fechar o projeto desliga a revisão; carregar outro (recarga externa) não', () => {
+    const { store } = setup();
+    store.setReviewing(true);
+    store.load(sampleProject());
+    expect(store.reviewing.value).toBe(true);
+    store.close();
+    expect(store.reviewing.value).toBe(false);
+  });
+});

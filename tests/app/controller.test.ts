@@ -2,13 +2,19 @@ import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { serialize, specFiles } from '../../src/model';
+import {
+  parseProposalText,
+  serialize,
+  serializeProposal,
+  specFiles,
+} from '../../src/model';
 import type { DirectoryHandleLike } from '../../src/storage/folder';
 import { writeProjectZip } from '../../src/storage/zip';
 import { clearReportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
-import { emptyProject } from '../model/fixtures';
+import { emptyProject, sampleProject } from '../model/fixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
+import { richScenario } from '../store/proposalHarness';
 
 const pickDirectory = vi.fn<() => Promise<DirectoryHandleLike | null>>();
 
@@ -109,7 +115,13 @@ describe('projeto local', () => {
 
   it('projeto v1: grava o backup antes do primeiro salvamento', async () => {
     const library = await local.openLocalLibrary();
-    await library?.create('v1', { mapping: v1, images: new Map(), specs: new Map() });
+    await library?.create('v1', {
+      mapping: v1,
+      images: new Map(),
+      specs: new Map(),
+      proposals: new Map(),
+      proposalImages: new Map(),
+    });
     expect(await library?.listBackups('v1')).toEqual([]);
 
     expect((await app.openLocalProject('v1')).ok).toBe(true);
@@ -261,6 +273,8 @@ describe('importar zip', () => {
       mapping: serialize(emptyProject()),
       images: new Map(),
       specs: new Map(),
+      proposals: new Map(),
+      proposalImages: new Map(),
     });
     expect((await app.importZip(blob)).ok).toBe(true);
     const current = await openedOf(app);
@@ -289,6 +303,8 @@ describe('exportar', () => {
         mapping: serialize(project),
         images: new Map([['images/cadastro.png', new Blob(['png'])]]),
         specs: specFiles(project),
+        proposals: new Map(),
+        proposalImages: new Map(),
       },
       { unexported: false },
     );
@@ -368,5 +384,85 @@ describe('fechar', () => {
     session.actions.renameProject('Lista 2');
     await app.closeProject();
     expect(app.localProjects.value.map((p) => p.name)).toEqual(['Lista 2']);
+  });
+});
+
+describe('propostas de alteração (etapa 4)', () => {
+  const proposalZip = async () => {
+    const { proposal } = richScenario();
+    const zip = new JSZip();
+    zip.file('mapping.json', serialize(sampleProject()));
+    zip.file('proposals/P1/proposal.json', serializeProposal(proposal));
+    zip.file('proposals/P1/images/nova.webp', 'WEBP');
+    return {
+      proposal,
+      blob: new Blob([await zip.generateAsync({ type: 'arraybuffer' })]),
+    };
+  };
+
+  it('zip importado mostra as propostas; decidir, exportar e reimportar preserva a revisão', async () => {
+    const { proposal, blob } = await proposalZip();
+    expect((await app.importZip(blob)).ok).toBe(true);
+    const first = await openedOf(app);
+    expect(first.session.proposals.list.value.map((p) => p.id)).toEqual(['P1']);
+
+    const accepted = proposal.changes[1]?.id ?? '';
+    const decided = await first.session.proposalActions.decide(
+      'P1',
+      { level: 'change', id: accepted },
+      'accepted',
+    );
+    expect(decided.ok).toBe(true);
+    await app.closeProject();
+    // Decidir é trabalho a exportar, como editar o projeto.
+    const library = await local.openLocalLibrary();
+    expect((await library?.get(first.localId ?? ''))?.unexported).toBe(true);
+    library?.close();
+
+    // Reabre o projeto local: a decisão veio do IndexedDB.
+    await app.openLocalProject(first.localId ?? '');
+    const second = await openedOf(app);
+    expect(second.session.proposals.get('P1')?.decisions[accepted]?.state).toBe(
+      'accepted',
+    );
+
+    const exported = await app.buildExport();
+    if (!exported.ok) throw new Error(exported.error);
+    const zip = await JSZip.loadAsync(await exported.value.arrayBuffer());
+    expect(await zip.file('proposals/P1/images/nova.webp')?.async('string')).toBe('WEBP');
+    const text = (await zip.file('proposals/P1/proposal.json')?.async('string')) ?? '';
+    expect(parseProposalText(text)).toMatchObject({
+      ok: true,
+      proposal: { revision: 1, decisions: { [accepted]: { state: 'accepted' } } },
+    });
+
+    const reviewed = second.session.proposals.get('P1');
+    await app.closeProject();
+    expect((await app.importZip(exported.value)).ok).toBe(true);
+    const third = await openedOf(app);
+    expect(third.session.proposals.get('P1')).toEqual(reviewed);
+  });
+
+  it('projeto em pasta abre com as propostas da pasta e aplica uma delas', async () => {
+    const { proposal } = richScenario();
+    const root = folderWith({ 'mapping.json': serialize(sampleProject()) });
+    root.put('proposals/P1/proposal.json', serializeProposal(proposal));
+    root.put('proposals/P1/images/nova.webp', 'WEBP');
+    pickDirectory.mockResolvedValue(root);
+    expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
+    const { session } = await openedOf(app);
+    expect(session.proposals.list.value.map((p) => p.title)).toEqual(['Teste']);
+
+    await session.proposalActions.decide(
+      'P1',
+      { level: 'proposal', id: null },
+      'accepted',
+    );
+    expect(await session.proposalActions.applyAccepted('P1')).toMatchObject({
+      ok: true,
+      applied: 5,
+    });
+    expect(await root.read('images/nova.webp')).toBe('WEBP');
+    expect(session.store.project.value?.images.some((i) => i.id === 'I3')).toBe(true);
   });
 });

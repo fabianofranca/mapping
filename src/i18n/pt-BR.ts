@@ -580,6 +580,27 @@ export const ptBR = {
   'marking.error.locked': 'A marcação está trancada. Destranque para alterar.',
   'shortcuts.toggleLock': 'Trancar ou destrancar o item selecionado',
   'editor.externalUpdated': 'Projeto atualizado por fora.',
+  'review.readOnly':
+    'Somente leitura durante a revisão. Saia da revisão para editar o projeto.',
+  'proposal.error.generic': 'Não foi possível concluir a ação na proposta.',
+  'proposal.error.unknown': 'A proposta não existe mais.',
+  'proposal.error.gone': 'O arquivo da proposta foi apagado fora da app.',
+  'proposal.error.unreadable':
+    'O arquivo da proposta mudou fora da app e não pôde ser lido.',
+  'proposal.error.writeFailed': 'Não foi possível gravar a proposta.',
+  'proposal.error.notOpen': 'Esta proposta não está aberta: não recebe mais decisões.',
+  'proposal.error.noTarget': 'O item não existe nesta proposta.',
+  'proposal.error.emptyNote': 'A nota está vazia.',
+  'proposal.error.blocked':
+    'As mudanças aceitas deixariam o projeto inválido. Aceite o que falta ou rejeite o que causa o problema.',
+  'proposal.error.stale': 'O projeto ou a proposta mudou desde a última ação.',
+  'proposal.error.imageMissing': 'A imagem da proposta não foi encontrada: {path}',
+  'proposal.error.imageExists':
+    'Já existe uma imagem do projeto com este arquivo: {path}',
+  'proposal.error.readOnly': 'O projeto está somente leitura e não recebe mudanças.',
+  'proposal.notice.added': 'Nova proposta: {title}',
+  'proposal.notice.changed': 'Proposta alterada fora da app: {title}',
+  'proposal.notice.removed': 'Proposta apagada fora da app: {title}',
   'external.title': 'Projeto alterado fora da app',
   'external.message':
     'O mapping.json foi alterado por outro programa (o servidor MCP, um editor de texto, o git…) desde que você o abriu. "Recarregar" descarta as suas alterações ainda não gravadas e abre o arquivo como está. "Manter as minhas" grava por cima, com a revisão nova.',

@@ -221,11 +221,11 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 > **Estado**: implementada. O aceite está coberto por testes: `tests/mcp/proposals.test.ts` (hash do `mapping.json` conferido depois de cada tool; a proposta do MCP é aceita e aplicada por `applyAccepted`, a função que a app usa), `tests/mcp/specValidation.test.ts` (erros iguais aos de `parseSpecText`, a validação da importação da app). Decisões de detalhe no PR: `author` padrão é o nome do cliente MCP; lote sem mudanças é recusado (`no-changes`); `withdraw_proposal` só retira proposta aberta e não apaga os arquivos; o `base64` das operações não vai para o `proposal.json`; o estado de uma mudança em `get_proposal` é `pending`, `accepted`, `rejected` ou `applied`, com `conflict` e `locked` à parte.
 
 #### 4.3 — App: armazenamento e estado
-- [ ] Leitura e gravação de `proposals/` na pasta, no IndexedDB e no zip
-- [ ] Detecção de proposta nova e de proposta alterada por fora
-- [ ] Estado da revisão (proposta aberta, decisões, notas, filtros) e estado derivado ("como ficaria", contagens, níveis, aceitas aguardando aplicação)
-- [ ] Retomar a revisão: último item, filtros e Atual/Proposto por dispositivo; conflitos recalculados ao reabrir; aviso de proposta substituída
-- [ ] Aplicar aceitas pela sessão (uma entrada de desfazer, imagens movidas, proposta atualizada)
+- [x] Leitura e gravação de `proposals/` na pasta, no IndexedDB e no zip
+- [x] Detecção de proposta nova e de proposta alterada por fora
+- [x] Estado da revisão (proposta aberta, decisões, notas, filtros) e estado derivado ("como ficaria", contagens, níveis, aceitas aguardando aplicação)
+- [x] Retomar a revisão: último item, filtros e Atual/Proposto por dispositivo; conflitos recalculados ao reabrir; aviso de proposta substituída
+- [x] Aplicar aceitas pela sessão (uma entrada de desfazer, imagens movidas, proposta atualizada)
 
 **Aceite**: testes de store e storage; zip com propostas faz round-trip sem perdas.
 

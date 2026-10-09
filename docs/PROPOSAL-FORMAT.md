@@ -199,4 +199,9 @@ Cada mudança da proposta antiga mostra se a nova traz a **mesma** coisa, **outr
 - Revisão: `proposalIndex` (dependências), `requiredChanges`, `dependentChanges`, `reviewTree`, `summarizeDecisions`, `reviewProgress`, `decide`, `changeStatus`, `changeStatuses`, `addNote`, `editNote`, `removeNote`, `notesOf`, `withdrawProposal`, `supersedeProposal`.
 - Aplicação: `acceptedPending`, `validateAccepted`, `applyAccepted`, `previewProject` (a visão "como ficaria"), `patchProject`.
 - Comparação: `compareProposals`.
+- Leitura para a interface (`proposalView.ts`): `changeType`, `dominantChangeType`, `reviewKey`, `changeTarget`, `changeLayerId`, `changeImageFile`, `filterChanges` (`ReviewFilters`, `NO_FILTERS`), `undecidedChanges`, `acceptedPendingIds`, `leftBehind`, `stepChange`.
 - Origens: `findBySource`, `setImageSource`, `setMarkingSource` (`FORMAT.md`, v8) e `findTypesBySource` (`SPEC-FORMAT.md`, `formatVersion` 3).
+
+## Na app
+
+Como a app guarda e confere as propostas (armazenamento, `revision`, desfazer da aplicação, retomada da revisão) está em [`ARCHITECTURE.md`](ARCHITECTURE.md), no item "Propostas de alteração".

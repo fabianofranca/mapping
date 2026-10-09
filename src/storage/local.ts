@@ -1,7 +1,14 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { channelDbName } from '../utils/channel';
 import type { ProjectFiles } from './zip';
-import { BACKUPS_DIR, backupTimestamp, type ProjectStorage } from './types';
+import { proposalFilePath } from '../model';
+import {
+  BACKUPS_DIR,
+  backupTimestamp,
+  isProposalFilePath,
+  proposalIdOfPath,
+  type ProjectStorage,
+} from './types';
 import { reportError } from '../utils/report';
 
 /** O preview usa outro banco (`-preview`): nunca enxerga os projetos da versão principal. */
@@ -114,9 +121,10 @@ function createLibrary(db: Db): LocalLibrary {
       // Converte antes de abrir a transação: ela fecha se esperar outra coisa.
       const stored = await Promise.all([
         ...[...files.images].map(([path, blob]) => toStoredFile(id, path, blob)),
-        ...[...files.specs].map(([path, text]) =>
+        ...[...files.specs, ...files.proposals].map(([path, text]) =>
           toStoredFile(id, path, new Blob([text], { type: SPEC_TYPE })),
         ),
+        ...[...files.proposalImages].map(([path, blob]) => toStoredFile(id, path, blob)),
       ]);
       const info = readInfo(files.mapping);
       const tx = db.transaction(['projects', 'mappings', 'files'], 'readwrite');
@@ -172,6 +180,32 @@ function createLibrary(db: Db): LocalLibrary {
         },
         async removeSpec(path) {
           await db.delete('files', [id, path]);
+        },
+        async listProposals() {
+          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+          const ids: string[] = [];
+          for (const [, path] of keys) {
+            const proposalId = isProposalFilePath(path) ? proposalIdOfPath(path) : null;
+            if (proposalId !== null) ids.push(proposalId);
+          }
+          return ids.sort();
+        },
+        async readProposal(proposalId) {
+          const file = await db.get('files', [id, proposalFilePath(proposalId)]);
+          return file ? new Blob([file.data]).text() : null;
+        },
+        async writeProposal(proposalId, text) {
+          const blob = new Blob([text], { type: SPEC_TYPE });
+          const stored = await toStoredFile(id, proposalFilePath(proposalId), blob);
+          // Decidir numa proposta é trabalho a exportar, como salvar o `mapping.json`.
+          const tx = db.transaction(['projects', 'files'], 'readwrite');
+          const meta = await tx.objectStore('projects').get(id);
+          if (!meta) throw new Error(`local project not found: ${id}`);
+          await Promise.all([
+            tx.objectStore('projects').put({ ...meta, unexported: true }),
+            tx.objectStore('files').put(stored),
+            tx.done,
+          ]);
         },
         async writeBackup(name, text) {
           const blob = new Blob([text], { type: SPEC_TYPE });

@@ -1,5 +1,5 @@
 import { createContext, type ComponentChildren } from 'preact';
-import { useContext, useMemo } from 'preact/hooks';
+import { useContext, useEffect, useMemo } from 'preact/hooks';
 import type { OpenProject } from '../app/controller';
 import type { CanvasController } from '../canvas/CanvasController';
 import { createCanvasViewState, type CanvasViewState } from '../canvas/viewState';
@@ -7,6 +7,7 @@ import { createEditorDerived, type EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
+import { createReviewState, type ReviewState } from '../store/review';
 import type { ProjectSession } from '../store/session';
 import { createEditorUi, type EditorUi } from '../store/ui';
 
@@ -19,6 +20,8 @@ export interface EditorContextValue {
   readonly display: DisplayImages<ImageBitmap>;
   readonly ui: EditorUi;
   readonly derived: EditorDerived;
+  /** Revisão de propostas (etapa 4): proposta aberta, filtros, decisões e o estado derivado dela. */
+  readonly review: ReviewState;
   /** Controller do canvas montado (`CanvasHost` o preenche); `null` fora do editor. */
   readonly canvas: { current: CanvasController | null };
   /** Zoom, cursor e área das imagens, escritos pelo canvas e lidos pela interface. */
@@ -40,6 +43,7 @@ export function createEditorContextValue(
     display,
     ui,
     derived: createEditorDerived(store, ui),
+    review: createReviewState(session),
     canvas: { current: null },
     view: createCanvasViewState(),
   };
@@ -56,6 +60,7 @@ export function EditorProvider({
   readonly children: ComponentChildren;
 }) {
   const value = useMemo(() => createEditorContextValue(open), [open]);
+  useEffect(() => () => value.review.dispose(), [value]);
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
 }
 

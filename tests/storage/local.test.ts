@@ -42,10 +42,22 @@ describe('LocalLibrary (IndexedDB)', () => {
         updatedAt: '2027-01-01T00:00:00.000Z',
       },
     });
-    await library.create('a', { mapping: a, images: noImages, specs: noSpecs });
+    await library.create('a', {
+      mapping: a,
+      images: noImages,
+      specs: noSpecs,
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
     await library.create(
       'b',
-      { mapping: b, images: noImages, specs: noSpecs },
+      {
+        mapping: b,
+        images: noImages,
+        specs: noSpecs,
+        proposals: noSpecs,
+        proposalImages: noImages,
+      },
       { unexported: false },
     );
 
@@ -60,7 +72,13 @@ describe('LocalLibrary (IndexedDB)', () => {
   it('salvar o mapping atualiza nome, data e marca como não exportado', async () => {
     await library.create(
       'p',
-      { mapping: serialize(emptyProject()), images: noImages, specs: noSpecs },
+      {
+        mapping: serialize(emptyProject()),
+        images: noImages,
+        specs: noSpecs,
+        proposals: noSpecs,
+        proposalImages: noImages,
+      },
       {
         unexported: false,
       },
@@ -87,8 +105,20 @@ describe('LocalLibrary (IndexedDB)', () => {
 
   it('grava, lê e remove imagens separadas por projeto', async () => {
     const mapping = serialize(emptyProject());
-    await library.create('p1', { mapping, images: noImages, specs: noSpecs });
-    await library.create('p2', { mapping, images: noImages, specs: noSpecs });
+    await library.create('p1', {
+      mapping,
+      images: noImages,
+      specs: noSpecs,
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
+    await library.create('p2', {
+      mapping,
+      images: noImages,
+      specs: noSpecs,
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
     const s1 = library.open('p1');
     await s1.writeImage('images/a.jpg', new Blob(['A1'], { type: 'image/jpeg' }));
     await library.open('p2').writeImage('images/a.jpg', new Blob(['A2']));
@@ -107,6 +137,8 @@ describe('LocalLibrary (IndexedDB)', () => {
       mapping,
       images: new Map([['images/a.jpg', new Blob(['A'])]]),
       specs: new Map([['specs/sdui.json', '{}']]),
+      proposals: new Map(),
+      proposalImages: new Map(),
     });
     await library.remove('p');
     expect(await library.list()).toEqual([]);
@@ -121,6 +153,8 @@ describe('LocalLibrary (IndexedDB)', () => {
       mapping: serialize(emptyProject()),
       images: noImages,
       specs: noSpecs,
+      proposals: noSpecs,
+      proposalImages: noImages,
     });
     const storage = library.open('p');
     expect(await storage.readSpec('specs/sdui.json')).toBeNull();
@@ -139,7 +173,13 @@ describe('LocalLibrary (IndexedDB)', () => {
       ['images/frente.jpg', new Blob(['FRENTE'], { type: 'image/jpeg' })],
       ['images/lateral.jpg', new Blob(['LATERAL'], { type: 'image/jpeg' })],
     ]);
-    const zip = await writeProjectZip({ mapping, images, specs });
+    const zip = await writeProjectZip({
+      mapping,
+      images,
+      specs,
+      proposals: new Map(),
+      proposalImages: new Map(),
+    });
 
     const read = await readProjectZip(zip);
     if (!read.ok) throw new Error(read.error);
@@ -163,6 +203,8 @@ describe('LocalLibrary (IndexedDB)', () => {
         mapping: serialize(parsed.project),
         images: exported,
         specs: specFiles(parsed.project),
+        proposals: new Map(),
+        proposalImages: new Map(),
       }),
     );
     if (!again.ok) throw new Error(again.error);
@@ -183,6 +225,8 @@ describe('LocalLibrary (IndexedDB)', () => {
         mapping: serialize(emptyProject()),
         images: noImages,
         specs: noSpecs,
+        proposals: noSpecs,
+        proposalImages: noImages,
       });
 
     it(`guarda só os ${MAX_LOCAL_BACKUPS} mais recentes, por projeto`, async () => {
