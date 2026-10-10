@@ -14,7 +14,7 @@ afterEach(() => {
 describe('Configurações › Sobre', () => {
   it('mostra build, canal e schema, e copia os três', async () => {
     const user = userEvent.setup();
-    const writeText = vi.fn(async (_text: string) => undefined);
+    const writeText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText },
       configurable: true,

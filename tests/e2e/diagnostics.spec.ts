@@ -28,7 +28,7 @@ test('o build id aparece no "Sobre" das Configurações e na barra de status', a
     // Celular: o resumo da barra fica no rodapé do menu Painéis.
     await page.getByRole('button', { name: /^Painéis/ }).tap();
     const menu = page.getByRole('dialog', { name: 'Painéis e ações' });
-    await expect(menu.getByText(`build ${id}`)).toBeVisible();
+    await expect(menu.getByText(`versão ${id}`)).toBeVisible();
   } else {
     const bar = page.getByRole('contentinfo', { name: 'Barra de status' });
     await expect(bar.getByText(id, { exact: true })).toBeVisible();

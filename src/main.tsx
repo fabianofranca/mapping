@@ -16,7 +16,10 @@ import { ErrorBoundary } from './app/ErrorBoundary';
 import { initApp } from './app/controller';
 import { attachManifest, bindInstallPrompt, registerServiceWorker } from './app/pwa';
 import { bindDocumentSettings } from './theme/apply';
+import { listenForUncaughtErrors } from './utils/report';
 
+// Antes de tudo: o que escapar dos handlers (promessa solta, erro não capturado) vai para o Diagnóstico.
+listenForUncaughtErrors(window);
 bindDocumentSettings();
 void initApp();
 attachManifest();

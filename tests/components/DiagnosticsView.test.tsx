@@ -83,7 +83,7 @@ describe('Diagnóstico: registro, Copiar e Limpar', () => {
 
 describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
   function mockClipboard() {
-    const writeText = vi.fn(async (_text: string) => undefined);
+    const writeText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText },
       configurable: true,
@@ -120,7 +120,7 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
     // O cabeçalho vem antes dos erros.
     expect(text.indexOf('build: ')).toBeLessThan(text.indexOf('[local.open] bloqueado'));
     // Privacidade: nem nome do projeto nem caminhos de imagem.
-    expect(text).not.toContain(project.name);
+    expect(text).not.toContain(project.project.name);
     for (const image of project.images) expect(text).not.toContain(image.file);
   });
 

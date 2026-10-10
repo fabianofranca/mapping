@@ -9,17 +9,18 @@ describe('identificação do build', () => {
     expect(formatBuildId('abcdef0123456789', NOW)).toBe('abcdef0 · 2026-10-10');
   });
 
-  it('no CI usa o GITHUB_SHA; localmente, o git; sem git, `dev`', () => {
-    const git = () => 'fedcba9';
-    expect(resolveBuildId({ githubSha: '0123456789abcdef', gitSha: git, now: NOW })).toBe(
-      '0123456 · 2026-10-10',
-    );
-    expect(resolveBuildId({ githubSha: undefined, gitSha: git, now: NOW })).toBe(
-      'fedcba9 · 2026-10-10',
-    );
+  it('usa o commit do git; sem git, o GITHUB_SHA do CI; sem os dois, `dev`', () => {
+    const git = () => 'fedcba9\n';
     const noGit = () => {
       throw new Error('not a git repository');
     };
+    // O deploy faz checkouts próprios (main e preview): vale o commit do checkout.
+    expect(resolveBuildId({ githubSha: '0123456789abcdef', gitSha: git, now: NOW })).toBe(
+      'fedcba9 · 2026-10-10',
+    );
+    expect(
+      resolveBuildId({ githubSha: '0123456789abcdef', gitSha: noGit, now: NOW }),
+    ).toBe('0123456 · 2026-10-10');
     expect(resolveBuildId({ githubSha: '', gitSha: noGit, now: NOW })).toBe(
       'dev · 2026-10-10',
     );
