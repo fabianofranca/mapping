@@ -230,14 +230,16 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 **Aceite**: testes de store e storage; zip com propostas faz round-trip sem perdas.
 
 #### 4.4 — App: interface
-- [ ] Janela Propostas e modo revisão conforme a fase 4.0, com a contagem de aceitas aguardando aplicação e o lembrete ao sair da revisão
-- [ ] Canvas com as diferenças e a alternância Atual/Proposto
-- [ ] Detalhes com antes/depois, decisões e notas; filtros; atalhos
-- [ ] Celular
-- [ ] Textos pt-BR/en-US, Ajuda e Atalhos
-- [ ] e2e: revisar e aplicar parcialmente uma proposta de fixture
+- [x] Janela Propostas e modo revisão conforme a fase 4.0, com a contagem de aceitas aguardando aplicação e o lembrete ao sair da revisão
+- [x] Canvas com as diferenças e a alternância Atual/Proposto
+- [x] Detalhes com antes/depois, decisões e notas; filtros; atalhos
+- [x] Celular
+- [x] Textos pt-BR/en-US, Ajuda e Atalhos
+- [x] e2e: revisar e aplicar parcialmente uma proposta de fixture
 
 **Aceite**: roteiro da etapa 4 (abaixo) no desktop e no celular, nos dois temas.
+
+> **Estado**: implementada (componentes em `src/ui/review/`, marcas do canvas em `src/canvas/reviewMarks.ts` e `src/canvas/renderers/review.ts`). e2e em `tests/e2e/proposals.spec.ts` (desktop e celular) com o zip de exemplo `examples/proposta-exemplo.zip`, que permite seguir o roteiro sem o agente. Decisões de detalhe no PR.
 
 #### 4.5 — Documentação e release
 - [ ] `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md` (etapa 4 concluída)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shortcutFor } from '../../src/app/shortcuts';
+import { reviewShortcutFor, shortcutFor } from '../../src/app/shortcuts';
 import { t } from '../../src/i18n';
 import { TOOL_WINDOWS, WINDOW_NUMBER } from '../../src/store/toolWindows';
 import { comboText, shortcutGroups } from '../../src/ui/shortcutList';
@@ -50,6 +50,26 @@ describe('lista de atalhos da Ajuda (P10)', () => {
         altKey: true,
       }),
     ).toEqual({ kind: 'toggle-lock' });
+  });
+
+  it('os atalhos da revisão listados disparam de verdade', () => {
+    const review = groups.find((g) => g.id === 'review');
+    const keys = (c: readonly string[]) => {
+      const key = c.at(-1) ?? '';
+      return {
+        key: key.length === 1 ? key.toLowerCase() : key,
+        code: key.length === 1 ? `Key${key}` : key,
+        ctrlKey: c.includes('Ctrl'),
+        metaKey: false,
+        shiftKey: c.includes('Shift'),
+        altKey: false,
+      };
+    };
+    const combos = review?.rows.flatMap((r) => r.combos) ?? [];
+    expect(combos.length).toBe(10);
+    for (const c of combos) {
+      expect(reviewShortcutFor(keys(c)), comboText(c)).not.toBeNull();
+    }
   });
 
   it('nenhuma linha vazia e nenhum texto repetido', () => {

@@ -317,6 +317,32 @@ export const reviewPtBR = {
   'review.filter.showCount': 'Mostrar {count} mudança(s)',
   'review.details.none': 'Nada selecionado na proposta',
   'review.mobile.exit': 'Sair',
+  'shortcuts.group.review': 'Revisão de propostas',
+  'shortcuts.review.accept': 'Aceitar o nível selecionado',
+  'shortcuts.review.reject': 'Rejeitar o nível selecionado',
+  'shortcuts.review.clear': 'Voltar o nível para "sem decisão"',
+  'shortcuts.review.pending': 'Próxima / anterior pendente',
+  'shortcuts.review.conflict': 'Próximo / anterior conflito',
+  'shortcuts.review.view': 'Alternar Atual / Proposto no canvas',
+  'shortcuts.review.legend': 'Mostrar ou esconder a legenda das marcas',
+  'shortcuts.review.apply': 'Aplicar as aceitas',
+  'help.proposals.title': 'Propostas de alteração',
+  'help.proposals.intro':
+    'Uma proposta é um conjunto de mudanças sugeridas para o projeto (por exemplo, por um agente pelo servidor MCP). Ela fica na pasta proposals/ ao lado do mapping.json e nada muda no projeto até você revisar e aplicar.',
+  'help.proposals.arrive':
+    'Propostas novas aparecem na janela Propostas (Ctrl+Shift+7) com um aviso no canto do canvas e um contador na barra de status. A lista separa abertas, aplicadas, descartadas e substituídas.',
+  'help.proposals.review':
+    'Revisar abre o modo revisão: o projeto fica somente leitura, a faixa azul mostra o progresso e a janela Propostas lista os níveis Proposta → Imagem → Item → Mudança. O canvas mostra o projeto proposto (P alterna com o atual) com as marcas de cada tipo de mudança; L abre a legenda.',
+  'help.proposals.decide':
+    'Cada nível tem Aceitar e Rejeitar; decidir um nível decide todas as mudanças dentro dele, e cada mudança pode contrariar o nível. Tocar de novo no mesmo botão volta para "sem decisão". Os filtros (decisão, tipo, imagem, camada, só conflitos) limitam a lista e as ações em lote.',
+  'help.proposals.details':
+    'A janela Detalhes mostra o valor atual, o de antes e o proposto de cada mudança, os conflitos (o projeto mudou depois da proposta) e os itens trancados. Ali também ficam as notas, que vão junto com a proposta e o agente pode ler.',
+  'help.proposals.apply':
+    'Aplicar aceitas · N grava as mudanças aceitas no projeto de uma vez (e pode ser desfeito com Ctrl+Z). Se uma aceita depende de outra que não foi aceita, o botão explica o que falta antes de aplicar.',
+  'help.proposals.resume':
+    'Sair da revisão não perde nada: decisões e notas ficam na proposta e a revisão volta ao mesmo ponto. Se o projeto mudou entre sessões, os conflitos novos são avisados; uma proposta substituída por outra mostra o que ficou para trás.',
+  'help.proposals.mobile':
+    'No celular, abra Propostas pelo menu Painéis. Na revisão, a barra de baixo traz Filtros, Próxima pendente e Aplicar aceitas; a gaveta mostra o nível selecionado com Aceitar e Rejeitar.',
 } as const;
 
 export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
@@ -629,4 +655,30 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.filter.showCount': 'Show {count} change(s)',
   'review.details.none': 'Nothing selected in the proposal',
   'review.mobile.exit': 'Exit',
+  'shortcuts.group.review': 'Proposal review',
+  'shortcuts.review.accept': 'Accept the selected level',
+  'shortcuts.review.reject': 'Reject the selected level',
+  'shortcuts.review.clear': 'Set the level back to "undecided"',
+  'shortcuts.review.pending': 'Next / previous pending',
+  'shortcuts.review.conflict': 'Next / previous conflict',
+  'shortcuts.review.view': 'Toggle Current / Proposed on the canvas',
+  'shortcuts.review.legend': 'Show or hide the mark legend',
+  'shortcuts.review.apply': 'Apply the accepted changes',
+  'help.proposals.title': 'Change proposals',
+  'help.proposals.intro':
+    'A proposal is a set of changes suggested for the project (for example, by an agent through the MCP server). It lives in the proposals/ folder next to mapping.json, and nothing changes in the project until you review and apply it.',
+  'help.proposals.arrive':
+    'New proposals show up in the Proposals window (Ctrl+Shift+7) with a notice in the corner of the canvas and a count in the status bar. The list separates open, applied, discarded and superseded proposals.',
+  'help.proposals.review':
+    'Review opens review mode: the project is read-only, the blue strip shows the progress and the Proposals window lists the levels Proposal → Image → Item → Change. The canvas shows the proposed project (P toggles with the current one) with marks for each kind of change; L opens the legend.',
+  'help.proposals.decide':
+    'Each level has Accept and Reject; deciding a level decides every change inside it, and each change can go against the level. Pressing the same button again sets it back to "undecided". The filters (decision, kind, image, layer, conflicts only) narrow the list and the bulk actions.',
+  'help.proposals.details':
+    'The Details window shows the current, the previous and the proposed value of each change, the conflicts (the project changed after the proposal) and the locked items. Notes live there too; they stay with the proposal and the agent can read them.',
+  'help.proposals.apply':
+    'Apply accepted · N writes the accepted changes into the project at once (and can be undone with Ctrl+Z). If an accepted change depends on another one that was not accepted, the button explains what is missing before applying.',
+  'help.proposals.resume':
+    'Leaving the review loses nothing: decisions and notes stay in the proposal and the review returns to the same spot. If the project changed between sessions, new conflicts are flagged; a proposal superseded by another one shows what was left behind.',
+  'help.proposals.mobile':
+    'On a phone, open Proposals from the Panels menu. During review, the bottom bar has Filters, Next pending and Apply accepted; the drawer shows the selected level with Accept and Reject.',
 };

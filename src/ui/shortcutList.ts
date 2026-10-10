@@ -1,6 +1,7 @@
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { t, type TranslationKey } from '../i18n';
 import { TOOL_WINDOWS, WINDOW_NUMBER } from '../store/toolWindows';
+import { REVIEW_KEYS } from './review/DecisionControl';
 import { toolWindowMeta, toolWindowShortcut } from './toolWindowMeta';
 
 // Lista de atalhos da seção Atalhos da Ajuda (P10). As janelas saem de `TOOL_WINDOWS`,
@@ -16,7 +17,7 @@ export interface ShortcutRow {
 }
 
 export interface ShortcutGroup {
-  readonly id: 'windows' | 'edit' | 'view' | 'project';
+  readonly id: 'windows' | 'edit' | 'view' | 'review' | 'project';
   readonly title: string;
   readonly rows: readonly ShortcutRow[];
 }
@@ -66,6 +67,29 @@ export function shortcutGroups(): readonly ShortcutGroup[] {
         row('shortcuts.zoomIn', ['Ctrl', '=']),
         row('shortcuts.zoomOut', ['Ctrl', '−']),
         row('shortcuts.zoomReset', ['Ctrl', '0']),
+      ],
+    },
+    {
+      // Só valem no modo revisão (etapa 4); as teclas vêm das mesmas constantes dos botões.
+      id: 'review',
+      title: t('shortcuts.group.review'),
+      rows: [
+        row('shortcuts.review.accept', combo(REVIEW_KEYS.accept)),
+        row('shortcuts.review.reject', combo(REVIEW_KEYS.reject)),
+        row('shortcuts.review.clear', combo(REVIEW_KEYS.clear)),
+        row(
+          'shortcuts.review.pending',
+          combo(REVIEW_KEYS.nextPending),
+          combo(REVIEW_KEYS.previousPending),
+        ),
+        row(
+          'shortcuts.review.conflict',
+          combo(REVIEW_KEYS.nextConflict),
+          combo(REVIEW_KEYS.previousConflict),
+        ),
+        row('shortcuts.review.view', combo(REVIEW_KEYS.toggleView)),
+        row('shortcuts.review.legend', combo(REVIEW_KEYS.legend)),
+        row('shortcuts.review.apply', combo(REVIEW_KEYS.apply)),
       ],
     },
     {
