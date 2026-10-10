@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 8,
+  "revision": 0,
+  "app": "mapping",
+  "coordinateSystem": "image-pixels-exif-oriented",
+  "project": {
+    "name": "Teste",
+    "createdAt": "2026-09-30T12:00:00.000Z",
+    "updatedAt": "2026-09-30T12:00:00.000Z"
+  },
+  "specializations": [
+    {
+      "id": "sdui",
+      "version": 2,
+      "file": "specs/sdui.json"
+    },
+    {
+      "id": "modelo-dados",
+      "version": 1,
+      "file": "specs/modelo-dados.json"
+    }
+  ],
+  "platformRepos": {},
+  "layers": [
+    {
+      "id": "L1",
+      "name": "Lataria",
+      "color": "#D32F2F",
+      "spec": null
+    },
+    {
+      "id": "LM",
+      "name": "Model",
+      "color": "#757575",
+      "spec": null
+    },
+    {
+      "id": "LS1",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "spec": {
+        "specId": "sdui",
+        "layerId": "componentes"
+      }
+    },
+    {
+      "id": "LS2",
+      "name": "Eventos",
+      "color": "#FB8C00",
+      "spec": {
+        "specId": "sdui",
+        "layerId": "eventos"
+      }
+    },
+    {
+      "id": "LS3",
+      "name": "Telas",
+      "color": "#00897B",
+      "spec": {
+        "specId": "sdui",
+        "layerId": "telas"
+      }
+    },
+    {
+      "id": "LD1",
+      "name": "Classes",
+      "color": "#43A047",
+      "spec": {
+        "specId": "modelo-dados",
+        "layerId": "classes"
+      }
+    },
+    {
+      "id": "LD2",
+      "name": "Endpoints",
+      "color": "#8E24AA",
+      "spec": {
+        "specId": "modelo-dados",
+        "layerId": "endpoints"
+      }
+    }
+  ],
+  "images": [
+    {
+      "id": "I1",
+      "name": null,
+      "file": "images/cadastro.png",
+      "width": 1000,
+      "height": 2000,
+      "placement": {
+        "x": 0,
+        "y": 0,
+        "scale": 0.5
+      },
+      "markingColor": null,
+      "locked": false,
+      "source": null
+    }
+  ],
+  "markings": [
+    {
+      "id": "MT",
+      "imageId": "I1",
+      "parentId": null,
+      "name": "Título",
+      "rect": {
+        "x": 100,
+        "y": 50,
+        "width": 800,
+        "height": 100
+      },
+      "needsReview": false,
+      "locked": false,
+      "source": null
+    },
+    {
+      "id": "MF",
+      "imageId": "I1",
+      "parentId": null,
+      "name": "Formulário",
+      "rect": {
+        "x": 50,
+        "y": 200,
+        "width": 900,
+        "height": 1200
+      },
+      "needsReview": false,
+      "locked": false,
+      "source": null
+    },
+    {
+      "id": "MN",
+      "imageId": "I1",
+      "parentId": "MF",
+      "name": "Nome",
+      "rect": {
+        "x": 20,
+        "y": 250,
+        "width": 800,
+        "height": 100
+      },
+      "needsReview": false,
+      "locked": false,
+      "source": null
+    },
+    {
+      "id": "MI",
+      "imageId": "I1",
+      "parentId": "MF",
+      "name": "Idade",
+      "rect": {
+        "x": 100,
+        "y": 400,
+        "width": 800,
+        "height": 100
+      },
+      "needsReview": false,
+      "locked": false,
+      "source": null
+    },
+    {
+      "id": "ME",
+      "imageId": "I1",
+      "parentId": "MF",
+      "name": "E-mail",
+      "rect": {
+        "x": 100,
+        "y": 550,
+        "width": 800,
+        "height": 100
+      },
+      "needsReview": false,
+      "locked": false,
+      "source": null
+    },
+    {
+      "id": "MC",
+      "imageId": "I1",
+      "parentId": "MF",
+      "name": "Cadastrar",
+      "rect": {
+        "x": 100,
+        "y": 700,
+        "width": 800,
+        "height": 100
+      },
+      "needsReview": false,
+      "locked": false,
+      "source": null
+    }
+  ],
+  "annotations": [
+    {
+      "id": "AU",
+      "markingId": "MF",
+      "layerId": "LM",
+      "name": "User",
+      "inherit": false,
+      "parentAnnotationId": null,
+      "type": null,
+      "values": null,
+      "entries": [
+        {
+          "id": "EN",
+          "key": "name",
+          "value": "string"
+        },
+        {
+          "id": "EA",
+          "key": "age",
+          "value": "number"
+        }
+      ]
+    },
+    {
+      "id": "AC",
+      "markingId": "MF",
+      "layerId": "LD1",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "modelo-dados",
+        "typeId": "classe"
+      },
+      "values": {
+        "nome": "Contato",
+        "descricao": null,
+        "versao": 1,
+        "revisadoEm": "2026-10-02",
+        "atributos": [
+          {
+            "_id": "R1",
+            "nome": "email",
+            "tipo": "String",
+            "obrigatorio": "sim",
+            "exemplo": "ana@exemplo.com"
+          }
+        ]
+      },
+      "entries": []
+    },
+    {
+      "id": "AIN",
+      "markingId": "MN",
+      "layerId": "LS1",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "input"
+      },
+      "values": {
+        "id": "input_nome",
+        "tipo": "text",
+        "placeholder": null,
+        "obrigatorio": "não",
+        "maxLength": null,
+        "dado": {
+          "annotationId": "AU",
+          "entryId": "EN"
+        }
+      },
+      "entries": []
+    },
+    {
+      "id": "AII",
+      "markingId": "MI",
+      "layerId": "LS1",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "input"
+      },
+      "values": {
+        "id": "input_idade",
+        "tipo": "number",
+        "placeholder": null,
+        "obrigatorio": "não",
+        "maxLength": null,
+        "dado": {
+          "annotationId": "AU",
+          "entryId": "EA"
+        }
+      },
+      "entries": []
+    },
+    {
+      "id": "AIE",
+      "markingId": "ME",
+      "layerId": "LS1",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "input"
+      },
+      "values": {
+        "id": "input_email",
+        "tipo": "email",
+        "placeholder": null,
+        "obrigatorio": "sim",
+        "maxLength": null,
+        "dado": {
+          "annotationId": "AC",
+          "key": "atributos",
+          "rowId": "R1"
+        }
+      },
+      "entries": []
+    },
+    {
+      "id": "AB",
+      "markingId": "MC",
+      "layerId": "LS1",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "button"
+      },
+      "values": {
+        "id": "btn_cadastrar",
+        "texto": "Cadastrar",
+        "estilo": "primary",
+        "habilitado": "sim"
+      },
+      "entries": []
+    },
+    {
+      "id": "AT",
+      "markingId": "MT",
+      "layerId": "LS1",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "text"
+      },
+      "values": {
+        "id": null,
+        "conteudo": "Crie sua conta",
+        "estilo": "corpo",
+        "dado": null
+      },
+      "entries": []
+    },
+    {
+      "id": "AOC",
+      "markingId": "MC",
+      "layerId": "LS2",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": "AB",
+      "type": {
+        "specId": "sdui",
+        "typeId": "onClick"
+      },
+      "values": {
+        "acao": "submit",
+        "destino": "/usuarios",
+        "parametros": [
+          {
+            "_id": "RP1",
+            "nome": "origem",
+            "valor": "cadastro"
+          }
+        ]
+      },
+      "entries": []
+    },
+    {
+      "id": "AOH",
+      "markingId": "MC",
+      "layerId": "LS2",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": "AB",
+      "type": {
+        "specId": "sdui",
+        "typeId": "onHold"
+      },
+      "values": {
+        "acao": "track",
+        "duracaoMs": 500
+      },
+      "entries": []
+    },
+    {
+      "id": "AOE",
+      "markingId": "ME",
+      "layerId": "LS2",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": "AIE",
+      "type": {
+        "specId": "sdui",
+        "typeId": "onChange"
+      },
+      "values": {
+        "acao": "validate",
+        "regra": "email"
+      },
+      "entries": []
+    },
+    {
+      "id": "AE",
+      "markingId": "MF",
+      "layerId": "LD2",
+      "name": null,
+      "inherit": false,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "modelo-dados",
+        "typeId": "endpoint"
+      },
+      "values": {
+        "metodo": "POST",
+        "path": "/v1/usuarios",
+        "request": "User",
+        "response": "User",
+        "timeoutMs": 10000
+      },
+      "entries": []
+    }
+  ]
+}

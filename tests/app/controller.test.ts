@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  deserialize,
   parseProposalText,
   serialize,
   serializeProposal,
@@ -10,9 +11,10 @@ import {
 } from '../../src/model';
 import type { DirectoryHandleLike } from '../../src/storage/folder';
 import { writeProjectZip } from '../../src/storage/zip';
-import { clearReportedErrors } from '../../src/utils/report';
+import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
 import { emptyProject, sampleProject } from '../model/fixtures';
+import { readInvalidFixture } from '../model/invalidFixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
 import { richScenario } from '../store/proposalHarness';
 
@@ -464,5 +466,117 @@ describe('propostas de alteração (etapa 4)', () => {
     });
     expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(session.store.project.value?.images.some((i) => i.id === 'I3')).toBe(true);
+  });
+});
+
+describe('projeto com dados inconsistentes', () => {
+  const repairable = readInvalidFixture('missing-parent');
+  const unrepairable = readInvalidFixture('duplicate-id');
+
+  it('pasta: recusa com a lista e oferece reparar; o backup sai na primeira gravação', async () => {
+    const root = folderWith({ 'mapping.json': repairable });
+    pickDirectory.mockResolvedValue(root);
+    const result = await app.openFolder();
+    if (result.ok) throw new Error('deveria pedir o reparo');
+    expect(result.error).toBe('invariant-violation');
+    expect(app.openProject.value).toBeNull();
+    const inconsistent = result.inconsistent;
+    if (!inconsistent?.repair) throw new Error('deveria oferecer o reparo');
+    expect(inconsistent.issues).toContainEqual({
+      code: 'missing-parent',
+      entity: 'marking',
+      id: 'MN',
+      name: 'Nome',
+      otherId: 'M9',
+    });
+    expect(inconsistent.unrepaired).toEqual([]);
+    expect(inconsistent.repaired).toEqual([
+      {
+        action: 'made-root',
+        code: 'missing-parent',
+        entity: 'marking',
+        id: 'MN',
+        name: 'Nome',
+      },
+    ]);
+
+    expect(await inconsistent.repair()).toEqual({ ok: true, value: undefined });
+    const { session, repaired } = await openedOf(app);
+    expect(repaired).toEqual(inconsistent.repaired);
+    expect(
+      session.store.project.value?.markings.find((m) => m.id === 'MN')?.parentId,
+    ).toBeNull();
+    // Ler nunca grava: nada muda na pasta até a primeira gravação.
+    expect(await backupsOf(root)).toEqual([]);
+    expect(await root.files.get('mapping.json')?.text()).toBe(repairable);
+    // O resumo do reparo vai para o Diagnóstico.
+    expect(reportedErrors.value.map((e) => e.context)).toContain('open.repair');
+
+    session.actions.renameProject('Reparado');
+    await session.flush();
+
+    const [backup, ...rest] = await backupsOf(root);
+    expect(rest).toEqual([]);
+    expect(backup).toMatch(/^mapping\.v8\.\d{8}-\d{6}\.json$/);
+    expect(
+      await root.dirs
+        .get('backups')
+        ?.files.get(backup ?? '')
+        ?.text(),
+    ).toBe(repairable);
+    const saved = (await root.files.get('mapping.json')?.text()) ?? '';
+    expect(deserialize(saved).ok).toBe(true);
+  });
+
+  it('pasta: com problema sem reparo, só a lista', async () => {
+    pickDirectory.mockResolvedValue(folderWith({ 'mapping.json': unrepairable }));
+    const result = await app.openFolder();
+    if (result.ok) throw new Error('deveria recusar');
+    expect(result.inconsistent?.repair).toBeNull();
+    expect(result.inconsistent?.unrepaired.map((i) => `${i.code}:${i.id}`)).toEqual([
+      'duplicate-id:MT',
+    ]);
+    expect(app.openProject.value).toBeNull();
+  });
+
+  it('projeto local: reparar e abrir grava o backup no IndexedDB', async () => {
+    const library = await local.openLocalLibrary();
+    await library?.create('inc', {
+      mapping: repairable,
+      images: new Map(),
+      specs: new Map(),
+      proposals: new Map(),
+      proposalImages: new Map(),
+    });
+    const result = await app.openLocalProject('inc');
+    if (result.ok || !result.inconsistent?.repair)
+      throw new Error('deveria pedir o reparo');
+    expect((await result.inconsistent.repair()).ok).toBe(true);
+    const { session } = await openedOf(app);
+    session.actions.renameProject('Reparado');
+    await session.flush();
+    expect(await library?.listBackups('inc')).toHaveLength(1);
+    library?.close();
+  });
+
+  it('zip: só vira projeto local depois de aceitar o reparo', async () => {
+    const zip = new JSZip();
+    zip.file('mapping.json', repairable);
+    const blob = new Blob([await zip.generateAsync({ type: 'arraybuffer' })]);
+    const result = await app.importZip(blob);
+    if (result.ok || !result.inconsistent?.repair)
+      throw new Error('deveria pedir o reparo');
+    expect(app.localProjects.value).toEqual([]);
+    expect((await result.inconsistent.repair()).ok).toBe(true);
+    expect((await openedOf(app)).kind).toBe('local');
+    expect(app.localProjects.value).toHaveLength(1);
+  });
+
+  it('o projeto do roteiro 13.9 íntegro abre direto', async () => {
+    pickDirectory.mockResolvedValue(
+      folderWith({ 'mapping.json': serialize(cadastroProject()) }),
+    );
+    expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
+    expect((await openedOf(app)).repaired).toEqual([]);
   });
 });

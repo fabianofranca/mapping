@@ -28,6 +28,50 @@ describe('validador de invariantes', () => {
     expect(image.id).toBe('I2');
   });
 
+  it('cada problema diz a entidade, o id e o nome quando houver', () => {
+    const p = sampleProject();
+    const layer = p.layers[1];
+    const spec = { id: 'S1', version: 1, file: 'specs/s1.json', spec: null };
+    if (!layer) throw new Error('fixture');
+    const broken: Project = {
+      ...p,
+      specializations: [spec, spec],
+      layers: [...p.layers, layer],
+      markings: p.markings.map((m) =>
+        m.id === 'M2'
+          ? { ...m, imageId: 'I9' }
+          : m.id === 'M4'
+            ? { ...m, parentId: 'M9' }
+            : m,
+      ),
+      annotations: p.annotations.map((a) =>
+        a.id === 'A1' ? { ...a, layerId: 'L9' } : a,
+      ),
+    };
+    expect(validateProject(broken)).toEqual(
+      expect.arrayContaining([
+        { code: 'duplicate-id', entity: 'spec', id: 'S1' },
+        { code: 'duplicate-spec-file', entity: 'spec', id: 'S1' },
+        { code: 'duplicate-id', entity: 'layer', id: 'L2', name: 'Vidros' },
+        {
+          code: 'missing-image',
+          entity: 'marking',
+          id: 'M2',
+          name: 'Maçaneta',
+          otherId: 'I9',
+        },
+        { code: 'missing-parent', entity: 'marking', id: 'M4', otherId: 'M9' },
+        {
+          code: 'missing-layer',
+          entity: 'annotation',
+          id: 'A1',
+          name: 'Amassado',
+          otherId: 'L9',
+        },
+      ]),
+    );
+  });
+
   it('imagens sobrepostas', () => {
     const p = sampleProject();
     const overlapping = {
@@ -38,7 +82,9 @@ describe('validador de invariantes', () => {
     };
     expect(validateProject(overlapping)).toContainEqual({
       code: 'images-overlap',
+      entity: 'image',
       id: 'I1',
+      name: 'images/lateral.jpg',
       otherId: 'I2',
     });
   });
