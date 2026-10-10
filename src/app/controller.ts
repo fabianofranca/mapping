@@ -305,16 +305,26 @@ export function createFolderProject(
 
 // ---- Projeto aberto ----
 
+export interface ExportedProject {
+  readonly file: File;
+  /** Imagens do projeto que não estavam no armazenamento e ficaram fora do zip. */
+  readonly missingImages: readonly string[];
+}
+
 /** Gera o zip do projeto aberto. */
-export function buildExport(): Promise<AppResult<File>> {
+export function buildExport(): Promise<AppResult<ExportedProject>> {
   return guarded(async () => {
     const current = openProject.value;
     const project = current?.session.store.project.value;
     if (!current || !project) return err('not-found');
-    const blob = await writeProjectZip(await current.session.collectFiles());
-    return ok(
-      new File([blob], zipFileName(project.project.name), { type: 'application/zip' }),
-    );
+    const files = await current.session.collectFiles();
+    const blob = await writeProjectZip(files);
+    return ok({
+      file: new File([blob], zipFileName(project.project.name), {
+        type: 'application/zip',
+      }),
+      missingImages: files.missingImages,
+    });
   });
 }
 

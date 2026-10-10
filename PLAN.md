@@ -72,11 +72,11 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 
 **Toca em:** `src/store/session.ts`, `src/storage/autosave.ts` (se precisar), `tests/store/session.test.ts`, `tests/store/externalChanges.test.ts`, `src/app/controller.ts` só na exportação (aviso de imagens ausentes), `src/i18n/*`.
 
-- [ ] Teste que reproduz: edição → `beginGesture` → timer dispara → `cancelGesture`; hoje o disco difere de `committed`
-- [ ] `persist` serializa `store.committed`; se há gesto em andamento no momento da gravação, grava o confirmado (a prévia não vai para o disco em nenhum caso)
-- [ ] Ao terminar um gesto (`commitGesture`), a gravação é agendada como hoje (pela `revision`); ao cancelar, nada é gravado e o disco já está igual ao confirmado
-- [ ] `collectFiles` (zip) usa `committed` e devolve a lista de imagens ausentes; a exportação avisa quais faltaram (toast ou diálogo) em vez de omitir em silêncio
-- [ ] Testes: gesto confirmado grava uma vez com a geometria final; zip com imagem ausente lista o arquivo
+- [x] Teste que reproduz: edição → `beginGesture` → timer dispara → `cancelGesture`; hoje o disco difere de `committed`
+- [x] `persist` serializa `store.committed`; se há gesto em andamento no momento da gravação, grava o confirmado (a prévia não vai para o disco em nenhum caso)
+- [x] Ao terminar um gesto (`commitGesture`), a gravação é agendada como hoje (pela `revision`); ao cancelar, nada é gravado e o disco já está igual ao confirmado
+- [x] `collectFiles` (zip) usa `committed` e devolve a lista de imagens ausentes; a exportação avisa quais faltaram (toast ou diálogo) em vez de omitir em silêncio
+- [x] Testes: gesto confirmado grava uma vez com a geometria final; zip com imagem ausente lista o arquivo
 
 **Aceite**: os testes acima no projeto `store` do Vitest; `tests/components/editorRenders.test.tsx` continua no orçamento (a mudança não pode fazer a interface renderizar durante o gesto).
 

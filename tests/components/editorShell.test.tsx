@@ -119,11 +119,32 @@ describe('useProjectCommands', () => {
   it('exportar com sucesso abre o diálogo com o arquivo', async () => {
     const s = setup();
     const file = new File(['z'], 'p.zip');
-    controller.buildExport.mockResolvedValue({ ok: true, value: file });
+    controller.buildExport.mockResolvedValue({
+      ok: true,
+      value: { file, missingImages: [] },
+    });
     await s.commands().exportProject();
     expect(s.notices.setProgress).toHaveBeenNthCalledWith(1, t('editor.exporting'));
     expect(s.notices.setProgress).toHaveBeenLastCalledWith(null);
     expect(s.dialogs.show).toHaveBeenCalledWith({ kind: 'export', file });
+    expect(s.notices.setMessage).toHaveBeenLastCalledWith(null);
+  });
+
+  it('exportar com imagens ausentes abre o diálogo e avisa quais faltaram', async () => {
+    const s = setup();
+    const file = new File(['z'], 'p.zip');
+    controller.buildExport.mockResolvedValue({
+      ok: true,
+      value: { file, missingImages: ['images/a.jpg', 'images/b.png'] },
+    });
+    await s.commands().exportProject();
+    expect(s.dialogs.show).toHaveBeenCalledWith({ kind: 'export', file });
+    expect(s.notices.setMessage).toHaveBeenLastCalledWith(
+      t('editor.exportMissingImages', {
+        count: 2,
+        files: 'images/a.jpg, images/b.png',
+      }),
+    );
   });
 
   it('exportar com erro mostra a mensagem traduzida', async () => {

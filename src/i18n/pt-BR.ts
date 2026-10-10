@@ -67,6 +67,8 @@ export const ptBR = {
   'editor.importFailed': 'Não foi possível importar: {names}',
   'editor.export': 'Exportar',
   'editor.exporting': 'Gerando zip…',
+  'editor.exportMissingImages':
+    'O zip saiu sem {count} imagem(ns) ausente(s) no armazenamento: {files}',
   'editor.migrationBackup':
     'Projeto atualizado do formato v{version}; uma cópia do original foi guardada.',
   'editor.readOnlyNotice':

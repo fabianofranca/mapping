@@ -68,6 +68,8 @@ export const enUS: Dictionary = {
   'editor.importFailed': 'Could not import: {names}',
   'editor.export': 'Export',
   'editor.exporting': 'Building zip…',
+  'editor.exportMissingImages':
+    'The zip is missing {count} image(s) not found in storage: {files}',
   'editor.migrationBackup':
     'Project upgraded from format v{version}; a copy of the original was saved.',
   'editor.readOnlyNotice':

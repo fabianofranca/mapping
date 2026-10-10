@@ -23,8 +23,20 @@ export function useProjectCommands(
       notices.setProgress(t('editor.exporting'));
       const result = await buildExport();
       notices.setProgress(null);
-      if (result.ok) dialogs.show({ kind: 'export', file: result.value });
-      else notices.setMessage(t(`error.${result.error}`));
+      if (!result.ok) {
+        notices.setMessage(t(`error.${result.error}`));
+        return;
+      }
+      dialogs.show({ kind: 'export', file: result.value.file });
+      const missing = result.value.missingImages;
+      if (missing.length > 0) {
+        notices.setMessage(
+          t('editor.exportMissingImages', {
+            count: missing.length,
+            files: missing.join(', '),
+          }),
+        );
+      }
     },
     closeProject: async () => {
       dialogs.close();
