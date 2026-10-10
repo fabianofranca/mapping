@@ -132,11 +132,11 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 
 **Toca em:** `src/app/controller.ts`, `src/store/session.ts`, `src/storage/autosave.ts`, `src/app/useImageIntake.tsx` (só se a gravação imediata for disparada ali), `tests/app/controller.test.ts`, `tests/store/session.test.ts`.
 
-- [ ] Teste que reproduz: alteração → `pagehide` → nada é gravado até o timer
-- [ ] `pagehide` e `visibilitychange: hidden` chamam `flush()` imediato (sem debounce); `beforeunload` continua pedindo confirmação se há pendência
-- [ ] Operações caras gravam sem debounce: a sessão chama `flush()` logo depois de adicionar/trocar/remover imagem e de aplicar/atualizar/remover especialização (e o aplicar aceitas, que já grava)
-- [ ] O debounce de 800 ms das edições comuns fica como está; o motivo (não gravar a cada tecla no nome) vai para o comentário de `AUTOSAVE_DELAY_MS`
-- [ ] Testes: `pagehide` grava; adicionar imagem grava sem esperar o timer; duas operações caras seguidas não gravam em paralelo (fila única do autosave)
+- [x] Teste que reproduz: alteração → `pagehide` → nada é gravado até o timer
+- [x] `pagehide` e `visibilitychange: hidden` chamam `flush()` imediato (sem debounce); `beforeunload` continua pedindo confirmação se há pendência
+- [x] Operações caras gravam sem debounce: a sessão chama `flush()` logo depois de adicionar/trocar/remover imagem e de aplicar/atualizar/remover especialização (e o aplicar aceitas, que já grava)
+- [x] O debounce de 800 ms das edições comuns fica como está; o motivo (não gravar a cada tecla no nome) vai para o comentário de `AUTOSAVE_DELAY_MS`
+- [x] Testes: `pagehide` grava; adicionar imagem grava sem esperar o timer; duas operações caras seguidas não gravam em paralelo (fila única do autosave)
 
 **Aceite**: os testes acima; `tests/e2e/folder.spec.ts` continua verde (a gravação imediata não pode disputar com a leitura do `mapping.json` que o teste faz).
 
