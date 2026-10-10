@@ -75,7 +75,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 ## Etapa atual e etapas futuras
 
-**Etapa atual: nenhuma em andamento.** A etapa 4 foi a última detalhada no `PLAN.md`; a ordem das próximas (marco de uso real e evoluções) está em [`docs/ROADMAP.md`](docs/ROADMAP.md). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa. As funcionalidades do núcleo são genéricas: nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
+**Etapa atual: 5 — Pré-voo para uso real** (detalhada no `PLAN.md`: só correções dos achados da avaliação de arquitetura, uma fase por PR, executadas em ondas por um coordenador de agentes). A ordem das próximas (marco de uso real e evoluções) está em [`docs/ROADMAP.md`](docs/ROADMAP.md). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa. As funcionalidades do núcleo são genéricas: nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
 
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
