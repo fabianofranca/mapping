@@ -249,6 +249,22 @@ describe('anotações tipadas', () => {
     );
   });
 
+  it('id explícito já usado por outra anotação é recusado (duplicate-id)', () => {
+    const p = cadastroProject();
+    const button = annotation(p, 'AB');
+    if (!button.type) throw new Error('AB não é tipada');
+    const args = {
+      markingId: button.markingId,
+      layerId: button.layerId,
+      type: button.type,
+      parentAnnotationId: button.parentAnnotationId,
+    };
+    expect(codeOf(() => addTypedAnnotation(p, { ...args, id: 'AB' }))).toBe(
+      'duplicate-id',
+    );
+    expectValid(addTypedAnnotation(p, { ...args, id: 'N' }));
+  });
+
   it('requiresOwner: sem dono não cria; o dono precisa aceitar o filho', () => {
     const p = cadastroProject();
     const eventos = layerOf(p, 'sdui', 'eventos');

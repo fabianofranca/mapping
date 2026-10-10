@@ -150,6 +150,7 @@ export interface NewTypedAnnotationArgs {
 
 /** Cria a anotação tipada com os `default` dos campos. */
 export function addTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Project {
+  if (p.annotations.some((a) => a.id === args.id)) fail('duplicate-id', args.id);
   findById(p.markings, args.markingId);
   const layer = findById(p.layers, args.layerId);
   const resolved =
