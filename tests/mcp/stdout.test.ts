@@ -21,10 +21,26 @@ interface Run {
   readonly code: number | null;
 }
 
-/** Script carregado antes do servidor; `onFirstData` roda na primeira mensagem do cliente. */
-function preload(onFirstData: string): string {
+/**
+ * Script carregado antes do servidor; `onCall` roda quando chega a chamada da tool, depois do
+ * handshake (o servidor já está conectado).
+ */
+function preload(onCall: string): string {
   const file = join(mkdtempSync(join(tmpdir(), 'mapping-mcp-preload-')), 'preload.mjs');
-  writeFileSync(file, `process.stdin.once('data', () => { ${onFirstData} });\n`);
+  writeFileSync(
+    file,
+    // Só escuta o stdin depois que o transporte do servidor o escuta (não rouba mensagens).
+    `const wait = setInterval(() => {
+  if (process.stdin.listenerCount('data') === 0) return;
+  clearInterval(wait);
+  process.stdin.on('data', function onData(chunk) {
+    if (!String(chunk).includes('tools/call')) return;
+    process.stdin.off('data', onData);
+    ${onCall}
+  });
+}, 5);
+`,
+  );
   return pathToFileURL(file).href;
 }
 
@@ -46,10 +62,17 @@ function callTool(
     // Sem resposta (o processo pode ter caído): encerra e deixa o teste conferir o que saiu.
     const timer = setTimeout(() => child.kill(), 20_000);
     child.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()));
+    let called = false;
     child.stdout.on('data', (chunk: Buffer) => {
       stdout += chunk.toString();
-      // A resposta da chamada (id 2) encerra a sessão.
-      if (/"id":2[,}]/.test(stdout) && stdout.endsWith('\n')) child.stdin.end();
+      if (!stdout.endsWith('\n')) return;
+      // Depois da resposta do handshake (id 1), a chamada; a resposta dela (id 2) encerra.
+      if (!called && /"id":1[,}]/.test(stdout)) {
+        called = true;
+        send({ method: 'notifications/initialized' });
+        send({ id: 2, method: 'tools/call', params: { name, arguments: args } });
+      }
+      if (/"id":2[,}]/.test(stdout)) child.stdin.end();
     });
     child.on('error', fail);
     child.on('close', (code) => {
@@ -68,8 +91,6 @@ function callTool(
         clientInfo: { name: 'teste', version: '0' },
       },
     });
-    send({ method: 'notifications/initialized' });
-    send({ id: 2, method: 'tools/call', params: { name, arguments: args } });
   });
 }
 
