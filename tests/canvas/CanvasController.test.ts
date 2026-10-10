@@ -79,6 +79,32 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
+  it('marca no container os enquadramentos e as imagens prontas já desenhados (e2e)', async () => {
+    const editor = editorFor();
+    const display = createDisplayImages<ImageBitmap>(
+      async () => ({ width: 10, height: 10, close: () => undefined }) as ImageBitmap,
+    );
+    const container = document.createElement('div');
+    Object.defineProperty(container, 'clientWidth', { value: 380 });
+    Object.defineProperty(container, 'clientHeight', { value: 700 });
+    document.body.append(container);
+    const controller = new CanvasController({ container, display, ...editor });
+    flush();
+    // O primeiro enquadramento acontece ao medir o container; os bitmaps ainda carregam.
+    expect(container.dataset.fits).toBe('1');
+    expect(container.dataset.images).toBe('0');
+    await Promise.resolve();
+    await Promise.resolve();
+    flush();
+    expect(container.dataset.images).toBe('2');
+    // Só o quadro seguinte ao enquadramento o publica.
+    controller.fitAll();
+    expect(container.dataset.fits).toBe('1');
+    flush();
+    expect(container.dataset.fits).toBe('2');
+    controller.destroy();
+  });
+
   it('publica zoom, área das imagens e cursor em pixels da imagem (B8, P3 e P4)', () => {
     const { container, controller, view } = setup();
     flush();
