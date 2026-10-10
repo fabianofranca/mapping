@@ -569,6 +569,130 @@ describe('sessão de projeto', () => {
     expect(files.missingImages).toEqual(['images/lateral.jpg']);
   });
 
+  describe('operações caras gravam sem debounce (fase 5.5)', () => {
+    /** Sessão sobre a pasta, medindo quantas gravações do `mapping.json` correm ao mesmo tempo. */
+    function startTracking(
+      root: MemoryDirectory,
+      project = emptyProject(),
+      gate: Promise<void> = Promise.resolve(),
+    ) {
+      const storage = createFolderStorage(root);
+      let saves = 0;
+      let running = 0;
+      let maxParallel = 0;
+      const s = openSession({
+        storage: {
+          ...storage,
+          saveMapping: async (text) => {
+            saves++;
+            running++;
+            maxParallel = Math.max(maxParallel, running);
+            await gate;
+            await storage.saveMapping(text);
+            running--;
+          },
+        },
+        project,
+        prepareImage,
+        now: () => NOW,
+        newId: ids(),
+      });
+      return { session: s, saves: () => saves, maxParallel: () => maxParallel };
+    }
+
+    it('adicionar imagem grava o mapping.json sem esperar o timer', async () => {
+      const root = new MemoryDirectory('p');
+      const t = startTracking(root);
+      session = t.session;
+      await session.addImages([file('a.jpg', '400x300')]);
+      expect(session.saveStatus.value).toBe('saved');
+      expect((await savedProject(root)).images.map((i) => i.file)).toEqual([
+        'images/a.jpg',
+      ]);
+      expect(t.saves()).toBe(1);
+    });
+
+    it('trocar imagem grava sem esperar o timer', async () => {
+      const root = new MemoryDirectory('p');
+      root.put('images/lateral.jpg', 'jpg');
+      session = startTracking(root, sampleProject()).session;
+      const result = await session.replaceImage('I1', file('nova.jpg', '4000x3000'), () =>
+        Promise.resolve(true),
+      );
+      expect(result).toBe('replaced');
+      expect((await savedProject(root)).images.find((i) => i.id === 'I1')?.file).toBe(
+        'images/nova.jpg',
+      );
+    });
+
+    it('remover imagem e aplicar, atualizar ou remover especialização gravam sem esperar o timer', async () => {
+      const root = new MemoryDirectory('p');
+      session = startTracking(root, sampleProject()).session;
+      const sdui = loadExample('sdui');
+
+      expect(session.actions.applySpecialization(sdui).ok).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect((await savedProject(root)).specializations.map((s) => s.id)).toEqual([
+        'sdui',
+      ]);
+
+      expect(
+        session.actions.updateSpecialization({ ...sdui, version: sdui.version + 1 }).ok,
+      ).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect((await savedProject(root)).specializations[0]?.version).toBe(
+        sdui.version + 1,
+      );
+
+      expect(session.actions.removeSpecialization('sdui', 'convert').ok).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect((await savedProject(root)).specializations).toEqual([]);
+
+      expect(session.actions.removeImage('I2').ok).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect((await savedProject(root)).images.map((i) => i.id)).toEqual(['I1']);
+    });
+
+    it('duas operações caras seguidas não gravam em paralelo', async () => {
+      const root = new MemoryDirectory('p');
+      let release = () => {};
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const t = startTracking(root, sampleProject(), gate);
+      session = t.session;
+      // Libera a gravação mesmo se uma conferência falhar, para o `close` do afterEach terminar.
+      try {
+        expect(session.actions.applySpecialization(loadExample('sdui')).ok).toBe(true);
+        await vi.advanceTimersByTimeAsync(0);
+        // A primeira gravação está em andamento quando a segunda operação chega.
+        expect(t.saves()).toBe(1);
+        expect(session.actions.removeImage('I2').ok).toBe(true);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(t.saves()).toBe(1);
+        release();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(t.saves()).toBe(2);
+        expect(t.maxParallel()).toBe(1);
+        expect(session.saveStatus.value).toBe('saved');
+        const saved = await savedProject(root);
+        expect(saved.revision).toBe(sampleProject().revision + 2);
+        expect(saved.images.map((i) => i.id)).toEqual(['I1']);
+        expect(saved.specializations.map((s) => s.id)).toEqual(['sdui']);
+      } finally {
+        release();
+      }
+    });
+
+    it('edições comuns continuam esperando o debounce', async () => {
+      const root = new MemoryDirectory('p');
+      session = startTracking(root).session;
+      session.actions.renameProject('Devagar');
+      await vi.advanceTimersByTimeAsync(799);
+      expect(await root.read('mapping.json')).toBeNull();
+      await vi.advanceTimersByTimeAsync(1);
+      expect((await savedProject(root)).project.name).toBe('Devagar');
+    });
+  });
+
   it('fechar grava o que estiver pendente', async () => {
     const root = new MemoryDirectory('p');
     const s = start(root);

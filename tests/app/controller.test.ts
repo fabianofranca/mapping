@@ -390,6 +390,60 @@ describe('fechar', () => {
   });
 });
 
+describe('sair da página (fase 5.5)', () => {
+  /** O debounce do autosave é 800 ms: esperar bem menos prova que a gravação foi imediata. */
+  const soon = { timeout: 300, interval: 10 };
+
+  function setVisibility(state: DocumentVisibilityState) {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => state,
+    });
+  }
+
+  afterEach(() => setVisibility('visible'));
+
+  it('pagehide grava na hora, sem esperar o debounce', async () => {
+    const root = new MemoryDirectory('p');
+    await app.createFolderProject(root, 'Original', []);
+    const { session } = await openedOf(app);
+    session.actions.renameProject('Saindo');
+    window.dispatchEvent(new Event('pagehide'));
+    await vi.waitFor(async () => {
+      expect(await root.files.get('mapping.json')?.text()).toContain('Saindo');
+    }, soon);
+  });
+
+  it('visibilitychange para hidden grava na hora', async () => {
+    await app.createLocalProject('Local');
+    const { session, localId } = await openedOf(app);
+    session.actions.renameProject('Escondido');
+    setVisibility('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.waitFor(async () => {
+      await app.refreshLocalProjects();
+      expect(app.localProjects.value.find((p) => p.id === localId)?.name).toBe(
+        'Escondido',
+      );
+    }, soon);
+  });
+
+  it('beforeunload com pendência pede confirmação; sem pendência, não', async () => {
+    const root = new MemoryDirectory('p');
+    await app.createFolderProject(root, 'Original', []);
+    const { session } = await openedOf(app);
+    await session.flush();
+    const clean = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(clean);
+    expect(clean.defaultPrevented).toBe(false);
+
+    session.actions.renameProject('Pendente');
+    const pending = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(pending);
+    expect(pending.defaultPrevented).toBe(true);
+  });
+});
+
 describe('propostas de alteração (etapa 4)', () => {
   const proposalZip = async () => {
     const { proposal } = richScenario();
