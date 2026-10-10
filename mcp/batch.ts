@@ -174,7 +174,7 @@ function decodeBase64(text: string): Uint8Array {
   if (payload.length > MAX_BASE64_LENGTH) {
     throw new ToolError(
       'image-too-large',
-      `conteúdo base64 grande demais (${payload.length} caracteres; máximo ${MAX_BASE64_LENGTH})`,
+      `conteúdo base64 grande demais (${payload.length} caracteres; máximo ${MAX_BASE64_LENGTH}): envie imagens grandes por \`file\``,
     );
   }
   if (payload === '' || !/^[A-Za-z0-9+/_-]*={0,2}$/.test(payload)) {

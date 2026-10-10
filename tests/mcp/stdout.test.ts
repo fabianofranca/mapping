@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { MAX_MESSAGE_BYTES } from '../../mcp/image/formats';
 import { IDS, IMAGE_FILES, codeOf, createImageWorkspace } from './imageFixtures';
 
 // O stdout do servidor é o canal do protocolo: nada além de mensagens JSON-RPC pode sair
@@ -216,7 +217,7 @@ describe('mensagens grandes no stdin', () => {
     const { root } = await createImageWorkspace();
     const run = await callTool(root, 'plan_changes', {
       project: 'imagens',
-      operations: [{ op: 'add_image', base64: 'A'.repeat(40 * 1024 * 1024) }],
+      operations: [{ op: 'add_image', base64: 'A'.repeat(MAX_MESSAGE_BYTES) }],
     });
 
     expect(run.lines.filter((line) => !isJsonRpc(line))).toEqual([]);

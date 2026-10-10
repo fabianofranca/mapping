@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { format } from 'node:util';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { USAGE, UsageError, parseArgs } from './args';
+import { MAX_MESSAGE_BYTES } from './image/formats';
 import { createServer } from './server';
 import { SERVER_VERSION } from './version';
 
@@ -47,7 +48,25 @@ async function main(): Promise<void> {
     process.exit(1);
   });
   const server = createServer({ roots: options.roots.map((root) => resolve(root)) });
-  await server.connect(new StdioServerTransport());
+  // O teto de leitura acompanha o do `base64` no schema. Acima dele, o transporte do SDK avisa
+  // por `onerror` e fecha sem responder (o processo sairia com 0, em silêncio): sai com erro.
+  const transport = new StdioServerTransport(process.stdin, process.stdout, {
+    maxBufferSize: MAX_MESSAGE_BYTES,
+  });
+  let failure: string | null = null;
+  transport.onerror = (error) => {
+    if (/exceeded maximum size/i.test(error.message)) {
+      failure = `mensagem maior que ${MAX_MESSAGE_BYTES} bytes (imagens grandes vão por \`file\`, não por \`base64\`)`;
+    } else {
+      report(error);
+    }
+  };
+  // O servidor nunca fecha o transporte por conta própria: fechar é sempre falha.
+  transport.onclose = () => {
+    process.stderr.write(`mapping-mcp: ${failure ?? 'transporte stdio fechado'}\n`);
+    process.exit(1);
+  };
+  await server.connect(transport);
 }
 
 main().catch((error: unknown) => {
