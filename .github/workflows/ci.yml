@@ -36,7 +36,7 @@ jobs:
       # Orçamento do dist/index.html (autocontido; ~1,0 MB em 2026-10). Só aqui.
       INDEX_HTML_MAX_BYTES: 1572864
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
       # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
@@ -89,7 +89,7 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
       # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
