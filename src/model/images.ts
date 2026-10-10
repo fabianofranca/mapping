@@ -134,6 +134,7 @@ export function addImage(
     readonly center?: { readonly x: number; readonly y: number };
   },
 ): Project {
+  if (p.images.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
   checkDimensions(args);
   if (p.images.some((i) => i.file === args.file)) fail('duplicate-file');
   const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);

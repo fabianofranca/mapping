@@ -6,16 +6,18 @@ import { ProposalNotices } from '../ui/review/ProposalNotices';
 import type { EditorNotices } from './useEditorNotices';
 
 /**
- * Avisos sobre o canvas: somente leitura, backup da migração, erro ao salvar (B13),
+ * Avisos sobre o canvas: somente leitura, reparo ao abrir e backup da migração, erro ao salvar (B13),
  * erros de operação, dica de desenho e progresso.
  */
 export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) {
-  const { session, store, ui } = useEditor();
+  const { open, session, store, ui } = useEditor();
   // Com o diálogo de alteração externa aberto, o erro de gravação já está explicado nele.
   const saveFailed =
     session.saveStatus.value === 'error' && session.conflict.value === null;
   const [backupDismissed, setBackupDismissed] = useState(false);
   const backupSaved = session.backupSaved.value;
+  // Projeto reparado ao abrir: o aviso do reparo já fala do backup (não é uma migração).
+  const repairs = open.repaired?.length ?? 0;
   const readOnly = store.readOnly.value;
   const locked = store.locked.value;
   const hasImagesSignal = useComputed(
@@ -30,7 +32,18 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
       <ProposalNotices />
       <div class="canvas-overlay">
         {readOnly && <p class="notice">{t('editor.readOnlyNotice')}</p>}
-        {backupSaved !== null && !backupDismissed && (
+        {repairs > 0 && !backupDismissed && (
+          <p class="notice notice-info" role="status">
+            {t('editor.repairNotice', { count: repairs })}{' '}
+            {backupSaved === null
+              ? t('editor.repairBackupPending')
+              : t('editor.repairBackupSaved')}{' '}
+            <button type="button" class="link" onClick={() => setBackupDismissed(true)}>
+              {t('editor.dismiss')}
+            </button>
+          </p>
+        )}
+        {repairs === 0 && backupSaved !== null && !backupDismissed && (
           <p class="notice notice-info" role="status">
             {t('editor.migrationBackup', { version: backupSaved })}{' '}
             <button type="button" class="link" onClick={() => setBackupDismissed(true)}>

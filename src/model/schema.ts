@@ -18,6 +18,14 @@ const id = z.string().min(1);
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
 const finite = z.number().finite();
 
+/** Data ISO 8601 como gravada pela app: UTC com `Z`; com fuso, normalizada para UTC. */
+export function normalizeIsoDate(value: string): string {
+  return value.endsWith('Z') ? value : new Date(value).toISOString();
+}
+
+/** Data ISO 8601, com `Z` ou com fuso (escrita por ferramenta externa); sai em UTC `Z`. */
+export const isoDateTime = z.iso.datetime({ offset: true }).transform(normalizeIsoDate);
+
 export const rectSchema = z.object({
   x: z.number().int().min(0),
   y: z.number().int().min(0),
@@ -134,8 +142,8 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   coordinateSystem: z.literal(COORDINATE_SYSTEM),
   project: z.object({
     name: z.string(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
+    createdAt: isoDateTime,
+    updatedAt: isoDateTime,
   }),
   specializations: z.array(specializationSchema),
   platformRepos: z.record(z.string().regex(PLATFORM_ID_RE), platformRepoSchema),

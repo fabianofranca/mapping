@@ -33,12 +33,32 @@ export type InvariantCode =
   | 'duplicate-entry-id'
   | 'duplicate-row-id';
 
+/** Tipo do item com problema. */
+export type InvariantEntity = 'image' | 'marking' | 'annotation' | 'layer' | 'spec';
+
 export interface InvariantIssue {
   readonly code: InvariantCode;
+  readonly entity: InvariantEntity;
   /** Id do item com problema. */
   readonly id: string;
+  /** Nome do item, quando houver (na imagem sem rótulo, o arquivo). */
+  readonly name?: string;
   /** Id do outro item envolvido, quando houver (ex.: a imagem sobreposta). */
   readonly otherId?: string;
+}
+
+/** O que `validateProject` lê de cada item para identificar o problema. */
+interface Named {
+  readonly id: string;
+  readonly name?: string | null;
+  readonly file?: string;
+}
+
+/** Nome para a lista de problemas: o da imagem sem rótulo é o arquivo; especialização não tem. */
+function itemName(entity: InvariantEntity, item: Named): string | null {
+  if (entity === 'spec') return null;
+  if (entity === 'image') return item.name ?? item.file ?? null;
+  return item.name ?? null;
 }
 
 export type EntryIssue = 'empty-key' | 'duplicate-key' | null;
@@ -65,33 +85,55 @@ export function validateEntries<T extends Pick<Entry, 'key'>>(
  */
 export function validateProject(p: Project): InvariantIssue[] {
   const issues: InvariantIssue[] = [];
-  const push = (code: InvariantCode, id: string, otherId?: string) =>
-    issues.push(otherId === undefined ? { code, id } : { code, id, otherId });
+  // Entidade e nome só são montados quando há problema: o caminho feliz não paga nada.
+  const issue =
+    (entity: InvariantEntity) => (code: InvariantCode, item: Named, otherId?: string) => {
+      const name = itemName(entity, item);
+      issues.push({
+        code,
+        entity,
+        id: item.id,
+        ...(name === null ? {} : { name }),
+        ...(otherId === undefined ? {} : { otherId }),
+      });
+    };
+  const spec = issue('spec');
+  const layer = issue('layer');
+  const imageIssue = issue('image');
+  const marking = issue('marking');
+  const annotation = issue('annotation');
 
-  for (const list of [p.specializations, p.layers, p.images, p.markings, p.annotations]) {
+  const lists = [
+    [p.specializations, spec],
+    [p.layers, layer],
+    [p.images, imageIssue],
+    [p.markings, marking],
+    [p.annotations, annotation],
+  ] as const;
+  for (const [list, push] of lists) {
     const ids = new Set<string>();
     for (const item of list) {
-      if (ids.has(item.id)) push('duplicate-id', item.id);
+      if (ids.has(item.id)) push('duplicate-id', item);
       ids.add(item.id);
     }
   }
 
   const specFiles = new Set<string>();
   for (const s of p.specializations) {
-    if (specFiles.has(s.file)) push('duplicate-spec-file', s.id);
+    if (specFiles.has(s.file)) spec('duplicate-spec-file', s);
     specFiles.add(s.file);
   }
 
   const entryIds = new Set<string>();
   for (const a of p.annotations) {
     for (const e of a.entries) {
-      if (entryIds.has(e.id)) push('duplicate-entry-id', a.id, e.id);
+      if (entryIds.has(e.id)) annotation('duplicate-entry-id', a, e.id);
       entryIds.add(e.id);
     }
     for (const value of Object.values(a.values ?? {})) {
       const rowIds = new Set<string>();
       for (const row of tableRows(value)) {
-        if (rowIds.has(row._id)) push('duplicate-row-id', a.id, row._id);
+        if (rowIds.has(row._id)) annotation('duplicate-row-id', a, row._id);
         rowIds.add(row._id);
       }
     }
@@ -99,12 +141,12 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const files = new Set<string>();
   p.images.forEach((image, i) => {
-    if (files.has(image.file)) push('duplicate-file', image.id);
+    if (files.has(image.file)) imageIssue('duplicate-file', image);
     files.add(image.file);
     const rect = imageCanvasRect(image, image.placement);
     for (const other of p.images.slice(i + 1)) {
       if (rectsOverlap(rect, imageCanvasRect(other, other.placement))) {
-        push('images-overlap', image.id, other.id);
+        imageIssue('images-overlap', image, other.id);
       }
     }
   });
@@ -115,23 +157,23 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   for (const m of p.markings) {
     const image = images.get(m.imageId);
-    if (!image) push('missing-image', m.id, m.imageId);
-    if (!isIntegerRect(m.rect)) push('rect-not-integer', m.id);
+    if (!image) marking('missing-image', m, m.imageId);
+    if (!isIntegerRect(m.rect)) marking('rect-not-integer', m);
     if (m.rect.width < MIN_MARKING_SIZE || m.rect.height < MIN_MARKING_SIZE) {
-      push('rect-too-small', m.id);
+      marking('rect-too-small', m);
     }
     if (image && !containsRect(imagePixelRect(image), m.rect)) {
-      push('rect-out-of-image', m.id);
+      marking('rect-out-of-image', m);
     }
     if (m.parentId === null) continue;
     const parent = markings.get(m.parentId);
     if (!parent) {
-      push('missing-parent', m.id, m.parentId);
+      marking('missing-parent', m, m.parentId);
       continue;
     }
-    if (parent.imageId !== m.imageId) push('parent-other-image', m.id, parent.id);
+    if (parent.imageId !== m.imageId) marking('parent-other-image', m, parent.id);
     else if (!containsRect(parent.rect, m.rect))
-      push('rect-outside-parent', m.id, parent.id);
+      marking('rect-outside-parent', m, parent.id);
   }
 
   for (const m of p.markings) {
@@ -140,7 +182,7 @@ export function validateProject(p: Project): InvariantIssue[] {
     let parentId = m.parentId;
     while (parentId !== null) {
       if (visited.has(parentId)) {
-        push('hierarchy-cycle', m.id);
+        marking('hierarchy-cycle', m);
         break;
       }
       visited.add(parentId);
@@ -150,21 +192,22 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const layerIds = new Set(p.layers.map((l) => l.id));
   for (const a of p.annotations) {
-    if (!markings.has(a.markingId)) push('missing-marking', a.id, a.markingId);
-    if (!layerIds.has(a.layerId)) push('missing-layer', a.id, a.layerId);
-    for (const issue of validateEntries(a.entries)) {
-      if (issue) push(issue, a.id);
+    if (!markings.has(a.markingId)) annotation('missing-marking', a, a.markingId);
+    if (!layerIds.has(a.layerId)) annotation('missing-layer', a, a.layerId);
+    for (const entryIssue of validateEntries(a.entries)) {
+      if (entryIssue) annotation(entryIssue, a);
     }
     if (a.parentAnnotationId === null) continue;
     const owner = annotations.get(a.parentAnnotationId);
     if (!owner) {
-      push('missing-parent-annotation', a.id, a.parentAnnotationId);
+      annotation('missing-parent-annotation', a, a.parentAnnotationId);
       continue;
     }
     if (owner.markingId !== a.markingId) {
-      push('annotation-parent-other-marking', a.id, owner.id);
+      annotation('annotation-parent-other-marking', a, owner.id);
     }
-    if (owner.layerId === a.layerId) push('annotation-parent-same-layer', a.id, owner.id);
+    if (owner.layerId === a.layerId)
+      annotation('annotation-parent-same-layer', a, owner.id);
   }
 
   for (const a of p.annotations) {
@@ -173,7 +216,7 @@ export function validateProject(p: Project): InvariantIssue[] {
     let ownerId = a.parentAnnotationId;
     while (ownerId !== null) {
       if (visited.has(ownerId)) {
-        push('annotation-cycle', a.id);
+        annotation('annotation-cycle', a);
         break;
       }
       visited.add(ownerId);

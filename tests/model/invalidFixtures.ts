@@ -1,6 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Annotation, InvariantCode, Marking, Project } from '../../src/model';
+import {
+  imageCanvasRect,
+  right,
+  type Annotation,
+  type InvariantCode,
+  type Marking,
+  type Project,
+} from '../../src/model';
 import { cadastroProject } from './specFixtures';
 
 // Um `mapping.json` inconsistente por classe de invariante (`tests/fixtures/invalid/`), todos
@@ -67,10 +74,11 @@ const freeAnnotation = (p: Project, annotation: Partial<Annotation>): Project =>
   ],
 });
 
-/** Segunda imagem (500×500), à direita da primeira e sem sobrepor. */
-const secondImage = (p: Project, x = 1000): Project => {
+/** Segunda imagem (500×500); sem `at`, à direita da primeira e sem sobrepor. */
+const secondImage = (p: Project, at?: { x: number; y: number }): Project => {
   const first = p.images[0];
   if (!first) throw new Error('fixture sem imagem');
+  const firstRect = imageCanvasRect(first, first.placement);
   return {
     ...p,
     images: [
@@ -82,7 +90,7 @@ const secondImage = (p: Project, x = 1000): Project => {
         file: 'images/segunda.png',
         width: 500,
         height: 500,
-        placement: { x, y: 0, scale: 1 },
+        placement: { ...(at ?? { x: right(firstRect) + 100, y: 0 }), scale: 1 },
       },
     ],
   };
@@ -151,8 +159,8 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     name: 'images-overlap',
     code: 'images-overlap',
     repairable: true,
-    // A segunda imagem começa dentro da primeira (que vai até x = 1000 no canvas).
-    build: (p) => secondImage(p, 900),
+    // A segunda imagem começa no mesmo ponto da primeira.
+    build: (p) => secondImage(p, p.images[0]?.placement),
   },
   // ---- Recusados (sem reparo mecânico inequívoco) ----
   {

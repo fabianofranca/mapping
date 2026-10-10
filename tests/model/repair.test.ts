@@ -107,17 +107,17 @@ describe('repairProject', () => {
         name: 'Maçaneta',
       },
       {
-        action: 'removed',
-        code: 'missing-marking',
-        entity: 'annotation',
-        id: 'A3',
-      },
-      {
         action: 'made-root',
         code: 'missing-parent',
         entity: 'marking',
         id: 'M3',
         name: 'Fechadura',
+      },
+      {
+        action: 'removed',
+        code: 'missing-marking',
+        entity: 'annotation',
+        id: 'A3',
       },
     ]);
   });

@@ -31,7 +31,7 @@ describe('loadProject com dados inconsistentes', () => {
     expect(error.code).toBe('invalid-project');
     expect(error.message).toContain('missing-parent');
     const json = error.toJSON().error;
-    expect(json.issues).toEqual([
+    expect((json.reason as { issues: unknown }).issues).toEqual([
       {
         code: 'missing-parent',
         entity: 'marking',

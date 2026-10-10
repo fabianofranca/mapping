@@ -11,7 +11,7 @@ import {
 } from '../../src/model';
 import type { DirectoryHandleLike } from '../../src/storage/folder';
 import { writeProjectZip } from '../../src/storage/zip';
-import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
+import { clearReportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
 import { emptyProject, sampleProject } from '../model/fixtures';
 import { readInvalidFixture } from '../model/invalidFixtures';
@@ -510,7 +510,9 @@ describe('projeto com dados inconsistentes', () => {
     expect(await backupsOf(root)).toEqual([]);
     expect(await root.files.get('mapping.json')?.text()).toBe(repairable);
     // O resumo do reparo vai para o Diagnóstico.
-    expect(reportedErrors.value.map((e) => e.context)).toContain('open.repair');
+    // (o controller foi carregado de novo em `load()`: o registro é o da cópia dele)
+    const report = await import('../../src/utils/report');
+    expect(report.reportedErrors.value.map((e) => e.context)).toContain('open.repair');
 
     session.actions.renameProject('Reparado');
     await session.flush();
@@ -566,10 +568,14 @@ describe('projeto com dados inconsistentes', () => {
     const result = await app.importZip(blob);
     if (result.ok || !result.inconsistent?.repair)
       throw new Error('deveria pedir o reparo');
-    expect(app.localProjects.value).toEqual([]);
+    const before = await local.openLocalLibrary();
+    expect(await before?.list()).toEqual([]);
+    before?.close();
     expect((await result.inconsistent.repair()).ok).toBe(true);
     expect((await openedOf(app)).kind).toBe('local');
-    expect(app.localProjects.value).toHaveLength(1);
+    const library = await local.openLocalLibrary();
+    expect(await library?.list()).toHaveLength(1);
+    library?.close();
   });
 
   it('o projeto do roteiro 13.9 íntegro abre direto', async () => {

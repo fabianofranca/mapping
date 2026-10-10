@@ -8,8 +8,12 @@ import {
   deserialize,
   migrations,
   serialize,
+  SCHEMA_VERSION,
   type DeserializeError,
+  type InvariantIssue,
   type Project,
+  type RepairedLoad,
+  type RepairRecord,
 } from '../model';
 import { importExistingImages } from '../storage/existingImages';
 import {
@@ -22,7 +26,7 @@ import {
   type ExistingImage,
 } from '../storage/folder';
 import { createDisplayBitmap, prepareImage, readImageSize } from '../storage/imageImport';
-import { loadProject } from '../storage/loadProject';
+import { loadProject, type InconsistentLoad } from '../storage/loadProject';
 import {
   loadProposals,
   NO_PROPOSALS,
@@ -58,7 +62,26 @@ export type AppErrorCode =
 
 export type AppResult<T = void> =
   | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly error: AppErrorCode };
+  | {
+      readonly ok: false;
+      readonly error: AppErrorCode;
+      /** Em `invariant-violation`: a lista exata dos problemas e o reparo, se houver. */
+      readonly inconsistent?: InconsistentProject;
+    };
+
+/** Projeto recusado por dados inconsistentes (docs/FORMAT.md, "Arquivos inconsistentes"). */
+export interface InconsistentProject {
+  readonly issues: readonly InvariantIssue[];
+  /** O que "Reparar e abrir" faria. */
+  readonly repaired: readonly RepairRecord[];
+  /** Problemas sem reparo mecânico. */
+  readonly unrepaired: readonly InvariantIssue[];
+  /**
+   * "Reparar e abrir": abre o projeto reparado; o backup do original e o reparado só são
+   * gravados na primeira gravação. `null` quando há problema sem reparo.
+   */
+  readonly repair: (() => Promise<AppResult>) | null;
+}
 
 export interface OpenProject {
   readonly kind: StorageKind;
@@ -68,6 +91,8 @@ export interface OpenProject {
   readonly localId: string | null;
   /** Modo local: há alterações desde a última exportação. */
   readonly unexported: Signal<boolean>;
+  /** Reparos feitos ao abrir um projeto inconsistente (vazio ou ausente no caso normal). */
+  readonly repaired?: readonly RepairRecord[];
 }
 
 export const features = signal<Features | null>(null);
@@ -124,6 +149,8 @@ function start(
     loadedText?: string;
     /** As propostas de alteração lidas do armazenamento. */
     proposals?: LoadedProposals;
+    /** Reparos feitos na abertura (projeto inconsistente). */
+    repaired?: readonly RepairRecord[];
   },
 ): void {
   const unexported = signal(options.unexported);
@@ -158,6 +185,7 @@ function start(
     display,
     localId: options.localId,
     unexported,
+    repaired: options.repaired ?? [],
   };
 }
 
@@ -166,7 +194,13 @@ async function openFromStorage(
   localId: string | null,
 ): Promise<AppResult> {
   const loaded = await loadProject(storage);
-  if (!loaded.ok) return err(loaded.error);
+  if (!loaded.ok) {
+    const { inconsistent } = loaded;
+    if (!inconsistent) return err(loaded.error);
+    return inconsistentResult(inconsistent.issues, inconsistent.repair, () =>
+      openRepaired(storage, localId, inconsistent),
+    );
+  }
   const meta = localId ? await library?.get(localId) : undefined;
   start(storage, loaded.project, {
     readOnly: loaded.readOnly,
@@ -178,6 +212,60 @@ async function openFromStorage(
     ...(loaded.migratedFrom !== null
       ? { migratedFrom: { version: loaded.migratedFrom, text: loaded.text } }
       : {}),
+  });
+  return ok(undefined);
+}
+
+/** Recusa por dados inconsistentes, com o "Reparar e abrir" quando tudo tem reparo. */
+function inconsistentResult(
+  issues: readonly InvariantIssue[],
+  repair: RepairedLoad,
+  open: () => Promise<AppResult>,
+): AppResult<never> {
+  return {
+    ok: false,
+    error: 'invariant-violation',
+    inconsistent: {
+      issues,
+      repaired: repair.repaired,
+      unrepaired: repair.unrepaired,
+      repair: repair.unrepaired.length === 0 ? () => guarded(open) : null,
+    },
+  };
+}
+
+/** Uma linha por reparo, para o Diagnóstico (ex.: `made-root marking MN "Nome" (missing-parent)`). */
+function describeRepairs(records: readonly RepairRecord[]): string {
+  return records
+    .map(
+      (r) =>
+        `${r.action} ${r.entity} ${r.id}${r.name === undefined ? '' : ` "${r.name}"`} (${r.code})`,
+    )
+    .join('; ');
+}
+
+/**
+ * Abre o projeto reparado. Nada é gravado agora: a sessão guarda o original em `backups/`
+ * (mesmo mecanismo da migração) e grava o reparado na primeira gravação.
+ */
+async function openRepaired(
+  storage: ProjectStorage,
+  localId: string | null,
+  { repair, text }: InconsistentLoad,
+): Promise<AppResult> {
+  const meta = localId ? await library?.get(localId) : undefined;
+  reportError(
+    'open.repair',
+    `${repair.repaired.length} reparo(s): ${describeRepairs(repair.repaired)}`,
+  );
+  start(storage, repair.project, {
+    readOnly: repair.readOnly,
+    localId,
+    unexported: meta?.unexported ?? false,
+    loadedText: text,
+    proposals: await loadProposals(storage),
+    migratedFrom: { version: repair.migratedFrom ?? SCHEMA_VERSION, text },
+    repaired: repair.repaired,
   });
   return ok(undefined);
 }
@@ -234,11 +322,25 @@ export function importZip(file: Blob): Promise<AppResult> {
     const read = await readProjectZip(file);
     if (!read.ok) return err(read.error);
     const parsed = deserialize(read.files.mapping, migrations, read.files.specs);
-    if (!parsed.ok) return err(parsed.error.code);
-    const id = crypto.randomUUID();
-    await library.create(id, read.files, { unexported: false });
-    void requestPersistentStorage();
-    return openFromStorage(library.open(id), id);
+    const target = library;
+    const create = async () => {
+      const id = crypto.randomUUID();
+      await target.create(id, read.files, { unexported: false });
+      void requestPersistentStorage();
+      return openFromStorage(target.open(id), id);
+    };
+    if (!parsed.ok) {
+      const { error, repair } = parsed;
+      if (error.code !== 'invariant-violation' || !repair) return err(error.code);
+      // O projeto local só é criado se o reparo for aceito; recusar não deixa rastro.
+      return inconsistentResult(error.issues, repair, async () => {
+        const opened = await create();
+        return opened.ok || !opened.inconsistent?.repair
+          ? opened
+          : opened.inconsistent.repair();
+      });
+    }
+    return create();
   });
 }
 

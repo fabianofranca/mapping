@@ -11,9 +11,10 @@ import {
 import { cadastroProject } from './specFixtures';
 
 const update = process.env.UPDATE_FIXTURES === '1';
+const cases = INVALID_CASES.map((c) => [c.name, c] as const);
 
 describe('fixtures inconsistentes (tests/fixtures/invalid)', () => {
-  it.each(INVALID_CASES)('$name.json é o gerado a partir do roteiro 13.9', (c) => {
+  it.each(cases)('%s.json é o gerado a partir do roteiro 13.9', (_, c) => {
     const text = serialize(buildInvalidCase(c));
     if (update) {
       mkdirSync(INVALID_FIXTURES_DIR, { recursive: true });
@@ -28,7 +29,7 @@ describe('fixtures inconsistentes (tests/fixtures/invalid)', () => {
     expect(result.ok ? null : result.repair).toBeNull();
   });
 
-  it.each(INVALID_CASES)('$name.json: recusado com a lista exata', (c) => {
+  it.each(cases)('%s.json: recusado com a lista exata', (_, c) => {
     const result = deserialize(readInvalidFixture(c.name));
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -41,7 +42,7 @@ describe('fixtures inconsistentes (tests/fixtures/invalid)', () => {
     }
   });
 
-  it.each(INVALID_CASES)('$name.json: abre reparado ou fica só a lista', (c) => {
+  it.each(cases)('%s.json: abre reparado ou fica só a lista', (_, c) => {
     const result = deserialize(readInvalidFixture(c.name));
     if (result.ok) throw new Error('deveria ser recusado');
     const repair = result.repair;
