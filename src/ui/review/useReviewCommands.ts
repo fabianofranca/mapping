@@ -19,7 +19,7 @@ export interface ReviewCommands {
 
 /** Comandos da revisão usados pela lista, pelo aviso de proposta nova e pela barra de status. */
 export function useReviewCommands(): ReviewCommands {
-  const { review, ui } = useEditor();
+  const { review, ui, canvas } = useEditor();
   const desktop = useMediaQuery(DESKTOP_QUERY);
   const report = (error: ProposalActionError, path?: string) =>
     showToast(ui, proposalErrorMessage(error, path), REVIEW_ERROR_MS);
@@ -40,6 +40,12 @@ export function useReviewCommands(): ReviewCommands {
       } else {
         // Celular: a revisão acontece no canvas, com a faixa e a gaveta (M2-Revisao).
         ui.mobileWindow.value = null;
+      }
+      // Volta ao último item visto: mostra-o no canvas depois do desenho seguinte.
+      const center = () => canvas.current?.focusSelection();
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(center);
+      if (result.resumed && result.newConflicts === 0) {
+        showToast(ui, t('review.resumed'));
       }
       if (result.newConflicts > 0) {
         showToast(

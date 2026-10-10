@@ -32,6 +32,7 @@ import { useProjectCommands } from './useProjectCommands';
 import { useReviewSync } from './useReviewSync';
 import { ReviewBar } from '../ui/review/ReviewBar';
 import { CompareDialog, ReviewLegend } from '../ui/review/ReviewCanvasControls';
+import { needsExitReminder } from '../ui/review/ExitReviewDialog';
 import { Button } from '../ui/controls';
 
 export function Editor({ open }: { readonly open: OpenProject }) {
@@ -56,7 +57,13 @@ export function EditorScreen() {
   useExternalChanges();
   useReviewSync();
   const reviewing = review.proposalId.value !== null;
-  const exitReview = () => review.close();
+  // Sair da revisão nunca perde nada; com aceitas não aplicadas, lembra antes (5.3).
+  const exitReview = () => {
+    const p = review.derived.proposal.peek();
+    if (needsExitReminder(p?.status, review.derived.counts.peek().acceptedPending)) {
+      dialogs.show({ kind: 'exitReview' });
+    } else review.close();
+  };
 
   /** Celular: centralizar a seleção quando o canvas voltar a aparecer. */
   const focusAfterView = useRef(false);

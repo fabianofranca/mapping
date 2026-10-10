@@ -26,7 +26,9 @@ export type EditorDialog =
       readonly resolve: (confirmed: boolean) => void;
     }
   | { readonly kind: 'export'; readonly file: File }
-  | { readonly kind: 'confirmClose' };
+  | { readonly kind: 'confirmClose' }
+  /** Sair da revisão com aceitas ainda não aplicadas (etapa 4). */
+  | { readonly kind: 'exitReview' };
 
 export interface EditorDialogs {
   readonly current: EditorDialog | null;

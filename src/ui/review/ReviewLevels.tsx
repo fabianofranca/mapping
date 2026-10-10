@@ -244,7 +244,7 @@ function supersededRows(review: ReturnType<typeof useEditor>['review']): Superse
 }
 
 export function ReviewLevels({ desktop }: { readonly desktop: boolean }) {
-  const { review } = useEditor();
+  const { review, canvas } = useEditor();
   const names = useReviewNames();
   const d = review.derived;
   const p = d.proposal.value;
@@ -532,6 +532,26 @@ export function ReviewLevels({ desktop }: { readonly desktop: boolean }) {
   return (
     <div class="review-levels">
       <Filters names={names} />
+      {fresh.size > 0 && !superseded && (
+        <Notice
+          tone="warning"
+          size="sm"
+          title={t('review.stale.title')}
+          actions={
+            <Button
+              size="sm"
+              onClick={() => {
+                review.setFilters({ onlyConflicts: true });
+                if (review.step('conflict', 1)) canvas.current?.focusSelection();
+              }}
+            >
+              {t('review.stale.show', { count: fresh.size })}
+            </Button>
+          }
+        >
+          <span>{t('review.stale.text', { count: fresh.size })}</span>
+        </Notice>
+      )}
       {superseded && (
         <Notice
           tone="warning"

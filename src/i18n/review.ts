@@ -297,6 +297,22 @@ export const reviewPtBR = {
   'review.note.add': 'Adicionar nota',
   'review.note.remove': 'Remover nota',
   'review.note.saveHint': 'Grava ao sair do campo.',
+  'review.exitDialog.title': 'Sair da revisão?',
+  'review.exitDialog.text':
+    'Há {count} mudança(s) aceita(s) que ainda não foram aplicadas ao projeto.',
+  'review.exitDialog.accepted': '{count} aceita(s) aguardando aplicação',
+  'review.exitDialog.rejected': '{count} rejeitada(s)',
+  'review.exitDialog.undecided': '{count} sem decisão',
+  'review.exitDialog.nothingLost':
+    'Nada se perde: as decisões e as notas ficam guardadas na proposta, e a revisão volta ao mesmo ponto quando você a abrir de novo.',
+  'review.exitDialog.apply': 'Aplicar agora · {count}',
+  'review.exitDialog.exit': 'Sair mesmo assim',
+  'review.exitDialog.continue': 'Continuar revisando',
+  'review.resumed': 'A revisão voltou ao ponto onde você parou.',
+  'review.stale.title': 'O projeto mudou desde a sua última sessão.',
+  'review.stale.text':
+    '{count} mudança(s) passaram a ter conflito; as outras decisões foram mantidas.',
+  'review.stale.show': 'Ver os conflitos novos ({count})',
 } as const;
 
 export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
@@ -590,4 +606,19 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.note.add': 'Add note',
   'review.note.remove': 'Remove note',
   'review.note.saveHint': 'Saved when you leave the field.',
+  'review.exitDialog.title': 'Exit the review?',
+  'review.exitDialog.text':
+    'There are {count} accepted change(s) not yet applied to the project.',
+  'review.exitDialog.accepted': '{count} accepted, awaiting apply',
+  'review.exitDialog.rejected': '{count} rejected',
+  'review.exitDialog.undecided': '{count} undecided',
+  'review.exitDialog.nothingLost':
+    'Nothing is lost: decisions and notes stay in the proposal, and the review returns to the same spot when you open it again.',
+  'review.exitDialog.apply': 'Apply now · {count}',
+  'review.exitDialog.exit': 'Exit anyway',
+  'review.exitDialog.continue': 'Keep reviewing',
+  'review.resumed': 'The review is back where you left off.',
+  'review.stale.title': 'The project changed since your last session.',
+  'review.stale.text': '{count} change(s) now conflict; the other decisions were kept.',
+  'review.stale.show': 'Show the new conflicts ({count})',
 };

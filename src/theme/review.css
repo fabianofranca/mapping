@@ -1371,3 +1371,34 @@
     grid-template-columns: calc(3 * var(--space-6)) minmax(0, 1fr);
   }
 }
+
+/* ---------- Lembrete ao sair da revisão ---------- */
+.exit-review-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  margin: var(--space-3) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exit-review-summary li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.exit-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+@media (max-width: 899px) {
+  .exit-review-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    width: 100%;
+  }
+}
