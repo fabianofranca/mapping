@@ -93,6 +93,11 @@ export interface ExternalConflict {
  */
 export type SyncResult = 'unchanged' | 'reloaded' | 'busy';
 
+export interface CollectedFiles extends ProjectFiles {
+  /** Imagens do projeto cujo arquivo não está no armazenamento (ficam fora do zip). */
+  readonly missingImages: readonly string[];
+}
+
 /** Um projeto aberto: store com undo/redo ligado ao armazenamento. */
 export interface ProjectSession {
   readonly storage: ProjectStorage;
@@ -137,11 +142,18 @@ export interface ProjectSession {
   /** Grava agora o que estiver pendente (também serve para "tentar de novo"). */
   flush(): Promise<void>;
   /**
-   * `mapping.json` atual, as imagens existentes, as cópias de `specs/` e as propostas (com
-   * as imagens que aguardam aceitação), para exportar.
+   * `mapping.json` confirmado (nunca a prévia de um gesto), as imagens existentes, as cópias
+   * de `specs/` e as propostas (com as imagens que aguardam aceitação), para exportar.
    */
-  collectFiles(): Promise<ProjectFiles>;
+  collectFiles(): Promise<CollectedFiles>;
   close(): Promise<void>;
+}
+
+/** O projeto confirmado: durante um gesto, o do início dele (a prévia não é gravada). */
+function committedProject(store: ProjectStore): Project {
+  const p = store.committed.peek();
+  if (!p) throw new Error('session closed');
+  return p;
 }
 
 function currentProject(store: ProjectStore): Project {
@@ -236,10 +248,11 @@ export function openSession(options: SessionOptions): ProjectSession {
    * Grava o projeto: restaura imagens que voltaram (undo) e grava as cópias de
    * `specs/` novas ou alteradas, grava o `mapping.json` e só então remove as
    * imagens e cópias que deixaram de ser usadas. Assim o `mapping.json` em disco
-   * nunca aponta para um arquivo já apagado.
+   * nunca aponta para um arquivo já apagado. Grava o projeto confirmado: um gesto em
+   * andamento só chega ao disco quando confirmado (`commitGesture` sobe a revisão e agenda).
    */
   const persist = async () => {
-    const p = store.project.value;
+    const p = store.committed.peek();
     if (!p) return;
     await assertNotChangedExternally();
     let wrote = false;
@@ -546,11 +559,13 @@ export function openSession(options: SessionOptions): ProjectSession {
 
     async collectFiles() {
       await saver.flush();
-      const p = currentProject(store);
+      const p = committedProject(store);
       const images = new Map<string, Blob>();
+      const missingImages: string[] = [];
       for (const image of p.images) {
         const blob = await storage.readImage(image.file);
         if (blob) images.set(image.file, blob);
+        else missingImages.push(image.file);
       }
       const withProposals = await proposals.collect();
       return {
@@ -559,6 +574,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         specs: specFiles(p),
         proposals: withProposals.proposals,
         proposalImages: withProposals.images,
+        missingImages,
       };
     },
 

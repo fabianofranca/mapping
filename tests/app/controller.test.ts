@@ -318,8 +318,9 @@ describe('exportar', () => {
     await openCadastro();
     const result = await app.buildExport();
     if (!result.ok) throw new Error(result.error);
-    expect(result.value.name).toMatch(/\.zip$/);
-    const zip = await JSZip.loadAsync(await result.value.arrayBuffer());
+    expect(result.value.missingImages).toEqual([]);
+    expect(result.value.file.name).toMatch(/\.zip$/);
+    const zip = await JSZip.loadAsync(await result.value.file.arrayBuffer());
     const names = Object.keys(zip.files);
     expect(names).toContain('mapping.json');
     expect(names).toContain('images/cadastro.png');
@@ -428,7 +429,7 @@ describe('propostas de alteração (etapa 4)', () => {
 
     const exported = await app.buildExport();
     if (!exported.ok) throw new Error(exported.error);
-    const zip = await JSZip.loadAsync(await exported.value.arrayBuffer());
+    const zip = await JSZip.loadAsync(await exported.value.file.arrayBuffer());
     expect(await zip.file('proposals/P1/images/nova.webp')?.async('string')).toBe('WEBP');
     const text = (await zip.file('proposals/P1/proposal.json')?.async('string')) ?? '';
     expect(parseProposalText(text)).toMatchObject({
@@ -438,7 +439,7 @@ describe('propostas de alteração (etapa 4)', () => {
 
     const reviewed = second.session.proposals.get('P1');
     await app.closeProject();
-    expect((await app.importZip(exported.value)).ok).toBe(true);
+    expect((await app.importZip(exported.value.file)).ok).toBe(true);
     const third = await openedOf(app);
     expect(third.session.proposals.get('P1')).toEqual(reviewed);
   });
