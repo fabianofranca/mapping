@@ -18,6 +18,7 @@ import { StatusBar } from '../../src/ui/StatusBar';
 import { ToolStrip } from '../../src/ui/ToolStrip';
 import { ToolWindow } from '../../src/ui/ToolWindow';
 import { ZoomField } from '../../src/ui/ZoomField';
+import { BUILD_ID } from '../../src/utils/build';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, type Harness } from './harness';
 
@@ -190,7 +191,7 @@ describe('breadcrumbs', () => {
 });
 
 describe('barra de status', () => {
-  it('mostra salvamento, destino, seleção, cursor, zoom, schema e canal', () => {
+  it('mostra salvamento, destino, seleção, cursor, zoom, schema, canal e build', () => {
     const harness = createHarness(sampleProject());
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     harness.context.view.cursor.value = { imageId: 'I1', x: 120, y: 48 };
@@ -205,6 +206,7 @@ describe('barra de status', () => {
       screen.getByText(t('status.schema', { version: SCHEMA_VERSION })),
     ).toBeTruthy();
     expect(screen.getByText(t('status.channelMain'))).toBeTruthy();
+    expect(screen.getByText(BUILD_ID)).toBeTruthy();
   });
 
   it('fora de uma imagem o cursor fica vazio', () => {
