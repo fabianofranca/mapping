@@ -39,9 +39,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
+          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -90,9 +92,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
+          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium

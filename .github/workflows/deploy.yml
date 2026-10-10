@@ -80,7 +80,9 @@ jobs:
           path: main
       - uses: actions/setup-node@v4
         with:
-          node-version-file: main/.nvmrc
+          # Até a fase 5.6 entrar na main, ela não tem .nvmrc: Node 22.
+          node-version-file: ${{ hashFiles('main/.nvmrc') != '' && 'main/.nvmrc' || '' }}
+          node-version: ${{ hashFiles('main/.nvmrc') == '' && '22' || '' }}
           cache: npm
           cache-dependency-path: main/package-lock.json
 
