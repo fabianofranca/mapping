@@ -299,6 +299,48 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
+    it('guarda uma cópia em memória: num disco real o arquivo lido some junto com o arquivo', async () => {
+      const root = new MemoryDirectory('p');
+      const real = createFolderStorage(root);
+      const gone = new Set<string>();
+      // Como o `File` de uma pasta: depois que o arquivo é removido, ler o conteúdo falha.
+      const storage: typeof real = {
+        ...real,
+        readImage: async (path) => {
+          const blob = await real.readImage(path);
+          if (!blob) return null;
+          return {
+            type: blob.type,
+            arrayBuffer: () =>
+              gone.has(path)
+                ? Promise.reject(new Error('NotReadableError'))
+                : blob.arrayBuffer(),
+          } as unknown as Blob;
+        },
+        removeImage: async (path) => {
+          await real.removeImage(path);
+          gone.add(path);
+        },
+      };
+      const s = openSession({
+        storage,
+        project: emptyProject(),
+        readOnly: false,
+        prepareImage,
+        now: () => NOW,
+        newId: ids(),
+      });
+      session = s;
+      await s.addImages([file('a.jpg', '400x300')]);
+      await s.flush();
+      s.store.undo();
+      await s.flush();
+      expect(await root.read('images/a.jpg')).toBeNull();
+      s.store.redo();
+      await s.flush();
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+    });
+
     it('solta o conteúdo quando nenhum snapshot do histórico referencia o arquivo', async () => {
       const { s } = await removedImage();
       expect(await s.readImage('images/a.jpg')).not.toBeNull();

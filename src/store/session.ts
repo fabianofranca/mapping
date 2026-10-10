@@ -12,7 +12,7 @@ import { createAutoSaver, type SaveStatus } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
 import type { LoadedProposals } from '../storage/loadProposals';
-import { backupFileName, type ProjectStorage } from '../storage/types';
+import { backupFileName, imageMimeType, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
 import { reportError } from '../utils/report';
 import { createProjectStore, type ProjectStore } from './history';
@@ -281,7 +281,15 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (referenced.has(file)) continue;
       if (inHistory.has(file)) {
         const blob = await storage.readImage(file);
-        if (blob) trash.set(file, blob);
+        // Cópia em memória: numa pasta, o `File` lido deixa de ser legível quando o arquivo
+        // é removido logo abaixo, e o "refazer" precisa regravar a imagem.
+        if (blob)
+          trash.set(
+            file,
+            new Blob([await blob.arrayBuffer()], {
+              type: blob.type || imageMimeType(file),
+            }),
+          );
       }
       await storage.removeImage(file);
       imageStamps.delete(file);
