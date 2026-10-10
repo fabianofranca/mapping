@@ -416,6 +416,40 @@ describe('sessão de projeto', () => {
     expect((await savedProject(root)).project.name).toBe('Outro nome');
   });
 
+  it('falha na limpeza depois do mapping.json não é erro de gravação (fase 5.2)', async () => {
+    clearReportedErrors();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const root = new MemoryDirectory('p');
+    session = start(root);
+    const storage = session.storage;
+    await session.addImages([file('a.jpg', '400x300')]);
+    await session.flush();
+    const revision = (await savedProject(root)).revision;
+    const imageId = session.store.project.value?.images[0]?.id ?? '';
+
+    const remove = vi
+      .spyOn(storage, 'removeImage')
+      .mockRejectedValue(new Error('arquivo em uso'));
+    session.actions.removeImage(imageId);
+    const flushed = await session.flush();
+    expect(session.saveStatus.value).toBe('saved');
+    expect(flushed).toEqual({ ok: true });
+    expect((await savedProject(root)).revision).toBe(revision + 1);
+    expect((await savedProject(root)).images).toEqual([]);
+    expect(reportedErrors.value.map((e) => [e.context, e.message])).toEqual([
+      ['session.cleanup', 'arquivo em uso'],
+    ]);
+
+    // A próxima gravação sobe só uma revisão e tenta a remoção de novo.
+    remove.mockRestore();
+    session.actions.renameProject('Outro nome');
+    await session.flush();
+    expect(session.saveStatus.value).toBe('saved');
+    expect((await savedProject(root)).revision).toBe(revision + 2);
+    expect(await root.read('images/a.jpg')).toBeNull();
+    vi.restoreAllMocks();
+  });
+
   it('não grava nada ao abrir, nem em modo somente leitura', async () => {
     const root = new MemoryDirectory('p');
     session = start(root, sampleProject(), true);

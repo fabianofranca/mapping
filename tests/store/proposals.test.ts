@@ -1,16 +1,26 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it } from 'vitest';
-import { proposalFilePath, serializeProposal, type Proposal } from '../../src/model';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  proposalFilePath,
+  serialize,
+  serializeProposal,
+  type Proposal,
+} from '../../src/model';
 import { clearReportedErrors } from '../../src/utils/report';
+import { sampleProject } from '../model/fixtures';
 import {
   NEW_IMAGE_PATH,
   diskProposal,
   openHarness,
+  type Harness,
   richScenario,
   writeOutside,
 } from './proposalHarness';
 
-afterEach(() => clearReportedErrors());
+afterEach(() => {
+  clearReportedErrors();
+  vi.restoreAllMocks();
+});
 
 const accept = (p: Proposal, changeId: string): Proposal => ({
   ...p,
@@ -271,5 +281,79 @@ describe('exportar propostas', () => {
     });
     const files = await session.collectFiles();
     expect(files.proposals.get(proposalFilePath('P9'))).toBe('{ quebrado');
+  });
+});
+
+describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () => {
+  const files = { [NEW_IMAGE_PATH]: 'WEBP' };
+
+  /** Tudo aceito, pronto para aplicar. */
+  async function readyToApply(): Promise<Harness> {
+    const { proposal } = richScenario();
+    const h = await openHarness({ proposals: [proposal], files });
+    h.review.open('P1');
+    await h.review.decide({ level: 'proposal', id: null }, 'accepted');
+    expect(h.review.derived.canApply.value).toBe(true);
+    return h;
+  }
+
+  /** Nada mudou: projeto sem as mudanças, histórico vazio, proposta aberta e imagens no lugar. */
+  async function expectNothingApplied(h: Harness) {
+    const { session, root, review } = h;
+    expect(session.store.project.value?.images.map((i) => i.id)).not.toContain('I3');
+    expect(session.store.canUndo.value).toBe(false);
+    expect(session.store.canRedo.value).toBe(false);
+    await session.proposals.settled();
+    const disk = await diskProposal(root);
+    expect(disk.applied).toEqual({});
+    expect(disk.status).toBe('open');
+    expect(disk.revision).toBe(1);
+    expect(Object.keys(disk.decisions)).toHaveLength(5);
+    expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
+    expect(await root.read('images/nova.webp')).toBeNull();
+    // A revisão continua aberta, com as decisões intactas.
+    expect(review.proposalId.value).toBe('P1');
+    expect(review.derived.counts.value).toMatchObject({ applied: 0, acceptedPending: 5 });
+  }
+
+  it('mapping.json alterado por fora: save-failed, nada aplicado e o diálogo de conflito abre', async () => {
+    const h = await readyToApply();
+    // O MCP grava o mapping.json por fora enquanto a revisão está aberta.
+    const outside = serialize({ ...sampleProject(), name: 'Do agente', revision: 4 });
+    h.root.put('mapping.json', outside);
+
+    const result = await h.review.apply();
+    expect(result).toEqual({ ok: false, error: 'save-failed' });
+    await expectNothingApplied(h);
+    expect(h.session.conflict.value).toEqual({ reloadFailed: false });
+    expect(await h.root.read('mapping.json')).toBe(outside);
+
+    // "Recarregar": o projeto do disco; a proposta continua aberta e pode ser aplicada.
+    await h.session.resolveConflict('reload');
+    expect(h.session.conflict.value).toBeNull();
+    expect(h.session.store.project.value?.name).toBe('Do agente');
+    expect(h.review.derived.counts.value.acceptedPending).toBe(5);
+    expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
+    expect((await diskProposal(h.root)).status).toBe('applied');
+  });
+
+  it('erro de armazenamento ao gravar o mapping.json: save-failed e nada aplicado', async () => {
+    const h = await readyToApply();
+    const save = vi
+      .spyOn(h.storage, 'saveMapping')
+      .mockRejectedValue(new Error('quota excedida'));
+
+    const result = await h.review.apply();
+    expect(result).toEqual({ ok: false, error: 'save-failed' });
+    await expectNothingApplied(h);
+    expect(h.session.conflict.value).toBeNull();
+
+    // O armazenamento volta: aplicar de novo conclui.
+    save.mockRestore();
+    expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
+    expect((await diskProposal(h.root)).status).toBe('applied');
+    expect(await h.root.read('images/nova.webp')).toBe('WEBP');
+    expect(await h.root.read(NEW_IMAGE_PATH)).toBeNull();
+    expect(h.session.saveStatus.value).toBe('saved');
   });
 });
