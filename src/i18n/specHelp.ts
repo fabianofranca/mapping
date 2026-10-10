@@ -128,6 +128,32 @@ const CODE_EXCERPT = `{
   ]
 }`;
 
+/** Trecho de uma especialização v3: as origens (`sources`) de um tipo e de seus campos. */
+const SOURCES_EXCERPT = `{
+  "id": "button",
+  "name": "Button",
+  "sources": [{ "system": "figma", "id": "3f2a9c", "name": "DS/Button" }],
+  "fields": [
+    {
+      "key": "estilo",
+      "type": "enum",
+      "options": ["primary", "secondary", "text"],
+      "sources": [
+        {
+          "system": "figma",
+          "name": "Style",
+          "values": { "Primary": "primary", "Secondary": "secondary", "Text": "text" }
+        }
+      ]
+    },
+    {
+      "key": "texto",
+      "type": "string",
+      "sources": [{ "system": "figma", "name": "Label" }]
+    }
+  ]
+}`;
+
 const ptBR: readonly HelpSection[] = [
   {
     id: 'concept',
@@ -348,6 +374,38 @@ const ptBR: readonly HelpSection[] = [
         text: 'code e codeRef só valem em especializações que declaram platforms; os ids citados precisam estar em platforms, e as chaves de params e values precisam ser campos do tipo.',
       },
       { kind: 'code', code: CODE_EXCERPT },
+    ],
+  },
+  {
+    id: 'sources',
+    title: 'Origens (sources)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A formatVersion 3 diz a que elementos de um sistema externo (uma ferramenta de design, outro catálogo de componentes…) cada tipo corresponde e de que propriedade de origem vem cada campo. É o que um agente de importação usa para saber que componente vira que tipo, sem deduzir pelo nome; as propostas que ele cria usam essa correspondência. O app não interpreta system nem os nomes: só valida a estrutura.',
+      },
+      { kind: 'code', code: SOURCES_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'sources',
+            text: 'Opcional. Num tipo de anotação: lista de { system, id?, name? }, cada uma com pelo menos id ou name (um tipo pode corresponder a vários elementos, ex: variantes antigas e novas). Num campo ou coluna de table: lista de { system, name, values? }, a propriedade de origem do valor.',
+          },
+          {
+            term: 'system',
+            text: 'Nome do sistema de origem. system, id e name são textos não vazios; as comparações são exatas (maiúsculas contam).',
+          },
+          {
+            term: 'values',
+            text: 'Na origem de um campo, só em campos enum: valor de origem → uma das options (os destinos precisam existir em options).',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'sources só existe na formatVersion 3: uma versão anterior do app recusa o arquivo com a mensagem de versão, em vez de ignorar as origens.',
+      },
     ],
   },
   {
@@ -619,6 +677,38 @@ const enUS: readonly HelpSection[] = [
         text: 'code and codeRef only work in specializations that declare platforms; the ids they cite must exist in platforms, and the keys of params and values must be fields of the type.',
       },
       { kind: 'code', code: CODE_EXCERPT },
+    ],
+  },
+  {
+    id: 'sources',
+    title: 'Sources (sources)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'formatVersion 3 states which elements of an external system (a design tool, another component catalog…) each type corresponds to, and which source property each field comes from. An import agent uses it to know which component becomes which type without guessing from the name; the proposals it creates rely on this mapping. The app does not interpret system or the names: it only validates the structure.',
+      },
+      { kind: 'code', code: SOURCES_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'sources',
+            text: 'Optional. On an annotation type: list of { system, id?, name? }, each with at least id or name (a type can correspond to several elements, e.g. old and new variants). On a field or table column: list of { system, name, values? }, the source property of the value.',
+          },
+          {
+            term: 'system',
+            text: 'Name of the source system. system, id and name are non-empty strings; comparisons are exact (case matters).',
+          },
+          {
+            term: 'values',
+            text: 'In a field source, only for enum fields: source value → one of the options (the targets must exist in options).',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'sources only exists in formatVersion 3: an older version of the app rejects the file with the version message instead of ignoring the sources.',
+      },
     ],
   },
   {

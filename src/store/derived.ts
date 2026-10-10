@@ -430,19 +430,39 @@ export function createReviewDerived(
     return changes ? new Map(changes.map((c) => [c.id, changeType(c)])) : NO_TYPES;
   });
 
+  // Tipo de cada nível. Item e imagem: o da própria entidade (a marcação, a imagem),
+  // na ordem criada > removida > trocada > alterada; "movida" só se a posição é a única
+  // coisa que muda. Sem mudança na própria entidade, o que muda dentro (uma anotação
+  // criada, uma marcação da imagem) faz o nível "alterado". Proposta e Projeto: o
+  // dominante de tudo.
   const levelTypes = computed((): ReadonlyMap<string, ChangeType> => {
     const t = tree.value;
     const types = changeTypes.value;
+    const changes = changesOf.value;
     const result = new Map<string, ChangeType>();
-    if (!t) return result;
+    if (!t || !changes) return result;
+    const byId = new Map(changes.map((c) => [c.id, c]));
     for (const [key, node] of t.nodes) {
-      const own: ChangeType[] = [];
-      for (const id of t.changeIdsOf({ level: node.level, id: node.id })) {
-        const type = types.get(id);
-        if (type !== undefined) own.push(type);
+      const all = t.changeIdsOf({ level: node.level, id: node.id });
+      if (all.length === 0) continue;
+      const entity =
+        node.level === 'item' ? 'marking' : node.level === 'image' ? 'image' : null;
+      const typesOf = (ids: readonly string[]) =>
+        ids.map((id) => types.get(id)).filter((x): x is ChangeType => x !== undefined);
+      if (entity === null) {
+        const type = dominantChangeType(typesOf(all));
+        if (type !== null) result.set(key, type);
+        continue;
       }
-      const type = dominantChangeType(own);
-      if (type !== null) result.set(key, type);
+      const own = all.filter((id) => {
+        const c = byId.get(id);
+        return c?.entity === entity && c.entityId === node.id;
+      });
+      const type = dominantChangeType(typesOf(own));
+      result.set(
+        key,
+        type === null || (type === 'moved' && own.length < all.length) ? 'changed' : type,
+      );
     }
     return result;
   });

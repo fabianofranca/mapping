@@ -12,6 +12,8 @@ import { comboText, shortcutGroups, type KeyCombo } from './shortcutList';
 
 /** Id da seção Atalhos, para abrir a Ajuda direto nela (Configurações → atalhos). */
 export const HELP_SHORTCUTS = 'shortcuts';
+/** Id da seção das propostas de alteração ("Como o agente envia propostas"). */
+export const HELP_PROPOSALS = 'proposals';
 
 function Block({ block }: { readonly block: HelpBlock }) {
   switch (block.kind) {
@@ -98,6 +100,30 @@ const CODE_HELP_KEYS = [
   'help.code.display',
 ] as const satisfies readonly TranslationKey[];
 
+const PROPOSALS_HELP_KEYS = [
+  'help.proposals.arrive',
+  'help.proposals.review',
+  'help.proposals.decide',
+  'help.proposals.details',
+  'help.proposals.apply',
+  'help.proposals.resume',
+  'help.proposals.mobile',
+] as const satisfies readonly TranslationKey[];
+
+/** Propostas de alteração: como chegam, revisão, decisões, notas, aplicar e retomar. */
+function ProposalsUsage() {
+  return (
+    <>
+      <p>{t('help.proposals.intro')}</p>
+      <ul>
+        {PROPOSALS_HELP_KEYS.map((key) => (
+          <li key={key}>{t(key)}</li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 /** Uso das plataformas, de `code` e do `codeRef` no app (o formato fica nas Especializações). */
 function CodeUsage() {
   return (
@@ -163,6 +189,14 @@ function topics(): readonly Topic[] {
       title: t('help.code.title'),
       text: [t('help.code.intro'), ...CODE_HELP_KEYS.map((key) => t(key))].join(' '),
       body: <CodeUsage />,
+    },
+    {
+      id: HELP_PROPOSALS,
+      title: t('help.proposals.title'),
+      text: [t('help.proposals.intro'), ...PROPOSALS_HELP_KEYS.map((key) => t(key))].join(
+        ' ',
+      ),
+      body: <ProposalsUsage />,
     },
     {
       id: 'downloads',

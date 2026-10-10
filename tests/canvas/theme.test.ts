@@ -26,6 +26,7 @@ describe('canvasTokensFrom', () => {
     expect(t.halo).toBe('rgba(10, 12, 16, 0.72)');
     expect(t.select).toBe('#4d8dff');
     expect(t.nameTag).toBe(t.select);
+    expect(t.badge).toBe('rgba(10, 12, 16, 0.9)');
     expect(t.card).toBe('rgba(255, 255, 255, 0.92)');
     expect(t.opacity).toEqual({
       dimmed: 0.35,

@@ -27,6 +27,7 @@ export interface MappingJson {
   readonly markings: readonly {
     readonly id: string;
     readonly imageId: string;
+    readonly name: string;
     readonly rect: Rect;
     readonly locked: boolean;
   }[];
@@ -201,15 +202,20 @@ export async function openExport(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: 'Baixar' })).toBeVisible();
 }
 
-/** Exportar → Baixar: devolve o conteúdo do `mapping.json` do zip e os arquivos dele. */
-export async function exportMapping(
-  page: Page,
-): Promise<{ readonly mapping: MappingJson; readonly files: readonly string[] }> {
+/** Exportar → Baixar: devolve o zip baixado. */
+export async function exportZip(page: Page): Promise<JSZip> {
   await openExport(page);
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Baixar' }).click();
   const path = await (await download).path();
-  const zip = await JSZip.loadAsync(await readFile(path));
+  return JSZip.loadAsync(await readFile(path));
+}
+
+/** Exportar → Baixar: devolve o conteúdo do `mapping.json` do zip e os arquivos dele. */
+export async function exportMapping(
+  page: Page,
+): Promise<{ readonly mapping: MappingJson; readonly files: readonly string[] }> {
+  const zip = await exportZip(page);
   const text = await zip.file('mapping.json')?.async('string');
   if (text === undefined) throw new Error('o zip não tem mapping.json');
   return { mapping: JSON.parse(text) as MappingJson, files: Object.keys(zip.files) };

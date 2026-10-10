@@ -21,6 +21,9 @@ import { ToolWindow } from '../ui/ToolWindow';
 import { TreeWindow } from '../ui/TreeWindow';
 import { PANES_CLASS } from '../ui/toolWindowLayout';
 import { ZoomField } from '../ui/ZoomField';
+import { HELP_PROPOSALS } from '../ui/HelpDialog';
+import { ProposalsHeaderActions, ProposalsWindow } from '../ui/review/ProposalsWindow';
+import { ReviewCanvasControls } from '../ui/review/ReviewCanvasControls';
 import { FitButton, SemanticTextButton } from './EditorTools';
 import { EditorPanel, type EditorPanelProps } from './EditorPanel';
 
@@ -84,6 +87,14 @@ function Window({
           <DiagnosticsView />
         </ToolWindow>
       );
+    case 'proposals':
+      return (
+        <ToolWindow id={id} actions={<ProposalsHeaderActions />}>
+          <ProposalsWindow
+            onHelp={() => panel.dialogs.show({ kind: 'help', section: HELP_PROPOSALS })}
+          />
+        </ToolWindow>
+      );
   }
 }
 
@@ -114,6 +125,7 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
           <div class="canvas-bar">
             <Breadcrumbs onSelect={onSelect} />
             <div class="canvas-bar-end">
+              <ReviewCanvasControls />
               <SemanticTextButton />
               <FitButton />
               <ZoomField />

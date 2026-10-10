@@ -1,7 +1,7 @@
 // Entrada de ponteiro e roda do canvas: eventos → `gestureMachine` → intenções
 // → actions do store. Pan, zoom e pinça vão para o `ViewportController`; a
 // prévia dos gestos vai para o `InteractionState`, que as sobreposições desenham.
-import { projectIndex, type Placement } from '../../model';
+import { projectIndex, type Placement, type Project } from '../../model';
 import type { EditorDerived } from '../../store/derived';
 import type { ProjectStore } from '../../store/history';
 import type { ProjectActions } from '../../store/project';
@@ -43,6 +43,10 @@ export interface PointerInputOptions {
   readonly state: InteractionState;
   /** Espaço pressionado (arrastar faz pan). */
   readonly spaceDown: () => boolean;
+  /** Projeto desenhado (o "como ficaria" na revisão); padrão: o do store. */
+  readonly project?: () => Project | null;
+  /** Revisão aberta: tudo é somente leitura e o menu de contexto não abre. */
+  readonly reviewing?: () => boolean;
 }
 
 export class PointerInput {
@@ -59,6 +63,11 @@ export class PointerInput {
 
   constructor(options: PointerInputOptions) {
     this.o = options;
+  }
+
+  /** Projeto em que o toque procura os itens (o desenhado). */
+  private project(): Project | null {
+    return this.o.project ? this.o.project() : this.o.store.project.peek();
   }
 
   /** Escuta os eventos do container. Devolve a função que para de escutar. */
@@ -123,8 +132,8 @@ export class PointerInput {
   private context(): IntentContext {
     const { store, ui } = this.o;
     return {
-      project: store.project.peek(),
-      readOnly: store.readOnly.peek(),
+      project: this.project(),
+      readOnly: store.readOnly.peek() || (this.o.reviewing?.() ?? false),
       mode: ui.mode.peek(),
       selection: ui.selection.peek(),
       zoom: this.o.viewport.scale,
@@ -199,9 +208,9 @@ export class PointerInput {
     this.holdTimer = null;
     const g = this.gesture;
     if (g?.kind !== 'pending' || g.pointerId !== pointerId) return;
-    const { store, ui, derived, state } = this.o;
+    const { ui, derived, state } = this.o;
     const intent = grabIntentAt(
-      store.project.peek(),
+      this.project(),
       ui.selection.peek(),
       derived.markingVisibility.peek(),
       this.o.viewport.toCanvas(g.start),
@@ -383,12 +392,12 @@ export class PointerInput {
 
   /** Seleciona pelo toque em `p` (tela); tocar de novo no mesmo ponto sobe para o pai. */
   private tap(p: Point): void {
-    const { store, ui, derived, viewport } = this.o;
+    const { ui, derived, viewport } = this.o;
     const c = viewport.toCanvas(p);
     const repeat = isRepeatTap(this.lastTap, c, viewport.scale);
     this.lastTap = c;
     ui.selection.value = tapSelection(
-      store.project.peek(),
+      this.project(),
       ui.selection.peek(),
       derived.markingVisibility.peek(),
       c,
@@ -402,11 +411,13 @@ export class PointerInput {
    * é o "segurar e mover": não abre o menu (no celular, as ações ficam na Árvore e em Detalhes).
    */
   private openContextMenu(e: MouseEvent): void {
-    const { store, ui, derived, viewport } = this.o;
+    const { ui, derived, viewport } = this.o;
     ui.canvasMenu.value = null;
     if (this.lastPointerType === 'touch' || this.gesture !== null) return;
+    // Na revisão o menu (copiar, trancar) não vale: o projeto está somente leitura.
+    if (this.o.reviewing?.()) return;
     const picked = tapSelection(
-      store.project.peek(),
+      this.project(),
       ui.selection.peek(),
       derived.markingVisibility.peek(),
       viewport.toCanvas(viewport.screenPoint(e)),

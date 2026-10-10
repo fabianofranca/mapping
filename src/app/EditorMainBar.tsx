@@ -8,6 +8,7 @@ import { showAndFocusToolWindow } from '../ui/toolWindowLayout';
 import { Button, IconButton } from '../ui/controls';
 import { AddImagesButton, HistoryButtons, ModeButtons } from './EditorTools';
 import { SHORTCUT_LABELS } from './shortcuts';
+import { Flag } from '../ui/review/Flag';
 import type { EditorDialogs } from './useEditorDialogs';
 import type { ProjectCommands } from './useProjectCommands';
 
@@ -24,7 +25,7 @@ interface EditorMainBarProps {
 }
 
 export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarProps) {
-  const { store, derived } = useEditor();
+  const { store, derived, review } = useEditor();
   const projectName = useComputed(() => store.committed.value?.project.name ?? '');
   const activeLayer = derived.activeLayer.value;
   return (
@@ -45,6 +46,12 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
           {t('editor.closeProject')}
         </Button>
       </MenuPopover>
+
+      {review.proposalId.value !== null && (
+        <Flag icon="lock" title={t('review.readOnlyTip')}>
+          {t('review.readOnlyFlag')}
+        </Flag>
+      )}
 
       <div class="toolbar">
         <ModeButtons />

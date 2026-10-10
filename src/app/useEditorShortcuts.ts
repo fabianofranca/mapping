@@ -23,10 +23,13 @@ import type { ProjectCommands } from './useProjectCommands';
 import {
   altNumbersAvailable,
   isTextInput,
+  reviewShortcutFor,
   shortcutFor,
   worksInTextInput,
+  type ReviewShortcut,
   type Shortcut,
 } from './shortcuts';
+import { useApplyAccepted, useDecide } from '../ui/review/useReview';
 import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
 import {
   canCopyItems,
@@ -79,7 +82,12 @@ export function useEditorShortcuts(
   desktop = true,
 ): void {
   const editor = useEditor();
-  const { store, ui, canvas, actions } = editor;
+  const { store, ui, canvas, actions, review } = editor;
+  // Revisão: decidir e aplicar avisam os erros como os botões.
+  const decide = useDecide();
+  const apply = useApplyAccepted();
+  const reviewRef = useRef({ decide, apply });
+  reviewRef.current = { decide, apply };
   const dialogsRef = useRef(dialogs);
   dialogsRef.current = dialogs;
   const commandsRef = useRef(commands);
@@ -157,7 +165,7 @@ export function useEditorShortcuts(
           if (!canvas.current?.cancelInteraction()) ui.selection.value = null;
           return;
         case 'delete': {
-          if (store.readOnly.peek()) return;
+          if (store.locked.peek()) return;
           const current = resolveSelection(store.project.peek(), ui.selection.peek());
           if (current?.kind === 'image') {
             dialogsRef.current.requestDeleteImage(current.image);
@@ -168,7 +176,7 @@ export function useEditorShortcuts(
         }
         case 'toggle-lock': {
           // Só a trava muda: seleção e anotações seguem livres, mas o somente leitura vale.
-          if (store.readOnly.peek()) return;
+          if (store.locked.peek()) return;
           const current = resolveSelection(store.project.peek(), ui.selection.peek());
           if (current?.kind === 'image') {
             actions.setImageLocked(current.image.id, !current.image.locked);
@@ -239,9 +247,47 @@ export function useEditorShortcuts(
       }
     };
 
+    /** Atalhos da revisão (HANDOFF-PROPOSALS 6): agem sobre o nível selecionado. */
+    const runReview = (shortcut: ReviewShortcut) => {
+      switch (shortcut.kind) {
+        case 'decide': {
+          const target = review.selected.peek();
+          if (target) reviewRef.current.decide(target, shortcut.state);
+          return;
+        }
+        case 'step':
+          if (review.step(shortcut.target, shortcut.direction)) {
+            canvas.current?.focusSelection();
+          }
+          return;
+        case 'toggle-view':
+          review.setView(review.view.peek() === 'current' ? 'proposed' : 'current');
+          return;
+        case 'legend':
+          ui.reviewLegend.value = !ui.reviewLegend.peek();
+          return;
+        case 'apply':
+          void reviewRef.current.apply();
+          return;
+      }
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
       if (document.querySelector('dialog[open]')) return;
+      // No celular não há atalhos de revisão (as ações estão nos botões de 44px).
+      if (
+        review.proposalId.peek() !== null &&
+        desktopRef.current &&
+        !isTextInput(e.target)
+      ) {
+        const reviewShortcut = reviewShortcutFor(e);
+        if (reviewShortcut) {
+          e.preventDefault();
+          runReview(reviewShortcut);
+          return;
+        }
+      }
       const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
       if (isTextInput(e.target) && !worksInTextInput(shortcut)) return;
@@ -257,5 +303,5 @@ export function useEditorShortcuts(
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [editor, store, ui, canvas, actions]);
+  }, [editor, store, ui, canvas, actions, review]);
 }

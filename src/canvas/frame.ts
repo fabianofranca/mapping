@@ -14,6 +14,7 @@ import type { DisplayImage } from '../store/displayImages';
 import type { Locale } from '../store/settings';
 import type { EditorMode, Selection } from '../store/ui';
 import type { MarkingCard } from './renderers/cards';
+import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
 import type { Size, Viewport } from './viewport';
 
@@ -73,6 +74,8 @@ export interface Frame {
   readonly incomplete: ReadonlySet<string>;
   readonly visibility: ReadonlyMap<string, MarkingVisibility>;
   readonly card: (marking: Marking) => MarkingCard;
+  /** Marcas da revisão de uma proposta (etapa 4); `null` fora da revisão. */
+  readonly review: ReviewCanvas | null;
 }
 
 /** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */

@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { Icon, type IconName } from '../icons';
+import { classes } from './classes';
 import { Tooltip } from './Tooltip';
 
 type NativeButton = Omit<
@@ -13,7 +14,10 @@ interface IconButtonProps extends NativeButton {
   readonly label: string;
   /** Texto da dica quando difere do nome (ex.: o motivo de o botão estar desabilitado). */
   readonly tooltip?: string;
-  readonly variant?: 'default' | 'danger';
+  /** `accept` e `reject`: o par ✓ ✕ do `DecisionControl` (revisão de propostas). */
+  readonly variant?: 'default' | 'danger' | 'accept' | 'reject';
+  /** `sm`: 24px no desktop (linhas e cartões da revisão); no celular continua com 44px. */
+  readonly size?: 'md' | 'sm';
   /** Texto visível ao lado do ícone; sem ele, o botão mostra só o ícone. */
   readonly text?: string;
   /** Atalho mostrado na dica (e em `aria-keyshortcuts`). */
@@ -22,6 +26,16 @@ interface IconButtonProps extends NativeButton {
   readonly pressed?: boolean;
   /** Ponto de alerta no canto do ícone (ex.: erro novo no Diagnóstico). */
   readonly alert?: boolean;
+  /** Selo numérico informativo no canto (ex.: propostas novas na faixa lateral). */
+  readonly badge?: string;
+}
+
+function iconButtonClass(variant: string, size: 'md' | 'sm'): string {
+  return classes(
+    'icon-button',
+    variant !== 'default' && `icon-button-${variant}`,
+    size === 'sm' && 'icon-button-sm',
+  );
 }
 
 /** Botão de ícone (28px no desktop, 44px no celular), com dica. */
@@ -34,6 +48,8 @@ export function IconButton({
   shortcut,
   pressed,
   alert,
+  badge,
+  size = 'md',
   type = 'button',
   ...rest
 }: IconButtonProps) {
@@ -42,13 +58,18 @@ export function IconButton({
       <button
         {...rest}
         type={type}
-        class={variant === 'danger' ? 'icon-button icon-button-danger' : 'icon-button'}
+        class={iconButtonClass(variant, size)}
         aria-pressed={pressed}
         aria-label={text ? undefined : label}
         aria-keyshortcuts={shortcut}
       >
         <Icon name={icon} />
         {alert && <span class="icon-button-alert" aria-hidden="true" />}
+        {badge && (
+          <span class="icon-button-badge" aria-hidden="true">
+            {badge}
+          </span>
+        )}
         {text && <span class="icon-button-text">{text}</span>}
       </button>
     </Tooltip>

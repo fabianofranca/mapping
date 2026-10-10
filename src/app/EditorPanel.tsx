@@ -9,6 +9,8 @@ import { imageLabel, markingPath } from '../ui/labels';
 import { MarkingPanel } from '../ui/MarkingPanel';
 import { LayerDots } from '../ui/MarkingTree';
 import { SelectionPanel } from '../ui/SelectionPanel';
+import { ReviewDetails } from '../ui/review/ReviewDetails';
+import { ReviewSheetDecision, useReviewSheetTitle } from '../ui/review/MobileReview';
 import type { EditorDialogs } from './useEditorDialogs';
 
 export interface EditorPanelProps {
@@ -25,11 +27,19 @@ export function EditorPanel({
   onReplace,
   onGoToAnnotation,
 }: EditorPanelProps) {
-  const { store, ui, display, canvas } = useEditor();
+  const { store, ui, display, canvas, review } = useEditor();
   // Projeto confirmado: os campos do painel atualizam ao soltar o gesto, não durante.
   const project = store.committed.value;
   if (!project) return null;
-  const readOnly = store.readOnly.value;
+  // Revisão de uma proposta: Detalhes mostra o nível selecionado com as mudanças.
+  if (review.proposalId.value !== null) {
+    return (
+      <div class="tab-panel">
+        <ReviewDetails />
+      </div>
+    );
+  }
+  const readOnly = store.locked.value;
   const selected = resolveSelection(project, ui.selection.value);
   const selectedImage = selected?.kind === 'image' ? selected.image : null;
 
@@ -91,18 +101,23 @@ export function EditorSheet(panel: EditorPanelProps) {
     };
   });
   const { title, markingId } = header.value;
+  const reviewTitle = useReviewSheetTitle();
   const dots = markingId ? (derived.layerDots.value.get(markingId) ?? []) : [];
   const incomplete = markingId ? derived.incompleteMarkings.value.has(markingId) : false;
   return (
     <BottomSheet
-      title={title ?? t('panel.nothingSelected')}
+      title={reviewTitle ?? title ?? t('panel.nothingSelected')}
       leading={dots.length > 0 && <LayerDots dots={dots} />}
       trailing={
-        incomplete && (
-          <span class="sheet-warning" title={t('sheet.incomplete')}>
-            <Icon name="warning" />
-            <span class="visually-hidden">{t('sheet.incomplete')}</span>
-          </span>
+        reviewTitle !== null ? (
+          <ReviewSheetDecision />
+        ) : (
+          incomplete && (
+            <span class="sheet-warning" title={t('sheet.incomplete')}>
+              <Icon name="warning" />
+              <span class="visually-hidden">{t('sheet.incomplete')}</span>
+            </span>
+          )
         )
       }
       height={ui.sheet.value}

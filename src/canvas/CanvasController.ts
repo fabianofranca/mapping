@@ -14,6 +14,7 @@ import type { EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
+import type { ReviewState } from '../store/review';
 import { locale, semanticText } from '../store/settings';
 import { resolveSelection, type EditorUi } from '../store/ui';
 import {
@@ -38,6 +39,8 @@ import { canvasToImagePixel, markingCanvasRect, markingChainAt } from './marking
 import { ImageRenderer } from './renderers/images';
 import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
+import { ReviewRenderer } from './renderers/review';
+import { proposedDisplay, reviewMarks, type ReviewCanvas } from './reviewMarks';
 import { cardCache } from './renderers/cards';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import { clampZoom, type Point } from './viewport';
@@ -55,6 +58,11 @@ export interface CanvasControllerOptions {
   readonly derived: EditorDerived;
   /** Signals que a interface lê (zoom, cursor, minimapa). */
   readonly view: CanvasViewState;
+  /**
+   * Revisão de propostas (etapa 4): com uma proposta aberta, o canvas desenha o projeto
+   * "como ficaria" (ou o atual, na visão Atual) com as marcas de revisão.
+   */
+  readonly review?: ReviewState;
 }
 
 export class CanvasController {
@@ -63,6 +71,7 @@ export class CanvasController {
   private readonly ui: EditorUi;
   private readonly derived: EditorDerived;
   private readonly viewState: CanvasViewState;
+  private readonly review: ReviewState | null;
   /** Último ponto de tela do mouse, lido no quadro (não a cada `pointermove`). */
   private cursorPoint: Point | null = null;
   private cursorRequest: number | null = null;
@@ -82,21 +91,59 @@ export class CanvasController {
   private readonly images: ImageRenderer;
   private readonly markings: MarkingRenderer;
   private readonly overlay: OverlayRenderer;
+  private readonly reviewLayer: ReviewRenderer;
+
+  /**
+   * Projeto desenhado: o do store (com a prévia do gesto) e, na revisão, o "como ficaria"
+   * na visão Proposto. É também o que o toque e o enquadrar consultam.
+   */
+  private readonly drawnProject = computed(() => {
+    const base = this.store.project.value;
+    const review = this.review;
+    if (!review || review.proposalId.value === null || review.view.value === 'current') {
+      return base;
+    }
+    const preview = review.derived.preview.value;
+    const proposal = review.derived.proposal.value;
+    return preview && proposal ? proposedDisplay(preview.project, proposal) : base;
+  });
+
+  /** Marcas da revisão (tipo, conflito, inválida, fantasmas, removidas); `null` fora dela. */
+  private readonly reviewCanvas = computed((): ReviewCanvas | null => {
+    const review = this.review;
+    if (!review || review.proposalId.value === null) return null;
+    const d = review.derived;
+    const proposal = d.proposal.value;
+    const tree = d.tree.value;
+    const current = this.store.committed.value;
+    const drawn = this.drawnProject.value;
+    if (!proposal || !tree || !current || !drawn) return null;
+    return reviewMarks({
+      proposal,
+      tree,
+      types: d.changeTypes.value,
+      conflicts: d.conflictIds.value,
+      invalid: d.invalid.value.changeIds,
+      view: review.view.value,
+      current,
+      drawn,
+    });
+  });
 
   /** Cartões do zoom semântico; refeitos só quando o projeto, as camadas ou o idioma mudam. */
   private readonly cards = computed(() => {
     // `t()` dos rótulos lê o idioma só quando o cartão é montado: assina aqui.
     void locale.value;
     return cardCache(
-      this.store.project.value,
+      this.drawnProject.value,
       this.derived.visibleLayers.value,
       this.derived.annotationsByMarking.value,
     );
   });
   /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
   private readonly frame = computed((): Frame => ({
-    project: this.store.project.value,
-    readOnly: this.store.readOnly.value,
+    project: this.drawnProject.value,
+    readOnly: this.store.locked.value,
     bitmaps: this.display.images.value,
     preview: this.state.preview.value,
     draft: this.state.draft.value,
@@ -115,6 +162,7 @@ export class CanvasController {
     incomplete: this.derived.incompleteMarkings.value,
     visibility: this.derived.markingVisibility.value,
     card: this.cards.value,
+    review: this.reviewCanvas.value,
   }));
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
   private drawn: Frame | null = null;
@@ -130,6 +178,7 @@ export class CanvasController {
     this.ui = options.ui;
     this.derived = options.derived;
     this.viewState = options.view;
+    this.review = options.review ?? null;
 
     this.stage = new Konva.Stage({ container, width: 1, height: 1 });
     const imageLayer = new Konva.Layer({ listening: false });
@@ -139,10 +188,15 @@ export class CanvasController {
     this.images = new ImageRenderer(imageLayer);
     this.markings = new MarkingRenderer(markingLayer);
     this.overlay = new OverlayRenderer(overlayLayer, container);
+    // As marcas da revisão ficam por baixo das sobreposições (seleção, alças).
+    const reviewGroup = new Konva.Group({ listening: false });
+    overlayLayer.add(reviewGroup);
+    reviewGroup.moveToBottom();
+    this.reviewLayer = new ReviewRenderer(reviewGroup);
 
     this.view = new ViewportController(
       container,
-      () => this.store.project.peek()?.images ?? [],
+      () => this.drawnProject.peek()?.images ?? [],
     );
     const space = watchSpaceKey(() => this.pointer.updateCursor(null));
     this.pointer = new PointerInput({
@@ -154,6 +208,8 @@ export class CanvasController {
       viewport: this.view,
       state: this.state,
       spaceDown: space.down,
+      project: () => this.drawnProject.peek(),
+      reviewing: () => this.review?.proposalId.peek() != null,
     });
 
     this.cleanups.push(
@@ -175,7 +231,9 @@ export class CanvasController {
       effect(() => {
         // Projeto confirmado: um gesto em andamento não refaz o minimapa a cada quadro.
         this.viewState.bounds.value = imagesBounds(
-          this.store.committed.value?.images ?? [],
+          this.review?.proposalId.value != null
+            ? (this.drawnProject.value?.images ?? [])
+            : (this.store.committed.value?.images ?? []),
         );
       }),
       this.watchCursor(),
@@ -213,10 +271,7 @@ export class CanvasController {
   /** Centraliza o canvas no item selecionado (ajustando o zoom se ele for grande ou pequeno demais). */
   focusSelection(): void {
     this.view.measure(); // O canvas pode ter acabado de reaparecer (aba Lista → Canvas).
-    const selected = resolveSelection(
-      this.store.project.peek(),
-      this.ui.selection.peek(),
-    );
+    const selected = resolveSelection(this.drawnProject.peek(), this.ui.selection.peek());
     if (!selected) return;
     const { image } = selected;
     this.view.centerOn(
@@ -238,7 +293,7 @@ export class CanvasController {
 
   /** Id da imagem sob uma coordenada de tela da página, ou `null` em área vazia. */
   imageIdAt(clientX: number, clientY: number): string | null {
-    const images = this.store.project.peek()?.images ?? [];
+    const images = this.drawnProject.peek()?.images ?? [];
     return imageAt(images, this.canvasPointAt(clientX, clientY))?.id ?? null;
   }
 
@@ -307,7 +362,7 @@ export class CanvasController {
    * nada é calculado em projetos sem itens trancados.
    */
   private updateHoverLock(imageId: string | null, pixel: Point | null): void {
-    const project = this.store.project.peek();
+    const project = this.drawnProject.peek();
     let next: HoverLock | null = null;
     if (project && imageId !== null && pixel && this.derived.hasLocks.peek()) {
       const visibility = this.derived.markingVisibility.peek();
@@ -332,10 +387,13 @@ export class CanvasController {
 
   private loadBitmaps(): void {
     const images = this.store.project.value?.images ?? [];
+    // Na revisão, também as imagens novas ou trocadas que esperam em `proposals/`.
+    const drawn = this.drawnProject.value?.images ?? [];
     untracked(() => {
-      for (const image of images) this.display.ensure(image.file);
+      const files = new Set([...images, ...drawn].map((image) => image.file));
+      for (const file of files) this.display.ensure(file);
       // Arquivos que saíram do projeto (imagem excluída ou trocada) não ficam na memória.
-      this.display.retain(new Set(images.map((image) => image.file)));
+      this.display.retain(files);
     });
   }
 
@@ -366,6 +424,7 @@ export class CanvasController {
       this.placements = this.images.render(frame);
     }
     this.markings.render(frame, this.placements);
+    this.reviewLayer.render(frame, this.placements);
     // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela.
     const viewMoved = last?.viewport !== v || last?.size !== size;
     if (

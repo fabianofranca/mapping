@@ -1,7 +1,13 @@
 import type { JSX } from 'preact';
 import { classes } from './classes';
 
-export type ButtonVariant = 'default' | 'primary' | 'danger';
+/**
+ * `accept` e `reject`: os botões de decisão da revisão ("Aceitar item" / "Rejeitar item",
+ * HANDOFF-PROPOSALS 2.2), alternâncias com `aria-pressed` que se enchem de `color-success`
+ * ou `color-danger` quando marcadas.
+ */
+export type ButtonVariant =
+  'default' | 'primary' | 'danger' | 'accept' | 'reject' | 'ghost';
 
 type NativeButton = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'class' | 'size'>;
 

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { locale, theme } from '../../src/store/settings';
 import { Dialog } from '../../src/ui/Dialog';
-import { HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
+import { HELP_PROPOSALS, HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
 
 afterEach(() => {
@@ -100,6 +100,21 @@ describe('HelpDialog', () => {
     render(<HelpDialog onClose={vi.fn()} section={HELP_SHORTCUTS} />);
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
     expect(scroll.mock.contexts.at(-1)).toBe(document.getElementById('help-shortcuts'));
+  });
+
+  it('seção Propostas: abre direto nela e tem os atalhos da revisão em Atalhos', () => {
+    render(<HelpDialog onClose={vi.fn()} section={HELP_PROPOSALS} />);
+    const scroll = vi.mocked(Element.prototype.scrollIntoView);
+    const section = document.getElementById('help-proposals') as HTMLElement;
+    expect(scroll.mock.contexts.at(-1)).toBe(section);
+    expect(within(section).getByText(t('help.proposals.intro'))).toBeTruthy();
+    const shortcuts = document.getElementById('help-shortcuts') as HTMLElement;
+    expect(
+      within(shortcuts).getByRole('rowheader', {
+        name: t('shortcuts.review.apply'),
+        hidden: true,
+      }),
+    ).toBeTruthy();
   });
 
   it('seção Atalhos: mostra Ctrl+Shift+1 para a Árvore e F1', () => {

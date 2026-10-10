@@ -15,7 +15,9 @@ import { IncompleteView } from '../ui/IncompleteView';
 import { LayerActions, LayersPanel } from '../ui/LayersPanel';
 import { ListView } from '../ui/ListView';
 import { afterPaint, MarkingTree, scrollToSelected } from '../ui/MarkingTree';
-import { toolWindowMeta } from '../ui/toolWindowMeta';
+import { toolWindowMeta, windowBadge } from '../ui/toolWindowMeta';
+import { HELP_PROPOSALS } from '../ui/HelpDialog';
+import { ProposalsHeaderActions, ProposalsWindow } from '../ui/review/ProposalsWindow';
 import { EditorPanel, type EditorPanelProps } from './EditorPanel';
 
 // Celular (B6): cada janela de ferramenta abre em tela cheia, com cabeçalho (voltar ao
@@ -32,8 +34,9 @@ interface MobileWindowProps {
 
 /** Faixa de abas: Incompletas mostra quantas pendências; Diagnóstico, o erro novo. */
 function WindowStrip({ active }: { readonly active: ToolWindowId }) {
-  const { ui, derived } = useEditor();
+  const { ui, derived, review } = useEditor();
   const incomplete = derived.incompleteCount.value;
+  const fresh = review.derived.freshIds.value.length;
   const unseen = diagnosticsUnseen.value;
   const tabs: TabItem<ToolWindowId>[] = TOOL_WINDOWS.map((id) => {
     const meta = toolWindowMeta(id);
@@ -43,7 +46,7 @@ function WindowStrip({ active }: { readonly active: ToolWindowId }) {
       icon: meta.icon,
       label: meta.tab?.() ?? title,
       title,
-      badge: id === 'incomplete' && incomplete > 0 ? String(incomplete) : undefined,
+      ...windowBadge(id, incomplete, fresh),
       alert: id === 'diagnostics' && unseen && active !== 'diagnostics',
     };
   });
@@ -91,7 +94,7 @@ export function MobileWindow({ id, panel, onSelect, onBack }: MobileWindowProps)
   const back = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const project = store.committed.value;
-  const readOnly = store.readOnly.value;
+  const readOnly = store.locked.value;
   const title = toolWindowMeta(id).title();
 
   // Ao abrir, o foco vai para o "voltar" (o canvas por baixo fica escondido).
@@ -136,6 +139,14 @@ export function MobileWindow({ id, panel, onSelect, onBack }: MobileWindowProps)
     case 'diagnostics':
       actions = <DiagnosticsHeaderActions />;
       content = <DiagnosticsView />;
+      break;
+    case 'proposals':
+      actions = <ProposalsHeaderActions />;
+      content = (
+        <ProposalsWindow
+          onHelp={() => panel.dialogs.show({ kind: 'help', section: HELP_PROPOSALS })}
+        />
+      );
       break;
   }
 

@@ -50,8 +50,22 @@ async function readMapping(page: Page): Promise<FolderMapping> {
   return page.evaluate(async (folder) => {
     const root = await navigator.storage.getDirectory();
     const dir = await root.getDirectoryHandle(folder);
-    const file = await (await dir.getFileHandle('mapping.json')).getFile();
-    return JSON.parse(await file.text());
+    // A app pode estar regravando o arquivo nesse instante: o Chrome recusa a leitura
+    // (NotReadableError) se o arquivo muda entre o getFile() e o text(). Tenta de novo.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const file = await (await dir.getFileHandle('mapping.json')).getFile();
+        return JSON.parse(await file.text());
+      } catch (error) {
+        if (
+          attempt >= 20 ||
+          !(error instanceof DOMException) ||
+          error.name !== 'NotReadableError'
+        )
+          throw error;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+    }
   }, FOLDER);
 }
 

@@ -29,6 +29,15 @@ import { useEditorShortcuts } from './useEditorShortcuts';
 import { useExternalChanges } from './useExternalChanges';
 import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
+import { useReviewSync } from './useReviewSync';
+import { MobileReviewStrip, ReviewBar } from '../ui/review/ReviewBar';
+import { MobileReviewBottomBar, ReviewFiltersDialog } from '../ui/review/MobileReview';
+import {
+  CompareDialog,
+  ReviewCanvasControls,
+  ReviewLegend,
+} from '../ui/review/ReviewCanvasControls';
+import { useExitReview } from './useExitReview';
 import { Button } from '../ui/controls';
 
 export function Editor({ open }: { readonly open: OpenProject }) {
@@ -42,7 +51,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
 
 /** Exportado para o teste de contagem de renderizações (tests/components/editorRenders.test.tsx). */
 export function EditorScreen() {
-  const { store, ui, canvas } = useEditor();
+  const { store, ui, canvas, review } = useEditor();
   const desktop = useMediaQuery(DESKTOP_QUERY);
   const compact = useMediaQuery(`(max-width: ${BREAKPOINTS.compact}px)`);
   const dialogs = useEditorDialogs();
@@ -51,6 +60,9 @@ export function EditorScreen() {
   const commands = useProjectCommands(dialogs, notices);
   useEditorShortcuts(dialogs, commands, desktop);
   useExternalChanges();
+  useReviewSync();
+  const reviewing = review.proposalId.value !== null;
+  const exitReview = useExitReview(dialogs);
 
   /** Celular: centralizar a seleção quando o canvas voltar a aparecer. */
   const focusAfterView = useRef(false);
@@ -133,7 +145,7 @@ export function EditorScreen() {
       <p class="muted">{t('editor.emptyCanvas')}</p>
       <Button
         variant="primary"
-        disabled={store.readOnly.value || busy}
+        disabled={store.locked.value || busy}
         onClick={intake.onAddClick}
       >
         {t('editor.addImages')}
@@ -150,6 +162,7 @@ export function EditorScreen() {
           dialogs={dialogs}
           commands={commands}
         />
+        {reviewing && <ReviewBar onExit={exitReview} />}
         <EditorWindows
           panel={panel}
           onSelect={onSelect}
@@ -162,12 +175,14 @@ export function EditorScreen() {
               <CanvasHost />
               <CanvasNotices notices={notices} />
               <CanvasContextMenu />
+              <ReviewLegend />
               <Minimap />
               {emptyCanvas}
             </main>
           }
         />
         <StatusBar />
+        <CompareDialog />
         <ImageInputs intake={intake} />
         <EditorDialogs
           dialogs={dialogs}
@@ -193,7 +208,13 @@ export function EditorScreen() {
         />
       ) : (
         <>
-          <EditorTopBar dialogs={dialogs} commands={commands} busy={busy} />
+          <EditorTopBar
+            dialogs={dialogs}
+            commands={commands}
+            busy={busy}
+            onExitReview={reviewing ? exitReview : undefined}
+          />
+          {reviewing && <MobileReviewStrip />}
           <div class="mobile-crumbs">
             <Breadcrumbs onSelect={onSelect} />
           </div>
@@ -210,6 +231,12 @@ export function EditorScreen() {
           <CanvasHost />
           <CanvasNotices notices={notices} />
           <CanvasContextMenu />
+          <ReviewLegend />
+          {reviewing && (
+            <div class="canvas-float canvas-float-top">
+              <ReviewCanvasControls compact />
+            </div>
+          )}
           <div class="canvas-float canvas-float-start">
             <ZoomField />
           </div>
@@ -220,14 +247,24 @@ export function EditorScreen() {
         </main>
         {!full && <EditorSheet {...panel} />}
       </div>
-      {!full && (
-        <EditorBottomBar
-          busy={busy}
-          onAdd={intake.onAddClick}
-          onPanels={() => dialogs.show({ kind: 'panels' })}
-        />
+      {!full &&
+        (reviewing ? (
+          <MobileReviewBottomBar
+            onPanels={() => dialogs.show({ kind: 'panels' })}
+            onFilters={() => (ui.reviewFilters.value = true)}
+          />
+        ) : (
+          <EditorBottomBar
+            busy={busy}
+            onAdd={intake.onAddClick}
+            onPanels={() => dialogs.show({ kind: 'panels' })}
+          />
+        ))}
+      {reviewing && ui.reviewFilters.value && (
+        <ReviewFiltersDialog onClose={() => (ui.reviewFilters.value = false)} />
       )}
 
+      <CompareDialog />
       <ImageInputs intake={intake} />
       <EditorDialogs dialogs={dialogs} busy={busy} intake={intake} commands={commands} />
     </div>

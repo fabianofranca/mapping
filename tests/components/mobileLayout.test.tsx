@@ -105,6 +105,7 @@ describe('tela cheia (B6)', () => {
       t('view.list'),
       t('incomplete.title'),
       t('diagnostics.title'),
+      t('proposals.title'),
     ]);
     expect(within(strip).getByRole('tab', { name: t('layer.title') }).ariaSelected).toBe(
       'true',
@@ -156,13 +157,13 @@ describe('menu Painéis (B6)', () => {
     return { harness, dialogs, commands, user: userEvent.setup() };
   }
 
-  it('as seis janelas abrem em tela cheia e fecham o menu', async () => {
+  it('as sete janelas abrem em tela cheia e fecham o menu', async () => {
     const { harness, dialogs, user } = setup();
     const menu = screen.getByRole('dialog', { name: t('panels.title') });
     const tiles = within(menu)
       .getAllByRole('button')
       .filter((b) => b.classList.contains('panel-tile'));
-    expect(tiles).toHaveLength(6);
+    expect(tiles).toHaveLength(7);
     await user.click(within(menu).getByRole('button', { name: /^Incompletas/ }));
     expect(dialogs.close).toHaveBeenCalled();
     expect(harness.ui.mobileWindow.value).toBe('incomplete');

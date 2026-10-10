@@ -14,6 +14,7 @@ import type { EditorDialog, EditorDialogs as Dialogs } from './useEditorDialogs'
 import type { ImageIntake } from './useImageIntake';
 import type { ProjectCommands } from './useProjectCommands';
 import { Button } from '../ui/controls';
+import { ExitReviewDialog } from '../ui/review/ExitReviewDialog';
 
 interface EditorDialogsProps {
   readonly dialogs: Dialogs;
@@ -88,7 +89,7 @@ function renderDialog(
   const { store, actions, ui } = ctx;
   const project = store.committed.value;
   if (!project) return null;
-  const readOnly = store.readOnly.value;
+  const readOnly = store.locked.value;
   const { close } = dialogs;
 
   switch (dialog.kind) {
@@ -193,6 +194,8 @@ function renderDialog(
     }
     case 'export':
       return <ExportDialog file={dialog.file} onDone={close} />;
+    case 'exitReview':
+      return <ExitReviewDialog onClose={close} />;
     case 'confirmClose':
       return (
         <ConfirmDialog

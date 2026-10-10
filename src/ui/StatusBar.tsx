@@ -7,6 +7,8 @@ import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { imageLabel, markingLabel } from './labels';
 import { ZoomField } from './ZoomField';
+import { showAndFocusToolWindow } from './toolWindowLayout';
+import { awaitingText } from './review/ProposalRow';
 
 // Barra de status do desktop (B8; no celular, o resumo `StatusSummary`): salvamento, destino e "não exportado" à esquerda;
 // seleção, cursor, zoom, schema e canal à direita. O cursor vem do canvas num signal
@@ -75,6 +77,43 @@ function CursorItem() {
 
 const Separator = () => <span class="status-sep" aria-hidden="true" />;
 
+/**
+ * Propostas: na revisão, "Somente leitura" e as aceitas aguardando aplicação; fora dela, as
+ * propostas novas (abre a janela Propostas).
+ */
+function ProposalsItem() {
+  const { review } = useEditor();
+  if (review.proposalId.value !== null) {
+    const pending = review.derived.counts.value.acceptedPending;
+    return (
+      <>
+        <span class="status-item" title={t('review.readOnlyTip')}>
+          <Icon name="lock" />
+          {t('review.readOnlyFlag')}
+        </span>
+        {pending > 0 && (
+          <span class="status-item status-item-ok">
+            <Icon name="check" />
+            {awaitingText(pending)}
+          </span>
+        )}
+      </>
+    );
+  }
+  const fresh = review.derived.freshIds.value.length;
+  if (fresh === 0) return null;
+  return (
+    <button
+      type="button"
+      class="status-item status-item-button status-item-info"
+      onClick={() => showAndFocusToolWindow('proposals')}
+    >
+      <Icon name="proposal" />
+      {t('proposals.statusNew', { count: fresh })}
+    </button>
+  );
+}
+
 /** Destino do salvamento, "não exportado", schema e canal: comuns às duas barras. */
 function useStatusTexts() {
   const { open } = useEditor();
@@ -96,6 +135,7 @@ export function StatusBar() {
       {unexported && (
         <span class="status-item status-item-warn">{t('status.unexported')}</span>
       )}
+      <ProposalsItem />
       <span class="statusbar-gap" />
       <SelectionItem />
       <Separator />

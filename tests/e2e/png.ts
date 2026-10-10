@@ -42,3 +42,47 @@ export function solidPng(
     chunk('IEND', Buffer.alloc(0)),
   ]);
 }
+
+/** Bloco retangular de uma tela de exemplo (pixels da imagem, cor RGB). */
+export interface PngBlock {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly rgb: readonly [number, number, number];
+}
+
+/**
+ * PNG RGB com fundo sólido e blocos retangulares por cima: o bastante para parecer uma
+ * tela (cabeçalho, lista, botão) nas propostas de exemplo e nos testes de ponta a ponta.
+ */
+export function blocksPng(
+  width: number,
+  height: number,
+  background: readonly [number, number, number],
+  blocks: readonly PngBlock[],
+): Buffer {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 2;
+  const stride = 1 + width * 3;
+  const raw = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) raw.set(background, y * stride + 1 + x * 3);
+  }
+  for (const b of blocks) {
+    for (let y = Math.max(0, b.y); y < Math.min(height, b.y + b.height); y++) {
+      for (let x = Math.max(0, b.x); x < Math.min(width, b.x + b.width); x++) {
+        raw.set(b.rgb, y * stride + 1 + x * 3);
+      }
+    }
+  }
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(raw)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}

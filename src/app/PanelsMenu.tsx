@@ -9,6 +9,8 @@ import { Icon, type IconName } from '../ui/icons';
 import { StatusSummary } from '../ui/StatusBar';
 import { toolWindowMeta } from '../ui/toolWindowMeta';
 import type { EditorDialogs } from './useEditorDialogs';
+import { useDecideVisible } from '../ui/review/useReview';
+import { useExitReview } from './useExitReview';
 import type { ProjectCommands } from './useProjectCommands';
 
 // Menu "Painéis e ações" do celular (B6): abre pelo botão Painéis da barra de baixo e
@@ -28,14 +30,19 @@ function WindowTile({
   readonly id: ToolWindowId;
   readonly onOpen: (id: ToolWindowId) => void;
 }) {
-  const { derived } = useEditor();
+  const { derived, review } = useEditor();
   const meta = toolWindowMeta(id);
   const label = meta.tab?.() ?? meta.title();
-  const count = id === 'incomplete' ? derived.incompleteCount.value : 0;
+  const count =
+    id === 'incomplete'
+      ? derived.incompleteCount.value
+      : id === 'proposals'
+        ? review.derived.freshIds.value.length
+        : 0;
   const alert = id === 'diagnostics' && diagnosticsUnseen.value;
   const extra =
     count > 0
-      ? ` (${t('panels.pending', { count })})`
+      ? ` (${t(id === 'proposals' ? 'proposals.newCount' : 'panels.pending', { count })})`
       : alert
         ? ` (${t('diagnostics.unseen')})`
         : '';
@@ -76,6 +83,44 @@ function ActionRow({
   );
 }
 
+/** Seção Revisão do menu (celular): lote, legenda e sair. */
+function ReviewActions({ dialogs }: { readonly dialogs: EditorDialogs }) {
+  const { review, ui } = useEditor();
+  const decideVisible = useDecideVisible();
+  const exitReview = useExitReview(dialogs);
+  if (review.proposalId.value === null) return null;
+  const open = review.derived.proposal.value?.status === 'open';
+  const run = (action: () => void) => () => {
+    dialogs.close();
+    action();
+  };
+  return (
+    <>
+      <h2 class="action-sheet-heading">{t('review.mode')}</h2>
+      <div class="menu-rows">
+        <ActionRow
+          icon="check"
+          label={t('review.acceptAll')}
+          disabled={!open}
+          onClick={run(() => decideVisible('accepted'))}
+        />
+        <ActionRow
+          icon="close"
+          label={t('review.rejectAll')}
+          disabled={!open}
+          onClick={run(() => decideVisible('rejected'))}
+        />
+        <ActionRow
+          icon="info"
+          label={t('review.legend.open')}
+          onClick={run(() => (ui.reviewLegend.value = true))}
+        />
+        <ActionRow icon="arrowLeft" label={t('review.exit')} onClick={run(exitReview)} />
+      </div>
+    </>
+  );
+}
+
 export function PanelsMenu({ dialogs, commands, busy }: PanelsMenuProps) {
   const { ui } = useEditor();
   const openWindow = (id: ToolWindowId) => {
@@ -92,6 +137,7 @@ export function PanelsMenu({ dialogs, commands, busy }: PanelsMenuProps) {
           <WindowTile key={id} id={id} onOpen={openWindow} />
         ))}
       </div>
+      <ReviewActions dialogs={dialogs} />
       <h2 class="action-sheet-heading">{t('panels.project')}</h2>
       <div class="menu-rows">
         <ActionRow

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  addAnnotation,
   addLayer,
   deserialize,
   moveMarking,
@@ -808,6 +809,24 @@ describe('como ficaria', () => {
     expect(review.derived.levelTypes.value.get('item:M5')).toBe('created');
     expect(review.derived.levelTypes.value.get('item:M4')).toBe('moved');
     expect(review.derived.levelTypes.value.get('item:M1')).toBe('changed');
+    // A imagem nova é criada; a que só tem uma marcação movida está "alterada".
+    expect(review.derived.levelTypes.value.get('image:I3')).toBe('created');
+    expect(review.derived.levelTypes.value.get('image:I2')).toBe('changed');
+  });
+
+  it('o tipo do item é o da marcação: anotação criada num item que já existe o altera', async () => {
+    const base = sampleProject();
+    let after = addAnnotation(base, {
+      id: 'A9',
+      markingId: 'M4',
+      layerId: 'L1',
+      name: 'x',
+    });
+    after = setMarkingRect(after, 'M4', { x: 10, y: 10, width: 100, height: 100 });
+    const { review } = await openHarness({ proposals: [propose(base, after)] });
+    review.open('P1');
+    // A posição muda, mas não é a única coisa: "alterada", não "movida" nem "criada".
+    expect(review.derived.levelTypes.value.get('item:M4')).toBe('changed');
   });
 });
 

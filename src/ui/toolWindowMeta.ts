@@ -26,6 +26,7 @@ const META: Readonly<Record<ToolWindowId, ToolWindowMeta>> = {
   list: { icon: 'list', title: () => t('list.title'), tab: () => t('view.list') },
   incomplete: { icon: 'checklist', title: () => t('incomplete.title') },
   diagnostics: { icon: 'diagnostics', title: () => t('diagnostics.title') },
+  proposals: { icon: 'proposal', title: () => t('proposals.title') },
 };
 
 export function toolWindowMeta(id: ToolWindowId): ToolWindowMeta {
@@ -42,4 +43,20 @@ export function windowsOfSide(side: ToolWindowSide): readonly ToolWindowId[] {
   return TOOL_WINDOWS.filter((id) => WINDOW_SIDE[id] === side).sort(
     (a, b) => WINDOW_NUMBER[a] - WINDOW_NUMBER[b],
   );
+}
+
+/**
+ * Contador da aba de uma janela: as pendências na Incompletas e as propostas novas
+ * (informativo, em destaque) na Propostas.
+ */
+export function windowBadge(
+  id: ToolWindowId,
+  incomplete: number,
+  freshProposals: number,
+): { readonly badge?: string; readonly badgeTone?: 'muted' | 'info' } {
+  if (id === 'incomplete' && incomplete > 0) return { badge: String(incomplete) };
+  if (id === 'proposals' && freshProposals > 0) {
+    return { badge: String(freshProposals), badgeTone: 'info' };
+  }
+  return {};
 }

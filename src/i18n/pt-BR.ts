@@ -1,4 +1,7 @@
+import { reviewPtBR } from './review';
+
 export const ptBR = {
+  ...reviewPtBR,
   'app.title': 'Mapping',
   'app.loading': 'Carregando…',
   'settings.title': 'Configurações',

@@ -153,6 +153,47 @@ export function worksInTextInput(shortcut: Shortcut): boolean {
   return shortcut.kind === 'new-annotation';
 }
 
+/**
+ * Atalhos da revisão de propostas (HANDOFF-PROPOSALS 6): valem só com a revisão aberta e
+ * o foco fora de um campo de texto. O projeto está somente leitura, então as letras ficam
+ * livres (`R` rejeita).
+ */
+export type ReviewShortcut =
+  | { readonly kind: 'decide'; readonly state: 'accepted' | 'rejected' | null }
+  | {
+      readonly kind: 'step';
+      readonly target: 'pending' | 'conflict';
+      readonly direction: 1 | -1;
+    }
+  | { readonly kind: 'toggle-view' }
+  | { readonly kind: 'legend' }
+  | { readonly kind: 'apply' };
+
+/**
+ * A / R aceitam e rejeitam o nível selecionado, Backspace limpa a decisão, N / Shift+N e
+ * C / Shift+C andam nas pendentes e nos conflitos, P alterna Atual / Proposto, L mostra a
+ * legenda das marcas e Ctrl+Enter aplica as aceitas.
+ */
+export function reviewShortcutFor(e: KeyInfo): ReviewShortcut | null {
+  const key = e.key.toLowerCase();
+  const mod = e.ctrlKey || e.metaKey;
+  if (e.altKey) return null;
+  if (mod) return !e.shiftKey && key === 'enter' ? { kind: 'apply' } : null;
+  const direction = e.shiftKey ? -1 : 1;
+  if (e.code === 'KeyN' || key === 'n')
+    return { kind: 'step', target: 'pending', direction };
+  if (e.code === 'KeyC' || key === 'c') {
+    return { kind: 'step', target: 'conflict', direction };
+  }
+  if (e.shiftKey) return null;
+  if (key === 'a') return { kind: 'decide', state: 'accepted' };
+  if (key === 'r') return { kind: 'decide', state: 'rejected' };
+  if (key === 'backspace') return { kind: 'decide', state: null };
+  if (key === 'p') return { kind: 'toggle-view' };
+  if (key === 'l') return { kind: 'legend' };
+  return null;
+}
+
 /** Alvos em que o teclado pertence ao campo, não ao editor. */
 export function isTextInput(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;

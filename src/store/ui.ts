@@ -67,6 +67,12 @@ export interface EditorUi {
   readonly toast: Signal<string | null>;
   /** Menu de contexto do canvas (botão direito): onde abrir (tela) e o item sob o cursor. */
   readonly canvasMenu: Signal<CanvasMenu | null>;
+  /** Revisão de propostas: legenda das marcas do canvas aberta (atalho L). */
+  readonly reviewLegend: Signal<boolean>;
+  /** Revisão: comparação antes/depois da imagem trocada aberta (id da imagem). */
+  readonly compareImage: Signal<string | null>;
+  /** Revisão no celular: filtros abertos em tela cheia. */
+  readonly reviewFilters: Signal<boolean>;
 }
 
 export interface CanvasMenu {
@@ -93,6 +99,9 @@ export function createEditorUi(): EditorUi {
     sheet: signal<SheetHeight>('peek'),
     toast: signal<string | null>(null),
     canvasMenu: signal<CanvasMenu | null>(null),
+    reviewLegend: signal<boolean>(false),
+    compareImage: signal<string | null>(null),
+    reviewFilters: signal<boolean>(false),
   };
 }
 

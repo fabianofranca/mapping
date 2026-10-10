@@ -183,6 +183,7 @@ describe('janela inferior: abas e faixa', () => {
       t('view.list'),
       t('incomplete.title'),
       t('diagnostics.title'),
+      t('proposals.title'),
     ]);
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
     await userEvent.click(tabs[1]!);
