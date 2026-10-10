@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useContext, useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
+import { SCHEMA_VERSION } from '../model';
 import { markDiagnosticsSeen } from '../store/diagnostics';
-import { locale } from '../store/settings';
+import { locale, theme } from '../store/settings';
+import { BUILD_ID } from '../utils/build';
+import { CHANNEL } from '../utils/channel';
 import {
   clearReportedErrors,
-  formatReportedErrors,
+  formatDiagnosticsReport,
   reportedErrors,
+  type DiagnosticsInfo,
 } from '../utils/report';
 import { Button } from './controls';
+import { EditorContext, type EditorContextValue } from './EditorContext';
 
 function formatTime(iso: string): string {
   try {
@@ -20,12 +25,39 @@ function formatTime(iso: string): string {
   }
 }
 
-/** Copiar o registro como texto; `copied` guarda o resultado para o aviso. */
+/** Ambiente do relato; os dados do projeto só existem dentro do editor. */
+function diagnosticsInfo(editor: EditorContextValue | null): DiagnosticsInfo {
+  const project = editor?.store.committed.peek() ?? null;
+  return {
+    build: BUILD_ID,
+    channel: CHANNEL,
+    schema: SCHEMA_VERSION,
+    storage: editor?.open.kind ?? null,
+    userAgent: navigator.userAgent,
+    window: { width: window.innerWidth, height: window.innerHeight },
+    language: locale.peek(),
+    theme: theme.peek(),
+    counts: project && {
+      images: project.images.length,
+      markings: project.markings.length,
+      annotations: project.annotations.length,
+    },
+    pendingSave: editor ? editor.session.saveStatus.peek() !== 'saved' : null,
+  };
+}
+
+/**
+ * Copiar o cabeçalho do ambiente e o registro como texto; `copied` guarda o resultado
+ * para o aviso.
+ */
 export function useCopyErrors() {
+  const editor = useContext(EditorContext);
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(formatReportedErrors(reportedErrors.peek()));
+      await navigator.clipboard.writeText(
+        formatDiagnosticsReport(diagnosticsInfo(editor), reportedErrors.peek()),
+      );
       setCopied('ok');
     } catch {
       // Sem a API (ou sem permissão): a tabela continua na tela para copiar à mão.
@@ -50,7 +82,8 @@ export function DiagnosticsActions({ copied, copy }: ReturnType<typeof useCopyEr
       <Button size="sm" disabled={empty} onClick={clearReportedErrors}>
         {t('diagnostics.clear')}
       </Button>
-      <Button size="sm" disabled={empty} onClick={() => void copy()}>
+      {/* Copiar vale mesmo sem erros: o cabeçalho identifica o ambiente do relato. */}
+      <Button size="sm" onClick={() => void copy()}>
         {t('diagnostics.copy')}
       </Button>
     </>
@@ -94,6 +127,12 @@ export function DiagnosticsTable() {
                     data-label={t('diagnostics.col.message')}
                   >
                     {error.message}
+                    {error.count !== undefined && (
+                      <span class="muted">
+                        {' '}
+                        {t('diagnostics.repeated', { count: error.count })}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

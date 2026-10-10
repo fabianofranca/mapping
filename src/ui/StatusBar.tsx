@@ -2,6 +2,7 @@ import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
 import { SCHEMA_VERSION } from '../model';
 import { resolveSelection } from '../store/ui';
+import { BUILD_ID } from '../utils/build';
 import { CHANNEL } from '../utils/channel';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
@@ -11,7 +12,7 @@ import { showAndFocusToolWindow } from './toolWindowLayout';
 import { awaitingText } from './review/ProposalRow';
 
 // Barra de status do desktop (B8; no celular, o resumo `StatusSummary`): salvamento, destino e "não exportado" à esquerda;
-// seleção, cursor, zoom, schema e canal à direita. O cursor vem do canvas num signal
+// seleção, cursor, zoom, schema, canal e build à direita. O cursor vem do canvas num signal
 // de UI próprio, atualizado no máximo uma vez por quadro (HANDOFF, seção 6).
 
 function SaveItem() {
@@ -153,13 +154,20 @@ export function StatusBar() {
       <span class="status-item" title={t('status.channelLabel', { channel })}>
         {channel}
       </span>
+      <Separator />
+      <span
+        class="status-item status-item-mono"
+        title={t('status.buildLabel', { id: BUILD_ID })}
+      >
+        {BUILD_ID}
+      </span>
     </footer>
   );
 }
 
 /**
- * Celular: o resumo da barra de status (salvamento, destino, não exportado, schema e
- * canal), no rodapé do menu Painéis. Seleção e zoom já estão à vista no canvas.
+ * Celular: o resumo da barra de status (salvamento, destino, não exportado, schema,
+ * canal e build), no rodapé do menu Painéis. Seleção e zoom já estão à vista no canvas.
  */
 export function StatusSummary() {
   const { target, unexported, channel } = useStatusTexts();
@@ -172,6 +180,7 @@ export function StatusSummary() {
       )}
       <span class="status-item">{t('status.schema', { version: SCHEMA_VERSION })}</span>
       <span class="status-item">{t('status.channelLabel', { channel })}</span>
+      <span class="status-item">{t('status.build', { id: BUILD_ID })}</span>
     </footer>
   );
 }

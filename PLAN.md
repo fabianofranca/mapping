@@ -117,12 +117,12 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 
 **Toca em:** `src/main.tsx`, `src/utils/report.ts`, `vite.config.ts` (`define`), `src/utils/channel.ts` ou novo `src/utils/build.ts`, `src/ui/StatusBar.tsx`, `src/ui/SettingsDialog.tsx` (ou Ajuda), `src/ui/DiagnosticsView.tsx`, `src/i18n/*`, `README.md`, `tests/utils/*`, `tests/components/*`, `tests/e2e/*`.
 
-- [ ] `window.addEventListener('error')` e `('unhandledrejection')` em `main.tsx` chamando `reportError('window', …)`; erros repetidos em sequência agrupados (contador), para um laço não lotar os 20 lugares; sem violar a CSP
-- [ ] Build id injetado no build por `define` (`__BUILD_ID__`): SHA curto do commit (`GITHUB_SHA` no CI; `git rev-parse --short HEAD` localmente; `dev` sem git) mais a data do build; disponível como constante tipada em `src/utils/`
-- [ ] Build id, canal e schema na barra de status (desktop) e numa seção "Sobre" em Configurações (desktop e celular), com "Copiar"
-- [ ] "Copiar" do Diagnóstico gera um cabeçalho antes dos erros: build, canal, schema, tipo de armazenamento (pasta/local), `navigator.userAgent`, tamanho da janela, idioma, tema, contagens de imagens/marcações/anotações (sem nomes nem caminhos: privacidade), e indica se há gravação pendente
-- [ ] `README.md`: seção "Como relatar um problema" (onde fica o Diagnóstico, o que copiar, onde abrir a issue)
-- [ ] Testes: promessa rejeitada solta aparece no Diagnóstico; texto copiado tem o cabeçalho; e2e confere que o build id aparece na barra e no "Sobre" (desktop e celular)
+- [x] `window.addEventListener('error')` e `('unhandledrejection')` em `main.tsx` chamando `reportError('window', …)`; erros repetidos em sequência agrupados (contador), para um laço não lotar os 20 lugares; sem violar a CSP
+- [x] Build id injetado no build por `define` (`__BUILD_ID__`): SHA curto do commit (`GITHUB_SHA` no CI; `git rev-parse --short HEAD` localmente; `dev` sem git) mais a data do build; disponível como constante tipada em `src/utils/`
+- [x] Build id, canal e schema na barra de status (desktop) e numa seção "Sobre" em Configurações (desktop e celular), com "Copiar"
+- [x] "Copiar" do Diagnóstico gera um cabeçalho antes dos erros: build, canal, schema, tipo de armazenamento (pasta/local), `navigator.userAgent`, tamanho da janela, idioma, tema, contagens de imagens/marcações/anotações (sem nomes nem caminhos: privacidade), e indica se há gravação pendente
+- [x] `README.md`: seção "Como relatar um problema" (onde fica o Diagnóstico, o que copiar, onde abrir a issue)
+- [x] Testes: promessa rejeitada solta aparece no Diagnóstico; texto copiado tem o cabeçalho; e2e confere que o build id aparece na barra e no "Sobre" (desktop e celular)
 
 **Aceite**: os testes acima; `tests/theme/tokenLiterals.test.ts` e o teste de chaves de i18n continuam verdes; o build do preview mostra `prévia` e o id.
 

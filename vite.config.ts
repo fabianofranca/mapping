@@ -2,15 +2,28 @@
 import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { wasmFiles } from './mcp/wasmFiles.mjs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
 import { applyCsp } from './pwa/csp';
 import { renderTokensCss } from './src/theme/tokens';
+import { resolveBuildId } from './src/utils/build';
 
 /** `VITE_CHANNEL=preview` no build do branch publicado em /preview/ (deploy.yml). */
 const channel: BuildChannel = process.env.VITE_CHANNEL === 'preview' ? 'preview' : 'main';
+
+/** Build id (fase 5.4): `abc1234 · 2026-10-10`, lido por `src/utils/build.ts`. */
+const buildId = resolveBuildId({
+  githubSha: process.env.GITHUB_SHA,
+  gitSha: () =>
+    execSync('git rev-parse --short HEAD', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }),
+  now: new Date(),
+});
 
 /** FNV-1a de 32 bits em hexadecimal: basta para distinguir um build do outro. */
 function hash(text: string): string {
@@ -123,6 +136,7 @@ const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {
   base: './',
+  define: { __BUILD_ID__: JSON.stringify(buildId) },
   plugins: [
     tokensCss(),
     preact(),

@@ -67,6 +67,16 @@ Para ver um branch no celular antes do merge: em **Actions → Deploy → Run wo
 
 O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service worker próprios): ele não enxerga nem migra os projetos locais da versão principal. Uma faixa no topo avisa que é uma versão de teste (dá para dispensá-la na sessão; o selo PREVIEW na barra e o canal na barra de status ficam sempre), e o manifest tem outro nome, para instalar os dois lado a lado.
 
+## Como relatar um problema
+
+A app não envia nada para a rede (nem telemetria), então o relato depende de você copiar os dados:
+
+1. Abra o **Diagnóstico**: no desktop, a aba Diagnóstico da janela de baixo (`Ctrl+Shift+6`); no celular, o menu **Painéis** → Diagnóstico.
+2. Toque em **Copiar**. O texto traz um cabeçalho com a versão (build), canal, schema, tipo de armazenamento (pasta ou local), navegador, tamanho da janela, idioma, tema, quantas imagens, marcações e anotações o projeto tem e se há gravação pendente, seguido dos erros registrados. Não leva nomes de projeto, de imagens nem caminhos.
+3. Abra uma issue em [github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues) com o texto copiado, o que você fez, o que esperava e o que aconteceu (um print ajuda).
+
+Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também tem **Copiar**; no desktop ela aparece ainda no fim da barra de status.
+
 ## Documentação
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
