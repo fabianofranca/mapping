@@ -50,6 +50,7 @@ function checkColor(color: string): string {
 
 /** Cria uma camada livre. Camadas de especialização vêm de `applySpecialization`. */
 export function addLayer(p: Project, layer: Omit<Layer, 'spec'>): Project {
+  if (p.layers.some((l) => l.id === layer.id)) fail('duplicate-id', layer.id);
   const created: Layer = {
     id: layer.id,
     name: checkName(layer.name),

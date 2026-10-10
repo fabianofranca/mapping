@@ -3,7 +3,9 @@ import {
   migrations,
   referencedSpecFiles,
   type DeserializeError,
+  type InvariantIssue,
   type Project,
+  type RepairedLoad,
 } from '../model';
 import { reportError } from '../utils/report';
 import type { ProjectStorage } from './types';
@@ -19,7 +21,20 @@ export type LoadProjectResult =
       /** O `mapping.json` como estava no armazenamento. */
       readonly text: string;
     }
-  | { readonly ok: false; readonly error: DeserializeError['code'] | 'not-found' };
+  | {
+      readonly ok: false;
+      readonly error: DeserializeError['code'] | 'not-found';
+      /** Em `invariant-violation`: a lista de problemas e o reparo possível. */
+      readonly inconsistent?: InconsistentLoad;
+    };
+
+/** `mapping.json` com dados inconsistentes, como lido (nada foi gravado). */
+export interface InconsistentLoad {
+  readonly issues: readonly InvariantIssue[];
+  readonly repair: RepairedLoad;
+  /** O `mapping.json` original: vai para `backups/` se o reparo for aceito. */
+  readonly text: string;
+}
 
 /**
  * Lê o `mapping.json` e as cópias de `specs/` que ele cita e valida tudo. Usado ao
@@ -37,7 +52,17 @@ export async function loadProject(storage: ProjectStorage): Promise<LoadProjectR
     if (spec !== null) specs.set(file, spec);
   }
   const result = deserialize(text, migrations, specs);
-  if (!result.ok) return { ok: false, error: result.error.code };
+  if (!result.ok) {
+    const { error, repair } = result;
+    if (error.code === 'invariant-violation' && repair) {
+      return {
+        ok: false,
+        error: error.code,
+        inconsistent: { issues: error.issues, repair, text },
+      };
+    }
+    return { ok: false, error: error.code };
+  }
   return {
     ok: true,
     project: result.project,

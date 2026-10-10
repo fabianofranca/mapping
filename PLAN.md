@@ -100,14 +100,14 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 
 **Toca em:** `src/model/invariants.ts`, `src/model/serialization.ts`, novo `src/model/repair.ts`, `src/model/annotations.ts`, `markings.ts`, `images.ts`, `layers.ts`, `schema.ts`, `src/storage/loadProject.ts`, `src/app/controller.ts` (fluxo de abertura), um diálogo em `src/ui/` (reaproveitar `Dialog`), `src/i18n/*`, `docs/FORMAT.md`, `tests/model/*`, `tests/app/controller.test.ts`, `tests/fixtures/`.
 
-- [ ] Fixtures: um `mapping.json` por classe de invariante (`tests/fixtures/invalid/*.json`), gerados a partir do projeto do roteiro 13.9
-- [ ] Operações do modelo recusam `duplicate-id` para `id` explícito já existente (marcação, imagem, anotação, camada) e par com `id` já usado em **outra** anotação; teste por operação
-- [ ] `invariant-violation` carrega, por problema: código, entidade (`image`/`marking`/`annotation`/`layer`/`spec`), id e nome quando houver; o diálogo de erro lista tudo com "Copiar"
-- [ ] `repairProject(project, issues)` puro em `src/model/repair.ts`: devolve `{ project, repaired, unrepaired }`. Reparos mecânicos: par com id duplicado → id novo; `rect-out-of-image` → recorte aos limites da imagem (marcação que ficar sem área → removida, com registro); marcação com `imageId` inexistente, anotação com `markingId`/`layerId` inexistente → removida com registro; `parentId` inexistente ou ciclo na hierarquia → marcação vira raiz da imagem; `images-overlap` → a imagem de maior índice é deslocada para a direita da caixa das anteriores. Tudo o que não está nesta lista é `unrepaired`
-- [ ] Fluxo de abertura: com `unrepaired` vazio, o diálogo oferece **Reparar e abrir** (além de Fechar); ao aceitar, a sessão agenda o backup do original (`backups/`, mesmo mecanismo da migração) e grava o reparado na primeira gravação; o resumo do reparo entra no Diagnóstico e num aviso. Com `unrepaired`, só a lista e Fechar
-- [ ] `z.iso.datetime({ offset: true })` em `schema.ts` (e no formato da proposta); ao serializar, datas com fuso são normalizadas para UTC `Z`; teste de round-trip para as duas formas
-- [ ] MCP: `loadProject` continua recusando (ler nunca grava), mas a resposta traz a mesma lista de problemas; `docs/MCP.md` cita
-- [ ] `docs/FORMAT.md`: seção "Arquivos inconsistentes" (o que a app repara, o que recusa, onde fica o backup)
+- [x] Fixtures: um `mapping.json` por classe de invariante (`tests/fixtures/invalid/*.json`), gerados a partir do projeto do roteiro 13.9
+- [x] Operações do modelo recusam `duplicate-id` para `id` explícito já existente (marcação, imagem, anotação, camada) e par com `id` já usado em **outra** anotação; teste por operação
+- [x] `invariant-violation` carrega, por problema: código, entidade (`image`/`marking`/`annotation`/`layer`/`spec`), id e nome quando houver; o diálogo de erro lista tudo com "Copiar"
+- [x] `repairProject(project, issues)` puro em `src/model/repair.ts`: devolve `{ project, repaired, unrepaired }`. Reparos mecânicos: par com id duplicado → id novo; `rect-out-of-image` → recorte aos limites da imagem (marcação que ficar sem área → removida, com registro); marcação com `imageId` inexistente, anotação com `markingId`/`layerId` inexistente → removida com registro; `parentId` inexistente ou ciclo na hierarquia → marcação vira raiz da imagem; `images-overlap` → a imagem de maior índice é deslocada para a direita da caixa das anteriores. Tudo o que não está nesta lista é `unrepaired`
+- [x] Fluxo de abertura: com `unrepaired` vazio, o diálogo oferece **Reparar e abrir** (além de Fechar); ao aceitar, a sessão agenda o backup do original (`backups/`, mesmo mecanismo da migração) e grava o reparado na primeira gravação; o resumo do reparo entra no Diagnóstico e num aviso. Com `unrepaired`, só a lista e Fechar
+- [x] `z.iso.datetime({ offset: true })` em `schema.ts` (e no formato da proposta); ao serializar, datas com fuso são normalizadas para UTC `Z`; teste de round-trip para as duas formas
+- [x] MCP: `loadProject` continua recusando (ler nunca grava), mas a resposta traz a mesma lista de problemas; `docs/MCP.md` cita
+- [x] `docs/FORMAT.md`: seção "Arquivos inconsistentes" (o que a app repara, o que recusa, onde fica o backup)
 
 **Aceite**: cada fixture inválida abre reparada ou é recusada com a lista; o backup existe na pasta depois da primeira gravação; o projeto do roteiro 13.9 íntegro abre sem passar pelo reparo; `tests/model/performance.test.ts` continua no orçamento (`validateProject` não pode ficar mais lento no caminho feliz).
 

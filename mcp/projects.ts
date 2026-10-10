@@ -152,8 +152,15 @@ function describeError(error: DeserializeError): string {
       return `versão de schema não suportada: ${String(error.version)}`;
     case 'missing-migration':
       return `não há migração a partir da versão ${error.from}`;
-    case 'invariant-violation':
-      return `o mapping.json viola ${error.issues.length} regra(s) do modelo`;
+    case 'invariant-violation': {
+      // A mesma lista que a app mostra (a completa vai em `reason.issues`).
+      const shown = error.issues.slice(0, 20).map((i) => {
+        const name = i.name === undefined ? '' : ` "${i.name}"`;
+        return `${i.code} (${i.entity} ${i.id}${name})`;
+      });
+      const more = error.issues.length > shown.length ? '; …' : '';
+      return `o mapping.json viola ${error.issues.length} regra(s) do modelo: ${shown.join('; ')}${more}`;
+    }
   }
 }
 

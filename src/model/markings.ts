@@ -78,6 +78,7 @@ export interface NewMarkingArgs {
 
 /** Cria uma marcação. Se o retângulo estiver dentro de outras, a mais interna vira o pai. */
 export function createMarking(p: Project, args: NewMarkingArgs): Project {
+  if (p.markings.some((m) => m.id === args.id)) fail('duplicate-id', args.id);
   const image = findById(p.images, args.imageId);
   checkRectShape(args.rect);
   if (!containsRect(imagePixelRect(image), args.rect)) fail('rect-out-of-image');

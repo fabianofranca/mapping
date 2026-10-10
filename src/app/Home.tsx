@@ -8,6 +8,7 @@ import { Button, IconButton, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
 import { Icon, type IconName } from '../ui/icons';
+import { InconsistentProjectDialog } from '../ui/InconsistentProjectDialog';
 import { InstallHint } from '../ui/InstallHint';
 import { PreviewBadge } from '../ui/PreviewBanner';
 import { SettingsDialog } from '../ui/SettingsDialog';
@@ -23,6 +24,7 @@ import {
   openFolder,
   openLocalProject,
   type AppResult,
+  type InconsistentProject,
 } from './controller';
 
 type HomeDialog =
@@ -33,6 +35,7 @@ type HomeDialog =
       readonly images: readonly ExistingImage[];
     }
   | { readonly kind: 'delete'; readonly project: LocalProjectMeta }
+  | { readonly kind: 'inconsistent'; readonly inconsistent: InconsistentProject }
   | { readonly kind: 'help'; readonly section?: string }
   | { readonly kind: 'settings' };
 
@@ -66,14 +69,19 @@ export function Home() {
     );
   }
 
-  /** Roda uma ação mostrando o erro traduzido, se houver. */
+  /**
+   * Roda uma ação mostrando o erro traduzido, se houver. Projeto inconsistente abre o diálogo
+   * com a lista de problemas (e o "Reparar e abrir", quando dá).
+   */
   const run = async <T,>(action: () => Promise<AppResult<T>>): Promise<T | null> => {
     setBusy(true);
     setMessage(null);
     try {
       const result = await action();
       if (result.ok) return result.value;
-      setMessage(t(`error.${result.error}`));
+      if (result.inconsistent)
+        setDialog({ kind: 'inconsistent', inconsistent: result.inconsistent });
+      else setMessage(t(`error.${result.error}`));
       return null;
     } finally {
       setBusy(false);
@@ -95,6 +103,8 @@ export function Home() {
   };
 
   const closeDialog = () => setDialog(null);
+  // "Reparar e abrir" do projeto inconsistente (`null`: há problema sem reparo).
+  const repair = dialog?.kind === 'inconsistent' ? dialog.inconsistent.repair : null;
   const actions: HomeActions = {
     busy,
     available,
@@ -239,6 +249,21 @@ export function Home() {
         {list}
         {zipField}
       </main>
+
+      {dialog?.kind === 'inconsistent' && (
+        <InconsistentProjectDialog
+          details={dialog.inconsistent}
+          busy={busy}
+          onRepair={
+            repair &&
+            (() => {
+              closeDialog();
+              void run(repair);
+            })
+          }
+          onClose={closeDialog}
+        />
+      )}
 
       {dialog?.kind === 'help' && (
         <HelpDialog onClose={closeDialog} section={dialog.section} />

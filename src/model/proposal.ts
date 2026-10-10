@@ -6,6 +6,7 @@ import {
   jsonValue,
   layerSchema,
   markingSchema,
+  normalizeIsoDate,
   placementSchema,
   platformRepoSchema,
   rectSchema,
@@ -194,7 +195,9 @@ const id = z.string().min(1, 'não pode ser vazio');
 const proposalId = z
   .string()
   .regex(PROPOSAL_ID_RE, 'id inválido; use [A-Za-z0-9._-], sem começar com ponto');
-const isoDate = z.iso.datetime({ error: 'data inválida; use ISO 8601 (UTC)' });
+const isoDate = z.iso
+  .datetime({ offset: true, error: 'data inválida; use ISO 8601 (UTC)' })
+  .transform(normalizeIsoDate);
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'cor inválida; use #RRGGBB');
 const optionalText = z.string().nullable();
 

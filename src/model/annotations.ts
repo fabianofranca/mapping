@@ -13,8 +13,15 @@ export interface EntryInput {
   readonly value: string;
 }
 
-/** Valida e normaliza os pares (chaves sem espaços nas pontas; todo par com `id`). */
-function checkEntries(entries: readonly EntryInput[]): Entry[] {
+/**
+ * Valida e normaliza os pares (chaves sem espaços nas pontas; todo par com `id`). O `id`
+ * do par é único no projeto inteiro: não pode repetir o de um par de outra anotação.
+ */
+function checkEntries(
+  p: Project,
+  annotationId: string,
+  entries: readonly EntryInput[],
+): Entry[] {
   const normalized = entries.map((e) => ({
     id: e.id ?? crypto.randomUUID(),
     key: e.key.trim(),
@@ -22,8 +29,12 @@ function checkEntries(entries: readonly EntryInput[]): Entry[] {
   }));
   const issue = validateEntries(normalized).find((i) => i !== null);
   if (issue) fail(issue);
-  if (new Set(normalized.map((e) => e.id)).size !== normalized.length) {
-    fail('duplicate-id');
+  const ids = new Set(normalized.map((e) => e.id));
+  if (ids.size !== normalized.length) fail('duplicate-id');
+  for (const a of p.annotations) {
+    if (a.id === annotationId) continue;
+    const taken = a.entries.find((e) => ids.has(e.id));
+    if (taken) fail('duplicate-id', taken.id);
   }
   return normalized;
 }
@@ -38,6 +49,7 @@ export interface NewAnnotationArgs {
 
 /** Cria uma anotação livre. Camadas de especialização só aceitam tipadas (`addTypedAnnotation`). */
 export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
+  if (p.annotations.some((a) => a.id === args.id)) fail('duplicate-id', args.id);
   findById(p.markings, args.markingId);
   const layer = findById(p.layers, args.layerId);
   if (layer.spec) fail('typed-layer', layer.id);
@@ -50,7 +62,7 @@ export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
     parentAnnotationId: null,
     type: null,
     values: null,
-    entries: checkEntries(args.entries ?? []),
+    entries: checkEntries(p, args.id, args.entries ?? []),
   };
   return { ...p, annotations: [...p.annotations, annotation] };
 }
@@ -101,7 +113,7 @@ function updateEntries(
     ...p,
     annotations: updateById(p.annotations, annotationId, (a) => {
       if (a.type) fail('typed-annotation', a.id);
-      return { ...a, entries: checkEntries(update(a.entries)) };
+      return { ...a, entries: checkEntries(p, a.id, update(a.entries)) };
     }),
   };
 }

@@ -1,5 +1,6 @@
 import { validateProject, type InvariantIssue } from './invariants';
 import { migrate, migrations as defaultMigrations, type Migration } from './migrations';
+import { repairProject, type RepairResult } from './repair';
 import { projectSchema } from './schema';
 import { parseSpecText, type Spec } from './spec';
 import {
@@ -152,7 +153,23 @@ export type DeserializeResult =
        */
       readonly specWarnings: readonly SpecFileWarning[];
     }
-  | { readonly ok: false; readonly error: DeserializeError };
+  | {
+      readonly ok: false;
+      readonly error: DeserializeError;
+      /**
+       * Em `invariant-violation`, o reparo mecânico do projeto lido (`repairProject`),
+       * com o que a leitura apurou. Ler nunca grava: quem aceita o reparo é a app, e a
+       * sessão grava o backup do original e o reparado na primeira gravação.
+       */
+      readonly repair?: RepairedLoad;
+    };
+
+/** Projeto inconsistente reparado na leitura (ver `DeserializeResult`). */
+export interface RepairedLoad extends RepairResult {
+  readonly readOnly: boolean;
+  readonly migratedFrom: number | null;
+  readonly specWarnings: readonly SpecFileWarning[];
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -250,7 +267,16 @@ export function deserialize(
   const { project, warnings } = attachSpecs(parsed.data, specs);
   const issues = validateProject(project);
   if (issues.length > 0) {
-    return { ok: false, error: { code: 'invariant-violation', issues } };
+    return {
+      ok: false,
+      error: { code: 'invariant-violation', issues },
+      repair: {
+        ...repairProject(project, issues),
+        readOnly,
+        migratedFrom,
+        specWarnings: warnings,
+      },
+    };
   }
   return { ok: true, project, readOnly, migratedFrom, specWarnings: warnings };
 }

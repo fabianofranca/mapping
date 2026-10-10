@@ -92,7 +92,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                   |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).        |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
-| `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601).                     |
+| `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601; fuso vira UTC).      |
 | `specializations`  | array   | Especializações aplicadas (ver v4).                                       |
 | `platformRepos`    | objeto  | Repositório do código de cada plataforma (v7, ver abaixo).                |
 | `layers`           | array   | Camadas, **globais** (valem para todas as imagens), na ordem de exibição. |
@@ -120,7 +120,8 @@ Tipada: os dois preenchidos e `entries` vazio.
 ## Regras de validade
 
 Um arquivo só abre se passar nas regras abaixo (`validateProject` em `src/model/`); caso contrário, a app
-recusa o arquivo e informa o problema, sem alterá-lo.
+lista os problemas e repara o que tem reparo mecânico (ver "Arquivos inconsistentes"), sem alterar o
+arquivo ao ler.
 
 - Ids únicos em cada coleção; `file` único entre as imagens; `file` das especializações único.
 - Toda marcação aponta para uma imagem existente; `parentId`, se houver, é uma marcação existente.
@@ -140,6 +141,38 @@ recusa o arquivo e informa o problema, sem alterá-lo.
 
 Regras das especializações (campo obrigatório vazio, tipo incompatível, referência quebrada,
 `allowedChildren`…) **não** impedem a abertura: viram **pendências** (ver abaixo).
+
+### Arquivos inconsistentes
+
+Um arquivo que viola as regras acima (editado à mão, gerado por outra ferramenta) não abre direto: a app
+mostra a **lista exata** dos problemas (regra, tipo do item, id e nome), com **Copiar**.
+
+Quando todos os problemas têm reparo mecânico e inequívoco (`repairProject` em `src/model/repair.ts`), o
+diálogo oferece **Reparar e abrir**:
+
+| Problema                                                   | Reparo                                                                     |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Par com `id` já usado (em outra anotação ou na mesma)      | O primeiro fica com o id; os outros ganham um id novo.                     |
+| `rect` fora da imagem                                      | Recortado aos limites da imagem; se não sobra área, a marcação é removida. |
+| Marcação de imagem inexistente                             | Removida.                                                                  |
+| Anotação de marcação ou camada inexistente                 | Removida, com as anotações que ela possui (`parentAnnotationId`).          |
+| `parentId` inexistente ou ciclo na hierarquia de marcações | A marcação (no ciclo, cada uma do ciclo) vira raiz da imagem.              |
+| Imagens sobrepostas                                        | A de maior índice vai para a direita da caixa das anteriores.              |
+
+Um reparo pode expor outro (a marcação removida deixa as anotações dela sem marcação e os filhos sem pai):
+cada rodada resolve o que a anterior expôs. Qualquer outro problema (id repetido de imagem, marcação,
+anotação, camada ou especialização; arquivo repetido; `rect` pequeno demais; filha fora do pai; pai em
+outra imagem; problemas de anotação dona; chave vazia ou repetida; `_id` repetido em `table`/`codeRef`)
+deixa o arquivo **recusado**: o diálogo só lista e fecha. Corrija o arquivo à mão (ou restaure uma cópia)
+e abra de novo.
+
+Ler nunca grava. Ao reparar, o projeto abre reparado em memória; o original vai para
+`backups/mapping.v<versão>.<AAAAMMDD-HHMMSS>.json` e o reparado para o `mapping.json` só na **primeira
+gravação**, como na migração. O resumo do reparo fica no aviso do editor e no Diagnóstico. O servidor MCP
+continua recusando o arquivo (ler nunca grava), com a mesma lista de problemas na resposta.
+
+Datas (`createdAt`, `updatedAt`) com fuso (`2026-10-01T09:30:00-03:00`, de outra ferramenta) são aceitas
+e gravadas em UTC (`2026-10-01T12:30:00.000Z`).
 
 ## Campos da v2 e v3
 

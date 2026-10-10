@@ -8,6 +8,7 @@ export * from './invariants';
 export * from './migrations';
 export * from './schema';
 export * from './serialization';
+export * from './repair';
 export {
   createProject,
   renameProject,
