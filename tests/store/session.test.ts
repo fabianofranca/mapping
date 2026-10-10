@@ -85,7 +85,7 @@ describe('sessão de projeto', () => {
     expect(files.specs.get('specs/sdui.json')).toBe(copy);
   });
 
-  it('adiciona imagens: grava o arquivo, cria a entrada e salva o mapping após o debounce', async () => {
+  it('adiciona imagens: grava o arquivo, cria a entrada e salva o mapping sem esperar o debounce', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     const result = await session.addImages([
@@ -96,10 +96,7 @@ describe('sessão de projeto', () => {
     expect(result).toEqual({ added: ['images/a.jpg', 'images/a-2.jpg'], failed: [] });
     expect(await root.read('images/a.jpg')).toBe('400x300');
     expect(await root.read('images/a-2.jpg')).toBe('100x100');
-    expect(session.saveStatus.value).toBe('saving');
-    expect(await root.read('mapping.json')).toBeNull();
-
-    await vi.advanceTimersByTimeAsync(800);
+    // Operação cara (fase 5.5): a importação inteira grava uma vez, ao terminar.
     expect(session.saveStatus.value).toBe('saved');
     const saved = await savedProject(root);
     expect(saved.images.map((i) => [i.file, i.width, i.height])).toEqual([

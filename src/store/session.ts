@@ -184,7 +184,7 @@ interface DiskState {
 export function openSession(options: SessionOptions): ProjectSession {
   const { storage, prepareImage } = options;
   const store = createProjectStore({ now: options.now });
-  const actions = createProjectActions(store, { newId: options.newId });
+  const baseActions = createProjectActions(store, { newId: options.newId });
   store.load(options.project, { readOnly: options.readOnly });
   const now = options.now ?? (() => new Date().toISOString());
   const proposals = createProposalStore({ storage, initial: options.proposals, now });
@@ -335,6 +335,24 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
 
   const saver = createAutoSaver(persist, options.autosaveDelay);
+  /**
+   * Operações caras (imagens e especializações) gravam sem esperar o debounce: o trabalho
+   * de refazê-las é grande demais para ficar 800 ms só em memória. A gravação entra na
+   * mesma fila do autosave, então duas seguidas não correm em paralelo.
+   */
+  const saveNow = <R extends { readonly ok: boolean }>(result: R): R => {
+    if (result.ok) void saver.flush();
+    return result;
+  };
+  const actions: ProjectActions = {
+    ...baseActions,
+    removeImage: (imageId) => saveNow(baseActions.removeImage(imageId)),
+    applySpecialization: (spec) => saveNow(baseActions.applySpecialization(spec)),
+    updateSpecialization: (spec, texts) =>
+      saveNow(baseActions.updateSpecialization(spec, texts)),
+    removeSpecialization: (specId, mode, texts) =>
+      saveNow(baseActions.removeSpecialization(specId, mode, texts)),
+  };
   const proposalActions = createProposalActions({
     store,
     proposals,
@@ -526,6 +544,8 @@ export function openSession(options: SessionOptions): ProjectSession {
           }
         }
       }
+      // Operação cara: grava sem esperar o debounce (ver `saveNow`).
+      if (added.length > 0) await saver.flush();
       return { added, failed };
     },
 
@@ -554,6 +574,7 @@ export function openSession(options: SessionOptions): ProjectSession {
           { confirmAspectChange: !sameAspect },
         );
         if (!result.ok) throw new Error(result.error);
+        await saver.flush();
         return 'replaced';
       } catch (e) {
         reportError('session.replaceImage', e);

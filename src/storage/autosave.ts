@@ -1,7 +1,11 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
 import { reportError } from '../utils/report';
 
-/** Debounce entre a última alteração e a gravação. */
+/**
+ * Debounce entre a última alteração e a gravação: as edições comuns (digitar um nome, um
+ * valor) não gravam a cada tecla. Operações caras (imagens, especializações) e sair da
+ * página gravam na hora com `flush()`.
+ */
 export const AUTOSAVE_DELAY_MS = 800;
 
 /** `saving` cobre tanto a espera do debounce quanto a gravação em andamento. */
