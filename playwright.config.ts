@@ -14,12 +14,13 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
-  retries: 0,
+  // Uma repetição no CI, com trace só nela (a primeira falha fica no relatório).
+  retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: `http://localhost:${PORT}`,
     locale: 'pt-BR',
-    trace: 'retain-on-failure',
+    trace: 'on-first-retry',
     launchOptions: { executablePath },
   },
   projects: [

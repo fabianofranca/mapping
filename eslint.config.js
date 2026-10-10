@@ -34,6 +34,9 @@ const mcpOnlyFromModel = [
   'utils',
 ];
 
+// Diretórios da app que não falam com o Konva (src/model/ tem regra própria, mais estrita).
+const konvaFreeDirs = ['ui', 'app', 'store', 'storage', 'i18n', 'theme', 'utils'];
+
 export default tseslint.config(
   {
     ignores: [
@@ -59,7 +62,24 @@ export default tseslint.config(
     plugins: { 'react-hooks': reactHooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/exhaustive-deps': 'error',
+    },
+  },
+  // Konva fica isolado em src/canvas/ (CanvasController e CanvasHost; veja CLAUDE.md).
+  {
+    files: [`src/{${konvaFreeDirs.join(',')}}/**/*.{ts,tsx}`],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['konva', 'konva/*'],
+              message: 'Konva fica só em src/canvas/ (veja CLAUDE.md).',
+            },
+          ],
+        },
+      ],
     },
   },
   {

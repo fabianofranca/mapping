@@ -23,7 +23,7 @@ A política é gerada no build, e o build falha se ela faltar ou não bater com 
 
 ## Como rodar
 
-Requer Node 22.
+Requer Node 22 (fixado em `.nvmrc` e em `engines` no `package.json`; com nvm, `nvm use`).
 
 ```bash
 npm ci
@@ -51,9 +51,10 @@ O E2E roda no CI. Localmente, rode `npm run build` e informe o Chrome com `PLAYW
 
 Três workflows em `.github/workflows/`:
 
-- **`ci.yml`**: em todo PR e em push de branches (menos a `main`): lint, typecheck, testes com cobertura, orçamentos de desempenho, build (app e servidor MCP) e E2E.
+- **`ci.yml`**: em todo PR e em push de branches (menos a `main`): lint, typecheck, testes com cobertura, orçamentos de desempenho, build (app e servidor MCP), orçamento de tamanho do `dist/index.html` (1,5 MB, valor em `INDEX_HTML_MAX_BYTES`; o tamanho aparece no resumo do job) e E2E (jobs `check` e `e2e`). O Playwright repete uma vez no CI, com trace só na repetição.
 - **`mcp-release.yml`**: ao criar uma tag `mcp-v<versão>` (a versão precisa ser a de `mcp/version.ts`), gera `mapping-mcp.js` e o anexa à Release do GitHub (ver [`docs/MCP.md`](docs/MCP.md)).
-- **`deploy.yml`**: um push na `main` roda lint, testes e build e publica a versão principal no GitHub Pages (em `/`).
+- **`deploy.yml`**: um push na `main` publica a versão principal no GitHub Pages (em `/`). Antes, chama o `ci.yml` inteiro (`workflow_call`) para a `main` e, no preview, também para o branch: se qualquer validação falhar, nada é publicado.
+- **`dependabot.yml`**: atualizações semanais de npm e GitHub Actions, com minor e patch agrupados num PR por ecossistema.
 
 O `index.html` avulso também sai como artefato do workflow, para abrir por `file://`.
 

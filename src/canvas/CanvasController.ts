@@ -169,6 +169,9 @@ export class CanvasController {
   /** Placements do último quadro (com a prévia do gesto aplicada). */
   private placements: ReadonlyMap<string, Placement> = new Map();
   private frameRequest: number | null = null;
+  /** Imagens com bitmap pronto no último quadro e o que já foi publicado no container. */
+  private readyImages = 0;
+  private published = '';
   private readonly cleanups: (() => void)[] = [];
 
   constructor(options: CanvasControllerOptions) {
@@ -422,6 +425,9 @@ export class CanvasController {
 
     if (scaleChanged || !sameFrame(last, frame, IMAGE_KEYS)) {
       this.placements = this.images.render(frame);
+      this.readyImages =
+        frame.project?.images.filter((i) => frame.bitmaps.get(i.file)?.status === 'ready')
+          .length ?? 0;
     }
     this.markings.render(frame, this.placements);
     this.reviewLayer.render(frame, this.placements);
@@ -435,5 +441,14 @@ export class CanvasController {
       this.overlay.render(frame, this.placements);
     }
     this.stage.batchDraw();
+    // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
+    // imagens com bitmap já desenhados (o DOM só é tocado quando eles mudam).
+    const drawn = `${this.view.fits}:${this.readyImages}`;
+    if (drawn !== this.published) {
+      this.published = drawn;
+      const host = this.stage.container();
+      host.dataset.fits = String(this.view.fits);
+      host.dataset.images = String(this.readyImages);
+    }
   }
 }

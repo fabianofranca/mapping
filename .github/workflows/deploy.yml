@@ -4,6 +4,10 @@ name: Deploy
 # `workflow_dispatch` com um branch diferente da `main`: publica a `main` em `/`
 # e o branch em `/preview/`, com `VITE_CHANNEL=preview` (armazenamento separado,
 # faixa de aviso e manifest próprio). A produção nunca é substituída.
+#
+# Antes de publicar, a `main` e o preview passam pelo ci.yml inteiro (lint, typecheck,
+# testes, desempenho, build, build:mcp, orçamento de tamanho e e2e). Se qualquer um
+# falhar, nada é publicado.
 on:
   push:
     branches: [main]
@@ -24,10 +28,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      preview: ${{ steps.preview.outputs.ref }}
+    steps:
+      - name: Decide se há preview
+        id: preview
+        env:
+          PREVIEW_REF: ${{ github.event_name == 'workflow_dispatch' && (inputs.branch || github.ref_name) || '' }}
+        run: |
+          ref="${PREVIEW_REF#refs/heads/}"
+          if [ -n "$ref" ] && [ "$ref" != "main" ]; then
+            echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          fi
+
+  checks-main:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: main
+      label: main
+
+  checks-preview:
+    needs: plan
+    if: needs.plan.outputs.preview != ''
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.plan.outputs.preview }}
+      label: preview
+
   build:
+    needs: [plan, checks-main, checks-preview]
+    # O preview é opcional (pulado quando não há), mas, se houver, precisa passar.
+    if: >-
+      !cancelled() &&
+      needs.plan.result == 'success' &&
+      needs.checks-main.result == 'success' &&
+      (needs.checks-preview.result == 'success' ||
+       (needs.checks-preview.result == 'skipped' && needs.plan.outputs.preview == ''))
     runs-on: ubuntu-latest
     env:
-      PREVIEW_REF: ${{ github.event_name == 'workflow_dispatch' && (inputs.branch || github.ref_name) || '' }}
+      PREVIEW: ${{ needs.plan.outputs.preview }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,46 +80,30 @@ jobs:
           path: main
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Até a fase 5.6 entrar na main, ela não tem .nvmrc: Node 22.
+          node-version-file: ${{ hashFiles('main/.nvmrc') != '' && 'main/.nvmrc' || '' }}
+          node-version: ${{ hashFiles('main/.nvmrc') == '' && '22' || '' }}
           cache: npm
           cache-dependency-path: main/package-lock.json
 
       - name: Versão principal
         working-directory: main
-        # Orçamentos de desempenho fora da suíte paralela (disputam CPU com ela): no
-        # push da main, medidos depois, sozinhos. Ao publicar um preview, a main já
-        # foi medida no push dela: só os testes funcionais. O `--exclude` vale também
-        # para versões da main anteriores ao `PERF_BUDGETS=off` do vite.config.ts.
         run: |
           npm ci
-          npm run lint
-          PERF_BUDGETS=off npm test -- --exclude tests/model/performance.test.ts
-          if [ -z "$PREVIEW_REF" ]; then npm run test:perf; fi
           npm run build
 
-      - name: Decide se há preview
-        id: preview
-        run: |
-          ref="${PREVIEW_REF#refs/heads/}"
-          if [ -n "$ref" ] && [ "$ref" != "main" ]; then
-            echo "ref=$ref" >> "$GITHUB_OUTPUT"
-          fi
-
       - uses: actions/checkout@v4
-        if: steps.preview.outputs.ref != ''
+        if: env.PREVIEW != ''
         with:
-          ref: ${{ steps.preview.outputs.ref }}
+          ref: ${{ env.PREVIEW }}
           path: preview
 
       - name: Preview
-        if: steps.preview.outputs.ref != ''
+        if: env.PREVIEW != ''
         working-directory: preview
-        # `VITE_CHANNEL` só no build: os testes rodam como a versão principal.
+        # `VITE_CHANNEL` só no build: os testes (no ci.yml) rodam como a versão principal.
         run: |
           npm ci
-          npm run lint
-          PERF_BUDGETS=off npm test
-          npm run test:perf
           VITE_CHANNEL=preview npm run build
 
       - name: Monta o site
@@ -92,7 +121,7 @@ jobs:
           name: index-html
           path: main/dist/index.html
       - uses: actions/upload-artifact@v4
-        if: steps.preview.outputs.ref != ''
+        if: env.PREVIEW != ''
         with:
           name: index-html-preview
           path: preview/dist/index.html
