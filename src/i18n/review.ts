@@ -236,7 +236,8 @@ export const reviewPtBR = {
   'review.compare.decisionName': 'troca da imagem {name}',
   'review.compare.accept': 'Aceitar a troca',
   'review.compare.reject': 'Rejeitar a troca',
-  'review.details.empty': 'Escolha um nível na janela Propostas ou toque num item do canvas para ver as mudanças.',
+  'review.details.empty':
+    'Escolha um nível na janela Propostas ou toque num item do canvas para ver as mudanças.',
   'review.details.typeCount': '{type} · {count} mudança(s)',
   'review.details.created': 'Criada nesta proposta',
   'review.details.blocks': 'Bloqueia Aplicar',
@@ -255,30 +256,38 @@ export const reviewPtBR = {
   'review.details.reject.item': 'Rejeitar item',
   'review.details.accept.change': 'Aceitar mudança',
   'review.details.reject.change': 'Rejeitar mudança',
-  'review.details.decideHint': 'Decidir aqui decide as {count} mudança(s) abaixo, inclusive os conflitos (aceitar sobrescreve o valor atual). Cada mudança pode contrariar o nível.',
+  'review.details.decideHint':
+    'Decidir aqui decide as {count} mudança(s) abaixo, inclusive os conflitos (aceitar sobrescreve o valor atual). Cada mudança pode contrariar o nível.',
   'review.details.changes': 'Mudanças',
   'review.details.changeCount': '{count} neste nível e abaixo',
-  'review.details.more': 'E mais {count} mudança(s): escolha um nível menor na janela Propostas.',
+  'review.details.more':
+    'E mais {count} mudança(s): escolha um nível menor na janela Propostas.',
   'review.details.up': 'Ver o item',
   'review.diff.current': 'Atual',
   'review.diff.before': 'Antes',
   'review.diff.after': 'Depois',
   'review.flag.locked': 'Trancado',
-  'review.hint.conflict': 'O projeto mudou depois desta proposta. Aceitar troca {current} por {after}; rejeitar mantém {current}.',
-  'review.hint.conflictEntity': 'O projeto mudou depois desta proposta: aceitar sobrescreve o que existe agora; rejeitar mantém.',
+  'review.hint.conflict':
+    'O projeto mudou depois desta proposta. Aceitar troca {current} por {after}; rejeitar mantém {current}.',
+  'review.hint.conflictEntity':
+    'O projeto mudou depois desta proposta: aceitar sobrescreve o que existe agora; rejeitar mantém.',
   'review.hint.pixels': 'Pixels da imagem original.',
   'review.issue.title': 'Aplicar bloqueado',
   'review.issue.outsideParent': '{name} ficaria fora da marcação pai.',
   'review.issue.outOfImage': '{name} ficaria fora da imagem.',
   'review.issue.imagesOverlap': '{name} ficaria sobre {other}.',
-  'review.issue.missingSpecialization': '{name} usa uma especialização que não ficaria aplicada.',
+  'review.issue.missingSpecialization':
+    '{name} usa uma especialização que não ficaria aplicada.',
   'review.issue.doesNotFit': 'A mudança em {name} não cabe mais no projeto atual.',
-  'review.issue.closed': 'Esta proposta não está aberta: o que foi aceito não pode mais ser aplicado.',
-  'review.issue.generic': 'As mudanças aceitas deixariam o projeto inválido em {name} ({code}).',
+  'review.issue.closed':
+    'Esta proposta não está aberta: o que foi aceito não pode mais ser aplicado.',
+  'review.issue.generic':
+    'As mudanças aceitas deixariam o projeto inválido em {name} ({code}).',
   'review.issue.acceptMissing': 'Aceitar a(s) que falta(m) ({count})',
   'review.issue.rejectCause': 'Rejeitar a(s) que causa(m) ({count})',
   'review.locked.title': 'Item trancado',
-  'review.locked.text': 'Aceitar mudanças de posição ou remoção é permitido na revisão. A trava continua ligada depois de aplicar.',
+  'review.locked.text':
+    'Aceitar mudanças de posição ou remoção é permitido na revisão. A trava continua ligada depois de aplicar.',
   'review.note.title': 'Notas',
   'review.note.suggested': 'sugerida numa rejeição: o agente lê na próxima rodada',
   'review.note.optional': 'opcional, o agente lê na próxima rodada',
@@ -520,7 +529,8 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.compare.decisionName': 'replacement of image {name}',
   'review.compare.accept': 'Accept the replacement',
   'review.compare.reject': 'Reject the replacement',
-  'review.details.empty': 'Pick a level in the Proposals window or tap an item on the canvas to see its changes.',
+  'review.details.empty':
+    'Pick a level in the Proposals window or tap an item on the canvas to see its changes.',
   'review.details.typeCount': '{type} · {count} change(s)',
   'review.details.created': 'Created in this proposal',
   'review.details.blocks': 'Blocks Apply',
@@ -539,30 +549,38 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.details.reject.item': 'Reject item',
   'review.details.accept.change': 'Accept change',
   'review.details.reject.change': 'Reject change',
-  'review.details.decideHint': 'Deciding here decides the {count} change(s) below, conflicts included (accepting overwrites the current value). Each change can go against the level.',
+  'review.details.decideHint':
+    'Deciding here decides the {count} change(s) below, conflicts included (accepting overwrites the current value). Each change can go against the level.',
   'review.details.changes': 'Changes',
   'review.details.changeCount': '{count} at this level and below',
-  'review.details.more': 'And {count} more change(s): pick a smaller level in the Proposals window.',
+  'review.details.more':
+    'And {count} more change(s): pick a smaller level in the Proposals window.',
   'review.details.up': 'Show the item',
   'review.diff.current': 'Current',
   'review.diff.before': 'Before',
   'review.diff.after': 'After',
   'review.flag.locked': 'Locked',
-  'review.hint.conflict': 'The project changed after this proposal. Accepting replaces {current} with {after}; rejecting keeps {current}.',
-  'review.hint.conflictEntity': 'The project changed after this proposal: accepting overwrites what exists now; rejecting keeps it.',
+  'review.hint.conflict':
+    'The project changed after this proposal. Accepting replaces {current} with {after}; rejecting keeps {current}.',
+  'review.hint.conflictEntity':
+    'The project changed after this proposal: accepting overwrites what exists now; rejecting keeps it.',
   'review.hint.pixels': 'Original image pixels.',
   'review.issue.title': 'Apply is blocked',
   'review.issue.outsideParent': '{name} would end up outside its parent marking.',
   'review.issue.outOfImage': '{name} would end up outside the image.',
   'review.issue.imagesOverlap': '{name} would overlap {other}.',
-  'review.issue.missingSpecialization': '{name} uses a specialization that would not be applied.',
+  'review.issue.missingSpecialization':
+    '{name} uses a specialization that would not be applied.',
   'review.issue.doesNotFit': 'The change to {name} no longer fits the current project.',
-  'review.issue.closed': 'This proposal is not open: what was accepted can no longer be applied.',
-  'review.issue.generic': 'The accepted changes would make the project invalid at {name} ({code}).',
+  'review.issue.closed':
+    'This proposal is not open: what was accepted can no longer be applied.',
+  'review.issue.generic':
+    'The accepted changes would make the project invalid at {name} ({code}).',
   'review.issue.acceptMissing': 'Accept the missing one(s) ({count})',
   'review.issue.rejectCause': 'Reject the cause ({count})',
   'review.locked.title': 'Locked item',
-  'review.locked.text': 'Accepting position or removal changes is allowed in review. The lock stays on after applying.',
+  'review.locked.text':
+    'Accepting position or removal changes is allowed in review. The lock stays on after applying.',
   'review.note.title': 'Notes',
   'review.note.suggested': 'suggested on a rejection: the agent reads it next round',
   'review.note.optional': 'optional, the agent reads it next round',

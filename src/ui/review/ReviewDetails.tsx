@@ -14,12 +14,7 @@ import { markingPath } from '../labels';
 import { Notice } from '../Notice';
 import { ChangeCard } from './ChangeCard';
 import { changeKindLabel } from './ChangeKind';
-import {
-  imageName,
-  markingName,
-  targetName,
-  type ReviewNames,
-} from './changeText';
+import { imageName, markingName, targetName, type ReviewNames } from './changeText';
 import { DecisionControl, type DecisionValue } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
 import { Flag } from './Flag';
@@ -232,7 +227,9 @@ export function ReviewDetails() {
     : (summary?.state ?? 'undecided');
   const type = isChange ? types.get(target.id ?? '') : d.levelTypes.value.get(key);
   const locked = ids.some((id) => situation.get(id)?.locked === true);
-  const anyInvalid = ids.some((id) => invalid.changeIds.has(id) || invalid.related.has(id));
+  const anyInvalid = ids.some(
+    (id) => invalid.changeIds.has(id) || invalid.related.has(id),
+  );
   const issues = (d.validation.value?.issues ?? []).filter(
     (issue) =>
       target.level === 'proposal' ||
@@ -251,7 +248,8 @@ export function ReviewDetails() {
   const path = levelPath(names, target);
   const levelValue: DecisionValue =
     levelState === 'accepted' || levelState === 'rejected' ? levelState : null;
-  const allApplied = summary !== undefined && summary !== null && summary.applied === summary.total;
+  const allApplied =
+    summary !== undefined && summary !== null && summary.applied === summary.total;
   const shown = ids.slice(0, MAX_CARDS);
   const closedReason = open ? undefined : t('review.closedReason');
   const rejectedLevel = levelState === 'rejected' || levelState === 'partial';
@@ -367,7 +365,9 @@ export function ReviewDetails() {
         <h3 class="review-section-title">
           <Icon name="changed" />
           {t('review.details.changes')}
-          <span class="muted">{t('review.details.changeCount', { count: ids.length })}</span>
+          <span class="muted">
+            {t('review.details.changeCount', { count: ids.length })}
+          </span>
         </h3>
         {shown.map((id) => {
           const c = changes.get(id);

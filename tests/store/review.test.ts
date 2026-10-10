@@ -816,7 +816,12 @@ describe('como ficaria', () => {
 
   it('o tipo do item é o da marcação: anotação criada num item que já existe o altera', async () => {
     const base = sampleProject();
-    let after = addAnnotation(base, { id: 'A9', markingId: 'M4', layerId: 'L1', name: 'x' });
+    let after = addAnnotation(base, {
+      id: 'A9',
+      markingId: 'M4',
+      layerId: 'L1',
+      name: 'x',
+    });
     after = setMarkingRect(after, 'M4', { x: 10, y: 10, width: 100, height: 100 });
     const { review } = await openHarness({ proposals: [propose(base, after)] });
     review.open('P1');
