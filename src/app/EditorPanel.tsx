@@ -9,6 +9,7 @@ import { imageLabel, markingPath } from '../ui/labels';
 import { MarkingPanel } from '../ui/MarkingPanel';
 import { LayerDots } from '../ui/MarkingTree';
 import { SelectionPanel } from '../ui/SelectionPanel';
+import { ReviewDetails } from '../ui/review/ReviewDetails';
 import type { EditorDialogs } from './useEditorDialogs';
 
 export interface EditorPanelProps {
@@ -25,10 +26,18 @@ export function EditorPanel({
   onReplace,
   onGoToAnnotation,
 }: EditorPanelProps) {
-  const { store, ui, display, canvas } = useEditor();
+  const { store, ui, display, canvas, review } = useEditor();
   // Projeto confirmado: os campos do painel atualizam ao soltar o gesto, não durante.
   const project = store.committed.value;
   if (!project) return null;
+  // Revisão de uma proposta: Detalhes mostra o nível selecionado com as mudanças.
+  if (review.proposalId.value !== null) {
+    return (
+      <div class="tab-panel">
+        <ReviewDetails />
+      </div>
+    );
+  }
   const readOnly = store.locked.value;
   const selected = resolveSelection(project, ui.selection.value);
   const selectedImage = selected?.kind === 'image' ? selected.image : null;

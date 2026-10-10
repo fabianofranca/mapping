@@ -135,9 +135,18 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
     const self = (c: Change) => c.entity === entity && c.entityId === id;
     const create = own.find((c) => self(c) && c.kind === 'create');
     const remove = own.find((c) => self(c) && c.kind === 'remove');
-    const liveType = dominantChangeType(
-      live.map((c) => types.get(c.id)).filter((x): x is ChangeType => x !== undefined),
+    // Tipo pela própria entidade; o que muda dentro (anotações) faz "alterada", e
+    // "movida" só quando a posição é a única coisa que muda (a mesma regra dos níveis).
+    const ownLive = live.filter(self);
+    const ownType = dominantChangeType(
+      ownLive.map((c) => types.get(c.id)).filter((x): x is ChangeType => x !== undefined),
     );
+    const liveType: ChangeType | null =
+      live.length === 0
+        ? null
+        : ownType === null || (ownType === 'moved' && ownLive.length < live.length)
+          ? 'changed'
+          : ownType;
 
     if (node.level === 'image') {
       const image = currentIndex.images.get(id);
