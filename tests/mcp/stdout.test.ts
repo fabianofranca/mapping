@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -44,11 +45,18 @@ function preload(onCall: string): string {
   return pathToFileURL(file).href;
 }
 
-/** Sobe o bundle, faz o handshake e chama uma tool; devolve o stdout em linhas, o stderr e o código de saída. */
-function callTool(
+interface Call {
+  readonly name: string;
+  readonly args: Record<string, unknown>;
+}
+
+/**
+ * Sobe o bundle, faz o handshake e chama as tools em sequência (ids 2, 3…), cada uma depois da
+ * resposta da anterior; devolve o stdout em linhas, o stderr e o código de saída.
+ */
+function callTools(
   root: string,
-  name: string,
-  args: Record<string, unknown>,
+  calls: readonly Call[],
   importUrl?: string,
 ): Promise<Run> {
   return new Promise((done, fail) => {
@@ -60,19 +68,26 @@ function callTool(
     let stdout = '';
     let stderr = '';
     // Sem resposta (o processo pode ter caído): encerra e deixa o teste conferir o que saiu.
-    const timer = setTimeout(() => child.kill(), 20_000);
+    const timer = setTimeout(() => child.kill(), 50_000);
     child.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()));
-    let called = false;
+    let next = 0;
     child.stdout.on('data', (chunk: Buffer) => {
       stdout += chunk.toString();
       if (!stdout.endsWith('\n')) return;
-      // Depois da resposta do handshake (id 1), a chamada; a resposta dela (id 2) encerra.
-      if (!called && /"id":1[,}]/.test(stdout)) {
-        called = true;
-        send({ method: 'notifications/initialized' });
-        send({ id: 2, method: 'tools/call', params: { name, arguments: args } });
+      // Depois da resposta anterior (o handshake é o id 1), a próxima chamada.
+      if (!new RegExp(`"id":${next + 1}[,}]`).test(stdout)) return;
+      if (next === 0) send({ method: 'notifications/initialized' });
+      const call = calls[next];
+      next += 1;
+      if (call) {
+        send({
+          id: next + 1,
+          method: 'tools/call',
+          params: { name: call.name, arguments: call.args },
+        });
+      } else {
+        child.stdin.end();
       }
-      if (/"id":2[,}]/.test(stdout)) child.stdin.end();
     });
     child.on('error', fail);
     child.on('close', (code) => {
@@ -94,6 +109,13 @@ function callTool(
   });
 }
 
+const callTool = (
+  root: string,
+  name: string,
+  args: Record<string, unknown>,
+  importUrl?: string,
+): Promise<Run> => callTools(root, [{ name, args }], importUrl);
+
 const isJsonRpc = (line: string): boolean => {
   try {
     return (JSON.parse(line) as { jsonrpc?: unknown }).jsonrpc === '2.0';
@@ -102,7 +124,8 @@ const isJsonRpc = (line: string): boolean => {
   }
 };
 
-const answered = (run: Run) => run.lines.some((line) => /"id":2[,}]/.test(line));
+const answered = (run: Run, id = 2) =>
+  run.lines.some((line) => new RegExp(`"id":${id}[,}]`).test(line));
 
 describe('stdout do bundle (só JSON-RPC)', () => {
   it('get_image_file sobre um JPEG truncado não escreve nada além de JSON-RPC no stdout', async () => {
@@ -166,4 +189,38 @@ describe('stdout do bundle (só JSON-RPC)', () => {
     expect(run.stderr).toContain('mapping-mcp: exceção solta');
     expect(run.code).toBe(1);
   }, 30_000);
+});
+
+describe('mensagens grandes no stdin', () => {
+  it('plan_changes com 20 MB de base64 responde ao id e o servidor continua vivo', async () => {
+    const { root } = await createImageWorkspace();
+    const base64 = randomBytes(15 * 1024 * 1024).toString('base64');
+    expect(base64.length).toBeGreaterThan(20_000_000);
+
+    const run = await callTools(root, [
+      {
+        name: 'plan_changes',
+        args: { project: 'imagens', operations: [{ op: 'add_image', base64 }] },
+      },
+      { name: 'list_projects', args: {} },
+    ]);
+
+    expect(run.lines.filter((line) => !isJsonRpc(line))).toEqual([]);
+    const reply = run.lines.find((line) => /"id":2[,}]/.test(line));
+    // Erro estruturado da operação (os bytes não são uma imagem), não queda da conexão.
+    expect(reply).toContain('unsupported-image');
+    expect(answered(run, 3)).toBe(true);
+  }, 60_000);
+
+  it('acima do teto do transporte: linha com o prefixo no stderr e saída 1, nunca 0 em silêncio', async () => {
+    const { root } = await createImageWorkspace();
+    const run = await callTool(root, 'plan_changes', {
+      project: 'imagens',
+      operations: [{ op: 'add_image', base64: 'A'.repeat(40 * 1024 * 1024) }],
+    });
+
+    expect(run.lines.filter((line) => !isJsonRpc(line))).toEqual([]);
+    expect(run.stderr).toMatch(/mapping-mcp: mensagem maior que \d+ bytes/);
+    expect(run.code).toBe(1);
+  }, 60_000);
 });

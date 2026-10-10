@@ -48,8 +48,9 @@ describe('teto de pixels', () => {
 });
 
 describe('base64 das operações de imagem', () => {
-  it('o limite corresponde a MAX_FILE_BYTES', () => {
-    expect(MAX_BASE64_LENGTH).toBe(Math.ceil(MAX_FILE_BYTES / 3) * 4);
+  it('o limite corresponde a um arquivo de 16 MB (imagens maiores vão por `file`)', () => {
+    expect(MAX_BASE64_LENGTH).toBe(Math.ceil((16 * 1024 * 1024) / 3) * 4);
+    expect(16 * 1024 * 1024).toBeLessThan(MAX_FILE_BYTES);
   });
 
   it('o schema recusa texto muito acima do limite', () => {
