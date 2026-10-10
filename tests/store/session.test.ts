@@ -439,6 +439,102 @@ describe('sessão de projeto', () => {
     expect([...files.images.keys()]).toEqual(['images/a.jpg']);
   });
 
+  describe('gesto em andamento (fase 5.1)', () => {
+    /** Sessão sobre a pasta, contando as gravações do `mapping.json`. */
+    function startCounting(root: MemoryDirectory) {
+      const storage = createFolderStorage(root);
+      let saves = 0;
+      const s = openSession({
+        storage: {
+          ...storage,
+          saveMapping: async (text) => {
+            saves++;
+            await storage.saveMapping(text);
+          },
+        },
+        project: sampleProject(),
+        prepareImage,
+        now: () => NOW,
+        newId: ids(),
+      });
+      return { session: s, saves: () => saves };
+    }
+
+    const m4x = (p: { markings: readonly { id: string; rect: { x: number } }[] }) =>
+      p.markings.find((m) => m.id === 'M4')?.rect.x;
+
+    it('timer no meio do gesto cancelado: o disco fica igual ao confirmado', async () => {
+      const root = new MemoryDirectory('p');
+      const counting = startCounting(root);
+      session = counting.session;
+      session.actions.renameProject('Renomeado');
+      expect(session.actions.beginGesture().ok).toBe(true);
+      expect(session.actions.previewMarkingMove('M4', 50, 0).ok).toBe(true);
+      await vi.advanceTimersByTimeAsync(800);
+      session.actions.cancelGesture();
+      await vi.advanceTimersByTimeAsync(800);
+
+      const saved = await savedProject(root);
+      expect(saved.project.name).toBe('Renomeado');
+      expect(m4x(saved)).toBe(0);
+      const committed = session.store.committed.value;
+      if (!committed) throw new Error('sem projeto');
+      expect(await root.read('mapping.json')).toBe(
+        serialize({ ...committed, revision: saved.revision }),
+      );
+      expect(session.saveStatus.value).toBe('saved');
+    });
+
+    it('gesto confirmado grava uma vez, com a geometria final', async () => {
+      const root = new MemoryDirectory('p');
+      const counting = startCounting(root);
+      session = counting.session;
+      session.actions.beginGesture();
+      session.actions.previewMarkingMove('M4', 20, 0);
+      session.actions.previewMarkingMove('M4', 50, 0);
+      await vi.advanceTimersByTimeAsync(800);
+      expect(counting.saves()).toBe(0);
+      session.actions.commitGesture();
+      await vi.advanceTimersByTimeAsync(800);
+      expect(counting.saves()).toBe(1);
+      expect(m4x(await savedProject(root))).toBe(50);
+    });
+
+    it('flush durante o gesto grava o confirmado, não a prévia', async () => {
+      const root = new MemoryDirectory('p');
+      session = start(root, sampleProject());
+      session.actions.renameProject('Renomeado');
+      session.actions.beginGesture();
+      session.actions.previewMarkingMove('M4', 50, 0);
+      await session.flush();
+      expect(m4x(await savedProject(root))).toBe(0);
+      session.actions.commitGesture();
+      await session.flush();
+      expect(m4x(await savedProject(root))).toBe(50);
+    });
+
+    it('collectFiles durante o gesto exporta o confirmado', async () => {
+      const root = new MemoryDirectory('p');
+      session = start(root, sampleProject());
+      session.actions.beginGesture();
+      session.actions.previewMarkingMove('M4', 50, 0);
+      const files = await session.collectFiles();
+      const parsed = deserialize(files.mapping);
+      if (!parsed.ok) throw new Error('mapping inválido');
+      expect(m4x(parsed.project)).toBe(0);
+      session.actions.cancelGesture();
+    });
+  });
+
+  it('collectFiles lista as imagens ausentes no armazenamento', async () => {
+    const root = new MemoryDirectory('p');
+    session = start(root, sampleProject());
+    root.put('images/frente.jpg', 'jpg');
+    const files = await session.collectFiles();
+    expect([...files.images.keys()]).toEqual(['images/frente.jpg']);
+    expect(files.missingImages).toEqual(['images/lateral.jpg']);
+  });
+
   it('fechar grava o que estiver pendente', async () => {
     const root = new MemoryDirectory('p');
     const s = start(root);
