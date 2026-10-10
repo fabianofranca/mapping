@@ -162,12 +162,12 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 
 **Toca em:** `mcp/main.ts`, `mcp/image/codecs.ts`, `mcp/image/formats.ts`, `mcp/operations.ts`, `mcp/batch.ts` (só a checagem de tamanho), `mcp/tools.ts` (`failure()`), `mcp/version.ts`, `docs/MCP.md`, `tests/mcp/*`.
 
-- [ ] Teste que reproduz: `get_image_file` sobre um JPEG truncado, pelo bundle por stdio; hoje algo além de JSON-RPC pode sair no stdout (o teste lê o stdout bruto e exige só mensagens válidas)
-- [ ] `console.log/info/debug` redirecionados para `stderr` antes de `server.connect` (ou `print`/`printErr` passados aos módulos Emscripten); `console.error/warn` já vão para o stderr
-- [ ] `process.on('unhandledRejection')` e `('uncaughtException')`: linha no stderr com o prefixo e `exit(1)`
-- [ ] `MAX_PIXELS` para 40 megapixels; `base64` com `.max()` no schema (coerente com `MAX_FILE_BYTES`) e checagem do tamanho antes de `Buffer.from`
-- [ ] `ModelError` tratado em `failure()` para todas as tools (hoje vira `internal-error` com stack no stderr)
-- [ ] `SERVER_VERSION` 0.3.1; `docs/MCP.md`: limites atualizados e a tag `mcp-v0.3.1` (o dono cria após o merge)
+- [x] Teste que reproduz: `get_image_file` sobre um JPEG truncado, pelo bundle por stdio; hoje algo além de JSON-RPC pode sair no stdout (o teste lê o stdout bruto e exige só mensagens válidas)
+- [x] `console.log/info/debug` redirecionados para `stderr` antes de `server.connect` (ou `print`/`printErr` passados aos módulos Emscripten); `console.error/warn` já vão para o stderr
+- [x] `process.on('unhandledRejection')` e `('uncaughtException')`: linha no stderr com o prefixo e `exit(1)`
+- [x] `MAX_PIXELS` para 40 megapixels; `base64` com `.max()` no schema (coerente com `MAX_FILE_BYTES`) e checagem do tamanho antes de `Buffer.from`
+- [x] `ModelError` tratado em `failure()` para todas as tools (hoje vira `internal-error` com stack no stderr)
+- [x] `SERVER_VERSION` 0.3.1; `docs/MCP.md`: limites atualizados e a tag `mcp-v0.3.1` (o dono cria após o merge)
 
 **Aceite**: `tests/mcp/images.test.ts` e `read.test.ts` continuam verdes; o teste novo de stdout passa; `npm run build:mcp` gera o bundle e o `--version` imprime `0.3.1`.
 

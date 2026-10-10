@@ -288,7 +288,7 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 | `spec-unavailable`                               | A cópia da especialização em `specs/` está ausente ou inválida.                      |
 | `image-file-missing`                             | O arquivo da imagem não existe (ou aponta para fora das raízes).                     |
 | `unsupported-image`, `invalid-image`             | O arquivo não é PNG, JPEG nem WebP, ou está corrompido.                              |
-| `image-too-large`                                | Arquivo maior que 64 MB ou imagem com mais de 100 megapixels.                        |
+| `image-too-large`                                | Arquivo maior que 64 MB (16 MB em `base64`) ou imagem com mais de 40 megapixels.     |
 | `marking-outside-image`                          | O retângulo da marcação não toca a imagem: não há o que recortar.                    |
 | `revision-conflict`                              | `propose_changes`: o projeto mudou enquanto a proposta era calculada. Envie de novo. |
 | `no-changes`                                     | `propose_changes`: as operações não alteram nada (reexportação idêntica).            |

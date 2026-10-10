@@ -11,8 +11,32 @@ export const MIME: Record<ImageFormat, string> = {
 
 /** Arquivos de imagem maiores que isto são recusados. */
 export const MAX_FILE_BYTES = 64 * 1024 * 1024;
-/** Imagens com mais pixels que isto (≈ 100 megapixels) não são decodificadas. */
-export const MAX_PIXELS = 100_000_000;
+/**
+ * Imagens com mais pixels que isto (40 megapixels) não são decodificadas: o pico de memória de
+ * uma decodificação (heap WASM, RGBA, cópia da orientação e redução) fica abaixo de ~1 GB.
+ */
+export const MAX_PIXELS = 40_000_000;
+/**
+ * Maior imagem aceita em `base64` nas operações (16 MB; maiores vão por `file`). Menor que
+ * `MAX_FILE_BYTES` porque a mensagem inteira passa pelo stdin: o buffer de leitura do SDK copia
+ * a mensagem a cada pedaço recebido (tempo quadrático no tamanho), e 87 MB levavam ~90 s.
+ */
+export const MAX_BASE64_FILE_BYTES = 16 * 1024 * 1024;
+/** Tamanho em base64 (sem prefixo `data:` nem quebras de linha) de um arquivo de `MAX_BASE64_FILE_BYTES`. */
+export const MAX_BASE64_LENGTH = Math.ceil(MAX_BASE64_FILE_BYTES / 3) * 4;
+/**
+ * Teto do texto `base64` no schema: o conteúdo com folga para o prefixo `data:` e quebras de
+ * linha (CRLF a cada 76 caracteres). O tamanho exato é conferido antes de decodificar
+ * (`mcp/batch.ts`).
+ */
+export const MAX_BASE64_TEXT =
+  MAX_BASE64_LENGTH + Math.ceil(MAX_BASE64_LENGTH / 38) + 256;
+/**
+ * Maior mensagem JSON-RPC lida do stdin (`maxBufferSize` do transporte, `mcp/main.ts`): um
+ * `base64` no teto do schema mais 1 MB para o resto da mensagem. Acima disso o servidor sai com
+ * erro no stderr.
+ */
+export const MAX_MESSAGE_BYTES = MAX_BASE64_TEXT + 1024 * 1024;
 
 export interface Size {
   readonly width: number;

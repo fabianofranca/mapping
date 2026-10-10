@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_BASE64_TEXT } from './image/formats';
 
 // Operações de `plan_changes` (etapa 3a.5). Cada uma vira uma ou mais operações puras do
 // `src/model/`, aplicadas em ordem (mcp/batch.ts). Os nomes seguem o vocabulário do modelo.
@@ -57,8 +58,11 @@ const imageSource = {
     ),
   base64: z
     .string()
+    .max(MAX_BASE64_TEXT)
     .optional()
-    .describe('Conteúdo da imagem em base64 (aceita o prefixo `data:image/…;base64,`).'),
+    .describe(
+      'Conteúdo da imagem em base64 (aceita o prefixo `data:image/…;base64,`), até 16 MB de imagem; maiores, use `file`.',
+    ),
   fileName: z
     .string()
     .optional()
