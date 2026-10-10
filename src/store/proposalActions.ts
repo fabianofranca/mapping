@@ -7,12 +7,14 @@ import {
   removeNote as removeProposalNote,
   reviewKey,
   reviewTree,
+  type Project,
   type Proposal,
   type ProposalDecisions,
   type ProposalIssue,
   type ProposalStatus,
   type ReviewTarget,
 } from '../model';
+import type { FlushResult } from '../storage/autosave';
 import { imageMimeType, type ProjectStorage } from '../storage/types';
 import { reportError } from '../utils/report';
 import type { HistoryLink, ProjectStore } from './history';
@@ -62,6 +64,11 @@ export type ApplyError =
   | 'image-missing'
   /** O arquivo de destino já é de outra imagem do projeto (`path`). */
   | 'image-exists'
+  /**
+   * O `mapping.json` não gravou (alteração externa, quota, permissão): as mudanças foram
+   * desfeitas e a proposta continua como estava (alteração externa abre o diálogo de conflito).
+   */
+  | 'save-failed'
   | 'failed'
   | ProposalErrorCode;
 
@@ -135,8 +142,8 @@ export interface ProposalActionsDeps {
   readonly putProjectImage: (path: string, data: Blob) => Promise<void>;
   /** Desfaz `putProjectImage` (a aplicação falhou no meio). */
   readonly dropProjectImage: (path: string) => Promise<void>;
-  /** Grava agora o que o projeto tem pendente (o `mapping.json` antes da proposta). */
-  readonly flush: () => Promise<void>;
+  /** Grava agora o que o projeto tem pendente (o `mapping.json` antes da proposta) e diz se gravou. */
+  readonly flush: () => Promise<FlushResult>;
 }
 
 function sameDecisions(a: ProposalDecisions, b: ProposalDecisions): boolean {
@@ -252,12 +259,15 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
       );
       const statusBefore: ProposalStatus = p.status;
       const statusAfter: ProposalStatus = applying.proposal.status;
+      // A gravação do `mapping.json` falhou e a entrada foi desfeita: o vínculo não faz nada.
+      let abandoned = false;
 
       // Desfazer a entrada: a proposta volta a ter as mudanças como aceitas sem aplicar e
       // as imagens voltam para `proposals/<id>/`. Refazer: o contrário.
       const link: HistoryLink = {
         tag: id,
         undo: () => {
+          if (abandoned) return;
           void proposals
             .mutate<void, never>(id, (current) => {
               const rest = { ...current.applied };
@@ -281,6 +291,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             });
         },
         redo: () => {
+          if (abandoned) return;
           void proposals
             .mutate<void, never>(id, (current) => {
               const again = { ...current.applied };
@@ -349,15 +360,25 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             await rollback();
             return 'stale';
           }
+          let applied: Project | null = null;
           if (applying.applied.length > 0) {
-            const applied = store.apply(() => applying.project, { link });
-            if (!applied.ok) {
+            const result = store.apply(() => applying.project, { link });
+            if (!result.ok) {
               await rollback();
-              return applied.error === 'read-only' ? 'read-only' : 'failed';
+              return result.error === 'read-only' ? 'read-only' : 'failed';
             }
+            applied = store.project.peek();
           }
-          // 3. O `mapping.json` primeiro: se algo falhar daqui em diante, o projeto já tem as mudanças.
-          await deps.flush();
+          // 3. O `mapping.json` primeiro: a proposta só diz "aplicada" se ele gravou. Senão,
+          // desfaz a entrada (sem "refazer"), devolve as cópias e não grava a proposta.
+          const saved = await deps.flush();
+          if (!saved.ok) {
+            abandoned = true;
+            if (applied !== null && store.project.peek() === applied) store.undo();
+            store.discardRedoOf(id);
+            await rollback();
+            return 'save-failed';
+          }
           return null;
         },
         after: async () => {

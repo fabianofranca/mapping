@@ -86,11 +86,11 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 
 **Toca em:** `src/storage/autosave.ts`, `src/store/session.ts`, `src/store/proposalActions.ts`, `src/store/review.ts` e `src/ui/review/*` só para mostrar o novo resultado, `tests/store/proposals.test.ts`, `tests/store/session.test.ts`, `tests/store/proposalHarness.ts`, `src/i18n/*`.
 
-- [ ] Testes que reproduzem: `applyAccepted` com `saveMapping` lançando `ExternalChangeError` e com erro genérico de storage; hoje a proposta fica `applied` e as origens somem
-- [ ] `flush()` passa a informar se gravou (devolve um resultado ou lança para quem pediu explicitamente); o caminho do timer continua como hoje
-- [ ] `applyAccepted`: se o `mapping.json` não gravou, desfaz a entrada do histórico, devolve as imagens copiadas (`rollback`) e **não** grava a proposta; resultado novo (`save-failed`) com mensagem na interface; o conflito externo abre o diálogo "Projeto alterado fora da app" normalmente, e a revisão continua aberta com as decisões intactas
-- [ ] Limpeza pós-gravação (`readImage`/`removeImage`/`removeSpec` depois do `saveMapping`) isolada em `try/catch` com `reportError('session.cleanup', …)`: não marca erro de gravação nem sobe a revisão de novo
-- [ ] Teste: falha na limpeza pós-gravação deixa `saveStatus` em `saved`, o erro no Diagnóstico e a próxima gravação em `revision + 1`
+- [x] Testes que reproduzem: `applyAccepted` com `saveMapping` lançando `ExternalChangeError` e com erro genérico de storage; hoje a proposta fica `applied` e as origens somem
+- [x] `flush()` passa a informar se gravou (devolve um resultado ou lança para quem pediu explicitamente); o caminho do timer continua como hoje
+- [x] `applyAccepted`: se o `mapping.json` não gravou, desfaz a entrada do histórico, devolve as imagens copiadas (`rollback`) e **não** grava a proposta; resultado novo (`save-failed`) com mensagem na interface; o conflito externo abre o diálogo "Projeto alterado fora da app" normalmente, e a revisão continua aberta com as decisões intactas
+- [x] Limpeza pós-gravação (`readImage`/`removeImage`/`removeSpec` depois do `saveMapping`) isolada em `try/catch` com `reportError('session.cleanup', …)`: não marca erro de gravação nem sobe a revisão de novo
+- [x] Teste: falha na limpeza pós-gravação deixa `saveStatus` em `saved`, o erro no Diagnóstico e a próxima gravação em `revision + 1`
 
 **Aceite**: os testes acima; o roteiro da etapa 4 (`docs/history/PLAN-etapa-4.md`), passos de aplicar aceitas, continua passando com o zip de exemplo.
 

@@ -655,6 +655,8 @@ export const enUS: Dictionary = {
   'proposal.error.imageMissing': 'The proposal image was not found: {path}',
   'proposal.error.imageExists': 'The project already has an image with this file: {path}',
   'proposal.error.readOnly': 'The project is read-only and cannot take changes.',
+  'proposal.error.saveFailed':
+    'mapping.json could not be saved: nothing was applied and the decisions are unchanged.',
   'proposal.notice.added': 'New proposal: {title}',
   'proposal.notice.changed': 'Proposal changed outside the app: {title}',
   'proposal.notice.removed': 'Proposal deleted outside the app: {title}',

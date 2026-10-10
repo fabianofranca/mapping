@@ -74,6 +74,7 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   stale: 'proposal.error.stale',
   'image-missing': 'proposal.error.imageMissing',
   'image-exists': 'proposal.error.imageExists',
+  'save-failed': 'proposal.error.saveFailed',
   failed: 'proposal.error.generic',
 };
 

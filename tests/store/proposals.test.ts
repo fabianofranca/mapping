@@ -319,7 +319,12 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
   it('mapping.json alterado por fora: save-failed, nada aplicado e o diálogo de conflito abre', async () => {
     const h = await readyToApply();
     // O MCP grava o mapping.json por fora enquanto a revisão está aberta.
-    const outside = serialize({ ...sampleProject(), name: 'Do agente', revision: 4 });
+    const base = sampleProject();
+    const outside = serialize({
+      ...base,
+      project: { ...base.project, name: 'Do agente' },
+      revision: 4,
+    });
     h.root.put('mapping.json', outside);
 
     const result = await h.review.apply();
@@ -331,7 +336,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     // "Recarregar": o projeto do disco; a proposta continua aberta e pode ser aplicada.
     await h.session.resolveConflict('reload');
     expect(h.session.conflict.value).toBeNull();
-    expect(h.session.store.project.value?.name).toBe('Do agente');
+    expect(h.session.store.project.value?.project.name).toBe('Do agente');
     expect(h.review.derived.counts.value.acceptedPending).toBe(5);
     expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
     expect((await diskProposal(h.root)).status).toBe('applied');

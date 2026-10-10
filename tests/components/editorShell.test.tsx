@@ -157,7 +157,9 @@ describe('useProjectCommands', () => {
 
   it('fechar grava e fecha o projeto', async () => {
     const s = setup();
-    const flush = vi.spyOn(s.harness.context.session, 'flush').mockResolvedValue();
+    const flush = vi
+      .spyOn(s.harness.context.session, 'flush')
+      .mockResolvedValue({ ok: true });
     await s.commands().closeProject();
     expect(flush).toHaveBeenCalledOnce();
     expect(controller.closeProject).toHaveBeenCalledOnce();
@@ -166,7 +168,7 @@ describe('useProjectCommands', () => {
 
   it('fechar com o salvamento em erro pede confirmação e não fecha', async () => {
     const s = setup();
-    vi.spyOn(s.harness.context.session, 'flush').mockResolvedValue();
+    vi.spyOn(s.harness.context.session, 'flush').mockResolvedValue({ ok: true });
     Object.defineProperty(s.harness.context.session, 'saveStatus', {
       value: signal('error'),
     });
@@ -474,7 +476,9 @@ describe('barras do editor', () => {
 
   it('topo (celular): erro ao salvar vira botão que tenta de novo', async () => {
     const harness = createHarness(sampleProject());
-    const flush = vi.spyOn(harness.context.session, 'flush').mockResolvedValue();
+    const flush = vi
+      .spyOn(harness.context.session, 'flush')
+      .mockResolvedValue({ ok: true });
     Object.defineProperty(harness.context.session, 'saveStatus', {
       value: signal('error'),
     });
