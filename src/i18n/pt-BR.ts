@@ -662,6 +662,8 @@ export const ptBR = {
   'proposal.error.imageExists':
     'Já existe uma imagem do projeto com este arquivo: {path}',
   'proposal.error.readOnly': 'O projeto está somente leitura e não recebe mudanças.',
+  'proposal.error.saveFailed':
+    'Não foi possível gravar o mapping.json: nada foi aplicado e as decisões continuam como estavam.',
   'proposal.notice.added': 'Nova proposta: {title}',
   'proposal.notice.changed': 'Proposta alterada fora da app: {title}',
   'proposal.notice.removed': 'Proposta apagada fora da app: {title}',

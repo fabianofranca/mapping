@@ -7,12 +7,19 @@ export const AUTOSAVE_DELAY_MS = 800;
 /** `saving` cobre tanto a espera do debounce quanto a gravação em andamento. */
 export type SaveStatus = 'saved' | 'saving' | 'error';
 
+/**
+ * O que `flush` conseguiu: `ok` se não ficou nada pendente (gravou, ou não havia o que
+ * gravar). Nunca rejeita: quem não precisa saber (o timer, fechar a aba) ignora o retorno.
+ */
+export type FlushResult =
+  { readonly ok: true } | { readonly ok: false; readonly error: unknown };
+
 export interface AutoSaver {
   readonly status: ReadonlySignal<SaveStatus>;
   /** Avisa que houve alteração: grava depois do debounce. */
   schedule(): void;
-  /** Grava agora o que estiver pendente (ou tenta de novo após um erro). */
-  flush(): Promise<void>;
+  /** Grava agora o que estiver pendente (ou tenta de novo após um erro) e diz se gravou. */
+  flush(): Promise<FlushResult>;
   /** Descarta o que estiver pendente (recarregar o projeto do disco) e volta a `saved`. */
   reset(): void;
   dispose(): void;
@@ -30,7 +37,7 @@ export function createAutoSaver(
   const status = signal<SaveStatus>('saved');
   let timer: ReturnType<typeof setTimeout> | undefined;
   let dirty = false;
-  let queue: Promise<void> = Promise.resolve();
+  let queue: Promise<FlushResult> = Promise.resolve({ ok: true });
   let disposed = false;
 
   const clearTimer = () => {
@@ -38,18 +45,20 @@ export function createAutoSaver(
     timer = undefined;
   };
 
-  const flush = (): Promise<void> => {
+  const flush = (): Promise<FlushResult> => {
     clearTimer();
-    queue = queue.then(async () => {
-      if (!dirty) return;
+    queue = queue.then(async (): Promise<FlushResult> => {
+      if (!dirty) return { ok: true };
       dirty = false;
       try {
         await save();
         if (!dirty && timer === undefined) status.value = 'saved';
+        return { ok: true };
       } catch (e) {
         reportError('save', e);
         dirty = true;
         status.value = 'error';
+        return { ok: false, error: e };
       }
     });
     return queue;

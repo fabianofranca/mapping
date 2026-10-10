@@ -8,7 +8,7 @@ import {
   uniqueImageFile,
   type Project,
 } from '../model';
-import { createAutoSaver, type SaveStatus } from '../storage/autosave';
+import { createAutoSaver, type FlushResult, type SaveStatus } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
 import type { LoadedProposals } from '../storage/loadProposals';
@@ -139,8 +139,11 @@ export interface ProjectSession {
     confirmAspectChange: (change: AspectChange) => Promise<boolean>,
   ): Promise<ReplaceImageResult>;
   readImage(path: string): Promise<Blob | null>;
-  /** Grava agora o que estiver pendente (também serve para "tentar de novo"). */
-  flush(): Promise<void>;
+  /**
+   * Grava agora o que estiver pendente (também serve para "tentar de novo") e diz se
+   * gravou. Nunca rejeita: a falha fica no `saveStatus` e no Diagnóstico.
+   */
+  flush(): Promise<FlushResult>;
   /**
    * `mapping.json` confirmado (nunca a prévia de um gesto), as imagens existentes, as cópias
    * de `specs/` e as propostas (com as imagens que aguardam aceitação), para exportar.
@@ -250,6 +253,8 @@ export function openSession(options: SessionOptions): ProjectSession {
    * imagens e cópias que deixaram de ser usadas. Assim o `mapping.json` em disco
    * nunca aponta para um arquivo já apagado. Grava o projeto confirmado: um gesto em
    * andamento só chega ao disco quando confirmado (`commitGesture` sobe a revisão e agenda).
+   * Gravado o `mapping.json`, a gravação conta como feita: uma falha na limpeza vai para o
+   * Diagnóstico (`session.cleanup`) e a próxima gravação tenta de novo.
    */
   const persist = async () => {
     const p = store.committed.peek();
@@ -289,6 +294,14 @@ export function openSession(options: SessionOptions): ProjectSession {
     await storage.saveMapping(text);
     disk = { revision, text, lastModified: await statMapping() };
     options.onSaved?.();
+    await cleanUp(referenced, specs).catch(reportCleanupFailure);
+  };
+
+  /** Remove as imagens e cópias de `specs/` que o `mapping.json` gravado deixou de usar. */
+  const cleanUp = async (
+    referenced: ReadonlySet<string>,
+    specs: ReadonlyMap<string, string>,
+  ) => {
     const inHistory = store.referencedImageFiles();
     for (const file of [...stored]) {
       if (referenced.has(file)) continue;
