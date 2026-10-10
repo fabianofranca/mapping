@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_BASE64_LENGTH } from './image/formats';
 
 // Operações de `plan_changes` (etapa 3a.5). Cada uma vira uma ou mais operações puras do
 // `src/model/`, aplicadas em ordem (mcp/batch.ts). Os nomes seguem o vocabulário do modelo.
@@ -48,6 +49,13 @@ const externalSource = z
     'Identidade externa do elemento, para as reexportações reconhecerem o mesmo item (veja find_by_source). `null` limpa.',
   );
 
+/**
+ * Teto do texto `base64` no schema: o conteúdo de um arquivo de `MAX_FILE_BYTES` com folga para
+ * o prefixo `data:` e quebras de linha (CRLF a cada 76 caracteres). O tamanho exato do conteúdo é
+ * conferido de novo antes de decodificar (`mcp/batch.ts`).
+ */
+const MAX_BASE64_TEXT = MAX_BASE64_LENGTH + Math.ceil(MAX_BASE64_LENGTH / 38) + 256;
+
 const imageSource = {
   file: z
     .string()
@@ -57,6 +65,7 @@ const imageSource = {
     ),
   base64: z
     .string()
+    .max(MAX_BASE64_TEXT)
     .optional()
     .describe('Conteúdo da imagem em base64 (aceita o prefixo `data:image/…;base64,`).'),
   fileName: z

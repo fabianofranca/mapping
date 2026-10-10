@@ -70,7 +70,9 @@ async function respondWithImage(
   }
 }
 
-function failure(error: unknown): ToolResult {
+/** Erro de uma tool → resposta `isError`; só o inesperado vira `internal-error` (com stack no stderr). */
+export function failure(error: unknown): ToolResult {
+  if (error instanceof ModelError) return failure(modelToolError(error));
   if (error instanceof ToolError) {
     return { isError: true, content: [{ type: 'text', text: JSON.stringify(error) }] };
   }
@@ -328,12 +330,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     ({ ref, platform, project }) =>
       respond(async () => {
         const item = await resolveItem(roots, ref, project, 'm');
-        try {
-          return await codeHintsView(codeContext(roots, item.refs), item.id, platform);
-        } catch (error) {
-          if (error instanceof ModelError) throw modelToolError(error);
-          throw error;
-        }
+        return codeHintsView(codeContext(roots, item.refs), item.id, platform);
       }),
   );
 

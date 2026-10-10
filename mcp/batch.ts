@@ -76,7 +76,7 @@ import {
   type SpecField,
 } from '../src/model';
 import { ToolError } from './errors';
-import { MIME, detectFormat } from './image/formats';
+import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
 import { KIND_NAMES, Refs } from './items';
 import { MODEL_ERROR_MESSAGES } from './modelErrors';
@@ -170,6 +170,13 @@ function safeFileName(input: string, fallback: string): string {
 
 function decodeBase64(text: string): Uint8Array {
   const payload = text.replace(/^data:[^,]*;base64,/, '').replace(/\s+/g, '');
+  // Antes de decodificar: o `Buffer` de um texto enorme já seria o pico de memória.
+  if (payload.length > MAX_BASE64_LENGTH) {
+    throw new ToolError(
+      'image-too-large',
+      `conteúdo base64 grande demais (${payload.length} caracteres; máximo ${MAX_BASE64_LENGTH})`,
+    );
+  }
   if (payload === '' || !/^[A-Za-z0-9+/_-]*={0,2}$/.test(payload)) {
     throw new ToolError('invalid-base64', 'conteúdo base64 vazio ou inválido');
   }

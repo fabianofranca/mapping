@@ -152,11 +152,11 @@ O `mapping.json` tem `revision`, mas o agente não o grava. A proposta guarda a 
 | `unknown-platform`                                                    | A plataforma não é declarada pelas especializações aplicadas; a resposta lista as `platforms` válidas (veja `get_project`).                                                                                                                       |
 | `missing-query`                                                       | `find_by_code` sem `path` nem `symbol`.                                                                                                                                                                                                           |
 | `exists: null` e `localFileProblem: "outside-workdir"`                | O `localPath` leva para fora do diretório de trabalho do cliente: abra o cliente na raiz do repositório do app.                                                                                                                                   |
-| `image-too-large`                                                     | Imagem de mais de 64 MB ou 100 megapixels.                                                                                                                                                                                                        |
+| `image-too-large`                                                     | Imagem de mais de 64 MB (no arquivo ou no `base64` da operação) ou de mais de 40 megapixels.                                                                                                                                                      |
 | A proposta não aparece na app                                         | Só projetos abertos de **pasta** são observados. Volte o foco à janela, espere ~3 s ou use "Verificar a pasta agora" na janela Propostas (Ctrl+Shift+7). Confira também com `list_proposals` que a proposta foi gravada na pasta que a app abriu. |
 
 ## Publicar uma versão (mantenedores)
 
-1. Atualize `SERVER_VERSION` em `mcp/version.ts` (hoje `0.3.0`) e mescle na `main`.
-2. Crie a tag `mcp-v0.3.0` na `main`: `git tag mcp-v0.3.0 && git push origin mcp-v0.3.0`.
+1. Atualize `SERVER_VERSION` em `mcp/version.ts` (hoje `0.3.1`) e mescle na `main`.
+2. Crie a tag `mcp-v0.3.1` na `main`: `git tag mcp-v0.3.1 && git push origin mcp-v0.3.1`.
 3. O workflow `.github/workflows/mcp-release.yml` confere que a tag bate com `SERVER_VERSION`, roda lint, typecheck e testes, gera `dist-mcp/mapping-mcp.js`, o testa fora do repositório e o anexa à Release com o checksum.

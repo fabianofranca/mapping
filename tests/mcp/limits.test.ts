@@ -84,7 +84,7 @@ describe('base64 das operações de imagem', () => {
       {
         readSource: () => Promise.reject(new Error('sem arquivos')),
         takenImageFiles: new Set(),
-        now: () => NOW,
+        now: () => new Date(NOW),
       },
     );
     expect(result.errors[0]?.code).toBe('image-too-large');

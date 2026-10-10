@@ -11,8 +11,13 @@ export const MIME: Record<ImageFormat, string> = {
 
 /** Arquivos de imagem maiores que isto são recusados. */
 export const MAX_FILE_BYTES = 64 * 1024 * 1024;
-/** Imagens com mais pixels que isto (≈ 100 megapixels) não são decodificadas. */
-export const MAX_PIXELS = 100_000_000;
+/**
+ * Imagens com mais pixels que isto (40 megapixels) não são decodificadas: o pico de memória de
+ * uma decodificação (heap WASM, RGBA, cópia da orientação e redução) fica abaixo de ~1 GB.
+ */
+export const MAX_PIXELS = 40_000_000;
+/** Tamanho em base64 (sem prefixo `data:` nem quebras de linha) de um arquivo de `MAX_FILE_BYTES`. */
+export const MAX_BASE64_LENGTH = Math.ceil(MAX_FILE_BYTES / 3) * 4;
 
 export interface Size {
   readonly width: number;
