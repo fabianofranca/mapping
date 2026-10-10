@@ -1,27 +1,47 @@
 name: CI
 
 # Valida todo PR (e push em branches) antes do merge: os merges são feitos pelo
-# celular, sem rodar nada localmente. A `main` é validada pelo deploy.yml.
+# celular, sem rodar nada localmente. O deploy.yml chama este mesmo workflow
+# (`workflow_call`) para a `main` e para o preview antes de publicar: uma só lista
+# de validações, que não diverge entre o PR e a publicação.
 on:
   pull_request:
   push:
     branches-ignore: [main]
+  workflow_call:
+    inputs:
+      ref:
+        description: Ref a validar (vazio = o do evento)
+        type: string
+        required: false
+        default: ''
+      label:
+        description: Sufixo dos artifacts (main, preview), únicos na execução que chama
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event_name }}-${{ github.ref }}
+  # `inputs.ref` separa as duas chamadas do deploy (main e preview) no mesmo evento.
+  group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}
   cancel-in-progress: true
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      # Orçamento do dist/index.html (autocontido; ~1,0 MB em 2026-10). Só aqui.
+      INDEX_HTML_MAX_BYTES: 1572864
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -42,12 +62,24 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage
+          name: coverage${{ inputs.label && format('-{0}', inputs.label) || '' }}
           path: coverage
           if-no-files-found: ignore
       # Orçamentos de desempenho por quadro: sem cobertura (ela deixa o código mais lento).
       - run: npm run test:perf
       - run: npm run build
+      - name: Tamanho do dist/index.html
+        run: |
+          size=$(stat -c %s dist/index.html)
+          {
+            echo "### dist/index.html"
+            echo ""
+            echo "$size bytes ($((size / 1024)) KiB) de $INDEX_HTML_MAX_BYTES bytes ($((INDEX_HTML_MAX_BYTES / 1024)) KiB) do orçamento."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$size" -gt "$INDEX_HTML_MAX_BYTES" ]; then
+            echo "::error file=dist/index.html::$size bytes, acima do orçamento de $INDEX_HTML_MAX_BYTES bytes."
+            exit 1
+          fi
       - run: npm run build:mcp
 
   # Ponta a ponta no `dist/index.html` final, em desktop e celular emulado (toque).
@@ -56,9 +88,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
@@ -67,7 +101,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report${{ inputs.label && format('-{0}', inputs.label) || '' }}
           path: |
             playwright-report
             test-results

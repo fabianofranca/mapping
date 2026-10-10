@@ -67,14 +67,26 @@ export async function createProject(page: Page, name: string, url = '/'): Promis
 
 /** Adiciona uma imagem sólida (gerada na hora) pelo seletor de arquivos do editor. */
 export async function addImage(page: Page, width = 400, height = 800): Promise<void> {
+  // O canvas publica no container o que já desenhou: enquadramentos e imagens prontas.
+  const host = page.locator('.canvas-host');
+  const drawn = async () => ({
+    fits: Number((await host.getAttribute('data-fits')) ?? 0),
+    images: Number((await host.getAttribute('data-images')) ?? 0),
+  });
+  const before = await drawn();
   await page.locator('input[type=file][accept="image/*"][multiple]').setInputFiles({
     name: 'tela.png',
     mimeType: 'image/png',
     buffer: solidPng(width, height),
   });
   await expect(page.getByText('images/tela.webp').first()).toBeVisible();
-  // Dá tempo de o canvas enquadrar a imagem.
-  await page.waitForTimeout(500);
+  // Espera o quadro com a imagem nova desenhada e enquadrada.
+  await expect
+    .poll(async () => {
+      const now = await drawn();
+      return now.fits > before.fits && now.images > before.images;
+    })
+    .toBe(true);
 }
 
 export async function canvasBox(page: Page): Promise<Rect> {

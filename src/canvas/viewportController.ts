@@ -24,6 +24,8 @@ export class ViewportController {
   private readonly images: () => readonly ProjectImage[];
   /** Já enquadrou na primeira vez que o container teve tamanho. */
   private fitted = false;
+  /** Quantas vezes enquadrou; o canvas publica no container para os testes e2e. */
+  fits = 0;
 
   constructor(container: HTMLElement, images: () => readonly ProjectImage[]) {
     this.container = container;
@@ -54,6 +56,7 @@ export class ViewportController {
   fitAll(): void {
     const size = this.size.peek();
     if (size.width === 0) return;
+    this.fits += 1;
     this.viewport.value = fitRect(imagesBounds(this.images()) ?? EMPTY_CANVAS_RECT, size);
   }
 

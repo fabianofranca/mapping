@@ -146,13 +146,13 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 
 **Toca em:** `.github/workflows/deploy.yml`, `.github/workflows/ci.yml`, novo `.github/dependabot.yml`, `playwright.config.ts`, `tests/e2e/helpers.ts` (e onde o canvas sinaliza que enquadrou), `.nvmrc`, `package.json` (`engines`), `eslint.config.js`, `README.md`.
 
-- [ ] `deploy.yml` roda tudo que o `ci.yml` roda (`typecheck`, `test:coverage` ou `test`, `test:perf`, `build`, `build:mcp` e o job e2e) antes de `upload-pages-artifact`, para a versão principal e para o preview; de preferência um workflow reutilizável (`workflow_call`) para os dois não divergirem de novo
-- [ ] Playwright: `retries: process.env.CI ? 1 : 0`; `addImage` espera uma condição observável (ex.: atributo no canvas quando o enquadramento termina, ou a pílula de zoom estável) em vez de 500 ms fixos; `trace` só na repetição
-- [ ] `.nvmrc` com `22`, `"engines": { "node": ">=22" }` e `setup-node` lendo `node-version-file`
-- [ ] ESLint: `konva` proibido em `src/{ui,app,store,storage,i18n,theme,utils}/**` (exceção `src/canvas/CanvasHost.tsx` já está dentro de `canvas/`); `react-hooks/exhaustive-deps` como erro ou `eslint --max-warnings 0`
-- [ ] `.github/dependabot.yml`: npm e github-actions, semanal, agrupado (minor/patch juntos), para o dono aprovar pelo celular
-- [ ] Orçamento do `dist/index.html` no CI (falha acima de 1,5 MB; hoje 1,0 MB) e o tamanho no resumo do job
-- [ ] Instruções para o dono, no PR: ruleset na `main` exigindo os checks `check` e `e2e` e PR obrigatório
+- [x] `deploy.yml` roda tudo que o `ci.yml` roda (`typecheck`, `test:coverage` ou `test`, `test:perf`, `build`, `build:mcp` e o job e2e) antes de `upload-pages-artifact`, para a versão principal e para o preview; de preferência um workflow reutilizável (`workflow_call`) para os dois não divergirem de novo
+- [x] Playwright: `retries: process.env.CI ? 1 : 0`; `addImage` espera uma condição observável (ex.: atributo no canvas quando o enquadramento termina, ou a pílula de zoom estável) em vez de 500 ms fixos; `trace` só na repetição
+- [x] `.nvmrc` com `22`, `"engines": { "node": ">=22" }` e `setup-node` lendo `node-version-file`
+- [x] ESLint: `konva` proibido em `src/{ui,app,store,storage,i18n,theme,utils}/**` (exceção `src/canvas/CanvasHost.tsx` já está dentro de `canvas/`); `react-hooks/exhaustive-deps` como erro ou `eslint --max-warnings 0`
+- [x] `.github/dependabot.yml`: npm e github-actions, semanal, agrupado (minor/patch juntos), para o dono aprovar pelo celular
+- [x] Orçamento do `dist/index.html` no CI (falha acima de 1,5 MB; hoje 1,0 MB) e o tamanho no resumo do job
+- [x] Instruções para o dono, no PR: ruleset na `main` exigindo os checks `check` e `e2e` e PR obrigatório
 
 **Aceite**: `workflow_dispatch` do deploy num preview deste branch termina verde com todos os passos; um PR de teste com e2e quebrado fica vermelho no deploy do preview.
 
