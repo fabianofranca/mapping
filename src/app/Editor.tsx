@@ -30,9 +30,14 @@ import { useExternalChanges } from './useExternalChanges';
 import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
 import { useReviewSync } from './useReviewSync';
-import { ReviewBar } from '../ui/review/ReviewBar';
-import { CompareDialog, ReviewLegend } from '../ui/review/ReviewCanvasControls';
-import { needsExitReminder } from '../ui/review/ExitReviewDialog';
+import { MobileReviewStrip, ReviewBar } from '../ui/review/ReviewBar';
+import { MobileReviewBottomBar, ReviewFiltersDialog } from '../ui/review/MobileReview';
+import {
+  CompareDialog,
+  ReviewCanvasControls,
+  ReviewLegend,
+} from '../ui/review/ReviewCanvasControls';
+import { useExitReview } from './useExitReview';
 import { Button } from '../ui/controls';
 
 export function Editor({ open }: { readonly open: OpenProject }) {
@@ -57,13 +62,7 @@ export function EditorScreen() {
   useExternalChanges();
   useReviewSync();
   const reviewing = review.proposalId.value !== null;
-  // Sair da revisão nunca perde nada; com aceitas não aplicadas, lembra antes (5.3).
-  const exitReview = () => {
-    const p = review.derived.proposal.peek();
-    if (needsExitReminder(p?.status, review.derived.counts.peek().acceptedPending)) {
-      dialogs.show({ kind: 'exitReview' });
-    } else review.close();
-  };
+  const exitReview = useExitReview(dialogs);
 
   /** Celular: centralizar a seleção quando o canvas voltar a aparecer. */
   const focusAfterView = useRef(false);
@@ -209,7 +208,13 @@ export function EditorScreen() {
         />
       ) : (
         <>
-          <EditorTopBar dialogs={dialogs} commands={commands} busy={busy} />
+          <EditorTopBar
+            dialogs={dialogs}
+            commands={commands}
+            busy={busy}
+            onExitReview={reviewing ? exitReview : undefined}
+          />
+          {reviewing && <MobileReviewStrip />}
           <div class="mobile-crumbs">
             <Breadcrumbs onSelect={onSelect} />
           </div>
@@ -227,6 +232,11 @@ export function EditorScreen() {
           <CanvasNotices notices={notices} />
           <CanvasContextMenu />
           <ReviewLegend />
+          {reviewing && (
+            <div class="canvas-float canvas-float-top">
+              <ReviewCanvasControls compact />
+            </div>
+          )}
           <div class="canvas-float canvas-float-start">
             <ZoomField />
           </div>
@@ -237,12 +247,21 @@ export function EditorScreen() {
         </main>
         {!full && <EditorSheet {...panel} />}
       </div>
-      {!full && (
-        <EditorBottomBar
-          busy={busy}
-          onAdd={intake.onAddClick}
-          onPanels={() => dialogs.show({ kind: 'panels' })}
-        />
+      {!full &&
+        (reviewing ? (
+          <MobileReviewBottomBar
+            onPanels={() => dialogs.show({ kind: 'panels' })}
+            onFilters={() => (ui.reviewFilters.value = true)}
+          />
+        ) : (
+          <EditorBottomBar
+            busy={busy}
+            onAdd={intake.onAddClick}
+            onPanels={() => dialogs.show({ kind: 'panels' })}
+          />
+        ))}
+      {reviewing && ui.reviewFilters.value && (
+        <ReviewFiltersDialog onClose={() => (ui.reviewFilters.value = false)} />
       )}
 
       <CompareDialog />

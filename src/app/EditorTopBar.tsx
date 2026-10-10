@@ -6,6 +6,8 @@ import { MenuPopover } from '../ui/MenuPopover';
 import { PreviewBadge } from '../ui/PreviewBanner';
 import { Button, IconButton } from '../ui/controls';
 import type { EditorDialogs } from './useEditorDialogs';
+import { Flag } from '../ui/review/Flag';
+import { MobileReviewExit } from '../ui/review/MobileReview';
 import type { ProjectCommands } from './useProjectCommands';
 
 // Barra de cima do celular (52px, B6): projeto ▾ (Exportar e Fechar), camada ativa,
@@ -52,12 +54,35 @@ interface EditorTopBarProps {
   readonly dialogs: EditorDialogs;
   readonly commands: ProjectCommands;
   readonly busy: boolean;
+  /** Na revisão: "Sair" no lugar do menu do projeto e "Somente leitura". */
+  readonly onExitReview?: () => void;
 }
 
-export function EditorTopBar({ dialogs, commands, busy }: EditorTopBarProps) {
+export function EditorTopBar({
+  dialogs,
+  commands,
+  busy,
+  onExitReview,
+}: EditorTopBarProps) {
   const { store, ui, derived } = useEditor();
   const projectName = useComputed(() => store.committed.value?.project.name ?? '');
   const activeLayer = derived.activeLayer.value;
+  if (onExitReview) {
+    return (
+      <header class="mobile-bar editor-top" aria-label={t('editor.appName')}>
+        <MobileReviewExit onExit={onExitReview} />
+        <h1 class="review-mobile-project">{projectName.value}</h1>
+        <Flag icon="lock" title={t('review.readOnlyTip')}>
+          {t('review.readOnlyFlag')}
+        </Flag>
+        <IconButton
+          icon="more"
+          label={t('panels.more')}
+          onClick={() => dialogs.show({ kind: 'panels' })}
+        />
+      </header>
+    );
+  }
   return (
     <header class="mobile-bar editor-top" aria-label={t('editor.appName')}>
       <PreviewBadge />

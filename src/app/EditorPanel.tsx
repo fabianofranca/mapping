@@ -10,6 +10,7 @@ import { MarkingPanel } from '../ui/MarkingPanel';
 import { LayerDots } from '../ui/MarkingTree';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import { ReviewDetails } from '../ui/review/ReviewDetails';
+import { ReviewSheetDecision, useReviewSheetTitle } from '../ui/review/MobileReview';
 import type { EditorDialogs } from './useEditorDialogs';
 
 export interface EditorPanelProps {
@@ -100,18 +101,23 @@ export function EditorSheet(panel: EditorPanelProps) {
     };
   });
   const { title, markingId } = header.value;
+  const reviewTitle = useReviewSheetTitle();
   const dots = markingId ? (derived.layerDots.value.get(markingId) ?? []) : [];
   const incomplete = markingId ? derived.incompleteMarkings.value.has(markingId) : false;
   return (
     <BottomSheet
-      title={title ?? t('panel.nothingSelected')}
+      title={reviewTitle ?? title ?? t('panel.nothingSelected')}
       leading={dots.length > 0 && <LayerDots dots={dots} />}
       trailing={
-        incomplete && (
-          <span class="sheet-warning" title={t('sheet.incomplete')}>
-            <Icon name="warning" />
-            <span class="visually-hidden">{t('sheet.incomplete')}</span>
-          </span>
+        reviewTitle !== null ? (
+          <ReviewSheetDecision />
+        ) : (
+          incomplete && (
+            <span class="sheet-warning" title={t('sheet.incomplete')}>
+              <Icon name="warning" />
+              <span class="visually-hidden">{t('sheet.incomplete')}</span>
+            </span>
+          )
         )
       }
       height={ui.sheet.value}

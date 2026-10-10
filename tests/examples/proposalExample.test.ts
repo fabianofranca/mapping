@@ -54,7 +54,9 @@ describe('zip de exemplo com proposta', () => {
       if (typeof content === 'string') {
         expect(await entry?.async('string'), path).toBe(content);
       } else {
-        expect(Buffer.from((await entry?.async('uint8array')) ?? []), path).toEqual(content);
+        expect(Buffer.from((await entry?.async('uint8array')) ?? []), path).toEqual(
+          content,
+        );
       }
     }
   });

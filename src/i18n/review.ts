@@ -313,6 +313,10 @@ export const reviewPtBR = {
   'review.stale.text':
     '{count} mudança(s) passaram a ter conflito; as outras decisões foram mantidas.',
   'review.stale.show': 'Ver os conflitos novos ({count})',
+  'review.mobile.toolbar': 'Ferramentas da revisão',
+  'review.filter.showCount': 'Mostrar {count} mudança(s)',
+  'review.details.none': 'Nada selecionado na proposta',
+  'review.mobile.exit': 'Sair',
 } as const;
 
 export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
@@ -621,4 +625,8 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.stale.title': 'The project changed since your last session.',
   'review.stale.text': '{count} change(s) now conflict; the other decisions were kept.',
   'review.stale.show': 'Show the new conflicts ({count})',
+  'review.mobile.toolbar': 'Review tools',
+  'review.filter.showCount': 'Show {count} change(s)',
+  'review.details.none': 'Nothing selected in the proposal',
+  'review.mobile.exit': 'Exit',
 };

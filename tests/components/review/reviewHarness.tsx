@@ -1,6 +1,7 @@
 import { signal } from '@preact/signals';
 import { render } from '@testing-library/preact';
 import type { ComponentChildren } from 'preact';
+import { vi } from 'vitest';
 import { createDisplayImages } from '../../../src/store/displayImages';
 import { EditorContext, createEditorContextValue } from '../../../src/ui/EditorContext';
 import { openHarness, type HarnessOptions } from '../../store/proposalHarness';
@@ -25,6 +26,19 @@ export async function openReviewHarness(options: HarnessOptions = {}) {
 }
 
 export type ReviewHarness = Awaited<ReturnType<typeof openReviewHarness>>;
+
+/**
+ * O jsdom não tem `matchMedia`: sem ele os componentes ficam no layout do celular. Este
+ * stub liga o do desktop (desfazer com `vi.unstubAllGlobals()`).
+ */
+export function stubDesktop(): void {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query.includes('min-width'),
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+}
 
 export function renderInEditor(h: ReviewHarness, children: ComponentChildren) {
   return render(

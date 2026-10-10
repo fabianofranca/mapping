@@ -81,9 +81,19 @@ export function fixtureProject(): Project {
     now: NOW,
     firstLayer: { id: 'L1', name: 'Componentes', color: '#1e88e5' },
   });
-  p = addImage(p, { id: 'I1', file: 'images/checkout.png', width: WIDTH, height: HEIGHT });
+  p = addImage(p, {
+    id: 'I1',
+    file: 'images/checkout.png',
+    width: WIDTH,
+    height: HEIGHT,
+  });
   p = renameImage(p, 'I1', 'Checkout');
-  p = addImage(p, { id: 'I2', file: 'images/carrinho.png', width: WIDTH, height: HEIGHT });
+  p = addImage(p, {
+    id: 'I2',
+    file: 'images/carrinho.png',
+    width: WIDTH,
+    height: HEIGHT,
+  });
   p = renameImage(p, 'I2', 'Carrinho');
   // O pai vem da contenção (o Botão Pagar fica dentro do Rodapé).
   const mark = (id: string, imageId: string, name: string, rect: readonly number[]) => {

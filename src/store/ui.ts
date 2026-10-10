@@ -71,6 +71,8 @@ export interface EditorUi {
   readonly reviewLegend: Signal<boolean>;
   /** Revisão: comparação antes/depois da imagem trocada aberta (id da imagem). */
   readonly compareImage: Signal<string | null>;
+  /** Revisão no celular: filtros abertos em tela cheia. */
+  readonly reviewFilters: Signal<boolean>;
 }
 
 export interface CanvasMenu {
@@ -99,6 +101,7 @@ export function createEditorUi(): EditorUi {
     canvasMenu: signal<CanvasMenu | null>(null),
     reviewLegend: signal<boolean>(false),
     compareImage: signal<string | null>(null),
+    reviewFilters: signal<boolean>(false),
   };
 }
 

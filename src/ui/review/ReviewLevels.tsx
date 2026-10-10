@@ -28,7 +28,15 @@ import {
   levelParents,
   type LevelRow,
 } from './levelRows';
-import { useDecide, useReviewNames, useReviewNavigate } from './useReview';
+import {
+  useApplyAccepted,
+  useDecide,
+  useDecideVisible,
+  useReviewNames,
+  useReviewNavigate,
+} from './useReview';
+import { useApplyState } from './ReviewBar';
+import { MenuPopover } from '../MenuPopover';
 import { useReviewCommands } from './useReviewCommands';
 
 // Janela Propostas em modo revisão (HANDOFF-PROPOSALS 5.2 e 5.4): filtros (tipo, imagem,
@@ -93,7 +101,14 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
   return { start, end, row: view.row };
 }
 
-function Filters({ names }: { readonly names: ReviewNames }) {
+/** Filtros da revisão; `stacked`: um por linha (tela cheia do celular). */
+export function ReviewFilters({
+  names,
+  stacked = false,
+}: {
+  readonly names: ReviewNames;
+  readonly stacked?: boolean;
+}) {
   const { review } = useEditor();
   const d = review.derived;
   const filters = review.filters.value;
@@ -110,7 +125,11 @@ function Filters({ names }: { readonly names: ReviewNames }) {
     review.setFilters({ types: CHANGE_TYPES.filter((x) => set.has(x)) });
   };
   return (
-    <div class="review-filters" role="group" aria-label={t('review.filters')}>
+    <div
+      class={stacked ? 'review-filters review-filters-stacked' : 'review-filters'}
+      role="group"
+      aria-label={t('review.filters')}
+    >
       <Segmented
         label={t('review.filter.decision')}
         value={filters.decision}
@@ -531,7 +550,7 @@ export function ReviewLevels({ desktop }: { readonly desktop: boolean }) {
 
   return (
     <div class="review-levels">
-      <Filters names={names} />
+      {desktop && <ReviewFilters names={names} />}
       {fresh.size > 0 && !superseded && (
         <Notice
           tone="warning"
@@ -623,7 +642,47 @@ export function ReviewLevels({ desktop }: { readonly desktop: boolean }) {
         <div style={{ height: `${(count - win.end) * win.row}px` }} aria-hidden="true" />
         {count === 0 && <p class="muted review-none">{t('review.noneShown')}</p>}
       </div>
-      {desktop && <ShortcutFooter />}
+      {desktop ? <ShortcutFooter /> : <MobileLevelsBar />}
+    </div>
+  );
+}
+
+/**
+ * Celular: barra de baixo dos níveis (Em lote, Filtros, Aplicar aceitas · N); a próxima
+ * pendente fica no cabeçalho da janela.
+ */
+function MobileLevelsBar() {
+  const { review, ui } = useEditor();
+  const decideVisible = useDecideVisible();
+  const apply = useApplyAccepted();
+  const applyState = useApplyState();
+  const open = review.derived.proposal.value?.status === 'open';
+  return (
+    <div class="review-levels-bar">
+      <MenuPopover label={t('review.bulk')} buttonLabel={t('review.bulkTitle')}>
+        <Button disabled={!open} onClick={() => decideVisible('accepted')}>
+          <Icon name="check" />
+          {t('review.acceptAll')}
+        </Button>
+        <Button disabled={!open} onClick={() => decideVisible('rejected')}>
+          <Icon name="close" />
+          {t('review.rejectAll')}
+        </Button>
+      </MenuPopover>
+      <IconButton
+        icon="filter"
+        label={t('review.filters')}
+        pressed={hasActiveFilters(review.filters.value)}
+        onClick={() => (ui.reviewFilters.value = true)}
+      />
+      <Button
+        variant="primary"
+        disabled={applyState.disabled}
+        title={applyState.tooltip}
+        onClick={() => void apply()}
+      >
+        {applyState.label}
+      </Button>
     </div>
   );
 }
