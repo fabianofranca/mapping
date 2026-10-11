@@ -261,6 +261,7 @@ Todas as propostas da seção acima foram seguidas: `images-overlap` desloca a i
 - `MAX_PIXELS` caiu de 100 para 40 MP.
 - O teste manual do dono achou o teto de 10 MiB do stdin do SDK: `maxBufferSize` explícito (teto do base64 mais 1 MB, ~24 MB), base64 limitado a 16 MB por imagem (o tempo de leitura do SDK cresce quadraticamente) e, acima do teto, o servidor sai com erro no stderr. Tudo no próprio #78.
 - A tag `mcp-v0.3.1` fica com o dono.
+- **Depois do fechamento, o #98**: o workflow `mcp-release.yml` falhava quando a Release era criada pela tela do GitHub antes de o workflow rodar (aconteceu na `mcp-v0.3.0` e na `mcp-v0.3.1`). Ganhou `workflow_dispatch` com o nome da tag, checkout em `refs/tags/<tag>` e `gh release upload --clobber` quando a Release já existe, mais testes em `tests/tooling/ciConfig.test.ts`. A Release `mcp-v0.3.1` recebeu o `mapping-mcp.js` (3,6 MB) e o `.sha256` por esse caminho.
 
 **5.2 — Aplicar aceitas só conclui se o `mapping.json` gravou (#92)**
 
@@ -272,7 +273,7 @@ Todas as propostas da seção acima foram seguidas: `images-overlap` desloca a i
 **5.5 — Gravar ao sair da página e sem atraso nas operações caras (#93, mais o #95)**
 
 - `pagehide` e as operações caras (imagens, especializações) gravam na hora.
-- Importar várias imagens grava uma vez por imagem.
+- Importar várias imagens grava uma vez por lote: o `flush()` vem depois do laço de `addImages`; entre uma imagem e outra só o timer de 250 ms pode gravar.
 - Debounce de 800 para 250 ms, decisão do dono depois do teste manual do #93.
 - Limitação do `beforeunload`: o diálogo é modal e pausa a página; quem escolhe ficar não perde nada, quem confirma a saída na hora pode perder a última edição.
 - O diário de recuperação fica para depois do marco (ver "Fora desta etapa").
@@ -285,6 +286,7 @@ Todas as propostas da seção acima foram seguidas: `images-overlap` desloca a i
 - Arrastar com o dedo num monitor de toque faz pan (opção conservadora, aceita pelo dono depois do PR).
 - O "segurar e mover" saiu inteiro.
 - O e2e no CI caiu de 56 para 33 s.
+- `useMediaQuery` continua em `Editor.tsx` e `ReviewBar.tsx`, mas só para a faixa de desktop compacto (900 a 1199 px) e a largura de referência dos mockups: o checkbox "sem `useMediaQuery`" valia para a escolha entre os layouts de desktop e de celular, que acabou. O `@media (hover: none)` do tooltip em `controls.css` também ficou: sem mouse não há hover, e isso vale para um monitor de toque no desktop.
 
 **5.9 — Guia do testador e fechamento** (decisões no PR da fase)
 
@@ -294,6 +296,8 @@ Todas as propostas da seção acima foram seguidas: `images-overlap` desloca a i
 
 ### Fora desta etapa (acrescentado no fechamento)
 
+- **Regravação redundante depois de `save-failed`** (auditoria da etapa, 2026-10-11): quando o `mapping.json` não grava em "Aplicar aceitas", `applyAccepted` faz `store.undo()`, que sobe a `revision` do store, e o `effect` da sessão agenda outra gravação do projeto base sem mudança real. Com `ExternalChangeError` isso só reabre o diálogo de conflito; com erro de armazenamento, o status fica em "erro" e, quando o disco volta, grava uma revisão a mais. Não perde dados. Correção possível: `undo` da entrada abandonada sem subir a `revision`, ou a sessão ignorar a revisão gerada pelo desfazer de uma entrada com `HistoryLink` abandonada; teste do estado intermediário em `tests/store/proposals.test.ts`.
+- **Backup do reparo com nome de migração**: `openRepaired` grava o original como `mapping.v<versão>.<data>.json` em `backups/`, o mesmo nome do backup de migração; um v8 reparado vira `mapping.v8.<data>.json`. Documentado em `FORMAT.md`; um sufixo próprio (`.repaired`) fica para quando houver mais de um motivo de backup.
 - O erro intermitente `InvalidStateError` do `drawImage` ("The image source is detached") logo depois de aplicar uma proposta com imagem nova, registrado no #74 (fase 4.5) e, segundo o coordenador, visto também nos testes do #92; sem efeito visível e nunca reproduzido em teste automatizado.
 - O **diário de recuperação** (cópia das mudanças no armazenamento do navegador ao sair e "Recuperar alterações não gravadas" ao reabrir), a pedido do dono: entra se algum testador perder dados ao fechar a aba. Registrado nas Evoluções do [`ROADMAP`](../ROADMAP.md).
 - Os PRs do Dependabot #82 a #90 (actions, o grupo minor e patch, `@types/node` 26, **TypeScript 7** e **Preact 11**), abertos e sem revisão, para depois da etapa.
