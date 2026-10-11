@@ -79,6 +79,13 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
 const FRAME_BUDGET_MS = 8;
 /** Desligados com `--coverage` (vite.config.ts): o código instrumentado é mais lento. */
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
+/**
+ * Um orçamento é uma medida de tempo num runner compartilhado: um vizinho ocupado estoura
+ * o limite por 1% sem regressão nenhuma (deploy de 2026-10-11: 8,108 ms contra 8 ms, com o
+ * mesmo commit passando 17 min antes). Uma repetição separa ruído de regressão: a regressão
+ * real (algo virar O(n²)) estoura o limite por muito, nas duas vezes.
+ */
+const BUDGET_OPTIONS = { retry: 1 };
 
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
@@ -116,6 +123,7 @@ describe('projeto grande com tipadas e referências', () => {
 
   budgetIt(
     `índice + pendências + indicadores + visibilidade em menos de ${FRAME_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
     () => {
       const ms = medianMs((p) => {
         projectIndex(p);
@@ -129,16 +137,20 @@ describe('projeto grande com tipadas e referências', () => {
     },
   );
 
-  budgetIt('consultas repetidas na mesma versão reaproveitam o índice', () => {
-    projectIssues(project);
-    const queryAll = () => {
-      for (const a of project.annotations) {
-        getAnnotationIssues(project, a.id);
-        getBacklinks(project, a.id);
-      }
-    };
-    queryAll(); // Aquece o JIT.
-    const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
-    expect(median(runs)).toBeLessThan(FRAME_BUDGET_MS * 4);
-  });
+  budgetIt(
+    'consultas repetidas na mesma versão reaproveitam o índice',
+    BUDGET_OPTIONS,
+    () => {
+      projectIssues(project);
+      const queryAll = () => {
+        for (const a of project.annotations) {
+          getAnnotationIssues(project, a.id);
+          getBacklinks(project, a.id);
+        }
+      };
+      queryAll(); // Aquece o JIT.
+      const runs = Array.from({ length: 5 }, () => time(queryAll).ms);
+      expect(median(runs)).toBeLessThan(FRAME_BUDGET_MS * 4);
+    },
+  );
 });
