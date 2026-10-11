@@ -4,6 +4,9 @@ export const ptBR = {
   ...reviewPtBR,
   'app.title': 'Mapping',
   'app.loading': 'Carregando…',
+  'narrow.title': 'Abra numa janela maior',
+  'narrow.body':
+    'O Mapping precisa de pelo menos {width} px de largura. O projeto continua aberto e as alterações continuam sendo salvas.',
   'settings.title': 'Configurações',
   'settings.language': 'Idioma',
   'settings.theme': 'Tema',
