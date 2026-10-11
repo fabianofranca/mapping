@@ -299,7 +299,7 @@ Todas as propostas da seção acima foram seguidas: `images-overlap` desloca a i
 - Os PRs do Dependabot #82 a #90 (actions, o grupo minor e patch, `@types/node` 26, **TypeScript 7** e **Preact 11**), abertos e sem revisão, para depois da etapa.
 - **Achados de interface do Aceite da 5.9** (rodada 1, build `af30ba6`, Chromium por automação a 1280×800; nenhum perde dados, e esta fase não muda código):
   - em `file://`, `<link rel="icon" href="./icons/icon.svg">` e o `apple-touch-icon` dão 404 a cada carga: o `index.html` avulso não leva a pasta `icons/`;
-  - Camadas: o selo da especialização sai da linha de 30 px e cobre o nome da camada de baixo, só com a janela baixa (Árvore aberta junto; com a janela alta, 54 px por linha, não acontece); a lista transborda na horizontal (`scrollWidth` 351 contra `clientWidth` 255);
+  - Camadas: o selo da especialização sai da linha de 30 px e cobre o nome da camada de baixo, só com a janela baixa (Árvore aberta junto; com a janela alta, 54 px por linha, não acontece), e o nome "Modelo de dados" aparece cortado ("Modelo de …"); a lista transborda na horizontal (`scrollWidth` 351 contra `clientWidth` 255);
   - tabela `atributos` em Detalhes: o seletor de "obrigatório" cobre a coluna "exemplo", e "String" aparece cortado ("Str") na largura padrão;
   - campo de referência em Detalhes com a seta duplicada (o ícone e o texto "→ User.name");
   - `.editor` e o corpo de Detalhes podem ficar rolados na horizontal (`scrollLeft` 54 e 13): `span.tooltip` e `kbd` invisíveis passam da borda e o contêiner rola por foco (visto na automação, sem passo manual isolado);
