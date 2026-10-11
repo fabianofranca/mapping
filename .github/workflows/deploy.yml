@@ -74,7 +74,7 @@ jobs:
     env:
       PREVIEW: ${{ needs.plan.outputs.preview }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           path: main
@@ -92,7 +92,7 @@ jobs:
           npm ci
           npm run build
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.PREVIEW != ''
         with:
           ref: ${{ env.PREVIEW }}
