@@ -107,7 +107,6 @@ const PROPOSALS_HELP_KEYS = [
   'help.proposals.details',
   'help.proposals.apply',
   'help.proposals.resume',
-  'help.proposals.mobile',
 ] as const satisfies readonly TranslationKey[];
 
 /** Propostas de alteração: como chegam, revisão, decisões, notas, aplicar e retomar. */

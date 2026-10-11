@@ -7,8 +7,6 @@ import type { ReviewNames } from './changeText';
 import type { DecisionValue } from './DecisionControl';
 import { useReviewCommands } from './useReviewCommands';
 import { showToolWindow } from '../../store/toolWindows';
-import { DESKTOP_QUERY } from '../../theme/breakpoints';
-import { useMediaQuery } from '../useMediaQuery';
 
 // Ganchos comuns aos componentes da revisão: os nomes (projeto atual + "como ficaria"),
 // decidir com o aviso de erro, e navegar (selecionar e mostrar no canvas).
@@ -66,16 +64,13 @@ export function undoMessage(
 /** Leva ao problema que bloqueia "Aplicar": seleciona a primeira mudança envolvida. */
 export function useShowProblem(): () => void {
   const { review, canvas } = useEditor();
-  const desktop = useMediaQuery(DESKTOP_QUERY);
   return () => {
     const invalid = review.derived.invalid.peek().changeIds;
     const first = review.derived.proposal.peek()?.changes.find((c) => invalid.has(c.id));
     if (!first) return;
     review.select({ level: 'change', id: first.id });
-    if (desktop) {
-      showToolWindow('proposals');
-      showToolWindow('details');
-    }
+    showToolWindow('proposals');
+    showToolWindow('details');
     canvas.current?.focusSelection();
   };
 }

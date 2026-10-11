@@ -95,50 +95,12 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
   return PAN;
 }
 
-/** Segurar-e-mover só existe no modo Navegar, com a edição liberada. */
-export function canGrab(ctx: IntentContext): boolean {
-  return (
-    !ctx.spaceDown && !ctx.readOnly && ctx.project !== null && ctx.mode === 'navigate'
-  );
-}
-
 /** Marcações que aceitam toque: as ocultas pelo modo de exibição ficam de fora. */
 export function selectableMarkings(
   project: Project,
   visibility: ReadonlyMap<string, MarkingVisibility>,
 ): readonly Marking[] {
   return project.markings.filter((m) => visibility.get(m.id) !== 'hidden');
-}
-
-/**
- * Item que o segurar-e-mover pega em `c` (canvas): a marcação selecionada, se o
- * dedo estiver nela; senão a mais interna sob o dedo; senão a imagem. Um item
- * trancado (ele ou um ancestral) não é pego: o resultado é `null`.
- */
-export function grabIntentAt(
-  project: Project | null,
-  selection: Selection,
-  visibility: ReadonlyMap<string, MarkingVisibility>,
-  c: Point,
-): Intent | null {
-  if (!project) return null;
-  const image = imageAt(project.images, c);
-  if (!image) return null;
-  const chain = markingChainAt(
-    selectableMarkings(project, visibility),
-    image.id,
-    canvasToImagePixel(image.placement, c),
-  );
-  const picked =
-    chain.find((m) => selection?.kind === 'marking' && selection.id === m.id) ?? chain[0];
-  if (picked) {
-    return canEditMarkingGeometry(project, picked.id)
-      ? { kind: 'move-marking', markingId: picked.id }
-      : null;
-  }
-  return canEditImagePlacement(project, image.id)
-    ? { kind: 'move-image', imageId: image.id }
-    : null;
 }
 
 /** O toque em `c` foi perto do anterior (`last`), em px de tela? */

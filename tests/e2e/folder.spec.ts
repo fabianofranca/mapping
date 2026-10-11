@@ -2,10 +2,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import {
   addImage,
   canvasPoint,
-  closeDetails,
   drawMarking,
-  isMobile,
-  openDetails,
   selectedRect,
   type MappingJson,
   type Rect,
@@ -101,10 +98,10 @@ async function allowClipboard(context: BrowserContext): Promise<void> {
 const clipboardText = (page: Page) => page.evaluate(() => navigator.clipboard.readText());
 
 /** Projeto de pasta com uma imagem e uma marcação selecionada. */
-async function withMarking(page: Page, info: Parameters<typeof isMobile>[0]) {
+async function withMarking(page: Page) {
   await openFolderProject(page);
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
   // O salvamento automático espera o debounce (`AUTOSAVE_DELAY_MS`).
   await expect.poll(async () => (await readMapping(page)).markings.length).toBe(1);
   return (await readMapping(page)).markings[0]!;
@@ -116,12 +113,11 @@ const toast = (page: Page, text: string) =>
 test('Ctrl+C copia a referência do item selecionado, com os dados do item junto', async ({
   page,
   context,
-}, info) => {
-  test.skip(isMobile(info), 'atalho de teclado');
+}) => {
   await allowClipboard(context);
   await openFolderProject(page);
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
   await expect.poll(async () => (await readMapping(page)).markings.length).toBe(1);
   const marking = (await readMapping(page)).markings[0]!;
 
@@ -154,12 +150,11 @@ test('Ctrl+C copia a referência do item selecionado, com os dados do item junto
 test('Ctrl+Alt+C copia o recorte da marcação como PNG, em pixels da imagem original', async ({
   page,
   context,
-}, info) => {
-  test.skip(isMobile(info), 'atalho de teclado');
+}) => {
   await allowClipboard(context);
   await openFolderProject(page);
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
   const rect: Rect = await selectedRect(page);
 
   await page.keyboard.press('Control+Alt+c');
@@ -177,12 +172,11 @@ test('Ctrl+Alt+C copia o recorte da marcação como PNG, em pixels da imagem ori
 test('com o foco num campo de texto, Ctrl+C copia o texto do campo', async ({
   page,
   context,
-}, info) => {
-  test.skip(isMobile(info), 'atalho de teclado');
+}) => {
   await allowClipboard(context);
   await openFolderProject(page);
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
 
   const name = page.getByLabel('Nome', { exact: true }).first();
   await name.fill('Porta dianteira');
@@ -196,10 +190,9 @@ test('com o foco num campo de texto, Ctrl+C copia o texto do campo', async ({
 test('Detalhes: copiar referência e copiar recorte ao lado do ID', async ({
   page,
   context,
-}, info) => {
+}) => {
   await allowClipboard(context);
-  const marking = await withMarking(page, info);
-  await openDetails(page);
+  const marking = await withMarking(page);
   await page.getByRole('button', { name: 'Copiar referência' }).first().click();
   await expect(toast(page, 'Referência copiada')).toBeVisible();
   const code = marking.id.replaceAll('-', '').slice(0, 8);
@@ -207,16 +200,14 @@ test('Detalhes: copiar referência e copiar recorte ao lado do ID', async ({
 
   await page.getByRole('button', { name: 'Copiar recorte' }).click();
   await expect(toast(page, 'Recorte copiado')).toBeVisible();
-  await closeDetails(page);
 });
 
 test('menu da linha da Árvore (desktop) copia a referência', async ({
   page,
   context,
-}, info) => {
-  test.skip(isMobile(info), 'a Árvore do celular abre em tela cheia');
+}) => {
   await allowClipboard(context);
-  await withMarking(page, info);
+  await withMarking(page);
 
   await page.getByRole('button', { name: /^Ações de images\/tela\.webp/ }).click();
   await page.getByRole('menuitem', { name: 'Copiar referência' }).click();
@@ -227,10 +218,9 @@ test('menu da linha da Árvore (desktop) copia a referência', async ({
 test('botão direito no canvas seleciona o item e abre o menu de cópia', async ({
   page,
   context,
-}, info) => {
-  test.skip(isMobile(info), 'o celular usa a Árvore e Detalhes');
+}) => {
   await allowClipboard(context);
-  await withMarking(page, info);
+  await withMarking(page);
   const center = await canvasPoint(page);
   // Tira a seleção para provar que o clique direito seleciona.
   await page.keyboard.press('Escape');
@@ -244,8 +234,7 @@ test('botão direito no canvas seleciona o item e abre o menu de cópia', async 
   expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/m\/[0-9a-f]{8} \(/);
 });
 
-test('Ajuda → Atalhos lista os dois atalhos de copiar', async ({ page }, info) => {
-  test.skip(isMobile(info), 'a ajuda de atalhos é do desktop');
+test('Ajuda → Atalhos lista os dois atalhos de copiar', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Configurações', exact: true }).click();
   await page.getByRole('button', { name: 'Ver os atalhos de teclado' }).click();
@@ -255,11 +244,10 @@ test('Ajuda → Atalhos lista os dois atalhos de copiar', async ({ page }, info)
 });
 
 test.describe('mudanças externas no mapping.json', () => {
-  test('cada gravação sobe a revisão', async ({ page }, info) => {
-    await withMarking(page, info);
+  test('cada gravação sobe a revisão', async ({ page }) => {
+    await withMarking(page);
     await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
     const before = (await readMapping(page)).revision;
-    await openDetails(page);
     await page.getByLabel('Nome', { exact: true }).first().fill('Porta');
     await page.getByLabel('Nome', { exact: true }).first().press('Enter');
     await expect
@@ -269,12 +257,8 @@ test.describe('mudanças externas no mapping.json', () => {
 
   test('editar o arquivo por fora recarrega a app sozinha, com um aviso discreto', async ({
     page,
-  }, info) => {
-    test.skip(
-      isMobile(info),
-      'a conferência é igual no celular; o nome só aparece no desktop',
-    );
-    await withMarking(page, info);
+  }) => {
+    await withMarking(page);
     await expect.poll(async () => (await readMapping(page)).markings.length).toBe(1);
 
     await externalEdit(page, { markingName: 'Editada por fora' });
@@ -290,9 +274,8 @@ test.describe('mudanças externas no mapping.json', () => {
 
   test('editar por fora e dos dois lados abre o diálogo; "Manter as minhas" grava por cima', async ({
     page,
-  }, info) => {
-    test.skip(isMobile(info), 'o fluxo é o mesmo no celular');
-    await withMarking(page, info);
+  }) => {
+    await withMarking(page);
     await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
     const name = page.getByLabel('Nome', { exact: true }).first();
 
@@ -315,9 +298,8 @@ test.describe('mudanças externas no mapping.json', () => {
 
   test('"Recarregar" descarta as alterações locais e abre o arquivo como está', async ({
     page,
-  }, info) => {
-    test.skip(isMobile(info), 'o fluxo é o mesmo no celular');
-    await withMarking(page, info);
+  }) => {
+    await withMarking(page);
     await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
     const name = page.getByLabel('Nome', { exact: true }).first();
 

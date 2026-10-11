@@ -32,12 +32,7 @@ function open(harness: Harness, current: EditorDialog) {
   } as unknown as Dialogs;
   render(
     <EditorContext.Provider value={harness.context}>
-      <EditorDialogs
-        dialogs={dialogs}
-        busy={false}
-        intake={{} as never}
-        commands={{ exportProject: vi.fn(), closeProject: vi.fn() } as never}
-      />
+      <EditorDialogs dialogs={dialogs} />
     </EditorContext.Provider>,
   );
   const dialog = within(document.querySelector('dialog') as HTMLElement);

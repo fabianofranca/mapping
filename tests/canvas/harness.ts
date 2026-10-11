@@ -69,7 +69,7 @@ export const TOKENS: CanvasTokens = {
   text: '#111111',
   textMuted: '#666666',
   warningText: '#b26a00',
-  opacity: { dimmed: 0.3, ancestor: 0.7, inherited: 0.65, grabbed: 0.2 },
+  opacity: { dimmed: 0.3, ancestor: 0.7, inherited: 0.65 },
   fontFamily: 'TestSans, sans-serif',
   type: {
     name: { size: 11, line: 16, weight: 600 },
@@ -80,7 +80,6 @@ export const TOKENS: CanvasTokens = {
   handleSize: 10,
   lock: { fill: '#0057ba', glyph: '#010204', size: 20 },
   radius: { sm: 4, md: 6 },
-  grabShadow: { blur: 14, color: 'rgba(77, 141, 255, 0.8)' },
 };
 
 export const NOW = '2026-10-02T12:00:00.000Z';
@@ -152,7 +151,6 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     preview: null,
     draft: null,
     dropTarget: null,
-    grabbed: null,
     hoverLock: null,
     tokens: TOKENS,
     size: { width: 380, height: 700 },

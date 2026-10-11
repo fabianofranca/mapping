@@ -13,7 +13,7 @@ import { moveKeyDelta, useRowDrag, type RowDrag } from './rowDrag';
 import { BacklinkList } from './FieldEditors';
 
 // KeyValueGrid do DS 2.0: pares da anotação livre numa grade com edição na célula,
-// alça de arraste (P6) e menu ⋯ por linha. No celular cada par vira um cartão (CSS).
+// alça de arraste (P6) e menu ⋯ por linha.
 
 /** Alt+Enter: novo par ou nova linha (DS 2.0, seção Atalhos). */
 export function isNewRowKey(e: KeyboardEvent): boolean {

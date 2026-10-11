@@ -1,16 +1,9 @@
-import { useComputed } from '@preact/signals';
-import { t } from '../i18n';
 import type { ProjectImage } from '../model';
 import { resolveSelection, type AnnotationLocation, type Selection } from '../store/ui';
-import { BottomSheet } from '../ui/BottomSheet';
 import { useEditor } from '../ui/EditorContext';
-import { Icon } from '../ui/icons';
-import { imageLabel, markingPath } from '../ui/labels';
 import { MarkingPanel } from '../ui/MarkingPanel';
-import { LayerDots } from '../ui/MarkingTree';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import { ReviewDetails } from '../ui/review/ReviewDetails';
-import { ReviewSheetDecision, useReviewSheetTitle } from '../ui/review/MobileReview';
 import type { EditorDialogs } from './useEditorDialogs';
 
 export interface EditorPanelProps {
@@ -20,7 +13,7 @@ export interface EditorPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-/** Detalhes: janela da direita (desktop), gaveta ou tela cheia (celular). */
+/** Detalhes: a janela da direita. */
 export function EditorPanel({
   busy,
   dialogs,
@@ -75,56 +68,5 @@ export function EditorPanel({
         />
       )}
     </div>
-  );
-}
-
-/**
- * Celular: a gaveta de Detalhes (B7). Recolhida mostra as bolinhas das camadas, o nome
- * do item selecionado e o aviso de pendência; aberta, o painel; a tela cheia é a janela
- * Detalhes em tela cheia.
- */
-export function EditorSheet(panel: EditorPanelProps) {
-  const { store, ui, derived } = useEditor();
-  // Só o cabeçalho: textos e ids, para não renderizar a cada edição do projeto.
-  const header = useComputed(() => {
-    const project = store.committed.value;
-    const selected = resolveSelection(project, ui.selection.value);
-    if (project && selected?.kind === 'marking') {
-      return {
-        title: markingPath(project, selected.marking),
-        markingId: selected.marking.id,
-      };
-    }
-    return {
-      title: selected?.kind === 'image' ? imageLabel(selected.image) : null,
-      markingId: null,
-    };
-  });
-  const { title, markingId } = header.value;
-  const reviewTitle = useReviewSheetTitle();
-  const dots = markingId ? (derived.layerDots.value.get(markingId) ?? []) : [];
-  const incomplete = markingId ? derived.incompleteMarkings.value.has(markingId) : false;
-  return (
-    <BottomSheet
-      title={reviewTitle ?? title ?? t('panel.nothingSelected')}
-      leading={dots.length > 0 && <LayerDots dots={dots} />}
-      trailing={
-        reviewTitle !== null ? (
-          <ReviewSheetDecision />
-        ) : (
-          incomplete && (
-            <span class="sheet-warning" title={t('sheet.incomplete')}>
-              <Icon name="warning" />
-              <span class="visually-hidden">{t('sheet.incomplete')}</span>
-            </span>
-          )
-        )
-      }
-      height={ui.sheet.value}
-      onHeightChange={(height) => (ui.sheet.value = height)}
-      onFull={() => (ui.mobileWindow.value = 'details')}
-    >
-      <EditorPanel {...panel} />
-    </BottomSheet>
   );
 }

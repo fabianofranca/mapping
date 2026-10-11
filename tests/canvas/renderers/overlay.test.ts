@@ -28,7 +28,6 @@ describe('OverlayRenderer', () => {
     const { overlay, render, handles } = setup();
     render();
     expect(overlay.selectionOutline.visible()).toBe(false);
-    expect(overlay.grabRect.visible()).toBe(false);
     expect(handles().every((h) => !h.visible())).toBe(true);
   });
 
@@ -161,22 +160,6 @@ describe('OverlayRenderer', () => {
     expect(handles().some((h) => h.visible())).toBe(false);
     render({ selection: { kind: 'marking', id: 'M2' }, readOnly: true });
     expect(handles().some((h) => h.visible())).toBe(false);
-  });
-
-  it('item pego pelo segurar-e-mover: destaque com sombra', () => {
-    const { overlay, render } = setup();
-    render({
-      selection: { kind: 'marking', id: 'M2' },
-      grabbed: { kind: 'marking', id: 'M2' },
-    });
-    expect(overlay.grabRect.getAttrs()).toMatchObject({
-      visible: true,
-      x: 200,
-      width: 100,
-      opacity: TOKENS.opacity.grabbed,
-      shadowColor: TOKENS.grabShadow.color,
-      shadowBlur: TOKENS.grabShadow.blur,
-    });
   });
 
   it('rascunho: tracejado; vermelho enquanto for pequeno demais', () => {

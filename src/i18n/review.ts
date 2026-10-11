@@ -237,7 +237,7 @@ export const reviewPtBR = {
   'review.compare.accept': 'Aceitar a troca',
   'review.compare.reject': 'Rejeitar a troca',
   'review.details.empty':
-    'Escolha um nível na janela Propostas ou toque num item do canvas para ver as mudanças.',
+    'Escolha um nível na janela Propostas ou clique num item do canvas para ver as mudanças.',
   'review.details.typeCount': '{type} · {count} mudança(s)',
   'review.details.created': 'Criada nesta proposta',
   'review.details.blocks': 'Bloqueia Aplicar',
@@ -313,10 +313,6 @@ export const reviewPtBR = {
   'review.stale.text':
     '{count} mudança(s) passaram a ter conflito; as outras decisões foram mantidas.',
   'review.stale.show': 'Ver os conflitos novos ({count})',
-  'review.mobile.toolbar': 'Ferramentas da revisão',
-  'review.filter.showCount': 'Mostrar {count} mudança(s)',
-  'review.details.none': 'Nada selecionado na proposta',
-  'review.mobile.exit': 'Sair',
   'shortcuts.group.review': 'Revisão de propostas',
   'shortcuts.review.accept': 'Aceitar o nível selecionado',
   'shortcuts.review.reject': 'Rejeitar o nível selecionado',
@@ -334,15 +330,13 @@ export const reviewPtBR = {
   'help.proposals.review':
     'Revisar abre o modo revisão: o projeto fica somente leitura, a faixa azul mostra o progresso e a janela Propostas lista os níveis Proposta → Imagem → Item → Mudança. O canvas mostra o projeto proposto (P alterna com o atual) com as marcas de cada tipo de mudança; L abre a legenda.',
   'help.proposals.decide':
-    'Cada nível tem Aceitar e Rejeitar; decidir um nível decide todas as mudanças dentro dele, e cada mudança pode contrariar o nível. Tocar de novo no mesmo botão volta para "sem decisão". Os filtros (decisão, tipo, imagem, camada, só conflitos) limitam a lista e as ações em lote.',
+    'Cada nível tem Aceitar e Rejeitar; decidir um nível decide todas as mudanças dentro dele, e cada mudança pode contrariar o nível. Clicar de novo no mesmo botão volta para "sem decisão". Os filtros (decisão, tipo, imagem, camada, só conflitos) limitam a lista e as ações em lote.',
   'help.proposals.details':
     'A janela Detalhes mostra o valor atual, o de antes e o proposto de cada mudança, os conflitos (o projeto mudou depois da proposta) e os itens trancados. Ali também ficam as notas, que vão junto com a proposta e o agente pode ler.',
   'help.proposals.apply':
     'Aplicar aceitas · N grava as mudanças aceitas no projeto de uma vez (e pode ser desfeito com Ctrl+Z). Se uma aceita depende de outra que não foi aceita, o botão explica o que falta antes de aplicar.',
   'help.proposals.resume':
     'Sair da revisão não perde nada: decisões e notas ficam na proposta e a revisão volta ao mesmo ponto. Se o projeto mudou entre sessões, os conflitos novos são avisados; uma proposta substituída por outra mostra o que ficou para trás.',
-  'help.proposals.mobile':
-    'No celular, abra Propostas pelo menu Painéis. Na revisão, a barra de baixo traz Filtros, Próxima pendente e Aplicar aceitas; a gaveta mostra o nível selecionado com Aceitar e Rejeitar.',
 } as const;
 
 export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
@@ -576,7 +570,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.compare.accept': 'Accept the replacement',
   'review.compare.reject': 'Reject the replacement',
   'review.details.empty':
-    'Pick a level in the Proposals window or tap an item on the canvas to see its changes.',
+    'Pick a level in the Proposals window or click an item on the canvas to see its changes.',
   'review.details.typeCount': '{type} · {count} change(s)',
   'review.details.created': 'Created in this proposal',
   'review.details.blocks': 'Blocks Apply',
@@ -651,10 +645,6 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.stale.title': 'The project changed since your last session.',
   'review.stale.text': '{count} change(s) now conflict; the other decisions were kept.',
   'review.stale.show': 'Show the new conflicts ({count})',
-  'review.mobile.toolbar': 'Review tools',
-  'review.filter.showCount': 'Show {count} change(s)',
-  'review.details.none': 'Nothing selected in the proposal',
-  'review.mobile.exit': 'Exit',
   'shortcuts.group.review': 'Proposal review',
   'shortcuts.review.accept': 'Accept the selected level',
   'shortcuts.review.reject': 'Reject the selected level',
@@ -679,6 +669,4 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
     'Apply accepted · N writes the accepted changes into the project at once (and can be undone with Ctrl+Z). If an accepted change depends on another one that was not accepted, the button explains what is missing before applying.',
   'help.proposals.resume':
     'Leaving the review loses nothing: decisions and notes stay in the proposal and the review returns to the same spot. If the project changed between sessions, new conflicts are flagged; a proposal superseded by another one shows what was left behind.',
-  'help.proposals.mobile':
-    'On a phone, open Proposals from the Panels menu. During review, the bottom bar has Filters, Next pending and Apply accepted; the drawer shows the selected level with Accept and Reject.',
 };

@@ -7,21 +7,18 @@ import {
   createProject,
   drawMarking,
   exportMapping,
-  isMobile,
-  openDetails,
   openExport,
+  selectedRect,
 } from './helpers';
 
 const SDUI = join(process.cwd(), 'examples', 'specs', 'sdui.json');
 
 test('projeto novo → imagem → marcação → anotação → zip com o mapping.json', async ({
   page,
-}, info) => {
+}) => {
   await createProject(page, 'Projeto E2E');
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
-
-  await openDetails(page);
+  await drawMarking(page, await canvasPoint(page));
   await page
     .getByRole('button', { name: /Adicionar anotação na camada/ })
     .first()
@@ -66,14 +63,13 @@ test('projeto novo → imagem → marcação → anotação → zip com o mappin
 
 test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async ({
   page,
-}, info) => {
+}) => {
   await createProject(page, 'Projeto SDUI');
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
   await applySpecialization(page, SDUI);
 
   // Anotação livre com a tupla `name: string` (camada livre).
-  await openDetails(page);
   await page
     .getByRole('button', { name: 'Adicionar anotação na camada Camada 1' })
     .first()
@@ -134,8 +130,7 @@ test('caixa de seleção e texto de "Texto no canvas" ficam na mesma linha', asy
 // R4: estrutura do editor no desktop (B1, B2, B8, B11, P4).
 test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', async ({
   page,
-}, info) => {
-  test.skip(isMobile(info), 'janelas de ferramenta: só no layout de desktop');
+}) => {
   await createProject(page, 'Janelas');
 
   // Barra de status e breadcrumbs sem seleção.
@@ -184,11 +179,10 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
 });
 
 // R6: Árvore e Camadas como janelas à esquerda (B3).
-test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page }, info) => {
-  test.skip(isMobile(info), 'janelas de ferramenta: só no layout de desktop');
+test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page }) => {
   await createProject(page, 'Camadas');
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
 
   const tree = page.getByRole('region', { name: 'Árvore de marcações' });
   const layers = page.getByRole('region', { name: 'Camadas', exact: true });
@@ -248,12 +242,11 @@ test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page },
 
 test('desktop: a árvore recolhe nós, recolhe tudo e localiza a seleção', async ({
   page,
-}, info) => {
-  test.skip(isMobile(info), 'janelas de ferramenta: só no layout de desktop');
+}) => {
   await createProject(page, 'Árvore');
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page), { width: 160, height: 160 });
-  await drawMarking(page, info, await canvasPoint(page, 0.7), { width: 80, height: 60 });
+  await drawMarking(page, await canvasPoint(page), { width: 160, height: 160 });
+  await drawMarking(page, await canvasPoint(page, 0.7), { width: 80, height: 60 });
 
   const tree = page.getByRole('region', { name: 'Árvore de marcações' });
   const rows = tree.locator('.tree-item');
@@ -276,133 +269,12 @@ test('desktop: a árvore recolhe nós, recolhe tudo e localiza a seleção', asy
 });
 
 // R8: celular com barra de cima, Painéis, telas cheias e gaveta de três alturas (B6, B7).
-test('celular: Camadas em tela cheia, com a paleta e o menu da linha', async ({
-  page,
-}, info) => {
-  test.skip(!isMobile(info), 'telas cheias: só no celular');
-  await createProject(page, 'Camadas celular');
-  // O chip da camada ativa abre Camadas em tela cheia (B3, B6).
-  await page.getByRole('button', { name: /^Camadas \(ativa/ }).tap();
-  const screen = page.getByRole('region', { name: 'Camadas', exact: true });
-  await expect(screen).toBeVisible();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeHidden();
-
-  await screen.getByRole('button', { name: 'Nova camada' }).tap();
-  const names = screen.getByLabel('Nome da camada');
-  await expect(names).toHaveCount(2);
-  // Área de toque de 44px nos botões da linha.
-  const more = await screen
-    .getByRole('button', { name: /^Mais ações da camada/ })
-    .first()
-    .boundingBox();
-  expect(more?.height).toBeGreaterThanOrEqual(44);
-
-  await screen
-    .getByRole('button', { name: /^Cor da camada/ })
-    .first()
-    .tap();
-  const palette = page.getByRole('group', { name: /^Cor da camada/ });
-  await expect(palette).toBeVisible();
-  await palette.getByRole('button', { name: '#1E88E5' }).tap();
-  await expect(palette).toBeHidden();
-
-  // A faixa de abas troca de janela; voltar devolve o canvas.
-  await page.getByRole('tab', { name: 'Lista' }).tap();
-  await expect(page.getByRole('region', { name: 'Lista de anotações' })).toBeVisible();
-  await page.getByRole('button', { name: 'Voltar ao canvas' }).tap();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
-});
-
-// O `tap` do Playwright e o arraste por CDP do helper `drag` não se misturam num mesmo
-// teste: um deixa estado de toque que atrapalha o outro (o toque some, ou o arraste
-// vira pinça). Por isso os toques ficam num teste e o desenho, com `click`, no outro.
-test('celular: gaveta de três alturas e menu Painéis, com toque', async ({
-  page,
-}, info) => {
-  test.skip(!isMobile(info), 'layout do celular');
-  await createProject(page, 'Painéis');
-  await addImage(page);
-
-  // Gaveta: recolhida (64px), aberta (72%) e tela cheia (Detalhes).
-  const sheet = page.getByRole('region', { name: 'Detalhes' });
-  const peek = await sheet.boundingBox();
-  expect(peek?.height).toBeLessThanOrEqual(72);
-  await page.getByRole('button', { name: 'Mostrar detalhes', exact: true }).tap();
-  // `boundingBox` não espera: só mede depois que a gaveta aparece aberta.
-  await expect(page.getByRole('button', { name: 'Esconder detalhes' })).toBeVisible();
-  await expect
-    .poll(async () => (await sheet.boundingBox())?.height ?? 0)
-    .toBeGreaterThan(200);
-  await page.getByRole('button', { name: 'Abrir Detalhes em tela cheia' }).tap();
-  await expect(page.getByRole('tab', { name: 'Detalhes' })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
-  await page.getByRole('button', { name: 'Voltar ao canvas' }).tap();
-  await page.getByRole('button', { name: 'Esconder detalhes' }).tap();
-  await expect(
-    page.getByRole('button', { name: 'Mostrar detalhes', exact: true }),
-  ).toBeVisible();
-
-  // Painéis: as seis janelas e as ações do projeto.
-  await page.getByRole('button', { name: /^Painéis/ }).tap();
-  const menu = page.getByRole('dialog', { name: 'Painéis e ações' });
-  await expect(menu).toBeVisible();
-  for (const name of ['Especializações', 'Exportar', 'Ajuda', 'Configurações']) {
-    await expect(menu.getByRole('button', { name, exact: true })).toBeVisible();
-  }
-  await menu.getByRole('button', { name: /^Árvore de marcações/ }).tap();
-  await expect(menu).toBeHidden();
-  const tree = page.getByRole('region', { name: 'Árvore de marcações' });
-  await expect(tree).toBeVisible();
-  // Escolher na árvore seleciona e volta ao canvas, com o caminho nos breadcrumbs.
-  await tree.getByRole('button', { name: /^images\/tela/ }).tap();
-  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
-  await expect(
-    page.getByRole('navigation', { name: 'Caminho da seleção' }),
-  ).toContainText('images/tela.webp');
-
-  // O ⋯ da barra de cima abre o mesmo menu.
-  await page.getByRole('button', { name: 'Mais: painéis e ações' }).tap();
-  await expect(menu).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(menu).toBeHidden();
-});
-
-test('celular: marcação em Detalhes na gaveta e em tela cheia, sem rolagem lateral', async ({
-  page,
-}, info) => {
-  test.skip(!isMobile(info), 'layout do celular');
-  await createProject(page, 'Gaveta');
-  await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
-
-  // Nada passa da largura da tela.
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - window.innerWidth,
-  );
-  expect(overflow).toBeLessThanOrEqual(0);
-
-  await page.getByRole('button', { name: 'Mostrar detalhes', exact: true }).click();
-  await expect(page.getByLabel('X', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Abrir Detalhes em tela cheia' }).click();
-  await expect(page.getByLabel('X', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Voltar ao canvas' }).click();
-  // A gaveta volta aberta, e os breadcrumbs mostram o caminho da marcação.
-  await expect(page.getByRole('button', { name: 'Esconder detalhes' })).toBeVisible();
-  await expect(
-    page.getByRole('navigation', { name: 'Caminho da seleção' }),
-  ).toContainText('images/tela.webp');
-});
-
-// R5: Detalhes redesenhado (B15, P6 e os atalhos Alt+N e Alt+Enter).
 test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', async ({
   page,
-}, info) => {
-  test.skip(isMobile(info), 'atalhos de teclado e arrasto com mouse: layout de desktop');
+}) => {
   await createProject(page, 'Detalhes');
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
   const details = page.getByRole('region', { name: 'Detalhes' });
 
   // Alt+N: nova anotação na camada ativa, com o foco no nome.
@@ -447,22 +319,15 @@ test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', 
 });
 
 // R9: diálogos e tela inicial (B9, B10, B16, P8, P10).
-test('tela inicial: ações, busca e tabela de recentes (desktop) ou cartões (celular)', async ({
-  page,
-}, info) => {
+test('tela inicial: ações, busca e tabela de recentes', async ({ page }) => {
   await createProject(page, 'Carro');
   await page.getByRole('button', { name: 'Ações do projeto' }).click();
   await page.getByRole('button', { name: 'Fechar projeto', exact: true }).click();
 
   await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Abrir zip/ })).toBeVisible();
-  if (isMobile(info)) {
-    await expect(page.locator('.action-card')).toHaveCount(3);
-    await expect(page.getByRole('table')).toHaveCount(0);
-  } else {
-    await expect(page.getByRole('table')).toContainText('Neste dispositivo');
-    await expect(page.getByRole('complementary', { name: 'Tela inicial' })).toBeVisible();
-  }
+  await expect(page.getByRole('table')).toContainText('Neste dispositivo');
+  await expect(page.getByRole('complementary', { name: 'Tela inicial' })).toBeVisible();
 
   // A busca ignora acentos e maiúsculas.
   await page.getByRole('searchbox', { name: 'Buscar projetos' }).fill('CARRO');
@@ -471,9 +336,7 @@ test('tela inicial: ações, busca e tabela de recentes (desktop) ou cartões (c
   await expect(page.getByText('Nenhum projeto encontrado para "zzz".')).toBeVisible();
 });
 
-test('Ajuda: busca e seção Atalhos; Configurações leva até ela', async ({
-  page,
-}, info) => {
+test('Ajuda: busca e seção Atalhos; Configurações leva até ela', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Configurações', exact: true }).click();
   const settings = page.getByRole('dialog');
@@ -484,12 +347,6 @@ test('Ajuda: busca e seção Atalhos; Configurações leva até ela', async ({
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await theme.getByRole('button', { name: 'Claro' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-
-  // No celular o diálogo ocupa a tela toda.
-  if (isMobile(info)) {
-    const box = await settings.boundingBox();
-    expect(box?.width).toBe(380);
-  }
 
   await settings.getByRole('button', { name: 'Ver os atalhos de teclado' }).click();
   const help = page.getByRole('dialog');
@@ -514,4 +371,34 @@ test('Exportar: o diálogo mostra o arquivo e fecha pelo cabeçalho', async ({ p
   await expect(dialog.locator('.file-card')).toContainText('Arquivo zip');
   await dialog.getByRole('button', { name: 'Fechar diálogo' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+// Fase 5.8: só desktop. Abaixo de 900 px a app mostra o aviso no lugar do editor, sem
+// desmontar nada; ao alargar, o editor volta com a mesma seleção e o mesmo zoom.
+test('janela estreita: aviso no lugar do editor e volta ao alargar', async ({ page }) => {
+  await createProject(page, 'Estreita');
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page));
+  const rect = await selectedRect(page);
+  await page.keyboard.press('Control+Equal');
+  const zoom = page.locator('.zoom-field').first();
+  const zoomText = await zoom.textContent();
+  const host = page.locator('.canvas-host');
+  const fits = await host.getAttribute('data-fits');
+
+  await page.setViewportSize({ width: 600, height: 800 });
+  await expect(
+    page.getByRole('heading', { name: 'Abra numa janela maior' }),
+  ).toBeVisible();
+  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeHidden();
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(page.getByRole('heading', { name: 'Abra numa janela maior' })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect(zoom).toHaveText(zoomText ?? '');
+  expect(await selectedRect(page)).toEqual(rect);
+  // O canvas não foi remontado nem reenquadrado.
+  expect(await host.getAttribute('data-fits')).toBe(fits);
 });

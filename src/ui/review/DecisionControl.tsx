@@ -4,7 +4,7 @@ import { Icon } from '../icons';
 
 // Par ✓ ✕ que decide um nível (HANDOFF-PROPOSALS 2.1): nenhum marcado é "sem decisão";
 // apertar o marcado limpa a decisão. Decidir grava na hora, sem confirmação (é
-// reversível). Versão de ícone (linhas e cartões, 24px; 44px no celular) e versão com
+// reversível). Versão de ícone (linhas e cartões, 24px) e versão com
 // texto ("Aceitar item" / "Rejeitar item", nos Detalhes).
 
 export type DecisionValue = 'accepted' | 'rejected' | null;

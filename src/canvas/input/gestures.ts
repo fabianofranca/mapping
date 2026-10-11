@@ -15,12 +15,12 @@ import type { Point } from '../viewport';
 import type { Intent } from './intents';
 
 export type Gesture =
-  /** Dedo pressionado, ainda sem passar do limiar de arrasto (pode ser um toque). */
+  /** Ponteiro pressionado, ainda sem passar do limiar de arrasto (pode ser um clique). */
   | {
       readonly kind: 'pending';
       readonly pointerId: number;
       readonly start: Point;
-      /** Vira o item pego se o dedo segurar; senão é o que o arrasto direto faria. */
+      /** O que o arrasto faria. */
       intent: Intent;
     }
   | { readonly kind: 'pan'; readonly pointerId: number; last: Point }

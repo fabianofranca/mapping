@@ -15,7 +15,7 @@ import { MemoryDirectory } from '../storage/memoryFs';
 // Fase 26: arrastar/redimensionar troca `store.project` a cada `pointermove`, mas a
 // interface só lê o projeto confirmado (`store.committed`) e renderiza no fim do gesto.
 const MOVES = 30;
-const WATCHED = ['EditorScreen', 'EditorPanel', 'EditorTopBar'] as const;
+const WATCHED = ['EditorScreen', 'EditorPanel', 'EditorMainBar'] as const;
 /** Um render ao soltar o gesto e, no máximo, mais um de folga. */
 const MAX_RENDERS = 2;
 
@@ -65,7 +65,7 @@ describe('renderizações da interface durante um gesto', () => {
     return { project, session, ui: context.ui };
   }
 
-  it(`${MOVES} movimentos renderizam EditorScreen, EditorPanel e EditorTopBar no máximo ${MAX_RENDERS} vezes`, async () => {
+  it(`${MOVES} movimentos renderizam EditorScreen, EditorPanel e EditorMainBar no máximo ${MAX_RENDERS} vezes`, async () => {
     const { project, session, ui } = mountEditor();
     const { store, actions } = session;
     const marking = project.markings.find((m) => m.parentId === null);
@@ -90,7 +90,7 @@ describe('renderizações da interface durante um gesto', () => {
       }
       expect(counts.get('EditorScreen') ?? 0).toBe(0);
       expect(counts.get('EditorPanel') ?? 0).toBe(0);
-      expect(counts.get('EditorTopBar') ?? 0).toBe(0);
+      expect(counts.get('EditorMainBar') ?? 0).toBe(0);
       // A prévia mudou o projeto, mas não o confirmado.
       expect(store.project.value).not.toBe(before);
       expect(store.committed.value).toBe(before);

@@ -2,7 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { t } from '../i18n';
 
 // PropertyGrid do DS 2.0: rótulo à esquerda (coluna `--size-label-col`) e controle à
-// direita; no celular o rótulo fica acima do campo. Os estados vêm dos controles.
+// direita. Os estados vêm dos controles.
 
 export function PropertyGrid({ children }: { readonly children: ComponentChildren }) {
   return <div class="props">{children}</div>;

@@ -4,6 +4,9 @@ export const ptBR = {
   ...reviewPtBR,
   'app.title': 'Mapping',
   'app.loading': 'Carregando…',
+  'narrow.title': 'Abra numa janela maior',
+  'narrow.body':
+    'O Mapping precisa de pelo menos {width} px de largura. O projeto continua aberto e as alterações continuam sendo salvas.',
   'settings.title': 'Configurações',
   'settings.language': 'Idioma',
   'settings.theme': 'Tema',
@@ -28,18 +31,14 @@ export const ptBR = {
 
   'home.start': 'Começar',
   'home.newProject': 'Novo projeto',
-  'home.newProjectHint': 'Guardado neste dispositivo',
   'home.openFolder': 'Abrir pasta',
-  'home.openFolderHint': 'Salva direto nos arquivos da pasta',
   'home.openZip': 'Abrir zip',
-  'home.openZipHint': 'Importa um projeto exportado',
   'home.localProjects': 'Projetos neste dispositivo',
   'home.noLocalProjects': 'Nenhum projeto guardado neste dispositivo ainda.',
   'home.unsupported':
-    'Este navegador não permite abrir pastas nem guardar projetos. Use o Chrome ou o Edge no computador, ou a versão hospedada no celular.',
+    'Este navegador não permite abrir pastas nem guardar projetos. Use o Chrome ou o Edge no computador.',
   'home.fileProtocolWarning':
     'Aberto como arquivo: projetos "neste dispositivo" podem não ser mantidos pelo navegador. No computador, prefira Abrir pasta.',
-  'home.updatedAt': 'Alterado em {date}',
   'home.deleteTitle': 'Excluir projeto?',
   'home.deleteMessage':
     '"{name}" será apagado deste dispositivo, com todas as imagens. Isso não pode ser desfeito.',
@@ -59,10 +58,6 @@ export const ptBR = {
 
   'editor.addImages': 'Adicionar imagens',
   'editor.importing': 'Importando {current} de {total}…',
-  'editor.addFromDevice': 'Escolher arquivo ou câmera',
-  'editor.pasteImage': 'Colar imagem',
-  'editor.pasteEmpty': 'Não há imagem na área de transferência.',
-  'editor.pasteFailed': 'Não foi possível colar a imagem.',
   'editor.dropIgnored': 'Ignorado (não é imagem): {names}',
   'editor.importFailed': 'Não foi possível importar: {names}',
   'editor.export': 'Exportar',
@@ -93,10 +88,7 @@ export const ptBR = {
 
   'panel.details': 'Detalhes',
   'panel.nothingSelected': 'Nada selecionado',
-  'panel.empty':
-    'Toque ou clique numa imagem ou marcação do canvas para ver os detalhes.',
-  'panel.expand': 'Mostrar detalhes',
-  'panel.collapse': 'Esconder detalhes',
+  'panel.empty': 'Clique numa imagem ou marcação do canvas para ver os detalhes.',
 
   'editor.modeNavigate': 'Navegar',
   'editor.modeDraw': 'Desenhar',
@@ -166,8 +158,6 @@ export const ptBR = {
   'layer.newName': 'Camada {n}',
   'layer.title': 'Camadas',
   'layer.chipLabel': 'Camadas (ativa: {name})',
-  'layer.hint':
-    'A camada ativa recebe as novas anotações e está sempre visível. Marque as outras para vê-las no canvas e no painel.',
   'layer.add': 'Nova camada',
   'layer.showAll': 'Mostrar todas',
   'layer.visible': 'Mostrar a camada {name}',
@@ -231,17 +221,6 @@ export const ptBR = {
   'window.resize': 'Arraste para redimensionar {name} (duplo clique volta ao padrão)',
   'window.closeWindow': 'Fechar a janela {name}',
   'window.bottomTabs': 'Janelas inferiores',
-  'sheet.full': 'Abrir Detalhes em tela cheia',
-  'sheet.incomplete': 'Marcação com pendências',
-  'status.errorRetry': 'Erro ao salvar: tocar para tentar de novo',
-  'panels.title': 'Painéis e ações',
-  'panels.open': 'Painéis',
-  'panels.more': 'Mais: painéis e ações',
-  'panels.windows': 'Janelas',
-  'panels.project': 'Projeto',
-  'panels.pending': '{count} pendentes',
-  'mobile.back': 'Voltar ao canvas',
-  'mobile.toolbar': 'Ferramentas',
 
   'crumbs.label': 'Caminho da seleção',
   'crumbs.image': 'Imagem {name}',
@@ -267,7 +246,6 @@ export const ptBR = {
   'status.channelMain': 'estável',
   'status.channelPreview': 'prévia',
   'status.channelLabel': 'Canal deste build: {channel}',
-  'status.build': 'versão {id}',
   'status.buildLabel': 'Identificação deste build: {id}',
 
   'editor.projectMenu': 'Ações do projeto',
@@ -505,7 +483,7 @@ export const ptBR = {
     'Baixar exemplo Modelo de dados (modelo-de-dados.json)',
   'help.specs.download.schema': 'Baixar JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
-    'Para usar um exemplo: abra um projeto, escolha Especializações (botão da barra principal no desktop, Painéis no celular) → Aplicar e selecione o arquivo baixado.',
+    'Para usar um exemplo: abra um projeto, escolha Especializações (botão da barra principal) → Aplicar e selecione o arquivo baixado.',
   'typed.chooseTypeTitle': 'Nova anotação em {layer}',
   'typed.chooseTypeHint':
     'Escolha o tipo. Os campos já vêm definidos; é só preencher os valores.',

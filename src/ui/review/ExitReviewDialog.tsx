@@ -7,8 +7,7 @@ import { useApplyAccepted } from './useReview';
 
 // Lembrete ao sair da revisão (HANDOFF-PROPOSALS 5.3): com aceitas ainda não aplicadas,
 // sair pergunta. Nada se perde em nenhum caso: as decisões e as notas ficam na proposta.
-// Ações: Aplicar agora · N (principal), Sair mesmo assim e Continuar revisando. No celular
-// o diálogo ocupa a tela toda, com os botões empilhados.
+// Ações: Aplicar agora · N (principal), Sair mesmo assim e Continuar revisando.
 
 /** Sair pede o lembrete? Só com aceitas aguardando aplicação numa proposta aplicável. */
 export function needsExitReminder(

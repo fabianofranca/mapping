@@ -15,7 +15,7 @@ export interface ToolWindowMeta {
   readonly icon: IconName;
   /** Título mostrado no cabeçalho e no botão da faixa. */
   title(): string;
-  /** Texto curto da aba (janela inferior e faixa do celular); sem ele vale o título. */
+  /** Texto curto da aba (janela inferior); sem ele vale o título. */
   tab?(): string;
 }
 

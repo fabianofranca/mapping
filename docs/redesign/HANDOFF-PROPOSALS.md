@@ -2,6 +2,8 @@
 
 Documento de passagem do desenho da etapa 4 (propostas de alteração com revisão), feito com o Claude Design. É a referência das fases 4.3 (estado) e 4.4 (interface); o `PLAN.md` aponta para cá. Complementa o [`HANDOFF.md`](HANDOFF.md) do redesenho: tudo o que não é citado aqui segue o design system 2.0 como está.
 
+> **Só desktop (fase 5.8, 2026-10-11).** A app passou a ser só desktop, com largura mínima de 900 px. As partes de celular deste documento (layout de 380 px, toque, densidade de 44 px, gaveta, telas cheias, menu Painéis) ficam como **registro histórico** do desenho e não descrevem mais a app; ver `docs/ARCHITECTURE.md`.
+
 | Fonte                                     | Endereço                                          | O que tem                                                                                                                                                                 |
 | ----------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Canvas “Propostas de alteração”           | https://claude.ai/artifact/7gTGB3ACoBQGgN1VqbSgqs | Rodada 1 (modo revisão, desktop), Rodada 2 (Propostas, retomada, vazio, grande), Rodada 3 (celular), Bases. Pranchetas duplas mostram escuro à esquerda e claro à direita |
@@ -166,6 +168,8 @@ Colunas do `ReviewRow` (`minmax(0, 1fr) 232px 60px`), do `ProposalRow` (`minmax(
 - Implementação: **virtualizar** a lista (as 412 mudanças são só o exemplo; o limite deve ser de milhares), contagens por imagem vindas de `derived.ts` sem recalcular a cada decisão do projeto inteiro, e o canvas desenha só as marcações da imagem em tela.
 
 ### 5.5 Celular (380 × 760, toque)
+
+> **Histórico (fase 5.8):** removido da app, que passou a ser só desktop. Mantido como registro do desenho.
 
 Nenhuma função do desktop some; as janelas viram telas cheias e a gaveta e o menu absorvem o resto.
 

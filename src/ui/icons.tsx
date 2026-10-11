@@ -1,6 +1,6 @@
 // Ícones em SVG inline (sem dependências), na cor do texto (`currentColor`).
 // Conjunto original da interface 2.0: grade de 16px, traço de 1,25 e pontas redondas.
-// O tamanho em tela vem do CSS (`--density-icon`: 16px no desktop, 20px no celular).
+// O tamanho em tela vem do CSS (`--control-icon`: 16px).
 import type { JSX } from 'preact';
 import { LOCK_PATHS, UNLOCK_PATHS } from '../utils/lockGlyph';
 import {

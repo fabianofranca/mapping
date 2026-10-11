@@ -2,12 +2,12 @@
 
 Aplicação web para marcar **áreas retangulares** em imagens, organizá-las em **camadas** e anotá-las com pares chave-valor (livres) ou com **anotações tipadas** definidas por uma _especialização_ (ex: SDUI, modelo de dados). Tudo é salvo num `mapping.json` ao lado das imagens, num formato pensado para ser lido por um agente de IA: as coordenadas são pixels da imagem original, então o agente recorta exatamente a área marcada.
 
-- **Desktop primeiro, utilizável no celular**: o uso principal é no desktop (mouse, teclado, painéis lado a lado), e a app continua funcionando no celular (toque, gaveta inferior de três alturas, menu Painéis com as janelas em tela cheia, pan e zoom).
+- **Só desktop**: feita para estação de trabalho (mouse, teclado, painéis lado a lado), com largura mínima de 900 px; numa janela mais estreita a app mostra "Abra numa janela maior" e volta ao normal ao alargar. Toque simples (num monitor de toque) funciona; não há layout de celular.
 - **Um único arquivo**: o build gera `dist/index.html` autocontido; funciona aberto por `file://` (Chrome/Edge desktop) e hospedado no GitHub Pages, sem requisições de rede (ver [Privacidade](#privacidade-e-seus-dados)).
 - **Dois modos de armazenamento**: _pasta_ no disco (File System Access API, Chrome/Edge desktop) ou _projeto local_ no navegador (IndexedDB). Qualquer projeto pode ser exportado em `.zip`.
 - Tema claro/escuro, português (pt-BR) e inglês (en-US), instalável como PWA (só em `https:`).
 - **Servidor MCP** para agentes de IA lerem projetos em pasta e **proporem alterações** a eles, com o Ctrl+C da app copiando a referência do item selecionado. O agente nunca grava o `mapping.json` (não há `apply_changes`). Instalação e uso em [`docs/MCP.md`](docs/MCP.md).
-- **Propostas de alteração com revisão** (etapa 4): toda alteração feita por um agente chega como uma _proposta_, uma espécie de pull request dentro da ferramenta, gravada em `proposals/` na pasta do projeto (versionada junto com o resto; o zip exportado a inclui). Na janela **Propostas** (Ctrl+Shift+7; no celular, menu Painéis) o usuário abre a proposta no **modo revisão**: o projeto fica somente leitura, o canvas mostra o projeto **como ficaria** (alternância Atual / Proposto), e ele **aceita ou rejeita** em qualquer nível (proposta, imagem, item ou mudança), deixa **notas** no que rejeitou e usa **Aplicar aceitas** (uma entrada de desfazer). A revisão pode ser interrompida e retomada, inclusive depois de fechar a app. O agente lê a revisão (`get_proposal_review`) e manda uma nova proposta (`supersedes`) só com as correções. Imagens e marcações têm uma identidade externa genérica (`source`), e as especializações `formatVersion` 3 declaram a que elementos de um sistema externo cada tipo e campo correspondem (`sources`); o núcleo não interpreta o sistema. Para experimentar sem um agente, abra `examples/proposta-exemplo.zip` na app. Formato em [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md).
+- **Propostas de alteração com revisão** (etapa 4): toda alteração feita por um agente chega como uma _proposta_, uma espécie de pull request dentro da ferramenta, gravada em `proposals/` na pasta do projeto (versionada junto com o resto; o zip exportado a inclui). Na janela **Propostas** (Ctrl+Shift+7) o usuário abre a proposta no **modo revisão**: o projeto fica somente leitura, o canvas mostra o projeto **como ficaria** (alternância Atual / Proposto), e ele **aceita ou rejeita** em qualquer nível (proposta, imagem, item ou mudança), deixa **notas** no que rejeitou e usa **Aplicar aceitas** (uma entrada de desfazer). A revisão pode ser interrompida e retomada, inclusive depois de fechar a app. O agente lê a revisão (`get_proposal_review`) e manda uma nova proposta (`supersedes`) só com as correções. Imagens e marcações têm uma identidade externa genérica (`source`), e as especializações `formatVersion` 3 declaram a que elementos de um sistema externo cada tipo e campo correspondem (`sources`); o núcleo não interpreta o sistema. Para experimentar sem um agente, abra `examples/proposta-exemplo.zip` na app. Formato em [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md).
 - **Referências de código**: uma especialização pode declarar _plataformas_ e dizer como cada tipo vira código nelas (`code`); as anotações guardam **onde foram implementadas** (campo `codeRef`) e o projeto guarda o repositório de cada plataforma (`platformRepos`), com "Abrir no repositório" e "Copiar caminho" na app. O agente recebe a planta de código de uma marcação (`get_code_hints`) e acha o mapeamento a partir de um arquivo (`find_by_code`). O núcleo continua genérico: nenhum nome de plataforma no código da app nem do servidor MCP. Formato em [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md) e [`docs/FORMAT.md`](docs/FORMAT.md).
 
 ## Privacidade e seus dados
@@ -60,7 +60,7 @@ O `index.html` avulso também sai como artefato do workflow, para abrir por `fil
 
 ## Como usar o preview de um branch
 
-Para ver um branch no celular antes do merge: em **Actions → Deploy → Run workflow**, escolha o branch em "Use workflow from" (ou digite o nome no campo `branch`). O workflow publica:
+Para ver um branch publicado antes do merge: em **Actions → Deploy → Run workflow**, escolha o branch em "Use workflow from" (ou digite o nome no campo `branch`). O workflow publica:
 
 - a `main`, intacta, em `/`;
 - o branch em **`/preview/`**, construído com `VITE_CHANNEL=preview`.
@@ -71,11 +71,11 @@ O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service wo
 
 A app não envia nada para a rede (nem telemetria), então o relato depende de você copiar os dados:
 
-1. Abra o **Diagnóstico**: no desktop, a aba Diagnóstico da janela de baixo (`Ctrl+Shift+6`); no celular, o menu **Painéis** → Diagnóstico.
-2. Toque em **Copiar**. O texto traz um cabeçalho com a versão (build), canal, schema, tipo de armazenamento (pasta ou local), navegador, tamanho da janela, idioma, tema, quantas imagens, marcações e anotações o projeto tem e se há gravação pendente, seguido dos erros registrados. Não leva nomes de projeto, de imagens nem caminhos.
+1. Abra o **Diagnóstico**: a aba Diagnóstico da janela de baixo (`Ctrl+Shift+6`).
+2. Clique em **Copiar**. O texto traz um cabeçalho com a versão (build), canal, schema, tipo de armazenamento (pasta ou local), navegador, tamanho da janela, idioma, tema, quantas imagens, marcações e anotações o projeto tem e se há gravação pendente, seguido dos erros registrados. Não leva nomes de projeto, de imagens nem caminhos.
 3. Abra uma issue em [github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues) com o texto copiado, o que você fez, o que esperava e o que aconteceu (um print ajuda).
 
-Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também tem **Copiar**; no desktop ela aparece ainda no fim da barra de status.
+Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também tem **Copiar**; com um projeto aberto, ela aparece ainda no fim da barra de status.
 
 ## Documentação
 

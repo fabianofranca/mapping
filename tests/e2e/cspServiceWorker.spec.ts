@@ -5,7 +5,7 @@ import { createServer } from 'node:https';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize } from 'node:path';
-import { addImage, createProject, isMobile, watchViolations } from './helpers';
+import { addImage, createProject, watchViolations } from './helpers';
 
 // Etapa 2.4: a CSP com o service worker (instalação, cache, aviso de nova versão),
 // na versão principal (/) e no preview (/preview/), como no GitHub Pages.
@@ -114,8 +114,7 @@ test.use({
 test('GitHub Pages e preview: service worker instala, faz cache e avisa da versão nova', async ({
   page,
   context,
-}, info) => {
-  test.skip(isMobile(info), 'o service worker é o mesmo; roda só no desktop');
+}) => {
   // Inclui o build do preview (VITE_CHANNEL=preview) numa pasta temporária.
   test.setTimeout(90_000);
   const previewDir = mkdtempSync(join(tmpdir(), 'mapeador-preview-'));

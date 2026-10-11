@@ -1,7 +1,6 @@
 import { signal } from '@preact/signals';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Draft, Grabbed, ImagePreview } from '../../../src/canvas/frame';
-import { HOLD_MS } from '../../../src/canvas/gestureMachine';
+import type { Draft, HoverLock, ImagePreview } from '../../../src/canvas/frame';
 import { PointerInput } from '../../../src/canvas/input/pointer';
 import { ViewportController } from '../../../src/canvas/viewportController';
 import { projectIndex } from '../../../src/model';
@@ -19,8 +18,7 @@ function setup(readOnly = false) {
   const state = {
     preview: signal<ImagePreview | null>(null),
     draft: signal<Draft | null>(null),
-    grabbed: signal<Grabbed | null>(null),
-    hoverLock: signal<Grabbed | null>(null),
+    hoverLock: signal<HoverLock | null>(null),
   };
   let spaceDown = false;
   const input = new PointerInput({
@@ -144,24 +142,6 @@ describe('PointerInput', () => {
     s.drag([400, 400], [450, 430], { kind: 'touch' });
     expect(s.markingRect('M1')).toEqual({ x: 100, y: 100, width: 600, height: 500 });
     expect(s.viewport.viewport.value).toMatchObject({ x: 50, y: 30, scale: 1 });
-    s.cleanup();
-  });
-
-  it('toque: segurar pega o item sob o dedo e arrastar o move', () => {
-    vi.useFakeTimers();
-    const s = setup();
-    const vibrate = vi.fn();
-    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
-    s.fire('pointerdown', 250, 250, { kind: 'touch' });
-    vi.advanceTimersByTime(HOLD_MS);
-    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
-    expect(s.state.grabbed.value).toEqual({ kind: 'marking', id: 'M2' });
-    expect(vibrate).toHaveBeenCalled();
-    s.fire('pointermove', 260, 260, { kind: 'touch' });
-    s.fire('pointermove', 280, 290, { kind: 'touch' });
-    s.fire('pointerup', 280, 290, { kind: 'touch' });
-    expect(s.markingRect('M2')).toEqual({ x: 230, y: 240, width: 100, height: 100 });
-    expect(s.state.grabbed.value).toBeNull();
     s.cleanup();
   });
 
@@ -316,36 +296,6 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     s.cleanup();
   });
 
-  it('toque: segurar sobre o item trancado não o pega (sem sinal visual nem vibração)', () => {
-    vi.useFakeTimers();
-    const s = setup();
-    lockMarking(s, 'M2');
-    const vibrate = vi.fn();
-    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
-    s.fire('pointerdown', 250, 250, { kind: 'touch' });
-    vi.advanceTimersByTime(HOLD_MS);
-    expect(s.state.grabbed.value).toBeNull();
-    expect(vibrate).not.toHaveBeenCalled();
-    s.fire('pointermove', 260, 260, { kind: 'touch' });
-    s.fire('pointermove', 280, 290, { kind: 'touch' });
-    s.fire('pointerup', 280, 290, { kind: 'touch' });
-    expect(s.markingRect('M2')).toEqual({ x: 200, y: 200, width: 100, height: 100 });
-    expect(s.store.canUndo.value).toBe(true); // só a própria trava
-    s.cleanup();
-  });
-
-  it('toque: segurar sobre o item trancado e selecionado também não o pega', () => {
-    vi.useFakeTimers();
-    const s = setup();
-    lockMarking(s, 'M1');
-    s.ui.selection.value = { kind: 'marking', id: 'M1' };
-    s.fire('pointerdown', 400, 400, { kind: 'touch' });
-    vi.advanceTimersByTime(HOLD_MS);
-    expect(s.state.grabbed.value).toBeNull();
-    s.fire('pointerup', 400, 400, { kind: 'touch' });
-    s.cleanup();
-  });
-
   it('toque: arrastar sobre o item trancado faz pan e tocar o seleciona', () => {
     const s = setup();
     lockMarking(s, 'M1');
@@ -356,28 +306,6 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     s.fire('pointerdown', 250, 250, { kind: 'touch', id: 2 });
     s.fire('pointerup', 250, 250, { kind: 'touch', id: 2 });
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
-    s.cleanup();
-  });
-
-  it('toque: segurar numa marcação livre continua pegando', () => {
-    vi.useFakeTimers();
-    const s = setup();
-    lockMarking(s, 'M2');
-    s.fire('pointerdown', 1200, 100, { kind: 'touch' });
-    vi.advanceTimersByTime(HOLD_MS);
-    expect(s.state.grabbed.value).toEqual({ kind: 'marking', id: 'M3' });
-    s.fire('pointerup', 1200, 100, { kind: 'touch' });
-    s.cleanup();
-  });
-
-  it('segurar numa imagem trancada (fora das marcações) não a pega', () => {
-    vi.useFakeTimers();
-    const s = setup();
-    expect(s.actions.setImageLocked('I1', true).ok).toBe(true);
-    s.fire('pointerdown', 900, 700, { kind: 'touch' });
-    vi.advanceTimersByTime(HOLD_MS);
-    expect(s.state.grabbed.value).toBeNull();
-    s.fire('pointerup', 900, 700, { kind: 'touch' });
     s.cleanup();
   });
 });

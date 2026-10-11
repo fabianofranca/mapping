@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  canGrab,
   cursorFor,
   dragModeOf,
-  grabIntentAt,
   intentAt,
   isRepeatTap,
   tapSelection,
@@ -71,46 +69,6 @@ describe('intentAt', () => {
     });
     expect(intentAt(ctx({ selection, readOnly: true }), inside)).toEqual({ kind: 'pan' });
     expect(intentAt(ctx({ project: null }), inside)).toEqual({ kind: 'pan' });
-  });
-});
-
-describe('canGrab', () => {
-  it('só no modo Navegar, com edição liberada e sem Espaço', () => {
-    expect(canGrab(ctx())).toBe(true);
-    expect(canGrab(ctx({ mode: 'draw' }))).toBe(false);
-    expect(canGrab(ctx({ readOnly: true }))).toBe(false);
-    expect(canGrab(ctx({ spaceDown: true }))).toBe(false);
-    expect(canGrab(ctx({ project: null }))).toBe(false);
-  });
-});
-
-describe('grabIntentAt', () => {
-  it('pega a marcação mais interna sob o dedo; fora delas, a imagem', () => {
-    expect(grabIntentAt(project, null, NONE, { x: 250, y: 250 })).toEqual({
-      kind: 'move-marking',
-      markingId: 'M2',
-    });
-    expect(grabIntentAt(project, null, NONE, { x: 900, y: 700 })).toEqual({
-      kind: 'move-image',
-      imageId: 'I1',
-    });
-    expect(grabIntentAt(project, null, NONE, { x: 1050, y: 0 })).toBeNull();
-  });
-
-  it('prefere a selecionada quando o dedo está nela', () => {
-    const selection = { kind: 'marking', id: 'M1' } as const;
-    expect(grabIntentAt(project, selection, NONE, { x: 250, y: 250 })).toEqual({
-      kind: 'move-marking',
-      markingId: 'M1',
-    });
-  });
-
-  it('ignora as marcações ocultas', () => {
-    const hidden = new Map([['M2', 'hidden' as const]]);
-    expect(grabIntentAt(project, null, hidden, { x: 250, y: 250 })).toEqual({
-      kind: 'move-marking',
-      markingId: 'M1',
-    });
   });
 });
 
@@ -210,27 +168,6 @@ describe('trava (etapa 2.5)', () => {
   it('cursor "não permitido" e arrastar tentaria mover', () => {
     expect(cursorFor({ kind: 'locked' })).toBe('not-allowed');
     expect(dragModeOf({ kind: 'locked' })).toBe('move');
-  });
-
-  it('segurar-e-mover não pega item trancado (nem a imagem trancada)', () => {
-    const p = lockedMarking('M2');
-    expect(grabIntentAt(p, null, NONE, { x: 250, y: 250 })).toBeNull();
-    // O pai de uma marcação trancada é pego: mover o pai leva a filha trancada junto.
-    expect(grabIntentAt(p, null, NONE, { x: 150, y: 150 })).toEqual({
-      kind: 'move-marking',
-      markingId: 'M1',
-    });
-    // Uma marcação livre (de outra imagem) continua pegável.
-    expect(grabIntentAt(p, null, NONE, { x: 1200, y: 100 })).toEqual({
-      kind: 'move-marking',
-      markingId: 'M3',
-    });
-    const image = setImageLocked(project, 'I1', true);
-    expect(grabIntentAt(image, null, NONE, { x: 900, y: 700 })).toBeNull();
-  });
-
-  it('segurar numa marcação sob um pai trancado não a pega', () => {
-    expect(grabIntentAt(lockedMarking('M1'), null, NONE, { x: 250, y: 250 })).toBeNull();
   });
 
   it('tocar continua selecionando o item trancado', () => {

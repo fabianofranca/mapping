@@ -50,17 +50,17 @@ interface Fake {
 function Probe({
   dialogs,
   commands,
-  desktop,
+  enabled,
 }: {
   readonly dialogs: EditorDialogs;
   readonly commands: ProjectCommands;
-  readonly desktop: boolean;
+  readonly enabled: boolean;
 }) {
-  useEditorShortcuts(dialogs, commands, desktop);
+  useEditorShortcuts(dialogs, commands, enabled);
   return null;
 }
 
-function setup({ desktop = true, readOnly = false } = {}): Fake {
+function setup({ enabled = true, readOnly = false } = {}): Fake {
   const harness = createHarness(sampleProject(), readOnly);
   const canvas = {
     cancelInteraction: vi.fn(() => false),
@@ -82,7 +82,7 @@ function setup({ desktop = true, readOnly = false } = {}): Fake {
   };
   const tree = (d: EditorDialogs) => (
     <EditorContext.Provider value={harness.context}>
-      <Probe dialogs={d} commands={commands} desktop={desktop} />
+      <Probe dialogs={d} commands={commands} enabled={enabled} />
     </EditorContext.Provider>
   );
   const view = render(tree(dialogs as unknown as EditorDialogs));
@@ -343,14 +343,10 @@ describe('useEditorShortcuts: zoom, ajuda, configurações e projeto', () => {
     expect(s.commands.exportProject).toHaveBeenCalledOnce();
   });
 
-  it('Ctrl+L: abre Camadas no desktop; no celular, em tela cheia', () => {
-    const desktop = setup();
-    desktop.press('l', { ctrl: true });
+  it('Ctrl+L abre Camadas', () => {
+    const s = setup();
+    s.press('l', { ctrl: true });
     expect(isToolWindowOpen('layers')).toBe(true);
-    cleanup();
-    const mobile = setup({ desktop: false });
-    mobile.press('l', { ctrl: true });
-    expect(mobile.harness.ui.mobileWindow.value).toBe('layers');
   });
 });
 
@@ -386,18 +382,6 @@ describe('useEditorShortcuts: janelas', () => {
     const s = setup();
     s.press('3', { alt: true }, { code: 'Digit3' });
     expect(isToolWindowOpen('details')).toBe(false);
-  });
-
-  it('no celular, Ctrl+Shift+N alterna a janela em tela cheia, e Shift+Esc a fecha', () => {
-    const s = setup({ desktop: false });
-    s.press('1', { ctrl: true, shift: true }, { code: 'Digit1' });
-    expect(s.harness.ui.mobileWindow.value).toBe('tree');
-    s.press('1', { ctrl: true, shift: true }, { code: 'Digit1' });
-    expect(s.harness.ui.mobileWindow.value).toBeNull();
-    s.press('2', { ctrl: true, shift: true }, { code: 'Digit2' });
-    expect(s.harness.ui.mobileWindow.value).toBe('layers');
-    s.press('Escape', { shift: true });
-    expect(s.harness.ui.mobileWindow.value).toBeNull();
   });
 
   it('Shift+Esc esconde a janela em foco (e sem foco não faz nada)', () => {
@@ -454,8 +438,9 @@ describe('useEditorShortcuts: Alt+N (nova anotação)', () => {
   it('sem marcação selecionada e sem o botão, não faz nada', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'image', id: 'I1' };
+    const details = isToolWindowOpen('details');
     s.press('n', { alt: true });
-    expect(s.harness.ui.sheet.value).not.toBe('open');
+    expect(isToolWindowOpen('details')).toBe(details);
   });
 
   it('com a marcação selecionada e Detalhes fechado: abre Detalhes e aciona o botão depois', () => {
@@ -478,14 +463,6 @@ describe('useEditorShortcuts: Alt+N (nova anotação)', () => {
     s.press('n', { alt: true });
     expect(isToolWindowOpen('details')).toBe(true);
     expect(click).toHaveBeenCalledOnce();
-  });
-
-  it('no celular, abre a gaveta de Detalhes', () => {
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 0);
-    const s = setup({ desktop: false });
-    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
-    s.press('n', { alt: true });
-    expect(s.harness.ui.sheet.value).toBe('open');
   });
 });
 
@@ -511,6 +488,18 @@ describe('useEditorShortcuts: quando as teclas não valem', () => {
     });
     s.press('z', { ctrl: true });
     expect(s.harness.project().layers[0]?.name).toBe('Pintura');
+  });
+
+  it('desligado (janela estreita, editor atrás do aviso), nenhuma tecla vale', () => {
+    const s = setup({ enabled: false });
+    s.harness.actions.renameLayer('L1', 'Pintura');
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    expect(s.press('z', { ctrl: true }).defaultPrevented).toBe(false);
+    s.press('Delete');
+    s.press('F1');
+    expect(s.harness.project().layers[0]?.name).toBe('Pintura');
+    expect(s.dialogs.requestDeleteMarking).not.toHaveBeenCalled();
+    expect(s.dialogs.show).not.toHaveBeenCalled();
   });
 
   it('teclas sem atalho não são interceptadas', () => {

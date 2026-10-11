@@ -1,4 +1,4 @@
-import { expect, type Page, type TestInfo } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import JSZip from 'jszip';
 import { readFile } from 'node:fs/promises';
 import { solidPng } from './png';
@@ -53,15 +53,13 @@ export interface Rect {
   readonly height: number;
 }
 
-export const isMobile = (info: TestInfo): boolean => info.project.name === 'mobile';
-
 /** Abre a app e cria um projeto local (guardado no IndexedDB do navegador de teste). */
 export async function createProject(page: Page, name: string, url = '/'): Promise<void> {
   await page.goto(url);
   await page.getByRole('button', { name: /Novo projeto/ }).click();
   await page.getByRole('textbox').fill(name);
   await page.getByRole('button', { name: 'Criar' }).click();
-  // O título some em telas estreitas: o editor aberto é reconhecido pelo canvas.
+  // O editor aberto é reconhecido pelo canvas.
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
 }
 
@@ -101,47 +99,18 @@ export async function canvasPoint(page: Page, fy = 1 / 3): Promise<Point> {
   return { x: box.x + box.width / 2, y: box.y + box.height * fy };
 }
 
-/**
- * Arrasta com o mouse (desktop) ou com toque real (celular emulado, via CDP:
- * gera `pointerType: 'touch'`, que é o que a máquina de gestos distingue).
- */
-export async function drag(
-  page: Page,
-  info: TestInfo,
-  from: Point,
-  to: Point,
-  options: { readonly holdMs?: number } = {},
-): Promise<void> {
+/** Arrasta com o mouse de `from` até `to`, em alguns passos. */
+export async function drag(page: Page, from: Point, to: Point): Promise<void> {
   const steps = 8;
-  const at = (i: number): Point => ({
-    x: from.x + ((to.x - from.x) * i) / steps,
-    y: from.y + ((to.y - from.y) * i) / steps,
-  });
-  if (!isMobile(info)) {
-    await page.mouse.move(from.x, from.y);
-    await page.mouse.down();
-    if (options.holdMs) await page.waitForTimeout(options.holdMs);
-    for (let i = 1; i <= steps; i++) {
-      const p = at(i);
-      await page.mouse.move(p.x, p.y);
-    }
-    await page.mouse.up();
-    return;
-  }
-  const cdp = await page.context().newCDPSession(page);
-  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', p?: Point) =>
-    cdp.send('Input.dispatchTouchEvent', {
-      type,
-      touchPoints: p ? [{ x: p.x, y: p.y }] : [],
-    });
-  await touch('touchStart', from);
-  if (options.holdMs) await page.waitForTimeout(options.holdMs);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
   for (let i = 1; i <= steps; i++) {
-    await touch('touchMove', at(i));
-    await page.waitForTimeout(16);
+    await page.mouse.move(
+      from.x + ((to.x - from.x) * i) / steps,
+      from.y + ((to.y - from.y) * i) / steps,
+    );
   }
-  await touch('touchEnd');
-  await cdp.detach();
+  await page.mouse.up();
 }
 
 export async function setMode(page: Page, mode: 'Desenhar' | 'Navegar'): Promise<void> {
@@ -151,34 +120,20 @@ export async function setMode(page: Page, mode: 'Desenhar' | 'Navegar'): Promise
 /** Desenha uma marcação de `width` × `height` px de tela centrada em `center`. */
 export async function drawMarking(
   page: Page,
-  info: TestInfo,
   center: Point,
   size = { width: 120, height: 80 },
 ): Promise<void> {
   await setMode(page, 'Desenhar');
   await drag(
     page,
-    info,
     { x: center.x - size.width / 2, y: center.y - size.height / 2 },
     { x: center.x + size.width / 2, y: center.y + size.height / 2 },
   );
   await setMode(page, 'Navegar');
 }
 
-/** No celular Detalhes fica numa gaveta recolhida (B7): abre para editar. */
-export async function openDetails(page: Page): Promise<void> {
-  const expand = page.getByRole('button', { name: 'Mostrar detalhes', exact: true });
-  if (await expand.isVisible()) await expand.click();
-}
-
-export async function closeDetails(page: Page): Promise<void> {
-  const collapse = page.getByRole('button', { name: 'Esconder detalhes', exact: true });
-  if (await collapse.isVisible()) await collapse.click();
-}
-
 /** Posição e tamanho da marcação selecionada, lidos do painel (pixels da imagem). */
 export async function selectedRect(page: Page): Promise<Rect> {
-  await openDetails(page);
   const read = async (label: string) =>
     Number(await page.getByLabel(label, { exact: true }).inputValue());
   const rect = {
@@ -187,25 +142,12 @@ export async function selectedRect(page: Page): Promise<Rect> {
     width: await read('Largura'),
     height: await read('Altura'),
   };
-  await closeDetails(page);
   return rect;
 }
 
-/**
- * Aciona uma ação do projeto: no desktop ela está na barra principal (R4); no celular,
- * no menu Painéis (R8), aberto pelo botão da barra de baixo.
- */
+/** Aciona uma ação do projeto na barra principal (R4). */
 export async function projectAction(page: Page, name: string): Promise<void> {
-  const inBar = page.locator('.main-bar').getByRole('button', { name, exact: true });
-  if (await inBar.count()) {
-    await inBar.click();
-    return;
-  }
-  await page.getByRole('button', { name: /^Painéis/ }).click();
-  await page
-    .getByRole('dialog', { name: 'Painéis e ações' })
-    .getByRole('button', { name, exact: true })
-    .click();
+  await page.locator('.main-bar').getByRole('button', { name, exact: true }).click();
 }
 
 /** Abre o diálogo Exportar (o zip já está pronto nele). */

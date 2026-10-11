@@ -11,12 +11,7 @@ import { locale } from '../../../src/store/settings';
 import { ReviewBar } from '../../../src/ui/review/ReviewBar';
 import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
 import { NEW_IMAGE_PATH, richScenario } from '../../store/proposalHarness';
-import {
-  openReviewHarness,
-  renderInEditor,
-  stubDesktop,
-  type ReviewHarness,
-} from './reviewHarness';
+import { openReviewHarness, renderInEditor, type ReviewHarness } from './reviewHarness';
 
 // Modo revisão (HANDOFF-PROPOSALS 5.2, passo 4 da seção 9): a faixa com as quatro ações,
 // os níveis com a decisão de três estados, os filtros e o teclado da lista.
@@ -90,7 +85,6 @@ describe('níveis da proposta', () => {
   });
 
   it('filtro por tipo mostra só as mudanças dele; Aceitar tudo vira "visíveis"', async () => {
-    stubDesktop();
     const h = await openRich();
     renderInEditor(
       h,

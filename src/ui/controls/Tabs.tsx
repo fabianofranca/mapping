@@ -4,7 +4,7 @@ import { Icon, type IconName } from '../icons';
 export interface TabItem<T extends string> {
   readonly id: T;
   readonly label: string;
-  /** Ícone antes do rótulo (faixa de abas do celular). */
+  /** Ícone antes do rótulo. */
   readonly icon?: IconName;
   /** Dica nativa (`title`). */
   readonly title?: string;
@@ -26,7 +26,7 @@ interface TabsProps<T extends string> {
 }
 
 /**
- * Abas com sublinhado (2px no desktop, 3px no celular). Setas, Home e End movem entre
+ * Abas com sublinhado (2px). Setas, Home e End movem entre
  * as abas (o foco e a seleção andam juntos); só a aba escolhida entra na ordem do Tab.
  */
 export function Tabs<T extends string>({

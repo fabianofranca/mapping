@@ -4,7 +4,7 @@ import { useEditor } from '../ui/EditorContext';
 import { IconButton, Segmented } from '../ui/controls';
 import { SHORTCUT_LABELS } from './shortcuts';
 
-// Botões de ferramenta compartilhados pela barra do topo (desktop) e a de baixo (celular).
+// Botões de ferramenta da barra principal e da barra dos breadcrumbs.
 
 /** Navegar | Desenhar. */
 export function ModeButtons() {
@@ -27,11 +27,9 @@ export function ModeButtons() {
 }
 
 export function AddImagesButton({
-  desktop,
   busy,
   onAdd,
 }: {
-  readonly desktop: boolean;
   readonly busy: boolean;
   readonly onAdd: () => void;
 }) {
@@ -40,7 +38,7 @@ export function AddImagesButton({
     <IconButton
       icon="addImage"
       label={t('editor.addImages')}
-      text={desktop ? t('editor.addImages') : undefined}
+      text={t('editor.addImages')}
       disabled={store.locked.value || busy}
       onClick={onAdd}
     />
@@ -70,7 +68,7 @@ export function HistoryButtons() {
   );
 }
 
-/** Enquadrar tudo: na barra dos breadcrumbs (desktop) e na barra de baixo (celular). */
+/** Enquadrar tudo: na barra dos breadcrumbs. */
 export function FitButton() {
   const { canvas } = useEditor();
   return (

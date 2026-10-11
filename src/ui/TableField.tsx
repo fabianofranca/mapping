@@ -21,7 +21,7 @@ import { BacklinkList, SimpleEditor, type FieldContext } from './FieldEditors';
 import { issueMessage, issuesOf } from './typedText';
 
 // DataGrid do DS 2.0 para campos `table`: coluna # numerada, alça de arraste (P6),
-// edição na célula e menu ⋯ por linha. No celular cada linha vira um cartão (CSS).
+// edição na célula e menu ⋯ por linha.
 
 type TableFieldDef = Extract<SpecField, { type: 'table' }>;
 

@@ -2,17 +2,15 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import type { LocalProjectMeta } from '../storage/local';
-import { DESKTOP_QUERY } from '../theme/breakpoints';
 import { locale } from '../store/settings';
-import { Button, IconButton, TextField } from '../ui/controls';
+import { Button, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
-import { Icon, type IconName } from '../ui/icons';
+import { Icon } from '../ui/icons';
 import { InconsistentProjectDialog } from '../ui/InconsistentProjectDialog';
 import { InstallHint } from '../ui/InstallHint';
 import { PreviewBadge } from '../ui/PreviewBanner';
 import { SettingsDialog } from '../ui/SettingsDialog';
-import { useMediaQuery } from '../ui/useMediaQuery';
 import { matchesSearch } from '../utils/search';
 import {
   createFolderProject,
@@ -26,6 +24,7 @@ import {
   type AppResult,
   type InconsistentProject,
 } from './controller';
+import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
 
 type HomeDialog =
   | { readonly kind: 'new' }
@@ -52,7 +51,7 @@ function formatDate(iso: string): string {
 }
 
 export function Home() {
-  const desktop = useMediaQuery(DESKTOP_QUERY);
+  const narrow = useNarrowWindow();
   const [dialog, setDialog] = useState<HomeDialog | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -134,15 +133,8 @@ export function Home() {
           </div>
           {projects.length === 0 ? (
             <p class="muted">{t('home.noResults', { query: query.trim() })}</p>
-          ) : desktop ? (
-            <ProjectTable
-              projects={projects}
-              busy={busy}
-              onOpen={(id) => void run(() => openLocalProject(id))}
-              onDelete={(project) => setDialog({ kind: 'delete', project })}
-            />
           ) : (
-            <ProjectCards
+            <ProjectTable
               projects={projects}
               busy={busy}
               onOpen={(id) => void run(() => openLocalProject(id))}
@@ -179,8 +171,8 @@ export function Home() {
   );
 
   return (
-    <div class={desktop ? 'home home-desktop' : 'home home-mobile'}>
-      {desktop ? (
+    <>
+      <div class="home home-desktop" hidden={narrow}>
         <aside class="home-side" aria-label={t('home.sideLabel')}>
           <div class="home-brand">
             <span class="main-bar-logo" aria-hidden="true">
@@ -215,171 +207,158 @@ export function Home() {
             <InstallHint />
           </div>
         </aside>
-      ) : (
-        <header class="topbar">
-          <h1>{t('app.title')}</h1>
-          <PreviewBadge />
-          <div class="toolbar home-bar-end">
-            <IconButton
-              icon="help"
-              label={t('help.open')}
-              onClick={() => setDialog({ kind: 'help' })}
-            />
-            <IconButton
-              icon="settings"
-              label={t('settings.title')}
-              onClick={() => setDialog({ kind: 'settings' })}
-            />
-          </div>
-        </header>
-      )}
 
-      <main class="home-main">
-        {desktop ? (
+        <main class="home-main">
           <div class="home-heading">
             <h2>{t('home.start')}</h2>
             <HomeButtons {...actions} />
           </div>
-        ) : (
-          <HomeCards {...actions} />
+          <FolderReason {...actions} />
+          {notices}
+          {list}
+          {zipField}
+        </main>
+
+        {dialog?.kind === 'inconsistent' && (
+          <InconsistentProjectDialog
+            details={dialog.inconsistent}
+            busy={busy}
+            onRepair={
+              repair &&
+              (() => {
+                closeDialog();
+                void run(repair);
+              })
+            }
+            onClose={closeDialog}
+          />
         )}
-        <FolderReason {...actions} />
-        {notices}
-        {!desktop && <InstallHint />}
-        {list}
-        {zipField}
-      </main>
 
-      {dialog?.kind === 'inconsistent' && (
-        <InconsistentProjectDialog
-          details={dialog.inconsistent}
-          busy={busy}
-          onRepair={
-            repair &&
-            (() => {
-              closeDialog();
-              void run(repair);
-            })
-          }
-          onClose={closeDialog}
-        />
-      )}
+        {dialog?.kind === 'help' && (
+          <HelpDialog onClose={closeDialog} section={dialog.section} />
+        )}
 
-      {dialog?.kind === 'help' && (
-        <HelpDialog onClose={closeDialog} section={dialog.section} />
-      )}
+        {dialog?.kind === 'settings' && (
+          <SettingsDialog
+            onClose={closeDialog}
+            onShowShortcuts={() => setDialog({ kind: 'help', section: HELP_SHORTCUTS })}
+          />
+        )}
 
-      {dialog?.kind === 'settings' && (
-        <SettingsDialog
-          onClose={closeDialog}
-          onShowShortcuts={() => setDialog({ kind: 'help', section: HELP_SHORTCUTS })}
-        />
-      )}
-
-      {dialog?.kind === 'new' && (
-        <Dialog
-          title={t('home.newProject')}
-          onCancel={closeDialog}
-          actions={
-            <>
-              <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-              <Button
-                type="submit"
-                form="new-project-form"
-                variant="primary"
-                disabled={busy}
-              >
-                {t('common.create')}
-              </Button>
-            </>
-          }
-        >
-          <form
-            id="new-project-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              closeDialog();
-              void run(() => createLocalProject(name));
-            }}
+        {dialog?.kind === 'new' && (
+          <Dialog
+            title={t('home.newProject')}
+            onCancel={closeDialog}
+            actions={
+              <>
+                <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                <Button
+                  type="submit"
+                  form="new-project-form"
+                  variant="primary"
+                  disabled={busy}
+                >
+                  {t('common.create')}
+                </Button>
+              </>
+            }
           >
-            <NameField
-              value={name}
-              placeholder={t('project.untitled')}
-              onInput={setName}
-            />
-          </form>
-        </Dialog>
-      )}
+            <form
+              id="new-project-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                closeDialog();
+                void run(() => createLocalProject(name));
+              }}
+            >
+              <NameField
+                value={name}
+                placeholder={t('project.untitled')}
+                onInput={setName}
+              />
+            </form>
+          </Dialog>
+        )}
 
-      {dialog?.kind === 'folder-setup' && (
-        <Dialog
-          title={t('home.folderSetupTitle')}
-          onCancel={closeDialog}
-          actions={
-            <>
-              <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-              <Button
-                type="submit"
-                form="folder-setup-form"
-                variant="primary"
-                disabled={busy}
-              >
-                {t('common.create')}
-              </Button>
-            </>
-          }
-        >
-          <form
-            id="folder-setup-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const { handle, images } = dialog;
-              closeDialog();
-              void run(() => createFolderProject(handle, name, images)).then((result) => {
-                if (result && result.skipped.length > 0) {
-                  setMessage(t('home.folderSkipped', { count: result.skipped.length }));
-                }
-              });
-            }}
+        {dialog?.kind === 'folder-setup' && (
+          <Dialog
+            title={t('home.folderSetupTitle')}
+            onCancel={closeDialog}
+            actions={
+              <>
+                <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                <Button
+                  type="submit"
+                  form="folder-setup-form"
+                  variant="primary"
+                  disabled={busy}
+                >
+                  {t('common.create')}
+                </Button>
+              </>
+            }
           >
-            <p>
-              {dialog.images.length === 0
-                ? t('home.folderSetupEmpty', { folder: dialog.handle.name })
-                : t('home.folderSetupImages', {
-                    folder: dialog.handle.name,
-                    count: dialog.images.length,
-                  })}
-            </p>
-            <NameField value={name} placeholder={dialog.handle.name} onInput={setName} />
-          </form>
-        </Dialog>
-      )}
+            <form
+              id="folder-setup-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const { handle, images } = dialog;
+                closeDialog();
+                void run(() => createFolderProject(handle, name, images)).then(
+                  (result) => {
+                    if (result && result.skipped.length > 0) {
+                      setMessage(
+                        t('home.folderSkipped', { count: result.skipped.length }),
+                      );
+                    }
+                  },
+                );
+              }}
+            >
+              <p>
+                {dialog.images.length === 0
+                  ? t('home.folderSetupEmpty', { folder: dialog.handle.name })
+                  : t('home.folderSetupImages', {
+                      folder: dialog.handle.name,
+                      count: dialog.images.length,
+                    })}
+              </p>
+              <NameField
+                value={name}
+                placeholder={dialog.handle.name}
+                onInput={setName}
+              />
+            </form>
+          </Dialog>
+        )}
 
-      {dialog?.kind === 'delete' && (
-        <Dialog
-          title={t('home.deleteTitle')}
-          onCancel={closeDialog}
-          actions={
-            <>
-              <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-              <Button
-                variant="danger"
-                disabled={busy}
-                onClick={() => {
-                  const { id } = dialog.project;
-                  closeDialog();
-                  void run(() => deleteLocalProject(id));
-                }}
-              >
-                {t('common.delete')}
-              </Button>
-            </>
-          }
-        >
-          <p>{t('home.deleteMessage', { name: dialog.project.name })}</p>
-        </Dialog>
-      )}
-    </div>
+        {dialog?.kind === 'delete' && (
+          <Dialog
+            title={t('home.deleteTitle')}
+            onCancel={closeDialog}
+            actions={
+              <>
+                <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                <Button
+                  variant="danger"
+                  disabled={busy}
+                  onClick={() => {
+                    const { id } = dialog.project;
+                    closeDialog();
+                    void run(() => deleteLocalProject(id));
+                  }}
+                >
+                  {t('common.delete')}
+                </Button>
+              </>
+            }
+          >
+            <p>{t('home.deleteMessage', { name: dialog.project.name })}</p>
+          </Dialog>
+        )}
+      </div>
+      {narrow && <NarrowWindowNotice />}
+    </>
   );
 }
 
@@ -416,7 +395,7 @@ interface HomeActions {
   readonly onOpenZip: () => void;
 }
 
-/** Desktop: os três pontos de entrada como botões do cabeçalho. */
+/** Os três pontos de entrada como botões do cabeçalho. */
 function HomeButtons({ busy, available, onNew, onOpenFolder, onOpenZip }: HomeActions) {
   return (
     <div class="home-buttons">
@@ -450,65 +429,6 @@ function FolderReason({ available }: HomeActions) {
   return <p class="muted home-reason">{t('home.folderUnavailable')}</p>;
 }
 
-function ActionCard({
-  icon,
-  title,
-  hint,
-  disabled,
-  onClick,
-}: {
-  readonly icon: IconName;
-  readonly title: string;
-  readonly hint: string;
-  readonly disabled: boolean;
-  readonly onClick: () => void;
-}) {
-  return (
-    <button type="button" class="action-card" disabled={disabled} onClick={onClick}>
-      <span class="action-card-icon" aria-hidden="true">
-        <Icon name={icon} />
-      </span>
-      <span class="action-card-text">
-        <strong>{title}</strong>
-        <span>{hint}</span>
-      </span>
-    </button>
-  );
-}
-
-/** Celular: três botões grandes; Abrir pasta desabilitado diz o motivo. */
-function HomeCards({ busy, available, onNew, onOpenFolder, onOpenZip }: HomeActions) {
-  return (
-    <div class="home-actions">
-      {available.local && (
-        <ActionCard
-          icon="plus"
-          title={t('home.newProject')}
-          hint={t('home.newProjectHint')}
-          disabled={busy}
-          onClick={onNew}
-        />
-      )}
-      <ActionCard
-        icon="folder"
-        title={t('home.openFolder')}
-        hint={available.folder ? t('home.openFolderHint') : t('home.folderUnavailable')}
-        disabled={busy || !available.folder}
-        onClick={onOpenFolder}
-      />
-      {available.local && (
-        <ActionCard
-          icon="upload"
-          title={t('home.openZip')}
-          hint={t('home.openZipHint')}
-          disabled={busy}
-          onClick={onOpenZip}
-        />
-      )}
-    </div>
-  );
-}
-
 interface ProjectListProps {
   readonly projects: readonly LocalProjectMeta[];
   readonly busy: boolean;
@@ -522,7 +442,7 @@ function Unexported({ project }: { readonly project: LocalProjectMeta }) {
   ) : null;
 }
 
-/** Desktop: tabela Nome | Origem | Alterado em, com Abrir e Excluir na linha. */
+/** Tabela Nome | Origem | Alterado em, com Abrir e Excluir na linha. */
 function ProjectTable({ projects, busy, onOpen, onDelete }: ProjectListProps) {
   return (
     <table class="project-table">
@@ -562,32 +482,5 @@ function ProjectTable({ projects, busy, onOpen, onDelete }: ProjectListProps) {
         ))}
       </tbody>
     </table>
-  );
-}
-
-/** Celular: um cartão por projeto. */
-function ProjectCards({ projects, busy, onOpen, onDelete }: ProjectListProps) {
-  return (
-    <ul class="project-cards">
-      {projects.map((project) => (
-        <li key={project.id} class="project-item">
-          <div class="project-info">
-            <strong>{project.name}</strong>
-            <span class="muted">
-              {t('home.updatedAt', { date: formatDate(project.updatedAt) })}
-            </span>
-            <Unexported project={project} />
-          </div>
-          <div class="row">
-            <Button disabled={busy} onClick={() => onOpen(project.id)}>
-              {t('common.open')}
-            </Button>
-            <Button variant="danger" disabled={busy} onClick={() => onDelete(project)}>
-              {t('common.delete')}
-            </Button>
-          </div>
-        </li>
-      ))}
-    </ul>
   );
 }

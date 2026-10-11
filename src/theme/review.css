@@ -208,24 +208,6 @@
   flex: 1;
 }
 
-@media (max-width: 899px) {
-  .change-kind {
-    width: calc(var(--size-icon-touch) + var(--space-0-5));
-    height: calc(var(--size-icon-touch) + var(--space-0-5));
-    border-radius: var(--radius-md);
-  }
-
-  .change-kind .icon {
-    width: var(--space-4);
-    height: var(--space-4);
-  }
-
-  .flag {
-    height: var(--size-icon-touch);
-    font: var(--t-text-small);
-  }
-}
-
 /* ---------- Contagens (○ ✓ ✕ ⚠) ---------- */
 .review-counts {
   display: inline-flex;
@@ -483,29 +465,6 @@
   color: var(--color-accent);
 }
 
-@media (max-width: 899px) {
-  .proposal-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    row-gap: var(--space-1);
-    padding: var(--space-2) var(--space-3);
-  }
-
-  .proposal-row-counts {
-    grid-column: 1;
-    grid-row: 2;
-    padding-left: calc(var(--size-icon-touch) + var(--space-2));
-  }
-
-  .proposal-row-action {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
-
-  .review-search {
-    min-width: 100%;
-  }
-}
-
 /* ---------- Selo REVISÃO ---------- */
 .review-badge {
   flex: none;
@@ -599,8 +558,7 @@
   white-space: nowrap;
 }
 
-.review-bar-stats,
-.review-strip-stats {
+.review-bar-stats {
   flex: none;
   display: flex;
   align-items: center;
@@ -641,32 +599,6 @@
 .review-bar-problem {
   height: var(--control-height-sm);
   cursor: pointer;
-}
-
-/* ---------- Faixa do celular (duas linhas) ---------- */
-.review-strip {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1-5);
-  padding: var(--space-1-5) var(--space-3) var(--space-2);
-  background: var(--color-selection);
-  border-bottom: 1px solid var(--color-accent);
-}
-
-.review-strip-top {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.review-strip-top b {
-  min-width: 0;
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ---------- Níveis da revisão (janela Propostas) ---------- */
@@ -848,41 +780,6 @@
 
 .review-levels > .notice-box {
   margin: var(--space-1-5) var(--space-2) 0;
-}
-
-@media (max-width: 899px) {
-  .review-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    height: auto;
-    min-height: calc(var(--size-touch) + var(--space-3));
-    padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
-    border-radius: 0;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .review-row-name {
-    grid-row: 1;
-  }
-
-  .review-row-summary {
-    grid-column: 1;
-    grid-row: 2;
-    padding-left: calc(var(--depth, 0) * var(--space-4) + var(--size-icon-touch));
-  }
-
-  .review-row-decision {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
-
-  .review-levels-head {
-    display: none;
-  }
-
-  .review-bar-stats .review-progress {
-    display: none;
-  }
 }
 
 /* ---------- Controles do canvas: Atual / Proposto, legenda, Comparar ---------- */
@@ -1114,16 +1011,6 @@
 @media (prefers-reduced-motion: reduce) {
   .image-compare * {
     transition-duration: var(--duration-instant);
-  }
-}
-
-@media (max-width: 899px) {
-  .image-compare-side {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .review-canvas-controls {
-    border-right: none;
   }
 }
 
@@ -1362,16 +1249,6 @@
   padding: var(--space-4) 0;
 }
 
-@media (max-width: 899px) {
-  .change-card-head {
-    min-height: calc(var(--size-touch) + var(--space-2));
-  }
-
-  .diff-value {
-    grid-template-columns: calc(3 * var(--space-6)) minmax(0, 1fr);
-  }
-}
-
 /* ---------- Lembrete ao sair da revisão ---------- */
 .exit-review-summary {
   display: flex;
@@ -1393,86 +1270,4 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
-}
-
-@media (max-width: 899px) {
-  .exit-review-actions {
-    flex-direction: column-reverse;
-    align-items: stretch;
-    width: 100%;
-  }
-}
-
-/* ---------- Revisão no celular (5.5) ---------- */
-.review-mobile-exit {
-  flex: none;
-  gap: var(--space-1);
-}
-
-.review-mobile-project {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  font: var(--t-text-title);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.review-bottombar {
-  justify-content: flex-start;
-}
-
-/* Atual/Proposto, legenda e Comparar flutuam no topo do canvas. */
-.canvas-float-top {
-  top: var(--space-2);
-  bottom: auto;
-  right: auto;
-  left: var(--space-2);
-  padding: 0 var(--space-1);
-  border-radius: var(--radius-lg);
-}
-
-.canvas-float-top .review-canvas-controls {
-  padding-right: 0;
-  margin-right: 0;
-}
-
-/* A legenda e os avisos do canto ficam abaixo dos controles flutuantes. */
-.canvas-area:has(.canvas-float-top) .review-legend,
-.canvas-area:has(.canvas-float-top) .canvas-corner {
-  top: calc(var(--control-height) + 3 * var(--space-2));
-}
-
-.review-filters-stacked {
-  flex-direction: column;
-  align-items: stretch;
-  padding: 0;
-  border-bottom: none;
-}
-
-.review-filters-stacked .review-search,
-.review-filters-stacked .review-select {
-  min-width: 0;
-}
-
-.review-levels-bar {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1-5) var(--space-2);
-  padding-bottom: calc(var(--space-1-5) + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-
-.review-levels-bar > .button-primary,
-.review-bottombar-apply {
-  flex: 1;
-  min-width: 0;
-  justify-content: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

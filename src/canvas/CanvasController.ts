@@ -26,7 +26,6 @@ import {
   type Draft,
   type DropTarget,
   type Frame,
-  type Grabbed,
   type HoverLock,
   type ImagePreview,
   type InteractionState,
@@ -79,7 +78,6 @@ export class CanvasController {
   private readonly state: InteractionState = {
     preview: signal<ImagePreview | null>(null),
     draft: signal<Draft | null>(null),
-    grabbed: signal<Grabbed | null>(null),
     hoverLock: signal<HoverLock | null>(null),
   };
   private readonly dropTarget = signal<DropTarget>(null);
@@ -148,7 +146,6 @@ export class CanvasController {
     preview: this.state.preview.value,
     draft: this.state.draft.value,
     dropTarget: this.dropTarget.value,
-    grabbed: this.state.grabbed.value,
     hoverLock: this.state.hoverLock.value,
     tokens: this.tokens.value,
     size: this.view.size.value,

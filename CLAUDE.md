@@ -44,7 +44,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - As coordenadas das marcações são **sempre** em pixels da imagem original. Conversões de tela/canvas ficam só em `src/canvas/`.
 - Nenhuma string de UI hardcoded: tudo via `t()` com chaves em `src/i18n/pt-BR.ts` e `src/i18n/en-US.ts`.
 - Nenhum valor de design fixo (cor, espaço, raio, fonte, opacidade, duração, z-index) fora dos tokens: use `var(--…)` dos tokens de `src/theme/tokens.ts` (fonte única, temas claro e escuro). Borda de controle usa `--color-border-control`; `--color-border` é só divisória. O canvas lê os tokens do tema. Um teste (`tests/theme/tokenLiterals.test.ts`) procura literais no CSS.
-- Controles de formulário e botões vêm de `src/ui/controls/` (`Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`) e ícones de `<Icon name="…" />` (`src/ui/icons.tsx`); não crie botão, campo ou ícone avulso. Altura, raio e ícone seguem a densidade (`--control-*`): 28px/16px no desktop, 44px/20px no celular.
+- Controles de formulário e botões vêm de `src/ui/controls/` (`Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`) e ícones de `<Icon name="…" />` (`src/ui/icons.tsx`); não crie botão, campo ou ícone avulso. Altura, raio e ícone vêm dos papéis `--control-*` (28px/16px).
 
 ## Restrições do ambiente de execução
 
@@ -53,7 +53,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
   - o service worker só é registrado quando `location.protocol === 'https:'`;
   - detecte os recursos em runtime (`showDirectoryPicker`, IndexedDB, `navigator.canShare`) e degrade com elegância;
   - o `dist/index.html` leva uma **CSP** em `<meta>` gerada no build (`pwa/csp.ts`; hashes dos blocos embutidos, sem `'unsafe-inline'`/`'unsafe-eval'`, `connect-src 'none'`). Por isso: sem `style=""` nem handlers inline no HTML, sem `eval`/`new Function`, sem `setAttribute('style')`, sem `fetch`/XHR/WebSocket (estilo dinâmico só por JS: `el.style.x`, objeto `style` do Preact). Não escreva a CSP à mão no `index.html`. Detalhes em `docs/ARCHITECTURE.md`.
-- **Desktop primeiro, utilizável no celular**: o layout principal é o de desktop (≥ 900 px, mouse e teclado). Todo layout também precisa funcionar em 380 px de largura com toque, com áreas de toque de pelo menos 24 px (alças) e 44 px (botões) no celular. Uma mudança só está pronta quando funciona nos dois.
+- **Só desktop**: largura mínima de 900 px (token `size-app-min`), mouse e teclado; toque simples funciona (clicar, arrastar, rolar e a pinça), gestos de celular não. Abaixo de 900 px a app mostra o aviso "Abra numa janela maior" no lugar da tela, sem desmontar nada (o projeto continua aberto e gravando). Não há layout de celular (decisão da fase 5.8).
 - Envolva todo acesso a `localStorage`/IndexedDB em try/catch.
 
 ## Código
@@ -69,7 +69,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - Um branch e um PR por fase (ou por parte de uma fase, se ela for grande).
 - Toda descrição de PR contém:
   1. **Resumo** do que mudou;
-  2. **Como testar**: passos manuais objetivos no desktop e no celular, lembrando que o deploy do branch pode ser disparado pelo `workflow_dispatch`;
+  2. **Como testar**: passos manuais objetivos no desktop, lembrando que o deploy do branch pode ser disparado pelo `workflow_dispatch`;
   3. **Decisões tomadas** que não estavam no `PLAN.md`.
 - Se algo no `PLAN.md` estiver ambíguo ou for inviável, registre a dúvida no PR em vez de inventar comportamento grande. Para detalhes pequenos, decida, siga e documente.
 

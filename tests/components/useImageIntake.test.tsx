@@ -12,7 +12,6 @@ import { createHarness, type Harness } from './harness';
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
-  Reflect.deleteProperty(navigator, 'clipboard');
 });
 
 const png = (name: string) => new File(['x'], name, { type: 'image/png' });
@@ -73,7 +72,7 @@ function setup(options: { readOnly?: boolean; busy?: boolean } = {}): Setup {
 
   let current: ImageIntake | null = null;
   function Probe() {
-    current = useImageIntake({ desktop: true, dialogs, notices });
+    current = useImageIntake({ dialogs, notices });
     return null;
   }
   render(
@@ -158,65 +157,7 @@ describe('useImageIntake: vários arquivos', () => {
   });
 });
 
-describe('useImageIntake: colar', () => {
-  it('área de transferência sem imagem avisa e não adiciona', async () => {
-    const s = setup();
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: { read: vi.fn().mockResolvedValue([]) },
-    });
-    await s.intake().pasteImage();
-    expect(s.addImages).not.toHaveBeenCalled();
-    expect(s.messages.at(-1)).toBeTruthy();
-  });
-
-  it('item da área de transferência que não é imagem também conta como vazio', async () => {
-    const s = setup();
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: {
-        read: vi
-          .fn()
-          .mockResolvedValue([
-            { types: ['text/plain'], getType: () => Promise.resolve(new Blob(['x'])) },
-          ]),
-      },
-    });
-    await s.intake().pasteImage();
-    expect(s.addImages).not.toHaveBeenCalled();
-    expect(s.messages.at(-1)).toBeTruthy();
-  });
-
-  it('imagem na área de transferência é adicionada no centro da vista', async () => {
-    const s = setup();
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: {
-        read: vi.fn().mockResolvedValue([
-          {
-            types: ['image/png'],
-            getType: () => Promise.resolve(new Blob(['x'], { type: 'image/png' })),
-          },
-        ]),
-      },
-    });
-    await s.intake().pasteImage();
-    expect(s.addImages).toHaveBeenCalledOnce();
-    expect(s.addImages.mock.calls[0]?.[1]).toEqual({ center: { x: 1, y: 2 } });
-    expect(s.canvas.fitAll).not.toHaveBeenCalled();
-  });
-
-  it('erro ao ler a área de transferência vira mensagem', async () => {
-    const s = setup();
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: { read: vi.fn().mockRejectedValue(new Error('negado')) },
-    });
-    await s.intake().pasteImage();
-    expect(s.addImages).not.toHaveBeenCalled();
-    expect(s.messages.at(-1)).toBeTruthy();
-  });
-
+describe('useImageIntake: colar (Ctrl+V)', () => {
   it('Ctrl+V sem imagem no evento não faz nada e não bloqueia o padrão', () => {
     const s = setup();
     const event = new Event('paste', { cancelable: true }) as ClipboardEvent;

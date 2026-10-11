@@ -35,24 +35,6 @@ export function dragHasFiles(dt: DataTransfer | null): boolean {
   return !!dt && [...dt.types].includes('Files');
 }
 
-/** `navigator.clipboard.read()` existe (opção "Colar imagem" no celular). */
-export function canReadClipboard(): boolean {
-  return (
-    typeof navigator !== 'undefined' && typeof navigator.clipboard?.read === 'function'
-  );
-}
-
-/** Lê as imagens da área de transferência (exige gesto do usuário). */
-export async function readClipboardImages(now: Date = new Date()): Promise<File[]> {
-  const items = await navigator.clipboard.read();
-  const files: File[] = [];
-  for (const item of items) {
-    const type = item.types.find((mime) => mime.startsWith('image/'));
-    if (type) files.push(nameForPasted(await item.getType(type), now));
-  }
-  return files;
-}
-
 /** Imagens de um evento `paste` (Ctrl/Cmd+V). */
 export function imagesFromPaste(data: DataTransfer | null): File[] {
   return [...(data?.files ?? [])].filter(isImageFile).map((file) => nameForPasted(file));

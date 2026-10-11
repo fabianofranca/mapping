@@ -9,18 +9,12 @@ import { SettingsDialog } from '../ui/SettingsDialog';
 import { SpecsDialog } from '../ui/SpecsDialog';
 import { closeProject } from './controller';
 import { ExportDialog } from './ExportDialog';
-import { PanelsMenu } from './PanelsMenu';
 import type { EditorDialog, EditorDialogs as Dialogs } from './useEditorDialogs';
-import type { ImageIntake } from './useImageIntake';
-import type { ProjectCommands } from './useProjectCommands';
 import { Button } from '../ui/controls';
 import { ExitReviewDialog } from '../ui/review/ExitReviewDialog';
 
 interface EditorDialogsProps {
   readonly dialogs: Dialogs;
-  readonly busy: boolean;
-  readonly intake: ImageIntake;
-  readonly commands: ProjectCommands;
 }
 
 const formatSize = (s: { width: number; height: number }) =>
@@ -60,30 +54,9 @@ function ConfirmDialog({
   );
 }
 
-function AddMenuDialog({
-  dialogs,
-  intake,
-}: {
-  readonly dialogs: Dialogs;
-  readonly intake: ImageIntake;
-}) {
-  return (
-    <Dialog
-      title={t('editor.addImages')}
-      onCancel={dialogs.close}
-      actions={<Button onClick={dialogs.close}>{t('common.cancel')}</Button>}
-    >
-      <div class="dialog-stack">
-        <Button onClick={intake.pickFromDevice}>{t('editor.addFromDevice')}</Button>
-        <Button onClick={() => void intake.pasteImage()}>{t('editor.pasteImage')}</Button>
-      </div>
-    </Dialog>
-  );
-}
-
 function renderDialog(
   dialog: EditorDialog,
-  { dialogs, busy, intake, commands }: EditorDialogsProps,
+  { dialogs }: EditorDialogsProps,
   ctx: EditorContextValue,
 ) {
   const { store, actions, ui } = ctx;
@@ -93,10 +66,6 @@ function renderDialog(
   const { close } = dialogs;
 
   switch (dialog.kind) {
-    case 'addMenu':
-      return <AddMenuDialog dialogs={dialogs} intake={intake} />;
-    case 'panels':
-      return <PanelsMenu dialogs={dialogs} busy={busy} commands={commands} />;
     case 'specs':
       return <SpecsDialog project={project} readOnly={readOnly} onClose={close} />;
     case 'settings':

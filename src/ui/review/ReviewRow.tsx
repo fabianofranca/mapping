@@ -9,8 +9,7 @@ import { DecisionMark, type DecisionCounts } from './DecisionMark';
 
 // Linha dos níveis da revisão (HANDOFF-PROPOSALS 2.1, ReviewRow): um TreeRow de três
 // colunas — nome (chevron, decisão, tipo, rótulo e sinalizadores), resumo (contagens ou
-// "antes → depois") e o DecisionControl. 28px no desktop; no celular o resumo desce para
-// uma segunda linha e os botões têm 44px.
+// "antes → depois") e o DecisionControl. 28px de altura.
 
 export interface ReviewRowProps {
   readonly rowKey: string;

@@ -522,7 +522,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (store.readOnly.value || store.reviewing.value || !store.project.value) {
         return { added, failed: files.map((f) => f.name) };
       }
-      // Uma por vez: fotos grandes decodificadas em paralelo estouram a memória do celular.
+      // Uma por vez: fotos grandes decodificadas em paralelo estouram a memória.
       for (const file of files) {
         let path: string | null = null;
         try {

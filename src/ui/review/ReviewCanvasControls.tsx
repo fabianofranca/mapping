@@ -75,12 +75,8 @@ export function ReviewViewToggle() {
   );
 }
 
-/** Atual / Proposto, a legenda e "Comparar" (barra dos breadcrumbs, no desktop). */
-export function ReviewCanvasControls({
-  compact = false,
-}: {
-  readonly compact?: boolean;
-}) {
+/** Atual / Proposto, a legenda e "Comparar" (barra dos breadcrumbs). */
+export function ReviewCanvasControls() {
   const { review, ui } = useEditor();
   const comparable = useComparable();
   if (review.proposalId.value === null) return null;
@@ -90,7 +86,7 @@ export function ReviewCanvasControls({
       <IconButton
         icon="info"
         label={t('review.legend.open')}
-        shortcut={compact ? undefined : REVIEW_KEYS.legend}
+        shortcut={REVIEW_KEYS.legend}
         pressed={ui.reviewLegend.value}
         onClick={() => (ui.reviewLegend.value = !ui.reviewLegend.peek())}
       />
@@ -98,7 +94,7 @@ export function ReviewCanvasControls({
         <IconButton
           icon="compare"
           label={t('review.compare.open')}
-          text={compact ? undefined : t('review.compare.button')}
+          text={t('review.compare.button')}
           onClick={() => (ui.compareImage.value = comparable)}
         />
       )}
