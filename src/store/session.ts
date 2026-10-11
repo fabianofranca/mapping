@@ -337,7 +337,7 @@ export function openSession(options: SessionOptions): ProjectSession {
   const saver = createAutoSaver(persist, options.autosaveDelay);
   /**
    * Operações caras (imagens e especializações) gravam sem esperar o debounce: o trabalho
-   * de refazê-las é grande demais para ficar 800 ms só em memória. A gravação entra na
+   * de refazê-las é grande demais para ficar só em memória até o fim do debounce. A gravação entra na
    * mesma fila do autosave, então duas seguidas não correm em paralelo.
    */
   const saveNow = <R extends { readonly ok: boolean }>(result: R): R => {

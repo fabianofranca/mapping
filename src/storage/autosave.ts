@@ -2,11 +2,13 @@ import { signal, type ReadonlySignal } from '@preact/signals';
 import { reportError } from '../utils/report';
 
 /**
- * Debounce entre a última alteração e a gravação: as edições comuns (digitar um nome, um
- * valor) não gravam a cada tecla. Operações caras (imagens, especializações) e sair da
- * página gravam na hora com `flush()`.
+ * Debounce entre a última alteração e a gravação. Quase todas as edições já gravam uma vez
+ * por ação (nome com Enter ou blur, gestos, painéis); só a chave e o valor das anotações
+ * livres (`KeyValueGrid`) mudam a cada tecla, e 250 ms ainda agrupam essa digitação. Curto
+ * para encolher a janela em que uma edição só existe em memória (fechar a aba). Operações
+ * caras (imagens, especializações) e sair da página gravam na hora com `flush()`.
  */
-export const AUTOSAVE_DELAY_MS = 800;
+export const AUTOSAVE_DELAY_MS = 250;
 
 /** `saving` cobre tanto a espera do debounce quanto a gravação em andamento. */
 export type SaveStatus = 'saved' | 'saving' | 'error';

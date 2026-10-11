@@ -105,7 +105,7 @@ async function withMarking(page: Page, info: Parameters<typeof isMobile>[0]) {
   await openFolderProject(page);
   await addImage(page);
   await drawMarking(page, info, await canvasPoint(page));
-  // O salvamento automático espera 800 ms.
+  // O salvamento automático espera o debounce (`AUTOSAVE_DELAY_MS`).
   await expect.poll(async () => (await readMapping(page)).markings.length).toBe(1);
   return (await readMapping(page)).markings[0]!;
 }
@@ -296,7 +296,7 @@ test.describe('mudanças externas no mapping.json', () => {
     await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
     const name = page.getByLabel('Nome', { exact: true }).first();
 
-    // Alteração local ainda não gravada (o salvamento espera 800 ms) + alteração externa.
+    // Alteração local ainda não gravada (o salvamento espera o debounce) + alteração externa.
     await name.fill('Minha marcação');
     await name.press('Enter');
     await externalEdit(page, { projectName: 'Nome do outro programa' });

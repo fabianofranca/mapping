@@ -391,8 +391,11 @@ describe('fechar', () => {
 });
 
 describe('sair da página (fase 5.5)', () => {
-  /** O debounce do autosave é 800 ms: esperar bem menos prova que a gravação foi imediata. */
-  const soon = { timeout: 300, interval: 10 };
+  /**
+   * A gravação imediata é provada pelo `flush()` chamado no próprio evento (o debounce não
+   * chama `flush` antes do timer); depois, só confere que ela chegou ao disco.
+   */
+  const soon = { timeout: 1000, interval: 10 };
 
   function setVisibility(state: DocumentVisibilityState) {
     Object.defineProperty(document, 'visibilityState', {
@@ -407,8 +410,10 @@ describe('sair da página (fase 5.5)', () => {
     const root = new MemoryDirectory('p');
     await app.createFolderProject(root, 'Original', []);
     const { session } = await openedOf(app);
+    const flush = vi.spyOn(session, 'flush');
     session.actions.renameProject('Saindo');
     window.dispatchEvent(new Event('pagehide'));
+    expect(flush).toHaveBeenCalledTimes(1);
     await vi.waitFor(async () => {
       expect(await root.files.get('mapping.json')?.text()).toContain('Saindo');
     }, soon);
@@ -417,9 +422,11 @@ describe('sair da página (fase 5.5)', () => {
   it('visibilitychange para hidden grava na hora', async () => {
     await app.createLocalProject('Local');
     const { session, localId } = await openedOf(app);
+    const flush = vi.spyOn(session, 'flush');
     session.actions.renameProject('Escondido');
     setVisibility('hidden');
     document.dispatchEvent(new Event('visibilitychange'));
+    expect(flush).toHaveBeenCalledTimes(1);
     await vi.waitFor(async () => {
       await app.refreshLocalProjects();
       expect(app.localProjects.value.find((p) => p.id === localId)?.name).toBe(

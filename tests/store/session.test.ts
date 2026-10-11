@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SCHEMA_VERSION, deserialize, serialize, specFiles } from '../../src/model';
+import { AUTOSAVE_DELAY_MS } from '../../src/storage/autosave';
 import { createFolderStorage } from '../../src/storage/folder';
 import type { PreparedImage } from '../../src/storage/imageImport';
 import { HISTORY_LIMIT } from '../../src/store/history';
@@ -64,7 +65,7 @@ describe('sessão de projeto', () => {
     session = start(root);
     const sdui = loadExample('sdui');
     expect(session.actions.applySpecialization(sdui).ok).toBe(true);
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     const copy = await root.read('specs/sdui.json');
     expect(JSON.parse(copy ?? '')).toEqual(sdui);
     expect((await savedProject(root)).specializations).toEqual([
@@ -72,12 +73,12 @@ describe('sessão de projeto', () => {
     ]);
 
     expect(session.actions.removeSpecialization('sdui', 'convert').ok).toBe(true);
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(await root.read('specs/sdui.json')).toBeNull();
     expect((await savedProject(root)).specializations).toEqual([]);
 
     session.store.undo();
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(await root.read('specs/sdui.json')).toBe(copy);
 
     const files = await session.collectFiles();
@@ -390,7 +391,7 @@ describe('sessão de projeto', () => {
     await session.addImages([file('ruim.jpg', 'ruim')]);
     session.actions.renameProject('Outro nome');
     root.failWrites = new Error('sem permissão');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(reportedErrors.value.map((e) => [e.context, e.message])).toEqual([
       ['session.addImage', 'decode'],
       ['save', 'sem permissão'],
@@ -404,7 +405,7 @@ describe('sessão de projeto', () => {
     session = start(root);
     session.actions.renameProject('Outro nome');
     root.failWrites = new Error('sem permissão');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.saveStatus.value).toBe('error');
 
     root.failWrites = null;
@@ -501,9 +502,9 @@ describe('sessão de projeto', () => {
       session.actions.renameProject('Renomeado');
       expect(session.actions.beginGesture().ok).toBe(true);
       expect(session.actions.previewMarkingMove('M4', 50, 0).ok).toBe(true);
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       session.actions.cancelGesture();
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
       const saved = await savedProject(root);
       expect(saved.project.name).toBe('Renomeado');
@@ -523,10 +524,10 @@ describe('sessão de projeto', () => {
       session.actions.beginGesture();
       session.actions.previewMarkingMove('M4', 20, 0);
       session.actions.previewMarkingMove('M4', 50, 0);
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(counting.saves()).toBe(0);
       session.actions.commitGesture();
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(counting.saves()).toBe(1);
       expect(m4x(await savedProject(root))).toBe(50);
     });
@@ -691,7 +692,7 @@ describe('sessão de projeto', () => {
       const root = new MemoryDirectory('p');
       session = startTracking(root).session;
       session.actions.renameProject('Devagar');
-      await vi.advanceTimersByTimeAsync(799);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS - 1);
       expect(await root.read('mapping.json')).toBeNull();
       await vi.advanceTimersByTimeAsync(1);
       expect((await savedProject(root)).project.name).toBe('Devagar');
@@ -780,7 +781,7 @@ describe('sessão de projeto', () => {
       session = openV1(root);
       session.actions.renameProject('Migrado');
       root.failWrites = new Error('sem permissão');
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.saveStatus.value).toBe('error');
       expect(await root.read('mapping.json')).toBe(v1Text);
       expect(session.backupSaved.value).toBeNull();
