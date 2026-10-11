@@ -74,8 +74,8 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 ## Etapa 5 — Pré-voo para uso real (em andamento)
 
 - **Objetivo:** fechar, antes dos testes com pessoas, os achados da avaliação de arquitetura de 2026-10-10 que causam perda de dados silenciosa ou impedem o testador de relatar o que viu. Só correções, sem funcionalidade nova nem mudança de formato.
-- **Entra:** autosave gravando só o projeto confirmado; aplicar aceitas só conclui se o `mapping.json` gravou; projeto inconsistente abre reparado com backup (ou lista exatamente o que está errado); Diagnóstico com erros globais e identificação do build; gravação ao sair da página e sem atraso nas operações caras; deploy rodando tudo que o CI roda, Node fixado, Dependabot; MCP com stdout limpo e limites de memória (0.3.1); guia do testador (`docs/TESTING.md`) com os roteiros consolidados e o template de registro do marco.
-- **Detalhamento:** [`PLAN.md`](../PLAN.md). Desenhada para execução por um coordenador de agentes, em três ondas.
+- **Entra:** autosave gravando só o projeto confirmado; aplicar aceitas só conclui se o `mapping.json` gravou; projeto inconsistente abre reparado com backup (ou lista exatamente o que está errado); Diagnóstico com erros globais e identificação do build; gravação ao sair da página e sem atraso nas operações caras; deploy rodando tudo que o CI roda, Node fixado, Dependabot; MCP com stdout limpo e limites de memória (0.3.1); **só desktop** (decisão de 2026-10-11: o layout de celular sai, com largura mínima e aviso, porque ninguém o testa nem o usará); guia do testador (`docs/TESTING.md`) com os roteiros consolidados e o template de registro do marco.
+- **Detalhamento:** [`PLAN.md`](../PLAN.md). Desenhada para execução por um coordenador de agentes, em quatro ondas.
 - **Depende de:** etapa 4 (concluída).
 
 ## Marco — Uso real
