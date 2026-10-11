@@ -443,7 +443,7 @@ describe('sair da página (fase 5.5)', () => {
     expect(pending.defaultPrevented).toBe(true);
   });
 
-  it('beforeunload com pendência já começa a gravar enquanto pede confirmação', async () => {
+  it('beforeunload com pendência agenda a gravação e pede confirmação', async () => {
     const root = new MemoryDirectory('p');
     await app.createFolderProject(root, 'Original', []);
     const { session } = await openedOf(app);

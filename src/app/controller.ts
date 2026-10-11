@@ -472,8 +472,9 @@ function bindPageLifecycle(): void {
   window.addEventListener('beforeunload', (event) => {
     const status = openProject.value?.session.saveStatus.value;
     if (status && status !== 'saved') {
-      // A gravação começa enquanto o diálogo de confirmação está aberto; confirmar a saída
-      // na hora ainda pode interromper a escrita (assíncrona), e a proteção é o próprio diálogo.
+      // `flushNow()` só agenda a gravação: o diálogo de confirmação é modal e pausa a página,
+      // então a escrita (assíncrona) só anda se a pessoa escolher ficar. A proteção é essa
+      // escolha; confirmar a saída perde o que ainda não foi gravado.
       flushNow();
       event.preventDefault();
     }
