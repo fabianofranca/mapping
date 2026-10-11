@@ -168,7 +168,9 @@ e abra de novo.
 
 Ler nunca grava. Ao reparar, o projeto abre reparado em memória; o original vai para
 `backups/mapping.v<versão>.<AAAAMMDD-HHMMSS>.json` e o reparado para o `mapping.json` só na **primeira
-gravação**, como na migração. O resumo do reparo fica no aviso do editor e no Diagnóstico. O servidor MCP
+gravação**, como na migração. O nome é o mesmo do backup de migração (um v8 reparado vira
+`mapping.v8.<data>.json`): para saber qual foi o motivo, compare a data com o Diagnóstico ou o conteúdo
+com o `mapping.json` atual. O resumo do reparo fica no aviso do editor e no Diagnóstico. O servidor MCP
 continua recusando o arquivo (ler nunca grava), com a mesma lista de problemas na resposta.
 
 Datas (`createdAt`, `updatedAt`) com fuso (`2026-10-01T09:30:00-03:00`, de outra ferramenta) são aceitas

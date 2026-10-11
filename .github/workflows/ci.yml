@@ -84,7 +84,7 @@ jobs:
           fi
       - run: npm run build:mcp
 
-  # Ponta a ponta no `dist/index.html` final, em desktop e celular emulado (toque).
+  # Ponta a ponta no `dist/index.html` final, no desktop (a app é só desktop desde a fase 5.8).
   # Só roda aqui: o ambiente de desenvolvimento pode não conseguir baixar o navegador.
   e2e:
     runs-on: ubuntu-latest
