@@ -10,7 +10,7 @@ interface MarkingColorFieldProps {
 
 /**
  * Cor da borda das marcações da imagem: grupo de rádios (a neutra do tema e a paleta,
- * alvos de 24px no desktop e 44px no celular) e uma cor livre.
+ * alvos de 24px) e uma cor livre.
  */
 export function MarkingColorField({ image, disabled }: MarkingColorFieldProps) {
   const { actions } = useEditor();

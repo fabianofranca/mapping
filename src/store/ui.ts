@@ -7,7 +7,6 @@ import {
   type Project,
   type ProjectImage,
 } from '../model';
-import type { ToolWindowId } from './toolWindows';
 
 /** Item selecionado no editor. */
 export type Selection =
@@ -17,12 +16,6 @@ export type Selection =
 
 /** Navegar: tocar seleciona, arrastar move ou faz pan. Desenhar: arrastar cria marcações. */
 export type EditorMode = 'navigate' | 'draw';
-
-/**
- * Altura da gaveta do celular (B7): recolhida (64px, só o cabeçalho) ou aberta (72%).
- * A terceira altura, tela cheia, é a janela Detalhes em tela cheia (`mobileWindow`).
- */
-export type SheetHeight = 'peek' | 'open';
 
 /**
  * Estado da UI do editor: não vai para o JSON nem entra no desfazer.
@@ -59,10 +52,6 @@ export interface EditorUi {
    * todas as marcações.
    */
   readonly collapsed: Signal<ReadonlySet<string>>;
-  /** Celular (B6): janela aberta em tela cheia; `null` mostra o canvas. */
-  readonly mobileWindow: Signal<ToolWindowId | null>;
-  /** Celular (B7): altura da gaveta de Detalhes sobre o canvas. */
-  readonly sheet: Signal<SheetHeight>;
   /** Aviso curto sobre o canvas ("Referência copiada"); some sozinho (`showToast`). */
   readonly toast: Signal<string | null>;
   /** Menu de contexto do canvas (botão direito): onde abrir (tela) e o item sob o cursor. */
@@ -71,8 +60,6 @@ export interface EditorUi {
   readonly reviewLegend: Signal<boolean>;
   /** Revisão: comparação antes/depois da imagem trocada aberta (id da imagem). */
   readonly compareImage: Signal<string | null>;
-  /** Revisão no celular: filtros abertos em tela cheia. */
-  readonly reviewFilters: Signal<boolean>;
 }
 
 export interface CanvasMenu {
@@ -95,13 +82,10 @@ export function createEditorUi(): EditorUi {
     collapsedTree: signal<ReadonlySet<string>>(new Set()),
     focusField: signal<string | null>(null),
     collapsed: signal<ReadonlySet<string>>(new Set()),
-    mobileWindow: signal<ToolWindowId | null>(null),
-    sheet: signal<SheetHeight>('peek'),
     toast: signal<string | null>(null),
     canvasMenu: signal<CanvasMenu | null>(null),
     reviewLegend: signal<boolean>(false),
     compareImage: signal<string | null>(null),
-    reviewFilters: signal<boolean>(false),
   };
 }
 

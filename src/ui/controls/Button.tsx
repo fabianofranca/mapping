@@ -13,7 +13,7 @@ type NativeButton = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'class' | 
 
 interface ButtonProps extends NativeButton {
   readonly variant?: ButtonVariant;
-  /** `sm` é o controle compacto do desktop (24px); no celular todo botão tem 44px. */
+  /** `sm` é o controle compacto (24px). */
   readonly size?: 'md' | 'sm';
   /** Classes extras de layout (a aparência do botão vem de `variant` e `size`). */
   readonly class?: string;

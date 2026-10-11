@@ -75,11 +75,12 @@ function resizeFocused(dx: number, dy: number): void {
 /**
  * Atalhos de teclado. Diálogos abertos cuidam do próprio teclado (Esc).
  * O listener é inscrito uma vez; `dialogs` aponta para a versão atual.
+ * `enabled` falso (janela estreita, com o editor atrás do aviso) desliga todos.
  */
 export function useEditorShortcuts(
   dialogs: EditorDialogs,
   commands: ProjectCommands,
-  desktop = true,
+  enabled = true,
 ): void {
   const editor = useEditor();
   const { store, ui, canvas, actions, review } = editor;
@@ -92,9 +93,8 @@ export function useEditorShortcuts(
   dialogsRef.current = dialogs;
   const commandsRef = useRef(commands);
   commandsRef.current = commands;
-  // No desktop as janelas ficam encaixadas; no celular abrem em tela cheia (B6).
-  const desktopRef = useRef(desktop);
-  desktopRef.current = desktop;
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
   useEffect(() => {
     const altNumbers = altNumbersAvailable(
@@ -186,20 +186,12 @@ export function useEditorShortcuts(
           return;
         }
         case 'hide-window': {
-          if (!desktopRef.current) {
-            ui.mobileWindow.value = null;
-            return;
-          }
           const focused = focusedWindow();
           if (focused) hideToolWindow(focused.id);
           return;
         }
         case 'toggle-window': {
           const { window } = shortcut;
-          if (!desktopRef.current) {
-            ui.mobileWindow.value = ui.mobileWindow.peek() === window ? null : window;
-            return;
-          }
           // Fechada ou sem foco dentro: abre e foca; já em foco: esconde.
           if (focusedWindow()?.id === window) toggleToolWindow(window);
           else showAndFocusToolWindow(window);
@@ -218,9 +210,7 @@ export function useEditorShortcuts(
         case 'export':
           return void commandsRef.current.exportProject();
         case 'layers':
-          if (desktopRef.current) return showAndFocusToolWindow('layers');
-          ui.mobileWindow.value = 'layers';
-          return;
+          return showAndFocusToolWindow('layers');
         case 'help':
           return dialogsRef.current.show({ kind: 'help' });
         case 'settings':
@@ -238,9 +228,7 @@ export function useEditorShortcuts(
             'marking'
           )
             return;
-          // Celular: a gaveta abre (ela só monta Detalhes aberta).
-          if (desktopRef.current) showToolWindow('details');
-          else ui.sheet.value = 'open';
+          showToolWindow('details');
           requestAnimationFrame(() => button()?.click());
           return;
         }
@@ -273,14 +261,9 @@ export function useEditorShortcuts(
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return;
+      if (e.defaultPrevented || !enabledRef.current) return;
       if (document.querySelector('dialog[open]')) return;
-      // No celular não há atalhos de revisão (as ações estão nos botões de 44px).
-      if (
-        review.proposalId.peek() !== null &&
-        desktopRef.current &&
-        !isTextInput(e.target)
-      ) {
+      if (review.proposalId.peek() !== null && !isTextInput(e.target)) {
         const reviewShortcut = reviewShortcutFor(e);
         if (reviewShortcut) {
           e.preventDefault();

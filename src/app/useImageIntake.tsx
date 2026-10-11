@@ -2,21 +2,13 @@ import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import type { ProjectImage } from '../model';
 import type { AspectChange } from '../store/session';
-import { reportError } from '../utils/report';
 import { useEditor } from '../ui/EditorContext';
-import {
-  canReadClipboard,
-  dragHasFiles,
-  imagesFromPaste,
-  readClipboardImages,
-  splitImageFiles,
-} from './imageIntake';
+import { dragHasFiles, imagesFromPaste, splitImageFiles } from './imageIntake';
 import { isTextInput } from './shortcuts';
 import type { EditorDialogs } from './useEditorDialogs';
 import type { EditorNotices } from './useEditorNotices';
 
 interface ImageIntakeOptions {
-  readonly desktop: boolean;
   readonly dialogs: EditorDialogs;
   readonly notices: EditorNotices;
 }
@@ -26,10 +18,8 @@ export interface ImageIntake {
   readonly replaceInput: { current: HTMLInputElement | null };
   onImagesChosen(input: HTMLInputElement): Promise<void>;
   onReplaceChosen(input: HTMLInputElement): Promise<void>;
-  /** Botão de adicionar: no celular com clipboard, oferece "Colar imagem". */
+  /** Botão de adicionar: abre o seletor de arquivos. */
   onAddClick(): void;
-  pickFromDevice(): void;
-  pasteImage(): Promise<void>;
   requestReplace(image: ProjectImage): void;
   readonly dropHandlers: {
     readonly onDragOver: (e: DragEvent) => void;
@@ -39,11 +29,7 @@ export interface ImageIntake {
 }
 
 /** Entrada de imagens: escolher, colar, arrastar e soltar, e trocar o arquivo de uma imagem. */
-export function useImageIntake({
-  desktop,
-  dialogs,
-  notices,
-}: ImageIntakeOptions): ImageIntake {
+export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageIntake {
   const { session, store, ui, canvas } = useEditor();
   const { busy, setProgress, setMessage } = notices;
   const readOnly = store.locked.value;
@@ -165,25 +151,7 @@ export function useImageIntake({
       if (!file || !imageId) return;
       await replaceWith(imageId, file);
     },
-    onAddClick: () => {
-      if (!desktop && canReadClipboard()) dialogs.show({ kind: 'addMenu' });
-      else imageInput.current?.click();
-    },
-    pickFromDevice: () => {
-      dialogs.close();
-      imageInput.current?.click();
-    },
-    pasteImage: async () => {
-      dialogs.close();
-      try {
-        const files = await readClipboardImages();
-        if (files.length === 0) setMessage(t('editor.pasteEmpty'));
-        else await addAtViewCenter(files);
-      } catch (e) {
-        reportError('editor.paste', e);
-        setMessage(t('editor.pasteFailed'));
-      }
-    },
+    onAddClick: () => imageInput.current?.click(),
     requestReplace: (image) => {
       replaceTarget.current = image.id;
       replaceInput.current?.click();

@@ -3,17 +3,13 @@
  * estes números; `tests/theme/tokenLiterals.test.ts` confere que os dois batem.
  */
 export const BREAKPOINTS = {
-  /** Maior largura do layout de celular. */
-  mobileMax: 899,
-  /** Menor largura do layout de desktop. */
-  desktop: 900,
+  /** Menor largura da app (só desktop): abaixo dela, o aviso "Abra numa janela maior". */
+  appMin: 900,
   /** Maior largura do desktop "compacto" (botões da barra só com ícone). */
   compact: 1199,
   /** Largura de referência dos mockups de desktop. */
   design: 1440,
-  /** Largura de referência dos mockups de celular. */
-  mobileDesign: 380,
 } as const;
 
-/** Layout de desktop (docs/history/PLAN-etapas-1-2.md, 7.1). */
-export const DESKTOP_QUERY = `(min-width: ${BREAKPOINTS.desktop}px)`;
+/** Janela abaixo da largura mínima da app. */
+export const NARROW_QUERY = `(max-width: ${BREAKPOINTS.appMin - 1}px)`;

@@ -28,16 +28,10 @@ describe('canvasTokensFrom', () => {
     expect(t.nameTag).toBe(t.select);
     expect(t.badge).toBe('rgba(10, 12, 16, 0.9)');
     expect(t.card).toBe('rgba(255, 255, 255, 0.92)');
-    expect(t.opacity).toEqual({
-      dimmed: 0.35,
-      ancestor: 0.75,
-      inherited: 0.7,
-      grabbed: 0.25,
-    });
+    expect(t.opacity).toEqual({ dimmed: 0.35, ancestor: 0.75, inherited: 0.7 });
     expect(t.type.name).toEqual({ size: 11, line: 16, weight: 600 });
     expect(t.type.caption).toEqual({ size: 10, line: 14, weight: 400 });
     expect(t.radius).toEqual({ sm: 4, md: 6 });
-    expect(t.grabShadow).toEqual({ blur: 14, color: 'rgba(77, 141, 255, 0.8)' });
     expect(t.fontFamily).toBe(tokenValue('font-sans', 'light'));
   });
 
@@ -59,9 +53,8 @@ describe('canvasTokensFrom', () => {
     expect(light.select).toBe(dark.select);
   });
 
-  it('alça maior com toque', () => {
+  it('alça de 10 px', () => {
     expect(canvasTokensFrom(reader('light')).handleSize).toBe(10);
-    expect(canvasTokensFrom(reader('light'), true).handleSize).toBe(14);
   });
 
   it('só usa tokens que existem', () => {
@@ -69,7 +62,7 @@ describe('canvasTokensFrom', () => {
     canvasTokensFrom((name) => {
       asked.add(name);
       return reader('light')(name);
-    }, true);
+    });
     for (const name of asked) expect(name.slice(2) in TOKENS, name).toBe(true);
   });
 });
@@ -94,8 +87,7 @@ describe('tokens do cadeado', () => {
     }
   });
 
-  it('o lado é 20 px, e 24 px (alvo mínimo) com toque', () => {
+  it('o lado é 20 px', () => {
     expect(canvasTokensFrom(reader('light')).lock.size).toBe(20);
-    expect(canvasTokensFrom(reader('light'), true).lock.size).toBe(24);
   });
 });

@@ -7,8 +7,6 @@ import {
   createProject,
   drawMarking,
   exportMapping,
-  isMobile,
-  openDetails,
   openExport,
   watchViolations,
 } from './helpers';
@@ -20,12 +18,10 @@ import { solidPng } from './png';
 const DIST = join(process.cwd(), 'dist');
 
 /** Fluxo principal da app: criar projeto, imagem, marcação, anotação e exportar. */
-async function mainFlow(page: Page, info: Parameters<typeof isMobile>[0], url = '/') {
+async function mainFlow(page: Page, url = '/') {
   await createProject(page, 'Projeto CSP', url);
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
-
-  await openDetails(page);
+  await drawMarking(page, await canvasPoint(page));
   await page
     .getByRole('button', { name: /Adicionar anotação na camada/ })
     .first()
@@ -203,7 +199,7 @@ test.describe('CSP do index.html', () => {
   test('fluxo principal sem nenhuma violação (inclui copiar ID, colar e arrastar imagens)', async ({
     page,
     context,
-  }, info) => {
+  }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const violations = await watchViolations(page);
     const consoleErrors: string[] = [];
@@ -211,10 +207,9 @@ test.describe('CSP do index.html', () => {
       if (m.text().includes('Content Security Policy')) consoleErrors.push(m.text());
     });
 
-    await mainFlow(page, info);
+    await mainFlow(page);
 
     // Copiar ID (área de transferência).
-    await openDetails(page);
     const copyId = page.getByRole('button', { name: /^Copiar ID/ }).first();
     if (await copyId.isVisible()) {
       await copyId.click();
@@ -264,7 +259,7 @@ test.describe('CSP do index.html', () => {
     expect(consoleErrors).toEqual([]);
   });
 
-  test('compartilhar o zip (Web Share) funciona sob a CSP', async ({ page }, info) => {
+  test('compartilhar o zip (Web Share) funciona sob a CSP', async ({ page }) => {
     const violations = await watchViolations(page);
     await page.addInitScript(() => {
       const shared: string[] = [];
@@ -278,7 +273,7 @@ test.describe('CSP do index.html', () => {
     });
     await createProject(page, 'Projeto CSP');
     await addImage(page);
-    await drawMarking(page, info, await canvasPoint(page));
+    await drawMarking(page, await canvasPoint(page));
     await openExport(page);
     await page.getByRole('button', { name: 'Compartilhar' }).click();
     await expect
@@ -291,10 +286,10 @@ test.describe('CSP do index.html', () => {
 
   test('aberto por file://: o fluxo principal funciona e a política vale igual', async ({
     page,
-  }, info) => {
+  }) => {
     const violations = await watchViolations(page);
     const url = pathToFileURL(join(DIST, 'index.html')).href;
-    await mainFlow(page, info, url);
+    await mainFlow(page, url);
     expect(violations()).toEqual([]);
     // O mesmo bloqueio de rede vale em file://.
     const blocked = await page.evaluate(() =>

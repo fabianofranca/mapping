@@ -27,14 +27,14 @@ import { Button, IconButton, Select } from './controls';
 
 // Conteúdo das camadas: a lista (visibilidade, camada ativa, nome, cor, ordem e
 // exclusão) e o modo de exibição das marcações sem anotação. É o miolo da janela
-// Camadas (desktop, `LayersWindow`; no celular, a tela cheia de `MobileWindow`).
+// Camadas (o conteúdo da janela `LayersWindow`).
 
 interface LayersProps {
   readonly project: Project;
   readonly readOnly: boolean;
 }
 
-/** Nova camada e Mostrar todas: ícones no cabeçalho da janela (e da tela cheia). */
+/** Nova camada e Mostrar todas: ícones no cabeçalho da janela. */
 export function LayerActions({ project, readOnly }: LayersProps) {
   const { ui, actions } = useEditor();
   const onAdd = () => {

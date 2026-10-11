@@ -12,7 +12,7 @@ import { Flag } from '../ui/review/Flag';
 import type { EditorDialogs } from './useEditorDialogs';
 import type { ProjectCommands } from './useProjectCommands';
 
-// Barra principal do desktop (40px, seção Layouts do DS 2.0): ícone, projeto ▾,
+// Barra principal (40px, seção Layouts do DS 2.0): ícone, projeto ▾,
 // ferramentas, camada ativa, Especializações, Exportar, Ajuda e Configurações.
 // Fechar foi para o menu do projeto; o estado do salvamento, para a barra de status;
 // Lista virou janela e "Texto no canvas" foi para a barra dos breadcrumbs.
@@ -55,7 +55,7 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
 
       <div class="toolbar">
         <ModeButtons />
-        <AddImagesButton desktop busy={busy} onAdd={onAdd} />
+        <AddImagesButton busy={busy} onAdd={onAdd} />
         <HistoryButtons />
       </div>
 

@@ -17,7 +17,7 @@ import { useApplyAccepted, useDecideVisible, useShowProblem } from './useReview'
 // origem, progresso, contagens e as quatro ações (Rejeitar tudo, Aceitar tudo, Aplicar
 // aceitas · N, o único primário, e Sair da revisão). Com filtros ativos, o lote vale só
 // para o que a lista mostra. Abaixo de 1200px fica compacta (contagens só com ícone e o
-// lote num menu "Em lote"); no celular é a faixa de duas linhas (`MobileReviewStrip`).
+// lote num menu "Em lote").
 
 function Stat({
   label,
@@ -196,45 +196,6 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
         <Button variant="ghost" title={t('review.exitTip')} onClick={onExit}>
           {t('review.exit')}
         </Button>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Celular (`mp-mstrip`): selo e título numa linha; progresso e contagens na outra. Fica
- * entre a barra de cima e o canvas; as ações vão para a barra de baixo e o menu.
- */
-export function MobileReviewStrip() {
-  const { review } = useEditor();
-  const p = review.derived.proposal.value;
-  if (!p) return null;
-  const counts = review.derived.counts.value;
-  return (
-    <section class="review-strip" aria-label={t('review.region')}>
-      <div class="review-strip-top">
-        <span class="review-badge">
-          <Icon name="proposal" />
-          {t('review.mode')}
-        </span>
-        <b title={p.title}>{p.title}</b>
-      </div>
-      <div class="review-strip-stats">
-        <ProgressBar summary={counts} wide />
-        <Stat label={t('review.count.undecided')} value={counts.undecided} compact>
-          <DecisionMark state="undecided" decorative />
-        </Stat>
-        <Stat label={t('review.count.accepted')} value={counts.accepted} compact>
-          <DecisionMark state="accepted" decorative />
-        </Stat>
-        <Stat label={t('review.count.rejected')} value={counts.rejected} compact>
-          <DecisionMark state="rejected" decorative />
-        </Stat>
-        {counts.conflicts > 0 && (
-          <Stat label={t('review.count.conflicts')} value={counts.conflicts} compact warn>
-            <Icon name="warning" />
-          </Stat>
-        )}
       </div>
     </section>
   );

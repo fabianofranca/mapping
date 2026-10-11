@@ -15,7 +15,7 @@ interface ChipProps extends NativeButton {
 }
 
 /**
- * Chip de filtro (Chip do DS 2.0): alternância compacta de 24px (44px no celular), com
+ * Chip de filtro (Chip do DS 2.0): alternância compacta de 24px, com
  * contagem opcional. Usado nos filtros da revisão (tipo de mudança, só conflitos).
  */
 export function Chip({ pressed, children, count, type = 'button', ...rest }: ChipProps) {

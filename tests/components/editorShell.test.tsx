@@ -23,9 +23,7 @@ vi.mock('../../src/app/controller', async () => {
 });
 
 import { CanvasNotices } from '../../src/app/CanvasNotices';
-import { EditorBottomBar } from '../../src/app/EditorBottomBar';
 import { EditorMainBar } from '../../src/app/EditorMainBar';
-import { EditorTopBar } from '../../src/app/EditorTopBar';
 import { ErrorBoundary } from '../../src/app/ErrorBoundary';
 import { ExportDialog } from '../../src/app/ExportDialog';
 import { useEditorNotices } from '../../src/app/useEditorNotices';
@@ -438,80 +436,17 @@ describe('barras do editor', () => {
     expect(dialogs.show).not.toHaveBeenCalled();
   });
 
-  it('topo (celular): o chip da camada ativa abre Camadas em tela cheia', async () => {
-    const harness = createHarness(sampleProject());
-    const dialogs = fakeDialogs();
-    withContext(
-      harness,
-      <EditorTopBar dialogs={dialogs} commands={fakeCommands()} busy={false} />,
-    );
-    const name = harness.project().layers[0]?.name ?? '';
-    await userEvent.click(
-      screen.getByRole('button', { name: t('layer.chipLabel', { name }) }),
-    );
-    expect(harness.ui.mobileWindow.value).toBe('layers');
-    expect(dialogs.show).not.toHaveBeenCalled();
-  });
-
-  it('topo (celular): projeto ▾, salvamento e ⋯ abre o menu Painéis', async () => {
-    const harness = createHarness(sampleProject());
-    const dialogs = fakeDialogs();
-    const commands = fakeCommands();
-    withContext(
-      harness,
-      <EditorTopBar dialogs={dialogs} commands={commands} busy={false} />,
-    );
-    const user = userEvent.setup();
-    // O salvamento fica só no ícone (o texto é o nome acessível).
-    expect(screen.getByText(t('status.saved'))).toBeTruthy();
-    harness.actions.renameProject('Novo');
-    const trigger = await screen.findByRole('button', { name: t('editor.projectMenu') });
-    expect(trigger.textContent).toContain('Novo');
-    await user.click(trigger);
-    await user.click(screen.getByRole('button', { name: t('editor.export') }));
-    expect(commands.exportProject).toHaveBeenCalledOnce();
-    await user.click(screen.getByRole('button', { name: t('panels.more') }));
-    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'panels' });
-  });
-
-  it('topo (celular): erro ao salvar vira botão que tenta de novo', async () => {
-    const harness = createHarness(sampleProject());
-    const flush = vi
-      .spyOn(harness.context.session, 'flush')
-      .mockResolvedValue({ ok: true });
-    Object.defineProperty(harness.context.session, 'saveStatus', {
-      value: signal('error'),
-    });
-    withContext(
-      harness,
-      <EditorTopBar dialogs={fakeDialogs()} commands={fakeCommands()} busy={false} />,
-    );
-    await userEvent.click(screen.getByRole('button', { name: t('status.errorRetry') }));
-    expect(flush).toHaveBeenCalledOnce();
-  });
-
-  it('inferior (celular): ferramentas, adicionar imagens e Painéis (sem abas)', async () => {
-    const harness = createHarness(sampleProject());
-    const onAdd = vi.fn();
-    const onPanels = vi.fn();
-    withContext(
-      harness,
-      <EditorBottomBar busy={false} onAdd={onAdd} onPanels={onPanels} />,
-    );
-    const user = userEvent.setup();
-    expect(screen.queryByRole('tab')).toBeNull();
-    await user.click(screen.getByRole('button', { name: t('editor.addImages') }));
-    expect(onAdd).toHaveBeenCalledOnce();
-    // O nome ganha "(há erros novos)" quando o Diagnóstico tem erro não visto.
-    await user.click(
-      screen.getByRole('button', { name: new RegExp(`^${t('panels.open')}`) }),
-    );
-    expect(onPanels).toHaveBeenCalledOnce();
-  });
-
-  it('somente leitura ou ocupado desabilita desenhar e adicionar', () => {
+  it('principal: somente leitura ou ocupado desabilita desenhar e adicionar', () => {
     const harness = createHarness(sampleProject(), true);
-    withContext(harness, <EditorBottomBar busy onAdd={vi.fn()} onPanels={vi.fn()} />);
+    withContext(
+      harness,
+      <EditorMainBar
+        busy
+        onAdd={vi.fn()}
+        dialogs={fakeDialogs()}
+        commands={fakeCommands()}
+      />,
+    );
     expect(
       screen.getByRole('button', { name: t('editor.modeDraw') }).hasAttribute('disabled'),
     ).toBe(true);

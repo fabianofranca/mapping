@@ -110,10 +110,6 @@ const TEXT_STYLES: readonly TextStyle[] = [
   { name: 't-small', size: 12, line: 16, weight: 400 },
   { name: 't-label', size: 12, line: 16, weight: 400 },
   { name: 't-micro', size: 11, line: 16, weight: 600 },
-  { name: 't-m-title', size: 16, line: 20, weight: 600 },
-  { name: 't-m-body', size: 14, line: 20, weight: 400 },
-  { name: 't-m-input', size: 16, line: 24, weight: 400 },
-  { name: 't-m-small', size: 13, line: 18, weight: 400 },
   { name: 't-cv-name', size: 11, line: 16, weight: 600, parts: true },
   { name: 't-cv-image', size: 12, line: 16, weight: 600, parts: true },
   { name: 't-cv-card', size: 11, line: 15, weight: 400, parts: true },
@@ -123,27 +119,26 @@ const TEXT_STYLES: readonly TextStyle[] = [
 ];
 
 /**
- * Papéis da interface que dependem da densidade: o desktop usa a escala `t-*` e controles
- * de 28px; o celular usa a `t-m-*` e alvos de 44px (o bloco `@media` abaixo troca os alias).
- * O CSS dos componentes usa só os papéis, nunca a escala direta.
+ * Papéis da interface: alias para a escala `t-*` e os tamanhos de controle (28px). O CSS
+ * dos componentes usa só os papéis, nunca a escala direta.
  */
-const ROLES: Readonly<Record<string, { desktop: string; mobile: string }>> = {
-  't-text': { desktop: 't-body', mobile: 't-m-body' },
-  't-text-small': { desktop: 't-small', mobile: 't-m-small' },
-  't-text-heading': { desktop: 't-heading', mobile: 't-m-title' },
-  't-text-title': { desktop: 't-title', mobile: 't-m-title' },
-  't-text-input': { desktop: 't-body', mobile: 't-m-input' },
+const ROLES: Readonly<Record<string, string>> = {
+  't-text': 't-body',
+  't-text-small': 't-small',
+  't-text-heading': 't-heading',
+  't-text-title': 't-title',
+  't-text-input': 't-body',
   /** Altura de Button, TextField, Select, Segmented e IconButton. */
-  'control-height': { desktop: 'size-control-lg', mobile: 'size-touch' },
+  'control-height': 'size-control-lg',
   /** Altura dos controles compactos (`size="sm"`). */
-  'control-height-sm': { desktop: 'size-control', mobile: 'size-touch' },
-  'control-radius': { desktop: 'radius-sm', mobile: 'radius-lg' },
+  'control-height-sm': 'size-control',
+  'control-radius': 'radius-sm',
   /** Lado do ícone. */
-  'control-icon': { desktop: 'size-icon', mobile: 'size-icon-touch' },
+  'control-icon': 'size-icon',
   /** Lado da caixa de seleção e do rádio. */
-  'control-check': { desktop: 'size-icon', mobile: 'size-target-min' },
+  'control-check': 'size-icon',
   /** Altura de uma linha de árvore ou de lista (TreeRow). */
-  'row-height': { desktop: 'size-row', mobile: 'size-touch' },
+  'row-height': 'size-row',
 };
 
 const SCALES: Readonly<Record<string, TokenValue>> = {
@@ -168,11 +163,6 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
     light: '0 8px 24px rgba(16, 24, 40, 0.18)',
     dark: '0 8px 24px rgba(0, 0, 0, 0.5)',
   },
-  'shadow-sheet': {
-    light: '0 -8px 24px rgba(16, 24, 40, 0.16)',
-    dark: '0 -8px 24px rgba(0, 0, 0, 0.5)',
-  },
-  'shadow-grabbed': '0 0 14px rgba(77, 141, 255, 0.8)',
   // Tamanhos
   'size-touch': '44px',
   'size-target-min': '24px',
@@ -184,12 +174,9 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-statusbar': '26px',
   'size-stripe': '40px',
   'size-icon': '16px',
-  'size-icon-touch': '20px',
   'size-handle': '10px',
-  'size-handle-touch': '14px',
   /** Emblema do cadeado no canvas (px de tela). */
   'size-lock-badge': '20px',
-  'size-lock-badge-touch': '24px',
   'size-tw-left': '264px',
   'size-tw-right': '360px',
   'size-tw-bottom': '208px',
@@ -203,6 +190,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
    */
   'size-review-col-summary': '232px',
   'size-proposal-col-counts': '236px',
+  /** Largura mínima da app (só desktop): abaixo dela, o aviso "Abra numa janela maior". */
+  'size-app-min': `${BREAKPOINTS.appMin}px`,
   'size-canvas-min': '320px',
   'size-resize-hit': '8px',
   'size-label-col': '92px',
@@ -215,11 +204,6 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-home-main': '960px',
   /** Seletor de referência (popup no topo, B14). */
   'size-picker': '600px',
-  'size-sheet-peek': '64px',
-  'size-m-bar': '52px',
-  'size-m-toolbar': '60px',
-  /** Botão de janela no menu Painéis do celular (B6). */
-  'size-panel-tile': '68px',
   // Opacidades
   'opacity-disabled': '0.45',
   'opacity-dimmed': '0.35',
@@ -227,6 +211,7 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'opacity-inherited': '0.7',
   'opacity-hidden-layer': '0.6',
   'opacity-card': '0.92',
+  /** Retângulo da vista no minimapa. */
   'opacity-grabbed': '0.25',
   'opacity-halo': '0.72',
   // Movimento
@@ -239,18 +224,14 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'z-canvas': '0',
   'z-canvas-overlay': '10',
   'z-toolwindow': '20',
-  'z-sheet': '30',
   'z-popover': '40',
   'z-tooltip': '50',
   'z-picker': '60',
   'z-dialog': '70',
   'z-banner': '80',
   // Breakpoints (só documentação: media queries usam `breakpoints.ts`)
-  'bp-mobile-max': `${BREAKPOINTS.mobileMax}px`,
-  'bp-desktop': `${BREAKPOINTS.desktop}px`,
   'bp-compact': `${BREAKPOINTS.compact}px`,
   'bp-design': `${BREAKPOINTS.design}px`,
-  'bp-mobile-design': `${BREAKPOINTS.mobileDesign}px`,
 };
 
 function fontFamily(style: TextStyle): string {
@@ -276,7 +257,7 @@ export const TOKENS: Readonly<Record<string, TokenValue>> = {
   ...FONTS,
   ...textTokens(),
   ...Object.fromEntries(
-    Object.entries(ROLES).map(([role, { desktop }]) => [role, `var(--${desktop})`]),
+    Object.entries(ROLES).map(([role, target]) => [role, `var(--${target})`]),
   ),
   ...SCALES,
 };
@@ -297,9 +278,6 @@ export function renderTokensCss(): string {
   const all = Object.entries(TOKENS);
   const light = all.map(([name, v]) => [name, isThemed(v) ? v.light : v] as const);
   const dark = all.flatMap(([name, v]) => (isThemed(v) ? [[name, v.dark] as const] : []));
-  const roles = Object.entries(ROLES).map(
-    ([role, { mobile }]) => [role, `var(--${mobile})`] as const,
-  );
   const indent = (block: string) => block.replaceAll(/^ {4}/gm, '  ');
 
   return [
@@ -319,12 +297,6 @@ export function renderTokensCss(): string {
     ":root[data-theme='dark'] {",
     '  color-scheme: dark;',
     indent(declarations(dark)),
-    '}',
-    '',
-    `@media (max-width: ${BREAKPOINTS.mobileMax}px) {`,
-    '  :root {',
-    declarations(roles),
-    '  }',
     '}',
     '',
   ].join('\n');

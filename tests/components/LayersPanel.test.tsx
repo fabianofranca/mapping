@@ -8,8 +8,8 @@ import { LayerActions, LayersPanel } from '../../src/ui/LayersPanel';
 import { cadastroProject } from '../model/specFixtures';
 import { createHarness, renderLive } from './harness';
 
-// Camadas (B3): o conteúdo da janela do desktop e da tela cheia do celular é o mesmo
-// `LayersPanel`; Nova camada e Mostrar todas vêm de `LayerActions`.
+// Camadas (B3): o conteúdo da janela é o `LayersPanel`; Nova camada e Mostrar todas
+// vêm de `LayerActions`.
 
 beforeEach(() => {
   locale.value = 'pt-BR';

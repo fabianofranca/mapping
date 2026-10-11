@@ -106,8 +106,8 @@ describe('media queries', () => {
     expect(bad).toEqual([]);
   });
 
-  it('o tokens.ts emite o breakpoint do celular na mesma largura', () => {
-    expect(BREAKPOINTS.mobileMax + 1).toBe(BREAKPOINTS.desktop);
+  it('a largura mínima da app é a do token size-app-min', () => {
+    expect(TOKENS['size-app-min']).toBe(`${BREAKPOINTS.appMin}px`);
   });
 });
 

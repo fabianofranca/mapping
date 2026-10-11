@@ -89,7 +89,7 @@ function AnnotationCell({
  * Janela Lista (P7): tabela Marcação | Camada | Anotação | Conteúdo, agrupada por
  * imagem, com uma linha por anotação. Escolher uma linha seleciona a marcação. Os
  * filtros são as camadas visíveis (compartilhadas com o canvas e o painel), "marcações
- * sem anotação" e "só incompletas". No celular a tabela vira cartões (CSS).
+ * sem anotação" e "só incompletas".
  */
 export function ListView({ onSelect }: ListViewProps) {
   // Camadas visíveis (a lista respeita esse filtro) e os dados já montados da lista.

@@ -32,18 +32,14 @@ export const enUS: Dictionary = {
 
   'home.start': 'Get started',
   'home.newProject': 'New project',
-  'home.newProjectHint': 'Stored on this device',
   'home.openFolder': 'Open folder',
-  'home.openFolderHint': 'Saves straight to the folder files',
   'home.openZip': 'Open zip',
-  'home.openZipHint': 'Imports an exported project',
   'home.localProjects': 'Projects on this device',
   'home.noLocalProjects': 'No projects stored on this device yet.',
   'home.unsupported':
-    'This browser cannot open folders or store projects. Use Chrome or Edge on a computer, or the hosted version on your phone.',
+    'This browser cannot open folders or store projects. Use Chrome or Edge on a computer.',
   'home.fileProtocolWarning':
     'Opened as a file: projects "on this device" may not be kept by the browser. On a computer, prefer Open folder.',
-  'home.updatedAt': 'Changed {date}',
   'home.deleteTitle': 'Delete project?',
   'home.deleteMessage':
     '"{name}" will be removed from this device, with all its images. This cannot be undone.',
@@ -63,10 +59,6 @@ export const enUS: Dictionary = {
 
   'editor.addImages': 'Add images',
   'editor.importing': 'Importing {current} of {total}…',
-  'editor.addFromDevice': 'Choose file or camera',
-  'editor.pasteImage': 'Paste image',
-  'editor.pasteEmpty': 'There is no image on the clipboard.',
-  'editor.pasteFailed': 'Could not paste the image.',
   'editor.dropIgnored': 'Ignored (not an image): {names}',
   'editor.importFailed': 'Could not import: {names}',
   'editor.export': 'Export',
@@ -97,9 +89,7 @@ export const enUS: Dictionary = {
 
   'panel.details': 'Details',
   'panel.nothingSelected': 'Nothing selected',
-  'panel.empty': 'Tap or click an image or marking on the canvas to see its details.',
-  'panel.expand': 'Show details',
-  'panel.collapse': 'Hide details',
+  'panel.empty': 'Click an image or marking on the canvas to see its details.',
 
   'editor.modeNavigate': 'Navigate',
   'editor.modeDraw': 'Draw',
@@ -168,8 +158,6 @@ export const enUS: Dictionary = {
   'layer.newName': 'Layer {n}',
   'layer.title': 'Layers',
   'layer.chipLabel': 'Layers (active: {name})',
-  'layer.hint':
-    'The active layer receives new annotations and is always visible. Check the others to see them on the canvas and in the panel.',
   'layer.add': 'New layer',
   'layer.showAll': 'Show all',
   'layer.visible': 'Show layer {name}',
@@ -233,17 +221,6 @@ export const enUS: Dictionary = {
   'window.resize': 'Drag to resize {name} (double click resets it)',
   'window.closeWindow': 'Close the {name} window',
   'window.bottomTabs': 'Bottom windows',
-  'sheet.full': 'Open Details full screen',
-  'sheet.incomplete': 'Marking has pending issues',
-  'status.errorRetry': 'Save failed: tap to try again',
-  'panels.title': 'Panels and actions',
-  'panels.open': 'Panels',
-  'panels.more': 'More: panels and actions',
-  'panels.windows': 'Windows',
-  'panels.project': 'Project',
-  'panels.pending': '{count} pending',
-  'mobile.back': 'Back to canvas',
-  'mobile.toolbar': 'Tools',
 
   'crumbs.label': 'Selection path',
   'crumbs.image': 'Image {name}',
@@ -269,7 +246,6 @@ export const enUS: Dictionary = {
   'status.channelMain': 'stable',
   'status.channelPreview': 'preview',
   'status.channelLabel': 'Build channel: {channel}',
-  'status.build': 'build {id}',
   'status.buildLabel': 'Build identifier: {id}',
 
   'editor.projectMenu': 'Project actions',
@@ -504,7 +480,7 @@ export const enUS: Dictionary = {
   'help.specs.download.data-model': 'Download Data model example (modelo-de-dados.json)',
   'help.specs.download.schema': 'Download JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
-    'To use an example: open a project, choose Specializations (a button on the main bar on desktop, Panels on mobile) → Apply and pick the downloaded file.',
+    'To use an example: open a project, choose Specializations (a button on the main bar) → Apply and pick the downloaded file.',
   'typed.chooseTypeTitle': 'New annotation in {layer}',
   'typed.chooseTypeHint':
     'Pick the type. The fields are predefined; just fill in the values.',

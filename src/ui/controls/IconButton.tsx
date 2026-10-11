@@ -16,7 +16,7 @@ interface IconButtonProps extends NativeButton {
   readonly tooltip?: string;
   /** `accept` e `reject`: o par ✓ ✕ do `DecisionControl` (revisão de propostas). */
   readonly variant?: 'default' | 'danger' | 'accept' | 'reject';
-  /** `sm`: 24px no desktop (linhas e cartões da revisão); no celular continua com 44px. */
+  /** `sm`: 24px (linhas e cartões da revisão). */
   readonly size?: 'md' | 'sm';
   /** Texto visível ao lado do ícone; sem ele, o botão mostra só o ícone. */
   readonly text?: string;
@@ -38,7 +38,7 @@ function iconButtonClass(variant: string, size: 'md' | 'sm'): string {
   );
 }
 
-/** Botão de ícone (28px no desktop, 44px no celular), com dica. */
+/** Botão de ícone (28px), com dica. */
 export function IconButton({
   icon,
   label,

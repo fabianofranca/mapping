@@ -1,7 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { Icon, type IconName } from '../icons';
 
-// Pílula de 18px (20px no celular) com um fato sobre a linha (HANDOFF-PROPOSALS 2.1):
+// Pílula de 18px com um fato sobre a linha (HANDOFF-PROPOSALS 2.1):
 // Conflito, Trancado, junto, Envolvida, o status da proposta. Não é interativa (o `Chip`
 // é que é); o texto aparece sempre, nunca só o ícone.
 

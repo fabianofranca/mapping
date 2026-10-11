@@ -13,7 +13,7 @@ import {
 } from '../store/settings';
 import { Choice, Segmented, Select } from './controls';
 
-/** Idioma, tema (segmentado) e texto no canvas. Vive no diálogo Configurações e no Menu do celular. */
+/** Idioma, tema (segmentado) e texto no canvas. Vive no diálogo Configurações. */
 export function SettingsBar() {
   return (
     <div class="settings" role="group" aria-label={t('settings.title')}>

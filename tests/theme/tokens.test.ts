@@ -14,7 +14,7 @@ const FAMILIES: Record<string, readonly string[]> = {
   fonte: ['font-sans', 'font-mono'],
   tipografia: [
     't-display',
-    't-m-input',
+    't-body',
     't-cv-name',
     't-cv-caption-size',
     't-code',
@@ -22,18 +22,18 @@ const FAMILIES: Record<string, readonly string[]> = {
   ],
   espaço: ['space-0-5', 'space-1-5', 'space-3', 'space-4', 'space-8'],
   raio: ['radius-xs', 'radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'radius-full'],
-  tamanho: ['size-touch', 'size-target-min', 'size-handle-touch', 'size-tw-right'],
-  breakpoint: [
-    'bp-mobile-max',
-    'bp-desktop',
-    'bp-compact',
-    'bp-design',
-    'bp-mobile-design',
+  tamanho: [
+    'size-touch',
+    'size-target-min',
+    'size-handle',
+    'size-tw-right',
+    'size-app-min',
   ],
+  breakpoint: ['bp-compact', 'bp-design'],
   opacidade: ['opacity-disabled', 'opacity-halo'],
   duração: ['duration-instant', 'duration-base', 'easing-standard'],
   'z-index': ['z-canvas', 'z-dialog', 'z-banner'],
-  sombra: ['shadow-popup', 'shadow-sheet', 'shadow-grabbed'],
+  sombra: ['shadow-popup'],
 };
 
 const css = renderTokensCss();
@@ -74,19 +74,13 @@ describe('tokens', () => {
     }
   });
 
-  it('o celular troca os papéis de texto para a escala t-m-*', () => {
-    expect(css).toMatch(
-      /@media \(max-width: 899px\) \{\s*:root \{[^}]*--t-text: var\(--t-m-body\)/,
-    );
+  it('papéis com um valor só (só desktop): texto t-*, controles de 28px e ícone de 16px', () => {
     expect(tokenValue('t-text', 'light')).toBe('var(--t-body)');
-  });
-
-  it('a densidade troca de 28px/16px (desktop) para 44px/20px (celular)', () => {
     expect(tokenValue('control-height', 'light')).toBe('var(--size-control-lg)');
     expect(tokenValue('control-icon', 'light')).toBe('var(--size-icon)');
-    expect(css).toMatch(
-      /@media \(max-width: 899px\) \{\s*:root \{[^}]*--control-height: var\(--size-touch\)[^}]*--control-icon: var\(--size-icon-touch\)/,
-    );
+    expect(tokenValue('size-app-min', 'light')).toBe('900px');
+    // Sem troca de densidade por largura: o CSS dos tokens não tem media query de largura.
+    expect(css).not.toMatch(/@media \((?:min|max)-width/);
   });
 
   it('nomes de token são válidos como variável CSS', () => {

@@ -28,14 +28,11 @@ export interface ImagePreview {
 /** Alvo de um arrastar-e-soltar de arquivos: área vazia ou uma imagem (será trocada). */
 export type DropTarget = { readonly imageId: string | null } | null;
 
-/** Item "pego" pelo segurar-e-mover: recebe o sinal visual até soltar. */
-export interface Grabbed {
+/** Item trancado sob o mouse: recebe o emblema do cadeado enquanto o cursor está nele. */
+export interface HoverLock {
   readonly kind: 'image' | 'marking';
   readonly id: string;
 }
-
-/** Item trancado sob o mouse: recebe o emblema do cadeado enquanto o cursor está nele. */
-export type HoverLock = Grabbed;
 
 /** Retângulo sendo desenhado (modo Desenhar), em pixels da imagem. */
 export interface Draft {
@@ -47,7 +44,6 @@ export interface Draft {
 export interface InteractionState {
   readonly preview: Signal<ImagePreview | null>;
   readonly draft: Signal<Draft | null>;
-  readonly grabbed: Signal<Grabbed | null>;
   /** Marcação (ou imagem) com a geometria travada sob o mouse; `null` se não há nenhum ou se ele é livre. */
   readonly hoverLock: Signal<HoverLock | null>;
 }
@@ -60,7 +56,6 @@ export interface Frame {
   readonly preview: ImagePreview | null;
   readonly draft: Draft | null;
   readonly dropTarget: DropTarget;
-  readonly grabbed: Grabbed | null;
   readonly hoverLock: HoverLock | null;
   readonly tokens: CanvasTokens;
   readonly size: Size;
@@ -96,7 +91,6 @@ export const OVERLAY_KEYS = [
   'preview',
   'draft',
   'dropTarget',
-  'grabbed',
   'hoverLock',
   'tokens',
   'selection',

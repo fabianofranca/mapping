@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 
-// R2 (docs/redesign/HANDOFF.md): foco visível em tudo e alvos de 44px no celular.
+// R2 (docs/redesign/HANDOFF.md): foco visível em tudo e altura dos controles pelos papéis.
 
 const DIR = 'src/theme';
 const css = Object.fromEntries(
@@ -25,9 +25,9 @@ describe('foco visível', () => {
   });
 });
 
-describe('alvos de toque', () => {
+describe('altura dos controles', () => {
   it.each(['.button', '.icon-button', '.segmented-item', '.input', '.tab'])(
-    '%s usa a altura de densidade (44px no celular)',
+    '%s usa a altura do papel --control-height',
     (selector) => {
       const rule = new RegExp(
         `(?:^|[\\s,])${selector.replace('.', '\\.')}[^{]*\\{[^}]*min-height:\\s*var\\(--control-height\\)`,

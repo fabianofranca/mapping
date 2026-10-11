@@ -16,7 +16,7 @@ import { imageLabel, markingPath } from './labels';
 import { annotationSourceLabel, labelTexts } from './typedText';
 
 // Seletor de referência no estilo "ir para símbolo" (B14): popup de 600px no topo,
-// sem fundo escurecido (no celular, tela cheia), com busca, abas por etiqueta aceita
+// sem fundo escurecido, com busca, abas por etiqueta aceita
 // (P5) e teclado: ↑↓ navegam, Enter escolhe, Ctrl+Enter escolhe e vai até o alvo,
 // Esc fecha e devolve o foco ao campo (quem abre cuida disso em `onClose`).
 

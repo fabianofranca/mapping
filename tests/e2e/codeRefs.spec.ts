@@ -4,11 +4,8 @@ import { join } from 'node:path';
 import {
   addImage,
   canvasPoint,
-  closeDetails,
   drawMarking,
   exportMapping,
-  isMobile,
-  openDetails,
   projectAction,
 } from './helpers';
 
@@ -92,22 +89,12 @@ async function closeDialog(page: Page): Promise<void> {
     .click();
 }
 
-/** Abre uma janela da base: aba no desktop; tela cheia, pelo menu Painéis, no celular. */
+/** Abre uma janela da base pela aba dela. */
 async function openBottomWindow(
   page: Page,
-  info: Parameters<typeof isMobile>[0],
   name: 'Lista de anotações' | 'Incompletas',
 ): Promise<void> {
-  if (!isMobile(info)) {
-    await page.getByRole('button', { name: `Mostrar ${name}` }).click();
-    return;
-  }
-  await closeDetails(page);
-  await page.getByRole('button', { name: /^Painéis/ }).click();
-  await page
-    .getByRole('dialog', { name: 'Painéis e ações' })
-    .getByRole('button', { name: new RegExp(`^${name}`) })
-    .click();
+  await page.getByRole('button', { name: `Mostrar ${name}` }).click();
 }
 
 async function openSettings(page: Page): Promise<void> {
@@ -136,19 +123,14 @@ async function configureRepos(page: Page): Promise<void> {
 }
 
 /** Marcação "Formulário" com a SDUI v2 aplicada e o Screen `Cadastro` criado e preenchido. */
-async function createScreen(
-  page: Page,
-  info: Parameters<typeof isMobile>[0],
-): Promise<void> {
+async function createScreen(page: Page): Promise<void> {
   await openFolderProject(page);
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
   await updateSduiToV2(page);
   await closeDialog(page);
   await configureRepos(page);
   await closeDialog(page);
-
-  await openDetails(page);
   await page.getByRole('button', { name: 'Adicionar anotação na camada Telas' }).click();
   await page.getByRole('button', { name: /^Screen/ }).click();
   await page.getByLabel('nome', { exact: true }).fill('Cadastro');
@@ -184,10 +166,10 @@ async function createScreen(
 
 test('passo 1: atualizar a SDUI para a v2 mostra a camada Telas e as plataformas', async ({
   page,
-}, info) => {
+}) => {
   await openFolderProject(page);
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
   await updateSduiToV2(page);
 
   // As plataformas de cada especialização: nome, id e linguagem.
@@ -197,8 +179,7 @@ test('passo 1: atualizar a SDUI para a v2 mostra a camada Telas e as plataformas
   await expect(specs.getByText('Contrato SDUI · bff · json')).toBeVisible();
   await closeDialog(page);
 
-  // A camada Telas veio com a atualização (o painel de Camadas, no desktop, lista todas).
-  await openDetails(page);
+  // A camada Telas veio com a atualização (o painel de Camadas lista todas).
   await expect(
     page.getByRole('button', { name: 'Adicionar anotação na camada Telas' }),
   ).toBeVisible();
@@ -209,10 +190,10 @@ test('passo 1: atualizar a SDUI para a v2 mostra a camada Telas e as plataformas
 
 test('passo 2: repositórios por plataforma, com os erros da validação', async ({
   page,
-}, info) => {
+}) => {
   await openFolderProject(page);
   await addImage(page);
-  await drawMarking(page, info, await canvasPoint(page));
+  await drawMarking(page, await canvasPoint(page));
   await updateSduiToV2(page);
   await closeDialog(page);
   await configureRepos(page);
@@ -242,8 +223,8 @@ test('passo 2: repositórios por plataforma, com os erros da validação', async
 
 test('passo 3: Screen com codeRef nos Detalhes, na Lista, no resumo e com o aviso', async ({
   page,
-}, info) => {
-  await createScreen(page, info);
+}) => {
+  await createScreen(page);
 
   // Detalhes: uma linha por entrada, "<plataforma> · <arquivo>[:linha]".
   const entries = page.getByRole('list', { name: 'implementação' }).getByRole('listitem');
@@ -282,7 +263,7 @@ test('passo 3: Screen com codeRef nos Detalhes, na Lista, no resumo e com o avis
   await closeDialog(page);
 
   // Lista: uma linha por entrada, com o caminho completo na dica (desktop).
-  await openBottomWindow(page, info, 'Lista de anotações');
+  await openBottomWindow(page, 'Lista de anotações');
   const list = page.getByRole('region', { name: 'Lista de anotações' });
   await expect(list).toBeVisible();
   await expect(
@@ -292,21 +273,16 @@ test('passo 3: Screen com codeRef nos Detalhes, na Lista, no resumo e com o avis
     list.getByText('Android · CadastroViewModel.kt:42', { exact: true }),
   ).toBeVisible();
   await expect(list.getByText('iOS · CadastroView.swift', { exact: true })).toBeVisible();
-  if (!isMobile(info)) {
-    await list.getByText('iOS · CadastroView.swift', { exact: true }).hover();
-    await expect(list.locator('.tooltip', { hasText: VIEW_SWIFT }).first()).toBeVisible();
-  } else {
-    // Sem hover: o caminho completo fica visível.
-    await expect(list.locator('.code-entry-path', { hasText: VIEW_SWIFT })).toBeVisible();
-  }
+  await list.getByText('iOS · CadastroView.swift', { exact: true }).hover();
+  await expect(list.locator('.tooltip', { hasText: VIEW_SWIFT }).first()).toBeVisible();
 });
 
 test('passo 4: "Abrir no repositório" (href certo, com e sem linha) e "Copiar caminho"', async ({
   page,
   context,
-}, info) => {
+}) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await createScreen(page, info);
+  await createScreen(page);
 
   const entries = page.getByRole('list', { name: 'implementação' }).getByRole('listitem');
   const open = (index: number) =>
@@ -343,7 +319,7 @@ test('passo 4: "Abrir no repositório" (href certo, com e sem linha) e "Copiar c
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(VIEW_MODEL_KT);
 
   // O mesmo na Lista.
-  await openBottomWindow(page, info, 'Lista de anotações');
+  await openBottomWindow(page, 'Lista de anotações');
   const list = page.getByRole('region', { name: 'Lista de anotações' });
   await expect(
     list.getByRole('link', { name: /^Abrir no repositório: CadastroViewModel\.kt/ }),
@@ -371,8 +347,8 @@ test('passo 4: "Abrir no repositório" (href certo, com e sem linha) e "Copiar c
 
 test('passo 5: entrada com plataforma não declarada (JSON editado por fora) fica incompleta', async ({
   page,
-}, info) => {
-  await createScreen(page, info);
+}) => {
+  await createScreen(page);
   await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
   await expect.poll(async () => implementacaoOf(await readMapping(page)).length).toBe(3);
 
@@ -389,7 +365,7 @@ test('passo 5: entrada com plataforma não declarada (JSON editado por fora) fic
   await expect(issues).toContainText('plataforma não declarada pela especialização');
   // A anotação conta como incompleta (aviso nos Detalhes e aba Incompletas).
   await expect(page.getByText('Incompleta: 1 pendência')).toBeVisible();
-  await openBottomWindow(page, info, 'Incompletas');
+  await openBottomWindow(page, 'Incompletas');
   const incomplete = page.getByRole('region', { name: 'Incompletas' });
   await expect(incomplete).toContainText('Screen · Cadastro');
   await expect(incomplete).toContainText('plataforma não declarada pela especialização');

@@ -1,7 +1,7 @@
 /*
  * Detalhes (inspetor, fase R5): identidade, seções recolhíveis, PropertyGrid, LayerGroup,
  * KeyValueGrid, DataGrid, ReferenceField e o seletor de referência. Medidas e cores só
- * dos tokens; desktop primeiro, com os ajustes do celular (cartões, 44px) no fim.
+ * dos tokens.
  */
 
 .visually-hidden {
@@ -241,7 +241,7 @@ code.props-text {
   min-width: 0;
 }
 
-/* Cor das linhas: rádios Tema + paleta (24px; 44px no celular) */
+/* Cor das linhas: rádios Tema + paleta (24px) */
 .color-field {
   display: flex;
   flex-direction: column;
@@ -1025,138 +1025,6 @@ button.layer-group-label:hover {
   border-radius: var(--radius-xs);
 }
 
-/* Celular: rótulos acima, cartões no lugar das grades, 44px, seletor em tela cheia */
-@media (max-width: 899px) {
-  .props {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-1);
-  }
-
-  .props-label {
-    padding-top: var(--space-2);
-  }
-
-  .identity-id,
-  .swatch-theme,
-  .swatch-color,
-  .swatch-custom input {
-    min-height: var(--size-touch);
-  }
-
-  .swatch-color,
-  .swatch-custom input {
-    width: var(--size-touch);
-    height: var(--size-touch);
-  }
-
-  .details-section-toggle,
-  .layer-group-head,
-  .layer-group-label {
-    min-height: var(--size-touch);
-  }
-
-  .grid {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    border: none;
-  }
-
-  .grid-head {
-    display: none;
-  }
-
-  .kv-grid .grid-row,
-  .data-grid .grid-row {
-    grid-template-columns: var(--size-touch) minmax(0, 1fr) var(--size-touch);
-    gap: var(--space-1);
-    padding: var(--space-1);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-  }
-
-  .grid-row:last-child {
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .grid-cell-grip {
-    grid-row: 1;
-    grid-column: 1;
-  }
-
-  .grid-cell-num {
-    grid-row: 1;
-    grid-column: 2;
-    text-align: left;
-  }
-
-  .grid-cell-menu {
-    grid-row: 1;
-    grid-column: 3;
-  }
-
-  .grid-cell-key,
-  .kv-row .grid-cell:nth-child(3),
-  .grid-cell-value {
-    grid-column: 1 / -1;
-  }
-
-  .grid-cell-value {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-0-5);
-  }
-
-  .grid-cell-label,
-  .grid-row-title {
-    display: block;
-  }
-
-  .grid-row-index {
-    display: none;
-  }
-
-  .grid-cell .input {
-    background: var(--color-bg);
-    border-color: var(--color-border-control);
-  }
-
-  .grid-grip {
-    width: var(--size-touch);
-    height: var(--size-touch);
-  }
-
-  .grid-row-note {
-    padding-left: var(--space-1);
-  }
-
-  .action-menu-item {
-    min-height: var(--size-touch);
-  }
-
-  .picker {
-    width: 100vw;
-    max-width: none;
-    height: 100dvh;
-    max-height: none;
-    margin: 0;
-    border: none;
-    border-radius: 0;
-  }
-
-  .picker-body {
-    height: 100%;
-  }
-
-  .picker-option {
-    min-height: var(--size-touch);
-  }
-
-  .picker-foot {
-    display: none;
-  }
-}
-
 /* Referências de código (etapa 3b): editor do campo codeRef (cartão por entrada) e a
    exibição na Lista e nas herdadas (uma linha por entrada, com as ações). */
 .code-grid .code-entry {
@@ -1210,7 +1078,7 @@ button.layer-group-label:hover {
   padding: var(--space-1) var(--space-1-5) 0;
 }
 
-/* O caminho completo: no desktop vai na dica; no celular (sem hover) fica visível. */
+/* O caminho completo vai na dica. */
 .code-entry-path {
   display: none;
   font: var(--t-text-small);
@@ -1234,33 +1102,4 @@ button.layer-group-label:hover {
 
 .code-entry-line .code-entry-name {
   overflow-wrap: anywhere;
-}
-
-@media (max-width: 899px) {
-  .code-grid .grid-row {
-    grid-template-columns: var(--size-touch) minmax(0, 1fr) auto;
-    padding: var(--space-1);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-  }
-
-  .code-grid .grid-row:last-child {
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .code-entry-fields {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    padding: 0 var(--space-1);
-  }
-
-  /* Plataforma e linha lado a lado; o símbolo ocupa a linha toda. */
-  .code-entry-field-symbol {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
-
-  .code-entry-path {
-    display: block;
-    flex-basis: 100%;
-  }
 }

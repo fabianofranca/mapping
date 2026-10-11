@@ -7,7 +7,7 @@ import type { ProjectStore } from '../../store/history';
 import type { ProjectActions } from '../../store/project';
 import type { EditorUi } from '../../store/ui';
 import type { InteractionState } from '../frame';
-import { HOLD_MS, IDLE, stepGesture, type GestureState } from '../gestureMachine';
+import { IDLE, stepGesture, type GestureState } from '../gestureMachine';
 import { resizeFromCorner } from '../imageGeometry';
 import {
   canvasToImagePixel,
@@ -19,19 +19,14 @@ import { wheelZoomFactor, type Point } from '../viewport';
 import type { ViewportController } from '../viewportController';
 import { isStoreGesture, startGesture, type Gesture } from './gestures';
 import {
-  canGrab,
   cursorFor,
   dragModeOf,
-  grabIntentAt,
   intentAt,
   isRepeatTap,
   tapSelection,
   type Intent,
   type IntentContext,
 } from './intents';
-
-/** Vibração ao pegar o item (ms), onde o sistema oferecer (Android). */
-const GRAB_VIBRATION_MS = 20;
 
 export interface PointerInputOptions {
   readonly container: HTMLElement;
@@ -53,12 +48,11 @@ export class PointerInput {
   private readonly o: PointerInputOptions;
   private readonly pointers = new Map<number, Point>();
   private gesture: Gesture | null = null;
-  /** Classificação do gesto em andamento (toque / pan / segurar-e-mover / …). */
+  /** Classificação do gesto em andamento (clique / pan / mover / …). */
   private gestureState: GestureState = IDLE;
-  private holdTimer: ReturnType<typeof setTimeout> | null = null;
-  /** Último toque (canvas), para o ciclo "tocar de novo sobe para o pai". */
+  /** Último clique (canvas), para o ciclo "clicar de novo sobe para o pai". */
   private lastTap: Point | null = null;
-  /** Tipo do último ponteiro apertado: o `contextmenu` do toque longo não é do mouse. */
+  /** Tipo do último ponteiro apertado: o `contextmenu` de um toque demorado não é do mouse. */
   private lastPointerType = 'mouse';
 
   constructor(options: PointerInputOptions) {
@@ -104,15 +98,13 @@ export class PointerInput {
     const { state } = this.o;
     state.preview.value = null;
     state.draft.value = null;
-    state.grabbed.value = null;
     this.gesture = { kind: 'pinch' }; // Ignora o resto do arrasto até soltar.
     this.gestureState = { phase: 'pinch' };
     return true;
   }
 
-  /** Para o timer do segurar e desfaz um gesto do store pela metade. */
+  /** Desfaz um gesto do store pela metade. */
   destroy(): void {
-    this.clearHold();
     if (isStoreGesture(this.gesture)) this.o.actions.cancelGesture();
   }
 
@@ -159,8 +151,6 @@ export class PointerInput {
 
     if (this.pointers.size >= 2) {
       this.cancelInteraction();
-      this.clearHold();
-      this.o.state.grabbed.value = null;
       this.gesture = { kind: 'pinch' };
       this.gestureState = stepGesture(this.gestureState, {
         type: 'second-pointer',
@@ -168,72 +158,22 @@ export class PointerInput {
       return;
     }
     let intent: Intent = e.button === 1 ? { kind: 'pan' } : this.intentAt(p);
-    // No toque, arrastar sobre o item trancado faz pan (o mouse fica sem efeito).
-    if (intent.kind === 'locked' && e.pointerType === 'touch') intent = { kind: 'pan' };
-    // No toque, arrastar sempre faz pan; para mover um item é preciso segurar antes.
-    // Alças (resize) e o modo Desenhar continuam diretos, e o mouse não muda.
-    const holdable =
+    // Numa tela de toque, arrastar sobre um item (livre ou trancado) faz pan, como rolar a
+    // página; alças (resize) e o modo Desenhar continuam diretos, e o mouse não muda.
+    if (
       e.pointerType === 'touch' &&
-      (intent.kind === 'pan' ||
+      (intent.kind === 'locked' ||
         intent.kind === 'move-marking' ||
-        intent.kind === 'move-image') &&
-      canGrab(this.context());
-    this.gesture = {
-      kind: 'pending',
-      pointerId: e.pointerId,
-      start: p,
-      intent: holdable ? { kind: 'pan' } : intent,
-    };
+        intent.kind === 'move-image')
+    ) {
+      intent = { kind: 'pan' };
+    }
+    this.gesture = { kind: 'pending', pointerId: e.pointerId, start: p, intent };
     this.gestureState = stepGesture(IDLE, {
       type: 'down',
       point: p,
       direct: dragModeOf(intent),
-      holdable,
     }).state;
-    this.clearHold();
-    if (holdable) {
-      const pointerId = e.pointerId;
-      this.holdTimer = setTimeout(() => this.onHold(pointerId), HOLD_MS);
-    }
-  }
-
-  private clearHold(): void {
-    if (this.holdTimer === null) return;
-    clearTimeout(this.holdTimer);
-    this.holdTimer = null;
-  }
-
-  /** O dedo ficou parado por `HOLD_MS`: pega o item sob ele, se houver. */
-  private onHold(pointerId: number): void {
-    this.holdTimer = null;
-    const g = this.gesture;
-    if (g?.kind !== 'pending' || g.pointerId !== pointerId) return;
-    const { ui, derived, state } = this.o;
-    const intent = grabIntentAt(
-      this.project(),
-      ui.selection.peek(),
-      derived.markingVisibility.peek(),
-      this.o.viewport.toCanvas(g.start),
-    );
-    const step = stepGesture(this.gestureState, {
-      type: 'hold',
-      hasTarget: intent !== null,
-    });
-    this.gestureState = step.state;
-    if (step.effect.kind !== 'grab' || !intent) return;
-    g.intent = intent;
-    if (intent.kind === 'move-marking') {
-      ui.selection.value = { kind: 'marking', id: intent.markingId };
-      state.grabbed.value = { kind: 'marking', id: intent.markingId };
-    } else if (intent.kind === 'move-image') {
-      ui.selection.value = { kind: 'image', id: intent.imageId };
-      state.grabbed.value = { kind: 'image', id: intent.imageId };
-    }
-    try {
-      navigator.vibrate?.(GRAB_VIBRATION_MS);
-    } catch {
-      // Sem vibração (iOS, permissões): fica só o sinal visual.
-    }
   }
 
   private onPointerMove(e: PointerEvent): void {
@@ -265,10 +205,7 @@ export class PointerInput {
         const step = stepGesture(this.gestureState, { type: 'move', point: p });
         this.gestureState = step.state;
         if (step.effect.kind === 'start-drag') {
-          this.clearHold();
-          // Mexeu antes de segurar: pan. Depois de segurar, move o item pego.
-          const intent: Intent = step.effect.mode === 'pan' ? { kind: 'pan' } : g.intent;
-          this.gesture = this.startDrag(g.pointerId, g.start, intent);
+          this.gesture = this.startDrag(g.pointerId, g.start, g.intent);
           this.onPointerMove(e);
         }
         return;
@@ -366,8 +303,6 @@ export class PointerInput {
     if (g.pointerId !== e.pointerId) return;
     const { actions, state } = this.o;
     this.gesture = null;
-    this.clearHold();
-    state.grabbed.value = null;
     const step = stepGesture(this.gestureState, { type: cancelled ? 'cancel' : 'up' });
     this.gestureState = step.state;
     if (g.kind === 'pending' && step.effect.kind === 'tap') this.tap(step.effect.at);
@@ -390,7 +325,7 @@ export class PointerInput {
     if (result.ok) this.o.ui.selection.value = { kind: 'marking', id: result.value };
   }
 
-  /** Seleciona pelo toque em `p` (tela); tocar de novo no mesmo ponto sobe para o pai. */
+  /** Seleciona pelo clique em `p` (tela); clicar de novo no mesmo ponto sobe para o pai. */
   private tap(p: Point): void {
     const { ui, derived, viewport } = this.o;
     const c = viewport.toCanvas(p);
@@ -407,8 +342,8 @@ export class PointerInput {
 
   /**
    * Botão direito do mouse: seleciona o item sob o cursor (a marcação mais interna, ou a
-   * imagem) e abre o menu de contexto dele. Um toque longo também dispara `contextmenu`, mas
-   * é o "segurar e mover": não abre o menu (no celular, as ações ficam na Árvore e em Detalhes).
+   * imagem) e abre o menu de contexto dele. Numa tela de toque, um toque demorado também
+   * dispara `contextmenu`; ele não abre o menu (as ações ficam na Árvore e em Detalhes).
    */
   private openContextMenu(e: MouseEvent): void {
     const { ui, derived, viewport } = this.o;

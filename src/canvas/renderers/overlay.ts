@@ -30,7 +30,6 @@ export type OverlayFrame = Pick<
   | 'preview'
   | 'draft'
   | 'dropTarget'
-  | 'grabbed'
   | 'hoverLock'
   | 'tokens'
   | 'selection'
@@ -45,7 +44,6 @@ export class OverlayRenderer {
   readonly selectionOutline = new KonvaRect({ visible: false });
   readonly draftRect = new KonvaRect({ visible: false });
   readonly dropRect = new KonvaRect({ visible: false });
-  readonly grabRect = new KonvaRect({ visible: false });
   readonly handles = new Map<Corner, KonvaRect>();
   /** Etiqueta com o nome da marcação selecionada, acima do canto superior esquerdo. */
   readonly nameTag = new Konva.Group({ visible: false });
@@ -58,7 +56,7 @@ export class OverlayRenderer {
   constructor(layer: Konva.Layer, container: HTMLElement) {
     this.container = container;
     this.nameTag.add(this.nameTagBox, this.nameTagText);
-    layer.add(this.selectionOutline, this.draftRect, this.dropRect, this.grabRect);
+    layer.add(this.selectionOutline, this.draftRect, this.dropRect);
     for (const corner of CORNERS) {
       const handle = new KonvaRect({ visible: false });
       this.handles.set(corner, handle);
@@ -150,14 +148,13 @@ export class OverlayRenderer {
     frame: OverlayFrame,
     placements: ReadonlyMap<string, Placement>,
   ): void {
-    const { preview, grabbed, tokens } = frame;
+    const { preview, tokens } = frame;
     const zoom = frame.viewport.scale;
     const selected = resolveSelection(frame.project, frame.selection);
     // Alças só no modo Navegar (em Desenhar, arrastar sempre desenha) e se o item pode mudar.
     const handlesAllowed = !frame.readOnly && frame.mode === 'navigate';
     if (!selected) {
       this.selectionLock.hide();
-      this.grabRect.visible(false);
       this.selectionOutline.visible(false);
       this.nameTag.visible(false);
       for (const handle of this.handles.values()) handle.visible(false);
@@ -204,17 +201,6 @@ export class OverlayRenderer {
     } else {
       this.selectionLock.hide();
     }
-    const isGrabbed = grabbed?.kind === selected.kind && grabbed.id === selectedId;
-    this.grabRect.setAttrs({
-      ...rect,
-      visible: isGrabbed,
-      fill: tokens.select,
-      opacity: tokens.opacity.grabbed,
-      stroke: tokens.select,
-      strokeWidth: (2 * SELECTION_STROKE) / zoom,
-      shadowColor: tokens.grabShadow.color,
-      shadowBlur: tokens.grabShadow.blur / zoom,
-    });
 
     const side = tokens.handleSize / zoom;
     for (const [corner, handle] of this.handles) {

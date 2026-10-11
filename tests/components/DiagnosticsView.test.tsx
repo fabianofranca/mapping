@@ -25,7 +25,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Registro com Copiar e Limpar, como no cabeçalho da janela (desktop e celular). */
+/** Registro com Copiar e Limpar, como no cabeçalho da janela. */
 function Diagnostics() {
   return (
     <>

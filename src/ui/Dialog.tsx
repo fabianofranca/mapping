@@ -44,7 +44,7 @@ interface DialogProps {
 
 /**
  * Diálogo modal com `<dialog>` nativo (foco preso e Esc de graça). Cabeçalho de 44px com
- * título e fechar, corpo que rola e rodapé com borda; no celular ocupa a tela toda.
+ * título e fechar, corpo que rola e rodapé com borda.
  */
 export function Dialog({
   title,

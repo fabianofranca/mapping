@@ -48,16 +48,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-/** O jsdom não tem `matchMedia`: sem ele a tela inicial é a do celular. */
-function stubDesktop(): void {
-  vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: query.includes('min-width'),
-    media: query,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  }));
-}
-
 describe('Home', () => {
   it('antes de detectar os recursos mostra "carregando"', () => {
     features.value = null;
@@ -154,9 +144,7 @@ describe('Home', () => {
   });
 });
 
-describe('Home no desktop (B10)', () => {
-  beforeEach(stubDesktop);
-
+describe('Home (B10)', () => {
   it('coluna lateral com Projetos, Ajuda e Configurações', async () => {
     render(<Home />);
     const side = screen.getByRole('complementary', { name: t('home.sideLabel') });
@@ -252,32 +240,5 @@ describe('Home no desktop (B10)', () => {
       screen.getByRole('button', { name: t('home.openFolder') }).hasAttribute('disabled'),
     ).toBe(true);
     expect(screen.getByText(t('home.folderUnavailable'))).toBeTruthy();
-  });
-});
-
-describe('Home no celular (B10)', () => {
-  it('três botões grandes, com Abrir pasta desabilitado e o motivo', () => {
-    features.value = { folder: false, local: true, fileProtocol: false };
-    render(<Home />);
-    const cards = [...document.querySelectorAll<HTMLButtonElement>('.action-card')];
-    expect(cards).toHaveLength(3);
-    const folder = screen.getByRole('button', { name: new RegExp(t('home.openFolder')) });
-    expect(folder.hasAttribute('disabled')).toBe(true);
-    expect(folder.textContent).toContain(t('home.folderUnavailable'));
-    expect(screen.queryByRole('table')).toBeNull();
-    expect(screen.getByRole('button', { name: t('help.open') })).toBeTruthy();
-    expect(screen.getByRole('button', { name: t('settings.title') })).toBeTruthy();
-  });
-
-  it('com a pasta disponível, o texto sobre git aparece também no celular', () => {
-    render(<Home />);
-    expect(screen.getByText(t('home.gitHint'))).toBeTruthy();
-  });
-
-  it('com a pasta disponível o botão abre normalmente', () => {
-    render(<Home />);
-    const folder = screen.getByRole('button', { name: new RegExp(t('home.openFolder')) });
-    expect(folder.hasAttribute('disabled')).toBe(false);
-    expect(folder.textContent).toContain(t('home.openFolderHint'));
   });
 });

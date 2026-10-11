@@ -2,13 +2,11 @@ import { t } from '../../i18n';
 import { showToast } from '../../store/ui';
 import { useEditor } from '../EditorContext';
 import { IconButton } from '../controls';
-import { DESKTOP_QUERY } from '../../theme/breakpoints';
-import { useMediaQuery } from '../useMediaQuery';
 import { REVIEW_KEYS } from './DecisionControl';
 import { ProposalList } from './ProposalList';
 import { ReviewLevels } from './ReviewLevels';
 
-// Conteúdo da janela Propostas (inferior no desktop; tela cheia no celular): a lista de
+// Conteúdo da janela Propostas (inferior): a lista de
 // propostas fora da revisão e os níveis da proposta aberta em modo revisão.
 
 export interface ProposalsWindowProps {
@@ -61,8 +59,7 @@ export function ProposalsHeaderActions() {
 export function ProposalsWindow({ onHelp }: ProposalsWindowProps) {
   const { review } = useEditor();
   const scan = useScanProposals();
-  const desktop = useMediaQuery(DESKTOP_QUERY);
   const id = review.proposalId.value;
-  if (id !== null) return <ReviewLevels key={id} desktop={desktop} />;
+  if (id !== null) return <ReviewLevels key={id} />;
   return <ProposalList onHelp={onHelp} onScan={scan} />;
 }

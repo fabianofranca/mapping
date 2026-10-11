@@ -1,12 +1,12 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { exportZip, isMobile, type MappingJson } from './helpers';
+import { expect, test, type Page } from '@playwright/test';
+import { exportZip, type MappingJson } from './helpers';
 import {
   FIXTURE_PROPOSAL_ID,
   FIXTURE_PROPOSAL_TITLE,
   fixtureZip,
 } from './proposalFixture';
 
-// Etapa 4 (fase 4.4): revisar e aplicar em parte uma proposta, no desktop e no celular.
+// Etapa 4 (fase 4.4): revisar e aplicar em parte uma proposta.
 // O zip de exemplo (o mesmo de examples/proposta-exemplo.zip) traz o projeto "Loja" com
 // a proposta "Checkout a partir do Figma"; nada aqui depende do agente.
 
@@ -22,44 +22,25 @@ async function importFixture(page: Page): Promise<void> {
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
 }
 
-/** Abre a janela Propostas: Ctrl+Shift+7 no desktop; Painéis → Propostas no celular. */
-async function openProposals(page: Page, info: TestInfo): Promise<void> {
-  if (isMobile(info)) {
-    await page
-      .getByRole('button', { name: /^Painéis/ })
-      .first()
-      .click();
-    await page
-      .getByRole('dialog', { name: 'Painéis e ações' })
-      .getByRole('button', { name: /^Propostas/ })
-      .click();
-  } else {
-    await page.keyboard.press('Control+Shift+7');
-  }
+/** Abre a janela Propostas (Ctrl+Shift+7). */
+async function openProposals(page: Page): Promise<void> {
+  await page.keyboard.press('Control+Shift+7');
 }
 
 const row = (page: Page, name: string) =>
   page.getByRole('treeitem', { name, exact: true });
 
-test('revisar e aplicar em parte uma proposta', async ({ page }, info) => {
-  const mobile = isMobile(info);
+test('revisar e aplicar em parte uma proposta', async ({ page }) => {
   await importFixture(page);
 
   // A proposta chega na janela Propostas; Revisar abre o modo revisão.
-  await openProposals(page, info);
+  await openProposals(page);
   await expect(page.getByText(FIXTURE_PROPOSAL_TITLE).first()).toBeVisible();
   await page
     .getByRole('button', { name: /^Revisar/ })
     .first()
     .click();
   await expect(page.getByText('Somente leitura').first()).toBeVisible();
-  if (mobile) {
-    // No celular, Revisar volta ao canvas com a faixa e a barra de baixo da revisão.
-    await expect(
-      page.getByRole('navigation', { name: 'Ferramentas da revisão' }),
-    ).toBeVisible();
-    await openProposals(page, info);
-  }
 
   // Aceita a imagem nova (com a marcação dela) e o item novo; rejeita o cabeçalho.
   await row(page, 'Confirmação')
@@ -73,14 +54,7 @@ test('revisar e aplicar em parte uma proposta', async ({ page }, info) => {
     .click();
   await row(page, 'Cabeçalho').click();
 
-  // A nota da rejeição fica nos Detalhes (no celular, na gaveta).
-  if (mobile) {
-    await page
-      .getByRole('button', { name: /^Voltar/ })
-      .first()
-      .click();
-    await page.getByRole('button', { name: 'Mostrar detalhes' }).click();
-  }
+  // A nota da rejeição fica nos Detalhes.
   await page.getByRole('textbox', { name: 'Nova nota para o agente' }).fill(NOTE);
   await page.getByRole('button', { name: 'Adicionar nota' }).click();
   await expect(
@@ -96,7 +70,7 @@ test('revisar e aplicar em parte uma proposta', async ({ page }, info) => {
 
   // Sem aceitas pendentes, sair não pergunta nada.
   await page
-    .getByRole('button', { name: mobile ? 'Sair' : /^Sair da revisão/ })
+    .getByRole('button', { name: /^Sair da revisão/ })
     .first()
     .click();
   await expect(page.getByText('Somente leitura')).toHaveCount(0);

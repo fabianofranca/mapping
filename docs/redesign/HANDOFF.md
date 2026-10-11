@@ -2,6 +2,8 @@
 
 Documento de passagem do redesenho feito com o Claude Design. É a referência para as fases de implementação; o `PLAN.md` aponta para cá.
 
+> **Só desktop (fase 5.8, 2026-10-11).** A app passou a ser só desktop, com largura mínima de 900 px. As partes de celular deste documento (layout de 380 px, toque, densidade de 44 px, gaveta, telas cheias, menu Painéis) ficam como **registro histórico** do desenho e não descrevem mais a app; ver `docs/ARCHITECTURE.md`.
+
 | Fonte                                      | Endereço                                          | O que tem                                                                                                       |
 | ------------------------------------------ | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Canvas “Mapeador — Redesign”               | https://claude.ai/artifact/F5cJUBA5wHycHNBHPyhCk5 | Entrega 1 (editor no desktop), Entrega 2 (11 telas e 6 estados, desktop e celular, claro e escuro)              |
@@ -60,6 +62,8 @@ Os artifacts são privados: só abrem para quem tiver acesso compartilhado pelo 
 | `ui/AnnotationSummary.tsx` · `.mini-table`                | Resumo no cabeçalho recolhido / DataGrid na Lista | Visual                                                                                                         |
 
 ### Celular
+
+> **Histórico (fase 5.8):** removido da app, que passou a ser só desktop. Mantido como registro do desenho.
 
 | Atual                                    | Novo                                          | O que muda                                                                           |
 | ---------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------ |

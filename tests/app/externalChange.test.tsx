@@ -41,12 +41,7 @@ function renderDialogs(harness: Harness) {
   } as unknown as Dialogs;
   return render(
     <EditorContext.Provider value={harness.context}>
-      <EditorDialogs
-        dialogs={dialogs}
-        busy={false}
-        intake={{} as never}
-        commands={{ exportProject: vi.fn(), closeProject: vi.fn() } as never}
-      />
+      <EditorDialogs dialogs={dialogs} />
     </EditorContext.Provider>,
   );
 }

@@ -4,8 +4,7 @@ import type { EditorDialogs } from './useEditorDialogs';
 
 /**
  * Sair da revisão: nunca perde nada; com aceitas ainda não aplicadas, lembra antes
- * (HANDOFF-PROPOSALS 5.3). Usado pela faixa da revisão, pela barra de cima do celular e
- * pelo menu Painéis.
+ * (HANDOFF-PROPOSALS 5.3). Usado pela faixa da revisão.
  */
 export function useExitReview(dialogs: EditorDialogs): () => void {
   const { review } = useEditor();

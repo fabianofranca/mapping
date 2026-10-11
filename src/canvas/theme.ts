@@ -41,8 +41,6 @@ export interface CanvasTokens {
     readonly ancestor: number;
     /** Anotações herdadas no cartão. */
     readonly inherited: number;
-    /** Preenchimento do item pego pelo segurar-e-mover. */
-    readonly grabbed: number;
   };
   readonly fontFamily: string;
   readonly type: {
@@ -51,18 +49,16 @@ export interface CanvasTokens {
     readonly card: CanvasTextStyle;
     readonly caption: CanvasTextStyle;
   };
-  /** Lado visível da alça (px de tela): `size-handle`, ou `size-handle-touch` com toque. */
+  /** Lado visível da alça (px de tela): `size-handle`. */
   readonly handleSize: number;
   /** Raios (px de tela): `sm` na etiqueta do nome, `md` no cartão do zoom semântico. */
   readonly radius: { readonly sm: number; readonly md: number };
-  /** Emblema do cadeado: fundo, traço e lado (px de tela; maior com toque). */
+  /** Emblema do cadeado: fundo, traço e lado (px de tela). */
   readonly lock: {
     readonly fill: string;
     readonly glyph: string;
     readonly size: number;
   };
-  /** Sombra do item pego (`shadow-grabbed`). */
-  readonly grabShadow: { readonly blur: number; readonly color: string };
 }
 
 /** Lê o valor de um token pelo nome com `--` (ex: `--cv-line`). */
@@ -80,14 +76,8 @@ function textStyle(read: TokenReader, name: string): CanvasTextStyle {
   };
 }
 
-/** `0 0 14px rgba(…)` → desfoque e cor (o deslocamento do `shadow-grabbed` é zero). */
-function parseShadow(value: string): CanvasTokens['grabShadow'] {
-  const match = /^\s*\S+\s+\S+\s+(-?[\d.]+)px\s+(.+?)\s*$/.exec(value);
-  return { blur: Number.parseFloat(match?.[1] ?? ''), color: match?.[2] ?? '' };
-}
-
 /** Monta os tokens do canvas a partir de um leitor (o computed style, ou outro, nos testes). */
-export function canvasTokensFrom(read: TokenReader, coarsePointer = false): CanvasTokens {
+export function canvasTokensFrom(read: TokenReader): CanvasTokens {
   return {
     line: read('--cv-line'),
     halo: read('--cv-halo'),
@@ -107,7 +97,6 @@ export function canvasTokensFrom(read: TokenReader, coarsePointer = false): Canv
       dimmed: number(read, '--opacity-dimmed'),
       ancestor: number(read, '--opacity-ancestor'),
       inherited: number(read, '--opacity-inherited'),
-      grabbed: number(read, '--opacity-grabbed'),
     },
     fontFamily: read('--font-sans'),
     type: {
@@ -116,14 +105,13 @@ export function canvasTokensFrom(read: TokenReader, coarsePointer = false): Canv
       card: textStyle(read, 't-cv-card'),
       caption: textStyle(read, 't-cv-caption'),
     },
-    handleSize: number(read, coarsePointer ? '--size-handle-touch' : '--size-handle'),
+    handleSize: number(read, '--size-handle'),
     radius: { sm: number(read, '--radius-sm'), md: number(read, '--radius-md') },
     lock: {
       fill: read('--cv-lock'),
       glyph: read('--cv-lock-glyph'),
-      size: number(read, coarsePointer ? '--size-lock-badge-touch' : '--size-lock-badge'),
+      size: number(read, '--size-lock-badge'),
     },
-    grabShadow: parseShadow(read('--shadow-grabbed')),
   };
 }
 
@@ -131,8 +119,7 @@ export function readCanvasTokens(
   root: HTMLElement = document.documentElement,
 ): CanvasTokens {
   const style = getComputedStyle(root);
-  const coarse = globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;
-  return canvasTokensFrom((name) => style.getPropertyValue(name).trim(), coarse);
+  return canvasTokensFrom((name) => style.getPropertyValue(name).trim());
 }
 
 /**

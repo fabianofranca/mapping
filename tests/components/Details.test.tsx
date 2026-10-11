@@ -201,7 +201,7 @@ describe('Detalhes — DataGrid', () => {
     expect(Array.isArray(rows) ? rows.length : 0).toBe(2);
   });
 
-  it('linhas numeradas, com o nome da linha para o celular', () => {
+  it('linhas numeradas, com o nome da linha', () => {
     renderAnnotation('AC');
     const table = screen.getByRole('table', { name: 'atributos' });
     const [, row] = within(table).getAllByRole('row');

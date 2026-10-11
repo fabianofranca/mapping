@@ -1,7 +1,7 @@
 /*
  * Controles base (fase R2): Button, IconButton, TextField, Select, Choice, Segmented, Tabs
- * e Tooltip. Altura, raio e ícone seguem a densidade (`--control-*`): 28px e 16px no desktop,
- * 44px e 20px no celular (tokens.ts, papéis). Todo estado usa tokens:
+ * e Tooltip. Altura, raio e ícone vêm dos papéis `--control-*` (tokens.ts): 28px e 16px.
+ * Todo estado usa tokens:
  * hover, pressionado, foco, desabilitado, alternância ligada, inválido e somente leitura.
  */
 
@@ -169,7 +169,7 @@ a.icon-button {
   font-weight: 600;
 }
 
-/* Botão de ícone compacto (24px no desktop; no celular a densidade o leva a 44px) */
+/* Botão de ícone compacto (24px) */
 .icon-button-sm {
   min-height: var(--control-height-sm);
   min-width: var(--control-height-sm);
@@ -187,8 +187,7 @@ a.icon-button {
 /* Desabilitado */
 .button:disabled,
 .icon-button:disabled,
-.segmented-item:disabled,
-.action-card:disabled {
+.segmented-item:disabled {
   opacity: var(--opacity-disabled);
   cursor: default;
 }
@@ -485,12 +484,6 @@ a.icon-button {
   color: var(--color-accent-text);
   background: var(--color-accent);
   border-radius: var(--radius-full);
-}
-
-@media (max-width: 899px) {
-  .tab {
-    border-bottom-width: 3px;
-  }
 }
 
 /* Dica */
