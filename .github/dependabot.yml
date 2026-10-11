@@ -10,6 +10,12 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Os tipos acompanham a versão mínima de Node suportada (.nvmrc; o MCP promete
+      # Node ≥ 20), não a mais nova: tipos de um Node acima deixam passar APIs que não
+      # existem onde o código roda. Patches e minors da linha atual continuam chegando.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:

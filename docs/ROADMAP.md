@@ -95,4 +95,5 @@ Só depois do marco, se a ferramenta se provar útil.
 - Reverter, depois de aplicada, uma mudança específica de uma proposta.
 - Editor de especializações dentro da app.
 - Paleta de comandos e busca global (antiga R10).
+- **Migrações de versão maior adiadas** (PRs do Dependabot fechados em 2026-10-11 com `ignore this major version`): **TypeScript 7** (o compilador novo; hoje bloqueado porque `typescript-eslint` exige TypeScript < 6.1) e **Preact 11** (cerca de 40 erros de tipo nos controles de `src/ui/controls/` e nos handlers; confirmar `@preact/signals` e `@testing-library/preact`). Cada uma é uma fase própria, com os gates e o roteiro de fumaça do `docs/TESTING.md`; para retomar, `npm install <pacote>@<major>` num branch.
 - **Diário de recuperação** (pedido do dono na etapa 5): ao sair da página, uma cópia das mudanças ainda não gravadas vai para o armazenamento do navegador, e ao reabrir o projeto a app oferece "Recuperar alterações não gravadas". **Condição de entrada:** algum testador perder dados ao fechar a aba (hoje a proteção é o "Sair da página?": quem escolhe ficar não perde nada).
