@@ -16,6 +16,13 @@ updates:
       # existem onde o código roda. Patches e minors da linha atual continuam chegando.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # Migrações adiadas para depois do marco "Uso real" (docs/ROADMAP.md, Evoluções):
+      # TypeScript 7 (typescript-eslint ainda exige TS < 6.1) e Preact 11 (tipos JSX dos
+      # controles mudaram). Cada uma entra como fase própria; retire a regra ao começar.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: preact
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
