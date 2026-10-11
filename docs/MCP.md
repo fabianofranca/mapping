@@ -158,5 +158,6 @@ O `mapping.json` tem `revision`, mas o agente não o grava. A proposta guarda a 
 ## Publicar uma versão (mantenedores)
 
 1. Atualize `SERVER_VERSION` em `mcp/version.ts` (hoje `0.3.1`) e mescle na `main`.
-2. Crie a tag `mcp-v0.3.1` na `main`: `git tag mcp-v0.3.1 && git push origin mcp-v0.3.1`.
-3. O workflow `.github/workflows/mcp-release.yml` confere que a tag bate com `SERVER_VERSION`, roda lint, typecheck e testes, gera `dist-mcp/mapping-mcp.js`, o testa fora do repositório e o anexa à Release com o checksum.
+2. Crie a tag `mcp-v0.3.1` na `main`: `git tag mcp-v0.3.1 && git push origin mcp-v0.3.1`, ou crie a Release pela tela do GitHub (Releases › Draft a new release, tag nova `mcp-v0.3.1` na `main`), que cria a tag junto.
+3. O workflow `.github/workflows/mcp-release.yml` confere que a tag bate com `SERVER_VERSION`, roda lint, typecheck e testes (sem os orçamentos de desempenho), gera `dist-mcp/mapping-mcp.js`, o testa fora do repositório e o anexa à Release com o checksum: cria a Release se ela não existe, ou anexa os arquivos à que já existe.
+4. Confira que a Release tem `mapping-mcp.js` e `mapping-mcp.js.sha256`. Se ficou sem eles (o workflow falhou), corrija a causa e rode de novo pela tela: Actions › **MCP release** › Run workflow, com a tag (ex.: `mcp-v0.3.1`). O workflow usa o código da tag e só anexa os arquivos, sem apagar nem recriar a Release.
