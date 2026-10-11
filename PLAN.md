@@ -48,6 +48,7 @@ Origem dos achados: revisão do código por camada (modelo, store/storage, canva
 - **O que a app grava é o projeto confirmado** (`store.committed`), nunca a prévia de um gesto. Vale para o autosave e para o zip.
 - **Falha de gravação é erro, não aviso**, para quem precisa saber se gravou (aplicar aceitas, fechar o projeto). O autosave por timer continua tolerante (mostra "erro ao salvar" e tenta de novo).
 - **Projeto inconsistente abre reparado, com backup**, quando o reparo é mecânico e inequívoco; o resto continua recusado, mas com a lista exata do que está errado. Ler nunca grava: o backup e o arquivo reparado só são gravados pela sessão, na primeira gravação, como já acontece com a migração.
+- **Só desktop** (decisão de 2026-10-11, fase 5.8). Ninguém testa nem vai usar a app no celular: o dono deixou de conferir os previews no aparelho, os testes reais serão no desktop (pessoas e o agente do Cowork) e o uso é de devs em estação de trabalho. Manter o layout de celular significaria código que todo PR paga e ninguém exercita. A app passa a ser **só desktop** (largura mínima com aviso abaixo dela), o que também encerra a regra "pronto só quando funciona nos dois" e o projeto `mobile` do e2e. A remoção entra **antes** do guia do testador, para o guia não nascer com seções a apagar.
 
 ### Execução por um coordenador de agentes
 
@@ -57,11 +58,12 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 2. **Ondas.** As fases de uma onda rodam em paralelo, cada uma a partir do `main` atual; a onda seguinte só começa com todos os PRs da anterior mergeados. O coordenador rebaseia ou mergeia o `main` em cada branch antes de abrir o PR para revisão se outro PR da onda entrou antes (conflitos esperados: só em `src/i18n/pt-BR.ts` e `en-US.ts`, por chaves novas).
    - **Onda 1:** 5.1, 5.3, 5.4, 5.6 e 5.7 (arquivos disjuntos).
    - **Onda 2:** 5.2 (depende da 5.1, mesmo `session.ts`) e 5.5 (depende da 5.1 e da 5.3, por `session.ts` e `app/controller.ts`).
-   - **Onda 3:** 5.8 (depende de todas).
+   - **Onda 3:** 5.8 (só desktop; depende das ondas 1 e 2, porque remove partes de celular que elas tocaram).
+   - **Onda 4:** 5.9 (guia do testador e fechamento; depende da 5.8, para o guia já nascer só desktop).
 3. **Gates antes de abrir o PR:** `npm run lint && npm run typecheck && npm test && npm run build` (e `npm run build:mcp` na 5.7). O executor cola o resumo dos gates no PR; o coordenador confere o CI verde e o e2e antes de mergear.
-4. **Descrição do PR** com as três seções do `CLAUDE.md` (Resumo, Como testar no desktop e no celular, Decisões tomadas) e os checkboxes da fase marcados neste `PLAN.md`, no mesmo PR.
-5. **Decisões pequenas** o executor toma e documenta no PR; **ambiguidade** que mude comportamento visível vira pergunta no PR (seção "Decisões a confirmar", abaixo) e o coordenador decide ou escala ao dono. O coordenador consolida as decisões tomadas de volta no histórico ao fechar a etapa (5.8).
-6. **O que fica com o dono** (o coordenador registra no PR e avisa): criar o ruleset da `main` (5.6), criar a tag `mcp-v0.3.1` depois do merge da 5.7, disparar o deploy de preview quando quiser ver um branch no celular.
+4. **Descrição do PR** com as três seções do `CLAUDE.md` (Resumo, Como testar, Decisões tomadas) e os checkboxes da fase marcados neste `PLAN.md`, no mesmo PR. A partir da 5.8, "Como testar" é só no desktop.
+5. **Decisões pequenas** o executor toma e documenta no PR; **ambiguidade** que mude comportamento visível vira pergunta no PR (seção "Decisões a confirmar", abaixo) e o coordenador decide ou escala ao dono. O coordenador consolida as decisões tomadas de volta no histórico ao fechar a etapa (5.9).
+6. **O que fica com o dono** (o coordenador registra no PR e avisa): criar o ruleset da `main` (5.6), criar a tag `mcp-v0.3.1` depois do merge da 5.7, disparar o deploy de preview quando quiser ver um branch publicado.
 7. **Aceite** de cada fase é o descrito nela; o coordenador não mergeia fase sem o teste que reproduz o achado.
 
 ### Fases
@@ -171,18 +173,36 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 
 **Aceite**: `tests/mcp/images.test.ts` e `read.test.ts` continuam verdes; o teste novo de stdout passa; `npm run build:mcp` gera o bundle e o `--version` imprime `0.3.1`.
 
-#### 5.8 — Guia do testador e fechamento
+#### 5.8 — Só desktop: remoção do layout de celular
 
-**Achado.** Os roteiros de teste manual existem (13.9 em `docs/history/PLAN-etapas-1-2.md`, 3b e etapa 4 nos históricos), mas estão espalhados, escritos para quem conhece o projeto, e não há um lugar que diga ao testador onde pegar a app, o que o navegador precisa, como instalar o MCP e como relatar. O marco "Uso real" pede um registro (telas mapeadas, devs, telas implementadas por agentes, o que atrapalhou) e não há template.
+**Achado.** O suporte a celular (barras de cima e de baixo, gaveta de três alturas, janelas em tela cheia, menu Painéis, revisão mobile, estados de toque "segurar e mover", densidade de 44 px, blocos `@media`, projeto `mobile` do Playwright) é cerca de 2% do código, mas custa em **todo** PR de interface (design, teste, "Como testar" e áreas de toque duplicados) e dobra o tempo do e2e. Ninguém mais o exercita: o dono não confere previews no aparelho, os testes reais serão no desktop e o agente do Cowork não testa toque. Código mantido e nunca usado é dívida. A arquitetura (modelo, store, storage, canvas) não muda com a remoção: tudo isso vive na casca de interface, na entrada de ponteiro e nos tokens. De quebra, um shell só no `Editor.tsx` resolve a remontagem do canvas ao trocar de layout, listada em "Fora desta etapa".
 
-**Toca em:** novo `docs/TESTING.md`, `README.md`, `PLAN.md`, `docs/ROADMAP.md`, `CLAUDE.md`, novo `docs/history/PLAN-etapa-5.md`.
+**Toca em:** `src/app/Editor.tsx`, `EditorTopBar.tsx`, `EditorBottomBar.tsx`, `MobileWindow.tsx`, `PanelsMenu.tsx`, `EditorPanel.tsx` (`EditorSheet`), `Home.tsx`; `src/ui/BottomSheet.tsx`, `ActionSheet.tsx`, `review/MobileReview.tsx` (e `MobileReviewStrip`), `useMediaQuery.ts` e quem o usa; `src/store/ui.ts` (`mobileWindow`, `sheet`); `src/canvas/gestureMachine.ts` e `input/pointer.ts` (só os estados de toque exclusivos do celular); `src/theme/tokens.ts`, `breakpoints.ts` e os `.css` (blocos `@media` de celular e a troca de densidade); `src/i18n/*` (chaves que sobram); `playwright.config.ts`, `tests/e2e/*` (projeto `mobile` e `skip` condicionais), `tests/components/*` e `tests/theme/*` afetados; `CLAUDE.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/redesign/HANDOFF.md` e `HANDOFF-PROPOSALS.md` (partes de celular viram histórico).
 
-- [ ] `docs/TESTING.md`: onde pegar a app (GitHub Pages, `/preview/`, `index.html` avulso do artefato) e o que cada uma implica (pasta só em Chrome/Edge desktop; projeto local nos demais; PWA só em `https:`); requisitos; instalar o `mapping-mcp.js` da Release num repositório (resumo do `docs/MCP.md`); como relatar (Diagnóstico com cabeçalho, da 5.4)
-- [ ] Roteiros consolidados em `docs/TESTING.md`, reescritos como **ação → resultado esperado observável** (o que aparece na tela, o que fica no disco), numerados, para serem executados tanto por uma pessoa quanto por um agente com controle do computador (Cowork), que confere cada resultado por captura de tela ou pelo arquivo. Fontes: 13.9, roteiro da 3b e roteiro da etapa 4, sem perder passos; os históricos passam a apontar para o novo arquivo
+- [ ] Testes primeiro: um teste de componente que monta o editor com a largura abaixo do mínimo e espera o aviso de "janela estreita" (hoje falha: monta o layout de celular); os testes que exercitam componentes de celular são removidos junto com eles, não adaptados
+- [ ] Um shell só no `Editor.tsx` (`EditorMainBar` + `EditorWindows` + `StatusBar`), sem `useMediaQuery`; o canvas é montado uma vez e não é remontado por mudança de largura; `Home.tsx` com um layout
+- [ ] Remoção dos componentes só de celular, do estado `mobileWindow`/`sheet` e das chaves de i18n que ficarem sem uso (o teste de chaves iguais nos dois idiomas continua verde)
+- [ ] Máquina de gestos: saem os estados exclusivos do celular ("segurar e mover", vibração de pegar); **fica** a pinça (trackpad) e o `pointercancel`; `touch-action` continua `none` no canvas, para toque simples (clicar, arrastar, rolar) seguir funcionando num monitor de toque
+- [ ] Largura mínima (token `size-app-min`, proposto 900 px): abaixo dela a app mostra um aviso centralizado ("Abra numa janela maior") no lugar do editor, com o projeto intacto e gravando normalmente; acima, o layout de desktop como hoje
+- [ ] Tokens: sai a troca de densidade por breakpoint (`--control-*`, `--t-text*`, `--size-handle-touch` passam a ter um valor só); saem os blocos `@media` de celular dos `.css`; `breakpoints.ts` fica só com o que o desktop usa (`compact`, se ainda for usado, e o mínimo); `tests/theme/*` ajustados
+- [ ] Playwright: sai o projeto `mobile` e os `skip` condicionais; o e2e roda uma vez, no desktop
+- [ ] Documentação: `CLAUDE.md` ("Desktop primeiro, utilizável no celular" vira "Só desktop: largura mínima de 900 px, mouse e teclado; toque simples funciona, gestos de celular não"; a regra dos 44 px e a frase "pronto só quando funciona nos dois" saem; "Como testar" só desktop), `README.md`, `docs/ARCHITECTURE.md` (seções de celular removidas, decisão registrada), `docs/redesign/HANDOFF*.md` (as partes de celular marcadas como históricas, sem apagar o documento)
+- [ ] Orçamento do `dist/index.html` e `tests/components/editorRenders.test.tsx` continuam verdes; o tamanho do bundle deve cair
+
+**Aceite**: o roteiro 13.9 e o da etapa 4 passam no desktop; a janela estreita mostra o aviso e volta ao editor ao alargar, sem perder seleção nem viewport; nenhum arquivo em `src/` menciona celular, toque longo ou gaveta (grep por `mobile`, `sheet`, `hold`, `coarse` limpo, salvo o `touch-action` do canvas); o e2e termina em cerca de metade do tempo.
+
+#### 5.9 — Guia do testador e fechamento
+
+**Achado.** Os roteiros de teste manual existem (13.9 em `docs/history/PLAN-etapas-1-2.md`, 3b e etapa 4 nos históricos), mas estão espalhados, escritos para quem conhece o projeto e com passos de celular que a 5.8 tornou obsoletos, e não há um lugar que diga ao testador onde pegar a app, o que o navegador precisa, como instalar o MCP e como relatar. O marco "Uso real" pede um registro (telas mapeadas, devs, telas implementadas por agentes, o que atrapalhou) e não há template.
+
+**Toca em:** novo `docs/TESTING.md`, `docs/prompts/etapa-5-testes-cowork.md`, `README.md`, `PLAN.md`, `docs/ROADMAP.md`, `CLAUDE.md`, novo `docs/history/PLAN-etapa-5.md`.
+
+- [ ] `docs/TESTING.md`: onde pegar a app (GitHub Pages, `/preview/`, `index.html` avulso do artefato) e o que cada uma implica (pasta só em Chrome/Edge; projeto local nos demais; PWA só em `https:`; largura mínima); requisitos; instalar o `mapping-mcp.js` da Release num repositório (resumo do `docs/MCP.md`); como relatar (Diagnóstico com cabeçalho, da 5.4)
+- [ ] Roteiros consolidados em `docs/TESTING.md`, só desktop, reescritos como **ação → resultado esperado observável** (o que aparece na tela, o que fica no disco), numerados, para serem executados tanto por uma pessoa quanto por um agente com controle do computador (Cowork), que confere cada resultado por captura de tela ou pelo arquivo. Fontes: 13.9, roteiro da 3b e roteiro da etapa 4, sem perder passos de desktop (os passos de celular saem, com uma nota); os históricos passam a apontar para o novo arquivo
 - [ ] Template de registro do marco "Uso real" em `docs/TESTING.md`: telas mapeadas, devs que consultaram, telas implementadas por agentes a partir da ferramenta, lista do que atrapalhou (com build id e data em cada item)
 - [ ] `docs/TESTING.md` e o prompt do testador no computador do dono (`docs/prompts/etapa-5-testes-cowork.md`) conferidos um contra o outro: mesmos roteiros, mesmo template, mesmos nomes de janela e de botão; o guia aponta para o prompt
 - [ ] `README.md` aponta para `docs/TESTING.md`
-- [ ] Fechamento: esta seção vai para `docs/history/PLAN-etapa-5.md` (com as decisões consolidadas dos PRs), `PLAN.md` volta a "nenhuma etapa em andamento", `docs/ROADMAP.md` marca a etapa 5 concluída e `CLAUDE.md` atualiza "Etapa atual"
+- [ ] Fechamento: esta seção vai para `docs/history/PLAN-etapa-5.md` (com as decisões consolidadas dos PRs), os dois prompts de `docs/prompts/` vão junto, `PLAN.md` volta a "nenhuma etapa em andamento", `docs/ROADMAP.md` marca a etapa 5 concluída e `CLAUDE.md` atualiza "Etapa atual"
 
 **Aceite**: um agente sem contexto do projeto consegue, só com `docs/TESTING.md`, abrir a app publicada, seguir o roteiro 13.9 e produzir um relato no formato do template (o coordenador executa este aceite com um agente novo e cola o relato no PR).
 
@@ -193,13 +213,15 @@ Esta etapa foi desenhada para um **agente coordenador** distribuir as fases entr
 3. Gravação imediata nas operações caras vale também para o projeto local (IndexedDB), não só para a pasta. Proposto: sim, o custo é o mesmo.
 4. Orçamento do `dist/index.html`: 1,5 MB. Proposto: sim, com o valor num só lugar no workflow.
 5. Build id com data do build além do SHA. Proposto: sim (`abc1234 · 2026-10-10`), porque o `index.html` avulso circula sem o repositório.
+6. Largura mínima da app (5.8): 900 px, o breakpoint de desktop atual. Proposto: sim; tablet em modo paisagem com teclado entra, retrato não.
+7. Toque simples no desktop (monitor de toque, tablet): clicar, arrastar e rolar continuam; gestos de celular (segurar e mover, gaveta) saem; a pinça fica porque o trackpad a usa. Proposto: sim.
 
 ### Fora desta etapa (registrado para depois do marco)
 
 Achados da mesma revisão que não causam perda de dados nem impedem o relato, e por isso ficam para as Evoluções ou para a próxima revisão técnica:
 
 - **Concorrência real** entre duas abas na mesma pasta, ou app e MCP gravando ao mesmo tempo: janela de corrida entre a conferência e o `close()`; para abas da mesma origem, `navigator.locks`; para o MCP, documentar como limitação. O `updateStored` do MCP (`proposalStore.ts`) tem a mesma janela antes do `rename`.
-- **Canvas**: ponteiro "fantasma" trava o modo pinça se um `pointerup` se perde (sem `lostpointercapture`/`blur` em `pointer.ts`); diálogos não devolvem o foco ao abridor; trocar desktop↔celular remonta o canvas e perde o viewport; `Popover` aberto não bloqueia atalhos globais; ações do projeto definidas em três shells.
+- **Canvas**: ponteiro "fantasma" trava o modo pinça se um `pointerup` se perde (sem `lostpointercapture`/`blur` em `pointer.ts`); diálogos não devolvem o foco ao abridor; `Popover` aberto não bloqueia atalhos globais. (A remontagem do canvas ao trocar de layout e as ações do projeto em três shells somem com a 5.8.)
 - **Modelo**: campos desconhecidos descartados em silêncio na regravação (avisar); `crypto.randomUUID()` chamado direto em sete lugares (centralizar `newId`); `findById` por `Array.find` em vez do índice; `~25 as unknown as` em `proposalApply.ts` que os schemas zod existentes eliminariam; `platformRepos` sem ordem fixa no `serialize`.
 - **Coesão**: `session.ts`, `derived.ts` (editor e revisão juntos), `batch.ts` (1202 linhas), `ReviewLevels.tsx`, `typed.ts`, `spec.ts` e `proposal.ts`.
 - **MCP**: `discoverProjects` sem cache nem teto de diretórios; `internal-error` vaza caminhos absolutos; `create_project` pode sobrescrever um `mapping.json` criado no intervalo; `link()` falha em sistemas sem hardlink; actions do release não fixadas por SHA.

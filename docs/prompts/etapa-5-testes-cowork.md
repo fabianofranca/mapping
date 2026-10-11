@@ -4,7 +4,7 @@
 >
 > Para iniciar: numa sessão do Cowork com acesso a este repositório clonado, mande **"Leia `docs/prompts/etapa-5-testes-cowork.md` e execute."** Antes, o dono prepara três coisas: a URL publicada da app (GitHub Pages) ou o `index.html` avulso baixado do artefato do deploy; o `mapping-mcp.js` da última Release; e, se quiser o teste do MCP, o Claude Code instalado no computador.
 >
-> O que este teste **não** cobre, de propósito: celular com toque real (gaveta, pinça, segurar e mover) e julgamento de usabilidade. Isso fica com pessoas, no marco.
+> O que este teste **não** cobre, de propósito: julgamento de usabilidade (se um painel é descobrível, se um texto é claro para quem não leu a documentação). Isso fica com pessoas, no marco. A app é só desktop desde a fase 5.8; não há o que testar em celular. Inclua no roteiro de fumaça estreitar a janela abaixo da largura mínima: a app deve mostrar o aviso de janela estreita e voltar ao editor ao alargar, sem perder nada.
 
 ---
 
