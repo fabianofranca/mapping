@@ -442,6 +442,21 @@ describe('sair da página (fase 5.5)', () => {
     window.dispatchEvent(pending);
     expect(pending.defaultPrevented).toBe(true);
   });
+
+  it('beforeunload com pendência já começa a gravar enquanto pede confirmação', async () => {
+    const root = new MemoryDirectory('p');
+    await app.createFolderProject(root, 'Original', []);
+    const { session } = await openedOf(app);
+    const flush = vi.spyOn(session, 'flush');
+    session.actions.renameProject('Fechando');
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(flush).toHaveBeenCalledTimes(1);
+    await vi.waitFor(async () => {
+      expect(await root.files.get('mapping.json')?.text()).toContain('Fechando');
+    }, soon);
+  });
 });
 
 describe('propostas de alteração (etapa 4)', () => {

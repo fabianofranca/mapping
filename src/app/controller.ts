@@ -472,7 +472,9 @@ function bindPageLifecycle(): void {
   window.addEventListener('beforeunload', (event) => {
     const status = openProject.value?.session.saveStatus.value;
     if (status && status !== 'saved') {
-      void openProject.value?.session.flush();
+      // A gravação começa enquanto o diálogo de confirmação está aberto; confirmar a saída
+      // na hora ainda pode interromper a escrita (assíncrona), e a proteção é o próprio diálogo.
+      flushNow();
       event.preventDefault();
     }
   });
