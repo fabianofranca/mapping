@@ -71,18 +71,18 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - **Fechamento** (fase 4.5): documentação, roteiro de teste manual executado e a tag `mcp-v0.3.0` (criada pelo dono). Histórico em [`history/PLAN-etapa-4.md`](history/PLAN-etapa-4.md).
 - **Depende de:** etapa 3 (concluída).
 
-## Etapa 5 — Pré-voo para uso real (em andamento)
+## Etapa 5 — Pré-voo para uso real (concluída)
 
 - **Objetivo:** fechar, antes dos testes com pessoas, os achados da avaliação de arquitetura de 2026-10-10 que causam perda de dados silenciosa ou impedem o testador de relatar o que viu. Só correções, sem funcionalidade nova nem mudança de formato.
 - **Entra:** autosave gravando só o projeto confirmado; aplicar aceitas só conclui se o `mapping.json` gravou; projeto inconsistente abre reparado com backup (ou lista exatamente o que está errado); Diagnóstico com erros globais e identificação do build; gravação ao sair da página e sem atraso nas operações caras; deploy rodando tudo que o CI roda, Node fixado, Dependabot; MCP com stdout limpo e limites de memória (0.3.1); **só desktop** (decisão de 2026-10-11: o layout de celular sai, com largura mínima e aviso, porque ninguém o testa nem o usará); guia do testador (`docs/TESTING.md`) com os roteiros consolidados e o template de registro do marco.
-- **Detalhamento:** [`PLAN.md`](../PLAN.md). Desenhada para execução por um coordenador de agentes, em quatro ondas.
+- **Entregue:** fases 5.1 a 5.9, executadas por um coordenador de agentes em quatro ondas (PRs #77 a #81, #91 a #93, #95 e #96, mais o da 5.9): o autosave e o zip gravam o projeto confirmado; "Aplicar aceitas" só conclui se o `mapping.json` gravou; projeto inconsistente abre com a lista exata e "Reparar e abrir", com backup em `backups/`; build id (`abc1234 · AAAA-MM-DD`) na barra de status e em Configurações › Sobre, e o "Copiar" do Diagnóstico com cabeçalho; gravação ao sair da página e na hora nas operações caras (debounce de 250 ms); deploy validado pelo CI, Node 22 fixado, Dependabot e orçamento de 1,5 MB do `index.html`; MCP 0.3.1 (stdout limpo, limites de imagem); só desktop, com largura mínima de 900 px; e o guia do testador [`TESTING.md`](TESTING.md), com os roteiros consolidados e os templates do relato e do registro do marco. Histórico, com as decisões consolidadas, em [`history/PLAN-etapa-5.md`](history/PLAN-etapa-5.md).
 - **Depende de:** etapa 4 (concluída).
 
 ## Marco — Uso real
 
 - **Objetivo:** usar a ferramenta em trabalho de verdade antes de qualquer evolução.
 - **Antes de começar:** decidir onde os projetos moram (recomendado: repositório git).
-- **Registrar:** telas mapeadas, devs que consultam, telas implementadas por agentes a partir da ferramenta e uma lista do que atrapalhou (template em `docs/TESTING.md`, fase 5.8).
+- **Registrar:** telas mapeadas, devs que consultam, telas implementadas por agentes a partir da ferramenta e uma lista do que atrapalhou (template "Registro do marco 'Uso real'" em [`TESTING.md`](TESTING.md), fase 5.9).
 - **Depende de:** etapa 5; as evoluções só começam depois dele.
 
 ## Evoluções
@@ -95,3 +95,4 @@ Só depois do marco, se a ferramenta se provar útil.
 - Reverter, depois de aplicada, uma mudança específica de uma proposta.
 - Editor de especializações dentro da app.
 - Paleta de comandos e busca global (antiga R10).
+- **Diário de recuperação** (pedido do dono na etapa 5): ao sair da página, uma cópia das mudanças ainda não gravadas vai para o armazenamento do navegador, e ao reabrir o projeto a app oferece "Recuperar alterações não gravadas". **Condição de entrada:** algum testador perder dados ao fechar a aba (hoje a proteção é o "Sair da página?": quem escolhe ficar não perde nada).

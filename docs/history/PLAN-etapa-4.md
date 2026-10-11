@@ -240,6 +240,8 @@ A revisão pode ser interrompida e retomada quantas vezes o usuário quiser, inc
 
 ### Roteiro de teste manual da etapa 4
 
+> **Roteiro atual:** os roteiros de teste manual foram consolidados, só desktop, em [`docs/TESTING.md`](../TESTING.md) (fase 5.9); este roteiro lá é **R5 (com agente; os passos que dispensam o agente estão em R4)**. Este texto fica como registro histórico.
+
 Use uma pasta de projeto dentro de um repositório git e o Claude Code com o MCP 0.3.0.
 
 1. **Importação nova:** peça ao agente para montar um projeto a partir de dois prints de tela, com a SDUI v2. Confira que o `mapping.json` não mudou e que a janela Propostas mostra a proposta nova.

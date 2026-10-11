@@ -171,6 +171,8 @@ A importação aceita `formatVersion` 1 e 2. Uma especialização v1 é tratada 
 
 ### Roteiro de teste manual da 3b
 
+> **Roteiro atual:** os roteiros de teste manual foram consolidados, só desktop, em [`docs/TESTING.md`](../TESTING.md) (fase 5.9); este roteiro lá é **R3**. Este texto fica como registro histórico.
+
 Use o projeto do roteiro 13.9 ([`docs/history/PLAN-etapas-1-2.md`](docs/history/PLAN-etapas-1-2.md)) numa pasta dentro de um repositório git.
 
 1. Atualize a SDUI aplicada para o `examples/specs/sdui.json` v2 (Especializações → Atualizar versão). Confira a camada **Telas** nova, as plataformas no diálogo e que o Modelo de dados (v1) continua funcionando.

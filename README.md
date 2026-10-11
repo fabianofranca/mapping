@@ -69,6 +69,8 @@ O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service wo
 
 ## Como relatar um problema
 
+Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md).
+
 A app não envia nada para a rede (nem telemetria), então o relato depende de você copiar os dados:
 
 1. Abra o **Diagnóstico**: a aba Diagnóstico da janela de baixo (`Ctrl+Shift+6`).
@@ -79,6 +81,7 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 
 ## Documentação
 
+- [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, instalação do MCP, roteiros de teste manual e os templates do relato e do registro de uso real).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
 - [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v8).
 - [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md): formato da proposta de alteração e regras da revisão.

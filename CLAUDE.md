@@ -4,7 +4,7 @@
 
 Mapping: app web para marcar áreas retangulares em imagens, organizar em camadas e anotar com pares chave-valor, salvando tudo num `mapping.json` ao lado das imagens.
 
-**Leia o `PLAN.md` antes de qualquer tarefa** (resumo do produto e fases pendentes, quando houver). Trabalhe **uma fase por vez**, na ordem, e marque os checkboxes concluídos no próprio PR. A referência atual está em `docs/` (`ARCHITECTURE.md`, `FORMAT.md`, `SPEC-FORMAT.md`, `MCP.md`, `AGENT-GUIDE.md`); o plano das etapas concluídas está em `docs/history/` (inclui o roteiro de teste manual, seção 13.9).
+**Leia o `PLAN.md` antes de qualquer tarefa** (resumo do produto e fases pendentes, quando houver). Trabalhe **uma fase por vez**, na ordem, e marque os checkboxes concluídos no próprio PR. A referência atual está em `docs/` (`ARCHITECTURE.md`, `FORMAT.md`, `SPEC-FORMAT.md`, `MCP.md`, `AGENT-GUIDE.md`); o plano das etapas concluídas está em `docs/history/`. Os roteiros de teste manual e o template do relato estão em `docs/TESTING.md`.
 
 ## Stack
 
@@ -75,7 +75,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 ## Etapa atual e etapas futuras
 
-**Etapa atual: 5 — Pré-voo para uso real** (detalhada no `PLAN.md`: só correções dos achados da avaliação de arquitetura, uma fase por PR, executadas em ondas por um coordenador de agentes). A ordem das próximas (marco de uso real e evoluções) está em [`docs/ROADMAP.md`](docs/ROADMAP.md). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa. As funcionalidades do núcleo são genéricas: nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
+**Etapa atual: nenhuma.** A etapa 5 (pré-voo para uso real) foi a última detalhada; o próximo passo é o marco "Uso real", com os testes guiados por [`docs/TESTING.md`](docs/TESTING.md). A ordem das próximas (marco de uso real e evoluções) está em [`docs/ROADMAP.md`](docs/ROADMAP.md). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa. As funcionalidades do núcleo são genéricas: nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
 
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
@@ -86,4 +86,5 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - **Etapa 3a — Servidor MCP, base (concluída):** histórico em `docs/history/PLAN-etapa-3a.md`; uso em `docs/MCP.md` e `docs/AGENT-GUIDE.md`.
 - **Etapa 3b — Referências de código (concluída):** histórico em `docs/history/PLAN-etapa-3b.md`; formato em `docs/SPEC-FORMAT.md` e `docs/FORMAT.md` (schema v7), uso em `docs/MCP.md` e `docs/AGENT-GUIDE.md`.
 - **Etapa 4 — Propostas de alteração com revisão (concluída):** histórico em `docs/history/PLAN-etapa-4.md` (inclui o roteiro de teste manual da etapa 4); formato em `docs/PROPOSAL-FORMAT.md`, `docs/FORMAT.md` (schema v8) e `docs/SPEC-FORMAT.md` (especialização v3), uso em `docs/MCP.md` e `docs/AGENT-GUIDE.md` (MCP 0.3.0, sem `apply_changes`), design em `docs/redesign/HANDOFF-PROPOSALS.md`.
+- **Etapa 5 — Pré-voo para uso real (concluída):** histórico em `docs/history/PLAN-etapa-5.md` (com as decisões consolidadas dos PRs e os prompts do coordenador e do testador do Cowork, `docs/history/etapa-5-*.md`); guia do testador em `docs/TESTING.md`; MCP 0.3.1.
 - **Etapas futuras:** a ordem está em [`docs/ROADMAP.md`](docs/ROADMAP.md) (marco de uso real e evoluções). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa.
