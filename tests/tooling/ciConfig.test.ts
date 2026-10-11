@@ -124,3 +124,22 @@ describe('Dependabot', () => {
     expect(config.match(/update-types: \[minor, patch\]/g)).toHaveLength(2);
   });
 });
+
+describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
+  const release = read('.github/workflows/mcp-release.yml');
+
+  it('roda os testes sem os orçamentos de desempenho (oscilam no runner e não dizem nada do MCP)', () => {
+    expect(release).toMatch(/PERF_BUDGETS=off npm test/);
+    expect(release).not.toMatch(/^\s+- run: npm test\s*$/m);
+  });
+
+  it('anexa à Release que já existe (criada pela tela do GitHub) em vez de falhar', () => {
+    expect(release).toMatch(/gh release view/);
+    expect(release).toMatch(/gh release upload [^\n]*--clobber/);
+  });
+
+  it('pode ser disparado à mão para uma tag que já existe', () => {
+    expect(release).toMatch(/^ {2}workflow_dispatch:/m);
+    expect(release).toMatch(/ref: refs\/tags\/\$\{\{ env\.TAG \}\}/);
+  });
+});
