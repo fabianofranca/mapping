@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { deserialize, readRevision, serialize, type Project } from '../../src/model';
+import { AUTOSAVE_DELAY_MS } from '../../src/storage/autosave';
 import { createFolderStorage } from '../../src/storage/folder';
 import { openSession, type ProjectSession } from '../../src/store/session';
 import { clearReportedErrors } from '../../src/utils/report';
@@ -69,10 +70,10 @@ describe('revisão do mapping.json', () => {
     const { root, text, project } = projectOnDisk(sampleProject(), 4);
     session = open(root, project, text);
     session.actions.renameProject('Um');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect((await diskProject(root)).revision).toBe(5);
     session.actions.renameProject('Dois');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect((await diskProject(root)).revision).toBe(6);
     expect(session.saveStatus.value).toBe('saved');
   });
@@ -87,7 +88,7 @@ describe('revisão do mapping.json', () => {
     expect(readRevision(text)).toBe(0);
     session = open(root, project, text);
     session.actions.renameProject('Novo');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect((await diskProject(root)).revision).toBe(1);
   });
 
@@ -97,7 +98,7 @@ describe('revisão do mapping.json', () => {
     const external = externalWrite(root, project, 1, 'Feito pelo MCP');
 
     session.actions.renameProject('Meu nome');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
     expect(session.saveStatus.value).toBe('error');
     expect(session.conflict.value).toEqual({ reloadFailed: false });
@@ -110,7 +111,7 @@ describe('revisão do mapping.json', () => {
     session = open(root, project, text);
     root.put('mapping.json', text.replace('"Teste"', '"Editado à mão"'));
     session.actions.renameProject('Meu nome');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
   });
 
@@ -119,7 +120,7 @@ describe('revisão do mapping.json', () => {
     session = open(root, project, text);
     externalWrite(root, project, 7, 'Feito pelo MCP');
     session.actions.renameProject('Meu nome');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
 
     await session.resolveConflict('keep');
@@ -136,7 +137,7 @@ describe('revisão do mapping.json', () => {
     session = open(root, project, text);
     const external = externalWrite(root, project, 1, 'Feito pelo MCP');
     session.actions.renameProject('Meu nome');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
     await session.resolveConflict('reload');
     await vi.advanceTimersByTimeAsync(2000);
@@ -155,7 +156,7 @@ describe('revisão do mapping.json', () => {
     session = open(root, project, text);
     externalWrite(root, project, 1, 'Feito pelo MCP');
     session.actions.renameProject('Meu nome');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
     root.put('mapping.json', '{ isso não é json');
     await session.resolveConflict('reload');
@@ -172,7 +173,7 @@ describe('revisão do mapping.json', () => {
     session = open(root, project, text);
     root.files.delete('mapping.json');
     session.actions.renameProject('Meu nome');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).toBeNull();
     expect((await diskProject(root)).project.name).toBe('Meu nome');
   });
@@ -208,7 +209,7 @@ describe('mudanças externas', () => {
     expect(session.saveStatus.value).toBe('saved');
     // E uma gravação seguinte parte da revisão nova.
     session.actions.renameProject('Depois');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect((await diskProject(root)).revision).toBe(2);
   });
 
@@ -217,7 +218,7 @@ describe('mudanças externas', () => {
     session = open(root, project, text);
     expect(await session.sync()).toBe('unchanged');
     session.actions.renameProject('Meu nome');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(await session.sync()).toBe('unchanged');
     expect(session.reloads.value).toBe(0);
   });
@@ -239,7 +240,7 @@ describe('mudanças externas', () => {
     expect(await session.sync()).toBe('busy');
     expect(session.store.project.value?.project.name).toBe('Meu nome');
 
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
   });
 
@@ -270,7 +271,7 @@ describe('mudanças externas', () => {
     session = open(root, project, text);
     externalWrite(root, project, 1, 'Feito pelo MCP');
     session.actions.renameProject('Meu nome');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.conflict.value).not.toBeNull();
     expect(await session.sync()).toBe('unchanged');
     expect(session.reloads.value).toBe(0);
@@ -280,7 +281,7 @@ describe('mudanças externas', () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     session = open(root, project, text);
     session.actions.renameProject('Local');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.store.canUndo.value).toBe(true);
     const current = await diskProject(root);
     externalWrite(root, current, current.revision + 1, 'Externo');

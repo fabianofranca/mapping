@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SCHEMA_VERSION, deserialize, serialize, specFiles } from '../../src/model';
+import { AUTOSAVE_DELAY_MS } from '../../src/storage/autosave';
 import { createFolderStorage } from '../../src/storage/folder';
 import type { PreparedImage } from '../../src/storage/imageImport';
 import { HISTORY_LIMIT } from '../../src/store/history';
@@ -64,7 +65,7 @@ describe('sessão de projeto', () => {
     session = start(root);
     const sdui = loadExample('sdui');
     expect(session.actions.applySpecialization(sdui).ok).toBe(true);
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     const copy = await root.read('specs/sdui.json');
     expect(JSON.parse(copy ?? '')).toEqual(sdui);
     expect((await savedProject(root)).specializations).toEqual([
@@ -72,12 +73,12 @@ describe('sessão de projeto', () => {
     ]);
 
     expect(session.actions.removeSpecialization('sdui', 'convert').ok).toBe(true);
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(await root.read('specs/sdui.json')).toBeNull();
     expect((await savedProject(root)).specializations).toEqual([]);
 
     session.store.undo();
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(await root.read('specs/sdui.json')).toBe(copy);
 
     const files = await session.collectFiles();
@@ -85,7 +86,7 @@ describe('sessão de projeto', () => {
     expect(files.specs.get('specs/sdui.json')).toBe(copy);
   });
 
-  it('adiciona imagens: grava o arquivo, cria a entrada e salva o mapping após o debounce', async () => {
+  it('adiciona imagens: grava o arquivo, cria a entrada e salva o mapping sem esperar o debounce', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);
     const result = await session.addImages([
@@ -96,10 +97,7 @@ describe('sessão de projeto', () => {
     expect(result).toEqual({ added: ['images/a.jpg', 'images/a-2.jpg'], failed: [] });
     expect(await root.read('images/a.jpg')).toBe('400x300');
     expect(await root.read('images/a-2.jpg')).toBe('100x100');
-    expect(session.saveStatus.value).toBe('saving');
-    expect(await root.read('mapping.json')).toBeNull();
-
-    await vi.advanceTimersByTimeAsync(800);
+    // Operação cara (fase 5.5): a importação inteira grava uma vez, ao terminar.
     expect(session.saveStatus.value).toBe('saved');
     const saved = await savedProject(root);
     expect(saved.images.map((i) => [i.file, i.width, i.height])).toEqual([
@@ -393,7 +391,7 @@ describe('sessão de projeto', () => {
     await session.addImages([file('ruim.jpg', 'ruim')]);
     session.actions.renameProject('Outro nome');
     root.failWrites = new Error('sem permissão');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(reportedErrors.value.map((e) => [e.context, e.message])).toEqual([
       ['session.addImage', 'decode'],
       ['save', 'sem permissão'],
@@ -407,7 +405,7 @@ describe('sessão de projeto', () => {
     session = start(root);
     session.actions.renameProject('Outro nome');
     root.failWrites = new Error('sem permissão');
-    await vi.advanceTimersByTimeAsync(800);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.saveStatus.value).toBe('error');
 
     root.failWrites = null;
@@ -504,9 +502,9 @@ describe('sessão de projeto', () => {
       session.actions.renameProject('Renomeado');
       expect(session.actions.beginGesture().ok).toBe(true);
       expect(session.actions.previewMarkingMove('M4', 50, 0).ok).toBe(true);
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       session.actions.cancelGesture();
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
 
       const saved = await savedProject(root);
       expect(saved.project.name).toBe('Renomeado');
@@ -526,10 +524,10 @@ describe('sessão de projeto', () => {
       session.actions.beginGesture();
       session.actions.previewMarkingMove('M4', 20, 0);
       session.actions.previewMarkingMove('M4', 50, 0);
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(counting.saves()).toBe(0);
       session.actions.commitGesture();
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(counting.saves()).toBe(1);
       expect(m4x(await savedProject(root))).toBe(50);
     });
@@ -567,6 +565,138 @@ describe('sessão de projeto', () => {
     const files = await session.collectFiles();
     expect([...files.images.keys()]).toEqual(['images/frente.jpg']);
     expect(files.missingImages).toEqual(['images/lateral.jpg']);
+  });
+
+  describe('operações caras gravam sem debounce (fase 5.5)', () => {
+    /** Sessão sobre a pasta, medindo quantas gravações do `mapping.json` correm ao mesmo tempo. */
+    function startTracking(
+      root: MemoryDirectory,
+      project = emptyProject(),
+      gate: Promise<void> = Promise.resolve(),
+    ) {
+      const storage = createFolderStorage(root);
+      let saves = 0;
+      let running = 0;
+      let maxParallel = 0;
+      const s = openSession({
+        storage: {
+          ...storage,
+          saveMapping: async (text) => {
+            saves++;
+            running++;
+            maxParallel = Math.max(maxParallel, running);
+            await gate;
+            await storage.saveMapping(text);
+            running--;
+          },
+        },
+        project,
+        prepareImage,
+        now: () => NOW,
+        newId: ids(),
+      });
+      return { session: s, saves: () => saves, maxParallel: () => maxParallel };
+    }
+
+    it('adicionar imagem grava o mapping.json sem esperar o timer', async () => {
+      const root = new MemoryDirectory('p');
+      const t = startTracking(root);
+      session = t.session;
+      await session.addImages([file('a.jpg', '400x300')]);
+      expect(session.saveStatus.value).toBe('saved');
+      expect((await savedProject(root)).images.map((i) => i.file)).toEqual([
+        'images/a.jpg',
+      ]);
+      expect(t.saves()).toBe(1);
+    });
+
+    it('trocar imagem grava sem esperar o timer', async () => {
+      const root = new MemoryDirectory('p');
+      root.put('images/lateral.jpg', 'jpg');
+      session = startTracking(root, sampleProject()).session;
+      const result = await session.replaceImage('I1', file('nova.jpg', '4000x3000'), () =>
+        Promise.resolve(true),
+      );
+      expect(result).toBe('replaced');
+      expect((await savedProject(root)).images.find((i) => i.id === 'I1')?.file).toBe(
+        'images/nova.jpg',
+      );
+    });
+
+    it('remover imagem e aplicar, atualizar ou remover especialização gravam sem esperar o timer', async () => {
+      const root = new MemoryDirectory('p');
+      session = startTracking(root, sampleProject()).session;
+      const sdui = loadExample('sdui');
+
+      expect(session.actions.applySpecialization(sdui).ok).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect((await savedProject(root)).specializations.map((s) => s.id)).toEqual([
+        'sdui',
+      ]);
+
+      expect(
+        session.actions.updateSpecialization({ ...sdui, version: sdui.version + 1 }).ok,
+      ).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect((await savedProject(root)).specializations[0]?.version).toBe(
+        sdui.version + 1,
+      );
+
+      expect(session.actions.removeSpecialization('sdui', 'convert').ok).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect((await savedProject(root)).specializations).toEqual([]);
+
+      expect(session.actions.removeImage('I2').ok).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      expect((await savedProject(root)).images.map((i) => i.id)).toEqual(['I1']);
+    });
+
+    it('duas operações caras seguidas não gravam em paralelo', async () => {
+      const root = new MemoryDirectory('p');
+      let release = () => {};
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const t = startTracking(root, sampleProject(), gate);
+      session = t.session;
+      // Libera a gravação mesmo se uma conferência falhar, para o `close` do afterEach terminar.
+      try {
+        expect(session.actions.applySpecialization(loadExample('sdui')).ok).toBe(true);
+        await vi.advanceTimersByTimeAsync(0);
+        // A primeira gravação está em andamento quando a segunda operação chega.
+        expect(t.saves()).toBe(1);
+        expect(session.actions.removeImage('I2').ok).toBe(true);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(t.saves()).toBe(1);
+        release();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(t.saves()).toBe(2);
+        expect(t.maxParallel()).toBe(1);
+        expect(session.saveStatus.value).toBe('saved');
+        const saved = await savedProject(root);
+        expect(saved.revision).toBe(sampleProject().revision + 2);
+        expect(saved.images.map((i) => i.id)).toEqual(['I1']);
+        expect(saved.specializations.map((s) => s.id)).toEqual(['sdui']);
+      } finally {
+        release();
+      }
+    });
+
+    it('uma edição comum chega ao disco em até 250 ms', async () => {
+      const root = new MemoryDirectory('p');
+      session = startTracking(root).session;
+      session.actions.renameProject('Rápido');
+      await vi.advanceTimersByTimeAsync(250);
+      expect((await savedProject(root)).project.name).toBe('Rápido');
+    });
+
+    it('edições comuns continuam esperando o debounce', async () => {
+      const root = new MemoryDirectory('p');
+      session = startTracking(root).session;
+      session.actions.renameProject('Devagar');
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS - 1);
+      expect(await root.read('mapping.json')).toBeNull();
+      await vi.advanceTimersByTimeAsync(1);
+      expect((await savedProject(root)).project.name).toBe('Devagar');
+    });
   });
 
   it('fechar grava o que estiver pendente', async () => {
@@ -651,7 +781,7 @@ describe('sessão de projeto', () => {
       session = openV1(root);
       session.actions.renameProject('Migrado');
       root.failWrites = new Error('sem permissão');
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
       expect(session.saveStatus.value).toBe('error');
       expect(await root.read('mapping.json')).toBe(v1Text);
       expect(session.backupSaved.value).toBeNull();

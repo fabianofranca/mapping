@@ -390,6 +390,82 @@ describe('fechar', () => {
   });
 });
 
+describe('sair da página (fase 5.5)', () => {
+  /**
+   * A gravação imediata é provada pelo `flush()` chamado no próprio evento (o debounce não
+   * chama `flush` antes do timer); depois, só confere que ela chegou ao disco.
+   */
+  const soon = { timeout: 1000, interval: 10 };
+
+  function setVisibility(state: DocumentVisibilityState) {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => state,
+    });
+  }
+
+  afterEach(() => setVisibility('visible'));
+
+  it('pagehide grava na hora, sem esperar o debounce', async () => {
+    const root = new MemoryDirectory('p');
+    await app.createFolderProject(root, 'Original', []);
+    const { session } = await openedOf(app);
+    const flush = vi.spyOn(session, 'flush');
+    session.actions.renameProject('Saindo');
+    window.dispatchEvent(new Event('pagehide'));
+    expect(flush).toHaveBeenCalledTimes(1);
+    await vi.waitFor(async () => {
+      expect(await root.files.get('mapping.json')?.text()).toContain('Saindo');
+    }, soon);
+  });
+
+  it('visibilitychange para hidden grava na hora', async () => {
+    await app.createLocalProject('Local');
+    const { session, localId } = await openedOf(app);
+    const flush = vi.spyOn(session, 'flush');
+    session.actions.renameProject('Escondido');
+    setVisibility('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(flush).toHaveBeenCalledTimes(1);
+    await vi.waitFor(async () => {
+      await app.refreshLocalProjects();
+      expect(app.localProjects.value.find((p) => p.id === localId)?.name).toBe(
+        'Escondido',
+      );
+    }, soon);
+  });
+
+  it('beforeunload com pendência pede confirmação; sem pendência, não', async () => {
+    const root = new MemoryDirectory('p');
+    await app.createFolderProject(root, 'Original', []);
+    const { session } = await openedOf(app);
+    await session.flush();
+    const clean = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(clean);
+    expect(clean.defaultPrevented).toBe(false);
+
+    session.actions.renameProject('Pendente');
+    const pending = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(pending);
+    expect(pending.defaultPrevented).toBe(true);
+  });
+
+  it('beforeunload com pendência agenda a gravação e pede confirmação', async () => {
+    const root = new MemoryDirectory('p');
+    await app.createFolderProject(root, 'Original', []);
+    const { session } = await openedOf(app);
+    const flush = vi.spyOn(session, 'flush');
+    session.actions.renameProject('Fechando');
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(flush).toHaveBeenCalledTimes(1);
+    await vi.waitFor(async () => {
+      expect(await root.files.get('mapping.json')?.text()).toContain('Fechando');
+    }, soon);
+  });
+});
+
 describe('propostas de alteração (etapa 4)', () => {
   const proposalZip = async () => {
     const { proposal } = richScenario();

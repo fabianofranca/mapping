@@ -456,17 +456,26 @@ export async function closeProject(): Promise<void> {
 
 let lifecycleBound = false;
 
-/** Grava ao sair da página e avisa antes de fechar com alterações não gravadas. */
+/**
+ * Grava ao sair da página e avisa antes de fechar com alterações não gravadas. A gravação é
+ * assíncrona e pode morrer com a aba, por isso começa já em `visibilitychange: hidden` e em
+ * `pagehide` (o iOS Safari não dispara `beforeunload`), sem esperar o debounce.
+ */
 function bindPageLifecycle(): void {
   if (lifecycleBound) return;
   lifecycleBound = true;
+  const flushNow = () => void openProject.value?.session.flush();
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') void openProject.value?.session.flush();
+    if (document.visibilityState === 'hidden') flushNow();
   });
+  window.addEventListener('pagehide', flushNow);
   window.addEventListener('beforeunload', (event) => {
     const status = openProject.value?.session.saveStatus.value;
     if (status && status !== 'saved') {
-      void openProject.value?.session.flush();
+      // `flushNow()` só agenda a gravação: o diálogo de confirmação é modal e pausa a página,
+      // então a escrita (assíncrona) só anda se a pessoa escolher ficar. A proteção é essa
+      // escolha; confirmar a saída perde o que ainda não foi gravado.
+      flushNow();
       event.preventDefault();
     }
   });
