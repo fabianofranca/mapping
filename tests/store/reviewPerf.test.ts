@@ -13,6 +13,8 @@ import { openHarness } from './proposalHarness';
 beforeEach(() => localStorage.clear());
 
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
+/** Uma repetição separa ruído do runner de regressão (ver tests/model/performance.test.ts). */
+const BUDGET_OPTIONS = { retry: 1 };
 
 /** Uma imagem com `n` marcações; a proposta renomeia todas e cria uma anotação em cada. */
 function bigScenario(n: number) {
@@ -43,6 +45,7 @@ function bigScenario(n: number) {
 describe('revisão de uma proposta grande', () => {
   budgetIt(
     'abrir, decidir e ler o estado derivado de 2000 mudanças continua rápido',
+    BUDGET_OPTIONS,
     async () => {
       const { base, proposal } = bigScenario(1000);
       expect(proposal.changes.length).toBe(2000);
