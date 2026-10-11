@@ -2,9 +2,17 @@ name: MCP release
 
 # Tag `mcp-v<versão>` (ex: mcp-v0.3.0): gera o `mapping-mcp.js` e o anexa à Release.
 # A versão da tag precisa ser a de `SERVER_VERSION` em `mcp/version.ts`.
+# A Release pode ter sido criada antes pela tela do GitHub (que cria a tag junto): nesse
+# caso os arquivos são anexados a ela. `workflow_dispatch` gera e anexa os arquivos de uma
+# tag que já existe (ex.: uma Release que ficou sem eles), sem apagar nem recriar nada.
 on:
   push:
     tags: ['mcp-v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag já existente (ex.: mcp-v0.3.1)'
+        required: true
 
 permissions:
   contents: write
@@ -12,8 +20,19 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
+      - name: Conferir o nome da tag
+        run: |
+          if ! printf '%s' "$TAG" | grep -Eq '^mcp-v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Tag inválida: $TAG (esperado mcp-v<versão>, ex.: mcp-v0.3.1)." >&2
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -22,16 +41,18 @@ jobs:
 
       - name: Conferir a versão da tag
         run: |
-          tag_version="${GITHUB_REF_NAME#mcp-v}"
+          tag_version="${TAG#mcp-v}"
           code_version="$(sed -n "s/.*SERVER_VERSION = '\(.*\)';/\1/p" mcp/version.ts)"
           if [ "$tag_version" != "$code_version" ]; then
-            echo "A tag $GITHUB_REF_NAME não bate com SERVER_VERSION ($code_version) em mcp/version.ts." >&2
+            echo "A tag $TAG não bate com SERVER_VERSION ($code_version) em mcp/version.ts." >&2
             exit 1
           fi
 
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      # Sem os orçamentos de desempenho: oscilam conforme o runner e não dizem nada do MCP
+      # (o CI e o deploy os medem à parte, com `npm run test:perf`).
+      - run: PERF_BUDGETS=off npm test
       - run: npm run build:mcp
 
       - name: Testar o arquivo gerado fora do repositório
@@ -45,11 +66,16 @@ jobs:
         working-directory: dist-mcp
         run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
 
-      - name: Publicar a Release
+      - name: Publicar na Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
-            --title "Servidor MCP ${GITHUB_REF_NAME#mcp-v}" \
-            --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Instruções em docs/MCP.md."
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            # Criada pela tela do GitHub (ou numa execução anterior): só anexa os arquivos.
+            gh release upload "$TAG" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 --clobber
+          else
+            gh release create "$TAG" \
+              dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
+              --title "Servidor MCP ${TAG#mcp-v}" \
+              --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Instruções em docs/MCP.md."
+          fi
