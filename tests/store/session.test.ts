@@ -679,6 +679,14 @@ describe('sessão de projeto', () => {
       }
     });
 
+    it('uma edição comum chega ao disco em até 250 ms', async () => {
+      const root = new MemoryDirectory('p');
+      session = startTracking(root).session;
+      session.actions.renameProject('Rápido');
+      await vi.advanceTimersByTimeAsync(250);
+      expect((await savedProject(root)).project.name).toBe('Rápido');
+    });
+
     it('edições comuns continuam esperando o debounce', async () => {
       const root = new MemoryDirectory('p');
       session = startTracking(root).session;
