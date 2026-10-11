@@ -1,6 +1,6 @@
 # Prompt do coordenador — Etapa 5 (pré-voo para uso real)
 
-> Arquivo temporário: é o prompt inicial da sessão que coordena a etapa 5 do `PLAN.md`. Ao fechar a etapa (fase 5.9), vai para `docs/history/`. Para iniciar o coordenador, basta uma sessão nova do Claude Code neste repositório com a mensagem: **"Leia `docs/prompts/etapa-5-coordenador.md` e execute."**
+> Arquivo histórico: foi o prompt inicial da sessão que coordenou a etapa 5 (concluída; plano em [`PLAN-etapa-5.md`](PLAN-etapa-5.md)). Movido de `docs/prompts/` para cá na fase 5.9, sem outras mudanças além dos caminhos. Para iniciar um coordenador com ele, a mensagem era: **"Leia `docs/history/etapa-5-coordenador.md` e execute."**
 
 ---
 
@@ -26,7 +26,7 @@ O `PLAN.md` da `main` precisa conter a etapa 5. Se não contiver, pare e avise o
 6. **Decisões.** Siga o que está "Proposto" em "Decisões a confirmar" do `PLAN.md`, salvo comentário do dono. Qualquer outra ambiguidade que **mude comportamento visível** vira pergunta no PR da fase e uma linha na sua mensagem ao dono; as demais fases continuam. Detalhe pequeno: o executor decide e documenta.
 7. **Com o dono.** Ao fim da onda 1, mande uma mensagem única listando o que ficou para ele: criar o ruleset da `main` (instruções no PR da 5.6) e criar a tag `mcp-v0.3.1` (PR da 5.7). Lembre que ele pode disparar o deploy de preview (`workflow_dispatch`) para ver um branch publicado.
 8. **Fase 5.8 (só desktop).** É a única fase que remove código em vez de corrigir. Confira no PR: nenhum teste de celular foi "adaptado" para passar (eles saem junto com o componente); o aviso de janela estreita tem teste; o grep do Aceite está limpo; o `CLAUDE.md` foi atualizado no mesmo PR (a regra "desktop primeiro, utilizável no celular" deixa de existir). Nenhuma mudança de comportamento no desktop além da largura mínima.
-9. **Fase 5.9.** O Aceite exige um agente **novo, sem contexto**, que receba só `docs/TESTING.md`, abra a app publicada (ou o preview) e produza o relato no template. Você lança esse agente, cola o relato no PR da 5.9 e corrige o guia com o executor até o relato sair sem perguntas. O executor da 5.9 também confere que `docs/TESTING.md` e o prompt do testador no computador do dono (`docs/prompts/etapa-5-testes-cowork.md`) batem: mesmos roteiros, mesmo template, mesmos nomes de janela e de botão; o que divergir, corrige no guia ou no prompt.
+9. **Fase 5.9.** O Aceite exige um agente **novo, sem contexto**, que receba só `docs/TESTING.md`, abra a app publicada (ou o preview) e produza o relato no template. Você lança esse agente, cola o relato no PR da 5.9 e corrige o guia com o executor até o relato sair sem perguntas. O executor da 5.9 também confere que `docs/TESTING.md` e o prompt do testador no computador do dono (`docs/history/etapa-5-testes-cowork.md`) batem: mesmos roteiros, mesmo template, mesmos nomes de janela e de botão; o que divergir, corrige no guia ou no prompt.
 10. **Relatório.** Uma mensagem curta ao dono ao fim de cada onda: PRs mergeados, pendentes, bloqueios e decisões tomadas. Ao fim da etapa, um relatório final com os links de todos os PRs, as decisões consolidadas (que o executor da 5.9 deve ter levado para `docs/history/PLAN-etapa-5.md`) e o relato do agente testador.
 
 ## Nunca
