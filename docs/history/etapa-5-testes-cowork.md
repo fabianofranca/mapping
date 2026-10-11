@@ -37,7 +37,7 @@ Os códigos são os passos do `docs/TESTING.md`.
 - Campos de texto gravam com **Enter** ou ao sair do campo; espere o indicador **Salvo** antes de conferir o disco.
 - Em ❌: capture a tela, copie o Diagnóstico naquele momento (`Ctrl+Shift+6` › **Copiar**), guarde o `mapping.json` daquele instante na pasta de trabalho e anote **passos exatos para reproduzir**. Tente reproduzir uma segunda vez antes de registrar; diga se reproduziu.
 - Nunca ajuste um passo para fazer o teste passar. Nunca mexa no código ou na documentação do repositório.
-- Trate como achado também: lentidão perceptível (mais de um segundo para responder), texto cortado, controle com menos de 28 px, foco do teclado perdido depois de fechar um diálogo, qualquer erro no console do navegador (deixe o console do DevTools visível durante tudo).
+- Trate como achado também: lentidão perceptível (mais de um segundo para responder), texto cortado, controle com menos de 28 px, foco do teclado perdido depois de fechar um diálogo, qualquer erro no console do navegador, menos os dois conhecidos listados na seção 6 do guia (deixe o console do DevTools visível durante tudo).
 
 ## Relato
 

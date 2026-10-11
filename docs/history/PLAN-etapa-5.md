@@ -297,3 +297,10 @@ Todas as propostas da seção acima foram seguidas: `images-overlap` desloca a i
 - O erro intermitente `InvalidStateError` do `drawImage` ("The image source is detached") logo depois de aplicar uma proposta com imagem nova, registrado no #74 (fase 4.5) e, segundo o coordenador, visto também nos testes do #92; sem efeito visível e nunca reproduzido em teste automatizado.
 - O **diário de recuperação** (cópia das mudanças no armazenamento do navegador ao sair e "Recuperar alterações não gravadas" ao reabrir), a pedido do dono: entra se algum testador perder dados ao fechar a aba. Registrado nas Evoluções do [`ROADMAP`](../ROADMAP.md).
 - Os PRs do Dependabot #82 a #90 (actions, o grupo minor e patch, `@types/node` 26, **TypeScript 7** e **Preact 11**), abertos e sem revisão, para depois da etapa.
+- **Achados de interface do Aceite da 5.9** (rodada 1, build `af30ba6`, Chromium por automação a 1280×800; nenhum perde dados, e esta fase não muda código):
+  - em `file://`, `<link rel="icon" href="./icons/icon.svg">` e o `apple-touch-icon` dão 404 a cada carga: o `index.html` avulso não leva a pasta `icons/`;
+  - Camadas: o selo da especialização sai da linha de 30 px e cobre o nome da camada de baixo; a lista transborda na horizontal (`scrollWidth` 351 contra `clientWidth` 255);
+  - tabela `atributos` em Detalhes: o seletor de "obrigatório" cobre a coluna "exemplo", e "String" aparece cortado ("Str") na largura padrão;
+  - campo de referência em Detalhes com a seta duplicada (o ícone e o texto "→ User.name");
+  - `.editor` e o corpo de Detalhes podem ficar rolados na horizontal (`scrollLeft` 54 e 13): `span.tooltip` e `kbd` invisíveis passam da borda e o contêiner rola por foco (visto na automação, sem passo manual isolado);
+  - zoom por Ctrl+roda com passos grandes demais (53 → 144 → 390 → 604%; seis passos chegam a 5000%).
