@@ -299,8 +299,13 @@ Todas as propostas da seção acima foram seguidas: `images-overlap` desloca a i
 - Os PRs do Dependabot #82 a #90 (actions, o grupo minor e patch, `@types/node` 26, **TypeScript 7** e **Preact 11**), abertos e sem revisão, para depois da etapa.
 - **Achados de interface do Aceite da 5.9** (rodada 1, build `af30ba6`, Chromium por automação a 1280×800; nenhum perde dados, e esta fase não muda código):
   - em `file://`, `<link rel="icon" href="./icons/icon.svg">` e o `apple-touch-icon` dão 404 a cada carga: o `index.html` avulso não leva a pasta `icons/`;
-  - Camadas: o selo da especialização sai da linha de 30 px e cobre o nome da camada de baixo; a lista transborda na horizontal (`scrollWidth` 351 contra `clientWidth` 255);
+  - Camadas: o selo da especialização sai da linha de 30 px e cobre o nome da camada de baixo, só com a janela baixa (Árvore aberta junto; com a janela alta, 54 px por linha, não acontece); a lista transborda na horizontal (`scrollWidth` 351 contra `clientWidth` 255);
   - tabela `atributos` em Detalhes: o seletor de "obrigatório" cobre a coluna "exemplo", e "String" aparece cortado ("Str") na largura padrão;
   - campo de referência em Detalhes com a seta duplicada (o ícone e o texto "→ User.name");
   - `.editor` e o corpo de Detalhes podem ficar rolados na horizontal (`scrollLeft` 54 e 13): `span.tooltip` e `kbd` invisíveis passam da borda e o contêiner rola por foco (visto na automação, sem passo manual isolado);
   - zoom por Ctrl+roda com passos grandes demais (53 → 144 → 390 → 604%; seis passos chegam a 5000%).
+- **Achados de interface do Aceite da 5.9, rodada 2** (mesmo build `af30ba6` e ambiente; sem mudança de código):
+  - num seletor segmentado, clicar na opção já marcada apaga o valor (grava `null`) sem nenhum indício na tela;
+  - o segmentado da `ação` do onHold passa da largura do cartão e da janela Detalhes (o botão `track` termina em x=1253 com a janela até 1240);
+  - selecionar um item na Árvore enquadra a seleção e muda o zoom, o que atrapalha quem quer manter o zoom;
+  - Diagnóstico: as colunas Hora e Contexto quebram no meio da palavra quando a janela de baixo é estreita.
