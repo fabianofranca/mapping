@@ -41,6 +41,8 @@ Os códigos são os passos do `docs/TESTING.md`.
 
 ## Relato
 
+**Escreva o relato a cada roteiro concluído, não só no fim**: ao terminar R0, crie o `relato.md` com o cabeçalho e os passos de R0; ao terminar cada roteiro seguinte, acrescente os passos e os achados dele e grave o arquivo. Uma sessão interrompida não pode perder o que já foi observado, e o dono pode acompanhar o andamento abrindo o arquivo. Se a rodada for dividida em mais de uma sessão (por exemplo R0 a R2, R3 a R5, R6 a R8), cada sessão continua o mesmo `relato.md`.
+
 Entregue dois arquivos na pasta de trabalho e cole o conteúdo do primeiro na conversa:
 
 1. `relato.md`, no template **"Relato de uma rodada de teste"** da seção 8 do `docs/TESTING.md`: build id, canal, navegador e versão, sistema operacional, data, versão e origem do MCP; a tabela de passos com ✅/❌/não executado; os achados numerados (título, severidade, build id e data, passos para reproduzir, esperado × observado, se reproduziu, anexos); e a seção "O que atrapalhou", inclusive o que atrapalhou **você** como testador (passo ambíguo no roteiro, resultado esperado que não dá para observar). Essa última parte é a que mais importa para a fase seguinte.
