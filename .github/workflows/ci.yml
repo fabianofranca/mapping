@@ -61,7 +61,7 @@ jobs:
                 ...["lines", "statements", "functions", "branches"].map(row)].join("\n"));
             ' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage${{ inputs.label && format('-{0}', inputs.label) || '' }}
@@ -102,7 +102,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report${{ inputs.label && format('-{0}', inputs.label) || '' }}
