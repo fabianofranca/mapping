@@ -306,6 +306,6 @@ Todas as propostas da seção acima foram seguidas: `images-overlap` desloca a i
   - zoom por Ctrl+roda com passos grandes demais (53 → 144 → 390 → 604%; seis passos chegam a 5000%).
 - **Achados de interface do Aceite da 5.9, rodada 2** (mesmo build `af30ba6` e ambiente; sem mudança de código):
   - num seletor segmentado, clicar na opção já marcada apaga o valor (grava `null`) sem nenhum indício na tela;
-  - o segmentado da `ação` do onHold passa da largura do cartão e da janela Detalhes (o botão `track` termina em x=1253 com a janela até 1240);
+  - o segmentado da `ação` do onHold passa da largura do cartão e da janela Detalhes (o botão `track` termina em x=1253 com a janela até 1240), e clicar nele rola o corpo de Detalhes 13 px na horizontal (rodada 4);
   - selecionar um item na Árvore enquadra a seleção e muda o zoom, o que atrapalha quem quer manter o zoom;
   - Diagnóstico: as colunas Hora e Contexto quebram no meio da palavra quando a janela de baixo é estreita.
