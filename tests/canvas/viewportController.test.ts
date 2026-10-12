@@ -41,6 +41,20 @@ describe('ViewportController', () => {
     expect(view.viewport.value).toEqual(fitRect(EMPTY_CANVAS_RECT, SIZE));
   });
 
+  // Etapa 7 (7.2), regressão G3: fechar a janela de baixo e clicar em Enquadrar tudo
+  // usava a altura antiga (o ResizeObserver ainda não tinha disparado).
+  it('enquadrar tudo mede o container antes (sem esperar o ResizeObserver)', () => {
+    const el = container(380, 300);
+    const view = new ViewportController(el, () => canvasProject().images);
+    view.measure();
+    Object.defineProperty(el, 'clientHeight', { value: 700 });
+    view.fitAll();
+    expect(view.size.value).toEqual(SIZE);
+    expect(view.viewport.value).toEqual(
+      fitRect({ x: 0, y: 0, width: 1600, height: 800 }, SIZE),
+    );
+  });
+
   it('centraliza num retângulo e converte tela ↔ canvas', () => {
     const view = new ViewportController(container(380, 700), () => []);
     view.measure();
