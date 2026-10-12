@@ -93,6 +93,12 @@ describe('TypedFields — referência (ref)', () => {
     );
   });
 
+  // Etapa 6 (6.4), achado 6: o valor cortado ("→ User.no…") fica inteiro na dica.
+  it('o valor da referência vai inteiro no title (o campo corta o texto)', () => {
+    setup('AIN', 'dado');
+    expect(field().title).toContain('→ User.name');
+  });
+
   it('Ir para o alvo navega até a anotação apontada', async () => {
     const { onGoToAnnotation, user } = setup('AIN', 'dado');
     await user.click(screen.getByRole('button', { name: 'Ir para o alvo' }));

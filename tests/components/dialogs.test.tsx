@@ -1,8 +1,9 @@
-import { cleanup, render, within } from '@testing-library/preact';
+import { cleanup, render, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { locale, theme } from '../../src/store/settings';
+import { useState } from 'preact/hooks';
 import { Dialog } from '../../src/ui/Dialog';
 import { HELP_PROPOSALS, HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
@@ -66,6 +67,52 @@ describe('Dialog', () => {
     rerender(<Dialog title="a" size="lg" flush onCancel={vi.fn()} actions={null} />);
     expect(dialogEl().classList.contains('dialog-lg')).toBe(true);
     expect(dialogEl().querySelector('.dialog-body-flush')).not.toBeNull();
+  });
+
+  // Etapa 6 (6.4), achado 4: ao fechar, o foco volta para quem abriu (e não ao `body`).
+  function Opener() {
+    const [outer, setOuter] = useState(false);
+    const [inner, setInner] = useState(false);
+    return (
+      <>
+        <button onClick={() => setOuter(true)}>Abrir</button>
+        {outer && (
+          <Dialog
+            title="Externo"
+            onCancel={() => setOuter(false)}
+            actions={<button onClick={() => setInner(true)}>Detalhar</button>}
+          />
+        )}
+        {inner && (
+          <Dialog
+            title="Interno"
+            onCancel={() => setInner(false)}
+            actions={<button onClick={() => setInner(false)}>Ok</button>}
+          />
+        )}
+      </>
+    );
+  }
+
+  it('ao fechar, devolve o foco a quem abriu (inclusive diálogo sobre diálogo)', async () => {
+    const user = userEvent.setup();
+    const { getByRole } = render(<Opener />);
+    const opener = getByRole('button', { name: 'Abrir' });
+    opener.focus();
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Detalhar'));
+    const detail = document.activeElement as HTMLElement;
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Ok'));
+    await user.keyboard('{Enter}');
+    // O interno fechou: o foco volta ao botão do externo que o abriu.
+    await waitFor(() => expect(document.querySelectorAll('dialog')).toHaveLength(1));
+    expect(document.activeElement).toBe(detail);
+    await user.click(
+      within(dialogEl()).getByRole('button', { name: t('dialog.close'), hidden: true }),
+    );
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(opener);
   });
 });
 

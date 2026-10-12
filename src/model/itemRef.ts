@@ -102,6 +102,18 @@ export function matchShortCode(
   return found;
 }
 
+/**
+ * Nome da imagem no caminho legível da referência: o nome dado ou, sem nome, o nome do
+ * arquivo sem a pasta (`images/cadastro.webp` → `cadastro.webp`). O mesmo na app (que
+ * copia) e no MCP (que devolve no `resolve`).
+ */
+export function refImageLabel(image: {
+  readonly name: string | null;
+  readonly file: string;
+}): string {
+  return image.name ?? image.file.slice(image.file.lastIndexOf('/') + 1);
+}
+
 export interface FormatRefArgs {
   /** Nome da pasta do projeto. */
   readonly project: string;

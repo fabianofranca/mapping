@@ -573,8 +573,9 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
 
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const text = String(writeText.mock.calls[0]?.[0]);
+    // Etapa 6 (6.4), achado 6: imagem sem nome com o mesmo texto do `resolve` do MCP.
     expect(text).toBe(
-      `mapping://projeto/m/m2 (images/lateral.jpg${t('marking.pathSeparator')}Porta${t('marking.pathSeparator')}Maçaneta)`,
+      `mapping://projeto/m/m2 (lateral.jpg${t('marking.pathSeparator')}Porta${t('marking.pathSeparator')}Maçaneta)`,
     );
     expect(parseRef(text)).toEqual({ project: 'projeto', kind: 'm', code: 'm2' });
     await vi.waitFor(() =>

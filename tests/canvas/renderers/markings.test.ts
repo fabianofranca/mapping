@@ -202,6 +202,25 @@ describe('MarkingRenderer', () => {
     }
   });
 
+  // Etapa 6 (6.4), achado 6: filha no mesmo canto do pai ("Formulário …" sobre "Nome").
+  it('zoom semântico: o nome da filha no canto do pai desce para baixo do cabeçalho dele', () => {
+    const { renderer, render, editor } = setup();
+    const p = editor.store.committed.value;
+    if (!p) throw new Error('sem projeto');
+    const project: Project = {
+      ...p,
+      markings: p.markings.map((m) =>
+        m.id === 'M2' ? { ...m, rect: { x: 100, y: 100, width: 200, height: 120 } } : m,
+      ),
+    };
+    render({ project });
+    const parent = node(renderer, 'M1').text.header;
+    const child = node(renderer, 'M2').text.header;
+    expect(parent.visible()).toBe(true);
+    expect(child.visible()).toBe(true);
+    expect(child.y()).toBeGreaterThanOrEqual(parent.y() + parent.height());
+  });
+
   it('zoom semântico: área pequena só mostra o nome com "…"; desligado, nada', () => {
     const { renderer, render } = setup();
     render({ viewport: { x: 0, y: 0, scale: 0.31 } });

@@ -86,6 +86,17 @@ export interface SemanticText {
   readonly mode: SemanticMode;
   readonly card: MarkingCard;
   readonly incomplete: boolean;
+  /**
+   * Fim (y do canvas) do cabeçalho do pai quando ele passa pelo canto desta marcação
+   * (filha no mesmo canto): o nome dela desce para baixo dele em vez de cobri-lo.
+   */
+  readonly headerFloor?: number | null;
+}
+
+/** Faixa ocupada pelo nome no cabeçalho (canvas), para as filhas no mesmo canto. */
+export interface HeaderBand {
+  readonly bottom: number;
+  readonly right: number;
 }
 
 /**
@@ -100,14 +111,14 @@ export function updateSemanticText(
   input: SemanticText,
   tokens: CanvasTokens,
   zoom: number,
-): void {
+): HeaderBand | null {
   const { marking, markingRect, mode, card, incomplete } = input;
   // Com zoom alto o canto da marcação sai da tela: o texto fica ancorado na
   // parte visível dela (e recortado nela).
   const rect = intersectRects(markingRect, input.view);
   if (mode === 'none' || !rect) {
     node.group.visible(false);
-    return;
+    return null;
   }
   const px = (n: number) => n / zoom;
   const name = tokens.type.name;
@@ -127,8 +138,13 @@ export function updateSemanticText(
   const more =
     (dotCount > MAX_DOTS ? MORE_WIDTH : 0) +
     (atCorner && incomplete ? ALERT_SIZE + 2 : 0);
-  const headerX =
-    rect.x + px(before + dotsWidth + more + (dotsWidth + more > 0 ? 0 : TEXT_PADDING));
+  // Filha no mesmo canto do pai: o nome vai para a linha de baixo do cabeçalho dele.
+  const floor = input.headerFloor ?? null;
+  const shifted = floor !== null && floor > rect.y;
+  const headerTop = shifted ? floor : rect.y;
+  const headerX = shifted
+    ? rect.x + px(TEXT_PADDING)
+    : rect.x + px(before + dotsWidth + more + (dotsWidth + more > 0 ? 0 : TEXT_PADDING));
   const cut = mode === 'header' && card.rows.length > 0;
   const headerText =
     marking.name !== null
@@ -145,7 +161,7 @@ export function updateSemanticText(
       visible: true,
       text: headerText,
       x: headerX,
-      y: rect.y + px((TEXT_HEADER_HEIGHT - name.size) / 2),
+      y: headerTop + px((TEXT_HEADER_HEIGHT - name.size) / 2),
       width: Math.max(0, rect.x + rect.width - headerX - px(TEXT_PADDING)),
       height: px(name.line),
       fontSize: px(name.size),
@@ -157,7 +173,16 @@ export function updateSemanticText(
     });
   }
   const headerUsed = headerText !== '' || before + dotsWidth > 0;
-  updateCard(node, input.area, rect, headerUsed, card, tokens, zoom);
+  updateCard(node, input.area, rect, headerUsed, card, tokens, zoom, headerTop);
+  if (headerText === '') return null;
+  const textRight = headerX + Math.min(node.header.width(), node.header.getTextWidth());
+  return {
+    bottom: Math.max(
+      headerTop + px(TEXT_HEADER_HEIGHT),
+      node.header.y() + node.header.height(),
+    ),
+    right: textRight,
+  };
 }
 
 /** Cartão com fundo semiopaco: barra da camada, nomes, pares com recuo e separadores. */
@@ -169,6 +194,7 @@ function updateCard(
   card: MarkingCard,
   tokens: CanvasTokens,
   zoom: number,
+  headerTop: number,
 ): void {
   const px = (n: number) => n / zoom;
   const hide = () => {
@@ -182,7 +208,7 @@ function updateCard(
     return;
   }
   // O cartão não cobre a linha de cabeçalho da marcação.
-  const headerBottom = visible.y + px(TEXT_HEADER_HEIGHT + 2);
+  const headerBottom = headerTop + px(TEXT_HEADER_HEIGHT + 2);
   const top = Math.max(box.y, headerUsed ? headerBottom : box.y) + px(CARD_MARGIN);
   const bottom = box.y + box.height - px(CARD_MARGIN);
   const x = box.x + px(CARD_MARGIN);

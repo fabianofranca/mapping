@@ -272,7 +272,9 @@ export function RefPicker({
                 >
                   <div class="picker-group" aria-hidden="true">
                     <strong>{annotationSourceLabel(project, group.annotation)}</strong>
-                    <span class="picker-context">{group.context}</span>
+                    <span class="picker-context" title={group.context}>
+                      {group.context}
+                    </span>
                   </div>
                   {group.items.map((item) => {
                     const i = n++;
@@ -287,7 +289,7 @@ export function RefPicker({
                         onClick={(e) => choose(item, e.ctrlKey || e.metaKey)}
                       >
                         <Icon name="arrowRight" />
-                        <span class="picker-option-label">
+                        <span class="picker-option-label" title={item.label}>
                           <Highlight text={item.label} needle={needle} />
                         </span>
                         {isCurrent(item) && (

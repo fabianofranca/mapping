@@ -117,13 +117,13 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/theme/controls.css`, `panels.css`, `details.css`, `dialogs.css`, `src/ui/controls/Tooltip.tsx`, `src/ui/Dialog.tsx` (devolver o foco), `src/ui/ActionMenu.tsx`, `src/ui/Popover.tsx`, `src/ui/LayersPanel.tsx`, `src/ui/TableField.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/FieldEditors.tsx`/`RefPicker.tsx` (`title`), `src/ui/KeyValueGrid.tsx` (Enter → Valor), `src/ui/review/changeText.ts` (caixa do tipo), `src/model/itemRef.ts` ou `mcp/items.ts` (caminho legível igual), `src/canvas/renderers/overlay.ts` (rótulos), `tests/components/*`, `tests/theme/*`, `tests/e2e/flows.spec.ts`.
 
-- [ ] Testes que reproduzem: e2e mede `scrollWidth > clientWidth` no diálogo Configurações e no `.editor` (hoje falha); componente: foco após fechar `Dialog` é o abridor (hoje `body`)
-- [ ] Tooltip oculto fora do fluxo (sem ocupar espaço nem rolar o contêiner), mantendo o texto no DOM para o nome acessível; `.editor` com `overflow` que nunca rola na horizontal por foco
-- [ ] Camadas: altura mínima de linha com o selo dentro; a lista rola em vez de encolher as linhas
-- [ ] Tabela `atributos`: colunas sem sobreposição na largura padrão de Detalhes (grade adaptativa ou rolagem dentro da tabela)
-- [ ] Textos: `title` nos valores de referência cortados; dica não cobre o menu que ela anuncia; Diagnóstico com Hora e Contexto sem quebra no meio da palavra; nome do tipo com a mesma caixa na lista e em Detalhes; caminho legível com o mesmo texto na app e no `resolve` do MCP; rótulo de filha no mesmo canto do pai deslocado para não cobrir
-- [ ] Foco: `Dialog` guarda o `activeElement` ao abrir e o devolve ao fechar (inclusive diálogo sobre diálogo); Enter na **Chave** foca **Valor**
-- [ ] Testes de componente para cada item e o e2e sem barra horizontal
+- [x] Testes que reproduzem: e2e mede `scrollWidth > clientWidth` no diálogo Configurações e no `.editor` (hoje falha); componente: foco após fechar `Dialog` é o abridor (hoje `body`)
+- [x] Tooltip oculto fora do fluxo (sem ocupar espaço nem rolar o contêiner), mantendo o texto no DOM para o nome acessível; `.editor` com `overflow` que nunca rola na horizontal por foco
+- [x] Camadas: altura mínima de linha com o selo dentro; a lista rola em vez de encolher as linhas
+- [x] Tabela `atributos`: colunas sem sobreposição na largura padrão de Detalhes (grade adaptativa ou rolagem dentro da tabela)
+- [x] Textos: `title` nos valores de referência cortados; dica não cobre o menu que ela anuncia; Diagnóstico com Hora e Contexto sem quebra no meio da palavra; nome do tipo com a mesma caixa na lista e em Detalhes; caminho legível com o mesmo texto na app e no `resolve` do MCP; rótulo de filha no mesmo canto do pai deslocado para não cobrir
+- [x] Foco: `Dialog` guarda o `activeElement` ao abrir e o devolve ao fechar (inclusive diálogo sobre diálogo); Enter na **Chave** foca **Valor**
+- [x] Testes de componente para cada item e o e2e sem barra horizontal
 
 **Aceite**: R1.3, R1.5, R1.8, R1.14 e R7.1 do guia sem os achados; nenhum `@media`, token ou regra do design system nova sem justificativa no PR.
 

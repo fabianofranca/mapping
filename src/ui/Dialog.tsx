@@ -57,6 +57,12 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
+  // Quem tinha o foco ao abrir (o botão que abriu, ou o diálogo de baixo): ao fechar, o
+  // foco volta para ele em vez de cair no `body`. Guardado na renderização, antes de o
+  // diálogo pegar o foco.
+  const opener = useRef<Element | null | undefined>(undefined);
+  if (opener.current === undefined) opener.current = document.activeElement;
+
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog || dialog.open) return;
@@ -67,6 +73,21 @@ export function Dialog({
       dialog.setAttribute('open', '');
     }
     focusFirst(dialog);
+    return () => {
+      // Fecha antes de sair do DOM: com o modal aberto, o resto da página está inerte.
+      try {
+        if (dialog.open) dialog.close();
+      } catch {
+        dialog.removeAttribute('open');
+      }
+      const target = opener.current;
+      // Só se o foco não foi para outro lugar de propósito (ficou no diálogo ou no body).
+      const lost =
+        document.activeElement === null ||
+        document.activeElement === document.body ||
+        dialog.contains(document.activeElement);
+      if (lost && target instanceof HTMLElement && target.isConnected) target.focus();
+    };
   }, []);
 
   return (

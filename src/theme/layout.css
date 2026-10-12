@@ -195,7 +195,8 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  /* Recorta sem virar contêiner de rolagem: levar um controle à vista não o desloca. */
+  overflow: clip;
 }
 
 .toolbar {

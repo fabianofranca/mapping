@@ -94,10 +94,42 @@ function annotationName(names: ReviewNames, id: string): string {
       const name = text(record?.name);
       if (name) return name;
       const type = record?.type;
-      if (isRecord(type) && typeof type.typeId === 'string') return type.typeId;
+      if (isRecord(type) && typeof type.typeId === 'string') {
+        return typeName(names, type.specId, type.typeId);
+      }
     }
   }
   return t('annotation.unnamed');
+}
+
+/**
+ * Nome do tipo ("Button"), com a mesma caixa da lista e de Detalhes: da especialização do
+ * projeto, senão da que a própria proposta aplica (importação nova); por último, o id.
+ */
+function typeName(
+  names: ReviewNames,
+  specId: JsonValue | undefined,
+  typeId: string,
+): string {
+  if (typeof specId !== 'string') return typeId;
+  const found = lookup(names, (p) => findSpecType(p, { specId, typeId })?.type.name);
+  if (found) return found;
+  for (const c of names.proposal.changes) {
+    if (c.entity !== 'specialization' || c.entityId !== specId) continue;
+    const record = entityRecord(c);
+    const spec = record && isRecord(record.spec) ? record.spec : null;
+    const layers = spec && Array.isArray(spec.layers) ? spec.layers : [];
+    for (const layer of layers) {
+      const types =
+        isRecord(layer) && Array.isArray(layer.annotationTypes)
+          ? layer.annotationTypes
+          : [];
+      for (const type of types) {
+        if (isRecord(type) && type.id === typeId) return text(type.name) ?? typeId;
+      }
+    }
+  }
+  return typeId;
 }
 
 function specName(names: ReviewNames, c: Change): string {
