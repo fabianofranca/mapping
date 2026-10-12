@@ -436,6 +436,57 @@ describe('ExportDialog com o seletor de arquivo', () => {
       }),
     );
     expect(onDone).toHaveBeenCalledOnce();
+    expect(screen.queryByText(t('export.downloadHint'))).toBeNull();
+  });
+
+  it('falha ao gravar mostra o erro, descarta a gravação e não marca', async () => {
+    const abort = vi.fn(() => Promise.resolve());
+    Reflect.set(globalThis, 'showSaveFilePicker', () =>
+      Promise.resolve({
+        createWritable: () =>
+          Promise.resolve({
+            write: () => Promise.reject(new DOMException('cheio', 'QuotaExceededError')),
+            close: () => Promise.resolve(),
+            abort,
+          }),
+      }),
+    );
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const onDone = vi.fn();
+    render(<ExportDialog file={new File(['z'], 'p.zip')} onDone={onDone} />);
+    await userEvent.click(screen.getByRole('button', { name: t('export.download') }));
+    expect((await screen.findByRole('alert')).textContent).toBe(t('export.saveFailed'));
+    expect(abort).toHaveBeenCalledOnce();
+    expect(controller.markExported).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('sem o seletor, baixa como antes e avisa que cancelar exige exportar de novo', async () => {
+    const onDone = vi.fn();
+    render(<ExportDialog file={new File(['z'], 'p.zip')} onDone={onDone} />);
+    expect(screen.getByText(t('export.downloadHint'))).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: t('export.download') }));
+    expect(steps).toEqual(['download', 'markExported']);
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it('cancelar o compartilhamento não marca como exportado', async () => {
+    Object.defineProperty(navigator, 'canShare', {
+      configurable: true,
+      value: () => true,
+    });
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: () => Promise.reject(new DOMException('cancelado', 'AbortError')),
+    });
+    const onDone = vi.fn();
+    render(<ExportDialog file={new File(['z'], 'p.zip')} onDone={onDone} />);
+    await userEvent.click(screen.getByRole('button', { name: t('export.share') }));
+    expect(controller.markExported).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
+    Reflect.deleteProperty(navigator, 'canShare');
+    Reflect.deleteProperty(navigator, 'share');
   });
 });
 

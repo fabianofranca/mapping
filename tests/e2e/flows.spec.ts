@@ -396,8 +396,8 @@ test('Exportar: cancelar o "Salvar como" mantém "Alterações não exportadas"'
   await addImage(page);
   const statusbar = page.locator('.statusbar');
   await expect(statusbar).toContainText('Alterações não exportadas');
-  await openExport(page);
   await simulateSavePicker(page, 'cancel');
+  await openExport(page);
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Baixar' }).click();
   await expect(dialog.getByRole('button', { name: 'Baixar' })).toBeVisible();
@@ -413,8 +413,8 @@ test('Exportar: salvar pelo "Salvar como" grava o zip e limpa o aviso', async ({
   await addImage(page);
   const statusbar = page.locator('.statusbar');
   await expect(statusbar).toContainText('Alterações não exportadas');
-  await openExport(page);
   await simulateSavePicker(page, 'save');
+  await openExport(page);
   await page.getByRole('dialog').getByRole('button', { name: 'Baixar' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(statusbar).not.toContainText('Alterações não exportadas');
