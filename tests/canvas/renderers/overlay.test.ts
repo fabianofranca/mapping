@@ -1,6 +1,7 @@
 import Konva from 'konva/lib/Core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Frame } from '../../../src/canvas/frame';
+import { MarkingRenderer } from '../../../src/canvas/renderers/markings';
 import { OverlayRenderer } from '../../../src/canvas/renderers/overlay';
 import type { Placement } from '../../../src/model';
 import { editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
@@ -150,6 +151,60 @@ describe('OverlayRenderer', () => {
       // Título da imagem: linha de 16 px terminando 4 px acima do topo (y = 0).
       const tagBottom = overlay.nameTag.y() + overlay.nameTagBox.height();
       expect(tagBottom).toBeLessThanOrEqual(-(TOKENS.type.image.line + 4));
+    });
+
+    // Etapa 7 (7.2), achado A2: a 52%, a etiqueta "Nome" da filha encostada no topo do
+    // Formulário cobria o rótulo "Formulário …" do pai ("Fo[Nome]ulário").
+    it('filha no topo do pai: a etiqueta não cobre o rótulo do pai', () => {
+      const editor = editorFor();
+      const p = editor.store.committed.value;
+      if (!p) throw new Error('sem projeto');
+      const zoom = 0.52;
+      const project = {
+        ...p,
+        markings: p.markings.map((m) =>
+          m.id === 'M2' ? { ...m, rect: { x: 110, y: 120, width: 200, height: 120 } } : m,
+        ),
+      };
+      const frame = frameOf(editor, {
+        project,
+        selection: SELECTED,
+        size: { width: 1000, height: 800 },
+        viewport: { x: 0, y: 0, scale: zoom },
+      });
+      const markings = new MarkingRenderer(new Konva.Layer());
+      markings.render(frame, PLACEMENTS);
+      const overlay = new OverlayRenderer(
+        new Konva.Layer(),
+        document.createElement('div'),
+      );
+      overlay.render(frame, PLACEMENTS, markings.headers);
+
+      const label = markings.node('M1')?.text.header;
+      if (!label) throw new Error('sem rótulo do pai');
+      expect(label.visible()).toBe(true);
+      const labelBox = {
+        x: label.x(),
+        y: label.y(),
+        right: label.x() + Math.min(label.width(), label.getTextWidth()),
+        bottom: label.y() + label.height(),
+      };
+      expect(overlay.nameTag.visible()).toBe(true);
+      const tag = {
+        x: overlay.nameTag.x(),
+        y: overlay.nameTag.y(),
+        right: overlay.nameTag.x() + overlay.nameTagBox.width() / zoom,
+        bottom: overlay.nameTag.y() + overlay.nameTagBox.height() / zoom,
+      };
+      const overlaps =
+        tag.x < labelBox.right &&
+        labelBox.x < tag.right &&
+        tag.y < labelBox.bottom &&
+        labelBox.y < tag.bottom;
+      expect(overlaps).toBe(false);
+      // Deslocada para baixo do rótulo do pai, sem sair da linha de cima da filha.
+      expect(tag.y).toBeGreaterThanOrEqual(labelBox.bottom);
+      expect(tag.x).toBe(110);
     });
 
     it('canto fora da tela: ancorada na borda visível', () => {
