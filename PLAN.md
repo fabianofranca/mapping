@@ -1,3 +1,4 @@
+| [`docs/history/relato-2026-10-12-dirigida-r3.md`](docs/history/relato-2026-10-12-dirigida-r3.md) | Relato da rodada 3 (dirigida) do Cowork sobre o build `2bdb662`; confirma a etapa 7 sem achados |
 # Mapping — Plano de desenvolvimento
 
 > Este documento guarda o resumo do produto e **só as fases pendentes** (hoje, nenhuma: a etapa 7 foi a última detalhada). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
