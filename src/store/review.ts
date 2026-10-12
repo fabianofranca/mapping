@@ -206,9 +206,9 @@ export function createReviewState(session: ProjectSession): ReviewState {
   const newConflicts = signal<ReadonlySet<string>>(new Set());
   const undoable = signal<DecisionUndo | null>(null);
   const initial = entriesOf(readResume(), scope);
-  const seen = signal<ReadonlySet<string>>(
-    new Set([...initial.own.keys(), ...initial.legacy.keys()]),
-  );
+  // Só as entradas desta cópia contam como vistas: a legada (sem a cópia na chave) pode ter
+  // vindo de qualquer outra cópia, e a proposta da cópia nova é nova (G1, etapa 7).
+  const seen = signal<ReadonlySet<string>>(new Set(initial.own.keys()));
 
   const derived = createReviewDerived(store, {
     proposals: proposals.list,
@@ -372,7 +372,9 @@ export function createReviewState(session: ProjectSession): ReviewState {
       };
       batch(() => {
         selected.value = target;
-        view.value = stored?.entry.view ?? START_VIEW;
+        // A entrada legada devolve a posição e os filtros, não a visão: a revisão da cópia
+        // nova começa pela visão Proposto (G1).
+        view.value = stored?.known ? stored.entry.view : START_VIEW;
         filters.value = cleanFilters;
         newConflicts.value = new Set(fresh);
       });
