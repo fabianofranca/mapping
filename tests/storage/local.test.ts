@@ -296,7 +296,7 @@ describe('FolderLibrary (recentes de pasta)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('guarda handle, nome do projeto, nome da pasta e data; lista pelo uso mais recente', async () => {
+  it('guarda handle, nome do projeto, nome da pasta e data; a lista não traz handles', async () => {
     const a = new PermissionDirectory('a');
     const b = new PermissionDirectory('b');
     const idA = await folders.remember(a, { name: 'A', usedAt: '2026-10-01T00:00:00Z' });
@@ -311,8 +311,9 @@ describe('FolderLibrary (recentes de pasta)', () => {
       name: 'A',
       folderName: 'a',
       usedAt: '2026-10-01T00:00:00Z',
-      handle: a,
     });
+    expect(await folders.handle(idA)).toBe(a);
+    expect(await folders.handle('nao-existe')).toBeNull();
   });
 
   it('a mesma pasta (isSameEntry) atualiza a entrada em vez de duplicar', async () => {
@@ -334,7 +335,8 @@ describe('FolderLibrary (recentes de pasta)', () => {
       new DOMException('', 'NotFoundError'),
     );
     await folders.remember(broken, { name: 'V', usedAt: '2026-10-01T00:00:00Z' });
-    await folders.remember(new PermissionDirectory('nova'), {
+    // Mesmo nome de pasta: o handle guardado é comparado (e falha).
+    await folders.remember(new PermissionDirectory('velha'), {
       name: 'N',
       usedAt: '2026-10-02T00:00:00Z',
     });
@@ -376,5 +378,6 @@ describe('FolderLibrary (recentes de pasta)', () => {
     ]);
     await folders.remove(id);
     expect(await folders.list()).toEqual([]);
+    expect(await folders.handle(id)).toBeNull();
   });
 });

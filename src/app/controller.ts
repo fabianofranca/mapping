@@ -23,10 +23,12 @@ import {
   findExistingImages,
   isFolderModeSupported,
   isNotFound,
+  isOriginPrivate,
   isReopenable,
   pickDirectory,
   type DirectoryHandleLike,
   type ExistingImage,
+  type ReopenableDirectory,
 } from '../storage/folder';
 import { createDisplayBitmap, prepareImage, readImageSize } from '../storage/imageImport';
 import { loadProject, type InconsistentLoad } from '../storage/loadProject';
@@ -157,6 +159,11 @@ let library: LocalLibrary | null = null;
 let folderLibrary: FolderLibrary | null = null;
 /** Entrada dos recentes da pasta aberta agora (nome e data atualizados ao fechar). */
 let openFolderId: string | null = null;
+/**
+ * Handles já em memória nesta visita (pastas abertas agora ou já reabertas), por id da
+ * entrada: o clique em Abrir vai direto ao pedido de permissão, sem ler o IndexedDB.
+ */
+const knownHandles = new Map<string, ReopenableDirectory>();
 
 const ok = <T>(value: T): AppResult<T> => ({ ok: true, value });
 const err = (error: AppErrorCode): AppResult<never> => ({ ok: false, error });
@@ -486,21 +493,37 @@ function openProjectName(): string | undefined {
 /**
  * Guarda a pasta do projeto que acabou de abrir nos recentes. Sem o recurso no navegador
  * (`queryPermission`, `isSameEntry`) ou sem IndexedDB, não faz nada; uma falha não impede
- * o projeto de abrir (vai para o Diagnóstico).
+ * o projeto de abrir (vai para o Diagnóstico). Uma pasta do armazenamento privado da origem
+ * (OPFS) nunca é guardada: o seletor de pastas não a devolve, e o Chromium derruba a página
+ * ao ler de volta do IndexedDB um handle do OPFS (ver `isOriginPrivate`).
  */
 async function rememberFolder(handle: DirectoryHandleLike, replaceId?: string) {
   openFolderId = null;
-  if (!folderLibrary || !isReopenable(handle)) return;
+  if (!folderLibrary || !isReopenable(handle) || (await isOriginPrivate(handle))) return;
   try {
     openFolderId = await folderLibrary.remember(
       handle,
       { name: openProjectName() ?? handle.name, usedAt: new Date().toISOString() },
       replaceId,
     );
+    knownHandles.set(openFolderId, handle);
   } catch (e) {
     reportError('folders.remember', e);
   }
   await refreshRecentFolders();
+}
+
+/** O handle de uma entrada: o da memória ou, numa visita nova, o do IndexedDB. */
+async function handleOf(id: string): Promise<ReopenableDirectory | null> {
+  try {
+    const handle = (await folderLibrary?.handle(id)) ?? null;
+    if (handle) knownHandles.set(id, handle);
+    return handle;
+  } catch (e) {
+    // Um handle que o navegador não consegue reconstruir: a pasta fica indisponível.
+    reportError('folders.handle', e);
+    return null;
+  }
 }
 
 export type RecentFolderOpen =
@@ -509,25 +532,30 @@ export type RecentFolderOpen =
   | { readonly kind: 'unavailable'; readonly reason: 'denied' | 'missing' };
 
 /**
- * Reabre uma pasta dos recentes. Chamar direto do clique: a consulta e o pedido de
- * permissão vêm antes de qualquer outra espera (o navegador só pergunta dentro do gesto).
+ * Reabre uma pasta dos recentes. Chamar direto do clique: o navegador só mostra o pedido de
+ * permissão dentro do gesto. Com o handle já em memória, a consulta começa no próprio clique;
+ * numa visita nova, a única espera antes dela é ler o handle do IndexedDB (milissegundos,
+ * dentro da ativação do gesto, que vale alguns segundos). A lista em si não lê handles.
  */
 export function openRecentFolder(id: string): Promise<AppResult<RecentFolderOpen>> {
   const entry = recentFolders.value.find((f) => f.id === id);
+  const known = knownHandles.get(id);
   return guarded<RecentFolderOpen>(async () => {
     if (!entry) return err('not-found');
     const unavailable = (reason: 'denied' | 'missing') =>
       ok<RecentFolderOpen>({ kind: 'unavailable', reason });
+    const handle = known ?? (await handleOf(id));
+    if (!handle || !isReopenable(handle)) return unavailable('missing');
     try {
-      if (!(await ensurePermission(entry.handle))) return unavailable('denied');
-      if ((await createFolderStorage(entry.handle).loadMapping()) === null) {
+      if (!(await ensurePermission(handle))) return unavailable('denied');
+      if ((await createFolderStorage(handle).loadMapping()) === null) {
         return unavailable('missing');
       }
     } catch (e) {
       if (isNotFound(e)) return unavailable('missing');
       throw e;
     }
-    const opened = await openFolderHandle(entry.handle, id);
+    const opened = await openFolderHandle(handle, id);
     return opened.ok ? ok({ kind: 'opened' }) : opened;
   });
 }
@@ -555,6 +583,7 @@ export function relocateFolder(id: string): Promise<AppResult<FolderRelocation>>
 export function forgetFolder(id: string): Promise<AppResult> {
   return guarded(async () => {
     if (!folderLibrary) return err('storage-failed');
+    knownHandles.delete(id);
     await folderLibrary.remove(id);
     await refreshRecentFolders();
     return ok(undefined);

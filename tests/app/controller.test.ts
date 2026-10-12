@@ -870,6 +870,39 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(folders()).toEqual([]);
   });
 
+  it('numa visita nova, o handle vem do IndexedDB e a permissão é pedida', async () => {
+    const root = projectFolder();
+    await openViaPicker(root);
+    ({ app, local } = await load());
+    root.permission = 'prompt';
+    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+      ok: true,
+      value: { kind: 'opened' },
+    });
+    expect(root.requests).toBe(1);
+  });
+
+  it('pasta do armazenamento privado da origem (OPFS) não entra na lista', async () => {
+    const root = projectFolder('opfs');
+    // A raiz do OPFS reconhece a pasta como sua (`resolve` devolve o caminho).
+    const opfs = {
+      isSameEntry: async () => false,
+      resolve: async (h: unknown) => (h === root ? ['opfs'] : null),
+    };
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: { getDirectory: async () => opfs },
+    });
+    try {
+      await openViaPicker(root);
+      expect(folders()).toEqual([]);
+      await openViaPicker(projectFolder('fora'));
+      expect(folders().map((p) => p.folderName)).toEqual(['fora']);
+    } finally {
+      Reflect.deleteProperty(navigator, 'storage');
+    }
+  });
+
   it('navegador sem queryPermission/isSameEntry: a lista fica só com os locais', async () => {
     const plain = new MemoryDirectory('simples');
     plain.put('mapping.json', serialize(emptyProject()));

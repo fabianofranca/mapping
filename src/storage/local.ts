@@ -314,12 +314,13 @@ async function withTimeout<T extends { close(): void }>(
 /**
  * Banco à parte para os handles das pastas: criar um store no banco dos projetos locais
  * pediria uma versão nova, e uma aba antiga aberta bloquearia a atualização (o modo local
- * sumiria até ela fechar).
+ * sumiria até ela fechar). Versão 2: os handles saíram dos registros da lista para um store
+ * próprio (a versão 1 só existiu em preview; a atualização a descarta).
  */
 const FOLDERS_DB_NAME = channelDbName('mapping-folders');
-const FOLDERS_DB_VERSION = 1;
+const FOLDERS_DB_VERSION = 2;
 
-/** Pasta aberta recentemente. Só o handle: o navegador não deixa saber o caminho. */
+/** Pasta aberta recentemente (a linha da lista). O handle fica à parte, em `handles`. */
 export interface StoredFolder {
   readonly id: string;
   /** Nome do projeto na última vez que foi aberto. */
@@ -328,17 +329,23 @@ export interface StoredFolder {
   readonly folderName: string;
   /** Último uso (ISO 8601). */
   readonly usedAt: string;
-  readonly handle: ReopenableDirectory;
 }
 
 interface FoldersSchema extends DBSchema {
   folders: { key: string; value: StoredFolder };
+  /** id da entrada → handle. Só o handle: o navegador não deixa saber o caminho. */
+  handles: { key: string; value: ReopenableDirectory };
 }
 
-/** Os handles das pastas abertas, no IndexedDB deste navegador. */
+/** As pastas abertas, no IndexedDB deste navegador. */
 export interface FolderLibrary {
-  /** Do uso mais recente ao mais antigo. */
+  /**
+   * Do uso mais recente ao mais antigo. Só os dados da lista: nenhum handle é lido (um
+   * handle que o navegador não consiga reconstruir não chega a atrapalhar a tela inicial).
+   */
   list(): Promise<StoredFolder[]>;
+  /** O handle de uma entrada (`null` se não houver). */
+  handle(id: string): Promise<ReopenableDirectory | null>;
   /**
    * Guarda a pasta (ou atualiza a entrada da mesma pasta, por `isSameEntry`) e devolve o id.
    * Com `replaceId` ("Localizar pasta…"), a entrada `replaceId` passa a apontar para ela.
@@ -358,46 +365,55 @@ export interface FolderLibrary {
   close(): void;
 }
 
-/** A entrada guardada aponta para a mesma pasta? Um handle velho que falha conta como não. */
-async function sameFolder(stored: StoredFolder, handle: ReopenableDirectory) {
-  try {
-    return await stored.handle.isSameEntry(handle);
-  } catch {
-    return false;
-  }
-}
-
 function createFolderLibrary(db: IDBPDatabase<FoldersSchema>): FolderLibrary {
+  /** A entrada guardada aponta para a mesma pasta? Um handle que falha conta como não. */
+  const sameFolder = async (id: string, handle: ReopenableDirectory) => {
+    try {
+      const stored = await db.get('handles', id);
+      return stored ? await stored.isSameEntry(handle) : false;
+    } catch {
+      return false;
+    }
+  };
+
   return {
     async list() {
       const all = await db.getAll('folders');
       return all.sort((a, b) => b.usedAt.localeCompare(a.usedAt));
     },
 
+    async handle(id) {
+      return (await db.get('handles', id)) ?? null;
+    },
+
     async remember(handle, info, replaceId) {
-      // `isSameEntry` é assíncrono e não cabe numa transação: compara antes de gravar.
-      const all = await db.getAll('folders');
+      // `isSameEntry` é assíncrono e não cabe numa transação: compara antes de gravar. Só
+      // as entradas com o mesmo nome de pasta podem ser a mesma: só os handles delas são lidos.
+      const candidates = (await db.getAll('folders')).filter(
+        (f) => f.folderName === handle.name,
+      );
       let same: StoredFolder | undefined;
-      for (const stored of all) {
-        if (await sameFolder(stored, handle)) {
+      for (const stored of candidates) {
+        if (await sameFolder(stored.id, handle)) {
           same = stored;
           break;
         }
       }
       const id = same?.id ?? replaceId ?? crypto.randomUUID();
-      const tx = db.transaction('folders', 'readwrite');
+      const tx = db.transaction(['folders', 'handles'], 'readwrite');
+      // A pasta localizada já estava na lista: as duas entradas viram uma.
+      const merged = replaceId !== undefined && replaceId !== id ? replaceId : null;
       await Promise.all([
-        tx.store.put({
-          id,
-          name: info.name,
-          folderName: handle.name,
-          usedAt: info.usedAt,
-          handle,
-        }),
-        // A pasta localizada já estava na lista: as duas entradas viram uma.
-        ...(replaceId !== undefined && replaceId !== id
-          ? [tx.store.delete(replaceId)]
-          : []),
+        tx
+          .objectStore('folders')
+          .put({ id, name: info.name, folderName: handle.name, usedAt: info.usedAt }),
+        tx.objectStore('handles').put(handle, id),
+        ...(merged === null
+          ? []
+          : [
+              tx.objectStore('folders').delete(merged),
+              tx.objectStore('handles').delete(merged),
+            ]),
         tx.done,
       ]);
       return id;
@@ -410,7 +426,14 @@ function createFolderLibrary(db: IDBPDatabase<FoldersSchema>): FolderLibrary {
       await tx.done;
     },
 
-    remove: (id) => db.delete('folders', id),
+    async remove(id) {
+      const tx = db.transaction(['folders', 'handles'], 'readwrite');
+      await Promise.all([
+        tx.objectStore('folders').delete(id),
+        tx.objectStore('handles').delete(id),
+        tx.done,
+      ]);
+    },
 
     close: () => db.close(),
   };
@@ -426,7 +449,11 @@ export async function openFolderLibrary(): Promise<FolderLibrary | null> {
     const db = await withTimeout(
       openDB<FoldersSchema>(FOLDERS_DB_NAME, FOLDERS_DB_VERSION, {
         upgrade(db) {
+          // Da versão 1 (handles dentro dos registros da lista) não se aproveita nada: o
+          // store é apagado sem ler os registros.
+          for (const name of [...db.objectStoreNames]) db.deleteObjectStore(name);
           db.createObjectStore('folders', { keyPath: 'id' });
+          db.createObjectStore('handles');
         },
       }),
     );

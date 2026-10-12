@@ -56,6 +56,28 @@ export function isReopenable(handle: DirectoryHandleLike): handle is ReopenableD
 }
 
 /**
+ * A pasta é do armazenamento privado da origem (OPFS, `navigator.storage.getDirectory()`)?
+ * O seletor de pastas nunca devolve uma (ela é invisível para a pessoa); só os testes a usam
+ * no lugar dele. Não vai para os recentes: no Chromium, ler de volta do IndexedDB um handle
+ * do OPFS derruba a página. Sem OPFS (ou em `file://`, onde ele recusa): `false`.
+ */
+export async function isOriginPrivate(handle: DirectoryHandleLike): Promise<boolean> {
+  try {
+    const storage: unknown = Reflect.get(globalThis.navigator ?? {}, 'storage');
+    const getDirectory: unknown =
+      typeof storage === 'object' && storage !== null
+        ? Reflect.get(storage, 'getDirectory')
+        : undefined;
+    if (typeof getDirectory !== 'function') return false;
+    const root = (await getDirectory.call(storage)) as FileSystemDirectoryHandle;
+    const entry = handle as unknown as FileSystemHandle;
+    return (await root.isSameEntry(entry)) || (await root.resolve(entry)) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Leitura e escrita na pasta: consulta e, se preciso, pede a permissão. Chamar no próprio
  * clique, sem outra espera antes: o `requestPermission` só abre o diálogo do navegador
  * dentro de um gesto da pessoa.
