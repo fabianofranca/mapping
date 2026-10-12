@@ -146,9 +146,17 @@ interface ProposalRowProps {
   /** Agora (para a data relativa). */
   readonly now: Date;
   readonly onAction: (row: ProposalRowData, action: ProposalAction) => void;
+  /** "Abrir a nova": a proposta que substituiu esta (`row.supersededBy`). */
+  readonly onOpenNewer: (proposalId: string) => void;
 }
 
-export function ProposalRow({ row, showNew, now, onAction }: ProposalRowProps) {
+export function ProposalRow({
+  row,
+  showNew,
+  now,
+  onAction,
+  onOpenNewer,
+}: ProposalRowProps) {
   const { proposal: p, progress } = row;
   const status = proposalStatus(row, showNew);
   const lang = locale.value;
@@ -159,6 +167,9 @@ export function ProposalRow({ row, showNew, now, onAction }: ProposalRowProps) {
       ? awaitingText(progress.acceptedPending)
       : null;
   const actionLabel = t(`proposals.action.${status.action}`);
+  // Quem a substituiu vem do `supersedes` da nova, não do status desta: uma proposta já
+  // aplicada é histórico e continua "Aplicada · substituída por …" (achado 13).
+  const newer = row.supersededBy;
   return (
     <div class="proposal-row" role="listitem" data-proposal={p.id} data-status={p.status}>
       <div class="proposal-row-main">
@@ -175,6 +186,11 @@ export function ProposalRow({ row, showNew, now, onAction }: ProposalRowProps) {
           <div class="proposal-row-title">
             <b title={p.title}>{p.title}</b>
             {status.flag && <Flag tone={status.flag.tone}>{status.flag.text}</Flag>}
+            {newer && p.status !== 'superseded' && (
+              <span class="muted proposal-row-newer" title={newer.title}>
+                {t('proposals.supersededBy', { title: newer.title })}
+              </span>
+            )}
           </div>
           <div class="proposal-row-meta" title={formatFullDate(p.createdAt, lang)}>
             {meta}
@@ -209,6 +225,15 @@ export function ProposalRow({ row, showNew, now, onAction }: ProposalRowProps) {
         )}
       </div>
       <div class="proposal-row-action">
+        {newer && (
+          <Button
+            variant="ghost"
+            aria-label={t('review.superseded.openNewNamed', { title: newer.title })}
+            onClick={() => onOpenNewer(newer.id)}
+          >
+            {t('review.superseded.openNew')}
+          </Button>
+        )}
         <Button
           variant={status.primary ? 'primary' : 'default'}
           aria-label={`${actionLabel}: ${p.title}`}

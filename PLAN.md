@@ -133,12 +133,12 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/app/Editor.tsx`, `src/app/CanvasNotices.tsx`, `src/ui/TreeWindow.tsx`/`MarkingTree.tsx` (fonte da árvore na revisão), `src/store/derived.ts`, `src/store/review.ts` (`knownConflicts`), `src/ui/review/ProposalRow.tsx`/`ProposalList.tsx`, `src/store/displayImages.ts`, `src/canvas/renderers/images.ts`, `src/store/proposalActions.ts` (invalidar imagens ao aplicar), `src/i18n/*`, `tests/store/review.test.ts`, `tests/components/review/*`, `tests/canvas/*`, `docs/ARCHITECTURE.md`.
 
-- [ ] Testes que reproduzem: revisão aberta num projeto sem imagens com proposta que cria imagens → árvore vazia e aviso de "nenhuma imagem" visíveis; reabrir a revisão sem mudança → `newConflicts` não vazio; proposta `applied` com outra apontando `supersedes` → sem link; bitmap fechado por `retain` ainda desenhado
-- [ ] Na revisão, Árvore e estado vazio leem `review.derived.preview` quando a visão é Proposto (e o atual quando é Atual); o aviso "Nenhuma imagem ainda" não aparece se a prévia tem imagens
-- [ ] `knownConflicts`: investigar a divergência da chave (idioma, ordem, id) e corrigir; reabrir sem mudança nunca marca conflito novo; teste cobre troca de idioma entre sessões
-- [ ] Proposta aplicada substituída: a linha mostra "Aplicada · substituída por <título>" e **Abrir a nova**, derivado do `supersedes` das demais propostas (sem mudar o arquivo)
-- [ ] `drawImage` destacado: reproduzir (bitmap fechado pelo `retain` enquanto um quadro pendente ainda o referencia, ou imagem trocada ao aplicar a proposta) e corrigir na raiz (não desenhar bitmap fechado; invalidar a exibição da imagem ao aplicar/desfazer uma proposta com imagens); o erro não volta ao Diagnóstico no cenário do R4.10
-- [ ] Testes
+- [x] Testes que reproduzem: revisão aberta num projeto sem imagens com proposta que cria imagens → árvore vazia e aviso de "nenhuma imagem" visíveis; reabrir a revisão sem mudança → `newConflicts` não vazio; proposta `applied` com outra apontando `supersedes` → sem link; bitmap fechado por `retain` ainda desenhado
+- [x] Na revisão, Árvore e estado vazio leem `review.derived.preview` quando a visão é Proposto (e o atual quando é Atual); o aviso "Nenhuma imagem ainda" não aparece se a prévia tem imagens
+- [x] `knownConflicts`: investigar a divergência da chave (idioma, ordem, id) e corrigir; reabrir sem mudança nunca marca conflito novo; teste cobre troca de idioma entre sessões
+- [x] Proposta aplicada substituída: a linha mostra "Aplicada · substituída por <título>" e **Abrir a nova**, derivado do `supersedes` das demais propostas (sem mudar o arquivo)
+- [x] `drawImage` destacado: reproduzir (bitmap fechado pelo `retain` enquanto um quadro pendente ainda o referencia, ou imagem trocada ao aplicar a proposta) e corrigir na raiz (não desenhar bitmap fechado; invalidar a exibição da imagem ao aplicar/desfazer uma proposta com imagens); o erro não volta ao Diagnóstico no cenário do R4.10
+- [x] Testes
 
 **Aceite**: R5.2 e R5.4 do guia com a Árvore navegável e o link **Abrir a nova**; R4.9/R4.10 sem "conflito novo" falso e sem erro no Diagnóstico; `tests/store/reviewPerf.test.ts` no orçamento.
 

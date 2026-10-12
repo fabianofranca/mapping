@@ -94,6 +94,7 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
             showNew={row.proposal.id === newId}
             now={now}
             onAction={onAction}
+            onOpenNewer={openReview}
           />
         ))}
       </>

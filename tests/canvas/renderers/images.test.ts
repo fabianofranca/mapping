@@ -61,6 +61,31 @@ describe('ImageRenderer', () => {
     expect(node?.placeholder.visible()).toBe(false);
   });
 
+  // Achado 10: `drawImage … The image source is detached`. Um `ImageBitmap` fechado fica
+  // com largura e altura zero; desenhá-lo lança. O nó nunca recebe um bitmap fechado.
+  it('não desenha um bitmap fechado: o nó fica sem imagem e volta ao espaço reservado', () => {
+    const { renderer, editor } = setup();
+    const open = { width: 1000, height: 800, close: () => undefined };
+    const ready = (bitmap: typeof open) =>
+      new Map([
+        [
+          'images/a.jpg',
+          { status: 'ready' as const, bitmap: bitmap as unknown as ImageBitmap },
+        ],
+      ]);
+    renderer.render(frameOf(editor, { bitmaps: ready(open) }));
+    const node = renderer.node('I1');
+    expect(node?.bitmap.image()).toBe(open);
+
+    const closed = { width: 0, height: 0, close: () => undefined };
+    renderer.render(frameOf(editor, { bitmaps: ready(closed) }));
+    expect(node?.bitmap.visible()).toBe(false);
+    expect(node?.bitmap.image()).toBeUndefined();
+    expect(node?.placeholder.visible()).toBe(true);
+    // Sem aviso: não é uma imagem ausente nem quebrada, só um quadro de transição.
+    expect(node?.label.visible()).toBe(false);
+  });
+
   it('imagem ausente: borda tracejada de aviso e mensagem com o arquivo', () => {
     const { renderer, editor } = setup();
     const bitmaps = new Map([['images/a.jpg', { status: 'missing' as const }]]);

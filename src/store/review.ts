@@ -13,8 +13,9 @@ import {
   type ReviewFilters,
   type ReviewTarget,
 } from '../model';
+import type { ProjectStorage } from '../storage/types';
 import { readSetting, writeSetting } from '../utils/safeStorage';
-import { createReviewDerived, type ReviewDerived } from './derived';
+import { createReviewDerived, type ReviewDerived, type ReviewView } from './derived';
 import type { ApplyResult, DecisionResult, NoteResult } from './proposalActions';
 import type { ProjectSession } from './session';
 
@@ -24,7 +25,7 @@ import type { ProjectSession } from './session';
 // calculado a partir delas, em `derived`. Retomar a revisão (último item, filtros e visão)
 // fica no `localStorage` por dispositivo, com try/catch, fora da proposta e do desfazer.
 
-export type ReviewView = 'current' | 'proposed';
+export type { ReviewView };
 
 /** O que volta ao reabrir uma proposta neste dispositivo. */
 export interface ReviewResume {
@@ -32,7 +33,10 @@ export interface ReviewResume {
   readonly selected: ReviewTarget | null;
   readonly view: ReviewView;
   readonly filters: ReviewFilters;
-  /** Conflitos que já se conheciam ao abrir, para marcar só os novos ("Conflito novo"). */
+  /**
+   * Conflitos que a pessoa já viu nesta cópia do projeto (os da última abertura e os que
+   * apareceram até fechar), para marcar só os novos ("Conflito novo").
+   */
   readonly knownConflicts: readonly string[];
 }
 
@@ -160,6 +164,32 @@ function writeResume(all: StoredResume): void {
   writeSetting(RESUME_KEY, JSON.stringify(all));
 }
 
+/**
+ * A cópia do projeto a que o estado guardado pertence: o projeto local pelo id, a pasta
+ * pelo nome. A mesma proposta (mesmo id) em duas cópias (o zip importado e a pasta
+ * descompactada dele) tem conflitos diferentes; guardá-los numa entrada só fazia a abertura
+ * de uma cópia apagar o que a outra já conhecia (achado 11 do relato de 2026-10-11).
+ */
+function resumeScope(storage: ProjectStorage): string {
+  const id = 'id' in storage && typeof storage.id === 'string' ? storage.id : null;
+  return `${storage.kind}:${id ?? storage.folderName ?? ''}`;
+}
+
+/** Separa a cópia do id da proposta (o id nunca tem `|`: `PROPOSAL_ID_RE`). */
+const KEY_SEPARATOR = '|';
+
+/** As entradas desta cópia, por id da proposta, e as de antes da cópia na chave (legado). */
+function entriesOf(all: StoredResume, scope: string) {
+  const prefix = `${scope}${KEY_SEPARATOR}`;
+  const own = new Map<string, ReviewResume>();
+  const legacy = new Map<string, ReviewResume>();
+  for (const [key, entry] of Object.entries(all)) {
+    if (key.startsWith(prefix)) own.set(key.slice(prefix.length), entry);
+    else if (!key.includes(KEY_SEPARATOR)) legacy.set(key, entry);
+  }
+  return { own, legacy };
+}
+
 const START_VIEW: ReviewView = 'proposed';
 
 function sameTarget(a: ReviewTarget | null, b: ReviewTarget | null): boolean {
@@ -168,21 +198,43 @@ function sameTarget(a: ReviewTarget | null, b: ReviewTarget | null): boolean {
 
 export function createReviewState(session: ProjectSession): ReviewState {
   const { store, proposals, proposalActions } = session;
+  const scope = resumeScope(session.storage);
   const proposalId = signal<string | null>(null);
   const selected = signal<ReviewTarget | null>(null);
   const view = signal<ReviewView>(START_VIEW);
   const filters = signal<ReviewFilters>(NO_FILTERS);
   const newConflicts = signal<ReadonlySet<string>>(new Set());
   const undoable = signal<DecisionUndo | null>(null);
-  let resume: StoredResume = readResume();
-  const seen = signal<ReadonlySet<string>>(new Set(Object.keys(resume)));
+  const initial = entriesOf(readResume(), scope);
+  const seen = signal<ReadonlySet<string>>(
+    new Set([...initial.own.keys(), ...initial.legacy.keys()]),
+  );
 
   const derived = createReviewDerived(store, {
     proposals: proposals.list,
     proposalId,
+    view,
     filters,
     seen,
   });
+
+  /**
+   * O estado guardado da proposta nesta cópia do projeto, relido agora (outra aba pode ter
+   * gravado depois de esta abrir). `known: null`: entrada de antes de a chave levar a cópia
+   * (legado); a posição e os filtros valem, os conflitos dela não.
+   */
+  const storedOf = (
+    id: string,
+  ): {
+    readonly entry: ReviewResume;
+    readonly known: ReadonlySet<string> | null;
+  } | null => {
+    const { own, legacy } = entriesOf(readResume(), scope);
+    const mine = own.get(id);
+    if (mine) return { entry: mine, known: new Set(mine.knownConflicts) };
+    const old = legacy.get(id);
+    return old ? { entry: old, known: null } : null;
+  };
 
   /** O alvo existe na proposta aberta? */
   const exists = (target: ReviewTarget, p: Proposal): boolean => {
@@ -200,7 +252,12 @@ export function createReviewState(session: ProjectSession): ReviewState {
   const remember = (known?: readonly string[]) => {
     const id = proposalId.peek();
     if (id === null) return;
-    const previous = resume[id];
+    // Relê o que está gravado e troca só a entrada desta proposta nesta cópia: o que outra
+    // aba (ou outra cópia do projeto) gravou fica. A entrada legada (sem a cópia na chave)
+    // vira esta, e sai.
+    const all = readResume();
+    const key = `${scope}${KEY_SEPARATOR}${id}`;
+    const previous = all[key] ?? all[id];
     const entry: ReviewResume = {
       selected: selected.peek(),
       view: view.peek(),
@@ -208,9 +265,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
       knownConflicts: known ?? previous?.knownConflicts ?? [],
     };
     // O mais recente por último; só as últimas `MAX_RESUME` ficam.
-    const others = Object.entries(resume).filter(([key]) => key !== id);
-    resume = Object.fromEntries([...others, [id, entry]].slice(-MAX_RESUME));
-    writeResume(resume);
+    const others = Object.entries(all).filter(([k]) => k !== key && k !== id);
+    writeResume(Object.fromEntries([...others, [key, entry]].slice(-MAX_RESUME)));
     if (!seen.peek().has(id)) seen.value = new Set([...seen.peek(), id]);
   };
 
@@ -230,7 +286,13 @@ export function createReviewState(session: ProjectSession): ReviewState {
 
   function closeReview() {
     if (proposalId.peek() === null) return;
-    remember();
+    // Os conflitos à vista ao fechar passam a ser conhecidos: um projeto recarregado por
+    // fora durante a revisão pode ter trazido novos, e a pessoa já os viu.
+    remember(
+      derived.proposal.peek()
+        ? [...derived.conflictIds.peek()].slice(0, MAX_KNOWN_CONFLICTS)
+        : undefined,
+    );
     batch(() => {
       proposalId.value = null;
       selected.value = null;
@@ -280,7 +342,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       if (p.status === 'withdrawn') return { ok: false, error: 'withdrawn' };
       if (!store.committed.peek()) return { ok: false, error: 'no-project' };
       if (proposalId.peek() !== null && proposalId.peek() !== id) closeReview();
-      const stored = resume[id];
+      const stored = storedOf(id);
       batch(() => {
         proposalId.value = id;
         store.setReviewing(true);
@@ -288,12 +350,12 @@ export function createReviewState(session: ProjectSession): ReviewState {
       });
       const project = store.committed.peek();
       const conflicts = [...derived.conflictIds.peek()];
-      const known = stored ? new Set(stored.knownConflicts) : null;
+      const known = stored?.known ?? null;
       const fresh = known ? conflicts.filter((c) => !known.has(c)) : [];
-      let target = stored?.selected ?? null;
+      let target = stored?.entry.selected ?? null;
       if (target === null || !exists(target, p)) target = firstPending();
       // Filtros de uma imagem ou camada que não existem mais não podem esconder tudo.
-      const savedFilters = stored?.filters ?? NO_FILTERS;
+      const savedFilters = stored?.entry.filters ?? NO_FILTERS;
       const tree = derived.tree.peek();
       const cleanFilters: ReviewFilters = {
         ...savedFilters,
@@ -310,12 +372,12 @@ export function createReviewState(session: ProjectSession): ReviewState {
       };
       batch(() => {
         selected.value = target;
-        view.value = stored?.view ?? START_VIEW;
+        view.value = stored?.entry.view ?? START_VIEW;
         filters.value = cleanFilters;
         newConflicts.value = new Set(fresh);
       });
       remember(conflicts.slice(0, MAX_KNOWN_CONFLICTS));
-      return { ok: true, resumed: stored !== undefined, newConflicts: fresh.length };
+      return { ok: true, resumed: stored !== null, newConflicts: fresh.length };
     },
 
     close: closeReview,

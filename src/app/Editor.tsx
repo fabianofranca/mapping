@@ -68,7 +68,11 @@ export function EditorScreen() {
   // Só fatias do projeto confirmado (ver `ProjectStore.committed`): a tela não
   // renderiza de novo a cada prévia de gesto, nem a cada edição que não as muda.
   const hasProject = useComputed(() => store.committed.value !== null);
-  const noImages = useComputed(() => (store.committed.value?.images.length ?? 0) === 0);
+  // O estado vazio é do projeto à vista: na visão Proposto da revisão, o "como ficaria"
+  // (uma importação nova só tem imagens na prévia; o aviso não pode cobri-las).
+  const noImages = useComputed(
+    () => (review.derived.shownProject.value?.images.length ?? 0) === 0,
+  );
   const { busy } = notices;
 
   // Desktop compacto (abaixo de 1200px): Detalhes começa recolhido (B2).
