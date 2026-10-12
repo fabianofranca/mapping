@@ -174,7 +174,7 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
       'Estado prévio do navegador',
       'Tempo por roteiro',
       'Impede o uso com pessoas?',
-      '| Sessões',
+      '## Sessões',
     ]) {
       expect(guide, s).toContain(s);
     }
