@@ -1,4 +1,4 @@
-> **Relato da rodada 2 (dirigida)**, feita em 2026-10-12 pelo agente do Cowork no computador do dono, sobre o build `db5060d` (etapa 6 concluída), com o prompt [`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md) no modo dirigido: R0 e os achados 2 a 15 de [`relato-2026-10-11.md`](relato-2026-10-11.md). Confirmou 12 achados corrigidos e 2 em parte; os 3 achados (A1 a A3) e as 4 regressões (G1 a G4) originaram a **etapa 7** (`PLAN.md`). Guardado como veio, sem edição.
+> **Relato da rodada 2 (dirigida)**, feita em 2026-10-12 pelo agente do Cowork no computador do dono, sobre o build `db5060d` (etapa 6 concluída), com o prompt [`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md) no modo dirigido: R0 e os achados 2 a 15 de [`relato-2026-10-11.md`](relato-2026-10-11.md). Confirmou 12 achados corrigidos e 2 em parte; os 3 achados (A1 a A3) e as 4 regressões (G1 a G4) originaram a **etapa 7** (concluída; plano e decisões em [`PLAN-etapa-7.md`](PLAN-etapa-7.md), nesta pasta). Guardado como veio, sem edição.
 
 ---
 
