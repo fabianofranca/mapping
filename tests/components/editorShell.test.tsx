@@ -408,7 +408,8 @@ describe('ExportDialog: foco ao fechar', () => {
     await user.click(button);
     const dialog = await vi.waitFor(() => {
       const el = document.querySelector('dialog');
-      if (!el) throw new Error('o diálogo ainda não abriu');
+      // Aberto de fato: o foco inicial já entrou nele.
+      if (!el?.contains(document.activeElement)) throw new Error('ainda não abriu');
       return el;
     });
     return { user, button, dialog };

@@ -11,6 +11,12 @@ import {
   type SpecField,
 } from '../model';
 import { Tabs, type TabItem } from './controls';
+import {
+  captureFocusOrigin,
+  restoreFocusAfterRender,
+  type FocusOrigin,
+  type FocusReturn,
+} from './Dialog';
 import { Icon } from './icons';
 import { imageLabel, markingPath } from './labels';
 import { annotationSourceLabel, labelTexts } from './typedText';
@@ -18,7 +24,8 @@ import { annotationSourceLabel, labelTexts } from './typedText';
 // Seletor de referência no estilo "ir para símbolo" (B14): popup de 600px no topo,
 // sem fundo escurecido, com busca, abas por etiqueta aceita
 // (P5) e teclado: ↑↓ navegam, Enter escolhe, Ctrl+Enter escolhe e vai até o alvo,
-// Esc fecha e devolve o foco ao campo (quem abre cuida disso em `onClose`).
+// Esc fecha. Ao fechar (Esc, clique fora ou escolha), o foco volta a quem abriu, como no
+// `Dialog`: depois de o seletor sair da tela, porque com ele aberto o resto é inerte.
 
 export type RefFieldDef = Extract<SpecField, { type: 'ref' }>;
 
@@ -102,6 +109,8 @@ interface RefPickerProps {
   readonly onClose: () => void;
   /** Alvo escolhido; `goTo` = Ctrl+Enter (ou Ctrl+clique): também vai até ele. */
   readonly onPick: (target: RefTarget, goTo: boolean) => void;
+  /** Alvo do foco ao fechar se quem abriu não estiver mais no DOM (o campo da referência). */
+  readonly returnFocus?: FocusReturn;
 }
 
 export function RefPicker({
@@ -110,6 +119,7 @@ export function RefPicker({
   field,
   onClose,
   onPick,
+  returnFocus,
 }: RefPickerProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -122,6 +132,11 @@ export function RefPicker({
   const isCurrent = (target: RefTarget) =>
     current !== null && JSON.stringify(current) === JSON.stringify(target.ref);
   const [active, setActive] = useState(() => Math.max(0, targets.findIndex(isCurrent)));
+  // Quem tinha o foco ao abrir (o campo da referência), guardado antes de o seletor pegá-lo.
+  const origin = useRef<FocusOrigin | null>(null);
+  origin.current ??= captureFocusOrigin();
+  const returnTo = useRef(returnFocus);
+  returnTo.current = returnFocus;
 
   useEffect(() => {
     const el = dialog.current;
@@ -133,6 +148,16 @@ export function RefPicker({
       el.setAttribute('open', '');
     }
     input.current?.focus();
+    return () => {
+      // Fecha antes de sair do DOM: com o modal aberto, o resto da página está inerte e o
+      // foco não sai dele (etapa 7, achado A1).
+      try {
+        if (el.open) el.close();
+      } catch {
+        el.removeAttribute('open');
+      }
+      restoreFocusAfterRender(el, origin.current, returnTo);
+    };
   }, []);
 
   const filters: Filter[] = [

@@ -96,7 +96,10 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
   await dado.click();
   await page.getByRole('combobox', { name: 'Buscar alvo' }).fill('name');
   await page.getByRole('combobox', { name: 'Buscar alvo' }).press('Enter');
-  await expect(dado).toContainText('→ User.name');
+  // Uma seta só no campo: o ícone (etapa 7, O2); a seta em texto fica na dica.
+  await expect(dado).toContainText('User.name');
+  await expect(dado).not.toContainText('→');
+  await expect(dado).toHaveAttribute('title', /→ User\.name/);
 
   const { mapping } = await exportMapping(page);
   expect(mapping.specializations).toEqual(

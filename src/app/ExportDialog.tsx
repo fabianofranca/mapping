@@ -12,6 +12,16 @@ import { formatBytes } from '../ui/formatBytes';
 import { Icon } from '../ui/icons';
 import { markExported } from './controller';
 import { Button } from '../ui/controls';
+import { SHORTCUT_LABELS } from './shortcuts';
+
+/**
+ * O botão Exportar da barra principal, achado pelo atalho (não muda com o idioma). O zip é
+ * gerado com ele desabilitado, então o foco já tinha saído dele quando o diálogo abriu.
+ */
+const exportButton = () =>
+  document.querySelector<HTMLElement>(
+    `.main-bar button[aria-keyshortcuts="${SHORTCUT_LABELS.export}"]`,
+  );
 
 /**
  * O zip é gerado antes de abrir este diálogo; o toque em "Baixar" ou "Compartilhar" é um
@@ -64,6 +74,7 @@ export function ExportDialog({
     <Dialog
       title={t('export.title')}
       onCancel={onDone}
+      returnFocus={exportButton}
       actions={
         <>
           <Button onClick={onDone}>{t('common.cancel')}</Button>

@@ -330,6 +330,25 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       );
     });
 
+    it('Excluir um projeto deste dispositivo faz o mesmo', async () => {
+      controller.deleteLocalProject.mockImplementation((id: string) => {
+        recentProjects.value = recentProjects.value.filter(
+          (p) => (p as { id: string }).id !== id,
+        );
+        return ok();
+      });
+      render(<Home />);
+      const user = userEvent.setup();
+      const row = screen.getByRole('row', { name: /Carro/ });
+      await user.click(within(row).getByRole('button', { name: t('common.delete') }));
+      const dialog = document.querySelector('dialog') as HTMLElement;
+      await user.click(
+        within(dialog).getByRole('button', { name: t('common.delete'), hidden: true }),
+      );
+      await waitFor(() => expect(screen.queryByText('Carro')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
+    });
+
     it('pelo aviso "Pasta indisponível" também', async () => {
       forgetting();
       controller.openRecentFolder.mockReturnValue(

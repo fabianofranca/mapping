@@ -76,12 +76,12 @@ Mesmo desenho das etapas 5 e 6; o prompt do coordenador está em `docs/prompts/e
 
 **Toca em:** `src/ui/Dialog.tsx` (alvo de retorno explícito e fallback), `src/app/ExportDialog.tsx`, `src/ui/RefPicker.tsx` e `src/ui/FieldEditors.tsx` (retorno ao campo `dado`; seta dupla), `src/ui/TableField.tsx` (retorno após **Remover linha**; `title` nas células), `src/ui/ActionMenu.tsx` (se precisar expor o abridor do menu), `src/app/Home.tsx` (foco após **Remover da lista**), `src/i18n/*`, `tests/components/dialogs.test.tsx`, `tests/components/editorShell.test.tsx`, `tests/components/Home.test.tsx`, `tests/components/*` da tabela e dos campos.
 
-- [ ] Testes que reproduzem: fechar Exportar, escolher alvo com Enter, Excluir no "Referências vão quebrar" e Remover da lista deixam o foco no `body` (hoje falham ao esperar o alvo certo); `exemplo` cortado sem `title`
-- [ ] `Dialog`: prop de alvo de retorno (elemento ou função) usada quando o abridor não está mais no DOM; sem ela, o contêiner focável mais próximo do abridor; o `body` nunca
-- [ ] Exportar volta ao botão **Exportar**; Escolher alvo volta ao campo `dado`; Referências vão quebrar volta ao botão de ações da linha (ou à tabela, se a linha saiu); Remover da lista vai ao **Abrir** da linha seguinte (ou anterior) ou ao título da lista
-- [ ] `title` com o valor inteiro nas células de texto da tabela e nos campos de texto dos tipos quando cortados
-- [ ] Valor de referência com uma seta só (ícone ou texto)
-- [ ] Testes de componente para cada caso
+- [x] Testes que reproduzem: fechar Exportar, escolher alvo com Enter, Excluir no "Referências vão quebrar" e Remover da lista deixam o foco no `body` (hoje falham ao esperar o alvo certo); `exemplo` cortado sem `title`
+- [x] `Dialog`: prop de alvo de retorno (elemento ou função) usada quando o abridor não está mais no DOM; sem ela, o contêiner focável mais próximo do abridor; o `body` nunca
+- [x] Exportar volta ao botão **Exportar**; Escolher alvo volta ao campo `dado`; Referências vão quebrar volta ao botão de ações da linha (ou à tabela, se a linha saiu); Remover da lista vai ao **Abrir** da linha seguinte (ou anterior) ou ao título da lista
+- [x] `title` com o valor inteiro nas células de texto da tabela e nos campos de texto dos tipos quando cortados
+- [x] Valor de referência com uma seta só (ícone ou texto)
+- [x] Testes de componente para cada caso
 
 **Aceite**: R1.8, R1.9, R1.15, R1.22 e R0.7 do `docs/TESTING.md` com o foco no controle esperado depois de fechar; "Visual: diálogos" da rodada dirigida sem o ❌.
 

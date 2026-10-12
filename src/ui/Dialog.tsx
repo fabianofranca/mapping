@@ -30,6 +30,83 @@ function focusFirst(dialog: HTMLDialogElement): void {
   target?.focus();
 }
 
+/**
+ * Para onde o foco vai ao fechar quando quem abriu saiu do DOM (ou não havia quem abrisse,
+ * como no Exportar, que gera o zip antes de abrir): o elemento, ou uma função lida na hora
+ * de fechar (a linha que ficou no lugar da excluída, por exemplo).
+ */
+export type FocusReturn = HTMLElement | null | (() => HTMLElement | null | undefined);
+
+/** Quem tinha o foco ao abrir e os ancestrais dele (do mais próximo ao mais distante). */
+export interface FocusOrigin {
+  readonly opener: Element | null;
+  readonly containers: readonly Element[];
+}
+
+/** Guarda quem tem o foco agora (antes de o diálogo pegá-lo). */
+export function captureFocusOrigin(): FocusOrigin {
+  const active = document.activeElement;
+  const opener = active === document.body ? null : active;
+  const containers: Element[] = [];
+  for (
+    let el = opener?.parentElement ?? null;
+    el && el !== document.body && el !== document.documentElement;
+    el = el.parentElement
+  ) {
+    containers.push(el);
+  }
+  return { opener, containers };
+}
+
+function tryFocus(el: Element | null | undefined, dialog: Element): boolean {
+  if (!(el instanceof HTMLElement) || !el.isConnected || el === document.body)
+    return false;
+  if (dialog.contains(el)) return false;
+  el.focus();
+  return document.activeElement === el;
+}
+
+/**
+ * Devolve o foco ao fechar um diálogo modal (chamar depois de fechá-lo): a quem abriu; se
+ * saiu do DOM, ao alvo explícito; sem ele, ao contêiner focável mais próximo de quem abriu
+ * (ou ao primeiro controle dentro dele); o `body` nunca. Não mexe se o foco já foi para
+ * outro lugar de propósito (fora do diálogo e do `body`).
+ */
+export function restoreFocus(
+  dialog: HTMLElement,
+  origin: FocusOrigin,
+  returnFocus?: FocusReturn,
+): void {
+  const active = document.activeElement;
+  const lost = active === null || active === document.body || dialog.contains(active);
+  if (!lost) return;
+  if (tryFocus(origin.opener, dialog)) return;
+  const explicit = typeof returnFocus === 'function' ? returnFocus() : returnFocus;
+  if (tryFocus(explicit, dialog)) return;
+  const selector = FOCUSABLE.join(', ');
+  for (const container of origin.containers) {
+    if (!container.isConnected) continue;
+    if (tryFocus(container, dialog)) return;
+    for (const el of container.querySelectorAll(selector)) {
+      if (tryFocus(el, dialog)) return;
+    }
+  }
+}
+
+/**
+ * `restoreFocus` depois da renderização que fechou o diálogo: o Preact desmonta o diálogo
+ * antes de aplicar o resto da mesma renderização (a linha excluída, o item trocado), então
+ * só depois dela se sabe se quem abriu continua no DOM.
+ */
+export function restoreFocusAfterRender(
+  dialog: HTMLElement,
+  origin: FocusOrigin | null,
+  returnFocus: { readonly current: FocusReturn | undefined },
+): void {
+  if (!origin) return;
+  queueMicrotask(() => restoreFocus(dialog, origin, returnFocus.current));
+}
+
 interface DialogBaseProps {
   readonly title: string;
   readonly children?: ComponentChildren;
@@ -38,6 +115,8 @@ interface DialogBaseProps {
   readonly size?: DialogSize;
   /** Corpo sem margem interna nem rolagem própria: o conteúdo cuida dos dois (ex.: Ajuda). */
   readonly flush?: boolean;
+  /** Alvo do foco ao fechar quando quem abriu não está mais no DOM (`restoreFocus`). */
+  readonly returnFocus?: FocusReturn;
 }
 
 /**
@@ -66,6 +145,7 @@ export function Dialog({
   actions,
   size = 'sm',
   flush = false,
+  returnFocus,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -73,8 +153,11 @@ export function Dialog({
   // Quem tinha o foco ao abrir (o botão que abriu, ou o diálogo de baixo): ao fechar, o
   // foco volta para ele em vez de cair no `body`. Guardado na renderização, antes de o
   // diálogo pegar o foco.
-  const opener = useRef<Element | null | undefined>(undefined);
-  if (opener.current === undefined) opener.current = document.activeElement;
+  const origin = useRef<FocusOrigin | null>(null);
+  origin.current ??= captureFocusOrigin();
+  // Lido ao fechar: o chamador pode trocar o alvo enquanto o diálogo está aberto.
+  const returnTo = useRef(returnFocus);
+  returnTo.current = returnFocus;
 
   useEffect(() => {
     const dialog = ref.current;
@@ -93,13 +176,7 @@ export function Dialog({
       } catch {
         dialog.removeAttribute('open');
       }
-      const target = opener.current;
-      // Só se o foco não foi para outro lugar de propósito (ficou no diálogo ou no body).
-      const lost =
-        document.activeElement === null ||
-        document.activeElement === document.body ||
-        dialog.contains(document.activeElement);
-      if (lost && target instanceof HTMLElement && target.isConnected) target.focus();
+      restoreFocusAfterRender(dialog, origin.current, returnTo);
     };
   }, []);
 
