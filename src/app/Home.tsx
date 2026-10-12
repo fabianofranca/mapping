@@ -71,6 +71,16 @@ export function Home() {
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const zipInput = useRef<HTMLInputElement>(null);
+  const listSection = useRef<HTMLElement>(null);
+  // Linha que saiu da lista (Remover da lista, Excluir): a posição dela, para o foco ir à
+  // linha que ficou no lugar quando a lista atualizar, e não ao `body` (etapa 7, G4).
+  const refocusRow = useRef<number | null>(null);
+  useEffect(() => {
+    const index = refocusRow.current;
+    if (busy || index === null) return;
+    refocusRow.current = null;
+    focusRecentRow(listSection.current, index);
+  }, [busy]);
 
   const available = features.value;
   if (!available) {
@@ -135,8 +145,20 @@ export function Home() {
     }
   };
 
+  /** Lembra a posição da linha `key` antes de ela sair da lista (ver `refocusRow`). */
+  const rememberRow = (key: string) => {
+    const rows = [
+      ...(listSection.current?.querySelectorAll<HTMLElement>('tr[data-recent]') ?? []),
+    ];
+    refocusRow.current = Math.max(
+      0,
+      rows.findIndex((row) => row.dataset['recent'] === key),
+    );
+  };
+
   const onForget = (id: string) => {
     setDialog(null);
+    rememberRow(`folder:${id}`);
     void run(() => forgetFolder(id));
   };
 
@@ -166,8 +188,14 @@ export function Home() {
       (p.kind === 'folder' && matchesSearch(p.folderName, query)),
   );
   const list = (available.local || recents.length > 0) && (
-    <section class="project-section" aria-labelledby="home-projects-title">
-      <h2 id="home-projects-title">{t('home.recentProjects')}</h2>
+    <section
+      ref={listSection}
+      class="project-section"
+      aria-labelledby="home-projects-title"
+    >
+      <h2 id="home-projects-title" tabIndex={-1}>
+        {t('home.recentProjects')}
+      </h2>
       {recents.length === 0 ? (
         <p class="muted">{t('home.noRecentProjects')}</p>
       ) : (
@@ -433,6 +461,7 @@ export function Home() {
                   onClick={() => {
                     const { id } = dialog.project;
                     closeDialog();
+                    rememberRow(`local:${id}`);
                     void run(() => deleteLocalProject(id));
                   }}
                 >
@@ -448,6 +477,20 @@ export function Home() {
       {narrow && <NarrowWindowNotice />}
     </>
   );
+}
+
+/**
+ * Foco depois de uma linha sair da lista: o Abrir da linha que ficou na posição `index` (ou
+ * da última, se a removida era a última); sem linhas, o título da lista.
+ */
+function focusRecentRow(section: HTMLElement | null, index: number): void {
+  if (!section?.isConnected) return;
+  const rows = section.querySelectorAll<HTMLElement>('tr[data-recent]');
+  const row = rows[Math.min(index, rows.length - 1)];
+  const target =
+    row?.querySelector<HTMLElement>('.project-actions button') ??
+    section.querySelector<HTMLElement>('h2');
+  target?.focus();
 }
 
 /** Campo de nome: vazio usa o `placeholder` como nome (ver controller). */
@@ -550,7 +593,10 @@ function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectLis
       </thead>
       <tbody>
         {projects.map((project) => (
-          <tr key={`${project.kind}:${project.id}`}>
+          <tr
+            key={`${project.kind}:${project.id}`}
+            data-recent={`${project.kind}:${project.id}`}
+          >
             <th scope="row">
               <span class="project-name">{project.name}</span>
               {project.kind === 'folder' && project.folderName !== project.name && (

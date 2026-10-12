@@ -76,6 +76,9 @@ export function SimpleEditor({
   const required = field.required === true;
   const text = valueText(value);
   const bad = invalid || error !== null;
+  // Texto e número podem sair cortados na célula ("ana@exe"): o valor inteiro vai na dica,
+  // antes do motivo da pendência, se houver (etapa 7, achado A3).
+  const fullTitle = [text, title ?? ''].filter((s) => s !== '').join('\n') || undefined;
   let editor;
 
   switch (field.type) {
@@ -85,7 +88,7 @@ export function SimpleEditor({
           id={id}
           size="sm"
           invalid={bad}
-          title={title}
+          title={fullTitle}
           aria-label={label}
           aria-required={required}
           disabled={readOnly}
@@ -100,7 +103,7 @@ export function SimpleEditor({
           id={id}
           size="sm"
           invalid={bad}
-          title={title}
+          title={fullTitle}
           aria-label={label}
           aria-required={required}
           inputMode="decimal"

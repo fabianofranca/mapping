@@ -117,7 +117,8 @@ function RefField({
   const layer = target
     ? projectIndex(project).layers.get(target.annotation.layerId)
     : undefined;
-  const shown = hasValue && !broken ? `→ ${text}` : text;
+  // O ícone de seta já marca a referência no campo; a seta em texto fica só na dica (O2).
+  const tip = hasValue && !broken ? `→ ${text}` : text;
 
   const goTo = () => {
     if (target) ctx.onGoToAnnotation(target.annotation);
@@ -151,7 +152,7 @@ function RefField({
         aria-label={t('ref.fieldButton', { field: fieldLabel(field), value: text })}
         aria-keyshortcuts="Control+B"
         // O valor pode sair cortado no campo ("→ User.no…"): inteiro na dica.
-        title={`${shown}${layer ? ` (${layer.name})` : ''}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
+        title={`${tip}${layer ? ` (${layer.name})` : ''}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
         disabled={readOnly}
         onClick={(e) => {
           if ((e.ctrlKey || e.metaKey) && target) goTo();
@@ -159,7 +160,7 @@ function RefField({
         }}
       >
         <Icon name={!hasValue ? 'search' : broken ? 'warning' : 'arrowRight'} />
-        <span class="ref-control-text">{shown}</span>
+        <span class="ref-control-text">{text}</span>
         {layer && <span class="ref-control-layer">{layer.name}</span>}
       </button>
       <IconButton
@@ -180,15 +181,13 @@ function RefField({
           project={project}
           annotation={annotation}
           field={field}
-          onClose={() => {
-            setPicking(false);
-            button.current?.focus();
-          }}
+          // O seletor devolve o foco ao campo ao fechar (com ele aberto, o campo é inerte).
+          returnFocus={() => button.current}
+          onClose={() => setPicking(false)}
           onPick={(picked, andGo) => {
             setPicking(false);
             actions.setFieldValue(annotation.id, field.key, { ...picked.ref });
             if (andGo) ctx.onGoToAnnotation(picked.annotation);
-            else button.current?.focus();
           }}
         />
       )}

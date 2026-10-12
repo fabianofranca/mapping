@@ -6,6 +6,7 @@ import { locale } from '../../src/store/settings';
 import { TypedField } from '../../src/ui/TypedFields';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
+import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 
 beforeEach(() => {
   locale.value = 'pt-BR';
@@ -82,7 +83,7 @@ describe('TypedFields — referência (ref)', () => {
 
   it('mostra o alvo atual e os botões', () => {
     setup('AIN', 'dado');
-    expect(field().textContent).toContain('→ User.name');
+    expect(field().textContent).toContain('User.name');
     expect(screen.getByRole('button', { name: 'Limpar' })).toHaveProperty(
       'disabled',
       false,
@@ -214,6 +215,43 @@ describe('TypedFields — referência (ref)', () => {
     expect(document.activeElement).toBe(field());
   });
 
+  // Etapa 7 (7.1), O2: o ícone de seta já marca a referência; o texto não repete "→".
+  it('o valor da referência mostra uma seta só (o ícone)', () => {
+    setup('AIN', 'dado');
+    expect(field().querySelector('.ref-control-text')?.textContent).toBe('User.name');
+    expect(field().querySelectorAll('svg')).toHaveLength(1);
+  });
+
+  // Etapa 7 (7.1), achado A1: com o seletor modal aberto, o resto da página está inerte;
+  // focar o campo antes de o seletor fechar não adianta e o foco caía no body.
+  describe('com o seletor modal (inércia do navegador)', () => {
+    beforeEach(simulateModalFocus);
+    afterEach(restoreModalFocus);
+
+    it('Enter escolhe o alvo e o foco volta ao campo dado', async () => {
+      const { harness, user } = setup('AIN', 'dado');
+      await user.click(field());
+      await screen.findByRole('dialog');
+      await user.keyboard('{ArrowDown}{Enter}');
+      expect(valueOf(harness, 'AIN', 'dado')).toEqual({
+        annotationId: 'AU',
+        entryId: 'EA',
+      });
+      await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(document.activeElement).toBe(field());
+    });
+
+    it('Esc fecha e o foco volta ao campo dado', async () => {
+      const { user } = setup('AIN', 'dado');
+      field().focus();
+      await user.keyboard('{Control>}b{/Control}');
+      const dialog = await screen.findByRole('dialog');
+      dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+      await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(document.activeElement).toBe(field());
+    });
+  });
+
   it('a busca filtra os alvos e destaca o trecho', async () => {
     const { user } = setup('AIN', 'dado');
     await user.click(field());
@@ -284,6 +322,52 @@ describe('TypedFields — tabela', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Excluir' }));
     const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
     expect(Array.isArray(rows) ? rows.length : 0).toBe(0);
+  });
+
+  // Etapa 7 (7.1), achado A3: a célula corta o texto ("ana@exe"); o valor inteiro vai na dica.
+  it('células e campos de texto levam o valor inteiro no title', () => {
+    setup('AC', 'atributos');
+    expect(screen.getByLabelText('exemplo (email)').title).toBe('ana@exemplo.com');
+    expect(screen.getByLabelText('nome (email)').title).toBe('email');
+  });
+
+  // Etapa 7 (7.1), achado A1: a linha excluída levava o botão que abriu o diálogo.
+  describe('foco depois de Excluir no "Referências vão quebrar"', () => {
+    beforeEach(simulateModalFocus);
+    afterEach(restoreModalFocus);
+
+    async function removeEmail(user: ReturnType<typeof userEvent.setup>) {
+      await user.click(screen.getByRole('button', { name: 'Ações da linha email' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Remover linha' }));
+      const dialog = await vi.waitFor(() => {
+        const el = document.querySelector('dialog');
+        if (!el) throw new Error('o diálogo ainda não abriu');
+        return el;
+      });
+      await user.click(
+        within(dialog).getByRole('button', { name: 'Excluir', hidden: true }),
+      );
+      await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    }
+
+    it('vai ao botão de ações da linha que ficou no lugar', async () => {
+      const { user } = setup('AC', 'atributos');
+      await user.click(screen.getByRole('button', { name: '+ Linha' }));
+      // A linha nova pega o foco no quadro seguinte.
+      await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('INPUT'));
+      await removeEmail(user);
+      expect(document.activeElement).toBe(
+        screen.getByRole('button', { name: /^Ações da linha/ }),
+      );
+    });
+
+    it('sem linhas, vai à tabela (o botão + Linha)', async () => {
+      const { user } = setup('AC', 'atributos');
+      await removeEmail(user);
+      expect(document.activeElement).toBe(
+        screen.getByRole('button', { name: '+ Linha' }),
+      );
+    });
   });
 
   it('mostra quem referencia a linha', () => {

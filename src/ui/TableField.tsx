@@ -31,6 +31,7 @@ export function TableField({
 }: FieldContext & { readonly field: TableFieldDef }) {
   const { actions } = useEditor();
   const { project, annotation, readOnly } = ctx;
+  const root = useRef<HTMLDivElement>(null);
   const grid = useRef<HTMLDivElement>(null);
   const rows = tableRows(annotation.values?.[field.key]);
   const [confirm, setConfirm] = useState<{ row: TableRow; count: number } | null>(null);
@@ -44,6 +45,24 @@ export function TableField({
     return typeof name === 'string' && name !== ''
       ? name
       : t('typed.row', { n: index + 1 });
+  };
+
+  /**
+   * Foco ao fechar o "Referências vão quebrar" (o menu da linha fecha antes de o diálogo
+   * abrir): o botão de ações da linha; se ela saiu, o da linha que ficou no lugar (ou da
+   * anterior, na última); sem linhas, o "+ Linha" da tabela (etapa 7, achado A1).
+   */
+  const focusAfterConfirm = (row: TableRow, index: number) => () => {
+    const el = root.current;
+    if (!el) return null;
+    const all = [...el.querySelectorAll<HTMLElement>('[data-row-id]')];
+    const target =
+      all.find((r) => r.dataset['rowId'] === row._id) ??
+      all[Math.max(0, Math.min(index, all.length - 1))];
+    return (
+      target?.querySelector<HTMLElement>('.grid-cell-menu .icon-button') ??
+      el.querySelector<HTMLElement>('.table-field-head button')
+    );
   };
 
   const remove = (row: TableRow) => {
@@ -81,6 +100,7 @@ export function TableField({
 
   return (
     <div
+      ref={root}
       class="props-wide table-field"
       data-focus={field.key}
       onKeyDown={(e) => {
@@ -154,6 +174,7 @@ export function TableField({
                 class={drag.state?.from === index ? 'grid-row is-dragging' : 'grid-row'}
                 role="row"
                 data-drag-row=""
+                data-row-id={row._id}
                 data-drop={drag.drop(index, rows.length)}
                 onKeyDown={(e) => {
                   if (readOnly) return;
@@ -264,6 +285,10 @@ export function TableField({
         <Dialog
           title={t('ref.deleteTitle')}
           onCancel={() => setConfirm(null)}
+          returnFocus={focusAfterConfirm(
+            confirm.row,
+            rows.findIndex((r) => r._id === confirm.row._id),
+          )}
           actions={
             <>
               <Button onClick={() => setConfirm(null)}>{t('common.cancel')}</Button>
