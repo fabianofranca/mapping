@@ -133,6 +133,8 @@ O `mapping.json` tem `revision`, mas o agente não o grava. A proposta guarda a 
 
 ## Solução de problemas
 
+A tabela abaixo cobre o que costuma aparecer na instalação e no uso; a lista completa dos códigos de erro e de aviso, com o significado de cada um, está em [`AGENT-GUIDE.md`](AGENT-GUIDE.md), seção "Erros" (o registro é `mcp/errors.ts`).
+
 | Sintoma                                                               | Causa e solução                                                                                                                                                                                                                                   |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | O cliente não lista as tools                                          | Confira o caminho de `args` (relativo ao diretório de trabalho do cliente), a versão do Node (`node --version` ≥ 20) e se aprovou o servidor. Rode `node tools/mapping-mcp.js --help`.                                                            |

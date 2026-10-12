@@ -276,28 +276,87 @@ Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o 
 
 ## Erros
 
-As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}`. Os códigos que você mais verá:
+As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}`. Num lote (`plan_changes`, `propose_changes`), o erro de cada operação vem em `errors`, com o mesmo `code`, sem parar as outras. A lista abaixo é **completa** para os códigos próprios do servidor (o registro fica em `mcp/errors.ts`, e um teste confere que todo código dele está aqui). Os demais são **regras do modelo** (`locked`, `rect-out-of-image`, `owner-required`, `duplicate-key`…): a `message` explica o que corrigir.
 
-| `code`                                           | Significado                                                                          |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `project-not-found`, `ambiguous-project`         | Projeto inexistente, ou nome repetido (a resposta lista as candidatas).              |
-| `invalid-ref`, `not-found`, `ambiguous-ref`      | Referência mal formada, sem item correspondente, ou com mais de um.                  |
-| `wrong-kind`                                     | A referência é de outro tipo (ex: anotação passada a `get_marking`).                 |
-| `outside-roots`                                  | Caminho com `..`, absoluto fora das raízes ou link simbólico que sai delas.          |
-| `invalid-project`                                | O `mapping.json` não passa na validação (a resposta traz o motivo).                  |
-| `spec-unavailable`                               | A cópia da especialização em `specs/` está ausente ou inválida.                      |
-| `image-file-missing`                             | O arquivo da imagem não existe (ou aponta para fora das raízes).                     |
-| `unsupported-image`, `invalid-image`             | O arquivo não é PNG, JPEG nem WebP, ou está corrompido.                              |
-| `image-too-large`                                | Arquivo maior que 64 MB (16 MB em `base64`) ou imagem com mais de 40 megapixels.     |
-| `marking-outside-image`                          | O retângulo da marcação não toca a imagem: não há o que recortar.                    |
-| `revision-conflict`                              | `propose_changes`: o projeto mudou enquanto a proposta era calculada. Envie de novo. |
-| `no-changes`                                     | `propose_changes`: as operações não alteram nada (reexportação idêntica).            |
-| `proposal-not-found`, `not-open`                 | Proposta inexistente; ou `withdraw_proposal` numa proposta que não está aberta.      |
-| `invalid-arguments`                              | `validate_specialization` precisa de exatamente um de `path` ou `text`.              |
-| `unknown-alias`, `alias-unavailable`             | Apelido não criado antes no lote, ou criado por uma operação que falhou.             |
-| `unknown-platform`, `platform-not-allowed`       | Plataforma não declarada pelas especializações, ou não permitida no campo `codeRef`. |
-| `missing-query`                                  | `find_by_code` sem `path` nem `symbol`.                                              |
-| `locked`, `rect-out-of-image`, `owner-required`… | Regras do modelo: a `message` explica o que corrigir.                                |
+**Projetos, raízes e caminhos**
+
+| `code`                             | Significado                                                                                                                                     |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project-not-found`                | Projeto inexistente nas raízes.                                                                                                                 |
+| `ambiguous-project`                | Nome de projeto repetido: a resposta lista as candidatas; use o `path` de `list_projects`.                                                      |
+| `project-mismatch`                 | A referência é de um projeto e `project` indica outro.                                                                                          |
+| `invalid-project`                  | O `mapping.json` não passa na validação ou não pôde ser lido (a resposta traz o motivo).                                                        |
+| `read-only`                        | O `mapping.json` é de uma versão de schema mais nova que este servidor: atualize o `mapping-mcp.js`.                                            |
+| `spec-unavailable`                 | A cópia da especialização em `specs/` está ausente ou inválida.                                                                                 |
+| `outside-roots`                    | Caminho com `..`, absoluto fora das raízes ou link simbólico que sai delas.                                                                     |
+| `path-not-found`                   | O caminho informado (arquivo de origem, especialização) não existe em nenhuma raiz.                                                             |
+| `invalid-path`                     | Caminho vazio ou inválido; em `find_by_code`, caminho de código que não é relativo à raiz do repositório. Também é regra do modelo (`codeRef`). |
+| `not-a-file`                       | O caminho é uma pasta (ou outra coisa que não um arquivo).                                                                                      |
+| `file-too-large`                   | Arquivo lido grande demais (origem do lote, especialização ou `proposal.json` acima de 64 MB).                                                  |
+| `root-required`                    | `create_project` com caminho relativo e mais de uma raiz: informe `root`.                                                                       |
+| `unknown-root`                     | `root` não é nenhuma das raízes (a resposta lista `roots`).                                                                                     |
+| `already-exists`, `nested-project` | `create_project`: a pasta já tem um projeto, ou fica dentro de outro projeto (projetos não se aninham).                                         |
+| `invalid-name`                     | `create_project` com nome vazio. Também é regra do modelo (nome vazio ou inválido).                                                             |
+| `invalid-arguments`                | Combinação de argumentos inválida: `validate_specialization` precisa de exatamente um de `path` ou `text`.                                      |
+
+**Referências e itens**
+
+| `code`                                                 | Significado                                                                                                |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `invalid-ref`                                          | Referência mal formada.                                                                                    |
+| `not-found`                                            | Sem item correspondente (referência, camada ou imagem por nome). Também é regra do modelo.                 |
+| `ambiguous-ref`                                        | O código curto ou o id casa com mais de um item (a resposta lista as candidatas).                          |
+| `ambiguous-image`, `ambiguous-layer`, `ambiguous-type` | Nome de imagem, de camada ou de tipo de anotação que casa com mais de um: use o id (ou `specId`/`typeId`). |
+| `wrong-kind`                                           | A referência é de outro tipo (ex: anotação passada a `get_marking`).                                       |
+| `missing-query`                                        | `find_by_code` sem `path` nem `symbol`; `find_by_source` e `find_types_by_source` sem o que procurar.      |
+| `unknown-platform`                                     | Plataforma não declarada pelas especializações aplicadas (a resposta lista as válidas).                    |
+
+**Imagens**
+
+| `code`                               | Significado                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------- |
+| `image-file-missing`                 | O arquivo da imagem não existe (ou aponta para fora das raízes).                 |
+| `unsupported-image`, `invalid-image` | O arquivo não é PNG, JPEG nem WebP, ou está corrompido.                          |
+| `image-too-large`                    | Arquivo maior que 64 MB (16 MB em `base64`) ou imagem com mais de 40 megapixels. |
+| `encode-failed`                      | Falha ao codificar a imagem em WebP (a origem provavelmente está corrompida).    |
+| `marking-outside-image`              | O retângulo da marcação não toca a imagem: não há o que recortar.                |
+| `invalid-image-source`               | `add_image`/`replace_image`: informe `file` ou `base64`, exatamente um.          |
+| `invalid-base64`                     | Conteúdo `base64` vazio ou inválido.                                             |
+
+**Lote (`plan_changes`, `propose_changes`)**
+
+| `code`                               | Significado                                                                                                                 |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `unknown-alias`, `alias-unavailable` | Apelido não criado antes no lote, ou criado por uma operação que falhou.                                                    |
+| `duplicate-alias`, `invalid-alias`   | Apelido repetido no lote; ou `_as` de uma linha de tabela que não é um apelido (`$linha`).                                  |
+| `layer-required`                     | Anotação livre sem `layer` (ou informe `type` para uma tipada).                                                             |
+| `invalid-value`                      | Tabela que não é uma lista de linhas, ou linha que não é objeto. Também é regra do modelo (valor incompatível com o campo). |
+| `invalid-ref-value`                  | Valor de um campo `ref` que não é `{ "annotation": … }`.                                                                    |
+| `invalid-spec`                       | `apply_specialization`/`update_specialization` com um arquivo de especialização inválido.                                   |
+| `spec-already-applied`               | A especialização já está aplicada (numa versão menor, use `update_specialization`). Também é regra do modelo.               |
+| `nothing-to-change`                  | `set_platform_repo` sem `urlTemplate` nem `localPath`.                                                                      |
+| `platform-not-allowed`               | Plataforma não permitida no campo `codeRef` (regra do modelo).                                                              |
+
+**Propostas**
+
+| `code`               | Significado                                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invalid-title`      | `propose_changes` sem título.                                                                                                                                                         |
+| `no-changes`         | `propose_changes`: as operações não alteram nada (reexportação idêntica).                                                                                                             |
+| `revision-conflict`  | `propose_changes`: o projeto mudou enquanto a proposta era calculada (envie de novo). Ao substituir ou retirar: o `proposal.json` não parava de mudar (a app está gravando decisões). |
+| `proposal-not-found` | Proposta inexistente no projeto.                                                                                                                                                      |
+| `invalid-proposal`   | O `proposal.json` da proposta está ilegível.                                                                                                                                          |
+| `not-open`           | `withdraw_proposal` numa proposta que não está aberta.                                                                                                                                |
+
+**Inesperado**: `internal-error` é uma falha que o servidor não previu (a pilha vai para o stderr do servidor). Repita uma vez; se persistir, relate com a mensagem.
+
+**Avisos** (vêm em `warnings`, sem `isError`: a operação foi feita):
+
+| `code`                  | Significado                                                                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `missing-repo`          | Plataforma usada em algum `codeRef` sem repositório configurado.                                                                                         |
+| `superseded-incomplete` | `propose_changes` com `supersedes`: a anterior ainda tinha mudanças sem decisão ou aceitas sem aplicar.                                                  |
+| `supersede-failed`      | `propose_changes` com `supersedes`: a nova proposta foi gravada, mas a anterior não pôde ser marcada como substituída. **Não reenvie**: avise o usuário. |
 
 ## Boas práticas
 
