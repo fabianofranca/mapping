@@ -148,13 +148,13 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/storage/local.ts` (store `folders` no IndexedDB: handle, nome, último uso), `src/storage/folder.ts` (abrir a partir de um handle: `queryPermission`/`requestPermission`, `NotFoundError`), `src/app/controller.ts` (recentes unificados, `openRecentFolder`, `relocateFolder`, `forgetFolder`), `src/app/Home.tsx` (lista única com selo), `src/i18n/*`, `docs/ARCHITECTURE.md`, `docs/TESTING.md` (R0.4 e a nota dos [pessoa]), `tests/app/controller.test.ts`, `tests/storage/*`, `tests/e2e/folder.spec.ts`.
 
-- [ ] Teste que reproduz: abrir uma pasta, fechar o projeto; hoje a lista da tela inicial não a traz
-- [ ] Ao abrir ou criar um projeto em pasta, guardar o handle no IndexedDB com nome e data (try/catch; `isSameEntry` evita duplicata); o recente local existente ganha o mesmo formato de entrada
-- [ ] Clique no recente de pasta: `queryPermission({ mode: 'readwrite' })`; se não `granted`, `requestPermission` (dentro do gesto do clique); abre e atualiza a data
-- [ ] Handle inválido ou permissão negada: aviso com **Localizar pasta…** (seletor; substitui o handle, conferindo o `mapping.json`) e **Remover da lista** (não apaga nada do disco)
-- [ ] Tela inicial: lista única ordenada por último uso, selo **Pasta** ou **Neste dispositivo**, ação "Remover da lista" nas pastas; `file://` também guarda (IndexedDB existe lá no Chrome)
-- [ ] Documentação: `ARCHITECTURE.md` (recentes), `TESTING.md` (o seletor é [pessoa] só na primeira abertura; "Permitir em todas as visitas" é do navegador e tira o diálogo das seguintes)
-- [ ] Testes: controller com handles falsos (granted, prompt, denied, NotFoundError); e2e com OPFS guardando e reabrindo
+- [x] Teste que reproduz: abrir uma pasta, fechar o projeto; hoje a lista da tela inicial não a traz
+- [x] Ao abrir ou criar um projeto em pasta, guardar o handle no IndexedDB com nome e data (try/catch; `isSameEntry` evita duplicata); o recente local existente ganha o mesmo formato de entrada
+- [x] Clique no recente de pasta: `queryPermission({ mode: 'readwrite' })`; se não `granted`, `requestPermission` (dentro do gesto do clique); abre e atualiza a data
+- [x] Handle inválido ou permissão negada: aviso com **Localizar pasta…** (seletor; substitui o handle, conferindo o `mapping.json`) e **Remover da lista** (não apaga nada do disco)
+- [x] Tela inicial: lista única ordenada por último uso, selo **Pasta** ou **Neste dispositivo**, ação "Remover da lista" nas pastas; `file://` também guarda (IndexedDB existe lá no Chrome)
+- [x] Documentação: `ARCHITECTURE.md` (recentes), `TESTING.md` (o seletor é [pessoa] só na primeira abertura; "Permitir em todas as visitas" é do navegador e tira o diálogo das seguintes)
+- [x] Testes: controller com handles falsos (granted, prompt, denied, NotFoundError); e2e com OPFS guardando e reabrindo
 
 **Aceite**: reabrir um projeto de pasta a partir da tela inicial com um clique (mais a permissão do navegador na primeira vez); pasta movida leva ao aviso com as duas ações; nada muda no `mapping.json`.
 

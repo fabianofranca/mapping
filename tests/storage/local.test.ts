@@ -1,6 +1,6 @@
 // @vitest-environment node
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   deserialize,
   migrations,
@@ -10,12 +10,15 @@ import {
 } from '../../src/model';
 import {
   MAX_LOCAL_BACKUPS,
+  openFolderLibrary,
   openLocalLibrary,
+  type FolderLibrary,
   type LocalLibrary,
 } from '../../src/storage/local';
 import { readProjectZip, writeProjectZip } from '../../src/storage/zip';
 import { emptyProject, sampleProject } from '../model/fixtures';
 import { cadastroProject } from '../model/specFixtures';
+import { keepDirectoriesInClone, PermissionDirectory } from './memoryFs';
 
 let library: LocalLibrary;
 
@@ -256,5 +259,125 @@ describe('LocalLibrary (IndexedDB)', () => {
       await library.remove('p');
       expect(await library.listBackups('p')).toEqual([]);
     });
+  });
+
+  it('markOpened guarda a última abertura sem mexer no resto', async () => {
+    await library.create('p', {
+      mapping: serialize(emptyProject()),
+      images: noImages,
+      specs: noSpecs,
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
+    const before = await library.get('p');
+    await library.markOpened('p', '2026-10-12T10:00:00.000Z');
+    await library.markOpened('nao-existe', '2026-10-12T10:00:00.000Z');
+    expect(await library.get('p')).toEqual({
+      ...before,
+      openedAt: '2026-10-12T10:00:00.000Z',
+    });
+    expect(await library.list()).toHaveLength(1);
+  });
+});
+
+describe('FolderLibrary (recentes de pasta)', () => {
+  let folders: FolderLibrary;
+
+  beforeEach(async () => {
+    vi.stubGlobal('structuredClone', keepDirectoriesInClone());
+    const opened = await openFolderLibrary();
+    if (!opened) throw new Error('IndexedDB indisponível');
+    folders = opened;
+    for (const f of await folders.list()) await folders.remove(f.id);
+  });
+
+  afterEach(() => {
+    folders.close();
+    vi.unstubAllGlobals();
+  });
+
+  it('guarda handle, nome do projeto, nome da pasta e data; a lista não traz handles', async () => {
+    const a = new PermissionDirectory('a');
+    const b = new PermissionDirectory('b');
+    const idA = await folders.remember(a, { name: 'A', usedAt: '2026-10-01T00:00:00Z' });
+    await folders.remember(b, { name: 'B', usedAt: '2026-10-02T00:00:00Z' });
+    const list = await folders.list();
+    expect(list.map((f) => [f.name, f.folderName])).toEqual([
+      ['B', 'b'],
+      ['A', 'a'],
+    ]);
+    expect(list[1]).toEqual({
+      id: idA,
+      name: 'A',
+      folderName: 'a',
+      usedAt: '2026-10-01T00:00:00Z',
+    });
+    expect(await folders.handle(idA)).toBe(a);
+    expect(await folders.handle('nao-existe')).toBeNull();
+  });
+
+  it('a mesma pasta (isSameEntry) atualiza a entrada em vez de duplicar', async () => {
+    const a = new PermissionDirectory('a');
+    const id = await folders.remember(a, { name: 'A', usedAt: '2026-10-01T00:00:00Z' });
+    const again = await folders.remember(a, {
+      name: 'A2',
+      usedAt: '2026-10-03T00:00:00Z',
+    });
+    expect(again).toBe(id);
+    expect((await folders.list()).map((f) => [f.id, f.name, f.usedAt])).toEqual([
+      [id, 'A2', '2026-10-03T00:00:00Z'],
+    ]);
+  });
+
+  it('um handle guardado que falha no isSameEntry não impede guardar outro', async () => {
+    const broken = new PermissionDirectory('velha');
+    vi.spyOn(broken, 'isSameEntry').mockRejectedValue(
+      new DOMException('', 'NotFoundError'),
+    );
+    await folders.remember(broken, { name: 'V', usedAt: '2026-10-01T00:00:00Z' });
+    // Mesmo nome de pasta: o handle guardado é comparado (e falha).
+    await folders.remember(new PermissionDirectory('velha'), {
+      name: 'N',
+      usedAt: '2026-10-02T00:00:00Z',
+    });
+    expect(await folders.list()).toHaveLength(2);
+  });
+
+  it('replaceId: a entrada passa a apontar para a pasta localizada', async () => {
+    const old = new PermissionDirectory('antiga');
+    const id = await folders.remember(old, { name: 'P', usedAt: '2026-10-01T00:00:00Z' });
+    const moved = new PermissionDirectory('movida');
+    expect(
+      await folders.remember(moved, { name: 'P', usedAt: '2026-10-02T00:00:00Z' }, id),
+    ).toBe(id);
+    expect((await folders.list()).map((f) => [f.id, f.folderName])).toEqual([
+      [id, 'movida'],
+    ]);
+  });
+
+  it('replaceId de uma pasta que já estava na lista junta as duas entradas', async () => {
+    const a = new PermissionDirectory('a');
+    const b = new PermissionDirectory('b');
+    const idA = await folders.remember(a, { name: 'A', usedAt: '2026-10-01T00:00:00Z' });
+    const idB = await folders.remember(b, { name: 'B', usedAt: '2026-10-02T00:00:00Z' });
+    expect(
+      await folders.remember(b, { name: 'B', usedAt: '2026-10-03T00:00:00Z' }, idA),
+    ).toBe(idB);
+    expect((await folders.list()).map((f) => f.id)).toEqual([idB]);
+  });
+
+  it('touch atualiza nome e data; remove tira da lista', async () => {
+    const id = await folders.remember(new PermissionDirectory('a'), {
+      name: 'A',
+      usedAt: '2026-10-01T00:00:00Z',
+    });
+    await folders.touch(id, { name: 'Renomeado', usedAt: '2026-10-05T00:00:00Z' });
+    await folders.touch('nao-existe', { name: 'X', usedAt: '2026-10-05T00:00:00Z' });
+    expect((await folders.list()).map((f) => [f.name, f.usedAt])).toEqual([
+      ['Renomeado', '2026-10-05T00:00:00Z'],
+    ]);
+    await folders.remove(id);
+    expect(await folders.list()).toEqual([]);
+    expect(await folders.handle(id)).toBeNull();
   });
 });

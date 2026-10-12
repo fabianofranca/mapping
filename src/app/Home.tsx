@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
-import type { LocalProjectMeta } from '../storage/local';
 import { locale } from '../store/settings';
 import { Button, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
@@ -17,14 +16,21 @@ import {
   createLocalProject,
   deleteLocalProject,
   features,
+  forgetFolder,
   importZip,
-  localProjects,
   openFolder,
   openLocalProject,
+  openRecentFolder,
+  recentProjects,
+  relocateFolder,
   type AppResult,
   type InconsistentProject,
+  type RecentProject,
 } from './controller';
 import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
+
+type LocalRecent = Extract<RecentProject, { kind: 'local' }>;
+type FolderRecent = Extract<RecentProject, { kind: 'folder' }>;
 
 type HomeDialog =
   | { readonly kind: 'new' }
@@ -33,7 +39,14 @@ type HomeDialog =
       readonly handle: DirectoryHandleLike;
       readonly images: readonly ExistingImage[];
     }
-  | { readonly kind: 'delete'; readonly project: LocalProjectMeta }
+  | { readonly kind: 'delete'; readonly project: LocalRecent }
+  | {
+      readonly kind: 'folder-unavailable';
+      readonly folder: FolderRecent;
+      readonly reason: 'denied' | 'missing';
+      /** "Localizar pasta…" escolheu uma pasta sem `mapping.json`. */
+      readonly noProject: boolean;
+    }
   | { readonly kind: 'inconsistent'; readonly inconsistent: InconsistentProject }
   | { readonly kind: 'help'; readonly section?: string }
   | { readonly kind: 'settings' };
@@ -95,6 +108,38 @@ export function Home() {
     }
   };
 
+  const onOpenRecent = async (project: RecentProject) => {
+    if (project.kind === 'local') {
+      await run(() => openLocalProject(project.id));
+      return;
+    }
+    // Direto no clique: o navegador só mostra o pedido de permissão dentro do gesto.
+    const result = await run(() => openRecentFolder(project.id));
+    if (result?.kind === 'unavailable') {
+      setDialog({
+        kind: 'folder-unavailable',
+        folder: project,
+        reason: result.reason,
+        noProject: false,
+      });
+    }
+  };
+
+  const onRelocate = async (folder: FolderRecent, reason: 'denied' | 'missing') => {
+    const result = await run(() => relocateFolder(folder.id));
+    if (result?.kind === 'no-project') {
+      setDialog({ kind: 'folder-unavailable', folder, reason, noProject: true });
+    } else if (result === null) {
+      // O erro aparece na tela inicial (ou o diálogo do projeto inconsistente já entrou).
+      setDialog((current) => (current?.kind === 'folder-unavailable' ? null : current));
+    }
+  };
+
+  const onForget = (id: string) => {
+    setDialog(null);
+    void run(() => forgetFolder(id));
+  };
+
   const onZipChosen = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = '';
@@ -114,12 +159,17 @@ export function Home() {
     onOpenFolder: () => void onOpenFolder(),
     onOpenZip: () => zipInput.current?.click(),
   };
-  const projects = localProjects.value.filter((p) => matchesSearch(p.name, query));
-  const list = available.local && (
+  const recents = recentProjects.value;
+  const projects = recents.filter(
+    (p) =>
+      matchesSearch(p.name, query) ||
+      (p.kind === 'folder' && matchesSearch(p.folderName, query)),
+  );
+  const list = (available.local || recents.length > 0) && (
     <section class="project-section" aria-labelledby="home-projects-title">
-      <h2 id="home-projects-title">{t('home.localProjects')}</h2>
-      {localProjects.value.length === 0 ? (
-        <p class="muted">{t('home.noLocalProjects')}</p>
+      <h2 id="home-projects-title">{t('home.recentProjects')}</h2>
+      {recents.length === 0 ? (
+        <p class="muted">{t('home.noRecentProjects')}</p>
       ) : (
         <>
           <div class="home-search">
@@ -137,8 +187,9 @@ export function Home() {
             <ProjectTable
               projects={projects}
               busy={busy}
-              onOpen={(id) => void run(() => openLocalProject(id))}
+              onOpen={(project) => void onOpenRecent(project)}
               onDelete={(project) => setDialog({ kind: 'delete', project })}
+              onForget={(project) => onForget(project.id)}
             />
           )}
         </>
@@ -332,6 +383,43 @@ export function Home() {
           </Dialog>
         )}
 
+        {dialog?.kind === 'folder-unavailable' && (
+          <Dialog
+            title={t('home.folderUnavailableTitle')}
+            onCancel={closeDialog}
+            actions={
+              <>
+                <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                <Button disabled={busy} onClick={() => onForget(dialog.folder.id)}>
+                  {t('home.forgetFolder')}
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={busy || !available.folder}
+                  onClick={() => void onRelocate(dialog.folder, dialog.reason)}
+                >
+                  {t('home.relocateFolder')}
+                </Button>
+              </>
+            }
+          >
+            <p>
+              {t(
+                dialog.reason === 'denied' ? 'home.folderDenied' : 'home.folderMissing',
+                {
+                  folder: dialog.folder.folderName,
+                },
+              )}
+            </p>
+            <p class="muted">{t('home.forgetFolderHint')}</p>
+            {dialog.noProject && (
+              <p class="notice notice-error" role="alert">
+                {t('home.folderNoProject', { name: dialog.folder.name })}
+              </p>
+            )}
+          </Dialog>
+        )}
+
         {dialog?.kind === 'delete' && (
           <Dialog
             title={t('home.deleteTitle')}
@@ -430,27 +518,31 @@ function FolderReason({ available }: HomeActions) {
 }
 
 interface ProjectListProps {
-  readonly projects: readonly LocalProjectMeta[];
+  readonly projects: readonly RecentProject[];
   readonly busy: boolean;
-  readonly onOpen: (id: string) => void;
-  readonly onDelete: (project: LocalProjectMeta) => void;
+  readonly onOpen: (project: RecentProject) => void;
+  readonly onDelete: (project: LocalRecent) => void;
+  readonly onForget: (project: FolderRecent) => void;
 }
 
-function Unexported({ project }: { readonly project: LocalProjectMeta }) {
-  return project.unexported ? (
+function Unexported({ project }: { readonly project: RecentProject }) {
+  return project.kind === 'local' && project.unexported ? (
     <span class="status status-warning">{t('status.unexported')}</span>
   ) : null;
 }
 
-/** Tabela Nome | Origem | Alterado em, com Abrir e Excluir na linha. */
-function ProjectTable({ projects, busy, onOpen, onDelete }: ProjectListProps) {
+/**
+ * Lista única (projetos deste dispositivo e pastas), do uso mais recente ao mais antigo:
+ * Nome | Origem (selo) | Último uso, com Abrir e Excluir (ou Remover da lista) na linha.
+ */
+function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectListProps) {
   return (
     <table class="project-table">
       <thead>
         <tr>
           <th scope="col">{t('home.colName')}</th>
           <th scope="col">{t('home.colOrigin')}</th>
-          <th scope="col">{t('home.colUpdated')}</th>
+          <th scope="col">{t('home.colUsed')}</th>
           <th scope="col">
             <span class="visually-hidden">{t('home.colActions')}</span>
           </th>
@@ -458,25 +550,42 @@ function ProjectTable({ projects, busy, onOpen, onDelete }: ProjectListProps) {
       </thead>
       <tbody>
         {projects.map((project) => (
-          <tr key={project.id}>
+          <tr key={`${project.kind}:${project.id}`}>
             <th scope="row">
               <span class="project-name">{project.name}</span>
+              {project.kind === 'folder' && project.folderName !== project.name && (
+                <span class="project-name muted">{project.folderName}</span>
+              )}
               <Unexported project={project} />
             </th>
-            <td>{t('status.targetLocal')}</td>
-            <td>{formatDate(project.updatedAt)}</td>
+            <td>
+              <span class="badge">
+                {t(
+                  project.kind === 'folder'
+                    ? 'status.targetFolder'
+                    : 'status.targetLocal',
+                )}
+              </span>
+            </td>
+            <td>{formatDate(project.usedAt)}</td>
             <td class="project-actions">
-              <Button size="sm" disabled={busy} onClick={() => onOpen(project.id)}>
+              <Button size="sm" disabled={busy} onClick={() => onOpen(project)}>
                 {t('common.open')}
               </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                disabled={busy}
-                onClick={() => onDelete(project)}
-              >
-                {t('common.delete')}
-              </Button>
+              {project.kind === 'local' ? (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  disabled={busy}
+                  onClick={() => onDelete(project)}
+                >
+                  {t('common.delete')}
+                </Button>
+              ) : (
+                <Button size="sm" disabled={busy} onClick={() => onForget(project)}>
+                  {t('home.forgetFolder')}
+                </Button>
+              )}
             </td>
           </tr>
         ))}

@@ -1,6 +1,6 @@
 // Orquestra a tela inicial e o projeto aberto: detecção de recursos, abertura
 // e criação de projetos (pasta, local, zip), exportação e fechamento.
-import { signal, type Signal } from '@preact/signals';
+import { computed, signal, type Signal } from '@preact/signals';
 import { t } from '../i18n';
 import {
   DEFAULT_LAYER_COLOR,
@@ -19,11 +19,16 @@ import { importExistingImages } from '../storage/existingImages';
 import {
   createFolderStorage,
   ensureGitignore,
+  ensurePermission,
   findExistingImages,
   isFolderModeSupported,
+  isNotFound,
+  isOriginPrivate,
+  isReopenable,
   pickDirectory,
   type DirectoryHandleLike,
   type ExistingImage,
+  type ReopenableDirectory,
 } from '../storage/folder';
 import { createDisplayBitmap, prepareImage, readImageSize } from '../storage/imageImport';
 import { loadProject, type InconsistentLoad } from '../storage/loadProject';
@@ -33,10 +38,13 @@ import {
   type LoadedProposals,
 } from '../storage/loadProposals';
 import {
+  openFolderLibrary,
   openLocalLibrary,
   requestPersistentStorage,
+  type FolderLibrary,
   type LocalLibrary,
   type LocalProjectMeta,
+  type StoredFolder,
 } from '../storage/local';
 import type { ProjectStorage, StorageKind } from '../storage/types';
 import { readProjectZip, writeProjectZip, zipFileName } from '../storage/zip';
@@ -97,9 +105,65 @@ export interface OpenProject {
 
 export const features = signal<Features | null>(null);
 export const localProjects = signal<readonly LocalProjectMeta[]>([]);
+/** Pastas abertas recentemente, com o handle (o clique precisa dele sem esperar nada). */
+export const recentFolders = signal<readonly StoredFolder[]>([]);
 export const openProject = signal<OpenProject | null>(null);
 
+/** Uma linha da lista da tela inicial: projeto deste dispositivo ou pasta. */
+export type RecentProject =
+  | {
+      readonly kind: 'local';
+      readonly id: string;
+      readonly name: string;
+      /** Último uso: a última alteração ou a última abertura, o que for mais recente. */
+      readonly usedAt: string;
+      readonly unexported: boolean;
+    }
+  | {
+      readonly kind: 'folder';
+      readonly id: string;
+      readonly name: string;
+      readonly folderName: string;
+      readonly usedAt: string;
+    };
+
+const latest = (a: string, b: string | undefined): string =>
+  b !== undefined && Date.parse(b) > Date.parse(a) ? b : a;
+
+/**
+ * A lista única da tela inicial, do uso mais recente ao mais antigo. Sem o modo pasta
+ * (navegador sem `showDirectoryPicker`, página num iframe), só os projetos deste dispositivo.
+ */
+export const recentProjects = computed<readonly RecentProject[]>(() => {
+  const locals: RecentProject[] = localProjects.value.map((p) => ({
+    kind: 'local',
+    id: p.id,
+    name: p.name,
+    usedAt: latest(p.updatedAt, p.openedAt),
+    unexported: p.unexported,
+  }));
+  const folders: RecentProject[] = features.value?.folder
+    ? recentFolders.value.map((f) => ({
+        kind: 'folder',
+        id: f.id,
+        name: f.name,
+        folderName: f.folderName,
+        usedAt: f.usedAt,
+      }))
+    : [];
+  const time = (p: RecentProject) => Date.parse(p.usedAt) || 0;
+  return [...folders, ...locals].sort((a, b) => time(b) - time(a));
+});
+
 let library: LocalLibrary | null = null;
+let folderLibrary: FolderLibrary | null = null;
+/** Entrada dos recentes da pasta aberta agora (nome e data atualizados ao fechar). */
+let openFolderId: string | null = null;
+/**
+ * Handles já em memória nesta visita (pastas abertas agora ou já reabertas), por id da
+ * entrada: o clique em Abrir vai direto ao pedido de permissão, sem ler o IndexedDB.
+ */
+const knownHandles = new Map<string, ReopenableDirectory>();
 
 const ok = <T>(value: T): AppResult<T> => ({ ok: true, value });
 const err = (error: AppErrorCode): AppResult<never> => ({ ok: false, error });
@@ -118,14 +182,27 @@ function newProject(name: string): Project {
 
 /** Detecta os recursos e carrega a lista de projetos locais. Chamar uma vez. */
 export async function initApp(): Promise<void> {
-  library = await openLocalLibrary();
+  const folder = isFolderModeSupported();
+  [library, folderLibrary] = await Promise.all([
+    openLocalLibrary(),
+    folder ? openFolderLibrary() : null,
+  ]);
   features.value = {
-    folder: isFolderModeSupported(),
+    folder,
     local: library !== null,
     fileProtocol: location.protocol === 'file:',
   };
-  await refreshLocalProjects();
+  await Promise.all([refreshLocalProjects(), refreshRecentFolders()]);
   bindPageLifecycle();
+}
+
+export async function refreshRecentFolders(): Promise<void> {
+  try {
+    recentFolders.value = folderLibrary ? await folderLibrary.list() : [];
+  } catch (e) {
+    reportError('folders.list', e);
+    recentFolders.value = [];
+  }
 }
 
 export async function refreshLocalProjects(): Promise<void> {
@@ -302,7 +379,14 @@ export function openLocalProject(id: string): Promise<AppResult> {
   return guarded(async () => {
     if (!library) return err('storage-failed');
     void requestPersistentStorage();
-    return openFromStorage(library.open(id), id);
+    const opened = await openFromStorage(library.open(id), id);
+    if (opened.ok) {
+      // Abrir conta como uso, para a ordem dos recentes.
+      await library
+        .markOpened(id, new Date().toISOString())
+        .catch((e: unknown) => reportError('local.markOpened', e));
+    }
+    return opened;
   });
 }
 
@@ -368,8 +452,141 @@ export function openFolder(): Promise<AppResult<FolderInspection>> {
         images: await findExistingImages(handle),
       });
     }
-    const opened = await openFromStorage(storage, null);
+    const opened = await openFolderHandle(handle);
     return opened.ok ? ok({ kind: 'opened' }) : opened;
+  });
+}
+
+/**
+ * Abre o projeto da pasta e a guarda nos recentes (também depois de "Reparar e abrir").
+ * `replaceId`: a entrada dos recentes que passa a apontar para esta pasta.
+ */
+async function openFolderHandle(
+  handle: DirectoryHandleLike,
+  replaceId?: string,
+): Promise<AppResult> {
+  const opened = await openFromStorage(createFolderStorage(handle), null);
+  if (opened.ok) {
+    await rememberFolder(handle, replaceId);
+    return opened;
+  }
+  const repair = opened.inconsistent?.repair;
+  if (!opened.inconsistent || !repair) return opened;
+  return {
+    ...opened,
+    inconsistent: {
+      ...opened.inconsistent,
+      repair: async () => {
+        const repaired = await repair();
+        if (repaired.ok) await rememberFolder(handle, replaceId);
+        return repaired;
+      },
+    },
+  };
+}
+
+/** Nome do projeto aberto agora (para a lista dos recentes). */
+function openProjectName(): string | undefined {
+  return openProject.value?.session.store.project.peek()?.project.name;
+}
+
+/**
+ * Guarda a pasta do projeto que acabou de abrir nos recentes. Sem o recurso no navegador
+ * (`queryPermission`, `isSameEntry`) ou sem IndexedDB, não faz nada; uma falha não impede
+ * o projeto de abrir (vai para o Diagnóstico). Uma pasta do armazenamento privado da origem
+ * (OPFS) nunca é guardada: o seletor de pastas não a devolve, e o Chromium derruba a página
+ * ao ler de volta do IndexedDB um handle do OPFS (ver `isOriginPrivate`).
+ */
+async function rememberFolder(handle: DirectoryHandleLike, replaceId?: string) {
+  openFolderId = null;
+  if (!folderLibrary || !isReopenable(handle) || (await isOriginPrivate(handle))) return;
+  try {
+    openFolderId = await folderLibrary.remember(
+      handle,
+      { name: openProjectName() ?? handle.name, usedAt: new Date().toISOString() },
+      replaceId,
+    );
+    knownHandles.set(openFolderId, handle);
+  } catch (e) {
+    reportError('folders.remember', e);
+  }
+  await refreshRecentFolders();
+}
+
+/** O handle de uma entrada: o da memória ou, numa visita nova, o do IndexedDB. */
+async function handleOf(id: string): Promise<ReopenableDirectory | null> {
+  try {
+    const handle = (await folderLibrary?.handle(id)) ?? null;
+    if (handle) knownHandles.set(id, handle);
+    return handle;
+  } catch (e) {
+    // Um handle que o navegador não consegue reconstruir: a pasta fica indisponível.
+    reportError('folders.handle', e);
+    return null;
+  }
+}
+
+export type RecentFolderOpen =
+  | { readonly kind: 'opened' }
+  /** Permissão negada, ou a pasta (ou o `mapping.json` dela) não está mais lá. */
+  | { readonly kind: 'unavailable'; readonly reason: 'denied' | 'missing' };
+
+/**
+ * Reabre uma pasta dos recentes. Chamar direto do clique: o navegador só mostra o pedido de
+ * permissão dentro do gesto. Com o handle já em memória, a consulta começa no próprio clique;
+ * numa visita nova, a única espera antes dela é ler o handle do IndexedDB (milissegundos,
+ * dentro da ativação do gesto, que vale alguns segundos). A lista em si não lê handles.
+ */
+export function openRecentFolder(id: string): Promise<AppResult<RecentFolderOpen>> {
+  const entry = recentFolders.value.find((f) => f.id === id);
+  const known = knownHandles.get(id);
+  return guarded<RecentFolderOpen>(async () => {
+    if (!entry) return err('not-found');
+    const unavailable = (reason: 'denied' | 'missing') =>
+      ok<RecentFolderOpen>({ kind: 'unavailable', reason });
+    const handle = known ?? (await handleOf(id));
+    if (!handle || !isReopenable(handle)) return unavailable('missing');
+    try {
+      if (!(await ensurePermission(handle))) return unavailable('denied');
+      if ((await createFolderStorage(handle).loadMapping()) === null) {
+        return unavailable('missing');
+      }
+    } catch (e) {
+      if (isNotFound(e)) return unavailable('missing');
+      throw e;
+    }
+    const opened = await openFolderHandle(handle, id);
+    return opened.ok ? ok({ kind: 'opened' }) : opened;
+  });
+}
+
+export type FolderRelocation =
+  | { readonly kind: 'cancelled' }
+  | { readonly kind: 'opened' }
+  /** A pasta escolhida não tem `mapping.json`: a entrada continua como estava. */
+  | { readonly kind: 'no-project' };
+
+/** "Localizar pasta…": escolhe a pasta de novo; ela substitui a entrada e o projeto abre. */
+export function relocateFolder(id: string): Promise<AppResult<FolderRelocation>> {
+  return guarded<FolderRelocation>(async () => {
+    const handle = await pickDirectory();
+    if (!handle) return ok({ kind: 'cancelled' });
+    if ((await createFolderStorage(handle).loadMapping()) === null) {
+      return ok({ kind: 'no-project' });
+    }
+    const opened = await openFolderHandle(handle, id);
+    return opened.ok ? ok({ kind: 'opened' }) : opened;
+  });
+}
+
+/** "Remover da lista": esquece a pasta. Nada no disco muda. */
+export function forgetFolder(id: string): Promise<AppResult> {
+  return guarded(async () => {
+    if (!folderLibrary) return err('storage-failed');
+    knownHandles.delete(id);
+    await folderLibrary.remove(id);
+    await refreshRecentFolders();
+    return ok(undefined);
   });
 }
 
@@ -401,6 +618,7 @@ export function createFolderProject(
       // A pasta pode já ter propostas (ex: restauradas do git sem o mapping.json).
       proposals: await loadProposals(storage),
     });
+    await rememberFolder(handle);
     return ok({ skipped: imported.skipped });
   });
 }
@@ -445,12 +663,25 @@ export async function markExported(): Promise<void> {
 export async function closeProject(): Promise<void> {
   const current = openProject.value;
   if (!current) return;
+  const name = openProjectName();
+  const folderId = openFolderId;
+  openFolderId = null;
   openProject.value = null;
   current.display.dispose();
   try {
     await current.session.close();
   } finally {
-    await refreshLocalProjects();
+    if (folderId !== null && name !== undefined) await touchFolder(folderId, name);
+    await Promise.all([refreshLocalProjects(), refreshRecentFolders()]);
+  }
+}
+
+/** Nome do projeto (pode ter sido renomeado) e último uso da pasta que acabou de fechar. */
+async function touchFolder(id: string, name: string): Promise<void> {
+  try {
+    await folderLibrary?.touch(id, { name, usedAt: new Date().toISOString() });
+  } catch (e) {
+    reportError('folders.touch', e);
   }
 }
 

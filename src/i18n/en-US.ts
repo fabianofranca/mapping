@@ -34,8 +34,9 @@ export const enUS: Dictionary = {
   'home.newProject': 'New project',
   'home.openFolder': 'Open folder',
   'home.openZip': 'Open zip',
-  'home.localProjects': 'Projects on this device',
-  'home.noLocalProjects': 'No projects stored on this device yet.',
+  'home.recentProjects': 'Recent projects',
+  'home.noRecentProjects':
+    'No projects yet. Projects on this device and the folders you open show up here.',
   'home.unsupported':
     'This browser cannot open folders or store projects. Use Chrome or Edge on a computer.',
   'home.fileProtocolWarning':
@@ -465,7 +466,17 @@ export const enUS: Dictionary = {
   'home.noResults': 'No project found for "{query}".',
   'home.colName': 'Name',
   'home.colOrigin': 'Source',
-  'home.colUpdated': 'Modified',
+  'home.colUsed': 'Last used',
+  'home.forgetFolder': 'Remove from list',
+  'home.folderUnavailableTitle': 'Folder unavailable',
+  'home.folderDenied':
+    'The browser did not grant access to the folder "{folder}". Click Open again and choose Allow, or locate the folder.',
+  'home.folderMissing':
+    'The folder "{folder}" was not found (or no longer has the mapping.json): it may have been moved, renamed or deleted.',
+  'home.folderNoProject':
+    'The chosen folder has no mapping.json. Choose the folder of the project "{name}".',
+  'home.forgetFolderHint': 'Remove from list does not delete anything from the disk.',
+  'home.relocateFolder': 'Locate folder…',
   'home.colActions': 'Actions',
   'home.folderUnavailable':
     'This browser cannot open folders. Use Chrome or Edge on a computer.',

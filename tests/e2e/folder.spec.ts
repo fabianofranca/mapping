@@ -320,3 +320,82 @@ test.describe('mudanças externas no mapping.json', () => {
     expect((await readMapping(page)).markings[0]?.name).toBe('Do outro programa');
   });
 });
+
+// Fase 6.6: recentes de pasta na tela inicial. Aqui a "pasta" é do OPFS, que o seletor de
+// verdade nunca devolve: a app não a guarda (o Chromium derruba a página ao ler de volta do
+// IndexedDB um handle do OPFS). O fluxo da lista, do clique e do aviso é exercido com uma
+// entrada gravada direto no banco dos recentes, sem handle; o de abrir pelo handle fica nos
+// testes do controller (handles falsos: granted, prompt, denied, NotFoundError).
+test.describe('recentes de pasta', () => {
+  async function closeProject(page: Page): Promise<void> {
+    await page.getByRole('button', { name: 'Ações do projeto' }).click();
+    await page.getByRole('button', { name: 'Fechar projeto', exact: true }).click();
+  }
+
+  /** Grava uma entrada dos recentes (nome do projeto e da pasta, sem handle) no IndexedDB. */
+  async function seedRecentFolder(page: Page, name: string, folderName: string) {
+    await page.evaluate(
+      async ([projectName, folder]) => {
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('mapping-folders');
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction('folders', 'readwrite');
+          tx.objectStore('folders').put({
+            id: 'semeada',
+            name: projectName,
+            folderName: folder,
+            usedAt: new Date().toISOString(),
+          });
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+      },
+      [name, folderName] as const,
+    );
+  }
+
+  test('uma pasta do OPFS não entra nos recentes, e a app segue de pé', async ({
+    page,
+  }) => {
+    await openFolderProject(page, 'Privada');
+    await addImage(page);
+    await closeProject(page);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Começar' })).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: 'Privada' })).toHaveCount(0);
+  });
+
+  test('a lista traz a pasta guardada; sem acesso, o aviso tem Localizar pasta… e Remover da lista', async ({
+    page,
+  }) => {
+    await stubFolderPicker(page);
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Começar' })).toBeVisible();
+    await seedRecentFolder(page, 'Guardada', 'pasta-guardada');
+
+    // Outra visita: a lista vem do IndexedDB, com o selo e o nome da pasta.
+    await page.reload();
+    const row = page.getByRole('row').filter({ hasText: 'Guardada' });
+    await expect(row.getByText('Pasta', { exact: true })).toBeVisible();
+    await expect(row.getByText('pasta-guardada')).toBeVisible();
+
+    await row.getByRole('button', { name: 'Abrir', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Pasta indisponível' });
+    await expect(dialog).toBeVisible();
+
+    // A pasta escolhida (vazia) não tem mapping.json: o aviso continua, com o motivo.
+    await dialog.getByRole('button', { name: 'Localizar pasta…' }).click();
+    await expect(dialog.getByRole('alert')).toContainText('não tem um mapping.json');
+
+    await dialog.getByRole('button', { name: 'Remover da lista' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(row).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Começar' })).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: 'Guardada' })).toHaveCount(0);
+  });
+});
