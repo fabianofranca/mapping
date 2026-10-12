@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/preac
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
+import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 
 const controller = vi.hoisted(() => ({
   createFolderProject: vi.fn(),
@@ -428,5 +429,31 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     expect(
       await screen.findByText(t('home.folderDenied', { folder: 'principal-pasta' })),
     ).toBeTruthy();
+  });
+});
+
+// Etapa 8 (8.3), achado F3: Configurações › Ver atalhos troca o diálogo no mesmo slot; o
+// novo guardava o body como "quem abriu" e o Esc não voltava ao botão Configurações.
+describe('Home: troca de diálogo (F3)', () => {
+  beforeEach(simulateModalFocus);
+  afterEach(restoreModalFocus);
+
+  it('Configurações › Ver atalhos › Esc volta ao botão Configurações', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    render(<Home />);
+    const user = userEvent.setup();
+    const settings = screen.getByRole('button', { name: t('settings.title') });
+    await user.click(settings);
+    await user.click(
+      await screen.findByRole('button', { name: t('settings.shortcuts'), hidden: true }),
+    );
+    const help = await waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el?.querySelector('.help')) throw new Error('a Ajuda ainda não abriu');
+      return el;
+    });
+    help.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(settings);
   });
 });

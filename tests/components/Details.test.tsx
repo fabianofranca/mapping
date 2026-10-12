@@ -8,6 +8,8 @@ import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
+import { restoreModalFocus, simulateModalFocus } from './modalFocus';
+import { layerOf } from '../model/specFixtures';
 
 // R5: Detalhes redesenhado (identidade, PropertyGrid, LayerGroup recolhível, pendências
 // com links, KeyValueGrid com arrasto e teclado). Edição e desfazer iguais aos de antes.
@@ -207,5 +209,42 @@ describe('Detalhes — DataGrid', () => {
     const [, row] = within(table).getAllByRole('row');
     expect(row?.textContent).toContain('1');
     expect(row?.textContent).toContain('email');
+  });
+});
+
+// Etapa 8 (8.3), achado F3: o passo "tipo" troca pelo passo "dono" no mesmo slot; o diálogo
+// novo guardava como "quem abriu" o botão do tipo, que já tinha saído, e o foco se perdia.
+describe('Detalhes — nova anotação tipada com dono (F3)', () => {
+  beforeEach(simulateModalFocus);
+  afterEach(restoreModalFocus);
+
+  it('tipo › dono › Cancelar volta ao "+ Anotação"', async () => {
+    const { harness, user } = renderMarking('MC');
+    act(() => {
+      harness.ui.activeLayer.value = layerOf(harness.project(), 'sdui', 'eventos');
+    });
+    // O "+ Anotação" do cabeçalho (o que o Alt+N aciona), não o de cada camada.
+    const add = await vi.waitFor(() => {
+      const el = document.querySelector<HTMLElement>('[data-action="add-annotation"]');
+      if (!el) throw new Error('sem o "+ Anotação"');
+      return el;
+    });
+    await user.click(add);
+    const types = await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el) throw new Error('sem o passo do tipo');
+      return el;
+    });
+    await user.click(
+      within(types).getByRole('button', { name: /^onClick/, hidden: true }),
+    );
+    const owner = await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el?.textContent?.includes('Dono do')) throw new Error('sem o passo do dono');
+      return el;
+    });
+    owner.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(add);
   });
 });

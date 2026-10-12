@@ -25,6 +25,8 @@ vi.mock('../../src/app/controller', async () => {
 });
 
 import { CanvasNotices } from '../../src/app/CanvasNotices';
+import { EditorDialogs as EditorDialogsView } from '../../src/app/EditorDialogs';
+import { useEditorDialogs } from '../../src/app/useEditorDialogs';
 import { EditorMainBar } from '../../src/app/EditorMainBar';
 import { ErrorBoundary } from '../../src/app/ErrorBoundary';
 import { ExportDialog } from '../../src/app/ExportDialog';
@@ -653,5 +655,47 @@ describe('barras do editor', () => {
         .getByRole('button', { name: t('editor.addImages') })
         .hasAttribute('disabled'),
     ).toBe(true);
+  });
+});
+
+// Etapa 8 (8.3), achado F3: a troca de diálogo no mesmo slot (Configurações › Ver atalhos)
+// desmontava o antigo antes de o novo guardar quem abriu; o Esc deixava o foco no primeiro
+// controle da app (ou no body), e não no botão Configurações.
+describe('troca de diálogo no editor (F3)', () => {
+  beforeEach(simulateModalFocus);
+  afterEach(restoreModalFocus);
+
+  function Shell() {
+    const dialogs = useEditorDialogs();
+    return (
+      <>
+        <EditorMainBar
+          busy={false}
+          onAdd={vi.fn()}
+          dialogs={dialogs}
+          commands={fakeCommands()}
+        />
+        <EditorDialogsView dialogs={dialogs} />
+      </>
+    );
+  }
+
+  it('Configurações › Ver atalhos › Esc volta ao botão Configurações', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    withContext(createHarness(sampleProject()), <Shell />);
+    const user = userEvent.setup();
+    const settings = screen.getByRole('button', { name: t('settings.title') });
+    await user.click(settings);
+    await user.click(
+      await screen.findByRole('button', { name: t('settings.shortcuts'), hidden: true }),
+    );
+    const help = await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el?.querySelector('.help')) throw new Error('a Ajuda ainda não abriu');
+      return el;
+    });
+    help.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(settings);
   });
 });
