@@ -18,8 +18,10 @@ import {
   proposalDir,
   proposalFilePath,
   proposalImagePath,
+  changeImageFile,
   serializeProposal,
   type Proposal,
+  type ProposalStatus,
 } from '../src/model';
 import { ToolError } from './errors';
 import { Roots, resolveProjectFile, writeFileAtomic } from './paths';
@@ -124,19 +126,23 @@ export async function listStored(
   return { proposals, broken };
 }
 
-/** Arquivos de `images/` que uma proposta ainda não aplicada reserva (novos ou trocados). */
-export function reservedImages(p: Proposal): string[] {
+/**
+ * Arquivos de `images/` que a proposta ainda reserva: os das mudanças de imagem (criação ou
+ * troca do arquivo, `changeImageFile`) que ainda podem ser aplicadas. Numa `open`, as não
+ * aplicadas e não rejeitadas; numa `superseded`, só as aceitas e não aplicadas (as pendentes
+ * não podem mais ser decididas nem aplicadas: PROPOSAL-FORMAT.md, "Estados"); nas demais,
+ * nenhuma. `status` é o estado a considerar: o `propose` passa `superseded` para a anterior de
+ * um `supersedes`, que ainda está aberta no disco mas deixa de estar nesta chamada.
+ */
+export function reservedImages(p: Proposal, status: ProposalStatus = p.status): string[] {
+  if (status !== 'open' && status !== 'superseded') return [];
   const files: string[] = [];
   for (const c of p.changes) {
-    if (c.entity !== 'image' || Object.hasOwn(p.applied, c.id)) continue;
-    if (p.decisions[c.id]?.state === 'rejected') continue;
-    const to = c.to;
-    if (typeof to !== 'object' || to === null || Array.isArray(to)) continue;
-    const file = (to as Record<string, unknown>).file;
-    if (typeof file !== 'string') continue;
-    if (c.kind === 'create' || (c.kind === 'update' && c.field === 'file')) {
-      files.push(file);
-    }
+    if (Object.hasOwn(p.applied, c.id)) continue;
+    const state = p.decisions[c.id]?.state;
+    if (status === 'open' ? state === 'rejected' : state !== 'accepted') continue;
+    const file = changeImageFile(c);
+    if (file !== null) files.push(file);
   }
   return files;
 }

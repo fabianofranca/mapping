@@ -98,12 +98,15 @@ export class Proposals {
     const previous =
       args.supersedes === undefined ? null : lookupStored(all, location, args.supersedes);
 
-    // Arquivos de `images/` reservados por outras propostas ainda abertas: não reutilizar o nome.
+    // Arquivos de `images/` que outras propostas ainda podem aplicar: não reutilizar o nome. A
+    // anterior aberta conta como `superseded` (o estado que terá): as aceitas dela continuam
+    // reservadas, as pendentes são liberadas. Uma anterior aplicada ou retirada não muda.
     const reserved = new Set<string>();
     for (const stored of all.proposals) {
-      if (stored.id === previous?.id) continue;
-      if (!OPEN_STATUSES.includes(stored.proposal.status)) continue;
-      for (const file of reservedImages(stored.proposal)) reserved.add(file);
+      const becomesSuperseded =
+        stored.id === previous?.id && stored.proposal.status === 'open';
+      const status = becomesSuperseded ? 'superseded' : stored.proposal.status;
+      for (const file of reservedImages(stored.proposal, status)) reserved.add(file);
     }
 
     const prepared = await prepareBatch(this.roots, location, args.operations, {
