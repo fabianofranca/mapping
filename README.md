@@ -69,7 +69,7 @@ O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service wo
 
 ## Como relatar um problema
 
-Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md). Para um agente com controle do computador (Cowork) testar no seu computador, o prompt inicial está em [`docs/history/etapa-6-testes-cowork.md`](docs/history/etapa-6-testes-cowork.md) (rodada completa ou dirigida a achados de um relato anterior).
+Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md). Para um agente com controle do computador (Cowork) testar no seu computador, o prompt inicial está em [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md) (rodada completa ou dirigida por achados de um relato, por uma lista de passos ou pelas fases de um plano); o guia tem um apêndice só para o agente.
 
 A app não envia nada para a rede (nem telemetria), então o relato depende de você copiar os dados:
 
@@ -81,7 +81,8 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 
 ## Documentação
 
-- [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, instalação do MCP, roteiros de teste manual e os templates do relato e do registro de uso real).
+- [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, mapa da interface, instalação do MCP, roteiros de teste manual, teste manual avançado e os templates do relato e do registro de uso real; apêndices para o agente testador e para operações de disco).
+- [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md): prompt do testador do Cowork (agente com controle do computador).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
 - [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v8).
 - [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md): formato da proposta de alteração e regras da revisão.

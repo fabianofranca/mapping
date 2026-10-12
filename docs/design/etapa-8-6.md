@@ -138,3 +138,13 @@ As funções de checagem ficam no próprio teste e são exercitadas também cont
 3. **Ordem:** proposto mover o texto do R5 para depois do R7 (código igual) **e** pôr o quadro "Comece aqui"; alternativa: só o quadro, sem mexer na ordem do texto.
 4. **Tempo por roteiro** no quadro: não há medição nos relatos; proposto escrever estimativas marcadas como "aproximado" (pelo número de passos) e o template passar a registrar o tempo real para calibrar.
 5. O aceite fala em "**quatro** relatos"; em `docs/history/` há três (`relato-2026-10-11.md`, `relato-2026-10-12-dirigida.md`, `relato-2026-10-12-dirigida-r3.md`). Proposto: o segundo agente usa os três (e o quarto, se o coordenador indicar onde está).
+
+## 12. Respostas do coordenador (nota aprovada)
+
+1. `tests/tooling/testingGuide.test.ts` entra no escopo (roda no projeto `app` do Vitest, pelo `npm test`).
+2. A1 a A18 mantidos, com a frase de desambiguação.
+3. O texto do R5 vai para depois do R7 (código igual), além do quadro "Comece aqui".
+4. Tempos marcados como "aproximado"; o template registra o tempo real.
+5. Os três relatos de `docs/history/`; o coordenador pergunta ao dono pelo quarto.
+6. R7.2: lista numerada curta logo abaixo da tabela do R7, citada pelo passo; comandos no apêndice B.
+7. Referências numéricas a seções do guia fora dos arquivos da fase não são editadas: vão para "Para a 8.7" no PR.
