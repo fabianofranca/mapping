@@ -181,8 +181,9 @@ function renderDialog(
 }
 
 /**
- * "Projeto alterado fora da app": a gravação foi recusada porque o `mapping.json` mudou por
- * fora. Sem botão de fechar: é preciso escolher (Esc e toque fora não fazem nada).
+ * "Projeto alterado fora da app": o `mapping.json` mudou por fora enquanto havia alterações
+ * locais ainda não gravadas (a gravação foi recusada, ou estava em erro e a conferência
+ * percebeu). Sem botão de fechar: é preciso escolher (Esc e toque fora não fazem nada).
  */
 function ExternalChangeDialog() {
   const { session } = useEditor();
@@ -191,7 +192,7 @@ function ExternalChangeDialog() {
   return (
     <Dialog
       title={t('external.title')}
-      onCancel={() => undefined}
+      closable={false}
       actions={
         <>
           <Button onClick={() => void session.resolveConflict('reload')}>

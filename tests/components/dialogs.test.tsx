@@ -38,6 +38,42 @@ describe('Dialog', () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
+  // Etapa 6 (6.2), achado 9: um diálogo de escolha obrigatória não mostra um X que não faz nada.
+  it('closable={false}: sem o fechar do cabeçalho; Esc e o fundo não fazem nada', async () => {
+    const onClick = vi.fn();
+    render(
+      <Dialog
+        title="Escolha"
+        closable={false}
+        actions={<button onClick={onClick}>Ok</button>}
+      >
+        <p>Conteúdo</p>
+      </Dialog>,
+    );
+    const dialog = within(dialogEl());
+    expect(
+      dialog.queryByRole('button', { name: t('dialog.close'), hidden: true }),
+    ).toBeNull();
+    expect(dialog.getAllByRole('button', { hidden: true })).toHaveLength(1);
+    expect(document.activeElement?.textContent).toBe('Ok');
+    const esc = new Event('cancel', { cancelable: true });
+    dialogEl().dispatchEvent(esc);
+    expect(esc.defaultPrevented).toBe(true);
+    await userEvent.click(dialogEl());
+    expect(dialogEl()).not.toBeNull();
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('closable={false}: se o navegador fechar o <dialog> mesmo assim, ele volta a abrir', () => {
+    render(<Dialog title="Escolha" closable={false} actions={<button>Ok</button>} />);
+    const dialog = dialogEl() as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    // O jsdom não tem `close()`: tira o `open` como o navegador faria ao fechar.
+    dialog.removeAttribute('open');
+    dialog.dispatchEvent(new Event('close'));
+    expect(dialog.open).toBe(true);
+  });
+
   it('o botão do cabeçalho não repete o nome do "Fechar" do rodapé', () => {
     expect(t('dialog.close')).not.toBe(t('common.close'));
   });
