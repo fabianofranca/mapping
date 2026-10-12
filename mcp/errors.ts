@@ -18,6 +18,7 @@ export const MCP_ERROR_CODES = [
   'duplicate-alias',
   'encode-failed',
   'file-too-large',
+  'image-exists',
   'image-file-missing',
   'image-too-large',
   'invalid-alias',

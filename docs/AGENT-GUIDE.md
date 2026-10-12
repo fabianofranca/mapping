@@ -346,6 +346,7 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 | `revision-conflict`  | `propose_changes`: o projeto mudou enquanto a proposta era calculada (envie de novo). Ao substituir ou retirar: o `proposal.json` não parava de mudar (a app está gravando decisões). |
 | `proposal-not-found` | Proposta inexistente no projeto.                                                                                                                                                      |
 | `invalid-proposal`   | O `proposal.json` da proposta está ilegível.                                                                                                                                          |
+| `image-exists`       | `propose_changes`: outro processo criou o arquivo de uma imagem na pasta da proposta enquanto ela era gravada. Nada foi gravado; envie de novo.                                       |
 | `not-open`           | `withdraw_proposal` numa proposta que não está aberta.                                                                                                                                |
 
 **Inesperado**: `internal-error` é uma falha que o servidor não previu (a pilha vai para o stderr do servidor). Repita uma vez; se persistir, relate com a mensagem.

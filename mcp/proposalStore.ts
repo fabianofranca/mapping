@@ -141,7 +141,26 @@ export function reservedImages(p: Proposal): string[] {
   return files;
 }
 
-/** Grava um arquivo novo sem sobrescrever: temporário + `link` (falha se o destino já existe). */
+/**
+ * Códigos com que `link` falha num sistema de arquivos sem hard link (exFAT de pendrive ou HD
+ * externo, alguns compartilhamentos de rede e pastas sincronizadas).
+ */
+const NO_HARD_LINK: ReadonlySet<string> = new Set([
+  'EPERM',
+  'ENOTSUP',
+  'EOPNOTSUPP',
+  'ENOSYS',
+  'EXDEV',
+]);
+
+const errnoCode = (error: unknown): string | undefined =>
+  (error as NodeJS.ErrnoException | null)?.code;
+
+/**
+ * Grava um arquivo novo sem nunca sobrescrever: temporário + `link` (falha com `EEXIST` se o
+ * destino já existe). Sem hard link, grava direto com `wx`, que também falha se o destino
+ * existe; perde só a atomicidade, e a pasta da proposta é removida inteira se algo falha.
+ */
 async function writeNewFile(path: string, data: Uint8Array | string): Promise<void> {
   const temp = join(
     dirname(path),
@@ -149,7 +168,13 @@ async function writeNewFile(path: string, data: Uint8Array | string): Promise<vo
   );
   try {
     await writeFile(temp, data, { flag: 'wx' });
-    await link(temp, path);
+    try {
+      await link(temp, path);
+    } catch (error) {
+      if (!NO_HARD_LINK.has(errnoCode(error) ?? '')) throw error;
+      await rm(temp, { force: true });
+      await writeFile(path, data, { flag: 'wx' });
+    }
   } finally {
     await rm(temp, { force: true });
   }
@@ -178,7 +203,14 @@ export async function writeNewProposal(
     for (const [file, data] of images) {
       const relative = proposalImagePath(proposal.id, file);
       await mkdir(dirname(join(location.dir, relative)), { recursive: true });
-      await writeNewFile(join(location.dir, relative), data);
+      try {
+        await writeNewFile(join(location.dir, relative), data);
+      } catch (error) {
+        if (errnoCode(error) !== 'EEXIST') throw error;
+        throw new ToolError('image-exists', `já existe um arquivo em ${relative}`, {
+          file: relative,
+        });
+      }
       written.push(relative);
     }
     await writeNewFile(join(dir, PROPOSAL_FILE), serializeProposal(proposal));
