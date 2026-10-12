@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import JSZip from 'jszip';
 import { join } from 'node:path';
 import {
   addImage,
@@ -371,6 +372,61 @@ test('Exportar: o diálogo mostra o arquivo e fecha pelo cabeçalho', async ({ p
   await expect(dialog.locator('.file-card')).toContainText('Arquivo zip');
   await dialog.getByRole('button', { name: 'Fechar diálogo' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+// Fase 6.1 (achado 7): no Chrome, Baixar abre o "Salvar como" (`showSaveFilePicker`) e o
+// aviso "Alterações não exportadas" só sai depois de o zip ser gravado. O seletor é
+// simulado: cancelar rejeita com `AbortError`; salvar devolve um arquivo do OPFS, gravado
+// pelo `createWritable` de verdade.
+async function simulateSavePicker(page: Page, outcome: 'cancel' | 'save'): Promise<void> {
+  await page.evaluate((outcome) => {
+    Reflect.set(window, 'showSaveFilePicker', async (options: unknown) => {
+      Reflect.set(window, '__savePickerOptions', options);
+      if (outcome === 'cancel') throw new DOMException('cancelado', 'AbortError');
+      const root = await navigator.storage.getDirectory();
+      return root.getFileHandle('exportado.zip', { create: true });
+    });
+  }, outcome);
+}
+
+test('Exportar: cancelar o "Salvar como" mantém "Alterações não exportadas"', async ({
+  page,
+}) => {
+  await createProject(page, 'Cancela');
+  await addImage(page);
+  const statusbar = page.locator('.statusbar');
+  await expect(statusbar).toContainText('Alterações não exportadas');
+  await simulateSavePicker(page, 'cancel');
+  await openExport(page);
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Baixar' }).click();
+  await expect(dialog.getByRole('button', { name: 'Baixar' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(statusbar).toContainText('Alterações não exportadas');
+});
+
+test('Exportar: salvar pelo "Salvar como" grava o zip e limpa o aviso', async ({
+  page,
+}) => {
+  await createProject(page, 'Salva');
+  await addImage(page);
+  const statusbar = page.locator('.statusbar');
+  await expect(statusbar).toContainText('Alterações não exportadas');
+  await simulateSavePicker(page, 'save');
+  await openExport(page);
+  await page.getByRole('dialog').getByRole('button', { name: 'Baixar' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(statusbar).not.toContainText('Alterações não exportadas');
+  const options = await page.evaluate(() => Reflect.get(window, '__savePickerOptions'));
+  expect(options).toMatchObject({ suggestedName: expect.stringMatching(/\.zip$/) });
+  const bytes = await page.evaluate(async () => {
+    const root = await navigator.storage.getDirectory();
+    const file = await (await root.getFileHandle('exportado.zip')).getFile();
+    return Array.from(new Uint8Array(await file.arrayBuffer()));
+  });
+  const zip = await JSZip.loadAsync(new Uint8Array(bytes));
+  expect(Object.keys(zip.files)).toContain('mapping.json');
 });
 
 // Fase 5.8: só desktop. Abaixo de 900 px a app mostra o aviso no lugar do editor, sem

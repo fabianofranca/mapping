@@ -76,11 +76,11 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/app/ExportDialog.tsx`, `src/storage/share.ts`, `src/app/controller.ts` (só `markExported` e o que a exportação chama), `src/i18n/*`, `tests/components/*` do diálogo de exportação, `tests/app/controller.test.ts`, `tests/e2e/flows.spec.ts`, `docs/ARCHITECTURE.md` (parágrafo da exportação).
 
-- [ ] Teste que reproduz: com `showSaveFilePicker` simulado devolvendo `AbortError`, hoje `unexported` vira `false`
-- [ ] `storage/share.ts` ganha `saveFileWithPicker(file)`: `showSaveFilePicker` com nome sugerido e tipo zip, grava pelo `createWritable`, devolve `saved | cancelled`; detecta o recurso em runtime
-- [ ] `ExportDialog`: **Baixar** usa o seletor quando existe e chama `markExported()` só em `saved`; em `cancelled` nada muda e o aviso continua; sem o recurso, `<a download>` + `markExported()` como hoje, com a linha de texto avisando que cancelar o salvamento exige exportar de novo
-- [ ] `navigator.share`: `markExported()` só quando a promessa resolve (cancelar o compartilhamento rejeita com `AbortError`)
-- [ ] Testes: cancelado mantém o aviso; salvo limpa; sem o recurso o comportamento antigo continua; e2e cobre o caminho com o seletor simulado
+- [x] Teste que reproduz: com `showSaveFilePicker` simulado devolvendo `AbortError`, hoje `unexported` vira `false`
+- [x] `storage/share.ts` ganha `saveFileWithPicker(file)`: `showSaveFilePicker` com nome sugerido e tipo zip, grava pelo `createWritable`, devolve `saved | cancelled`; detecta o recurso em runtime
+- [x] `ExportDialog`: **Baixar** usa o seletor quando existe e chama `markExported()` só em `saved`; em `cancelled` nada muda e o aviso continua; sem o recurso, `<a download>` + `markExported()` como hoje, com a linha de texto avisando que cancelar o salvamento exige exportar de novo
+- [x] `navigator.share`: `markExported()` só quando a promessa resolve (cancelar o compartilhamento rejeita com `AbortError`)
+- [x] Testes: cancelado mantém o aviso; salvo limpa; sem o recurso o comportamento antigo continua; e2e cobre o caminho com o seletor simulado
 
 **Aceite**: R1.22 e R2.3 do `docs/TESTING.md` com um cancelamento no meio mantêm **Alterações não exportadas**; a exportação continua compatível com a CSP e com `file://`.
 
