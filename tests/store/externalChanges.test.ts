@@ -574,16 +574,21 @@ describe('conferência e gravação não se cruzam (fase 6.2)', () => {
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
     expect(session.saveStatus.value).toBe('error');
 
-    // A conferência lê o arquivo de antes e fica parada; enquanto isso, a permissão volta
-    // e "Tentar de novo" grava.
+    // A conferência lê o arquivo de antes e fica parada; enquanto isso, a permissão volta,
+    // "Tentar de novo" grava, o arquivo volta a travar e a edição seguinte falha de novo.
     const read = h.holdRead();
     const syncing = session.sync();
     await vi.waitFor(() => expect(h.readsHeld()).toBe(1));
     root.failWrites = null;
     expect(await session.flush()).toEqual({ ok: true });
     expect(session.saveStatus.value).toBe('saved');
+    root.failWrites = new Error('NoModificationAllowedError');
+    session.actions.renameProject('Outro título');
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+    expect(session.saveStatus.value).toBe('error');
     read.resolve();
 
+    // O texto lido antes da gravação não é o que a sessão gravou, mas não é de fora.
     expect(await syncing).toBe('busy');
     expect(session.conflict.value).toBeNull();
     expect((await diskProject(root)).project.name).toBe('Título app');

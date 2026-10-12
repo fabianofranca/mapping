@@ -90,10 +90,10 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/store/session.ts` (`idle`, `sync`), `src/app/useExternalChanges.ts`, `src/app/EditorDialogs.tsx`, `src/ui/Dialog.tsx` (opção sem botão de fechar), `src/i18n/*`, `tests/store/externalChanges.test.ts`, `tests/store/session.test.ts`, `tests/components/*` do diálogo, `docs/ARCHITECTURE.md` (parágrafo "Revisão e mudanças externas").
 
-- [ ] Teste que reproduz: `saveStatus` em `error`, arquivo alterado por fora, `sync()` devolve `busy` e `conflict` continua `null`
-- [ ] `sync()` com `saveStatus === 'error'`: confere o disco; se o texto difere do conhecido, abre `conflict` (sem recarregar sozinho); `busy` só com gesto em andamento ou gravação em curso
-- [ ] Diálogo "Projeto alterado fora da app" sem o X: `Dialog` ganha `closable={false}` (sem botão e sem Esc), usado só aqui e no "Sair da revisão?" se couber
-- [ ] Testes: o diálogo abre em até um ciclo de `sync` com a gravação em erro; **Recarregar** e **Manter as minhas** continuam funcionando a partir desse estado; sem X no DOM
+- [x] Teste que reproduz: `saveStatus` em `error`, arquivo alterado por fora, `sync()` devolve `busy` e `conflict` continua `null`
+- [x] `sync()` com `saveStatus === 'error'`: confere o disco; se o texto difere do conhecido, abre `conflict` (sem recarregar sozinho); `busy` só com gesto em andamento ou gravação em curso
+- [x] Diálogo "Projeto alterado fora da app" sem o X: `Dialog` ganha `closable={false}` (sem botão e sem Esc), usado só aqui e no "Sair da revisão?" se couber
+- [x] Testes: o diálogo abre em até um ciclo de `sync` com a gravação em erro; **Recarregar** e **Manter as minhas** continuam funcionando a partir desse estado; sem X no DOM
 
 **Aceite**: R6.10 do guia passa a observar o diálogo em ~3 s (o guia é ajustado na 6.7); `tests/e2e/folder.spec.ts` continua verde.
 
