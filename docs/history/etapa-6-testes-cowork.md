@@ -22,8 +22,9 @@ Você é o **testador da app Mapping** no computador do dono. Seu trabalho é ex
 3. Confirme com o dono, numa pergunta só, o que ele preparou: (a) a URL da app ou o caminho do `index.html` avulso; (b) o caminho do `mapping-mcp.js` baixado (e a versão: `node mapping-mcp.js --version`, que deve ser `0.3.2`); (c) se o Claude Code está instalado e se o teste do MCP entra. Sem (a), não há o que testar. Na mesma pergunta, avise que alguns passos precisam dele no teclado (os **[pessoa]**) e combine como vai chamá-lo (seção "Passos [pessoa]" abaixo).
 4. Crie uma pasta de trabalho só para os testes, fora de qualquer repositório do dono: `~/mapping-testes/<AAAA-MM-DD>/`. Tudo o que você criar (projetos, zips, repositório de teste do MCP, capturas) fica dentro dela. **Não abra, mova nem apague nada fora dela.** Ao final, pergunte ao dono se quer manter ou apagar a pasta; não apague por conta própria.
 5. Use o **Chrome** (ou Edge) do computador. Se a sua extensão só funciona no perfil normal do dono, use esse perfil, numa janela nova, e não toque nos projetos que já estiverem na tela inicial; peça ao dono para desativar, no endereço da app, extensões que injetam quadros nos campos (gerenciadores de senha). O modo **pasta** da app exige File System Access, que só existe nesses navegadores no desktop. Mantenha a janela com 900 px ou mais de largura e o DevTools encaixado embaixo ou separado (encaixado do lado, ele estreita a página e a app mostra "Abra numa janela maior").
-6. Peça ao dono para deixar o computador **desbloqueado** e a janela do Chrome **à vista** durante a rodada, inclusive quando ele não estiver no teclado: com a página oculta, a app não confere alterações feitas por fora (R3.5, R6.3, R6.10) e o passo falha por um motivo que não é da app.
-7. Anote o **build id** (`abc1234 · AAAA-MM-DD`, seção 3 do guia) e confira se é o esperado; se não for, siga a seção 3 para forçar a versão nova. Ele vai no relato. Se a app não mostrar um build id, isso já é o primeiro achado.
+6. Confirme que você tem um **shell** no computador do dono (para as operações de arquivo e as conferências de disco) e se consegue pôr um arquivo na área de transferência por ele. Sem shell, essas operações viram [pessoa].
+7. Peça ao dono para deixar o computador **desbloqueado** e a janela do Chrome **à vista** durante a rodada, inclusive quando ele não estiver no teclado: com a página oculta, a app não confere alterações feitas por fora (R3.5, R6.3, R6.10) e o passo falha por um motivo que não é da app.
+8. Anote o **build id** (`abc1234 · AAAA-MM-DD`, seção 3 do guia) e confira se é o esperado; se não for, siga a seção 3 para forçar a versão nova. Ele vai no relato. Se a app não mostrar um build id, isso já é o primeiro achado.
 
 ## Passos [pessoa]
 
@@ -34,7 +35,8 @@ Você é o **testador da app Mapping** no computador do dono. Seu trabalho é ex
 
 ## Como agir na interface
 
-- **Imagens: prefira colar ou arrastar.** Se você conseguir pôr o arquivo (ou a imagem) na área de transferência, clique numa área vazia do canvas e cole com `Ctrl+V`; se conseguir arrastar o arquivo para uma área vazia do canvas, arraste. Os dois dispensam o seletor de arquivo e o dono. A imagem colada ganha o nome `img-AAAAMMDD-HHMMSS.webp` (nos passos que citam `cadastro.webp`, confira o nome que a app deu); arrastada, mantém o nome. Soltar um arquivo só **sobre uma imagem** troca aquela imagem: solte fora delas. Só se nada disso funcionar, use **Adicionar imagens** como [pessoa].
+- **Imagens: prefira colar.** Ponha o arquivo na área de transferência pelo shell (no Windows, `Set-Clipboard -Path <arquivo>` no PowerShell), clique numa área vazia do canvas e cole com `Ctrl+V`: dispensa o seletor de arquivo e o dono. A imagem colada ganha o nome `img-AAAAMMDD-HHMMSS.webp` (nos passos que citam `cadastro.webp`, confira o nome que a app deu). Arrastar do gerenciador de arquivos mantém o nome, mas é sempre [pessoa] (a extensão não arrasta de fora do navegador); soltar um arquivo só **sobre uma imagem** troca aquela imagem, então peça para soltar fora delas. Sem colar, use **Adicionar imagens** como [pessoa].
+- **Shell para o disco.** As operações de arquivo fora do navegador (criar, copiar, mover, renomear e descompactar pastas, ler e regravar o `mapping.json`, mudar a permissão da `loja`) e as conferências de **Disco** são suas, pelo shell (seção 7 do guia, "O que o guia supõe de um agente testador"). Se você não tiver shell, cada uma delas vira [pessoa]: avise o dono no começo e inclua-as nos blocos.
 - **Espere o campo aparecer antes de digitar.** Depois de **+ Par**, **+ Linha**, **+ Entrada**, de escolher um tipo ou de abrir um diálogo, confira que o campo existe e está com o foco (ou clique nele) antes de digitar; texto digitado antes se perde. Depois de digitar, confirme com Enter e espere **Salvo** antes de ler o disco.
 - **Listas suspensas nativas, zoom e dicas:** siga as convenções da seção 7 (escolher pelo valor do campo ou pelo teclado; `keydown` por script se o atalho de zoom não sair; dicas pelo atributo `title`). Registre em "O que atrapalhou" quando precisar desses contornos.
 - **Capturas que falham** logo depois de abrir um diálogo ou recarregar: espere um pouco e tente de novo antes de registrar qualquer coisa.
@@ -44,7 +46,7 @@ Você é o **testador da app Mapping** no computador do dono. Seu trabalho é ex
 
 ### Rodada completa (padrão)
 
-Os códigos são os passos do `docs/TESTING.md`, nesta ordem:
+Os códigos são os passos do `docs/TESTING.md`, na ordem padrão e com as dependências da seção 7 do guia ("Ordem e dependências"):
 
 1. **R0 — Fumaça**, com as três formas de abrir a app (URL publicada, `index.html` avulso por `file://` e instalada como app a partir da URL), a janela estreita e a reabertura pelos recentes depois de recarregar (R0.4), e a pasta indisponível (R0.7).
 2. **R1 — Roteiro principal** em projeto de **pasta**, completo, uma vez, conferindo o disco a cada passo que grava.
