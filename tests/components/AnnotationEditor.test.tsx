@@ -82,6 +82,23 @@ describe('AnnotationEditor — anotação livre', () => {
     expect(entries.map((e) => e.key)).toEqual(['name', 'age', 'email']);
   });
 
+  // Etapa 6 (6.4), achado 4: Enter na Chave de um par novo grava e leva ao Valor.
+  it('Enter na chave de um par novo grava e põe o foco no valor', async () => {
+    const { harness, user } = setup('AU');
+    await user.click(screen.getByRole('button', { name: '+ Par' }));
+    const key = screen.getAllByLabelText('Chave')[2];
+    if (!key) throw new Error('sem campo novo');
+    await user.type(key, 'email{Enter}');
+    expect(annotationOf(harness.project(), 'AU').entries.map((e) => e.key)).toEqual([
+      'name',
+      'age',
+      'email',
+    ]);
+    expect(document.activeElement).toBe(screen.getAllByLabelText('Valor')[2]);
+    await user.type(document.activeElement as HTMLElement, 'string{Enter}');
+    expect(annotationOf(harness.project(), 'AU').entries[2]?.value).toBe('string');
+  });
+
   it('chave repetida mostra o erro e não grava', async () => {
     const { harness, user } = setup('AU');
     const [first] = screen.getAllByLabelText('Chave');

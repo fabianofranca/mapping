@@ -60,6 +60,20 @@ describe('Diagnóstico: registro, Copiar e Limpar', () => {
     expect(screen.getByText('sem permissão de escrita')).toBeTruthy();
   });
 
+  // Etapa 6 (6.4), achado 6: Hora e Contexto não quebram no meio ("22:3" / "3:36").
+  it('Hora e Contexto ficam numa linha só', () => {
+    reportError('open.repair', new Error('falhou'));
+    render(<Diagnostics />);
+    const time = screen.getByText((_, el) => el?.tagName === 'TIME');
+    expect(time.closest('td')?.classList.contains('diagnostics-nowrap')).toBe(true);
+    expect(
+      screen
+        .getByText('open.repair')
+        .closest('td')
+        ?.classList.contains('diagnostics-nowrap'),
+    ).toBe(true);
+  });
+
   it('copia a lista como texto e permite limpar', async () => {
     const user = userEvent.setup();
     const writeText = vi.fn(async () => undefined);

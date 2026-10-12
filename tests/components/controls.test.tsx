@@ -79,6 +79,26 @@ describe('IconButton', () => {
     expect(anchor?.className).toContain('tooltip-dismissed');
     expect(document.activeElement).toBe(screen.getByRole('button'));
   });
+
+  // Etapa 6 (6.4), achados 2 e 6: a dica fica fora do fluxo (posição fixa, calculada ao
+  // aparecer) e dentro da janela do navegador, sem ser cortada pela borda do painel.
+  it('a dica se posiciona na tela ao passar o mouse, sem sair pela borda', () => {
+    const { container } = render(
+      <IconButton icon="undo" label="Mostrar Classe · Contato" />,
+    );
+    const anchor = container.querySelector<HTMLElement>('.tooltip-anchor');
+    const tip = container.querySelector<HTMLElement>('.tooltip');
+    if (!anchor || !tip) throw new Error('sem dica');
+    vi.spyOn(anchor, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: 2, y: 100, width: 24, height: 24 }),
+    );
+    vi.spyOn(tip, 'offsetWidth', 'get').mockReturnValue(160);
+    vi.spyOn(tip, 'offsetHeight', 'get').mockReturnValue(20);
+    fireEvent.pointerEnter(anchor);
+    // Centrada no botão iria para x = 14 − 80 < 0: fica encostada na margem da janela.
+    expect(tip.style.left).toBe('8px');
+    expect(tip.style.top).toBe('128px');
+  });
 });
 
 describe('TextField', () => {

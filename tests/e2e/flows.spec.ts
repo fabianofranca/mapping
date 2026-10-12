@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { join } from 'node:path';
 import {
   addImage,
@@ -12,6 +12,7 @@ import {
 } from './helpers';
 
 const SDUI = join(process.cwd(), 'examples', 'specs', 'sdui.json');
+const MODELO = join(process.cwd(), 'examples', 'specs', 'modelo-de-dados.json');
 
 test('projeto novo → imagem → marcação → anotação → zip com o mapping.json', async ({
   page,
@@ -401,4 +402,103 @@ test('janela estreita: aviso no lugar do editor e volta ao alargar', async ({ pa
   expect(await selectedRect(page)).toEqual(rect);
   // O canvas não foi remontado nem reenquadrado.
   expect(await host.getAttribute('data-fits')).toBe(fits);
+});
+
+// Etapa 6 (6.4), achado 2: dicas ocultas não alargam diálogos, janelas nem o editor.
+// Mede os contêineres que rolam (overflow auto/scroll) e o `.editor` (que nunca rola).
+async function horizontalOverflow(page: Page, root: string): Promise<string[]> {
+  return page.evaluate((selector) => {
+    const found: string[] = [];
+    for (const base of document.querySelectorAll<HTMLElement>(selector)) {
+      for (const el of [base, ...base.querySelectorAll<HTMLElement>('*')]) {
+        const overflowX = getComputedStyle(el).overflowX;
+        const scrolls = overflowX === 'auto' || overflowX === 'scroll';
+        if (!scrolls && !el.matches('.editor')) continue;
+        if (el.scrollWidth > el.clientWidth || el.scrollLeft !== 0) {
+          found.push(
+            `${el.tagName.toLowerCase()}.${el.className} ${el.scrollWidth}x${el.clientWidth} (scrollLeft ${el.scrollLeft})`,
+          );
+        }
+      }
+    }
+    return found;
+  }, root);
+}
+
+test('sem barra horizontal: Configurações, janelas e o editor', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Configurações', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(await horizontalOverflow(page, 'dialog[open]')).toEqual([]);
+  await page.getByRole('dialog').getByRole('button', { name: 'Fechar diálogo' }).click();
+
+  await createProject(page, 'Sem rolagem');
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page));
+  await applySpecialization(page, SDUI);
+  await page
+    .getByRole('button', { name: /Adicionar anotação na camada/ })
+    .first()
+    .click();
+  await page.getByLabel('Nome da anotação').fill('Botão');
+  await page.getByLabel('Nome da anotação').press('Enter');
+  expect(await horizontalOverflow(page, '.editor')).toEqual([]);
+
+  // Levar à vista cada botão do editor (como a rolagem automática do relato) não o desloca.
+  await page.evaluate(() => {
+    for (const b of document.querySelectorAll<HTMLElement>('.editor button')) {
+      b.scrollIntoView({ block: 'nearest', inline: 'end' });
+    }
+  });
+  expect(await horizontalOverflow(page, '.editor')).toEqual([]);
+});
+
+// Etapa 6 (6.4), achado 3: com a janela Camadas baixa, o selo fica dentro da linha (a
+// lista rola em vez de encolher as linhas). Achado 5: na largura padrão de Detalhes, as
+// colunas da tabela não se sobrepõem.
+test('selo da especialização dentro da linha com a janela Camadas baixa', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 639 });
+  await createProject(page, 'Selos');
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page));
+  await applySpecialization(page, SDUI);
+  await applySpecialization(page, MODELO);
+
+  const layers = page.getByRole('region', { name: 'Camadas', exact: true });
+  const rows = layers.locator('.layer-row');
+  await expect(rows).toHaveCount(6);
+  for (const row of await rows.all()) {
+    const badge = row.locator('.layer-badge');
+    if ((await badge.count()) === 0) continue;
+    const [r, b] = await Promise.all([row.boundingBox(), badge.boundingBox()]);
+    if (!r || !b) continue; // fora da área visível da lista (que rola)
+    expect(b.y + b.height).toBeLessThanOrEqual(r.y + r.height + 0.5);
+  }
+});
+
+test('tabela `atributos` sem colunas sobrepostas na largura padrão de Detalhes', async ({
+  page,
+}) => {
+  await createProject(page, 'Tabela');
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page));
+  await applySpecialization(page, MODELO);
+  await page
+    .getByRole('button', { name: 'Adicionar anotação na camada Classes' })
+    .click();
+  const typed = page.getByRole('button', { name: /^Classe/ });
+  if ((await typed.count()) > 0) await typed.first().click();
+  const details = page.getByRole('region', { name: 'Detalhes' });
+  await details.getByRole('button', { name: '+ Linha' }).click();
+  await details.getByLabel('exemplo (Linha 1)').fill('ana@exemplo.com');
+  await details.getByLabel('exemplo (Linha 1)').press('Enter');
+  const required = details.getByRole('group', { name: 'obrigatório (Linha 1)' });
+  const [seg, example] = await Promise.all([
+    required.boundingBox(),
+    details.getByLabel('exemplo (Linha 1)').boundingBox(),
+  ]);
+  if (!seg || !example) throw new Error('tabela sem tamanho');
+  expect(seg.x + seg.width).toBeLessThanOrEqual(example.x + 0.5);
 });
