@@ -75,7 +75,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 ## Etapa atual e etapas futuras
 
-**Etapa atual: nenhuma.** A etapa 5 (pré-voo para uso real) foi a última detalhada; o próximo passo é o marco "Uso real", com os testes guiados por [`docs/TESTING.md`](docs/TESTING.md). A ordem das próximas (marco de uso real e evoluções) está em [`docs/ROADMAP.md`](docs/ROADMAP.md). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa. As funcionalidades do núcleo são genéricas: nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
+**Etapa atual: 6 — Correções da primeira rodada de testes** (detalhada no `PLAN.md`: os achados do relato do Cowork de 2026-10-11 mais os recentes de pasta, uma fase por PR, executadas em ondas por um coordenador de agentes; prompt em `docs/prompts/etapa-6-coordenador.md`). O marco "Uso real" segue em paralelo, com os testes guiados por [`docs/TESTING.md`](docs/TESTING.md). A ordem das próximas (marco de uso real e evoluções) está em [`docs/ROADMAP.md`](docs/ROADMAP.md). Não implementar nada delas antes de o `PLAN.md` detalhar a etapa. As funcionalidades do núcleo são genéricas: nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
 
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).
