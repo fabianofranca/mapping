@@ -101,6 +101,7 @@ describe('LocalLibrary (IndexedDB)', () => {
       name: 'Novo',
       updatedAt: '2026-10-01T00:00:00.000Z',
       unexported: true,
+      openedAt: expect.any(String),
     });
     await library.setUnexported('p', false);
     expect((await library.get('p'))?.unexported).toBe(false);

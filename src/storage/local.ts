@@ -139,6 +139,9 @@ function createLibrary(db: Db): LocalLibrary {
           name: info.name ?? '',
           updatedAt: info.updatedAt ?? new Date().toISOString(),
           unexported: options.unexported ?? true,
+          // Criar ou importar um zip conta como uso: o projeto vai para o topo dos recentes,
+          // e `updatedAt` continua sendo a data de dentro do zip (G2, etapa 7).
+          openedAt: new Date().toISOString(),
         }),
         tx.objectStore('mappings').put(files.mapping, id),
         ...stored.map((f) => tx.objectStore('files').put(f)),
