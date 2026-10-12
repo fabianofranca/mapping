@@ -8,7 +8,7 @@ export function App() {
   const open = openProject.value;
   if (open) {
     return (
-      <div class="app app-editor">
+      <div class="app app-editor" data-focus-root>
         <PreviewBanner />
         <UpdateBanner />
         <Editor open={open} />
@@ -16,7 +16,7 @@ export function App() {
     );
   }
   return (
-    <div class="app">
+    <div class="app" data-focus-root>
       <PreviewBanner />
       <UpdateBanner />
       <Home />

@@ -368,6 +368,24 @@ describe('TypedFields — tabela', () => {
         screen.getByRole('button', { name: '+ Linha' }),
       );
     });
+
+    it('Cancelar volta ao botão de ações da própria linha', async () => {
+      const { user } = setup('AC', 'atributos');
+      await user.click(screen.getByRole('button', { name: 'Ações da linha email' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Remover linha' }));
+      const dialog = await vi.waitFor(() => {
+        const el = document.querySelector('dialog');
+        if (!el) throw new Error('o diálogo ainda não abriu');
+        return el;
+      });
+      await user.click(
+        within(dialog).getByRole('button', { name: 'Cancelar', hidden: true }),
+      );
+      await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+      expect(document.activeElement).toBe(
+        screen.getByRole('button', { name: 'Ações da linha email' }),
+      );
+    });
   });
 
   it('mostra quem referencia a linha', () => {

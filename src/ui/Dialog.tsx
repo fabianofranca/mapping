@@ -66,11 +66,15 @@ function tryFocus(el: Element | null | undefined, dialog: Element): boolean {
   return document.activeElement === el;
 }
 
+/** Raiz da app (`App.tsx`): o último recurso é o primeiro controle dentro dela. */
+const FOCUS_ROOT = '[data-focus-root]';
+
 /**
  * Devolve o foco ao fechar um diálogo modal (chamar depois de fechá-lo): a quem abriu; se
  * saiu do DOM, ao alvo explícito; sem ele, ao contêiner focável mais próximo de quem abriu
- * (ou ao primeiro controle dentro dele); o `body` nunca. Não mexe se o foco já foi para
- * outro lugar de propósito (fora do diálogo e do `body`).
+ * (ou ao primeiro controle dentro dele); por último, ao primeiro controle da app (`data-focus-root`), para
+ * o teclado não ficar perdido no `body`. O `body` nunca. Não mexe se o foco já foi
+ * para outro lugar de propósito (fora do diálogo e do `body`).
  */
 export function restoreFocus(
   dialog: HTMLElement,
@@ -90,6 +94,10 @@ export function restoreFocus(
     for (const el of container.querySelectorAll(selector)) {
       if (tryFocus(el, dialog)) return;
     }
+  }
+  const root = document.querySelector(FOCUS_ROOT);
+  for (const el of root?.querySelectorAll(selector) ?? []) {
+    if (tryFocus(el, dialog)) return;
   }
 }
 
