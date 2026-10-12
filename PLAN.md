@@ -104,11 +104,11 @@ Mesmo desenho das etapas 5 e 6; o prompt do coordenador está em `docs/prompts/e
 
 **Toca em:** `src/store/review.ts` (`seen` inicial só com as entradas da própria cópia), `src/storage/local.ts` (importar grava `openedAt`) e `src/app/controller.ts` (se a ordem dos recentes precisar), `tests/store/review.test.ts`, `tests/storage/*` dos recentes, `tests/app/controller.test.ts`, `docs/ARCHITECTURE.md` (parágrafos dos recentes e do retomar revisão), `docs/TESTING.md`, `docs/history/etapa-6-testes-cowork.md` (o prompt do testador em vigor; só as frases novas).
 
-- [ ] Testes que reproduzem: entrada legada no `localStorage` e cópia nova: a proposta conta como nova (hoje não); importar zip: `openedAt` de agora e o projeto no topo (hoje fica com a data do zip)
-- [ ] `review.ts`: `seen` começa só com as chaves da própria cópia; a entrada legada continua devolvendo posição e filtros ao retomar
-- [ ] `local.ts`: `import` grava `openedAt`; `ARCHITECTURE.md` diz que abrir ou importar conta como uso
-- [ ] `TESTING.md`: seção 4 "à vista **e com o foco**" com a nota dos seletores nativos; R4.2 e R4.6 com os selos na lista Nível e a Árvore na visão; R4.5 reescrito a partir do que a app faz (rejeitar só a criação da marcação leva a anotação junto; aceitar a anotação traz a criação de volta com **junto**); R5.4 com "filtro **Sem decisão** e **Aceitar** no nível Projeto" e o aviso sobre **Aceitar tudo**; R0.3 e R1.1 com a nota do `.png`
-- [ ] Prompt do testador: item 7 pede janela à vista **e em foco** (e o que fazer quando o clique num seletor não abre nada); novo item sobre estado de rodadas anteriores no navegador do dono (projetos **Loja**/**Local** e `mapping.reviewResume`): usar perfil limpo ou registrar o que já existia antes do R4.1
+- [x] Testes que reproduzem: entrada legada no `localStorage` e cópia nova: a proposta conta como nova (hoje não); importar zip: `openedAt` de agora e o projeto no topo (hoje fica com a data do zip)
+- [x] `review.ts`: `seen` começa só com as chaves da própria cópia; a entrada legada continua devolvendo posição e filtros ao retomar
+- [x] `local.ts`: `import` grava `openedAt`; `ARCHITECTURE.md` diz que abrir ou importar conta como uso
+- [x] `TESTING.md`: seção 4 "à vista **e com o foco**" com a nota dos seletores nativos; R4.2 e R4.6 com os selos na lista Nível e a Árvore na visão; R4.5 reescrito a partir do que a app faz (rejeitar só a criação da marcação leva a anotação junto; aceitar a anotação traz a criação de volta com **junto**); R5.4 com "filtro **Sem decisão** e **Aceitar** no nível Projeto" e o aviso sobre **Aceitar tudo**; R0.3 e R1.1 com a nota do `.png`
+- [x] Prompt do testador: item 7 pede janela à vista **e em foco** (e o que fazer quando o clique num seletor não abre nada); novo item sobre estado de rodadas anteriores no navegador do dono (projetos **Loja**/**Local** e `mapping.reviewResume`): usar perfil limpo ou registrar o que já existia antes do R4.1
 
 **Aceite**: R4.1 com uma entrada legada no `localStorage` mostra "1 proposta(s) nova(s)"; **Abrir zip** põe o projeto no topo dos recentes com a data de hoje; um agente novo lê os passos alterados do guia e não encontra nenhum dos pontos de "O que atrapalhou" acima.
 
