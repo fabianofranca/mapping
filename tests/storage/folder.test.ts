@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   createFolderStorage,
   ensureGitignore,
+  ensurePermission,
   findExistingImages,
+  isReopenable,
 } from '../../src/storage/folder';
-import { MemoryDirectory } from './memoryFs';
+import { MemoryDirectory, PermissionDirectory } from './memoryFs';
 
 describe('FolderStorage', () => {
   it('lê null quando não há mapping.json e grava na raiz', async () => {
@@ -167,5 +169,28 @@ describe('FolderStorage: o que a app confere por fora (etapa 3a.2)', () => {
     const second = await storage.statImage?.('images/a.jpg');
     expect(second).toMatch(/^4:\d+$/);
     expect(second).not.toBe(first);
+  });
+});
+
+describe('permissão da pasta (recentes, fase 6.6)', () => {
+  it('isReopenable exige queryPermission, requestPermission e isSameEntry', () => {
+    expect(isReopenable(new PermissionDirectory('p'))).toBe(true);
+    expect(isReopenable(new MemoryDirectory('p'))).toBe(false);
+  });
+
+  it('já concedida: não pede de novo', async () => {
+    const root = new PermissionDirectory('p');
+    expect(await ensurePermission(root)).toBe(true);
+    expect(root.requests).toBe(0);
+  });
+
+  it('a pedir: pede uma vez e devolve a resposta', async () => {
+    const root = new PermissionDirectory('p');
+    root.permission = 'prompt';
+    expect(await ensurePermission(root)).toBe(true);
+    expect(root.requests).toBe(1);
+    root.permission = 'prompt';
+    root.answer = 'denied';
+    expect(await ensurePermission(root)).toBe(false);
   });
 });

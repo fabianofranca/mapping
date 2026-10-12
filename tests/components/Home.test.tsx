@@ -7,9 +7,12 @@ const controller = vi.hoisted(() => ({
   createFolderProject: vi.fn(),
   createLocalProject: vi.fn(),
   deleteLocalProject: vi.fn(),
+  forgetFolder: vi.fn(),
   importZip: vi.fn(),
   openFolder: vi.fn(),
   openLocalProject: vi.fn(),
+  openRecentFolder: vi.fn(),
+  relocateFolder: vi.fn(),
 }));
 
 vi.mock('../../src/app/controller', async () => {
@@ -17,7 +20,7 @@ vi.mock('../../src/app/controller', async () => {
   return {
     ...controller,
     features: signal<unknown>(null),
-    localProjects: signal<unknown[]>([]),
+    recentProjects: signal<unknown[]>([]),
   };
 });
 
@@ -25,7 +28,7 @@ import * as app from '../../src/app/controller';
 import { Home } from '../../src/app/Home';
 
 const features = app.features as unknown as { value: unknown };
-const localProjects = app.localProjects as unknown as { value: unknown[] };
+const recentProjects = app.recentProjects as unknown as { value: unknown[] };
 
 const ok = (value?: unknown) => Promise.resolve({ ok: true, value });
 const fail = (error: string) => Promise.resolve({ ok: false, error });
@@ -33,11 +36,12 @@ const fail = (error: string) => Promise.resolve({ ok: false, error });
 beforeEach(() => {
   for (const fn of Object.values(controller)) fn.mockReset();
   features.value = { folder: true, local: true, fileProtocol: false };
-  localProjects.value = [
+  recentProjects.value = [
     {
+      kind: 'local',
       id: 'p1',
       name: 'Carro',
-      updatedAt: '2026-09-20T18:30:00.000Z',
+      usedAt: '2026-09-20T18:30:00.000Z',
       unexported: true,
     },
   ];
@@ -75,9 +79,9 @@ describe('Home', () => {
   });
 
   it('sem projetos locais mostra o texto vazio', () => {
-    localProjects.value = [];
+    recentProjects.value = [];
     render(<Home />);
-    expect(screen.getByText(t('home.noLocalProjects'))).toBeTruthy();
+    expect(screen.getByText(t('home.noRecentProjects'))).toBeTruthy();
   });
 
   it('criar projeto: pede o nome e chama o controller', async () => {
@@ -184,7 +188,7 @@ describe('Home (B10)', () => {
     expect(headers.slice(0, 3)).toEqual([
       t('home.colName'),
       t('home.colOrigin'),
-      t('home.colUpdated'),
+      t('home.colUsed'),
     ]);
     const row = within(table).getByRole('row', { name: /Carro/ });
     expect(within(row).getByText(t('status.targetLocal'))).toBeTruthy();
@@ -194,12 +198,13 @@ describe('Home (B10)', () => {
   });
 
   it('busca filtra os projetos (sem acento nem maiúsculas)', async () => {
-    localProjects.value = [
-      ...localProjects.value,
+    recentProjects.value = [
+      ...recentProjects.value,
       {
+        kind: 'local',
         id: 'p2',
         name: 'Avião',
-        updatedAt: '2026-09-21T10:00:00.000Z',
+        usedAt: '2026-09-21T10:00:00.000Z',
         unexported: false,
       },
     ];
@@ -214,7 +219,7 @@ describe('Home (B10)', () => {
   });
 
   it('sem projetos não mostra busca nem tabela', () => {
-    localProjects.value = [];
+    recentProjects.value = [];
     render(<Home />);
     expect(screen.queryByRole('searchbox')).toBeNull();
     expect(screen.queryByRole('table')).toBeNull();
@@ -240,5 +245,95 @@ describe('Home (B10)', () => {
       screen.getByRole('button', { name: t('home.openFolder') }).hasAttribute('disabled'),
     ).toBe(true);
     expect(screen.getByText(t('home.folderUnavailable'))).toBeTruthy();
+  });
+});
+
+describe('Home: recentes de pasta (fase 6.6)', () => {
+  const folder = {
+    kind: 'folder',
+    id: 'f1',
+    name: 'Principal',
+    folderName: 'principal-pasta',
+    usedAt: '2026-10-01T10:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    recentProjects.value = [folder, ...recentProjects.value];
+  });
+
+  it('pasta na mesma lista, com o selo Pasta, o nome da pasta e Remover da lista', async () => {
+    controller.forgetFolder.mockReturnValue(ok());
+    render(<Home />);
+    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    expect(rows.map((r) => r.querySelector('.project-name')?.textContent)).toEqual([
+      'Principal',
+      'Carro',
+    ]);
+    const row = rows[0] as HTMLElement;
+    expect(within(row).getByText(t('status.targetFolder'))).toBeTruthy();
+    expect(within(row).getByText('principal-pasta')).toBeTruthy();
+    expect(within(row).queryByRole('button', { name: t('common.delete') })).toBeNull();
+    await userEvent.click(
+      within(row).getByRole('button', { name: t('home.forgetFolder') }),
+    );
+    expect(controller.forgetFolder).toHaveBeenCalledWith('f1');
+  });
+
+  it('a busca também acha pelo nome da pasta', async () => {
+    render(<Home />);
+    await userEvent.type(screen.getByRole('searchbox'), 'pasta');
+    expect(screen.getByText('Principal')).toBeTruthy();
+    expect(screen.queryByText('Carro')).toBeNull();
+  });
+
+  it('Abrir chama openRecentFolder no próprio clique', async () => {
+    controller.openRecentFolder.mockReturnValue(ok({ kind: 'opened' }));
+    render(<Home />);
+    const row = screen.getByRole('row', { name: /Principal/ });
+    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    expect(controller.openRecentFolder).toHaveBeenCalledWith('f1');
+    expect(document.querySelector('dialog')).toBeNull();
+  });
+
+  it('pasta indisponível: aviso com Localizar pasta… e Remover da lista', async () => {
+    controller.openRecentFolder.mockReturnValue(
+      ok({ kind: 'unavailable', reason: 'missing' }),
+    );
+    controller.relocateFolder.mockReturnValue(ok({ kind: 'no-project' }));
+    controller.forgetFolder.mockReturnValue(ok());
+    render(<Home />);
+    const user = userEvent.setup();
+    const row = screen.getByRole('row', { name: /Principal/ });
+    await user.click(within(row).getByRole('button', { name: t('common.open') }));
+    await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
+    const dialog = document.querySelector('dialog') as HTMLElement;
+
+    // A pasta escolhida não tem mapping.json: o aviso continua, com o motivo.
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: t('home.relocateFolder'),
+        hidden: true,
+      }),
+    );
+    expect(controller.relocateFolder).toHaveBeenCalledWith('f1');
+    await within(dialog).findByText(t('home.folderNoProject', { name: 'Principal' }));
+
+    await user.click(
+      within(dialog).getByRole('button', { name: t('home.forgetFolder'), hidden: true }),
+    );
+    expect(controller.forgetFolder).toHaveBeenCalledWith('f1');
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+  });
+
+  it('permissão negada: o aviso diz que o navegador não deu acesso', async () => {
+    controller.openRecentFolder.mockReturnValue(
+      ok({ kind: 'unavailable', reason: 'denied' }),
+    );
+    render(<Home />);
+    const row = screen.getByRole('row', { name: /Principal/ });
+    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    expect(
+      await screen.findByText(t('home.folderDenied', { folder: 'principal-pasta' })),
+    ).toBeTruthy();
   });
 });

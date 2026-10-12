@@ -33,8 +33,9 @@ export const ptBR = {
   'home.newProject': 'Novo projeto',
   'home.openFolder': 'Abrir pasta',
   'home.openZip': 'Abrir zip',
-  'home.localProjects': 'Projetos neste dispositivo',
-  'home.noLocalProjects': 'Nenhum projeto guardado neste dispositivo ainda.',
+  'home.recentProjects': 'Projetos recentes',
+  'home.noRecentProjects':
+    'Nenhum projeto ainda. Os projetos deste dispositivo e as pastas abertas aparecem aqui.',
   'home.unsupported':
     'Este navegador não permite abrir pastas nem guardar projetos. Use o Chrome ou o Edge no computador.',
   'home.fileProtocolWarning':
@@ -467,7 +468,17 @@ export const ptBR = {
   'home.noResults': 'Nenhum projeto encontrado para "{query}".',
   'home.colName': 'Nome',
   'home.colOrigin': 'Origem',
-  'home.colUpdated': 'Alterado em',
+  'home.colUsed': 'Último uso',
+  'home.forgetFolder': 'Remover da lista',
+  'home.folderUnavailableTitle': 'Pasta indisponível',
+  'home.folderDenied':
+    'O navegador não deu acesso à pasta "{folder}". Clique em Abrir de novo e escolha Permitir, ou localize a pasta.',
+  'home.folderMissing':
+    'A pasta "{folder}" não foi encontrada (ou não tem mais o mapping.json): ela pode ter sido movida, renomeada ou apagada.',
+  'home.folderNoProject':
+    'A pasta escolhida não tem um mapping.json. Escolha a pasta do projeto "{name}".',
+  'home.forgetFolderHint': 'Remover da lista não apaga nada do disco.',
+  'home.relocateFolder': 'Localizar pasta…',
   'home.colActions': 'Ações',
   'home.folderUnavailable':
     'Este navegador não deixa abrir pastas. Use o Chrome ou o Edge no computador.',

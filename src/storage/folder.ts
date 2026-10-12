@@ -36,6 +36,36 @@ export interface DirectoryHandleLike {
   values(): AsyncIterable<FileHandleLike | DirectoryHandleLike>;
 }
 
+export type FolderPermission = 'granted' | 'denied' | 'prompt';
+
+/**
+ * Handle que pode ser guardado e reaberto noutra visita (recentes de pasta): o navegador
+ * pede a permissão de novo com um clique, e `isSameEntry` evita a mesma pasta duas vezes.
+ */
+export interface ReopenableDirectory extends DirectoryHandleLike {
+  queryPermission(descriptor: { mode: 'readwrite' }): Promise<FolderPermission>;
+  requestPermission(descriptor: { mode: 'readwrite' }): Promise<FolderPermission>;
+  isSameEntry(other: DirectoryHandleLike): Promise<boolean>;
+}
+
+/** O navegador oferece o que os recentes de pasta precisam neste handle? */
+export function isReopenable(handle: DirectoryHandleLike): handle is ReopenableDirectory {
+  return ['queryPermission', 'requestPermission', 'isSameEntry'].every(
+    (method) => typeof Reflect.get(handle, method) === 'function',
+  );
+}
+
+/**
+ * Leitura e escrita na pasta: consulta e, se preciso, pede a permissão. Chamar no próprio
+ * clique, sem outra espera antes: o `requestPermission` só abre o diálogo do navegador
+ * dentro de um gesto da pessoa.
+ */
+export async function ensurePermission(handle: ReopenableDirectory): Promise<boolean> {
+  const mode = { mode: 'readwrite' } as const;
+  if ((await handle.queryPermission(mode)) === 'granted') return true;
+  return (await handle.requestPermission(mode)) === 'granted';
+}
+
 type DirectoryPicker = (options: { mode: 'readwrite' }) => Promise<DirectoryHandleLike>;
 
 function directoryPicker(): DirectoryPicker | null {
@@ -64,7 +94,8 @@ export async function pickDirectory(): Promise<DirectoryHandleLike | null> {
   }
 }
 
-function isNotFound(e: unknown): boolean {
+/** A pasta (ou o arquivo) não existe mais: movida, renomeada ou apagada. */
+export function isNotFound(e: unknown): boolean {
   return (
     e instanceof DOMException &&
     (e.name === 'NotFoundError' || e.name === 'TypeMismatchError')
