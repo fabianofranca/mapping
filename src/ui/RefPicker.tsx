@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'preact/hooks';
+import { useId, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   fieldLabel,
@@ -13,10 +13,10 @@ import {
 import { Tabs, type TabItem } from './controls';
 import {
   captureFocusOrigin,
-  restoreFocusAfterRender,
+  useModal,
   type FocusOrigin,
   type FocusReturn,
-} from './Dialog';
+} from './focus';
 import { Icon } from './icons';
 import { imageLabel, markingPath } from './labels';
 import { annotationSourceLabel, labelTexts } from './typedText';
@@ -135,30 +135,8 @@ export function RefPicker({
   // Quem tinha o foco ao abrir (o campo da referência), guardado antes de o seletor pegá-lo.
   const origin = useRef<FocusOrigin | null>(null);
   origin.current ??= captureFocusOrigin();
-  const returnTo = useRef(returnFocus);
-  returnTo.current = returnFocus;
-
-  useEffect(() => {
-    const el = dialog.current;
-    if (!el || el.open) return;
-    try {
-      el.showModal();
-    } catch {
-      // Detecção de recurso: sem `showModal` (navegador antigo) abre sem modal.
-      el.setAttribute('open', '');
-    }
-    input.current?.focus();
-    return () => {
-      // Fecha antes de sair do DOM: com o modal aberto, o resto da página está inerte e o
-      // foco não sai dele (etapa 7, achado A1).
-      try {
-        if (el.open) el.close();
-      } catch {
-        el.removeAttribute('open');
-      }
-      restoreFocusAfterRender(el, origin.current, returnTo);
-    };
-  }, []);
+  // Aberto, com o foco na busca, na mesma renderização que o põe no DOM (etapa 8, F1).
+  useModal(dialog, origin.current, returnFocus, () => input.current?.focus());
 
   const filters: Filter[] = [
     ...(field.accepts.tags ?? []).map((tag) => ({ kind: 'tag', tag }) as const),
