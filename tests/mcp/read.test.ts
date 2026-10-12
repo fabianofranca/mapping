@@ -1,4 +1,11 @@
-import { readFileSync, realpathSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deserialize } from '../../src/model';
@@ -865,6 +872,77 @@ describe('várias raízes', () => {
       await multi.call('create_project', { path: 'novo', name: 'N', root: second }),
     );
     expect(created.root).toBe(second);
+  });
+});
+
+describe('`root` do create_project (raízes relativas, como no .mcp.json)', () => {
+  // O servidor sobe com o diretório de trabalho em `ws.base` e as raízes como um `.mcp.json`
+  // as escreveria: relativas a ele. Duas delas têm o mesmo nome de pasta (`mapeamentos`).
+  let rel: Connection;
+  const design = () => join(ws.base, 'design', 'mapeamentos');
+  const outro = () => join(ws.base, 'outro', 'mapeamentos');
+
+  beforeAll(async () => {
+    mkdirSync(design(), { recursive: true });
+    mkdirSync(outro(), { recursive: true });
+    symlinkSync(design(), join(ws.base, 'atalho'), 'dir');
+    rel = await connect(['raiz', 'design/mapeamentos', 'outro/mapeamentos'], {
+      cwd: ws.base,
+    });
+  });
+  afterAll(async () => {
+    await rel.close();
+  });
+
+  const create = (path: string, root: string) =>
+    rel.call('create_project', { path, name: 'N', root });
+
+  it('aceita o caminho como no --root: relativo, com ./, com barra final e absoluto (M1)', async () => {
+    for (const [path, root] of [
+      ['rel-a', 'design/mapeamentos'],
+      ['rel-b', './design/mapeamentos'],
+      ['rel-c', 'design/mapeamentos/'],
+      ['rel-d', design()],
+    ] as const) {
+      const created = ok(await create(path, root));
+      expect(created.root, root).toBe(design());
+      expect(existsSync(join(design(), path, 'mapping.json')), root).toBe(true);
+    }
+  });
+
+  it('aceita um link simbólico para a raiz e o nome da pasta, se ele for único (M1)', async () => {
+    expect(ok(await create('rel-e', 'atalho')).root).toBe(design());
+    expect(ok(await create('rel-f', 'raiz')).root).toBe(ws.root);
+    rmSync(join(ws.root, 'rel-f'), { recursive: true });
+  });
+
+  it('nome de pasta que casa com mais de uma raiz pede o caminho (Q1)', async () => {
+    const result = await create('rel-g', 'mapeamentos');
+    expect(errorCode(result)).toBe('unknown-root');
+    const { error } = result.data as unknown as ErrorData;
+    expect(error.message).toContain('use o caminho');
+    expect(error.roots).toEqual([ws.root, design(), outro()]);
+    expect(existsSync(join(design(), 'rel-g'))).toBe(false);
+    expect(existsSync(join(outro(), 'rel-g'))).toBe(false);
+  });
+
+  it('raiz desconhecida continua unknown-root', async () => {
+    expect(errorCode(await create('rel-h', 'nao/existe'))).toBe('unknown-root');
+  });
+
+  it('path absoluto em outra raiz que não a indicada é invalid-arguments (M12)', async () => {
+    const inOther = join(outro(), 'abs-a');
+    expect(errorCode(await create(inOther, 'design/mapeamentos'))).toBe(
+      'invalid-arguments',
+    );
+    expect(existsSync(inOther)).toBe(false);
+    // Dentro da raiz indicada: cria.
+    const inDesign = join(design(), 'abs-b');
+    expect(ok(await create(inDesign, 'design/mapeamentos')).root).toBe(design());
+    // Fora de todas as raízes: a segurança fala primeiro.
+    expect(errorCode(await create(join(ws.base, 'abs-c'), 'design/mapeamentos'))).toBe(
+      'outside-roots',
+    );
   });
 });
 
