@@ -1,6 +1,6 @@
 # Prompt do coordenador — Etapa 6 (correções da primeira rodada de testes)
 
-> Arquivo temporário: é o prompt inicial da sessão que coordena a etapa 6 do `PLAN.md`. Ao fechar a etapa (fase 6.7), vai para `docs/history/`. Para iniciar o coordenador, abra uma sessão nova do Claude Code neste repositório e mande uma das mensagens da seção "Modos de execução" abaixo; a mais simples é **"Leia `docs/prompts/etapa-6-coordenador.md` e execute."**
+> Arquivo histórico: foi o prompt inicial da sessão que coordenou a etapa 6 (concluída; plano em [`PLAN-etapa-6.md`](PLAN-etapa-6.md)). Movido de `docs/prompts/` para cá na fase 6.7, sem outras mudanças além deste aviso. Onde o texto abaixo cita o `PLAN.md`, a seção da etapa 6 hoje está no `PLAN-etapa-6.md`. Para iniciar um coordenador com ele, a mensagem era: **"Leia `docs/history/etapa-6-coordenador.md` e execute."**
 
 ---
 
