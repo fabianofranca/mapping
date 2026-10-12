@@ -68,7 +68,10 @@ describe('ImageRenderer', () => {
     const open = { width: 1000, height: 800, close: () => undefined };
     const ready = (bitmap: typeof open) =>
       new Map([
-        ['images/a.jpg', { status: 'ready' as const, bitmap: bitmap as unknown as ImageBitmap }],
+        [
+          'images/a.jpg',
+          { status: 'ready' as const, bitmap: bitmap as unknown as ImageBitmap },
+        ],
       ]);
     renderer.render(frameOf(editor, { bitmaps: ready(open) }));
     const node = renderer.node('I1');

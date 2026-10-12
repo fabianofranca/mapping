@@ -84,6 +84,14 @@ export class ImageRenderer {
   }
 }
 
+/**
+ * Um `ImageBitmap` fechado (`close()`) fica com largura e altura zero; desenhá-lo lança
+ * `InvalidStateError`. O nó nunca recebe um, mesmo que o mapa de exibição o traga.
+ */
+function isClosed(bitmap: ImageBitmap): boolean {
+  return bitmap.width === 0 && bitmap.height === 0;
+}
+
 function updateNode(
   node: ImageNode,
   image: ProjectImage,
@@ -96,7 +104,7 @@ function updateNode(
   node.group.position({ x: rect.x, y: rect.y });
   const box = { width: rect.width, height: rect.height };
 
-  const ready = state?.status === 'ready';
+  const ready = state?.status === 'ready' && !isClosed(state.bitmap);
   node.bitmap.setAttrs({
     ...box,
     visible: ready,

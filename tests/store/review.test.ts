@@ -397,7 +397,11 @@ describe('conflitos', () => {
 
     locale.value = 'en-US';
     const second = await openHarness({ project: edited, proposals: [proposal] });
-    expect(second.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    expect(second.review.open('P1')).toEqual({
+      ok: true,
+      resumed: true,
+      newConflicts: 0,
+    });
     expect(second.review.selected.value).toEqual({ level: 'item', id: 'M4' });
     expect(second.review.derived.conflictIds.value.size).toBe(1);
   });
@@ -417,6 +421,35 @@ describe('conflitos', () => {
     tabA.review.close();
     // A outra aba abre a mesma revisão depois: o conflito já foi mostrado.
     expect(tabB.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+  });
+
+  it('a entrada guardada antes de a chave levar a cópia (legado) devolve a posição, não marca conflito novo e é regravada', async () => {
+    const { proposal } = richScenario();
+    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    localStorage.setItem(
+      'mapping.reviewResume',
+      JSON.stringify({
+        P1: {
+          selected: { level: 'item', id: 'M4' },
+          view: 'current',
+          filters: {
+            types: [],
+            imageId: null,
+            layerId: null,
+            decision: 'all',
+            onlyConflicts: false,
+          },
+          knownConflicts: [],
+        },
+      }),
+    );
+    const { review } = await openHarness({ project: edited, proposals: [proposal] });
+    expect(review.seen.value.has('P1')).toBe(true);
+    expect(review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    expect(review.selected.value).toEqual({ level: 'item', id: 'M4' });
+    expect(review.view.value).toBe('current');
+    const stored = JSON.parse(localStorage.getItem('mapping.reviewResume') ?? '{}');
+    expect(Object.keys(stored)).toEqual(['folder:projeto|P1']);
   });
 
   it('um conflito que aparece durante a revisão (projeto recarregado por fora) já é conhecido na abertura seguinte', async () => {
@@ -622,7 +655,11 @@ describe('proposta nova e substituída', () => {
       status: 'applied',
       applied: Object.fromEntries(accepted.changes.map((c) => [c.id, { at: AT }])),
     };
-    const next = { ...richScenario('P2').proposal, supersedes: 'P1', title: 'Só a correção' };
+    const next = {
+      ...richScenario('P2').proposal,
+      supersedes: 'P1',
+      title: 'Só a correção',
+    };
     const { review, root } = await openHarness({ proposals: [applied, next] });
     const row = must(review.derived.rows.value.find((r) => r.proposal.id === 'P1'));
     expect(row.proposal.status).toBe('applied');

@@ -1,5 +1,14 @@
 import { act, cleanup, screen } from '@testing-library/preact';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { EditorScreen } from '../../../src/app/Editor';
 import { addImage, createMarking, createProject } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
