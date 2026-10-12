@@ -1,6 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import { realpath, rename, rm, writeFile } from 'node:fs/promises';
-import path, { basename, dirname, isAbsolute, join, type PlatformPath } from 'node:path';
+import path, {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  resolve,
+  type PlatformPath,
+} from 'node:path';
 import { ToolError } from './errors';
 
 // Segurança de caminhos: o servidor só lê e grava dentro das raízes configuradas.
@@ -170,12 +177,22 @@ export class Roots {
 
   private async newTarget(input: string, rootHint?: string): Promise<string> {
     if (isAbsolute(input)) {
+      // Fora de todas as raízes: `outside-roots` antes de olhar o `root` (a segurança fala primeiro).
       const [candidate] = await this.candidates(input);
+      if (rootHint !== undefined) {
+        const index = await this.resolveRoot(rootHint);
+        if (!(await this.isUnderRoot(index, candidate!))) {
+          throw new ToolError(
+            'invalid-arguments',
+            `o caminho absoluto não fica na raiz indicada em \`root\`: ${input}`,
+            { path: input, root: this.roots[index] },
+          );
+        }
+      }
       return candidate!;
     }
     if (rootHint !== undefined) {
-      const root = await this.resolveRoot(rootHint);
-      return join(root, input);
+      return join(this.roots[await this.resolveRoot(rootHint)]!, input);
     }
     if (this.roots.length === 1) return join(this.roots[0]!, input);
     throw new ToolError(
@@ -185,15 +202,55 @@ export class Roots {
     );
   }
 
-  /** `root` informado pelo agente: o caminho de uma das raízes (como listado) ou o seu nome. */
-  private async resolveRoot(hint: string): Promise<string> {
-    const reals = await this.realRoots();
-    for (const [index, root] of this.roots.entries()) {
-      if (root === hint || reals[index] === hint || basename(root) === hint) return root;
+  /**
+   * `path` absoluto (ainda pode não existir) fica dentro da raiz `index`? Compara com a raiz
+   * como configurada e com o seu caminho real, e também o caminho real do ancestral existente
+   * mais próximo (um link simbólico no meio do caminho).
+   */
+  private async isUnderRoot(index: number, target: string): Promise<boolean> {
+    const root = this.roots[index]!;
+    const realRoot = (await this.realRoots())[index] ?? null;
+    if (isWithin(root, target) || (realRoot !== null && isWithin(realRoot, target))) {
+      return true;
     }
-    throw new ToolError('unknown-root', `raiz desconhecida: ${hint}`, {
-      roots: this.roots,
-    });
+    if (realRoot === null) return false;
+    for (let existing = target; ; existing = dirname(existing)) {
+      try {
+        return isWithin(realRoot, await realpath(existing));
+      } catch (error) {
+        if (!isNotFound(error) || dirname(existing) === existing) return false;
+      }
+    }
+  }
+
+  /**
+   * Índice da raiz que o `root` do agente indica, na ordem: o caminho como no `--root`
+   * (resolvido a partir do diretório de trabalho, como o `main.ts` faz: relativo, com `./`,
+   * com barra final ou absoluto), o mesmo caminho real (link simbólico para a raiz), ou o nome
+   * da pasta, se só uma raiz o tiver. Nome repetido pede o caminho.
+   */
+  private async resolveRoot(hint: string): Promise<number> {
+    const unknown = (message: string) =>
+      new ToolError('unknown-root', message, { roots: this.roots });
+    if (hint.trim() === '' || hint.includes('\0')) {
+      throw unknown('raiz vazia ou inválida');
+    }
+    const asPath = resolve(this.workDir, hint);
+    const reals = await this.realRoots();
+    const realHint = await realpath(asPath).catch(() => null);
+    const byPath = this.roots.findIndex(
+      (root, index) =>
+        root === asPath || (realHint !== null && reals[index] === realHint),
+    );
+    if (byPath >= 0) return byPath;
+    const byName = this.roots.flatMap((root, index) =>
+      basename(root) === hint ? [index] : [],
+    );
+    if (byName.length === 1) return byName[0]!;
+    if (byName.length > 1) {
+      throw unknown(`o nome "${hint}" casa com mais de uma raiz: use o caminho`);
+    }
+    throw unknown(`raiz desconhecida: ${hint}`);
   }
 }
 

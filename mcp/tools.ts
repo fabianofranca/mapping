@@ -205,7 +205,9 @@ export function registerTools(server: McpServer, roots: Roots): void {
         root: z
           .string()
           .optional()
-          .describe('Raiz em que criar, quando há mais de uma e `path` é relativo.'),
+          .describe(
+            'Raiz em que criar, quando há mais de uma e `path` é relativo: um dos `roots` de list_projects, o caminho como está no `--root` (relativo ao diretório de trabalho do cliente, ex: "design/mapeamentos") ou o nome da pasta da raiz, se só uma raiz o tiver. Com `path` absoluto, ele precisa ficar dentro desta raiz.',
+          ),
         firstLayerName: z
           .string()
           .optional()

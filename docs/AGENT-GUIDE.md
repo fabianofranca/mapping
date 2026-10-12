@@ -280,24 +280,24 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 
 **Projetos, raízes e caminhos**
 
-| `code`                             | Significado                                                                                                                                     |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `project-not-found`                | Projeto inexistente nas raízes.                                                                                                                 |
-| `ambiguous-project`                | Nome de projeto repetido: a resposta lista as candidatas; use o `path` de `list_projects`.                                                      |
-| `project-mismatch`                 | A referência é de um projeto e `project` indica outro.                                                                                          |
-| `invalid-project`                  | O `mapping.json` não passa na validação ou não pôde ser lido (a resposta traz o motivo).                                                        |
-| `read-only`                        | O `mapping.json` é de uma versão de schema mais nova que este servidor: atualize o `mapping-mcp.js`.                                            |
-| `spec-unavailable`                 | A cópia da especialização em `specs/` está ausente ou inválida.                                                                                 |
-| `outside-roots`                    | Caminho com `..`, absoluto fora das raízes ou link simbólico que sai delas.                                                                     |
-| `path-not-found`                   | O caminho informado (arquivo de origem, especialização) não existe em nenhuma raiz.                                                             |
-| `invalid-path`                     | Caminho vazio ou inválido; em `find_by_code`, caminho de código que não é relativo à raiz do repositório. Também é regra do modelo (`codeRef`). |
-| `not-a-file`                       | O caminho é uma pasta (ou outra coisa que não um arquivo).                                                                                      |
-| `file-too-large`                   | Arquivo lido grande demais (origem do lote, especialização ou `proposal.json` acima de 64 MB).                                                  |
-| `root-required`                    | `create_project` com caminho relativo e mais de uma raiz: informe `root`.                                                                       |
-| `unknown-root`                     | `root` não é nenhuma das raízes (a resposta lista `roots`).                                                                                     |
-| `already-exists`, `nested-project` | `create_project`: a pasta já tem um projeto, ou fica dentro de outro projeto (projetos não se aninham).                                         |
-| `invalid-name`                     | `create_project` com nome vazio. Também é regra do modelo (nome vazio ou inválido).                                                             |
-| `invalid-arguments`                | Combinação de argumentos inválida: `validate_specialization` precisa de exatamente um de `path` ou `text`.                                      |
+| `code`                             | Significado                                                                                                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project-not-found`                | Projeto inexistente nas raízes.                                                                                                                                                  |
+| `ambiguous-project`                | Nome de projeto repetido: a resposta lista as candidatas; use o `path` de `list_projects`.                                                                                       |
+| `project-mismatch`                 | A referência é de um projeto e `project` indica outro.                                                                                                                           |
+| `invalid-project`                  | O `mapping.json` não passa na validação ou não pôde ser lido (a resposta traz o motivo).                                                                                         |
+| `read-only`                        | O `mapping.json` é de uma versão de schema mais nova que este servidor: atualize o `mapping-mcp.js`.                                                                             |
+| `spec-unavailable`                 | A cópia da especialização em `specs/` está ausente ou inválida.                                                                                                                  |
+| `outside-roots`                    | Caminho com `..`, absoluto fora das raízes ou link simbólico que sai delas.                                                                                                      |
+| `path-not-found`                   | O caminho informado (arquivo de origem, especialização) não existe em nenhuma raiz.                                                                                              |
+| `invalid-path`                     | Caminho vazio ou inválido; em `find_by_code`, caminho de código que não é relativo à raiz do repositório. Também é regra do modelo (`codeRef`).                                  |
+| `not-a-file`                       | O caminho é uma pasta (ou outra coisa que não um arquivo).                                                                                                                       |
+| `file-too-large`                   | Arquivo lido grande demais (origem do lote, especialização ou `proposal.json` acima de 64 MB).                                                                                   |
+| `root-required`                    | `create_project` com caminho relativo e mais de uma raiz: informe `root`.                                                                                                        |
+| `unknown-root`                     | `root` não é nenhuma das raízes (a resposta lista `roots`), ou é um nome de pasta que mais de uma raiz tem: use o caminho, como em `roots` ou no `--root`.                       |
+| `already-exists`, `nested-project` | `create_project`: a pasta já tem um projeto, ou fica dentro de outro projeto (projetos não se aninham).                                                                          |
+| `invalid-name`                     | `create_project` com nome vazio. Também é regra do modelo (nome vazio ou inválido).                                                                                              |
+| `invalid-arguments`                | Combinação de argumentos inválida: `validate_specialization` precisa de exatamente um de `path` ou `text`; `create_project` com `path` absoluto fora da raiz indicada em `root`. |
 
 **Referências e itens**
 
