@@ -1,11 +1,17 @@
 import type { ComponentChildren } from 'preact';
 import { useRef, useState } from 'preact/hooks';
+import { tokenValue } from '../../theme/tokens';
 import { classes } from './classes';
 
-/** Folga mínima entre a dica e a borda da janela do navegador (a mesma do Popover). */
-const EDGE = 8;
+/** Número de um token de comprimento (`--space-2: 8px` → 8). */
+function px(token: string): number {
+  return Number.parseInt(tokenValue(token, 'light'), 10);
+}
+
+/** Folga mínima entre a dica e a borda da janela do navegador (`--space-2`, a mesma do Popover). */
+const EDGE = px('space-2');
 /** Espaço entre o controle e a dica (`--space-1`). */
-const GAP = 4;
+const GAP = px('space-1');
 
 interface TooltipProps {
   /** Texto da dica. */

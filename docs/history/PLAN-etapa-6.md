@@ -1,6 +1,6 @@
 # Histórico — Etapa 6, correções da primeira rodada de testes (seção do antigo PLAN.md)
 
-> Fases 6.1 a 6.7 concluídas (PRs #108 a #113 e o da 6.7; o plano entrou no #107). Referência atual: [`../TESTING.md`](../TESTING.md) (guia do testador), [`../ARCHITECTURE.md`](../ARCHITECTURE.md), [`../MCP.md`](../MCP.md) e [`../AGENT-GUIDE.md`](../AGENT-GUIDE.md) (MCP 0.3.2) e o [`README.md`](../../README.md). Ao lado ficam o relato que originou a etapa ([`relato-2026-10-11.md`](relato-2026-10-11.md)) e os prompts: [`etapa-6-coordenador.md`](etapa-6-coordenador.md) (coordenador de agentes) e [`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md) (testador no computador do dono, para a segunda rodada em diante).
+> Fases 6.1 a 6.7 concluídas (PRs #108 a #114; o plano entrou no #107). Referência atual: [`../TESTING.md`](../TESTING.md) (guia do testador), [`../ARCHITECTURE.md`](../ARCHITECTURE.md), [`../MCP.md`](../MCP.md) e [`../AGENT-GUIDE.md`](../AGENT-GUIDE.md) (MCP 0.3.2) e o [`README.md`](../../README.md). Ao lado ficam o relato que originou a etapa ([`relato-2026-10-11.md`](relato-2026-10-11.md)) e os prompts: [`etapa-6-coordenador.md`](etapa-6-coordenador.md) (coordenador de agentes) e [`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md) (testador no computador do dono, para a segunda rodada em diante).
 >
 > Arquivo histórico: seção movida do `PLAN.md` sem alterações de conteúdo, exceto os checkboxes da 6.7, marcados ao fechar a etapa, e o caminho do prompt do coordenador, que saiu de `docs/prompts/`. Depois dela vêm o fechamento (o que valeu das decisões a confirmar e as decisões consolidadas dos PRs) e o que ficou para depois. As etapas anteriores estão nos outros arquivos desta pasta.
 
@@ -126,7 +126,7 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/history/etapa-6
 - [x] Handle inválido ou permissão negada: aviso com **Localizar pasta…** (seletor; substitui o handle, conferindo o `mapping.json`) e **Remover da lista** (não apaga nada do disco)
 - [x] Tela inicial: lista única ordenada por último uso, selo **Pasta** ou **Neste dispositivo**, ação "Remover da lista" nas pastas; `file://` também guarda (IndexedDB existe lá no Chrome)
 - [x] Documentação: `ARCHITECTURE.md` (recentes), `TESTING.md` (o seletor é [pessoa] só na primeira abertura; "Permitir em todas as visitas" é do navegador e tira o diálogo das seguintes)
-- [x] Testes: controller com handles falsos (granted, prompt, denied, NotFoundError); e2e com OPFS guardando e reabrindo
+- [x] Testes: controller com handles falsos (granted, prompt, denied, NotFoundError); e2e grava uma entrada nos recentes e confere a lista e o aviso com **Localizar pasta…** e **Remover da lista** (reabrir pelo handle de verdade não tem cobertura automática: ver o achado técnico nas decisões consolidadas; fica no R0.4 manual)
 
 **Aceite**: reabrir um projeto de pasta a partir da tela inicial com um clique (mais a permissão do navegador na primeira vez); pasta movida leva ao aviso com as duas ações; nada muda no `mapping.json`.
 

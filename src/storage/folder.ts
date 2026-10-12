@@ -79,8 +79,8 @@ export async function isOriginPrivate(handle: DirectoryHandleLike): Promise<bool
 
 /**
  * Leitura e escrita na pasta: consulta e, se preciso, pede a permissão. Chamar no próprio
- * clique, sem outra espera antes: o `requestPermission` só abre o diálogo do navegador
- * dentro de um gesto da pessoa.
+ * clique, sem espera longa antes (ler o handle do IndexedDB cabe na ativação do gesto): o
+ * `requestPermission` só abre o diálogo do navegador dentro de um gesto da pessoa.
  */
 export async function ensurePermission(handle: ReopenableDirectory): Promise<boolean> {
   const mode = { mode: 'readwrite' } as const;
