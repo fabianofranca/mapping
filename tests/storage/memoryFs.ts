@@ -133,3 +133,67 @@ export class MemoryDirectory implements DirectoryHandleLike {
     this.dirAt(parts, false)?.modified.set(fileName, ++clock);
   }
 }
+
+export type MemoryPermission = 'granted' | 'prompt' | 'denied';
+
+/**
+ * Pasta em memória com a parte de permissão da File System Access API
+ * (`queryPermission`/`requestPermission`/`isSameEntry`), para os recentes de pasta.
+ */
+export class PermissionDirectory extends MemoryDirectory {
+  /** O que `queryPermission` devolve. */
+  permission: MemoryPermission = 'granted';
+  /** O que `requestPermission` devolve (e passa a valer para as próximas consultas). */
+  answer: MemoryPermission = 'granted';
+  /** Quantas vezes a app pediu a permissão. */
+  requests = 0;
+  /** Pasta movida ou apagada: todo acesso falha com `NotFoundError`. */
+  gone = false;
+
+  async queryPermission(): Promise<MemoryPermission> {
+    return this.permission;
+  }
+
+  async requestPermission(): Promise<MemoryPermission> {
+    this.requests++;
+    this.permission = this.answer;
+    return this.answer;
+  }
+
+  async isSameEntry(other: unknown): Promise<boolean> {
+    return other === this;
+  }
+
+  override async getFileHandle(name: string, options: { create?: boolean } = {}) {
+    if (this.gone) throw notFound(this.name);
+    return super.getFileHandle(name, options);
+  }
+
+  override async getDirectoryHandle(name: string, options: { create?: boolean } = {}) {
+    if (this.gone) throw notFound(this.name);
+    return super.getDirectoryHandle(name, options);
+  }
+}
+
+/**
+ * O IndexedDB guarda o handle de verdade por clonagem estruturada (o navegador sabe
+ * serializar um `FileSystemDirectoryHandle`). A pasta em memória não é serializável:
+ * este `structuredClone` mantém as pastas por referência e clona o resto como sempre.
+ * Uso: `vi.stubGlobal('structuredClone', keepDirectoriesInClone())`.
+ */
+export function keepDirectoriesInClone(): typeof structuredClone {
+  const original = globalThis.structuredClone;
+  const clone = (value: unknown): unknown => {
+    if (value instanceof MemoryDirectory) return value;
+    if (Array.isArray(value)) return value.map(clone);
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      Object.getPrototypeOf(value) === Object.prototype
+    ) {
+      return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, clone(v)]));
+    }
+    return original(value);
+  };
+  return ((value: unknown) => clone(value)) as typeof structuredClone;
+}

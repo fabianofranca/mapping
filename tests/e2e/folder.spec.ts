@@ -320,3 +320,50 @@ test.describe('mudanças externas no mapping.json', () => {
     expect((await readMapping(page)).markings[0]?.name).toBe('Do outro programa');
   });
 });
+
+// Fase 6.6: o handle da pasta fica no IndexedDB e a tela inicial reabre o projeto.
+test.describe('recentes de pasta', () => {
+  async function closeProject(page: Page): Promise<void> {
+    await page.getByRole('button', { name: 'Ações do projeto' }).click();
+    await page.getByRole('button', { name: 'Fechar projeto', exact: true }).click();
+  }
+
+  test('a pasta aberta fica na tela inicial e reabre com um clique', async ({ page }) => {
+    await openFolderProject(page, 'Recente');
+    await closeProject(page);
+    const row = page.getByRole('row').filter({ hasText: 'Recente' });
+    await expect(row.getByText('Pasta', { exact: true })).toBeVisible();
+
+    // Outra visita: a lista vem do IndexedDB.
+    await page.reload();
+    await row.getByRole('button', { name: 'Abrir', exact: true }).click();
+    await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+    expect((await readMapping(page)).project.name).toBe('Recente');
+
+    // Abrir de novo pelo seletor não duplica a entrada.
+    await closeProject(page);
+    await page.getByRole('button', { name: /Abrir pasta/ }).click();
+    await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+    await closeProject(page);
+    await expect(page.getByRole('row').filter({ hasText: 'Recente' })).toHaveCount(1);
+  });
+
+  test('pasta apagada: aviso com Localizar pasta… e Remover da lista', async ({
+    page,
+  }) => {
+    await openFolderProject(page, 'Some');
+    await closeProject(page);
+    await page.evaluate(async (folder) => {
+      const root = await navigator.storage.getDirectory();
+      await root.removeEntry(folder, { recursive: true });
+    }, FOLDER);
+
+    const row = page.getByRole('row').filter({ hasText: 'Some' });
+    await row.getByRole('button', { name: 'Abrir', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Pasta indisponível' });
+    await expect(dialog.getByRole('button', { name: 'Localizar pasta…' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Remover da lista' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(row).toHaveCount(0);
+  });
+});

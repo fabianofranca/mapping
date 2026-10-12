@@ -15,7 +15,11 @@ import { clearReportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
 import { emptyProject, sampleProject } from '../model/fixtures';
 import { readInvalidFixture } from '../model/invalidFixtures';
-import { MemoryDirectory } from '../storage/memoryFs';
+import {
+  keepDirectoriesInClone,
+  MemoryDirectory,
+  PermissionDirectory,
+} from '../storage/memoryFs';
 import { richScenario } from '../store/proposalHarness';
 
 const pickDirectory = vi.fn<() => Promise<DirectoryHandleLike | null>>();
@@ -661,5 +665,223 @@ describe('projeto com dados inconsistentes', () => {
     );
     expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
     expect((await openedOf(app)).repaired).toEqual([]);
+  });
+});
+
+describe('recentes de pasta (fase 6.6)', () => {
+  /** Pasta com um projeto: `mapping.json` com o nome dado. */
+  const projectFolder = (folder = 'pasta', name = 'Projeto da pasta') => {
+    const root = new PermissionDirectory(folder);
+    const project = emptyProject();
+    root.put(
+      'mapping.json',
+      serialize({ ...project, project: { ...project.project, name } }),
+    );
+    return root;
+  };
+  const folders = () => app.recentProjects.value.filter((p) => p.kind === 'folder');
+  const idOf = (folderName: string) =>
+    folders().find((p) => p.kind === 'folder' && p.folderName === folderName)?.id ?? '';
+  const openViaPicker = async (root: MemoryDirectory) => {
+    pickDirectory.mockResolvedValue(root);
+    expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
+    await app.closeProject();
+  };
+
+  beforeEach(async () => {
+    // O handle de verdade é serializável; a pasta em memória fica por referência.
+    vi.stubGlobal('structuredClone', keepDirectoriesInClone());
+    // O modo pasta depende de `showDirectoryPicker` (o seletor em si é o `pickDirectory`).
+    vi.stubGlobal('showDirectoryPicker', vi.fn());
+    const library = await local.openFolderLibrary();
+    for (const f of (await library?.list()) ?? []) await library?.remove(f.id);
+    library?.close();
+    ({ app, local } = await load());
+  });
+
+  afterEach(async () => {
+    await app.closeProject().catch(() => undefined);
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('abrir uma pasta e fechar o projeto: a lista da tela inicial traz a pasta', async () => {
+    await openViaPicker(projectFolder());
+    expect(folders()).toEqual([
+      expect.objectContaining({
+        kind: 'folder',
+        name: 'Projeto da pasta',
+        folderName: 'pasta',
+      }),
+    ]);
+    // Fica no IndexedDB: a próxima visita também a traz.
+    ({ app, local } = await load());
+    expect(folders().map((p) => p.name)).toEqual(['Projeto da pasta']);
+  });
+
+  it('criar o projeto numa pasta também a guarda; abrir de novo não duplica', async () => {
+    const root = new PermissionDirectory('nova');
+    expect((await app.createFolderProject(root, 'Novo', [])).ok).toBe(true);
+    await app.closeProject();
+    expect(folders().map((p) => p.name)).toEqual(['Novo']);
+    await openViaPicker(root);
+    expect(folders()).toHaveLength(1);
+    // Outra pasta com o mesmo nome é outra entrada (`isSameEntry`, não o nome).
+    await openViaPicker(projectFolder('nova', 'Outro'));
+    expect(folders()).toHaveLength(2);
+  });
+
+  it('o nome da lista acompanha o projeto renomeado', async () => {
+    const root = projectFolder();
+    pickDirectory.mockResolvedValue(root);
+    await app.openFolder();
+    const { session } = await openedOf(app);
+    session.actions.renameProject('Renomeado');
+    await app.closeProject();
+    expect(folders().map((p) => p.name)).toEqual(['Renomeado']);
+  });
+
+  it('lista única com pastas e projetos deste dispositivo, por último uso', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
+    await app.createLocalProject('Local');
+    const localId = (await openedOf(app)).localId ?? '';
+    await app.closeProject();
+    vi.setSystemTime(new Date('2026-10-02T10:00:00.000Z'));
+    await openViaPicker(projectFolder());
+    expect(app.recentProjects.value.map((p) => [p.kind, p.name])).toEqual([
+      ['folder', 'Projeto da pasta'],
+      ['local', 'Local'],
+    ]);
+    // Abrir (sem alterar) o projeto local conta como uso.
+    vi.setSystemTime(new Date('2026-10-03T10:00:00.000Z'));
+    expect((await app.openLocalProject(localId)).ok).toBe(true);
+    await app.closeProject();
+    expect(app.recentProjects.value.map((p) => p.kind)).toEqual(['local', 'folder']);
+    expect(app.recentProjects.value[0]?.usedAt).toBe('2026-10-03T10:00:00.000Z');
+  });
+
+  it('permissão já concedida: um clique abre e atualiza a data, sem mudar o mapping.json', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
+    const root = projectFolder();
+    const before = await root.read('mapping.json');
+    await openViaPicker(root);
+    vi.setSystemTime(new Date('2026-10-05T10:00:00.000Z'));
+    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+      ok: true,
+      value: { kind: 'opened' },
+    });
+    expect((await openedOf(app)).kind).toBe('folder');
+    expect(root.requests).toBe(0);
+    await app.closeProject();
+    expect(folders()[0]?.usedAt).toBe('2026-10-05T10:00:00.000Z');
+    expect(await root.read('mapping.json')).toBe(before);
+  });
+
+  it('permissão a pedir: pede dentro do clique e abre', async () => {
+    const root = projectFolder();
+    await openViaPicker(root);
+    root.permission = 'prompt';
+    const query = vi.spyOn(root, 'queryPermission');
+    const opening = app.openRecentFolder(idOf('pasta'));
+    // A consulta começa no próprio clique, antes de qualquer outra espera.
+    expect(query).toHaveBeenCalledWith({ mode: 'readwrite' });
+    expect(await opening).toEqual({ ok: true, value: { kind: 'opened' } });
+    expect(root.requests).toBe(1);
+  });
+
+  it('permissão negada: aviso, nada aberto', async () => {
+    const root = projectFolder();
+    await openViaPicker(root);
+    root.permission = 'prompt';
+    root.answer = 'denied';
+    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+      ok: true,
+      value: { kind: 'unavailable', reason: 'denied' },
+    });
+    expect(app.openProject.value).toBeNull();
+    expect(folders()).toHaveLength(1);
+  });
+
+  it('pasta movida ou apagada (NotFoundError): aviso, nada aberto', async () => {
+    const root = projectFolder();
+    await openViaPicker(root);
+    root.gone = true;
+    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+      ok: true,
+      value: { kind: 'unavailable', reason: 'missing' },
+    });
+    expect(app.openProject.value).toBeNull();
+  });
+
+  it('Localizar pasta: substitui o handle, conferindo o mapping.json', async () => {
+    const root = projectFolder();
+    await openViaPicker(root);
+    const id = idOf('pasta');
+    root.gone = true;
+
+    // Pasta sem mapping.json: não é o projeto; a entrada fica como estava.
+    pickDirectory.mockResolvedValue(new PermissionDirectory('vazia'));
+    expect(await app.relocateFolder(id)).toEqual({
+      ok: true,
+      value: { kind: 'no-project' },
+    });
+    expect(app.openProject.value).toBeNull();
+    expect(folders().map((p) => p.folderName)).toEqual(['pasta']);
+
+    pickDirectory.mockResolvedValue(null);
+    expect(await app.relocateFolder(id)).toEqual({
+      ok: true,
+      value: { kind: 'cancelled' },
+    });
+
+    const moved = projectFolder('pasta-movida');
+    pickDirectory.mockResolvedValue(moved);
+    expect(await app.relocateFolder(id)).toEqual({ ok: true, value: { kind: 'opened' } });
+    await app.closeProject();
+    expect(folders().map((p) => [p.id, p.folderName])).toEqual([[id, 'pasta-movida']]);
+    expect(await app.openRecentFolder(id)).toEqual({
+      ok: true,
+      value: { kind: 'opened' },
+    });
+  });
+
+  it('Localizar uma pasta que já está na lista junta as duas entradas', async () => {
+    const a = projectFolder('a', 'A');
+    const b = projectFolder('b', 'B');
+    await openViaPicker(a);
+    await openViaPicker(b);
+    a.gone = true;
+    pickDirectory.mockResolvedValue(b);
+    expect((await app.relocateFolder(idOf('a'))).ok).toBe(true);
+    await app.closeProject();
+    expect(folders().map((p) => p.folderName)).toEqual(['b']);
+  });
+
+  it('Remover da lista não apaga nada do disco', async () => {
+    const root = projectFolder();
+    await openViaPicker(root);
+    const before = await root.read('mapping.json');
+    expect((await app.forgetFolder(idOf('pasta'))).ok).toBe(true);
+    expect(folders()).toEqual([]);
+    expect(await root.read('mapping.json')).toBe(before);
+    ({ app, local } = await load());
+    expect(folders()).toEqual([]);
+  });
+
+  it('navegador sem queryPermission/isSameEntry: a lista fica só com os locais', async () => {
+    const plain = new MemoryDirectory('simples');
+    plain.put('mapping.json', serialize(emptyProject()));
+    await openViaPicker(plain);
+    expect(folders()).toEqual([]);
+  });
+
+  it('sem o modo pasta, as pastas guardadas não aparecem', async () => {
+    await openViaPicker(projectFolder());
+    vi.stubGlobal('showDirectoryPicker', undefined);
+    ({ app, local } = await load());
+    expect(app.features.value?.folder).toBe(false);
+    expect(folders()).toEqual([]);
   });
 });
