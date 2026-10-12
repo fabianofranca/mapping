@@ -251,13 +251,21 @@ export class Proposals {
         },
       };
     } catch (error) {
-      if (!(error instanceof ToolError)) throw error;
+      // A nova proposta já está gravada: qualquer falha aqui (inclusive de disco) é só um aviso.
+      // Um `internal-error` levaria o agente a reenviar e duplicar a proposta. O inesperado
+      // deixa a pilha no stderr, como `failure` (tools.ts).
+      if (!(error instanceof ToolError)) {
+        process.stderr.write(
+          `mapping-mcp: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
+        );
+      }
+      const reason = error instanceof Error ? error.message : String(error);
       return {
         view: { ref: refs.ref(previous.id), status: previous.proposal.status },
         warning: {
           code: 'supersede-failed',
           proposal: refs.ref(previous.id),
-          message: `a nova proposta foi gravada, mas a anterior não pôde ser marcada como substituída (${error.message})`,
+          message: `a nova proposta foi gravada, mas a anterior não pôde ser marcada como substituída (${reason})`,
         },
       };
     }
