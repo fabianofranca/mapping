@@ -362,6 +362,83 @@ describe('ExportDialog', () => {
   });
 });
 
+// Fase 6.1 (achado 7): no Chrome e no Edge, Baixar abre o "Salvar como" pelo
+// `showSaveFilePicker`; o projeto só conta como exportado depois de o arquivo ser gravado.
+describe('ExportDialog com o seletor de arquivo', () => {
+  const steps: string[] = [];
+
+  function installPicker(outcome: 'cancel' | 'save'): ReturnType<typeof vi.fn> {
+    const picker = vi.fn(() => {
+      steps.push('picker');
+      if (outcome === 'cancel') {
+        return Promise.reject(new DOMException('cancelado', 'AbortError'));
+      }
+      return Promise.resolve({
+        createWritable: () =>
+          Promise.resolve({
+            write: (data: Blob) => {
+              steps.push(`write:${data.size}`);
+              return Promise.resolve();
+            },
+            close: () => {
+              steps.push('close');
+              return Promise.resolve();
+            },
+            abort: () => Promise.resolve(),
+          }),
+      });
+    });
+    Reflect.set(globalThis, 'showSaveFilePicker', picker);
+    return picker;
+  }
+
+  beforeEach(() => {
+    steps.length = 0;
+    controller.markExported.mockImplementation(() => {
+      steps.push('markExported');
+      return Promise.resolve();
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {
+      steps.push('download');
+    });
+    Object.assign(URL, {
+      createObjectURL: vi.fn(() => 'blob:x'),
+      revokeObjectURL: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, 'showSaveFilePicker');
+    vi.restoreAllMocks();
+  });
+
+  it('cancelar o "Salvar como" não marca como exportado e mantém o diálogo', async () => {
+    installPicker('cancel');
+    const onDone = vi.fn();
+    render(<ExportDialog file={new File(['z'], 'p.zip')} onDone={onDone} />);
+    await userEvent.click(screen.getByRole('button', { name: t('export.download') }));
+    expect(controller.markExported).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+    expect(steps).toEqual(['picker']);
+    expect(screen.getByRole('button', { name: t('export.download') })).toBeTruthy();
+  });
+
+  it('salvar grava pelo handle e só depois do close marca como exportado', async () => {
+    const picker = installPicker('save');
+    const onDone = vi.fn();
+    render(<ExportDialog file={new File(['zip!'], 'p.zip')} onDone={onDone} />);
+    await userEvent.click(screen.getByRole('button', { name: t('export.download') }));
+    expect(steps).toEqual(['picker', 'write:4', 'close', 'markExported']);
+    expect(picker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        suggestedName: 'p.zip',
+        types: [expect.objectContaining({ accept: { 'application/zip': ['.zip'] } })],
+      }),
+    );
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+});
+
 describe('barras do editor', () => {
   it('principal (desktop): modo, desfazer, exportar e os diálogos da barra', async () => {
     const harness = createHarness(sampleProject());
