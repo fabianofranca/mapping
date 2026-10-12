@@ -81,6 +81,11 @@ export type MarkingFrame = Pick<
   | 'review'
 >;
 
+/** Consulta do rótulo de nome desenhado de uma marcação (canvas). */
+export interface HeaderLookup {
+  get(id: string): Rect | undefined;
+}
+
 const NO_LAYER_DOTS: readonly LayerDot[] = [];
 const NO_CHILDREN: ReadonlyMap<string | null, readonly Marking[]> = new Map();
 
@@ -95,6 +100,12 @@ export class MarkingRenderer {
   constructor(layer: Konva.Layer) {
     this.layer = layer;
   }
+
+  /**
+   * Retângulo (canvas) do rótulo de nome de cada marcação desenhada no último quadro: a
+   * etiqueta da selecionada desvia do rótulo do pai. Calculado só quando pedido.
+   */
+  readonly headers: HeaderLookup = { get: (id) => this.headerRect(id) };
 
   /** Nó desenhado para a marcação (ou `undefined` se ela não está no canvas). */
   node(id: string): MarkingNode | undefined {
@@ -201,6 +212,19 @@ export class MarkingRenderer {
       node.group.destroy();
       this.nodes.delete(id);
     }
+  }
+
+  private headerRect(id: string): Rect | undefined {
+    const node = this.nodes.get(id);
+    if (!node?.group.visible() || !node.text.group.visible()) return undefined;
+    const { header } = node.text;
+    if (!header.visible()) return undefined;
+    return {
+      x: header.x(),
+      y: header.y(),
+      width: Math.min(header.width(), header.getTextWidth()),
+      height: header.height(),
+    };
   }
 
   private createNode(id: string): MarkingNode {

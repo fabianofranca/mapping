@@ -16,7 +16,8 @@ import { visibleArea, type Frame } from '../frame';
 import { CORNERS, cornerPoint, type Corner } from '../imageGeometry';
 import { isDrawableRect, markingCanvasRect } from '../markingGeometry';
 import { LockBadge } from './lockBadge';
-import { HALO_WIDTH, SELECTION_STROKE, fontStyle } from './metrics';
+import type { HeaderLookup } from './markings';
+import { HALO_WIDTH, SELECTION_STROKE, fontStyle, intersectRects } from './metrics';
 
 /** Etiqueta do nome (px de tela): recuo interno, vão até a borda e largura máxima. */
 const NAME_TAG_PADDING = 4;
@@ -24,6 +25,7 @@ const NAME_TAG_GAP = 2;
 const NAME_TAG_MAX_WIDTH = 240;
 /** Vão entre o título da imagem e a borda de cima dela (o mesmo de `images.ts`). */
 const IMAGE_TITLE_GAP = 4;
+const NO_HEADERS: HeaderLookup = { get: () => undefined };
 
 export type OverlayFrame = Pick<
   Frame,
@@ -76,9 +78,14 @@ export class OverlayRenderer {
     );
   }
 
-  render(frame: OverlayFrame, placements: ReadonlyMap<string, Placement>): void {
+  /** `headers`: rótulos de nome desenhados pelas marcações (a etiqueta desvia do pai). */
+  render(
+    frame: OverlayFrame,
+    placements: ReadonlyMap<string, Placement>,
+    headers: HeaderLookup = NO_HEADERS,
+  ): void {
     this.renderDraft(frame, placements);
-    this.renderSelection(frame, placements);
+    this.renderSelection(frame, placements, headers);
     this.renderHoverLock(frame, placements);
     this.renderDropTarget(frame);
   }
@@ -149,6 +156,7 @@ export class OverlayRenderer {
   private renderSelection(
     frame: OverlayFrame,
     placements: ReadonlyMap<string, Placement>,
+    headers: HeaderLookup,
   ): void {
     const { preview, tokens } = frame;
     const zoom = frame.viewport.scale;
@@ -183,7 +191,9 @@ export class OverlayRenderer {
       rect = markingCanvasRect(placement, selected.marking.rect);
       this.selectionOutline.visible(false);
       const imageTop = imageCanvasRect(selected.image, placement).y;
-      this.renderNameTag(frame, rect, selected.marking.name, imageTop);
+      const { parentId } = selected.marking;
+      const parentLabel = parentId === null ? undefined : headers.get(parentId);
+      this.renderNameTag(frame, rect, selected.marking.name, imageTop, parentLabel);
     }
 
     const selectedId =
@@ -224,14 +234,16 @@ export class OverlayRenderer {
   /**
    * Nome da marcação selecionada numa etiqueta acima do canto superior esquerdo (por dentro
    * quando não há espaço acima na tela). Encostada no topo da imagem, sobe acima do título
-   * dela em vez de cobri-lo. Com o canto fora da tela, a etiqueta fica ancorada na borda
-   * visível. Sem nome, sem etiqueta.
+   * dela em vez de cobri-lo; sobre o rótulo do pai (`parentLabel`), desce para baixo dele,
+   * como o rótulo da filha não selecionada. Com o canto fora da tela, a etiqueta fica
+   * ancorada na borda visível. Sem nome, sem etiqueta.
    */
   private renderNameTag(
     frame: OverlayFrame,
     rect: Rect,
     name: string | null,
     imageTop: number,
+    parentLabel?: Rect,
   ): void {
     const { tokens, viewport } = frame;
     const zoom = viewport.scale;
@@ -275,10 +287,16 @@ export class OverlayRenderer {
     }
     const above = aboveY >= view.y;
     const top = Math.max(rect.y, view.y);
+    const x = Math.max(rect.x, view.x);
+    let y = above ? aboveY : top + NAME_TAG_GAP / zoom;
+    const tag = { x, y, width: width / zoom, height: height / zoom };
+    if (parentLabel && intersectRects(tag, parentLabel)) {
+      y = parentLabel.y + parentLabel.height + NAME_TAG_GAP / zoom;
+    }
     this.nameTag.setAttrs({
       visible: true,
-      x: Math.max(rect.x, view.x),
-      y: above ? aboveY : top + NAME_TAG_GAP / zoom,
+      x,
+      y,
       scaleX: 1 / zoom,
       scaleY: 1 / zoom,
     });

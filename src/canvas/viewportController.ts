@@ -52,12 +52,28 @@ export class ViewportController {
     }
   }
 
-  /** Enquadra todas as imagens (ou uma área padrão, com o canvas vazio). */
+  /**
+   * Enquadra todas as imagens (ou uma área padrão, com o canvas vazio). Mede o container
+   * antes: logo depois de uma janela de ferramenta fechar, o `ResizeObserver` ainda não
+   * disparou e o último tamanho medido é o antigo.
+   */
   fitAll(): void {
-    const size = this.size.peek();
+    const size = this.readSize();
     if (size.width === 0) return;
+    this.fitted = true;
     this.fits += 1;
     this.viewport.value = fitRect(imagesBounds(this.images()) ?? EMPTY_CANVAS_RECT, size);
+  }
+
+  /** Tamanho atual do container; atualiza `size` só se ele mudou. */
+  private readSize(): Size {
+    const current = this.size.peek();
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    if (width === current.width && height === current.height) return current;
+    const size = { width, height };
+    this.size.value = size;
+    return size;
   }
 
   /** Centraliza em `rect` (canvas), ajustando o zoom se ele for grande ou pequeno demais. */

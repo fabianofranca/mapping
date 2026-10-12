@@ -91,10 +91,10 @@ Mesmo desenho das etapas 5 e 6; o prompt do coordenador está em `docs/prompts/e
 
 **Toca em:** `src/canvas/renderers/overlay.ts` (`renderNameTag`), `src/canvas/renderers/markings.ts` (posição dos rótulos, se a colisão precisar ser calculada lá), `src/canvas/viewportController.ts` (`fitAll` mede o contêiner antes), `src/canvas/CanvasController.ts` (se a medição precisar ser exposta), `tests/canvas/viewportController.test.ts`, `tests/canvas/renderers/*`, `tests/canvas/CanvasController.test.ts`.
 
-- [ ] Testes que reproduzem: `fitAll` depois de o contêiner crescer sem o `ResizeObserver` ter disparado usa o tamanho novo (hoje usa o antigo); a etiqueta da selecionada não intersecta o retângulo do rótulo do pai (hoje intersecta)
-- [ ] `fitAll` (e `centerOn`, se tiver o mesmo problema) mede o contêiner antes de calcular
-- [ ] Etiqueta da marcação selecionada deslocada quando colide com o rótulo do pai (para baixo da linha de cima da marcação, ou para o lado), com a mesma regra da 6.4
-- [ ] Orçamentos de desempenho (`tests/canvas/renderPerformance.test.ts`) continuam no limite
+- [x] Testes que reproduzem: `fitAll` depois de o contêiner crescer sem o `ResizeObserver` ter disparado usa o tamanho novo (hoje usa o antigo); a etiqueta da selecionada não intersecta o retângulo do rótulo do pai (hoje intersecta)
+- [x] `fitAll` (e `centerOn`, se tiver o mesmo problema) mede o contêiner antes de calcular
+- [x] Etiqueta da marcação selecionada deslocada quando colide com o rótulo do pai (para baixo da linha de cima da marcação, ou para o lado), com a mesma regra da 6.4
+- [x] Orçamentos de desempenho (`tests/canvas/renderPerformance.test.ts`) continuam no limite
 
 **Aceite**: R1.6 e R1.9 do guia sem a etiqueta cobrindo o pai; fechar a janela de baixo e clicar em **Enquadrar tudo** uma vez enquadra no canvas inteiro.
 

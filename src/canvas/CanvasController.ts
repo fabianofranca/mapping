@@ -64,6 +64,9 @@ export interface CanvasControllerOptions {
   readonly review?: ReviewState;
 }
 
+/** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
+const LABEL_KEYS = ['semantic', 'visibility', 'dots', 'incomplete', 'card'] as const;
+
 export class CanvasController {
   private readonly store: ProjectStore;
   private readonly display: DisplayImages<ImageBitmap>;
@@ -428,14 +431,16 @@ export class CanvasController {
     }
     this.markings.render(frame, this.placements);
     this.reviewLayer.render(frame, this.placements);
-    // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela.
-    const viewMoved = last?.viewport !== v || last?.size !== size;
+    // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela;
+    // e desvia do rótulo do pai, que muda com o zoom semântico e as camadas visíveis.
+    const viewMoved =
+      last?.viewport !== v || last?.size !== size || !sameFrame(last, frame, LABEL_KEYS);
     if (
       scaleChanged ||
       !sameFrame(last, frame, OVERLAY_KEYS) ||
       (viewMoved && this.overlay.followsView)
     ) {
-      this.overlay.render(frame, this.placements);
+      this.overlay.render(frame, this.placements, this.markings.headers);
     }
     this.stage.batchDraw();
     // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
