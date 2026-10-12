@@ -12,9 +12,10 @@ import {
   type Project,
   type Proposal,
 } from '../../src/model';
+import { locale } from '../../src/store/settings';
 import { clearReportedErrors } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
-import { propose } from '../model/proposalFixtures';
+import { AT, decided, propose } from '../model/proposalFixtures';
 import {
   NEW_IMAGE_PATH,
   diskProposal,
@@ -25,7 +26,10 @@ import {
 } from './proposalHarness';
 
 beforeEach(() => localStorage.clear());
-afterEach(() => clearReportedErrors());
+afterEach(() => {
+  clearReportedErrors();
+  locale.value = 'pt-BR';
+});
 
 async function projectOnDisk(h: Harness): Promise<Project> {
   await h.session.flush();
@@ -349,6 +353,84 @@ describe('conflitos', () => {
     expect(review.derived.proposal.value?.decisions[ids.name]?.state).toBe('accepted');
     expect(session.store.reviewing.value).toBe(true);
   });
+
+  // Achado 11 do relato de 2026-10-11: "O projeto mudou desde a sua última sessão" sem
+  // mudança. A mesma proposta (mesmo id) aberta em outra cópia do projeto (a pasta
+  // descompactada do mesmo zip) apagava os conflitos conhecidos desta cópia.
+  it('reabrir sem mudança nunca marca conflito novo, mesmo depois de abrir a mesma proposta em outra cópia do projeto', async () => {
+    const { proposal } = richScenario();
+    // Cópia A: o nome de M1 foi editado à mão antes de revisar → a mudança do nome conflita.
+    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    const a = await openHarness({
+      project: edited,
+      proposals: [proposal],
+      folderName: 'loja',
+    });
+    expect(a.review.open('P1')).toEqual({ ok: true, resumed: false, newConflicts: 0 });
+    expect(a.review.derived.conflictIds.value.size).toBe(1);
+    a.review.close();
+
+    // Cópia B: a mesma proposta numa pasta com o projeto sem a edição (sem conflito).
+    const b = await openHarness({ proposals: [proposal], folderName: 'loja-pasta' });
+    expect(b.review.open('P1')).toMatchObject({ ok: true, newConflicts: 0 });
+    expect(b.review.derived.conflictIds.value.size).toBe(0);
+    b.review.close();
+
+    // De volta à cópia A, sem mexer em nada: o conflito já era conhecido.
+    const again = await openHarness({
+      project: edited,
+      proposals: [proposal],
+      folderName: 'loja',
+    });
+    expect(again.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    expect(again.review.newConflicts.value.size).toBe(0);
+  });
+
+  it('trocar o idioma entre as sessões não muda os conflitos conhecidos', async () => {
+    const { proposal } = richScenario();
+    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    locale.value = 'pt-BR';
+    const first = await openHarness({ project: edited, proposals: [proposal] });
+    expect(first.review.open('P1')).toMatchObject({ ok: true, newConflicts: 0 });
+    first.review.select({ level: 'item', id: 'M4' });
+    first.review.close();
+
+    locale.value = 'en-US';
+    const second = await openHarness({ project: edited, proposals: [proposal] });
+    expect(second.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    expect(second.review.selected.value).toEqual({ level: 'item', id: 'M4' });
+    expect(second.review.derived.conflictIds.value.size).toBe(1);
+  });
+
+  it('outra aba com o estado antigo em memória não faz um conflito já visto voltar como novo', async () => {
+    const { proposal } = richScenario();
+    // Ontem: a revisão aberta sem nenhum conflito.
+    const yesterday = await openHarness({ proposals: [proposal] });
+    yesterday.review.open('P1');
+    yesterday.review.close();
+
+    // O nome de M1 muda por fora; duas abas abrem o projeto (as duas leem o estado de ontem).
+    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    const tabA = await openHarness({ project: edited, proposals: [proposal] });
+    const tabB = await openHarness({ project: edited, proposals: [proposal] });
+    expect(tabA.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 1 });
+    tabA.review.close();
+    // A outra aba abre a mesma revisão depois: o conflito já foi mostrado.
+    expect(tabB.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+  });
+
+  it('um conflito que aparece durante a revisão (projeto recarregado por fora) já é conhecido na abertura seguinte', async () => {
+    const { proposal, ids, base } = richScenario();
+    const { session, root, review } = await openHarness({ proposals: [proposal] });
+    review.open('P1');
+    expect(review.derived.conflictIds.value.size).toBe(0);
+    const external = renameMarking(base, 'M1', 'Outro nome');
+    root.put('mapping.json', serialize({ ...external, revision: 4 }));
+    expect(await session.sync()).toBe('reloaded');
+    expect([...review.derived.conflictIds.value]).toEqual([ids.name]);
+    review.close();
+    expect(review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+  });
 });
 
 describe('retomar a revisão', () => {
@@ -521,13 +603,33 @@ describe('proposta nova e substituída', () => {
     expect(sup.comparison?.get(nameOld)).toBe('different');
     expect(sup.comparison?.get(rectOld)).toBe('missing');
     const row = must(review.derived.rows.value.find((r) => r.proposal.id === 'OLD'));
-    expect(row.supersededBy).toBe('NEW');
+    expect(row.supersededBy?.id).toBe('NEW');
     expect(row.leftBehind?.undecided).toEqual([rectOld]);
     expect(
       review.derived.rows.value.find((r) => r.proposal.id === 'NEW')?.supersededBy,
     ).toBeNull();
     // As aceitas da substituída ainda podem ser aplicadas.
     expect(review.derived.canApply.value).toBe(true);
+  });
+
+  // Achado 13 (parte da app): a proposta aplicada não muda de status ao ser substituída
+  // (é histórico); a linha deriva "substituída por" do `supersedes` da nova.
+  it('a proposta aplicada continua aplicada e a linha sabe quem a substituiu (título e id)', async () => {
+    const { base, proposal } = richScenario();
+    const accepted = decided(proposal, base, { level: 'proposal', id: null }, 'accepted');
+    const applied: Proposal = {
+      ...accepted,
+      status: 'applied',
+      applied: Object.fromEntries(accepted.changes.map((c) => [c.id, { at: AT }])),
+    };
+    const next = { ...richScenario('P2').proposal, supersedes: 'P1', title: 'Só a correção' };
+    const { review, root } = await openHarness({ proposals: [applied, next] });
+    const row = must(review.derived.rows.value.find((r) => r.proposal.id === 'P1'));
+    expect(row.proposal.status).toBe('applied');
+    expect(row.supersededBy).toMatchObject({ id: 'P2', title: 'Só a correção' });
+    expect(row.leftBehind).toBeNull();
+    // Nada é gravado: o arquivo da antiga continua `applied`.
+    expect((await diskProposal(root)).status).toBe('applied');
   });
 
   it('a proposta apagada por fora fecha a revisão', async () => {

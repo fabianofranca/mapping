@@ -46,15 +46,15 @@ describe('bitmaps de exibição', () => {
     await vi.waitFor(() => expect(display.images.value.get('a')?.status).toBe('ready'));
     const a = display.images.value.get('a');
     display.invalidate('a');
-    expect(a?.status === 'ready' && a.bitmap.closed).toBe(true);
     expect(display.images.value.has('a')).toBe(false);
+    await vi.waitFor(() => expect(a?.status === 'ready' && a.bitmap.closed).toBe(true));
 
     display.ensure('b');
     display.ensure('tarde');
     await vi.waitFor(() => expect(display.images.value.get('b')?.status).toBe('ready'));
     const b = display.images.value.get('b');
     display.dispose();
-    expect(b?.status === 'ready' && b.bitmap.closed).toBe(true);
+    await vi.waitFor(() => expect(b?.status === 'ready' && b.bitmap.closed).toBe(true));
     resolveLate(late);
     await vi.waitFor(() => expect(late.closed).toBe(true));
     expect(display.images.value.size).toBe(0);
@@ -73,11 +73,19 @@ describe('bitmaps de exibição', () => {
     await vi.waitFor(() => expect(display.images.value.get('a')?.status).toBe('ready'));
 
     display.retain(new Set(['b']));
+    // O mapa solta o bitmap na hora; o `close()` fica para o quadro seguinte, porque o
+    // canvas ainda pode desenhar o quadro que o referencia (achado 10).
+    expect([...display.images.value.keys()]).toEqual(['b']);
     expect(created.map((b) => [b.path, b.closed])).toEqual([
-      ['a', true],
+      ['a', false],
       ['b', false],
     ]);
-    expect([...display.images.value.keys()]).toEqual(['b']);
+    await vi.waitFor(() =>
+      expect(created.map((b) => [b.path, b.closed])).toEqual([
+        ['a', true],
+        ['b', false],
+      ]),
+    );
 
     // O arquivo volta (desfazer): carrega de novo.
     display.ensure('a');
