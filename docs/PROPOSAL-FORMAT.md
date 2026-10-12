@@ -23,7 +23,7 @@ meu-projeto/
 
 ## Quem grava o quê
 
-- **Servidor MCP** (`propose_changes`, `withdraw_proposal`): cria a pasta e o `proposal.json` (`status: open`, `revision: 0`, sem decisões nem notas) e, depois, só muda o `status` (`superseded` ao ser substituída, `withdrawn` ao ser retirada), sempre relendo o arquivo antes de gravar e com `revision + 1`. Nunca grava o `mapping.json`. No campo `operations` o conteúdo `base64` das imagens é trocado por um marcador (a imagem já está em `proposals/<id>/images/`).
+- **Servidor MCP** (`propose_changes`, `withdraw_proposal`): cria a pasta e o `proposal.json` (`status: open`, `revision: 0`, sem decisões nem notas) e, depois, só muda o `status` (`superseded` quando uma proposta **aberta** é substituída, `withdrawn` ao ser retirada; uma `applied` substituída não muda), sempre relendo o arquivo antes de gravar e com `revision + 1`. Nunca grava o `mapping.json`. No campo `operations` o conteúdo `base64` das imagens é trocado por um marcador (a imagem já está em `proposals/<id>/images/`).
 - **App**: grava `decisions`, `notes`, `applied` e o `status` à medida que o usuário revisa e aplica; é a única que grava o `mapping.json`.
 
 ## Exemplo
@@ -172,15 +172,17 @@ Mudanças de geometria (`rect` da marcação; `placement` e troca de arquivo de 
 | `status`     | Quando                                                                                                                                       |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `open`       | Em revisão.                                                                                                                                  |
-| `applied`    | Tudo decidido e as aceitas aplicadas (a última aplicação muda o estado sozinha).                                                             |
-| `superseded` | Substituída por outra proposta (`supersedes`). Decisões e notas continuam guardadas; as aceitas ainda podem ser aplicadas, as pendentes não. |
+| `applied`    | Tudo decidido e as aceitas aplicadas (a última aplicação muda o estado sozinha). Ao ser substituída, continua `applied` (é histórico).       |
+| `superseded` | Aberta e substituída por outra (`supersedes`). Decisões e notas continuam guardadas; as aceitas ainda podem ser aplicadas, as pendentes não. |
 | `withdrawn`  | Retirada pelo agente. Nada mais é aplicado.                                                                                                  |
 
 `reviewProgress` conta as aceitas aguardando aplicação e diz se a revisão terminou (`complete`: nada sem decisão nem aceito sem aplicar), que é quando uma proposta deve ser substituída.
 
 ### Proposta substituída
 
-Cada mudança da proposta antiga mostra se a nova traz a **mesma** coisa, **outra** coisa ou **não consta** nela (`compareProposals(antiga, nova)`): a comparação é pela entidade e pelo campo (e pelo valor `to`); a criação de imagem ou marcação com `source` também casa pela origem, mesmo recriada com outro id.
+Cada mudança da proposta antiga mostra se a nova traz a **mesma** coisa, **outra** coisa ou **não consta** nela (`compareProposals(antiga, nova)`): a mudança correspondente é achada pela origem (criação de imagem ou marcação com `source`, mesmo recriada com outro id), depois pela entidade e pelo campo e, nas criações que sobraram, pelo caminho legível (imagem › pai › nome; na anotação, marcação › camada › tipo › nome), uma a uma e na ordem. O valor `to` é comparado com os ids gerados por cada proposta trocados pelo caminho.
+
+Uma proposta **aplicada** substituída continua `applied`: a app deriva do `supersedes` da nova o "Aplicada · substituída por <título>", com **Abrir a nova**.
 
 ## Regras de validade
 
