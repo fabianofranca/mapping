@@ -1,6 +1,6 @@
 # Prompt do coordenador — Etapa 7 (correções da rodada dirigida)
 
-> Prompt inicial da sessão que coordena a etapa 7 (plano na seção "Fases pendentes — Etapa 7" do `PLAN.md`). Para iniciar: numa sessão do Claude Code com este repositório, mande **"Leia `docs/prompts/etapa-7-coordenador.md` e execute."** (ou com um dos modos abaixo). No fechamento (fase 7.4) este arquivo vai para `docs/history/`.
+> Arquivo histórico: foi o prompt inicial da sessão que coordenou a etapa 7 (concluída; plano em [`PLAN-etapa-7.md`](PLAN-etapa-7.md)). Movido de `docs/prompts/` para cá na fase 7.4, sem outras mudanças além deste aviso. Onde o texto abaixo cita o `PLAN.md`, a seção da etapa 7 hoje está no `PLAN-etapa-7.md`. Para iniciar um coordenador com ele, a mensagem era: **"Leia `docs/history/etapa-7-coordenador.md` e execute."**
 
 ---
 
