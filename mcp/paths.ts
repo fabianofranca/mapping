@@ -1,15 +1,24 @@
 import { randomBytes } from 'node:crypto';
 import { realpath, rename, rm, writeFile } from 'node:fs/promises';
-import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path';
+import path, { basename, dirname, isAbsolute, join, type PlatformPath } from 'node:path';
 import { ToolError } from './errors';
 
 // Segurança de caminhos: o servidor só lê e grava dentro das raízes configuradas.
 // Rejeita `..`, caminhos absolutos fora das raízes e links simbólicos que levam para fora.
 
-/** `child` é `parent` ou está dentro dele (comparação léxica de caminhos absolutos). */
-export function isWithin(parent: string, child: string): boolean {
-  const rel = relative(parent, child);
-  return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
+/** O que `isWithin` usa de `node:path` (o teste passa `path.win32`). */
+export type PathApi = Pick<PlatformPath, 'relative' | 'sep' | 'isAbsolute'>;
+
+/**
+ * `child` é `parent` ou está dentro dele (comparação léxica de caminhos absolutos). `api` é a
+ * do sistema; no Windows (`path.win32`) a comparação ignora a caixa e respeita a unidade.
+ */
+export function isWithin(parent: string, child: string, api: PathApi = path): boolean {
+  const rel = api.relative(parent, child);
+  return (
+    rel === '' ||
+    (rel !== '..' && !rel.startsWith(`..${api.sep}`) && !api.isAbsolute(rel))
+  );
 }
 
 /** Algum segmento é `..`. Barras invertidas contam como separador (Windows). */
