@@ -42,6 +42,16 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
     expect(deploy).not.toMatch(/npm (run )?test/);
   });
 
+  it('o deploy publica mesmo sem preview (checks-preview skipped não o pula)', () => {
+    // Sem `if`, o `success()` implícito exige todos os ancestrais em sucesso, inclusive o
+    // `checks-preview` pulado: de 10/10 a 11/10 todo push na main terminou verde com o
+    // `deploy` skipped e o Pages ficou parado. O `if` precisa olhar só o `build`.
+    const job = deploy.slice(deploy.indexOf('\n  deploy:'));
+    expect(job).toMatch(/^ {4}needs: build$/m);
+    expect(job).toMatch(/^ {4}if: .*!cancelled\(\).*needs\.build\.result == 'success'/m);
+    expect(job).toContain('deploy-pages');
+  });
+
   it('orçamento do dist/index.html num só lugar, com o tamanho no resumo do job', () => {
     expect(ci.match(/INDEX_HTML_MAX_BYTES: (\d+)/)?.[1]).toBe(String(1.5 * 1024 * 1024));
     expect(ci.match(/INDEX_HTML_MAX_BYTES:/g)).toHaveLength(1);

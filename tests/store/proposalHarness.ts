@@ -72,11 +72,13 @@ export interface HarnessOptions {
   readonly files?: Readonly<Record<string, string>>;
   /** Abre a sessão sem as propostas (depois `session.proposals.scan()` as encontra). */
   readonly skipProposals?: boolean;
+  /** Nome da pasta (outra cópia do mesmo projeto é outra pasta). */
+  readonly folderName?: string;
 }
 
 /** Uma pasta com projeto e propostas, a sessão aberta sobre ela e o estado da revisão. */
 export async function openHarness(options: HarnessOptions = {}) {
-  const root = new MemoryDirectory('projeto');
+  const root = new MemoryDirectory(options.folderName ?? 'projeto');
   const project: Project = { ...(options.project ?? sampleProject()), revision: 3 };
   root.put('mapping.json', serialize(project));
   for (const p of options.proposals ?? [])

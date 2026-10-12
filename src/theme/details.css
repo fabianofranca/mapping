@@ -555,10 +555,25 @@ button.layer-group-label:hover {
     var(--control-height);
 }
 
-.data-grid .grid-row {
+/*
+ * As linhas dividem as colunas da tabela (subgrid): a coluna de um controle que não
+ * encolhe (segmentado "sim | não") fica com a largura mínima dele em todas as linhas e
+ * as outras dividem o resto, sem sobreposição. Campos e listas encolhem (largura 100%).
+ */
+.data-grid {
+  display: grid;
   grid-template-columns:
-    var(--size-target-min) var(--size-target-min) repeat(var(--cols), minmax(0, 1fr))
+    var(--size-target-min) var(--size-target-min) repeat(var(--cols), 1fr)
     var(--control-height);
+}
+
+.data-grid .grid-row {
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.data-grid .grid-cell-value {
+  min-width: auto;
 }
 
 .grid-head {

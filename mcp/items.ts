@@ -1,4 +1,3 @@
-import { basename } from 'node:path';
 import {
   ancestorsOf,
   annotationShortLabel,
@@ -6,6 +5,7 @@ import {
   matchShortCode,
   parseRef,
   projectIndex,
+  refImageLabel,
   shortCode,
   type ItemKind,
   type Project,
@@ -43,7 +43,7 @@ export class Refs {
   imageLabel(imageId: string): string {
     const image = projectIndex(this.project).images.get(imageId);
     if (!image) return imageId;
-    return image.name ?? basename(image.file);
+    return refImageLabel(image);
   }
 
   /** Nome da marcação; sem nome, "Marcação <código>" (único no projeto). */

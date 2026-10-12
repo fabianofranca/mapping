@@ -37,6 +37,7 @@ import { NO_CARD, semanticPlacement } from './cards';
 import {
   createSemanticNode,
   updateSemanticText,
+  type HeaderBand,
   type SemanticNode,
 } from './semanticCard';
 
@@ -109,6 +110,8 @@ export class MarkingRenderer {
     const children = lookup?.children ?? NO_CHILDREN;
     const ordered = project ? topDownMarkings(project) : [];
     const seen = new Set<string>();
+    // Cabeçalho de cada marcação já desenhada (pais antes das filhas).
+    const headers = new Map<string, HeaderBand>();
     let index = 0;
     for (const marking of ordered) {
       const placement = placements.get(marking.imageId);
@@ -169,7 +172,8 @@ export class MarkingRenderer {
         children.get(marking.id) ?? [],
         frame.visibility,
       );
-      updateSemanticText(
+      const parentHeader = marking.parentId ? headers.get(marking.parentId) : undefined;
+      const header = updateSemanticText(
         node.text,
         {
           marking,
@@ -179,10 +183,18 @@ export class MarkingRenderer {
           mode,
           card: mode === 'none' ? NO_CARD : frame.card(marking),
           incomplete: markingIncomplete,
+          // Filha começando sob o nome do pai: o dela desce uma linha.
+          headerFloor:
+            parentHeader &&
+            markingRect.y < parentHeader.bottom &&
+            markingRect.x < parentHeader.right
+              ? parentHeader.bottom
+              : null,
         },
         tokens,
         zoom,
       );
+      if (header) headers.set(marking.id, header);
     }
     for (const [id, node] of this.nodes) {
       if (seen.has(id)) continue;

@@ -234,7 +234,9 @@ button.tree-toggle:hover {
   list-style: none;
 }
 
+/* A linha não encolhe abaixo do conteúdo (o selo fica dentro): a lista rola. */
 .layer-row {
+  flex: none;
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto auto;
   align-items: center;
@@ -572,6 +574,12 @@ button.tree-toggle:hover {
 
 .diagnostics-message {
   width: 100%;
+}
+
+/* Hora e Contexto numa linha só ("22:33:36", "open.repair"); a Mensagem quebra. */
+.diagnostics-nowrap {
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 /* Herança e vínculos (fase 10) */

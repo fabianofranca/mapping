@@ -22,6 +22,8 @@ import { HALO_WIDTH, SELECTION_STROKE, fontStyle } from './metrics';
 const NAME_TAG_PADDING = 4;
 const NAME_TAG_GAP = 2;
 const NAME_TAG_MAX_WIDTH = 240;
+/** Vão entre o título da imagem e a borda de cima dela (o mesmo de `images.ts`). */
+const IMAGE_TITLE_GAP = 4;
 
 export type OverlayFrame = Pick<
   Frame,
@@ -180,7 +182,8 @@ export class OverlayRenderer {
       const placement = placements.get(selected.image.id) ?? selected.image.placement;
       rect = markingCanvasRect(placement, selected.marking.rect);
       this.selectionOutline.visible(false);
-      this.renderNameTag(frame, rect, selected.marking.name);
+      const imageTop = imageCanvasRect(selected.image, placement).y;
+      this.renderNameTag(frame, rect, selected.marking.name, imageTop);
     }
 
     const selectedId =
@@ -220,10 +223,16 @@ export class OverlayRenderer {
 
   /**
    * Nome da marcação selecionada numa etiqueta acima do canto superior esquerdo (por dentro
-   * quando não há espaço acima na tela). Com o canto fora da tela, a etiqueta fica ancorada
-   * na borda visível. Sem nome, sem etiqueta.
+   * quando não há espaço acima na tela). Encostada no topo da imagem, sobe acima do título
+   * dela em vez de cobri-lo. Com o canto fora da tela, a etiqueta fica ancorada na borda
+   * visível. Sem nome, sem etiqueta.
    */
-  private renderNameTag(frame: OverlayFrame, rect: Rect, name: string | null): void {
+  private renderNameTag(
+    frame: OverlayFrame,
+    rect: Rect,
+    name: string | null,
+    imageTop: number,
+  ): void {
     const { tokens, viewport } = frame;
     const zoom = viewport.scale;
     if (name === null || name === '') {
@@ -257,12 +266,19 @@ export class OverlayRenderer {
       cornerRadius: tokens.radius.sm,
     });
     const view = visibleArea(frame.size, viewport);
-    const above = rect.y - view.y >= (height + NAME_TAG_GAP) / zoom;
+    const step = (height + NAME_TAG_GAP) / zoom;
+    // Faixa do título da imagem, logo acima dela: a etiqueta não a cobre.
+    const titleTop = imageTop - (tokens.type.image.line + IMAGE_TITLE_GAP) / zoom;
+    let aboveY = rect.y - step;
+    if (aboveY < imageTop && rect.y - NAME_TAG_GAP / zoom > titleTop) {
+      aboveY = titleTop - step;
+    }
+    const above = aboveY >= view.y;
     const top = Math.max(rect.y, view.y);
     this.nameTag.setAttrs({
       visible: true,
       x: Math.max(rect.x, view.x),
-      y: above ? rect.y - (height + NAME_TAG_GAP) / zoom : top + NAME_TAG_GAP / zoom,
+      y: above ? aboveY : top + NAME_TAG_GAP / zoom,
       scaleX: 1 / zoom,
       scaleY: 1 / zoom,
     });

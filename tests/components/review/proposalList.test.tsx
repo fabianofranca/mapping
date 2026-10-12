@@ -1,12 +1,12 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { supersedeProposal } from '../../../src/model';
+import { supersedeProposal, type Proposal } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { ProposalNotices } from '../../../src/ui/review/ProposalNotices';
 import { ProposalList } from '../../../src/ui/review/ProposalList';
 import { formatWhen } from '../../../src/ui/review/format';
-import { decided } from '../../model/proposalFixtures';
-import { richScenario, writeOutside } from '../../store/proposalHarness';
+import { AT, decided } from '../../model/proposalFixtures';
+import { diskProposal, richScenario, writeOutside } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 
 // Janela Propostas fora da revisão (HANDOFF-PROPOSALS 5.1, passo 3 da seção 9): lista,
@@ -88,6 +88,37 @@ describe('janela Propostas: lista', () => {
     ).toBeTruthy();
     // Só uma "Nova" por janela.
     expect(screen.getAllByText('Nova')).toHaveLength(1);
+  });
+
+  // Achado 13 (parte da app): a proposta já revisada e aplicada não muda de status ao ser
+  // substituída; a linha mostra quem a substituiu e leva à nova.
+  it('aplicada e substituída: "Aplicada · substituída por …" e Abrir a nova, sem mudar o arquivo', async () => {
+    const { base, proposal } = richScenario();
+    const accepted = decided(proposal, base, { level: 'proposal', id: null }, 'accepted');
+    const applied: Proposal = {
+      ...accepted,
+      status: 'applied',
+      applied: Object.fromEntries(accepted.changes.map((c) => [c.id, { at: AT }])),
+    };
+    const next = {
+      ...richScenario('P2').proposal,
+      supersedes: 'P1',
+      title: 'Só a correção',
+    };
+    const h = await openReviewHarness({ proposals: [applied, next] });
+    renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
+    const row = screen
+      .getAllByRole('listitem')
+      .find((r) => r.getAttribute('data-proposal') === 'P1');
+    if (!row) throw new Error('linha da P1');
+    expect(within(row).getByText('Aplicada')).toBeTruthy();
+    expect(within(row).getByText('substituída por Só a correção')).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'Ver: Teste' })).toBeTruthy();
+    fireEvent.click(
+      within(row).getByRole('button', { name: 'Abrir a nova: Só a correção' }),
+    );
+    expect(h.review.proposalId.value).toBe('P2');
+    expect((await diskProposal(h.root)).status).toBe('applied');
   });
 
   it('busca por título, origem e autor e filtro Abertas/Fechadas', async () => {

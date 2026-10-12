@@ -89,9 +89,10 @@ export interface ExternalConflict {
 
 /**
  * `unchanged`: nada mudou por fora. `reloaded`: o projeto foi recarregado do disco.
- * `busy`: há alterações locais pendentes (ou um gesto): a próxima gravação confere.
+ * `conflict`: mudou por fora com a gravação em erro (há pendência): abriu o `conflict`.
+ * `busy`: há um gesto em andamento ou uma gravação agendada ou em curso: ela confere.
  */
-export type SyncResult = 'unchanged' | 'reloaded' | 'busy';
+export type SyncResult = 'unchanged' | 'reloaded' | 'conflict' | 'busy';
 
 export interface CollectedFiles extends ProjectFiles {
   /** Imagens do projeto cujo arquivo não está no armazenamento (ficam fora do zip). */
@@ -119,7 +120,9 @@ export interface ProjectSession {
   /**
    * Confere o `mapping.json` (e, com `images`, os arquivos de imagem) e a pasta `proposals/`
    * (propostas novas, alteradas ou apagadas por fora: `proposals.notices`). Sem alterações
-   * locais pendentes, recarrega o projeto do disco se ele mudou por fora; senão devolve `busy`.
+   * locais pendentes, recarrega o projeto do disco se ele mudou por fora. Com a gravação em
+   * erro (a pendência não chega ao disco), não recarrega: abre o `conflict`. Com um gesto em
+   * andamento ou uma gravação agendada ou em curso, devolve `busy`.
    */
   sync(options?: { readonly images?: boolean }): Promise<SyncResult>;
   /**
@@ -211,6 +214,11 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
   const conflict = signal<ExternalConflict | null>(null);
   const reloads = signal(0);
+  // Uma gravação do projeto está em curso (`persist`), e quantas já começaram: a conferência
+  // com a gravação em erro não pode tomar por alteração externa o arquivo que a própria
+  // sessão está gravando (nem a leitura feita antes de um "Tentar de novo").
+  let writing = false;
+  let writes = 0;
   const watchable = typeof storage.statMapping === 'function';
   // Carimbo (tamanho + data) de cada arquivo de imagem como a sessão o conhece.
   const imageStamps = new Map<string, string | null>();
@@ -256,9 +264,7 @@ export function openSession(options: SessionOptions): ProjectSession {
    * Gravado o `mapping.json`, a gravação conta como feita: uma falha na limpeza vai para o
    * Diagnóstico (`session.cleanup`) e a próxima gravação tenta de novo.
    */
-  const persist = async () => {
-    const p = store.committed.peek();
-    if (!p) return;
+  const writeProject = async (p: Project) => {
     await assertNotChangedExternally();
     let wrote = false;
     if (pendingBackup) {
@@ -295,6 +301,19 @@ export function openSession(options: SessionOptions): ProjectSession {
     disk = { revision, text, lastModified: await statMapping() };
     options.onSaved?.();
     await cleanUp(referenced, specs).catch(reportCleanupFailure);
+  };
+
+  /** A gravação do autosave: `writeProject` com a gravação marcada como em curso (`writing`). */
+  const persist = async () => {
+    const p = store.committed.peek();
+    if (!p) return;
+    writing = true;
+    writes++;
+    try {
+      await writeProject(p);
+    } finally {
+      writing = false;
+    }
   };
 
   /** Remove as imagens e cópias de `specs/` que o `mapping.json` gravado deixou de usar. */
@@ -430,12 +449,45 @@ export function openSession(options: SessionOptions): ProjectSession {
   let closed = false;
   /** Sem nada local a perder: nenhuma gravação pendente e nenhum gesto em andamento. */
   const idle = () => saver.status.value === 'saved' && !store.gestureActive.peek();
+  /**
+   * A gravação falhou e nada a está refazendo agora: a pendência não chega ao disco sozinha,
+   * então a conferência olha o arquivo (sem recarregar). Um gesto ou uma gravação em curso
+   * (a fila do autosave, o "Tentar de novo") seguram a conferência.
+   */
+  const stalled = () =>
+    saver.status.value === 'error' && !writing && !store.gestureActive.peek();
+
+  /**
+   * Gravação em erro: se o arquivo mudou por fora, abre o conflito ("Projeto alterado fora da
+   * app") em vez de esperar a próxima tentativa de gravar. Nunca recarrega: há pendência.
+   */
+  const checkStalled = async (): Promise<SyncResult> => {
+    const started = writes;
+    const modified = await statMapping();
+    if (modified === null || modified === disk.lastModified) return 'unchanged';
+    const text = await storage.loadMapping();
+    // Uma gravação começou durante a leitura (o "Tentar de novo"): ela mesma confere.
+    if (!stalled() || writes !== started) return 'busy';
+    if (conflict.peek()) return 'unchanged';
+    if (text === null || text.trim() === '') return 'unchanged';
+    if (!changedExternally(text)) {
+      disk = { ...disk, lastModified: modified };
+      return 'unchanged';
+    }
+    conflict.value = { reloadFailed: false };
+    return 'conflict';
+  };
 
   /** O `mapping.json` e as imagens: recarrega o projeto se mudou por fora e não há nada local a perder. */
   const syncProject = async (syncOptions: {
     readonly images?: boolean;
   }): Promise<SyncResult> => {
     if (conflict.peek()) return 'unchanged';
+    if (stalled()) {
+      const result = await checkStalled();
+      if (syncOptions.images && result !== 'busy') await checkImages(false);
+      return result;
+    }
     if (!idle()) return 'busy';
     const modified = await statMapping();
     let result: SyncResult = 'unchanged';

@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag já existente (ex.: mcp-v0.3.1)'
+        description: 'Tag já existente (ex.: mcp-v0.3.2)'
         required: true
 
 permissions:
@@ -26,7 +26,7 @@ jobs:
       - name: Conferir o nome da tag
         run: |
           if ! printf '%s' "$TAG" | grep -Eq '^mcp-v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "Tag inválida: $TAG (esperado mcp-v<versão>, ex.: mcp-v0.3.1)." >&2
+            echo "Tag inválida: $TAG (esperado mcp-v<versão>, ex.: mcp-v0.3.2)." >&2
             exit 1
           fi
 

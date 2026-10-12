@@ -117,6 +117,7 @@ function RefField({
   const layer = target
     ? projectIndex(project).layers.get(target.annotation.layerId)
     : undefined;
+  const shown = hasValue && !broken ? `→ ${text}` : text;
 
   const goTo = () => {
     if (target) ctx.onGoToAnnotation(target.annotation);
@@ -149,7 +150,8 @@ function RefField({
         aria-invalid={invalid || undefined}
         aria-label={t('ref.fieldButton', { field: fieldLabel(field), value: text })}
         aria-keyshortcuts="Control+B"
-        title={`${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
+        // O valor pode sair cortado no campo ("→ User.no…"): inteiro na dica.
+        title={`${shown}${layer ? ` (${layer.name})` : ''}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
         disabled={readOnly}
         onClick={(e) => {
           if ((e.ctrlKey || e.metaKey) && target) goTo();
@@ -157,7 +159,7 @@ function RefField({
         }}
       >
         <Icon name={!hasValue ? 'search' : broken ? 'warning' : 'arrowRight'} />
-        <span class="ref-control-text">{hasValue && !broken ? `→ ${text}` : text}</span>
+        <span class="ref-control-text">{shown}</span>
         {layer && <span class="ref-control-layer">{layer.name}</span>}
       </button>
       <IconButton

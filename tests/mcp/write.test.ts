@@ -19,6 +19,7 @@ import {
 import { cadastroProject } from '../model/specFixtures';
 import { encodeJpegWithExif, encodePng, quadrants, webpSize } from './images';
 import {
+  errorOf,
   hashOf,
   propose,
   readProject,
@@ -488,6 +489,48 @@ describe('regras do modelo no lote', () => {
       [1, 'locked'],
     ]);
     expect(result.data.summary.map((s) => s.slice(0, 2))).toEqual(['2.', '3.']);
+  });
+
+  it('o rect atual de um item trancado não é mudança: o lote passa e, sozinho, é no-changes (achado 14)', async () => {
+    // Formulário trancado (50, 200, 900×1200) e Nome com a trava herdada (100, 250, 800×100):
+    // a reexportação completa repete o `rect` atual de cada um.
+    const dir = ws.projectDir('apps/cadastro');
+    const before = hashOf(join(dir, 'mapping.json'));
+    const proposals = () =>
+      existsSync(join(dir, 'proposals')) ? readdirSync(join(dir, 'proposals')).length : 0;
+    const proposalsBefore = proposals();
+    const same = [
+      {
+        op: 'update_marking',
+        marking: `m/${code('MF')}`,
+        name: 'Formulário',
+        rect: { x: 50, y: 200, width: 900, height: 1200 },
+      },
+      {
+        op: 'update_marking',
+        marking: `m/${code('MN')}`,
+        rect: { x: 100, y: 250, width: 800, height: 100 },
+        move: { dx: 0, dy: 0 },
+      },
+    ];
+    const plan = await mcp.call<Plan>('plan_changes', {
+      project: 'apps/cadastro',
+      operations: [
+        ...same,
+        { op: 'update_marking', marking: `m/${code('MN')}`, name: 'Nome completo' },
+      ],
+    });
+    expect(plan.data.errors).toBeUndefined();
+    expect(plan.data).toMatchObject({ valid: true, reviewChanges: 1 });
+
+    const result = await mcp.call('propose_changes', {
+      project: 'apps/cadastro',
+      title: 'Reexportação idêntica',
+      operations: same,
+    });
+    expect(errorOf(result).code).toBe('no-changes');
+    expect(proposals()).toBe(proposalsBefore);
+    expect(hashOf(join(dir, 'mapping.json'))).toBe(before);
   });
 
   it('referência de outro projeto, tipo errado e camada de especialização são recusados', async () => {

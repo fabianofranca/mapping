@@ -1,6 +1,12 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
-import { canShareFile, downloadFile, shareFile } from '../storage/share';
+import {
+  canSaveWithPicker,
+  canShareFile,
+  downloadFile,
+  saveFileWithPicker,
+  shareFile,
+} from '../storage/share';
 import { Dialog } from '../ui/Dialog';
 import { formatBytes } from '../ui/formatBytes';
 import { Icon } from '../ui/icons';
@@ -8,8 +14,14 @@ import { markExported } from './controller';
 import { Button } from '../ui/controls';
 
 /**
- * O zip é gerado antes de abrir este diálogo; o toque em "Compartilhar" é um
- * gesto novo do usuário, que o navegador exige para `navigator.share`.
+ * O zip é gerado antes de abrir este diálogo; o toque em "Baixar" ou "Compartilhar" é um
+ * gesto novo do usuário, que o navegador exige para `showSaveFilePicker` e `navigator.share`.
+ *
+ * O projeto só conta como exportado quando o arquivo saiu: pelo "Salvar como"
+ * (`showSaveFilePicker`), depois de gravado; pelo compartilhamento, quando a promessa
+ * resolve. Cancelar não muda nada. Sem o seletor, o `<a download>` não diz se a pessoa
+ * salvou: o aviso sai no clique e o texto do diálogo avisa para exportar de novo se ela
+ * cancelar.
  */
 export function ExportDialog({
   file,
@@ -20,6 +32,7 @@ export function ExportDialog({
 }) {
   const [error, setError] = useState<string | null>(null);
   const shareable = canShareFile(file);
+  const picker = canSaveWithPicker();
 
   const onShare = async () => {
     const result = await shareFile(file, file.name);
@@ -32,7 +45,17 @@ export function ExportDialog({
   };
 
   const onDownload = async () => {
-    downloadFile(file);
+    setError(null);
+    if (picker) {
+      const result = await saveFileWithPicker(file);
+      if (result === 'cancelled') return;
+      if (result === 'failed') {
+        setError(t('export.saveFailed'));
+        return;
+      }
+    } else {
+      downloadFile(file);
+    }
     await markExported();
     onDone();
   };
@@ -70,6 +93,7 @@ export function ExportDialog({
           </span>
         </span>
       </div>
+      {!picker && <p class="muted">{t('export.downloadHint')}</p>}
       {error && (
         <p class="notice notice-error" role="alert">
           {error}

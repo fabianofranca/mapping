@@ -53,3 +53,36 @@ describe('janelas de ferramenta', () => {
     );
   });
 });
+
+// Etapa 6 (6.4): regras de CSS por trás dos achados 2, 3, 5 e 6 (o e2e mede o layout).
+describe('etapa 6.4: tooltips, camadas, tabela e Diagnóstico', () => {
+  it('a dica fica fora do fluxo (posição fixa): oculta, não alarga nem rola o contêiner', () => {
+    expect(css['controls.css']).toMatch(/\.tooltip\s*\{[^}]*position:\s*fixed/);
+  });
+
+  it('com o menu aberto (aria-expanded), a dica do botão não aparece por cima dele', () => {
+    expect(css['controls.css']).toMatch(
+      /\.tooltip-anchor:has\(\[aria-haspopup\]\[aria-expanded='true'\]\) \.tooltip[^{]*\{[^}]*display:\s*none/,
+    );
+  });
+
+  it('o editor recorta em vez de rolar (overflow: clip): o foco não o desloca', () => {
+    expect(css['layout.css']).toMatch(/\.editor\s*\{[^}]*overflow:\s*clip/);
+  });
+
+  it('as linhas da janela Camadas não encolhem: a lista rola', () => {
+    expect(css['panels.css']).toMatch(/\.layer-row\s*\{[^}]*flex:\s*none/);
+  });
+
+  it('Diagnóstico: Hora e Contexto sem quebra no meio', () => {
+    expect(css['panels.css']).toMatch(
+      /\.diagnostics-nowrap\s*\{[^}]*white-space:\s*nowrap/,
+    );
+  });
+
+  it('tabela: as linhas dividem as mesmas colunas (subgrid)', () => {
+    expect(css['details.css']).toMatch(
+      /\.data-grid \.grid-row\s*\{[^}]*grid-template-columns:\s*subgrid/,
+    );
+  });
+});

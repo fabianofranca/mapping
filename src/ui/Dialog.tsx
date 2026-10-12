@@ -30,10 +30,8 @@ function focusFirst(dialog: HTMLDialogElement): void {
   target?.focus();
 }
 
-interface DialogProps {
+interface DialogBaseProps {
   readonly title: string;
-  /** Esc, toque fora ou botão de fechar do cabeçalho. */
-  readonly onCancel: () => void;
   readonly children?: ComponentChildren;
   /** Botões do rodapé. */
   readonly actions: ComponentChildren;
@@ -43,12 +41,27 @@ interface DialogProps {
 }
 
 /**
+ * `closable={false}`: a escolha no rodapé é obrigatória (ex.: "Projeto alterado fora da app"),
+ * então não há botão de fechar no cabeçalho e Esc e o toque fora não fazem nada.
+ */
+type DialogProps = DialogBaseProps &
+  (
+    | {
+        readonly closable?: true;
+        /** Esc, toque fora ou botão de fechar do cabeçalho. */
+        readonly onCancel: () => void;
+      }
+    | { readonly closable: false; readonly onCancel?: undefined }
+  );
+
+/**
  * Diálogo modal com `<dialog>` nativo (foco preso e Esc de graça). Cabeçalho de 44px com
  * título e fechar, corpo que rola e rodapé com borda.
  */
 export function Dialog({
   title,
   onCancel,
+  closable = true,
   children,
   actions,
   size = 'sm',
@@ -56,6 +69,12 @@ export function Dialog({
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+
+  // Quem tinha o foco ao abrir (o botão que abriu, ou o diálogo de baixo): ao fechar, o
+  // foco volta para ele em vez de cair no `body`. Guardado na renderização, antes de o
+  // diálogo pegar o foco.
+  const opener = useRef<Element | null | undefined>(undefined);
+  if (opener.current === undefined) opener.current = document.activeElement;
 
   useEffect(() => {
     const dialog = ref.current;
@@ -67,6 +86,21 @@ export function Dialog({
       dialog.setAttribute('open', '');
     }
     focusFirst(dialog);
+    return () => {
+      // Fecha antes de sair do DOM: com o modal aberto, o resto da página está inerte.
+      try {
+        if (dialog.open) dialog.close();
+      } catch {
+        dialog.removeAttribute('open');
+      }
+      const target = opener.current;
+      // Só se o foco não foi para outro lugar de propósito (ficou no diálogo ou no body).
+      const lost =
+        document.activeElement === null ||
+        document.activeElement === document.body ||
+        dialog.contains(document.activeElement);
+      if (lost && target instanceof HTMLElement && target.isConnected) target.focus();
+    };
   }, []);
 
   return (
@@ -76,18 +110,31 @@ export function Dialog({
       aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault();
-        onCancel();
+        onCancel?.();
+      }}
+      onClose={() => {
+        // O Chrome deixa de aceitar o `preventDefault` do Esc repetido sem outro gesto e fecha
+        // o `<dialog>` assim mesmo: sem fechar, ele volta a abrir enquanto estiver montado.
+        const dialog = ref.current;
+        if (closable || !dialog || !dialog.isConnected || dialog.open) return;
+        try {
+          dialog.showModal();
+        } catch {
+          dialog.setAttribute('open', '');
+        }
       }}
       onClick={(e) => {
         // Clique no fundo (fora do conteúdo) fecha.
-        if (e.target === ref.current) onCancel();
+        if (e.target === ref.current) onCancel?.();
       }}
     >
       <header class="dialog-header">
         <h2 id={titleId} class="dialog-title">
           {title}
         </h2>
-        <IconButton icon="close" label={t('dialog.close')} onClick={onCancel} />
+        {closable && (
+          <IconButton icon="close" label={t('dialog.close')} onClick={onCancel} />
+        )}
       </header>
       <div class={flush ? 'dialog-body dialog-body-flush' : 'dialog-body'}>
         {children}

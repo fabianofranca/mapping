@@ -16,6 +16,8 @@ import { installFakeCanvas } from './harness';
 const RENDER_BUDGET_MS = 16;
 /** Desligado com `--coverage` (vite.config.ts): o código instrumentado é mais lento. */
 const budgetIt = it.skipIf(process.env.PERF_BUDGETS === 'off');
+/** Uma repetição separa ruído do runner de regressão (ver tests/model/performance.test.ts). */
+const BUDGET_OPTIONS = { retry: 1 };
 
 describe('renderização do canvas com o projeto grande', () => {
   const frames: FrameRequestCallback[] = [];
@@ -67,38 +69,46 @@ describe('renderização do canvas com o projeto grande', () => {
     return { project, store, actions, ui, controller, container };
   }
 
-  budgetIt(`pan, zoom e edição desenham em menos de ${RENDER_BUDGET_MS} ms`, () => {
-    const { project, actions, ui, controller, container } = setup();
-    flush(); // Primeiro quadro: cria os nós.
+  budgetIt(
+    `pan, zoom e edição desenham em menos de ${RENDER_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const { project, actions, ui, controller, container } = setup();
+      flush(); // Primeiro quadro: cria os nós.
 
-    // Aproxima numa marcação pai: cartões do zoom semântico na tela.
-    const [first, second] = project.markings.filter((m) => m.parentId === null);
-    if (!first || !second) throw new Error('fixture');
-    ui.selection.value = { kind: 'marking', id: first.id };
-    controller.focusSelection();
-    flush();
-
-    const pans: number[] = [];
-    const zooms: number[] = [];
-    const edits: number[] = [];
-    for (let i = 0; i < 7; i++) {
-      // Pan: centraliza alternando entre duas marcações vizinhas.
-      ui.selection.value = { kind: 'marking', id: (i % 2 ? first : second).id };
+      // Aproxima numa marcação pai: cartões do zoom semântico na tela.
+      const [first, second] = project.markings.filter((m) => m.parentId === null);
+      if (!first || !second) throw new Error('fixture');
+      ui.selection.value = { kind: 'marking', id: first.id };
       controller.focusSelection();
-      pans.push(flush());
-      container.dispatchEvent(
-        new WheelEvent('wheel', { deltaY: i % 2 ? 40 : -40, clientX: 190, clientY: 350 }),
-      );
-      zooms.push(flush());
-      expect(actions.renameMarking(first.id, `Renomeada ${i}`).ok).toBe(true);
-      edits.push(flush());
-    }
-    const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[3] ?? Number.NaN;
-    expect(median(pans)).toBeLessThan(RENDER_BUDGET_MS);
-    expect(median(zooms)).toBeLessThan(RENDER_BUDGET_MS);
-    expect(median(edits)).toBeLessThan(RENDER_BUDGET_MS);
-    controller.destroy();
-  });
+      flush();
+
+      const pans: number[] = [];
+      const zooms: number[] = [];
+      const edits: number[] = [];
+      for (let i = 0; i < 7; i++) {
+        // Pan: centraliza alternando entre duas marcações vizinhas.
+        ui.selection.value = { kind: 'marking', id: (i % 2 ? first : second).id };
+        controller.focusSelection();
+        pans.push(flush());
+        container.dispatchEvent(
+          new WheelEvent('wheel', {
+            deltaY: i % 2 ? 40 : -40,
+            clientX: 190,
+            clientY: 350,
+          }),
+        );
+        zooms.push(flush());
+        expect(actions.renameMarking(first.id, `Renomeada ${i}`).ok).toBe(true);
+        edits.push(flush());
+      }
+      const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[3] ?? Number.NaN;
+      expect(median(pans)).toBeLessThan(RENDER_BUDGET_MS);
+      expect(median(zooms)).toBeLessThan(RENDER_BUDGET_MS);
+      expect(median(edits)).toBeLessThan(RENDER_BUDGET_MS);
+      controller.destroy();
+    },
+  );
 
   it('várias mudanças no mesmo quadro geram uma renderização só', () => {
     const { ui, controller, project } = setup();

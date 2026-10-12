@@ -105,6 +105,48 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
+  // Achado 10: `InvalidStateError: drawImage … The image source is detached`. O `retain`
+  // fechava o bitmap na hora, enquanto o nó do Konva ainda o referenciava e um desenho
+  // pendente (o `batchDraw` do quadro anterior) ainda ia usá-lo.
+  it('o bitmap de uma imagem que sai do projeto só fecha depois do quadro que deixa de desenhá-lo', async () => {
+    const editor = editorFor();
+    const bitmaps = new Map<string, { closed: boolean }>();
+    const display = createDisplayImages<ImageBitmap>(async (path) => {
+      const bitmap = {
+        width: 10,
+        height: 10,
+        closed: false,
+        close() {
+          this.closed = true;
+        },
+      };
+      bitmaps.set(path, bitmap);
+      return bitmap as unknown as ImageBitmap;
+    });
+    const container = document.createElement('div');
+    Object.defineProperty(container, 'clientWidth', { value: 380 });
+    Object.defineProperty(container, 'clientHeight', { value: 700 });
+    document.body.append(container);
+    const controller = new CanvasController({ container, display, ...editor });
+    flush();
+    await Promise.resolve();
+    await Promise.resolve();
+    flush();
+    expect(container.dataset.images).toBe('2');
+    const b = bitmaps.get('images/b.jpg');
+    if (!b) throw new Error('bitmap de b.jpg');
+
+    // A imagem sai do projeto: o mapa de exibição a solta na hora, mas o bitmap continua
+    // aberto até o quadro seguinte (que tira a referência do nó) ser desenhado.
+    editor.actions.removeImage('I2');
+    expect(display.images.value.has('images/b.jpg')).toBe(false);
+    expect(b.closed).toBe(false);
+    flush();
+    expect(container.dataset.images).toBe('1');
+    expect(b.closed).toBe(true);
+    controller.destroy();
+  });
+
   it('publica zoom, área das imagens e cursor em pixels da imagem (B8, P3 e P4)', () => {
     const { container, controller, view } = setup();
     flush();

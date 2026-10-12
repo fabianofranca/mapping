@@ -133,6 +133,10 @@ jobs:
 
   deploy:
     needs: build
+    # Sem este `if`, o `success()` implícito exige todos os ancestrais em sucesso, inclusive o
+    # `checks-preview` pulado quando não há preview: o deploy era pulado em todo push na main.
+    # O gate de qualidade é o do `build`, que já exige checks-main (e checks-preview, se houver).
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

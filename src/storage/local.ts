@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { channelDbName } from '../utils/channel';
+import type { ReopenableDirectory } from './folder';
 import type { ProjectFiles } from './zip';
 import { proposalFilePath } from '../model';
 import {
@@ -36,6 +37,8 @@ export interface LocalProjectMeta {
   readonly updatedAt: string;
   /** Há alterações desde a última exportação (ou o projeto nunca foi exportado). */
   readonly unexported: boolean;
+  /** Última abertura (ISO 8601), para a lista de recentes; ausente se nunca reaberto. */
+  readonly openedAt?: string;
 }
 
 interface StoredFile {
@@ -103,6 +106,8 @@ export interface LocalLibrary {
   open(id: string): LocalProjectStorage;
   remove(id: string): Promise<void>;
   setUnexported(id: string, unexported: boolean): Promise<void>;
+  /** Registra a abertura (`openedAt`), para a ordem dos recentes. */
+  markOpened(id: string, openedAt: string): Promise<void>;
   /** Nomes dos backups do `mapping.json` do projeto, do mais recente ao mais antigo. */
   listBackups(id: string): Promise<string[]>;
   close(): void;
@@ -242,6 +247,13 @@ function createLibrary(db: Db): LocalLibrary {
       await tx.done;
     },
 
+    async markOpened(id, openedAt) {
+      const tx = db.transaction('projects', 'readwrite');
+      const meta = await tx.store.get(id);
+      if (meta) await tx.store.put({ ...meta, openedAt });
+      await tx.done;
+    },
+
     async listBackups(id) {
       const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
       return keys
@@ -262,29 +274,192 @@ function createLibrary(db: Db): LocalLibrary {
 export async function openLocalLibrary(): Promise<LocalLibrary | null> {
   try {
     if (typeof indexedDB === 'undefined') return null;
-    const open = openDB<Schema>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        db.createObjectStore('projects', { keyPath: 'id' });
-        db.createObjectStore('mappings');
-        const files = db.createObjectStore('files', { keyPath: ['projectId', 'path'] });
-        files.createIndex('byProject', 'projectId');
-      },
-    });
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<null>((resolve) => {
-      timer = setTimeout(() => resolve(null), OPEN_TIMEOUT_MS);
-    });
-    const db = await Promise.race([open, timeout]);
-    clearTimeout(timer);
-    if (!db) {
-      // A abertura demorou demais: se ela terminar depois, só fecha a conexão.
-      void open.then((late) => late.close()).catch(() => undefined);
-      return null;
-    }
-    return createLibrary(db);
+    const db = await withTimeout(
+      openDB<Schema>(DB_NAME, DB_VERSION, {
+        upgrade(db) {
+          db.createObjectStore('projects', { keyPath: 'id' });
+          db.createObjectStore('mappings');
+          const files = db.createObjectStore('files', { keyPath: ['projectId', 'path'] });
+          files.createIndex('byProject', 'projectId');
+        },
+      }),
+    );
+    return db && createLibrary(db);
   } catch (e) {
     // Sem IndexedDB o modo local fica indisponível; o motivo vai para o Diagnóstico.
     reportError('local.open', e);
+    return null;
+  }
+}
+
+/** A abertura do banco, ou `null` se demorar mais que `OPEN_TIMEOUT_MS`. */
+async function withTimeout<T extends { close(): void }>(
+  open: Promise<T>,
+): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), OPEN_TIMEOUT_MS);
+  });
+  const db = await Promise.race([open, timeout]);
+  clearTimeout(timer);
+  if (!db) {
+    // A abertura demorou demais: se ela terminar depois, só fecha a conexão.
+    void open.then((late) => late.close()).catch(() => undefined);
+  }
+  return db;
+}
+
+// ---- Recentes de pasta ----
+
+/**
+ * Banco à parte para os handles das pastas: criar um store no banco dos projetos locais
+ * pediria uma versão nova, e uma aba antiga aberta bloquearia a atualização (o modo local
+ * sumiria até ela fechar). Versão 2: os handles saíram dos registros da lista para um store
+ * próprio (a versão 1 só existiu em preview; a atualização a descarta).
+ */
+const FOLDERS_DB_NAME = channelDbName('mapping-folders');
+const FOLDERS_DB_VERSION = 2;
+
+/** Pasta aberta recentemente (a linha da lista). O handle fica à parte, em `handles`. */
+export interface StoredFolder {
+  readonly id: string;
+  /** Nome do projeto na última vez que foi aberto. */
+  readonly name: string;
+  /** Nome da pasta (`handle.name`). */
+  readonly folderName: string;
+  /** Último uso (ISO 8601). */
+  readonly usedAt: string;
+}
+
+interface FoldersSchema extends DBSchema {
+  folders: { key: string; value: StoredFolder };
+  /** id da entrada → handle. Só o handle: o navegador não deixa saber o caminho. */
+  handles: { key: string; value: ReopenableDirectory };
+}
+
+/** As pastas abertas, no IndexedDB deste navegador. */
+export interface FolderLibrary {
+  /**
+   * Do uso mais recente ao mais antigo. Só os dados da lista: nenhum handle é lido (um
+   * handle que o navegador não consiga reconstruir não chega a atrapalhar a tela inicial).
+   */
+  list(): Promise<StoredFolder[]>;
+  /** O handle de uma entrada (`null` se não houver). */
+  handle(id: string): Promise<ReopenableDirectory | null>;
+  /**
+   * Guarda a pasta (ou atualiza a entrada da mesma pasta, por `isSameEntry`) e devolve o id.
+   * Com `replaceId` ("Localizar pasta…"), a entrada `replaceId` passa a apontar para ela.
+   */
+  remember(
+    handle: ReopenableDirectory,
+    info: { readonly name: string; readonly usedAt: string },
+    replaceId?: string,
+  ): Promise<string>;
+  /** Atualiza o nome do projeto e o último uso de uma entrada que ainda existe. */
+  touch(
+    id: string,
+    info: { readonly name: string; readonly usedAt: string },
+  ): Promise<void>;
+  /** Tira da lista. Nada no disco muda. */
+  remove(id: string): Promise<void>;
+  close(): void;
+}
+
+function createFolderLibrary(db: IDBPDatabase<FoldersSchema>): FolderLibrary {
+  /** A entrada guardada aponta para a mesma pasta? Um handle que falha conta como não. */
+  const sameFolder = async (id: string, handle: ReopenableDirectory) => {
+    try {
+      const stored = await db.get('handles', id);
+      return stored ? await stored.isSameEntry(handle) : false;
+    } catch {
+      return false;
+    }
+  };
+
+  return {
+    async list() {
+      const all = await db.getAll('folders');
+      return all.sort((a, b) => b.usedAt.localeCompare(a.usedAt));
+    },
+
+    async handle(id) {
+      return (await db.get('handles', id)) ?? null;
+    },
+
+    async remember(handle, info, replaceId) {
+      // `isSameEntry` é assíncrono e não cabe numa transação: compara antes de gravar. Só
+      // as entradas com o mesmo nome de pasta podem ser a mesma: só os handles delas são lidos.
+      const candidates = (await db.getAll('folders')).filter(
+        (f) => f.folderName === handle.name,
+      );
+      let same: StoredFolder | undefined;
+      for (const stored of candidates) {
+        if (await sameFolder(stored.id, handle)) {
+          same = stored;
+          break;
+        }
+      }
+      const id = same?.id ?? replaceId ?? crypto.randomUUID();
+      const tx = db.transaction(['folders', 'handles'], 'readwrite');
+      // A pasta localizada já estava na lista: as duas entradas viram uma.
+      const merged = replaceId !== undefined && replaceId !== id ? replaceId : null;
+      await Promise.all([
+        tx
+          .objectStore('folders')
+          .put({ id, name: info.name, folderName: handle.name, usedAt: info.usedAt }),
+        tx.objectStore('handles').put(handle, id),
+        ...(merged === null
+          ? []
+          : [
+              tx.objectStore('folders').delete(merged),
+              tx.objectStore('handles').delete(merged),
+            ]),
+        tx.done,
+      ]);
+      return id;
+    },
+
+    async touch(id, info) {
+      const tx = db.transaction('folders', 'readwrite');
+      const stored = await tx.store.get(id);
+      if (stored) await tx.store.put({ ...stored, ...info });
+      await tx.done;
+    },
+
+    async remove(id) {
+      const tx = db.transaction(['folders', 'handles'], 'readwrite');
+      await Promise.all([
+        tx.objectStore('folders').delete(id),
+        tx.objectStore('handles').delete(id),
+        tx.done,
+      ]);
+    },
+
+    close: () => db.close(),
+  };
+}
+
+/**
+ * Abre a lista de pastas recentes. `null` sem IndexedDB (ou se ele não responder): a tela
+ * inicial fica só com os projetos deste dispositivo.
+ */
+export async function openFolderLibrary(): Promise<FolderLibrary | null> {
+  try {
+    if (typeof indexedDB === 'undefined') return null;
+    const db = await withTimeout(
+      openDB<FoldersSchema>(FOLDERS_DB_NAME, FOLDERS_DB_VERSION, {
+        upgrade(db) {
+          // Da versão 1 (handles dentro dos registros da lista) não se aproveita nada: o
+          // store é apagado sem ler os registros.
+          for (const name of [...db.objectStoreNames]) db.deleteObjectStore(name);
+          db.createObjectStore('folders', { keyPath: 'id' });
+          db.createObjectStore('handles');
+        },
+      }),
+    );
+    return db && createFolderLibrary(db);
+  } catch (e) {
+    reportError('folders.open', e);
     return null;
   }
 }

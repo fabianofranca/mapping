@@ -46,6 +46,7 @@ export const reviewPtBR = {
   'proposals.leftBehindUndecided': '{undecided} sem decisão ficaram para trás',
   'proposals.leftBehindNone': 'Nada ficou para trás',
   'proposals.appliedCount': '{count} mudanças aplicadas',
+  'proposals.supersededBy': 'substituída por {title}',
   'proposals.withdrawnCount': '{count} mudanças, retirada pelo agente',
   'proposals.withdrawnInfo':
     'Esta proposta foi retirada pelo agente: não há o que revisar.',
@@ -380,6 +381,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'proposals.leftBehindUndecided': '{undecided} undecided were left behind',
   'proposals.leftBehindNone': 'Nothing was left behind',
   'proposals.appliedCount': '{count} changes applied',
+  'proposals.supersededBy': 'superseded by {title}',
   'proposals.withdrawnCount': '{count} changes, withdrawn by the agent',
   'proposals.withdrawnInfo':
     'This proposal was withdrawn by the agent: there is nothing to review.',

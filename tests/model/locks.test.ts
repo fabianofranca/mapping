@@ -134,6 +134,32 @@ describe('trava: marcação trancada', () => {
     expect(adjustMarkingRect(p, 'M2', 'x', marking(p, 'M2').rect.x)).toBe(p);
   });
 
+  it('geometria igual não é mudança: devolve o projeto como está (achado 14)', () => {
+    const p = locked();
+    const rect = marking(p, 'M2').rect;
+    expect(setMarkingRect(p, 'M2', { ...rect })).toBe(p);
+    expect(moveMarking(p, 'M2', 0, 0)).toBe(p);
+    // Destrancada, idem: sem projeto novo, sem entrada de desfazer nem índice novo.
+    const free = sampleProject();
+    expect(setMarkingRect(free, 'M2', { ...marking(free, 'M2').rect })).toBe(free);
+    expect(moveMarking(free, 'M2', 0, 0)).toBe(free);
+  });
+
+  it('qualquer diferença de geometria continua barrada pela trava', () => {
+    const p = locked();
+    const rect = marking(p, 'M2').rect;
+    for (const changed of [
+      { ...rect, x: rect.x + 1 },
+      { ...rect, y: rect.y - 1 },
+      { ...rect, width: rect.width - 1 },
+      { ...rect, height: rect.height + 1 },
+    ]) {
+      expect(codeOf(() => setMarkingRect(p, 'M2', changed))).toBe('locked');
+    }
+    expect(codeOf(() => moveMarking(p, 'M2', 0, 1))).toBe('locked');
+    expect(codeOf(() => moveMarking(p, 'M2', -1, 0))).toBe('locked');
+  });
+
   it('as funções de consulta refletem a trava', () => {
     const p = locked();
     expect(canEditMarkingGeometry(p, 'M2')).toBe(false);
@@ -159,6 +185,15 @@ describe('trava: pai trancado trava a geometria dos descendentes', () => {
       expect(
         codeOf(() => setMarkingRect(p, id, { ...rect, width: rect.width + 2 })),
       ).toBe('locked');
+    }
+  });
+
+  it('com a trava herdada, a geometria igual também passa e devolve o projeto', () => {
+    const p = parentLocked();
+    for (const id of ['M1', 'M2', 'M3']) {
+      const { rect } = marking(p, id);
+      expect(setMarkingRect(p, id, { ...rect })).toBe(p);
+      expect(moveMarking(p, id, 0, 0)).toBe(p);
     }
   });
 

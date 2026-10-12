@@ -1,4 +1,4 @@
-import { type Signal } from '@preact/signals';
+import { signal, type Signal } from '@preact/signals';
 import { cleanup, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,11 +8,20 @@ import type { EditorDialogs as Dialogs } from '../../src/app/useEditorDialogs';
 import type { EditorNotices } from '../../src/app/useEditorNotices';
 import { EXTERNAL_POLL_MS, useExternalChanges } from '../../src/app/useExternalChanges';
 import { t } from '../../src/i18n';
-import type { ExternalConflict } from '../../src/store/session';
+import { serialize } from '../../src/model';
+import { AUTOSAVE_DELAY_MS } from '../../src/storage/autosave';
+import { createFolderStorage } from '../../src/storage/folder';
+import { createDisplayImages } from '../../src/store/displayImages';
+import {
+  openSession,
+  type ExternalConflict,
+  type ProjectSession,
+} from '../../src/store/session';
 import { locale } from '../../src/store/settings';
-import { EditorContext } from '../../src/ui/EditorContext';
+import { EditorContext, createEditorContextValue } from '../../src/ui/EditorContext';
 import { createHarness, type Harness } from '../components/harness';
 import { sampleProject } from '../model/fixtures';
+import { MemoryDirectory } from '../storage/memoryFs';
 
 // Etapa 3a.2: o diálogo "Projeto alterado fora da app", o aviso "Projeto atualizado por
 // fora" e a conferência periódica do mapping.json.
@@ -92,18 +101,28 @@ describe('diálogo "Projeto alterado fora da app"', () => {
     expect(resolve).toHaveBeenLastCalledWith('keep');
   });
 
-  it('Esc e o fechar não decidem por ninguém: a escolha é obrigatória', async () => {
+  // Etapa 6 (6.2), achado 9: o X aparecia e não fazia nada. A escolha é obrigatória, então
+  // o diálogo não tem botão de fechar; Esc e o clique no fundo também não decidem.
+  it('sem o X: Esc e o clique no fundo não decidem por ninguém', async () => {
     const harness = createHarness(sampleProject());
     const resolve = vi.spyOn(harness.context.session, 'resolveConflict');
     renderDialogs(harness);
     conflictOf(harness).value = { reloadFailed: false };
     await vi.waitFor(() => expect(dialogEl()).not.toBeNull());
-    dialogEl()!.dispatchEvent(new Event('cancel', { cancelable: true }));
-    await userEvent.click(
-      within(dialogEl()!).getByRole('button', { name: t('dialog.close'), hidden: true }),
-    );
+    expect(
+      within(dialogEl()!).queryByRole('button', {
+        name: t('dialog.close'),
+        hidden: true,
+      }),
+    ).toBeNull();
+    expect(within(dialogEl()!).getAllByRole('button', { hidden: true })).toHaveLength(2);
+    const esc = new Event('cancel', { cancelable: true });
+    dialogEl()!.dispatchEvent(esc);
+    expect(esc.defaultPrevented).toBe(true);
+    await userEvent.click(dialogEl()!);
     expect(resolve).not.toHaveBeenCalled();
     expect(conflictOf(harness).value).not.toBeNull();
+    expect(dialogEl()).not.toBeNull();
   });
 
   it('avisa quando recarregar falhou', async () => {
@@ -284,6 +303,115 @@ describe('useExternalChanges', () => {
     harness.ui.selection.value = { kind: 'marking', id: 'sumiu' };
     reloadsOf(harness).value++;
     expect(harness.ui.selection.value).toBeNull();
+  });
+
+  // Etapa 6 (6.2), achado 8 (R6.10): com a gravação em erro (arquivo travado), a alteração
+  // feita por fora abre o diálogo na conferência seguinte, sem esperar "Tentar de novo".
+  describe('com a gravação em erro (fase 6.2)', () => {
+    function lockedFolder() {
+      const root = new MemoryDirectory('loja');
+      const project = sampleProject();
+      const text = serialize(project);
+      root.put('mapping.json', text);
+      const session = openSession({
+        storage: createFolderStorage(root),
+        project,
+        loadedText: text,
+        prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+        now: () => '2026-10-11T12:00:00.000Z',
+      });
+      const context = createEditorContextValue({
+        kind: 'folder',
+        session,
+        display: createDisplayImages<ImageBitmap>(() => Promise.resolve(null)),
+        localId: null,
+        unexported: signal(false),
+      });
+      const view = render(
+        <EditorContext.Provider value={context}>
+          <Probe />
+          <EditorDialogs
+            dialogs={
+              {
+                current: null,
+                show: vi.fn(),
+                close: vi.fn(),
+                requestDeleteImage: vi.fn(),
+                requestDeleteMarking: vi.fn(),
+              } as unknown as Dialogs
+            }
+          />
+        </EditorContext.Provider>,
+      );
+      return { root, project, session, view };
+    }
+
+    /** R6.9 e R6.10: edição na app com o arquivo travado, depois edição por fora. */
+    async function failedThenExternal(root: MemoryDirectory, session: ProjectSession) {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      root.failWrites = new Error('NoModificationAllowedError');
+      session.actions.renameProject('Título app');
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      expect(session.saveStatus.value).toBe('error');
+      const external = serialize({
+        ...sampleProject(),
+        revision: 1,
+        project: { ...sampleProject().project, name: 'Rodapé externo' },
+      });
+      root.put('mapping.json', external);
+      return external;
+    }
+
+    it('o diálogo abre em até um ciclo da conferência', async () => {
+      const { root, session, view } = lockedFolder();
+      await failedThenExternal(root, session);
+      expect(dialogEl()).toBeNull();
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS);
+      await vi.waitFor(() => expect(dialogEl()).not.toBeNull());
+      expect(
+        within(dialogEl()!).getByRole('heading', {
+          name: t('external.title'),
+          hidden: true,
+        }),
+      ).toBeTruthy();
+      expect(session.store.project.value?.project.name).toBe('Título app');
+      view.unmount();
+      await session.close();
+    });
+
+    it('Recarregar a partir desse estado lê o arquivo de fora', async () => {
+      const { root, session, view } = lockedFolder();
+      const external = await failedThenExternal(root, session);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS);
+      await vi.waitFor(() => expect(dialogEl()).not.toBeNull());
+      within(dialogEl()!)
+        .getByRole('button', { name: t('external.reload'), hidden: true })
+        .click();
+      await vi.waitFor(() => expect(dialogEl()).toBeNull());
+      expect(session.store.project.value?.project.name).toBe('Rodapé externo');
+      expect(session.saveStatus.value).toBe('saved');
+      expect(await root.read('mapping.json')).toBe(external);
+      view.unmount();
+      await session.close();
+    });
+
+    it('Manter as minhas a partir desse estado grava por cima ao devolver a permissão', async () => {
+      const { root, session, view } = lockedFolder();
+      await failedThenExternal(root, session);
+      await vi.advanceTimersByTimeAsync(EXTERNAL_POLL_MS);
+      await vi.waitFor(() => expect(dialogEl()).not.toBeNull());
+      root.failWrites = null;
+      within(dialogEl()!)
+        .getByRole('button', { name: t('external.keep'), hidden: true })
+        .click();
+      await vi.waitFor(() => expect(dialogEl()).toBeNull());
+      await vi.waitFor(() => expect(session.saveStatus.value).toBe('saved'));
+      const saved = await root.read('mapping.json');
+      expect(saved).toContain('Título app');
+      expect(saved).not.toContain('Rodapé externo');
+      view.unmount();
+      await session.close();
+    });
   });
 
   it('camadas visíveis e ativa continuam como estavam', () => {

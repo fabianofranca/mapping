@@ -492,9 +492,14 @@ a.icon-button {
   display: inline-flex;
 }
 
+/*
+ * A dica é fixa (fora do fluxo): oculta, não ocupa espaço nem alarga ou rola o painel
+ * onde está, e não é cortada pela borda dele. O Tooltip calcula `top`/`left` ao aparecer.
+ */
 .tooltip {
-  position: absolute;
-  left: 50%;
+  position: fixed;
+  top: 0;
+  left: 0;
   z-index: var(--z-tooltip);
   display: flex;
   align-items: center;
@@ -508,19 +513,10 @@ a.icon-button {
   box-shadow: var(--shadow-popup);
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-50%);
   pointer-events: none;
   transition:
     opacity var(--duration-fast) var(--easing-standard),
     visibility var(--duration-instant) linear var(--duration-fast);
-}
-
-.tooltip-bottom .tooltip {
-  top: calc(100% + var(--space-1));
-}
-
-.tooltip-top .tooltip {
-  bottom: calc(100% + var(--space-1));
 }
 
 .tooltip .kbd {
@@ -551,6 +547,11 @@ a.icon-button {
   opacity: 0;
   visibility: hidden;
   transition-delay: var(--duration-instant), var(--duration-instant);
+}
+
+/* Com o menu ou o popover do botão aberto, a dica não cobre o que ele abriu. */
+.tooltip-anchor:has([aria-haspopup][aria-expanded='true']) .tooltip {
+  display: none;
 }
 
 /* Sem mouse não há hover: a dica não aparece. */

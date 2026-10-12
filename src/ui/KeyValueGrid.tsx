@@ -158,13 +158,26 @@ function EntryRow({
           value={current.key}
           onInput={(e) => edit({ key: e.currentTarget.value })}
           onChange={commit}
-          onKeyDown={onFieldKeyDown}
+          onKeyDown={(e) => {
+            // Enter na Chave grava (ao sair do campo) e segue para o Valor da mesma linha.
+            if (e.key === 'Enter' && !e.altKey) {
+              const row = e.currentTarget.closest('.kv-row');
+              const value = row?.querySelector<HTMLElement>('[data-kv-value]');
+              if (value) {
+                e.preventDefault();
+                value.focus();
+                return;
+              }
+            }
+            onFieldKeyDown(e);
+          }}
         />
       </span>
       <span class="grid-cell" role="cell">
         <TextField
           size="sm"
           aria-label={t('annotation.value')}
+          data-kv-value=""
           placeholder={t('annotation.value')}
           disabled={readOnly}
           value={current.value}

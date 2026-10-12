@@ -127,6 +127,31 @@ describe('OverlayRenderer', () => {
       expect(overlay.nameTag.y()).toBe(200 + 2);
     });
 
+    // Etapa 6 (6.4), achado 6: "Topo" por cima do título da imagem "Checkout".
+    it('marcação no topo da imagem: a etiqueta sobe acima do título da imagem', () => {
+      const { overlay } = setup();
+      const editor = editorFor();
+      const p = editor.store.committed.value;
+      if (!p) throw new Error('sem projeto');
+      const project = {
+        ...p,
+        markings: p.markings.map((m) =>
+          m.id === 'M2' ? { ...m, rect: { x: 200, y: 4, width: 100, height: 100 } } : m,
+        ),
+      };
+      overlay.render(
+        frameOf(editor, {
+          project,
+          selection: SELECTED,
+          viewport: { x: 0, y: 300, scale: 1 },
+        }),
+        PLACEMENTS,
+      );
+      // Título da imagem: linha de 16 px terminando 4 px acima do topo (y = 0).
+      const tagBottom = overlay.nameTag.y() + overlay.nameTagBox.height();
+      expect(tagBottom).toBeLessThanOrEqual(-(TOKENS.type.image.line + 4));
+    });
+
     it('canto fora da tela: ancorada na borda visível', () => {
       const { overlay, render } = setup();
       // M2 começa em x = 200 e y = 200; a tela mostra de (250, 250) em diante.
