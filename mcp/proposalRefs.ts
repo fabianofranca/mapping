@@ -55,6 +55,7 @@ export function formatProposalRef(
 /** Referências de todas as propostas legíveis do projeto, por id. */
 export class ProposalRefs {
   private readonly codes: ReadonlyMap<string, string>;
+  private readonly titles: ReadonlyMap<string, string>;
 
   constructor(
     readonly projectName: string,
@@ -62,12 +63,13 @@ export class ProposalRefs {
     extraIds: readonly string[] = [],
   ) {
     this.codes = proposalCodes([...all.proposals.map((p) => p.id), ...extraIds]);
+    this.titles = new Map(all.proposals.map((p) => [p.id, p.proposal.title]));
   }
 
   /** Referência da proposta; o título entre parênteses vem da pasta ou de `title` (proposta nova). */
   ref(id: string, title?: string): string {
     const code = this.codes.get(id) ?? normalizeId(id).slice(0, 8);
-    const known = title ?? this.all.proposals.find((p) => p.id === id)?.proposal.title;
+    const known = title ?? this.titles.get(id);
     return formatProposalRef(this.projectName, code, known);
   }
 }

@@ -1,13 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, realpath, stat } from 'node:fs/promises';
 import { basename, dirname, join, relative } from 'node:path';
-import { DEFAULT_LAYER_COLOR, createProject, serialize } from '../src/model';
+import {
+  DEFAULT_LAYER_COLOR,
+  GITIGNORE_FILE,
+  MAPPING_FILE,
+  createProject,
+  gitignoreWithBackups,
+  serialize,
+} from '../src/model';
 import { ToolError } from './errors';
 import { Roots, writeFileAtomic } from './paths';
-import { MAPPING_FILE } from './projects';
 
-const BACKUPS_DIR = 'backups';
-const GITIGNORE_FILE = '.gitignore';
 const DEFAULT_FIRST_LAYER = 'Camada 1';
 
 async function exists(path: string): Promise<boolean> {
@@ -31,16 +35,13 @@ async function enclosingProject(dir: string, roots: Roots): Promise<string | nul
   }
 }
 
-/** Como a app (`ensureGitignore`): acrescenta `backups/` sem sobrescrever nem duplicar. */
+/** Como a app (`ensureGitignore`): o texto vem de `gitignoreWithBackups`; aqui só o disco. */
 async function ensureGitignore(dir: string): Promise<void> {
   const file = join(dir, GITIGNORE_FILE);
-  const text = (await exists(file)) ? await readFile(file, 'utf8') : '';
-  const covered = text
-    .split(/\r?\n/)
-    .some((line) => line.trim().replace(/^\//, '').replace(/\/$/, '') === BACKUPS_DIR);
-  if (covered) return;
-  const separator = text === '' || text.endsWith('\n') ? '' : '\n';
-  await writeFileAtomic(file, `${text}${separator}${BACKUPS_DIR}/\n`);
+  const next = gitignoreWithBackups(
+    (await exists(file)) ? await readFile(file, 'utf8') : '',
+  );
+  if (next !== null) await writeFileAtomic(file, next);
 }
 
 export interface CreateProjectArgs {

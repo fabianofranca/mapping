@@ -1,11 +1,14 @@
-/** Nome do arquivo do projeto na raiz da pasta/zip. */
-export const MAPPING_FILE = 'mapping.json';
-/** Pasta das imagens, relativa à raiz do projeto. */
-export const IMAGES_DIR = 'images';
 /** Pasta das cópias das especializações aplicadas (`specs/<id>.json`). */
 export const SPECS_DIR = 'specs';
 import { PROPOSALS_DIR, PROPOSAL_FILE, PROPOSAL_ID_RE } from '../model';
-export { BACKUPS_DIR, backupFileName, backupTimestamp } from '../model';
+// Nomes da pasta do projeto: definidos no modelo, compartilhados com o servidor MCP.
+export {
+  BACKUPS_DIR,
+  IMAGES_DIR,
+  MAPPING_FILE,
+  backupFileName,
+  backupTimestamp,
+} from '../model';
 
 export type StorageKind = 'folder' | 'local';
 
