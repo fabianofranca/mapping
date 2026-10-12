@@ -423,9 +423,37 @@ describe('conflitos', () => {
     expect(tabB.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
   });
 
-  it('a entrada guardada antes de a chave levar a cópia (legado) devolve a posição, não marca conflito novo e é regravada', async () => {
+  it('a entrada guardada antes de a chave levar a cópia (legado) devolve a posição e os filtros, não marca conflito novo e é regravada', async () => {
     const { proposal } = richScenario();
     const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    localStorage.setItem(
+      'mapping.reviewResume',
+      JSON.stringify({
+        P1: {
+          selected: { level: 'item', id: 'M4' },
+          view: 'current',
+          filters: {
+            types: [],
+            imageId: null,
+            layerId: null,
+            decision: 'undecided',
+            onlyConflicts: false,
+          },
+          knownConflicts: [],
+        },
+      }),
+    );
+    const { review } = await openHarness({ project: edited, proposals: [proposal] });
+    expect(review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    expect(review.selected.value).toEqual({ level: 'item', id: 'M4' });
+    expect(review.filters.value.decision).toBe('undecided');
+    const stored = JSON.parse(localStorage.getItem('mapping.reviewResume') ?? '{}');
+    expect(Object.keys(stored)).toEqual(['folder:projeto|P1']);
+  });
+
+  it('a entrada legada vale para qualquer cópia: não conta a proposta como vista e a revisão começa pela visão Proposto (G1)', async () => {
+    const { proposal } = richScenario();
+    // Entrada de antes da 6.5 (chave só com o id), deixada por outra cópia do projeto.
     localStorage.setItem(
       'mapping.reviewResume',
       JSON.stringify({
@@ -443,13 +471,14 @@ describe('conflitos', () => {
         },
       }),
     );
-    const { review } = await openHarness({ project: edited, proposals: [proposal] });
-    expect(review.seen.value.has('P1')).toBe(true);
-    expect(review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
-    expect(review.selected.value).toEqual({ level: 'item', id: 'M4' });
-    expect(review.view.value).toBe('current');
-    const stored = JSON.parse(localStorage.getItem('mapping.reviewResume') ?? '{}');
-    expect(Object.keys(stored)).toEqual(['folder:projeto|P1']);
+    const { review } = await openHarness({ proposals: [proposal] });
+    // A barra de status mostra "1 proposta(s) nova(s)".
+    expect(review.seen.value.has('P1')).toBe(false);
+    expect(review.derived.freshIds.value).toEqual(['P1']);
+    review.open('P1');
+    expect(review.view.value).toBe('proposed');
+    // Depois de aberta nesta cópia, já foi vista.
+    expect(review.derived.freshIds.value).toEqual([]);
   });
 
   it('um conflito que aparece durante a revisão (projeto recarregado por fora) já é conhecido na abertura seguinte', async () => {

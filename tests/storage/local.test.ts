@@ -278,6 +278,34 @@ describe('LocalLibrary (IndexedDB)', () => {
     });
     expect(await library.list()).toHaveLength(1);
   });
+
+  it('criar (ou importar um zip) conta como uso: grava openedAt de agora e mantém a data do mapping (G2)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-10-12T10:00:00.000Z'));
+      const p = emptyProject();
+      await library.create(
+        'zip',
+        {
+          mapping: serialize({
+            ...p,
+            project: { ...p.project, updatedAt: '2026-10-09T09:00:00.000Z' },
+          }),
+          images: noImages,
+          specs: noSpecs,
+          proposals: noSpecs,
+          proposalImages: noImages,
+        },
+        { unexported: false },
+      );
+      expect(await library.get('zip')).toMatchObject({
+        updatedAt: '2026-10-09T09:00:00.000Z',
+        openedAt: '2026-10-12T10:00:00.000Z',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('FolderLibrary (recentes de pasta)', () => {

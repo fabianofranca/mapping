@@ -288,6 +288,41 @@ describe('importar zip', () => {
     expect(current.unexported.value).toBe(false);
   });
 
+  it('importar conta como uso: o projeto vai para o topo dos recentes com a data de agora (G2)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-10-10T10:00:00.000Z'));
+      await app.createLocalProject('Local');
+      await app.closeProject();
+      // O zip traz a data da última alteração, anterior ao projeto local.
+      const p = emptyProject();
+      const old = {
+        ...p,
+        project: { ...p.project, updatedAt: '2026-10-09T09:00:00.000Z' },
+      };
+      const blob = await writeProjectZip({
+        mapping: serialize(old),
+        images: new Map(),
+        specs: new Map(),
+        proposals: new Map(),
+        proposalImages: new Map(),
+      });
+      vi.setSystemTime(new Date('2026-10-12T10:00:00.000Z'));
+      expect((await app.importZip(blob)).ok).toBe(true);
+      const importedId = (await openedOf(app)).localId;
+      await app.closeProject();
+      const [first] = app.recentProjects.value;
+      expect(first?.id).toBe(importedId);
+      expect(first?.usedAt).toBe('2026-10-12T10:00:00.000Z');
+      // A última alteração continua sendo a de dentro do zip.
+      const meta = app.localProjects.value.find((m) => m.id === importedId);
+      expect(meta?.updatedAt).toBe('2026-10-09T09:00:00.000Z');
+      expect(meta?.openedAt).toBe('2026-10-12T10:00:00.000Z');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('zip de projeto v1 abre migrando e faz backup ao salvar', async () => {
     expect((await app.importZip(await zipOf({ 'mapping.json': v1 }))).ok).toBe(true);
     const { session, localId } = await openedOf(app);
