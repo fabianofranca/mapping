@@ -23,8 +23,21 @@ export interface DisplayImages<T> {
 }
 
 /**
+ * Fecha o bitmap só no quadro seguinte. Quem o desenha (o canvas) ainda pode ter um
+ * desenho pendente do quadro em que o bitmap estava no mapa: o mapa muda na hora e o
+ * quadro seguinte deixa de referenciá-lo, antes de ele fechar. Desenhar um `ImageBitmap`
+ * fechado lança `InvalidStateError` (achado 10 do relato de 2026-10-11).
+ */
+function closeAfterFrame(bitmap: { close(): void }): void {
+  const close = () => bitmap.close();
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(close);
+  else setTimeout(close, 0);
+}
+
+/**
  * Bitmaps de exibição por caminho de arquivo, carregados sob demanda e
- * liberados (`close()`) ao sair do projeto.
+ * liberados (`close()`) ao sair do projeto. O mapa nunca contém um bitmap fechado: o
+ * caminho sai do mapa primeiro e o bitmap fecha depois do quadro seguinte.
  */
 export function createDisplayImages<T extends { close(): void }>(
   load: (path: string) => Promise<T | null>,
@@ -41,9 +54,10 @@ export function createDisplayImages<T extends { close(): void }>(
     images.value = next;
   };
 
-  const release = (path: string) => {
+  /** O bitmap de `path`, para fechar depois de tirá-lo do mapa (`undefined` se não há). */
+  const bitmapOf = (path: string): T | undefined => {
     const current = images.value.get(path);
-    if (current?.status === 'ready') current.bitmap.close();
+    return current?.status === 'ready' ? current.bitmap : undefined;
   };
 
   return {
@@ -74,23 +88,28 @@ export function createDisplayImages<T extends { close(): void }>(
       const dropped = [...images.value.keys()].filter((path) => !paths.has(path));
       if (dropped.length === 0) return;
       const next = new Map(images.value);
+      const bitmaps: T[] = [];
       for (const path of dropped) {
-        release(path);
+        const bitmap = bitmapOf(path);
+        if (bitmap) bitmaps.push(bitmap);
         // Um carregamento em andamento chega "velho": o bitmap é fechado ao chegar.
         loadingGeneration.delete(path);
         next.delete(path);
       }
       images.value = next;
+      for (const bitmap of bitmaps) closeAfterFrame(bitmap);
     },
     invalidate(path) {
-      release(path);
+      const bitmap = bitmapOf(path);
       loadingGeneration.delete(path);
       set(path, null);
+      if (bitmap) closeAfterFrame(bitmap);
     },
     dispose() {
       disposed = true;
-      for (const path of images.value.keys()) release(path);
+      const bitmaps = [...images.value.keys()].flatMap((path) => bitmapOf(path) ?? []);
       images.value = new Map();
+      for (const bitmap of bitmaps) closeAfterFrame(bitmap);
     },
   };
 }

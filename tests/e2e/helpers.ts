@@ -156,8 +156,13 @@ export async function openExport(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: 'Baixar' })).toBeVisible();
 }
 
-/** Exportar → Baixar: devolve o zip baixado. */
+/**
+ * Exportar → Baixar: devolve o zip baixado. Tira o `showSaveFilePicker` (o Chromium do
+ * teste o tem) antes de abrir o diálogo, para a app usar o `<a download>`, que o
+ * Playwright captura; o caminho do seletor tem os próprios testes em `flows.spec.ts`.
+ */
 export async function exportZip(page: Page): Promise<JSZip> {
+  await page.evaluate(() => Reflect.set(window, 'showSaveFilePicker', undefined));
   await openExport(page);
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Baixar' }).click();

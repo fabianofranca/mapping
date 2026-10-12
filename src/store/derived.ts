@@ -228,13 +228,17 @@ export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDe
 // ---------------------------------------------------------------------------
 // Revisão de propostas (etapa 4)
 
+/** Visão do canvas (e da Árvore) na revisão: o projeto como está ou "como ficaria". */
+export type ReviewView = 'current' | 'proposed';
+
 /**
  * De onde o estado derivado da revisão lê: as propostas da sessão e o que a interface
- * escolheu (proposta aberta, filtros, propostas que este dispositivo já abriu).
+ * escolheu (proposta aberta, visão, filtros, propostas que este dispositivo já abriu).
  */
 export interface ReviewSources {
   readonly proposals: ReadonlySignal<readonly Proposal[]>;
   readonly proposalId: ReadonlySignal<string | null>;
+  readonly view: ReadonlySignal<ReviewView>;
   readonly filters: ReadonlySignal<ReviewFilters>;
   /** Propostas já abertas neste dispositivo (ids), para a marca "Nova". */
   readonly seen: ReadonlySignal<ReadonlySet<string>>;
@@ -275,8 +279,11 @@ export interface ProposalRow {
   readonly fresh: boolean;
   /** Substituída: o que ficou para trás (`null` nas demais). */
   readonly leftBehind: LeftBehind | null;
-  /** Id da proposta que a substituiu, se estiver na pasta. */
-  readonly supersededBy: string | null;
+  /**
+   * A proposta que aponta `supersedes` para esta, se estiver na pasta: derivado da nova,
+   * qualquer que seja o status desta (uma aplicada é histórico e não muda de status).
+   */
+  readonly supersededBy: Proposal | null;
 }
 
 export interface ReviewDerived {
@@ -312,6 +319,12 @@ export interface ReviewDerived {
   readonly canApply: ReadonlySignal<boolean>;
   /** O projeto "como ficaria" (atual + mudanças não rejeitadas e não aplicadas); lido só quando a interface pede. */
   readonly preview: ReadonlySignal<PatchResult | null>;
+  /**
+   * O projeto que a interface mostra: o "como ficaria" na visão Proposto da revisão; o
+   * atual (`store.committed`) na visão Atual e fora da revisão. A Árvore e o estado vazio
+   * do canvas leem daqui (uma importação nova tem imagens só na prévia).
+   */
+  readonly shownProject: ReadonlySignal<Project | null>;
   /** Mudanças que passam pelos filtros, na ordem da proposta. */
   readonly visibleIds: ReadonlySignal<readonly string[]>;
   /** Sem decisão (todas, na ordem da proposta). */
@@ -405,7 +418,7 @@ export function createReviewDerived(
         p.notes.length === 0 &&
         !seen.has(p.id),
       leftBehind: p.status === 'superseded' ? leftBehind(p) : null,
-      supersededBy: successors.get(p.id)?.id ?? null,
+      supersededBy: successors.get(p.id) ?? null,
     }));
   });
 
@@ -562,6 +575,13 @@ export function createReviewDerived(
     return p && current ? previewProject(current, p) : null;
   });
 
+  const shownProject = computed((): Project | null => {
+    if (sources.proposalId.value === null || sources.view.value === 'current') {
+      return project.value;
+    }
+    return preview.value?.project ?? project.value;
+  });
+
   const visibleIds = computed((): readonly string[] => {
     const p = proposal.value;
     const current = project.value;
@@ -618,6 +638,7 @@ export function createReviewDerived(
     invalid,
     canApply,
     preview,
+    shownProject,
     visibleIds,
     pendingIds,
     notes,

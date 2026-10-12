@@ -76,11 +76,11 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/app/ExportDialog.tsx`, `src/storage/share.ts`, `src/app/controller.ts` (só `markExported` e o que a exportação chama), `src/i18n/*`, `tests/components/*` do diálogo de exportação, `tests/app/controller.test.ts`, `tests/e2e/flows.spec.ts`, `docs/ARCHITECTURE.md` (parágrafo da exportação).
 
-- [ ] Teste que reproduz: com `showSaveFilePicker` simulado devolvendo `AbortError`, hoje `unexported` vira `false`
-- [ ] `storage/share.ts` ganha `saveFileWithPicker(file)`: `showSaveFilePicker` com nome sugerido e tipo zip, grava pelo `createWritable`, devolve `saved | cancelled`; detecta o recurso em runtime
-- [ ] `ExportDialog`: **Baixar** usa o seletor quando existe e chama `markExported()` só em `saved`; em `cancelled` nada muda e o aviso continua; sem o recurso, `<a download>` + `markExported()` como hoje, com a linha de texto avisando que cancelar o salvamento exige exportar de novo
-- [ ] `navigator.share`: `markExported()` só quando a promessa resolve (cancelar o compartilhamento rejeita com `AbortError`)
-- [ ] Testes: cancelado mantém o aviso; salvo limpa; sem o recurso o comportamento antigo continua; e2e cobre o caminho com o seletor simulado
+- [x] Teste que reproduz: com `showSaveFilePicker` simulado devolvendo `AbortError`, hoje `unexported` vira `false`
+- [x] `storage/share.ts` ganha `saveFileWithPicker(file)`: `showSaveFilePicker` com nome sugerido e tipo zip, grava pelo `createWritable`, devolve `saved | cancelled`; detecta o recurso em runtime
+- [x] `ExportDialog`: **Baixar** usa o seletor quando existe e chama `markExported()` só em `saved`; em `cancelled` nada muda e o aviso continua; sem o recurso, `<a download>` + `markExported()` como hoje, com a linha de texto avisando que cancelar o salvamento exige exportar de novo
+- [x] `navigator.share`: `markExported()` só quando a promessa resolve (cancelar o compartilhamento rejeita com `AbortError`)
+- [x] Testes: cancelado mantém o aviso; salvo limpa; sem o recurso o comportamento antigo continua; e2e cobre o caminho com o seletor simulado
 
 **Aceite**: R1.22 e R2.3 do `docs/TESTING.md` com um cancelamento no meio mantêm **Alterações não exportadas**; a exportação continua compatível com a CSP e com `file://`.
 
@@ -103,11 +103,11 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/model/markings.ts`, `src/model/proposalCompare.ts`, `mcp/batch.ts` (só o caso `update_marking`, se precisar), `mcp/proposals.ts` (texto da resposta `superseded`), `mcp/version.ts`, `docs/AGENT-GUIDE.md`, `docs/PROPOSAL-FORMAT.md`, `docs/MCP.md`, `tests/model/locks.test.ts`, `tests/model/proposalCompare*.test.ts`, `tests/mcp/proposals.test.ts`, `tests/mcp/write.test.ts`.
 
-- [ ] Testes que reproduzem: `setMarkingRect` com o `rect` atual e `moveMarking(0, 0)` num item trancado lançam `locked`; `compareProposals` marca como `missing` criações iguais sem `source`; `propose_changes` com `supersedes` de uma aplicada
-- [ ] Geometria igual devolve `p` sem checar a trava (também em redimensionar); a trava continua valendo para qualquer diferença; `update_marking` do MCP com o `rect` atual passa e, se nada mais mudou, o lote devolve `no-changes`
-- [ ] `compareProposals`: casamento por `source`, depois por id da entidade, depois por caminho legível para criações; `same`/`different`/`missing` corretos no caso do achado 15
-- [ ] Substituição de aplicada: o modelo não muda (`applied` fica); a resposta do MCP explica (`superseded: { status: 'applied', note }`); `AGENT-GUIDE.md` passo 7 e `PROPOSAL-FORMAT.md` descrevem o comportamento real (aberta vira `superseded`; aplicada mantém o status e a app mostra "substituída por")
-- [ ] `SERVER_VERSION` 0.3.2; `docs/MCP.md` (tag `mcp-v0.3.2`, pelo dono)
+- [x] Testes que reproduzem: `setMarkingRect` com o `rect` atual e `moveMarking(0, 0)` num item trancado lançam `locked`; `compareProposals` marca como `missing` criações iguais sem `source`; `propose_changes` com `supersedes` de uma aplicada
+- [x] Geometria igual devolve `p` sem checar a trava (também em redimensionar); a trava continua valendo para qualquer diferença; `update_marking` do MCP com o `rect` atual passa e, se nada mais mudou, o lote devolve `no-changes`
+- [x] `compareProposals`: casamento por `source`, depois por id da entidade, depois por caminho legível para criações; `same`/`different`/`missing` corretos no caso do achado 15
+- [x] Substituição de aplicada: o modelo não muda (`applied` fica); a resposta do MCP explica (`superseded: { status: 'applied', note }`); `AGENT-GUIDE.md` passo 7 e `PROPOSAL-FORMAT.md` descrevem o comportamento real (aberta vira `superseded`; aplicada mantém o status e a app mostra "substituída por")
+- [x] `SERVER_VERSION` 0.3.2; `docs/MCP.md` (tag `mcp-v0.3.2`, pelo dono)
 
 **Aceite**: R5.7 do guia com um item trancado passa (`no-changes`); `tests/mcp` verdes; `npm run build:mcp` com `--version` 0.3.2.
 
@@ -133,12 +133,12 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/app/Editor.tsx`, `src/app/CanvasNotices.tsx`, `src/ui/TreeWindow.tsx`/`MarkingTree.tsx` (fonte da árvore na revisão), `src/store/derived.ts`, `src/store/review.ts` (`knownConflicts`), `src/ui/review/ProposalRow.tsx`/`ProposalList.tsx`, `src/store/displayImages.ts`, `src/canvas/renderers/images.ts`, `src/store/proposalActions.ts` (invalidar imagens ao aplicar), `src/i18n/*`, `tests/store/review.test.ts`, `tests/components/review/*`, `tests/canvas/*`, `docs/ARCHITECTURE.md`.
 
-- [ ] Testes que reproduzem: revisão aberta num projeto sem imagens com proposta que cria imagens → árvore vazia e aviso de "nenhuma imagem" visíveis; reabrir a revisão sem mudança → `newConflicts` não vazio; proposta `applied` com outra apontando `supersedes` → sem link; bitmap fechado por `retain` ainda desenhado
-- [ ] Na revisão, Árvore e estado vazio leem `review.derived.preview` quando a visão é Proposto (e o atual quando é Atual); o aviso "Nenhuma imagem ainda" não aparece se a prévia tem imagens
-- [ ] `knownConflicts`: investigar a divergência da chave (idioma, ordem, id) e corrigir; reabrir sem mudança nunca marca conflito novo; teste cobre troca de idioma entre sessões
-- [ ] Proposta aplicada substituída: a linha mostra "Aplicada · substituída por <título>" e **Abrir a nova**, derivado do `supersedes` das demais propostas (sem mudar o arquivo)
-- [ ] `drawImage` destacado: reproduzir (bitmap fechado pelo `retain` enquanto um quadro pendente ainda o referencia, ou imagem trocada ao aplicar a proposta) e corrigir na raiz (não desenhar bitmap fechado; invalidar a exibição da imagem ao aplicar/desfazer uma proposta com imagens); o erro não volta ao Diagnóstico no cenário do R4.10
-- [ ] Testes
+- [x] Testes que reproduzem: revisão aberta num projeto sem imagens com proposta que cria imagens → árvore vazia e aviso de "nenhuma imagem" visíveis; reabrir a revisão sem mudança → `newConflicts` não vazio; proposta `applied` com outra apontando `supersedes` → sem link; bitmap fechado por `retain` ainda desenhado
+- [x] Na revisão, Árvore e estado vazio leem `review.derived.preview` quando a visão é Proposto (e o atual quando é Atual); o aviso "Nenhuma imagem ainda" não aparece se a prévia tem imagens
+- [x] `knownConflicts`: investigar a divergência da chave (idioma, ordem, id) e corrigir; reabrir sem mudança nunca marca conflito novo; teste cobre troca de idioma entre sessões
+- [x] Proposta aplicada substituída: a linha mostra "Aplicada · substituída por <título>" e **Abrir a nova**, derivado do `supersedes` das demais propostas (sem mudar o arquivo)
+- [x] `drawImage` destacado: reproduzir (bitmap fechado pelo `retain` enquanto um quadro pendente ainda o referencia, ou imagem trocada ao aplicar a proposta) e corrigir na raiz (não desenhar bitmap fechado; invalidar a exibição da imagem ao aplicar/desfazer uma proposta com imagens); o erro não volta ao Diagnóstico no cenário do R4.10
+- [x] Testes
 
 **Aceite**: R5.2 e R5.4 do guia com a Árvore navegável e o link **Abrir a nova**; R4.9/R4.10 sem "conflito novo" falso e sem erro no Diagnóstico; `tests/store/reviewPerf.test.ts` no orçamento.
 

@@ -550,6 +550,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
     );
     pagamentoRef = found.matches[0]!.ref;
     const before = hashOf(mappingPath());
+    const firstBefore = readProposal(dir(), first.proposal.id);
     second = await propose(
       mcp,
       'loja',
@@ -583,6 +584,15 @@ describe('nova proposta com supersedes (só as correções)', () => {
       ref: first.proposal.ref,
       status: 'applied',
     });
+    // Achado 13: a aplicada é histórico e não muda; a resposta explica por quê (e o que a app
+    // mostra), em vez de deixar o agente esperar `superseded`.
+    expect(second.superseded).toEqual({
+      ref: first.proposal.ref,
+      status: 'applied',
+      revision: firstBefore.revision,
+      note: expect.stringMatching(/aplicada.*substituída por/s),
+    });
+    expect(readProposal(dir(), first.proposal.id)).toEqual(firstBefore);
     expect(readProposal(dir(), first.proposal.id).decisions).toEqual(firstDecisions());
     const listed = ok(await mcp.call<Listed>('list_proposals', { project: 'loja' }));
     const row = listed.proposals.find((r) => r.id === first.proposal.id)!;
@@ -659,6 +669,47 @@ describe('nova proposta com supersedes (só as correções)', () => {
     const got = ok(await mcp.call<Got>('get_proposal', { ref: third.proposal.ref }));
     expect(got.proposal.status).toBe('superseded');
     expect(got.progress).toMatchObject({ pending: 1, accepted: 1 });
+  });
+
+  it('superseded-incomplete conta como presentes as criações sem source que a nova repete (achado 15)', async () => {
+    const operations = (input: Record<string, unknown>) => [
+      {
+        op: 'create_marking',
+        as: '$senha',
+        image: pagamentoRef,
+        name: 'Senha',
+        rect: { x: 20, y: 200, width: 500, height: 70 },
+        source: figma('2:30'),
+      },
+      { op: 'create_annotation', marking: '$senha', type: 'input', values: input },
+      {
+        op: 'create_annotation',
+        marking: '$senha',
+        type: 'button',
+        values: { id: 'btn_ver_senha', texto: 'Ver' },
+      },
+    ];
+    const fifth = await propose(mcp, 'loja', operations({ id: 'input_senha' }), {
+      title: 'Senha',
+    });
+    expect(fifth.reviewChanges).toMatchObject({ total: 3, create: 3 });
+    const sixth = await propose(
+      mcp,
+      'loja',
+      operations({ id: 'input_senha', placeholder: 'Sua senha' }),
+      { title: 'Senha (2)', supersedes: fifth.proposal.ref },
+    );
+    expect(sixth.warnings).toEqual([
+      expect.objectContaining({
+        code: 'superseded-incomplete',
+        undecided: 3,
+        // A marcação (casada pela origem) e o Button iguais; o Input ganhou o placeholder.
+        inNewProposal: { same: 2, different: 1, missing: 0 },
+      }),
+    ]);
+    expect(sixth.superseded).toMatchObject({ status: 'superseded' });
+    expect(sixth.superseded).not.toHaveProperty('note');
+    ok(await mcp.call('withdraw_proposal', { ref: sixth.proposal.ref }));
   });
 
   it('supersedes inexistente ou de outro projeto é recusado, sem gravar nada', async () => {

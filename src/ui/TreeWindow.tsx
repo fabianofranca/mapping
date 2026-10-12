@@ -10,15 +10,20 @@ interface TreeWindowProps {
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }
 
-/** Janela Árvore de marcações (esquerda), com Localizar a seleção e Recolher tudo. */
+/**
+ * Janela Árvore de marcações (esquerda), com Localizar a seleção e Recolher tudo. Mostra
+ * o projeto que está à vista: na visão Proposto da revisão, o "como ficaria" (uma
+ * importação nova só tem imagens e itens na prévia); senão, o projeto atual.
+ */
 export function TreeWindow({ onSelect }: TreeWindowProps) {
-  const { store, ui } = useEditor();
+  const { review, ui } = useEditor();
   const body = useRef<HTMLDivElement>(null);
-  const project = store.committed.value;
+  const shown = review.derived.shownProject;
+  const project = shown.value;
   const selection = ui.selection.value;
 
   const locate = () => {
-    revealInTree(ui, store.committed.peek(), ui.selection.peek());
+    revealInTree(ui, shown.peek(), ui.selection.peek());
     afterPaint(() => scrollToSelected(body.current, true));
   };
 
@@ -36,7 +41,7 @@ export function TreeWindow({ onSelect }: TreeWindowProps) {
           <IconButton
             icon="collapseAll"
             label={t('tree.collapseAll')}
-            onClick={() => collapseTree(ui, store.committed.peek())}
+            onClick={() => collapseTree(ui, shown.peek())}
           />
         </>
       }

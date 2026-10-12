@@ -286,6 +286,9 @@ export const enUS: Dictionary = {
   'export.share': 'Share',
   'export.download': 'Download',
   'export.shareFailed': 'Could not share. Try downloading.',
+  'export.saveFailed': 'Could not save the file. Try again.',
+  'export.downloadHint':
+    'Downloading counts as exported. If you cancel saving the file, export again.',
 
   'pwa.updateAvailable': 'New version available.',
   'pwa.update': 'Update',

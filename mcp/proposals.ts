@@ -199,7 +199,10 @@ export class Proposals {
     };
   }
 
-  /** Marca a proposta anterior como substituída e avisa se a revisão dela não tinha terminado. */
+  /**
+   * Marca a proposta anterior como substituída e avisa se a revisão dela não tinha terminado.
+   * Uma anterior já aplicada fica como está, e a resposta explica.
+   */
   private async supersede(
     location: ProjectLocation,
     all: StoredProposals,
@@ -218,6 +221,12 @@ export class Proposals {
         ref: refs.ref(previous.id),
         status: updated.status,
         revision: updated.revision,
+        // A aplicada é histórico: não vira `superseded` (o `supersedes` da nova é o vínculo).
+        ...(updated.status === 'applied'
+          ? {
+              note: `a proposta anterior já estava aplicada e continua \`applied\` (é histórico e não muda de status); a app mostra nela "Aplicada · substituída por ${next.title}", com o link Abrir a nova`,
+            }
+          : {}),
       };
       if (!before || !OPEN_STATUSES.includes(before.status)) return { view };
       const progress = reviewProgress(before);

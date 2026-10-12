@@ -287,6 +287,9 @@ export const ptBR = {
   'export.share': 'Compartilhar',
   'export.download': 'Baixar',
   'export.shareFailed': 'Não foi possível compartilhar. Tente baixar.',
+  'export.saveFailed': 'Não foi possível salvar o arquivo. Tente de novo.',
+  'export.downloadHint':
+    'Ao baixar, o projeto conta como exportado. Se você cancelar o salvamento do arquivo, exporte de novo.',
 
   'pwa.updateAvailable': 'Nova versão disponível.',
   'pwa.update': 'Atualizar',

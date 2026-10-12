@@ -10,7 +10,7 @@ import type { EditorNotices } from './useEditorNotices';
  * erros de operação, dica de desenho e progresso.
  */
 export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) {
-  const { open, session, store, ui } = useEditor();
+  const { open, session, store, ui, review } = useEditor();
   // Com o diálogo de alteração externa aberto, o erro de gravação já está explicado nele.
   const saveFailed =
     session.saveStatus.value === 'error' && session.conflict.value === null;
@@ -20,8 +20,9 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
   const repairs = open.repaired?.length ?? 0;
   const readOnly = store.readOnly.value;
   const locked = store.locked.value;
+  // O projeto à vista (na visão Proposto da revisão, o "como ficaria").
   const hasImagesSignal = useComputed(
-    () => (store.committed.value?.images.length ?? 0) > 0,
+    () => (review.derived.shownProject.value?.images.length ?? 0) > 0,
   );
   const hasImages = hasImagesSignal.value;
   const { message, progress } = notices;
