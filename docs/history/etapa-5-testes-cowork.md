@@ -1,5 +1,7 @@
 # Prompt do testador — Cowork no computador do dono (depois da etapa 5)
 
+> **Histórico.** Foi o prompt da primeira rodada (relato em [`relato-2026-10-11.md`](relato-2026-10-11.md)). A partir da segunda rodada vale [`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md), escrito na fase 6.7 com o que atrapalhou nesta e com o modo dirigido. O texto abaixo ficou como estava; os passos que ele cita podem ter mudado no `docs/TESTING.md`.
+
 > É o prompt inicial de uma sessão do **Cowork** (Claude com controle do computador) que executa os testes reais da app no computador do dono, com os roteiros de [`docs/TESTING.md`](../TESTING.md). Escrito durante a etapa 5 e guardado aqui no fechamento dela (fase 5.9), junto com o plano ([`PLAN-etapa-5.md`](PLAN-etapa-5.md)).
 >
 > Para iniciar: numa sessão do Cowork com acesso a este repositório clonado, mande **"Leia `docs/history/etapa-5-testes-cowork.md` e execute."** Antes, o dono prepara três coisas: a URL publicada da app (GitHub Pages) ou o `index.html` avulso baixado do artefato do deploy; o `mapping-mcp.js` da Release `mcp-v0.3.1` (seção 5 do `docs/TESTING.md`, inclusive o que fazer se a Release ainda não existir); e, se quiser o teste do MCP, o Claude Code instalado no computador.
