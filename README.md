@@ -69,7 +69,7 @@ O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service wo
 
 ## Como relatar um problema
 
-Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md).
+Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md). Para um agente com controle do computador (Cowork) testar no seu computador, o prompt inicial está em [`docs/history/etapa-6-testes-cowork.md`](docs/history/etapa-6-testes-cowork.md) (rodada completa ou dirigida a achados de um relato anterior).
 
 A app não envia nada para a rede (nem telemetria), então o relato depende de você copiar os dados:
 
