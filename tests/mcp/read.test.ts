@@ -790,7 +790,7 @@ describe('segurança de caminhos', () => {
 });
 
 describe('create_project', () => {
-  it('cria o projeto com mapping.json, images/ e .gitignore, e ele já é descoberto', async () => {
+  it('cria o projeto com mapping.json e .gitignore, sem images/ (como a app), e ele já é descoberto', async () => {
     const created = ok(
       await mcp.call('create_project', { path: 'novos/loja', name: ' Loja ' }),
     );
@@ -805,6 +805,8 @@ describe('create_project', () => {
     });
     const dir = ws.projectDir('novos/loja');
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('backups/\n');
+    // A app só cria `images/` ao gravar a primeira imagem; o servidor faz o mesmo (M2).
+    expect(existsSync(join(dir, 'images'))).toBe(false);
     const parsed = deserialize(readFileSync(join(dir, 'mapping.json'), 'utf8'));
     expect(parsed.ok && parsed.project.layers[0]!.name).toBe('Camada 1');
 
