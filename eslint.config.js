@@ -161,5 +161,7 @@ export default tseslint.config(
   { files: ['tests/mcp/**/*.ts'], languageOptions: { globals: globals.node } },
   { files: ['pwa/**/*.js'], languageOptions: { globals: globals.serviceworker } },
   { files: ['*.config.{js,ts}'], languageOptions: { globals: globals.node } },
+  // Fase 8.5: o gancho de disco dos testes do MCP (`tests/mcp/fsHooks.mjs`) roda no Node.
+  { files: ['tests/mcp/**/*.mjs'], languageOptions: { globals: globals.node } },
   prettier,
 );

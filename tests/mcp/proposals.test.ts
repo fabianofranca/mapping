@@ -1141,29 +1141,7 @@ describe('o agente nunca altera o mapping.json', () => {
     expect(invalid.data.valid).toBe(false);
     expect(files.map((f) => hashOf(f))).toEqual(before);
   });
-
-  it('só o create_project e as propostas gravam no disco, e nenhum módulo de proposta cita o mapping.json', () => {
-    const dirPath = join(process.cwd(), 'mcp');
-    const sources = readdirSync(dirPath).filter((f) => f.endsWith('.ts'));
-    const writers = sources.filter((f) =>
-      /writeFileAtomic\(|writeFile\(|rename\(/.test(
-        readFileSync(join(dirPath, f), 'utf8'),
-      ),
-    );
-    expect(writers).toEqual(['createProject.ts', 'paths.ts', 'proposalStore.ts']);
-    for (const file of [
-      'proposalStore.ts',
-      'proposals.ts',
-      'proposalViews.ts',
-      'proposalRefs.ts',
-    ]) {
-      const code = readFileSync(join(dirPath, file), 'utf8')
-        .split('\n')
-        .filter((line) => !/^\s*(\/\/|\/?\*)/.test(line))
-        .join('\n');
-      expect(code, file).not.toMatch(/MAPPING_FILE|['"`]mapping\.json['"`]/);
-    }
-  });
+  // A guarda estática dos escritores (recursiva) está em staticGuards.test.ts.
 });
 
 describe('projeto com propostas ilegíveis', () => {
