@@ -62,7 +62,7 @@ describe('etapa 6.4: tooltips, camadas, tabela e Diagnóstico', () => {
 
   it('com o menu aberto (aria-expanded), a dica do botão não aparece por cima dele', () => {
     expect(css['controls.css']).toMatch(
-      /\.tooltip-anchor:has\(\[aria-expanded='true'\]\) \.tooltip[^{]*\{[^}]*display:\s*none/,
+      /\.tooltip-anchor:has\(\[aria-haspopup\]\[aria-expanded='true'\]\) \.tooltip[^{]*\{[^}]*display:\s*none/,
     );
   });
 

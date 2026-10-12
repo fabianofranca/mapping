@@ -126,7 +126,8 @@ test('Ctrl+C copia a referência do item selecionado, com os dados do item junto
 
   const code = marking.id.replaceAll('-', '').slice(0, 8);
   expect(await clipboardText(page)).toMatch(
-    new RegExp(`^mapping://${FOLDER}/m/${code} \\(images/tela\\.webp › .+\\)$`),
+    // Imagem sem nome: o nome do arquivo sem a pasta, como no `resolve` do MCP (6.4).
+    new RegExp(`^mapping://${FOLDER}/m/${code} \\(tela\\.webp › .+\\)$`),
   );
 
   // O formato próprio da app vai junto (só a app o lê; o texto é o que o chat recebe).

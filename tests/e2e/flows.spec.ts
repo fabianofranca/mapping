@@ -488,8 +488,10 @@ test('tabela `atributos` sem colunas sobrepostas na largura padrão de Detalhes'
   await page
     .getByRole('button', { name: 'Adicionar anotação na camada Classes' })
     .click();
-  const typed = page.getByRole('button', { name: /^Classe/ });
-  if ((await typed.count()) > 0) await typed.first().click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /^Classe/ })
+    .click();
   const details = page.getByRole('region', { name: 'Detalhes' });
   await details.getByRole('button', { name: '+ Linha' }).click();
   await details.getByLabel('exemplo (Linha 1)').fill('ana@exemplo.com');

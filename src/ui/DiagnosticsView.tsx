@@ -114,12 +114,18 @@ export function DiagnosticsTable() {
                   key={`${error.at}|${error.context}|${error.message}`}
                   class="list-row"
                 >
-                  <td class="list-cell" data-label={t('diagnostics.col.time')}>
+                  <td
+                    class="list-cell diagnostics-nowrap"
+                    data-label={t('diagnostics.col.time')}
+                  >
                     <time class="muted" dateTime={error.at}>
                       {formatTime(error.at)}
                     </time>
                   </td>
-                  <td class="list-cell" data-label={t('diagnostics.col.context')}>
+                  <td
+                    class="list-cell diagnostics-nowrap"
+                    data-label={t('diagnostics.col.context')}
+                  >
                     <code>{error.context}</code>
                   </td>
                   <td

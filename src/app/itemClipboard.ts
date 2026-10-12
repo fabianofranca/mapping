@@ -6,6 +6,7 @@ import {
   ITEM_CLIPBOARD_MIME,
   formatRef,
   itemClipboardData,
+  refImageLabel,
   shortCode,
   type ItemKind,
   type Project,
@@ -13,7 +14,7 @@ import {
 import { cropToPng } from '../storage/imageCrop';
 import { resolveSelection, showToast, type Selection } from '../store/ui';
 import type { EditorContextValue } from '../ui/EditorContext';
-import { annotationLabel, imageLabel, markingPath } from '../ui/labels';
+import { annotationLabel, markingPath } from '../ui/labels';
 import { writeClipboardPng, writeClipboardText } from '../utils/clipboard';
 import { reportError } from '../utils/report';
 
@@ -46,20 +47,20 @@ function readablePath(project: Project, target: CopyTarget): string | null {
   const markingOf = (id: string) => project.markings.find((m) => m.id === id);
   if (target.kind === 'i') {
     const image = imageOf(target.id);
-    return image ? imageLabel(image) : null;
+    return image ? refImageLabel(image) : null;
   }
   if (target.kind === 'm') {
     const marking = markingOf(target.id);
     const image = marking && imageOf(marking.imageId);
     if (!marking || !image) return null;
-    return [imageLabel(image), markingPath(project, marking)].join(separator);
+    return [refImageLabel(image), markingPath(project, marking)].join(separator);
   }
   const annotation = project.annotations.find((a) => a.id === target.id);
   const owner = annotation && markingOf(annotation.markingId);
   const image = owner && imageOf(owner.imageId);
   if (!annotation || !owner || !image) return null;
   return [
-    imageLabel(image),
+    refImageLabel(image),
     markingPath(project, owner),
     annotationLabel(annotation),
   ].join(separator);
