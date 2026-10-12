@@ -216,6 +216,32 @@ describe('Dialog: foco quando quem abriu não existe mais', () => {
     expect(document.activeElement?.textContent).toBe('Vizinho');
   });
 
+  /** Aberto sem botão (atalho com o foco no body): não há quem abriu nem contêiner. */
+  function Orphan() {
+    const [open, setOpen] = useState(true);
+    return (
+      <div data-focus-root>
+        <button>Primeiro</button>
+        {open && (
+          <Dialog
+            title="Atalho"
+            onCancel={() => setOpen(false)}
+            actions={<button onClick={() => setOpen(false)}>Ok</button>}
+          />
+        )}
+      </div>
+    );
+  }
+
+  it('sem quem abriu nem contêiner, vai ao primeiro controle da app (data-focus-root), e não ao body', async () => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    render(<Orphan />);
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Ok'));
+    dialogEl().dispatchEvent(new Event('cancel', { cancelable: true }));
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement?.textContent).toBe('Primeiro');
+  });
+
   it('quem abriu continua no DOM: o foco volta para ele (o alvo explícito fica de reserva)', async () => {
     const user = userEvent.setup();
     render(<Vanishing explicit />);

@@ -1,6 +1,6 @@
 # Histórico — Etapa 7, correções da rodada dirigida (seção do antigo PLAN.md)
 
-> Fases 7.1 a 7.4 concluídas (PRs #117 a #119, mais o da 7.4; o plano entrou no #116). Referência atual: [`../TESTING.md`](../TESTING.md) (guia do testador), [`../ARCHITECTURE.md`](../ARCHITECTURE.md) e o [`README.md`](../../README.md); o MCP continua 0.3.2 ([`../MCP.md`](../MCP.md)). Ao lado ficam o relato que originou a etapa ([`relato-2026-10-12-dirigida.md`](relato-2026-10-12-dirigida.md)), o prompt do coordenador de agentes ([`etapa-7-coordenador.md`](etapa-7-coordenador.md)) e o prompt do testador em vigor ([`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md)).
+> Fases 7.1 a 7.4 concluídas (PRs #117 a #120; o plano entrou no #116). Referência atual: [`../TESTING.md`](../TESTING.md) (guia do testador), [`../ARCHITECTURE.md`](../ARCHITECTURE.md) e o [`README.md`](../../README.md); o MCP continua 0.3.2 ([`../MCP.md`](../MCP.md)). Ao lado ficam o relato que originou a etapa ([`relato-2026-10-12-dirigida.md`](relato-2026-10-12-dirigida.md)), o prompt do coordenador de agentes ([`etapa-7-coordenador.md`](etapa-7-coordenador.md)) e o prompt do testador em vigor ([`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md)).
 >
 > Arquivo histórico: seção movida do `PLAN.md` sem alterações de conteúdo, exceto os checkboxes da 7.4, marcados ao fechar a etapa, e o caminho do prompt do coordenador, que saiu de `docs/prompts/`. Depois dela vêm o fechamento (o que valeu das decisões a confirmar e as decisões consolidadas dos PRs) e o que ficou para depois. As etapas anteriores estão nos outros arquivos desta pasta.
 
@@ -124,7 +124,7 @@ As cinco foram adotadas como **Proposto**, sem comentário do dono:
 
 **Coordenação**
 
-- Onda 1 em paralelo, cada fase a partir da `main` com o plano (#116): #117 (7.2), #118 (7.3) e #119 (7.1), mergeados nessa ordem. Onda 2: a 7.4.
+- Onda 1 em paralelo, cada fase a partir da `main` com o plano (#116): #117 (7.2), #118 (7.3) e #119 (7.1), mergeados nessa ordem. Onda 2: #120 (7.4).
 - Todos os PRs foram mergeados pela conta do dono (na API, autor e quem mergeou aparecem como a mesma conta).
 - Nada do schema v8, do formato da proposta nem do MCP mudou; o MCP continua 0.3.2, sem tag nova.
 
@@ -154,7 +154,7 @@ As cinco foram adotadas como **Proposto**, sem comentário do dono:
 - Prompt do testador (`docs/history/etapa-6-testes-cowork.md`): item 7 com a janela à vista e em foco, pedindo ao dono que clique no Chrome antes de cada seletor nativo; **item 8 novo** sobre o estado de rodadas anteriores (projetos Loja/Local, a chave `preview:mapping.reviewResume` na prévia, `file://` e Pages com `localStorage` separados); o agente não apaga nada.
 - Aceite do guia feito por um agente novo, sem contexto: 8 pontos apontados e corrigidos; a ordem do texto do R4.6 ficou de lado (opcional).
 
-**7.4 — Fechamento**
+**7.4 — Fechamento (#120)**
 
 - Esta seção saiu do `PLAN.md`; o prompt do coordenador foi de `docs/prompts/` para esta pasta (`git mv`, com o aviso de histórico), e a pasta `docs/prompts/` deixou de existir.
 - `docs/ARCHITECTURE.md` (Diálogos e tela inicial) ganhou a frase sobre `returnFocus` e `restoreFocus` que a 7.1 deixou para o fechamento.
@@ -164,3 +164,5 @@ As cinco foram adotadas como **Proposto**, sem comentário do dono:
 - **Próxima rodada do Cowork**, se o dono quiser: dirigida nos itens **A1 a A3 e G1 a G4** (prompt [`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md), modo dirigido, citando [`relato-2026-10-12-dirigida.md`](relato-2026-10-12-dirigida.md)). Ou seguir direto com o marco "Uso real" ([`../ROADMAP.md`](../ROADMAP.md)).
 - **Aviso "A revisão voltou ao ponto onde você parou" com entrada legada** (7.3): se o dono preferir sem o aviso (ou sem devolver posição e filtros), é uma linha em `open` (`src/store/review.ts`).
 - O1, O3 e O4 continuam como acima; e continuam valendo os itens de "Fora desta etapa" das etapas 5 e 6 ([`PLAN-etapa-5.md`](PLAN-etapa-5.md), [`PLAN-etapa-6.md`](PLAN-etapa-6.md)).
+- **Resíduos da auditoria da entrega** (PR aberto depois do fechamento): último recurso do foco no primeiro controle da app (`data-focus-root`), para um diálogo aberto por atalho com o foco no `body` não deixar o foco lá; teste do **Cancelar** no "Referências vão quebrar"; os números dos PRs.
+- **Ctrl+Enter no seletor de alvo ("Ir ao alvo")**: a navegação troca a marcação selecionada, o campo `dado` sai do DOM e o foco cai no primeiro controle do painel Detalhes. A correção certa é a navegação focar o cartão da anotação de destino (desenho de foco do editor), não o `Dialog`; fica para quando o uso real pedir.
