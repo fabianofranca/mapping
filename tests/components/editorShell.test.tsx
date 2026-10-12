@@ -1,7 +1,9 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { signal } from '@preact/signals';
+import { useState } from 'preact/hooks';
+import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 import { t } from '../../src/i18n';
 import type { CanvasController } from '../../src/canvas/CanvasController';
 import { hideToolWindow, isToolWindowOpen } from '../../src/store/toolWindows';
@@ -359,6 +361,73 @@ describe('ExportDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: t('common.cancel') }));
     expect(onDone).toHaveBeenCalledOnce();
     expect(controller.markExported).not.toHaveBeenCalled();
+  });
+});
+
+// Etapa 7 (7.1), achado A1: o zip é gerado antes de o diálogo abrir, com o botão Exportar
+// desabilitado (o Chrome tira o foco dele), então o diálogo não tem a quem devolver o foco.
+describe('ExportDialog: foco ao fechar', () => {
+  beforeEach(simulateModalFocus);
+  afterEach(restoreModalFocus);
+
+  function ExportFlow({
+    harness,
+  }: {
+    readonly harness: ReturnType<typeof createHarness>;
+  }) {
+    const [busy, setBusy] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const commands = {
+      exportProject: async () => {
+        setBusy(true);
+        // O botão fica desabilitado enquanto o zip é gerado: o foco cai no body.
+        (document.activeElement as HTMLElement | null)?.blur();
+        await Promise.resolve();
+        setBusy(false);
+        setFile(new File(['z'], 'p.zip'));
+      },
+      closeProject: vi.fn(),
+    } as unknown as ProjectCommands;
+    return (
+      <EditorContext.Provider value={harness.context}>
+        <EditorMainBar
+          busy={busy}
+          onAdd={vi.fn()}
+          dialogs={fakeDialogs()}
+          commands={commands}
+        />
+        {file && <ExportDialog file={file} onDone={() => setFile(null)} />}
+      </EditorContext.Provider>
+    );
+  }
+
+  async function openExport() {
+    render(<ExportFlow harness={createHarness(sampleProject())} />);
+    const user = userEvent.setup();
+    const button = screen.getByRole('button', { name: t('editor.export') });
+    await user.click(button);
+    const dialog = await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el) throw new Error('o diálogo ainda não abriu');
+      return el;
+    });
+    return { user, button, dialog };
+  }
+
+  it('Cancelar devolve o foco ao botão Exportar (e não ao body)', async () => {
+    const { user, button, dialog } = await openExport();
+    await user.click(
+      within(dialog).getByRole('button', { name: t('common.cancel'), hidden: true }),
+    );
+    await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('Esc devolve o foco ao botão Exportar', async () => {
+    const { button, dialog } = await openExport();
+    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(button);
   });
 });
 

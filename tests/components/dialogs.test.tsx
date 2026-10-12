@@ -3,8 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { locale, theme } from '../../src/store/settings';
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { Dialog } from '../../src/ui/Dialog';
+import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 import { HELP_PROPOSALS, HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
 
@@ -147,6 +148,85 @@ describe('Dialog', () => {
     await user.click(
       within(dialogEl()).getByRole('button', { name: t('dialog.close'), hidden: true }),
     );
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(opener);
+  });
+});
+
+// Etapa 7 (7.1), achado A1: quem abriu saiu do DOM ao fechar (item de menu, linha removida…).
+describe('Dialog: foco quando quem abriu não existe mais', () => {
+  beforeEach(simulateModalFocus);
+  afterEach(restoreModalFocus);
+
+  /** "Abrir" some ao confirmar com "Ok", como a linha excluída pelo próprio diálogo. */
+  function Vanishing({ explicit }: { readonly explicit: boolean }) {
+    const [open, setOpen] = useState(false);
+    const [gone, setGone] = useState(false);
+    const target = useRef<HTMLButtonElement>(null);
+    return (
+      <div>
+        <button ref={target}>Alvo</button>
+        <div>
+          {!gone && <button onClick={() => setOpen(true)}>Abrir</button>}
+          <button>Vizinho</button>
+        </div>
+        {open && (
+          <Dialog
+            title="Confirmar"
+            onCancel={() => setOpen(false)}
+            returnFocus={explicit ? () => target.current : undefined}
+            actions={
+              <button
+                onClick={() => {
+                  setGone(true);
+                  setOpen(false);
+                }}
+              >
+                Ok
+              </button>
+            }
+          />
+        )}
+      </div>
+    );
+  }
+
+  async function openAndConfirm() {
+    const user = userEvent.setup();
+    const opener = [...document.querySelectorAll('button')].find(
+      (b) => b.textContent === 'Abrir',
+    );
+    if (!opener) throw new Error('sem o botão Abrir');
+    opener.focus();
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Ok'));
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+  }
+
+  it('vai ao alvo de retorno explícito, e não ao body', async () => {
+    render(<Vanishing explicit />);
+    await openAndConfirm();
+    expect(document.activeElement?.textContent).toBe('Alvo');
+  });
+
+  it('sem alvo explícito, vai ao contêiner mais próximo de quem abriu', async () => {
+    render(<Vanishing explicit={false} />);
+    await openAndConfirm();
+    expect(document.activeElement?.textContent).toBe('Vizinho');
+  });
+
+  it('quem abriu continua no DOM: o foco volta para ele (o alvo explícito fica de reserva)', async () => {
+    const user = userEvent.setup();
+    render(<Vanishing explicit />);
+    const opener = [...document.querySelectorAll('button')].find(
+      (b) => b.textContent === 'Abrir',
+    ) as HTMLElement;
+    opener.focus();
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Ok'));
+    // Esc (o jsdom não dispara o `cancel` sozinho).
+    dialogEl().dispatchEvent(new Event('cancel', { cancelable: true }));
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
     expect(document.activeElement).toBe(opener);
   });

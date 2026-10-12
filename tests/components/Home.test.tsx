@@ -279,6 +279,80 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     expect(controller.forgetFolder).toHaveBeenCalledWith('f1');
   });
 
+  // Etapa 7 (7.1), regressão G4: a linha sai da lista e o foco caía no body.
+  describe('foco depois de Remover da lista', () => {
+    /** `forgetFolder` tira a pasta da lista, como o controller faz. */
+    const forgetting = () =>
+      controller.forgetFolder.mockImplementation((id: string) => {
+        recentProjects.value = recentProjects.value.filter(
+          (p) => (p as { id: string }).id !== id,
+        );
+        return ok();
+      });
+    const openOf = (name: RegExp) =>
+      within(screen.getByRole('row', { name })).getByRole('button', {
+        name: t('common.open'),
+      });
+
+    it('vai ao Abrir da linha seguinte', async () => {
+      forgetting();
+      render(<Home />);
+      const row = screen.getByRole('row', { name: /Principal/ });
+      await userEvent.click(
+        within(row).getByRole('button', { name: t('home.forgetFolder') }),
+      );
+      await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
+    });
+
+    it('na última linha, vai ao Abrir da anterior', async () => {
+      forgetting();
+      recentProjects.value = [...recentProjects.value].reverse();
+      render(<Home />);
+      const row = screen.getByRole('row', { name: /Principal/ });
+      await userEvent.click(
+        within(row).getByRole('button', { name: t('home.forgetFolder') }),
+      );
+      await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
+    });
+
+    it('sem linhas, vai ao título da lista', async () => {
+      forgetting();
+      recentProjects.value = [folder];
+      render(<Home />);
+      await userEvent.click(screen.getByRole('button', { name: t('home.forgetFolder') }));
+      await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
+      await waitFor(() =>
+        expect(document.activeElement).toBe(
+          screen.getByRole('heading', { name: t('home.recentProjects') }),
+        ),
+      );
+    });
+
+    it('pelo aviso "Pasta indisponível" também', async () => {
+      forgetting();
+      controller.openRecentFolder.mockReturnValue(
+        ok({ kind: 'unavailable', reason: 'missing' }),
+      );
+      render(<Home />);
+      const user = userEvent.setup();
+      const row = screen.getByRole('row', { name: /Principal/ });
+      await user.click(within(row).getByRole('button', { name: t('common.open') }));
+      await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
+      const dialog = document.querySelector('dialog') as HTMLElement;
+      await user.click(
+        within(dialog).getByRole('button', {
+          name: t('home.forgetFolder'),
+          hidden: true,
+        }),
+      );
+      await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+      await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
+    });
+  });
+
   it('a busca também acha pelo nome da pasta', async () => {
     render(<Home />);
     await userEvent.type(screen.getByRole('searchbox'), 'pasta');
