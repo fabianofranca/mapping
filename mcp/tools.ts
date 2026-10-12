@@ -194,7 +194,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'create_project',
     {
       description:
-        'Cria um projeto Mapping vazio (mapping.json, images/ e .gitignore) numa pasta dentro de uma raiz. O nome da pasta vira o <projeto> das referências.',
+        'Cria um projeto Mapping vazio (mapping.json e .gitignore; images/ nasce com a primeira imagem aplicada) numa pasta dentro de uma raiz. O nome da pasta vira o <projeto> das referências.',
       inputSchema: {
         path: z
           .string()

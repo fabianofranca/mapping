@@ -6,7 +6,6 @@ import { ToolError } from './errors';
 import { Roots, writeFileAtomic } from './paths';
 import { MAPPING_FILE } from './projects';
 
-const IMAGES_DIR = 'images';
 const BACKUPS_DIR = 'backups';
 const GITIGNORE_FILE = '.gitignore';
 const DEFAULT_FIRST_LAYER = 'Camada 1';
@@ -57,7 +56,7 @@ export interface CreatedProject {
   readonly dir: string;
 }
 
-/** Cria a pasta do projeto (`mapping.json`, `images/` e `.gitignore`) dentro de uma raiz. */
+/** Cria a pasta do projeto (`mapping.json` e `.gitignore`) dentro de uma raiz. */
 export async function createProjectFolder(
   roots: Roots,
   args: CreateProjectArgs,
@@ -90,7 +89,8 @@ export async function createProjectFolder(
       color: DEFAULT_LAYER_COLOR,
     },
   });
-  await mkdir(join(dir, IMAGES_DIR), { recursive: true });
+  // Sem `images/`: como a app, a pasta só nasce com a primeira imagem (ao aplicar uma proposta).
+  await mkdir(dir, { recursive: true });
   // Confere de novo com a pasta já criada: um link simbólico no caminho só aparece agora.
   const inside = await roots.assertInside(await realpath(dir), args.path);
   await ensureGitignore(dir);
