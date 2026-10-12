@@ -113,15 +113,22 @@ export function renameMarking(
   };
 }
 
+function sameRect(a: Rect, b: Rect): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
 /**
  * Altera o retângulo (redimensionar ou ajuste fino). As filhas não se movem:
  * o novo retângulo precisa continuar dentro do pai e envolvendo as filhas.
+ * O retângulo atual não é mudança: devolve `p` como está, sem conferir a trava
+ * (a reexportação completa de um item trancado passa).
  */
 export function setMarkingRect(p: Project, markingId: string, rect: Rect): Project {
+  const marking = findById(p.markings, markingId);
+  if (sameRect(marking.rect, rect)) return p;
   checkRectShape(rect);
   requireUnlocked(canEditMarkingGeometry(p, markingId));
   const { outer, inner } = markingRectLimits(p, markingId);
-  const marking = findById(p.markings, markingId);
   if (!containsRect(outer, rect)) {
     fail(marking.parentId === null ? 'rect-out-of-image' : 'rect-outside-parent');
   }
@@ -152,7 +159,8 @@ export function clampMarkingDelta(
 
 /**
  * Move a marcação e todos os descendentes pelo mesmo deslocamento (inteiro). Descendentes
- * trancados vão junto: a posição relativa entre eles e o pai não muda.
+ * trancados vão junto: a posição relativa entre eles e o pai não muda. Deslocamento zero
+ * não é mudança: devolve `p` como está, sem conferir a trava.
  */
 export function moveMarking(
   p: Project,
@@ -162,6 +170,7 @@ export function moveMarking(
 ): Project {
   if (!Number.isInteger(dx) || !Number.isInteger(dy)) fail('rect-not-integer');
   const marking = findById(p.markings, markingId);
+  if (dx === 0 && dy === 0) return p;
   requireUnlocked(canEditMarkingGeometry(p, markingId));
   const moved = translateRect(marking.rect, dx, dy);
   if (!containsRect(containerOf(p, marking), moved)) {

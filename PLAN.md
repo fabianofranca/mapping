@@ -103,11 +103,11 @@ Mesmo desenho da etapa 5; o prompt do coordenador está em `docs/prompts/etapa-6
 
 **Toca em:** `src/model/markings.ts`, `src/model/proposalCompare.ts`, `mcp/batch.ts` (só o caso `update_marking`, se precisar), `mcp/proposals.ts` (texto da resposta `superseded`), `mcp/version.ts`, `docs/AGENT-GUIDE.md`, `docs/PROPOSAL-FORMAT.md`, `docs/MCP.md`, `tests/model/locks.test.ts`, `tests/model/proposalCompare*.test.ts`, `tests/mcp/proposals.test.ts`, `tests/mcp/write.test.ts`.
 
-- [ ] Testes que reproduzem: `setMarkingRect` com o `rect` atual e `moveMarking(0, 0)` num item trancado lançam `locked`; `compareProposals` marca como `missing` criações iguais sem `source`; `propose_changes` com `supersedes` de uma aplicada
-- [ ] Geometria igual devolve `p` sem checar a trava (também em redimensionar); a trava continua valendo para qualquer diferença; `update_marking` do MCP com o `rect` atual passa e, se nada mais mudou, o lote devolve `no-changes`
-- [ ] `compareProposals`: casamento por `source`, depois por id da entidade, depois por caminho legível para criações; `same`/`different`/`missing` corretos no caso do achado 15
-- [ ] Substituição de aplicada: o modelo não muda (`applied` fica); a resposta do MCP explica (`superseded: { status: 'applied', note }`); `AGENT-GUIDE.md` passo 7 e `PROPOSAL-FORMAT.md` descrevem o comportamento real (aberta vira `superseded`; aplicada mantém o status e a app mostra "substituída por")
-- [ ] `SERVER_VERSION` 0.3.2; `docs/MCP.md` (tag `mcp-v0.3.2`, pelo dono)
+- [x] Testes que reproduzem: `setMarkingRect` com o `rect` atual e `moveMarking(0, 0)` num item trancado lançam `locked`; `compareProposals` marca como `missing` criações iguais sem `source`; `propose_changes` com `supersedes` de uma aplicada
+- [x] Geometria igual devolve `p` sem checar a trava (também em redimensionar); a trava continua valendo para qualquer diferença; `update_marking` do MCP com o `rect` atual passa e, se nada mais mudou, o lote devolve `no-changes`
+- [x] `compareProposals`: casamento por `source`, depois por id da entidade, depois por caminho legível para criações; `same`/`different`/`missing` corretos no caso do achado 15
+- [x] Substituição de aplicada: o modelo não muda (`applied` fica); a resposta do MCP explica (`superseded: { status: 'applied', note }`); `AGENT-GUIDE.md` passo 7 e `PROPOSAL-FORMAT.md` descrevem o comportamento real (aberta vira `superseded`; aplicada mantém o status e a app mostra "substituída por")
+- [x] `SERVER_VERSION` 0.3.2; `docs/MCP.md` (tag `mcp-v0.3.2`, pelo dono)
 
 **Aceite**: R5.7 do guia com um item trancado passa (`no-changes`); `tests/mcp` verdes; `npm run build:mcp` com `--version` 0.3.2.
 

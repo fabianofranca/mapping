@@ -88,7 +88,7 @@ No texto: `region` é a parte da imagem original que aparece (em pixels da image
    - `notes`: as notas gerais (proposta, projeto, imagem, item), com o alvo;
    - `conflicts`: mudanças que ainda valem mas o projeto mudou depois da proposta (o valor atual vem junto);
    - `ready`: se a revisão terminou.
-7. **Corrija com uma nova proposta**: leia o projeto atual (o que foi aceito já foi aplicado) e envie `propose_changes` com `supersedes` apontando para a proposta anterior, **só com as correções**: refaça o que foi rejeitado levando em conta as notas, e nada do que foi aceito. A anterior passa a `superseded` e mantém decisões e notas. Repita até o usuário aceitar tudo.
+7. **Corrija com uma nova proposta**: leia o projeto atual (o que foi aceito já foi aplicado) e envie `propose_changes` com `supersedes` apontando para a proposta anterior, **só com as correções**: refaça o que foi rejeitado levando em conta as notas, e nada do que foi aceito. A anterior **já aplicada** (o caso normal, com a revisão concluída) continua `applied`: é histórico e não muda de status; a resposta traz `superseded: { status: "applied", note }` e a app mostra nela "Aplicada · substituída por <título da nova>", com **Abrir a nova** (o vínculo é o `supersedes` da nova). Só uma anterior ainda **aberta** passa a `superseded` (mantendo decisões e notas). Repita até o usuário aceitar tudo.
 
 Se a revisão da proposta anterior ainda tinha mudanças sem decisão ou aceitas sem aplicar, a resposta traz o aviso `superseded-incomplete` (quantas ficaram para trás e quantas a nova repete, altera ou deixa de fora): o usuário vê "esta proposta foi substituída por outra". **Evite**: só substitua depois da revisão concluída.
 
@@ -111,7 +111,7 @@ Imagens e marcações têm um `source` opcional (`{ "system", "id", "url" }`): a
 
 - **Na primeira importação**, ponha `source` em toda imagem (`add_image`) e marcação (`create_marking`) criada. Os ids do Mapping são novos; o `source` é o que permite reconhecer os mesmos elementos depois.
 - **Na reexportação**, para cada elemento da origem chame `find_by_source({ project, system, id })`: se existe, **atualize** (`update_marking`, `update_image`, `replace_image`) em vez de criar de novo; se não existe, crie com o mesmo `source`. Remova (`delete_*`) só o que sumiu da origem e que o usuário espera ver removido.
-- **Proponha só o que mudou.** A proposta já só traz as diferenças campo a campo (nome igual, posição igual = nenhuma mudança), e uma reexportação idêntica é recusada (`no-changes`). Mesmo assim, não reenvie imagens que não mudaram: um `replace_image` com o mesmo conteúdo ainda gera uma mudança de arquivo.
+- **Proponha só o que mudou.** A proposta já só traz as diferenças campo a campo (nome igual, posição igual = nenhuma mudança; repetir o `rect` atual, ou `move` 0,0, num item trancado também não é mudança e passa), e uma reexportação idêntica é recusada (`no-changes`). Mesmo assim, não reenvie imagens que não mudaram: um `replace_image` com o mesmo conteúdo ainda gera uma mudança de arquivo.
 - `find_by_source` também lista em `proposed` as propostas **abertas** que ainda vão criar um elemento com essa origem: espere a revisão (ou use `supersedes`) em vez de duplicá-lo.
 - **Especializações com `sources`** (`formatVersion` 3): `find_types_by_source({ project, system, id?, name? })` devolve o tipo de anotação que corresponde ao elemento de origem (ex: o componente `DS/Button`), pelo `id` (mais forte) ou pelo `name`, com as propriedades de origem dos campos e como os valores se traduzem (`Primary` → `primary`). Use-o para escolher o `type` e preencher `values` sem deduzir pelo nome.
 
@@ -183,7 +183,7 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 
 **Imagens.** Como na app: a orientação EXIF é aplicada, o lado maior fica em no máximo 2560 px e o arquivo é recodificado em WebP (sem perdas para PNG; com perdas, qualidade 0,85, para fotos), sem metadados. Sem redução nem rotação, o original é mantido se o WebP não ficar menor. `width` e `height` da imagem (e as coordenadas das marcações) são os do arquivo gravado. O nome em `images/` nunca sobrescreve um arquivo existente (`foto-2.webp`…). `file` é relativo à pasta do projeto ou a uma raiz, ou absoluto dentro das raízes.
 
-**Travas.** Item trancado não é movido, redimensionado, trocado nem excluído (`locked`): destranque na mesma operação (`"locked": false` é aplicado primeiro; `true`, por último) ou numa anterior. Nome e anotações seguem livres.
+**Travas.** Item trancado não é movido, redimensionado, trocado nem excluído (`locked`): destranque na mesma operação (`"locked": false` é aplicado primeiro; `true`, por último) ou numa anterior. Nome e anotações seguem livres. Repetir a geometria atual (`rect` igual ao atual, `move: {dx: 0, dy: 0}`) não é mudança e passa mesmo trancado, então a reexportação completa pode repetir o `rect` de tudo.
 
 ## Lendo uma anotação
 
