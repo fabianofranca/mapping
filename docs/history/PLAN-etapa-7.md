@@ -1,6 +1,6 @@
 # Histórico — Etapa 7, correções da rodada dirigida (seção do antigo PLAN.md)
 
-> Fases 7.1 a 7.4 concluídas (PRs #117 a #120; o plano entrou no #116). Referência atual: [`../TESTING.md`](../TESTING.md) (guia do testador), [`../ARCHITECTURE.md`](../ARCHITECTURE.md) e o [`README.md`](../../README.md); o MCP continua 0.3.2 ([`../MCP.md`](../MCP.md)). Ao lado ficam o relato que originou a etapa ([`relato-2026-10-12-dirigida.md`](relato-2026-10-12-dirigida.md)), o prompt do coordenador de agentes ([`etapa-7-coordenador.md`](etapa-7-coordenador.md)) e o prompt do testador em vigor ([`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md)).
+> Fases 7.1 a 7.4 concluídas (PRs #117 a #120; o plano entrou no #116; resíduos da auditoria no #121). Confirmada pela rodada 3 do Cowork, dirigida, sem achados ([`relato-2026-10-12-dirigida-r3.md`](relato-2026-10-12-dirigida-r3.md)). Referência atual: [`../TESTING.md`](../TESTING.md) (guia do testador), [`../ARCHITECTURE.md`](../ARCHITECTURE.md) e o [`README.md`](../../README.md); o MCP continua 0.3.2 ([`../MCP.md`](../MCP.md)). Ao lado ficam o relato que originou a etapa ([`relato-2026-10-12-dirigida.md`](relato-2026-10-12-dirigida.md)), o prompt do coordenador de agentes ([`etapa-7-coordenador.md`](etapa-7-coordenador.md)) e o prompt do testador em vigor ([`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md)).
 >
 > Arquivo histórico: seção movida do `PLAN.md` sem alterações de conteúdo, exceto os checkboxes da 7.4, marcados ao fechar a etapa, e o caminho do prompt do coordenador, que saiu de `docs/prompts/`. Depois dela vêm o fechamento (o que valeu das decisões a confirmar e as decisões consolidadas dos PRs) e o que ficou para depois. As etapas anteriores estão nos outros arquivos desta pasta.
 
@@ -161,7 +161,7 @@ As cinco foram adotadas como **Proposto**, sem comentário do dono:
 
 ### Fora desta etapa (acrescentado no fechamento)
 
-- **Próxima rodada do Cowork**, se o dono quiser: dirigida nos itens **A1 a A3 e G1 a G4** (prompt [`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md), modo dirigido, citando [`relato-2026-10-12-dirigida.md`](relato-2026-10-12-dirigida.md)). Ou seguir direto com o marco "Uso real" ([`../ROADMAP.md`](../ROADMAP.md)).
+- **Próxima rodada do Cowork** (feita em 2026-10-12, sem achados: [`relato-2026-10-12-dirigida-r3.md`](relato-2026-10-12-dirigida-r3.md)): dirigida nos itens **A1 a A3 e G1 a G4** (prompt [`etapa-6-testes-cowork.md`](etapa-6-testes-cowork.md), modo dirigido, citando [`relato-2026-10-12-dirigida.md`](relato-2026-10-12-dirigida.md)). Ou seguir direto com o marco "Uso real" ([`../ROADMAP.md`](../ROADMAP.md)).
 - **Aviso "A revisão voltou ao ponto onde você parou" com entrada legada** (7.3): se o dono preferir sem o aviso (ou sem devolver posição e filtros), é uma linha em `open` (`src/store/review.ts`).
 - O1, O3 e O4 continuam como acima; e continuam valendo os itens de "Fora desta etapa" das etapas 5 e 6 ([`PLAN-etapa-5.md`](PLAN-etapa-5.md), [`PLAN-etapa-6.md`](PLAN-etapa-6.md)).
 - **Resíduos da auditoria da entrega** (PR aberto depois do fechamento): último recurso do foco no primeiro controle da app (`data-focus-root`), para um diálogo aberto por atalho com o foco no `body` não deixar o foco lá; teste do **Cancelar** no "Referências vão quebrar"; os números dos PRs.
