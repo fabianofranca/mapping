@@ -150,12 +150,12 @@ Prompt em `docs/prompts/etapa-8-coordenador.md` (modelo e esforço por fase, mod
 
 **Toca em:** `mcp/**`, `src/model/proposalView.ts` (exportar `changeImageFile`), `src/model/backups.ts` (predicado do `.gitignore`), `src/model/images.ts` ou `src/storage/types.ts` (constantes `MAPPING_FILE`/`IMAGES_DIR`, só mover), `src/storage/folder.ts` (só usar o predicado movido), `docs/MCP.md`, `docs/AGENT-GUIDE.md`, `docs/ARCHITECTURE.md` (limites conhecidos M6/M7), `tests/mcp/**`, `tests/model/*` dos itens movidos.
 
-- [ ] Nota de desenho aprovada: resolução do `root` (como `main.ts`), fallback do `link`, registro `ToolErrorCode`, o que entra na 0.3.3
-- [ ] Testes que reproduzem: `root` relativo e `./` (M1); `create_project` sem `images/` (M2); `revision-conflict` do `propose` com `mapping.json` mudando no meio, `read-only` com `schemaVersion` maior, `supersede-failed` (M3); `link` falhando com `EPERM` cai para `wx` (M4); reserva das aceitas da substituída (M5); `root` + `path` absoluto fora da raiz → `invalid-arguments` (M12); `isWithin`/`hasParentSegment` com `path.win32` (M14)
-- [ ] M1, M2, M4, M5, M12 implementados; M6 e M7 documentados em `docs/ARCHITECTURE.md`
-- [ ] M10: `changeImageFile` exportado e reutilizado; predicado do `.gitignore` em `src/model/backups.ts` usado pelos dois lados; constantes num só lugar
-- [ ] Regras automáticas: guarda estática recursiva e nominal dos escritores (`mcp/**/*.ts`); `ToolErrorCode` como união literal + teste "todo código de `new ToolError(` está em `docs/AGENT-GUIDE.md` ou `docs/MCP.md`"; teste versão × docs (`SERVER_VERSION` ⇔ `mcp-v…` em `docs/MCP.md`)
-- [ ] `SERVER_VERSION = '0.3.3'`; `docs/MCP.md` e `docs/AGENT-GUIDE.md` atualizados (o `docs/TESTING.md` passa a dizer "a versão em `mcp/version.ts`", pela 8.6)
+- [x] Nota de desenho aprovada: resolução do `root` (como `main.ts`), fallback do `link`, registro `ToolErrorCode`, o que entra na 0.3.3
+- [x] Testes que reproduzem: `root` relativo e `./` (M1); `create_project` sem `images/` (M2); `revision-conflict` do `propose` com `mapping.json` mudando no meio, `read-only` com `schemaVersion` maior, `supersede-failed` (M3); `link` falhando com `EPERM` cai para `wx` (M4); reserva das aceitas da substituída (M5); `root` + `path` absoluto fora da raiz → `invalid-arguments` (M12); `isWithin`/`hasParentSegment` com `path.win32` (M14)
+- [x] M1, M2, M4, M5, M12 implementados; M6 e M7 documentados em `docs/ARCHITECTURE.md`
+- [x] M10: `changeImageFile` exportado e reutilizado; predicado do `.gitignore` em `src/model/backups.ts` usado pelos dois lados; constantes num só lugar
+- [x] Regras automáticas: guarda estática recursiva e nominal dos escritores (`mcp/**/*.ts`); `ToolErrorCode` como união literal + teste "todo código de `new ToolError(` está em `docs/AGENT-GUIDE.md` ou `docs/MCP.md`"; teste versão × docs (`SERVER_VERSION` ⇔ `mcp-v…` em `docs/MCP.md`)
+- [x] `SERVER_VERSION = '0.3.3'`; `docs/MCP.md` e `docs/AGENT-GUIDE.md` atualizados (o `docs/TESTING.md` passa a dizer "a versão em `mcp/version.ts`", pela 8.6)
 
 **Aceite**: `npm run build:mcp` e os testes por stdio verdes; a Release `mcp-v0.3.3` criada pelo dono depois do merge; R5.2 a R5.7 do guia com o `mapping-mcp.js` novo.
 
