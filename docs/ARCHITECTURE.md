@@ -211,7 +211,7 @@ O modelo de foco mora em `ui/focus.ts`; o porquê de cada regra está na nota de
 
 **Política de teclado:**
 
-- **Enter num campo de texto confirma e o foco fica no campo** (`CommitInput`, o Valor dos pares); uma guarda impede que o `change` que o navegador dispara em seguida grave de novo (uma entrada de desfazer). Exceção: **Enter na Chave** de um par leva ao Valor. Enter num `<form>` de diálogo envia; Enter e ↑↓ no seletor de referência e nos níveis da revisão seguem o que cada um faz.
+- **Enter num campo de texto confirma e o foco fica no campo** (`CommitInput`, o Valor dos pares); uma guarda impede que o `change` que o navegador dispara em seguida grave de novo (uma entrada de desfazer). A guarda vale só enquanto o valor externo (no par, o par gravado) ainda é a base daquela gravação e é zerada quando ele muda: depois de desfazer, o mesmo texto grava de novo; depois da renderização, o campo mostra o valor externo e o `change` duplicado não tem o que gravar, mesmo com um `onCommit` que normaliza o texto. Gravado, o rascunho passa a ser o texto gravado, então desfazer mostra o valor de antes, não o rascunho. Exceção: **Enter na Chave** de um par leva ao Valor. Enter num `<form>` de diálogo envia; Enter e ↑↓ no seletor de referência e nos níveis da revisão seguem o que cada um faz.
 - **Alt+Enter**: nova linha / novo par.
 - **Esc num campo**: com o que reverter, volta ao valor gravado e **para aí** (`preventDefault` + `stopPropagation`: não fecha o diálogo nem o menu em volta); sem o que reverter, **sobe** (fecha o menu ou o diálogo; no editor, os atalhos ignoram campos de texto). Esc num par novo o descarta e o foco vai ao "+ Par".
 - **Menus e popovers** devolvem o foco ao gatilho em todo fechamento (acima).

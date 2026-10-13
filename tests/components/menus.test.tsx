@@ -1,11 +1,14 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
+import { useRef } from 'preact/hooks';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { ActionMenu } from '../../src/ui/ActionMenu';
 import { CanvasContextMenu } from '../../src/ui/CanvasContextMenu';
 import { Button } from '../../src/ui/controls';
+import { Dialog } from '../../src/ui/Dialog';
 import { EditorContext } from '../../src/ui/EditorContext';
+import { DialogSlotContext, useDialogSlot } from '../../src/ui/focus';
 import { MenuPopover } from '../../src/ui/MenuPopover';
 import { Popover } from '../../src/ui/Popover';
 import { sampleProject } from '../model/fixtures';
@@ -39,6 +42,80 @@ describe('MenuPopover', () => {
     expect(onPick).toHaveBeenCalledOnce();
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(trigger);
+  });
+
+  // Devolução da 8.3 (segunda leitura, M1): o menu fechava na bolha do clique, depois de o
+  // item agir; o gatilho tem de receber o foco antes (nota §3, como o `ActionMenu`).
+  it('o gatilho recebe o foco antes de o item agir', async () => {
+    let focusedOnPick: Element | null = null;
+    const onPick = vi.fn(() => {
+      focusedOnPick = document.activeElement;
+    });
+    const trigger = renderMenu(onPick);
+    const user = userEvent.setup();
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: 'Exportar' }));
+    expect(onPick).toHaveBeenCalledOnce();
+    expect(focusedOnPick).toBe(trigger);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('Enter num item escolhe: o item age, o menu fecha e o foco fica no gatilho', async () => {
+    let focusedOnPick: Element | null = null;
+    const onPick = vi.fn(() => {
+      focusedOnPick = document.activeElement;
+    });
+    const trigger = renderMenu(onPick);
+    const user = userEvent.setup();
+    await user.click(trigger);
+    screen.getByRole('button', { name: 'Exportar' }).focus();
+    await user.keyboard('{Enter}');
+    expect(onPick).toHaveBeenCalledOnce();
+    expect(focusedOnPick).toBe(trigger);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('um item que abre um diálogo na hora: o diálogo tem o gatilho como origem', async () => {
+    // O diálogo abre pelo slot do host (a origem é guardada no gesto) e tem um alvo
+    // explícito de retorno, como o Exportar: se a origem fosse o item (que sai do DOM com o
+    // menu), o foco iria ao alvo explícito em vez de voltar ao gatilho.
+    function Host() {
+      const dialogs = useDialogSlot<'confirm'>();
+      const other = useRef<HTMLButtonElement>(null);
+      return (
+        <div>
+          <MenuPopover label="Projeto" buttonLabel="Menu do projeto">
+            <Button onClick={() => dialogs.show('confirm')}>Abrir</Button>
+          </MenuPopover>
+          <button ref={other}>Outro</button>
+          {dialogs.current && (
+            <DialogSlotContext.Provider value={dialogs.slot}>
+              <Dialog
+                title="Confirmar"
+                onCancel={dialogs.close}
+                returnFocus={() => other.current}
+                actions={<Button onClick={dialogs.close}>Cancelar</Button>}
+              >
+                <p>Texto</p>
+              </Dialog>
+            </DialogSlotContext.Provider>
+          )}
+        </div>
+      );
+    }
+    render(<Host />);
+    const trigger = screen.getByRole('button', { name: 'Menu do projeto' });
+    const user = userEvent.setup();
+    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: 'Abrir' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Confirmar' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
   it('clique fora com o foco num item devolve o foco ao gatilho', async () => {

@@ -66,6 +66,26 @@ describe('Detalhes — marcação', () => {
     expect(harness.project().markings.find((m) => m.id === 'MT')?.rect.x).toBe(100);
   });
 
+  // Devolução da 8.3 (segunda leitura, A1): depois de desfazer, o mesmo nome era engolido
+  // pela guarda do Enter (o campo mostrava o texto e o projeto não mudava).
+  it('nome: gravar, desfazer e redigitar o mesmo nome grava de novo com Enter', async () => {
+    const { harness, user } = renderMarking('MN');
+    const name = () => screen.getByLabelText<HTMLInputElement>('Nome');
+    const stored = () => harness.project().markings.find((m) => m.id === 'MN')?.name;
+    await user.clear(name());
+    await user.type(name(), 'Novo nome{Enter}');
+    expect(stored()).toBe('Novo nome');
+    act(() => {
+      harness.store.undo();
+    });
+    expect(stored()).toBe('Nome');
+    expect(name().value).toBe('Nome');
+    await user.clear(name());
+    await user.type(name(), 'Novo nome{Enter}');
+    expect(stored()).toBe('Novo nome');
+    expect(document.activeElement).toBe(name());
+  });
+
   it('pendências: cada motivo leva o foco ao campo', async () => {
     const { user } = renderMarking('MT');
     const notice = screen.getByText('Incompleta: 1 pendência').closest('.issues');
@@ -205,6 +225,65 @@ describe('Detalhes — KeyValueGrid', () => {
     await user.type(value, 'text{Enter}');
     expect(annotationOf(harness.project(), 'AU').entries[0]?.value).toBe('text');
     expect(document.activeElement).toBe(screen.getAllByLabelText('Valor')[0]);
+  });
+
+  // Devolução da 8.3 (segunda leitura, A1): a guarda do Enter dos pares nunca era zerada, e
+  // o rascunho gravado voltava ao campo depois de desfazer. Redigitar o mesmo texto não
+  // gravava.
+  it('Valor: gravar, desfazer e redigitar o mesmo valor grava de novo com Enter', async () => {
+    const { harness, user } = renderAnnotation('AU');
+    const value = () => screen.getAllByLabelText<HTMLInputElement>('Valor')[0];
+    const stored = () => annotationOf(harness.project(), 'AU').entries[0]?.value;
+    await user.clear(value()!);
+    await user.type(value()!, 'text{Enter}');
+    expect(stored()).toBe('text');
+    act(() => {
+      harness.store.undo();
+    });
+    expect(stored()).toBe('string');
+    // O campo acompanha o par gravado, não o rascunho de antes.
+    expect(value()?.value).toBe('string');
+    await user.clear(value()!);
+    await user.type(value()!, 'text{Enter}');
+    expect(stored()).toBe('text');
+  });
+
+  it('Chave: gravar, desfazer e redigitar a mesma chave grava de novo', async () => {
+    const { harness, user } = renderAnnotation('AU');
+    const key = () => screen.getAllByLabelText<HTMLInputElement>('Chave')[0];
+    await user.clear(key()!);
+    await user.type(key()!, 'nome{Enter}');
+    expect(keys(harness, 'AU')).toEqual(['nome', 'age']);
+    act(() => {
+      harness.store.undo();
+    });
+    expect(keys(harness, 'AU')).toEqual(['name', 'age']);
+    expect(key()?.value).toBe('name');
+    await user.clear(key()!);
+    await user.type(key()!, 'nome{Enter}');
+    expect(keys(harness, 'AU')).toEqual(['nome', 'age']);
+  });
+
+  // A linha é identificada pela posição: a que gravou o par novo vira o par gravado e, ao
+  // desfazer a criação com outro par novo aberto, volta a ser o par novo (mesma instância).
+  it('par novo: criar, desfazer com outro par novo aberto e recriar a mesma chave grava', async () => {
+    const { harness, user } = renderAnnotation('AU');
+    const addButton = () => screen.getByRole('button', { name: '+ Par' });
+    await user.click(addButton());
+    await user.type(screen.getAllByLabelText('Chave')[2]!, 'email{Enter}');
+    expect(keys(harness, 'AU')).toEqual(['name', 'age', 'email']);
+    await user.click(addButton());
+    expect(screen.getAllByLabelText('Chave')).toHaveLength(4);
+    act(() => {
+      harness.store.undo();
+    });
+    expect(keys(harness, 'AU')).toEqual(['name', 'age']);
+    const created = screen.getAllByLabelText<HTMLInputElement>('Chave');
+    expect(created).toHaveLength(3);
+    // A linha nova começa vazia, não com o rascunho da criação desfeita.
+    expect(created[2]?.value).toBe('');
+    await user.type(created[2]!, 'email{Enter}');
+    expect(keys(harness, 'AU')).toEqual(['name', 'age', 'email']);
   });
 });
 

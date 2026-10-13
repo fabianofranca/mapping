@@ -65,8 +65,10 @@ export function MenuPopover({
         <Icon name="chevronDown" />
       </button>
       {open && (
-        // O item age primeiro (no próprio clique); o menu fecha na volta do evento.
-        <div class="menu-list" role="menu" onClick={close}>
+        // Fecha na captura, antes de o clique chegar ao item: o foco já está no gatilho
+        // quando o item age (um diálogo aberto por ele guarda o gatilho como quem o abriu).
+        // A lista só sai na renderização seguinte, então o item ainda recebe o clique.
+        <div class="menu-list" role="menu" onClickCapture={close}>
           {children}
         </div>
       )}
