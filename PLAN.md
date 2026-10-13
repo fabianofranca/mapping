@@ -182,6 +182,7 @@ Prompt em `docs/prompts/etapa-8-coordenador.md` (modelo e esforço por fase, mod
 
 - [ ] Esta seção vai para `docs/history/PLAN-etapa-8.md` com as decisões consolidadas dos PRs, o que valeu de "Decisões a confirmar" e as notas de desenho (ou links); o prompt do coordenador vai junto; `PLAN.md` volta a "nenhuma etapa em andamento"; `docs/ROADMAP.md` marca a etapa 8 concluída; `CLAUDE.md` atualiza "Etapa atual" e a lista de etapas
 - [ ] Auditoria da entrega (como nas etapas 5 a 7) com os resíduos num PR pequeno
+- [ ] O `docs/TESTING.md` reflete o comportamento visível das fases 8.1 a 8.5 (a lista "Guia desatualizado" da auditoria; regra "Sem mudar comportamento visível sem registro")
 - [ ] **Portão:** rodada completa do Cowork sobre o build final, com o prompt novo (`docs/TESTING-COWORK.md`); o relato vai para `docs/history/`; achados altos ou médios voltam para a fase dona antes de fechar a etapa
 - [ ] `docs/ROADMAP.md`: a seção do marco "Uso real" diz que o teste manual avançado do dono (seção nova do guia) é o próximo passo
 
