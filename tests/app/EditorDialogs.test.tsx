@@ -126,3 +126,30 @@ describe('confirmar exclusão da imagem', () => {
     expect(harness.actions.removeImage('I2')).toEqual({ ok: false, error: 'locked' });
   });
 });
+
+// Etapa 8 (8.3), F10: as confirmações destrutivas são alertdialog, descritas pelo corpo; a
+// pergunta da proporção (não destrutiva) continua um diálogo comum.
+describe('papel das confirmações', () => {
+  it('excluir a marcação é um alertdialog descrito pelo corpo', () => {
+    const harness = createHarness(sampleProject());
+    open(harness, { kind: 'deleteMarking', marking: marking(harness, 'M1') });
+    const el = document.querySelector('dialog') as HTMLElement;
+    expect(el.getAttribute('role')).toBe('alertdialog');
+    const body = document.getElementById(el.getAttribute('aria-describedby') ?? '');
+    expect(body?.textContent).toMatch(/será excluída/);
+  });
+
+  it('fechar sem salvar também', () => {
+    open(createHarness(sampleProject()), { kind: 'confirmClose' });
+    expect(document.querySelector('dialog')?.getAttribute('role')).toBe('alertdialog');
+  });
+
+  it('a proporção da imagem não', () => {
+    open(createHarness(sampleProject()), {
+      kind: 'aspect',
+      change: { from: { width: 10, height: 10 }, to: { width: 20, height: 10 } },
+      resolve: () => undefined,
+    } as EditorDialog);
+    expect(document.querySelector('dialog')?.hasAttribute('role')).toBe(false);
+  });
+});

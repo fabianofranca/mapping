@@ -144,7 +144,8 @@ describe('AnnotationEditor — anotação livre', () => {
       await user.click(screen.getByRole('menuitem', { name: 'Remover par' }));
     };
     await removeFirst();
-    const dialog = await screen.findByRole('dialog');
+    // Etapa 8 (8.3), F10: confirmação destrutiva, anunciada como alerta.
+    const dialog = await screen.findByRole('alertdialog');
     expect(within(dialog).getByText('Referências vão quebrar')).toBeTruthy();
     // Cancelar mantém o par.
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));

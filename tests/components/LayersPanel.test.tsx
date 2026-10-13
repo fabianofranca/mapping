@@ -170,6 +170,8 @@ describe('LayersPanel', () => {
     const dialog = heading.closest('dialog');
     if (!dialog) throw new Error('sem diálogo');
     expect(within(dialog).getByText(/anotação/)).toBeTruthy();
+    // Etapa 8 (8.3), F10: confirmação destrutiva, anunciada como alerta.
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
 
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
     expect(harness.project().layers).toContain(free);

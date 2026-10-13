@@ -97,6 +97,32 @@ describe('Home', () => {
     );
   });
 
+  // Etapa 8 (8.3), F9: o campo do nome focava sozinho na montagem, além do foco inicial do
+  // diálogo (o primeiro controle do corpo): dois donos do mesmo foco.
+  it('Novo projeto foca o nome uma vez só', async () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    render(<Home />);
+    const user = userEvent.setup();
+    await user.click(screen.getByText(t('home.newProject')));
+    const name = await screen.findByLabelText(t('project.name'));
+    await waitFor(() => expect(document.activeElement).toBe(name));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(focus.mock.contexts.filter((el) => el === name)).toHaveLength(1);
+    focus.mockRestore();
+  });
+
+  // Etapa 8 (8.3), F10: a confirmação destrutiva é um alertdialog, descrito pelo corpo.
+  it('Excluir é um alertdialog descrito pelo corpo', async () => {
+    render(<Home />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: t('common.delete') }));
+    await screen.findByText(t('home.deleteMessage', { name: 'Carro' }));
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
+    const body = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
+    expect(body?.textContent).toContain(t('home.deleteMessage', { name: 'Carro' }));
+  });
+
   it('abrir projeto local; erro aparece traduzido', async () => {
     controller.openLocalProject.mockReturnValue(fail('not-found'));
     render(<Home />);

@@ -317,8 +317,10 @@ describe('TypedFields — tabela', () => {
     const { harness, user } = setup('AC', 'atributos');
     await user.click(screen.getByRole('button', { name: 'Ações da linha email' }));
     await user.click(screen.getByRole('menuitem', { name: 'Remover linha' }));
-    const dialog = await screen.findByRole('dialog');
+    // Etapa 8 (8.3), F10: confirmação destrutiva, anunciada como alerta.
+    const dialog = await screen.findByRole('alertdialog');
     expect(within(dialog).getByText('Referências vão quebrar')).toBeTruthy();
+    expect(dialog.getAttribute('aria-describedby')).toBeTruthy();
     await user.click(within(dialog).getByRole('button', { name: 'Excluir' }));
     const rows = annotationOf(harness.project(), 'AC').values?.['atributos'];
     expect(Array.isArray(rows) ? rows.length : 0).toBe(0);

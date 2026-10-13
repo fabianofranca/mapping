@@ -20,6 +20,14 @@ afterEach(() => {
 const dialogEl = () => document.querySelector('dialog') as HTMLElement;
 
 describe('Dialog', () => {
+  // Etapa 8 (8.3), F10: só a confirmação (`alert`) é descrita pelo corpo; num diálogo
+  // comprido (Ajuda) o leitor de tela leria o corpo inteiro ao abrir.
+  it('diálogo comum: role dialog, sem aria-describedby', () => {
+    render(<HelpDialog onClose={() => undefined} />);
+    expect(dialogEl().getAttribute('role')).toBeNull();
+    expect(dialogEl().hasAttribute('aria-describedby')).toBe(false);
+  });
+
   it('cabeçalho com título e fechar, corpo e rodapé', async () => {
     const onCancel = vi.fn();
     render(
