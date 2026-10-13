@@ -1,15 +1,24 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SCHEMA_VERSION, deserialize, serialize, specFiles } from '../../src/model';
+import {
+  SCHEMA_VERSION,
+  deserialize,
+  serialize,
+  serializeProposal,
+  specFiles,
+  type Project,
+} from '../../src/model';
 import { AUTOSAVE_DELAY_MS } from '../../src/storage/autosave';
 import { createFolderStorage } from '../../src/storage/folder';
 import type { PreparedImage } from '../../src/storage/imageImport';
+import { loadProposals } from '../../src/storage/loadProposals';
 import { HISTORY_LIMIT } from '../../src/store/history';
 import { openSession, type ProjectSession } from '../../src/store/session';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
 import { cadastroProject, loadExample } from '../model/specFixtures';
+import { richScenario } from './proposalHarness';
 import { MemoryDirectory } from '../storage/memoryFs';
 
 beforeEach(() => vi.useFakeTimers());
@@ -708,6 +717,200 @@ describe('sessão de projeto', () => {
     expect(s.store.project.value).toBeNull();
   });
 
+  // Fase 8.1: `onChanged` (S4, S8), imagens órfãs ao recarregar (S6) e `collectFiles().saved`.
+  describe('o que mudou no armazenamento e os arquivos órfãos (fase 8.1)', () => {
+    /** Outro processo grava o `mapping.json`: muda o nome e sobe a revisão. */
+    function externalWrite(root: MemoryDirectory, project: Project, name: string) {
+      const next = {
+        ...project,
+        revision: project.revision + 1,
+        project: { ...project.project, name },
+      };
+      root.put('mapping.json', serialize(next));
+      return next;
+    }
+
+    /** Sessão sobre a pasta, com `onChanged` contado e a próxima gravação do mapping segurável. */
+    function hookedStart(root: MemoryDirectory, project: Project) {
+      const storage = createFolderStorage(root);
+      const gates: { resolve: () => void; promise: Promise<void> }[] = [];
+      let savesStarted = 0;
+      const onChanged = vi.fn();
+      const s = openSession({
+        storage: {
+          ...storage,
+          saveMapping: async (text) => {
+            savesStarted++;
+            const gate = gates.shift();
+            if (gate) await gate.promise;
+            await storage.saveMapping(text);
+          },
+        },
+        project,
+        prepareImage,
+        now: () => NOW,
+        newId: ids(),
+        onChanged,
+      });
+      return {
+        session: s,
+        onChanged,
+        savesStarted: () => savesStarted,
+        holdSave() {
+          let resolve: () => void = () => undefined;
+          const promise = new Promise<void>((res) => (resolve = res));
+          const gate = { resolve: () => resolve(), promise };
+          gates.push(gate);
+          return gate;
+        },
+      };
+    }
+
+    beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));
+    afterEach(() => vi.restoreAllMocks());
+
+    it('gravar uma proposta chama onChanged, sem gravar o mapping.json (S4)', async () => {
+      const root = new MemoryDirectory('p');
+      const { proposal, ids: changeIds } = richScenario();
+      const project = sampleProject();
+      const text = serialize(project);
+      root.put('mapping.json', text);
+      root.put('proposals/P1/proposal.json', serializeProposal(proposal));
+      const storage = createFolderStorage(root);
+      const onChanged = vi.fn();
+      session = openSession({
+        storage,
+        project,
+        loadedText: text,
+        prepareImage,
+        now: () => NOW,
+        onChanged,
+        proposals: await loadProposals(storage),
+      });
+      const decided = await session.proposalActions.decide(
+        'P1',
+        { level: 'change', id: changeIds.name },
+        'accepted',
+      );
+      expect(decided.ok).toBe(true);
+      expect(onChanged).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(await root.read('mapping.json')).toBe(text);
+    });
+
+    it('Recarregar depois de adicionar uma imagem com a gravação recusada apaga o arquivo órfão (S6)', async () => {
+      const root = new MemoryDirectory('p');
+      const project = sampleProject();
+      root.put('mapping.json', serialize(project));
+      session = start(root, project);
+      externalWrite(root, project, 'De fora');
+      const added = await session.addImages([file('a.jpg', '400x300')]);
+      expect(added.added).toEqual(['images/a.jpg']);
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+      expect(session.conflict.value).not.toBeNull();
+
+      await session.resolveConflict('reload');
+      expect(session.store.project.value?.project.name).toBe('De fora');
+      // O arquivo que só a gravação recusada citaria não fica para sempre na pasta.
+      expect(await root.read('images/a.jpg')).toBeNull();
+    });
+
+    it('um arquivo citado por um mapping.json já gravado não é apagado no Recarregar (S6)', async () => {
+      const root = new MemoryDirectory('p');
+      const project = sampleProject();
+      root.put('mapping.json', serialize(project));
+      session = start(root, project);
+      await session.addImages([file('a.jpg', '400x300')]);
+      const saved = await savedProject(root);
+      expect(saved.images.map((i) => i.file)).toContain('images/a.jpg');
+
+      session.actions.renameProject('Pendente');
+      // Alguém de fora regrava o arquivo sem a imagem: ela virou órfã por decisão de fora.
+      externalWrite(
+        root,
+        { ...saved, images: saved.images.filter((i) => i.file !== 'images/a.jpg') },
+        'De fora',
+      );
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      expect(session.conflict.value).not.toBeNull();
+      await session.resolveConflict('reload');
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+    });
+
+    it('imagem adicionada durante uma gravação em curso, gravação seguinte recusada, Recarregar: o arquivo é apagado (S6, A3)', async () => {
+      const root = new MemoryDirectory('p');
+      const project = sampleProject();
+      root.put('mapping.json', serialize(project));
+      const h = hookedStart(root, project);
+      session = h.session;
+      session.actions.renameProject('Um');
+      const first = h.holdSave();
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
+      // A imagem entra enquanto a primeira gravação (que não a cita) está parada.
+      const adding = session.addImages([file('a.jpg', '400x300')]);
+      await vi.waitFor(async () =>
+        expect(await root.read('images/a.jpg')).toBe('400x300'),
+      );
+      const second = h.holdSave();
+      first.resolve();
+      await vi.waitFor(() => expect(h.savesStarted()).toBe(2));
+      // A segunda gravação (a que citaria a imagem) falha no disco.
+      root.failWrites = new Error('NoModificationAllowedError');
+      second.resolve();
+      await adding;
+      expect(session.saveStatus.value).toBe('error');
+      root.failWrites = null;
+
+      const onDisk = await savedProject(root);
+      expect(onDisk.project.name).toBe('Um');
+      externalWrite(root, onDisk, 'De fora');
+      expect(await session.sync()).toBe('conflict');
+      await session.resolveConflict('reload');
+      expect(session.store.project.value?.project.name).toBe('De fora');
+      expect(await root.read('images/a.jpg')).toBeNull();
+    });
+
+    it('collectFiles com a gravação em erro devolve saved: false e leva o confirmado (S8)', async () => {
+      const root = new MemoryDirectory('p');
+      const h = hookedStart(root, emptyProject());
+      session = h.session;
+      session.actions.renameProject('Não gravado');
+      root.failWrites = new Error('sem permissão');
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      expect(session.saveStatus.value).toBe('error');
+
+      const files = await session.collectFiles();
+      expect(files.saved).toBe(false);
+      expect(deserialize(files.mapping)).toMatchObject({
+        ok: true,
+        project: { project: { name: 'Não gravado' } },
+      });
+      root.failWrites = null;
+      expect((await session.collectFiles()).saved).toBe(true);
+    });
+
+    it('a gravação que enfim passa com o conteúdo já exportado não chama onChanged; a de um projeto diferente chama (S8)', async () => {
+      const root = new MemoryDirectory('p');
+      const h = hookedStart(root, emptyProject());
+      session = h.session;
+      session.actions.renameProject('Exportado');
+      root.failWrites = new Error('sem permissão');
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      expect(session.saveStatus.value).toBe('error');
+      expect(h.onChanged).not.toHaveBeenCalled();
+
+      await session.collectFiles();
+      root.failWrites = null;
+      expect(await session.flush()).toEqual({ ok: true });
+      expect(h.onChanged).not.toHaveBeenCalled();
+
+      session.actions.renameProject('Outro');
+      expect(await session.flush()).toEqual({ ok: true });
+      expect(h.onChanged).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('backup antes de gravar um projeto migrado', () => {
     const v1Text = readFileSync(
       new URL('../fixtures/mapping-v1.json', import.meta.url),
@@ -794,6 +997,22 @@ describe('sessão de projeto', () => {
       expect(session.saveStatus.value).toBe('saved');
       expect(await root.read(backupPath())).toBe(v1Text);
       expect((await savedProject(root)).project.name).toBe('Migrado');
+    });
+
+    it('projeto migrado: editar e desfazer até o início ainda grava o formato novo (A2)', async () => {
+      const root = new MemoryDirectory('p');
+      const log: string[] = [];
+      session = openV1(root, log);
+      session.actions.renameProject('Migrado');
+      session.store.undo();
+      await session.flush();
+      // O que está em memória (v8) difere do disco (v1): a gravação acontece, com o backup.
+      expect(log).toEqual([`backup ${backupPath().slice('backups/'.length)}`, 'mapping']);
+      const saved = JSON.parse((await root.read('mapping.json')) ?? '') as {
+        schemaVersion: number;
+      };
+      expect(saved.schemaVersion).toBe(SCHEMA_VERSION);
+      expect(await root.read(backupPath())).toBe(v1Text);
     });
 
     it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v8', async () => {

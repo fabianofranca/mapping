@@ -67,6 +67,29 @@ export function f(root: HTMLElement) {
     const code = "export const f = () => document.querySelector('.x');\n";
     expect(await messages(code, 'src/storage/Probe.ts')).toEqual([]);
   });
+
+  // No flat config o último bloco de `no-restricted-syntax` vence: os blocos do foco juntam
+  // os seletores da sessão (8.1), e nenhum dos dois conjuntos some em src/ui e src/app.
+  it.each(['src/app/Probe.tsx', 'src/ui/Probe.tsx', 'src/ui/focus.ts'])(
+    'a regra da sessão (8.1) continua valendo em %s',
+    async (file) => {
+      const code = 'export const f = (s: { saveMapping(): void }) => s.saveMapping();\n';
+      const found = await messages(code, file);
+      expect(found.map((m) => m.message).join('\n')).toMatch(/Só a sessão/);
+    },
+  );
+
+  it('no controller valem a exceção da sessão e a regra do foco', async () => {
+    const code = `
+export function other(s: { saveMapping(): void }) {
+  s.saveMapping();
+  return document.querySelector('dialog[open]');
+}
+`;
+    const found = (await messages(code, 'src/app/controller.ts')).map((m) => m.message);
+    expect(found.join('\n')).toMatch(/createFolderProject/);
+    expect(found.join('\n')).toMatch(/consulta global ao DOM/i);
+  });
 });
 
 /** Todos os `.tsx` de `src/`. */

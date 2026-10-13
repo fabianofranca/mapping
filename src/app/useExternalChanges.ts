@@ -13,9 +13,11 @@ export const EXTERNAL_POLL_MS = 3000;
  * de pasta: confere o `mapping.json` a cada ~3 s enquanto a janela está visível e, ao voltar
  * o foco, confere também os arquivos de imagem. Sem alterações locais pendentes o projeto é
  * recarregado sozinho, com um aviso discreto; com a gravação em erro, a sessão abre o diálogo
- * "Projeto alterado fora da app" (`session.conflict`), sem recarregar. Seleção, camadas
- * visíveis e viewport ficam como estão (são estado da UI); a seleção só é limpa se o item
- * deixou de existir.
+ * "Projeto alterado fora da app" (`session.conflict`), sem recarregar. As chamadas a
+ * `session.sync` entram na fila da sessão e as concorrentes são juntadas (um `focus` durante
+ * o poll não perde a conferência das imagens), então este hook não controla concorrência.
+ * Seleção, camadas visíveis e viewport ficam como estão (são estado da UI); a seleção só é
+ * limpa se o item deixou de existir.
  */
 export function useExternalChanges(interval = EXTERNAL_POLL_MS): void {
   const { session, store, ui } = useEditor();
