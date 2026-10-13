@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   deserialize,
   readRevision,
-  renameMarking,
   serialize,
   serializeProposal,
   type Project,
@@ -20,8 +19,8 @@ import {
 } from '../../src/store/session';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
-import { propose } from '../model/proposalFixtures';
 import { MemoryDirectory } from '../storage/memoryFs';
+import { richScenario } from './proposalHarness';
 
 // Etapa 3a.2: a revisão do `mapping.json`, as alterações externas (o MCP, um editor de texto)
 // e o que a sessão faz com elas: recusar a gravação, recarregar ou deixar o usuário decidir.
@@ -670,7 +669,7 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
 
   // Reescrito na fase 8.1 (S2): a versão da 6.2 fixava `status === 'error'` com uma gravação
   // em curso, que era o sintoma (o AutoSaver não marcava `saving` na enfileirada).
-  it('uma gravação em curso depois de um erro tem o status "saving" e a conferência devolve busy (S2)', async () => {
+  it('uma gravação em curso depois de um erro tem o status "saving" e a conferência espera a fila (S2)', async () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
@@ -692,10 +691,10 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     expect(session.saveStatus.value).toBe('saving');
 
     // O arquivo já tem a gravação nova, mas a sessão ainda não a registrou: a conferência
-    // espera a fila (devolve `busy`) em vez de tomar o arquivo por alteração externa.
+    // espera a fila (só roda depois da gravação) em vez de tomar o arquivo por alteração externa.
     const syncing = session.sync();
     second.resolve();
-    expect(await syncing).toBe('busy');
+    expect(await syncing).toBe('unchanged');
     expect(session.conflict.value).toBeNull();
     await vi.waitFor(() => expect(session?.saveStatus.value).toBe('saved'));
     expect(await session.sync()).toBe('unchanged');
@@ -825,21 +824,20 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
   });
 
   it('aplicar aceitas com a gravação recusada: o desfazer da compensação não regrava o projeto base (S5)', async () => {
-    const base = sampleProject();
-    const proposal = propose(base, renameMarking(base, 'M1', 'Porta'), { id: 'P1' });
+    const { base, proposal, ids } = richScenario();
     const { root, text, project } = projectOnDisk(base);
     root.put('proposals/P1/proposal.json', serializeProposal(proposal));
     const h = hooked(root, project, text, {
       proposals: await loadProposals(createFolderStorage(root)),
     });
     session = h.session;
-    const changeId = proposal.changes[0]?.id ?? '';
+    // Só a mudança de nome (sem imagem a copiar).
     const decided = await session.proposalActions.decide(
       'P1',
-      { level: 'change', id: changeId },
+      { level: 'change', id: ids.name },
       'accepted',
     );
-    expect(decided.ok).toBe(true);
+    expect(decided).toMatchObject({ ok: true });
     const external = externalWrite(root, project, 1, 'De fora');
 
     const applied = await session.proposalActions.applyAccepted('P1');
@@ -941,6 +939,7 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
     const { root, text, project } = projectOnDisk(sampleProject());
     const h = hooked(root, project, text);
     session = h.session;
+    await vi.advanceTimersByTimeAsync(0); // a data conhecida desde a abertura
     root.touch('mapping.json');
     const read = h.holdRead();
     const first = session.sync();
@@ -1014,6 +1013,7 @@ describe('conferência e gravação não se cruzam (fases 6.2 e 8.1)', () => {
       const { root, text, project } = projectOnDisk(sampleProject());
       const h = hooked(root, project, text);
       session = h.session;
+      await vi.advanceTimersByTimeAsync(0); // a data conhecida desde a abertura
       root.touch('mapping.json');
       const read = h.holdRead();
       const syncing = session.sync();

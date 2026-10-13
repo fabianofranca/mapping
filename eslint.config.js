@@ -37,6 +37,43 @@ const mcpOnlyFromModel = [
 // Diretórios da app que não falam com o Konva (src/model/ tem regra própria, mais estrita).
 const konvaFreeDirs = ['ui', 'app', 'store', 'storage', 'i18n', 'theme', 'utils'];
 
+// Só a sessão (src/store/session.ts) lê e grava o mapping.json de um projeto aberto: a
+// conferência de alteração externa (revisão e conteúdo) depende de todo acesso passar por ela
+// (fase 8.1; veja docs/ARCHITECTURE.md, "Sessão e gravação"). As exceções: `loadProject.ts`
+// (abrir e recarregar) e, no controller, as conferências de existência e a criação da pasta.
+// Os seletores ficam em constantes nomeadas porque `no-restricted-syntax` de um bloco
+// posterior SUBSTITUI o anterior nos arquivos em comum: outro conjunto para `src/ui/**` ou
+// `src/app/**` (ex.: o do foco, fase 8.3) precisa ser juntado ao mesmo bloco
+// (`[...sessionStorageSyntaxRules, ...outros]`). `tests/tooling/sessionStorageLint.test.ts`
+// prova que a regra pega o padrão antigo em `src/app/` e `src/ui/`.
+const mappingCall = (method) =>
+  `CallExpression[callee.type='MemberExpression'][callee.property.name='${method}']`;
+const onlyInFunction = (method, kind, name) =>
+  `${mappingCall(method)}:not(${kind}[id.name='${name}'] CallExpression)`;
+export const sessionStorageSyntaxRules = ['loadMapping', 'saveMapping'].map((method) => ({
+  selector: mappingCall(method),
+  message: `Só a sessão (src/store/session.ts) lê e grava o mapping.json de um projeto aberto; use session.sync()/flush() (veja docs/ARCHITECTURE.md).`,
+}));
+const sessionFileSyntaxRules = [
+  {
+    selector: onlyInFunction('loadMapping', 'VariableDeclarator', 'readMapping'),
+    message:
+      'Em session.ts, storage.loadMapping() só dentro de readMapping (o único ponto de leitura).',
+  },
+  {
+    selector: onlyInFunction('saveMapping', 'VariableDeclarator', 'writeProject'),
+    message:
+      'Em session.ts, storage.saveMapping() só dentro de writeProject (o único ponto de gravação).',
+  },
+];
+const controllerFileSyntaxRules = [
+  {
+    selector: onlyInFunction('saveMapping', 'FunctionDeclaration', 'createFolderProject'),
+    message:
+      'No controller, saveMapping() só na criação do projeto em pasta (createFolderProject); o resto é da sessão.',
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -81,6 +118,24 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  // Só a sessão lê e grava o mapping.json (fase 8.1; constantes definidas acima).
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: [
+      'src/store/session.ts',
+      'src/storage/loadProject.ts',
+      'src/app/controller.ts',
+    ],
+    rules: { 'no-restricted-syntax': ['error', ...sessionStorageSyntaxRules] },
+  },
+  {
+    files: ['src/store/session.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...sessionFileSyntaxRules] },
+  },
+  {
+    files: ['src/app/controller.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...controllerFileSyntaxRules] },
   },
   {
     files: ['src/model/**/*.ts'],

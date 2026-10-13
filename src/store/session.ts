@@ -8,7 +8,12 @@ import {
   uniqueImageFile,
   type Project,
 } from '../model';
-import { createAutoSaver, type FlushResult, type SaveStatus } from '../storage/autosave';
+import {
+  AUTOSAVE_DELAY_MS,
+  createAutoSaver,
+  type FlushResult,
+  type SaveStatus,
+} from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
 import type { LoadedProposals } from '../storage/loadProposals';
@@ -20,14 +25,31 @@ import { createProjectActions, type ProjectActions } from './project';
 import { createProposalActions, type ProposalActions } from './proposalActions';
 import { createProposalStore, type ProposalStore } from './proposals';
 
+// A sessão é o único escritor do `mapping.json` de um projeto aberto e o único lugar que o lê
+// depois de aberto (regra ESLint em `eslint.config.js`; desenho em `docs/ARCHITECTURE.md`,
+// "Sessão e gravação"). Gravação, conferência de alteração externa, recarga e decisão do
+// conflito são trabalhos de UMA fila (a do `AutoSaver`): nunca se cruzam.
+
+/**
+ * Um `mapping.json` vazio no instante da gravação é alguém escrevendo (um editor que trunca e
+ * depois escreve): a gravação espera `EMPTY_RETRY_DELAY_MS` e relê, até `EMPTY_RETRY_ATTEMPTS`
+ * vezes, antes de desistir com `EmptyMappingError`. Os testes usam estas constantes com
+ * relógio falso.
+ */
+export const EMPTY_RETRY_ATTEMPTS = 4;
+export const EMPTY_RETRY_DELAY_MS = AUTOSAVE_DELAY_MS;
+
 export interface SessionOptions {
   readonly storage: ProjectStorage;
   readonly project: Project;
   readonly readOnly?: boolean;
   /** Lê e normaliza uma imagem escolhida pelo usuário (ver `storage/imageImport`). */
   readonly prepareImage: (file: File) => Promise<PreparedImage>;
-  /** Chamado após cada gravação bem-sucedida do `mapping.json`. */
-  readonly onSaved?: () => void;
+  /**
+   * Algo deste projeto mudou no armazenamento desta sessão: gravou o `mapping.json` com um
+   * conteúdo que ainda não saiu num zip (`collectFiles`), ou gravou um `proposal.json`.
+   */
+  readonly onChanged?: () => void;
   /**
    * O projeto foi migrado de um schema antigo: `text` é o `mapping.json` original,
    * guardado com `writeBackup` antes do primeiro salvamento (que o sobrescreve).
@@ -81,6 +103,19 @@ export class ExternalChangeError extends Error {
   }
 }
 
+/**
+ * O `mapping.json` continuou vazio durante todas as tentativas de gravar: alguém o truncou e
+ * não terminou de escrever (ferramenta que morreu no meio, sincronizador). A gravação desiste;
+ * a pessoa resolve exportando, apagando o arquivo por fora, ou pelo diálogo de conflito que a
+ * conferência abre ("Manter as minhas" grava por cima).
+ */
+export class EmptyMappingError extends Error {
+  constructor() {
+    super('mapping.json is empty on disk');
+    this.name = 'EmptyMappingError';
+  }
+}
+
 /** Há uma alteração externa esperando a decisão do usuário (diálogo "Projeto alterado fora da app"). */
 export interface ExternalConflict {
   /** "Recarregar" falhou (arquivo sumiu ou ilegível): a decisão continua pendente. */
@@ -88,15 +123,21 @@ export interface ExternalConflict {
 }
 
 /**
- * `unchanged`: nada mudou por fora. `reloaded`: o projeto foi recarregado do disco.
- * `conflict`: mudou por fora com a gravação em erro (há pendência): abriu o `conflict`.
- * `busy`: há um gesto em andamento ou uma gravação agendada ou em curso: ela confere.
+ * `unchanged`: nada mudou por fora (ou o arquivo está ilegível por um instante). `reloaded`: o
+ * projeto foi recarregado do disco. `conflict`: mudou por fora com a gravação em erro (há
+ * pendência que não chega ao disco sozinha): abriu o `conflict`. `busy`: há um gesto em
+ * andamento ou uma gravação agendada ou na fila (`saveStatus === 'saving'`): ela confere.
  */
 export type SyncResult = 'unchanged' | 'reloaded' | 'conflict' | 'busy';
 
 export interface CollectedFiles extends ProjectFiles {
   /** Imagens do projeto cujo arquivo não está no armazenamento (ficam fora do zip). */
   readonly missingImages: readonly string[];
+  /**
+   * O que vai no zip está também no armazenamento. `false` com a gravação em erro: o zip leva
+   * o confirmado (é o resgate), mas o disco ainda não o tem.
+   */
+  readonly saved: boolean;
 }
 
 /** Um projeto aberto: store com undo/redo ligado ao armazenamento. */
@@ -122,12 +163,15 @@ export interface ProjectSession {
    * (propostas novas, alteradas ou apagadas por fora: `proposals.notices`). Sem alterações
    * locais pendentes, recarrega o projeto do disco se ele mudou por fora. Com a gravação em
    * erro (a pendência não chega ao disco), não recarrega: abre o `conflict`. Com um gesto em
-   * andamento ou uma gravação agendada ou em curso, devolve `busy`.
+   * andamento ou uma gravação agendada ou na fila, devolve `busy`. A conferência é um trabalho
+   * da fila da sessão; chamadas concorrentes são juntadas (uma em curso e no máximo uma
+   * esperando, com `images` acumulado).
    */
   sync(options?: { readonly images?: boolean }): Promise<SyncResult>;
   /**
    * Decide o conflito: `reload` descarta as alterações locais ainda não gravadas e carrega o
-   * arquivo; `keep` grava as minhas por cima, com a revisão nova.
+   * arquivo; `keep` grava as minhas por cima, com a revisão nova. Nunca rejeita: uma falha de
+   * leitura vira `conflict.reloadFailed` (no `reload`) ou `saveStatus === 'error'` (no `keep`).
    */
   resolveConflict(choice: 'reload' | 'keep'): Promise<void>;
   /** Importa as imagens: grava cada arquivo e o adiciona ao projeto (uma entrada de undo cada). */
@@ -143,8 +187,12 @@ export interface ProjectSession {
   ): Promise<ReplaceImageResult>;
   readImage(path: string): Promise<Blob | null>;
   /**
-   * Grava agora o que estiver pendente (também serve para "tentar de novo") e diz se
-   * gravou. Nunca rejeita: a falha fica no `saveStatus` e no Diagnóstico.
+   * Grava agora o que estiver pendente (também serve para "tentar de novo") e diz se gravou.
+   * Entra na fila (espera a gravação, a conferência ou a recarga em curso) e nunca rejeita.
+   * `ok: true` ⇔ o projeto confirmado do instante da chamada está no disco; `ok: false` ⇔ a
+   * pendência continua (`saveStatus === 'error'`), com a causa em `error` (`ExternalChangeError`
+   * ⇔ `conflict` aberto). Quem desfaz uma mudança depois de um `ok` (a compensação de aplicar
+   * aceitas) faz a sessão agendar sozinha a gravação do projeto restaurado.
    */
   flush(): Promise<FlushResult>;
   /**
@@ -176,6 +224,20 @@ function safeFileName(name: string): string {
 
 const reportCleanupFailure = (e: unknown) => reportError('session.cleanup', e);
 
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * O arquivo é exatamente a serialização do projeto em memória? Só então o projeto conta como
+ * "o que o disco tem" (`written`): um projeto migrado, reparado ao abrir ou gravado por outro
+ * programa em formato não canônico difere do disco, e a primeira mudança precisa gravar.
+ */
+function sameAsDisk(project: Project, text: string | null | undefined): boolean {
+  if (text === null || text === undefined) return false;
+  return (
+    serialize({ ...project, revision: readRevision(text) ?? project.revision }) === text
+  );
+}
+
 /** O que a sessão sabe do `mapping.json` em disco (ver `openSession`). */
 interface DiskState {
   readonly revision: number;
@@ -190,10 +252,18 @@ export function openSession(options: SessionOptions): ProjectSession {
   const baseActions = createProjectActions(store, { newId: options.newId });
   store.load(options.project, { readOnly: options.readOnly });
   const now = options.now ?? (() => new Date().toISOString());
-  const proposals = createProposalStore({ storage, initial: options.proposals, now });
+  const proposals = createProposalStore({
+    storage,
+    initial: options.proposals,
+    now,
+    onChanged: () => options.onChanged?.(),
+  });
 
   // Arquivos de imagem que a sessão sabe estarem gravados e referenciados.
   const stored = new Set(options.project.images.map((i) => i.file));
+  // Arquivos de imagem que a sessão gravou e que nenhum `mapping.json` gravado cita ainda: se
+  // o projeto for recarregado do disco antes de a gravação citá-los, são órfãos e saem.
+  const pendingFiles = new Set<string>();
   // Conteúdo das imagens removidas do armazenamento, para o desfazer restaurar.
   // Só guarda arquivos que algum snapshot do histórico ainda referencia.
   const trash = new Map<string, Blob>();
@@ -212,13 +282,15 @@ export function openSession(options: SessionOptions): ProjectSession {
     text: options.loadedText ?? null,
     lastModified: null,
   };
+  // O snapshot confirmado que o disco tem (por identidade): decide se há algo a gravar. Nasce
+  // igual ao projeto aberto só quando o arquivo é exatamente a serialização dele.
+  let written: Project | null = sameAsDisk(options.project, options.loadedText)
+    ? store.committed.peek()
+    : null;
+  // O snapshot confirmado que o último `collectFiles` levou: gravá-lo depois não é "mudança".
+  let exported: Project | null = null;
   const conflict = signal<ExternalConflict | null>(null);
   const reloads = signal(0);
-  // Uma gravação do projeto está em curso (`persist`), e quantas já começaram: a conferência
-  // com a gravação em erro não pode tomar por alteração externa o arquivo que a própria
-  // sessão está gravando (nem a leitura feita antes de um "Tentar de novo").
-  let writing = false;
-  let writes = 0;
   const watchable = typeof storage.statMapping === 'function';
   // Carimbo (tamanho + data) de cada arquivo de imagem como a sessão o conhece.
   const imageStamps = new Map<string, string | null>();
@@ -232,10 +304,13 @@ export function openSession(options: SessionOptions): ProjectSession {
     : Promise.resolve();
   const putImage = async (path: string, data: Blob) => {
     await storage.writeImage(path, data);
+    pendingFiles.add(path);
     if (watchable) imageStamps.set(path, await stampOf(path));
   };
   const statMapping = (): Promise<number | null> =>
     storage.statMapping ? storage.statMapping().catch(() => null) : Promise.resolve(null);
+  /** O único ponto em que a sessão lê o `mapping.json` depois de aberto (regra ESLint). */
+  const readMapping = () => storage.loadMapping();
 
   /**
    * O disco difere do que a sessão leu ou gravou? Com o texto conhecido, qualquer diferença
@@ -245,14 +320,40 @@ export function openSession(options: SessionOptions): ProjectSession {
   const changedExternally = (text: string): boolean =>
     disk.text !== null ? text !== disk.text : readRevision(text) !== disk.revision;
 
-  /** Recusa a gravação se outro processo mexeu no `mapping.json` desde a última leitura. */
-  const assertNotChangedExternally = async () => {
-    const text = await storage.loadMapping();
-    // Sem arquivo (apagado por fora) ou vazio (uma criação interrompida): gravar não
-    // sobrescreve nada de ninguém.
-    if (text === null || text.trim() === '' || !changedExternally(text)) return;
-    conflict.value = { reloadFailed: false };
-    throw new ExternalChangeError();
+  // A data do arquivo como estava ao abrir, para a primeira conferência não precisar lê-lo.
+  // O `stat` vem depois da leitura que abriu o projeto, então só vale se o arquivo ainda é o
+  // conhecido (lido aqui uma vez); se já mudou, a primeira conferência o trata como sempre.
+  const initialStat = watchable
+    ? (async () => {
+        const modified = await statMapping();
+        if (modified === null || disk.lastModified !== null) return;
+        const text = await readMapping().catch(() => null);
+        if (text !== null && !changedExternally(text) && disk.lastModified === null) {
+          disk = { ...disk, lastModified: modified };
+        }
+      })()
+    : Promise.resolve();
+
+  /**
+   * Pode gravar? Sem arquivo (apagado por fora) ou com o arquivo igual ao conhecido, sim. Vazio
+   * e diferente é alguém escrevendo: espera e relê, até `EMPTY_RETRY_ATTEMPTS` vezes, e então
+   * desiste (`EmptyMappingError`). Diferente de verdade: abre o conflito e recusa
+   * (`ExternalChangeError`). Sem o texto conhecido (`loadedText` ausente; a app sempre o passa)
+   * a sessão só compara revisões, e um arquivo vazio não tem revisão: não há como saber se é
+   * de alguém, então grava, como antes.
+   */
+  const assertWritable = async () => {
+    for (let attempt = 1; ; attempt++) {
+      const text = await readMapping();
+      if (text === null || !changedExternally(text)) return;
+      if (text.trim() === '' && disk.text === null) return;
+      if (text.trim() !== '') {
+        conflict.value = { reloadFailed: false };
+        throw new ExternalChangeError();
+      }
+      if (attempt >= EMPTY_RETRY_ATTEMPTS) throw new EmptyMappingError();
+      await sleep(EMPTY_RETRY_DELAY_MS);
+    }
   };
 
   /**
@@ -265,7 +366,7 @@ export function openSession(options: SessionOptions): ProjectSession {
    * Diagnóstico (`session.cleanup`) e a próxima gravação tenta de novo.
    */
   const writeProject = async (p: Project) => {
-    await assertNotChangedExternally();
+    await assertWritable();
     let wrote = false;
     if (pendingBackup) {
       // Se o backup falhar, o salvamento falha junto: o original não é sobrescrito.
@@ -294,25 +395,45 @@ export function openSession(options: SessionOptions): ProjectSession {
       wrote = true;
     }
     // As gravações acima levam tempo: confere de novo antes de sobrescrever o arquivo.
-    if (wrote) await assertNotChangedExternally();
+    if (wrote) await assertWritable();
     const revision = disk.revision + 1;
     const text = serialize({ ...p, revision });
     await storage.saveMapping(text);
     disk = { revision, text, lastModified: await statMapping() };
-    options.onSaved?.();
+    written = p;
+    // Só o que este `mapping.json` cita deixa de ser pendente: uma imagem posta durante esta
+    // gravação (não citada por `p`) continua pendente até a gravação que a citar.
+    for (const file of referenced) pendingFiles.delete(file);
+    if (p !== exported) options.onChanged?.();
     await cleanUp(referenced, specs).catch(reportCleanupFailure);
   };
 
-  /** A gravação do autosave: `writeProject` com a gravação marcada como em curso (`writing`). */
+  /**
+   * O disco já tem `p`? Pela identidade (o atalho) ou pelo conteúdo a menos do `updatedAt`
+   * do projeto: o desfazer carimba um `updatedAt` novo no snapshot restaurado, e voltar ao que
+   * o disco tem não é mudança a gravar (S5). Só vale com `written` conhecido (ver `sameAsDisk`).
+   */
+  const onDisk = (p: Project): boolean => {
+    if (p === written) return true;
+    if (written === null || disk.text === null) return false;
+    return (
+      serialize({
+        ...p,
+        revision: disk.revision,
+        project: { ...p.project, updatedAt: written.project.updatedAt },
+      }) === disk.text
+    );
+  };
+
+  /** A gravação do autosave (o `save()` da fila): nada a fazer se o disco já tem o confirmado. */
   const persist = async () => {
     const p = store.committed.peek();
-    if (!p) return;
-    writing = true;
-    writes++;
+    if (!p || onDisk(p)) return;
     try {
       await writeProject(p);
-    } finally {
-      writing = false;
+    } catch (e) {
+      if (e instanceof EmptyMappingError) reportError('session.emptyMapping', e);
+      throw e;
     }
   };
 
@@ -386,6 +507,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     },
     dropProjectImage: async (path) => {
       if (stored.delete(path)) await storage.removeImage(path);
+      pendingFiles.delete(path);
       imageStamps.delete(path);
     },
     flush: () => saver.flush(),
@@ -393,21 +515,37 @@ export function openSession(options: SessionOptions): ProjectSession {
   let lastRevision = store.revision.peek();
   const stopWatching = effect(() => {
     const revision = store.revision.value;
-    if (revision !== lastRevision) {
-      lastRevision = revision;
+    if (revision === lastRevision) return;
+    lastRevision = revision;
+    // Pela identidade (barato, a cada edição); a gravação confere o conteúdo (`onDisk`) e,
+    // se o desfazer voltou ao que o disco tem, só acerta o status, sem ler nem gravar.
+    if (store.committed.peek() !== written) {
       saver.schedule();
+    } else if (saver.status.peek() !== 'saved') {
+      void saver.flush();
     }
   });
 
-  /** Troca o projeto em memória pelo que veio do disco, descartando histórico e pendências. */
-  const adopt = async (loaded: Extract<LoadProjectResult, { ok: true }>) => {
+  /**
+   * Troca o projeto em memória pelo que veio do disco, descartando histórico e pendências. Só
+   * de dentro de um trabalho da fila, logo depois da guarda (`idle()`), sem `await` antes de
+   * trocar o projeto. Apaga os arquivos de imagem que a sessão gravou e nenhum `mapping.json`
+   * gravado cita (`pendingFiles`): sem isso ficariam órfãos na pasta para sempre.
+   */
+  const adopt = async (
+    loaded: Extract<LoadProjectResult, { ok: true }>,
+    modified: number | null,
+  ) => {
     const { project } = loaded;
     store.load(project, { readOnly: loaded.readOnly });
     // O `load` zera o contador de revisão do store, o que agendaria uma gravação: descarta.
     lastRevision = store.revision.peek();
     saver.reset();
+    const referenced = new Set(project.images.map((i) => i.file));
+    const orphans = [...pendingFiles].filter((file) => !referenced.has(file));
+    pendingFiles.clear();
     stored.clear();
-    for (const image of project.images) stored.add(image.file);
+    for (const file of referenced) stored.add(file);
     trash.clear();
     writtenSpecs.clear();
     for (const [file, text] of specFiles(project)) writtenSpecs.set(file, text);
@@ -417,9 +555,14 @@ export function openSession(options: SessionOptions): ProjectSession {
     disk = {
       revision: readRevision(loaded.text) ?? 0,
       text: loaded.text,
-      lastModified: await statMapping(),
+      lastModified: modified,
     };
+    written = sameAsDisk(project, loaded.text) ? store.committed.peek() : null;
     reloads.value++;
+    for (const file of orphans) {
+      await storage.removeImage(file).catch(reportCleanupFailure);
+      imageStamps.delete(file);
+    }
   };
 
   /**
@@ -445,113 +588,134 @@ export function openSession(options: SessionOptions): ProjectSession {
     if (changed.length > 0) options.onImagesChanged?.(changed);
   };
 
-  let syncing = false;
   let closed = false;
   /** Sem nada local a perder: nenhuma gravação pendente e nenhum gesto em andamento. */
-  const idle = () => saver.status.value === 'saved' && !store.gestureActive.peek();
-  /**
-   * A gravação falhou e nada a está refazendo agora: a pendência não chega ao disco sozinha,
-   * então a conferência olha o arquivo (sem recarregar). Um gesto ou uma gravação em curso
-   * (a fila do autosave, o "Tentar de novo") seguram a conferência.
-   */
-  const stalled = () =>
-    saver.status.value === 'error' && !writing && !store.gestureActive.peek();
+  const idle = () => saver.status.peek() === 'saved' && !store.gestureActive.peek();
 
   /**
-   * Gravação em erro: se o arquivo mudou por fora, abre o conflito ("Projeto alterado fora da
-   * app") em vez de esperar a próxima tentativa de gravar. Nunca recarrega: há pendência.
+   * O trabalho de conferência (na fila: nenhuma gravação corre junto). Edições do usuário
+   * continuam acontecendo entre os `await` (são síncronas), por isso a guarda `idle()` é relida
+   * logo antes de trocar o projeto.
    */
-  const checkStalled = async (): Promise<SyncResult> => {
-    const started = writes;
-    const modified = await statMapping();
-    if (modified === null || modified === disk.lastModified) return 'unchanged';
-    const text = await storage.loadMapping();
-    // Uma gravação começou durante a leitura (o "Tentar de novo"): ela mesma confere.
-    if (!stalled() || writes !== started) return 'busy';
-    if (conflict.peek()) return 'unchanged';
-    if (text === null || text.trim() === '') return 'unchanged';
-    if (!changedExternally(text)) {
-      disk = { ...disk, lastModified: modified };
-      return 'unchanged';
-    }
-    conflict.value = { reloadFailed: false };
-    return 'conflict';
-  };
-
-  /** O `mapping.json` e as imagens: recarrega o projeto se mudou por fora e não há nada local a perder. */
-  const syncProject = async (syncOptions: {
-    readonly images?: boolean;
-  }): Promise<SyncResult> => {
-    if (conflict.peek()) return 'unchanged';
-    if (stalled()) {
-      const result = await checkStalled();
-      if (syncOptions.images && result !== 'busy') await checkImages(false);
-      return result;
-    }
-    if (!idle()) return 'busy';
+  const syncProject = async (images: boolean): Promise<SyncResult> => {
+    if (closed || !store.project.peek() || conflict.peek()) return 'unchanged';
+    if (store.gestureActive.peek()) return 'busy';
+    // Gravação agendada ou na fila: ela mesma confere o arquivo antes de gravar.
+    if (saver.status.peek() === 'saving') return 'busy';
+    await initialStat;
     const modified = await statMapping();
     let result: SyncResult = 'unchanged';
     if (modified !== null && modified !== disk.lastModified) {
-      const text = await storage.loadMapping();
+      const text = await readMapping();
       if (text !== null && changedExternally(text)) {
-        if (!idle()) return 'busy';
-        const loaded = await loadProject(storage);
-        // Ilegível (um editor ainda escrevendo): tenta de novo no próximo ciclo.
-        if (!loaded.ok) return 'unchanged';
-        if (!idle()) return 'busy';
-        await adopt(loaded);
-        result = 'reloaded';
-      } else {
+        const erroring = saver.status.peek() === 'error';
+        if (text.trim() === '' && !erroring) {
+          // Um editor ainda escrevendo; sem pendência, nada a proteger: tenta no próximo ciclo.
+        } else if (erroring) {
+          // A pendência não chega ao disco sozinha: a pessoa decide (um arquivo que ficou vazio
+          // de vez também cai aqui, e "Manter as minhas" é a saída).
+          conflict.value = { reloadFailed: false };
+          result = 'conflict';
+        } else {
+          const loaded = await loadProject(storage);
+          // Ilegível (um editor ainda escrevendo): tenta de novo no próximo ciclo.
+          if (loaded.ok) {
+            if (closed) return 'unchanged';
+            // Uma edição entrou durante as leituras: a gravação dela decide.
+            if (!idle()) return 'busy';
+            await adopt(loaded, modified);
+            result = 'reloaded';
+          }
+        }
+      } else if (text !== null) {
         // Só a data mudou (um `touch`, a sincronização de uma nuvem): o conteúdo é o mesmo.
         disk = { ...disk, lastModified: modified };
       }
     }
-    if (result === 'reloaded' || syncOptions.images)
-      await checkImages(result === 'reloaded');
+    if (result === 'reloaded' || images) await checkImages(result === 'reloaded');
     return result;
   };
 
-  const sync = async (
-    syncOptions: { readonly images?: boolean } = {},
-  ): Promise<SyncResult> => {
-    if (!watchable || syncing || closed || !store.project.peek()) return 'unchanged';
-    syncing = true;
-    try {
-      const result = await syncProject(syncOptions);
-      // As propostas não esperam o projeto: decisões e notas são gravadas na hora e
-      // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
-      if (storage.statProposal) {
-        await proposals.scan().catch((e: unknown) => reportError('proposals.scan', e));
-      }
-      return result;
-    } finally {
-      syncing = false;
+  // A conferência enfileirada e ainda não iniciada: chamadas concorrentes acumulam `images`
+  // nela e recebem a mesma promessa (uma em curso e no máximo uma esperando).
+  let pendingSync: { promise: Promise<SyncResult>; images: boolean } | null = null;
+  const sync = (syncOptions: { readonly images?: boolean } = {}): Promise<SyncResult> => {
+    if (!watchable || closed || !store.project.peek())
+      return Promise.resolve('unchanged');
+    if (pendingSync) {
+      pendingSync.images ||= syncOptions.images === true;
+      return pendingSync.promise;
     }
+    const entry = {
+      images: syncOptions.images === true,
+      promise: Promise.resolve<SyncResult>('unchanged'),
+    };
+    entry.promise = saver
+      .enqueue(() => {
+        pendingSync = null;
+        return syncProject(entry.images);
+      })
+      .then(async (result) => {
+        // As propostas não esperam o projeto: decisões e notas são gravadas na hora e
+        // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
+        // Fora da fila da sessão: a fila das propostas pode esperar por ela (`flush`), nunca o
+        // contrário.
+        if (!closed && storage.statProposal) {
+          await proposals.scan().catch((e: unknown) => reportError('proposals.scan', e));
+        }
+        return result;
+      });
+    pendingSync = entry;
+    return entry.promise;
   };
 
   const resolveConflict = async (choice: 'reload' | 'keep') => {
     if (!conflict.peek()) return;
     if (choice === 'keep') {
-      const text = await storage.loadMapping();
-      disk = {
-        revision: (text === null ? null : readRevision(text)) ?? disk.revision,
-        text,
-        lastModified: await statMapping(),
-      };
-      conflict.value = null;
-      // As alterações locais continuam pendentes desde a gravação recusada.
+      await saver.enqueue(async () => {
+        if (!conflict.peek()) return;
+        let text: string | null = null;
+        try {
+          text = await readMapping();
+        } catch (e) {
+          // Ilegível (permissão revogada): segue como se o arquivo tivesse sumido; se a
+          // gravação também falhar, o status diz.
+          reportError('session.keep', e);
+        }
+        disk = {
+          revision: (text === null ? null : readRevision(text)) ?? disk.revision,
+          text,
+          lastModified: await statMapping(),
+        };
+        // O disco passou a ter o arquivo de fora: as minhas vão por cima, mesmo que a pendência
+        // tenha sido desfeita no meio.
+        written = null;
+        conflict.value = null;
+        saver.schedule();
+      });
       await saver.flush();
       return;
     }
-    const loaded = await loadProject(storage);
-    if (!loaded.ok) {
-      reportError('session.reload', new Error(loaded.error));
-      conflict.value = { reloadFailed: true };
-      return;
-    }
-    await adopt(loaded);
-    conflict.value = null;
-    await checkImages(true);
+    await saver.enqueue(async () => {
+      if (!conflict.peek()) return;
+      const modified = await statMapping();
+      let loaded: LoadProjectResult;
+      try {
+        loaded = await loadProject(storage);
+      } catch (e) {
+        reportError('session.reload', e);
+        conflict.value = { reloadFailed: true };
+        return;
+      }
+      if (!loaded.ok) {
+        reportError('session.reload', new Error(loaded.error));
+        conflict.value = { reloadFailed: true };
+        return;
+      }
+      await adopt(loaded, modified);
+      conflict.value = null;
+      await checkImages(true);
+    });
   };
 
   return {
@@ -592,6 +756,7 @@ export function openSession(options: SessionOptions): ProjectSession {
           reportError('session.addImage', e);
           failed.push(file.name);
           if (path && stored.delete(path)) {
+            pendingFiles.delete(path);
             await storage.removeImage(path).catch(reportCleanupFailure);
           }
         }
@@ -631,6 +796,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       } catch (e) {
         reportError('session.replaceImage', e);
         if (path && stored.delete(path)) {
+          pendingFiles.delete(path);
           await storage.removeImage(path).catch(reportCleanupFailure);
         }
         return 'failed';
@@ -644,8 +810,10 @@ export function openSession(options: SessionOptions): ProjectSession {
     flush: () => saver.flush(),
 
     async collectFiles() {
-      await saver.flush();
+      const saved = (await saver.flush()).ok;
       const p = committedProject(store);
+      // Gravar este snapshot depois (a gravação em erro que enfim passa) não é mudança nova.
+      exported = p;
       const images = new Map<string, Blob>();
       const missingImages: string[] = [];
       for (const image of p.images) {
@@ -661,6 +829,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         proposals: withProposals.proposals,
         proposalImages: withProposals.images,
         missingImages,
+        saved,
       };
     },
 
@@ -668,6 +837,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       closed = true;
       stopWatching();
       await proposals.settled();
+      // Na fila: espera a conferência ou a recarga em curso e grava o pendente.
       await saver.flush();
       saver.dispose();
       store.close();
