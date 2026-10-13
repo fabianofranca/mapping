@@ -152,13 +152,13 @@ describe('FolderStorage: o que a app confere por fora (etapa 3a.2)', () => {
   });
 
   // Etapa 8 (8.4): conferir se a pasta tem projeto sem passar pelo loadMapping da sessão.
-  it('hasMappingFile: true com o mapping.json, false sem ele, NotFound na pasta sumida', async () => {
+  it('hasMappingFile: true com o mapping.json, false sem ele ou com a pasta sumida', async () => {
     const dir = new PermissionDirectory('pasta');
     expect(await hasMappingFile(dir)).toBe(false);
     dir.put('mapping.json', '{}');
     expect(await hasMappingFile(dir)).toBe(true);
     dir.gone = true;
-    await expect(hasMappingFile(dir)).rejects.toMatchObject({ name: 'NotFoundError' });
+    expect(await hasMappingFile(dir)).toBe(false);
   });
 
   it('statMapping devolve o lastModified, ou null sem o arquivo', async () => {
