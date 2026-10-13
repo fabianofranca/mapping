@@ -239,7 +239,9 @@ function start(
     loadedText: options.loadedText,
     proposals: options.proposals ?? NO_PROPOSALS,
     prepareImage,
-    onSaved: () => {
+    // Gravou o `mapping.json` (com conteúdo que ainda não saiu num zip) ou um `proposal.json`:
+    // há trabalho a exportar. `markExported` zera; o IndexedDB guarda o mesmo flag.
+    onChanged: () => {
       unexported.value = true;
     },
     // Arquivos trocados por fora: o bitmap guardado é do conteúdo antigo.
@@ -690,7 +692,8 @@ let lifecycleBound = false;
 /**
  * Grava ao sair da página e avisa antes de fechar com alterações não gravadas. A gravação é
  * assíncrona e pode morrer com a aba, por isso começa já em `visibilitychange: hidden` e em
- * `pagehide` (o iOS Safari não dispara `beforeunload`), sem esperar o debounce.
+ * `pagehide` (o iOS Safari não dispara `beforeunload`), sem esperar o debounce. `flush()`
+ * entra na fila da sessão (atrás de uma conferência ou gravação em curso) e nunca rejeita.
  */
 function bindPageLifecycle(): void {
   if (lifecycleBound) return;

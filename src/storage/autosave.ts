@@ -10,7 +10,10 @@ import { reportError } from '../utils/report';
  */
 export const AUTOSAVE_DELAY_MS = 250;
 
-/** `saving` cobre tanto a espera do debounce quanto a gravação em andamento. */
+/**
+ * `saving` cobre a espera do debounce, a espera na fila e a gravação em andamento: enquanto
+ * há uma gravação rodando o status é sempre `saving`, mesmo que a anterior tenha falhado.
+ */
 export type SaveStatus = 'saved' | 'saving' | 'error';
 
 /**
@@ -24,17 +27,32 @@ export interface AutoSaver {
   readonly status: ReadonlySignal<SaveStatus>;
   /** Avisa que houve alteração: grava depois do debounce. */
   schedule(): void;
-  /** Grava agora o que estiver pendente (ou tenta de novo após um erro) e diz se gravou. */
+  /** Enfileira a gravação do pendente agora (ou a nova tentativa após um erro) e diz se gravou. */
   flush(): Promise<FlushResult>;
-  /** Descarta o que estiver pendente (recarregar o projeto do disco) e volta a `saved`. */
+  /**
+   * Enfileira um trabalho que não pode cruzar com uma gravação (conferir o arquivo,
+   * recarregar o projeto, decidir o conflito). O trabalho roda quando a gravação ou o
+   * trabalho anterior terminar, e a gravação seguinte espera por ele. Um trabalho **nunca**
+   * chama `flush()` nem `enqueue()`: a espera ficaria atrás dele mesmo.
+   */
+  enqueue<T>(job: () => Promise<T>): Promise<T>;
+  /**
+   * Descarta o que estiver pendente (o projeto foi recarregado do disco): cancela o debounce
+   * e a gravação enfileirada ainda não iniciada; uma gravação em curso termina sem mexer no
+   * estado. Volta a `saved` (ou assim que a gravação em curso terminar).
+   */
   reset(): void;
   dispose(): void;
 }
 
 /**
- * Salvamento automático com debounce. As gravações nunca rodam em paralelo;
- * uma alteração feita durante a gravação agenda outra. Após um erro, a próxima
- * alteração (ou `flush`) tenta de novo.
+ * Salvamento automático com debounce e **uma fila só**: gravações e os trabalhos de
+ * `enqueue` nunca rodam em paralelo; uma alteração feita durante a gravação agenda outra.
+ * Após um erro, a próxima alteração (ou `flush`) tenta de novo.
+ *
+ * Invariantes (teste em `tests/storage/autosave.test.ts`): `status === 'saved'` ⇒ nenhuma
+ * gravação em curso, nada pendente e nenhum timer; gravação em curso ⇒ `status === 'saving'`;
+ * `status === 'error'` ⇒ nenhuma gravação em curso.
  */
 export function createAutoSaver(
   save: () => Promise<void>,
@@ -42,32 +60,57 @@ export function createAutoSaver(
 ): AutoSaver {
   const status = signal<SaveStatus>('saved');
   let timer: ReturnType<typeof setTimeout> | undefined;
+  // Houve alteração desde a última gravação bem-sucedida.
   let dirty = false;
-  let queue: Promise<FlushResult> = Promise.resolve({ ok: true });
+  // `save()` rodando agora.
+  let inFlight = false;
+  // Sobe a cada `reset()`: a gravação em curso naquele momento não mexe mais no estado.
+  let generation = 0;
   let disposed = false;
+  // A fila: cada trabalho começa quando o anterior termina (bem ou mal).
+  let tail: Promise<unknown> = Promise.resolve();
+
+  const enqueue = <T>(job: () => Promise<T>): Promise<T> => {
+    const run = tail.then(job, job);
+    tail = run.catch(() => undefined);
+    return run;
+  };
 
   const clearTimer = () => {
     clearTimeout(timer);
     timer = undefined;
   };
 
-  const flush = (): Promise<FlushResult> => {
+  /** O trabalho de gravação: grava tudo que está pendente neste instante. */
+  const write = async (): Promise<FlushResult> => {
+    if (!dirty) {
+      // Nada a gravar (o pendente foi gravado ou descartado antes de este trabalho começar).
+      if (status.value !== 'error') status.value = 'saved';
+      return { ok: true };
+    }
+    const started = generation;
     clearTimer();
-    queue = queue.then(async (): Promise<FlushResult> => {
-      if (!dirty) return { ok: true };
-      dirty = false;
-      try {
-        await save();
-        if (!dirty && timer === undefined) status.value = 'saved';
-        return { ok: true };
-      } catch (e) {
-        reportError('save', e);
+    status.value = 'saving';
+    dirty = false;
+    inFlight = true;
+    try {
+      await save();
+    } catch (e) {
+      inFlight = false;
+      reportError('save', e);
+      if (started === generation) {
         dirty = true;
         status.value = 'error';
-        return { ok: false, error: e };
+      } else {
+        // O pendente foi descartado por um `reset()` no meio: a falha dele não conta.
+        status.value = dirty ? 'saving' : 'saved';
       }
-    });
-    return queue;
+      return { ok: false, error: e };
+    }
+    inFlight = false;
+    if (started !== generation) status.value = dirty ? 'saving' : 'saved';
+    else if (!dirty && timer === undefined) status.value = 'saved';
+    return { ok: true };
   };
 
   return {
@@ -77,16 +120,19 @@ export function createAutoSaver(
       dirty = true;
       status.value = 'saving';
       clearTimer();
-      timer = setTimeout(() => void flush(), delay);
+      timer = setTimeout(() => void this.flush(), delay);
     },
     flush() {
-      if (dirty && status.value === 'error') status.value = 'saving';
-      return flush();
+      clearTimer();
+      if (dirty) status.value = 'saving';
+      return enqueue(write);
     },
+    enqueue,
     reset() {
       clearTimer();
       dirty = false;
-      status.value = 'saved';
+      generation++;
+      if (!inFlight) status.value = 'saved';
     },
     dispose() {
       disposed = true;

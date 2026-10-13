@@ -116,6 +116,12 @@ export interface ProposalStoreOptions {
   readonly storage: ProjectStorage;
   readonly initial?: LoadedProposals;
   readonly now: () => string;
+  /**
+   * Chamado depois de cada gravação bem-sucedida de um `proposal.json` (decidir, anotar,
+   * aplicar, desfazer ou refazer a aplicação): a sessão o repassa como "algo deste projeto
+   * mudou no armazenamento" (indicador "Alterações não exportadas").
+   */
+  readonly onChanged?: () => void;
 }
 
 function newestFirst(a: Proposal, b: Proposal): number {
@@ -225,6 +231,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     }
     known.set(id, { proposal: next, text: nextText, stamp: await stampOf(id) });
     publish();
+    options.onChanged?.();
     if (plan.after) {
       try {
         await plan.after();

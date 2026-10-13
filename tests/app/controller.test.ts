@@ -518,6 +518,20 @@ describe('propostas de alteração (etapa 4)', () => {
     };
   };
 
+  it('decidir numa proposta marca "não exportadas" no indicador sem reabrir o projeto (S4, fase 8.1)', async () => {
+    const { proposal, blob } = await proposalZip();
+    expect((await app.importZip(blob)).ok).toBe(true);
+    const current = await openedOf(app);
+    expect(current.unexported.value).toBe(false);
+    const decided = await current.session.proposalActions.decide(
+      'P1',
+      { level: 'change', id: proposal.changes[1]?.id ?? '' },
+      'accepted',
+    );
+    expect(decided.ok).toBe(true);
+    expect(current.unexported.value).toBe(true);
+  });
+
   it('zip importado mostra as propostas; decidir, exportar e reimportar preserva a revisão', async () => {
     const { proposal, blob } = await proposalZip();
     expect((await app.importZip(blob)).ok).toBe(true);
