@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "mapping": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["tools/mapping-mcp.js", "--root", "projetos", "--root", "especializacoes"]
+    }
+  }
+}

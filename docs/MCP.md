@@ -27,6 +27,8 @@ Só projetos **em pasta** ficam ao alcance do MCP; projetos guardados no navegad
 
 Teste fora do cliente: `node tools/mapping-mcp.js --version` e `--help`.
 
+> **Pasta central de mapeamentos.** Para guardar vários projetos numa pasta só, pronta para qualquer cliente MCP (Claude Code, Cursor, Gemini CLI, Copilot, Codex), copie [`examples/workspace/`](../examples/workspace/): o `setup.sh` baixa o servidor da release, confere o `sha256` e traz a skill `spec-author`; o `AGENTS.md` explica a pasta ao agente.
+
 ## Raízes
 
 `--root <pasta>` define onde o servidor pode ler e gravar; repita para mais de uma. Caminhos relativos valem a partir do diretório de trabalho do cliente (o repositório, quando o `.mcp.json` é do projeto). O argumento `root` do `create_project` aceita a raiz do mesmo jeito: como está no `--root` (relativa, com `./` ou barra final), absoluta, como listada em `roots` pelo `list_projects`, ou pelo nome da pasta, se só uma raiz o tiver. O servidor procura projetos (pastas com `mapping.json`) em qualquer profundidade dentro das raízes.
