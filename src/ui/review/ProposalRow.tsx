@@ -32,15 +32,12 @@ const FLAG_TONES: Record<ProposalListFlag, FlagTone> = {
 };
 
 /**
- * Status mostrado e ação de uma linha. `showNew`: esta é a linha que leva a `Flag` "Nova"
- * (só uma por janela).
+ * Status mostrado e ação de uma linha: toda linha `fresh` leva o selo "Nova" e a ação
+ * principal (a mesma verdade da contagem da barra de status; fase 8.2, P4).
  */
-export function proposalStatus(
-  row: ProposalRowData,
-  showNew: boolean,
-): ProposalStatusView {
+export function proposalStatus(row: ProposalRowData): ProposalStatusView {
   const status = proposalListStatus(row.proposal, row.progress, row.fresh);
-  const flag = status.flag === 'new' && !showNew ? null : status.flag;
+  const { flag } = status;
   return {
     flag: flag ? { tone: FLAG_TONES[flag], text: t(`proposals.status.${flag}`) } : null,
     action: status.action,
@@ -121,7 +118,6 @@ export function DecisionCounts({
 
 interface ProposalRowProps {
   readonly row: ProposalRowData;
-  readonly showNew: boolean;
   /** Agora (para a data relativa). */
   readonly now: Date;
   readonly onAction: (row: ProposalRowData, action: ProposalAction) => void;
@@ -129,15 +125,9 @@ interface ProposalRowProps {
   readonly onOpenNewer: (proposalId: string) => void;
 }
 
-export function ProposalRow({
-  row,
-  showNew,
-  now,
-  onAction,
-  onOpenNewer,
-}: ProposalRowProps) {
+export function ProposalRow({ row, now, onAction, onOpenNewer }: ProposalRowProps) {
   const { proposal: p, progress } = row;
-  const status = proposalStatus(row, showNew);
+  const status = proposalStatus(row);
   const lang = locale.value;
   const meta = joinParts([p.origin, p.author, formatWhen(p.createdAt, now, lang)]);
   const behind = leftBehindText(row);

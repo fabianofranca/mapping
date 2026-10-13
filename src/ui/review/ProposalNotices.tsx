@@ -8,7 +8,9 @@ import { undoMessage } from './useReview';
 
 // Aviso discreto no canto do canvas quando uma proposta chega, muda ou some por fora
 // (`session.proposals.notices`, conferido junto com o `mapping.json`). A proposta nova
-// ganha "Revisar"; fechar o aviso limpa a fila (as propostas continuam na janela).
+// ganha "Revisar"; fechar o aviso limpa a fila (as propostas continuam na janela). Abrir a
+// proposta na revisão, por qualquer caminho, tira o aviso dela da fila (`review.open`), então
+// a interface não precisa escondê-lo por conta própria.
 
 /**
  * "Desfazer" dos lotes e das dependências (HANDOFF-PROPOSALS 8.3): depois de "Aceitar
@@ -45,13 +47,11 @@ export function ProposalNotices() {
 }
 
 function ProposalNotice() {
-  const { session, review } = useEditor();
+  const { session } = useEditor();
   const { openReview } = useReviewCommands();
   const notices = session.proposals.notices.value;
   const latest = notices.at(-1);
   if (!latest) return null;
-  // A proposta que já está aberta na revisão não precisa de aviso de "nova".
-  if (latest.kind === 'added' && review.proposalId.value === latest.id) return null;
   const others = notices.length - 1;
   const dismiss = () => session.proposals.clearNotices();
   const more = others > 0 ? t('proposals.noticeMore', { count: others }) : null;

@@ -11,7 +11,8 @@ import { useReviewCommands } from './useReviewCommands';
 
 // Janela Propostas fora do modo revisão (HANDOFF-PROPOSALS 5.1): propostas abertas e
 // fechadas, com busca por título, origem e autor, a contagem de aceitas aguardando
-// aplicação em cada linha e o estado vazio. Os dados vêm de `review.derived.rows`.
+// aplicação em cada linha e o estado vazio. Os dados vêm de `review.derived.rows`; o selo
+// "Nova" vai em toda linha `fresh` (a mesma contagem da barra de status; fase 8.2).
 
 type Scope = 'all' | 'open' | 'closed';
 
@@ -71,8 +72,6 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
     );
   const shownOpen = scope === 'closed' ? [] : open.filter(matches);
   const shownClosed = scope === 'open' ? [] : closed.filter(matches);
-  // "Nova" só numa linha por janela: a mais recente que chegou e ninguém abriu.
-  const newId = rows.find((r) => r.fresh)?.proposal.id ?? null;
   const now = new Date();
 
   // Revisar, Continuar e Ver abrem a revisão (a retirada só explica que não há o que rever).
@@ -91,7 +90,6 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
           <ProposalRow
             key={row.proposal.id}
             row={row}
-            showNew={row.proposal.id === newId}
             now={now}
             onAction={onAction}
             onOpenNewer={openReview}

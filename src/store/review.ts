@@ -455,6 +455,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
         filters.value = cleanFilters;
         knownAtOpen.value = known;
       });
+      // Abrir tira o aviso "Nova proposta" desta proposta para sempre (P4).
+      proposals.dismissNotice(id, 'added');
       remember([...known].slice(0, MAX_KNOWN_CONFLICTS));
       return {
         ok: true,

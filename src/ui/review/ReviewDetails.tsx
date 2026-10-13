@@ -252,7 +252,11 @@ export function ReviewDetails() {
     summary !== undefined && summary !== null && summary.applied === summary.total;
   const shown = ids.slice(0, MAX_CARDS);
   const closedReason = open ? undefined : t('review.closedReason');
-  const rejectedLevel = levelState === 'rejected' || levelState === 'partial';
+  // A nota é sugerida numa rejeição: a própria mudança rejeitada ou alguma rejeitada no
+  // nível ("parcial" só por aceitas e pendentes não é rejeição; fase 8.2, P8).
+  const rejectedLevel = isChange
+    ? levelState === 'rejected'
+    : (summary?.rejected ?? 0) > 0;
 
   return (
     <div class="review-details">
