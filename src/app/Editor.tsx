@@ -88,13 +88,13 @@ export function EditorScreen() {
     const sameMarking =
       selection?.kind === 'marking' && selection.id === annotation.markingId;
     goToAnnotation(ui, annotation);
-    if (!sameMarking) canvas.current?.focusSelection();
+    if (!sameMarking) canvas.current?.centerSelection();
   };
 
   /** Escolher na árvore, na lista ou nos breadcrumbs seleciona e centraliza o canvas. */
   const onSelect = (next: NonNullable<Selection>) => {
     ui.selection.value = next;
-    canvas.current?.focusSelection();
+    canvas.current?.centerSelection();
   };
 
   const panel: EditorPanelProps = {

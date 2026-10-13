@@ -58,7 +58,7 @@ describe('CanvasController', () => {
     expect(center.x).toBeCloseTo(800);
     expect(center.y).toBeCloseTo(400);
     ui.selection.value = { kind: 'image', id: 'I2' };
-    controller.focusSelection();
+    controller.centerSelection();
     expect(controller.viewportCenter().x).toBeCloseTo(1350);
     expect(controller.imageIdAt(190, 350)).toBe('I2');
     const p = controller.canvasPointAt(190, 350);

@@ -129,7 +129,7 @@ export function useEditorShortcuts(
       }
       if (!next) return;
       ui.selection.value = next;
-      canvas.current?.focusSelection();
+      canvas.current?.centerSelection();
     };
 
     /**
@@ -249,7 +249,7 @@ export function useEditorShortcuts(
         }
         case 'step':
           if (review.step(shortcut.target, shortcut.direction)) {
-            canvas.current?.focusSelection();
+            canvas.current?.centerSelection();
           }
           return;
         case 'toggle-view':

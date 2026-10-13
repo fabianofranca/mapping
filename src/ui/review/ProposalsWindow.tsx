@@ -48,7 +48,7 @@ export function ProposalsHeaderActions() {
         shortcut={REVIEW_KEYS.nextPending}
         disabled={review.derived.pendingIds.value.length === 0}
         onClick={() => {
-          if (review.step('pending', 1)) canvas.current?.focusSelection();
+          if (review.step('pending', 1)) canvas.current?.centerSelection();
         }}
       />
     );

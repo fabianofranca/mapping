@@ -39,7 +39,7 @@ export function useReviewNavigate(): (target: ReviewTarget, center?: boolean) =>
   const { review, canvas } = useEditor();
   return (target, center = true) => {
     review.select(target);
-    if (center) canvas.current?.focusSelection();
+    if (center) canvas.current?.centerSelection();
   };
 }
 
@@ -71,7 +71,7 @@ export function useShowProblem(): () => void {
     review.select({ level: 'change', id: first.id });
     showToolWindow('proposals');
     showToolWindow('details');
-    canvas.current?.focusSelection();
+    canvas.current?.centerSelection();
   };
 }
 

@@ -46,7 +46,7 @@ function withContext(harness: Harness, ui: preact.ComponentChildren) {
 
 function fakeCanvas(harness: Harness) {
   const canvas = {
-    focusSelection: vi.fn(),
+    centerSelection: vi.fn(),
     zoomTo: vi.fn(),
     centerOnPoint: vi.fn(),
   };

@@ -272,7 +272,7 @@ export class CanvasController {
   }
 
   /** Centraliza o canvas no item selecionado (ajustando o zoom se ele for grande ou pequeno demais). */
-  focusSelection(): void {
+  centerSelection(): void {
     this.view.measure(); // O canvas pode ter acabado de reaparecer (aba Lista → Canvas).
     const selected = resolveSelection(this.drawnProject.peek(), this.ui.selection.peek());
     if (!selected) return;

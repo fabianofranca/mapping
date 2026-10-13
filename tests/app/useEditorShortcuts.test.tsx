@@ -39,7 +39,7 @@ interface Fake {
   };
   readonly canvas: {
     cancelInteraction: ReturnType<typeof vi.fn>;
-    focusSelection: ReturnType<typeof vi.fn>;
+    centerSelection: ReturnType<typeof vi.fn>;
     zoomBy: ReturnType<typeof vi.fn>;
     zoomTo: ReturnType<typeof vi.fn>;
   };
@@ -65,7 +65,7 @@ function setup({ enabled = true, readOnly = false } = {}): Fake {
   const harness = createHarness(sampleProject(), readOnly);
   const canvas = {
     cancelInteraction: vi.fn(() => false),
-    focusSelection: vi.fn(),
+    centerSelection: vi.fn(),
     zoomBy: vi.fn(),
     zoomTo: vi.fn(),
   };
@@ -287,7 +287,7 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
     s.press('ArrowUp', { alt: true });
     s.press('ArrowUp', { alt: true });
     expect(s.harness.ui.selection.value).toEqual({ kind: 'image', id: 'I1' });
-    expect(s.canvas.focusSelection).toHaveBeenCalledTimes(3);
+    expect(s.canvas.centerSelection).toHaveBeenCalledTimes(3);
   });
 
   it('Alt+↓ desce para o primeiro filho; da imagem, para a primeira marcação raiz', () => {
@@ -307,7 +307,7 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
     s.harness.ui.selection.value = null;
     s.press('ArrowUp', { alt: true });
     expect(s.harness.ui.selection.value).toBeNull();
-    expect(s.canvas.focusSelection).not.toHaveBeenCalled();
+    expect(s.canvas.centerSelection).not.toHaveBeenCalled();
   });
 
   it('a imagem sem marcações não tem para onde descer', () => {

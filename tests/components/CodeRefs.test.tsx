@@ -94,10 +94,7 @@ describe('editor do codeRef', () => {
   it('recusa linha inválida e caminho fora do formato, com a mensagem', async () => {
     const { entries, items, user } = setupEditor();
     const first = within(items()[0]!);
-    await user.type(
-      first.getByRole('textbox', { name: 'Linha' }),
-      'abc{Enter}',
-    );
+    await user.type(first.getByRole('textbox', { name: 'Linha' }), 'abc{Enter}');
     expect(
       first.getByText('A linha precisa ser um número inteiro a partir de 1.'),
     ).toBeTruthy();

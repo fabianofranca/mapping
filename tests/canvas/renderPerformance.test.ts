@@ -80,7 +80,7 @@ describe('renderização do canvas com o projeto grande', () => {
       const [first, second] = project.markings.filter((m) => m.parentId === null);
       if (!first || !second) throw new Error('fixture');
       ui.selection.value = { kind: 'marking', id: first.id };
-      controller.focusSelection();
+      controller.centerSelection();
       flush();
 
       const pans: number[] = [];
@@ -89,7 +89,7 @@ describe('renderização do canvas com o projeto grande', () => {
       for (let i = 0; i < 7; i++) {
         // Pan: centraliza alternando entre duas marcações vizinhas.
         ui.selection.value = { kind: 'marking', id: (i % 2 ? first : second).id };
-        controller.focusSelection();
+        controller.centerSelection();
         pans.push(flush());
         container.dispatchEvent(
           new WheelEvent('wheel', {

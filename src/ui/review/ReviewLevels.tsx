@@ -543,7 +543,7 @@ export function ReviewLevels() {
               size="sm"
               onClick={() => {
                 review.setFilters({ onlyConflicts: true });
-                if (review.step('conflict', 1)) canvas.current?.focusSelection();
+                if (review.step('conflict', 1)) canvas.current?.centerSelection();
               }}
             >
               {t('review.stale.show', { count: fresh.size })}
