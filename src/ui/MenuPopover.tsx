@@ -1,9 +1,11 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { returnFocusToTrigger } from './focus';
 import { Icon } from './icons';
 
 // Menu em popover (o "projeto ▾" da barra principal). Não usa diálogo: fecha com Esc,
-// com clique fora e ao escolher um item, e funciona em `file://` (sem API nova).
+// com clique fora e ao escolher um item, e funciona em `file://` (sem API nova). Em todo
+// fechamento, o foco que estava no menu volta ao botão (etapa 8, F6).
 
 interface MenuPopoverProps {
   /** Texto do botão que abre o menu. */
@@ -23,11 +25,18 @@ export function MenuPopover({
 }: MenuPopoverProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
+  const close = () => {
+    returnFocusToTrigger(root.current, trigger.current);
+    setOpen(false);
+  };
+
+  // Em layout effect: o clique fora vale desde o commit que abre o menu.
+  useLayoutEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
+      if (!root.current?.contains(e.target as Node)) close();
     };
     document.addEventListener('pointerdown', onDown);
     return () => document.removeEventListener('pointerdown', onDown);
@@ -40,12 +49,12 @@ export function MenuPopover({
       onKeyDown={(e) => {
         if (e.key === 'Escape' && open) {
           e.stopPropagation();
-          setOpen(false);
-          root.current?.querySelector<HTMLElement>('button')?.focus();
+          close();
         }
       }}
     >
       <button
+        ref={trigger}
         type="button"
         class="menu-trigger"
         aria-label={buttonLabel}
@@ -56,7 +65,8 @@ export function MenuPopover({
         <Icon name="chevronDown" />
       </button>
       {open && (
-        <div class="menu-list" role="menu" onClick={() => setOpen(false)}>
+        // O item age primeiro (no próprio clique); o menu fecha na volta do evento.
+        <div class="menu-list" role="menu" onClick={close}>
           {children}
         </div>
       )}

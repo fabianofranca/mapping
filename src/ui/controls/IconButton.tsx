@@ -1,4 +1,4 @@
-import type { JSX } from 'preact';
+import type { JSX, Ref } from 'preact';
 import { Icon, type IconName } from '../icons';
 import { classes } from './classes';
 import { Tooltip } from './Tooltip';
@@ -28,6 +28,8 @@ interface IconButtonProps extends NativeButton {
   readonly alert?: boolean;
   /** Selo numérico informativo no canto (ex.: propostas novas na faixa lateral). */
   readonly badge?: string;
+  /** O `<button>` (para devolver o foco a ele), como o `inputRef` do `TextField`. */
+  readonly buttonRef?: Ref<HTMLButtonElement>;
 }
 
 function iconButtonClass(variant: string, size: 'md' | 'sm'): string {
@@ -51,12 +53,14 @@ export function IconButton({
   badge,
   size = 'md',
   type = 'button',
+  buttonRef,
   ...rest
 }: IconButtonProps) {
   return (
     <Tooltip label={tooltip ?? label} shortcut={shortcut}>
       <button
         {...rest}
+        ref={buttonRef}
         type={type}
         class={iconButtonClass(variant, size)}
         aria-pressed={pressed}

@@ -1,4 +1,4 @@
-import type { JSX } from 'preact';
+import type { JSX, Ref } from 'preact';
 import { classes } from './classes';
 
 /**
@@ -17,6 +17,8 @@ interface ButtonProps extends NativeButton {
   readonly size?: 'md' | 'sm';
   /** Classes extras de layout (a aparência do botão vem de `variant` e `size`). */
   readonly class?: string;
+  /** O `<button>` (para devolver o foco a ele), como o `inputRef` do `TextField`. */
+  readonly buttonRef?: Ref<HTMLButtonElement>;
 }
 
 /** Botão com texto. Estados (hover, pressionado, foco, desabilitado) vêm do CSS. */
@@ -25,11 +27,13 @@ export function Button({
   size = 'md',
   type = 'button',
   class: extra,
+  buttonRef,
   ...rest
 }: ButtonProps) {
   return (
     <button
       {...rest}
+      ref={buttonRef}
       type={type}
       class={classes(
         'button',

@@ -1,5 +1,5 @@
 import { signal } from '@preact/signals';
-import { createContext, type RefObject } from 'preact';
+import { createContext, type Ref, type RefObject } from 'preact';
 import { useContext, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 // Modelo de foco da app (etapa 8, fase 8.3; `docs/ARCHITECTURE.md`, "Foco e teclado").
@@ -233,4 +233,23 @@ export function useModal(
     // Abre uma vez por montagem; o resto é lido pelos refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+}
+
+/**
+ * Fechar um menu ou popover (Esc, escolha, clique fora, rolagem): se o foco está dentro
+ * dele (`root`, gatilho incluído), vai ao gatilho, antes de o menu sair do DOM; senão fica
+ * onde o clique o pôs. Na escolha, chamar antes da ação do item: um diálogo aberto por ela
+ * guarda o gatilho como quem o abriu (etapa 8, F6).
+ */
+export function returnFocusToTrigger(
+  root: Element | null,
+  trigger: HTMLElement | null | undefined,
+): void {
+  if (root?.contains(document.activeElement) && trigger?.isConnected) trigger.focus();
+}
+
+/** Passa o elemento a um `ref` de fora (objeto ou função), além do próprio. */
+export function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
+  if (typeof ref === 'function') ref(value);
+  else if (ref) ref.current = value;
 }

@@ -1,10 +1,12 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { FOCUSABLE, returnFocusToTrigger } from './focus';
 
 // Popover ancorado num botão (paleta de cor e ações da linha da janela Camadas). Fica em
-// `position: fixed`, então não é cortado pela rolagem da janela onde está. Fecha com Esc
-// (devolvendo o foco ao botão), com clique fora, ao rolar ou ao redimensionar. Sem API
-// nova do navegador: funciona em `file://`.
+// `position: fixed`, então não é cortado pela rolagem da janela onde está. Fecha com Esc,
+// ao escolher, com clique fora, ao rolar ou ao redimensionar; em todo fechamento, o foco
+// que estava nele volta ao botão (etapa 8, F6). Sem API nova do navegador: funciona em
+// `file://`.
 
 /** Folga mínima entre o popover e a borda da janela do navegador. */
 const EDGE = 8;
@@ -61,20 +63,29 @@ export function Popover({
   const [open, setOpen] = useState(false);
   const host = useRef<HTMLSpanElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  const close = () => setOpen(false);
+  /** O botão que abre: o primeiro controle do host fora do painel. */
+  const triggerEl = () =>
+    [...(host.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].find(
+      (el) => !panel.current?.contains(el),
+    );
+  const close = () => {
+    returnFocusToTrigger(host.current, triggerEl());
+    setOpen(false);
+  };
 
   useLayoutEffect(() => {
     if (open && host.current && panel.current) place(host.current, panel.current, align);
   }, [open, align]);
 
-  useEffect(() => {
+  // Em layout effect: o clique fora vale desde o commit que abre o popover.
+  useLayoutEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (!host.current?.contains(e.target as Node)) setOpen(false);
+      if (!host.current?.contains(e.target as Node)) close();
     };
     const onScroll = (e: Event) => {
       // Rolar o próprio popover (paleta longa) não fecha.
-      if (!panel.current?.contains(e.target as Node)) setOpen(false);
+      if (!panel.current?.contains(e.target as Node)) close();
     };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('scroll', onScroll, true);
@@ -84,6 +95,8 @@ export function Popover({
       document.removeEventListener('scroll', onScroll, true);
       globalThis.removeEventListener('resize', close);
     };
+    // `close` só lê refs e escreve no estado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   return (
@@ -93,8 +106,7 @@ export function Popover({
       onKeyDown={(e) => {
         if (e.key !== 'Escape' || !open) return;
         e.stopPropagation();
-        setOpen(false);
-        host.current?.querySelector<HTMLElement>('button')?.focus();
+        close();
       }}
     >
       {trigger({ open, toggle: () => setOpen(!open) })}

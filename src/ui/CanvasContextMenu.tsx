@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from 'preact/hooks';
+import { captureFocusOrigin, restoreFocusAfterRender, type FocusOrigin } from './focus';
 import { t } from '../i18n';
 import { canCopyItems } from '../app/itemClipboard';
 import { CopyMenuItems } from './CopyActions';
@@ -17,6 +18,11 @@ export function CanvasContextMenu() {
   const { ui } = editor;
   const menu = ui.canvasMenu.value;
   const panel = useRef<HTMLDivElement>(null);
+  // Quem tinha o foco antes de o menu abrir (não há gatilho: abre pelo botão direito) e o
+  // painel aberto: ao fechar (Esc, escolha, clique fora), o foco que estava no menu volta
+  // para lá em vez de cair no `body` (etapa 8, F6).
+  const origin = useRef<FocusOrigin | null>(null);
+  const shown = useRef<HTMLElement | null>(null);
   const close = () => {
     ui.canvasMenu.value = null;
   };
@@ -24,7 +30,16 @@ export function CanvasContextMenu() {
   // Ancora no cursor, sem sair da janela.
   useLayoutEffect(() => {
     const el = panel.current;
-    if (!menu || !el) return;
+    if (!menu || !el) {
+      if (origin.current && shown.current) {
+        restoreFocusAfterRender(shown.current, origin.current, { current: undefined });
+      }
+      origin.current = null;
+      shown.current = null;
+      return;
+    }
+    origin.current ??= captureFocusOrigin();
+    shown.current = el;
     const width = globalThis.innerWidth || document.documentElement.clientWidth;
     const height = globalThis.innerHeight || document.documentElement.clientHeight;
     el.style.left = `${Math.max(EDGE, Math.min(menu.x, width - el.offsetWidth - EDGE))}px`;
