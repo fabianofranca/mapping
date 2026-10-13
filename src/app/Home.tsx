@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import { locale } from '../store/settings';
@@ -76,15 +76,18 @@ export function Home() {
   const [query, setQuery] = useState('');
   const zipInput = useRef<HTMLInputElement>(null);
   const listSection = useRef<HTMLElement>(null);
-  // Linha que saiu da lista (Remover da lista, Excluir): a posição dela, para o foco ir à
-  // linha que ficou no lugar quando a lista atualizar, e não ao `body` (etapa 7, G4).
-  const refocusRow = useRef<number | null>(null);
-  useEffect(() => {
-    const index = refocusRow.current;
+  // Linha que sai da lista (Remover da lista, Excluir): a posição dela, para o foco ir à
+  // linha que ficou no lugar, e não ao `body` (etapa 7, G4). Um dono por fechamento (etapa
+  // 8, F2): pelo diálogo, o `returnFocus` dele (o diálogo fecha depois da ação, já sem a
+  // linha); direto na linha, sem diálogo, este efeito, no commit da lista nova.
+  const removedAt = useRef(0);
+  const focusRowAfter = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const index = focusRowAfter.current;
     if (busy || index === null) return;
-    refocusRow.current = null;
-    focusRecentRow(listSection.current, index);
-  }, [busy]);
+    focusRowAfter.current = null;
+    recentRowTarget(listSection.current, index)?.focus();
+  });
 
   const available = features.value;
   if (!available) {
@@ -153,22 +156,27 @@ export function Home() {
     }
   };
 
-  /** Lembra a posição da linha `key` antes de ela sair da lista (ver `refocusRow`). */
-  const rememberRow = (key: string) => {
-    const rows = [
-      ...(listSection.current?.querySelectorAll<HTMLElement>('tr[data-recent]') ?? []),
-    ];
-    refocusRow.current = Math.max(
-      0,
-      rows.findIndex((row) => row.dataset['recent'] === key),
-    );
+  /**
+   * Tira a pasta da lista. Pelo aviso "Pasta indisponível", o aviso fecha depois e devolve
+   * o foco à linha que ficou; direto na linha, a própria Home leva o foco até ela.
+   */
+  const onForget = async (id: string, viaDialog: boolean) => {
+    const index = recentRowIndex(listSection.current, `folder:${id}`);
+    if (viaDialog) removedAt.current = index;
+    else focusRowAfter.current = index;
+    await run(() => forgetFolder(id));
+    if (viaDialog) dialogs.closeIf((current) => current.kind === 'folder-unavailable');
   };
 
-  const onForget = (id: string) => {
-    dialogs.close();
-    rememberRow(`folder:${id}`);
-    void run(() => forgetFolder(id));
+  /** Excluir pelo diálogo: ele fecha depois da exclusão, já sem a linha (F2). */
+  const onDelete = async (id: string) => {
+    removedAt.current = recentRowIndex(listSection.current, `local:${id}`);
+    await run(() => deleteLocalProject(id));
+    dialogs.closeIf((current) => current.kind === 'delete');
   };
+
+  /** Alvo do foco quando o diálogo fecha sem a linha que o abriu. */
+  const rowLeft = () => recentRowTarget(listSection.current, removedAt.current);
 
   const onZipChosen = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
@@ -225,7 +233,7 @@ export function Home() {
               busy={busy}
               onOpen={(project) => void onOpenRecent(project)}
               onDelete={(project) => dialogs.show({ kind: 'delete', project })}
-              onForget={(project) => onForget(project.id)}
+              onForget={(project) => void onForget(project.id, false)}
             />
           )}
         </>
@@ -426,10 +434,14 @@ export function Home() {
             <Dialog
               title={t('home.folderUnavailableTitle')}
               onCancel={closeDialog}
+              returnFocus={rowLeft}
               actions={
                 <>
                   <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-                  <Button disabled={busy} onClick={() => onForget(dialog.folder.id)}>
+                  <Button
+                    disabled={busy}
+                    onClick={() => void onForget(dialog.folder.id, true)}
+                  >
                     {t('home.forgetFolder')}
                   </Button>
                   <Button
@@ -463,18 +475,14 @@ export function Home() {
             <Dialog
               title={t('home.deleteTitle')}
               onCancel={closeDialog}
+              returnFocus={rowLeft}
               actions={
                 <>
                   <Button onClick={closeDialog}>{t('common.cancel')}</Button>
                   <Button
                     variant="danger"
                     disabled={busy}
-                    onClick={() => {
-                      const { id } = dialog.project;
-                      closeDialog();
-                      rememberRow(`local:${id}`);
-                      void run(() => deleteLocalProject(id));
-                    }}
+                    onClick={() => void onDelete(dialog.project.id)}
                   >
                     {t('common.delete')}
                   </Button>
@@ -491,18 +499,27 @@ export function Home() {
   );
 }
 
+/** Posição da linha `key` na lista de recentes (0 se não estiver nela). */
+function recentRowIndex(section: HTMLElement | null, key: string): number {
+  const rows = [...(section?.querySelectorAll<HTMLElement>('tr[data-recent]') ?? [])];
+  return Math.max(
+    0,
+    rows.findIndex((row) => row.dataset['recent'] === key),
+  );
+}
+
 /**
  * Foco depois de uma linha sair da lista: o Abrir da linha que ficou na posição `index` (ou
  * da última, se a removida era a última); sem linhas, o título da lista.
  */
-function focusRecentRow(section: HTMLElement | null, index: number): void {
-  if (!section?.isConnected) return;
+function recentRowTarget(section: HTMLElement | null, index: number): HTMLElement | null {
+  if (!section?.isConnected) return null;
   const rows = section.querySelectorAll<HTMLElement>('tr[data-recent]');
   const row = rows[Math.min(index, rows.length - 1)];
-  const target =
-    row?.querySelector<HTMLElement>('.project-actions button') ??
-    section.querySelector<HTMLElement>('h2');
-  target?.focus();
+  return (
+    row?.querySelector<HTMLElement>('[data-recent-open]') ??
+    section.querySelector<HTMLElement>('h2')
+  );
 }
 
 /** Campo de nome: vazio usa o `placeholder` como nome (ver controller). */
@@ -627,7 +644,12 @@ function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectLis
             </td>
             <td>{formatDate(project.usedAt)}</td>
             <td class="project-actions">
-              <Button size="sm" disabled={busy} onClick={() => onOpen(project)}>
+              <Button
+                size="sm"
+                data-recent-open=""
+                disabled={busy}
+                onClick={() => onOpen(project)}
+              >
                 {t('common.open')}
               </Button>
               {project.kind === 'local' ? (

@@ -57,8 +57,8 @@ const FOCUS_ROOT = '[data-focus-root]';
 
 /**
  * Devolve o foco ao fechar `scope` (um modal, um menu sem gatilho), chamada depois de ele
- * sair: a quem abriu; se saiu do DOM, ao alvo explícito; sem ele, ao contêiner focável mais
- * próximo de quem abriu (ou ao primeiro controle dentro dele); por último, ao primeiro
+ * sair: a quem abriu; se saiu do DOM, ao alvo explícito; sem alvo explícito, ao contêiner
+ * focável mais próximo de quem abriu (ou ao primeiro controle dentro dele); por último, ao primeiro
  * controle da app (`data-focus-root`), para o teclado não ficar perdido no `body`. O `body`
  * nunca. Não mexe se o foco já foi para outro lugar de propósito (fora de `scope` e do
  * `body`): quem fecha e leva o foco a outro lugar é o dono daquele fechamento.
@@ -72,13 +72,18 @@ export function restoreFocus(
   const lost = active === null || active === document.body || scope.contains(active);
   if (!lost) return;
   if (tryFocus(origin.opener, scope)) return;
-  const explicit = typeof returnFocus === 'function' ? returnFocus() : returnFocus;
-  if (tryFocus(explicit, scope)) return;
-  for (const container of origin.containers) {
-    if (!container.isConnected) continue;
-    if (tryFocus(container, scope)) return;
-    for (const el of container.querySelectorAll(FOCUSABLE)) {
-      if (tryFocus(el, scope)) return;
+  if (returnFocus !== undefined) {
+    // Com alvo explícito, ele é a decisão de quem fecha: sem ele no DOM, nada de adivinhar
+    // um contêiner (etapa 8, F2); vai direto ao último recurso.
+    const explicit = typeof returnFocus === 'function' ? returnFocus() : returnFocus;
+    if (tryFocus(explicit, scope)) return;
+  } else {
+    for (const container of origin.containers) {
+      if (!container.isConnected) continue;
+      if (tryFocus(container, scope)) return;
+      for (const el of container.querySelectorAll(FOCUSABLE)) {
+        if (tryFocus(el, scope)) return;
+      }
     }
   }
   const root = document.querySelector(FOCUS_ROOT);

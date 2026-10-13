@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+import { useLayoutEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationsOf,
@@ -110,7 +110,10 @@ export function AnnotationsPanel({
   }));
   const count = byLayer.reduce((n, g) => n + g.annotations.length, 0);
 
-  useEffect(() => {
+  // "Ir para a anotação" (backlinks, pendências, criação, "escolher e ir" no seletor): o
+  // painel é o dono deste foco e age no commit que desenha o cartão. Um diálogo que fecha na
+  // mesma renderização devolve o foco depois (microtarefa) e, vendo-o aqui, não mexe (F2).
+  useLayoutEffect(() => {
     if (focusAnnotation === null) return;
     const target = [
       ...(root.current?.querySelectorAll<HTMLElement>('[data-annotation]') ?? []),
@@ -129,7 +132,7 @@ export function AnnotationsPanel({
     // Campo de texto ou lista primeiro; senão o botão (referência, segmentado).
     (
       scope.querySelector<HTMLElement>('input, select, textarea') ??
-      scope.querySelector<HTMLElement>('.props-value button')
+      scope.querySelector<HTMLElement>('[data-focus] button')
     )?.focus({ preventScroll: true });
   }, [focusAnnotation, layers.length, project, collapsed, ui]);
 
