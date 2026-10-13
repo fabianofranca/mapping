@@ -4,10 +4,11 @@
 >
 > Para iniciar, numa sessão do Cowork com acesso a este repositório clonado, mande uma destas mensagens:
 >
-> - **Rodada completa:** "Leia `docs/TESTING-COWORK.md` e execute."
+> - **Rodada completa:** "Leia `docs/TESTING-COWORK.md` e execute. Build id esperado: `abc1234 · AAAA-MM-DD`." (o build id da versão a testar, no formato da seção 3 do `docs/TESTING.md`)
 > - **Rodada dirigida por achados de um relato:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: os achados 2 a 15 de `docs/history/relato-2026-10-11.md`." (vale número de achado ou código, como "A1 a A3 e G1 a G4")
 > - **Rodada dirigida por lista de passos:** "… no modo dirigido: R0, R4.1 a R4.5 e R6.8a a R6.11."
 > - **Rodada dirigida pelas fases de um plano:** "… no modo dirigido: as fases 7.1 e 7.2 de `docs/history/PLAN-etapa-7.md`."
+> - Nos modos dirigidos, acrescente do mesmo jeito o **build id esperado**.
 > - Em qualquer modo, acrescente se quiser a lista da **passada visual**: "passada visual: Detalhes, Propostas". Sem lista, vale a padrão (seção 5 abaixo).
 >
 > Antes, o dono prepara: a URL publicada da app (GitHub Pages) ou o `index.html` avulso baixado do artefato do deploy; o `mapping-mcp.js` da Release mais recente do MCP (seção 6 do `docs/TESTING.md`, inclusive o que fazer se a Release ainda não existir); e, se quiser o teste do MCP, o Claude Code instalado no computador.
@@ -30,11 +31,12 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
    - (c) se o Claude Code está instalado e se o teste do MCP entra;
    - (d) que você tem um shell no computador dele e se consegue pôr arquivo na área de transferência por ele;
    - (e) que extensões que injetam quadros nos campos (gerenciadores de senha) estão desativadas no endereço da app;
-   - (f) que alguns passos precisam dele no teclado (os **[pessoa]**) e como você vai chamá-lo (seção 3 abaixo).
+   - (f) que alguns passos precisam dele no teclado (os **[pessoa]**) e como você vai chamá-lo (seção 3 abaixo);
+   - (g) o build id esperado, se não veio na mensagem dele (o commit e a data, `abc1234 · AAAA-MM-DD`).
 4. Crie a pasta de trabalho `~/mapping-testes/<AAAA-MM-DD>/`, fora de qualquer repositório do dono. Tudo o que você criar fica nela. **Não abra, mova nem apague nada fora dela.**
 5. Peça ao dono para deixar o computador **desbloqueado** e a janela do Chrome **à vista e em foco** durante a rodada, inclusive quando ele não estiver no teclado (apêndice A, "Página oculta e foco").
 6. **Estado prévio do navegador:** registre o que a tela inicial já mostra e, se souber ler, a chave `mapping.reviewResume` (apêndice A); não apague nada.
-7. Anote o **build id** (seção 3 do guia) e confira se é o esperado. Se não for, use só a faixa **Atualizar**; se ela não aparecer, peça ao dono. Nunca use janela anônima ou de convidado nem limpe os dados do site (apêndice A, "Forçar a versão nova"). Se a app não mostrar um build id, esse já é o primeiro achado.
+7. Anote o **build id** (seção 3 do guia) e confira se é o esperado, o do item (g). Se não for, use só a faixa **Atualizar**; se ela não aparecer, peça ao dono. Nunca use janela anônima ou de convidado nem limpe os dados do site (apêndice A, "Forçar a versão nova"). Se a app não mostrar um build id, esse já é o primeiro achado.
 
 ## 3. Passos [pessoa]
 

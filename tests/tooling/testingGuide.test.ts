@@ -5,6 +5,7 @@
 // revisão técnica de 2026-10-12, seção 6).
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { parseArgs } from '../../mcp/args';
 
 const read = (path: string): string =>
   existsSync(path) ? readFileSync(path, 'utf8') : '';
@@ -83,6 +84,47 @@ function longSteps(md: string, max = 1200): string[] {
   return out;
 }
 
+/** Ação (primeira célula depois do código) de cada passo da tabela, por código. */
+function stepActions(md: string): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const line of stripFences(md).split('\n')) {
+    const m = /^\|\s*(?:\*\*)?((?:R\d+\.\d+|A\d+)[a-z]?)(?:\*\*)?\s*\|([^|]*)\|/.exec(
+      line,
+    );
+    if (m && !out.has(m[1]!)) out.set(m[1]!, m[2]!.trim());
+  }
+  return out;
+}
+
+/**
+ * Passos cuja Ação pede algo ao Claude Code sem a marca [pessoa] na mesma frase (M4 da segunda
+ * leitura): a marca de outra ação do passo, como o Abrir pasta do R5.2, não conta.
+ */
+function claudeCodeWithoutPerson(md: string): string[] {
+  return [...stepActions(md)]
+    .filter(([, action]) => {
+      const ask = action.split(/(?<=\.["”]?)\s+/).find((s) => s.includes('Claude Code'));
+      return ask !== undefined && !ask.includes('[pessoa]');
+    })
+    .map(([code]) => code);
+}
+
+/** Texto de uma seção "## <prefixo>…" até o próximo "## ". */
+function section(md: string, prefix: string): string {
+  const lines = md.split('\n');
+  const start = lines.findIndex((l) => l.startsWith(`## ${prefix}`));
+  if (start < 0) return '';
+  let end = lines.findIndex((l, i) => i > start && /^## /.test(l));
+  if (end < 0) end = lines.length;
+  return lines.slice(start, end).join('\n');
+}
+
+/** Primeiro bloco ```json de um trecho, sem as cercas. */
+function firstJsonBlock(md: string): string {
+  const m = /```json\n([\s\S]*?)\n\s*```/.exec(md);
+  return m ? m[1]! : '';
+}
+
 describe('regras do guia: as funções pegam o padrão antigo e deixam passar a prosa certa', () => {
   it('pega "Agente:" e termos de DOM fora do apêndice A', () => {
     const old = [
@@ -109,6 +151,17 @@ describe('regras do guia: as funções pegam o padrão antigo e deixam passar a 
     const { body, appendixA } = splitAppendixA(fine);
     expect(agentLeaks(body)).toEqual([]);
     expect(agentLeaks(appendixA).length).toBeGreaterThan(0);
+  });
+
+  it('pega o "Peça ao Claude Code" sem [pessoa] e deixa passar o marcado', () => {
+    const md = [
+      '| R5.1 | **[pessoa]** No Claude Code, peça a lista. | ok |',
+      '| R5.2 | Peça ao Claude Code: "Crie". Abra a pasta (**[pessoa]**). | ok |',
+      '| R3.6 | **Com o Claude Code** (seção 6) **[pessoa]**. Peça: a planta. | ok |',
+      '| R5.3 | Na Árvore, aceite. | **Claude Code:** nada. |',
+      '| R5.4a | Peça ao Claude Code: "Leia…" | ok |',
+    ].join('\n');
+    expect(claudeCodeWithoutPerson(md)).toEqual(['R5.2', 'R5.4a']);
   });
 
   it('pega o bullet gigante do [pessoa] e o passo R5.4 de 2.200 caracteres', () => {
@@ -165,6 +218,30 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
     expect(guide).not.toMatch(/mcp-v0\.\d/);
   });
 
+  it('todo passo que pede algo ao Claude Code tem [pessoa] na Ação (M4)', () => {
+    expect(stepActions(guide).get('R3.6')).toContain('[pessoa]');
+    expect(claudeCodeWithoutPerson(guide)).toEqual([]);
+  });
+
+  it('seção 6: o .mcp.json tem as raízes design/mapeamentos e assets, no formato do servidor (M3)', () => {
+    const six = section(guide, '6. ');
+    expect(six).toContain('assets/');
+    const config = JSON.parse(firstJsonBlock(six)) as {
+      mcpServers: { mapping: { command: string; args: string[] } };
+    };
+    const [script, ...args] = config.mcpServers.mapping.args;
+    expect(script).toBe('tools/mapping-mcp.js');
+    expect(parseArgs(args).roots).toEqual(['design/mapeamentos', 'assets']);
+  });
+
+  it('R5: os prints vão para assets/ e o create_project indica a raiz (M3)', () => {
+    const r5 = guide.slice(guide.indexOf('### R5 '), guide.indexOf('### R8 '));
+    expect(r5).toMatch(/`login\.png`[^\n]*`assets\/`/);
+    expect(stepActions(guide).get('R5.2')).toMatch(
+      /create_project[^"]*design\/mapeamentos|design\/mapeamentos[^"]*create_project/,
+    );
+  });
+
   it('templates com Resumo, Observações e a escala de severidade (G15)', () => {
     for (const s of [
       '## Resumo',
@@ -200,6 +277,11 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
     expect(prompt).toContain('Sair da revisão?');
     expect(prompt).not.toMatch(/etapa 6/i);
     expect(prompt).not.toMatch(/mcp-v0\.\d/);
+  });
+
+  it('pede o build id esperado na pergunta única e na mensagem da rodada completa (M6)', () => {
+    expect(prompt).toMatch(/^\s*- \(g\)[^\n]*build id esperado/m);
+    expect(prompt).toMatch(/\*\*Rodada completa:\*\*[^\n]*Build id esperado/);
   });
 
   it('README.md e CLAUDE.md apontam para ele, não para o prompt em history/ (G16)', () => {
