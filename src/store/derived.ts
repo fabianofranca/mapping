@@ -99,10 +99,18 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
   return a.length === b.length && a.every((item, i) => item === b[i]);
 }
 
-export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDerived {
-  // Projeto confirmado (sem prévia de gesto): nada daqui depende de geometria, então
-  // arrastar/redimensionar não recalcula nada.
-  const project = store.committed;
+/**
+ * `shown`: o projeto à vista (`review.derived.shownProject`): na visão Proposto da revisão,
+ * o "como ficaria"; senão, o confirmado. Sem ele (testes do editor sem revisão), o
+ * confirmado. Nunca o projeto com a prévia do gesto: nada daqui depende de geometria,
+ * então arrastar/redimensionar não recalcula nada.
+ */
+export function createEditorDerived(
+  store: ProjectStore,
+  ui: EditorUi,
+  shown: ReadonlySignal<Project | null> = store.committed,
+): EditorDerived {
+  const project = shown;
 
   const activeLayerId = computed(() =>
     resolveActiveLayerId(project.value, ui.activeLayer.value),

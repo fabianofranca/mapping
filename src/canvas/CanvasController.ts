@@ -95,18 +95,21 @@ export class CanvasController {
   private readonly reviewLayer: ReviewRenderer;
 
   /**
-   * Projeto desenhado: o do store (com a prévia do gesto) e, na revisão, o "como ficaria"
-   * na visão Proposto. É também o que o toque e o enquadrar consultam.
+   * Projeto desenhado, derivado do projeto à vista (`review.derived.shownProject`, fase
+   * 8.2): quando ele é o confirmado (fora da revisão ou na visão Atual), o do store, com a
+   * prévia do gesto; quando é o "como ficaria" (visão Proposto), a prévia com as imagens
+   * novas ou trocadas lidas de `proposals/<id>/` (`proposedDisplay`). O canvas não decide
+   * Atual/Proposto: só traduz o arquivo das imagens. É também o que o toque, o cursor e o
+   * enquadrar consultam.
    */
   private readonly drawnProject = computed(() => {
-    const base = this.store.project.value;
     const review = this.review;
-    if (!review || review.proposalId.value === null || review.view.value === 'current') {
-      return base;
+    const shown = review?.derived.shownProject.value ?? null;
+    if (!review || shown === null || shown === this.store.committed.value) {
+      return this.store.project.value;
     }
-    const preview = review.derived.preview.value;
     const proposal = review.derived.proposal.value;
-    return preview && proposal ? proposedDisplay(preview.project, proposal) : base;
+    return proposal ? proposedDisplay(shown, proposal) : shown;
   });
 
   /** Marcas da revisão (tipo, conflito, inválida, fantasmas, removidas); `null` fora dela. */
@@ -232,12 +235,11 @@ export class CanvasController {
         this.viewState.size.value = this.view.size.value;
       }),
       effect(() => {
-        // Projeto confirmado: um gesto em andamento não refaz o minimapa a cada quadro.
-        this.viewState.bounds.value = imagesBounds(
-          this.review?.proposalId.value != null
-            ? (this.drawnProject.value?.images ?? [])
-            : (this.store.committed.value?.images ?? []),
-        );
+        // Projeto à vista, sem a prévia do gesto: um gesto em andamento não refaz o
+        // minimapa a cada quadro; na visão Proposto, as imagens da prévia.
+        const shown =
+          this.review?.derived.shownProject.value ?? this.store.committed.value;
+        this.viewState.bounds.value = imagesBounds(shown?.images ?? []);
       }),
       this.watchCursor(),
       () => {
@@ -344,7 +346,9 @@ export class CanvasController {
     this.cursorRequest = requestFrame(() => {
       this.cursorRequest = null;
       const point = this.cursorPoint;
-      const images = this.store.committed.peek()?.images ?? [];
+      // O projeto desenhado: na visão Proposto, a imagem que só existe na proposta também
+      // dá coordenadas (fase 8.2, P1).
+      const images = this.drawnProject.peek()?.images ?? [];
       const canvas = point && this.canvasPointAt(point.x, point.y);
       const image = canvas && imageAt(images, canvas);
       const pixel = image && canvasToImagePixel(image.placement, canvas);

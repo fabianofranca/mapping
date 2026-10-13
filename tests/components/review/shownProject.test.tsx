@@ -20,7 +20,8 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const NOTHING = t('panel.nothingSelected');
+// Lido a cada uso: o idioma só é fixado no `beforeEach`.
+const nothing = () => t('panel.nothingSelected');
 
 async function openProposed() {
   const { base, proposal } = firstImport();
@@ -47,13 +48,13 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
       t('crumbs.image', { name: 'images/cadastro.webp' }),
       t('crumbs.marking', { name: 'Formulário' }),
     ]);
-    expect(screen.queryByText(NOTHING)).toBeNull();
+    expect(screen.queryByText(nothing())).toBeNull();
     crumbs[0]?.click();
     expect(onSelect).toHaveBeenCalledWith({ kind: 'image', id: 'I1' });
 
     act(() => h.review.setView('current'));
     expect(screen.queryAllByRole('button')).toHaveLength(0);
-    expect(screen.getByText(NOTHING)).toBeTruthy();
+    expect(screen.getByText(nothing())).toBeTruthy();
   });
 
   it('a barra de status mostra o nome da marcação proposta; na visão Atual, "Nada selecionado"', async () => {
@@ -62,7 +63,7 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
     const bar = screen.getByRole('contentinfo');
     expect(within(bar).getByTitle(t('status.selectionLabel', { name: 'Formulário' })));
     act(() => h.review.setView('current'));
-    expect(within(bar).getByTitle(t('status.selectionLabel', { name: NOTHING })));
+    expect(within(bar).getByTitle(t('status.selectionLabel', { name: nothing() })));
   });
 
   it('Camadas lista a camada criada pela proposta na visão Proposto, e só as atuais na visão Atual', async () => {
@@ -98,6 +99,6 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
     act(() => h.review.close());
     // Ao sair, a seleção de um item que só existia na prévia é limpa pelo `useReviewSync`;
     // aqui, sem o hook, a trilha simplesmente não o encontra no confirmado.
-    expect(screen.getByText(NOTHING)).toBeTruthy();
+    expect(screen.getByText(nothing())).toBeTruthy();
   });
 });

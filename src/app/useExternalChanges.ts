@@ -20,7 +20,7 @@ export const EXTERNAL_POLL_MS = 3000;
  * limpa se o item deixou de existir.
  */
 export function useExternalChanges(interval = EXTERNAL_POLL_MS): void {
-  const { session, store, ui } = useEditor();
+  const { session, review, ui } = useEditor();
 
   useEffect(() => {
     if (!session.watchable) return;
@@ -45,14 +45,17 @@ export function useExternalChanges(interval = EXTERNAL_POLL_MS): void {
   }, [session, ui, interval]);
 
   // Depois de recarregar (sozinho ou pelo diálogo), a seleção que sumiu do arquivo é limpa.
+  // Pelo projeto à vista: na visão Proposto da revisão, o item que só existe na prévia
+  // continua selecionado (fase 8.2, P1).
   useEffect(
     () =>
       effect(() => {
         void session.reloads.value;
-        if (!resolveSelection(store.project.peek(), ui.selection.peek())) {
+        const shown = review.derived.shownProject.peek();
+        if (!resolveSelection(shown, ui.selection.peek())) {
           ui.selection.value = null;
         }
       }),
-    [session, store, ui],
+    [session, review, ui],
   );
 }

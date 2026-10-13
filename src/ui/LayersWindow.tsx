@@ -7,8 +7,10 @@ import { ToolWindow } from './ToolWindow';
  * popover, modo "sem anotação" no rodapé. Nova camada e Mostrar todas ficam no cabeçalho.
  */
 export function LayersWindow({ stacked }: { readonly stacked: boolean }) {
-  const { store } = useEditor();
-  const project = store.committed.value;
+  const { store, review } = useEditor();
+  // O projeto à vista: na visão Proposto da revisão, a camada criada pela proposta
+  // aparece aqui como na Árvore (fase 8.2, P1).
+  const project = review.derived.shownProject.value;
   if (!project) return null;
   const readOnly = store.locked.value;
   return (

@@ -49,8 +49,10 @@ export function Breadcrumbs({
 }: {
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }) {
-  const { store, ui } = useEditor();
-  const crumbs = crumbsOf(store.committed.value, ui.selection.value);
+  const { review, ui } = useEditor();
+  // O projeto à vista: na visão Proposto da revisão, o item que só existe na proposta
+  // também tem caminho (fase 8.2, P1).
+  const crumbs = crumbsOf(review.derived.shownProject.value, ui.selection.value);
   return (
     <nav class="crumbs" aria-label={t('crumbs.label')}>
       {crumbs.length === 0 && (
