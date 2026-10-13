@@ -924,6 +924,54 @@ describe('recentes de pasta (fase 6.6)', () => {
     library?.close();
   });
 
+  // Etapa 8 (8.7), decisão do dono: gerar o zip não é exportar. Com a gravação em erro, a
+  // pessoa gera o zip e cancela o "Salvar como" (sem `markExported`); quando a gravação volta
+  // com exatamente aquele conteúdo, é mudança a exportar: `unexported` sobe e a entrada dos
+  // recentes anda (`touchFolder`), como em qualquer gravação.
+  it('zip gerado e download cancelado: a gravação seguinte conta como mudança', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
+    const root = projectFolder();
+    pickDirectory.mockResolvedValue(root);
+    await app.openFolder();
+    const { session, unexported } = await openedOf(app);
+    root.failWrites = new Error('NoModificationAllowedError');
+    session.actions.renameProject('Cancelado');
+    await session.flush();
+    expect(session.saveStatus.value).toBe('error');
+    expect(unexported.value).toBe(false);
+
+    const built = await app.buildExport();
+    expect(built.ok && built.value.saved).toBe(false);
+    // Sem markExported: a pessoa cancelou o "Salvar como".
+    vi.setSystemTime(new Date('2026-10-02T10:00:00.000Z'));
+    root.failWrites = null;
+    expect(await session.flush()).toEqual({ ok: true });
+    expect(unexported.value).toBe(true);
+    const library = await local.openFolderLibrary();
+    await vi.waitFor(async () =>
+      expect((await library?.list())?.map((f) => [f.name, f.usedAt])).toEqual([
+        ['Cancelado', '2026-10-02T10:00:00.000Z'],
+      ]),
+    );
+    library?.close();
+  });
+
+  it('zip baixado (markExported): a gravação do mesmo conteúdo não é mudança', async () => {
+    const root = projectFolder();
+    pickDirectory.mockResolvedValue(root);
+    await app.openFolder();
+    const { session, unexported } = await openedOf(app);
+    root.failWrites = new Error('NoModificationAllowedError');
+    session.actions.renameProject('Baixado');
+    await session.flush();
+    expect((await app.buildExport()).ok).toBe(true);
+    await app.markExported();
+    root.failWrites = null;
+    expect(await session.flush()).toEqual({ ok: true });
+    expect(unexported.value).toBe(false);
+  });
+
   // Etapa 8 (8.4), R5: uma falha da permissão (ativação expirada, volume desmontado) dá o
   // aviso com Localizar/Remover, não só "Não foi possível acessar os arquivos".
   it('SecurityError no requestPermission: aviso de permissão, com o erro no Diagnóstico', async () => {
