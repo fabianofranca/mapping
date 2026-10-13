@@ -163,9 +163,29 @@ const errnoCode = (error: unknown): string | undefined =>
   (error as NodeJS.ErrnoException | null)?.code;
 
 /**
+ * Apaga o temporário em melhor esforço: numa pasta montada ou com antivírus (Windows), o
+ * sistema pode recusar (`EPERM`, `EBUSY`) depois de o arquivo estar gravado. A limpeza nunca
+ * decide o resultado: o erro vira um aviso no stderr e o temporário fica (ninguém o lê; pode
+ * ser apagado à mão). Sem isso, o agente recebia `internal-error` com a proposta já gravada e
+ * a reenviava, duplicando-a (devolução do portão, 0.3.4).
+ */
+async function removeTemp(temp: string): Promise<void> {
+  try {
+    await rm(temp, { force: true });
+  } catch (error) {
+    const code =
+      errnoCode(error) ?? (error instanceof Error ? error.message : String(error));
+    process.stderr.write(
+      `mapping-mcp: aviso: não foi possível apagar o temporário ${temp} (${code}); ele pode ser apagado à mão\n`,
+    );
+  }
+}
+
+/**
  * Grava um arquivo novo sem nunca sobrescrever: temporário + `link` (falha com `EEXIST` se o
  * destino já existe). Sem hard link, grava direto com `wx`, que também falha se o destino
- * existe; perde só a atomicidade, e a pasta da proposta é removida inteira se algo falha.
+ * existe; perde só a atomicidade, e a pasta da proposta é removida inteira se algo falha. Nos
+ * dois caminhos, o temporário é apagado no fim, em melhor esforço (`removeTemp`).
  */
 async function writeNewFile(path: string, data: Uint8Array | string): Promise<void> {
   const temp = join(
@@ -178,11 +198,10 @@ async function writeNewFile(path: string, data: Uint8Array | string): Promise<vo
       await link(temp, path);
     } catch (error) {
       if (!NO_HARD_LINK.has(errnoCode(error) ?? '')) throw error;
-      await rm(temp, { force: true });
       await writeFile(path, data, { flag: 'wx' });
     }
   } finally {
-    await rm(temp, { force: true });
+    await removeTemp(temp);
   }
 }
 

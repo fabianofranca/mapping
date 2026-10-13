@@ -25,7 +25,8 @@ import { connect, type Connection } from './workspace';
 
 // Gravação das propostas no disco, por stdio no bundle real (fase 8.5): as três promessas de
 // "Concorrência com a app" do docs/MCP.md (M3), o `link` em sistemas sem hard link (M4) e os
-// nomes de `images/` que uma proposta substituída ainda reserva (M5). As corridas são
+// nomes de `images/` que uma proposta substituída ainda reserva (M5), a limpeza do temporário
+// em melhor esforço (devolução do portão, 0.3.4). As corridas são
 // provocadas pelo gancho de disco (`fsHooks.mjs`), que roda dentro do processo do servidor.
 
 let base: string;
@@ -37,7 +38,7 @@ const dir = () => join(root, 'loja');
 interface Hooks {
   afterRead?: { match: string; append: { file: string; text: string } }[];
   fail?: {
-    fn: 'readFile' | 'link' | 'rename' | 'writeFile';
+    fn: 'readFile' | 'link' | 'rename' | 'rm' | 'writeFile';
     match: string;
     code: string;
   }[];
@@ -59,7 +60,7 @@ beforeAll(async () => {
     mkdirSync(join(root, folder), { recursive: true });
   }
   const png = await encodePng(quadrants(64, 48));
-  for (const name of ['tela', 'livre', 'velha', 'outra']) {
+  for (const name of ['tela', 'livre', 'velha', 'outra', 'presa', 'montada', 'busy']) {
     for (const folder of ['fontes', 'fontes2', 'fontes3']) {
       writeFileSync(join(root, folder, `${name}.png`), png);
     }
@@ -192,6 +193,121 @@ describe('sistemas de arquivos sem hard link (M4)', () => {
         project: 'loja',
         title: 'Colide',
         operations: [{ op: 'add_image', file: 'fontes2/outra.png' }],
+      });
+      expect(errorOf(result).code).toBe('image-exists');
+    } finally {
+      disarm();
+    }
+    expect(proposalDirs()).toEqual(before);
+  });
+});
+
+describe('limpeza do temporário em melhor esforço (devolução do portão, 0.3.4)', () => {
+  // Numa pasta montada (VM com a pasta do Windows) ou com antivírus, apagar o temporário pode
+  // falhar com EPERM/EBUSY depois de o arquivo estar gravado. A proposta vale; o temporário
+  // fica e o servidor só avisa no stderr.
+  const temps = (folder: string) =>
+    existsSync(folder) ? readdirSync(folder).filter((name) => name.endsWith('.tmp')) : [];
+
+  it.each(['EPERM', 'EBUSY'])(
+    'rm do temporário do proposal.json com %s: a proposta vale e o aviso vai para o stderr',
+    async (code) => {
+      arm({ fail: [{ fn: 'rm', match: '.proposal.json.', code }] });
+      let result;
+      try {
+        result = await mcp.call<Proposed>('propose_changes', {
+          project: 'loja',
+          title: `Pasta montada ${code}`,
+          operations: [{ op: 'create_layer', name: `Montada ${code}` }],
+        });
+      } finally {
+        disarm();
+      }
+      const proposed = ok(result);
+      expect(proposed.proposed).toBe(true);
+      const folder = join(dir(), 'proposals', proposed.proposal.id);
+      expect(readProposal(dir(), proposed.proposal.id).status).toBe('open');
+      const left = temps(folder);
+      expect(left).toHaveLength(1);
+      expect(left[0]).toMatch(/^\.proposal\.json\.[0-9a-f]+\.tmp$/);
+      expect(mcp.stderr()).toContain(`aviso: não foi possível apagar o temporário`);
+      expect(mcp.stderr()).toContain(left[0]);
+      // O temporário que sobra não é proposta nem proposta quebrada.
+      const listed = ok(
+        await mcp.call<{ proposals: { id: string }[]; broken?: unknown[] }>(
+          'list_proposals',
+          { project: 'loja' },
+        ),
+      );
+      expect(listed.proposals.map((p) => p.id)).toContain(proposed.proposal.id);
+      expect(listed.broken).toBeUndefined();
+    },
+  );
+
+  it('rm do temporário de uma imagem com EPERM: imagem e proposal.json gravados', async () => {
+    arm({ fail: [{ fn: 'rm', match: '/images/.', code: 'EPERM' }] });
+    let result;
+    try {
+      result = await mcp.call<Proposed>('propose_changes', {
+        project: 'loja',
+        title: 'Imagem presa',
+        operations: [{ op: 'add_image', file: 'fontes/presa.png' }],
+      });
+    } finally {
+      disarm();
+    }
+    const proposed = ok(result);
+    expect(proposed.files.images.map(imageOf)).toEqual(['images/presa.webp']);
+    const folder = join(dir(), 'proposals', proposed.proposal.id);
+    expect(readdirSync(folder).sort()).toEqual(['images', 'proposal.json']);
+    const images = readdirSync(join(folder, 'images'));
+    expect(images.filter((name) => !name.endsWith('.tmp'))).toEqual(['presa.webp']);
+    expect(temps(join(folder, 'images'))).toHaveLength(1);
+    expect(readProposal(dir(), proposed.proposal.id).status).toBe('open');
+  });
+
+  it('sem hard link e o rm do temporário com EPERM: grava por wx', async () => {
+    arm({
+      fail: [
+        { fn: 'link', match: join(dir(), 'proposals'), code: 'EPERM' },
+        { fn: 'rm', match: '.tmp', code: 'EPERM' },
+      ],
+    });
+    let result;
+    try {
+      result = await mcp.call<Proposed>('propose_changes', {
+        project: 'loja',
+        title: 'Sem hard link e montada',
+        operations: [{ op: 'add_image', file: 'fontes/montada.png' }],
+      });
+    } finally {
+      disarm();
+    }
+    const proposed = ok(result);
+    expect(proposed.files.images.map(imageOf)).toEqual(['images/montada.webp']);
+    const folder = join(dir(), 'proposals', proposed.proposal.id);
+    expect(readProposal(dir(), proposed.proposal.id).status).toBe('open');
+    expect(
+      readdirSync(join(folder, 'images')).filter((n) => !n.endsWith('.tmp')),
+    ).toEqual(['montada.webp']);
+    // Sem hard link, o que sobra é uma cópia; os arquivos gravados são os de verdade.
+    expect(temps(folder)).toHaveLength(1);
+    expect(temps(join(folder, 'images'))).toHaveLength(1);
+  });
+
+  it('link com EEXIST e o rm do temporário com EPERM: o erro original (image-exists) prevalece', async () => {
+    const before = proposalDirs();
+    arm({
+      fail: [
+        { fn: 'link', match: '/images/', code: 'EEXIST' },
+        { fn: 'rm', match: '.tmp', code: 'EPERM' },
+      ],
+    });
+    try {
+      const result = await mcp.call('propose_changes', {
+        project: 'loja',
+        title: 'Colide e montada',
+        operations: [{ op: 'add_image', file: 'fontes/busy.png' }],
       });
       expect(errorOf(result).code).toBe('image-exists');
     } finally {
