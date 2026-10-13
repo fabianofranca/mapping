@@ -253,3 +253,26 @@ export function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
   if (typeof ref === 'function') ref(value);
   else if (ref) ref.current = value;
 }
+
+/**
+ * Foco depois da renderização, no idioma único da app: `request(alvo)` guarda o pedido e
+ * agenda uma renderização do componente; o pedido é cumprido no `useLayoutEffect` dela,
+ * quando o alvo (a linha nova, a alça da linha movida, o botão que fica) já está no DOM.
+ * Sem `requestAnimationFrame` nem microtarefa: o foco chega no mesmo commit.
+ */
+export function useFocusRequest(): (
+  target: () => HTMLElement | null | undefined,
+) => void {
+  const pending = useRef<(() => HTMLElement | null | undefined) | null>(null);
+  const [, rerender] = useState(0);
+  useLayoutEffect(() => {
+    const target = pending.current;
+    if (!target) return;
+    pending.current = null;
+    target()?.focus();
+  });
+  return (target) => {
+    pending.current = target;
+    rerender((n) => n + 1);
+  };
+}

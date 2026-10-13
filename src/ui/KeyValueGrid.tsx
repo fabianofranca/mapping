@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
 import { getBacklinks, type Annotation, type Entry, type Project } from '../model';
@@ -7,6 +7,7 @@ import type { AnnotationLocation } from '../store/ui';
 import { ActionMenu } from './ActionMenu';
 import { Button, IconButton, TextField } from './controls';
 import { useEditor } from './EditorContext';
+import { useFocusRequest } from './focus';
 import { Icon } from './icons';
 import { annotationErrorMessage } from './labels';
 import { moveKeyDelta, useRowDrag, type RowDrag } from './rowDrag';
@@ -83,11 +84,16 @@ function EntryRow({
   const edit = (patch: Partial<Pick<typeof draft, 'key' | 'value'>>) =>
     setDraft({ ...current, ...patch });
 
+  // A última gravação (sobre qual par, com qual texto): o `change` que o navegador dispara
+  // depois do Enter traz o mesmo texto e não grava de novo (uma entrada de desfazer).
+  const committed = useRef<string | null>(null);
   const commit = () => {
     if (entry && current.key === entry.key && current.value === entry.value) {
       setError(null);
       return;
     }
+    const attempt = `${base}\u0001${current.key}\u0000${current.value}`;
+    if (committed.current === attempt) return;
     // Par novo ainda vazio: nada a gravar nem a reclamar.
     if (!entry && current.key.trim() === '' && current.value === '') return;
     const next = { key: current.key, value: current.value };
@@ -95,6 +101,7 @@ function EntryRow({
       ? actions.updateEntry(annotationId, entry.id, next)
       : actions.addEntry(annotationId, next);
     if (result.ok) {
+      committed.current = attempt;
       setError(null);
       if (!entry) onCreated();
     } else {
@@ -102,15 +109,24 @@ function EntryRow({
     }
   };
 
+  /**
+   * Enter grava e o foco fica no campo; Esc com o que reverter volta ao par gravado (no par
+   * novo, descarta a linha) e para aí; sem o que reverter, sobe (etapa 8, F5).
+   */
   const onFieldKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.altKey) (e.currentTarget as HTMLElement).blur();
-    if (e.key === 'Escape') {
-      // Esc cancela a edição do campo: volta ao valor gravado.
-      setDraft({ base, key: entry?.key ?? '', value: entry?.value ?? '' });
-      setError(null);
-      if (!entry) onDiscard();
-      e.stopPropagation();
-    }
+    if (e.key === 'Enter' && !e.altKey) commit();
+    if (e.key !== 'Escape') return;
+    const pending =
+      !entry ||
+      error !== null ||
+      current.key !== entry.key ||
+      current.value !== entry.value;
+    if (!pending) return;
+    setDraft({ base, key: entry?.key ?? '', value: entry?.value ?? '' });
+    setError(null);
+    if (!entry) onDiscard();
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const onRowKeyDown = (e: KeyboardEvent) => {
@@ -161,7 +177,7 @@ function EntryRow({
           onKeyDown={(e) => {
             // Enter na Chave grava (ao sair do campo) e segue para o Valor da mesma linha.
             if (e.key === 'Enter' && !e.altKey) {
-              const row = e.currentTarget.closest('.kv-row');
+              const row = e.currentTarget.closest('[role="row"]');
               const value = row?.querySelector<HTMLElement>('[data-kv-value]');
               if (value) {
                 e.preventDefault();
@@ -254,8 +270,11 @@ export function KeyValueGrid({
   };
   const drag = useRowDrag(grid, (from, to) => move(from, to, false));
 
-  // Par novo: o foco vai para a chave.
-  useEffect(() => {
+  const requestFocus = useFocusRequest();
+  const addButton = useRef<HTMLButtonElement>(null);
+
+  // Par novo: o foco vai para a chave, no commit que desenha a linha.
+  useLayoutEffect(() => {
     if (!adding) return;
     grid.current?.querySelector<HTMLElement>('[data-new-row] input')?.focus();
   }, [adding]);
@@ -307,7 +326,11 @@ export function KeyValueGrid({
         readOnly={readOnly}
         drag={drag}
         onMove={() => undefined}
-        onDiscard={() => setAdding(false)}
+        onDiscard={() => {
+          setAdding(false);
+          // A linha descartada levava o foco: ele fica no "+ Par".
+          requestFocus(() => addButton.current);
+        }}
         onCreated={() => setAdding(false)}
         onRemove={() => undefined}
       />,
@@ -350,6 +373,7 @@ export function KeyValueGrid({
           title={`${t('annotation.addEntry')}  ${SHORTCUT_LABELS.newRow}`}
           aria-keyshortcuts={SHORTCUT_LABELS.newRow}
           disabled={readOnly || adding}
+          buttonRef={addButton}
           onClick={startAdding}
         >
           {t('annotation.addEntry')}
