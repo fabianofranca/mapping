@@ -1,5 +1,7 @@
 # Prompt do testador — Cowork no computador do dono (depois da etapa 6)
 
+> **Histórico.** Este é o prompt usado nas rodadas 1 a 3 (2026-10-11 e 2026-10-12). O prompt vivo é [`docs/TESTING-COWORK.md`](../TESTING-COWORK.md), desde a fase 8.6; os números de seção do `docs/TESTING.md` citados abaixo são os da época.
+
 > É o prompt inicial de uma sessão do **Cowork** (Claude com controle do computador) que executa os testes reais da app no computador do dono, com os roteiros de [`docs/TESTING.md`](../TESTING.md). Escrito na fase 6.7, no fechamento da etapa 6 ([`PLAN-etapa-6.md`](PLAN-etapa-6.md)), a partir do da primeira rodada ([`etapa-5-testes-cowork.md`](etapa-5-testes-cowork.md), que fica como histórico) e do que atrapalhou nela ([`relato-2026-10-11.md`](relato-2026-10-11.md), seção "O que atrapalhou"). Vale para a segunda rodada e as seguintes, até uma etapa trocá-lo.
 >
 > Para iniciar, numa sessão do Cowork com acesso a este repositório clonado, mande uma destas mensagens:
