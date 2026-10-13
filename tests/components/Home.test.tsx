@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/preac
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
+import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 
 const controller = vi.hoisted(() => ({
   createFolderProject: vi.fn(),
@@ -491,7 +492,11 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     render(<Home />);
     const row = screen.getByRole('row', { name: /Principal/ });
     await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
-    expect(controller.openRecentFolder).toHaveBeenCalledWith('f1');
+    // Com o rastro do Abrir (devolução do portão da 8.4), que segue junto no mesmo clique.
+    expect(controller.openRecentFolder).toHaveBeenCalledWith(
+      'f1',
+      expect.objectContaining({ step: expect.any(Function) }),
+    );
     expect(document.querySelector('dialog')).toBeNull();
   });
 
@@ -558,5 +563,120 @@ describe('Home: troca de diálogo (F3)', () => {
     help.dispatchEvent(new Event('cancel', { cancelable: true }));
     await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
     expect(document.activeElement).toBe(settings);
+  });
+});
+
+// Devolução do portão da 8.4 (achado 1): pasta renomeada depois do pedido de permissão. O
+// Abrir leva um rastro ao `openRecentFolder` (o controller simulado escreve nele como o real)
+// e a Home grava no Diagnóstico o que fez com o resultado e como o aviso fechou.
+describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
+  const folder = {
+    kind: 'folder',
+    id: 'f1',
+    name: 'Principal',
+    folderName: 'principal-pasta',
+    showFolderName: true,
+    usedAt: '2026-10-01T10:00:00.000Z',
+  };
+  type Steps = { step(label: string): void } | undefined;
+  const lines = () =>
+    reportedErrors.value
+      .filter((e) => e.context === 'folders.reopen')
+      .map((e) => e.message);
+  /** O controller simulado: escreve os passos no rastro e devolve o resultado. */
+  const answers = (steps: readonly string[], result: Promise<unknown>) =>
+    controller.openRecentFolder.mockImplementation((_id: string, trace: Steps) => {
+      for (const s of steps) trace?.step(s);
+      return result;
+    });
+  const PROMPTED = ['handle=idb', 'query=prompt', 'request=granted', 'branch=no-mapping'];
+  const missing = () => ok({ kind: 'unavailable', reason: 'missing' });
+
+  const openAndWaitDialog = async () => {
+    const user = userEvent.setup();
+    const row = screen.getByRole('row', { name: /Principal/ });
+    await user.click(within(row).getByRole('button', { name: t('common.open') }));
+    await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
+    return { user, dialog: document.querySelector('dialog') as HTMLDialogElement };
+  };
+
+  beforeEach(() => {
+    clearReportedErrors();
+    recentProjects.value = [folder, ...recentProjects.value];
+  });
+
+  it('o caso do relato grava o caminho, o aviso na tela e o fechamento por Cancelar', async () => {
+    answers(PROMPTED, missing());
+    render(<Home />);
+    const { user, dialog } = await openAndWaitDialog();
+    expect(controller.openRecentFolder).toHaveBeenCalledWith(
+      'f1',
+      expect.objectContaining({ step: expect.any(Function) }),
+    );
+    await waitFor(() => expect(lines()).toHaveLength(1));
+    expect(lines()[0]).toMatch(
+      /^handle=idb@\d+ query=prompt@\d+ request=granted@\d+ branch=no-mapping@\d+ home=dialog:missing@\d+ shown=open,/,
+    );
+    await user.click(
+      within(dialog).getByRole('button', { name: t('common.cancel'), hidden: true }),
+    );
+    await waitFor(() => expect(lines()).toHaveLength(2));
+    expect(lines()[1]).toMatch(/^aviso fechado: cancel-button após \d+ms$/);
+  });
+
+  it('Esc e o clique no fundo gravam a origem do fechamento', async () => {
+    answers(PROMPTED, missing());
+    render(<Home />);
+    const first = await openAndWaitDialog();
+    first.dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await waitFor(() => expect(lines()[1]).toMatch(/^aviso fechado: cancel após/));
+    const second = await openAndWaitDialog();
+    await second.user.click(second.dialog);
+    await waitFor(() => expect(lines()[3]).toMatch(/^aviso fechado: backdrop após/));
+  });
+
+  it('Remover da lista pelo aviso grava forget', async () => {
+    answers(PROMPTED, missing());
+    controller.forgetFolder.mockReturnValue(ok());
+    render(<Home />);
+    const { user, dialog } = await openAndWaitDialog();
+    await user.click(
+      within(dialog).getByRole('button', { name: t('home.forgetFolder'), hidden: true }),
+    );
+    await waitFor(() => expect(lines()[1]).toMatch(/^aviso fechado: forget após/));
+  });
+
+  it('aviso sem pedido (o caminho que funciona) não grava', async () => {
+    answers(['handle=memory', 'query=granted', 'branch=no-mapping'], missing());
+    render(<Home />);
+    const { user, dialog } = await openAndWaitDialog();
+    await user.click(
+      within(dialog).getByRole('button', { name: t('common.cancel'), hidden: true }),
+    );
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(lines()).toEqual([]);
+  });
+
+  it('Abrir que abre o projeto, mesmo com pedido, não grava', async () => {
+    answers(
+      ['handle=idb', 'query=prompt', 'request=granted', 'branch=opened'],
+      ok({ kind: 'opened' }),
+    );
+    render(<Home />);
+    const row = screen.getByRole('row', { name: /Principal/ });
+    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    await waitFor(() => expect(controller.openRecentFolder).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(lines()).toEqual([]);
+  });
+
+  it('erro mostrado como mensagem grava o código', async () => {
+    answers(['handle=memory', 'query=granted'], fail('storage-failed'));
+    render(<Home />);
+    const row = screen.getByRole('row', { name: /Principal/ });
+    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    await screen.findByText(t('error.storage-failed'));
+    expect(lines()).toHaveLength(1);
+    expect(lines()[0]).toContain('home=message:storage-failed');
   });
 });

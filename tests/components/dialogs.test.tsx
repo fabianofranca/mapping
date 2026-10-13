@@ -46,6 +46,24 @@ describe('Dialog', () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
+  // Devolução do portão da 8.4: o rastro do Abrir (`folders.reopen`) registra como o aviso
+  // fechou; o `onCancel` diz de onde veio, como parâmetro opcional.
+  it('onCancel recebe a origem: cancel (Esc), backdrop (fundo) e close-button', async () => {
+    const onCancel = vi.fn();
+    render(
+      <Dialog title="Título" onCancel={onCancel} actions={<button>Ação</button>}>
+        <p>Conteúdo</p>
+      </Dialog>,
+    );
+    dialogEl().dispatchEvent(new Event('cancel', { cancelable: true }));
+    await userEvent.click(dialogEl());
+    await userEvent.click(
+      within(dialogEl()).getByRole('button', { name: t('dialog.close'), hidden: true }),
+    );
+    await userEvent.click(within(dialogEl()).getByText('Conteúdo'));
+    expect(onCancel.mock.calls).toEqual([['cancel'], ['backdrop'], ['close-button']]);
+  });
+
   // Etapa 6 (6.2), achado 9: um diálogo de escolha obrigatória não mostra um X que não faz nada.
   it('closable={false}: sem o fechar do cabeçalho; Esc e o fundo não fazem nada', async () => {
     const onClick = vi.fn();
