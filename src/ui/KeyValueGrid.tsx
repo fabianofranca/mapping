@@ -92,15 +92,26 @@ function EntryRow({
     setDraft({ ...current, ...patch });
 
   // A última gravação (sobre qual par, com qual texto): o `change` que o navegador dispara
-  // depois do Enter traz o mesmo texto e não grava de novo (uma entrada de desfazer).
-  const committed = useRef<string | null>(null);
+  // depois do Enter, antes da renderização, traz o mesmo texto e não grava de novo (uma
+  // entrada de desfazer). A guarda vale só enquanto o par gravado (`''` no par novo) ainda é
+  // a base dela: mudou (a gravação chegou, ou um desfazer), ela é zerada, como no
+  // `CommitInput`; depois da renderização, o `change` duplicado sai pela primeira linha.
+  const committed = useRef<{
+    readonly base: string;
+    readonly key: string;
+    readonly value: string;
+  } | null>(null);
+  if (committed.current && committed.current.base !== base) committed.current = null;
   const commit = () => {
     if (entry && current.key === entry.key && current.value === entry.value) {
       setError(null);
       return;
     }
-    const attempt = `${base}\u0001${current.key}\u0000${current.value}`;
-    if (committed.current === attempt) return;
+    if (
+      committed.current?.key === current.key &&
+      committed.current.value === current.value
+    )
+      return;
     // Par novo ainda vazio: nada a gravar nem a reclamar.
     if (!entry && current.key.trim() === '' && current.value === '') return;
     const next = { key: current.key, value: current.value };
@@ -108,7 +119,10 @@ function EntryRow({
       ? actions.updateEntry(annotationId, entry.id, next)
       : actions.addEntry(annotationId, next);
     if (result.ok) {
-      committed.current = attempt;
+      committed.current = { base, ...next };
+      // Gravado: o rascunho passa a ser o par gravado. Sem isto, desfazer (o par volta ao
+      // de antes) reaproveitaria o rascunho, como no `CommitInput`.
+      setDraft({ base: `${next.key}\u0000${next.value}`, ...next });
       setError(null);
       if (!entry) onCreated();
     } else {

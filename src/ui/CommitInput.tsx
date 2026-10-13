@@ -29,8 +29,14 @@ export function CommitInput({ value, onCommit, ...rest }: CommitInputProps) {
   const text = draft.base === value ? draft.text : value;
   const setText = (next: string) => setDraft({ base: value, text: next });
   // A última gravação (sobre qual valor, com qual texto): o `change` que o navegador
-  // dispara depois do Enter (ou ao sair) traz o mesmo texto e não grava de novo.
+  // dispara depois do Enter, antes da renderização, traz o mesmo texto e não grava de novo.
   const committed = useRef<{ readonly base: string; readonly text: string } | null>(null);
+  // A guarda vale só enquanto o valor externo ainda é a base daquela gravação: mudou (a
+  // gravação chegou, normalizada ou não, ou um desfazer), ela é zerada, e o mesmo texto
+  // volta a gravar. Depois da renderização, o campo mostra o valor externo e o `change`
+  // duplicado cai em `typed === value`. Um `onCommit` que aceita sem mudar o valor deixa a
+  // guarda até ele mudar: redigitar o mesmo texto é ignorado, mas não gravaria nada.
+  if (committed.current && committed.current.base !== value) committed.current = null;
 
   // Lê o texto do próprio campo: o `change` pode chegar antes da renderização que
   // acompanha o `input`, e `text` ainda seria o valor antigo.
