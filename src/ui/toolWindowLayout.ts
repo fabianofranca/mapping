@@ -29,7 +29,10 @@ export function focusToolWindow(id: ToolWindowId): void {
 
 /**
  * Abre a janela e leva o foco para ela (o chip da camada ativa e o Ctrl+L). O foco
- * espera a janela ser desenhada: abrir é só uma mudança de signal.
+ * espera a janela ser desenhada: abrir é só uma mudança de signal, e a renderização que
+ * ele agenda roda numa microtarefa anterior a esta. É uma das duas exceções documentadas ao
+ * idioma `useFocusRequest` (função de módulo, sem componente; `docs/ARCHITECTURE.md`,
+ * "Foco e teclado").
  */
 export function showAndFocusToolWindow(id: ToolWindowId): void {
   showToolWindow(id);

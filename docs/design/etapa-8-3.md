@@ -123,3 +123,13 @@ Ordem dos commits: para cada achado, o teste que o reproduz (vermelho na `main`)
 3. **Excluir/Remover pelo diálogo da tela inicial fecham depois da ação** (alguns milissegundos do IndexedDB, com o botão desabilitado): é mudança visível mínima e vai em "Decisões tomadas". De acordo?
 4. **Origem por contexto com reivindicação única** em vez da prop `origin` (seção 2). De acordo?
 5. **20 vezes no CI por `repeats: 19`** nos testes do flake (sem mexer no `ci.yml`), ou prefere um passo dedicado no `ci.yml` (fora da fase)?
+
+## 11. Respostas do coordenador (nota aprovada)
+
+1. Seção 9: aprovados o rename (só o rename), o `ariaKeys` em `Segmented` e `DecisionControl`, a correção de uma linha em `HelpDialog`, `MarkingTree` e `Tooltip` (sem exceção nominal) e o `alert` em `AnnotationEditor`, `LayersPanel` e `SpecsDialog`; arquivos novos aprovados.
+2. "Ir para": o painel é o dono no commit; o retorno do seletor fica como rede de segurança (registrado em "Decisões tomadas" como divergência do texto do checkbox).
+3. Excluir e Remover pelo diálogo da tela inicial fecham depois da ação.
+4. Origem por contexto com reivindicação única (o mesmo contrato do checkbox, "origem vinda do host", por outro meio).
+5. `repeats: 19` nos testes do flake e de F1, sem mexer no `ci.yml`.
+
+Na implementação, os menus (`ActionMenu`, `MenuPopover`, `Popover`) também passaram a registrar o clique fora em `useLayoutEffect`: em `useEffect`, um clique logo depois de abrir não fechava o menu (o mesmo atraso de quadro do F1).
