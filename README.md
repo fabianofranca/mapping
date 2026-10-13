@@ -89,6 +89,7 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 - [`docs/MCP.md`](docs/MCP.md): servidor MCP (instalação, `.mcp.json`, raízes, tools, referências e solução de problemas); [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md) é o guia do agente.
 - [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): formato do arquivo de especialização (e [`docs/spec.schema.json`](docs/spec.schema.json)); exemplos em [`examples/specs/`](examples/specs/).
 - [`.claude/skills/spec-author/SKILL.md`](.claude/skills/spec-author/SKILL.md): skill do Claude Code que escreve e valida uma especialização a partir de um código ou design system (copie a pasta para o repositório mapeado ou para `~/.claude/skills/`).
+- [`examples/workspace/`](examples/workspace/): esqueleto de uma pasta que centraliza projetos Mapping, pronta para qualquer agente MCP (servidor, raízes, skill e `AGENTS.md` por caminho relativo; `setup.sh` baixa a release).
 - [`PLAN.md`](PLAN.md): resumo do produto e fases pendentes; o histórico está em [`docs/history/`](docs/history/).
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code.
 

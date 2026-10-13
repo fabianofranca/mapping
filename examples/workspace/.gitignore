@@ -1,0 +1,4 @@
+# Backups que a app grava ao migrar um mapping.json antigo.
+projetos/**/backups/
+.DS_Store
+Thumbs.db
