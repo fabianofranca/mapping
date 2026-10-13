@@ -371,6 +371,63 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
       await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
     });
+
+    // Etapa 8 (8.3), achado F2: com a exclusão ainda em curso, o retorno do diálogo punha o
+    // foco num contêiner (a busca) e depois o `refocusRow` da Home o levava à linha: dois
+    // donos. Agora o diálogo fecha depois da ação e o foco vai direto à linha que ficou.
+    it(
+      'Excluir pelo diálogo leva o foco direto à linha que ficou (um dono só)',
+      { repeats: 19 },
+      async () => {
+        simulateModalFocus();
+        try {
+          let finish: () => void = () => undefined;
+          controller.deleteLocalProject.mockImplementation(
+            (id: string) =>
+              new Promise((resolve) => {
+                finish = () => {
+                  recentProjects.value = recentProjects.value.filter(
+                    (p) => (p as { id: string }).id !== id,
+                  );
+                  resolve({ ok: true });
+                };
+              }),
+          );
+          render(<Home />);
+          const user = userEvent.setup();
+          const row = screen.getByRole('row', { name: /Carro/ });
+          await user.click(within(row).getByRole('button', { name: t('common.delete') }));
+          const dialog = await waitFor(() => {
+            const el = document.querySelector('dialog');
+            if (!el?.contains(document.activeElement)) throw new Error('não abriu');
+            return el;
+          });
+          const focused: Element[] = [];
+          const track = (e: FocusEvent) => focused.push(e.target as Element);
+          document.addEventListener('focusin', track);
+          try {
+            await user.click(
+              within(dialog).getByRole('button', {
+                name: t('common.delete'),
+                hidden: true,
+              }),
+            );
+            await new Promise((resolve) => setTimeout(resolve, 30));
+            finish();
+            await waitFor(() => expect(screen.queryByText('Carro')).toBeNull());
+            await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
+            await new Promise((resolve) => setTimeout(resolve, 30));
+          } finally {
+            document.removeEventListener('focusin', track);
+          }
+          expect(focused.filter((el) => !dialog.contains(el))).toEqual([
+            openOf(/Principal/),
+          ]);
+        } finally {
+          restoreModalFocus();
+        }
+      },
+    );
   });
 
   it('a busca também acha pelo nome da pasta', async () => {

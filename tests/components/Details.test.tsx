@@ -248,3 +248,66 @@ describe('Detalhes — nova anotação tipada com dono (F3)', () => {
     expect(document.activeElement).toBe(add);
   });
 });
+
+/** Elementos que receberam o foco enquanto `run` roda (na ordem). */
+async function focusTrail(run: () => Promise<void>): Promise<Element[]> {
+  const focused: Element[] = [];
+  const track = (e: FocusEvent) => focused.push(e.target as Element);
+  document.addEventListener('focusin', track);
+  try {
+    await run();
+  } finally {
+    document.removeEventListener('focusin', track);
+  }
+  return focused;
+}
+
+// Etapa 8 (8.3), achado F2: "escolher e ir" (Ctrl+Enter no seletor) tinha dois donos do
+// foco: o retorno do seletor (ao campo `dado`) e o painel (à anotação de destino), e o certo
+// vencia só pela ordem das filas. Agora o painel é o dono e age no commit; o retorno do
+// seletor vê o foco já no destino e não mexe. O foco vai direto, sem passar por outro lugar.
+describe('Detalhes — escolher e ir até o alvo (F2)', () => {
+  beforeEach(simulateModalFocus);
+  afterEach(restoreModalFocus);
+
+  it('Ctrl+Enter no seletor leva o foco direto à anotação de destino', async () => {
+    const harness = createHarness(cadastroProject());
+    harness.ui.selection.value = { kind: 'marking', id: 'MN' };
+    renderLive(harness, (p) => {
+      const selection = harness.ui.selection.value;
+      const marking = p.markings.find(
+        (m) => selection?.kind === 'marking' && m.id === selection.id,
+      );
+      const image = p.images.find((i) => i.id === marking?.imageId);
+      if (!marking || !image) return null;
+      return (
+        <MarkingPanel
+          project={p}
+          marking={marking}
+          image={image}
+          readOnly={false}
+          onDelete={() => undefined}
+          onSelectMarking={() => undefined}
+          onGoToAnnotation={(a) => goToAnnotation(harness.ui, a)}
+        />
+      );
+    });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /^dado: / }));
+    await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el?.contains(document.activeElement)) throw new Error('o seletor não abriu');
+    });
+    let target: Element | null = null;
+    const trail = await focusTrail(async () => {
+      // Abre no atual (User.name); ↓ vai para User.age, da anotação User no Formulário.
+      await user.keyboard('{ArrowDown}{Control>}{Enter}{/Control}');
+      await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+      const name = await screen.findByLabelText('Nome da anotação');
+      target = name;
+      await vi.waitFor(() => expect(document.activeElement).toBe(name));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(trail).toEqual([target]);
+  });
+});
