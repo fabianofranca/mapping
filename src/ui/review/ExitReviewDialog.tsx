@@ -6,16 +6,9 @@ import { DecisionMark } from './DecisionMark';
 import { useApplyAccepted } from './useReview';
 
 // Lembrete ao sair da revisão (HANDOFF-PROPOSALS 5.3): com aceitas ainda não aplicadas,
-// sair pergunta. Nada se perde em nenhum caso: as decisões e as notas ficam na proposta.
-// Ações: Aplicar agora · N (principal), Sair mesmo assim e Continuar revisando.
-
-/** Sair pede o lembrete? Só com aceitas aguardando aplicação numa proposta aplicável. */
-export function needsExitReminder(
-  status: string | undefined,
-  acceptedPending: number,
-): boolean {
-  return acceptedPending > 0 && (status === 'open' || status === 'superseded');
-}
+// sair pergunta (a regra é `needsExitReminder`, do modelo; quem decide mostrar é
+// `app/useExitReview.ts`). Nada se perde em nenhum caso: as decisões e as notas ficam na
+// proposta. Ações: Aplicar agora · N (principal), Sair mesmo assim e Continuar revisando.
 
 export function ExitReviewDialog({ onClose }: { readonly onClose: () => void }) {
   const { review } = useEditor();

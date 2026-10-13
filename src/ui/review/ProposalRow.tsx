@@ -1,5 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { t } from '../../i18n';
+import { proposalListStatus, type ProposalListFlag } from '../../model';
 import type { ProposalRow as ProposalRowData } from '../../store/derived';
 import { locale } from '../../store/settings';
 import { Button } from '../controls';
@@ -10,7 +11,8 @@ import { formatFullDate, formatWhen, joinParts } from './format';
 
 // Linha da lista de propostas (HANDOFF-PROPOSALS 5.1 e componente ProposalRow): estado do
 // conjunto, título com o status, contexto (origem · autor · data), contagens e a linha
-// "N aceitas aguardando aplicação"; ação Revisar, Continuar ou Ver. Só lê o derivado.
+// "N aceitas aguardando aplicação"; ação Revisar, Continuar ou Ver. Só lê o derivado; a
+// regra do status é `proposalListStatus`, do modelo.
 
 export type ProposalAction = 'review' | 'continue' | 'view';
 
@@ -21,6 +23,14 @@ export interface ProposalStatusView {
   readonly primary: boolean;
 }
 
+const FLAG_TONES: Record<ProposalListFlag, FlagTone> = {
+  new: 'new',
+  inReview: 'neutral',
+  superseded: 'warn',
+  applied: 'ok',
+  withdrawn: 'neutral',
+};
+
 /**
  * Status mostrado e ação de uma linha. `showNew`: esta é a linha que leva a `Flag` "Nova"
  * (só uma por janela).
@@ -29,44 +39,13 @@ export function proposalStatus(
   row: ProposalRowData,
   showNew: boolean,
 ): ProposalStatusView {
-  const { proposal: p, progress } = row;
-  switch (p.status) {
-    case 'open': {
-      if (row.fresh) {
-        return {
-          flag: showNew ? { tone: 'new', text: t('proposals.status.new') } : null,
-          action: 'review',
-          primary: true,
-        };
-      }
-      const started = progress.accepted + progress.rejected > 0 || p.notes.length > 0;
-      return started
-        ? {
-            flag: { tone: 'neutral', text: t('proposals.status.inReview') },
-            action: 'continue',
-            primary: false,
-          }
-        : { flag: null, action: 'review', primary: false };
-    }
-    case 'superseded':
-      return {
-        flag: { tone: 'warn', text: t('proposals.status.superseded') },
-        action: 'view',
-        primary: false,
-      };
-    case 'applied':
-      return {
-        flag: { tone: 'ok', text: t('proposals.status.applied') },
-        action: 'view',
-        primary: false,
-      };
-    case 'withdrawn':
-      return {
-        flag: { tone: 'neutral', text: t('proposals.status.withdrawn') },
-        action: 'view',
-        primary: false,
-      };
-  }
+  const status = proposalListStatus(row.proposal, row.progress, row.fresh);
+  const flag = status.flag === 'new' && !showNew ? null : status.flag;
+  return {
+    flag: flag ? { tone: FLAG_TONES[flag], text: t(`proposals.status.${flag}`) } : null,
+    action: status.action,
+    primary: status.primary,
+  };
 }
 
 /** "2 aceitas e 4 sem decisão ficaram para trás" (proposta substituída). */

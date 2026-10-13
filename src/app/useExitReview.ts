@@ -1,5 +1,5 @@
+import { needsExitReminder } from '../model';
 import { useEditor } from '../ui/EditorContext';
-import { needsExitReminder } from '../ui/review/ExitReviewDialog';
 import type { EditorDialogs } from './useEditorDialogs';
 
 /**

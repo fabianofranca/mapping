@@ -242,7 +242,11 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
     ).toBe('removed');
     const swapped = propose(
       base,
-      renameMarking(replaceImage(base, 'I1', 'images/outra.webp', 4000, 3000), 'M1', 'X'),
+      renameMarking(
+        replaceImage(base, 'I1', { file: 'images/outra.webp', width: 4000, height: 3000 }),
+        'M1',
+        'X',
+      ),
     );
     expect(
       levelType('image', 'I1', changesOf(swapped, base, { level: 'image', id: 'I1' })),

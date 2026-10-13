@@ -1,11 +1,12 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renameMarking, supersedeProposal } from '../../../src/model';
-import { locale } from '../../../src/store/settings';
 import {
-  ExitReviewDialog,
   needsExitReminder,
-} from '../../../src/ui/review/ExitReviewDialog';
+  renameMarking,
+  supersedeProposal,
+} from '../../../src/model';
+import { locale } from '../../../src/store/settings';
+import { ExitReviewDialog } from '../../../src/ui/review/ExitReviewDialog';
 import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
 import { sampleProject } from '../../model/fixtures';
 import { decided } from '../../model/proposalFixtures';
