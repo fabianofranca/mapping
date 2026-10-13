@@ -1,8 +1,16 @@
 import { signal } from '@preact/signals';
 import { render } from '@testing-library/preact';
 import type { ComponentChildren } from 'preact';
+import {
+  addAnnotation,
+  addImage,
+  addLayer,
+  createMarking,
+  createProject,
+} from '../../../src/model';
 import { createDisplayImages } from '../../../src/store/displayImages';
 import { EditorContext, createEditorContextValue } from '../../../src/ui/EditorContext';
+import { AT, propose } from '../../model/proposalFixtures';
 import { openHarness, type HarnessOptions } from '../../store/proposalHarness';
 
 /**
@@ -25,6 +33,39 @@ export async function openReviewHarness(options: HarnessOptions = {}) {
 }
 
 export type ReviewHarness = Awaited<ReturnType<typeof openReviewHarness>>;
+
+/**
+ * Importação nova: projeto recém-criado (sem imagens, só a camada `L1`) e a proposta que
+ * cria a camada `L2` "Eventos", a imagem `I1` (800×600, em (0, 0)) e nela a marcação `M1`
+ * "Formulário" com uma anotação na camada nova. Nada disso existe fora da prévia.
+ */
+export function firstImport() {
+  const base = createProject({
+    name: 'Importação',
+    now: AT,
+    firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
+  });
+  let after = addLayer(base, { id: 'L2', name: 'Eventos', color: '#1E88E5' });
+  after = addImage(after, {
+    id: 'I1',
+    file: 'images/cadastro.webp',
+    width: 800,
+    height: 600,
+  });
+  after = createMarking(after, {
+    id: 'M1',
+    imageId: 'I1',
+    rect: { x: 10, y: 10, width: 200, height: 100 },
+    name: 'Formulário',
+  });
+  after = addAnnotation(after, {
+    id: 'A1',
+    markingId: 'M1',
+    layerId: 'L2',
+    name: 'onClick',
+  });
+  return { base, proposal: propose(base, after, { id: 'P1', title: 'Importação' }) };
+}
 
 export function renderInEditor(h: ReviewHarness, children: ComponentChildren) {
   return render(
