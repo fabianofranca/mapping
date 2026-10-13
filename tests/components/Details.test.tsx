@@ -191,6 +191,21 @@ describe('Detalhes — KeyValueGrid', () => {
     await vi.waitFor(() => expect(document.activeElement).toBe(created));
     await user.keyboard('x{Escape}');
     expect(screen.getAllByLabelText('Chave')).toHaveLength(2);
+    // Etapa 8 (8.3), F5: a linha descartada levava o foco; ele vai ao "+ Par".
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: '+ Par' })),
+    );
+  });
+
+  // Etapa 8 (8.3), achado F5 (O5): Enter no Valor tirava o foco do campo (ia ao body).
+  it('Enter no Valor grava e mantém o foco no campo', async () => {
+    const { harness, user } = renderAnnotation('AU');
+    const [value] = screen.getAllByLabelText('Valor');
+    if (!value) throw new Error('sem o Valor');
+    await user.clear(value);
+    await user.type(value, 'text{Enter}');
+    expect(annotationOf(harness.project(), 'AU').entries[0]?.value).toBe('text');
+    expect(document.activeElement).toBe(screen.getAllByLabelText('Valor')[0]);
   });
 });
 
