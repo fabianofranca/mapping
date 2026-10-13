@@ -303,3 +303,10 @@ Depois procura no próprio registro da mudança de criação ou remoção da pro
 7. **Regra automática [ajuste 2]**: `tests/tooling/applyAcceptedCallers.test.ts`, no padrão de `shownProjectReaders.test.ts`. Varre `src/**` e só permite `.applyAccepted(` em `src/store/review.ts` (hoje o único chamador, `:536`), com `toEqual`. Um caso com fixture em memória prova que a varredura pega um chamador novo. Passa na `main`, porque hoje só há um chamador. A prova vermelha vai no corpo do PR: um arquivo temporário em `src/` chamando `.applyAccepted(` faz o teste falhar, e a saída fica registrada.
 
 **Toca em:** `src/store/derived.ts` (`hold` e as três versões ao vivo), `src/store/review.ts` (`apply` segura e solta), `src/ui/review/ReviewDetails.tsx` (`issueText`), `src/ui/review/changeText.ts` (`entityName`, `layerName` e `annotationName` exportadas), `src/ui/review/ReviewBar.tsx` (o motivo "Aplicando…"), `src/i18n/review.ts` (duas chaves: alvo que não existe mais e "Aplicando as aceitas…", em pt-BR e en-US; o nome de tipo sem alvo reusa `review.entity.*`), os testes acima (inclusive `tests/tooling/`) e esta nota. Fora das pastas pedidas, só `docs/ARCHITECTURE.md`: uma frase na seção "Revisão" (o aplicar segura a reavaliação até terminar), porque a seção é a referência do subsistema e foi escrita nesta fase.
+
+Na implementação, o código divergiu da nota em quatro pontos:
+
+- `changeText.ts` exporta `entityName`, `entityKindOf` e `entityLabel`. `layerName` e `annotationName` continuam privados, porque o `entityName` mora no mesmo arquivo.
+- Uma especialização no projeto sem a cópia em `specs/` (`spec: null`) não encerra a busca. O nome sai do registro da proposta e, sem ele, o id. O harness dos testes não grava `specs/`, e o teste da especialização passa por esse caminho.
+- O caso de remoção do teste 2 monta o `CanvasController`, como em `tests/canvas/reviewCursor.test.ts`, no lugar do `CanvasHost`. O contexto 2D falso é reinstalado a cada teste, porque o `vi.restoreAllMocks()` o desfaz.
+- O teste 5 também falha na `main`, porque confere o estado no meio do aplicar, antes de o `proposal.json` falhar.
