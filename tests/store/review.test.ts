@@ -4,6 +4,7 @@ import {
   addLayer,
   deserialize,
   moveMarking,
+  removeImage,
   renameMarking,
   replaceImage,
   reviewKey,
@@ -13,7 +14,7 @@ import {
   type Proposal,
 } from '../../src/model';
 import { locale } from '../../src/store/settings';
-import { clearReportedErrors } from '../../src/utils/report';
+import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
 import { AT, decided, propose } from '../model/proposalFixtures';
 import {
@@ -50,7 +51,7 @@ describe('abrir a revisão', () => {
     expect(session.actions.renameProject('Novo')).toEqual({ ok: true, value: undefined });
 
     const opened = review.open('P1');
-    expect(opened).toEqual({ ok: true, resumed: false, newConflicts: 0 });
+    expect(opened).toEqual({ ok: true, resumed: 'none', newConflicts: 0 });
     expect(review.proposalId.value).toBe('P1');
     expect(review.selected.value).toEqual({
       level: 'change',
@@ -321,7 +322,7 @@ describe('conflitos', () => {
     // Fora da revisão o usuário edita a marcação que a proposta renomeia.
     session.actions.renameMarking('M1', 'Porta (editada à mão)');
     const reopened = review.open('P1');
-    expect(reopened).toEqual({ ok: true, resumed: true, newConflicts: 1 });
+    expect(reopened).toEqual({ ok: true, resumed: 'full', newConflicts: 1 });
     expect([...review.derived.conflictIds.value]).toEqual([ids.name]);
     expect([...review.newConflicts.value]).toEqual([ids.name]);
     const situation = must(review.derived.situation.value.get(ids.name));
@@ -333,7 +334,7 @@ describe('conflitos', () => {
     review.close();
 
     // Na abertura seguinte o conflito já é conhecido.
-    expect(review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    expect(review.open('P1')).toEqual({ ok: true, resumed: 'full', newConflicts: 0 });
     expect(review.newConflicts.value.size).toBe(0);
     expect(review.derived.conflictIds.value.size).toBe(1);
   });
@@ -364,14 +365,14 @@ describe('conflitos', () => {
     const a = await openHarness({
       project: edited,
       proposals: [proposal],
-      folderName: 'loja',
+      copyId: 'copia-a',
     });
-    expect(a.review.open('P1')).toEqual({ ok: true, resumed: false, newConflicts: 0 });
+    expect(a.review.open('P1')).toEqual({ ok: true, resumed: 'none', newConflicts: 0 });
     expect(a.review.derived.conflictIds.value.size).toBe(1);
     a.review.close();
 
     // Cópia B: a mesma proposta numa pasta com o projeto sem a edição (sem conflito).
-    const b = await openHarness({ proposals: [proposal], folderName: 'loja-pasta' });
+    const b = await openHarness({ proposals: [proposal], copyId: 'copia-b' });
     expect(b.review.open('P1')).toMatchObject({ ok: true, newConflicts: 0 });
     expect(b.review.derived.conflictIds.value.size).toBe(0);
     b.review.close();
@@ -380,9 +381,13 @@ describe('conflitos', () => {
     const again = await openHarness({
       project: edited,
       proposals: [proposal],
-      folderName: 'loja',
+      copyId: 'copia-a',
     });
-    expect(again.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    expect(again.review.open('P1')).toEqual({
+      ok: true,
+      resumed: 'full',
+      newConflicts: 0,
+    });
     expect(again.review.newConflicts.value.size).toBe(0);
   });
 
@@ -390,16 +395,24 @@ describe('conflitos', () => {
     const { proposal } = richScenario();
     const edited = renameMarking(sampleProject(), 'M1', 'Topo');
     locale.value = 'pt-BR';
-    const first = await openHarness({ project: edited, proposals: [proposal] });
+    const first = await openHarness({
+      project: edited,
+      proposals: [proposal],
+      copyId: 'c',
+    });
     expect(first.review.open('P1')).toMatchObject({ ok: true, newConflicts: 0 });
     first.review.select({ level: 'item', id: 'M4' });
     first.review.close();
 
     locale.value = 'en-US';
-    const second = await openHarness({ project: edited, proposals: [proposal] });
+    const second = await openHarness({
+      project: edited,
+      proposals: [proposal],
+      copyId: 'c',
+    });
     expect(second.review.open('P1')).toEqual({
       ok: true,
-      resumed: true,
+      resumed: 'full',
       newConflicts: 0,
     });
     expect(second.review.selected.value).toEqual({ level: 'item', id: 'M4' });
@@ -409,96 +422,326 @@ describe('conflitos', () => {
   it('outra aba com o estado antigo em memória não faz um conflito já visto voltar como novo', async () => {
     const { proposal } = richScenario();
     // Ontem: a revisão aberta sem nenhum conflito.
-    const yesterday = await openHarness({ proposals: [proposal] });
+    const yesterday = await openHarness({ proposals: [proposal], copyId: 'c' });
     yesterday.review.open('P1');
     yesterday.review.close();
 
     // O nome de M1 muda por fora; duas abas abrem o projeto (as duas leem o estado de ontem).
     const edited = renameMarking(sampleProject(), 'M1', 'Topo');
-    const tabA = await openHarness({ project: edited, proposals: [proposal] });
-    const tabB = await openHarness({ project: edited, proposals: [proposal] });
-    expect(tabA.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 1 });
+    const tabA = await openHarness({
+      project: edited,
+      proposals: [proposal],
+      copyId: 'c',
+    });
+    const tabB = await openHarness({
+      project: edited,
+      proposals: [proposal],
+      copyId: 'c',
+    });
+    expect(tabA.review.open('P1')).toEqual({
+      ok: true,
+      resumed: 'full',
+      newConflicts: 1,
+    });
     tabA.review.close();
     // A outra aba abre a mesma revisão depois: o conflito já foi mostrado.
-    expect(tabB.review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    expect(tabB.review.open('P1')).toEqual({
+      ok: true,
+      resumed: 'full',
+      newConflicts: 0,
+    });
   });
 
-  it('a entrada guardada antes de a chave levar a cópia (legado) devolve a posição e os filtros, não marca conflito novo e é regravada', async () => {
-    const { proposal } = richScenario();
-    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
-    localStorage.setItem(
-      'mapping.reviewResume',
-      JSON.stringify({
-        P1: {
-          selected: { level: 'item', id: 'M4' },
-          view: 'current',
-          filters: {
-            types: [],
-            imageId: null,
-            layerId: null,
-            decision: 'undecided',
-            onlyConflicts: false,
-          },
-          knownConflicts: [],
-        },
-      }),
-    );
-    const { review } = await openHarness({ project: edited, proposals: [proposal] });
-    expect(review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
-    expect(review.selected.value).toEqual({ level: 'item', id: 'M4' });
-    expect(review.filters.value.decision).toBe('undecided');
-    const stored = JSON.parse(localStorage.getItem('mapping.reviewResume') ?? '{}');
-    expect(Object.keys(stored)).toEqual(['folder:projeto|P1']);
-  });
-
-  it('a entrada legada vale para qualquer cópia: não conta a proposta como vista e a revisão começa pela visão Proposto (G1)', async () => {
-    const { proposal } = richScenario();
-    // Entrada de antes da 6.5 (chave só com o id), deixada por outra cópia do projeto.
-    localStorage.setItem(
-      'mapping.reviewResume',
-      JSON.stringify({
-        P1: {
-          selected: { level: 'item', id: 'M4' },
-          view: 'current',
-          filters: {
-            types: [],
-            imageId: null,
-            layerId: null,
-            decision: 'all',
-            onlyConflicts: false,
-          },
-          knownConflicts: [],
-        },
-      }),
-    );
-    const { review } = await openHarness({ proposals: [proposal] });
-    // A barra de status mostra "1 proposta(s) nova(s)".
-    expect(review.seen.value.has('P1')).toBe(false);
-    expect(review.derived.freshIds.value).toEqual(['P1']);
-    review.open('P1');
-    expect(review.view.value).toBe('proposed');
-    // Depois de aberta nesta cópia, já foi vista.
-    expect(review.derived.freshIds.value).toEqual([]);
-  });
-
-  it('um conflito que aparece durante a revisão (projeto recarregado por fora) já é conhecido na abertura seguinte', async () => {
+  // Fase 8.2 (P6): um conflito que surge durante a revisão (recarga externa) aparece como
+  // novo na hora; decidido, passa a conhecido ao fechar; sem decisão, é novo de novo na
+  // próxima abertura. (Substitui o teste que fixava "já é conhecido na abertura seguinte".)
+  it('um conflito que aparece durante a revisão é novo na hora; só o decidido fica conhecido ao fechar', async () => {
     const { proposal, ids, base } = richScenario();
     const { session, root, review } = await openHarness({ proposals: [proposal] });
     review.open('P1');
     expect(review.derived.conflictIds.value.size).toBe(0);
-    const external = renameMarking(base, 'M1', 'Outro nome');
+    expect(review.newConflicts.value.size).toBe(0);
+    // Por fora, o nome de M1 muda e a imagem I2 é apagada: a mudança do nome e a da
+    // posição de M4 (que está em I2) passam a conflitar.
+    let external = renameMarking(base, 'M1', 'Outro nome');
+    external = removeImage(external, 'I2');
     root.put('mapping.json', serialize({ ...external, revision: 4 }));
     expect(await session.sync()).toBe('reloaded');
-    expect([...review.derived.conflictIds.value]).toEqual([ids.name]);
+    expect(review.derived.conflictIds.value).toEqual(new Set([ids.name, ids.rect]));
+    // Ao vivo: os dois são novos.
+    expect(review.newConflicts.value).toEqual(new Set([ids.name, ids.rect]));
+    // A pessoa decide um deles (prova de que o viu) e fecha.
+    await review.decide({ level: 'change', id: ids.name }, 'rejected');
     review.close();
-    expect(review.open('P1')).toEqual({ ok: true, resumed: true, newConflicts: 0 });
+    // Na reabertura, o decidido é conhecido e o que ficou sem decisão volta como novo.
+    expect(review.open('P1')).toEqual({ ok: true, resumed: 'full', newConflicts: 1 });
+    expect([...review.newConflicts.value]).toEqual([ids.rect]);
+  });
+});
+
+// Fase 8.2 (P2/R3, P3, P5, O5): o retomar e o "vista" por cópia (`ProjectStorage.copyId`),
+// num blob versionado (`mapping.reviewResume` v2) com `seen` separado do `resume`.
+describe('retomar por cópia e blob v2', () => {
+  const RESUME_KEY = 'mapping.reviewResume';
+  const blob = () => JSON.parse(localStorage.getItem(RESUME_KEY) ?? 'null');
+  const v1Entry = {
+    selected: { level: 'item', id: 'M4' },
+    view: 'current',
+    filters: {
+      types: [],
+      imageId: null,
+      layerId: null,
+      decision: 'undecided',
+      onlyConflicts: false,
+    },
+    knownConflicts: [],
+  };
+
+  it('duas pastas com o mesmo nome são duas cópias: posição, filtros, conflitos conhecidos e "vista" independentes (O5)', async () => {
+    const { proposal } = richScenario();
+    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    // Cópia A (`projetos/loja`): com conflito, selecionou M4 e filtrou as pendentes.
+    const a = await openHarness({
+      project: edited,
+      proposals: [proposal],
+      folderName: 'loja',
+      copyId: 'loja-1',
+    });
+    expect(a.review.open('P1')).toMatchObject({ resumed: 'none', newConflicts: 0 });
+    a.review.select({ level: 'item', id: 'M4' });
+    a.review.setFilters({ decision: 'undecided' });
+    a.review.close();
+
+    // Cópia B (`backup/loja`, recém-descompactada): a proposta é nova e a revisão começa
+    // do zero; o conflito que A já conhecia não existe aqui e nada é herdado.
+    const b = await openHarness({
+      proposals: [proposal],
+      folderName: 'loja',
+      copyId: 'loja-2',
+    });
+    expect(b.review.derived.freshIds.value).toEqual(['P1']);
+    expect(b.review.open('P1')).toEqual({ ok: true, resumed: 'none', newConflicts: 0 });
+    expect(b.review.selected.value).toEqual({
+      level: 'change',
+      id: proposal.changes[0]?.id,
+    });
+    expect(b.review.filters.value.decision).toBe('all');
+    // A edição acontece em B depois: o conflito é novo em B, e A não é afetada.
+    b.review.close();
+    b.session.actions.renameMarking('M1', 'Topo');
+    expect(b.review.open('P1')).toMatchObject({ resumed: 'full', newConflicts: 1 });
+    b.review.close();
+
+    // A mesma cópia com outro nome de pasta (renomeada no disco) continua sendo a mesma.
+    const again = await openHarness({
+      project: edited,
+      proposals: [proposal],
+      folderName: 'loja-renomeada',
+      copyId: 'loja-1',
+    });
+    expect(again.review.derived.freshIds.value).toEqual([]);
+    expect(again.review.open('P1')).toEqual({
+      ok: true,
+      resumed: 'full',
+      newConflicts: 0,
+    });
+    expect(again.review.selected.value).toEqual({ level: 'item', id: 'M4' });
+    expect(again.review.filters.value.decision).toBe('undecided');
+  });
+
+  it('a chave é `copyId|proposalId` e o blob tem `v: 2`, `seen` e `resume`', async () => {
+    const { proposal } = richScenario();
+    const { review } = await openHarness({ proposals: [proposal], copyId: 'copia-x' });
+    review.open('P1');
+    review.select({ level: 'item', id: 'M4' });
+    review.close();
+    const stored = blob();
+    expect(stored.v).toBe(2);
+    expect(stored.seen).toEqual(['copia-x|P1']);
+    expect(Object.keys(stored.resume)).toEqual(['copia-x|P1']);
+    for (const key of [...stored.seen, ...Object.keys(stored.resume)]) {
+      expect(key).toMatch(/^[^|]+\|[A-Za-z0-9._-]+$/);
+    }
+    expect(stored.resume['copia-x|P1']).toMatchObject({
+      selected: { level: 'item', id: 'M4' },
+      view: 'proposed',
+      knownConflicts: [],
+    });
+  });
+
+  it('sem copyId o escopo é vazio (chave `|P1`) e o Diagnóstico registra', async () => {
+    const { proposal } = richScenario();
+    const { review } = await openHarness({ proposals: [proposal], copyId: null });
+    review.open('P1');
+    review.close();
+    expect(Object.keys(blob().resume)).toEqual(['|P1']);
+    expect(reportedErrors.value.map((e) => e.context)).toContain('review.scope');
+  });
+
+  it('o blob v1 (sem versão, com entradas legadas e da cópia) é descartado: nada retomado, tudo "Nova", e regravado como v2', async () => {
+    const { proposal } = richScenario();
+    const edited = renameMarking(sampleProject(), 'M1', 'Topo');
+    localStorage.setItem(
+      RESUME_KEY,
+      JSON.stringify({ P1: v1Entry, 'folder:projeto|P1': v1Entry }),
+    );
+    const { review } = await openHarness({ project: edited, proposals: [proposal] });
+    expect(review.derived.freshIds.value).toEqual(['P1']);
+    // A primeira abertura nesta cópia não marca conflito novo (não há com o que comparar).
+    expect(review.open('P1')).toEqual({ ok: true, resumed: 'none', newConflicts: 0 });
+    expect(review.view.value).toBe('proposed');
+    expect(review.selected.value).toEqual({
+      level: 'change',
+      id: proposal.changes[0]?.id,
+    });
+    expect(review.filters.value.decision).toBe('all');
+    const stored = blob();
+    expect(stored.v).toBe(2);
+    expect(Object.keys(stored.resume)).toHaveLength(1);
+    expect(stored.resume.P1).toBeUndefined();
+    expect(stored.resume['folder:projeto|P1']).toBeUndefined();
+  });
+
+  it('uma versão desconhecida do blob também é descartada', async () => {
+    const { proposal } = richScenario();
+    localStorage.setItem(
+      RESUME_KEY,
+      JSON.stringify({ v: 3, seen: ['x|P1'], resume: {}, extra: true }),
+    );
+    const { review } = await openHarness({ proposals: [proposal], copyId: 'x' });
+    expect(review.derived.freshIds.value).toEqual(['P1']);
+    expect(review.open('P1')).toMatchObject({ resumed: 'none' });
+    review.close();
+    expect(blob()).toMatchObject({ v: 2, seen: ['x|P1'] });
+  });
+
+  it('o resume guarda só as 12 propostas mais recentes da cópia; "vista" não tem limite (P3)', async () => {
+    const proposals: Proposal[] = [];
+    for (let i = 1; i <= 13; i++) {
+      proposals.push({
+        ...richScenario(`P${i}`).proposal,
+        createdAt: `2026-10-${String(i).padStart(2, '0')}T12:00:00.000Z`,
+      });
+    }
+    const { review } = await openHarness({ proposals, copyId: 'c' });
+    for (let i = 1; i <= 13; i++) {
+      review.open(`P${i}`);
+      review.select({ level: 'item', id: 'M4' });
+      review.close();
+    }
+    const stored = blob();
+    expect(Object.keys(stored.resume)).toHaveLength(12);
+    expect(stored.resume['c|P1']).toBeUndefined();
+    expect(Object.keys(stored.resume)[0]).toBe('c|P2');
+    expect(Object.keys(stored.resume).at(-1)).toBe('c|P13');
+    expect(stored.seen).toHaveLength(13);
+    // A primeira continua vista: a eviction do resume não a devolve a "Nova".
+    expect(review.derived.freshIds.value).toEqual([]);
+    expect(review.open('P1')).toMatchObject({ resumed: 'none' });
+    review.close();
+    // Outra sessão da mesma cópia lê o mesmo.
+    const again = await openHarness({ proposals, copyId: 'c' });
+    expect(again.review.derived.freshIds.value).toEqual([]);
+    // Outra cópia tem o seu próprio limite: as entradas desta não são tocadas.
+    const other = await openHarness({ proposals: [proposals[0]!], copyId: 'd' });
+    other.review.open('P1');
+    other.review.close();
+    expect(Object.keys(blob().resume)).toHaveLength(13);
+  });
+
+  it('com o localStorage bloqueado, abrir não lança e a proposta deixa de ser "Nova" na sessão', async () => {
+    const { proposal } = richScenario();
+    const original = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new Error('bloqueado');
+      },
+    });
+    try {
+      const { review } = await openHarness({ proposals: [proposal] });
+      expect(review.derived.freshIds.value).toEqual(['P1']);
+      expect(review.open('P1')).toMatchObject({ ok: true, resumed: 'none' });
+      review.select({ level: 'item', id: 'M4' });
+      review.close();
+      expect(review.derived.freshIds.value).toEqual([]);
+      expect(review.derived.rows.value[0]?.fresh).toBe(false);
+    } finally {
+      if (original) Object.defineProperty(window, 'localStorage', original);
+    }
+  });
+
+  it('o que outra aba marcou como vista entra nesta na próxima gravação ou abertura (limite aceito, D4)', async () => {
+    const p1 = richScenario('P1').proposal;
+    const p2 = { ...richScenario('P2').proposal, createdAt: '2026-10-10T12:00:00.000Z' };
+    const tabB = await openHarness({ proposals: [p1, p2], copyId: 'c' });
+    const tabA = await openHarness({ proposals: [p1, p2], copyId: 'c' });
+    expect(tabB.review.derived.freshIds.value).toEqual(['P2', 'P1']);
+    tabA.review.open('P1');
+    tabA.review.close();
+    // Sem evento entre abas: B ainda conta P1 como nova...
+    expect(tabB.review.derived.freshIds.value).toEqual(['P2', 'P1']);
+    // ...até a próxima abertura (ou gravação) dela, que relê o blob.
+    tabB.review.open('P2');
+    expect(tabB.review.derived.freshIds.value).toEqual([]);
+  });
+
+  it('selecionar e navegar não reatribuem `seen` nem recalculam as linhas da janela Propostas (E2)', async () => {
+    const { proposal } = richScenario();
+    const { review } = await openHarness({ proposals: [proposal] });
+    review.open('P1');
+    const seen = review.seen.value;
+    const rows = review.derived.rows.value;
+    review.select({ level: 'item', id: 'M4' });
+    review.setView('current');
+    review.step('pending', 1);
+    review.setFilters({ decision: 'undecided' });
+    expect(review.seen.value).toBe(seen);
+    expect(review.derived.rows.value).toBe(rows);
+  });
+
+  it('o filtro de camada criada pela proposta sobrevive ao retomar, em qualquer visão (P9)', async () => {
+    const base = sampleProject();
+    const after = addLayer(base, { id: 'L3', name: 'Eventos', color: '#00AA00' });
+    const proposal = propose(base, after, { id: 'P1' });
+    const { review } = await openHarness({ proposals: [proposal], copyId: 'c' });
+    review.open('P1');
+    review.setFilters({ layerId: 'L3' });
+    review.setView('current');
+    review.close();
+    expect(review.open('P1')).toMatchObject({ resumed: 'full' });
+    expect(review.view.value).toBe('current');
+    expect(review.filters.value.layerId).toBe('L3');
+    review.close();
+    // Uma camada que não existe nem no atual nem na prévia sai do filtro.
+    const stored = blob();
+    stored.resume['c|P1'].filters.layerId = 'LX';
+    localStorage.setItem(RESUME_KEY, JSON.stringify(stored));
+    review.open('P1');
+    expect(review.filters.value.layerId).toBeNull();
+  });
+
+  it('decidir sem revisão aberta é recusado sem lançar; a proposta apagada por fora fecha sem gravar resume (P11)', async () => {
+    const { proposal, ids } = richScenario();
+    const { session, root, review } = await openHarness({ proposals: [proposal] });
+    expect(await review.decide({ level: 'change', id: ids.name }, 'accepted')).toEqual({
+      ok: false,
+      error: 'unknown-proposal',
+    });
+    review.open('P1');
+    review.select({ level: 'item', id: 'M4' });
+    localStorage.removeItem(RESUME_KEY);
+    root.dirs.get('proposals')?.dirs.delete('P1');
+    await session.sync();
+    expect(review.proposalId.value).toBeNull();
+    expect(localStorage.getItem(RESUME_KEY)).toBeNull();
   });
 });
 
 describe('retomar a revisão', () => {
   it('volta ao último item, com os mesmos filtros e a mesma visão, por dispositivo', async () => {
     const { proposal, ids } = richScenario();
-    const first = await openHarness({ proposals: [proposal] });
+    const first = await openHarness({ proposals: [proposal], copyId: 'c' });
     first.review.open('P1');
     first.review.select({ level: 'item', id: 'M5' });
     first.review.setView('current');
@@ -511,11 +754,12 @@ describe('retomar a revisão', () => {
     expect(first.review.proposalId.value).toBeNull();
     expect(first.session.store.reviewing.value).toBe(false);
 
-    // "Fechar a app": outra sessão, outro estado de revisão, o mesmo localStorage.
-    const second = await openHarness({ proposals: [proposal] });
+    // "Fechar a app": outra sessão, outro estado de revisão, o mesmo localStorage e a
+    // mesma cópia do projeto.
+    const second = await openHarness({ proposals: [proposal], copyId: 'c' });
     expect(second.review.seen.value.has('P1')).toBe(true);
     const reopened = second.review.open('P1');
-    expect(reopened).toMatchObject({ ok: true, resumed: true });
+    expect(reopened).toMatchObject({ ok: true, resumed: 'full' });
     expect(second.review.selected.value).toEqual({ level: 'item', id: 'M5' });
     expect(second.review.view.value).toBe('current');
     expect(second.review.filters.value).toMatchObject({
@@ -527,7 +771,7 @@ describe('retomar a revisão', () => {
 
   it('cai na primeira pendente se o último item não existe mais ou não há estado guardado', async () => {
     const { proposal, ids } = richScenario();
-    const first = await openHarness({ proposals: [proposal] });
+    const first = await openHarness({ proposals: [proposal], copyId: 'c' });
     first.review.open('P1');
     first.review.select({ level: 'item', id: 'M5' });
     first.review.setFilters({ imageId: 'I3' });
@@ -538,7 +782,7 @@ describe('retomar a revisão', () => {
       ...proposal,
       changes: proposal.changes.filter((c) => c.id === ids.name || c.id === ids.rect),
     };
-    const second = await openHarness({ proposals: [smaller] });
+    const second = await openHarness({ proposals: [smaller], copyId: 'c' });
     second.review.open('P1');
     expect(second.review.selected.value).toEqual({ level: 'change', id: ids.name });
     expect(second.review.filters.value.imageId).toBeNull();
@@ -565,7 +809,7 @@ describe('retomar a revisão', () => {
     });
     try {
       const b = await openHarness({ proposals: [proposal] });
-      expect(b.review.open('P1')).toMatchObject({ ok: true, resumed: false });
+      expect(b.review.open('P1')).toMatchObject({ ok: true, resumed: 'none' });
       b.review.select({ level: 'item', id: 'M5' });
       b.review.close();
     } finally {

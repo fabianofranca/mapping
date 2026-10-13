@@ -1,11 +1,19 @@
-import type { Change, Proposal, ReviewTarget } from './proposal';
+import type {
+  Change,
+  Proposal,
+  ProposalStatus,
+  ReviewLevel,
+  ReviewTarget,
+} from './proposal';
+import type { ReviewProgress } from './proposalReview';
 import { projectIndex } from './projectIndex';
 import { isRecord } from './refs';
 import type { Project } from './types';
 
 // Leitura de uma proposta para a interface de revisão (etapa 4): tipo de cada mudança,
-// filtros, pendências e o que ficou para trás numa proposta substituída. Funções puras;
-// as contagens e os níveis ficam em `proposalReview.ts`.
+// tipo de cada nível, filtros, pendências, o que ficou para trás numa proposta
+// substituída, o status de uma linha da janela Propostas e o lembrete ao sair. Funções
+// puras; as contagens e os níveis ficam em `proposalReview.ts`.
 
 /**
  * Tipo da mudança, para o selo e o filtro (a forma diz o tipo; a cor diz a decisão).
@@ -46,6 +54,29 @@ export function dominantChangeType(types: Iterable<ChangeType>): ChangeType | nu
     if (found.has(type)) return type;
   }
   return found.has('moved') ? 'moved' : null;
+}
+
+/**
+ * Tipo de um nível da revisão (o selo da Árvore e da lista), a partir das mudanças que
+ * ele agrupa (`ReviewTree.changeIdsOf`). Item e imagem: o tipo da própria entidade (a
+ * marcação, a imagem), na ordem criada > removida > trocada > alterada; "movida" só se a
+ * posição é a única coisa que muda. Sem mudança na própria entidade, o que muda dentro
+ * (uma anotação criada, uma marcação da imagem) faz o nível "alterado". Proposta e
+ * Projeto: o dominante de tudo. `null` sem mudanças.
+ */
+export function levelType(
+  level: ReviewLevel,
+  id: string | null,
+  changes: readonly Change[],
+): ChangeType | null {
+  if (changes.length === 0) return null;
+  const entity = level === 'item' ? 'marking' : level === 'image' ? 'image' : null;
+  if (entity === null) return dominantChangeType(changes.map(changeType));
+  const own = changes.filter((c) => c.entity === entity && c.entityId === id);
+  const type = dominantChangeType(own.map(changeType));
+  return type === null || (type === 'moved' && own.length < changes.length)
+    ? 'changed'
+    : type;
 }
 
 /** Chave de um alvo da revisão (`level:id`), a mesma de `ReviewTree.nodes`. */
@@ -201,6 +232,59 @@ export function stepChange(
     if (id !== undefined && rank(id) < from) return id;
   }
   return ids.at(-1) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Janela Propostas e saída da revisão
+
+/** O selo da linha na janela Propostas (`null` sem selo); a interface traduz. */
+export type ProposalListFlag =
+  'new' | 'inReview' | 'superseded' | 'applied' | 'withdrawn';
+
+export interface ProposalListStatus {
+  readonly flag: ProposalListFlag | null;
+  /** Revisar (ainda não começou), Continuar (em andamento) ou Ver (fechada). */
+  readonly action: 'review' | 'continue' | 'view';
+  /** A ação é a principal da janela: só na proposta que chegou e ninguém abriu (`fresh`). */
+  readonly primary: boolean;
+}
+
+/**
+ * Status mostrado e ação de uma linha da janela Propostas. `fresh`: aberta, sem decisão
+ * nem nota e ainda não aberta neste dispositivo ("Nova"); é a mesma verdade da contagem
+ * da barra de status, então toda linha `fresh` leva o selo e a ação principal.
+ */
+export function proposalListStatus(
+  p: Proposal,
+  progress: ReviewProgress,
+  fresh: boolean,
+): ProposalListStatus {
+  switch (p.status) {
+    case 'open': {
+      if (fresh) return { flag: 'new', action: 'review', primary: true };
+      const started = progress.accepted + progress.rejected > 0 || p.notes.length > 0;
+      return started
+        ? { flag: 'inReview', action: 'continue', primary: false }
+        : { flag: null, action: 'review', primary: false };
+    }
+    case 'superseded':
+      return { flag: 'superseded', action: 'view', primary: false };
+    case 'applied':
+      return { flag: 'applied', action: 'view', primary: false };
+    case 'withdrawn':
+      return { flag: 'withdrawn', action: 'view', primary: false };
+  }
+}
+
+/**
+ * Sair da revisão pede o lembrete? Só com aceitas aguardando aplicação numa proposta que
+ * ainda pode ser aplicada (aberta ou substituída). Nada se perde em nenhum caso.
+ */
+export function needsExitReminder(
+  status: ProposalStatus | undefined,
+  acceptedPending: number,
+): boolean {
+  return acceptedPending > 0 && (status === 'open' || status === 'superseded');
 }
 
 /**

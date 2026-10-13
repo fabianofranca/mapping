@@ -48,9 +48,13 @@ function SaveItem() {
 }
 
 function SelectionItem() {
-  const { store, ui } = useEditor();
+  const { review, ui } = useEditor();
   const name = useComputed(() => {
-    const selected = resolveSelection(store.committed.value, ui.selection.value);
+    // O projeto à vista (prévia na visão Proposto da revisão), nunca o confirmado direto.
+    const selected = resolveSelection(
+      review.derived.shownProject.value,
+      ui.selection.value,
+    );
     if (selected?.kind === 'marking') return markingLabel(selected.marking);
     return selected?.kind === 'image' ? imageLabel(selected.image) : null;
   });

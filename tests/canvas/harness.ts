@@ -31,6 +31,10 @@ export function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D
       if (key === 'getImageData' || key === 'createImageData') {
         return () => ({ data: new Uint8ClampedArray(4) });
       }
+      // O Konva lê a matriz atual ao isolar uma forma (os selos da revisão): identidade.
+      if (key === 'getTransform') {
+        return () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+      }
       if (key === 'createLinearGradient' || key === 'createRadialGradient') {
         return () => ({ addColorStop: () => undefined });
       }

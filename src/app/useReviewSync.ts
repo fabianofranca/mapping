@@ -47,7 +47,7 @@ export function reviewTargetOf(
 }
 
 export function useReviewSync(): void {
-  const { review, ui, store } = useEditor();
+  const { review, ui } = useEditor();
 
   useEffect(
     () =>
@@ -88,13 +88,14 @@ export function useReviewSync(): void {
     [review, ui],
   );
 
-  // Ao sair da revisão, um item que só existia no "como ficaria" deixa de estar selecionado.
+  // Ao sair da revisão, um item que só existia no "como ficaria" deixa de estar selecionado
+  // (fora da revisão o projeto à vista é o confirmado).
   useEffect(
     () =>
       effect(() => {
         if (review.proposalId.value !== null) return;
         const selection = ui.selection.peek();
-        const project = store.committed.peek();
+        const project = review.derived.shownProject.peek();
         if (selection && !resolveSelection(project, selection)) {
           const exists =
             project &&
@@ -104,6 +105,6 @@ export function useReviewSync(): void {
           if (!exists) ui.selection.value = null;
         }
       }),
-    [review, ui, store],
+    [review, ui],
   );
 }

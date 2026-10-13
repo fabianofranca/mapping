@@ -5,6 +5,7 @@ import { locale } from '../../../src/store/settings';
 import { ProposalNotices } from '../../../src/ui/review/ProposalNotices';
 import { ProposalList } from '../../../src/ui/review/ProposalList';
 import { formatWhen } from '../../../src/ui/review/format';
+import { StatusBar } from '../../../src/ui/StatusBar';
 import { AT, decided } from '../../model/proposalFixtures';
 import { diskProposal, richScenario, writeOutside } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
@@ -86,8 +87,43 @@ describe('janela Propostas: lista', () => {
         `1 aceitas e ${proposal.changes.length - 1} sem decisão ficaram para trás`,
       ),
     ).toBeTruthy();
-    // Só uma "Nova" por janela.
+    // A fechada não leva "Nova"; a aberta que chegou, sim.
     expect(screen.getAllByText('Nova')).toHaveLength(1);
+  });
+
+  // Fase 8.2 (P4, O6 da rodada 4): `rows[].fresh` é a verdade; toda linha `fresh` leva o
+  // selo e a ação principal, e a barra de status conta as mesmas.
+  it('duas propostas que chegaram juntas: dois selos "Nova", duas ações principais e a barra conta 2', async () => {
+    const a = { ...richScenario('P1').proposal, title: 'Checkout' };
+    const b = {
+      ...richScenario('P2').proposal,
+      title: 'Correções',
+      createdAt: '2026-10-10T12:00:00.000Z',
+    };
+    const h = await openReviewHarness({ proposals: [a, b] });
+    renderInEditor(
+      h,
+      <>
+        <ProposalList onHelp={noop} onScan={noop} />
+        <StatusBar />
+      </>,
+    );
+    expect(screen.getAllByText('Nova')).toHaveLength(2);
+    for (const title of ['Checkout', 'Correções']) {
+      const action = screen.getByRole('button', { name: `Revisar: ${title}` });
+      expect(action.className).toContain('button-primary');
+    }
+    expect(screen.getByRole('button', { name: '2 proposta(s) nova(s)' })).toBeTruthy();
+    // Abrir uma delas tira o selo e a conta dela, e só dela.
+    act(() => {
+      h.review.open('P2');
+      h.review.close();
+    });
+    expect(screen.getAllByText('Nova')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '1 proposta(s) nova(s)' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Revisar: Correções' }).className,
+    ).not.toContain('button-primary');
   });
 
   // Achado 13 (parte da app): a proposta já revisada e aplicada não muda de status ao ser
@@ -152,6 +188,30 @@ describe('aviso de proposta nova', () => {
     expect(within(notice).getByText('Checkout')).toBeTruthy();
     fireEvent.click(within(notice).getByRole('button', { name: 'Revisar' }));
     expect(h.review.proposalId.value).toBe('P1');
+    expect(h.session.proposals.notices.value).toEqual([]);
+  });
+
+  // Fase 8.2 (P4): abrir a proposta por qualquer caminho tira o aviso dela da fila (ação
+  // do store), e ele não volta ao sair da revisão.
+  it('some ao abrir a proposta pela janela Propostas e não volta ao sair da revisão', async () => {
+    const h = await openReviewHarness({ skipProposals: true });
+    renderInEditor(
+      h,
+      <>
+        <ProposalNotices />
+        <ProposalList onHelp={noop} onScan={noop} />
+      </>,
+    );
+    writeOutside(h.root, { ...richScenario().proposal, title: 'Checkout' });
+    await act(async () => {
+      await h.session.proposals.scan();
+    });
+    expect(screen.getByRole('status')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar: Checkout' }));
+    expect(h.review.proposalId.value).toBe('P1');
+    expect(screen.queryByRole('status')).toBeNull();
+    act(() => h.review.close());
+    expect(screen.queryByRole('status')).toBeNull();
     expect(h.session.proposals.notices.value).toEqual([]);
   });
 });

@@ -17,8 +17,9 @@ interface IncompleteViewProps {
  * visíveis" restringe a lista às camadas que o canvas mostra.
  */
 export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
-  const { store, ui, derived } = useEditor();
-  const project = store.committed.value;
+  const { review, ui, derived } = useEditor();
+  // O projeto à vista, o mesmo de `derived.incompleteList` (na visão Proposto, a prévia).
+  const project = review.derived.shownProject.value;
   const visibleOnly = ui.incompleteVisibleOnly.value;
   const list = derived.incompleteList.value;
   if (!project) return null;

@@ -6,10 +6,10 @@ import {
   changeStatus,
   changeType,
   compareProposals,
-  dominantChangeType,
   filterChanges,
   layerDotsByMarking,
   leftBehind,
+  levelType,
   markingLockStates,
   markingVisibility,
   platformRepoWarnings,
@@ -99,10 +99,18 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
   return a.length === b.length && a.every((item, i) => item === b[i]);
 }
 
-export function createEditorDerived(store: ProjectStore, ui: EditorUi): EditorDerived {
-  // Projeto confirmado (sem prévia de gesto): nada daqui depende de geometria, então
-  // arrastar/redimensionar não recalcula nada.
-  const project = store.committed;
+/**
+ * `shown`: o projeto à vista (`review.derived.shownProject`): na visão Proposto da revisão,
+ * o "como ficaria"; senão, o confirmado. Sem ele (testes do editor sem revisão), o
+ * confirmado. Nunca o projeto com a prévia do gesto: nada daqui depende de geometria,
+ * então arrastar/redimensionar não recalcula nada.
+ */
+export function createEditorDerived(
+  store: ProjectStore,
+  ui: EditorUi,
+  shown: ReadonlySignal<Project | null> = store.committed,
+): EditorDerived {
+  const project = shown;
 
   const activeLayerId = computed(() =>
     resolveActiveLayerId(project.value, ui.activeLayer.value),
@@ -443,39 +451,20 @@ export function createReviewDerived(
     return changes ? new Map(changes.map((c) => [c.id, changeType(c)])) : NO_TYPES;
   });
 
-  // Tipo de cada nível. Item e imagem: o da própria entidade (a marcação, a imagem),
-  // na ordem criada > removida > trocada > alterada; "movida" só se a posição é a única
-  // coisa que muda. Sem mudança na própria entidade, o que muda dentro (uma anotação
-  // criada, uma marcação da imagem) faz o nível "alterado". Proposta e Projeto: o
-  // dominante de tudo.
+  // Tipo de cada nível (a regra é `levelType`, do modelo); memoizado pela árvore.
   const levelTypes = computed((): ReadonlyMap<string, ChangeType> => {
     const t = tree.value;
-    const types = changeTypes.value;
     const changes = changesOf.value;
     const result = new Map<string, ChangeType>();
     if (!t || !changes) return result;
     const byId = new Map(changes.map((c) => [c.id, c]));
     for (const [key, node] of t.nodes) {
-      const all = t.changeIdsOf({ level: node.level, id: node.id });
-      if (all.length === 0) continue;
-      const entity =
-        node.level === 'item' ? 'marking' : node.level === 'image' ? 'image' : null;
-      const typesOf = (ids: readonly string[]) =>
-        ids.map((id) => types.get(id)).filter((x): x is ChangeType => x !== undefined);
-      if (entity === null) {
-        const type = dominantChangeType(typesOf(all));
-        if (type !== null) result.set(key, type);
-        continue;
-      }
-      const own = all.filter((id) => {
-        const c = byId.get(id);
-        return c?.entity === entity && c.entityId === node.id;
-      });
-      const type = dominantChangeType(typesOf(own));
-      result.set(
-        key,
-        type === null || (type === 'moved' && own.length < all.length) ? 'changed' : type,
-      );
+      const own = t
+        .changeIdsOf({ level: node.level, id: node.id })
+        .map((id) => byId.get(id))
+        .filter((c): c is Change => c !== undefined);
+      const type = levelType(node.level, node.id, own);
+      if (type !== null) result.set(key, type);
     }
     return result;
   });

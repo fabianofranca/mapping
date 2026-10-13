@@ -93,8 +93,9 @@ function AnnotationCell({
  */
 export function ListView({ onSelect }: ListViewProps) {
   // Camadas visíveis (a lista respeita esse filtro) e os dados já montados da lista.
-  const { store, ui, derived } = useEditor();
-  const project = store.committed.value;
+  const { review, ui, derived } = useEditor();
+  // O projeto à vista, o mesmo de `derived.listing` (na visão Proposto, o "como ficaria").
+  const project = review.derived.shownProject.value;
   const selection: Selection = ui.selection.value;
   const showEmpty = ui.listShowEmpty.value;
   const incompleteOnly = ui.listIncompleteOnly.value;

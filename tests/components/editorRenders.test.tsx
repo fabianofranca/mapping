@@ -43,7 +43,7 @@ describe('renderizações da interface durante um gesto', () => {
   function mountEditor() {
     const project = buildLargeTypedProject();
     const session = openSession({
-      storage: createFolderStorage(new MemoryDirectory('grande')),
+      storage: createFolderStorage(new MemoryDirectory('grande'), { copyId: 'grande' }),
       project,
       readOnly: false,
       prepareImage: () => Promise.reject(new Error('imagens não são usadas aqui')),

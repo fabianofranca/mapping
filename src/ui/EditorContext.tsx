@@ -35,6 +35,9 @@ export function createEditorContextValue(
 ): EditorContextValue {
   const { session, display } = open;
   const { store, actions } = session;
+  // A revisão vem antes do derivado do editor: ele lê o projeto à vista (`shownProject`),
+  // para Camadas, Lista, Incompletas e o canvas seguirem a visão Atual/Proposto (fase 8.2).
+  const review = createReviewState(session);
   return {
     open,
     session,
@@ -42,8 +45,8 @@ export function createEditorContextValue(
     actions,
     display,
     ui,
-    derived: createEditorDerived(store, ui),
-    review: createReviewState(session),
+    derived: createEditorDerived(store, ui, review.derived.shownProject),
+    review,
     canvas: { current: null },
     view: createCanvasViewState(),
   };

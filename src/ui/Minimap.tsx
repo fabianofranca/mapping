@@ -25,7 +25,7 @@ function style(rect: Rect) {
 }
 
 export function Minimap() {
-  const { store, view, canvas } = useEditor();
+  const { review, view, canvas } = useEditor();
   const bounds = view.bounds.value;
   const viewport = view.viewport.value;
   const size = view.size.value;
@@ -33,8 +33,9 @@ export function Minimap() {
   const visible = visibleRect(viewport, size);
   const layout = minimapLayout(bounds, visible, BOX);
   if (!layout) return null;
-  // Projeto confirmado: um gesto em andamento não redesenha o minimapa a cada quadro.
-  const images = store.committed.value?.images ?? [];
+  // O projeto à vista (sem a prévia do gesto: um gesto em andamento não redesenha o
+  // minimapa a cada quadro); na visão Proposto da revisão, as imagens da prévia.
+  const images = review.derived.shownProject.value?.images ?? [];
 
   const goTo = (e: MouseEvent, l: MinimapLayout) => {
     const box = (e.currentTarget as HTMLElement).getBoundingClientRect();

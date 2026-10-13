@@ -64,6 +64,12 @@ export type MutationPlan<T, E extends string> =
       readonly before?: () => Promise<E | null>;
       /** Roda depois de gravar a proposta (ex: apagar as imagens que já foram movidas). */
       readonly after?: () => Promise<void>;
+      /**
+       * Desfaz o que `before` fez quando a gravação da proposta falha depois dele (ex: o
+       * `mapping.json` já aplicado volta ao de antes e as cópias das imagens saem). Um erro
+       * dele só vai ao Diagnóstico; o resultado continua `write-failed`.
+       */
+      readonly compensate?: () => Promise<void>;
     }
   | { readonly ok: false; readonly error: E };
 
@@ -105,6 +111,11 @@ export interface ProposalStore {
   /** Espera as gravações em andamento (ao fechar o projeto). */
   settled(): Promise<void>;
   clearNotices(): void;
+  /**
+   * Tira da fila os avisos de uma proposta (do tipo dado, ou todos). Abrir a proposta na
+   * revisão tira o `added` dela: o "Nova proposta · Revisar" não volta depois de revisada.
+   */
+  dismissNotice(id: string, kind?: ProposalNoticeKind): void;
   /** Arquivos para exportar: as propostas como estão no disco e as imagens que aguardam aceitação. */
   collect(): Promise<{
     readonly proposals: Map<string, string>;
@@ -227,6 +238,13 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       await storage.writeProposal(id, nextText);
     } catch (e) {
       reportError('proposals.write', e);
+      if (plan.compensate) {
+        try {
+          await plan.compensate();
+        } catch (compensation) {
+          reportError('proposals.compensate', compensation);
+        }
+      }
       return { ok: false, error: 'write-failed' };
     }
     known.set(id, { proposal: next, text: nextText, stamp: await stampOf(id) });
@@ -311,6 +329,12 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     settled: () => enqueue(() => Promise.resolve()),
     clearNotices() {
       notices.value = [];
+    },
+    dismissNotice(id, kind) {
+      const rest = notices.value.filter(
+        (n) => n.id !== id || (kind !== undefined && n.kind !== kind),
+      );
+      if (rest.length !== notices.value.length) notices.value = rest;
     },
     async collect() {
       return enqueue(async () => {

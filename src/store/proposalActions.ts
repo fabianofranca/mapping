@@ -261,6 +261,8 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
       const statusAfter: ProposalStatus = applying.proposal.status;
       // A gravação do `mapping.json` falhou e a entrada foi desfeita: o vínculo não faz nada.
       let abandoned = false;
+      // O projeto depois do `store.apply` (para desfazer só se ainda é ele).
+      let applied: Project | null = null;
 
       // Desfazer a entrada: a proposta volta a ter as mudanças como aceitas sem aplicar e
       // as imagens voltam para `proposals/<id>/`. Refazer: o contrário.
@@ -360,7 +362,6 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             await rollback();
             return 'stale';
           }
-          let applied: Project | null = null;
           if (applying.applied.length > 0) {
             const result = store.apply(() => applying.project, { link });
             if (!result.ok) {
@@ -380,6 +381,19 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             return 'save-failed';
           }
           return null;
+        },
+        // 4. O `mapping.json` gravou, mas o `proposal.json` falhou (fase 8.2, P7): o projeto
+        // não pode ficar aplicado com a proposta sem `applied`. Desfaz a entrada (a sessão
+        // vê o confirmado diferente do disco e agenda a regravação), confirma a regravação
+        // com `flush` e só então tira as cópias de `images/`: o `mapping.json` em disco
+        // ainda as cita até a regravação, e ele nunca aponta para um arquivo apagado. Se a
+        // regravação falha, as cópias ficam para a limpeza da sessão quando ela passar.
+        compensate: async () => {
+          abandoned = true;
+          if (applied !== null && store.project.peek() === applied) store.undo();
+          store.discardRedoOf(id);
+          const restored = await deps.flush();
+          if (restored.ok) await rollback();
         },
         after: async () => {
           for (const m of moved) {

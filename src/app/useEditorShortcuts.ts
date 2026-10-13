@@ -85,6 +85,10 @@ export function useEditorShortcuts(
 ): void {
   const editor = useEditor();
   const { store, ui, canvas, actions, review } = editor;
+  // O projeto à vista (`shownProject`): na visão Proposto da revisão, o item que só existe
+  // na proposta também tem pai e filhos para o Alt+↑/↓ (fase 8.2, P1). Fora da revisão é
+  // o confirmado; a prévia do gesto só muda geometria, que nenhum atalho daqui consulta.
+  const shown = review.derived.shownProject;
   // Revisão: decidir e aplicar avisam os erros como os botões.
   const decide = useDecide();
   const apply = useApplyAccepted();
@@ -105,7 +109,7 @@ export function useEditorShortcuts(
 
     /** Alt+↑ / Alt+↓: anda no caminho da seleção (B11). */
     const moveSelection = (up: boolean) => {
-      const project = store.project.peek();
+      const project = shown.peek();
       const current = resolveSelection(project, ui.selection.peek());
       if (!project || !current) return;
       const index = projectIndex(project);
@@ -167,7 +171,7 @@ export function useEditorShortcuts(
           return;
         case 'delete': {
           if (store.locked.peek()) return;
-          const current = resolveSelection(store.project.peek(), ui.selection.peek());
+          const current = resolveSelection(shown.peek(), ui.selection.peek());
           if (current?.kind === 'image') {
             dialogsRef.current.requestDeleteImage(current.image);
           } else if (current?.kind === 'marking') {
@@ -178,7 +182,7 @@ export function useEditorShortcuts(
         case 'toggle-lock': {
           // Só a trava muda: seleção e anotações seguem livres, mas o somente leitura vale.
           if (store.locked.peek()) return;
-          const current = resolveSelection(store.project.peek(), ui.selection.peek());
+          const current = resolveSelection(shown.peek(), ui.selection.peek());
           if (current?.kind === 'image') {
             actions.setImageLocked(current.image.id, !current.image.locked);
           } else if (current?.kind === 'marking') {
@@ -227,10 +231,7 @@ export function useEditorShortcuts(
               `[data-action="${ADD_ANNOTATION_ACTION}"]`,
             );
           if (button()) return button()?.click();
-          if (
-            resolveSelection(store.project.peek(), ui.selection.peek())?.kind !==
-            'marking'
-          )
+          if (resolveSelection(shown.peek(), ui.selection.peek())?.kind !== 'marking')
             return;
           showToolWindow('details');
           requestAnimationFrame(() => button()?.click());
@@ -290,5 +291,5 @@ export function useEditorShortcuts(
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [editor, store, ui, canvas, actions, review]);
+  }, [editor, store, ui, canvas, actions, review, shown]);
 }

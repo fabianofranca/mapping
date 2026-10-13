@@ -38,10 +38,11 @@ export function replaceChangeOf(p: Proposal, imageId: string): Change | null {
 
 /** Imagem selecionada (ou a da marcação selecionada) que a proposta troca. */
 function useComparable(): string | null {
-  const { review, ui, store } = useEditor();
+  const { review, ui } = useEditor();
   const p = review.derived.proposal.value;
   const selection = ui.selection.value;
-  const project = store.committed.value;
+  // O projeto à vista: a marcação que só existe na proposta resolve pela prévia.
+  const project = review.derived.shownProject.value;
   if (!p || !selection || !project) return null;
   const imageId =
     selection.kind === 'image'
@@ -163,6 +164,8 @@ export function CompareDialog() {
   const decide = useDecide();
   const imageId = ui.compareImage.value;
   const p = review.derived.proposal.value;
+  // A imagem "antes" é a do projeto confirmado por definição (não a da visão): é a base
+  // da comparação com o arquivo proposto.
   const project = store.committed.value;
   const change = p && imageId ? replaceChangeOf(p, imageId) : null;
   const image =

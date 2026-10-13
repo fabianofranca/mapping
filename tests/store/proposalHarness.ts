@@ -72,8 +72,14 @@ export interface HarnessOptions {
   readonly files?: Readonly<Record<string, string>>;
   /** Abre a sessão sem as propostas (depois `session.proposals.scan()` as encontra). */
   readonly skipProposals?: boolean;
-  /** Nome da pasta (outra cópia do mesmo projeto é outra pasta). */
+  /** Nome da pasta (o `<projeto>` das referências; não identifica a cópia). */
   readonly folderName?: string;
+  /**
+   * A cópia do projeto (`ProjectStorage.copyId`, a chave do retomar da revisão): por
+   * padrão um id novo (cada harness é outra cópia); o mesmo id em dois harnesses é "a
+   * mesma cópia, reaberta"; `null` abre um storage sem o campo.
+   */
+  readonly copyId?: string | null;
 }
 
 /** Uma pasta com projeto e propostas, a sessão aberta sobre ela e o estado da revisão. */
@@ -84,7 +90,8 @@ export async function openHarness(options: HarnessOptions = {}) {
   for (const p of options.proposals ?? [])
     root.put(proposalFilePath(p.id), serializeProposal(p));
   for (const [path, text] of Object.entries(options.files ?? {})) root.put(path, text);
-  const storage = createFolderStorage(root);
+  const copyId = options.copyId === undefined ? crypto.randomUUID() : options.copyId;
+  const storage = createFolderStorage(root, copyId === null ? {} : { copyId });
   const loaded = await loadProject(storage);
   if (!loaded.ok) throw new Error(loaded.error);
   let n = 0;
