@@ -1,7 +1,14 @@
 import { createHash } from 'node:crypto';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { basename, isAbsolute, join } from 'node:path';
-import { platformRepoWarnings, computeChanges, type ItemKind } from '../src/model';
+import {
+  IMAGES_DIR,
+  MAPPING_FILE,
+  computeChanges,
+  platformRepoWarnings,
+  projectIndex,
+  type ItemKind,
+} from '../src/model';
 import {
   changeCounts,
   issueChanges,
@@ -13,12 +20,7 @@ import { ToolError } from './errors';
 import { Refs } from './items';
 import type { Operation } from './operations';
 import { Roots, resolveProjectFile } from './paths';
-import {
-  MAPPING_FILE,
-  loadProject,
-  type LoadedProject,
-  type ProjectLocation,
-} from './projects';
+import { loadProject, type LoadedProject, type ProjectLocation } from './projects';
 
 // Operações em lote sobre uma cópia do projeto (etapa 3a.5), agora só para ler: o
 // `plan_changes` valida e resume sem gravar nada, e o `propose_changes` (proposals.ts) calcula
@@ -26,7 +28,6 @@ import {
 
 /** Imagem ou especialização lida pelo lote maior que isto é recusada. */
 const MAX_SOURCE_BYTES = 64 * 1024 * 1024;
-const IMAGES_DIR = 'images';
 
 export const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
 
@@ -66,19 +67,19 @@ async function takenImageFiles(dir: string): Promise<Set<string>> {
 
 /** Referências dos itens criados, com o apelido de cada um. */
 export function createdRefs(refs: Refs, result: BatchResult): Record<string, unknown>[] {
-  const project = refs.project;
-  const exists = {
-    layer: (id: string) => project.layers.some((l) => l.id === id),
-    i: (id: string) => project.images.some((i) => i.id === id),
-    m: (id: string) => project.markings.some((m) => m.id === id),
-    a: (id: string) => project.annotations.some((a) => a.id === id),
+  const index = projectIndex(refs.project);
+  const byKind = {
+    layer: index.layers,
+    i: index.images,
+    m: index.markings,
+    a: index.annotations,
   };
   return result.created
-    .filter((item) => exists[item.kind](item.id))
+    .filter((item) => byKind[item.kind].has(item.id))
     .map((item) => {
       const base = { op: item.index, ...(item.alias ? { alias: item.alias } : {}) };
       if (item.kind === 'layer') {
-        const layer = project.layers.find((l) => l.id === item.id)!;
+        const layer = index.layers.get(item.id)!;
         return { ...base, kind: 'layer', id: layer.id, name: layer.name };
       }
       const kind = item.kind as ItemKind;

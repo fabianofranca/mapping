@@ -330,7 +330,7 @@ describe('roteiro 13.9 criado pelo MCP', () => {
 
     // Nada foi gravado.
     expect(hashOf(join(dir, 'mapping.json'))).toBe(before);
-    expect(readdirSync(join(dir, 'images'))).toEqual([]);
+    expect(existsSync(join(dir, 'images'))).toBe(false);
     expect(existsSync(join(dir, 'specs'))).toBe(false);
   });
 
@@ -357,7 +357,7 @@ describe('roteiro 13.9 criado pelo MCP', () => {
 
     // O mapping.json não mudou; a proposta e a imagem nova estão em proposals/<id>/.
     expect(hashOf(join(dir, 'mapping.json'))).toBe(before);
-    expect(readdirSync(join(dir, 'images'))).toEqual([]);
+    expect(existsSync(join(dir, 'images'))).toBe(false);
     expect(existsSync(join(dir, 'specs'))).toBe(false);
     const stored = readProposal(dir, proposed.proposal.id);
     expect(stored).toMatchObject({ status: 'open', revision: 0, author: 'teste' });
@@ -622,7 +622,7 @@ describe('imagens pelo lote', () => {
       'images/foto.webp',
       'images/larga.webp',
     ]);
-    expect(readdirSync(join(dir, 'images'))).toEqual([]);
+    expect(existsSync(join(dir, 'images'))).toBe(false);
     // O conteúdo base64 não é copiado para o proposal.json (a imagem já está em images/).
     const stored = readProposal(dir, first.proposal.id);
     expect(JSON.stringify(stored.operations)).not.toContain(wide.slice(0, 200));

@@ -1,4 +1,11 @@
-import { PROPOSALS_DIR, PROPOSAL_FILE, PROPOSAL_ID_RE, proposalFilePath } from '../model';
+import {
+  GITIGNORE_FILE,
+  PROPOSALS_DIR,
+  PROPOSAL_FILE,
+  PROPOSAL_ID_RE,
+  gitignoreWithBackups,
+  proposalFilePath,
+} from '../model';
 import {
   BACKUPS_DIR,
   IMAGES_DIR,
@@ -255,25 +262,16 @@ export function createFolderStorage(root: DirectoryHandleLike): ProjectStorage {
   };
 }
 
-/** Arquivo que diz ao git para ignorar os backups (`backups/`, ver `BACKUPS_DIR`). */
-export const GITIGNORE_FILE = '.gitignore';
-
-/** A linha já cobre `backups/` (com ou sem barra no começo ou no fim)? */
-function ignoresBackups(line: string): boolean {
-  return line.trim().replace(/^\//, '').replace(/\/$/, '') === BACKUPS_DIR;
-}
-
 /**
  * Garante `backups/` no `.gitignore` da raiz, para quem versiona o projeto com git: cria o
- * arquivo, ou acrescenta a linha ao que já existe (nunca sobrescreve nem duplica).
- * Devolve `true` se gravou alguma coisa.
+ * arquivo, ou acrescenta a linha ao que já existe (nunca sobrescreve nem duplica; o texto vem
+ * de `gitignoreWithBackups`, o mesmo do `create_project` do MCP). Devolve `true` se gravou.
  */
 export async function ensureGitignore(root: DirectoryHandleLike): Promise<boolean> {
   const current = await readFile(root, GITIGNORE_FILE);
-  const text = current ? await current.text() : '';
-  if (text.split(/\r?\n/).some(ignoresBackups)) return false;
-  const separator = text === '' || text.endsWith('\n') ? '' : '\n';
-  await writeFile(root, GITIGNORE_FILE, `${text}${separator}${BACKUPS_DIR}/\n`);
+  const next = gitignoreWithBackups(current ? await current.text() : '');
+  if (next === null) return false;
+  await writeFile(root, GITIGNORE_FILE, next);
   return true;
 }
 

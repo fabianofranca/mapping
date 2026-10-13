@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  IMAGES_DIR,
   IMAGE_GAP,
+  MAPPING_FILE,
   addImage,
   canPlaceImage,
   imageDeletionImpact,
@@ -191,5 +193,14 @@ describe('imagens: trocar', () => {
         { confirmAspectChange: true },
       ),
     ).toThrow('image-too-small');
+  });
+});
+
+// Nomes da pasta do projeto, num só lugar para a app (`src/storage/`) e o servidor MCP (fase 8.5, M10).
+describe('arquivos da pasta do projeto', () => {
+  it('mapping.json e images/', () => {
+    expect(MAPPING_FILE).toBe('mapping.json');
+    expect(IMAGES_DIR).toBe('images');
+    expect(uniqueImageFile(emptyProject(), 'a.png')).toBe(`${IMAGES_DIR}/a.png`);
   });
 });
