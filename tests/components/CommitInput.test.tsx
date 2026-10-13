@@ -118,4 +118,45 @@ describe('CommitInput', () => {
     input.dispatchEvent(new Event('change', { bubbles: true }));
     expect(onCommit).toHaveBeenCalledWith('b');
   });
+
+  // Devolução da 8.3 (segunda leitura, A1): a guarda do Enter guardava a última gravação e
+  // nunca a zerava. Depois de desfazer (o valor volta a ser a base da gravação), o mesmo
+  // texto era engolido: o campo mostrava o texto e o projeto não mudava.
+  it('depois de o valor voltar ao de antes (desfazer), o mesmo texto grava de novo', async () => {
+    const onCommit = vi.fn(() => true);
+    const field = (value: string) => (
+      <CommitInput aria-label="campo" value={value} onCommit={onCommit} />
+    );
+    const { input, user, rerender } = setup(onCommit, 'antigo');
+    await user.clear(input);
+    await user.type(input, 'novo{Enter}');
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    rerender(field('novo'));
+    rerender(field('antigo'));
+    expect(input.value).toBe('antigo');
+    await user.clear(input);
+    await user.type(input, 'novo{Enter}');
+    expect(onCommit).toHaveBeenCalledTimes(2);
+    expect(onCommit).toHaveBeenLastCalledWith('novo');
+  });
+
+  it('com um onCommit que normaliza o texto, o change seguinte não grava e o desfazer libera', async () => {
+    const onCommit = vi.fn(() => true);
+    const field = (value: string) => (
+      <CommitInput aria-label="campo" value={value} onCommit={onCommit} />
+    );
+    const { input, user, rerender } = setup(onCommit, 'antigo');
+    await user.clear(input);
+    await user.type(input, '  novo  {Enter}');
+    expect(onCommit).toHaveBeenCalledWith('  novo  ');
+    // O valor externo é o texto normalizado, diferente do digitado.
+    rerender(field('novo'));
+    expect(input.value).toBe('novo');
+    fireEvent.change(input);
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    rerender(field('antigo'));
+    await user.clear(input);
+    await user.type(input, '  novo  {Enter}');
+    expect(onCommit).toHaveBeenCalledTimes(2);
+  });
 });
