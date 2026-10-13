@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { enUS } from '../../src/i18n/en-US';
 import { ptBR } from '../../src/i18n/pt-BR';
+import type { AppErrorCode } from '../../src/app/appResult';
+
+/**
+ * Etapa 8 (8.4): todo código de erro da abertura tem texto (`Home` mostra `t('error.<code>')`).
+ * Um `Record` com todos os códigos: um código novo sem entrada aqui quebra o typecheck.
+ */
+const APP_ERROR_CODES: Record<AppErrorCode, true> = {
+  'invalid-json': true,
+  'invalid-schema': true,
+  'unsupported-version': true,
+  'missing-migration': true,
+  'invariant-violation': true,
+  'invalid-zip': true,
+  'missing-mapping': true,
+  'not-found': true,
+  'storage-failed': true,
+};
 
 const placeholders = (text: string) =>
   [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
@@ -17,6 +34,14 @@ describe('dicionários', () => {
     expect(en.trim()).not.toBe('');
     expect(placeholders(en)).toEqual(placeholders(pt));
   });
+
+  it.each(Object.keys(APP_ERROR_CODES))(
+    'error.%s existe nos dois dicionários',
+    (code) => {
+      expect(Reflect.get(ptBR, `error.${code}`)).toEqual(expect.any(String));
+      expect(Reflect.get(enUS, `error.${code}`)).toEqual(expect.any(String));
+    },
+  );
 
   it('en-US não deixou texto em português (copiado sem traduzir)', () => {
     // Iguais nos dois idiomas só por serem nomes próprios, unidades ou palavras idênticas.

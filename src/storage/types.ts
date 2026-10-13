@@ -24,6 +24,14 @@ export interface ProjectStorage {
    * Só existe no modo pasta: é o que o MCP alcança.
    */
   readonly folderName?: string;
+  /**
+   * A cópia do projeto a que o estado por dispositivo (retomar a revisão) pertence. Local: o
+   * id do projeto no IndexedDB. Pasta: o id da entrada dos recentes (por pasta física; ele
+   * sobrevive ao "Localizar pasta…"); sem recentes, um id por aba (`app/recents.ts`).
+   * Definido na criação do storage, nunca vazio e imutável. Todo storage entregue a uma
+   * sessão pelo controller tem `copyId`; só os de leitura (abrir, conferir a pasta) não têm.
+   */
+  readonly copyId?: string;
   /** Texto do `mapping.json`, ou `null` se ele não existir. */
   loadMapping(): Promise<string | null>;
   saveMapping(text: string): Promise<void>;
