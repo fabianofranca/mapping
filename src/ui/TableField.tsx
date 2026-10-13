@@ -1,5 +1,5 @@
 import { useRef, useState } from 'preact/hooks';
-import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { ariaKeys, SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   fieldLabel,
@@ -15,7 +15,8 @@ import { Button } from './controls';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
-import { focusGrip, isNewRowKey } from './KeyValueGrid';
+import { gripAt, isGrip, isNewRowKey } from './KeyValueGrid';
+import { useFocusRequest } from './focus';
 import { moveKeyDelta, useRowDrag } from './rowDrag';
 import { BacklinkList, SimpleEditor, type FieldContext } from './FieldEditors';
 import { issueMessage, issuesOf } from './typedText';
@@ -31,9 +32,15 @@ export function TableField({
 }: FieldContext & { readonly field: TableFieldDef }) {
   const { actions } = useEditor();
   const { project, annotation, readOnly } = ctx;
-  const root = useRef<HTMLDivElement>(null);
   const grid = useRef<HTMLDivElement>(null);
   const rows = tableRows(annotation.values?.[field.key]);
+  // As linhas da última renderização e os botões de ações e "+ Linha": o retorno do foco
+  // do "Referências vão quebrar" é lido ao fechar, já com a tabela nova.
+  const rowsNow = useRef(rows);
+  rowsNow.current = rows;
+  const menuButtons = useRef(new Map<string, HTMLButtonElement>());
+  const addButton = useRef<HTMLButtonElement>(null);
+  const requestFocus = useFocusRequest();
   const [confirm, setConfirm] = useState<{ row: TableRow; count: number } | null>(null);
   const backlinks = getBacklinks(project, annotation.id);
   const issues = issuesOf(project, annotation.id).filter(
@@ -53,16 +60,11 @@ export function TableField({
    * anterior, na última); sem linhas, o "+ Linha" da tabela (etapa 7, achado A1).
    */
   const focusAfterConfirm = (row: TableRow, index: number) => () => {
-    const el = root.current;
-    if (!el) return null;
-    const all = [...el.querySelectorAll<HTMLElement>('[data-row-id]')];
+    const current = rowsNow.current;
     const target =
-      all.find((r) => r.dataset['rowId'] === row._id) ??
-      all[Math.max(0, Math.min(index, all.length - 1))];
-    return (
-      target?.querySelector<HTMLElement>('.grid-cell-menu .icon-button') ??
-      el.querySelector<HTMLElement>('.table-field-head button')
-    );
+      current.find((r) => r._id === row._id) ??
+      current[Math.max(0, Math.min(index, current.length - 1))];
+    return (target && menuButtons.current.get(target._id)) ?? addButton.current;
   };
 
   const remove = (row: TableRow) => {
@@ -77,7 +79,7 @@ export function TableField({
     const row = rows[from];
     if (!row || from === to) return;
     actions.moveTableRow(annotation.id, field.key, row._id, to);
-    if (focus) focusGrip(grid.current, to);
+    if (focus) requestFocus(() => gripAt(grid.current, to));
   };
   const drag = useRowDrag(grid, (from, to) => move(from, to, false));
 
@@ -85,14 +87,12 @@ export function TableField({
     if (readOnly) return;
     const result = actions.addTableRow(annotation.id, field.key);
     if (!result.ok) return;
-    // A linha nova recebe o foco na primeira célula.
-    requestAnimationFrame(() => {
+    // A linha nova recebe o foco na primeira célula, no commit que a desenha.
+    requestFocus(() => {
       const all = grid.current?.querySelectorAll<HTMLElement>('[data-drag-row]');
-      all?.[all.length - 1]
-        ?.querySelector<HTMLElement>(
-          '.grid-cell-value input, .grid-cell-value select, .grid-cell-value button',
-        )
-        ?.focus();
+      return all?.[all.length - 1]?.querySelector<HTMLElement>(
+        '[data-cell-value] input, [data-cell-value] select, [data-cell-value] button',
+      );
     });
   };
 
@@ -100,7 +100,6 @@ export function TableField({
 
   return (
     <div
-      ref={root}
       class="props-wide table-field"
       data-focus={field.key}
       onKeyDown={(e) => {
@@ -131,8 +130,9 @@ export function TableField({
           size="sm"
           class="button-link"
           title={`${t('typed.addRow')}  ${SHORTCUT_LABELS.newRow}`}
-          aria-keyshortcuts={SHORTCUT_LABELS.newRow}
+          aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.newRow)}
           disabled={readOnly}
+          buttonRef={addButton}
           onClick={addRow}
         >
           {t('typed.addRow')}
@@ -178,9 +178,7 @@ export function TableField({
                 data-drop={drag.drop(index, rows.length)}
                 onKeyDown={(e) => {
                   if (readOnly) return;
-                  const onGrip = (e.target as HTMLElement).classList.contains(
-                    'grid-grip',
-                  );
+                  const onGrip = isGrip(e.target);
                   const delta = moveKeyDelta(e, onGrip);
                   if (delta === 0) return;
                   e.preventDefault();
@@ -193,6 +191,7 @@ export function TableField({
                     <button
                       type="button"
                       class="grid-grip"
+                      data-grip=""
                       aria-label={t('typed.dragRow', { row: name })}
                       title={t('annotation.dragHint')}
                       {...drag.handle(index)}
@@ -213,6 +212,7 @@ export function TableField({
                     <span
                       key={column.key}
                       class="grid-cell grid-cell-value"
+                      data-cell-value=""
                       role="cell"
                       data-focus={`${field.key}:${row._id}:${column.key}`}
                     >
@@ -247,6 +247,10 @@ export function TableField({
                 <span class="grid-cell grid-cell-menu" role="cell">
                   <ActionMenu
                     label={t('typed.rowActions', { row: name })}
+                    triggerRef={(el) => {
+                      if (el) menuButtons.current.set(row._id, el);
+                      else menuButtons.current.delete(row._id);
+                    }}
                     disabled={readOnly}
                     items={[
                       {

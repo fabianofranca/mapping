@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { ariaKeys, SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
 import { getBacklinks, type Annotation, type Entry, type Project } from '../model';
 import type { AnnotationLocation } from '../store/ui';
@@ -21,14 +21,21 @@ export function isNewRowKey(e: KeyboardEvent): boolean {
   return e.key === 'Enter' && e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
 }
 
-/** Foca a alça da linha `index` depois da renderização (o foco segue a linha movida). */
-export function focusGrip(container: HTMLElement | null, index: number): void {
-  requestAnimationFrame(() => {
+/**
+ * A alça da linha `index` (o foco segue a linha movida). Pedido com `useFocusRequest`, ela
+ * é lida no commit que desenha a lista na ordem nova.
+ */
+export function gripAt(container: HTMLElement | null, index: number): HTMLElement | null {
+  return (
     container
       ?.querySelectorAll<HTMLElement>('[data-drag-row]')
-      [index]?.querySelector<HTMLElement>('.grid-grip')
-      ?.focus();
-  });
+      [index]?.querySelector<HTMLElement>('[data-grip]') ?? null
+  );
+}
+
+/** O alvo do evento é a alça da linha (as setas sozinhas movem a linha). */
+export function isGrip(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.hasAttribute('data-grip');
 }
 
 interface EntryRowProps {
@@ -131,7 +138,7 @@ function EntryRow({
 
   const onRowKeyDown = (e: KeyboardEvent) => {
     if (!entry || readOnly) return;
-    const onGrip = (e.target as HTMLElement).classList.contains('grid-grip');
+    const onGrip = isGrip(e.target);
     const delta = moveKeyDelta(e, onGrip);
     if (delta === 0) return;
     e.preventDefault();
@@ -156,6 +163,7 @@ function EntryRow({
           <button
             type="button"
             class="grid-grip"
+            data-grip=""
             aria-label={t('annotation.dragEntry', { key: entry.key })}
             title={t('annotation.dragHint')}
             {...drag.handle(index)}
@@ -262,16 +270,16 @@ export function KeyValueGrid({
   const count = annotation.entries.length;
   const backlinks = getBacklinks(project, annotation.id);
 
+  const requestFocus = useFocusRequest();
+  const addButton = useRef<HTMLButtonElement>(null);
+
   const move = (from: number, to: number, focus: boolean) => {
     const entry = annotation.entries[from];
     if (!entry || from === to) return;
     actions.moveEntry(annotation.id, entry.id, to);
-    if (focus) focusGrip(grid.current, to);
+    if (focus) requestFocus(() => gripAt(grid.current, to));
   };
   const drag = useRowDrag(grid, (from, to) => move(from, to, false));
-
-  const requestFocus = useFocusRequest();
-  const addButton = useRef<HTMLButtonElement>(null);
 
   // Par novo: o foco vai para a chave, no commit que desenha a linha.
   useLayoutEffect(() => {
@@ -371,7 +379,7 @@ export function KeyValueGrid({
           size="sm"
           class="button-link"
           title={`${t('annotation.addEntry')}  ${SHORTCUT_LABELS.newRow}`}
-          aria-keyshortcuts={SHORTCUT_LABELS.newRow}
+          aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.newRow)}
           disabled={readOnly || adding}
           buttonRef={addButton}
           onClick={startAdding}

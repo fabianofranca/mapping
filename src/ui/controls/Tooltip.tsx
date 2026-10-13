@@ -28,7 +28,7 @@ interface TooltipProps {
  * não é cortada pela borda dele.
  */
 function place(anchor: HTMLElement, placement: 'bottom' | 'top'): void {
-  const tip = anchor.querySelector<HTMLElement>(':scope > .tooltip');
+  const tip = anchor.querySelector<HTMLElement>(':scope > [data-tooltip]');
   if (!tip) return;
   const box = anchor.getBoundingClientRect();
   const width = tip.offsetWidth;
@@ -89,7 +89,7 @@ export function Tooltip({
       onFocusOut={() => setDismissed(false)}
     >
       {children}
-      <span class="tooltip" aria-hidden="true">
+      <span class="tooltip" data-tooltip="" aria-hidden="true">
         {label}
         {shortcut && <kbd class="kbd">{shortcut}</kbd>}
       </span>

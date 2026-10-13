@@ -27,8 +27,8 @@ export { exportButton };
     'o exportButton por seletor global é recusado em %s',
     async (file) => {
       const found = await messages(oldExportButton, file);
-      expect(found.map((m) => m.message).join('\n')).toMatch(/consulta global ao DOM/);
-      expect(found.map((m) => m.message).join('\n')).toMatch(/seletor por classe/);
+      expect(found.map((m) => m.message).join('\n')).toMatch(/consulta global ao DOM/i);
+      expect(found.map((m) => m.message).join('\n')).toMatch(/seletor por classe/i);
     },
   );
 
@@ -50,7 +50,7 @@ export function f(root: HTMLElement) {
 `;
     const found = await messages(code, 'src/ui/Probe.tsx');
     expect(found).toHaveLength(2);
-    expect(found[0]?.message).toMatch(/seletor por classe/);
+    expect(found[0]?.message).toMatch(/seletor por classe/i);
   });
 
   it('data-* e role dentro de um ref passam', async () => {

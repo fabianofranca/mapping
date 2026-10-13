@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/preact';
+import { modalOpen } from '../../src/ui/focus';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { signal } from '@preact/signals';
@@ -50,6 +51,7 @@ function fakeDialogs(): EditorDialogs {
   return {
     current: null,
     slot: null,
+    exportButton: { current: null },
     show: vi.fn(),
     close: vi.fn(),
     requestDeleteImage: vi.fn(),
@@ -252,11 +254,10 @@ describe('useEditorShortcuts', () => {
     document.body.append(input);
     fireEvent.keyDown(input, { key: 'Delete' });
     input.remove();
-    const dialog = document.createElement('dialog');
-    dialog.setAttribute('open', '');
-    document.body.append(dialog);
+    // Etapa 8 (8.3), F4: um modal aberto conta em `modalOpen` (no lugar de `dialog[open]`).
+    modalOpen.value += 1;
     fireEvent.keyDown(window, { key: 'Delete' });
-    dialog.remove();
+    modalOpen.value -= 1;
     fireEvent.keyDown(window, { key: 'a' });
     expect(dialogs.requestDeleteMarking).not.toHaveBeenCalled();
   });
@@ -380,6 +381,8 @@ describe('ExportDialog: foco ao fechar', () => {
   }) {
     const [busy, setBusy] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    // Etapa 8 (8.3), F4: o retorno vem do botão da barra (buttonRef), não de um seletor.
+    const [dialogs] = useState(fakeDialogs);
     const commands = {
       exportProject: async () => {
         setBusy(true);
@@ -396,10 +399,16 @@ describe('ExportDialog: foco ao fechar', () => {
         <EditorMainBar
           busy={busy}
           onAdd={vi.fn()}
-          dialogs={fakeDialogs()}
+          dialogs={dialogs}
           commands={commands}
         />
-        {file && <ExportDialog file={file} onDone={() => setFile(null)} />}
+        {file && (
+          <ExportDialog
+            file={file}
+            onDone={() => setFile(null)}
+            returnFocus={() => dialogs.exportButton.current}
+          />
+        )}
       </EditorContext.Provider>
     );
   }

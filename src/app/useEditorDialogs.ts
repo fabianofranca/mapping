@@ -6,6 +6,8 @@ import {
   type ProjectImage,
 } from '../model';
 import type { AspectChange } from '../store/session';
+import type { RefObject } from 'preact';
+import { useRef } from 'preact/hooks';
 import { useEditor } from '../ui/EditorContext';
 import { useDialogSlot, type DialogSlot } from '../ui/focus';
 
@@ -34,6 +36,11 @@ export interface EditorDialogs {
   /** Abre; com um diálogo aberto, troca por este (o foco volta a quem abriu o primeiro). */
   show(dialog: EditorDialog): void;
   close(): void;
+  /**
+   * O botão Exportar da barra (que o preenche): o retorno do foco do diálogo de exportação,
+   * aberto depois de gerar o zip com o botão desabilitado.
+   */
+  readonly exportButton: RefObject<HTMLButtonElement>;
   requestDeleteImage(image: ProjectImage): void;
   /** Em cascata pede confirmação; simples, não (o desfazer cobre). Item trancado: não faz nada. */
   requestDeleteMarking(marking: Marking): void;
@@ -42,6 +49,7 @@ export interface EditorDialogs {
 export function useEditorDialogs(): EditorDialogs {
   const { store, actions, ui } = useEditor();
   const dialogs = useDialogSlot<EditorDialog>();
+  const exportButton = useRef<HTMLButtonElement>(null);
   const { show } = dialogs;
 
   return {
@@ -49,6 +57,7 @@ export function useEditorDialogs(): EditorDialogs {
     slot: dialogs.slot,
     show,
     close: dialogs.close,
+    exportButton,
     requestDeleteImage: (image) => {
       const project = store.project.peek();
       // Trancada (ou com marcação trancada): nada a confirmar, o modelo recusaria.

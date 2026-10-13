@@ -13,7 +13,7 @@ import {
   type Project,
   type SpecAnnotationType,
 } from '../model';
-import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { ariaKeys, SHORTCUT_LABELS } from '../app/shortcuts';
 import {
   goToAnnotation,
   isSectionCollapsed,
@@ -188,7 +188,7 @@ export function AnnotationsPanel({
               size="sm"
               data-action={ADD_ANNOTATION_ACTION}
               aria-label={t('annotation.addIn', { layer: activeLayer.name })}
-              aria-keyshortcuts={SHORTCUT_LABELS.newAnnotation}
+              aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.newAnnotation)}
               title={`${t('annotation.addIn', { layer: activeLayer.name })}  ${SHORTCUT_LABELS.newAnnotation}`}
               disabled={readOnly}
               onClick={() => add(activeLayer)}

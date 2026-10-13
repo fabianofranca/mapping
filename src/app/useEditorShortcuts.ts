@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { modalOpen } from '../ui/focus';
 import { projectIndex } from '../model';
 import {
   RESIZE_STEP,
@@ -219,6 +220,9 @@ export function useEditorShortcuts(
           // O botão "+ Anotação" de Detalhes sabe a camada ativa, o tipo e o modo
           // somente leitura: o atalho só o aciona (abrindo Detalhes, se recolhido).
           const button = () =>
+            // Exceção nominal (etapa 8, 8.3): o atalho aciona o "+ Anotação" de Detalhes, que
+            // sabe a camada, o tipo e o somente leitura; trocar por um comando fica para depois.
+            // eslint-disable-next-line no-restricted-syntax
             document.querySelector<HTMLButtonElement>(
               `[data-action="${ADD_ANNOTATION_ACTION}"]`,
             );
@@ -262,7 +266,7 @@ export function useEditorShortcuts(
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || !enabledRef.current) return;
-      if (document.querySelector('dialog[open]')) return;
+      if (modalOpen.peek() > 0) return;
       if (review.proposalId.peek() !== null && !isTextInput(e.target)) {
         const reviewShortcut = reviewShortcutFor(e);
         if (reviewShortcut) {

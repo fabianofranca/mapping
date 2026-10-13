@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { modalOpen } from '../ui/focus';
 import { t } from '../i18n';
 import type { ProjectImage } from '../model';
 import type { AspectChange } from '../store/session';
@@ -81,7 +82,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
   pasteFiles.current = (files) => void addAtViewCenter(files);
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
-      if (isTextInput(e.target) || document.querySelector('dialog[open]')) return;
+      if (isTextInput(e.target) || modalOpen.peek() > 0) return;
       const files = imagesFromPaste(e.clipboardData);
       if (files.length === 0 || !store.project.peek() || store.locked.peek()) return;
       e.preventDefault();

@@ -24,7 +24,7 @@ export function spaceFor(el: Element | null, side: ToolWindowSide): LayoutSpace 
 
 /** Foca a janela de ferramenta (a seção dela é focável), se ela estiver desenhada. */
 export function focusToolWindow(id: ToolWindowId): void {
-  document.querySelector<HTMLElement>(`.tool-window[data-window="${id}"]`)?.focus();
+  document.querySelector<HTMLElement>(`[data-window="${id}"]`)?.focus();
 }
 
 /**

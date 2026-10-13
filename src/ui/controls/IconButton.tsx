@@ -1,4 +1,5 @@
 import type { JSX, Ref } from 'preact';
+import { ariaKeys } from '../../app/shortcuts';
 import { Icon, type IconName } from '../icons';
 import { classes } from './classes';
 import { Tooltip } from './Tooltip';
@@ -20,7 +21,7 @@ interface IconButtonProps extends NativeButton {
   readonly size?: 'md' | 'sm';
   /** Texto visível ao lado do ícone; sem ele, o botão mostra só o ícone. */
   readonly text?: string;
-  /** Atalho mostrado na dica (e em `aria-keyshortcuts`). */
+  /** Atalho mostrado na dica (e, na sintaxe ARIA, em `aria-keyshortcuts`). */
   readonly shortcut?: string;
   /** Botão de alternância (ex.: modo): `aria-pressed` e destaque visual. */
   readonly pressed?: boolean;
@@ -65,7 +66,7 @@ export function IconButton({
         class={iconButtonClass(variant, size)}
         aria-pressed={pressed}
         aria-label={text ? undefined : label}
-        aria-keyshortcuts={shortcut}
+        aria-keyshortcuts={ariaKeys(shortcut)}
       >
         <Icon name={icon} />
         {alert && <span class="icon-button-alert" aria-hidden="true" />}

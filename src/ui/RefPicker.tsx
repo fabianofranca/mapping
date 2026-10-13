@@ -10,7 +10,7 @@ import {
   type RefTarget,
   type SpecField,
 } from '../model';
-import { Tabs, type TabItem } from './controls';
+import { IconButton, Tabs, type TabItem } from './controls';
 import { useFocusOrigin, useModal, type FocusReturn } from './focus';
 import { Icon } from './icons';
 import { imageLabel, markingPath } from './labels';
@@ -178,7 +178,9 @@ export function RefPicker({
       const step = e.key === 'ArrowDown' ? 1 : -1;
       const next = (activeIndex + step + options.length) % options.length;
       setActive(next);
-      document.getElementById(optionId(next))?.scrollIntoView({ block: 'nearest' });
+      dialog.current
+        ?.querySelector(`[id="${optionId(next)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
       e.preventDefault();
       choose(options[activeIndex], e.ctrlKey || e.metaKey);
@@ -204,14 +206,7 @@ export function RefPicker({
         <div class="picker-head">
           <h2 id={titleId}>{t('ref.pickerTitle', { field: fieldLabel(field) })}</h2>
           <span class="picker-accepts">{acceptsText(field)}</span>
-          <button
-            type="button"
-            class="picker-close icon-button"
-            aria-label={t('common.close')}
-            onClick={onClose}
-          >
-            <Icon name="close" />
-          </button>
+          <IconButton icon="close" label={t('common.close')} onClick={onClose} />
         </div>
         {targets.length === 0 ? (
           <p class="notice notice-info picker-empty">{noTargetsMessage(field)}</p>

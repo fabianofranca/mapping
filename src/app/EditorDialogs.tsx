@@ -165,7 +165,13 @@ function renderDialog(
       );
     }
     case 'export':
-      return <ExportDialog file={dialog.file} onDone={close} />;
+      return (
+        <ExportDialog
+          file={dialog.file}
+          onDone={close}
+          returnFocus={() => dialogs.exportButton.current}
+        />
+      );
     case 'exitReview':
       return <ExitReviewDialog onClose={close} />;
     case 'confirmClose':
