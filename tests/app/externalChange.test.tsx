@@ -314,7 +314,7 @@ describe('useExternalChanges', () => {
       const text = serialize(project);
       root.put('mapping.json', text);
       const session = openSession({
-        storage: createFolderStorage(root),
+        storage: createFolderStorage(root, { copyId: 'externa' }),
         project,
         loadedText: text,
         prepareImage: () => Promise.reject(new Error('sem imagens aqui')),

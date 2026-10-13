@@ -27,7 +27,8 @@ export interface Harness {
  */
 export function createHarness(project: Project, readOnly = false): Harness {
   const session = openSession({
-    storage: createFolderStorage(new MemoryDirectory('projeto')),
+    // `copyId`: toda sessão recebe a cópia (8.4); sem ela a revisão registra no Diagnóstico.
+    storage: createFolderStorage(new MemoryDirectory('projeto'), { copyId: 'harness' }),
     project,
     readOnly,
     prepareImage: () => Promise.reject(new Error('imagens não são usadas aqui')),
