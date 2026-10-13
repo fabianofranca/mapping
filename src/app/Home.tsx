@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import { locale } from '../store/settings';
 import { Button, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
+import { DialogSlotContext, useDialogSlot } from '../ui/focus';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
 import { Icon } from '../ui/icons';
 import { InconsistentProjectDialog } from '../ui/InconsistentProjectDialog';
@@ -65,22 +66,28 @@ function formatDate(iso: string): string {
 
 export function Home() {
   const narrow = useNarrowWindow();
-  const [dialog, setDialog] = useState<HomeDialog | null>(null);
+  // Os diálogos da tela inicial são um slot: a troca (Configurações › Ver atalhos) mantém
+  // quem abriu o primeiro, para onde o foco volta.
+  const dialogs = useDialogSlot<HomeDialog>();
+  const dialog = dialogs.current;
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const zipInput = useRef<HTMLInputElement>(null);
   const listSection = useRef<HTMLElement>(null);
-  // Linha que saiu da lista (Remover da lista, Excluir): a posição dela, para o foco ir à
-  // linha que ficou no lugar quando a lista atualizar, e não ao `body` (etapa 7, G4).
-  const refocusRow = useRef<number | null>(null);
-  useEffect(() => {
-    const index = refocusRow.current;
+  // Linha que sai da lista (Remover da lista, Excluir): a posição dela, para o foco ir à
+  // linha que ficou no lugar, e não ao `body` (etapa 7, G4). Um dono por fechamento (etapa
+  // 8, F2): pelo diálogo, o `returnFocus` dele (o diálogo fecha depois da ação, já sem a
+  // linha); direto na linha, sem diálogo, este efeito, no commit da lista nova.
+  const removedAt = useRef(0);
+  const focusRowAfter = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const index = focusRowAfter.current;
     if (busy || index === null) return;
-    refocusRow.current = null;
-    focusRecentRow(listSection.current, index);
-  }, [busy]);
+    focusRowAfter.current = null;
+    recentRowTarget(listSection.current, index)?.focus();
+  });
 
   const available = features.value;
   if (!available) {
@@ -102,7 +109,7 @@ export function Home() {
       const result = await action();
       if (result.ok) return result.value;
       if (result.inconsistent)
-        setDialog({ kind: 'inconsistent', inconsistent: result.inconsistent });
+        dialogs.show({ kind: 'inconsistent', inconsistent: result.inconsistent });
       else setMessage(t(`error.${result.error}`));
       return null;
     } finally {
@@ -114,7 +121,11 @@ export function Home() {
     const result = await run(openFolder);
     if (result?.kind === 'needs-setup') {
       setName('');
-      setDialog({ kind: 'folder-setup', handle: result.handle, images: result.images });
+      dialogs.show({
+        kind: 'folder-setup',
+        handle: result.handle,
+        images: result.images,
+      });
     }
   };
 
@@ -126,7 +137,7 @@ export function Home() {
     // Direto no clique: o navegador só mostra o pedido de permissão dentro do gesto.
     const result = await run(() => openRecentFolder(project.id));
     if (result?.kind === 'unavailable') {
-      setDialog({
+      dialogs.show({
         kind: 'folder-unavailable',
         folder: project,
         reason: result.reason,
@@ -138,29 +149,34 @@ export function Home() {
   const onRelocate = async (folder: FolderRecent, reason: 'denied' | 'missing') => {
     const result = await run(() => relocateFolder(folder.id));
     if (result?.kind === 'no-project') {
-      setDialog({ kind: 'folder-unavailable', folder, reason, noProject: true });
+      dialogs.show({ kind: 'folder-unavailable', folder, reason, noProject: true });
     } else if (result === null) {
       // O erro aparece na tela inicial (ou o diálogo do projeto inconsistente já entrou).
-      setDialog((current) => (current?.kind === 'folder-unavailable' ? null : current));
+      dialogs.closeIf((current) => current.kind === 'folder-unavailable');
     }
   };
 
-  /** Lembra a posição da linha `key` antes de ela sair da lista (ver `refocusRow`). */
-  const rememberRow = (key: string) => {
-    const rows = [
-      ...(listSection.current?.querySelectorAll<HTMLElement>('tr[data-recent]') ?? []),
-    ];
-    refocusRow.current = Math.max(
-      0,
-      rows.findIndex((row) => row.dataset['recent'] === key),
-    );
+  /**
+   * Tira a pasta da lista. Pelo aviso "Pasta indisponível", o aviso fecha depois e devolve
+   * o foco à linha que ficou; direto na linha, a própria Home leva o foco até ela.
+   */
+  const onForget = async (id: string, viaDialog: boolean) => {
+    const index = recentRowIndex(listSection.current, `folder:${id}`);
+    if (viaDialog) removedAt.current = index;
+    else focusRowAfter.current = index;
+    await run(() => forgetFolder(id));
+    if (viaDialog) dialogs.closeIf((current) => current.kind === 'folder-unavailable');
   };
 
-  const onForget = (id: string) => {
-    setDialog(null);
-    rememberRow(`folder:${id}`);
-    void run(() => forgetFolder(id));
+  /** Excluir pelo diálogo: ele fecha depois da exclusão, já sem a linha (F2). */
+  const onDelete = async (id: string) => {
+    removedAt.current = recentRowIndex(listSection.current, `local:${id}`);
+    await run(() => deleteLocalProject(id));
+    dialogs.closeIf((current) => current.kind === 'delete');
   };
+
+  /** Alvo do foco quando o diálogo fecha sem a linha que o abriu. */
+  const rowLeft = () => recentRowTarget(listSection.current, removedAt.current);
 
   const onZipChosen = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
@@ -168,7 +184,7 @@ export function Home() {
     if (file) await run(() => importZip(file));
   };
 
-  const closeDialog = () => setDialog(null);
+  const closeDialog = () => dialogs.close();
   // "Reparar e abrir" do projeto inconsistente (`null`: há problema sem reparo).
   const repair = dialog?.kind === 'inconsistent' ? dialog.inconsistent.repair : null;
   const actions: HomeActions = {
@@ -176,7 +192,7 @@ export function Home() {
     available,
     onNew: () => {
       setName('');
-      setDialog({ kind: 'new' });
+      dialogs.show({ kind: 'new' });
     },
     onOpenFolder: () => void onOpenFolder(),
     onOpenZip: () => zipInput.current?.click(),
@@ -216,8 +232,8 @@ export function Home() {
               projects={projects}
               busy={busy}
               onOpen={(project) => void onOpenRecent(project)}
-              onDelete={(project) => setDialog({ kind: 'delete', project })}
-              onForget={(project) => onForget(project.id)}
+              onDelete={(project) => dialogs.show({ kind: 'delete', project })}
+              onForget={(project) => void onForget(project.id, false)}
             />
           )}
         </>
@@ -268,7 +284,7 @@ export function Home() {
             <button
               type="button"
               class="home-nav-item"
-              onClick={() => setDialog({ kind: 'help' })}
+              onClick={() => dialogs.show({ kind: 'help' })}
             >
               <Icon name="help" />
               {t('help.open')}
@@ -276,7 +292,7 @@ export function Home() {
             <button
               type="button"
               class="home-nav-item"
-              onClick={() => setDialog({ kind: 'settings' })}
+              onClick={() => dialogs.show({ kind: 'settings' })}
             >
               <Icon name="settings" />
               {t('settings.title')}
@@ -298,184 +314,198 @@ export function Home() {
           {zipField}
         </main>
 
-        {dialog?.kind === 'inconsistent' && (
-          <InconsistentProjectDialog
-            details={dialog.inconsistent}
-            busy={busy}
-            onRepair={
-              repair &&
-              (() => {
-                closeDialog();
-                void run(repair);
-              })
-            }
-            onClose={closeDialog}
-          />
-        )}
+        <DialogSlotContext.Provider value={dialogs.slot}>
+          {dialog?.kind === 'inconsistent' && (
+            <InconsistentProjectDialog
+              details={dialog.inconsistent}
+              busy={busy}
+              onRepair={
+                repair &&
+                (() => {
+                  closeDialog();
+                  void run(repair);
+                })
+              }
+              onClose={closeDialog}
+            />
+          )}
 
-        {dialog?.kind === 'help' && (
-          <HelpDialog onClose={closeDialog} section={dialog.section} />
-        )}
+          {dialog?.kind === 'help' && (
+            <HelpDialog onClose={closeDialog} section={dialog.section} />
+          )}
 
-        {dialog?.kind === 'settings' && (
-          <SettingsDialog
-            onClose={closeDialog}
-            onShowShortcuts={() => setDialog({ kind: 'help', section: HELP_SHORTCUTS })}
-          />
-        )}
+          {dialog?.kind === 'settings' && (
+            <SettingsDialog
+              onClose={closeDialog}
+              onShowShortcuts={() =>
+                dialogs.show({ kind: 'help', section: HELP_SHORTCUTS })
+              }
+            />
+          )}
 
-        {dialog?.kind === 'new' && (
-          <Dialog
-            title={t('home.newProject')}
-            onCancel={closeDialog}
-            actions={
-              <>
-                <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-                <Button
-                  type="submit"
-                  form="new-project-form"
-                  variant="primary"
-                  disabled={busy}
-                >
-                  {t('common.create')}
-                </Button>
-              </>
-            }
-          >
-            <form
-              id="new-project-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                closeDialog();
-                void run(() => createLocalProject(name));
-              }}
+          {dialog?.kind === 'new' && (
+            <Dialog
+              title={t('home.newProject')}
+              onCancel={closeDialog}
+              actions={
+                <>
+                  <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                  <Button
+                    type="submit"
+                    form="new-project-form"
+                    variant="primary"
+                    disabled={busy}
+                  >
+                    {t('common.create')}
+                  </Button>
+                </>
+              }
             >
-              <NameField
-                value={name}
-                placeholder={t('project.untitled')}
-                onInput={setName}
-              />
-            </form>
-          </Dialog>
-        )}
+              <form
+                id="new-project-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  closeDialog();
+                  void run(() => createLocalProject(name));
+                }}
+              >
+                <NameField
+                  value={name}
+                  placeholder={t('project.untitled')}
+                  onInput={setName}
+                />
+              </form>
+            </Dialog>
+          )}
 
-        {dialog?.kind === 'folder-setup' && (
-          <Dialog
-            title={t('home.folderSetupTitle')}
-            onCancel={closeDialog}
-            actions={
-              <>
-                <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-                <Button
-                  type="submit"
-                  form="folder-setup-form"
-                  variant="primary"
-                  disabled={busy}
-                >
-                  {t('common.create')}
-                </Button>
-              </>
-            }
-          >
-            <form
-              id="folder-setup-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const { handle, images } = dialog;
-                closeDialog();
-                void run(() => createFolderProject(handle, name, images)).then(
-                  (result) => {
-                    if (result && result.skipped.length > 0) {
-                      setMessage(
-                        t('home.folderSkipped', { count: result.skipped.length }),
-                      );
-                    }
-                  },
-                );
-              }}
+          {dialog?.kind === 'folder-setup' && (
+            <Dialog
+              title={t('home.folderSetupTitle')}
+              onCancel={closeDialog}
+              actions={
+                <>
+                  <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                  <Button
+                    type="submit"
+                    form="folder-setup-form"
+                    variant="primary"
+                    disabled={busy}
+                  >
+                    {t('common.create')}
+                  </Button>
+                </>
+              }
+            >
+              <form
+                id="folder-setup-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const { handle, images } = dialog;
+                  closeDialog();
+                  void run(() => createFolderProject(handle, name, images)).then(
+                    (result) => {
+                      if (result && result.skipped.length > 0) {
+                        setMessage(
+                          t('home.folderSkipped', { count: result.skipped.length }),
+                        );
+                      }
+                    },
+                  );
+                }}
+              >
+                <p>
+                  {dialog.images.length === 0
+                    ? t('home.folderSetupEmpty', { folder: dialog.handle.name })
+                    : t('home.folderSetupImages', {
+                        folder: dialog.handle.name,
+                        count: dialog.images.length,
+                      })}
+                </p>
+                <NameField
+                  value={name}
+                  placeholder={dialog.handle.name}
+                  onInput={setName}
+                />
+              </form>
+            </Dialog>
+          )}
+
+          {dialog?.kind === 'folder-unavailable' && (
+            <Dialog
+              title={t('home.folderUnavailableTitle')}
+              onCancel={closeDialog}
+              returnFocus={rowLeft}
+              actions={
+                <>
+                  <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                  <Button
+                    disabled={busy}
+                    onClick={() => void onForget(dialog.folder.id, true)}
+                  >
+                    {t('home.forgetFolder')}
+                  </Button>
+                  <Button
+                    variant="primary"
+                    disabled={busy || !available.folder}
+                    onClick={() => void onRelocate(dialog.folder, dialog.reason)}
+                  >
+                    {t('home.relocateFolder')}
+                  </Button>
+                </>
+              }
             >
               <p>
-                {dialog.images.length === 0
-                  ? t('home.folderSetupEmpty', { folder: dialog.handle.name })
-                  : t('home.folderSetupImages', {
-                      folder: dialog.handle.name,
-                      count: dialog.images.length,
-                    })}
+                {t(
+                  dialog.reason === 'denied' ? 'home.folderDenied' : 'home.folderMissing',
+                  {
+                    folder: dialog.folder.folderName,
+                  },
+                )}
               </p>
-              <NameField
-                value={name}
-                placeholder={dialog.handle.name}
-                onInput={setName}
-              />
-            </form>
-          </Dialog>
-        )}
-
-        {dialog?.kind === 'folder-unavailable' && (
-          <Dialog
-            title={t('home.folderUnavailableTitle')}
-            onCancel={closeDialog}
-            actions={
-              <>
-                <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-                <Button disabled={busy} onClick={() => onForget(dialog.folder.id)}>
-                  {t('home.forgetFolder')}
-                </Button>
-                <Button
-                  variant="primary"
-                  disabled={busy || !available.folder}
-                  onClick={() => void onRelocate(dialog.folder, dialog.reason)}
-                >
-                  {t('home.relocateFolder')}
-                </Button>
-              </>
-            }
-          >
-            <p>
-              {t(
-                dialog.reason === 'denied' ? 'home.folderDenied' : 'home.folderMissing',
-                {
-                  folder: dialog.folder.folderName,
-                },
+              <p class="muted">{t('home.forgetFolderHint')}</p>
+              {dialog.noProject && (
+                <p class="notice notice-error" role="alert">
+                  {t('home.folderNoProject', { name: dialog.folder.name })}
+                </p>
               )}
-            </p>
-            <p class="muted">{t('home.forgetFolderHint')}</p>
-            {dialog.noProject && (
-              <p class="notice notice-error" role="alert">
-                {t('home.folderNoProject', { name: dialog.folder.name })}
-              </p>
-            )}
-          </Dialog>
-        )}
+            </Dialog>
+          )}
 
-        {dialog?.kind === 'delete' && (
-          <Dialog
-            title={t('home.deleteTitle')}
-            onCancel={closeDialog}
-            actions={
-              <>
-                <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-                <Button
-                  variant="danger"
-                  disabled={busy}
-                  onClick={() => {
-                    const { id } = dialog.project;
-                    closeDialog();
-                    rememberRow(`local:${id}`);
-                    void run(() => deleteLocalProject(id));
-                  }}
-                >
-                  {t('common.delete')}
-                </Button>
-              </>
-            }
-          >
-            <p>{t('home.deleteMessage', { name: dialog.project.name })}</p>
-          </Dialog>
-        )}
+          {dialog?.kind === 'delete' && (
+            <Dialog
+              title={t('home.deleteTitle')}
+              alert
+              onCancel={closeDialog}
+              returnFocus={rowLeft}
+              actions={
+                <>
+                  <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                  <Button
+                    variant="danger"
+                    disabled={busy}
+                    onClick={() => void onDelete(dialog.project.id)}
+                  >
+                    {t('common.delete')}
+                  </Button>
+                </>
+              }
+            >
+              <p>{t('home.deleteMessage', { name: dialog.project.name })}</p>
+            </Dialog>
+          )}
+        </DialogSlotContext.Provider>
       </div>
       {narrow && <NarrowWindowNotice />}
     </>
+  );
+}
+
+/** Posição da linha `key` na lista de recentes (0 se não estiver nela). */
+function recentRowIndex(section: HTMLElement | null, key: string): number {
+  const rows = [...(section?.querySelectorAll<HTMLElement>('tr[data-recent]') ?? [])];
+  return Math.max(
+    0,
+    rows.findIndex((row) => row.dataset['recent'] === key),
   );
 }
 
@@ -483,14 +513,14 @@ export function Home() {
  * Foco depois de uma linha sair da lista: o Abrir da linha que ficou na posição `index` (ou
  * da última, se a removida era a última); sem linhas, o título da lista.
  */
-function focusRecentRow(section: HTMLElement | null, index: number): void {
-  if (!section?.isConnected) return;
+function recentRowTarget(section: HTMLElement | null, index: number): HTMLElement | null {
+  if (!section?.isConnected) return null;
   const rows = section.querySelectorAll<HTMLElement>('tr[data-recent]');
   const row = rows[Math.min(index, rows.length - 1)];
-  const target =
-    row?.querySelector<HTMLElement>('.project-actions button') ??
-    section.querySelector<HTMLElement>('h2');
-  target?.focus();
+  return (
+    row?.querySelector<HTMLElement>('[data-recent-open]') ??
+    section.querySelector<HTMLElement>('h2')
+  );
 }
 
 /** Campo de nome: vazio usa o `placeholder` como nome (ver controller). */
@@ -503,13 +533,10 @@ function NameField({
   readonly placeholder: string;
   readonly onInput: (value: string) => void;
 }) {
-  const input = useRef<HTMLInputElement>(null);
-  // `autoFocus` nem sempre vale dentro de um <dialog> reaberto; foca na montagem.
-  useEffect(() => input.current?.focus(), []);
+  // Sem foco próprio: o diálogo dá o foco inicial ao primeiro controle do corpo (F9).
   return (
     <TextField
       label={t('project.name')}
-      inputRef={input}
       type="text"
       value={value}
       placeholder={placeholder}
@@ -615,7 +642,12 @@ function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectLis
             </td>
             <td>{formatDate(project.usedAt)}</td>
             <td class="project-actions">
-              <Button size="sm" disabled={busy} onClick={() => onOpen(project)}>
+              <Button
+                size="sm"
+                data-recent-open=""
+                disabled={busy}
+                onClick={() => onOpen(project)}
+              >
                 {t('common.open')}
               </Button>
               {project.kind === 'local' ? (

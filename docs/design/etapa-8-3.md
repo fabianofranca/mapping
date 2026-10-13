@@ -1,0 +1,135 @@
+# Nota de desenho — fase 8.3: foco, diálogos e teclado
+
+> Nota de desenho da fase 8.3 da etapa 8 (`PLAN.md`), escrita antes do código e aprovada pelo coordenador antes do primeiro commit de código. Achados F1 a F10 da seção 3 de `docs/history/revisao-tecnica-2026-10-12.md`. Base: `main` `340cb96`.
+
+## 1. O que fica no fim
+
+Um **modelo único de foco**, com três peças e uma regra:
+
+1. **Abrir um modal** (`Dialog`, `RefPicker`) é síncrono com a renderização que o põe no DOM: `showModal`, foco inicial, registro do retorno e contagem de modais em `useLayoutEffect`. Invariante: **todo `<dialog>` no DOM está aberto, tem o foco dentro e tem o retorno registrado** (hoje há um quadro em que ele está no DOM fechado e sem retorno: F1).
+2. **A origem do foco** (quem tinha o foco antes do modal) é guardada **uma vez por slot**: o host do slot (`useEditorDialogs`, `Home`, os passos de `AnnotationsPanel`) captura ao abrir o primeiro diálogo, e uma troca de diálogo no mesmo slot herda a origem (F3). Diálogos fora de slot (aninhados, avulsos) capturam sozinhos, como hoje.
+3. **Um dono por fechamento**: para cada jeito de fechar há exatamente um código que decide para onde vai o foco (tabela na seção 3). O retorno do `Dialog` é o dono padrão; ele **só age com o foco perdido** (no `body` ou dentro do modal que sai) e roda depois de qualquer dono explícito, por construção (microtask depois do commit; os donos explícitos agem até o commit).
+
+**A regra:** o foco pós-renderização tem **um idioma só**: o dono guarda o pedido (um `ref`) e o cumpre num `useLayoutEffect` da renderização que desenha o alvo. Somem `requestAnimationFrame`, `useEffect` e `queueMicrotask` para foco nos arquivos da fase, com duas exceções documentadas: o retorno do `Dialog` (microtask, porque o Preact desmonta o diálogo antes de aplicar o resto da mesma renderização, e só depois dela se sabe se quem abriu continua no DOM) e `showAndFocusToolWindow` (microtask atrás da renderização agendada pelo signal; função de módulo, sem componente).
+
+## 2. Estados e transições do modal
+
+```
+            render (captura ou reivindica a origem)
+ [fechado] ───────────────────────────────────────► [no DOM]
+                                                       │ useLayoutEffect (mesmo commit)
+                                                       ▼
+                                                   [aberto] showModal + focusFirst + modalOpen++ + cleanup registrado
+                                                       │ desmontar (onCancel/onClose/troca)
+                                                       ▼
+                                                  [fechando] cleanup: close() + modalOpen--  (antes do resto da renderização)
+                                                       │ microtask, depois do commit inteiro
+                                                       ▼
+                                                  [retorno] restoreFocus: se o foco não está perdido, nada;
+                                                            senão opener → returnFocus → (contêineres, só sem returnFocus) → data-focus-root
+```
+
+- **Captura** (`captureFocusOrigin`): na renderização, antes de o diálogo pegar o foco, a menos que o slot do host forneça a origem.
+- **`restoreFocus`**: ordem atual mantida (quem abriu primeiro; o alvo explícito se quem abriu sumiu), com uma mudança: **quando recebe `returnFocus`, não adivinha contêiner** (F2: o alvo explícito é a decisão do dono; se ele não existir, vai direto ao primeiro controle de `data-focus-root`). Nunca o `body`.
+- **Slot do host** (`useDialogSlot<T>()` em `src/ui/focus.ts`): `{ current, show(d), close(), slot }`. `show` com o slot vazio captura a origem (no gesto, antes de qualquer render); `show` com o slot ocupado (troca) cria um slot novo **com a mesma origem**; `close` descarta. O host envolve o slot com `<DialogSlotProvider slot={…}>`. O `Dialog` lê o contexto e **reivindica a origem uma vez** (`slot.claim()`): o primeiro `Dialog` montado sob o slot leva a origem; os seguintes (ex.: os passos que o `SpecsDialog` abre como irmãos por cima dele) capturam sozinhos. Por isso é contexto, e não a prop `origin` do plano: os diálogos do slot vêm embrulhados (`HelpDialog`, `SettingsDialog`, `SpecsDialog`, `ExportDialog`, `ExitReviewDialog`, `InconsistentProjectDialog`), e uma prop exigiria repassá-la em seis arquivos fora da fase, e erraria nos irmãos do `SpecsDialog`.
+- **`modalOpen`** (`signal<number>` em `src/ui/focus.ts`): `Dialog` e `RefPicker` somam no layout effect e subtraem no cleanup. Substitui `document.querySelector('dialog[open]')` em `useEditorShortcuts` e `useImageIntake`.
+
+## 3. Um dono por fechamento
+
+| Fechamento                                                                                                           | Dono                                                                                                                                                                                                                                                     | Antes                                                                                                   |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Diálogo comum (Esc, X, Cancelar, ação que não remove quem abriu)                                                     | retorno do `Dialog` → quem abriu                                                                                                                                                                                                                         | igual                                                                                                   |
+| Configurações › Ver atalhos › Esc (editor e tela inicial); passo "tipo" › "dono" das anotações tipadas               | retorno do `Dialog` → origem do slot (o botão Configurações / "+ Anotação")                                                                                                                                                                              | origem `body` → primeiro controle da app (F3)                                                           |
+| Exportar (zip gerado com o botão desabilitado)                                                                       | retorno do `Dialog` → quem abriu; se perdido, `returnFocus` = `buttonRef` do Exportar da barra (`dialogs.exportButton`)                                                                                                                                  | seletor global pelo texto do atalho (F4)                                                                |
+| Tela inicial: Excluir (diálogo) e Remover da lista (aviso "Pasta indisponível")                                      | o diálogo **fecha depois** da ação; `returnFocus={() => rowAt(index)}` (linha que ficou no lugar; sem linhas, o título)                                                                                                                                  | dois donos: retorno do `Dialog` (contêiner) e `refocusRow` (`useEffect`) (F2)                           |
+| Tela inicial: Remover da lista **na linha** (sem diálogo)                                                            | a Home, num `useLayoutEffect` armado só por esse caminho (`rowAt(index)`)                                                                                                                                                                                | `refocusRow`                                                                                            |
+| "Referências vão quebrar" da tabela                                                                                  | retorno do `Dialog`; `returnFocus` = `triggerRef` do menu da linha que ficou (mapa por `_id`) ou `buttonRef` do "+ Linha"                                                                                                                                | seletores de classe de outros componentes (F4)                                                          |
+| `RefPicker`: Esc, clique fora, escolha                                                                               | retorno do seletor → o campo `dado`                                                                                                                                                                                                                      | igual                                                                                                   |
+| `RefPicker`: Ctrl+Enter / Ctrl+clique ("escolher e ir") e o "Ir para" de backlinks, pendências e criação de anotação | o painel (`AnnotationsPanel`), no `useLayoutEffect` que desenha o cartão; o retorno do seletor/diálogo vê o foco já no alvo e não age                                                                                                                    | painel em `useEffect` (rAF) disputando com o retorno (microtask); o certo vencia por ordem de fila (F2) |
+| Menus e popovers (`ActionMenu`, `MenuPopover`, `Popover`): Esc, escolha, clique fora                                 | o próprio menu, **síncrono, antes de desmontar**: se o foco está dentro dele, vai ao gatilho (ref); senão fica onde o clique o pôs. Na escolha, o gatilho recebe o foco antes de `onSelect`, então um diálogo aberto pelo item tem o gatilho como origem | só o Esc devolvia, por `querySelector('button')`/`.icon-button` (F6)                                    |
+| `CanvasContextMenu` (sem gatilho)                                                                                    | o menu: origem capturada ao abrir, devolvida ao fechar se o foco ficou perdido                                                                                                                                                                           | não devolvia (F6)                                                                                       |
+
+Sobre o plano dizer "`goToAnnotation` vira o `returnFocus` do `RefPicker`": proponho o inverso equivalente. O `goToAnnotation` é chamado também sem diálogo (backlinks, pendências, Incompletas, criação), e só o painel sabe quando o cartão existe (depois de mostrar a camada e abrir as seções). Então o painel continua dono do "ir para" e passa a agir no commit; o retorno do seletor vira só a rede de segurança. O teste da seção 6 prova que o foco não passa pelo campo de origem antes de chegar ao alvo, nas duas ordens (com e sem `act`).
+
+## 4. O que sobra e o que some
+
+**Novo `src/ui/focus.ts`** (o modelo, sem JSX): `FocusOrigin`, `FocusReturn`, `captureFocusOrigin`, `restoreFocus(scope, origin, target?)`, `restoreFocusAfterRender`, `modalOpen`, `useDialogSlot`, `DialogSlotProvider`, `useFocusRequest()` (o idioma "pedido + `useLayoutEffect`": `request(() => alvo)` guarda o pedido, cumprido no commit seguinte do dono). `Dialog.tsx` reexporta o que os chamadores já importam dele.
+
+**Somem:** `refocusRow` + `useEffect([busy])`, `rememberRow` e `focusRecentRow` (Home); `useEffect` de foco do `NameField` (o `focusFirst` já foca o 1º controle do corpo; F9); `exportButton` por seletor global; `document.querySelector('dialog[open]')` (×2); `document.getElementById` no `RefPicker` (vira consulta dentro do próprio `ref`); `.icon-button`, `.grid-grip`, `.grid-cell-menu .icon-button`, `.table-field-head button`, `.grid-cell-value …`, `.project-actions button`, `.props-value button`, `.dialog-body`/`.dialog-actions` como seletores (viram `ref` ou `data-*`; o CSS continua nas classes); `requestAnimationFrame` de foco em `focusGrip`, `TableField.addRow` e `CodeRefField` (viram `useFocusRequest`); o `<button class="picker-close icon-button">` cru (vira `IconButton`; F7); `canvas.focusSelection` (vira `centerSelection`, que é o que ele faz; F9).
+
+**API nova nos controles:** `Button` e `IconButton` aceitam `buttonRef` (como `TextField.inputRef`); `ActionMenu` aceita `triggerRef`; `Dialog` aceita `alert` (`role="alertdialog"` + `aria-describedby` no corpo, nas confirmações destrutivas; F10); `ExportDialog` aceita `returnFocus`; `useEditorDialogs` expõe `exportButton` (ref que a barra preenche).
+
+**Por que `aria-describedby` só com `alert`:** num diálogo comprido (Ajuda, Configurações) o leitor de tela leria o corpo inteiro ao abrir. Nas confirmações, o corpo é a pergunta, e é o que deve ser lido.
+
+## 5. Política de teclado (vira a seção "Foco e teclado" do `docs/ARCHITECTURE.md`)
+
+- **Enter num campo de texto confirma e mantém o foco** (`CommitInput` grava pela mesma função do `change`, sem `blur`; uma guarda impede que o `change` que o navegador dispara em seguida grave de novo, então continua uma entrada de desfazer). Exceção: **Chave → Valor** nos pares (segue igual). Muda o O5 da rodada 3 (Decisão 6).
+- **Alt+Enter**: nova linha / novo par (igual).
+- **Esc num campo**: com o que reverter, reverte e **para aí** (`preventDefault` + `stopPropagation`: não fecha o diálogo nem o menu em volta); sem o que reverter, **sobe** (fecha o menu ou o diálogo; no editor, os atalhos já ignoram campos de texto). Esc num par novo ainda vazio o descarta e o foco vai ao "+ Par".
+- **Menus e popovers** devolvem o foco ao gatilho em todo fechamento (seção 3).
+- **Enter num `<form>` de diálogo** envia (nativo, igual); Enter/↑↓ no `RefPicker` e nos níveis da revisão: iguais.
+- **`aria-keyshortcuts` sempre na sintaxe ARIA** (`Control+E`, `Control+Shift+Z`, `Alt+Enter`, `F1`), gerada por `ariaKeys(label)` em `src/app/shortcuts.ts` a partir do rótulo humano (`Ctrl+E`), que fica só na dica. Rótulo que não é tecla ("Ctrl+clique") não gera atributo. Aplicado na fonte: `IconButton`, `Segmented`, `DecisionControl` e os `aria-keyshortcuts=` diretos.
+
+## 6. Testes
+
+Ordem dos commits: para cada achado, o teste que o reproduz (vermelho na `main`) antes da correção.
+
+| Achado | Teste (vermelho na `main`)                                                                                                                                                                                                                                                                                                                                                            |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1     | `tests/components/focusModel.test.tsx`: com o `render` do Preact **sem `act`** (o cenário do `user-event` com a outra versão do `@testing-library/dom`), logo depois de montar: o `<dialog>` está aberto e com o foco dentro; desmontado antes do próximo quadro, o foco volta a quem abriu (hoje: fechado e `body`). Determinístico, sem depender de tempo. Idem para o `RefPicker`. |
+| F3     | `editorShell.test.tsx` e `Home.test.tsx`: Configurações › Ver atalhos › Esc → foco no botão Configurações (hoje: primeiro controle da app). `AnnotationsPanel`: tipo › dono › Cancelar → "+ Anotação".                                                                                                                                                                                |
+| F2     | `Home.test.tsx`: com a exclusão pendente (promessa adiada), o **histórico de `focusin`** depois de confirmar tem um só alvo, o Abrir da linha que ficou (hoje passa pela busca antes). `TypedFields.test.tsx`: Ctrl+Enter no seletor → o histórico tem só o campo do alvo (hoje passa pelo campo `dado`).                                                                             |
+| F6     | `tests/components/menus.test.tsx`: `MenuPopover` (escolher item), `Popover` (clique fora com o foco dentro), `ActionMenu` (escolher), `CanvasContextMenu` (Esc e escolha) → foco no gatilho/origem, nunca `body`.                                                                                                                                                                     |
+| F5     | `CommitInput.test.tsx`: Enter grava uma vez e mantém o foco; Tab depois não grava de novo; Esc com mudança reverte e não fecha o diálogo em volta; Esc sem mudança fecha. `KeyValueGrid`: Enter no Valor mantém o foco; Esc no par novo → "+ Par". Reescrevo os testes que fixam o `blur` no Enter (citados no PR).                                                                   |
+| F4     | A própria regra ESLint (seção 7) e o teste do Exportar existente (`editorShell`), agora sem seletor.                                                                                                                                                                                                                                                                                  |
+| F8     | `tests/setup.ts` liga o simulador do modal para todo teste com DOM (`beforeEach`/`afterEach` globais) e `modalFocus.ts` ganha `openDialog()` (espera `dialog.open && dialog.contains(activeElement)`); os `beforeEach(simulateModalFocus)` locais somem. Testes que só passavam porque o jsdom deixava focar fora do modal são corrigidos e listados no PR.                           |
+| F10    | `dialogs.test.tsx`: confirmações destrutivas com `role="alertdialog"` e `aria-describedby` apontando para o corpo; Ajuda sem `aria-describedby`.                                                                                                                                                                                                                                      |
+| F9     | `Home.test.tsx`: abrir "Novo projeto" foca o nome uma vez (um `focusin`).                                                                                                                                                                                                                                                                                                             |
+
+**O flake 20 vezes no CI.** Os testes de foco que flakavam (`TypedFields` "foco depois de Excluir", `Home` "Excluir…"/"Pasta indisponível") e os de F1 rodam com `{ repeats: 19 }` (opção de teste do Vitest): 20 execuções por rodada, dentro do `npm run test:coverage` do CI, sem mexer no `ci.yml` (custo estimado: poucos segundos). No PR colo também a saída local de `npx vitest run <arquivos> --repeats 19` e o link do job do CI.
+
+**`overrides` do `@testing-library/dom` (Decisão 7): sim.** `"overrides": { "@testing-library/dom": "^10.4.2" }` no `package.json` (sem dependência nova: a 10.4.2 já é a da raiz). Experimento feito nesta nota, revertido: com uma versão só, a suíte inteira passou (163 arquivos, 3144 testes, mesmo tempo, nenhum ajuste). O teste de F1 não depende disso (usa o `render` sem `act`), então a correção de produção é provada independentemente do alinhamento.
+
+## 7. Regras automáticas
+
+1. **ESLint `no-restricted-syntax` em `src/ui/**` e `src/app/**`**:
+   - `document.querySelector`/`querySelectorAll`/`getElementById`/`getElementsBy*` → "consulta global ao DOM: use ref, `returnFocus`, `buttonRef`/`triggerRef` ou um signal". Exceções nominais por arquivo no `eslint.config.js`: `src/ui/focus.ts` (`data-focus-root`, o último recurso do retorno) e `src/ui/toolWindowLayout.ts` (janela pelo `data-window`, função de módulo). O atalho Alt+N em `useEditorShortcuts.ts` (aciona o botão "+ Anotação" pelo `data-action`) fica com `eslint-disable-next-line` justificado (trocar por um comando é da 8.2 ou depois).
+   - Seletor com `.` (classe) em literal ou template de `querySelector(All)` → "seletor por classe atravessa componentes: use `ref` ou `[data-…]` dentro do próprio `ref`".
+   - Os seletores ficam numa constante (`focusSyntaxRules`) para o coordenador juntar com outra fase que use `no-restricted-syntax` nos mesmos arquivos (no flat config, o último bloco vence por regra).
+2. **`tests/tooling/focusRules.test.ts`**: (a) varre `src/**/*.tsx` e exige que todo `aria-keyshortcuts=` seja literal na sintaxe ARIA ou `{ariaKeys(…)}`; (b) roda o ESLint (`lintText`) sobre o padrão antigo (o `exportButton` da `main`, um `.icon-button` em `querySelector`) com `filePath` em `src/app/`/`src/ui/` e espera os erros. Esta é a prova permanente de que a regra falha no padrão antigo; no PR colo também a saída do `eslint` sobre a versão da `main` do `ExportDialog.tsx`.
+3. Unidade de `ariaKeys` em `tests/app/shortcuts.test.ts` (todos os `SHORTCUT_LABELS`, `REVIEW_KEYS` e `toolWindowShortcut`).
+
+## 8. Contrato com as fases vizinhas
+
+- **8.4 (onda 2) em `src/app/Home.tsx`.** O que muda aqui e a 8.4 deve preservar: o estado dos diálogos vira `useDialogSlot<HomeDialog>()` e o slot fica embrulhado em `DialogSlotProvider`; a busca da linha passa a `rowAt(index)` sobre o `ref` da seção com `tr[data-recent]` e o botão Abrir marcado `data-recent-open`; Excluir e Remover da lista (pelo aviso) **fecham depois da ação** com `returnFocus={() => rowAt(index)}`; Remover da lista na linha usa o pedido de foco em `useLayoutEffect`; `NameField` sem efeito de foco; o diálogo de Excluir com `alert`. Não toco no `folderName`, no `controller` nem nas chamadas a ele. Regra para a 8.4: nada de `useEffect`/rAF para foco nem `document.querySelector` (o lint pega).
+- **8.2 (onda 2) em `src/app/useEditorShortcuts.ts` e `src/ui/review/*`.** Troco só o `dialog[open]` por `modalOpen.peek() > 0`, o `focusSelection` por `centerSelection` e o `eslint-disable` do Alt+N. Em `review/`: o rename e o `ariaKeys` no `DecisionControl`. A 8.2 parte disso.
+- **8.1 (onda 1)**: nenhum arquivo em comum além do `eslint.config.js` (ver regra 1). Não toco no `ExternalChangeDialog` além do que o `Dialog` muda por dentro.
+- **8.6 (onda 1), `docs/TESTING.md`**: não edito. Lista para o guia (vai no PR): Enter em campo mantém o foco (R1.7 diz "Enter em cada campo": continua valendo, o foco fica no campo); Esc num campo alterado dentro de diálogo só reverte; Configurações › Ver atalhos › Esc volta ao Configurações; menus devolvem o foco ao gatilho; confirmações destrutivas anunciadas como alerta.
+
+## 9. Arquivos fora de "Toca em" — peço aprovação
+
+| Arquivos                                                                                                                                                                                           | Por quê                                                                                                               | Sem aprovação                                |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `src/canvas/CanvasController.ts`, `src/app/Editor.tsx`, `src/app/EditorPanel.tsx`, `src/ui/review/{ProposalsWindow,ReviewLevels}.tsx`, `src/ui/review/{useReview,useReviewCommands}.ts` e 4 testes | rename `focusSelection` → `centerSelection` (F9, está no checkbox da fase)                                            | faço mesmo assim (está na fase), só o rename |
+| `src/ui/controls/Segmented.tsx`, `src/ui/review/DecisionControl.tsx`                                                                                                                               | `ariaKeys` (sem eles o teste da regra 2a falha)                                                                       | faço (uma linha cada)                        |
+| `src/ui/HelpDialog.tsx`, `src/ui/MarkingTree.tsx`, `src/ui/controls/Tooltip.tsx`                                                                                                                   | `getElementById`/seletor por classe próprios que a regra pega (uma linha cada: consulta no próprio `ref` ou `data-*`) | exceção nominal no `eslint.config.js`        |
+| `src/ui/AnnotationEditor.tsx`, `src/ui/LayersPanel.tsx`, `src/ui/SpecsDialog.tsx`                                                                                                                  | `alert` nas três confirmações destrutivas que moram neles (F10)                                                       | deixo para a 8.7 e registro                  |
+| `src/ui/focus.ts`, `tests/components/focusModel.test.tsx`, `tests/components/menus.test.tsx`, `tests/tooling/focusRules.test.ts`, `docs/design/etapa-8-3.md`                                       | arquivos novos da fase                                                                                                | —                                            |
+
+## 10. Perguntas ao coordenador
+
+1. **Seção 9**: aprova os arquivos fora de "Toca em" (ou só alguns)?
+2. **"Ir para" a partir do seletor** (seção 3): aceita o painel como dono (no commit) e o retorno do seletor como rede de segurança, no lugar de "`goToAnnotation` vira o `returnFocus` do `RefPicker`"?
+3. **Excluir/Remover pelo diálogo da tela inicial fecham depois da ação** (alguns milissegundos do IndexedDB, com o botão desabilitado): é mudança visível mínima e vai em "Decisões tomadas". De acordo?
+4. **Origem por contexto com reivindicação única** em vez da prop `origin` (seção 2). De acordo?
+5. **20 vezes no CI por `repeats: 19`** nos testes do flake (sem mexer no `ci.yml`), ou prefere um passo dedicado no `ci.yml` (fora da fase)?
+
+## 11. Respostas do coordenador (nota aprovada)
+
+1. Seção 9: aprovados o rename (só o rename), o `ariaKeys` em `Segmented` e `DecisionControl`, a correção de uma linha em `HelpDialog`, `MarkingTree` e `Tooltip` (sem exceção nominal) e o `alert` em `AnnotationEditor`, `LayersPanel` e `SpecsDialog`; arquivos novos aprovados.
+2. "Ir para": o painel é o dono no commit; o retorno do seletor fica como rede de segurança (registrado em "Decisões tomadas" como divergência do texto do checkbox).
+3. Excluir e Remover pelo diálogo da tela inicial fecham depois da ação.
+4. Origem por contexto com reivindicação única (o mesmo contrato do checkbox, "origem vinda do host", por outro meio).
+5. `repeats: 19` nos testes do flake e de F1, sem mexer no `ci.yml`.
+
+Na implementação, os menus (`ActionMenu`, `MenuPopover`, `Popover`) também passaram a registrar o clique fora em `useLayoutEffect`: em `useEffect`, um clique logo depois de abrir não fechava o menu (o mesmo atraso de quadro do F1).

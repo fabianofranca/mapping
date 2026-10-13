@@ -39,7 +39,7 @@ export function EditorPanel({
   const onSelectMarking = (id: string) => {
     const next: NonNullable<Selection> = { kind: 'marking', id };
     ui.selection.value = next;
-    canvas.current?.focusSelection();
+    canvas.current?.centerSelection();
   };
 
   return (

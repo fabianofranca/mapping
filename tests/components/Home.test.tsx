@@ -96,6 +96,32 @@ describe('Home', () => {
     );
   });
 
+  // Etapa 8 (8.3), F9: o campo do nome focava sozinho na montagem, além do foco inicial do
+  // diálogo (o primeiro controle do corpo): dois donos do mesmo foco.
+  it('Novo projeto foca o nome uma vez só', async () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    render(<Home />);
+    const user = userEvent.setup();
+    await user.click(screen.getByText(t('home.newProject')));
+    const name = await screen.findByLabelText(t('project.name'));
+    await waitFor(() => expect(document.activeElement).toBe(name));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(focus.mock.contexts.filter((el) => el === name)).toHaveLength(1);
+    focus.mockRestore();
+  });
+
+  // Etapa 8 (8.3), F10: a confirmação destrutiva é um alertdialog, descrito pelo corpo.
+  it('Excluir é um alertdialog descrito pelo corpo', async () => {
+    render(<Home />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: t('common.delete') }));
+    await screen.findByText(t('home.deleteMessage', { name: 'Carro' }));
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
+    const body = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
+    expect(body?.textContent).toContain(t('home.deleteMessage', { name: 'Carro' }));
+  });
+
   it('abrir projeto local; erro aparece traduzido', async () => {
     controller.openLocalProject.mockReturnValue(fail('not-found'));
     render(<Home />);
@@ -330,7 +356,8 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       );
     });
 
-    it('Excluir um projeto deste dispositivo faz o mesmo', async () => {
+    // Etapa 8 (8.3), F1/F2: os dois pelo diálogo rodam 20 vezes por rodada (`repeats`).
+    it('Excluir um projeto deste dispositivo faz o mesmo', { repeats: 19 }, async () => {
       controller.deleteLocalProject.mockImplementation((id: string) => {
         recentProjects.value = recentProjects.value.filter(
           (p) => (p as { id: string }).id !== id,
@@ -349,7 +376,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
     });
 
-    it('pelo aviso "Pasta indisponível" também', async () => {
+    it('pelo aviso "Pasta indisponível" também', { repeats: 19 }, async () => {
       forgetting();
       controller.openRecentFolder.mockReturnValue(
         ok({ kind: 'unavailable', reason: 'missing' }),
@@ -370,6 +397,58 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
       await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
     });
+
+    // Etapa 8 (8.3), achado F2: com a exclusão ainda em curso, o retorno do diálogo punha o
+    // foco num contêiner (a busca) e depois o `refocusRow` da Home o levava à linha: dois
+    // donos. Agora o diálogo fecha depois da ação e o foco vai direto à linha que ficou.
+    it(
+      'Excluir pelo diálogo leva o foco direto à linha que ficou (um dono só)',
+      { repeats: 19 },
+      async () => {
+        let finish: () => void = () => undefined;
+        controller.deleteLocalProject.mockImplementation(
+          (id: string) =>
+            new Promise((resolve) => {
+              finish = () => {
+                recentProjects.value = recentProjects.value.filter(
+                  (p) => (p as { id: string }).id !== id,
+                );
+                resolve({ ok: true });
+              };
+            }),
+        );
+        render(<Home />);
+        const user = userEvent.setup();
+        const row = screen.getByRole('row', { name: /Carro/ });
+        await user.click(within(row).getByRole('button', { name: t('common.delete') }));
+        const dialog = await waitFor(() => {
+          const el = document.querySelector('dialog');
+          if (!el?.contains(document.activeElement)) throw new Error('não abriu');
+          return el;
+        });
+        const focused: Element[] = [];
+        const track = (e: FocusEvent) => focused.push(e.target as Element);
+        document.addEventListener('focusin', track);
+        try {
+          await user.click(
+            within(dialog).getByRole('button', {
+              name: t('common.delete'),
+              hidden: true,
+            }),
+          );
+          await new Promise((resolve) => setTimeout(resolve, 30));
+          finish();
+          await waitFor(() => expect(screen.queryByText('Carro')).toBeNull());
+          await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
+          await new Promise((resolve) => setTimeout(resolve, 30));
+        } finally {
+          document.removeEventListener('focusin', track);
+        }
+        expect(focused.filter((el) => !dialog.contains(el))).toEqual([
+          openOf(/Principal/),
+        ]);
+      },
+    );
   });
 
   it('a busca também acha pelo nome da pasta', async () => {
@@ -428,5 +507,28 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     expect(
       await screen.findByText(t('home.folderDenied', { folder: 'principal-pasta' })),
     ).toBeTruthy();
+  });
+});
+
+// Etapa 8 (8.3), achado F3: Configurações › Ver atalhos troca o diálogo no mesmo slot; o
+// novo guardava o body como "quem abriu" e o Esc não voltava ao botão Configurações.
+describe('Home: troca de diálogo (F3)', () => {
+  it('Configurações › Ver atalhos › Esc volta ao botão Configurações', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    render(<Home />);
+    const user = userEvent.setup();
+    const settings = screen.getByRole('button', { name: t('settings.title') });
+    await user.click(settings);
+    await user.click(
+      await screen.findByRole('button', { name: t('settings.shortcuts'), hidden: true }),
+    );
+    const help = await waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el?.querySelector('.help')) throw new Error('a Ajuda ainda não abriu');
+      return el;
+    });
+    help.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(settings);
   });
 });

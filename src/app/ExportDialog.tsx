@@ -7,21 +7,11 @@ import {
   saveFileWithPicker,
   shareFile,
 } from '../storage/share';
-import { Dialog } from '../ui/Dialog';
+import { Dialog, type FocusReturn } from '../ui/Dialog';
 import { formatBytes } from '../ui/formatBytes';
 import { Icon } from '../ui/icons';
 import { markExported } from './controller';
 import { Button } from '../ui/controls';
-import { SHORTCUT_LABELS } from './shortcuts';
-
-/**
- * O botão Exportar da barra principal, achado pelo atalho (não muda com o idioma). O zip é
- * gerado com ele desabilitado, então o foco já tinha saído dele quando o diálogo abriu.
- */
-const exportButton = () =>
-  document.querySelector<HTMLElement>(
-    `.main-bar button[aria-keyshortcuts="${SHORTCUT_LABELS.export}"]`,
-  );
 
 /**
  * O zip é gerado antes de abrir este diálogo; o toque em "Baixar" ou "Compartilhar" é um
@@ -36,9 +26,15 @@ const exportButton = () =>
 export function ExportDialog({
   file,
   onDone,
+  returnFocus,
 }: {
   readonly file: File;
   readonly onDone: () => void;
+  /**
+   * O botão Exportar da barra (`buttonRef`): o zip é gerado com ele desabilitado, então o
+   * foco pode já ter saído dele quando o diálogo abriu.
+   */
+  readonly returnFocus?: FocusReturn;
 }) {
   const [error, setError] = useState<string | null>(null);
   const shareable = canShareFile(file);
@@ -74,7 +70,7 @@ export function ExportDialog({
     <Dialog
       title={t('export.title')}
       onCancel={onDone}
-      returnFocus={exportButton}
+      returnFocus={returnFocus}
       actions={
         <>
           <Button onClick={onDone}>{t('common.cancel')}</Button>

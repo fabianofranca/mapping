@@ -144,14 +144,15 @@ describe('AnnotationEditor — anotação livre', () => {
       await user.click(screen.getByRole('menuitem', { name: 'Remover par' }));
     };
     await removeFirst();
-    const dialog = await screen.findByRole('dialog');
+    // Etapa 8 (8.3), F10: confirmação destrutiva, anunciada como alerta.
+    const dialog = await screen.findByRole('alertdialog');
     expect(within(dialog).getByText('Referências vão quebrar')).toBeTruthy();
     // Cancelar mantém o par.
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
     expect(annotationOf(harness.project(), 'AU').entries).toHaveLength(2);
 
     await removeFirst();
-    const again = await screen.findByRole('dialog');
+    const again = await screen.findByRole('alertdialog');
     await user.click(within(again).getByRole('button', { name: 'Excluir' }));
     expect(annotationOf(harness.project(), 'AU').entries.map((e) => e.id)).toEqual([
       'EA',
@@ -213,7 +214,7 @@ describe('AnnotationEditor — anotação tipada', () => {
   it('excluir uma anotação que é alvo de referência pede confirmação', async () => {
     const { harness, user } = setup('AU');
     await user.click(screen.getByRole('button', { name: 'Excluir anotação' }));
-    const dialog = await screen.findByRole('dialog');
+    const dialog = await screen.findByRole('alertdialog');
     await user.click(within(dialog).getByRole('button', { name: 'Excluir' }));
     expect(harness.project().annotations.some((a) => a.id === 'AU')).toBe(false);
   });

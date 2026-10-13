@@ -2,6 +2,7 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { t } from '../i18n';
 import { imageDeletionImpact, markingDeletionImpact } from '../model';
 import { Dialog } from '../ui/Dialog';
+import { DialogSlotContext } from '../ui/focus';
 import { useEditor, type EditorContextValue } from '../ui/EditorContext';
 import { markingLabel } from '../ui/labels';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
@@ -39,6 +40,8 @@ function ConfirmDialog({
   return (
     <Dialog
       title={title}
+      // Destrutiva (excluir, fechar sem salvar): anunciada como alerta.
+      alert={tone === 'danger'}
       onCancel={onCancel}
       actions={
         <>
@@ -162,7 +165,13 @@ function renderDialog(
       );
     }
     case 'export':
-      return <ExportDialog file={dialog.file} onDone={close} />;
+      return (
+        <ExportDialog
+          file={dialog.file}
+          onDone={close}
+          returnFocus={() => dialogs.exportButton.current}
+        />
+      );
     case 'exitReview':
       return <ExitReviewDialog onClose={close} />;
     case 'confirmClose':
@@ -221,7 +230,9 @@ export function EditorDialogs(props: EditorDialogsProps) {
   return (
     <>
       {current && (
-        <Fragment key={current.kind}>{renderDialog(current, props, ctx)}</Fragment>
+        <DialogSlotContext.Provider value={props.dialogs.slot}>
+          <Fragment key={current.kind}>{renderDialog(current, props, ctx)}</Fragment>
+        </DialogSlotContext.Provider>
       )}
       <ExternalChangeDialog />
     </>

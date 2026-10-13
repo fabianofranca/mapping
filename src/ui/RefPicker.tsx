@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'preact/hooks';
+import { useId, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   fieldLabel,
@@ -10,13 +10,8 @@ import {
   type RefTarget,
   type SpecField,
 } from '../model';
-import { Tabs, type TabItem } from './controls';
-import {
-  captureFocusOrigin,
-  restoreFocusAfterRender,
-  type FocusOrigin,
-  type FocusReturn,
-} from './Dialog';
+import { IconButton, Tabs, type TabItem } from './controls';
+import { useFocusOrigin, useModal, type FocusReturn } from './focus';
 import { Icon } from './icons';
 import { imageLabel, markingPath } from './labels';
 import { annotationSourceLabel, labelTexts } from './typedText';
@@ -133,32 +128,8 @@ export function RefPicker({
     current !== null && JSON.stringify(current) === JSON.stringify(target.ref);
   const [active, setActive] = useState(() => Math.max(0, targets.findIndex(isCurrent)));
   // Quem tinha o foco ao abrir (o campo da referência), guardado antes de o seletor pegá-lo.
-  const origin = useRef<FocusOrigin | null>(null);
-  origin.current ??= captureFocusOrigin();
-  const returnTo = useRef(returnFocus);
-  returnTo.current = returnFocus;
-
-  useEffect(() => {
-    const el = dialog.current;
-    if (!el || el.open) return;
-    try {
-      el.showModal();
-    } catch {
-      // Detecção de recurso: sem `showModal` (navegador antigo) abre sem modal.
-      el.setAttribute('open', '');
-    }
-    input.current?.focus();
-    return () => {
-      // Fecha antes de sair do DOM: com o modal aberto, o resto da página está inerte e o
-      // foco não sai dele (etapa 7, achado A1).
-      try {
-        if (el.open) el.close();
-      } catch {
-        el.removeAttribute('open');
-      }
-      restoreFocusAfterRender(el, origin.current, returnTo);
-    };
-  }, []);
+  const origin = useFocusOrigin();
+  useModal(dialog, origin, returnFocus, () => input.current?.focus());
 
   const filters: Filter[] = [
     ...(field.accepts.tags ?? []).map((tag) => ({ kind: 'tag', tag }) as const),
@@ -207,7 +178,9 @@ export function RefPicker({
       const step = e.key === 'ArrowDown' ? 1 : -1;
       const next = (activeIndex + step + options.length) % options.length;
       setActive(next);
-      document.getElementById(optionId(next))?.scrollIntoView({ block: 'nearest' });
+      dialog.current
+        ?.querySelector(`[id="${optionId(next)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
       e.preventDefault();
       choose(options[activeIndex], e.ctrlKey || e.metaKey);
@@ -233,14 +206,7 @@ export function RefPicker({
         <div class="picker-head">
           <h2 id={titleId}>{t('ref.pickerTitle', { field: fieldLabel(field) })}</h2>
           <span class="picker-accepts">{acceptsText(field)}</span>
-          <button
-            type="button"
-            class="picker-close icon-button"
-            aria-label={t('common.close')}
-            onClick={onClose}
-          >
-            <Icon name="close" />
-          </button>
+          <IconButton icon="close" label={t('common.close')} onClick={onClose} />
         </div>
         {targets.length === 0 ? (
           <p class="notice notice-info picker-empty">{noTargetsMessage(field)}</p>

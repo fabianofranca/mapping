@@ -49,6 +49,60 @@ export const SHORTCUT_LABELS = {
   copyCrop: 'Ctrl+Alt+C',
 } as const;
 
+const ARIA_MODIFIERS: Readonly<Record<string, string>> = {
+  ctrl: 'Control',
+  control: 'Control',
+  cmd: 'Meta',
+  meta: 'Meta',
+  alt: 'Alt',
+  option: 'Alt',
+  shift: 'Shift',
+};
+
+const ARIA_KEY_NAMES: Readonly<Record<string, string>> = {
+  esc: 'Escape',
+  escape: 'Escape',
+  del: 'Delete',
+  delete: 'Delete',
+  enter: 'Enter',
+  backspace: 'Backspace',
+  tab: 'Tab',
+  space: 'Space',
+  home: 'Home',
+  end: 'End',
+  pageup: 'PageUp',
+  pagedown: 'PageDown',
+  '+': 'Plus',
+  '↑': 'ArrowUp',
+  '↓': 'ArrowDown',
+  '←': 'ArrowLeft',
+  '→': 'ArrowRight',
+};
+
+/**
+ * O valor de `aria-keyshortcuts` (sintaxe WAI-ARIA: `Control+E`, `Control+Shift+Z`,
+ * `Alt+Enter`, `F1`) a partir do rótulo humano da dica (`Ctrl+E`), que continua só na dica.
+ * Rótulo que não é tecla ("Ctrl+clique") não vira atributo (etapa 8, F5).
+ */
+export function ariaKeys(label: string | undefined): string | undefined {
+  if (!label) return undefined;
+  // "Ctrl++": o último "+" é a tecla.
+  const parts = label.endsWith('++')
+    ? [...label.slice(0, -2).split('+'), '+']
+    : label.split('+');
+  const key = parts.pop() ?? '';
+  const modifiers = parts.map((m) => ARIA_MODIFIERS[m.trim().toLowerCase()]);
+  if (modifiers.some((m) => m === undefined)) return undefined;
+  const name =
+    ARIA_KEY_NAMES[key.toLowerCase()] ??
+    (/^F\d{1,2}$/i.test(key)
+      ? key.toUpperCase()
+      : key.length === 1
+        ? key.toUpperCase()
+        : undefined);
+  return name === undefined ? undefined : [...modifiers, name].join('+');
+}
+
 type KeyInfo = Pick<
   KeyboardEvent,
   'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'

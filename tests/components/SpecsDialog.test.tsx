@@ -170,6 +170,8 @@ describe('SpecsDialog', () => {
     await screen.findByText(/aplicada/);
     await user.click(screen.getByRole('button', { name: 'Remover' }));
     const dialog = await dialogTitled('Remover "SDUI"?');
+    // Etapa 8 (8.3), F10: confirmação destrutiva, anunciada como alerta.
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
     const confirm = within(dialog).getByRole('button', { name: 'Converter' });
     expect(confirm).toHaveProperty('disabled', true); // precisa escolher o modo
     await user.click(

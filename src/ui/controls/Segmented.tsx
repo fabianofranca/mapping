@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { ariaKeys } from '../../app/shortcuts';
 import { Icon, type IconName } from '../icons';
 import { classes } from './classes';
 import { Tooltip } from './Tooltip';
@@ -51,7 +52,7 @@ export function Segmented<T extends string>({
             class={classes('segmented-item', !text && 'segmented-item-icon')}
             aria-pressed={value === item.id}
             aria-label={text ? undefined : item.label}
-            aria-keyshortcuts={item.shortcut}
+            aria-keyshortcuts={ariaKeys(item.shortcut)}
             disabled={disabled === true || item.disabled === true}
             onClick={() => onSelect(item.id)}
           >

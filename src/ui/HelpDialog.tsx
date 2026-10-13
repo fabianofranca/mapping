@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import { specHelpSections, type HelpBlock } from '../i18n/specHelp';
 import { locale } from '../store/settings';
@@ -213,8 +213,8 @@ function topics(): readonly Topic[] {
 }
 
 /** Rola até a seção sem mudar o hash da URL (o app não usa roteamento). */
-function scrollToTopic(id: string): void {
-  document.getElementById(`help-${id}`)?.scrollIntoView?.({ block: 'start' });
+function scrollToTopic(content: HTMLElement | null, id: string): void {
+  content?.querySelector(`[id="help-${id}"]`)?.scrollIntoView?.({ block: 'start' });
 }
 
 interface HelpDialogProps {
@@ -230,10 +230,11 @@ interface HelpDialogProps {
 export function HelpDialog({ onClose, section }: HelpDialogProps) {
   const [query, setQuery] = useState('');
   const [current, setCurrent] = useState(section ?? null);
+  const content = useRef<HTMLDivElement>(null);
 
   // Abre direto na seção pedida (a lista só existe depois da montagem).
   useEffect(() => {
-    if (section) scrollToTopic(section);
+    if (section) scrollToTopic(content.current, section);
   }, [section]);
 
   const shown = topics().filter((topic) =>
@@ -267,7 +268,7 @@ export function HelpDialog({ onClose, section }: HelpDialogProps) {
                     onClick={(e) => {
                       e.preventDefault();
                       setCurrent(topic.id);
-                      scrollToTopic(topic.id);
+                      scrollToTopic(content.current, topic.id);
                     }}
                   >
                     {topic.title}
@@ -277,7 +278,7 @@ export function HelpDialog({ onClose, section }: HelpDialogProps) {
             </ul>
           </nav>
         </div>
-        <div class="help-content">
+        <div class="help-content" ref={content}>
           {shown.length === 0 ? (
             <p class="muted">{t('help.noResults', { query: query.trim() })}</p>
           ) : (

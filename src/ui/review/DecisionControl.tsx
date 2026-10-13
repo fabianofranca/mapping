@@ -1,4 +1,5 @@
 import { t } from '../../i18n';
+import { ariaKeys } from '../../app/shortcuts';
 import { Button, IconButton } from '../controls';
 import { Icon } from '../icons';
 
@@ -73,7 +74,7 @@ export function DecisionControl({
           variant="accept"
           aria-pressed={value === 'accepted'}
           aria-label={acceptLabel}
-          aria-keyshortcuts={REVIEW_KEYS.accept}
+          aria-keyshortcuts={ariaKeys(REVIEW_KEYS.accept)}
           title={`${acceptTip}  ${REVIEW_KEYS.accept}`}
           disabled={disabled}
           onClick={() => toggle('accepted')}
@@ -85,7 +86,7 @@ export function DecisionControl({
           variant="reject"
           aria-pressed={value === 'rejected'}
           aria-label={rejectLabel}
-          aria-keyshortcuts={REVIEW_KEYS.reject}
+          aria-keyshortcuts={ariaKeys(REVIEW_KEYS.reject)}
           title={`${rejectTip}  ${REVIEW_KEYS.reject}`}
           disabled={disabled}
           onClick={() => toggle('rejected')}

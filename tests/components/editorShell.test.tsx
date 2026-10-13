@@ -1,9 +1,9 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/preact';
+import { modalOpen } from '../../src/ui/focus';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { signal } from '@preact/signals';
 import { useState } from 'preact/hooks';
-import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 import { t } from '../../src/i18n';
 import type { CanvasController } from '../../src/canvas/CanvasController';
 import { hideToolWindow, isToolWindowOpen } from '../../src/store/toolWindows';
@@ -25,6 +25,8 @@ vi.mock('../../src/app/controller', async () => {
 });
 
 import { CanvasNotices } from '../../src/app/CanvasNotices';
+import { EditorDialogs as EditorDialogsView } from '../../src/app/EditorDialogs';
+import { useEditorDialogs } from '../../src/app/useEditorDialogs';
 import { EditorMainBar } from '../../src/app/EditorMainBar';
 import { ErrorBoundary } from '../../src/app/ErrorBoundary';
 import { ExportDialog } from '../../src/app/ExportDialog';
@@ -47,6 +49,8 @@ afterEach(() => {
 function fakeDialogs(): EditorDialogs {
   return {
     current: null,
+    slot: null,
+    exportButton: { current: null },
     show: vi.fn(),
     close: vi.fn(),
     requestDeleteImage: vi.fn(),
@@ -249,11 +253,10 @@ describe('useEditorShortcuts', () => {
     document.body.append(input);
     fireEvent.keyDown(input, { key: 'Delete' });
     input.remove();
-    const dialog = document.createElement('dialog');
-    dialog.setAttribute('open', '');
-    document.body.append(dialog);
+    // Etapa 8 (8.3), F4: um modal aberto conta em `modalOpen` (no lugar de `dialog[open]`).
+    modalOpen.value += 1;
     fireEvent.keyDown(window, { key: 'Delete' });
-    dialog.remove();
+    modalOpen.value -= 1;
     fireEvent.keyDown(window, { key: 'a' });
     expect(dialogs.requestDeleteMarking).not.toHaveBeenCalled();
   });
@@ -367,9 +370,6 @@ describe('ExportDialog', () => {
 // Etapa 7 (7.1), achado A1: o zip é gerado antes de o diálogo abrir, com o botão Exportar
 // desabilitado (o Chrome tira o foco dele), então o diálogo não tem a quem devolver o foco.
 describe('ExportDialog: foco ao fechar', () => {
-  beforeEach(simulateModalFocus);
-  afterEach(restoreModalFocus);
-
   function ExportFlow({
     harness,
   }: {
@@ -377,6 +377,8 @@ describe('ExportDialog: foco ao fechar', () => {
   }) {
     const [busy, setBusy] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    // Etapa 8 (8.3), F4: o retorno vem do botão da barra (buttonRef), não de um seletor.
+    const [dialogs] = useState(fakeDialogs);
     const commands = {
       exportProject: async () => {
         setBusy(true);
@@ -393,10 +395,16 @@ describe('ExportDialog: foco ao fechar', () => {
         <EditorMainBar
           busy={busy}
           onAdd={vi.fn()}
-          dialogs={fakeDialogs()}
+          dialogs={dialogs}
           commands={commands}
         />
-        {file && <ExportDialog file={file} onDone={() => setFile(null)} />}
+        {file && (
+          <ExportDialog
+            file={file}
+            onDone={() => setFile(null)}
+            returnFocus={() => dialogs.exportButton.current}
+          />
+        )}
       </EditorContext.Provider>
     );
   }
@@ -653,5 +661,44 @@ describe('barras do editor', () => {
         .getByRole('button', { name: t('editor.addImages') })
         .hasAttribute('disabled'),
     ).toBe(true);
+  });
+});
+
+// Etapa 8 (8.3), achado F3: a troca de diálogo no mesmo slot (Configurações › Ver atalhos)
+// desmontava o antigo antes de o novo guardar quem abriu; o Esc deixava o foco no primeiro
+// controle da app (ou no body), e não no botão Configurações.
+describe('troca de diálogo no editor (F3)', () => {
+  function Shell() {
+    const dialogs = useEditorDialogs();
+    return (
+      <>
+        <EditorMainBar
+          busy={false}
+          onAdd={vi.fn()}
+          dialogs={dialogs}
+          commands={fakeCommands()}
+        />
+        <EditorDialogsView dialogs={dialogs} />
+      </>
+    );
+  }
+
+  it('Configurações › Ver atalhos › Esc volta ao botão Configurações', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    withContext(createHarness(sampleProject()), <Shell />);
+    const user = userEvent.setup();
+    const settings = screen.getByRole('button', { name: t('settings.title') });
+    await user.click(settings);
+    await user.click(
+      await screen.findByRole('button', { name: t('settings.shortcuts'), hidden: true }),
+    );
+    const help = await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el?.querySelector('.help')) throw new Error('a Ajuda ainda não abriu');
+      return el;
+    });
+    help.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(settings);
   });
 });

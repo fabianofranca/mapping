@@ -1,12 +1,13 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
-import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { ariaKeys, SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
 import { getBacklinks, type Annotation, type Entry, type Project } from '../model';
 import type { AnnotationLocation } from '../store/ui';
 import { ActionMenu } from './ActionMenu';
 import { Button, IconButton, TextField } from './controls';
 import { useEditor } from './EditorContext';
+import { useFocusRequest } from './focus';
 import { Icon } from './icons';
 import { annotationErrorMessage } from './labels';
 import { moveKeyDelta, useRowDrag, type RowDrag } from './rowDrag';
@@ -20,14 +21,21 @@ export function isNewRowKey(e: KeyboardEvent): boolean {
   return e.key === 'Enter' && e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
 }
 
-/** Foca a alça da linha `index` depois da renderização (o foco segue a linha movida). */
-export function focusGrip(container: HTMLElement | null, index: number): void {
-  requestAnimationFrame(() => {
+/**
+ * A alça da linha `index` (o foco segue a linha movida). Pedido com `useFocusRequest`, ela
+ * é lida no commit que desenha a lista na ordem nova.
+ */
+export function gripAt(container: HTMLElement | null, index: number): HTMLElement | null {
+  return (
     container
       ?.querySelectorAll<HTMLElement>('[data-drag-row]')
-      [index]?.querySelector<HTMLElement>('.grid-grip')
-      ?.focus();
-  });
+      [index]?.querySelector<HTMLElement>('[data-grip]') ?? null
+  );
+}
+
+/** O alvo do evento é a alça da linha (as setas sozinhas movem a linha). */
+export function isGrip(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.hasAttribute('data-grip');
 }
 
 interface EntryRowProps {
@@ -83,11 +91,16 @@ function EntryRow({
   const edit = (patch: Partial<Pick<typeof draft, 'key' | 'value'>>) =>
     setDraft({ ...current, ...patch });
 
+  // A última gravação (sobre qual par, com qual texto): o `change` que o navegador dispara
+  // depois do Enter traz o mesmo texto e não grava de novo (uma entrada de desfazer).
+  const committed = useRef<string | null>(null);
   const commit = () => {
     if (entry && current.key === entry.key && current.value === entry.value) {
       setError(null);
       return;
     }
+    const attempt = `${base}\u0001${current.key}\u0000${current.value}`;
+    if (committed.current === attempt) return;
     // Par novo ainda vazio: nada a gravar nem a reclamar.
     if (!entry && current.key.trim() === '' && current.value === '') return;
     const next = { key: current.key, value: current.value };
@@ -95,6 +108,7 @@ function EntryRow({
       ? actions.updateEntry(annotationId, entry.id, next)
       : actions.addEntry(annotationId, next);
     if (result.ok) {
+      committed.current = attempt;
       setError(null);
       if (!entry) onCreated();
     } else {
@@ -102,20 +116,29 @@ function EntryRow({
     }
   };
 
+  /**
+   * Enter grava e o foco fica no campo; Esc com o que reverter volta ao par gravado (no par
+   * novo, descarta a linha) e para aí; sem o que reverter, sobe (etapa 8, F5).
+   */
   const onFieldKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.altKey) (e.currentTarget as HTMLElement).blur();
-    if (e.key === 'Escape') {
-      // Esc cancela a edição do campo: volta ao valor gravado.
-      setDraft({ base, key: entry?.key ?? '', value: entry?.value ?? '' });
-      setError(null);
-      if (!entry) onDiscard();
-      e.stopPropagation();
-    }
+    if (e.key === 'Enter' && !e.altKey) commit();
+    if (e.key !== 'Escape') return;
+    const pending =
+      !entry ||
+      error !== null ||
+      current.key !== entry.key ||
+      current.value !== entry.value;
+    if (!pending) return;
+    setDraft({ base, key: entry?.key ?? '', value: entry?.value ?? '' });
+    setError(null);
+    if (!entry) onDiscard();
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const onRowKeyDown = (e: KeyboardEvent) => {
     if (!entry || readOnly) return;
-    const onGrip = (e.target as HTMLElement).classList.contains('grid-grip');
+    const onGrip = isGrip(e.target);
     const delta = moveKeyDelta(e, onGrip);
     if (delta === 0) return;
     e.preventDefault();
@@ -140,6 +163,7 @@ function EntryRow({
           <button
             type="button"
             class="grid-grip"
+            data-grip=""
             aria-label={t('annotation.dragEntry', { key: entry.key })}
             title={t('annotation.dragHint')}
             {...drag.handle(index)}
@@ -161,7 +185,7 @@ function EntryRow({
           onKeyDown={(e) => {
             // Enter na Chave grava (ao sair do campo) e segue para o Valor da mesma linha.
             if (e.key === 'Enter' && !e.altKey) {
-              const row = e.currentTarget.closest('.kv-row');
+              const row = e.currentTarget.closest('[role="row"]');
               const value = row?.querySelector<HTMLElement>('[data-kv-value]');
               if (value) {
                 e.preventDefault();
@@ -246,16 +270,19 @@ export function KeyValueGrid({
   const count = annotation.entries.length;
   const backlinks = getBacklinks(project, annotation.id);
 
+  const requestFocus = useFocusRequest();
+  const addButton = useRef<HTMLButtonElement>(null);
+
   const move = (from: number, to: number, focus: boolean) => {
     const entry = annotation.entries[from];
     if (!entry || from === to) return;
     actions.moveEntry(annotation.id, entry.id, to);
-    if (focus) focusGrip(grid.current, to);
+    if (focus) requestFocus(() => gripAt(grid.current, to));
   };
   const drag = useRowDrag(grid, (from, to) => move(from, to, false));
 
-  // Par novo: o foco vai para a chave.
-  useEffect(() => {
+  // Par novo: o foco vai para a chave, no commit que desenha a linha.
+  useLayoutEffect(() => {
     if (!adding) return;
     grid.current?.querySelector<HTMLElement>('[data-new-row] input')?.focus();
   }, [adding]);
@@ -307,7 +334,11 @@ export function KeyValueGrid({
         readOnly={readOnly}
         drag={drag}
         onMove={() => undefined}
-        onDiscard={() => setAdding(false)}
+        onDiscard={() => {
+          setAdding(false);
+          // A linha descartada levava o foco: ele fica no "+ Par".
+          requestFocus(() => addButton.current);
+        }}
         onCreated={() => setAdding(false)}
         onRemove={() => undefined}
       />,
@@ -348,8 +379,9 @@ export function KeyValueGrid({
           size="sm"
           class="button-link"
           title={`${t('annotation.addEntry')}  ${SHORTCUT_LABELS.newRow}`}
-          aria-keyshortcuts={SHORTCUT_LABELS.newRow}
+          aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.newRow)}
           disabled={readOnly || adding}
+          buttonRef={addButton}
           onClick={startAdding}
         >
           {t('annotation.addEntry')}

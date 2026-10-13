@@ -34,7 +34,7 @@ export function useReviewCommands(): ReviewCommands {
       showToolWindow('details');
       showToolWindow('proposals');
       // Volta ao último item visto: mostra-o no canvas depois do desenho seguinte.
-      const center = () => canvas.current?.focusSelection();
+      const center = () => canvas.current?.centerSelection();
       if (typeof requestAnimationFrame === 'function') requestAnimationFrame(center);
       if (result.resumed && result.newConflicts === 0) {
         showToast(ui, t('review.resumed'));

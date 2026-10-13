@@ -85,6 +85,7 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
           text={t('editor.export')}
           shortcut={SHORTCUT_LABELS.export}
           disabled={busy}
+          buttonRef={dialogs.exportButton}
           onClick={() => void commands.exportProject()}
         />
         <IconButton

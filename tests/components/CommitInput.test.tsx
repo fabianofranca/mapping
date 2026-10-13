@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/preact';
+import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CommitInput } from '../../src/ui/CommitInput';
@@ -57,6 +57,41 @@ describe('CommitInput', () => {
     expect(input.value).toBe('atual');
     await user.tab();
     expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  // Etapa 8 (8.3), achado F5 (O5 da rodada 3): o Enter tirava o foco do campo (`blur`) e
+  // ele caía no `body`. Agora o Enter confirma e o foco fica no campo, com uma gravação só.
+  it('Enter grava uma vez e mantém o foco no campo', async () => {
+    const onCommit = vi.fn(() => true);
+    const { input, user } = setup(onCommit);
+    await user.clear(input);
+    await user.type(input, 'novo{Enter}');
+    expect(onCommit).toHaveBeenCalledOnce();
+    expect(onCommit).toHaveBeenCalledWith('novo');
+    expect(document.activeElement).toBe(input);
+    // O `change` que o navegador dispara depois (Enter, Tab) não grava de novo.
+    fireEvent.change(input);
+    await user.tab();
+    expect(onCommit).toHaveBeenCalledOnce();
+  });
+
+  // Etapa 8 (8.3), F5: Esc num campo reverte e para aí (não fecha o diálogo ou o menu em
+  // volta); sem o que reverter, sobe.
+  it('Esc com o que reverter consome a tecla; sem o que reverter, ela sobe', async () => {
+    const parent = vi.fn();
+    render(
+      <div onKeyDown={(e) => parent(e.key, e.defaultPrevented)}>
+        <CommitInput aria-label="campo" value="atual" onCommit={() => true} />
+      </div>,
+    );
+    const input = screen.getByLabelText<HTMLInputElement>('campo');
+    const user = userEvent.setup();
+    await user.type(input, 'x');
+    await user.keyboard('{Escape}');
+    expect(input.value).toBe('atual');
+    expect(parent).not.toHaveBeenCalledWith('Escape', expect.anything());
+    await user.keyboard('{Escape}');
+    expect(parent).toHaveBeenCalledWith('Escape', false);
   });
 
   it('acompanha o valor externo (ex.: depois de desfazer)', () => {

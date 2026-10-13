@@ -8,6 +8,7 @@ import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
+import { layerOf } from '../model/specFixtures';
 
 // R5: Detalhes redesenhado (identidade, PropertyGrid, LayerGroup recolhível, pendências
 // com links, KeyValueGrid com arrasto e teclado). Edição e desfazer iguais aos de antes.
@@ -189,6 +190,21 @@ describe('Detalhes — KeyValueGrid', () => {
     await vi.waitFor(() => expect(document.activeElement).toBe(created));
     await user.keyboard('x{Escape}');
     expect(screen.getAllByLabelText('Chave')).toHaveLength(2);
+    // Etapa 8 (8.3), F5: a linha descartada levava o foco; ele vai ao "+ Par".
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: '+ Par' })),
+    );
+  });
+
+  // Etapa 8 (8.3), achado F5 (O5): Enter no Valor tirava o foco do campo (ia ao body).
+  it('Enter no Valor grava e mantém o foco no campo', async () => {
+    const { harness, user } = renderAnnotation('AU');
+    const [value] = screen.getAllByLabelText('Valor');
+    if (!value) throw new Error('sem o Valor');
+    await user.clear(value);
+    await user.type(value, 'text{Enter}');
+    expect(annotationOf(harness.project(), 'AU').entries[0]?.value).toBe('text');
+    expect(document.activeElement).toBe(screen.getAllByLabelText('Valor')[0]);
   });
 });
 
@@ -207,5 +223,99 @@ describe('Detalhes — DataGrid', () => {
     const [, row] = within(table).getAllByRole('row');
     expect(row?.textContent).toContain('1');
     expect(row?.textContent).toContain('email');
+  });
+});
+
+// Etapa 8 (8.3), achado F3: o passo "tipo" troca pelo passo "dono" no mesmo slot; o diálogo
+// novo guardava como "quem abriu" o botão do tipo, que já tinha saído, e o foco se perdia.
+describe('Detalhes — nova anotação tipada com dono (F3)', () => {
+  it('tipo › dono › Cancelar volta ao "+ Anotação"', async () => {
+    const { harness, user } = renderMarking('MC');
+    act(() => {
+      harness.ui.activeLayer.value = layerOf(harness.project(), 'sdui', 'eventos');
+    });
+    // O "+ Anotação" do cabeçalho (o que o Alt+N aciona), não o de cada camada.
+    const add = await vi.waitFor(() => {
+      const el = document.querySelector<HTMLElement>('[data-action="add-annotation"]');
+      if (!el) throw new Error('sem o "+ Anotação"');
+      return el;
+    });
+    await user.click(add);
+    const types = await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el) throw new Error('sem o passo do tipo');
+      return el;
+    });
+    await user.click(
+      within(types).getByRole('button', { name: /^onClick/, hidden: true }),
+    );
+    const owner = await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el?.textContent?.includes('Dono do')) throw new Error('sem o passo do dono');
+      return el;
+    });
+    owner.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(document.activeElement).toBe(add);
+  });
+});
+
+/** Elementos que receberam o foco enquanto `run` roda (na ordem). */
+async function focusTrail(run: () => Promise<void>): Promise<Element[]> {
+  const focused: Element[] = [];
+  const track = (e: FocusEvent) => focused.push(e.target as Element);
+  document.addEventListener('focusin', track);
+  try {
+    await run();
+  } finally {
+    document.removeEventListener('focusin', track);
+  }
+  return focused;
+}
+
+// Etapa 8 (8.3), achado F2: "escolher e ir" (Ctrl+Enter no seletor) tinha dois donos do
+// foco: o retorno do seletor (ao campo `dado`) e o painel (à anotação de destino), e o certo
+// vencia só pela ordem das filas. Agora o painel é o dono e age no commit; o retorno do
+// seletor vê o foco já no destino e não mexe. O foco vai direto, sem passar por outro lugar.
+describe('Detalhes — escolher e ir até o alvo (F2)', () => {
+  it('Ctrl+Enter no seletor leva o foco direto à anotação de destino', async () => {
+    const harness = createHarness(cadastroProject());
+    harness.ui.selection.value = { kind: 'marking', id: 'MN' };
+    renderLive(harness, (p) => {
+      const selection = harness.ui.selection.value;
+      const marking = p.markings.find(
+        (m) => selection?.kind === 'marking' && m.id === selection.id,
+      );
+      const image = p.images.find((i) => i.id === marking?.imageId);
+      if (!marking || !image) return null;
+      return (
+        <MarkingPanel
+          project={p}
+          marking={marking}
+          image={image}
+          readOnly={false}
+          onDelete={() => undefined}
+          onSelectMarking={() => undefined}
+          onGoToAnnotation={(a) => goToAnnotation(harness.ui, a)}
+        />
+      );
+    });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /^dado: / }));
+    await vi.waitFor(() => {
+      const el = document.querySelector('dialog');
+      if (!el?.contains(document.activeElement)) throw new Error('o seletor não abriu');
+    });
+    let target: Element | null = null;
+    const trail = await focusTrail(async () => {
+      // Abre no atual (User.name); ↓ vai para User.age, da anotação User no Formulário.
+      await user.keyboard('{ArrowDown}{Control>}{Enter}{/Control}');
+      await vi.waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+      const name = await screen.findByLabelText('Nome da anotação');
+      target = name;
+      await vi.waitFor(() => expect(document.activeElement).toBe(name));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(trail).toEqual([target]);
   });
 });

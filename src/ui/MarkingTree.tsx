@@ -19,7 +19,7 @@ interface MarkingTreeProps {
  * árvore desenhar de novo, porque abrir os ancestrais troca as linhas.
  */
 export function scrollToSelected(root: HTMLElement | null, focus = false): void {
-  const row = root?.querySelector<HTMLElement>('.tree-item[aria-current="true"]');
+  const row = root?.querySelector<HTMLElement>('[aria-current="true"]');
   if (!row) return;
   row.scrollIntoView?.({ block: 'nearest' });
   if (focus) row.focus();

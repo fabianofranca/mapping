@@ -45,7 +45,8 @@ describe('IconButton', () => {
       <IconButton icon="undo" label="Desfazer" shortcut="Ctrl+Z" />,
     );
     const button = screen.getByRole('button', { name: 'Desfazer' });
-    expect(button.getAttribute('aria-keyshortcuts')).toBe('Ctrl+Z');
+    // Etapa 8 (8.3), F5: o atributo na sintaxe ARIA; o rótulo humano fica na dica.
+    expect(button.getAttribute('aria-keyshortcuts')).toBe('Control+Z');
     expect(button.querySelector('svg')).not.toBeNull();
     const tip = container.querySelector('.tooltip');
     expect(tip?.textContent).toContain('Desfazer');

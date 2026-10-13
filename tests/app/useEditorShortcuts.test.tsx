@@ -1,4 +1,5 @@
 import { cleanup, render } from '@testing-library/preact';
+import { modalOpen } from '../../src/ui/focus';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CanvasController } from '../../src/canvas/CanvasController';
 import type { EditorDialogs } from '../../src/app/useEditorDialogs';
@@ -38,7 +39,7 @@ interface Fake {
   };
   readonly canvas: {
     cancelInteraction: ReturnType<typeof vi.fn>;
-    focusSelection: ReturnType<typeof vi.fn>;
+    centerSelection: ReturnType<typeof vi.fn>;
     zoomBy: ReturnType<typeof vi.fn>;
     zoomTo: ReturnType<typeof vi.fn>;
   };
@@ -64,7 +65,7 @@ function setup({ enabled = true, readOnly = false } = {}): Fake {
   const harness = createHarness(sampleProject(), readOnly);
   const canvas = {
     cancelInteraction: vi.fn(() => false),
-    focusSelection: vi.fn(),
+    centerSelection: vi.fn(),
     zoomBy: vi.fn(),
     zoomTo: vi.fn(),
   };
@@ -286,7 +287,7 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
     s.press('ArrowUp', { alt: true });
     s.press('ArrowUp', { alt: true });
     expect(s.harness.ui.selection.value).toEqual({ kind: 'image', id: 'I1' });
-    expect(s.canvas.focusSelection).toHaveBeenCalledTimes(3);
+    expect(s.canvas.centerSelection).toHaveBeenCalledTimes(3);
   });
 
   it('Alt+↓ desce para o primeiro filho; da imagem, para a primeira marcação raiz', () => {
@@ -306,7 +307,7 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
     s.harness.ui.selection.value = null;
     s.press('ArrowUp', { alt: true });
     expect(s.harness.ui.selection.value).toBeNull();
-    expect(s.canvas.focusSelection).not.toHaveBeenCalled();
+    expect(s.canvas.centerSelection).not.toHaveBeenCalled();
   });
 
   it('a imagem sem marcações não tem para onde descer', () => {
@@ -470,11 +471,15 @@ describe('useEditorShortcuts: quando as teclas não valem', () => {
   it('com um diálogo aberto, o teclado é do diálogo', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
-    const dialog = document.createElement('dialog');
-    dialog.setAttribute('open', '');
-    document.body.append(dialog);
-    s.press('z', { ctrl: true });
-    s.press('F1');
+    // Etapa 8 (8.3), F4: um modal aberto conta em `modalOpen` (no lugar de procurar
+    // `dialog[open]` no documento).
+    modalOpen.value += 1;
+    try {
+      s.press('z', { ctrl: true });
+      s.press('F1');
+    } finally {
+      modalOpen.value -= 1;
+    }
     expect(s.harness.project().layers[0]?.name).toBe('Pintura');
     expect(s.dialogs.show).not.toHaveBeenCalled();
   });

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'preact/hooks';
-import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { ariaKeys, SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   codeRefEntries,
@@ -18,7 +18,8 @@ import { Button, Select, TextField, Tooltip } from './controls';
 import { useEditor } from './EditorContext';
 import type { FieldContext } from './FieldEditors';
 import { Icon } from './icons';
-import { focusGrip, isNewRowKey } from './KeyValueGrid';
+import { gripAt, isGrip, isNewRowKey } from './KeyValueGrid';
+import { useFocusRequest } from './focus';
 import { moveKeyDelta, useRowDrag } from './rowDrag';
 import { issueReason, issuesOf } from './typedText';
 
@@ -54,6 +55,7 @@ export function CodeRefField({
   const { actions } = useEditor();
   const { project, annotation, readOnly } = ctx;
   const grid = useRef<HTMLDivElement>(null);
+  const requestFocus = useFocusRequest();
   const [error, setError] = useState<EditError | null>(null);
 
   const entries = codeRefEntries(annotation.values?.[field.key]);
@@ -70,7 +72,7 @@ export function CodeRefField({
     const entry = entries[from];
     if (!entry || from === to) return;
     actions.moveCodeRefEntry(annotation.id, field.key, entry._id, to);
-    if (focus) focusGrip(grid.current, to);
+    if (focus) requestFocus(() => gripAt(grid.current, to));
   };
   const drag = useRowDrag(grid, (from, to) => move(from, to, false));
 
@@ -82,12 +84,12 @@ export function CodeRefField({
     if (platform === undefined) return;
     const result = actions.addCodeRefEntry(annotation.id, field.key, { platform });
     if (!result.ok) return;
-    // O foco vai para o caminho da entrada nova.
-    requestAnimationFrame(() => {
+    // O foco vai para o caminho da entrada nova, no commit que a desenha.
+    requestFocus(() => {
       const all = grid.current?.querySelectorAll<HTMLElement>('[data-drag-row]');
-      all?.[all.length - 1]
-        ?.querySelector<HTMLElement>('[data-focus$=":path"] input')
-        ?.focus();
+      return all?.[all.length - 1]?.querySelector<HTMLElement>(
+        '[data-focus$=":path"] input',
+      );
     });
   };
 
@@ -148,7 +150,7 @@ export function CodeRefField({
           size="sm"
           class="button-link"
           title={`${t('code.addEntry')}  ${SHORTCUT_LABELS.newRow}`}
-          aria-keyshortcuts={SHORTCUT_LABELS.newRow}
+          aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.newRow)}
           disabled={readOnly || allowed.length === 0}
           onClick={addEntry}
         >
@@ -207,9 +209,7 @@ export function CodeRefField({
                 data-drop={drag.drop(index, entries.length)}
                 onKeyDown={(e) => {
                   if (readOnly) return;
-                  const onGrip = (e.target as HTMLElement).classList.contains(
-                    'grid-grip',
-                  );
+                  const onGrip = isGrip(e.target);
                   const delta = moveKeyDelta(e, onGrip);
                   if (delta === 0) return;
                   e.preventDefault();
@@ -222,6 +222,7 @@ export function CodeRefField({
                     <button
                       type="button"
                       class="grid-grip"
+                      data-grip=""
                       aria-label={t('code.dragEntry', { entry: entryName })}
                       title={t('annotation.dragHint')}
                       {...drag.handle(index)}

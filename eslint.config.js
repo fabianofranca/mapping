@@ -34,6 +34,36 @@ const mcpOnlyFromModel = [
   'utils',
 ];
 
+// Etapa 8 (8.3): seletor por classe em `querySelector(All)` atravessa componentes (a
+// classe é do CSS de outro componente); dentro do próprio `ref`, use `[data-…]` ou `[role=…]`.
+const classSelectorMessage =
+  'Seletor por classe atravessa componentes: use um ref ou [data-…]/[role=…] dentro do próprio ref (docs/ARCHITECTURE.md, "Foco e teclado").';
+const classSelectorRules = [
+  {
+    selector:
+      'CallExpression[callee.property.name=/^querySelector(All)?$/] > Literal.arguments[value=/\\./]',
+    message: classSelectorMessage,
+  },
+  {
+    selector:
+      'CallExpression[callee.property.name=/^querySelector(All)?$/] > TemplateLiteral.arguments > TemplateElement[value.raw=/\\./]',
+    message: classSelectorMessage,
+  },
+];
+// Consulta global ao DOM em src/ui e src/app: um contrato invisível entre componentes.
+const focusSyntaxRules = [
+  {
+    selector:
+      "CallExpression[callee.object.name='document'][callee.property.name=/^(querySelector|querySelectorAll|getElementById|getElementsByClassName|getElementsByTagName|getElementsByName)$/]",
+    message:
+      'Consulta global ao DOM: use um ref, returnFocus, buttonRef/triggerRef ou um signal (docs/ARCHITECTURE.md, "Foco e teclado").',
+  },
+  ...classSelectorRules,
+];
+// Exceções nominais da consulta global: o último recurso do retorno do foco
+// (`data-focus-root`) e a janela de ferramenta pelo `data-window` (função de módulo).
+const focusGlobalQueryExceptions = ['src/ui/focus.ts', 'src/ui/toolWindowLayout.ts'];
+
 // Diretórios da app que não falam com o Konva (src/model/ tem regra própria, mais estrita).
 const konvaFreeDirs = ['ui', 'app', 'store', 'storage', 'i18n', 'theme', 'utils'];
 
@@ -253,4 +283,41 @@ export default tseslint.config(
     },
   },
   prettier,
+  // Etapa 8 (8.3), foco e teclado: nenhum componente acha outro pelo DOM global nem pela
+  // classe de outro componente (`docs/ARCHITECTURE.md`, "Foco e teclado"). No flat config o
+  // último bloco vence por regra, então estes blocos repetem os seletores da sessão (8.1)
+  // para os mesmos arquivos: `sessionStorageSyntaxRules` em src/ui e src/app e
+  // `controllerFileSyntaxRules` no controller (exceção da 8.1). Outra fase que use
+  // `no-restricted-syntax` nestes arquivos junta os seletores dela aqui.
+  {
+    files: ['src/{ui,app}/**/*.{ts,tsx}'],
+    ignores: [...focusGlobalQueryExceptions, 'src/app/controller.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...sessionStorageSyntaxRules,
+        ...focusSyntaxRules,
+      ],
+    },
+  },
+  {
+    files: focusGlobalQueryExceptions,
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...sessionStorageSyntaxRules,
+        ...classSelectorRules,
+      ],
+    },
+  },
+  {
+    files: ['src/app/controller.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...controllerFileSyntaxRules,
+        ...focusSyntaxRules,
+      ],
+    },
+  },
 );
