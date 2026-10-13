@@ -2,8 +2,12 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import {
+  StdioClientTransport,
+  getDefaultEnvironment,
+} from '@modelcontextprotocol/sdk/client/stdio.js';
 import {
   addImage,
   createMarking,
@@ -262,16 +266,35 @@ export interface Connection {
   close(): Promise<void>;
 }
 
+export interface ConnectOptions {
+  /** Diretório de trabalho do servidor (de onde valem os `--root` relativos). */
+  readonly cwd?: string;
+  /**
+   * Arquivo de configuração dos ganchos de disco (`tests/mcp/fsHooks.mjs`): com ele, o
+   * servidor sobe com `node --import` do gancho. Só para os testes de concorrência.
+   */
+  readonly fsHooks?: string;
+}
+
+const FS_HOOKS = resolve('tests/mcp/fsHooks.mjs');
+
 /** Sobe o `dist-mcp/mapping-mcp.js` por stdio, como um cliente MCP faz. */
 export async function connect(
   roots: readonly string[],
-  options: { readonly cwd?: string } = {},
+  options: ConnectOptions = {},
 ): Promise<Connection> {
+  const hooks =
+    options.fsHooks === undefined ? [] : ['--import', pathToFileURL(FS_HOOKS).href];
   const transport = new StdioClientTransport({
     command: process.execPath,
-    args: [bundle, ...roots.flatMap((root) => ['--root', root])],
+    args: [...hooks, bundle, ...roots.flatMap((root) => ['--root', root])],
     stderr: 'pipe',
     ...(options.cwd !== undefined ? { cwd: options.cwd } : {}),
+    ...(options.fsHooks !== undefined
+      ? {
+          env: { ...getDefaultEnvironment(), MAPPING_MCP_FS_HOOKS: options.fsHooks },
+        }
+      : {}),
   });
   const client = new Client({ name: 'teste', version: '0' });
   await client.connect(transport);

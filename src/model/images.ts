@@ -104,6 +104,11 @@ export function canPlaceImage(
   );
 }
 
+/** Arquivo do projeto na raiz da pasta/zip (app e servidor MCP). */
+export const MAPPING_FILE = 'mapping.json';
+/** Pasta das imagens, relativa à raiz do projeto (app e servidor MCP). */
+export const IMAGES_DIR = 'images';
+
 /**
  * Nome livre em `images/`: `foto.jpg`, `foto-2.jpg`, `foto-3.jpg`…
  * `taken` lista caminhos ocupados fora do projeto (arquivos já existentes na pasta).
@@ -117,8 +122,10 @@ export function uniqueImageFile(
   const dot = fileName.lastIndexOf('.');
   const base = dot > 0 ? fileName.slice(0, dot) : fileName;
   const ext = dot > 0 ? fileName.slice(dot) : '';
-  let candidate = `images/${fileName}`;
-  for (let n = 2; used.has(candidate); n++) candidate = `images/${base}-${n}${ext}`;
+  let candidate = `${IMAGES_DIR}/${fileName}`;
+  for (let n = 2; used.has(candidate); n++) {
+    candidate = `${IMAGES_DIR}/${base}-${n}${ext}`;
+  }
   return candidate;
 }
 

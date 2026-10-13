@@ -1,14 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, realpath, stat } from 'node:fs/promises';
 import { basename, dirname, join, relative } from 'node:path';
-import { DEFAULT_LAYER_COLOR, createProject, serialize } from '../src/model';
+import {
+  DEFAULT_LAYER_COLOR,
+  GITIGNORE_FILE,
+  MAPPING_FILE,
+  createProject,
+  gitignoreWithBackups,
+  serialize,
+} from '../src/model';
 import { ToolError } from './errors';
 import { Roots, writeFileAtomic } from './paths';
-import { MAPPING_FILE } from './projects';
 
-const IMAGES_DIR = 'images';
-const BACKUPS_DIR = 'backups';
-const GITIGNORE_FILE = '.gitignore';
 const DEFAULT_FIRST_LAYER = 'Camada 1';
 
 async function exists(path: string): Promise<boolean> {
@@ -32,16 +35,13 @@ async function enclosingProject(dir: string, roots: Roots): Promise<string | nul
   }
 }
 
-/** Como a app (`ensureGitignore`): acrescenta `backups/` sem sobrescrever nem duplicar. */
+/** Como a app (`ensureGitignore`): o texto vem de `gitignoreWithBackups`; aqui só o disco. */
 async function ensureGitignore(dir: string): Promise<void> {
   const file = join(dir, GITIGNORE_FILE);
-  const text = (await exists(file)) ? await readFile(file, 'utf8') : '';
-  const covered = text
-    .split(/\r?\n/)
-    .some((line) => line.trim().replace(/^\//, '').replace(/\/$/, '') === BACKUPS_DIR);
-  if (covered) return;
-  const separator = text === '' || text.endsWith('\n') ? '' : '\n';
-  await writeFileAtomic(file, `${text}${separator}${BACKUPS_DIR}/\n`);
+  const next = gitignoreWithBackups(
+    (await exists(file)) ? await readFile(file, 'utf8') : '',
+  );
+  if (next !== null) await writeFileAtomic(file, next);
 }
 
 export interface CreateProjectArgs {
@@ -57,7 +57,7 @@ export interface CreatedProject {
   readonly dir: string;
 }
 
-/** Cria a pasta do projeto (`mapping.json`, `images/` e `.gitignore`) dentro de uma raiz. */
+/** Cria a pasta do projeto (`mapping.json` e `.gitignore`) dentro de uma raiz. */
 export async function createProjectFolder(
   roots: Roots,
   args: CreateProjectArgs,
@@ -90,7 +90,8 @@ export async function createProjectFolder(
       color: DEFAULT_LAYER_COLOR,
     },
   });
-  await mkdir(join(dir, IMAGES_DIR), { recursive: true });
+  // Sem `images/`: como a app, a pasta só nasce com a primeira imagem (ao aplicar uma proposta).
+  await mkdir(dir, { recursive: true });
   // Confere de novo com a pasta já criada: um link simbólico no caminho só aparece agora.
   const inside = await roots.assertInside(await realpath(dir), args.path);
   await ensureGitignore(dir);

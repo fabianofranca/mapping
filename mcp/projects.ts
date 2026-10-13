@@ -1,6 +1,7 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, sep } from 'node:path';
 import {
+  MAPPING_FILE,
   deserialize,
   referencedSpecFiles,
   type DeserializeError,
@@ -10,8 +11,6 @@ import {
 import { ToolError } from './errors';
 import { Roots, resolveProjectFile } from './paths';
 
-/** Arquivo do projeto na raiz da pasta (igual ao `MAPPING_FILE` da app). */
-export const MAPPING_FILE = 'mapping.json';
 /** Quantos níveis de pastas a descoberta percorre abaixo de cada raiz. */
 const MAX_DEPTH = 16;
 /** `mapping.json` maior que isto é recusado, para não esgotar a memória. */

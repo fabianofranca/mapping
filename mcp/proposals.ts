@@ -98,12 +98,15 @@ export class Proposals {
     const previous =
       args.supersedes === undefined ? null : lookupStored(all, location, args.supersedes);
 
-    // Arquivos de `images/` reservados por outras propostas ainda abertas: não reutilizar o nome.
+    // Arquivos de `images/` que outras propostas ainda podem aplicar: não reutilizar o nome. A
+    // anterior aberta conta como `superseded` (o estado que terá): as aceitas dela continuam
+    // reservadas, as pendentes são liberadas. Uma anterior aplicada ou retirada não muda.
     const reserved = new Set<string>();
     for (const stored of all.proposals) {
-      if (stored.id === previous?.id) continue;
-      if (!OPEN_STATUSES.includes(stored.proposal.status)) continue;
-      for (const file of reservedImages(stored.proposal)) reserved.add(file);
+      const becomesSuperseded =
+        stored.id === previous?.id && stored.proposal.status === 'open';
+      const status = becomesSuperseded ? 'superseded' : stored.proposal.status;
+      for (const file of reservedImages(stored.proposal, status)) reserved.add(file);
     }
 
     const prepared = await prepareBatch(this.roots, location, args.operations, {
@@ -251,13 +254,21 @@ export class Proposals {
         },
       };
     } catch (error) {
-      if (!(error instanceof ToolError)) throw error;
+      // A nova proposta já está gravada: qualquer falha aqui (inclusive de disco) é só um aviso.
+      // Um `internal-error` levaria o agente a reenviar e duplicar a proposta. O inesperado
+      // deixa a pilha no stderr, como `failure` (tools.ts).
+      if (!(error instanceof ToolError)) {
+        process.stderr.write(
+          `mapping-mcp: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
+        );
+      }
+      const reason = error instanceof Error ? error.message : String(error);
       return {
         view: { ref: refs.ref(previous.id), status: previous.proposal.status },
         warning: {
           code: 'supersede-failed',
           proposal: refs.ref(previous.id),
-          message: `a nova proposta foi gravada, mas a anterior não pôde ser marcada como substituída (${error.message})`,
+          message: `a nova proposta foi gravada, mas a anterior não pôde ser marcada como substituída (${reason})`,
         },
       };
     }

@@ -1,4 +1,5 @@
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -42,6 +43,9 @@ let root: string;
 let mcp: Connection;
 const dir = () => join(root, 'loja');
 const mappingPath = () => join(dir(), 'mapping.json');
+/** Arquivos em `images/` do projeto (a pasta só existe depois da primeira imagem aplicada). */
+const projectImages = () =>
+  existsSync(join(dir(), 'images')) ? readdirSync(join(dir(), 'images')).sort() : [];
 
 /** O SDUI de exemplo em v3, com origens no Button (tipo, campo de texto e campo enum). */
 function sduiV3(): string {
@@ -263,7 +267,7 @@ describe('importação inteira', () => {
       'tela1.webp',
       'tela2.webp',
     ]);
-    expect(readdirSync(join(dir(), 'images'))).toEqual([]);
+    expect(projectImages()).toEqual([]);
     const parsed = parseProposalText(
       readFileSync(join(proposalDir, 'proposal.json'), 'utf8'),
     );
@@ -1104,7 +1108,7 @@ describe('o agente nunca altera o mapping.json', () => {
   it('nenhuma tool de proposta mexe no mapping.json (nem nas cópias de specs/)', async () => {
     const files = [mappingPath(), join(dir(), 'specs', 'sdui.json')];
     const before = files.map((f) => hashOf(f));
-    const imagesBefore = readdirSync(join(dir(), 'images')).sort();
+    const imagesBefore = projectImages();
 
     const a = await propose(
       mcp,
@@ -1131,7 +1135,7 @@ describe('o agente nunca altera o mapping.json', () => {
     ok(await mcp.call('withdraw_proposal', { ref: b.proposal.ref }));
 
     expect(files.map((f) => hashOf(f))).toEqual(before);
-    expect(readdirSync(join(dir(), 'images')).sort()).toEqual(imagesBefore);
+    expect(projectImages()).toEqual(imagesBefore);
     // Também em lote inválido e em operações que o modelo recusa.
     const invalid = await mcp.call<Proposed>('propose_changes', {
       project: 'loja',
@@ -1141,29 +1145,7 @@ describe('o agente nunca altera o mapping.json', () => {
     expect(invalid.data.valid).toBe(false);
     expect(files.map((f) => hashOf(f))).toEqual(before);
   });
-
-  it('só o create_project e as propostas gravam no disco, e nenhum módulo de proposta cita o mapping.json', () => {
-    const dirPath = join(process.cwd(), 'mcp');
-    const sources = readdirSync(dirPath).filter((f) => f.endsWith('.ts'));
-    const writers = sources.filter((f) =>
-      /writeFileAtomic\(|writeFile\(|rename\(/.test(
-        readFileSync(join(dirPath, f), 'utf8'),
-      ),
-    );
-    expect(writers).toEqual(['createProject.ts', 'paths.ts', 'proposalStore.ts']);
-    for (const file of [
-      'proposalStore.ts',
-      'proposals.ts',
-      'proposalViews.ts',
-      'proposalRefs.ts',
-    ]) {
-      const code = readFileSync(join(dirPath, file), 'utf8')
-        .split('\n')
-        .filter((line) => !/^\s*(\/\/|\/?\*)/.test(line))
-        .join('\n');
-      expect(code, file).not.toMatch(/MAPPING_FILE|['"`]mapping\.json['"`]/);
-    }
-  });
+  // A guarda estática dos escritores (recursiva) está em staticGuards.test.ts.
 });
 
 describe('projeto com propostas ilegíveis', () => {
