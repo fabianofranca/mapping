@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  addImage,
   addLayer,
   buildProposal,
   createProject,
@@ -19,7 +20,12 @@ import {
 } from '../../src/model';
 import { ToolError } from '../../mcp/errors';
 import { Roots } from '../../mcp/paths';
-import { listStored, updateStored, writeNewProposal } from '../../mcp/proposalStore';
+import {
+  listStored,
+  reservedImages,
+  updateStored,
+  writeNewProposal,
+} from '../../mcp/proposalStore';
 import type { ProjectLocation } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 
@@ -152,5 +158,61 @@ describe('updateStored', () => {
     await expect(
       updateStored(roots, location, 'nao-existe', (p) => p),
     ).rejects.toMatchObject({ code: 'proposal-not-found' });
+  });
+});
+
+// Nomes de `images/` que uma proposta ainda reserva (fase 8.5, M5): o que ainda pode ser
+// aplicado. Numa `superseded`, só as aceitas (PROPOSAL-FORMAT.md, "Estados").
+describe('reservedImages', () => {
+  function withImages(): Proposal {
+    const base = createProject({
+      name: 'P',
+      now: NOW,
+      firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
+    });
+    let after = base;
+    for (const [id, file] of [
+      ['I1', 'images/aceita.webp'],
+      ['I2', 'images/pendente.webp'],
+      ['I3', 'images/rejeitada.webp'],
+      ['I4', 'images/aplicada.webp'],
+    ] as const) {
+      after = addImage(after, { id, file, width: 100, height: 100 });
+    }
+    const proposal = buildProposal(base, after, {
+      id: 'prop-img',
+      title: 'Imagens',
+      createdAt: NOW,
+    });
+    const changeOf = (id: string) => proposal.changes.find((c) => c.entityId === id)!.id;
+    return {
+      ...proposal,
+      decisions: {
+        [changeOf('I1')]: { state: 'accepted', at: NOW },
+        [changeOf('I3')]: { state: 'rejected', at: NOW },
+        [changeOf('I4')]: { state: 'accepted', at: NOW },
+      },
+      applied: { [changeOf('I4')]: { at: NOW } },
+    };
+  }
+
+  it('aberta: pendentes e aceitas não aplicadas', () => {
+    expect(reservedImages(withImages()).sort()).toEqual([
+      'images/aceita.webp',
+      'images/pendente.webp',
+    ]);
+  });
+
+  it('substituída: só as aceitas não aplicadas (as pendentes não podem mais ser aplicadas)', () => {
+    const superseded = { ...withImages(), status: 'superseded' as const };
+    expect(reservedImages(superseded)).toEqual(['images/aceita.webp']);
+    // A anterior de um `supersedes`, ainda aberta no disco, entra pelo estado que vai ter.
+    expect(reservedImages(withImages(), 'superseded')).toEqual(['images/aceita.webp']);
+  });
+
+  it('aplicada ou retirada: nada', () => {
+    for (const status of ['applied', 'withdrawn'] as const) {
+      expect(reservedImages({ ...withImages(), status })).toEqual([]);
+    }
   });
 });

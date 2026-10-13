@@ -1,10 +1,11 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createServer } from '../../mcp/server';
 import { createCodeWorkspace, type CodeWorkspace } from './codeWorkspace';
+import { mcpSources } from './sources';
 import { codeOf } from './workspace';
 
 // Etapa 3b.4, decisão 7: o servidor confere se o arquivo de código existe, mas NUNCA o lê nem
@@ -136,13 +137,14 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
 
 describe('o servidor não abre arquivos de código (estático)', () => {
   const dir = join(process.cwd(), 'mcp');
-  const sources = readdirSync(dir).filter((file) => file.endsWith('.ts'));
-  const FS_IMPORT = /from\s+['"]node:fs(?:\/promises)?['"]/;
+  // Recursivo: um módulo novo em `mcp/image/` ou outra subpasta também entra na conferência.
+  const sources = mcpSources();
+  const FS_IMPORT = /from\s+['"](?:node:)?fs(?:\/promises)?['"]/;
 
   it('só os módulos conhecidos importam node:fs', () => {
-    const importers = sources.filter((file) =>
-      FS_IMPORT.test(readFileSync(join(dir, file), 'utf8')),
-    );
+    const importers = sources
+      .filter(({ text }) => FS_IMPORT.test(text))
+      .map(({ file }) => file);
     // Quem entra aqui lê/grava `mapping.json`, `specs/`, imagens, `proposals/` ou arquivos de
     // especialização (`validate_specialization`), nunca código. Um módulo novo
     // que precise do disco entra nesta lista de propósito, depois de conferir que não toca em código.
