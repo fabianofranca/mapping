@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   altNumbersAvailable,
+  ariaKeys,
+  SHORTCUT_LABELS,
   isTextInput,
   reviewShortcutFor,
   shortcutFor,
   worksInTextInput,
 } from '../../src/app/shortcuts';
+import { REVIEW_KEYS } from '../../src/ui/review/DecisionControl';
+import { toolWindowShortcut } from '../../src/ui/toolWindowMeta';
+import { TOOL_WINDOWS } from '../../src/store/toolWindows';
 
 const key = (
   k: string,
@@ -225,5 +230,45 @@ describe('atalhos da revisão', () => {
       kind: 'toggle-window',
       window: 'proposals',
     });
+  });
+});
+
+// Etapa 8 (8.3), F5: `aria-keyshortcuts` na sintaxe ARIA; o rótulo humano fica na dica.
+describe('ariaKeys', () => {
+  it.each([
+    ['Ctrl+E', 'Control+E'],
+    ['Ctrl+Shift+Z', 'Control+Shift+Z'],
+    ['Ctrl+,', 'Control+,'],
+    ['Ctrl+Alt+C', 'Control+Alt+C'],
+    ['Alt+Enter', 'Alt+Enter'],
+    ['Ctrl+Enter', 'Control+Enter'],
+    ['Shift+N', 'Shift+N'],
+    ['Esc', 'Escape'],
+    ['Del', 'Delete'],
+    ['F1', 'F1'],
+    ['A', 'A'],
+    ['Backspace', 'Backspace'],
+    ['Ctrl+Shift+3', 'Control+Shift+3'],
+    ['Ctrl++', 'Control+Plus'],
+    ['Cmd+K', 'Meta+K'],
+  ])('%s → %s', (label, aria) => {
+    expect(ariaKeys(label)).toBe(aria);
+  });
+
+  it('o que não é tecla não vira atributo', () => {
+    expect(ariaKeys('Ctrl+clique')).toBeUndefined();
+    expect(ariaKeys('')).toBeUndefined();
+    expect(ariaKeys(undefined)).toBeUndefined();
+  });
+
+  it('todos os atalhos da app têm forma ARIA', () => {
+    const labels = [
+      ...Object.values(SHORTCUT_LABELS),
+      ...Object.values(REVIEW_KEYS),
+      ...TOOL_WINDOWS.map(toolWindowShortcut),
+    ];
+    for (const label of labels) {
+      expect(ariaKeys(label), label).toMatch(/^((Control|Alt|Shift|Meta)\+)*[^+\s]+$/);
+    }
   });
 });
