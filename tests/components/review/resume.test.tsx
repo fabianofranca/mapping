@@ -1,10 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  needsExitReminder,
-  renameMarking,
-  supersedeProposal,
-} from '../../../src/model';
+import { needsExitReminder, renameMarking, supersedeProposal } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { ExitReviewDialog } from '../../../src/ui/review/ExitReviewDialog';
 import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
@@ -67,13 +63,17 @@ describe('lembrete ao sair', () => {
 describe('ao reabrir', () => {
   it('conflitos novos depois de uma edição entre sessões: aviso e "Ver os novos"', async () => {
     const { proposal } = richScenario();
-    // Primeira sessão: abre e sai (o dispositivo passa a conhecer a proposta).
-    const first = await openReviewHarness({ proposals: [proposal] });
+    // Primeira sessão: abre e sai (o dispositivo passa a conhecer a proposta nesta cópia).
+    const first = await openReviewHarness({ proposals: [proposal], copyId: 'c' });
     first.review.open('P1');
     first.review.close();
     // O projeto foi editado por fora: o nome de M1 mudou.
     const edited = renameMarking(sampleProject(), 'M1', 'Porta traseira');
-    const h = await openReviewHarness({ project: edited, proposals: [proposal] });
+    const h = await openReviewHarness({
+      project: edited,
+      proposals: [proposal],
+      copyId: 'c',
+    });
     act(() => {
       h.review.open('P1');
     });
