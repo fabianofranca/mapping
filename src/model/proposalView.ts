@@ -238,7 +238,8 @@ export function stepChange(
 // Janela Propostas e saída da revisão
 
 /** O selo da linha na janela Propostas (`null` sem selo); a interface traduz. */
-export type ProposalListFlag = 'new' | 'inReview' | 'superseded' | 'applied' | 'withdrawn';
+export type ProposalListFlag =
+  'new' | 'inReview' | 'superseded' | 'applied' | 'withdrawn';
 
 export interface ProposalListStatus {
   readonly flag: ProposalListFlag | null;

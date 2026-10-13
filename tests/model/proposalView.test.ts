@@ -243,7 +243,11 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
     const swapped = propose(
       base,
       renameMarking(
-        replaceImage(base, 'I1', { file: 'images/outra.webp', width: 4000, height: 3000 }),
+        replaceImage(base, 'I1', {
+          file: 'images/outra.webp',
+          width: 4000,
+          height: 3000,
+        }),
         'M1',
         'X',
       ),
