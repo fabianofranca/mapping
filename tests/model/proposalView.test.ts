@@ -11,18 +11,26 @@ import {
   filterChanges,
   hasActiveFilters,
   leftBehind,
+  levelType,
   moveImage,
+  needsExitReminder,
+  proposalListStatus,
   removeAnnotation,
+  removeMarking,
   renameMarking,
   replaceImage,
   reviewKey,
+  reviewProgress,
+  reviewTree,
   setMarkingRect,
   stepChange,
   undecidedChanges,
   type Project,
+  type Proposal,
+  type ReviewTarget,
 } from '../../src/model';
 import { sampleProject } from './fixtures';
-import { changeOf, decided, propose } from './proposalFixtures';
+import { AT, changeOf, decided, propose } from './proposalFixtures';
 
 function scenario() {
   const base = sampleProject();
@@ -187,5 +195,105 @@ describe('pendências, o que ficou para trás e navegação', () => {
     expect(stepChange(ids, order, 'c', 1)).toBe('d');
     expect(stepChange(ids, order, 'c', -1)).toBe('b');
     expect(stepChange([], order, 'a', 1)).toBeNull();
+  });
+});
+
+// Fase 8.2 (P10): a regra de negócio da revisão que morava no store e na interface.
+describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => {
+  const changesOf = (p: Proposal, project: Project, target: ReviewTarget) => {
+    const ids = new Set(reviewTree(p, project).changeIdsOf(target));
+    return p.changes.filter((c) => ids.has(c.id));
+  };
+
+  it('levelType: item e imagem pelo tipo da própria entidade; "movida" só sozinha; mudança interna = alterada; proposta e projeto pelo dominante', () => {
+    const { base, proposal } = scenario();
+    const of = (target: ReviewTarget) =>
+      levelType(target.level, target.id, changesOf(proposal, base, target));
+    // M1: só o nome muda.
+    expect(of({ level: 'item', id: 'M1' })).toBe('changed');
+    // M4: a posição muda, mas uma anotação entra e outra sai → alterada, não movida.
+    expect(of({ level: 'item', id: 'M4' })).toBe('changed');
+    // I2: a imagem move, mas um item dela muda → alterada.
+    expect(of({ level: 'image', id: 'I2' })).toBe('changed');
+    expect(of({ level: 'image', id: 'I3' })).toBe('created');
+    expect(of({ level: 'proposal', id: null })).toBe('created');
+    expect(levelType('project', null, [])).toBeNull();
+
+    // Só a posição muda: movida (item e imagem).
+    const onlyMoved = propose(
+      base,
+      moveImage(
+        setMarkingRect(base, 'M4', { x: 1, y: 1, width: 10, height: 10 }),
+        'I1',
+        9,
+        9,
+      ),
+    );
+    expect(
+      levelType('item', 'M4', changesOf(onlyMoved, base, { level: 'item', id: 'M4' })),
+    ).toBe('moved');
+    expect(
+      levelType('image', 'I1', changesOf(onlyMoved, base, { level: 'image', id: 'I1' })),
+    ).toBe('moved');
+    // Removida e imagem trocada ganham de alterada.
+    const removed = propose(base, removeMarking(base, 'M2'));
+    expect(
+      levelType('item', 'M2', changesOf(removed, base, { level: 'item', id: 'M2' })),
+    ).toBe('removed');
+    const swapped = propose(
+      base,
+      renameMarking(replaceImage(base, 'I1', 'images/outra.webp', 4000, 3000), 'M1', 'X'),
+    );
+    expect(
+      levelType('image', 'I1', changesOf(swapped, base, { level: 'image', id: 'I1' })),
+    ).toBe('replaced');
+  });
+
+  it('proposalListStatus: Nova e Revisar primário só na fresh; Em revisão depois de decidir ou anotar; fechadas só se veem', () => {
+    const { base, proposal } = scenario();
+    const progress = reviewProgress(proposal);
+    expect(proposalListStatus(proposal, progress, true)).toEqual({
+      flag: 'new',
+      action: 'review',
+      primary: true,
+    });
+    // Aberta, já vista, sem decisão nem nota: sem selo, Revisar comum.
+    expect(proposalListStatus(proposal, progress, false)).toEqual({
+      flag: null,
+      action: 'review',
+      primary: false,
+    });
+    const started = decided(proposal, base, { level: 'item', id: 'M1' }, 'accepted');
+    expect(proposalListStatus(started, reviewProgress(started), false)).toEqual({
+      flag: 'inReview',
+      action: 'continue',
+      primary: false,
+    });
+    const noted: Proposal = {
+      ...proposal,
+      notes: [{ id: 'n1', target: { level: 'proposal', id: null }, text: 'x', at: AT }],
+    };
+    expect(proposalListStatus(noted, progress, false).flag).toBe('inReview');
+    for (const [status, flag] of [
+      ['superseded', 'superseded'],
+      ['applied', 'applied'],
+      ['withdrawn', 'withdrawn'],
+    ] as const) {
+      // O derivado nunca marca uma fechada como `fresh`; a regra não depende disso.
+      expect(proposalListStatus({ ...proposal, status }, progress, true)).toEqual({
+        flag,
+        action: 'view',
+        primary: false,
+      });
+    }
+  });
+
+  it('needsExitReminder: só com aceitas aguardando aplicação numa proposta aplicável', () => {
+    expect(needsExitReminder('open', 0)).toBe(false);
+    expect(needsExitReminder('open', 3)).toBe(true);
+    expect(needsExitReminder('superseded', 1)).toBe(true);
+    expect(needsExitReminder('applied', 2)).toBe(false);
+    expect(needsExitReminder('withdrawn', 2)).toBe(false);
+    expect(needsExitReminder(undefined, 2)).toBe(false);
   });
 });
