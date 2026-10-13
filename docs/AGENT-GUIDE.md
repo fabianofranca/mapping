@@ -119,6 +119,8 @@ Imagens e marcações têm um `source` opcional (`{ "system", "id", "url" }`): a
 
 `validate_specialization({ path })` (arquivo dentro das raízes) ou `validate_specialization({ text })` (o JSON) valida uma especialização **sem aplicá-la a projeto algum**. Os erros são **os mesmos da importação da app**, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`); corrija o trecho apontado e valide de novo. `valid: true` pode vir com `warnings` (plataforma declarada e não usada, tipo sem `code`, `format` antigo): não impedem a importação, mas costumam ser descuido. Só então aplique com `apply_specialization` num `propose_changes`.
 
+O método completo para escrever uma especialização (leitura do formato, inventário da origem, camadas, tipos, campos, relações, `code`, `sources`, versão, validação e entrega) está na skill `spec-author` do repositório do Mapping (`.claude/skills/spec-author/SKILL.md`), feita para ser copiada para o repositório do código mapeado.
+
 ### Apelidos
 
 Um item criado no lote pode ser citado nas operações seguintes por um **apelido** (`"as": "$porta"`). Assim marcação, anotação e evento vinculado saem numa chamada só:
