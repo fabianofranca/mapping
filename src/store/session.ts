@@ -47,7 +47,7 @@ export interface SessionOptions {
   readonly prepareImage: (file: File) => Promise<PreparedImage>;
   /**
    * Algo deste projeto mudou no armazenamento desta sessão: gravou o `mapping.json` com um
-   * conteúdo que ainda não saiu num zip (`collectFiles`), ou gravou um `proposal.json`.
+   * conteúdo que ainda não saiu num zip baixado (`noteExported`), ou gravou um `proposal.json`.
    */
   readonly onChanged?: () => void;
   /**
@@ -141,6 +141,11 @@ export interface CollectedFiles extends ProjectFiles {
    * o confirmado (é o resgate), mas o disco ainda não o tem.
    */
   readonly saved: boolean;
+  /**
+   * O projeto confirmado que foi para o zip. Quem entrega o arquivo (o download ou o
+   * compartilhamento que deu certo) o passa a `noteExported`; gerar o zip não é exportar.
+   */
+  readonly snapshot: Project;
 }
 
 /** Um projeto aberto: store com undo/redo ligado ao armazenamento. */
@@ -204,6 +209,12 @@ export interface ProjectSession {
    * de `specs/` e as propostas (com as imagens que aguardam aceitação), para exportar.
    */
   collectFiles(): Promise<CollectedFiles>;
+  /**
+   * O zip com `snapshot` (de `collectFiles`) saiu de fato: gravar esse mesmo conteúdo depois
+   * (a gravação em erro que enfim passa) não é mudança a exportar e não chama `onChanged`.
+   * Sem esta chamada (a pessoa cancelou o "Salvar como"), a gravação conta como mudança.
+   */
+  noteExported(snapshot: Project): void;
   close(): Promise<void>;
 }
 
@@ -291,7 +302,8 @@ export function openSession(options: SessionOptions): ProjectSession {
   let written: Project | null = sameAsDisk(options.project, options.loadedText)
     ? store.committed.peek()
     : null;
-  // O snapshot confirmado que o último `collectFiles` levou: gravá-lo depois não é "mudança".
+  // O snapshot confirmado do último zip que saiu (`noteExported`, no ponto do download):
+  // gravá-lo depois não é "mudança". Gerar o zip sem baixar não conta (8.7).
   let exported: Project | null = null;
   const conflict = signal<ExternalConflict | null>(null);
   const reloads = signal(0);
@@ -816,8 +828,6 @@ export function openSession(options: SessionOptions): ProjectSession {
     async collectFiles() {
       const saved = (await saver.flush()).ok;
       const p = committedProject(store);
-      // Gravar este snapshot depois (a gravação em erro que enfim passa) não é mudança nova.
-      exported = p;
       const images = new Map<string, Blob>();
       const missingImages: string[] = [];
       for (const image of p.images) {
@@ -834,7 +844,12 @@ export function openSession(options: SessionOptions): ProjectSession {
         proposalImages: withProposals.images,
         missingImages,
         saved,
+        snapshot: p,
       };
+    },
+
+    noteExported(snapshot) {
+      exported = snapshot;
     },
 
     async close() {

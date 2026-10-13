@@ -24,7 +24,7 @@ export type EditorDialog =
       readonly change: AspectChange;
       readonly resolve: (confirmed: boolean) => void;
     }
-  | { readonly kind: 'export'; readonly file: File }
+  | { readonly kind: 'export'; readonly file: File; readonly saved: boolean }
   | { readonly kind: 'confirmClose' }
   /** Sair da revisão com aceitas ainda não aplicadas (etapa 4). */
   | { readonly kind: 'exitReview' };

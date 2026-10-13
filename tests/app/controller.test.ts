@@ -392,6 +392,7 @@ describe('exportar', () => {
     const result = await app.buildExport();
     if (!result.ok) throw new Error(result.error);
     expect(result.value.missingImages).toEqual([]);
+    expect(result.value.saved).toBe(true);
     expect(result.value.file.name).toMatch(/\.zip$/);
     const zip = await JSZip.loadAsync(await result.value.file.arrayBuffer());
     const names = Object.keys(zip.files);
@@ -399,6 +400,21 @@ describe('exportar', () => {
     expect(names).toContain('images/cadastro.png');
     expect(names.some((n) => n.startsWith('specs/'))).toBe(true);
     expect(names.some((n) => n.startsWith('backups'))).toBe(false);
+  });
+
+  // Etapa 8 (8.7), resíduo 1 (S8): `collectFiles().saved` chega ao diálogo Exportar.
+  it('com a gravação em erro, o zip sai com saved: false', async () => {
+    const root = new MemoryDirectory('p');
+    await app.createFolderProject(root, 'P', []);
+    const { session } = await openedOf(app);
+    root.failWrites = new Error('NoModificationAllowedError');
+    session.actions.renameProject('Q');
+    await session.flush();
+    expect(session.saveStatus.value).toBe('error');
+    const result = await app.buildExport();
+    if (!result.ok) throw new Error(result.error);
+    expect(result.value.saved).toBe(false);
+    root.failWrites = null;
   });
 
   it('sem projeto aberto devolve not-found', async () => {
@@ -906,6 +922,54 @@ describe('recentes de pasta (fase 6.6)', () => {
       expect((await library?.list())?.map((f) => f.name)).toEqual(['Renomeado']),
     );
     library?.close();
+  });
+
+  // Etapa 8 (8.7), decisão do dono: gerar o zip não é exportar. Com a gravação em erro, a
+  // pessoa gera o zip e cancela o "Salvar como" (sem `markExported`); quando a gravação volta
+  // com exatamente aquele conteúdo, é mudança a exportar: `unexported` sobe e a entrada dos
+  // recentes anda (`touchFolder`), como em qualquer gravação.
+  it('zip gerado e download cancelado: a gravação seguinte conta como mudança', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
+    const root = projectFolder();
+    pickDirectory.mockResolvedValue(root);
+    await app.openFolder();
+    const { session, unexported } = await openedOf(app);
+    root.failWrites = new Error('NoModificationAllowedError');
+    session.actions.renameProject('Cancelado');
+    await session.flush();
+    expect(session.saveStatus.value).toBe('error');
+    expect(unexported.value).toBe(false);
+
+    const built = await app.buildExport();
+    expect(built.ok && built.value.saved).toBe(false);
+    // Sem markExported: a pessoa cancelou o "Salvar como".
+    vi.setSystemTime(new Date('2026-10-02T10:00:00.000Z'));
+    root.failWrites = null;
+    expect(await session.flush()).toEqual({ ok: true });
+    expect(unexported.value).toBe(true);
+    const library = await local.openFolderLibrary();
+    await vi.waitFor(async () =>
+      expect((await library?.list())?.map((f) => [f.name, f.usedAt])).toEqual([
+        ['Cancelado', '2026-10-02T10:00:00.000Z'],
+      ]),
+    );
+    library?.close();
+  });
+
+  it('zip baixado (markExported): a gravação do mesmo conteúdo não é mudança', async () => {
+    const root = projectFolder();
+    pickDirectory.mockResolvedValue(root);
+    await app.openFolder();
+    const { session, unexported } = await openedOf(app);
+    root.failWrites = new Error('NoModificationAllowedError');
+    session.actions.renameProject('Baixado');
+    await session.flush();
+    expect((await app.buildExport()).ok).toBe(true);
+    await app.markExported();
+    root.failWrites = null;
+    expect(await session.flush()).toEqual({ ok: true });
+    expect(unexported.value).toBe(false);
   });
 
   // Etapa 8 (8.4), R5: uma falha da permissão (ativação expirada, volume desmontado) dá o

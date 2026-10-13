@@ -289,6 +289,8 @@ export const ptBR = {
   'export.download': 'Baixar',
   'export.shareFailed': 'Não foi possível compartilhar. Tente baixar.',
   'export.saveFailed': 'Não foi possível salvar o arquivo. Tente de novo.',
+  'export.unsaved':
+    'O zip leva as últimas alterações, mas elas ainda não foram salvas no projeto.',
   'export.downloadHint':
     'Ao baixar, o projeto conta como exportado. Se você cancelar o salvamento do arquivo, exporte de novo.',
 

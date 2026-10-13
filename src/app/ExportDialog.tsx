@@ -25,10 +25,16 @@ import { Button } from '../ui/controls';
  */
 export function ExportDialog({
   file,
+  saved = true,
   onDone,
   returnFocus,
 }: {
   readonly file: File;
+  /**
+   * `false` com a gravação em erro: o zip leva as últimas alterações, que o armazenamento do
+   * projeto ainda não tem (`collectFiles().saved`).
+   */
+  readonly saved?: boolean;
   readonly onDone: () => void;
   /**
    * O botão Exportar da barra (`buttonRef`): o zip é gerado com ele desabilitado, então o
@@ -100,6 +106,11 @@ export function ExportDialog({
           </span>
         </span>
       </div>
+      {!saved && (
+        <p class="notice" role="status">
+          {t('export.unsaved')}
+        </p>
+      )}
       {!picker && <p class="muted">{t('export.downloadHint')}</p>}
       {error && (
         <p class="notice notice-error" role="alert">

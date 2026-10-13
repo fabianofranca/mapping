@@ -168,6 +168,7 @@ function renderDialog(
       return (
         <ExportDialog
           file={dialog.file}
+          saved={dialog.saved}
           onDone={close}
           returnFocus={() => dialogs.exportButton.current}
         />

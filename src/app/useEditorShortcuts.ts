@@ -48,7 +48,7 @@ interface FocusedWindow {
 
 /** Janela de ferramenta que contém o foco (ou `null` fora delas). */
 function focusedWindow(): FocusedWindow | null {
-  const el = document.activeElement?.closest('.tool-window');
+  const el = document.activeElement?.closest('[data-window]');
   const name = el?.getAttribute('data-window');
   const id = TOOL_WINDOWS.find((candidate) => candidate === name);
   return el && id ? { id, side: WINDOW_SIDE[id], el } : null;
@@ -63,7 +63,7 @@ function resizeFocused(dx: number, dy: number): void {
   if (!focused) return;
   const { id, side, el } = focused;
   if (id === 'layers' && dy !== 0 && el.classList.contains('tool-window-stacked')) {
-    const column = el.closest('.tool-column')?.getBoundingClientRect().height || 0;
+    const column = el.closest('[data-tool-column]')?.getBoundingClientRect().height || 0;
     resizeLayersWindow(layersWindowHeight.peek() - dy * RESIZE_STEP, column);
     return;
   }

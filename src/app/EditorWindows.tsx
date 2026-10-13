@@ -114,10 +114,14 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
   return (
     <div class="editor-body">
       <ToolStrip side="left" />
-      <div class={PANES_CLASS}>
+      <div class={PANES_CLASS} data-panes>
         {left.length > 0 && (
           // A largura é da coluna: Árvore e Camadas empilhadas dividem a mesma.
-          <div class="tool-column" style={{ width: `${toolWindowSizes.value.left}px` }}>
+          <div
+            class="tool-column"
+            data-tool-column
+            style={{ width: `${toolWindowSizes.value.left}px` }}
+          >
             {left.map((id, i) => window(id, i > 0))}
           </div>
         )}

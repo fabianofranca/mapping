@@ -900,12 +900,31 @@ describe('sessão de projeto', () => {
       expect(session.saveStatus.value).toBe('error');
       expect(h.onChanged).not.toHaveBeenCalled();
 
-      await session.collectFiles();
+      // A exportação só conta quando o arquivo saiu (8.7): o controller chama noteExported
+      // no mesmo ponto do markExported.
+      const files = await session.collectFiles();
+      session.noteExported(files.snapshot);
       root.failWrites = null;
       expect(await session.flush()).toEqual({ ok: true });
       expect(h.onChanged).not.toHaveBeenCalled();
 
       session.actions.renameProject('Outro');
+      expect(await session.flush()).toEqual({ ok: true });
+      expect(h.onChanged).toHaveBeenCalledTimes(1);
+    });
+    // Etapa 8 (8.7), decisão do dono: gerar o zip (`collectFiles`) sem o download não marca
+    // nada como exportado; a gravação que enfim passa com o mesmo conteúdo chama onChanged.
+    it('collectFiles sem noteExported: a gravação do mesmo conteúdo chama onChanged', async () => {
+      const root = new MemoryDirectory('p');
+      const h = hookedStart(root, emptyProject());
+      session = h.session;
+      session.actions.renameProject('Cancelado');
+      root.failWrites = new Error('sem permissão');
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      expect(session.saveStatus.value).toBe('error');
+
+      await session.collectFiles();
+      root.failWrites = null;
       expect(await session.flush()).toEqual({ ok: true });
       expect(h.onChanged).toHaveBeenCalledTimes(1);
     });

@@ -4,7 +4,10 @@ import { showToolWindow, sideWidth } from '../store/toolWindows';
 // Espaço disponível para as janelas, medido no DOM. Fica fora dos componentes para o
 // arrasto da divisória e o Ctrl+Shift+setas usarem a mesma conta (B2).
 
-/** Elemento que contém as janelas e o canvas (sem as faixas laterais). */
+/**
+ * Elemento que contém as janelas e o canvas (sem as faixas laterais): a classe é do CSS; a
+ * medida acha o elemento pelo `data-panes` (seletor por classe atravessa componentes).
+ */
 export const PANES_CLASS = 'editor-panes';
 
 /**
@@ -12,7 +15,7 @@ export const PANES_CLASS = 'editor-panes';
  * primeiro quadro), cai para a janela do navegador, que é um limite seguro.
  */
 export function spaceFor(el: Element | null, side: ToolWindowSide): LayoutSpace {
-  const panes = el?.closest(`.${PANES_CLASS}`);
+  const panes = el?.closest('[data-panes]');
   const box = panes?.getBoundingClientRect();
   return {
     width: box?.width || globalThis.innerWidth || 0,

@@ -63,6 +63,36 @@ export function f(root: HTMLElement) {
     expect(await messages(code, 'src/ui/Probe.tsx')).toEqual([]);
   });
 
+  // Etapa 8 (8.7), resíduo 5: `closest('.classe')` também atravessa componentes (o atalho de
+  // redimensionar achava a janela e a coluna pelas classes do ToolWindow e do EditorWindows).
+  const oldFocusedWindow = `
+export function focusedWindow(el: Element) {
+  const win = document.activeElement?.closest('.tool-window');
+  const column = el.closest(\`.tool-column\`);
+  return { win, column };
+}
+`;
+
+  it.each(['src/app/Probe.ts', 'src/ui/Probe.tsx', 'src/ui/toolWindowLayout.ts'])(
+    'closest por classe é recusado em %s (literal e template)',
+    async (file) => {
+      const found = await messages(oldFocusedWindow, file);
+      expect(found).toHaveLength(2);
+      expect(found.every((m) => /seletor por classe/i.test(m.message))).toBe(true);
+    },
+  );
+
+  it('closest por data-* e por tag passa', async () => {
+    const code = `
+export function f(el: Element) {
+  el.closest('[data-window]');
+  el.closest('[data-tool-column]');
+  el.closest('button');
+}
+`;
+    expect(await messages(code, 'src/app/Probe.ts')).toEqual([]);
+  });
+
   it('fora de src/ui e src/app a regra não vale', async () => {
     const code = "export const f = () => document.querySelector('.x');\n";
     expect(await messages(code, 'src/storage/Probe.ts')).toEqual([]);

@@ -288,6 +288,8 @@ export const enUS: Dictionary = {
   'export.download': 'Download',
   'export.shareFailed': 'Could not share. Try downloading.',
   'export.saveFailed': 'Could not save the file. Try again.',
+  'export.unsaved':
+    'The zip includes the latest changes, but they have not been saved to the project yet.',
   'export.downloadHint':
     'Downloading counts as exported. If you cancel saving the file, export again.',
 

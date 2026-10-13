@@ -27,7 +27,11 @@ export function useProjectCommands(
         notices.setMessage(t(`error.${result.error}`));
         return;
       }
-      dialogs.show({ kind: 'export', file: result.value.file });
+      dialogs.show({
+        kind: 'export',
+        file: result.value.file,
+        saved: result.value.saved,
+      });
       const missing = result.value.missingImages;
       if (missing.length > 0) {
         notices.setMessage(

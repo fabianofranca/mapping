@@ -387,7 +387,12 @@ export interface ExportedProject {
   readonly file: File;
   /** Imagens do projeto que não estavam no armazenamento e ficaram fora do zip. */
   readonly missingImages: readonly string[];
+  /** `false` com a gravação em erro: o zip leva o que o armazenamento ainda não tem. */
+  readonly saved: boolean;
 }
+
+// Último zip gerado: só conta como exportado em `markExported`, quando o arquivo saiu (8.7).
+let pendingExport: { session: ProjectSession; snapshot: Project } | null = null;
 
 /** Gera o zip do projeto aberto. */
 export function buildExport(): Promise<AppResult<ExportedProject>> {
@@ -396,19 +401,27 @@ export function buildExport(): Promise<AppResult<ExportedProject>> {
     const project = current?.session.store.project.value;
     if (!current || !project) return err('not-found');
     const files = await current.session.collectFiles();
+    pendingExport = { session: current.session, snapshot: files.snapshot };
     const blob = await writeProjectZip(files);
     return ok({
       file: new File([blob], zipFileName(project.project.name), {
         type: 'application/zip',
       }),
       missingImages: files.missingImages,
+      saved: files.saved,
     });
   });
 }
 
+/** O zip gerado por `buildExport` saiu (salvo ou compartilhado). */
 export async function markExported(): Promise<void> {
   const current = openProject.value;
-  if (!current?.localId) return;
+  if (!current) return;
+  if (pendingExport?.session === current.session) {
+    current.session.noteExported(pendingExport.snapshot);
+    pendingExport = null;
+  }
+  if (!current.localId) return;
   current.unexported.value = false;
   try {
     await localLibrary()?.setUnexported(current.localId, false);
@@ -423,6 +436,7 @@ export async function closeProject(): Promise<void> {
   if (!current) return;
   const name = current.session.store.project.peek()?.project.name;
   openProject.value = null;
+  pendingExport = null;
   current.display.dispose();
   try {
     await current.session.close();

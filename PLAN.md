@@ -1,4 +1,3 @@
-| [`docs/history/relato-2026-10-12-dirigida-r3.md`](docs/history/relato-2026-10-12-dirigida-r3.md) | Relato da rodada 3 (dirigida) do Cowork sobre o build `2bdb662`; confirma a etapa 7 sem achados |
 # Mapping — Plano de desenvolvimento
 
 > Este documento guarda o resumo do produto e **só as fases pendentes** (hoje, a etapa 8). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
@@ -34,6 +33,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/PLAN-etapa-6.md`](docs/history/PLAN-etapa-6.md) | Histórico: etapa 6, correções da primeira rodada de testes (fases 6.1 a 6.7 concluídas; decisões consolidadas dos PRs; relato da rodada 1 e prompts do coordenador e do testador ao lado) |
 | [`docs/history/PLAN-etapa-7.md`](docs/history/PLAN-etapa-7.md) | Histórico: etapa 7, correções da rodada dirigida (fases 7.1 a 7.4 concluídas; decisões consolidadas dos PRs; relato da rodada 2 e prompt do coordenador ao lado) |
 | [`docs/history/relato-2026-10-12-dirigida.md`](docs/history/relato-2026-10-12-dirigida.md) | Relato da rodada 2 (dirigida) do Cowork sobre o build `db5060d`; origem da etapa 7 |
+| [`docs/history/relato-2026-10-12-dirigida-r3.md`](docs/history/relato-2026-10-12-dirigida-r3.md) | Relato da rodada 3 (dirigida) do Cowork sobre o build `2bdb662`; confirma a etapa 7 sem achados |
 | [`docs/history/relato-2026-10-12-dirigida-r4.md`](docs/history/relato-2026-10-12-dirigida-r4.md) | Relato da rodada 4 (dirigida) do Cowork sobre o build `48f8e32`; observações O1 a O9, citadas no aceite das fases 8.2 e 8.4 |
 | [`docs/history/revisao-tecnica-2026-10-12.md`](docs/history/revisao-tecnica-2026-10-12.md) | Revisão técnica dirigida (síntese e seis relatórios, 71 achados); origem da etapa 8 |
 | [`docs/prompts/etapa-8-coordenador.md`](docs/prompts/etapa-8-coordenador.md) | Prompt do coordenador de agentes da etapa 8 (nota de desenho antes do código; modelo e esforço por fase; modos de execução) |
@@ -182,6 +182,7 @@ Prompt em `docs/prompts/etapa-8-coordenador.md` (modelo e esforço por fase, mod
 
 - [ ] Esta seção vai para `docs/history/PLAN-etapa-8.md` com as decisões consolidadas dos PRs, o que valeu de "Decisões a confirmar" e as notas de desenho (ou links); o prompt do coordenador vai junto; `PLAN.md` volta a "nenhuma etapa em andamento"; `docs/ROADMAP.md` marca a etapa 8 concluída; `CLAUDE.md` atualiza "Etapa atual" e a lista de etapas
 - [ ] Auditoria da entrega (como nas etapas 5 a 7) com os resíduos num PR pequeno
+- [x] O `docs/TESTING.md` reflete o comportamento visível das fases 8.1 a 8.5 (a lista "Guia desatualizado" da auditoria; regra "Sem mudar comportamento visível sem registro")
 - [ ] **Portão:** rodada completa do Cowork sobre o build final, com o prompt novo (`docs/TESTING-COWORK.md`); o relato vai para `docs/history/`; achados altos ou médios voltam para a fase dona antes de fechar a etapa
 - [ ] `docs/ROADMAP.md`: a seção do marco "Uso real" diz que o teste manual avançado do dono (seção nova do guia) é o próximo passo
 
@@ -205,3 +206,6 @@ Prompt em `docs/prompts/etapa-8-coordenador.md` (modelo e esforço por fase, mod
 - **M11** (cache e paginação de propostas no MCP): aguardar o uso real.
 - **A1 a A18** do teste manual avançado são **roteiro**, não correção: o que eles acharem vira a etapa seguinte.
 - Evoluções do `docs/ROADMAP.md` ("Diário de recuperação", etc.) e os itens de "Fora desta etapa" das etapas 5 a 7.
+- **Flag `unexported` persistido com duas fontes** (resíduo 2 da auditoria; S4): o signal vem do `onChanged` da sessão, mas o `src/storage/local.ts` ainda grava `unexported: true` por conta própria ao gravar o `mapping.json` e a proposta de um projeto local. Aceito como resíduo nas notas 8.1 (D1) e 8.4 (§4).
+- **Duas pastas com o mesmo nome de projeto e de pasta** (resíduo 3; R7): continuam com linhas iguais nos recentes, porque o navegador não dá o caminho da pasta, só o nome; a coluna **Último uso** as distingue. Limite escrito no `docs/ARCHITECTURE.md` (recentes).
+- **`src/app/Home.tsx` acima de 600 linhas** (resíduo 4; o único aviso de `max-lines`): dividir a tela inicial (tabela de recentes, diálogos) é trabalho de foco e interface, não de fechamento.
