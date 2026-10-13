@@ -96,13 +96,41 @@ const sessionFileSyntaxRules = [
       'Em session.ts, storage.saveMapping() só dentro de writeProject (o único ponto de gravação).',
   },
 ];
+// Fase 8.4: o controller confere se a pasta tem projeto por `hasMappingFile` (storage/folder.ts),
+// sem `loadMapping`; ele só grava o mapping.json ao criar o projeto em pasta.
 const controllerFileSyntaxRules = [
   {
     selector: onlyInFunction('saveMapping', 'FunctionDeclaration', 'createFolderProject'),
     message:
       'No controller, saveMapping() só na criação do projeto em pasta (createFolderProject); o resto é da sessão.',
   },
+  {
+    selector: mappingCall('loadMapping'),
+    message:
+      'No controller, use hasMappingFile (storage/folder.ts) para conferir a pasta; ler o mapping.json é da sessão e do loadProject.',
+  },
 ];
+
+// Fase 8.4: o armazenamento do navegador só passa por `utils/safeStorage.ts` (try/catch e a
+// chave do canal) e por `storage/local.ts` (os bancos IndexedDB). O `src/model/` fica fora
+// deste bloco: a regra da arquitetura dele já proíbe esses nomes (e mais), e um segundo
+// `no-restricted-globals` nos mesmos arquivos substituiria aquele.
+// `tests/tooling/storageGlobalsLint.test.ts` prova as duas regras.
+const storageGlobalsMessage =
+  'Use readSetting/writeSetting (utils/safeStorage.ts) ou storage/local.ts: o acesso direto ao armazenamento do navegador pode lançar (modo privado, file://).';
+const storageGlobalNames = ['localStorage', 'sessionStorage', 'indexedDB'];
+const storageGlobals = storageGlobalNames.map((name) => ({
+  name,
+  message: storageGlobalsMessage,
+}));
+const storageGlobalProperties = ['window', 'globalThis', 'self'].flatMap((object) =>
+  storageGlobalNames.map((property) => ({
+    object,
+    property,
+    message: storageGlobalsMessage,
+  })),
+);
+const storageGlobalExceptions = ['src/utils/safeStorage.ts', 'src/storage/local.ts'];
 
 // Restrições de import do mcp/ (ver o bloco "Servidor MCP" abaixo).
 const mcpImportPatterns = [
@@ -219,6 +247,23 @@ export default tseslint.config(
   {
     files: ['src/app/controller.ts'],
     rules: { 'no-restricted-syntax': ['error', ...controllerFileSyntaxRules] },
+  },
+  // Armazenamento do navegador (fase 8.4; constantes definidas acima).
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/model/**', ...storageGlobalExceptions],
+    rules: {
+      'no-restricted-globals': ['error', ...storageGlobals],
+      'no-restricted-properties': ['error', ...storageGlobalProperties],
+    },
+  },
+  // Fase 8.4: sinal do próximo god-module (o controller tinha 713 linhas e oito
+  // responsabilidades). Aviso, não erro: dividir é decisão de desenho, não de lint.
+  {
+    files: ['src/app/**/*.{ts,tsx}'],
+    rules: {
+      'max-lines': ['warn', { max: 600, skipBlankLines: true, skipComments: true }],
+    },
   },
   {
     files: ['src/model/**/*.ts'],

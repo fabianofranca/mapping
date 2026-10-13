@@ -95,6 +95,7 @@ export interface LocalProjectStorage extends ProjectStorage {
 
 /** Projetos guardados no IndexedDB deste navegador. */
 export interface LocalLibrary {
+  /** Os projetos, sem ordem: a ordem da tela inicial é a de `recentProjects` (último uso). */
   list(): Promise<LocalProjectMeta[]>;
   get(id: string): Promise<LocalProjectMeta | undefined>;
   /** Cria o projeto com o `mapping.json` e as imagens informadas. */
@@ -115,10 +116,7 @@ export interface LocalLibrary {
 
 function createLibrary(db: Db): LocalLibrary {
   return {
-    async list() {
-      const all = await db.getAll('projects');
-      return all.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    },
+    list: () => db.getAll('projects'),
 
     get: (id) => db.get('projects', id),
 
@@ -153,6 +151,8 @@ function createLibrary(db: Db): LocalLibrary {
       return {
         kind: 'local',
         id,
+        // A cópia do projeto local é ele mesmo (`ProjectStorage.copyId`).
+        copyId: id,
         async loadMapping() {
           return (await db.get('mappings', id)) ?? null;
         },

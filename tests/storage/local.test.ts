@@ -35,7 +35,10 @@ const noImages = new Map<string, Blob>();
 const noSpecs = new Map<string, string>();
 
 describe('LocalLibrary (IndexedDB)', () => {
-  it('cria, lista (mais recente primeiro) e lê o mapping', async () => {
+  // Etapa 8 (8.4), R10: `list()` não ordena (a ordem da tela inicial é a de
+  // `recentProjects`, pelo último uso). Este teste fixava a ordem por `updatedAt`, que ninguém
+  // usava; agora compara como conjunto.
+  it('cria, lista e lê o mapping', async () => {
     const a = serialize(emptyProject());
     const b = serialize({
       ...sampleProject(),
@@ -65,11 +68,32 @@ describe('LocalLibrary (IndexedDB)', () => {
     );
 
     const list = await library.list();
-    expect(list.map((p) => [p.id, p.name, p.unexported])).toEqual([
-      ['b', 'B', false],
-      ['a', 'Teste', true],
-    ]);
+    expect(list.map((p) => [p.id, p.name, p.unexported])).toEqual(
+      expect.arrayContaining([
+        ['b', 'B', false],
+        ['a', 'Teste', true],
+      ]),
+    );
+    expect(list).toHaveLength(2);
     expect(await library.open('a').loadMapping()).toBe(a);
+  });
+
+  it('list() devolve na ordem do banco, sem ordenar por updatedAt', async () => {
+    const files = (name: string, updatedAt: string) => ({
+      mapping: serialize({
+        ...emptyProject(),
+        project: { ...emptyProject().project, name, updatedAt },
+      }),
+      images: noImages,
+      specs: noSpecs,
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
+    // Chaves em ordem alfabética (a ordem do IndexedDB); datas na ordem contrária.
+    await library.create('a', files('A', '2026-01-01T00:00:00.000Z'));
+    await library.create('b', files('B', '2027-01-01T00:00:00.000Z'));
+    expect((await library.list()).map((p) => p.id)).toEqual(['a', 'b']);
+    expect(library.open('a').copyId).toBe('a');
   });
 
   it('salvar o mapping atualiza nome, data e marca como não exportado', async () => {

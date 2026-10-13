@@ -59,20 +59,35 @@ export { readMapping, writeProject };
     expect(await restricted(inside, 'src/store/session.ts')).toEqual([]);
   });
 
-  it('em controller.ts, saveMapping só dentro de createFolderProject; loadMapping é livre', async () => {
+  // Fase 8.4: o controller confere a existência do projeto por `hasMappingFile` (folder.ts);
+  // `loadMapping` passou a ser proibido nele também (antes era livre, para essas conferências).
+  it('em controller.ts, saveMapping só dentro de createFolderProject; loadMapping é proibido', async () => {
     const outside = `declare const storage: { saveMapping(t: string): Promise<void>; loadMapping(): Promise<string | null> };
 export async function other() {
   await storage.saveMapping('{}');
   return storage.loadMapping();
 }
 `;
-    expect(await restricted(outside, 'src/app/controller.ts')).toHaveLength(1);
+    expect(await restricted(outside, 'src/app/controller.ts')).toHaveLength(2);
     const inside = `declare const storage: { saveMapping(t: string): Promise<void> };
 export function createFolderProject() {
   return storage.saveMapping('{}');
 }
 `;
     expect(await restricted(inside, 'src/app/controller.ts')).toEqual([]);
+  });
+
+  it('createFolderProject também não lê o mapping.json pelo storage', async () => {
+    const inside = `declare const storage: { loadMapping(): Promise<string | null> };
+export function createFolderProject() {
+  return storage.loadMapping();
+}
+`;
+    expect(await restricted(inside, 'src/app/controller.ts')).toHaveLength(1);
+  });
+
+  it('os módulos novos do split (recents.ts) herdam a regra', async () => {
+    expect(await restricted(read, 'src/app/recents.ts')).toHaveLength(1);
   });
 
   it('loadProject.ts pode ler o mapping.json', async () => {
