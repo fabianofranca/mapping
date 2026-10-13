@@ -1,5 +1,7 @@
 # Nota de desenho — fase 8.4: recentes e controller
 
+> **Revisão 2** (na aprovação): corrigida a frase do §3 sobre a chave do retomar (é da 8.2, `${copyId}|${proposalId}`); respostas do coordenador às perguntas do §8: 1, 2 e 3 aprovadas como propostas; 4 fica registrada.
+
 > Nota de desenho da fase 8.4 da etapa 8 (`PLAN.md`), escrita antes do código e aprovada pelo coordenador antes do primeiro commit de código. Achados R1, R2 e R4 a R10 da seção 4 de `docs/history/revisao-tecnica-2026-10-12.md` (R3 vai pela 8.2, que lê o `copyId` definido aqui). Base: `main` `9682ee8` (8.1 e 8.3 já mergeadas).
 
 ## 1. O que fica no fim
@@ -83,7 +85,7 @@ readonly copyId?: string;
 - **Abrir pelo seletor uma pasta que já está na lista:** `isSameEntry` acha a entrada ⇒ o mesmo id ⇒ o mesmo `copyId` que pelo recente.
 - **Pasta renomeada no disco e reaberta pelo seletor** (não pelo Localizar): o `remember` só compara entradas com o mesmo `folderName`, então nasce entrada nova ⇒ `copyId` novo (o retomar recomeça). É o comportamento atual dos recentes; a linha velha morta é o caso do R7.
 - **O5 da rodada 4:** a pasta `loja` recém-descompactada é outra pasta física ⇒ entrada nova ⇒ `copyId` novo ⇒ a entrada `folder:loja|…` de outra rodada não vale para ela. Fecha quando a 8.2 trocar `resumeScope` para `copyId ?? folderName`.
-- A 8.2 só lê. O formato da chave do retomar continua `<kind>:<cópia>|<proposta>`; o valor da cópia para pasta passa a ser um UUID.
+- A 8.2 só lê. A chave do retomar é da 8.2 (nota dela, PR #131): passa a ser `${copyId}|${proposalId}`, sem `kind:` (blob v2). Esta fase não implementa a chave.
 
 ## 4. Achados → mudança
 

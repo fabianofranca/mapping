@@ -23,11 +23,19 @@ import {
 import { richScenario } from '../store/proposalHarness';
 
 const pickDirectory = vi.fn<() => Promise<DirectoryHandleLike | null>>();
+/** `isOriginPrivate` controlável; sem implementação (`undefined`), vale a original. */
+const originPrivate =
+  vi.fn<(handle: DirectoryHandleLike) => Promise<boolean> | undefined>();
 
-vi.mock('../../src/storage/folder', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../src/storage/folder')>()),
-  pickDirectory: () => pickDirectory(),
-}));
+vi.mock('../../src/storage/folder', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/storage/folder')>();
+  return {
+    ...actual,
+    pickDirectory: () => pickDirectory(),
+    isOriginPrivate: (handle: DirectoryHandleLike) =>
+      originPrivate(handle) ?? actual.isOriginPrivate(handle),
+  };
+});
 
 const v1 = readFileSync('tests/fixtures/mapping-v1.json', 'utf8');
 
@@ -66,6 +74,7 @@ let local: Local;
 beforeEach(async () => {
   clearReportedErrors();
   pickDirectory.mockReset();
+  originPrivate.mockReset();
   ({ app, local } = await load());
   const library = await local.openLocalLibrary();
   for (const p of (await library?.list()) ?? []) await library?.remove(p.id);
@@ -103,6 +112,29 @@ describe('projeto local', () => {
     await app.closeProject();
     expect((await app.deleteLocalProject(id)).ok).toBe(true);
     expect(app.localProjects.value).toEqual([]);
+  });
+
+  // Etapa 8 (8.4): a cópia do projeto local é o id dele (chave do retomar da revisão, 8.2).
+  it('copyId do projeto local é o id: criar, abrir e importar zip', async () => {
+    await app.createLocalProject('Cópia');
+    const created = await openedOf(app);
+    expect(created.session.storage.copyId).toBe(created.localId);
+    const id = created.localId ?? '';
+    await app.closeProject();
+    await app.openLocalProject(id);
+    expect((await openedOf(app)).session.storage.copyId).toBe(id);
+    await app.closeProject();
+    const zip = await writeProjectZip({
+      mapping: serialize(emptyProject()),
+      images: new Map(),
+      specs: new Map(),
+      proposals: new Map(),
+      proposalImages: new Map(),
+    });
+    expect((await app.importZip(zip)).ok).toBe(true);
+    const imported = await openedOf(app);
+    expect(imported.localId).not.toBe(id);
+    expect(imported.session.storage.copyId).toBe(imported.localId);
   });
 
   it('nome vazio usa o nome padrão', async () => {
@@ -691,6 +723,32 @@ describe('projeto com dados inconsistentes', () => {
     library?.close();
   });
 
+  // Etapa 8 (8.4), R4: o reparado passa pelo mesmo vínculo que a abertura normal.
+  it('projeto local: reparar e abrir conta como uso (openedAt) e tem copyId', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
+      const library = await local.openLocalLibrary();
+      await library?.create('inc', {
+        mapping: repairable,
+        images: new Map(),
+        specs: new Map(),
+        proposals: new Map(),
+        proposalImages: new Map(),
+      });
+      vi.setSystemTime(new Date('2026-10-05T10:00:00.000Z'));
+      const result = await app.openLocalProject('inc');
+      if (result.ok || !result.inconsistent?.repair)
+        throw new Error('deveria pedir o reparo');
+      expect((await result.inconsistent.repair()).ok).toBe(true);
+      expect((await openedOf(app)).session.storage.copyId).toBe('inc');
+      expect((await library?.get('inc'))?.openedAt).toBe('2026-10-05T10:00:00.000Z');
+      library?.close();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('zip: só vira projeto local depois de aceitar o reparo', async () => {
     const zip = new JSZip();
     zip.file('mapping.json', repairable);
@@ -810,6 +868,147 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(app.recentProjects.value[0]?.usedAt).toBe('2026-10-03T10:00:00.000Z');
   });
 
+  // Etapa 8 (8.4), R1: fechar enquanto a pasta é guardada não deixa o id da entrada para o
+  // projeto seguinte (que, ao fechar, daria o nome dele à linha da pasta).
+  it('fechar durante o guardar da pasta não vaza a entrada para o próximo projeto', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    originPrivate.mockImplementationOnce(async () => {
+      await gate;
+      return false;
+    });
+    pickDirectory.mockResolvedValue(projectFolder());
+    const opening = app.openFolder();
+    await vi.waitFor(() => expect(originPrivate).toHaveBeenCalled());
+    // O editor só aparece com a pasta já guardada: não há projeto para fechar no meio.
+    expect(app.openProject.value).toBeNull();
+    await app.closeProject();
+    release();
+    expect(await opening).toEqual({ ok: true, value: { kind: 'opened' } });
+    await app.closeProject();
+    await app.createLocalProject('Local');
+    await app.closeProject();
+    expect(folders().map((p) => p.name)).toEqual(['Projeto da pasta']);
+  });
+
+  // Etapa 8 (8.4), R2: como no projeto local, o nome acompanha a cada gravação.
+  it('renomear o projeto em pasta reflete nos recentes sem Fechar', async () => {
+    pickDirectory.mockResolvedValue(projectFolder());
+    await app.openFolder();
+    const { session } = await openedOf(app);
+    session.actions.renameProject('Renomeado');
+    expect((await session.flush()).ok).toBe(true);
+    // O toque na entrada é posterior à gravação (fora da fila da sessão).
+    const library = await local.openFolderLibrary();
+    await vi.waitFor(async () =>
+      expect((await library?.list())?.map((f) => f.name)).toEqual(['Renomeado']),
+    );
+    library?.close();
+  });
+
+  // Etapa 8 (8.4), R5: uma falha da permissão (ativação expirada, volume desmontado) dá o
+  // aviso com Localizar/Remover, não só "Não foi possível acessar os arquivos".
+  it('SecurityError no requestPermission: aviso de permissão, com o erro no Diagnóstico', async () => {
+    const root = projectFolder();
+    await openViaPicker(root);
+    root.permission = 'prompt';
+    vi.spyOn(root, 'requestPermission').mockRejectedValue(
+      new DOMException('ativação expirada', 'SecurityError'),
+    );
+    expect(await app.openRecentFolder(idOf('pasta'))).toEqual({
+      ok: true,
+      value: { kind: 'unavailable', reason: 'denied' },
+    });
+    expect(app.openProject.value).toBeNull();
+    const report = await import('../../src/utils/report');
+    expect(report.reportedErrors.value.map((e) => e.context)).toContain(
+      'folders.permission',
+    );
+  });
+
+  // Etapa 8 (8.4), R6: o banco dos handles também pede armazenamento persistente.
+  it('guardar a pasta pede armazenamento persistente', async () => {
+    const persist = vi.fn(async () => true);
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: { persist },
+    });
+    try {
+      await openViaPicker(projectFolder());
+      expect(folders()).toHaveLength(1);
+      expect(persist).toHaveBeenCalled();
+    } finally {
+      Reflect.deleteProperty(navigator, 'storage');
+    }
+  });
+
+  // Etapa 8 (8.4): a cópia da pasta é o id da entrada dos recentes (chave do retomar, 8.2).
+  it('copyId da pasta é o id da entrada: pelo seletor, pelo recente e depois do Localizar', async () => {
+    const root = projectFolder();
+    pickDirectory.mockResolvedValue(root);
+    await app.openFolder();
+    const first = (await openedOf(app)).session.storage.copyId;
+    await app.closeProject();
+    const id = idOf('pasta');
+    expect(first).toBe(id);
+    await app.openRecentFolder(id);
+    expect((await openedOf(app)).session.storage.copyId).toBe(id);
+    await app.closeProject();
+    root.gone = true;
+    pickDirectory.mockResolvedValue(projectFolder('pasta-movida'));
+    expect(await app.relocateFolder(id)).toEqual({ ok: true, value: { kind: 'opened' } });
+    expect((await openedOf(app)).session.storage.copyId).toBe(id);
+  });
+
+  it('copyId da pasta reparada é o id da entrada', async () => {
+    const root = new PermissionDirectory('reparo');
+    root.put('mapping.json', readInvalidFixture('missing-parent'));
+    pickDirectory.mockResolvedValue(root);
+    const result = await app.openFolder();
+    if (result.ok || !result.inconsistent?.repair)
+      throw new Error('deveria pedir o reparo');
+    expect((await result.inconsistent.repair()).ok).toBe(true);
+    const copyId = (await openedOf(app)).session.storage.copyId;
+    await app.closeProject();
+    expect(copyId).toBe(idOf('reparo'));
+  });
+
+  it('copyId da pasta sem recentes: um id por aba, o mesmo ao reabrir a mesma pasta', async () => {
+    const plain = (name: string) => {
+      const dir = new MemoryDirectory(name);
+      dir.put('mapping.json', serialize(emptyProject()));
+      return dir;
+    };
+    const copyOf = async (dir: MemoryDirectory) => {
+      pickDirectory.mockResolvedValue(dir);
+      await app.openFolder();
+      const copyId = (await openedOf(app)).session.storage.copyId;
+      await app.closeProject();
+      return copyId;
+    };
+    const first = await copyOf(plain('simples'));
+    expect(first).toEqual(expect.any(String));
+    expect(first).not.toBe('');
+    expect(await copyOf(plain('simples'))).toBe(first);
+    expect(await copyOf(plain('outra'))).not.toBe(first);
+    expect(folders()).toEqual([]);
+  });
+
+  // Etapa 8 (8.4), R7: duas linhas iguais na lista ficam distinguíveis pelo nome da pasta.
+  it('nomes repetidos na lista mostram o nome da pasta', async () => {
+    await openViaPicker(projectFolder('a', 'Loja'));
+    await openViaPicker(projectFolder('b', 'Loja'));
+    await openViaPicker(projectFolder('c', 'c'));
+    const show = Object.fromEntries(
+      folders().map((p) =>
+        p.kind === 'folder' ? [p.folderName, p.showFolderName] : ['', false],
+      ),
+    );
+    expect(show).toEqual({ a: true, b: true, c: false });
+  });
+
   it('permissão já concedida: um clique abre e atualiza a data, sem mudar o mapping.json', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-01T10:00:00.000Z'));
@@ -919,6 +1118,10 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(folders()).toEqual([]);
   });
 
+  // Etapa 8 (8.4), R8: numa visita nova, a leitura do handle no IndexedDB (`handleOf`) vem
+  // ANTES do `queryPermission`. O `requestPermission` só abre o pedido dentro da ativação do
+  // gesto (alguns segundos): essa leitura precisa continuar curta e ser a única espera antes
+  // da consulta. Não ponha outra espera (rede, outra leitura, `remember`) nesse caminho.
   it('numa visita nova, o handle vem do IndexedDB e a permissão é pedida', async () => {
     const root = projectFolder();
     await openViaPicker(root);

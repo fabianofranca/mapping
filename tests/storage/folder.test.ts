@@ -5,6 +5,7 @@ import {
   ensureGitignore,
   ensurePermission,
   findExistingImages,
+  hasMappingFile,
   isReopenable,
 } from '../../src/storage/folder';
 import { MemoryDirectory, PermissionDirectory } from './memoryFs';
@@ -141,6 +142,23 @@ describe('FolderStorage: o que a app confere por fora (etapa 3a.2)', () => {
     expect(createFolderStorage(new MemoryDirectory('mapeamento-carro')).folderName).toBe(
       'mapeamento-carro',
     );
+  });
+
+  // Etapa 8 (8.4): a cópia (chave do estado por dispositivo) é dada na criação, imutável.
+  it('copyId vem da criação; sem ele, fica ausente', () => {
+    const dir = new MemoryDirectory('pasta');
+    expect(createFolderStorage(dir, { copyId: 'entrada-1' }).copyId).toBe('entrada-1');
+    expect(createFolderStorage(dir).copyId).toBeUndefined();
+  });
+
+  // Etapa 8 (8.4): conferir se a pasta tem projeto sem passar pelo loadMapping da sessão.
+  it('hasMappingFile: true com o mapping.json, false sem ele, NotFound na pasta sumida', async () => {
+    const dir = new PermissionDirectory('pasta');
+    expect(await hasMappingFile(dir)).toBe(false);
+    dir.put('mapping.json', '{}');
+    expect(await hasMappingFile(dir)).toBe(true);
+    dir.gone = true;
+    await expect(hasMappingFile(dir)).rejects.toMatchObject({ name: 'NotFoundError' });
   });
 
   it('statMapping devolve o lastModified, ou null sem o arquivo', async () => {

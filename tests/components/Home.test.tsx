@@ -280,6 +280,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     id: 'f1',
     name: 'Principal',
     folderName: 'principal-pasta',
+    showFolderName: true,
     usedAt: '2026-10-01T10:00:00.000Z',
   };
 
@@ -303,6 +304,30 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       within(row).getByRole('button', { name: t('home.forgetFolder') }),
     );
     expect(controller.forgetFolder).toHaveBeenCalledWith('f1');
+  });
+
+  // Etapa 8 (8.4), R7: duas pastas com o mesmo nome (do projeto e da pasta) mostram o nome
+  // da pasta nas duas linhas; a lista decide (`showFolderName`), a tabela só obedece.
+  it('nome repetido: as duas linhas mostram o nome da pasta', () => {
+    const twin = (id: string, usedAt: string) => ({
+      kind: 'folder',
+      id,
+      name: 'loja',
+      folderName: 'loja',
+      showFolderName: true,
+      usedAt,
+    });
+    recentProjects.value = [
+      twin('l1', '2026-10-02T10:00:00.000Z'),
+      twin('l2', '2026-10-01T10:00:00.000Z'),
+      { ...folder, id: 'f2', showFolderName: false },
+    ];
+    render(<Home />);
+    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    const names = rows.map((r) =>
+      [...r.querySelectorAll('.project-name')].map((n) => n.textContent),
+    );
+    expect(names).toEqual([['loja', 'loja'], ['loja', 'loja'], ['Principal']]);
   });
 
   // Etapa 7 (7.1), regressão G4: a linha sai da lista e o foco caía no body.
