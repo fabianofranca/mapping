@@ -9,6 +9,8 @@
 > **Revisão 4** (depois da implementação; pontos em que o código divergiu do desenho e o desenho foi corrigido, com o porquê e o teste que cobre): **[F1]** P6: ao fechar, os conflitos **à vista na abertura** também ficam conhecidos (não só `knownAtOpen ∪ decididos`), senão um conflito anunciado e sem decisão voltaria como novo a cada reabertura (achado 11 da rodada 1; §3 e §5); **[F2]** o cursor do canvas é testado em `tests/canvas/reviewCursor.test.ts` (arquivo novo, em vez de dentro de `CanvasController.test.ts`), com o contexto 2D falso do harness ganhando `getTransform` (os selos da revisão o exigem); **[F3]** o `firstImport` compartilhado mora em `tests/components/review/reviewHarness.tsx` (o de `reviewTree.test.tsx` fica como está); **[F4]** `useReviewSync` deixa de ler `store` (uma dependência a menos no hook). Nada mais divergiu.
 >
 > **Revisão 3** (aprovação do dono, com três ajustes e um registro; a `main` com a 8.4 já mergeada no branch): **[E1]** só `copyId` (o segundo ramo do [D1]): sem `legacyScope` e sem narrowing, `resumeScope = storage.copyId`, `''` mais `reportError` só se o campo faltar; os harnesses de teste preenchem `copyId` por padrão; **[E2]** `remember()` só reatribui o signal `seen` quando a união com o blob traz um id novo (`derived.rows` depende dele); **[E3]** a seção "Revisão" do `docs/ARCHITECTURE.md`, com o limite da outra aba do [D4], é escrita neste PR; **[E4]** registro do resíduo em `pendingFiles` no caminho `!saved.ok` do P7 (inofensivo, sem código). **Com este commit, o código está liberado.**
+>
+> **Revisão 5** (devolução do portão do Cowork, build `e701862`, achado 7 do relato): o aplicar das aceitas não reavalia a revisão enquanto está em curso, e o "Aplicar bloqueado" nomeia camada, especialização e anotação. Seção "Revisão 5", no fim. O nome "Revisão 4" já é o do registro pós-implementação acima, por isso esta é a 5. O código espera o "código liberado".
 
 ## 1. Resumo
 
@@ -253,3 +255,45 @@ Nenhuma string de interface nova (a decisão 5 dispensou o aviso "visão Atual")
 - **"Vista" entre abas com atraso** **[D4]**: a aba que não gravou nem abriu nada desde que a outra marcou a proposta como vista continua contando-a como nova até a próxima gravação ou abertura (`remember`/`open` releem o blob). Documentado no `docs/ARCHITECTURE.md`.
 - **Recálculo do derivado do editor na visão Proposto** a cada decisão (a prévia muda). Já acontece com a árvore e os conflitos; `reviewPerf.test.ts` guarda o orçamento. Se estourar, o fallback é memoizar `preview` por `(changes, decisions, applied, project)`, dentro de `derived.ts`.
 - **Fica igual**: formato da proposta, `docs/PROPOSAL-FORMAT.md`, o MCP, a sessão (`session.ts`, `autosave.ts`), o `HistoryLink`/`discardRedoOf`, os textos da revisão, os atalhos, o lembrete ao sair, `changeImageFile`, a Árvore e o estado vazio do canvas (que já leem `shownProject`).
+
+## Revisão 5
+
+Devolução do portão do Cowork (build `e701862`, relato do portão, achado 7, médio). **Causa.** O aplicar não troca o projeto e a proposta ao mesmo tempo. Dentro do `runMutation` (`src/store/proposals.ts:199-261`), o `before` do aplicar faz `store.apply` (`src/store/proposalActions.ts:366`). O `store.committed` muda na hora (`src/store/history.ts:158`), e depois vêm o `flush` do `mapping.json` (`proposalActions.ts:375`), o `writeProposal` (`proposals.ts:238`) e o `stampOf`. Só então o `publish()` (`proposals.ts:250-251`) entrega a proposta com `applied`. Numa pasta de verdade, cada passo espera o disco, e a janela dura centenas de milissegundos, tempo de sobra para a tela renderizar. Nessa janela o derivado da revisão reavalia as aceitas contra um projeto que já as tem, com uma proposta que ainda não as dá como aplicadas:
+
+- `validation` (`src/store/derived.ts:533-545`) ainda vê as aceitas em `acceptedPending`. Uma criação que já existe vira `entity-exists` (`src/model/proposalApply.ts:186`): é o "Aplicar bloqueado: a mudança em <id> não cabe mais" com o "Rejeitar a(s) que causa(m)", e o `invalid`/`canApply` seguem atrás.
+- `conflictIds` (`derived.ts:492-498`, via `conflictsOf`, `:371-383`) e `situation` (`:472-490`) marcam conflito. Uma criação que já existe conta como conflito, e uma alteração cujo valor atual já é o `to`, não o `from`, também (`src/model/proposalReview.ts:473` e `:479-481`).
+- `newConflicts` (`src/store/review.ts:292-298`) é, desde a 8.2 (P6), computado ao vivo: `conflictIds` menos `knownAtOpen`. Os conflitos de mentira não estão entre os conhecidos na abertura, então viram "novos", e a lista mostra "O projeto mudou desde a sua última sessão" (`src/ui/review/ReviewLevels.tsx:536`). Antes da 8.2, "novo" era calculado só na abertura e a janela passava em branco: daí a regressão.
+
+**Correção.** O "aplicar em curso" mora no derivado da revisão (`createReviewDerived`), que é quem calcula o que congela. `validation`, `conflictIds` e `situation` passam a ter uma versão ao vivo interna, igual à de hoje. A exportada é `held.value?.x ?? live.x.value`. Um novo `derived.hold()` tira, com `peek()`, o retrato das três ao vivo, guarda-o num signal `held` e devolve a função que solta. Um contador cobre dois aplicar seguidos: o retrato sai no primeiro `hold`, e o `held` volta a `null` no último `release`. `invalid`, `canApply`, `counts.conflicts`, o canvas e `newConflicts` derivam dessas três e congelam juntos, sem código próprio. Quem segura é `review.apply()`: o `hold()` vem antes de chamar `proposalActions.applyAccepted`, ainda no clique. É síncrono, então o retrato é do projeto de antes, porque o `store.apply` só roda dentro da fila. A soltura fica num `finally`, depois de a promessa resolver, qualquer que seja o resultado:
+
+- **sucesso:** a proposta já foi publicada com `applied`;
+- **`write-failed` do `proposal.json`:** a compensação do P7 já desfez a entrada e regravou;
+- **`save-failed` do `mapping.json`:** o `before` já desfez;
+- **`blocked`, `stale` e os erros de imagem:** nada mudou.
+
+Em todos os casos, ao soltar, as três reavaliam contra o projeto e a proposta daquele momento. Por isso o congelamento não esconde um conflito real: o retrato não é guardado depois do `release` e não entra no `knownAtOpen` nem no blob. Um conflito que surge durante a janela (uma recarga por fora) aparece no mesmo quadro em que o aplicar termina e, como `newConflicts` continua ao vivo, como "novo". Durante a janela, `canApply` é falso e o botão diz "Aplicando as aceitas…" (chave nova). Sem isso, como o retrato diz "válido", um segundo Ctrl+Enter entraria na fila e voltaria com "0 aplicadas". Ficam de fora:
+
+- a prévia (`preview`/`shownProject`), que não mostra aviso;
+- a janela igual do **refazer** de uma aplicação: o `history.redo` troca o projeto antes de chamar o `link.redo` (`history.ts:265-268`), então o retrato teria de vir de antes do `store.redo`. Não está no relato. Registro como limite e, se o coordenador quiser, entra numa fase própria.
+
+**`issueText`** (`src/ui/review/ReviewDetails.tsx:65-77`). Hoje só marcação e imagem ganham nome, e o resto cai em `return id`. O nome passa a sair de uma função `entityName(names, id)` em `src/ui/review/changeText.ts`, que procura na prévia e no projeto atual, como já faz para marcação:
+
+- marcação e imagem: `markingName`/`imageName`;
+- camada: `layerName`, que passa a ser exportada;
+- anotação: `annotationName`, também exportada, com o título da anotação;
+- especialização: o `spec.name` da aplicada.
+
+Depois procura no próprio registro da mudança de criação ou remoção da proposta (`to`/`from`), como `markingName` já faz. Isso cobre o `missing-specialization`, cujo `otherId` é uma especialização que só a proposta traz. Sem nome em lugar nenhum:
+
+- `entity-missing`, em que o alvo não existe mais: "O alvo desta mudança ({entity}) não existe mais no projeto atual." O `{entity}` é o tipo da mudança (`review.entity.*`, em minúsculas). A frase é neutra em gênero, porque "repositório" é masculino;
+- os demais códigos usam o tipo como nome ("camada"), nunca o id. A exceção é a especialização, que cai no próprio id dela (`sdui`): é o identificador legível que o arquivo da especialização declara, e o problema é justamente ela faltar.
+
+**Testes**, na ordem em que entram, todos commitados antes da correção e vermelhos na `main`, menos o 5:
+
+1. `tests/store/proposals.test.ts`, no describe do aplicar (com o `readyToApply`, o `richScenario` aceito): `writeProposal` segurado por um `vi.spyOn` com promessa adiada. Com o espião já chamado (projeto aplicado e `mapping.json` gravado), conferir `validation.ok`, `conflictIds` vazio, `newConflicts` vazio e nenhuma `situation` com conflito. Depois de soltar, as mesmas coisas com a proposta `applied` no disco e no derivado.
+2. Teste de componente novo, `tests/components/review/applyHold.test.tsx`: `firstImport` (a camada "Eventos" criada pela proposta, como no R5.4a) com o grupo Projeto aceito e `ReviewDetails` e `ReviewLevels` montados. Com o `writeProposal` segurado, a tela não tem "Aplicar bloqueado" nem "O projeto mudou desde a sua última sessão". Depois de soltar também não tem, e a camada está no projeto.
+3. `tests/store/review.test.ts`: o `mapping.json` muda por fora durante um `derived.hold()` (recarga por `session.sync()`, criando conflito numa mudança sem decisão), e depois de soltar o conflito aparece em `conflictIds` e `newConflicts`.
+4. `tests/components/review/details.test.tsx`: o "Aplicar bloqueado" com o nome de uma camada (criação de `L2` que já existe no projeto), de uma especialização (`missing-specialization` com a especialização só na proposta e a criação dela rejeitada) e de uma anotação (criação que já existe). Mais o texto do alvo que não existe mais: alteração de uma camada apagada do projeto.
+5. `proposals.test.ts`, regressão (pode passar na `main`): `writeProposal` rejeitando durante o `hold`. Depois do `write-failed` e da compensação, o derivado volta a valer o que valia antes do aplicar, sem aviso.
+
+**Toca em:** `src/store/derived.ts` (`hold` e as três versões ao vivo), `src/store/review.ts` (`apply` segura e solta), `src/ui/review/ReviewDetails.tsx` (`issueText`), `src/ui/review/changeText.ts` (`entityName`, `layerName` e `annotationName` exportadas), `src/ui/review/ReviewBar.tsx` (o motivo "Aplicando…"), `src/i18n/review.ts` (três chaves: alvo que não existe mais, nome de tipo sem alvo e "Aplicando as aceitas…", em pt-BR e en-US), os testes acima e esta nota. Fora das pastas pedidas, só `docs/ARCHITECTURE.md`: uma frase na seção "Revisão" (o aplicar segura a reavaliação até terminar), porque a seção é a referência do subsistema e foi escrita nesta fase.
