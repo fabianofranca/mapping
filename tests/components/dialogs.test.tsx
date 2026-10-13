@@ -5,7 +5,6 @@ import { t } from '../../src/i18n';
 import { locale, theme } from '../../src/store/settings';
 import { useRef, useState } from 'preact/hooks';
 import { Dialog } from '../../src/ui/Dialog';
-import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 import { HELP_PROPOSALS, HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
 
@@ -163,9 +162,6 @@ describe('Dialog', () => {
 
 // Etapa 7 (7.1), achado A1: quem abriu saiu do DOM ao fechar (item de menu, linha removida…).
 describe('Dialog: foco quando quem abriu não existe mais', () => {
-  beforeEach(simulateModalFocus);
-  afterEach(restoreModalFocus);
-
   /** "Abrir" some ao confirmar com "Ok", como a linha excluída pelo próprio diálogo. */
   function Vanishing({ explicit }: { readonly explicit: boolean }) {
     const [open, setOpen] = useState(false);

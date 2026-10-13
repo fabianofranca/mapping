@@ -70,19 +70,19 @@ describe('editor do codeRef', () => {
   it('altera caminho, símbolo e linha; cada alteração é um passo do desfazer', async () => {
     const { harness, entries, items, user } = setupEditor();
     const first = within(items()[0]!);
-    const path = first.getByRole('textbox', { name: 'Caminho', exact: true });
+    const path = first.getByRole('textbox', { name: 'Caminho' });
     await user.clear(path);
     await user.type(path, 'app\\Novo.kt{Enter}');
     expect(entries()[0]?.path).toBe('app/Novo.kt');
 
-    const line = first.getByRole('textbox', { name: 'Linha', exact: true });
+    const line = first.getByRole('textbox', { name: 'Linha' });
     await user.type(line, '7{Enter}');
     expect(entries()[0]?.line).toBe(7);
     await user.clear(line);
     await user.keyboard('{Enter}');
     expect(entries()[0]?.line).toBeNull();
 
-    const symbol = first.getByRole('textbox', { name: 'Símbolo', exact: true });
+    const symbol = first.getByRole('textbox', { name: 'Símbolo' });
     await user.clear(symbol);
     await user.type(symbol, 'Novo{Enter}');
     expect(entries()[0]?.symbol).toBe('Novo');
@@ -95,7 +95,7 @@ describe('editor do codeRef', () => {
     const { entries, items, user } = setupEditor();
     const first = within(items()[0]!);
     await user.type(
-      first.getByRole('textbox', { name: 'Linha', exact: true }),
+      first.getByRole('textbox', { name: 'Linha' }),
       'abc{Enter}',
     );
     expect(
@@ -103,7 +103,7 @@ describe('editor do codeRef', () => {
     ).toBeTruthy();
     expect(entries()[0]?.line).toBeNull();
 
-    const path = first.getByRole('textbox', { name: 'Caminho', exact: true });
+    const path = first.getByRole('textbox', { name: 'Caminho' });
     await user.clear(path);
     await user.type(path, '../fora.kt{Enter}');
     expect(first.getByText(/caminho relativo à raiz do repositório/)).toBeTruthy();
@@ -214,7 +214,7 @@ describe('editor do codeRef', () => {
     );
     expect(
       screen
-        .getAllByRole('textbox', { name: 'Caminho', exact: true })
+        .getAllByRole('textbox', { name: 'Caminho' })
         .every((i) => (i as HTMLInputElement).disabled),
     ).toBe(true);
   });

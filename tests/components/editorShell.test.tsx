@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { signal } from '@preact/signals';
 import { useState } from 'preact/hooks';
-import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 import { t } from '../../src/i18n';
 import type { CanvasController } from '../../src/canvas/CanvasController';
 import { hideToolWindow, isToolWindowOpen } from '../../src/store/toolWindows';
@@ -371,9 +370,6 @@ describe('ExportDialog', () => {
 // Etapa 7 (7.1), achado A1: o zip é gerado antes de o diálogo abrir, com o botão Exportar
 // desabilitado (o Chrome tira o foco dele), então o diálogo não tem a quem devolver o foco.
 describe('ExportDialog: foco ao fechar', () => {
-  beforeEach(simulateModalFocus);
-  afterEach(restoreModalFocus);
-
   function ExportFlow({
     harness,
   }: {
@@ -672,9 +668,6 @@ describe('barras do editor', () => {
 // desmontava o antigo antes de o novo guardar quem abriu; o Esc deixava o foco no primeiro
 // controle da app (ou no body), e não no botão Configurações.
 describe('troca de diálogo no editor (F3)', () => {
-  beforeEach(simulateModalFocus);
-  afterEach(restoreModalFocus);
-
   function Shell() {
     const dialogs = useEditorDialogs();
     return (

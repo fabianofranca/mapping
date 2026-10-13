@@ -6,7 +6,6 @@ import { locale } from '../../src/store/settings';
 import { TypedField } from '../../src/ui/TypedFields';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
-import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 
 beforeEach(() => {
   locale.value = 'pt-BR';
@@ -225,9 +224,6 @@ describe('TypedFields — referência (ref)', () => {
   // Etapa 7 (7.1), achado A1: com o seletor modal aberto, o resto da página está inerte;
   // focar o campo antes de o seletor fechar não adianta e o foco caía no body.
   describe('com o seletor modal (inércia do navegador)', () => {
-    beforeEach(simulateModalFocus);
-    afterEach(restoreModalFocus);
-
     it('Enter escolhe o alvo e o foco volta ao campo dado', async () => {
       const { harness, user } = setup('AIN', 'dado');
       await user.click(field());
@@ -334,10 +330,10 @@ describe('TypedFields — tabela', () => {
   });
 
   // Etapa 7 (7.1), achado A1: a linha excluída levava o botão que abriu o diálogo.
-  describe('foco depois de Excluir no "Referências vão quebrar"', () => {
-    beforeEach(simulateModalFocus);
-    afterEach(restoreModalFocus);
-
+  // Etapa 8 (8.3), F1: este era o flake ("sem linhas, vai à tabela"). Roda 20 vezes por
+  // rodada (`repeats`), e a espera abaixo é de propósito só "o <dialog> está no DOM", a
+  // condição em que o clique chegava antes de o diálogo abrir.
+  describe('foco depois de Excluir no "Referências vão quebrar"', { repeats: 19 }, () => {
     async function removeEmail(user: ReturnType<typeof userEvent.setup>) {
       await user.click(screen.getByRole('button', { name: 'Ações da linha email' }));
       await user.click(screen.getByRole('menuitem', { name: 'Remover linha' }));

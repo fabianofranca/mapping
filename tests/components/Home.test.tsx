@@ -2,7 +2,6 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/preac
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
-import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 
 const controller = vi.hoisted(() => ({
   createFolderProject: vi.fn(),
@@ -357,7 +356,8 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       );
     });
 
-    it('Excluir um projeto deste dispositivo faz o mesmo', async () => {
+    // Etapa 8 (8.3), F1/F2: os dois pelo diálogo rodam 20 vezes por rodada (`repeats`).
+    it('Excluir um projeto deste dispositivo faz o mesmo', { repeats: 19 }, async () => {
       controller.deleteLocalProject.mockImplementation((id: string) => {
         recentProjects.value = recentProjects.value.filter(
           (p) => (p as { id: string }).id !== id,
@@ -376,7 +376,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
     });
 
-    it('pelo aviso "Pasta indisponível" também', async () => {
+    it('pelo aviso "Pasta indisponível" também', { repeats: 19 }, async () => {
       forgetting();
       controller.openRecentFolder.mockReturnValue(
         ok({ kind: 'unavailable', reason: 'missing' }),
@@ -405,53 +405,48 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       'Excluir pelo diálogo leva o foco direto à linha que ficou (um dono só)',
       { repeats: 19 },
       async () => {
-        simulateModalFocus();
+        let finish: () => void = () => undefined;
+        controller.deleteLocalProject.mockImplementation(
+          (id: string) =>
+            new Promise((resolve) => {
+              finish = () => {
+                recentProjects.value = recentProjects.value.filter(
+                  (p) => (p as { id: string }).id !== id,
+                );
+                resolve({ ok: true });
+              };
+            }),
+        );
+        render(<Home />);
+        const user = userEvent.setup();
+        const row = screen.getByRole('row', { name: /Carro/ });
+        await user.click(within(row).getByRole('button', { name: t('common.delete') }));
+        const dialog = await waitFor(() => {
+          const el = document.querySelector('dialog');
+          if (!el?.contains(document.activeElement)) throw new Error('não abriu');
+          return el;
+        });
+        const focused: Element[] = [];
+        const track = (e: FocusEvent) => focused.push(e.target as Element);
+        document.addEventListener('focusin', track);
         try {
-          let finish: () => void = () => undefined;
-          controller.deleteLocalProject.mockImplementation(
-            (id: string) =>
-              new Promise((resolve) => {
-                finish = () => {
-                  recentProjects.value = recentProjects.value.filter(
-                    (p) => (p as { id: string }).id !== id,
-                  );
-                  resolve({ ok: true });
-                };
-              }),
+          await user.click(
+            within(dialog).getByRole('button', {
+              name: t('common.delete'),
+              hidden: true,
+            }),
           );
-          render(<Home />);
-          const user = userEvent.setup();
-          const row = screen.getByRole('row', { name: /Carro/ });
-          await user.click(within(row).getByRole('button', { name: t('common.delete') }));
-          const dialog = await waitFor(() => {
-            const el = document.querySelector('dialog');
-            if (!el?.contains(document.activeElement)) throw new Error('não abriu');
-            return el;
-          });
-          const focused: Element[] = [];
-          const track = (e: FocusEvent) => focused.push(e.target as Element);
-          document.addEventListener('focusin', track);
-          try {
-            await user.click(
-              within(dialog).getByRole('button', {
-                name: t('common.delete'),
-                hidden: true,
-              }),
-            );
-            await new Promise((resolve) => setTimeout(resolve, 30));
-            finish();
-            await waitFor(() => expect(screen.queryByText('Carro')).toBeNull());
-            await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
-            await new Promise((resolve) => setTimeout(resolve, 30));
-          } finally {
-            document.removeEventListener('focusin', track);
-          }
-          expect(focused.filter((el) => !dialog.contains(el))).toEqual([
-            openOf(/Principal/),
-          ]);
+          await new Promise((resolve) => setTimeout(resolve, 30));
+          finish();
+          await waitFor(() => expect(screen.queryByText('Carro')).toBeNull());
+          await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
+          await new Promise((resolve) => setTimeout(resolve, 30));
         } finally {
-          restoreModalFocus();
+          document.removeEventListener('focusin', track);
         }
+        expect(focused.filter((el) => !dialog.contains(el))).toEqual([
+          openOf(/Principal/),
+        ]);
       },
     );
   });
@@ -518,9 +513,6 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
 // Etapa 8 (8.3), achado F3: Configurações › Ver atalhos troca o diálogo no mesmo slot; o
 // novo guardava o body como "quem abriu" e o Esc não voltava ao botão Configurações.
 describe('Home: troca de diálogo (F3)', () => {
-  beforeEach(simulateModalFocus);
-  afterEach(restoreModalFocus);
-
   it('Configurações › Ver atalhos › Esc volta ao botão Configurações', async () => {
     Element.prototype.scrollIntoView = vi.fn();
     render(<Home />);

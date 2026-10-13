@@ -1,9 +1,11 @@
 // O jsdom não implementa `showModal`/`close` nem a inércia do resto da página com um
-// diálogo modal aberto. No Chrome, enquanto o modal está aberto, `focus()` num elemento
+// diálogo modal aberto (ligado para todo teste com DOM em `tests/setup.ts`, etapa 8, F8). No Chrome, enquanto o modal está aberto, `focus()` num elemento
 // fora dele não faz nada; e, quando o diálogo sai do DOM com o foco dentro, o foco cai no
 // `body`. Este simulador reproduz as duas coisas para os testes de foco ao fechar
 // (etapa 7, achado A1): sem ele, um `focus()` feito com o modal ainda aberto passaria no
 // jsdom e falharia no navegador.
+
+import { vi } from 'vitest';
 
 interface Saved {
   readonly showModal: PropertyDescriptor | undefined;
@@ -74,4 +76,19 @@ export function restoreModalFocus(): void {
   restore(HTMLElement.prototype, 'focus', saved.focus);
   saved = null;
   modals.length = 0;
+}
+
+/**
+ * Espera o modal de cima abrir de fato (aberto e com o foco dentro) e o devolve. Use antes
+ * de clicar dentro dele: `vi.waitFor` só pelo `<dialog>` no DOM devolve cedo demais.
+ */
+export function openDialog(): Promise<HTMLDialogElement> {
+  return vi.waitFor(() => {
+    const dialogs = [...document.querySelectorAll('dialog')];
+    const dialog = dialogs.at(-1);
+    if (!dialog?.open || !dialog.contains(document.activeElement)) {
+      throw new Error('o diálogo ainda não abriu');
+    }
+    return dialog;
+  });
 }

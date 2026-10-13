@@ -8,7 +8,6 @@ import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
-import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 import { layerOf } from '../model/specFixtures';
 
 // R5: Detalhes redesenhado (identidade, PropertyGrid, LayerGroup recolhível, pendências
@@ -230,9 +229,6 @@ describe('Detalhes — DataGrid', () => {
 // Etapa 8 (8.3), achado F3: o passo "tipo" troca pelo passo "dono" no mesmo slot; o diálogo
 // novo guardava como "quem abriu" o botão do tipo, que já tinha saído, e o foco se perdia.
 describe('Detalhes — nova anotação tipada com dono (F3)', () => {
-  beforeEach(simulateModalFocus);
-  afterEach(restoreModalFocus);
-
   it('tipo › dono › Cancelar volta ao "+ Anotação"', async () => {
     const { harness, user } = renderMarking('MC');
     act(() => {
@@ -282,9 +278,6 @@ async function focusTrail(run: () => Promise<void>): Promise<Element[]> {
 // vencia só pela ordem das filas. Agora o painel é o dono e age no commit; o retorno do
 // seletor vê o foco já no destino e não mexe. O foco vai direto, sem passar por outro lugar.
 describe('Detalhes — escolher e ir até o alvo (F2)', () => {
-  beforeEach(simulateModalFocus);
-  afterEach(restoreModalFocus);
-
   it('Ctrl+Enter no seletor leva o foco direto à anotação de destino', async () => {
     const harness = createHarness(cadastroProject());
     harness.ui.selection.value = { kind: 'marking', id: 'MN' };

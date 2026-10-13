@@ -6,7 +6,6 @@ import { Dialog } from '../../src/ui/Dialog';
 import { RefPicker, type RefFieldDef } from '../../src/ui/RefPicker';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf } from './harness';
-import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 
 // Etapa 8 (8.3), achado F1: o `Dialog` (e o `RefPicker`) abria e registrava o retorno do
 // foco num `useEffect`, que roda no quadro seguinte. Quem renderiza fora de `act` (o
@@ -19,7 +18,6 @@ import { restoreModalFocus, simulateModalFocus } from './modalFocus';
 let host: HTMLElement;
 
 beforeEach(() => {
-  simulateModalFocus();
   host = document.createElement('div');
   document.body.append(host);
 });
@@ -27,7 +25,6 @@ beforeEach(() => {
 afterEach(() => {
   render(null, host);
   host.remove();
-  restoreModalFocus();
 });
 
 /** Deixa a renderização agendada e as microtarefas rodarem (sem chegar ao próximo quadro). */
