@@ -98,4 +98,25 @@ describe('Detalhes da revisão', () => {
       await screen.findByRole('textbox', { name: 'Nota para o agente' }),
     ).toBeTruthy();
   });
+
+  // Fase 8.2 (P8, O9 da rodada 4): "sugerida numa rejeição" só com uma rejeição no nível;
+  // "parcial" por aceitas e pendentes não é rejeição.
+  it('a nota só é "sugerida numa rejeição" quando o nível tem alguma mudança rejeitada', async () => {
+    const { proposal, ids } = richScenario();
+    const h = await openReviewHarness({ proposals: [proposal] });
+    h.review.open('P1');
+    // A imagem I3 fica parcial: a marcação (e, junto, a imagem) aceita, a anotação pendente.
+    await h.review.decide({ level: 'change', id: ids.marking }, 'accepted');
+    act(() => h.review.select({ level: 'image', id: 'I3' }));
+    renderInEditor(h, <ReviewDetails />);
+    expect(h.review.derived.levels.value.get('image:I3')?.state).toBe('partial');
+    expect(screen.getByText('opcional, o agente lê na próxima rodada')).toBeTruthy();
+    // Uma rejeição no nível: a nota passa a ser sugerida.
+    await act(async () => {
+      await h.review.decide({ level: 'change', id: ids.annotation }, 'rejected');
+    });
+    expect(
+      screen.getByText('sugerida numa rejeição: o agente lê na próxima rodada'),
+    ).toBeTruthy();
+  });
 });

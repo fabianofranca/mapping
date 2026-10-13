@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  deserialize,
   proposalFilePath,
   serialize,
   serializeProposal,
@@ -251,6 +252,29 @@ describe('ProposalStore: conferência da pasta', () => {
     expect(session.proposals.problems.value).toEqual([]);
   });
 
+  // Fase 8.2 (P4): o aviso de uma proposta sai da fila por ação do store (quem abre a
+  // revisão chama), do tipo dado ou todos.
+  it('dismissNotice tira da fila os avisos de uma proposta, por tipo ou todos', async () => {
+    const { session, root } = await openHarness({ skipProposals: true });
+    writeOutside(root, richScenario('P1').proposal);
+    writeOutside(root, richScenario('P2').proposal);
+    await session.proposals.scan();
+    const kinds = () => session.proposals.notices.value.map((n) => `${n.kind}:${n.id}`);
+    expect(kinds()).toEqual(['added:P1', 'added:P2']);
+    const before = session.proposals.notices.value;
+    session.proposals.dismissNotice('P3', 'added');
+    expect(session.proposals.notices.value).toBe(before);
+    session.proposals.dismissNotice('P1', 'changed');
+    expect(session.proposals.notices.value).toBe(before);
+    session.proposals.dismissNotice('P1', 'added');
+    expect(kinds()).toEqual(['added:P2']);
+    writeOutside(root, { ...richScenario('P2').proposal, title: 'Outro' });
+    await session.proposals.scan();
+    expect(kinds()).toEqual(['added:P2', 'changed:P2']);
+    session.proposals.dismissNotice('P2');
+    expect(kinds()).toEqual([]);
+  });
+
   it('session.sync() confere as propostas junto com o mapping.json', async () => {
     const { session, root } = await openHarness({ skipProposals: true });
     expect(session.proposals.list.value).toEqual([]);
@@ -360,5 +384,73 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(await h.root.read('images/nova.webp')).toBe('WEBP');
     expect(await h.root.read(NEW_IMAGE_PATH)).toBeNull();
     expect(h.session.saveStatus.value).toBe('saved');
+  });
+
+  /** O `mapping.json` em disco, lido de novo. */
+  async function diskProject(h: Harness) {
+    const parsed = deserialize((await h.root.read('mapping.json')) ?? '');
+    if (!parsed.ok) throw new Error('mapping.json inválido');
+    return parsed.project;
+  }
+
+  // Fase 8.2 (P7): o `mapping.json` gravou, mas o `proposal.json` falhou. Sem compensar, o
+  // projeto ficava com as mudanças e a proposta sem `applied` (reaplicar dava conflito,
+  // imagens duplicadas). Agora o aplicar é desfeito como no `save-failed`: a entrada de
+  // desfazer sai, o projeto de antes é regravado e as cópias saem de `images/`.
+  it('proposal.json falhando depois do mapping.json gravar: write-failed, o projeto volta ao de antes e aplicar de novo conclui (P7)', async () => {
+    const h = await readyToApply();
+    const dir = h.root.dirs.get('proposals')?.dirs.get('P1');
+    if (!dir) throw new Error('sem a pasta da proposta');
+    dir.failWrites = new Error('disco cheio');
+
+    const result = await h.review.apply();
+    expect(result).toEqual({ ok: false, error: 'write-failed' });
+    await expectNothingApplied(h);
+    expect(h.session.conflict.value).toBeNull();
+    // O disco tem o projeto de antes, regravado por cima do aplicado (duas revisões a mais).
+    const disk = await diskProject(h);
+    expect(disk.images.map((i) => i.id)).not.toContain('I3');
+    expect(disk.revision).toBe(5);
+    expect(h.session.saveStatus.value).toBe('saved');
+
+    // O disco da proposta volta: aplicar de novo conclui, sem conflito nem duplicata.
+    dir.failWrites = null;
+    expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
+    expect((await diskProposal(h.root)).status).toBe('applied');
+    expect(await h.root.read('images/nova.webp')).toBe('WEBP');
+    expect(await h.root.read(NEW_IMAGE_PATH)).toBeNull();
+    expect((await diskProject(h)).images.map((i) => i.id)).toContain('I3');
+    expect(h.session.store.canUndo.value).toBe(true);
+  });
+
+  it('proposal.json e, em seguida, o mapping.json falhando: as cópias ficam até a gravação passar (P7)', async () => {
+    const h = await readyToApply();
+    const dir = h.root.dirs.get('proposals')?.dirs.get('P1');
+    if (!dir) throw new Error('sem a pasta da proposta');
+    dir.failWrites = new Error('disco cheio');
+    // A primeira gravação do mapping.json (o aplicado) passa; a da compensação falha.
+    const original = h.storage.saveMapping.bind(h.storage);
+    let calls = 0;
+    const save = vi.spyOn(h.storage, 'saveMapping').mockImplementation((text) => {
+      calls++;
+      return calls === 2 ? Promise.reject(new Error('quota')) : original(text);
+    });
+
+    expect(await h.review.apply()).toEqual({ ok: false, error: 'write-failed' });
+    // Em memória, o projeto de antes; no disco, ainda o aplicado, que cita a cópia: ela fica.
+    expect(h.session.store.project.value?.images.map((i) => i.id)).not.toContain('I3');
+    expect(h.session.store.canUndo.value).toBe(false);
+    expect((await diskProject(h)).images.map((i) => i.id)).toContain('I3');
+    expect(await h.root.read('images/nova.webp')).toBe('WEBP');
+    expect(h.session.saveStatus.value).toBe('error');
+
+    // "Tentar de novo": o projeto de antes vai ao disco e a limpeza tira a cópia órfã.
+    save.mockRestore();
+    expect(await h.session.flush()).toEqual({ ok: true });
+    expect((await diskProject(h)).images.map((i) => i.id)).not.toContain('I3');
+    expect(await h.root.read('images/nova.webp')).toBeNull();
+    expect(await h.root.read(NEW_IMAGE_PATH)).toBe('WEBP');
+    dir.failWrites = null;
+    expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
   });
 });
