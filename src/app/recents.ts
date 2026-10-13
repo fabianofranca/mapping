@@ -247,35 +247,68 @@ export type RecentFolderOpen =
   | { readonly kind: 'unavailable'; readonly reason: 'denied' | 'missing' };
 
 /**
+ * Onde o Abrir grava o caminho que tomou (`reopenTrace.ts`, contexto `folders.reopen` do
+ * Diagnóstico): `handle=…`, `query=…`, `request=…` e por último `branch=…`.
+ */
+export interface ReopenSteps {
+  step(label: string): void;
+}
+
+const noSteps: ReopenSteps = { step: () => undefined };
+
+/** O nome do erro (`DOMException` nem sempre é `instanceof Error`: o jsdom, outro realm). */
+function errorName(e: unknown): string {
+  const name: unknown = typeof e === 'object' && e !== null ? Reflect.get(e, 'name') : e;
+  return typeof name === 'string' ? name : typeof e;
+}
+
+/**
  * Reabre uma pasta dos recentes. Chamar direto do clique: o navegador só mostra o pedido de
  * permissão dentro do gesto. Com o handle já em memória, a consulta começa no próprio clique;
  * numa visita nova, a única espera antes dela é ler o handle do IndexedDB (milissegundos,
  * dentro da ativação do gesto, que vale alguns segundos). A lista em si não lê handles.
+ * `trace`: recebe o caminho (devolução do portão da 8.4); só grava em memória.
  */
 export function openRecentFolder(
   id: string,
   open: OpenFolder,
+  trace: ReopenSteps = noSteps,
 ): Promise<AppResult<RecentFolderOpen>> {
   const entry = recentFolders.value.find((f) => f.id === id);
   const known = knownHandles.get(id);
+  const branch = <R>(label: string, result: R): R => {
+    trace.step(`branch=${label}`);
+    return result;
+  };
   return guarded<RecentFolderOpen>(async () => {
-    if (!entry) return err('not-found');
-    const unavailable = (reason: 'denied' | 'missing') =>
-      ok<RecentFolderOpen>({ kind: 'unavailable', reason });
-    const handle = known ?? (await handleOf(id));
-    if (!handle || !isReopenable(handle)) return unavailable('missing');
+    if (!entry) return branch('no-entry', err('not-found'));
+    const unavailable = (label: string, reason: 'denied' | 'missing') =>
+      branch(label, ok<RecentFolderOpen>({ kind: 'unavailable', reason }));
     try {
-      if (!(await ensurePermission(handle))) return unavailable('denied');
+      const handle = known ?? (await handleOf(id));
+      trace.step(`handle=${known ? 'memory' : handle ? 'idb' : 'none'}`);
+      if (!handle || !isReopenable(handle)) return unavailable('no-handle', 'missing');
+      try {
+        const granted = await ensurePermission(handle, (step, state) =>
+          trace.step(`${step}=${state}`),
+        );
+        if (!granted) return unavailable('denied', 'denied');
+      } catch (e) {
+        if (isNotFound(e)) return unavailable('permission-missing', 'missing');
+        // Ativação expirada (`SecurityError`), volume desmontado: o aviso oferece Localizar e
+        // Remover da lista, em vez de só "Não foi possível acessar os arquivos" (R5).
+        reportError('folders.permission', e);
+        return unavailable(`permission-error:${errorName(e)}`, 'denied');
+      }
+      if (!(await hasMappingFile(handle))) return unavailable('no-mapping', 'missing');
+      const opened = await open(handle, id);
+      return opened.ok
+        ? branch('opened', ok({ kind: 'opened' }))
+        : branch(`open-failed:${opened.error}`, opened);
     } catch (e) {
-      if (isNotFound(e)) return unavailable('missing');
-      // Ativação expirada (`SecurityError`), volume desmontado: o aviso oferece Localizar e
-      // Remover da lista, em vez de só "Não foi possível acessar os arquivos" (R5).
-      reportError('folders.permission', e);
-      return unavailable('denied');
+      // O `guarded` registra e devolve `storage-failed`; o rastro guarda o nome.
+      throw branch(`exception:${errorName(e)}`, e);
     }
-    if (!(await hasMappingFile(handle))) return unavailable('missing');
-    const opened = await open(handle, id);
-    return opened.ok ? ok({ kind: 'opened' }) : opened;
   });
 }
 

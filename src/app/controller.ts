@@ -343,8 +343,8 @@ const openFolderHandle = (handle: DirectoryHandleLike, replaceId?: string) =>
   openFromStorage(folderTarget(handle, replaceId));
 
 /** Reabre uma pasta dos recentes. Chamar direto do clique (ver `recents.openRecentFolder`). */
-export const openRecentFolder = (id: string) =>
-  recents.openRecentFolder(id, openFolderHandle);
+export const openRecentFolder = (id: string, trace?: recents.ReopenSteps) =>
+  recents.openRecentFolder(id, openFolderHandle, trace);
 
 /** "Localizar pasta…" (ver `recents.relocateFolder`). */
 export const relocateFolder = (id: string) =>
