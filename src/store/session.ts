@@ -126,7 +126,10 @@ export interface ExternalConflict {
  * `unchanged`: nada mudou por fora (ou o arquivo está ilegível por um instante). `reloaded`: o
  * projeto foi recarregado do disco. `conflict`: mudou por fora com a gravação em erro (há
  * pendência que não chega ao disco sozinha): abriu o `conflict`. `busy`: há um gesto em
- * andamento ou uma gravação agendada ou na fila (`saveStatus === 'saving'`): ela confere.
+ * andamento, ou uma gravação agendada (debounce) ou enfileirada e ainda não iniciada
+ * (`saveStatus === 'saving'` quando a conferência roda): ela mesma confere o arquivo antes de
+ * gravar. Uma conferência pedida durante uma gravação em curso é um trabalho atrás dela: roda
+ * depois e responde pelo que encontra (`unchanged` se o arquivo é o que a sessão gravou).
  */
 export type SyncResult = 'unchanged' | 'reloaded' | 'conflict' | 'busy';
 
@@ -163,9 +166,10 @@ export interface ProjectSession {
    * (propostas novas, alteradas ou apagadas por fora: `proposals.notices`). Sem alterações
    * locais pendentes, recarrega o projeto do disco se ele mudou por fora. Com a gravação em
    * erro (a pendência não chega ao disco), não recarrega: abre o `conflict`. Com um gesto em
-   * andamento ou uma gravação agendada ou na fila, devolve `busy`. A conferência é um trabalho
-   * da fila da sessão; chamadas concorrentes são juntadas (uma em curso e no máximo uma
-   * esperando, com `images` acumulado).
+   * andamento, ou uma gravação agendada ou enfileirada ainda não iniciada, devolve `busy`. A
+   * conferência é um trabalho da fila da sessão (pedida durante uma gravação, roda depois dela);
+   * chamadas concorrentes são juntadas (uma em curso e no máximo uma esperando, com `images`
+   * acumulado).
    */
   sync(options?: { readonly images?: boolean }): Promise<SyncResult>;
   /**
