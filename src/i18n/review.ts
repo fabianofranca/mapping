@@ -100,6 +100,7 @@ export const reviewPtBR = {
   'review.applyShort': 'Aplicar',
   'review.applyNone': 'Nada aceito ainda',
   'review.applyBlocked': 'Aplicar bloqueado: o conjunto aceito é inválido',
+  'review.applying': 'Aplicando as aceitas…',
   'review.applied':
     '{count} mudança(s) aplicada(s). Desfazer (Ctrl+Z) volta tudo de uma vez.',
   'review.appliedReason': 'Já aplicada ao projeto',
@@ -280,6 +281,8 @@ export const reviewPtBR = {
   'review.issue.missingSpecialization':
     '{name} usa uma especialização que não ficaria aplicada.',
   'review.issue.doesNotFit': 'A mudança em {name} não cabe mais no projeto atual.',
+  'review.issue.gone':
+    'O alvo desta mudança ({entity}) não existe mais no projeto atual.',
   'review.issue.closed':
     'Esta proposta não está aberta: o que foi aceito não pode mais ser aplicado.',
   'review.issue.generic':
@@ -435,6 +438,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.applyShort': 'Apply',
   'review.applyNone': 'Nothing accepted yet',
   'review.applyBlocked': 'Apply is blocked: the accepted set is invalid',
+  'review.applying': 'Applying the accepted changes…',
   'review.applied': '{count} change(s) applied. Undo (Ctrl+Z) reverts them all at once.',
   'review.appliedReason': 'Already applied to the project',
   'review.closedReason': 'This proposal no longer takes decisions',
@@ -614,6 +618,8 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.issue.missingSpecialization':
     '{name} uses a specialization that would not be applied.',
   'review.issue.doesNotFit': 'The change to {name} no longer fits the current project.',
+  'review.issue.gone':
+    'The target of this change ({entity}) no longer exists in the current project.',
   'review.issue.closed':
     'This proposal is not open: what was accepted can no longer be applied.',
   'review.issue.generic':

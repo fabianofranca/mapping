@@ -51,6 +51,7 @@ export function useApplyState() {
   const label = t('review.applyCount', { count: counts.acceptedPending });
   let reason: string | null = null;
   if (store.readOnly.value) reason = t('proposal.error.readOnly');
+  else if (d.applying.value) reason = t('review.applying');
   else if (counts.acceptedPending === 0) reason = t('review.applyNone');
   else if (validation && !validation.ok) reason = t('review.applyBlocked');
   return {

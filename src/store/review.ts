@@ -533,7 +533,15 @@ export function createReviewState(session: ProjectSession): ReviewState {
       withOpen(async (id) => {
         // Aplicar fecha o que se pode desfazer da revisão: o projeto muda de base.
         undoable.value = null;
-        return proposalActions.applyAccepted(id);
+        // Até a proposta dizer "aplicada" (ou o aplicar ser desfeito), a revisão não
+        // reavalia: o projeto já teria as aceitas e a proposta ainda não. Segura aqui, no
+        // clique, antes de o aplicar entrar na fila; o retrato é do projeto de antes.
+        const release = derived.hold();
+        try {
+          return await proposalActions.applyAccepted(id);
+        } finally {
+          release();
+        }
       }),
 
     step(kind, direction) {

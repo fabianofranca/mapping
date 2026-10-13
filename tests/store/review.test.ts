@@ -479,6 +479,71 @@ describe('conflitos', () => {
   });
 });
 
+// Devolução do portão da 8.2 (achado 7): enquanto o aplicar está em curso, a revisão não
+// reavalia (`derived.hold()`). O retrato é preso à proposta e some ao soltar: um conflito
+// real que surge durante a espera aparece ao soltar, e outra proposta aberta no meio
+// tempo vê os seus próprios valores ao vivo.
+describe('aplicar em curso: a revisão segura a reavaliação', () => {
+  it('um conflito real que surge durante o hold aparece ao soltar, como novo', async () => {
+    const { proposal, ids, base } = richScenario();
+    const { session, root, review } = await openHarness({ proposals: [proposal] });
+    review.open('P1');
+    expect(review.derived.conflictIds.value.size).toBe(0);
+    const release = review.derived.hold();
+    root.put(
+      'mapping.json',
+      serialize({ ...renameMarking(base, 'M1', 'Outro nome'), revision: 4 }),
+    );
+    expect(await session.sync()).toBe('reloaded');
+    // Segurado: o retrato de antes.
+    expect(review.derived.conflictIds.value.size).toBe(0);
+    expect(review.newConflicts.value.size).toBe(0);
+    release();
+    // Solto: o conflito real, ao vivo e novo.
+    expect(review.derived.conflictIds.value).toEqual(new Set([ids.name]));
+    expect(review.derived.situation.value.get(ids.name)?.conflict).toBe(true);
+    expect(review.newConflicts.value).toEqual(new Set([ids.name]));
+  });
+
+  it('o retrato é da proposta: segurar A, fechar e abrir B mostra os valores ao vivo de B', async () => {
+    const { proposal: a, ids, base } = richScenario('P1');
+    const edited = renameMarking(base, 'M1', 'Topo');
+    const b = propose(
+      edited,
+      setMarkingRect(edited, 'M4', { x: 20, y: 20, width: 50, height: 50 }),
+      { id: 'P2', title: 'Mover M4' },
+    );
+    const { session, root, review } = await openHarness({
+      project: edited,
+      proposals: [a, b],
+    });
+    review.open('P1');
+    // A tem o conflito do nome (o projeto já está com outro nome).
+    expect(review.derived.conflictIds.value).toEqual(new Set([ids.name]));
+    const release = review.derived.hold();
+    review.close();
+
+    expect(review.open('P2').ok).toBe(true);
+    // B: os valores ao vivo, não o retrato de A.
+    expect(review.derived.conflictIds.value.size).toBe(0);
+    expect(review.newConflicts.value.size).toBe(0);
+    expect([...review.derived.situation.value.keys()]).toEqual(
+      b.changes.map((c) => c.id),
+    );
+    expect(review.derived.validation.value?.ok).toBe(true);
+    review.close();
+
+    // Por fora, o nome volta ao da proposta A: ao vivo, A não tem mais conflito.
+    root.put('mapping.json', serialize({ ...base, revision: 4 }));
+    expect(await session.sync()).toBe('reloaded');
+    // A, ainda segurada: o retrato dela volta.
+    review.open('P1');
+    expect(review.derived.conflictIds.value).toEqual(new Set([ids.name]));
+    release();
+    expect(review.derived.conflictIds.value.size).toBe(0);
+  });
+});
+
 // Fase 8.2 (P2/R3, P3, P5, O5): o retomar e o "vista" por cópia (`ProjectStorage.copyId`),
 // num blob versionado (`mapping.reviewResume` v2) com `seen` separado do `resume`.
 describe('retomar por cópia e blob v2', () => {

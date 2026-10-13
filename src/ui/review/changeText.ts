@@ -193,6 +193,49 @@ const ENTITY_KEYS = {
   annotation: 'review.entity.annotation',
 } as const satisfies Record<Change['entity'], TranslationKey>;
 
+/** O tipo de entidade por extenso ("Camada"). */
+export function entityLabel(entity: Change['entity']): string {
+  return t(ENTITY_KEYS[entity]);
+}
+
+/** O tipo da entidade que a proposta cita com esse id (pela primeira mudança nela). */
+export function entityKindOf(names: ReviewNames, id: string): Change['entity'] | null {
+  return names.proposal.changes.find((c) => c.entityId === id)?.entity ?? null;
+}
+
+/**
+ * Nome de uma entidade citada só pelo id (os problemas do conjunto aceito): procurada na
+ * prévia e no projeto atual (marcação, imagem, camada, anotação, especialização) e, por
+ * último, no registro da criação ou da remoção dela na proposta. `null` se não está em
+ * lugar nenhum: o alvo não existe mais.
+ */
+export function entityName(names: ReviewNames, id: string): string | null {
+  for (const p of names.preview ? [names.preview, names.current] : [names.current]) {
+    const index = projectIndex(p);
+    if (index.markings.has(id)) return markingName(names, id);
+    if (index.images.has(id)) return imageName(names, id);
+    if (index.layers.has(id)) return layerName(names, id);
+    if (index.annotations.has(id)) return annotationName(names, id);
+    // Sem a cópia em `specs/` (`spec: null`), o nome pode estar na própria proposta.
+    const spec = index.specializations.get(id)?.spec;
+    if (spec) return spec.name;
+  }
+  for (const c of names.proposal.changes) {
+    if (c.entityId !== id || c.field !== null) continue;
+    const record = entityRecord(c);
+    if (c.entity === 'annotation') return annotationName(names, id);
+    if (c.entity === 'specialization') {
+      const name = text(record && isRecord(record.spec) ? record.spec.name : undefined);
+      if (name) return name;
+    } else if (c.entity !== 'platformRepo') {
+      const name =
+        text(record?.name) ?? (c.entity === 'image' ? text(record?.file) : null);
+      if (name) return name;
+    }
+  }
+  return null;
+}
+
 /** Nome do campo de uma tipada (o rótulo do campo na especialização, senão a chave). */
 function valueFieldLabel(names: ReviewNames, c: Change, key: string): string {
   const project = names.preview ?? names.current;

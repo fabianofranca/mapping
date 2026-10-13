@@ -14,7 +14,15 @@ import { markingPath } from '../labels';
 import { Notice } from '../Notice';
 import { ChangeCard } from './ChangeCard';
 import { changeKindLabel } from './ChangeKind';
-import { imageName, markingName, targetName, type ReviewNames } from './changeText';
+import {
+  entityKindOf,
+  entityLabel,
+  entityName,
+  imageName,
+  markingName,
+  targetName,
+  type ReviewNames,
+} from './changeText';
 import { DecisionControl, type DecisionValue } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
 import { Flag } from './Flag';
@@ -62,20 +70,29 @@ function levelPath(names: ReviewNames, target: ReviewTarget): string | null {
   return null;
 }
 
-/** Texto de um problema do conjunto aceito. */
+/** O tipo da entidade em minúsculas ("camada"), para o texto do problema. */
+const kindText = (kind: Parameters<typeof entityLabel>[0]) =>
+  entityLabel(kind).toLocaleLowerCase();
+
+/**
+ * Texto de um problema do conjunto aceito. Cita a entidade pelo nome (marcação, imagem,
+ * camada, anotação, especialização), nunca pelo id; sem nome em lugar nenhum, pelo tipo.
+ */
 function issueText(names: ReviewNames, issue: ProposalIssue): string {
-  const project = names.preview ?? names.current;
-  const index = projectIndex(project);
   const name = (id: string | undefined) => {
     if (id === undefined) return '';
-    if (index.markings.has(id) || projectIndex(names.current).markings.has(id)) {
-      return markingName(names, id);
-    }
-    if (index.images.has(id) || projectIndex(names.current).images.has(id)) {
-      return imageName(names, id);
-    }
-    return id;
+    const found = entityName(names, id);
+    if (found !== null) return found;
+    const kind = entityKindOf(names, id);
+    // Especialização e repositório têm id legível (`sdui`, `android`): é o próprio nome.
+    if (kind === null || kind === 'specialization' || kind === 'platformRepo') return id;
+    return kindText(kind);
   };
+  // A mudança cita um alvo que não existe mais (nem no projeto, nem na proposta).
+  if (issue.code === 'entity-missing' && entityName(names, issue.id) === null) {
+    const kind = entityKindOf(names, issue.id);
+    if (kind !== null) return t('review.issue.gone', { entity: kindText(kind) });
+  }
   const params = { name: name(issue.id), other: name(issue.otherId) };
   switch (issue.code) {
     case 'rect-outside-parent':
