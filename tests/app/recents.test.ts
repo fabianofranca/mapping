@@ -35,8 +35,11 @@ describe('toRecentProjects', () => {
     ]);
   });
 
-  // R7: duas linhas iguais (pasta renomeada reaberta pelo seletor, zip descompactado duas
-  // vezes) ficam distinguíveis pelo nome da pasta.
+  // R7: duas pastas com o mesmo nome de projeto ganham o nome da pasta embaixo, o que as
+  // distingue quando as pastas têm nomes diferentes (`loja` × `loja-2`). Limite (8.7): com o
+  // mesmo nome de projeto **e** de pasta (o mesmo zip descompactado em dois lugares), as duas
+  // linhas continuam iguais, porque o navegador não dá o caminho; a coluna Último uso as
+  // distingue (`docs/ARCHITECTURE.md`, recentes).
   it('showFolderName: pasta com outro nome, ou outra pasta com o mesmo nome de projeto', () => {
     const list = toRecentProjects(
       [localMeta('l1', 'Loja', '2026-01-01T00:00:00.000Z')],

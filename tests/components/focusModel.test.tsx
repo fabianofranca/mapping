@@ -1,6 +1,9 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { within } from '@testing-library/preact';
+import userEvent from '@testing-library/user-event';
+import { t } from '../../src/i18n';
 import { typeOfAnnotation } from '../../src/model';
 import { Dialog } from '../../src/ui/Dialog';
 import { RefPicker, type RefFieldDef } from '../../src/ui/RefPicker';
@@ -140,4 +143,32 @@ describe('RefPicker fora de act (F1)', () => {
       expect(document.activeElement).toBe(host.querySelector('[data-target]'));
     },
   );
+});
+
+// Etapa 8 (8.3), achado F7 (resíduo 7 da auditoria, 8.7): o fechar do seletor é um
+// `IconButton` da biblioteca de controles, com nome acessível, e fecha o seletor.
+describe('RefPicker: botão de fechar (F7)', () => {
+  it('tem o nome acessível "Fechar" e chama onClose', async () => {
+    const project = cadastroProject();
+    const annotation = annotationOf(project, 'AIN');
+    const field = typeOfAnnotation(project, annotation)?.type.fields.find(
+      (f) => f.key === 'dado',
+    ) as RefFieldDef;
+    const onClose = vi.fn();
+    render(
+      <RefPicker
+        project={project}
+        annotation={annotation}
+        field={field}
+        onClose={onClose}
+        onPick={() => undefined}
+      />,
+      host,
+    );
+    await settle();
+    const close = within(host).getByRole('button', { name: t('common.close') });
+    expect(close.classList.contains('icon-button')).toBe(true);
+    await userEvent.click(close);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
 });

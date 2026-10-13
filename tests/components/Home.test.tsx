@@ -307,7 +307,10 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
   });
 
   // Etapa 8 (8.4), R7: duas pastas com o mesmo nome (do projeto e da pasta) mostram o nome
-  // da pasta nas duas linhas; a lista decide (`showFolderName`), a tabela só obedece.
+  // da pasta nas duas linhas; a lista decide (`showFolderName`), a tabela só obedece. Com os
+  // dois nomes iguais, as linhas continuam iguais (`['loja', 'loja']` nas duas): é o limite
+  // do R7, porque o navegador não dá o caminho da pasta; a coluna Último uso as distingue
+  // (`docs/ARCHITECTURE.md`, recentes; 8.7).
   it('nome repetido: as duas linhas mostram o nome da pasta', () => {
     const twin = (id: string, usedAt: string) => ({
       kind: 'folder',

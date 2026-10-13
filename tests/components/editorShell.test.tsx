@@ -125,12 +125,12 @@ describe('useProjectCommands', () => {
     const file = new File(['z'], 'p.zip');
     controller.buildExport.mockResolvedValue({
       ok: true,
-      value: { file, missingImages: [] },
+      value: { file, missingImages: [], saved: true },
     });
     await s.commands().exportProject();
     expect(s.notices.setProgress).toHaveBeenNthCalledWith(1, t('editor.exporting'));
     expect(s.notices.setProgress).toHaveBeenLastCalledWith(null);
-    expect(s.dialogs.show).toHaveBeenCalledWith({ kind: 'export', file });
+    expect(s.dialogs.show).toHaveBeenCalledWith({ kind: 'export', file, saved: true });
     expect(s.notices.setMessage).toHaveBeenLastCalledWith(null);
   });
 
@@ -139,16 +139,29 @@ describe('useProjectCommands', () => {
     const file = new File(['z'], 'p.zip');
     controller.buildExport.mockResolvedValue({
       ok: true,
-      value: { file, missingImages: ['images/a.jpg', 'images/b.png'] },
+      value: { file, missingImages: ['images/a.jpg', 'images/b.png'], saved: true },
     });
     await s.commands().exportProject();
-    expect(s.dialogs.show).toHaveBeenCalledWith({ kind: 'export', file });
+    expect(s.dialogs.show).toHaveBeenCalledWith({ kind: 'export', file, saved: true });
     expect(s.notices.setMessage).toHaveBeenLastCalledWith(
       t('editor.exportMissingImages', {
         count: 2,
         files: 'images/a.jpg, images/b.png',
       }),
     );
+  });
+
+  // Etapa 8 (8.7), resíduo 1 (S8): o zip com a gravação em erro leva o confirmado, que o
+  // armazenamento ainda não tem; o diálogo recebe `saved` para avisar.
+  it('exportar com a gravação em erro repassa saved: false ao diálogo', async () => {
+    const s = setup();
+    const file = new File(['z'], 'p.zip');
+    controller.buildExport.mockResolvedValue({
+      ok: true,
+      value: { file, missingImages: [], saved: false },
+    });
+    await s.commands().exportProject();
+    expect(s.dialogs.show).toHaveBeenCalledWith({ kind: 'export', file, saved: false });
   });
 
   it('exportar com erro mostra a mensagem traduzida', async () => {
@@ -356,6 +369,20 @@ describe('ExportDialog', () => {
     const card = document.querySelector('.file-card') as HTMLElement;
     expect(card.textContent).toContain('projeto.zip');
     expect(card.textContent).toContain(t('export.fileMeta', { size: '2 KB' }));
+  });
+
+  // Etapa 8 (8.7), resíduo 1 (S8).
+  it('com a gravação em erro, avisa que o zip leva alterações ainda não salvas', () => {
+    render(
+      <ExportDialog file={new File(['z'], 'p.zip')} saved={false} onDone={vi.fn()} />,
+    );
+    expect(screen.getByRole('status').textContent).toBe(t('export.unsaved'));
+  });
+
+  it('com tudo gravado, não mostra o aviso', () => {
+    render(<ExportDialog file={new File(['z'], 'p.zip')} saved onDone={vi.fn()} />);
+    expect(screen.queryByText(t('export.unsaved'))).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('cancelar só fecha', async () => {

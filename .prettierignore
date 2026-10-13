@@ -7,3 +7,7 @@ CLAUDE.md
 coverage
 playwright-report
 test-results
+
+# Worktrees locais do Claude Code: cópias do repositório. Só a pasta deles (o resto de .claude/,
+# como .claude/skills/, é do repositório e continua conferido).
+.claude/worktrees

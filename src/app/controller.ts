@@ -387,6 +387,11 @@ export interface ExportedProject {
   readonly file: File;
   /** Imagens do projeto que não estavam no armazenamento e ficaram fora do zip. */
   readonly missingImages: readonly string[];
+  /**
+   * O que vai no zip está também no armazenamento. `false` com a gravação em erro: o zip leva
+   * o confirmado, que o projeto ainda não tem (o diálogo Exportar avisa).
+   */
+  readonly saved: boolean;
 }
 
 /** Gera o zip do projeto aberto. */
@@ -402,6 +407,7 @@ export function buildExport(): Promise<AppResult<ExportedProject>> {
         type: 'application/zip',
       }),
       missingImages: files.missingImages,
+      saved: files.saved,
     });
   });
 }

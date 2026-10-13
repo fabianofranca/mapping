@@ -11,6 +11,8 @@ import * as imageCrop from '../../src/storage/imageCrop';
 import {
   RESIZE_STEP,
   hideToolWindow,
+  layersWindowHeight,
+  resizeLayersWindow,
   isToolWindowOpen,
   resetToolWindowSize,
   showToolWindow,
@@ -418,6 +420,26 @@ describe('useEditorShortcuts: janelas', () => {
     expect(toolWindowSizes.value.right).toBe(before + RESIZE_STEP);
     s.press('ArrowRight', { ctrl: true, shift: true });
     expect(toolWindowSizes.value.right).toBe(before);
+  });
+
+  // Etapa 8 (8.7), resíduo 5 (F4): a janela e a coluna são achadas pelos `data-*` que o
+  // ToolWindow e o EditorWindows expõem, não pelas classes de CSS deles.
+  it('Ctrl+Shift+↑ nas Camadas empilhadas mexe na divisória, medida pela coluna', () => {
+    const s = setup();
+    showToolWindow('layers');
+    resizeLayersWindow(300, 800);
+    const column = document.createElement('div');
+    column.setAttribute('data-tool-column', '');
+    column.getBoundingClientRect = () => new DOMRect(0, 0, 280, 800);
+    const el = document.createElement('section');
+    el.className = 'tool-window-stacked';
+    el.setAttribute('data-window', 'layers');
+    el.tabIndex = 0;
+    column.append(el);
+    document.body.append(column);
+    el.focus();
+    s.press('ArrowUp', { ctrl: true, shift: true });
+    expect(layersWindowHeight.value).toBe(300 + RESIZE_STEP);
   });
 });
 

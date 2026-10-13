@@ -36,17 +36,19 @@ const mcpOnlyFromModel = [
 
 // Etapa 8 (8.3): seletor por classe em `querySelector(All)` atravessa componentes (a
 // classe é do CSS de outro componente); dentro do próprio `ref`, use `[data-…]` ou `[role=…]`.
+// Vale também para `closest(...)` (8.7, resíduo 5 da auditoria): subir até a classe de outro
+// componente é o mesmo contrato invisível.
 const classSelectorMessage =
   'Seletor por classe atravessa componentes: use um ref ou [data-…]/[role=…] dentro do próprio ref (docs/ARCHITECTURE.md, "Foco e teclado").';
 const classSelectorRules = [
   {
     selector:
-      'CallExpression[callee.property.name=/^querySelector(All)?$/] > Literal.arguments[value=/\\./]',
+      'CallExpression[callee.property.name=/^(querySelector(All)?|closest)$/] > Literal.arguments[value=/\\./]',
     message: classSelectorMessage,
   },
   {
     selector:
-      'CallExpression[callee.property.name=/^querySelector(All)?$/] > TemplateLiteral.arguments > TemplateElement[value.raw=/\\./]',
+      'CallExpression[callee.property.name=/^(querySelector(All)?|closest)$/] > TemplateLiteral.arguments > TemplateElement[value.raw=/\\./]',
     message: classSelectorMessage,
   },
 ];
@@ -194,6 +196,8 @@ export default tseslint.config(
       'coverage',
       'playwright-report',
       'test-results',
+      // Worktrees locais do Claude Code (`.claude/worktrees/`): cópias do repositório.
+      '.claude/worktrees',
     ],
   },
   js.configs.recommended,

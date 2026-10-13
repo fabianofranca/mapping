@@ -392,6 +392,7 @@ describe('exportar', () => {
     const result = await app.buildExport();
     if (!result.ok) throw new Error(result.error);
     expect(result.value.missingImages).toEqual([]);
+    expect(result.value.saved).toBe(true);
     expect(result.value.file.name).toMatch(/\.zip$/);
     const zip = await JSZip.loadAsync(await result.value.file.arrayBuffer());
     const names = Object.keys(zip.files);
@@ -399,6 +400,21 @@ describe('exportar', () => {
     expect(names).toContain('images/cadastro.png');
     expect(names.some((n) => n.startsWith('specs/'))).toBe(true);
     expect(names.some((n) => n.startsWith('backups'))).toBe(false);
+  });
+
+  // Etapa 8 (8.7), resíduo 1 (S8): `collectFiles().saved` chega ao diálogo Exportar.
+  it('com a gravação em erro, o zip sai com saved: false', async () => {
+    const root = new MemoryDirectory('p');
+    await app.createFolderProject(root, 'P', []);
+    const { session } = await openedOf(app);
+    root.failWrites = new Error('NoModificationAllowedError');
+    session.actions.renameProject('Q');
+    await session.flush();
+    expect(session.saveStatus.value).toBe('error');
+    const result = await app.buildExport();
+    if (!result.ok) throw new Error(result.error);
+    expect(result.value.saved).toBe(false);
+    root.failWrites = null;
   });
 
   it('sem projeto aberto devolve not-found', async () => {

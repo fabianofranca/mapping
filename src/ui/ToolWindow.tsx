@@ -136,7 +136,7 @@ function ToolResizer({
 
 /** Altura da coluna da esquerda, de onde sai o limite da divisória entre as janelas. */
 function columnHeight(el: Element): number {
-  return el.closest('.tool-column')?.getBoundingClientRect().height || 0;
+  return el.closest('[data-tool-column]')?.getBoundingClientRect().height || 0;
 }
 
 /**
