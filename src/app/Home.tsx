@@ -626,7 +626,7 @@ function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectLis
           >
             <th scope="row">
               <span class="project-name">{project.name}</span>
-              {project.kind === 'folder' && project.folderName !== project.name && (
+              {project.kind === 'folder' && project.showFolderName && (
                 <span class="project-name muted">{project.folderName}</span>
               )}
               <Unexported project={project} />

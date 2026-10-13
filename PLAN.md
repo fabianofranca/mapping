@@ -136,12 +136,12 @@ Prompt em `docs/prompts/etapa-8-coordenador.md` (modelo e esforço por fase, mod
 
 **Toca em:** `src/app/controller.ts` (split), novos `src/app/recents.ts` e `src/app/pageLifecycle.ts`, `src/storage/types.ts` (`copyId`), `src/storage/local.ts`, `src/storage/folder.ts`, `src/app/Home.tsx` (só `folderName` com nome repetido e o que o split exigir; o foco é da 8.3), `src/i18n/*`, `eslint.config.js`, `docs/ARCHITECTURE.md` (seção dos recentes), `tests/app/controller.test.ts` (e novos `recents.test.ts`), `tests/storage/*`, `tests/i18n/*`, `tests/components/Home.test.tsx`.
 
-- [ ] Nota de desenho aprovada: responsabilidades de `controller.ts`, `recents.ts` e `pageLifecycle.ts`; onde mora `openFolderId`; o contrato `ProjectStorage.copyId` (local: id; pasta: id da entrada dos recentes; pasta sem recentes: id por sessão)
-- [ ] Testes que reproduzem: fechar durante `rememberFolder` não vaza `openFolderId` (R1); rename do projeto em pasta reflete nos recentes sem Fechar (R2); reparar e abrir local conta como uso (R4); `SecurityError` no `requestPermission` oferece Localizar/Remover (R5); duas pastas com o mesmo nome mostram `folderName` (R7); `copyId` preenchido nos três casos
-- [ ] Split do controller sem mudar a API usada por `Home.tsx` e pelos testes (re-exports)
-- [ ] R1, R2 (`touchFolder` no `onChanged`), R4, R5, R6 (`requestPersistentStorage` ao guardar pasta), R7, R8 (comentário no teste), R10 (`list()` sem ordenação morta)
-- [ ] Regras automáticas: ESLint `no-restricted-globals` para `localStorage`/`sessionStorage`/`indexedDB` em `src/**` exceto `src/utils/safeStorage.ts` e `src/storage/local.ts`; teste em `tests/i18n/` que exige `error.<code>` para todo `AppErrorCode`; `max-lines` (`warn`, 600) em `src/app/**`
-- [ ] `docs/ARCHITECTURE.md` atualizado (recentes, `copyId`, módulos novos)
+- [x] Nota de desenho aprovada: responsabilidades de `controller.ts`, `recents.ts` e `pageLifecycle.ts`; onde mora `openFolderId`; o contrato `ProjectStorage.copyId` (local: id; pasta: id da entrada dos recentes; pasta sem recentes: id por sessão)
+- [x] Testes que reproduzem: fechar durante `rememberFolder` não vaza `openFolderId` (R1); rename do projeto em pasta reflete nos recentes sem Fechar (R2); reparar e abrir local conta como uso (R4); `SecurityError` no `requestPermission` oferece Localizar/Remover (R5); duas pastas com o mesmo nome mostram `folderName` (R7); `copyId` preenchido nos três casos
+- [x] Split do controller sem mudar a API usada por `Home.tsx` e pelos testes (re-exports)
+- [x] R1, R2 (`touchFolder` no `onChanged`), R4, R5, R6 (`requestPersistentStorage` ao guardar pasta), R7, R8 (comentário no teste), R10 (`list()` sem ordenação morta)
+- [x] Regras automáticas: ESLint `no-restricted-globals` para `localStorage`/`sessionStorage`/`indexedDB` em `src/**` exceto `src/utils/safeStorage.ts` e `src/storage/local.ts`; teste em `tests/i18n/` que exige `error.<code>` para todo `AppErrorCode`; `max-lines` (`warn`, 600) em `src/app/**`
+- [x] `docs/ARCHITECTURE.md` atualizado (recentes, `copyId`, módulos novos)
 
 **Aceite**: R0.2 a R0.7, R2.1 a R2.4 e R7.2 do guia sem regressão; `controller.ts` abaixo de 450 linhas; O5 do relato da rodada 4 fechado junto com a 8.2.
 

@@ -207,11 +207,27 @@ async function removeFile(root: DirectoryHandleLike, path: string): Promise<void
   }
 }
 
-/** Projeto numa pasta do disco. Cada gravação vai direto para o arquivo. */
-export function createFolderStorage(root: DirectoryHandleLike): ProjectStorage {
+/**
+ * A pasta tem `mapping.json`? Para conferir se ela é um projeto (abrir, Localizar) sem passar
+ * pelo `loadMapping` de um `ProjectStorage`, que só a sessão usa. A pasta sumida conta como
+ * sem projeto; outros erros sobem.
+ */
+export async function hasMappingFile(root: DirectoryHandleLike): Promise<boolean> {
+  return (await readFile(root, MAPPING_FILE)) !== null;
+}
+
+/**
+ * Projeto numa pasta do disco. Cada gravação vai direto para o arquivo. `copyId`: a cópia do
+ * projeto (ver `ProjectStorage.copyId`), dada pelo controller antes de a sessão abrir.
+ */
+export function createFolderStorage(
+  root: DirectoryHandleLike,
+  options: { readonly copyId?: string } = {},
+): ProjectStorage {
   return {
     kind: 'folder',
     folderName: root.name,
+    ...(options.copyId === undefined ? {} : { copyId: options.copyId }),
     async loadMapping() {
       const blob = await readFile(root, MAPPING_FILE);
       return blob ? blob.text() : null;
