@@ -8,7 +8,7 @@
 //
 // {
 //   "afterRead": [{ "match": "fontes/tela.png", "append": { "file": "/abs/mapping.json", "text": "\n" } }],
-//   "fail": [{ "fn": "link", "match": "/images/", "code": "EPERM" }]
+//   "fail": [{ "fn": "link", "match": "/images/", "code": "EPERM" }, { "fn": "rm", "match": ".tmp", "code": "EBUSY" }]
 // }
 //
 // `match` é um trecho do caminho (qualquer argumento de texto da chamada). `afterRead` acrescenta
@@ -39,7 +39,7 @@ function failure(fn, code, args) {
   return error;
 }
 
-for (const fn of ['readFile', 'link', 'rename', 'writeFile']) {
+for (const fn of ['readFile', 'link', 'rename', 'rm', 'writeFile']) {
   const original = fsp[fn];
   fsp[fn] = async (...args) => {
     const hooks = config();
