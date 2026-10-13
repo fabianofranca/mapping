@@ -31,6 +31,12 @@ interface DialogBaseProps {
   readonly flush?: boolean;
   /** Alvo do foco ao fechar quando quem abriu não está mais no DOM (`restoreFocus`). */
   readonly returnFocus?: FocusReturn;
+  /**
+   * Confirmação destrutiva (excluir, remover): `role="alertdialog"`, descrita pelo corpo,
+   * que o leitor de tela lê ao abrir. Só aqui: num diálogo comprido (Ajuda) ele leria o
+   * corpo inteiro.
+   */
+  readonly alert?: boolean;
 }
 
 /**
@@ -60,9 +66,11 @@ export function Dialog({
   size = 'sm',
   flush = false,
   returnFocus,
+  alert = false,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const bodyId = useId();
 
   // Quem tinha o foco ao abrir (o botão que abriu, o diálogo de baixo, ou quem abriu o
   // primeiro diálogo do slot do host): ao fechar, o foco volta para ele em vez de cair no
@@ -74,7 +82,9 @@ export function Dialog({
     <dialog
       ref={ref}
       class={size === 'sm' ? 'dialog' : `dialog dialog-${size}`}
+      role={alert ? 'alertdialog' : undefined}
       aria-labelledby={titleId}
+      aria-describedby={alert ? bodyId : undefined}
       onCancel={(e) => {
         e.preventDefault();
         onCancel?.();
@@ -105,6 +115,7 @@ export function Dialog({
       </header>
       <div
         class={flush ? 'dialog-body dialog-body-flush' : 'dialog-body'}
+        id={bodyId}
         data-dialog-body=""
       >
         {children}

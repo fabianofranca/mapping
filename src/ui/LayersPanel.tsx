@@ -309,6 +309,7 @@ function DeleteLayerDialog({
   return (
     <Dialog
       title={t('layer.deleteTitle')}
+      alert
       onCancel={onCancel}
       actions={
         <>

@@ -355,6 +355,7 @@ export function AnnotationEditor({
       {pending && (
         <Dialog
           title={t('ref.deleteTitle')}
+          alert
           onCancel={() => setPending(null)}
           actions={
             <>

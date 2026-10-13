@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import { locale } from '../store/settings';
@@ -474,6 +474,7 @@ export function Home() {
           {dialog?.kind === 'delete' && (
             <Dialog
               title={t('home.deleteTitle')}
+              alert
               onCancel={closeDialog}
               returnFocus={rowLeft}
               actions={
@@ -532,13 +533,10 @@ function NameField({
   readonly placeholder: string;
   readonly onInput: (value: string) => void;
 }) {
-  const input = useRef<HTMLInputElement>(null);
-  // `autoFocus` nem sempre vale dentro de um <dialog> reaberto; foca na montagem.
-  useEffect(() => input.current?.focus(), []);
+  // Sem foco próprio: o diálogo dá o foco inicial ao primeiro controle do corpo (F9).
   return (
     <TextField
       label={t('project.name')}
-      inputRef={input}
       type="text"
       value={value}
       placeholder={placeholder}

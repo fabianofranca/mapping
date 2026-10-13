@@ -284,6 +284,7 @@ export function TableField({
       {confirm && (
         <Dialog
           title={t('ref.deleteTitle')}
+          alert
           onCancel={() => setConfirm(null)}
           returnFocus={focusAfterConfirm(
             confirm.row,

@@ -331,6 +331,7 @@ function RemoveDialog({
   return (
     <Dialog
       title={t('spec.removeTitle', { name })}
+      alert
       onCancel={onCancel}
       actions={
         <>

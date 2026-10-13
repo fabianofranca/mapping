@@ -40,6 +40,8 @@ function ConfirmDialog({
   return (
     <Dialog
       title={title}
+      // Destrutiva (excluir, fechar sem salvar): anunciada como alerta.
+      alert={tone === 'danger'}
       onCancel={onCancel}
       actions={
         <>
