@@ -34,14 +34,14 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 4. Crie a pasta de trabalho `~/mapping-testes/<AAAA-MM-DD>/`, fora de qualquer repositório do dono. Tudo o que você criar fica nela. **Não abra, mova nem apague nada fora dela.**
 5. Peça ao dono para deixar o computador **desbloqueado** e a janela do Chrome **à vista e em foco** durante a rodada, inclusive quando ele não estiver no teclado (apêndice A, "Página oculta e foco").
 6. **Estado prévio do navegador:** registre o que a tela inicial já mostra e, se souber ler, a chave `mapping.reviewResume` (apêndice A); não apague nada.
-7. Anote o **build id** (seção 3 do guia) e confira se é o esperado; se não for, siga a seção 3 para forçar a versão nova. Se a app não mostrar um build id, esse já é o primeiro achado.
+7. Anote o **build id** (seção 3 do guia) e confira se é o esperado. Se não for, use só a faixa **Atualizar**; se ela não aparecer, peça ao dono. Nunca use janela anônima ou de convidado nem limpe os dados do site (apêndice A, "Forçar a versão nova"). Se a app não mostrar um build id, esse já é o primeiro achado.
 
 ## 3. Passos [pessoa]
 
 - **Um bloco por roteiro.** Antes de começar cada roteiro, mande ao dono **uma** mensagem com todos os passos **[pessoa]** daquele roteiro, na ordem, e para cada um o que ele vai ver e exatamente o que escolher (ex.: "R1.1: seletor de pasta, escolha `principal` e **Permitir em todas as visitas**; R1.3: seletor de arquivo, `sdui.json` e depois `modelo-de-dados.json`; R1.22: 'Salvar como', pasta de trabalho, **Salvar**"). Peça que ele fique por perto durante aquele roteiro.
 - **Em cada [pessoa], pergunte e diga que está esperando.** Ao chegar num passo [pessoa], mande uma mensagem com uma **pergunta explícita** (o que fazer, onde clicar, o que escolher e o que responder) e termine com: **"Estou esperando você fazer isto; me avise quando terminar."** Não faça nada até a resposta. Uma mensagem curta demais, ou nenhuma, faz o dono achar que você travou.
 - **Avise toda espera de mais de 30 s.** Se for esperar mais de 30 s por qualquer outro motivo (captura que demora, recarga, varredura de propostas, conferência do disco), avise em uma linha antes ("Esperando a captura; volto em seguida.").
-- Os passos inteiros do dono (R0.6, R6.2 e, quando a extensão não abre `file://`, R0.5) e o que fazer antes de cada seletor estão no apêndice A.
+- **Passos inteiros do dono** (R0.6, R6.2 e, quando a extensão não abre `file://`, R0.5): peça de volta o build id daquela janela e a confirmação de cada ação do passo, uma por uma (apêndice A). O que fazer antes de cada seletor também está no apêndice A.
 
 ## 4. Como agir
 
