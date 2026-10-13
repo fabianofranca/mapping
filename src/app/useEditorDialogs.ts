@@ -1,4 +1,3 @@
-import { useState } from 'preact/hooks';
 import {
   canDeleteImage,
   canDeleteMarking,
@@ -8,6 +7,7 @@ import {
 } from '../model';
 import type { AspectChange } from '../store/session';
 import { useEditor } from '../ui/EditorContext';
+import { useDialogSlot, type DialogSlot } from '../ui/focus';
 
 /** O diálogo aberto no editor (só um por vez), com os dados que ele precisa. */
 export type EditorDialog =
@@ -29,6 +29,9 @@ export type EditorDialog =
 
 export interface EditorDialogs {
   readonly current: EditorDialog | null;
+  /** O slot do diálogo aberto (`DialogSlotContext`): quem abriu, herdado numa troca. */
+  readonly slot: DialogSlot | null;
+  /** Abre; com um diálogo aberto, troca por este (o foco volta a quem abriu o primeiro). */
   show(dialog: EditorDialog): void;
   close(): void;
   requestDeleteImage(image: ProjectImage): void;
@@ -38,13 +41,14 @@ export interface EditorDialogs {
 
 export function useEditorDialogs(): EditorDialogs {
   const { store, actions, ui } = useEditor();
-  const [current, setCurrent] = useState<EditorDialog | null>(null);
-  const show = (dialog: EditorDialog) => setCurrent(dialog);
+  const dialogs = useDialogSlot<EditorDialog>();
+  const { show } = dialogs;
 
   return {
-    current,
+    current: dialogs.current,
+    slot: dialogs.slot,
     show,
-    close: () => setCurrent(null),
+    close: dialogs.close,
     requestDeleteImage: (image) => {
       const project = store.project.peek();
       // Trancada (ou com marcação trancada): nada a confirmar, o modelo recusaria.

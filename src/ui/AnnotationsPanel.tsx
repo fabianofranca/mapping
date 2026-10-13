@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationsOf,
@@ -23,6 +23,7 @@ import {
 import { AnnotationEditor } from './AnnotationEditor';
 import { AnnotationLines, AnnotationTitle } from './AnnotationSummary';
 import { Dialog } from './Dialog';
+import { DialogSlotContext, useDialogSlot } from './focus';
 import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
@@ -93,7 +94,9 @@ export function AnnotationsPanel({
 }: AnnotationsPanelProps) {
   const { actions, ui } = useEditor();
   const root = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState<CreateStep | null>(null);
+  // Os passos da criação (tipo › dono) são um slot: a troca mantém quem abriu o primeiro.
+  const steps = useDialogSlot<CreateStep>();
+  const step = steps.current;
   // A função muda a cada renderização do pai; o efeito só deve reagir ao foco pedido.
   const onFocusDoneRef = useRef(onFocusDone);
   onFocusDoneRef.current = onFocusDone;
@@ -137,7 +140,7 @@ export function AnnotationsPanel({
   };
 
   const createTyped = (layer: Layer, type: AnnotationTypeRef, owner: string | null) => {
-    setStep(null);
+    steps.close();
     created(layer.id, actions.addTypedAnnotation(marking.id, layer.id, type, owner));
   };
 
@@ -150,19 +153,19 @@ export function AnnotationsPanel({
     }
     const owners = validTypedOwners(project, marking.id, type);
     if (owners.length === 0) {
-      setStep({
+      steps.show({
         kind: 'no-owner',
         definition,
         owners: ownerTypeNames(project, { type }),
       });
     } else {
-      setStep({ kind: 'owner', layer, type, definition, owners });
+      steps.show({ kind: 'owner', layer, type, definition, owners });
     }
   };
 
   const add = (layer: Layer) => {
     if (layer.spec) {
-      setStep({ kind: 'type', layer });
+      steps.show({ kind: 'type', layer });
       return;
     }
     created(layer.id, actions.addAnnotation(marking.id, layer.id));
@@ -227,52 +230,54 @@ export function AnnotationsPanel({
         })}
       </Section>
 
-      {step?.kind === 'type' && (
-        <Dialog
-          title={t('typed.chooseTypeTitle', { layer: step.layer.name })}
-          onCancel={() => setStep(null)}
-          actions={<Button onClick={() => setStep(null)}>{t('common.cancel')}</Button>}
-        >
-          <TypeList
-            types={layerAnnotationTypes(project, step.layer.id)}
-            onChoose={(definition) => chooseType(step.layer, definition)}
-          />
-        </Dialog>
-      )}
+      <DialogSlotContext.Provider value={steps.slot}>
+        {step?.kind === 'type' && (
+          <Dialog
+            title={t('typed.chooseTypeTitle', { layer: step.layer.name })}
+            onCancel={() => steps.close()}
+            actions={<Button onClick={() => steps.close()}>{t('common.cancel')}</Button>}
+          >
+            <TypeList
+              types={layerAnnotationTypes(project, step.layer.id)}
+              onChoose={(definition) => chooseType(step.layer, definition)}
+            />
+          </Dialog>
+        )}
 
-      {step?.kind === 'owner' && (
-        <Dialog
-          title={t('typed.chooseOwnerTitle', { type: step.definition.name })}
-          onCancel={() => setStep(null)}
-          actions={<Button onClick={() => setStep(null)}>{t('common.cancel')}</Button>}
-        >
-          <p class="muted">
-            {t('typed.chooseOwnerHint', { type: step.definition.name })}
-          </p>
-          <div class="dialog-stack">
-            {step.owners.map((owner) => (
-              <Button
-                key={owner.id}
-                onClick={() => createTyped(step.layer, step.type, owner.id)}
-              >
-                {annotationDisplayName(project, owner)}
-              </Button>
-            ))}
-          </div>
-        </Dialog>
-      )}
+        {step?.kind === 'owner' && (
+          <Dialog
+            title={t('typed.chooseOwnerTitle', { type: step.definition.name })}
+            onCancel={() => steps.close()}
+            actions={<Button onClick={() => steps.close()}>{t('common.cancel')}</Button>}
+          >
+            <p class="muted">
+              {t('typed.chooseOwnerHint', { type: step.definition.name })}
+            </p>
+            <div class="dialog-stack">
+              {step.owners.map((owner) => (
+                <Button
+                  key={owner.id}
+                  onClick={() => createTyped(step.layer, step.type, owner.id)}
+                >
+                  {annotationDisplayName(project, owner)}
+                </Button>
+              ))}
+            </div>
+          </Dialog>
+        )}
 
-      {step?.kind === 'no-owner' && (
-        <Dialog
-          title={t('typed.chooseOwnerTitle', { type: step.definition.name })}
-          onCancel={() => setStep(null)}
-          actions={<Button onClick={() => setStep(null)}>{t('common.close')}</Button>}
-        >
-          <p role="alert">
-            {t('typed.noOwner', { type: step.definition.name, owners: step.owners })}
-          </p>
-        </Dialog>
-      )}
+        {step?.kind === 'no-owner' && (
+          <Dialog
+            title={t('typed.chooseOwnerTitle', { type: step.definition.name })}
+            onCancel={() => steps.close()}
+            actions={<Button onClick={() => steps.close()}>{t('common.close')}</Button>}
+          >
+            <p role="alert">
+              {t('typed.noOwner', { type: step.definition.name, owners: step.owners })}
+            </p>
+          </Dialog>
+        )}
+      </DialogSlotContext.Provider>
     </div>
   );
 }

@@ -11,12 +11,7 @@ import {
   type SpecField,
 } from '../model';
 import { Tabs, type TabItem } from './controls';
-import {
-  captureFocusOrigin,
-  useModal,
-  type FocusOrigin,
-  type FocusReturn,
-} from './focus';
+import { useFocusOrigin, useModal, type FocusReturn } from './focus';
 import { Icon } from './icons';
 import { imageLabel, markingPath } from './labels';
 import { annotationSourceLabel, labelTexts } from './typedText';
@@ -133,10 +128,8 @@ export function RefPicker({
     current !== null && JSON.stringify(current) === JSON.stringify(target.ref);
   const [active, setActive] = useState(() => Math.max(0, targets.findIndex(isCurrent)));
   // Quem tinha o foco ao abrir (o campo da referência), guardado antes de o seletor pegá-lo.
-  const origin = useRef<FocusOrigin | null>(null);
-  origin.current ??= captureFocusOrigin();
-  // Aberto, com o foco na busca, na mesma renderização que o põe no DOM (etapa 8, F1).
-  useModal(dialog, origin.current, returnFocus, () => input.current?.focus());
+  const origin = useFocusOrigin();
+  useModal(dialog, origin, returnFocus, () => input.current?.focus());
 
   const filters: Filter[] = [
     ...(field.accepts.tags ?? []).map((tag) => ({ kind: 'tag', tag }) as const),

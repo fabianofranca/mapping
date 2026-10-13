@@ -2,6 +2,7 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { t } from '../i18n';
 import { imageDeletionImpact, markingDeletionImpact } from '../model';
 import { Dialog } from '../ui/Dialog';
+import { DialogSlotContext } from '../ui/focus';
 import { useEditor, type EditorContextValue } from '../ui/EditorContext';
 import { markingLabel } from '../ui/labels';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
@@ -221,7 +222,9 @@ export function EditorDialogs(props: EditorDialogsProps) {
   return (
     <>
       {current && (
-        <Fragment key={current.kind}>{renderDialog(current, props, ctx)}</Fragment>
+        <DialogSlotContext.Provider value={props.dialogs.slot}>
+          <Fragment key={current.kind}>{renderDialog(current, props, ctx)}</Fragment>
+        </DialogSlotContext.Provider>
       )}
       <ExternalChangeDialog />
     </>

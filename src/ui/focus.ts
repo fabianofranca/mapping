@@ -1,6 +1,6 @@
 import { signal } from '@preact/signals';
-import type { RefObject } from 'preact';
-import { useLayoutEffect, useRef } from 'preact/hooks';
+import { createContext, type RefObject } from 'preact';
+import { useContext, useLayoutEffect, useRef, useState } from 'preact/hooks';
 
 // Modelo de foco da app (etapa 8, fase 8.3; `docs/ARCHITECTURE.md`, "Foco e teclado").
 // Um modal (`Dialog`, `RefPicker`) abre na mesma renderização que o põe no DOM e, ao sair,
@@ -103,6 +103,82 @@ export function restoreFocusAfterRender(
 }
 
 /**
+ * Slot de diálogos de um host (o editor, a tela inicial, os passos de uma criação): só um
+ * diálogo por vez, e uma troca (Configurações › Ver atalhos) herda quem abriu o primeiro.
+ * O primeiro `Dialog` montado sob o slot reivindica a origem; os seguintes (um diálogo
+ * aberto por cima, como os passos do `SpecsDialog`) guardam a sua.
+ */
+export interface DialogSlot {
+  claim(): FocusOrigin | null;
+}
+
+function createSlot(origin: FocusOrigin): DialogSlot {
+  let claimed = false;
+  return {
+    claim() {
+      if (claimed) return null;
+      claimed = true;
+      return origin;
+    },
+  };
+}
+
+/** O host envolve o diálogo do slot com este contexto (`slot` de `useDialogSlot`). */
+export const DialogSlotContext = createContext<DialogSlot | null>(null);
+
+/** Origem do foco de um modal: a do slot do host, se houver, senão quem tem o foco agora. */
+export function useFocusOrigin(): FocusOrigin {
+  const slot = useContext(DialogSlotContext);
+  const origin = useRef<FocusOrigin | null>(null);
+  origin.current ??= slot?.claim() ?? captureFocusOrigin();
+  return origin.current;
+}
+
+export interface DialogSlotState<T> {
+  /** O diálogo aberto (só um por vez), com os dados que ele precisa. */
+  readonly current: T | null;
+  /** Para o `DialogSlotContext` em volta do diálogo aberto. */
+  readonly slot: DialogSlot | null;
+  /** Abre `next`; com um diálogo já aberto, troca por ele e mantém quem abriu o primeiro. */
+  show(next: T): void;
+  close(): void;
+  /** Fecha só se o diálogo aberto agora atender a `test` (depois de uma espera). */
+  closeIf(test: (current: T) => boolean): void;
+}
+
+/**
+ * Estado de um slot de diálogos. A origem do foco é guardada no gesto que abre o primeiro
+ * diálogo, antes de qualquer renderização, e passa de um diálogo ao seguinte numa troca:
+ * sem isso o diálogo novo nasce depois de o antigo levar o botão que tinha o foco, e ao
+ * fechar não há a quem devolvê-lo (etapa 8, F3).
+ */
+export function useDialogSlot<T>(): DialogSlotState<T> {
+  const [state, setState] = useState<{
+    readonly current: T | null;
+    readonly slot: DialogSlot | null;
+  }>({ current: null, slot: null });
+  // O que está aberto agora (os gestos podem abrir e trocar antes de renderizar).
+  const open = useRef<{ current: T; origin: FocusOrigin } | null>(null);
+  const close = () => {
+    open.current = null;
+    setState({ current: null, slot: null });
+  };
+  return {
+    current: state.current,
+    slot: state.slot,
+    show(next) {
+      const origin = open.current?.origin ?? captureFocusOrigin();
+      open.current = { current: next, origin };
+      setState({ current: next, slot: createSlot(origin) });
+    },
+    close,
+    closeIf(test) {
+      if (open.current && test(open.current.current)) close();
+    },
+  };
+}
+
+/**
  * Quantos modais estão abertos agora. Os atalhos do editor e o colar de imagens não agem
  * com um modal aberto (no lugar de procurar `dialog[open]` no documento).
  */
@@ -117,7 +193,7 @@ export const modalOpen = signal(0);
  */
 export function useModal(
   ref: RefObject<HTMLDialogElement>,
-  origin: FocusOrigin | null,
+  origin: FocusOrigin,
   returnFocus: FocusReturn | undefined,
   focusInitial: (dialog: HTMLDialogElement) => void,
 ): void {

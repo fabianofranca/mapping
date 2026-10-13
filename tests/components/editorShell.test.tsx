@@ -49,6 +49,7 @@ afterEach(() => {
 function fakeDialogs(): EditorDialogs {
   return {
     current: null,
+    slot: null,
     show: vi.fn(),
     close: vi.fn(),
     requestDeleteImage: vi.fn(),

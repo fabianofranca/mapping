@@ -2,13 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { useId, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import { IconButton } from './controls';
-import {
-  captureFocusOrigin,
-  FOCUSABLE,
-  useModal,
-  type FocusOrigin,
-  type FocusReturn,
-} from './focus';
+import { FOCUSABLE, useFocusOrigin, useModal, type FocusReturn } from './focus';
 
 export type { FocusOrigin, FocusReturn } from './focus';
 
@@ -70,12 +64,11 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
-  // Quem tinha o foco ao abrir (o botão que abriu, ou o diálogo de baixo): ao fechar, o
-  // foco volta para ele em vez de cair no `body`. Guardado na renderização, antes de o
-  // diálogo pegar o foco.
-  const origin = useRef<FocusOrigin | null>(null);
-  origin.current ??= captureFocusOrigin();
-  useModal(ref, origin.current, returnFocus, focusFirst);
+  // Quem tinha o foco ao abrir (o botão que abriu, o diálogo de baixo, ou quem abriu o
+  // primeiro diálogo do slot do host): ao fechar, o foco volta para ele em vez de cair no
+  // `body`. Guardado na renderização, antes de o diálogo pegar o foco.
+  const origin = useFocusOrigin();
+  useModal(ref, origin, returnFocus, focusFirst);
 
   return (
     <dialog
