@@ -133,3 +133,7 @@ Ordem dos commits: para cada achado, o teste que o reproduz (vermelho na `main`)
 5. `repeats: 19` nos testes do flake e de F1, sem mexer no `ci.yml`.
 
 Na implementação, os menus (`ActionMenu`, `MenuPopover`, `Popover`) também passaram a registrar o clique fora em `useLayoutEffect`: em `useEffect`, um clique logo depois de abrir não fechava o menu (o mesmo atraso de quadro do F1).
+
+## Revisão 2
+
+Devolução da segunda leitura (A1, M1: `docs/history/auditoria-etapa-8.md`, seção 3.3; numeração local a esta devolução): **A1**, a guarda do Enter (`CommitInput.tsx:33,39`, `KeyValueGrid.tsx:96,102-103`) guarda a última gravação e nunca a zera, então depois de desfazer o mesmo texto não grava mais; passa a valer só enquanto o valor externo ainda é a base da gravação e é zerada na renderização em que ele muda. **M1**, o `MenuPopover` (`:67-69`) fecha na bolha do clique, depois do item; passa a devolver o foco ao gatilho na captura, antes de o item agir, como o `ActionMenu`. Testes antes da correção: `CommitInput` isolado (e com `onCommit` que normaliza), nome da marcação no `MarkingPanel` e Valor de um par no `AnnotationEditor` com `store.undo()` entre as gravações; item do `MenuPopover` que abre um diálogo de forma síncrona. Nota completa no PR da devolução.
