@@ -453,4 +453,74 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     dir.failWrites = null;
     expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
   });
+
+  /**
+   * Segura a próxima gravação do `proposal.json`: `reached` resolve quando ela começa (o
+   * projeto já foi aplicado e o `mapping.json` gravado); `release()` a deixa seguir, ou
+   * falhar com o erro dado.
+   */
+  function holdProposalWrite(h: Harness) {
+    const original = h.storage.writeProposal.bind(h.storage);
+    let release: (error?: Error) => void = () => undefined;
+    const held = new Promise<Error | undefined>((resolve) => {
+      release = resolve;
+    });
+    let reachedNow: () => void = () => undefined;
+    const reached = new Promise<void>((resolve) => {
+      reachedNow = resolve;
+    });
+    vi.spyOn(h.storage, 'writeProposal').mockImplementationOnce(async (id, text) => {
+      reachedNow();
+      const error = await held;
+      if (error) throw error;
+      return original(id, text);
+    });
+    return { reached, release };
+  }
+
+  /** A revisão sem os avisos: conjunto válido, nenhum conflito, nada "novo". */
+  function expectNoWarnings(h: Harness) {
+    const d = h.review.derived;
+    expect(d.validation.value?.ok).toBe(true);
+    expect(d.validation.value?.issues).toEqual([]);
+    expect([...d.conflictIds.value]).toEqual([]);
+    expect([...h.review.newConflicts.value]).toEqual([]);
+    expect([...d.situation.value.values()].some((s) => s.conflict)).toBe(false);
+    expect(d.counts.value.conflicts).toBe(0);
+  }
+
+  // Devolução do portão da 8.2 (achado 7): entre o `store.apply` e a publicação do
+  // `proposal.json` com `applied`, a revisão reavaliava as aceitas contra um projeto que
+  // já as tinha ("Aplicar bloqueado" e "O projeto mudou desde a sua última sessão").
+  it('durante o aplicar, com o proposal.json ainda gravando, a revisão não mostra aviso; depois, também não', async () => {
+    const h = await readyToApply();
+    expectNoWarnings(h);
+    const hold = holdProposalWrite(h);
+    const applying = h.review.apply();
+    await hold.reached;
+    // O projeto já tem as mudanças e o mapping.json já gravou; a proposta ainda não diz.
+    expect(h.session.store.committed.value?.images.map((i) => i.id)).toContain('I3');
+    expect((await diskProject(h)).images.map((i) => i.id)).toContain('I3');
+    expect(h.review.derived.proposal.value?.applied).toEqual({});
+    expectNoWarnings(h);
+
+    hold.release();
+    expect(await applying).toMatchObject({ ok: true, applied: 5, files: 1 });
+    expectNoWarnings(h);
+    expect(Object.keys(h.review.derived.proposal.value?.applied ?? {})).toHaveLength(5);
+    expect((await diskProposal(h.root)).status).toBe('applied');
+  });
+
+  it('durante o aplicar, o proposal.json falhando: depois da compensação, a revisão volta a valer o de antes', async () => {
+    const h = await readyToApply();
+    const hold = holdProposalWrite(h);
+    const applying = h.review.apply();
+    await hold.reached;
+    expectNoWarnings(h);
+    hold.release(new Error('disco cheio'));
+    expect(await applying).toEqual({ ok: false, error: 'write-failed' });
+    await expectNothingApplied(h);
+    expectNoWarnings(h);
+    expect(h.review.derived.canApply.value).toBe(true);
+  });
 });

@@ -7,12 +7,24 @@ import {
   within,
 } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { renameMarking, setMarkingLocked } from '../../../src/model';
+import {
+  addAnnotation,
+  addLayer,
+  applySpecialization,
+  removeLayer,
+  renameLayer,
+  renameMarking,
+  setMarkingLocked,
+  type Project,
+  type Proposal,
+} from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { ReviewDetails } from '../../../src/ui/review/ReviewDetails';
 import { sampleProject } from '../../model/fixtures';
+import { propose } from '../../model/proposalFixtures';
+import { idGen, loadExample } from '../../model/specFixtures';
 import { richScenario } from '../../store/proposalHarness';
-import { openReviewHarness, renderInEditor } from './reviewHarness';
+import { firstImport, openReviewHarness, renderInEditor } from './reviewHarness';
 
 // Detalhes na revisão (HANDOFF-PROPOSALS 5.2, passo 6 da seção 9): DiffValue e
 // ChangeCard, decisão do nível, conflito com três linhas, item trancado e notas.
@@ -118,5 +130,73 @@ describe('Detalhes da revisão', () => {
     expect(
       screen.getByText('sugerida numa rejeição: o agente lê na próxima rodada'),
     ).toBeTruthy();
+  });
+});
+
+// Devolução do portão da 8.2: o "Aplicar bloqueado" nomeia camada, especialização e
+// anotação (antes só marcação e imagem; o resto saía com o id cru), e diz quando o alvo
+// da mudança não existe mais.
+describe('Aplicar bloqueado: o nome do alvo, nunca o id', () => {
+  /** Abre a proposta, aceita tudo e mostra o nível da proposta (todos os problemas). */
+  async function blocked(project: Project, proposal: Proposal) {
+    const h = await openReviewHarness({ project, proposals: [proposal] });
+    expect(h.review.open(proposal.id).ok).toBe(true);
+    await h.review.decide({ level: 'proposal', id: null }, 'accepted');
+    expect(h.review.derived.validation.value?.ok).toBe(false);
+    act(() => h.review.select({ level: 'proposal', id: null }));
+    renderInEditor(h, <ReviewDetails />);
+    return h;
+  }
+
+  it('camada: a criação de uma camada que já existe cita o nome dela', async () => {
+    const { base, proposal } = firstImport();
+    await blocked(
+      addLayer(base, { id: 'L2', name: 'Eventos', color: '#1E88E5' }),
+      proposal,
+    );
+    expect(
+      screen.getByText('A mudança em Eventos não cabe mais no projeto atual.'),
+    ).toBeTruthy();
+    expect(screen.queryByText(/A mudança em L2 /)).toBeNull();
+  });
+
+  it('especialização: a aplicação de uma especialização que já está no projeto cita o nome dela', async () => {
+    const base = sampleProject();
+    const sdui = loadExample('sdui');
+    const proposal = propose(
+      base,
+      applySpecialization(base, sdui, { newId: idGen('LS') }),
+    );
+    await blocked(applySpecialization(base, sdui, { newId: idGen('LX') }), proposal);
+    expect(
+      screen.getByText('A mudança em SDUI não cabe mais no projeto atual.'),
+    ).toBeTruthy();
+    expect(screen.queryByText(/A mudança em sdui /)).toBeNull();
+  });
+
+  it('anotação: a criação de uma anotação que já existe cita o título dela', async () => {
+    const base = sampleProject();
+    const proposal = propose(
+      base,
+      addAnnotation(base, { id: 'A9', markingId: 'M1', layerId: 'L1', name: 'onClick' }),
+    );
+    await blocked(
+      addAnnotation(base, { id: 'A9', markingId: 'M1', layerId: 'L1', name: 'onClick' }),
+      proposal,
+    );
+    expect(
+      screen.getByText('A mudança em onClick não cabe mais no projeto atual.'),
+    ).toBeTruthy();
+    expect(screen.queryByText(/A mudança em A9 /)).toBeNull();
+  });
+
+  it('alvo que não existe mais: diz que o alvo (camada) saiu do projeto, sem o id', async () => {
+    const base = sampleProject();
+    const proposal = propose(base, renameLayer(base, 'L2', 'Janelas'));
+    await blocked(removeLayer(base, 'L2'), proposal);
+    expect(
+      screen.getByText('O alvo desta mudança (camada) não existe mais no projeto atual.'),
+    ).toBeTruthy();
+    expect(screen.queryByText(/L2/)).toBeNull();
   });
 });

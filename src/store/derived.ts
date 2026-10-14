@@ -1,4 +1,4 @@
-import { computed, untracked, type ReadonlySignal } from '@preact/signals';
+import { computed, signal, untracked, type ReadonlySignal } from '@preact/signals';
 import {
   acceptedPending,
   buildIncompleteList,
@@ -323,8 +323,19 @@ export interface ReviewDerived {
     readonly changeIds: ReadonlySet<string>;
     readonly related: ReadonlySet<string>;
   }>;
-  /** Dá para aplicar agora: há aceitas pendentes, o conjunto é válido e o projeto não é só leitura. */
+  /**
+   * Dá para aplicar agora: há aceitas pendentes, o conjunto é válido, o projeto não é só
+   * leitura e nenhum aplicar desta proposta está em curso.
+   */
   readonly canApply: ReadonlySignal<boolean>;
+  /** Um aplicar da proposta aberta está em curso (`hold`): a revisão não reavalia. */
+  readonly applying: ReadonlySignal<boolean>;
+  /**
+   * Segura a reavaliação da proposta aberta enquanto o aplicar dela roda: `validation`,
+   * `conflictIds` e `situation` (e o que deriva deles) ficam com o valor de agora, só
+   * enquanto ela é a proposta aberta. Devolve a função que solta (as chamadas se somam).
+   */
+  hold(): () => void;
   /** O projeto "como ficaria" (atual + mudanças não rejeitadas e não aplicadas); lido só quando a interface pede. */
   readonly preview: ReadonlySignal<PatchResult | null>;
   /**
@@ -344,6 +355,15 @@ export interface ReviewDerived {
 }
 
 const NO_SITUATIONS: ReadonlyMap<string, ChangeSituation> = new Map();
+
+/** O retrato da revisão de uma proposta enquanto o aplicar dela roda (`hold`). */
+interface HeldReview {
+  readonly count: number;
+  readonly situation: ReadonlyMap<string, ChangeSituation>;
+  readonly conflictIds: ReadonlySet<string>;
+  readonly validation: AcceptedValidation | null;
+}
+const NO_HOLDS: ReadonlyMap<string, HeldReview> = new Map();
 const NO_IDS: readonly string[] = [];
 const NO_ID_SET: ReadonlySet<string> = new Set();
 const NO_ORDER: ReadonlyMap<string, number> = new Map();
@@ -469,7 +489,7 @@ export function createReviewDerived(
     return result;
   });
 
-  const situation = computed((): ReadonlyMap<string, ChangeSituation> => {
+  const liveSituation = computed((): ReadonlyMap<string, ChangeSituation> => {
     const changes = changesOf.value;
     void appliedOf.value;
     const current = project.value;
@@ -489,13 +509,33 @@ export function createReviewDerived(
     return result;
   });
 
-  const conflictIds = computed((): ReadonlySet<string> => {
+  const liveConflictIds = computed((): ReadonlySet<string> => {
     const changes = changesOf.value;
     void appliedOf.value;
     const current = project.value;
     const p = untracked(() => proposal.value);
     return changes && current && p ? conflictsOf(p, current) : NO_ID_SET;
   });
+
+  // Aplicar em curso (devolução do portão da 8.2): entre o `store.apply` e a publicação do
+  // `proposal.json` com `applied`, o projeto já tem as aceitas e a proposta ainda não as dá
+  // como aplicadas. Reavaliar nessa janela acusaria conflitos e um conjunto inválido que
+  // não existem. `hold()` guarda o retrato de antes, preso à proposta aberta: os valores
+  // exportados só o usam enquanto ela é a aberta, e o retrato some ao soltar (nada dele
+  // fica guardado), então um conflito real surgido na janela aparece ao soltar.
+  const held = signal<ReadonlyMap<string, HeldReview>>(NO_HOLDS);
+  const heldNow = computed((): HeldReview | null => {
+    const id = sources.proposalId.value;
+    return id === null ? null : (held.value.get(id) ?? null);
+  });
+  const applying = computed(() => heldNow.value !== null);
+  const situation = computed(
+    (): ReadonlyMap<string, ChangeSituation> =>
+      heldNow.value?.situation ?? liveSituation.value,
+  );
+  const conflictIds = computed(
+    (): ReadonlySet<string> => heldNow.value?.conflictIds ?? liveConflictIds.value,
+  );
 
   const levels = computed((): ReadonlyMap<string, LevelSummary> => {
     const p = proposal.value;
@@ -530,7 +570,7 @@ export function createReviewDerived(
     };
   });
 
-  const validation = computed((): AcceptedValidation | null => {
+  const liveValidation = computed((): AcceptedValidation | null => {
     const p = proposal.value;
     const current = project.value;
     if (!p || !current) return null;
@@ -544,6 +584,41 @@ export function createReviewDerived(
     return validateAccepted(current, p);
   });
 
+  const validation = computed((): AcceptedValidation | null => {
+    const frozen = heldNow.value;
+    return frozen ? frozen.validation : liveValidation.value;
+  });
+
+  const hold = (): (() => void) => {
+    const id = sources.proposalId.peek();
+    if (id === null) return () => undefined;
+    const current = held.peek().get(id);
+    const next = new Map(held.peek());
+    next.set(
+      id,
+      current
+        ? { ...current, count: current.count + 1 }
+        : {
+            count: 1,
+            situation: liveSituation.peek(),
+            conflictIds: liveConflictIds.peek(),
+            validation: liveValidation.peek(),
+          },
+    );
+    held.value = next;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      const entry = held.peek().get(id);
+      if (!entry) return;
+      const rest = new Map(held.peek());
+      if (entry.count > 1) rest.set(id, { ...entry, count: entry.count - 1 });
+      else rest.delete(id);
+      held.value = rest;
+    };
+  };
+
   const invalid = computed(() => {
     const v = validation.value;
     if (!v || v.ok) return NO_INVALID;
@@ -554,6 +629,8 @@ export function createReviewDerived(
   });
 
   const canApply = computed(() => {
+    // Enquanto aplica, o retrato diz "válido": não deixa aplicar de novo.
+    if (applying.value) return false;
     const v = validation.value;
     return v !== null && v.ok && v.changeIds.length > 0 && !store.readOnly.value;
   });
@@ -626,6 +703,8 @@ export function createReviewDerived(
     validation,
     invalid,
     canApply,
+    applying,
+    hold,
     preview,
     shownProject,
     visibleIds,

@@ -263,6 +263,8 @@ export interface Connection {
     name: string,
     args?: Record<string, unknown>,
   ): Promise<Call<T>>;
+  /** Tudo o que o servidor escreveu no stderr até agora (avisos e diagnósticos). */
+  stderr(): string;
   close(): Promise<void>;
 }
 
@@ -296,6 +298,10 @@ export async function connect(
         }
       : {}),
   });
+  let stderr = '';
+  transport.stderr?.on('data', (chunk: Buffer | string) => {
+    stderr += chunk.toString();
+  });
   const client = new Client({ name: 'teste', version: '0' });
   await client.connect(transport);
   return {
@@ -305,6 +311,7 @@ export async function connect(
       const content = result.content as { type: string; text: string }[];
       return { isError: result.isError === true, data: JSON.parse(content[0]!.text) };
     },
+    stderr: () => stderr,
     close: () => client.close(),
   };
 }

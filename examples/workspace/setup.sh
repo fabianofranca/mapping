@@ -2,7 +2,7 @@
 # Prepara a pasta de mapeamentos: baixa o servidor MCP do Mapping da release (mcp-v*), confere
 # o sha256, traz a skill spec-author e cria o link que o Claude Code lê.
 # Uso: ./setup.sh            (última release)
-#      ./setup.sh mcp-v0.3.3 (uma release específica)
+#      ./setup.sh mcp-v0.3.4 (uma release específica)
 set -euo pipefail
 cd "$(dirname "$0")"
 
