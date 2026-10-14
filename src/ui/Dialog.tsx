@@ -1,13 +1,22 @@
-import type { ComponentChildren } from 'preact';
-import { useId, useRef } from 'preact/hooks';
+import type { ComponentChildren, Ref } from 'preact';
+import { useId, useLayoutEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import { IconButton } from './controls';
-import { FOCUSABLE, useFocusOrigin, useModal, type FocusReturn } from './focus';
+import {
+  assignRef,
+  FOCUSABLE,
+  useFocusOrigin,
+  useModal,
+  type FocusReturn,
+} from './focus';
 
 export type { FocusOrigin, FocusReturn } from './focus';
 
 /** Largura do diálogo: 480px (padrão), 560px ou 820px (seção Layouts do DS 2.0). */
 export type DialogSize = 'sm' | 'md' | 'lg';
+
+/** De onde veio o fechamento: Esc (`cancel` do `<dialog>`), clique no fundo ou o X. */
+export type DialogCancelCause = 'cancel' | 'backdrop' | 'close-button';
 
 /**
  * Foco inicial: o `autofocus`, senão o primeiro controle do corpo, senão o primeiro botão do
@@ -37,6 +46,8 @@ interface DialogBaseProps {
    * corpo inteiro.
    */
   readonly alert?: boolean;
+  /** O `<dialog>` para quem precisa ler o estado dele (o rastro do Abrir de pasta). */
+  readonly dialogRef?: Ref<HTMLDialogElement>;
 }
 
 /**
@@ -47,8 +58,11 @@ type DialogProps = DialogBaseProps &
   (
     | {
         readonly closable?: true;
-        /** Esc, toque fora ou botão de fechar do cabeçalho. */
-        readonly onCancel: () => void;
+        /**
+         * Esc, toque fora ou botão de fechar do cabeçalho; `cause` diz qual (opcional: só o
+         * rastro do Abrir de pasta usa, para o Diagnóstico).
+         */
+        readonly onCancel: (cause?: DialogCancelCause) => void;
       }
     | { readonly closable: false; readonly onCancel?: undefined }
   );
@@ -67,6 +81,7 @@ export function Dialog({
   flush = false,
   returnFocus,
   alert = false,
+  dialogRef,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -77,6 +92,12 @@ export function Dialog({
   // `body`. Guardado na renderização, antes de o diálogo pegar o foco.
   const origin = useFocusOrigin();
   useModal(ref, origin, returnFocus, focusFirst);
+  // Depois do `showModal` (efeito acima): quem lê o ref já vê o diálogo aberto.
+  useLayoutEffect(() => {
+    assignRef(dialogRef, ref.current);
+    return () => assignRef(dialogRef, null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <dialog
@@ -87,7 +108,7 @@ export function Dialog({
       aria-describedby={alert ? bodyId : undefined}
       onCancel={(e) => {
         e.preventDefault();
-        onCancel?.();
+        onCancel?.('cancel');
       }}
       onClose={() => {
         // O Chrome deixa de aceitar o `preventDefault` do Esc repetido sem outro gesto e fecha
@@ -102,7 +123,7 @@ export function Dialog({
       }}
       onClick={(e) => {
         // Clique no fundo (fora do conteúdo) fecha.
-        if (e.target === ref.current) onCancel?.();
+        if (e.target === ref.current) onCancel?.('backdrop');
       }}
     >
       <header class="dialog-header">
@@ -110,7 +131,11 @@ export function Dialog({
           {title}
         </h2>
         {closable && (
-          <IconButton icon="close" label={t('dialog.close')} onClick={onCancel} />
+          <IconButton
+            icon="close"
+            label={t('dialog.close')}
+            onClick={() => onCancel?.('close-button')}
+          />
         )}
       </header>
       <div

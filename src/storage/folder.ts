@@ -88,11 +88,19 @@ export async function isOriginPrivate(handle: DirectoryHandleLike): Promise<bool
  * Leitura e escrita na pasta: consulta e, se preciso, pede a permissão. Chamar no próprio
  * clique, sem espera longa antes (ler o handle do IndexedDB cabe na ativação do gesto): o
  * `requestPermission` só abre o diálogo do navegador dentro de um gesto da pessoa.
+ * `observe`: cada resposta (consulta e, quando houve, pedido), para o rastro do Abrir.
  */
-export async function ensurePermission(handle: ReopenableDirectory): Promise<boolean> {
+export async function ensurePermission(
+  handle: ReopenableDirectory,
+  observe?: (step: 'query' | 'request', state: FolderPermission) => void,
+): Promise<boolean> {
   const mode = { mode: 'readwrite' } as const;
-  if ((await handle.queryPermission(mode)) === 'granted') return true;
-  return (await handle.requestPermission(mode)) === 'granted';
+  const queried = await handle.queryPermission(mode);
+  observe?.('query', queried);
+  if (queried === 'granted') return true;
+  const requested = await handle.requestPermission(mode);
+  observe?.('request', requested);
+  return requested === 'granted';
 }
 
 type DirectoryPicker = (options: { mode: 'readwrite' }) => Promise<DirectoryHandleLike>;

@@ -29,6 +29,8 @@ import {
   type RecentProject,
 } from './controller';
 import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
+import { recentRowIndex, recentRowTarget } from './recentRows';
+import { useReopenTrace } from './reopenTrace';
 
 type LocalRecent = Extract<RecentProject, { kind: 'local' }>;
 type FolderRecent = Extract<RecentProject, { kind: 'folder' }>;
@@ -70,6 +72,7 @@ export function Home() {
   // quem abriu o primeiro, para onde o foco volta.
   const dialogs = useDialogSlot<HomeDialog>();
   const dialog = dialogs.current;
+  const reopen = useReopenTrace(dialog?.kind === 'folder-unavailable');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -135,7 +138,9 @@ export function Home() {
       return;
     }
     // Direto no clique: o navegador só mostra o pedido de permissão dentro do gesto.
-    const result = await run(() => openRecentFolder(project.id));
+    const result = await run(() =>
+      reopen.track((trace) => openRecentFolder(project.id, trace)),
+    );
     if (result?.kind === 'unavailable') {
       dialogs.show({
         kind: 'folder-unavailable',
@@ -433,21 +438,28 @@ export function Home() {
           {dialog?.kind === 'folder-unavailable' && (
             <Dialog
               title={t('home.folderUnavailableTitle')}
-              onCancel={closeDialog}
+              dialogRef={reopen.dialogRef}
+              onCancel={reopen.closeWith(null, closeDialog)}
               returnFocus={rowLeft}
               actions={
                 <>
-                  <Button onClick={closeDialog}>{t('common.cancel')}</Button>
+                  <Button onClick={reopen.closeWith('cancel-button', closeDialog)}>
+                    {t('common.cancel')}
+                  </Button>
                   <Button
                     disabled={busy}
-                    onClick={() => void onForget(dialog.folder.id, true)}
+                    onClick={reopen.closeWith('forget', () => {
+                      void onForget(dialog.folder.id, true);
+                    })}
                   >
                     {t('home.forgetFolder')}
                   </Button>
                   <Button
                     variant="primary"
                     disabled={busy || !available.folder}
-                    onClick={() => void onRelocate(dialog.folder, dialog.reason)}
+                    onClick={reopen.closeWith('relocate', () => {
+                      void onRelocate(dialog.folder, dialog.reason);
+                    })}
                   >
                     {t('home.relocateFolder')}
                   </Button>
@@ -497,29 +509,6 @@ export function Home() {
       </div>
       {narrow && <NarrowWindowNotice />}
     </>
-  );
-}
-
-/** Posição da linha `key` na lista de recentes (0 se não estiver nela). */
-function recentRowIndex(section: HTMLElement | null, key: string): number {
-  const rows = [...(section?.querySelectorAll<HTMLElement>('tr[data-recent]') ?? [])];
-  return Math.max(
-    0,
-    rows.findIndex((row) => row.dataset['recent'] === key),
-  );
-}
-
-/**
- * Foco depois de uma linha sair da lista: o Abrir da linha que ficou na posição `index` (ou
- * da última, se a removida era a última); sem linhas, o título da lista.
- */
-function recentRowTarget(section: HTMLElement | null, index: number): HTMLElement | null {
-  if (!section?.isConnected) return null;
-  const rows = section.querySelectorAll<HTMLElement>('tr[data-recent]');
-  const row = rows[Math.min(index, rows.length - 1)];
-  return (
-    row?.querySelector<HTMLElement>('[data-recent-open]') ??
-    section.querySelector<HTMLElement>('h2')
   );
 }
 

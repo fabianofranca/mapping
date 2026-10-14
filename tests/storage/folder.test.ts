@@ -211,4 +211,18 @@ describe('permissão da pasta (recentes, fase 6.6)', () => {
     root.answer = 'denied';
     expect(await ensurePermission(root)).toBe(false);
   });
+
+  // Devolução do portão da 8.4: o rastro do Abrir (`folders.reopen`) diz se houve pedido.
+  it('o observador recebe a consulta e, quando pede, o pedido; o retorno não muda', async () => {
+    const root = new PermissionDirectory('p');
+    const seen: string[] = [];
+    const observe = (step: string, state: string) => seen.push(`${step}=${state}`);
+    expect(await ensurePermission(root, observe)).toBe(true);
+    expect(seen).toEqual(['query=granted']);
+    seen.length = 0;
+    root.permission = 'prompt';
+    root.answer = 'denied';
+    expect(await ensurePermission(root, observe)).toBe(false);
+    expect(seen).toEqual(['query=prompt', 'request=denied']);
+  });
 });

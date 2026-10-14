@@ -1233,4 +1233,115 @@ describe('recentes de pasta (fase 6.6)', () => {
     expect(app.features.value?.folder).toBe(false);
     expect(folders()).toEqual([]);
   });
+
+  // Devolução do portão da 8.4 (achado 1): o Abrir grava no rastro o caminho que tomou, para o
+  // Diagnóstico (`folders.reopen`). O rastro aqui é um objeto simples com `step`.
+  describe('rastro do Abrir', () => {
+    const recorder = () => {
+      const steps: string[] = [];
+      return { steps, step: (label: string) => void steps.push(label) };
+    };
+
+    it('o caso do relato: pedido concedido e a pasta renomeada', async () => {
+      const root = projectFolder();
+      await openViaPicker(root);
+      ({ app, local } = await load());
+      root.permission = 'prompt';
+      root.gone = true;
+      const trace = recorder();
+      expect(await app.openRecentFolder(idOf('pasta'), trace)).toEqual({
+        ok: true,
+        value: { kind: 'unavailable', reason: 'missing' },
+      });
+      expect(trace.steps).toEqual([
+        'handle=idb',
+        'query=prompt',
+        'request=granted',
+        'branch=no-mapping',
+      ]);
+    });
+
+    it('permissão já valendo e projeto aberto', async () => {
+      await openViaPicker(projectFolder());
+      const trace = recorder();
+      await app.openRecentFolder(idOf('pasta'), trace);
+      expect(trace.steps).toEqual(['handle=memory', 'query=granted', 'branch=opened']);
+    });
+
+    it('permissão negada', async () => {
+      const root = projectFolder();
+      await openViaPicker(root);
+      root.permission = 'prompt';
+      root.answer = 'denied';
+      const trace = recorder();
+      await app.openRecentFolder(idOf('pasta'), trace);
+      expect(trace.steps).toEqual([
+        'handle=memory',
+        'query=prompt',
+        'request=denied',
+        'branch=denied',
+      ]);
+    });
+
+    it('exceção no pedido: SecurityError e NotFoundError', async () => {
+      const root = projectFolder();
+      await openViaPicker(root);
+      root.permission = 'prompt';
+      const request = vi
+        .spyOn(root, 'requestPermission')
+        .mockRejectedValue(new DOMException('ativação expirada', 'SecurityError'));
+      const trace = recorder();
+      await app.openRecentFolder(idOf('pasta'), trace);
+      expect(trace.steps.at(-1)).toBe('branch=permission-error:SecurityError');
+      request.mockRejectedValue(new DOMException('sumiu', 'NotFoundError'));
+      const again = recorder();
+      await app.openRecentFolder(idOf('pasta'), again);
+      expect(again.steps.at(-1)).toBe('branch=permission-missing');
+    });
+
+    it('sem handle utilizável numa visita nova', async () => {
+      const root = projectFolder();
+      await openViaPicker(root);
+      ({ app, local } = await load());
+      Object.defineProperty(root, 'requestPermission', { value: undefined });
+      const trace = recorder();
+      expect(await app.openRecentFolder(idOf('pasta'), trace)).toEqual({
+        ok: true,
+        value: { kind: 'unavailable', reason: 'missing' },
+      });
+      expect(trace.steps).toEqual(['handle=idb', 'branch=no-handle']);
+    });
+
+    it('entrada que saiu da lista', async () => {
+      const trace = recorder();
+      expect((await app.openRecentFolder('nao-existe', trace)).ok).toBe(false);
+      expect(trace.steps).toEqual(['branch=no-entry']);
+    });
+
+    it('o projeto não abre: o código do erro', async () => {
+      const root = projectFolder();
+      await openViaPicker(root);
+      root.put('mapping.json', '{');
+      const trace = recorder();
+      const result = await app.openRecentFolder(idOf('pasta'), trace);
+      expect(result.ok).toBe(false);
+      expect(trace.steps.at(-1)).toBe(
+        `branch=open-failed:${result.ok ? '' : result.error}`,
+      );
+    });
+
+    it('exceção fora da permissão: o nome dela', async () => {
+      const root = projectFolder();
+      await openViaPicker(root);
+      vi.spyOn(root, 'getFileHandle').mockRejectedValue(
+        new DOMException('travado', 'InvalidStateError'),
+      );
+      const trace = recorder();
+      expect(await app.openRecentFolder(idOf('pasta'), trace)).toEqual({
+        ok: false,
+        error: 'storage-failed',
+      });
+      expect(trace.steps.at(-1)).toBe('branch=exception:InvalidStateError');
+    });
+  });
 });
