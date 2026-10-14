@@ -1,6 +1,8 @@
 # Nota de desenho — fase 8.6: guia do testador e prompt do Cowork
 
-> Nota de desenho da fase 8.6 da etapa 8 (`PLAN.md`), escrita antes de qualquer mudança no guia. Origem: achados **G1 a G16** da seção 6 de [`docs/history/revisao-tecnica-2026-10-12.md`](../history/revisao-tecnica-2026-10-12.md). Fase editorial: não muda código da app, schema nem formato da proposta.
+> **Arquivo histórico.** Nota de desenho da fase 8.6, movida de `docs/design/` para esta pasta no fechamento da etapa 8 (fase 8.7), com os links acertados. O que vale hoje está no [`TESTING.md`](../../TESTING.md) e no [`TESTING-COWORK.md`](../../TESTING-COWORK.md); o fechamento da etapa, em [`PLAN-etapa-8.md`](../PLAN-etapa-8.md).
+
+> Nota de desenho da fase 8.6 da etapa 8 (`PLAN.md`), escrita antes de qualquer mudança no guia. Origem: achados **G1 a G16** da seção 6 de [`docs/history/revisao-tecnica-2026-10-12.md`](../revisao-tecnica-2026-10-12.md). Fase editorial: não muda código da app, schema nem formato da proposta.
 
 ## 1. O "subsistema" e o problema
 

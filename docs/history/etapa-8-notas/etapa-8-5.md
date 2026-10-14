@@ -1,5 +1,7 @@
 # Nota de desenho — fase 8.5: servidor MCP 0.3.3
 
+> **Arquivo histórico.** Nota de desenho da fase 8.5, movida de `docs/design/` para esta pasta no fechamento da etapa 8 (fase 8.7), com os links acertados. No fechamento ganhou o registro da Revisão 1 (aprovação e desvios, do PR #125), que faltava ([`auditoria-etapa-8.md`](../auditoria-etapa-8.md), seção 3.5). O que vale hoje está no [`MCP.md`](../../MCP.md), no [`AGENT-GUIDE.md`](../../AGENT-GUIDE.md) e na seção `mcp/` do [`ARCHITECTURE.md`](../../ARCHITECTURE.md); o fechamento da etapa, em [`PLAN-etapa-8.md`](../PLAN-etapa-8.md).
+
 > Fase 8.5 da etapa 8 (`PLAN.md`). Achados M1 a M10 e M12 a M14 da seção 5 de `docs/history/revisao-tecnica-2026-10-12.md` (M11, cache e paginação, fica fora: decisão 9). Esta nota vem antes de qualquer código; o código segue o que estiver aprovado aqui.
 
 ## 1. O que entra na 0.3.3
@@ -192,6 +194,15 @@ O passo correspondente do `docs/TESTING.md` (R5.x do `create_project`, se citar 
 - **Q3** — Erro inesperado ao marcar a anterior: **proposto** virar `supersede-failed` (a nova já está gravada; `internal-error` levaria o agente a reenviar e duplicar). Fica um pouco fora da letra de M3/M7; se preferir, sai da fase.
 - **Q4** — Teste de versão e `docs/TESTING.md`: **proposto** a 8.5 não o ler (contrato com a 8.6 acima), e a 8.7 acrescentar "o guia não fixa `mcp-v<x.y.z>`" depois da 8.6. Confirma?
 - **Q5** — Complemento ESLint da 6.1 (`no-restricted-imports` dos escritores em `mcp/**`): **proposto** incluir. Mexe no bloco de `mcp/**` do `eslint.config.js` (compartilhado na onda).
+
+## Revisão 1 (registro, acrescentado no fechamento)
+
+Nota aprovada pelo coordenador com Q1 a Q5 como propostos (Q1: nome de raiz repetido dá `unknown-root` com "use o caminho"; Q2: numa `superseded`, só as aceitas reservam nome em `images/`; Q3: qualquer falha ao marcar a anterior vira o aviso `supersede-failed`; Q4: o teste de versão lê só `docs/MCP.md` e `docs/AGENT-GUIDE.md`; Q5: as restrições de import dos escritores de `mcp/**` entram no ESLint). Onde o código divergiu da nota (PR #125, "Decisões tomadas"):
+
+- o gancho de disco dos testes é `tests/mcp/fsHooks.mjs`, carregado com `node --import`, e não um `.cjs` (o ESLint do repositório recusa `require()`);
+- os testes por stdio de M3, M4, M5, Q2 e Q3 ficaram em `tests/mcp/proposalDisk.test.ts`, arquivo novo, porque precisam de um servidor subido com o gancho;
+- o fallback do `link` cobre também `EOPNOTSUPP` (além de `EPERM`, `ENOTSUP`, `ENOSYS` e `EXDEV`);
+- o registro `ToolErrorCode` ficou com 50 códigos; o `tsc` achou três montados em ternário que a busca por texto não via (`ambiguous-image`, `ambiguous-layer`, `ambiguous-type`).
 
 ## Revisão 2
 

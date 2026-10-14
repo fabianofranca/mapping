@@ -1,5 +1,7 @@
 # Nota de desenho — fase 8.3: foco, diálogos e teclado
 
+> **Arquivo histórico.** Nota de desenho da fase 8.3, movida de `docs/design/` para esta pasta no fechamento da etapa 8 (fase 8.7), com os links acertados. O que vale hoje está na seção "Foco e teclado" do [`ARCHITECTURE.md`](../../ARCHITECTURE.md); o fechamento da etapa, em [`PLAN-etapa-8.md`](../PLAN-etapa-8.md).
+
 > Nota de desenho da fase 8.3 da etapa 8 (`PLAN.md`), escrita antes do código e aprovada pelo coordenador antes do primeiro commit de código. Achados F1 a F10 da seção 3 de `docs/history/revisao-tecnica-2026-10-12.md`. Base: `main` `340cb96`.
 
 ## 1. O que fica no fim
@@ -114,7 +116,7 @@ Ordem dos commits: para cada achado, o teste que o reproduz (vermelho na `main`)
 | `src/ui/controls/Segmented.tsx`, `src/ui/review/DecisionControl.tsx`                                                                                                                               | `ariaKeys` (sem eles o teste da regra 2a falha)                                                                       | faço (uma linha cada)                        |
 | `src/ui/HelpDialog.tsx`, `src/ui/MarkingTree.tsx`, `src/ui/controls/Tooltip.tsx`                                                                                                                   | `getElementById`/seletor por classe próprios que a regra pega (uma linha cada: consulta no próprio `ref` ou `data-*`) | exceção nominal no `eslint.config.js`        |
 | `src/ui/AnnotationEditor.tsx`, `src/ui/LayersPanel.tsx`, `src/ui/SpecsDialog.tsx`                                                                                                                  | `alert` nas três confirmações destrutivas que moram neles (F10)                                                       | deixo para a 8.7 e registro                  |
-| `src/ui/focus.ts`, `tests/components/focusModel.test.tsx`, `tests/components/menus.test.tsx`, `tests/tooling/focusRules.test.ts`, `docs/design/etapa-8-3.md`                                       | arquivos novos da fase                                                                                                | —                                            |
+| `src/ui/focus.ts`, `tests/components/focusModel.test.tsx`, `tests/components/menus.test.tsx`, `tests/tooling/focusRules.test.ts`, `docs/history/etapa-8-notas/etapa-8-3.md`                                       | arquivos novos da fase                                                                                                | —                                            |
 
 ## 10. Perguntas ao coordenador
 
