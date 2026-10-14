@@ -51,7 +51,7 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 
 ## 5. O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8. Sem o MCP, marque a seção 6, o R3.6 e o R5 como "não executado (sem MCP)".
+**Rodada completa (padrão).** Todos os roteiros, R0 a R8, na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
 
 **Rodada dirigida.** O dono aponta o alvo de um destes três jeitos:
 
@@ -61,7 +61,7 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 
 Nos três casos: **monte a lista, mostre ao dono com o bloco [pessoa] e peça confirmação antes de começar**. Execute **R0 inteiro** primeiro. Siga a ordem do guia; se um passo depende de outro (ex.: R6.10 de R6.8a a R6.9; R4.9 de R4.1 a R4.8), execute também os anteriores necessários e marque-os com o mesmo achado de origem.
 
-**Passada visual** (no fim da dirigida e, se o dono pedir, da completa): nas janelas e nos diálogos que o dono listar; sem lista, nas sete janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico** e **Propostas**) e nos diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**. Procure texto cortado ou sobreposto, barra de rolagem horizontal, dica cobrindo menu e foco perdido ao fechar um diálogo. Registre cada janela ou diálogo como uma linha da tabela ("Visual: Camadas").
+**Passada visual** (no fim da dirigida e, se o dono pedir, da completa): nas janelas e nos diálogos que o dono listar; sem lista, nas sete janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico** e **Propostas**) e nos diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**. Procure texto cortado ou sobreposto, barra de rolagem horizontal, dica cobrindo menu e foco perdido ao fechar um diálogo: feche cada diálogo uma vez pelo teclado (Esc) e uma pelo mouse (**Cancelar** ou o X) e confira que o foco volta ao controle que o abriu, nunca ao `body`. Registre cada janela ou diálogo como uma linha da tabela ("Visual: Camadas").
 
 ## 6. Conferir e registrar
 
@@ -76,7 +76,7 @@ Nos três casos: **monte a lista, mostre ao dono com o bloco [pessoa] e peça co
 
 Entregue dois itens na pasta de trabalho e cole o conteúdo do primeiro na conversa:
 
-1. `relato.md`, no template da seção 10 do guia, com o cabeçalho inteiro, o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador (passo ambíguo, esperado que não dá para observar, contorno que precisou usar). Essa última parte é a que mais importa para a etapa seguinte.
+1. `relato.md`, no template da seção 10 do guia, com o cabeçalho inteiro (inclusive o **Tempo por roteiro**, anotado ao terminar cada roteiro), o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador (passo ambíguo, esperado que não dá para observar, contorno que precisou usar). Essa última parte é a que mais importa para a etapa seguinte.
 2. `anexos/`: capturas, Diagnósticos copiados e os `mapping.json` guardados, com o número do achado no nome.
 
 **Fechamento:** diga ao dono o total de passos, quantos passaram, quantos achados por severidade e se algum achado impede o uso com pessoas. Pergunte se ele quer manter ou apagar a pasta de trabalho; não apague por conta própria.

@@ -1,5 +1,7 @@
 # Nota de desenho — fase 8.1: sessão e gravação
 
+> **Arquivo histórico.** Nota de desenho da fase 8.1, movida de `docs/design/` para esta pasta no fechamento da etapa 8 (fase 8.7), com os links acertados. O que vale hoje está na seção "Sessão e gravação" do [`ARCHITECTURE.md`](../../ARCHITECTURE.md); o fechamento da etapa, em [`PLAN-etapa-8.md`](../PLAN-etapa-8.md).
+
 > Nota de desenho da fase 8.1 da etapa 8 (`PLAN.md`, "Fases pendentes — Etapa 8"). Cobre os achados **S1 a S10** de `docs/history/revisao-tecnica-2026-10-12.md`, seção 1. Escrita antes de qualquer código; o coordenador aprova ou devolve. Depois do merge, o conteúdo que vale vira a seção "Sessão e gravação" de `docs/ARCHITECTURE.md` e esta nota vai para `docs/history/` na fase 8.7.
 >
 > **Revisão 2** (depois da primeira leitura do coordenador): três ajustes incorporados, marcados **[A1]** (arquivo vazio persistente com a gravação em erro abre o conflito), **[A2]** (`written` nasce `null` quando o que está em memória difere do disco: migrado ou reparado) e **[A3]** (a gravação tira de `pendingFiles` só os arquivos que o `mapping.json` gravado cita); e as decisões D1 a D7 resolvidas (§7).

@@ -1,5 +1,7 @@
 # Nota de desenho — fase 8.4: recentes e controller
 
+> **Arquivo histórico.** Nota de desenho da fase 8.4, movida de `docs/design/` para esta pasta no fechamento da etapa 8 (fase 8.7), com os links acertados. O que vale hoje está nos recentes do [`ARCHITECTURE.md`](../../ARCHITECTURE.md); o fechamento da etapa, em [`PLAN-etapa-8.md`](../PLAN-etapa-8.md).
+
 > **Revisão 2** (na aprovação): corrigida a frase do §3 sobre a chave do retomar (é da 8.2, `${copyId}|${proposalId}`); respostas do coordenador às perguntas do §8: 1, 2 e 3 aprovadas como propostas; 4 fica registrada.
 
 > Nota de desenho da fase 8.4 da etapa 8 (`PLAN.md`), escrita antes do código e aprovada pelo coordenador antes do primeiro commit de código. Achados R1, R2 e R4 a R10 da seção 4 de `docs/history/revisao-tecnica-2026-10-12.md` (R3 vai pela 8.2, que lê o `copyId` definido aqui). Base: `main` `9682ee8` (8.1 e 8.3 já mergeadas).

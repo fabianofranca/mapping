@@ -1,3 +1,5 @@
+> **Etapa 8 concluída:** o plano, as decisões consolidadas dos PRs, as notas de desenho, a auditoria e os relatos do portão estão em [`PLAN-etapa-8.md`](PLAN-etapa-8.md), nesta pasta.
+>
 > **Documento da revisão técnica dirigida** feita em 2026-10-12 sobre a `main` `48f8e32`, depois das etapas 5 a 7 e das quatro rodadas de teste do Cowork. Só leitura: seis revisores, um por área, e a conferência das causas principais no código. É a origem da **etapa 8** (`PLAN.md`), que cita os achados pelo código da área mais o número do achado no relatório correspondente: **S** = seção 1 (sessão e persistência), **P** = seção 2 (revisão de propostas), **F** = seção 3 (foco, diálogos e teclado), **R** = seção 4 (armazenamento e recentes), **M** = seção 5 (servidor MCP), **G** = seção 6 (guia e prompt do testador). Ex.: S1 é o achado 1 da seção 1. Guardado como foi entregue; a síntese do topo foi escrita pelo coordenador da revisão.
 
 ---
