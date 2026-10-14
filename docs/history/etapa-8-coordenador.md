@@ -1,6 +1,6 @@
 # Prompt do coordenador — Etapa 8 (consolidação por subsistema)
 
-> Prompt inicial da sessão que coordena a etapa 8 (plano na seção "Fases pendentes — Etapa 8" do `PLAN.md`; origem em `docs/history/revisao-tecnica-2026-10-12.md`). Para iniciar: numa sessão do Claude Code com este repositório, mande **"Leia `docs/prompts/etapa-8-coordenador.md` e execute."** (ou com um dos modos abaixo). No fechamento (fase 8.7) este arquivo vai para `docs/history/`.
+> Arquivo histórico: foi o prompt inicial da sessão que coordenou a etapa 8 (concluída; plano em [`PLAN-etapa-8.md`](PLAN-etapa-8.md)). Movido de `docs/prompts/` para cá na fase 8.7, sem outras mudanças além deste aviso. Onde o texto abaixo cita o `PLAN.md`, a seção da etapa 8 hoje está no `PLAN-etapa-8.md`; as notas de desenho que ele manda escrever em `docs/design/etapa-8-<n>.md` estão em [`etapa-8-notas/`](etapa-8-notas/), nesta pasta. Para iniciar um coordenador com ele, a mensagem era: **"Leia `docs/history/etapa-8-coordenador.md` e execute."**
 
 ---
 
