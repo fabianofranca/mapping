@@ -39,6 +39,8 @@ interface DecisionControlProps {
   readonly rejectText?: string;
   /** Dica explicando por que está desabilitado. */
   readonly disabledReason?: string;
+  /** Id do texto que explica o motivo (`aria-describedby` dos botões desabilitados). */
+  readonly describedBy?: string;
 }
 
 export function DecisionControl({
@@ -51,7 +53,9 @@ export function DecisionControl({
   acceptText,
   rejectText,
   disabledReason,
+  describedBy,
 }: DecisionControlProps) {
+  const reason = disabled ? describedBy : undefined;
   const toggle = (state: 'accepted' | 'rejected') =>
     onDecide(value === state ? null : state);
   const acceptLabel = conflict
@@ -75,6 +79,7 @@ export function DecisionControl({
           aria-pressed={value === 'accepted'}
           aria-label={acceptLabel}
           aria-keyshortcuts={ariaKeys(REVIEW_KEYS.accept)}
+          aria-describedby={reason}
           title={`${acceptTip}  ${REVIEW_KEYS.accept}`}
           disabled={disabled}
           onClick={() => toggle('accepted')}
@@ -87,6 +92,7 @@ export function DecisionControl({
           aria-pressed={value === 'rejected'}
           aria-label={rejectLabel}
           aria-keyshortcuts={ariaKeys(REVIEW_KEYS.reject)}
+          aria-describedby={reason}
           title={`${rejectTip}  ${REVIEW_KEYS.reject}`}
           disabled={disabled}
           onClick={() => toggle('rejected')}
@@ -109,6 +115,7 @@ export function DecisionControl({
         shortcut={REVIEW_KEYS.accept}
         pressed={value === 'accepted'}
         disabled={disabled}
+        aria-describedby={reason}
         onClick={() => toggle('accepted')}
       />
       <IconButton
@@ -120,6 +127,7 @@ export function DecisionControl({
         shortcut={REVIEW_KEYS.reject}
         pressed={value === 'rejected'}
         disabled={disabled}
+        aria-describedby={reason}
         onClick={() => toggle('rejected')}
       />
     </span>

@@ -1,7 +1,16 @@
-import { signal, type Signal } from '@preact/signals';
+import { computed, signal, type Signal } from '@preact/signals';
 import { createContext } from 'preact';
-import { useContext, useEffect, useId, useRef, useState } from 'preact/hooks';
+import {
+  useContext,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'preact/hooks';
 import { t } from '../../i18n';
+import { reviewKey } from '../../model';
 import { tokenValue } from '../../theme/tokens';
 import { classes } from '../controls/classes';
 import { useEditor } from '../EditorContext';
@@ -25,7 +34,9 @@ import { useReviewNames } from './useReview';
 // DecisionMark); conflito com ⚠ em âmbar; parte de uma criação ou remoção só com o tipo,
 // tracejada. É um botão que abre o `ChangePopover` no `Popover` da app: pelo hover, com
 // `duration-hover-intent`; pelo foco, na hora; o clique (ou Enter) fixa. Esc e o clique
-// fora fecham e devolvem o foco ao marcador; um aberto por vez (`OpenMarkContext`).
+// fora fecham e devolvem o foco ao marcador; um aberto por vez (`OpenMarkContext`). Focar
+// o marcador seleciona aquela mudança na revisão (fase 9.6): A, R e Backspace decidem o
+// campo focado, e a linha da mudança acende na janela Propostas.
 
 /** Qual marcador está aberto (a chave dele) num painel; um por vez. */
 export const OpenMarkContext = createContext<Signal<string | null> | null>(null);
@@ -53,6 +64,7 @@ function markLabel(
     readonly invalid: boolean;
     readonly together: boolean;
     readonly applied: boolean;
+    readonly note: boolean;
     readonly current: string;
     readonly proposed: string;
   },
@@ -79,6 +91,7 @@ function markLabel(
     extra.together ? t('review.mark.together') : null,
     extra.applied ? t('review.mark.applied') : null,
     extra.invalid ? t('review.mark.invalid') : null,
+    extra.note ? t('review.mark.withNote') : null,
   ].filter((s) => s !== null);
   const head = t('review.mark.label', {
     field,
@@ -102,8 +115,37 @@ export function ChangeMark(subject: MarkSubject) {
   const [mode, setMode] = useState<OpenMode>('focus');
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const host = useRef<HTMLSpanElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  // A mudança selecionada na janela Propostas: o marcador rola até si e, num clique ou Enter
+  // na lista (`review.requestMark`), recebe o foco (o popover abre pelo foco). Pelas setas só
+  // rola e destaca. No commit que desenha o marcador, ainda que a seção que o esconde tenha
+  // acabado de abrir (modelo de foco da etapa 8: o dono do elemento cumpre o pedido).
+  // Um computed por marcador: mudar a seleção refaz só o que deixa e o que passa a ser o alvo.
+  const targetSignal = useMemo(
+    () =>
+      computed(() => {
+        const now = review.selected.value;
+        return !part && now?.level === 'change' && now.id === change.id;
+      }),
+    [review, change.id, part],
+  );
+  const isTarget = targetSignal.value;
+  const request = isTarget ? review.markRequest.value : null;
+  const asked = request?.changeId === change.id ? request.seq : 0;
+  useLayoutEffect(() => {
+    if (!isTarget) return;
+    button.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [isTarget]);
+  useLayoutEffect(() => {
+    if (asked === 0) return;
+    review.clearMarkRequest();
+    button.current?.focus({ preventScroll: true });
+    // Cada pedido vale uma vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [asked]);
   if (!names || !openMark) return null;
 
   const key = `${change.id}|${field}`;
@@ -120,6 +162,8 @@ export function ChangeMark(subject: MarkSubject) {
 
   const d = review.derived;
   const situation = d.situation.value.get(change.id);
+  const target = isTarget;
+  const hasNote = d.notes.value.has(reviewKey({ level: 'change', id: change.id }));
   const decision = names.proposal.decisions[change.id]?.state ?? null;
   const conflict = !part && situation?.conflict === true;
   const invalid = !part && d.invalid.value.changeIds.has(change.id);
@@ -133,6 +177,7 @@ export function ChangeMark(subject: MarkSubject) {
     invalid,
     together,
     applied,
+    note: hasNote,
     current: partsText(sides.current),
     proposed: partsText(sides.proposed),
   });
@@ -167,6 +212,7 @@ export function ChangeMark(subject: MarkSubject) {
         label={popoverTitle(names, subject)}
         trigger={() => (
           <button
+            ref={button}
             type="button"
             class={classes(
               'change-mark',
@@ -174,15 +220,24 @@ export function ChangeMark(subject: MarkSubject) {
               conflict && 'is-conflict',
               invalid && 'is-invalid',
               open && 'is-open',
+              target && 'is-target',
             )}
             aria-haspopup="dialog"
             aria-expanded={open}
             aria-controls={open ? panelId : undefined}
             aria-label={label}
+            aria-current={target ? 'true' : undefined}
+            aria-keyshortcuts="A R Backspace"
             data-change={change.id}
+            data-part={part ? '' : undefined}
             data-state={part ? undefined : (decision ?? 'undecided')}
             onFocus={() => {
               if (openMark.peek() !== key) show('focus');
+              // Focar o marcador seleciona a mudança: os atalhos agem sobre ela.
+              const now = review.selected.peek();
+              if (!(now?.level === 'change' && now.id === change.id)) {
+                review.select({ level: 'change', id: change.id });
+              }
             }}
             onClick={() => {
               // Clique ou Enter fixa o popover aberto; de novo, fecha.
@@ -198,7 +253,7 @@ export function ChangeMark(subject: MarkSubject) {
           </button>
         )}
       >
-        <ChangePopover subject={subject} />
+        {(close) => <ChangePopover subject={subject} close={close} />}
       </Popover>
     </span>
   );

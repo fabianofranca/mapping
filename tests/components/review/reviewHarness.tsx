@@ -1,6 +1,11 @@
 import { signal } from '@preact/signals';
-import { render } from '@testing-library/preact';
+import { act, render } from '@testing-library/preact';
 import type { ComponentChildren } from 'preact';
+import { expect } from 'vitest';
+import type { EditorDialogs } from '../../../src/app/useEditorDialogs';
+import type { ProjectCommands } from '../../../src/app/useProjectCommands';
+import { useEditorShortcuts } from '../../../src/app/useEditorShortcuts';
+import { ReviewPanel } from '../../../src/ui/review/ReviewPanel';
 import {
   addAnnotation,
   addImage,
@@ -71,4 +76,24 @@ export function renderInEditor(h: ReviewHarness, children: ComponentChildren) {
   return render(
     <EditorContext.Provider value={h.context}>{children}</EditorContext.Provider>,
   );
+}
+
+/** Os Detalhes da revisão (`ReviewPanel`) com os atalhos do editor ligados (A, R, N, C…). */
+export function PanelWithShortcuts() {
+  const dialogs = { current: null, show() {}, close() {} } as unknown as EditorDialogs;
+  const commands = { exportProject: async () => {} } as unknown as ProjectCommands;
+  useEditorShortcuts(dialogs, commands);
+  return <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />;
+}
+
+/** Abre a proposta `P1`, seleciona o nível e monta os Detalhes da revisão com os atalhos. */
+export async function showReviewPanel(
+  options: Parameters<typeof openReviewHarness>[0],
+  target: Parameters<ReviewHarness['review']['select']>[0],
+) {
+  const h = await openReviewHarness(options);
+  expect(h.review.open('P1').ok).toBe(true);
+  act(() => h.review.select(target));
+  renderInEditor(h, <PanelWithShortcuts />);
+  return h;
 }

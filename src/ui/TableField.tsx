@@ -143,6 +143,7 @@ export function TableField({
         </Button>
       </div>
       {field.description && <small class="muted props-note">{field.description}</small>}
+      {ext?.below(annotation.id, `values.${field.key}`)}
       {rows.length === 0 ? (
         <p class="muted">{t('typed.noRows')}</p>
       ) : (

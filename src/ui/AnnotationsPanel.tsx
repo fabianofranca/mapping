@@ -323,7 +323,11 @@ function PagedList({
   readonly page: DetailsExtension['annotationPage'];
 }) {
   const [limit, setLimit] = useState(page?.first ?? Number.POSITIVE_INFINITY);
-  const shown = page ? items.slice(0, limit) : items;
+  // A anotação pedida (a mudança selecionada na janela Propostas) nunca fica além do limite.
+  const revealId = page?.reveal.value ?? null;
+  const wanted =
+    revealId === null ? -1 : items.findIndex((item) => item.key === revealId);
+  const shown = page ? items.slice(0, Math.max(limit, wanted + 1)) : items;
   const rest = items.length - shown.length;
   return (
     <>

@@ -158,6 +158,8 @@ export function MarkingPanel({
         }
       />
 
+      {ext?.header(marking.id)}
+
       {lockNotice && (
         <p class="notice notice-info" role="status">
           {lockNotice}
@@ -188,6 +190,7 @@ export function MarkingPanel({
             label={t('marking.name')}
             for={nameId}
             mark={ext?.mark(marking.id, 'name')}
+            below={ext?.below(marking.id, 'name')}
           >
             <TextField
               id={nameId}
@@ -206,6 +209,7 @@ export function MarkingPanel({
             label={t('marking.parent')}
             for={parentId}
             mark={ext?.mark(marking.id, 'parentId')}
+            below={ext?.below(marking.id, 'parentId')}
           >
             <Select
               id={parentId}
@@ -235,6 +239,7 @@ export function MarkingPanel({
               }
               hint={t('marking.pixelsHint')}
               mark={<span class="props-rect-bracket">{rectMark}</span>}
+              below={ext?.below(marking.id, 'rect')}
             >
               {position}
               {size}
@@ -270,6 +275,8 @@ export function MarkingPanel({
         focusAnnotation={ui.focusAnnotation.value}
         onFocusDone={() => (ui.focusAnnotation.value = null)}
       />
+
+      {ext?.others(marking.id)}
 
       <div class="row">
         <Button

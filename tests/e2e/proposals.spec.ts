@@ -54,12 +54,13 @@ test('revisar e aplicar em parte uma proposta', async ({ page }) => {
     .click();
   await row(page, 'Cabeçalho').click();
 
-  // A nota da rejeição fica nos Detalhes.
-  await page.getByRole('textbox', { name: 'Nova nota para o agente' }).fill(NOTE);
+  // A nota da rejeição fica nos Detalhes: o botão de nota do cabeçalho abre o campo, que
+  // grava ao sair dele.
   await page.getByRole('button', { name: 'Adicionar nota' }).click();
-  await expect(
-    page.getByRole('textbox', { name: 'Nota para o agente', exact: true }),
-  ).toHaveValue(NOTE);
+  const note = page.getByRole('textbox', { name: 'Nota para o agente', exact: true });
+  await note.fill(NOTE);
+  await note.blur();
+  await expect(note).toHaveValue(NOTE);
 
   // Aplicar aceitas · 4: a imagem e a marcação dela, a marcação e a anotação do cupom.
   await page
@@ -109,4 +110,83 @@ test('revisar e aplicar em parte uma proposta', async ({ page }) => {
   ).toHaveLength(1);
   expect(proposal.notes.map((n) => n.text)).toEqual([NOTE]);
   expect(Object.keys(proposal.decisions).length).toBeLessThan(proposal.changes.length);
+});
+
+test('decidir pelos Detalhes: o cabeçalho do item, o popover do campo e o teclado', async ({
+  page,
+}) => {
+  await importFixture(page);
+  await openProposals(page);
+  await page
+    .getByRole('button', { name: /^Revisar/ })
+    .first()
+    .click();
+
+  // O cabeçalho decide o item inteiro (a marcação e a anotação criadas).
+  await row(page, 'Campo Cupom').click();
+  const header = page.getByRole('region', { name: 'Decisão' });
+  await expect(header.getByText('Marcação criada')).toBeVisible();
+  await header.getByRole('button', { name: 'Aceitar Campo Cupom' }).click();
+  await expect(header.getByText('2 aceitas, 0 rejeitadas, 0 sem decisão')).toBeVisible();
+
+  // O popover do campo decide só o campo; fica aberto mostrando a decisão.
+  await row(page, 'Cabeçalho').click();
+  const mark = page.getByRole('button', { name: /^Nome: alterado/ });
+  await mark.click();
+  const popover = page.getByRole('dialog', { name: 'Nome · alterado' });
+  await popover.getByRole('button', { name: 'Rejeitar Nome' }).click();
+  await expect(mark).toHaveAttribute('data-state', 'rejected');
+  await expect(popover).toBeVisible();
+  await expect(popover.getByRole('status')).toHaveText('Nome: rejeitada');
+
+  // Com o foco no marcador, o teclado decide o campo: A aceita, Backspace limpa.
+  await page.keyboard.press('Escape');
+  await expect(mark).toBeFocused();
+  await page.keyboard.press('a');
+  await expect(mark).toHaveAttribute('data-state', 'accepted');
+  await page.keyboard.press('Backspace');
+  await expect(mark).toHaveAttribute('data-state', 'undecided');
+});
+
+test('rejeitar a criação pelo marcador leva a anotação junto; Desfazer e aceitar pelo cartão', async ({
+  page,
+}) => {
+  await importFixture(page);
+  await openProposals(page);
+  await page
+    .getByRole('button', { name: /^Revisar/ })
+    .first()
+    .click();
+  await row(page, 'Campo Cupom').click();
+  const header = page.getByRole('region', { name: 'Decisão' });
+
+  // O marcador "+" é parte da criação: o quadro manda decidir no cabeçalho, e `R` com o
+  // foco nele rejeita a criação da marcação.
+  const part = page.getByRole('button', { name: /^Nome: novo, parte da criação/ });
+  await part.click();
+  await expect(
+    page
+      .getByRole('dialog')
+      .getByText('Faz parte da criação da marcação: decida no cabeçalho, acima.'),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(part).toBeFocused();
+  await page.keyboard.press('r');
+  await expect(
+    header.getByText(/^1 mudança\(s\) rejeitada\(s\) junto: Anotação Input criada/),
+  ).toBeVisible();
+  await expect(header.getByText('0 aceitas, 2 rejeitadas, 0 sem decisão')).toBeVisible();
+
+  // Desfazer volta as duas.
+  await header.getByRole('button', { name: 'Desfazer' }).click();
+  await expect(header.getByText('0 aceitas, 0 rejeitadas, 2 sem decisão')).toBeVisible();
+
+  // Rejeitar de novo e aceitar a anotação pelo cartão dela (a criação volta junto).
+  await part.focus();
+  await page.keyboard.press('r');
+  // A criação rejeitada: o painel mostra o que a proposta criaria, e o cartão da anotação
+  // continua lá, com a decisão.
+  const card = page.locator('[data-annotation]').first();
+  await card.getByRole('button', { name: 'Aceitar Anotação Input criada' }).click();
+  await expect(header.getByText('2 aceitas, 0 rejeitadas, 0 sem decisão')).toBeVisible();
 });

@@ -57,6 +57,7 @@ export function TypedField({
       issue={issue ? issueReason(project, annotation, issue) : null}
       note={field.description}
       mark={ext?.mark(annotation.id, `values.${field.key}`)}
+      below={ext?.below(annotation.id, `values.${field.key}`)}
     >
       {field.type === 'ref' ? (
         <RefField id={id} field={field} invalid={issue !== undefined} {...ctx} />

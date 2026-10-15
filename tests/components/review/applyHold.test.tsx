@@ -145,7 +145,7 @@ describe('aplicar aceitas sem avisos falsos (devolução do portão da 8.2)', ()
     );
   });
 
-  it('remoção: o retrato cita um item que já saiu do projeto; cartões, níveis e canvas desenham sem lançar', async () => {
+  it('remoção: o retrato cita um item que já saiu do projeto; painel, níveis e canvas desenham sem lançar', async () => {
     const base = sampleProject();
     const proposal = propose(base, removeMarking(base, 'M3'), {
       id: 'P1',
@@ -178,14 +178,14 @@ describe('aplicar aceitas sem avisos falsos (devolução do portão da 8.2)', ()
     expect(screen.getAllByText('Será removida').length).toBeGreaterThan(0);
 
     const { hold } = await applyAndHold(h);
-    // A marcação já saiu do projeto ao vivo (e da prévia): os Detalhes caem nos cartões
-    // da mudança e os níveis continuam de pé.
+    // A marcação já saiu do projeto ao vivo (e da prévia): os Detalhes caem no painel da
+    // mudança ("Outras mudanças") e os níveis continuam de pé.
     expect(h.session.store.committed.value?.markings.some((m) => m.id === 'M3')).toBe(
       false,
     );
     expect(() => flushFrames()).not.toThrow();
     expectNoFalseWarnings();
-    expect(screen.getAllByRole('article').length).toBeGreaterThan(0);
+    expect(screen.getByRole('region', { name: 'Outras mudanças' })).toBeTruthy();
     expect(screen.getByRole('tree', { name: 'Níveis da proposta' })).toBeTruthy();
 
     await act(async () => {

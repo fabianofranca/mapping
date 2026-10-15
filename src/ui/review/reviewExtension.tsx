@@ -1,3 +1,4 @@
+import { computed, type ReadonlySignal } from '@preact/signals';
 import { t } from '../../i18n';
 import {
   ENTRIES_FIELD_PREFIX,
@@ -13,6 +14,8 @@ import {
   type Change,
   type JsonValue,
   type Project,
+  type Proposal,
+  type ReviewTarget,
 } from '../../model';
 import type { EntityChanges, FieldChangeIndex, ReviewView } from '../../store/derived';
 import { visibleLayers, type DetailsSection } from '../../store/ui';
@@ -26,14 +29,18 @@ import type {
 import { Icon } from '../icons';
 import { Notice } from '../Notice';
 import { annotationDisplayName, annotationSummary } from '../typedText';
+import { ChangeBelow } from './ChangeBelow';
 import { ChangeMark } from './ChangeMark';
 import { Flag } from './Flag';
+import { OtherChangesSection } from './OtherChanges';
+import { IdentityFlags, ReviewHeader, WholeDecision } from './ReviewHeader';
 
 // A revisão no ponto de extensão dos Detalhes (fase 9.5): monta, para o item mostrado, o
 // que o painel normal pergunta campo a campo (marcadores, selos, fantasmas, seções que
 // abrem, camadas escondidas). Lê só o índice "mudanças por entidade e campo"
-// (`review.derived.fieldIndex`) e os projetos; as decisões ficam com cada marcador, então
-// decidir não refaz a extensão nem o painel.
+// (`review.derived.fieldIndex`) e os projetos; as decisões ficam com cada marcador, o
+// cabeçalho e os selos (componentes que leem o derivado), então decidir não refaz a extensão
+// nem o painel.
 
 /** Camada com mais anotações que isto começa recolhida, só com os cabeçalhos (E17). */
 export const BIG_LAYER = 8;
@@ -73,6 +80,46 @@ export function otherChangeIds(
     .map(([, c]) => c.id);
 }
 
+/**
+ * As seções que escondem a mudança (para abrir ao chegar nela pela janela Propostas): o
+ * campo do painel, "Outras mudanças" ou a anotação com a camada e as Anotações. A criação
+ * ou a remoção do próprio item não está em seção nenhuma (é o cabeçalho).
+ */
+export function sectionsForChange(
+  c: Change,
+  args: Pick<ReviewExtensionArgs, 'kind' | 'id' | 'project' | 'current'>,
+): DetailsSection[] {
+  if (c.entity === 'annotation') {
+    const layer = changeLayerId(c, args.project) ?? changeLayerId(c, args.current);
+    return [
+      { kind: 'annotations' },
+      ...(layer === null ? [] : [{ kind: 'layer', id: layer } as const]),
+      { kind: 'annotation', id: c.entityId },
+    ];
+  }
+  if (c.entity === args.kind && c.entityId === args.id) {
+    if (c.field === null) return [];
+    return [{ kind: PANEL_FIELDS[args.kind].has(c.field) ? args.kind : 'others' }];
+  }
+  return [{ kind: 'others' }];
+}
+
+/** A camada da mudança de anotação está escondida no editor (só o "Mostrar aqui" a traz)? */
+export function isChangeLayerHidden(
+  c: Change,
+  args: Pick<
+    ReviewExtensionArgs,
+    'project' | 'current' | 'hiddenLayers' | 'activeLayerId'
+  >,
+): boolean {
+  if (c.entity !== 'annotation') return false;
+  const layer = changeLayerId(c, args.project) ?? changeLayerId(c, args.current);
+  if (layer === null) return false;
+  return !visibleLayers(args.project, args.hiddenLayers, args.activeLayerId).some(
+    (l) => l.id === layer,
+  );
+}
+
 /** Quantas mudanças a entidade tem (a criação ou remoção conta uma). */
 function entityCount(e: EntityChanges | undefined): number {
   return e ? e.fields.size + (e.whole ? 1 : 0) : 0;
@@ -98,10 +145,23 @@ export interface ReviewExtensionArgs {
   readonly revealed: boolean;
   readonly onReveal: (revealed: boolean) => void;
   readonly onShowCurrent: () => void;
+  /** A proposta aberta (o nome sai riscado só enquanto a remoção não foi rejeitada). */
+  readonly proposal: ReadonlySignal<Proposal | null>;
+  /** O item tem nó na árvore da revisão (algo a decidir): tem cabeçalho. */
+  readonly hasNode: boolean;
+  /** Anotação da mudança selecionada, que não pode ficar além do "mostrar mais". */
+  readonly reveal: ReadonlySignal<string | null>;
+  /**
+   * O "como ficaria" com todas as mudanças (`review.derived.fullPreview`): de onde vem a
+   * anotação criada e rejeitada, que a visão Proposto não tem. Lido só quando há uma.
+   */
+  readonly full: () => Project | null;
 }
 
 /** Anotações de mudanças desta marcação, por camada (no projeto mostrado). */
-function changesByLayer(args: ReviewExtensionArgs): Map<string, Change[]> {
+function changesByLayer(
+  args: Pick<ReviewExtensionArgs, 'kind' | 'id' | 'project' | 'current' | 'index'>,
+): Map<string, Change[]> {
   const result = new Map<string, Change[]>();
   if (args.kind !== 'marking') return result;
   const list = [
@@ -154,9 +214,10 @@ function RemovedAnnotationCard({
   readonly project: Project;
   readonly annotation: Annotation;
   readonly change: Change;
-  readonly onShowCurrent: () => void;
+  readonly onShowCurrent: (() => void) | null;
 }) {
-  const field = change.kind === 'remove' ? '' : 'markingId';
+  const rejectedCreation = change.kind === 'create';
+  const field = change.kind === 'update' ? 'markingId' : '';
   return (
     <div class="annotation annotation-removed" data-annotation={annotation.id}>
       <div class="annotation-header">
@@ -167,11 +228,17 @@ function RemovedAnnotationCard({
         {change.kind === 'remove' && (
           <Flag icon="minus">{t('review.panel.willBeRemoved')}</Flag>
         )}
+        {rejectedCreation && (
+          <Flag icon="close">{t('review.panel.creationRejected')}</Flag>
+        )}
+        {change.kind !== 'update' && <WholeDecision change={change} />}
       </div>
       <p class="annotation-summary">{annotationSummary(project, annotation)}</p>
-      <Button size="sm" class="button-link" onClick={onShowCurrent}>
-        {t('review.panel.seeCurrent')}
-      </Button>
+      {onShowCurrent && (
+        <Button size="sm" class="button-link" onClick={onShowCurrent}>
+          {t('review.panel.seeCurrent')}
+        </Button>
+      )}
     </div>
   );
 }
@@ -190,6 +257,24 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
     (l) => !baseLayers.has(l.id) && (byLayer.get(l.id)?.length ?? 0) > 0,
   );
   const hiddenIds = new Set(hiddenWithChanges.map((l) => l.id));
+
+  const itemTarget: ReviewTarget = {
+    level: args.kind === 'marking' ? 'item' : 'image',
+    id: args.id,
+  };
+  // Riscado só enquanto a remoção vale: rejeitada, a entidade fica (um computed, para o
+  // painel não refazer a cada decisão, só quando esta vira).
+  const wholeOf = index.entities.get(args.id)?.whole ?? null;
+  const removalRejected = computed(
+    () =>
+      wholeOf !== null &&
+      args.proposal.value?.decisions[wholeOf.id]?.state === 'rejected',
+  );
+
+  const below = (entityId: string, field: string) => {
+    const c = index.entities.get(entityId)?.fields.get(field);
+    return c ? <ChangeBelow changeId={c.id} /> : null;
+  };
 
   const mark = (entityId: string, field: string) => {
     const e = index.entities.get(entityId);
@@ -225,6 +310,11 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
         allNew = e?.whole?.kind === 'create';
         break;
       }
+      case 'others':
+        count = otherChangeIds(index, args.kind, args.id).length;
+        break;
+      case 'images':
+        return null;
       case 'annotations':
         if (args.kind !== 'marking') return null;
         count = [...byLayer.values()].reduce((n, list) => n + list.length, 0);
@@ -243,11 +333,52 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
     return allNew ? t('review.panel.allNew') : t('review.panel.changes', { count });
   };
 
+  // As criações de anotação rejeitadas não estão na visão Proposto: voltam como cartão no
+  // lugar onde entrariam, com a decisão ali (senão a rejeição não teria como ser desfeita
+  // no painel). Uma chave de texto: o painel só refaz quando esse conjunto muda, não a cada
+  // decisão.
+  const rejectedCreations = computed(() => {
+    const decisions = args.proposal.value?.decisions;
+    if (!decisions || args.view !== 'proposed') return '';
+    return (index.annotationsOf.get(args.id) ?? [])
+      .filter((c) => c.kind === 'create' && decisions[c.id]?.state === 'rejected')
+      .map((c) => c.id)
+      .join(',');
+  });
+
   const removedAnnotations = (
     markingId: string,
     layerId: string,
   ): RemovedAnnotation[] => {
     const result: RemovedAnnotation[] = [];
+    const rejected = new Set(
+      rejectedCreations.value.split(',').filter((id) => id !== ''),
+    );
+    if (rejected.size > 0) {
+      const full = args.full();
+      const fullIndex = full ? projectIndex(full) : null;
+      for (const c of index.annotationsOf.get(markingId) ?? []) {
+        if (!rejected.has(c.id)) continue;
+        const a = fullIndex?.annotations.get(c.entityId);
+        if (!full || !a || a.layerId !== layerId) continue;
+        if (shownIndex.annotations.has(a.id)) continue;
+        const position = annotationsOf(full, markingId, layerId).findIndex(
+          (x) => x.id === a.id,
+        );
+        result.push({
+          id: `rejected:${a.id}`,
+          index: Math.max(0, position),
+          node: (
+            <RemovedAnnotationCard
+              project={full}
+              annotation={a}
+              change={c}
+              onShowCurrent={null}
+            />
+          ),
+        });
+      }
+    }
     for (const c of index.leaving.get(markingId) ?? []) {
       const a = currentIndex.annotations.get(c.entityId);
       if (!a || a.layerId !== layerId || a.markingId !== markingId) continue;
@@ -326,18 +457,28 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
 
   return {
     mark,
-    identity: (entityId) => {
+    below,
+    header: (entityId) =>
+      entityId === args.id && args.hasNode ? (
+        <ReviewHeader target={itemTarget} whole={wholeOf} />
+      ) : null,
+    decision: (entityId) => {
       const whole = index.entities.get(entityId)?.whole;
-      if (!whole) return null;
-      return whole.kind === 'create'
-        ? {
-            flags: <Flag icon="plus">{t('review.panel.createdByProposal')}</Flag>,
-            struck: false,
-          }
-        : {
-            flags: <Flag icon="minus">{t('review.panel.willBeRemoved')}</Flag>,
-            struck: true,
-          };
+      return whole && whole.entity === 'annotation' ? (
+        <WholeDecision change={whole} />
+      ) : null;
+    },
+    others: (entityId) => {
+      if (entityId !== args.id) return null;
+      const ids = otherChangeIds(index, args.kind, args.id);
+      return ids.length > 0 ? <OtherChangesSection ids={ids} /> : null;
+    },
+    identity: (entityId) => {
+      if (entityId !== args.id || !args.hasNode) return null;
+      return {
+        flags: <IdentityFlags target={itemTarget} whole={wholeOf} />,
+        struck: wholeOf?.kind === 'remove' && !removalRejected.value,
+      };
     },
     sectionSummary,
     layers: () =>
@@ -382,6 +523,7 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
       first: PAGE_FIRST,
       step: PAGE_STEP,
       label: (count) => t('review.panel.showMore', { count }),
+      reveal: args.reveal,
     },
     markColumn: t('review.mark.column'),
   };
@@ -400,15 +542,7 @@ export function sectionsFor(
   const { index, project, kind, id } = args;
   if (entityCount(index.entities.get(id)) > 0) open.push({ kind });
   if (kind !== 'marking') return { open, close };
-  const byLayer = changesByLayer({
-    ...args,
-    view: 'current',
-    hiddenLayers: new Set(),
-    activeLayerId: null,
-    revealed: false,
-    onReveal: () => undefined,
-    onShowCurrent: () => undefined,
-  });
+  const byLayer = changesByLayer(args);
   const leavingCount = (index.leaving.get(id) ?? []).length;
   if (byLayer.size > 0 || leavingCount > 0) open.push({ kind: 'annotations' });
   for (const [layerId, list] of byLayer) {

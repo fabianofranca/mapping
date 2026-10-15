@@ -9,13 +9,20 @@ interface MarkingColorFieldProps {
   readonly disabled: boolean;
   /** Peça depois do rótulo (o marcador da revisão). */
   readonly mark?: ComponentChildren;
+  /** Linha embaixo do campo (a nota da mudança, na revisão). */
+  readonly below?: ComponentChildren;
 }
 
 /**
  * Cor da borda das marcações da imagem: grupo de rádios (a neutra do tema e a paleta,
  * alvos de 24px) e uma cor livre.
  */
-export function MarkingColorField({ image, disabled, mark }: MarkingColorFieldProps) {
+export function MarkingColorField({
+  image,
+  disabled,
+  mark,
+  below,
+}: MarkingColorFieldProps) {
   const { actions } = useEditor();
   const labelId = useId();
   const current = image.markingColor?.toUpperCase() ?? null;
@@ -70,6 +77,7 @@ export function MarkingColorField({ image, disabled, mark }: MarkingColorFieldPr
         </label>
       </div>
       <small class="muted">{t('image.markingColorHint')}</small>
+      {below}
     </div>
   );
 }

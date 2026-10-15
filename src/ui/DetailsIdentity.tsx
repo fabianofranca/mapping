@@ -11,7 +11,8 @@ interface DetailsIdentityProps {
   readonly name: string;
   /** Linha de baixo: onde o item está (imagem e caminho, ou arquivo e tamanho). */
   readonly sub: string;
-  readonly id: string;
+  /** O ID para copiar; sem ele (o grupo Projeto da revisão), não há botão. */
+  readonly id?: string;
   /** Botões ao lado do ID (ex.: o cadeado). */
   readonly actions?: ComponentChildren;
   /** Linha de selos embaixo (ex.: "Criada pela proposta", na revisão). */
@@ -38,7 +39,7 @@ export function DetailsIdentity({
         ) : (
           <strong class="identity-name">{name}</strong>
         )}
-        <CopyIdButton id={id} />
+        {id !== undefined && <CopyIdButton id={id} />}
         {actions}
       </div>
       <span class="identity-sub">{sub}</span>

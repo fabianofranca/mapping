@@ -1,3 +1,4 @@
+import { effect } from '@preact/signals';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addAnnotation,
@@ -75,6 +76,43 @@ describe('revisão de uma proposta grande', () => {
       expect(open).toBeLessThan(2000);
       expect(decisions).toBeLessThan(500);
       expect(batch).toBeLessThan(3000);
+    },
+  );
+
+  // Detalhes na revisão (fase 9.6): o índice "mudanças por entidade e campo", que os marcadores
+  // e o cabeçalho leem, depende só das mudanças. Decidir não o recalcula (a mesma referência),
+  // e montá-lo para milhares de mudanças custa uma passada.
+  budgetIt(
+    'o índice por campo de 2000 mudanças é montado uma vez e não muda a cada decisão',
+    BUDGET_OPTIONS,
+    async () => {
+      const { base, proposal } = bigScenario(1000);
+      const { review } = await openHarness({ project: base, proposals: [proposal] });
+      review.open('P1');
+      const d = review.derived;
+
+      const start = performance.now();
+      const index = d.fieldIndex.value;
+      const build = performance.now() - start;
+      // 1000 marcações renomeadas e 1000 anotações criadas.
+      expect(index.entities.size).toBe(2000);
+      expect(index.annotationsOf.size).toBe(1000);
+
+      let notified = 0;
+      const stop = effect(() => {
+        void d.fieldIndex.value;
+        notified++;
+      });
+      for (let i = 0; i < 5; i++) {
+        await review.decide({ level: 'item', id: `M${i}` }, 'accepted');
+        expect(d.fieldIndex.value).toBe(index);
+      }
+      await review.decide({ level: 'proposal', id: null }, 'accepted');
+      expect(d.fieldIndex.value).toBe(index);
+      // Só a leitura inicial: nenhuma decisão o notificou de novo.
+      expect(notified).toBe(1);
+      stop();
+      expect(build).toBeLessThan(1000);
     },
   );
 });
