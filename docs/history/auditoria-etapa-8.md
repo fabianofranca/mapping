@@ -1,6 +1,6 @@
 # Auditoria da etapa 8 — segunda leitura
 
-> Leitura independente da entrega da etapa 8 sobre a `main` em `312915f` (PR #133, fase 8.7 parte 1), feita em 2026-10-13 pela sessão do dono, depois da auditoria do coordenador (os resíduos 1 a 12 tratados ou registrados no PR #133). Seis leitores em paralelo, um por fase, juntaram a evidência; **cada resíduo abaixo foi conferido no código por esta sessão antes de entrar aqui**, e a regressão alta foi reproduzida. Feita com o Opus 5.5 em esforço máximo porque o limite do Fable tinha acabado: a seção 4 lista o que uma sessão com o Fable deve fechar, e a seção 5 traz o prompt pronto. O que valer daqui vai para `docs/history/PLAN-etapa-8.md` na 8.7 parte 2.
+> Leitura independente da entrega da etapa 8 sobre a `main` em `312915f` (PR #133, fase 8.7 parte 1), feita em 2026-10-13 pela sessão do dono, depois da auditoria do coordenador (os resíduos 1 a 12 tratados ou registrados no PR #133). Seis leitores em paralelo, um por fase, juntaram a evidência; **cada resíduo abaixo foi conferido no código por esta sessão antes de entrar aqui**, e a regressão alta foi reproduzida. Feita com o Opus 5.5 em esforço máximo porque o limite do Fable tinha acabado: a seção 4 lista o que uma sessão com o Fable deve fechar, a seção 5 traz o prompt pronto e a seção 6 é a resposta dessa sessão (terceira leitura). O que valer daqui vai para `docs/history/PLAN-etapa-8.md` na 8.7 parte 2.
 >
 > **Certeza** de cada conclusão: **alta** (conferido no código e coberto por teste, ou reproduzido), **média** (conferido no código, mas depende de comportamento do navegador ou de raciocínio sobre concorrência que vale uma segunda leitura), **baixa** (não fechado; vai para o Fable).
 
@@ -120,7 +120,7 @@ O resto (M1, M2, M5, M7 do guia e todos os baixos) está na seção 3 do relató
 
 Cada pergunta diz o que ler, o que responder e como confirmar. Fora daqui, a certeza é alta e não precisa de outra leitura.
 
-**Estado em 2026-10-14, depois do fechamento da etapa (#141).** A pergunta 1 está respondida: os testes do #137 falham antes da correção e passam depois, cobrindo (a) a (d), inclusive o `onCommit` que normaliza o texto; os testes da política de teclado da 8.3 (e) continuam verdes; e a reprodução desta leitura passa contra a correção. As perguntas 2 a 4 continuam abertas e estão na lista do marco ([`../ROADMAP.md`](../ROADMAP.md)). Os arquivos de código que elas citam (`session.ts`, `proposalActions.ts`, `proposals.ts`) não mudaram desde esta leitura, e os dois testes citados continuam nas linhas 400 e 426: as referências abaixo valem na `main`.
+**Estado em 2026-10-14, depois do fechamento da etapa (#141).** A pergunta 1 está respondida: os testes do #137 falham antes da correção e passam depois, cobrindo (a) a (d), inclusive o `onCommit` que normaliza o texto; os testes da política de teclado da 8.3 (e) continuam verdes; e a reprodução desta leitura passa contra a correção. As perguntas 2 a 4 foram fechadas pela terceira leitura, em 2026-10-15 (seção 6): a 2 confirmada e reproduzida, a 3 e a 4 confirmadas sem defeito a corrigir. Os arquivos de código que elas citam (`session.ts`, `proposalActions.ts`, `proposals.ts`) não mudaram desde esta leitura, e os dois testes citados continuam nas linhas 400 e 426: as referências abaixo valem na `main`.
 
 1. **A correção da regressão alta da 8.3** (respondida no #137; ver o estado acima). Ler o PR inteiro, mais `src/ui/CommitInput.tsx` e `src/ui/KeyValueGrid.tsx`. Responder se a guarda nova (a) ainda impede a gravação dupla quando o `change` chega antes da renderização, (b) deixa gravar de novo depois de desfazer, (c) se comporta quando o `onCommit` normaliza o texto (o valor gravado difere do digitado: espaços, maiúsculas), (d) cobre a Chave e o Valor dos pares livres e o par novo, e (e) não muda o Esc e o Alt+Enter da política de teclado. Confirmar com os testes do PR e, se faltar um caso, escrever o teste que falha.
 2. **A corrida teórica do P7** (seção 3.2). Ler `src/store/proposalActions.ts:240-417`, `src/store/proposals.ts:199-262` e, em `src/store/session.ts`, `dropProjectImage` (`:524`), `adopt` (`:551`) e a conferência (`syncProject`, `:616`). Responder: a sequência (a falha do `writeProposal` + um `mapping.json` escrito por fora na mesma janela + uma conferência que o adota) é alcançável como descrita? O `rollback` apaga mesmo uma imagem que o disco cita? Se sim, a correção (guardar se o desfazer aconteceu e só fazer o `rollback` nesse caso) cobre o caso sem quebrar os testes `proposals.test.ts:400` e `:426`, e vale o código? Um teste possível: o armazenamento falso grava o `mapping.json` "de fora" e chama `session.sync()` de dentro do `writeProposal` antes de rejeitar.
@@ -132,3 +132,193 @@ Cada pergunta diz o que ler, o que responder e como confirmar. Fora daqui, a cer
 Numa sessão do Claude Code com este repositório, no Fable 5.1 com esforço alto, mande:
 
 > Leia `CLAUDE.md` e `docs/history/auditoria-etapa-8.md` (seções 1 a 4) e, para o que mudou depois dessa leitura, o fechamento em `docs/history/PLAN-etapa-8.md`. Você é a terceira leitura da etapa 8: não refaça a auditoria; feche só as perguntas 2 a 4 da seção 4 (a 1 já foi respondida). Para cada uma, responda **confirmado**, **refutado** ou **precisa de teste**, com `arquivo:linha` e o raciocínio em poucas linhas; onde confirmar um defeito, proponha a correção mínima e o teste que falha antes dela. Não edite nada sem o meu pedido. Termine com um bloco curto, só com o que muda o plano: o que corrigir (num PR pequeno, já que não há etapa em andamento) e o que só registrar no histórico e na lista do marco do `docs/ROADMAP.md`.
+
+## 6. Terceira leitura (2026-10-15): as perguntas 2 a 4
+
+> Sessão do Fable 5.1 com o prompt da seção 5, sobre a `main` em `d3c21d3` (depois do fechamento, #141 e #142). Os arquivos que as perguntas citam não mudaram desde a segunda leitura; as linhas abaixo valem na `main`. A pergunta 2 foi reproduzida com um teste e a correção mínima foi conferida na árvore de trabalho (teste novo mais os 20 de `tests/store/proposals.test.ts` passando, ESLint limpo), sem commit: o código fica para o PR pequeno descrito no bloco do coordenador (6.5). As perguntas 3 e 4 fecham sem defeito.
+
+| Pergunta | Veredito | Certeza | O que fazer |
+| --- | --- | --- | --- |
+| 2. Corrida teórica do P7 | **Confirmado** (reproduzido) | alta | Corrigir num PR pequeno (6.1 e 6.5) |
+| 3. Imagem que sai e volta durante uma gravação | **Confirmado** sem defeito (a análise da seção 3.1 vale) | alta | Só registrar; dois testes de regressão opcionais (6.2) |
+| 4. Premissa do P7 no navegador | **Confirmado** como premissa, com um limite | média (raciocínio sobre o navegador; não testável aqui) | Só registrar como limite (6.3) |
+
+### 6.1 Pergunta 2 — confirmado: a sequência é alcançável e o `rollback` apaga uma imagem que o disco cita
+
+- **A janela existe e é a única.** Entre o `store.apply` e o `flush` nenhuma conferência adota nada: o `schedule` do efeito põe o status em `saving` e `syncProject` devolve `busy` (`src/store/session.ts:620`). Depois do `flush` bem-sucedido o status volta a `saved`, e a janela vai até o `writeProposal` se resolver (`src/store/proposals.ts:238`). O poll de 3 s do `useExternalChanges` (`src/app/useExternalChanges.ts:37`) cabe nela se a gravação demorar.
+- **O que acontece na janela.** O `mapping.json` já gravado cita `images/nova.webp` e `pendingFiles` já não a tem (`session.ts:422`). Um escritor externo que relê esse arquivo e grava `revision + 1` (o caso natural é o próprio MCP editando qualquer coisa) produz um arquivo que cita a cópia. A conferência adota (`session.ts:642`) e `adopt` refaz `stored` a partir do arquivo de fora (`session.ts:564`), então a cópia continua em `stored`.
+- **A compensação.** `compensate` (`src/store/proposalActions.ts:391-397`) vê o projeto diferente do aplicado e não desfaz nada; o `flush` passa sem gravar (o `reset` do `adopt` zerou a pendência); o `rollback` chama `dropProjectImage`, que remove o arquivo porque ele está em `stored` (`session.ts:525`). Resultado: o `mapping.json` em disco e em memória citam um arquivo apagado. A origem em `proposals/P1/images/` fica, então a pessoa reaponta a imagem; o que se perde é a invariante "o disco nunca cita arquivo ausente".
+- **Vale o código:** quatro linhas, e o gatilho é real (o MCP editando enquanto a gravação da proposta falha). O caminho `save-failed` (`proposalActions.ts:375-382`) não precisa da guarda: ali o `flush` falhou, então o disco não cita as cópias.
+- **Limite que fica (baixo):** se o arquivo de fora não citar a cópia, ela vira órfã em `images/`, com ou sem a correção, porque `pendingFiles` já a tinha soltado. Inofensivo (nenhum `mapping.json` a cita; a limpeza da sessão só mexe em `stored`).
+
+**Correção mínima** (a que a seção 4 propôs), em `src/store/proposalActions.ts`, no `compensate` de `applyAcceptedChanges`:
+
+```ts
+compensate: async () => {
+  abandoned = true;
+  const undone = applied !== null && store.project.peek() === applied;
+  if (undone) store.undo();
+  store.discardRedoOf(id);
+  // O projeto já não é o aplicado (recarregado por fora na janela da gravação): não há
+  // o que regravar, e o disco pode citar as cópias. Elas ficam.
+  if (!undone) return;
+  const restored = await deps.flush();
+  if (restored.ok) await rollback();
+},
+```
+
+**Teste que falha antes da correção** (na `main`, falha só na última asserção: `images/nova.webp` é `null`; com a correção, passa junto com os testes das linhas 400 e 426). Entra no `describe` "aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)" de `tests/store/proposals.test.ts`, que já tem `readyToApply`, `diskProject`, `diskProposal` e `NEW_IMAGE_PATH`; `serialize` já está importado:
+
+```ts
+// Terceira leitura da etapa 8 (auditoria, §6.1): uma conferência adota um mapping.json de
+// fora durante a falha do proposal.json. O arquivo de fora cita a cópia; o rollback da
+// compensação não pode apagá-la.
+it('proposal.json falhando com o mapping.json recarregado por fora na janela: a cópia citada pelo disco fica', async () => {
+  const h = await readyToApply();
+  vi.spyOn(h.storage, 'writeProposal').mockImplementationOnce(async () => {
+    // O mapping.json aplicado já gravou e cita images/nova.webp. Nessa janela, o MCP o
+    // relê, edita o nome do projeto e grava revision + 1 (o arquivo continua citando a cópia).
+    const applied = await diskProject(h);
+    expect(applied.images.map((i) => i.file)).toContain('images/nova.webp');
+    h.root.put(
+      'mapping.json',
+      serialize({
+        ...applied,
+        revision: applied.revision + 1,
+        project: { ...applied.project, name: 'Do agente' },
+      }),
+    );
+    // O poll do useExternalChanges confere e recarrega (sem pendência local: 'reloaded').
+    // Não dá para esperar a promessa inteira do sync aqui (a varredura das propostas fica
+    // atrás desta mesma mutação): espera só o trabalho da fila da sessão.
+    void h.session.sync();
+    await h.session.flush();
+    expect(h.session.reloads.value).toBe(1);
+    throw new Error('disco cheio');
+  });
+
+  expect(await h.review.apply()).toEqual({ ok: false, error: 'write-failed' });
+  await h.session.proposals.settled();
+  // O projeto em memória e no disco são o de fora, e ele cita a cópia.
+  expect(h.session.store.project.value?.project.name).toBe('Do agente');
+  expect(h.session.store.project.value?.images.map((i) => i.file)).toContain(
+    'images/nova.webp',
+  );
+  expect((await diskProject(h)).images.map((i) => i.file)).toContain(
+    'images/nova.webp',
+  );
+  // A proposta continua sem `applied` e a origem continua lá.
+  expect((await diskProposal(h.root)).applied).toEqual({});
+  expect(await h.root.read(NEW_IMAGE_PATH)).toBe('WEBP');
+  // O ponto da pergunta: o rollback da compensação não pode apagar um arquivo que o disco cita.
+  expect(await h.root.read('images/nova.webp')).toBe('WEBP');
+});
+```
+
+### 6.2 Pergunta 3 — confirmado sem defeito: o disco nunca cita arquivo ausente
+
+Em nenhuma intercalação de adicionar, desfazer, refazer e gravar o `mapping.json` em disco cita um arquivo ausente, e a imagem só se perde como qualquer edição não gravada.
+
+- **O caso do resíduo 5 (3.1).** A gravação em curso não cita a imagem nova; a limpeza dela (`session.ts:457-476`) lê o arquivo para a `trash` em memória antes de removê-lo, porque a imagem está no histórico. A gravação seguinte, o `flush` do próprio `addImages` (`session.ts:781`), regrava da `trash` (`session.ts:399-401`), reconfere o arquivo (`:414`) e só então grava o `mapping.json`. A ordem é sempre "gravar antes de citar".
+- **Desfazer antes da gravação seguinte.** O projeto volta ao que o disco tem e `onDisk` não grava nada; o arquivo apagado pela limpeza fica na `trash` enquanto o "refazer" existir. Refazer agenda a gravação que o restaura antes de citá-lo. Um gesto novo descarta o refazer e a `trash` solta o conteúdo, sem nenhum snapshot citando o arquivo.
+- **Perda sem aviso.** Na janela em que a imagem só existe em memória o status é `saving` e o `beforeunload` segura a saída (`src/app/pageLifecycle.ts:23`). Se a gravação seguinte falhar e a pessoa escolher "Recarregar" no conflito, a `trash` é limpa (`session.ts:565`) e a imagem some com as outras alterações locais, que é o que o diálogo promete.
+- **A única dependência externa:** a invariante supõe que `readImage` devolve o arquivo recém-gravado na limpeza; se devolvesse `null`, a gravação seguinte citaria um arquivo ausente. Na pasta (File System Access, depois do `close()`) e no IndexedDB (transação confirmada) isso não acontece. Registrar.
+
+Os dois caminhos foram confirmados com testes temporários na suíte da sessão, reaproveitando o `hookedStart`/`holdSave` que já existe em `tests/store/session.test.ts` (o `describe` do teste "S6, A3"). Ficam aqui como regressão opcional para o mesmo PR pequeno:
+
+```ts
+it('imagem adicionada durante uma gravação em curso: a primeira não a cita e a apaga; a segunda a regrava antes de citar (auditoria §6.2)', async () => {
+  const root = new MemoryDirectory('p');
+  const project = sampleProject();
+  root.put('mapping.json', serialize(project));
+  const h = hookedStart(root, project);
+  session = h.session;
+  session.actions.renameProject('Um');
+  const first = h.holdSave();
+  await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+  await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
+  const adding = session.addImages([file('a.jpg', '400x300')]);
+  await vi.waitFor(async () => expect(await root.read('images/a.jpg')).toBe('400x300'));
+  const second = h.holdSave();
+  first.resolve();
+  await vi.waitFor(() => expect(h.savesStarted()).toBe(2));
+  // A primeira gravação não cita a imagem; a segunda já a regravou (está parada no saveMapping).
+  const between = await savedProject(root);
+  expect(between.project.name).toBe('Um');
+  expect(between.images.map((i) => i.file)).not.toContain('images/a.jpg');
+  expect(await root.read('images/a.jpg')).toBe('400x300');
+  second.resolve();
+  await adding;
+  expect(session.saveStatus.value).toBe('saved');
+  const after = await savedProject(root);
+  expect(after.images.map((i) => i.file)).toContain('images/a.jpg');
+  expect(await root.read('images/a.jpg')).toBe('400x300');
+});
+
+it('imagem adicionada durante uma gravação, desfeita antes da seguinte e refeita: o disco nunca cita arquivo ausente (auditoria §6.2)', async () => {
+  const root = new MemoryDirectory('p');
+  const project = sampleProject();
+  root.put('mapping.json', serialize(project));
+  const h = hookedStart(root, project);
+  session = h.session;
+  session.actions.renameProject('Um');
+  const first = h.holdSave();
+  await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+  await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
+  const adding = session.addImages([file('a.jpg', '400x300')]);
+  await vi.waitFor(async () => expect(await root.read('images/a.jpg')).toBe('400x300'));
+  expect(session.store.undo()).toBe(true);
+  first.resolve();
+  await adding;
+  await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS * 2);
+  expect(session.saveStatus.value).toBe('saved');
+  // Nada a gravar depois do desfazer (o disco já tem 'Um'); a limpeza da primeira apagou o arquivo.
+  expect(h.savesStarted()).toBe(1);
+  expect((await savedProject(root)).images.map((i) => i.file)).not.toContain(
+    'images/a.jpg',
+  );
+  expect(await root.read('images/a.jpg')).toBeNull();
+  // Refazer: a imagem volta da lixeira em memória antes do mapping.json que a cita.
+  expect(session.store.redo()).toBe(true);
+  await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS * 2);
+  await vi.waitFor(() => expect(session.saveStatus.value).toBe('saved'));
+  expect(h.savesStarted()).toBe(2);
+  expect((await savedProject(root)).images.map((i) => i.file)).toContain('images/a.jpg');
+  expect(await root.read('images/a.jpg')).toBe('400x300');
+});
+```
+
+### 6.3 Pergunta 4 — confirmado como premissa, com um limite a registrar
+
+- **Pasta.** `writeFile` (`src/storage/folder.ts:182-203`) escreve num `FileSystemWritableFileStream` e fecha; a especificação manda escrever num arquivo temporário e só substituir o original no `close()`. Toda rejeição antes da troca (quota no `write`, permissão revogada, a verificação de segurança do Chrome que recusa no `close`) deixa o arquivo anterior intacto, e o `abort` que segue só descarta o temporário. No Chrome e no Edge desktop a troca é um rename atômico.
+- **Local.** `writeProposal` (`src/storage/local.ts:205-217`) é uma transação do IndexedDB: `tx.done` só rejeita se nada foi confirmado. A premissa vale estritamente.
+- **O limite.** Resta um caso que nenhum app distingue de sucesso: o `close()` rejeitar depois de a troca já ter acontecido (a ligação com o processo do navegador cair nesse instante). Para o `mapping.json` é benigno: a próxima `assertWritable` (`session.ts:361-368`) vê um texto diferente do conhecido e abre o conflito com o conteúdo da própria app; "Manter as minhas" regrava. Para o `proposal.json` a compensação **inverte** o estado dividido: o projeto é desfeito e regravado sem as mudanças e as cópias saem de `images/`, mas o arquivo diz `applied` com `revision + 1`. A próxima mutação adota o arquivo do disco e a proposta aparece aplicada sem o projeto ter as mudanças; reaplicar não faz nada, e a app não tem como limpar `applied`. Nada se perde (as origens ficam em `proposals/<id>/images/`), mas a proposta fica presa até alguém editar o `proposal.json`.
+- **Se um dia aparecer num relato**, a defesa é barata: no `catch` do `writeProposal` (`proposals.ts:239`), reler o arquivo e, se ele já for `nextText`, seguir como sucesso em vez de compensar. Não vale o código sem um caso visto.
+
+### 6.4 O que muda o plano
+
+- **Corrigir num PR pequeno** (não há etapa em andamento): a corrida do P7 (6.1), com a guarda `undone` em `compensate` e o teste acima. Opcional no mesmo PR: os dois testes de regressão de 6.2.
+- **Só registrar**, no `PLAN-etapa-8.md` e na lista do marco do `ROADMAP.md`: a pergunta 3 fechada sem defeito (com a dependência do `readImage`); a pergunta 4 fechada como limite (o `close()` que rejeita depois da troca deixa a proposta presa como "aplicada", com a defesa de releitura anotada); e o órfão em `images/` quando o arquivo de fora não cita a cópia.
+
+### 6.5 Bloco para o coordenador
+
+```
+Terceira leitura da etapa 8 (docs/history/auditoria-etapa-8.md, seção 6): 1 defeito confirmado e
+reproduzido, nada mais a corrigir. Um PR pequeno, um executor, sem nota de desenho:
+
+1. CORRIGIR, src/store/proposalActions.ts:391-397 (compensate de applyAcceptedChanges): guardar se o
+   desfazer aconteceu (`undone`) e só regravar (flush) e fazer o rollback nesse caso; sem o desfazer,
+   voltar depois do discardRedoOf. Código pronto em §6.1.
+   Teste antes da correção: o `it` de §6.1 no describe "aplicar aceitas só conclui se o mapping.json
+   gravou (fase 5.2)" de tests/store/proposals.test.ts. Na main ele falha na última asserção
+   (images/nova.webp apagado); com a correção passa, junto com os testes das linhas 400 e 426.
+   Commit do teste antes do commit da correção, como nas fases da etapa.
+2. OPCIONAL no mesmo PR: os dois testes de regressão de §6.2 em tests/store/session.test.ts, no
+   describe do teste "S6, A3" (usam hookedStart/holdSave/savedProject/file dali). Passam na main.
+3. REGISTRAR no mesmo PR: em docs/history/PLAN-etapa-8.md, no parágrafo "Segunda leitura do dono",
+   o fechamento das perguntas 2 a 4 (apontar para §6); em docs/ROADMAP.md, na lista do marco,
+   tirar o item "PR pequeno da corrida do P7" e manter o item dos limites registrados (perguntas 3
+   e 4 e o órfão de images/).
+4. Aceite: npm run lint && npm run typecheck && npm test && npm run build; o PR com Resumo,
+   Como testar (R4.8 e R4.9 do guia como regressão manual) e Decisões.
+```
