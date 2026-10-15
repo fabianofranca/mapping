@@ -4,13 +4,13 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createServer } from '../../mcp/server';
-import { createCodeWorkspace, type CodeWorkspace } from './codeWorkspace';
+import { DS_BUTTON_KT, createCodeWorkspace, type CodeWorkspace } from './codeWorkspace';
 import { mcpSources } from './sources';
 import { codeOf } from './workspace';
 
 // Etapa 3b.4, decisão 7: o servidor confere se o arquivo de código existe, mas NUNCA o lê nem
 // o grava. Duas garantias:
-// 1. dinâmica: durante as tools que resolvem `codeRef`, toda chamada ao `node:fs/promises` e
+// 1. dinâmica: durante as tools que resolvem o `path` do `code` dos tipos, toda chamada ao `node:fs/promises` e
 //    ao `node:fs` com caminho fora das raízes (onde está o código do app) é só `stat`/`realpath`;
 // 2. estática: só os módulos conhecidos importam `node:fs`, e o da conferência importa apenas
 //    `realpath` e `stat`.
@@ -88,29 +88,20 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
     await call('get_marking', { ref: form('cadastro') });
     await call('get_marking', { ref: form('link') });
     await call('get_marking', { ref: form('escapa'), platform: 'android' });
-    await call('get_annotation', { ref: `mapping://cadastro/a/${codeOf(ws.ids.AS!)}` });
+    await call('get_annotation', { ref: `mapping://cadastro/a/${codeOf(ws.ids.AB!)}` });
     await call('get_code_hints', { ref: form('cadastro'), platform: 'android' });
     await call('get_code_hints', { ref: form('cadastro'), platform: 'ios' });
-    await call('find_by_code', { path: 'CadastroScreen.kt' });
-    await call('find_by_code', { symbol: 'Segredo' });
+    await call('find_by_code', { path: 'DSButton.kt' });
+    await call('find_by_code', { path: 'segredo.kt' });
     await call('get_project', { project: 'cadastro' });
     await call('plan_changes', {
       project: 'escrita',
-      operations: [
-        {
-          op: 'update_annotation',
-          annotation: `mapping://escrita/a/${codeOf(ws.ids.AS!)}`,
-          values: {
-            implementacao: [{ platform: 'android', path: 'app/Nova.kt', symbol: 'Nova' }],
-          },
-        },
-        { op: 'set_platform_repo', platform: 'ios', localPath: '../../..' },
-      ],
+      operations: [{ op: 'set_platform_repo', platform: 'ios', localPath: '../../..' }],
     });
 
     const outside = outsideRoots(fsCalls);
     // O espião funciona: a existência dos arquivos de código foi mesmo conferida...
-    const checked = outside.filter((c) => c.target.endsWith('CadastroScreen.kt'));
+    const checked = outside.filter((c) => c.target.endsWith('DSButton.kt'));
     expect(checked.map((c) => c.fn)).toEqual(
       expect.arrayContaining(['realpath', 'stat']),
     );
@@ -129,9 +120,11 @@ describe('o servidor não abre arquivos de código (dinâmico)', () => {
 
   it('o arquivo que escapa do diretório de trabalho nem é tocado', async () => {
     fsCalls.length = 0;
-    await call('get_marking', { ref: `mapping://escapa/m/${codeOf(ws.ids.MF!)}` });
-    expect(fsCalls.filter((c) => c.target.endsWith('CadastroOculto.kt'))).toEqual([]);
-    expect(fsCalls.filter((c) => c.target.endsWith('CadastroScreen.kt'))).toEqual([]);
+    await call('get_marking', { ref: `mapping://escapa/m/${codeOf(ws.ids.MC!)}` });
+    // O `localPath` de `escapa` leva o arquivo do Button para `base/`, fora do repositório.
+    const escaped = `${ws.base}/${DS_BUTTON_KT}`;
+    expect(fsCalls.filter((c) => c.target === escaped)).toEqual([]);
+    expect(fsCalls.filter((c) => c.target.endsWith('DSButton.kt'))).toEqual([]);
   });
 });
 

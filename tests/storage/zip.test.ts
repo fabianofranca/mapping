@@ -12,7 +12,7 @@ import {
 } from '../../src/model';
 import { readProjectZip, writeProjectZip, zipFileName } from '../../src/storage/zip';
 import { sampleProject } from '../model/fixtures';
-import { CADASTRO_VIEW_MODEL_KT, codeProject } from '../model/specFixtures';
+import { codeProject } from '../model/specFixtures';
 
 async function blobText(blob: Blob | undefined): Promise<string | undefined> {
   return blob?.text();
@@ -47,7 +47,7 @@ describe('zip do projeto', () => {
     expect(read.files.specs).toEqual(specs);
   });
 
-  it('round-trip v8: SDUI v2 e Modelo de dados v1 juntos, com platformRepos e os _id do codeRef', async () => {
+  it('round-trip v9: SDUI v2 e Modelo de dados v1 juntos, com platformRepos', async () => {
     const project = codeProject();
     const mapping = serialize(project);
     const images = new Map([
@@ -81,24 +81,25 @@ describe('zip do projeto', () => {
     expect(serialize(loaded.project)).toBe(mapping);
 
     const data = JSON.parse(read.files.mapping);
-    expect(data.schemaVersion).toBe(8);
+    expect(data.schemaVersion).toBe(9);
     expect(data.platformRepos).toEqual({
       android: {
         urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
         localPath: '../../..',
       },
     });
-    const screen = data.annotations.find((a: { id: string }) => a.id === 'AS');
-    expect(screen.values.implementacao.map((e: { _id: string }) => e._id)).toEqual([
-      'C1',
-      'C2',
-      'C3',
-    ]);
-    // O projeto lido do zip responde igual: link, busca e pendências.
-    const [found] = findByCode(loaded.project, { path: 'CadastroViewModel.kt' });
-    expect(found?.entry._id).toBe('C2');
-    expect(found && codeLink(loaded.project, found.entry)).toBe(
-      `https://github.com/org/app-android/blob/main/${CADASTRO_VIEW_MODEL_KT}#L42`,
+    // O projeto lido do zip responde igual: busca pelo arquivo do tipo, link e pendências.
+    const [found] = findByCode(loaded.project, { path: 'DSButton.kt' });
+    expect(found?.typeId).toBe('button');
+    const android = found?.code.find((c) => c.platform === 'android');
+    expect(
+      android &&
+        codeLink(loaded.project, {
+          platform: 'android',
+          path: android.code.path ?? null,
+        }),
+    ).toBe(
+      'https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt',
     );
     expect([...getProjectIssues(loaded.project).keys()]).toEqual(['AT']);
   });

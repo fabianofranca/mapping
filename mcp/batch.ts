@@ -9,7 +9,6 @@ import {
   annotationShortLabel,
   applySpecialization,
   checkSpecApply,
-  codeRefEntries,
   confirmMarkingReview,
   createMarking,
   extensionForMime,
@@ -1096,13 +1095,8 @@ class Batch {
       changes.push(`${op.entries.length} par(es)`);
     }
     if (op.values !== undefined) {
-      const before = project;
       project = this.setValues(project, id, op.values, rowAliases);
-      changes.push(
-        `campos ${Object.keys(op.values)
-          .map((key) => `${key}${codeRefDiff(before, project, id, key)}`)
-          .join(', ')}`,
-      );
+      changes.push(`campos ${Object.keys(op.values).join(', ')}`);
     }
     if (op.owner !== undefined) {
       const ownerId = op.owner === null ? null : this.item(op.owner, 'a', project);
@@ -1123,28 +1117,6 @@ class Batch {
       rowAliases,
     };
   }
-}
-
-/**
- * Campo `codeRef`: o valor enviado substitui a lista, então o resumo diz quantas entradas
- * entram e quantas saem (` (+1, -2 entrada(s))`). Vazio para outros campos ou sem diferença.
- */
-function codeRefDiff(before: Project, after: Project, annotationId: string, key: string) {
-  const idsOf = (p: Project) => {
-    const a = projectIndex(p).annotations.get(annotationId);
-    const type = a ? typeOfAnnotation(p, a)?.type : undefined;
-    return type && fieldOf(type, key)?.type === 'codeRef'
-      ? new Set(codeRefEntries(a?.values?.[key]).map((e) => e._id))
-      : null;
-  };
-  const [old, next] = [idsOf(before), idsOf(after)];
-  if (old === null || next === null) return '';
-  const added = [...next].filter((id) => !old.has(id)).length;
-  const removed = [...old].filter((id) => !next.has(id)).length;
-  if (added === 0 && removed === 0) return '';
-  return ` (${[added > 0 ? `+${added}` : null, removed > 0 ? `-${removed}` : null]
-    .filter((part) => part !== null)
-    .join(', ')} entrada(s))`;
 }
 
 function kindLabel(kind: AliasTarget['kind']): string {

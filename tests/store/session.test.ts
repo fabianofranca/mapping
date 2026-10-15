@@ -17,7 +17,7 @@ import { HISTORY_LIMIT } from '../../src/store/history';
 import { openSession, type ProjectSession } from '../../src/store/session';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
-import { cadastroProject, loadExample } from '../model/specFixtures';
+import { cadastroProject, legacyCodeFiles, loadExample } from '../model/specFixtures';
 import { richScenario } from './proposalHarness';
 import { MemoryDirectory } from '../storage/memoryFs';
 
@@ -1100,7 +1100,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backupPath())).toBe(v1Text);
     });
 
-    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v8', async () => {
+    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v9', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -1131,12 +1131,50 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(8);
+      expect(saved.schemaVersion).toBe(9);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({
         android: { urlTemplate: null, localPath: '../..' },
       });
       expect(session.backupSaved.value).toBe(6);
+    });
+
+    it('projeto v8 com o campo de código removido: backup do original e grava v9 sem os valores', async () => {
+      const root = new MemoryDirectory('p');
+      const { text: v8Text, specs } = legacyCodeFiles();
+      root.put('mapping.json', v8Text);
+      for (const [path, text] of specs) root.put(path, text);
+      const loaded = deserialize(v8Text, undefined, specs);
+      if (!loaded.ok || loaded.migratedFrom !== 8) throw new Error('fixture v8');
+      expect(
+        loaded.project.annotations.find((a) => a.id === 'AS')?.values,
+      ).not.toHaveProperty('implementacao');
+      session = openSession({
+        storage: createFolderStorage(root),
+        project: loaded.project,
+        migratedFrom: { version: loaded.migratedFrom, text: v8Text },
+        prepareImage,
+        now: () => NOW,
+        newId: ids(),
+      });
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(root.dirs.has('backups')).toBe(false);
+
+      session.actions.renameProject('Cadastro v9');
+      await session.flush();
+      const backup = backupPath().replace('mapping.v1.', 'mapping.v8.');
+      expect(await root.read(backup)).toBe(v8Text);
+      const savedText = (await root.read('mapping.json')) ?? '';
+      const saved = JSON.parse(savedText) as { schemaVersion: number; revision: number };
+      expect(saved.schemaVersion).toBe(9);
+      expect(saved.revision).toBe(1);
+      expect(savedText).not.toContain('implementacao');
+      // A cópia antiga em specs/ continua como estava (a leitura ignora o campo).
+      expect(await root.read('specs/sdui.json')).toBe(specs.get('specs/sdui.json'));
+      expect(session.backupSaved.value).toBe(8);
+      // Reaberto, o projeto gravado não passa mais pela migração.
+      const reopened = deserialize(savedText, undefined, specs);
+      expect(reopened.ok && reopened.migratedFrom).toBeNull();
     });
 
     it('projeto já na versão atual não gera backup', async () => {

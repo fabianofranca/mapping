@@ -48,20 +48,20 @@ describe('migração v7 → v8 (origem externa)', () => {
     const result = load(v7Text(sampleProject()));
     expect(result.migratedFrom).toBe(7);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(8);
+    expect(result.project.schemaVersion).toBe(9);
     expect(result.project.images.every((i) => i.source === null)).toBe(true);
     expect(result.project.markings.every((m) => m.source === null)).toBe(true);
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('projeto com especializações, codeRef e repositórios migra sem perder nada', () => {
+  it('projeto com especializações e repositórios migra sem perder nada', () => {
     const p = codeProject();
     expect(load(v7Text(p), p).project).toEqual(p);
   });
 
-  it('o v7 migrado salva como v8 estável (round-trip)', () => {
+  it('o v7 migrado salva como v9 estável (round-trip)', () => {
     const saved = serialize(load(v7Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(8);
+    expect(JSON.parse(saved).schemaVersion).toBe(9);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -76,9 +76,9 @@ describe('migração v7 → v8 (origem externa)', () => {
     expect(migrated.markings).toEqual([{ id: 'M1', source: null }]);
   });
 
-  it('o registro tem as migrações de cada versão até a v8', () => {
-    expect(SCHEMA_VERSION).toBe(8);
-    expect([...migrations.keys()]).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  it('o registro tem a migração da v7', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(8);
+    expect(migrations.get(7)).toBe(migrateFrom7To8);
   });
 });
 

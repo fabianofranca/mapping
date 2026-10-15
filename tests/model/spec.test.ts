@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { parseSpec, parseSpecText, type SpecParseResult } from '../../src/model';
+import {
+  REMOVED_FIELD_TYPE,
+  parseSpec,
+  parseSpecText,
+  removedFieldKeys,
+  type SpecParseResult,
+} from '../../src/model';
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const sdui = read('examples/specs/sdui.json');
@@ -70,7 +76,7 @@ describe('exemplos de especialização', () => {
     expect(button?.values?.estilo?.primary).toBe('ButtonStyle.Primary');
   });
 
-  it('a camada Telas tem o Screen com um campo codeRef', () => {
+  it('a camada Telas tem o Screen, só com nome e rota', () => {
     const result = parseSpecText(sdui);
     if (!result.ok) throw new Error('falhou');
     const layer = result.spec.layers[2];
@@ -81,9 +87,9 @@ describe('exemplos de especialização', () => {
     expect(screen?.fields.map((f) => [f.key, f.type])).toEqual([
       ['nome', 'string'],
       ['rota', 'string'],
-      ['implementacao', 'codeRef'],
     ]);
     expect(screen?.code).toBeUndefined();
+    expect(result.ignored).toEqual([]);
   });
 
   it('o modelo de dados continua em formatVersion 1, sem plataformas', () => {
@@ -261,7 +267,9 @@ describe('validação do formato (13.2)', () => {
     spec.layers[0].annotationTypes[1].fields[2].type = 'numero';
     const error = errorsOf(parseSpec(spec))[0];
     expect(error).toContain('"numero" inválido; use');
-    expect(error).toContain('"codeRef"');
+    expect(error).toContain('"table" ou "ref"');
+    // O tipo removido na etapa 9 não é sugerido.
+    expect(error).not.toContain('codeRef');
   });
 
   it('JSON malformado vira um erro legível', () => {
@@ -355,9 +363,8 @@ describe('consistência zod × JSON Schema', () => {
 
 const BUTTON = 'layers[0].annotationTypes[0]';
 const SCREEN = 'layers[2].annotationTypes[0]';
-const SCREEN_REF = `${SCREEN}.fields[2]`;
 
-/** Especialização v1: o SDUI sem plataformas, sem `code` e sem a camada Telas (codeRef). */
+/** Especialização v1: o SDUI sem plataformas, sem `code` e sem a camada Telas. */
 function asV1(spec: Json): Json {
   const v1 = structuredClone(spec);
   v1.formatVersion = 1;
@@ -369,7 +376,7 @@ function asV1(spec: Json): Json {
   return v1;
 }
 
-/** Remove `platforms`, todo `code` e o campo codeRef: o que sobra é uma especialização válida. */
+/** Remove `platforms`, todo `code` e a camada Telas: o que sobra é uma especialização válida. */
 function withoutPlatforms(spec: Json): Json {
   const out = asV1(spec);
   out.formatVersion = 2;
@@ -554,39 +561,11 @@ const platformCases: [string, (s: Json) => void, string][] = [
     (s) => (s.layers[0].annotationTypes[0].code.android.values.estilo.primary = ''),
     `${BUTTON}.code.android.values.estilo.primary:`,
   ],
-  // codeRef
+  // Campos
   [
-    'codeRef sem platforms na especialização',
-    (s) => {
-      delete s.platforms;
-      for (const l of s.layers) for (const t of l.annotationTypes) delete t.code;
-    },
-    `${SCREEN_REF}.type: "codeRef" só é permitido em especializações que declaram platforms`,
-  ],
-  [
-    'codeRef.platforms com plataforma não declarada',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].platforms = ['android', 'web']),
-    `${SCREEN_REF}.platforms[1]: plataforma "web" não declarada em platforms`,
-  ],
-  [
-    'codeRef.platforms vazio',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].platforms = []),
-    `${SCREEN_REF}.platforms: não pode ser vazio`,
-  ],
-  [
-    'codeRef.platforms repetido',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].platforms = ['ios', 'ios']),
-    `${SCREEN_REF}.platforms: plataformas repetidas`,
-  ],
-  [
-    'codeRef.platforms com id fora do formato',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].platforms = ['Android']),
-    `${SCREEN_REF}.platforms[0]:`,
-  ],
-  [
-    'platforms em campo que não é codeRef',
+    'platforms num campo (só existia no tipo de campo removido)',
     (s) => (s.layers[2].annotationTypes[0].fields[0].platforms = ['android']),
-    `${SCREEN}.fields[0].platforms: só é permitido em codeRef`,
+    `${SCREEN}.fields[0].platforms: não é permitido neste tipo de campo`,
   ],
   [
     'codeRef como coluna de table',
@@ -596,21 +575,6 @@ const platformCases: [string, (s: Json) => void, string][] = [
         type: 'codeRef',
       }),
     'layers[1].annotationTypes[0].fields[2].columns[0].type: "codeRef" não é permitido dentro de table',
-  ],
-  [
-    'codeRef como default',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].default = []),
-    `${SCREEN_REF}.default: não existe para codeRef`,
-  ],
-  [
-    'codeRef com etiquetas',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].tags = ['data-field']),
-    `${SCREEN_REF}.tags: codeRef não pode ter etiquetas`,
-  ],
-  [
-    'codeRef com accepts',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].accepts = { free: true }),
-    `${SCREEN_REF}.accepts: só é permitido em ref`,
   ],
   // formatVersion 1
   [
@@ -628,17 +592,9 @@ const platformCases: [string, (s: Json) => void, string][] = [
     },
     `${BUTTON}.code: só é permitido em especializações que declaram platforms`,
   ],
-  [
-    'codeRef numa especialização formatVersion 1 (sem platforms)',
-    (s) => {
-      s.formatVersion = 1;
-      delete s.platforms;
-    },
-    `${SCREEN_REF}.type: "codeRef" só é permitido`,
-  ],
 ];
 
-describe('validação do formatVersion 2 (plataformas, code e codeRef)', () => {
+describe('validação do formatVersion 2 (plataformas e code)', () => {
   it.each(platformCases)('rejeita: %s', (_name, mutate, expected) => {
     const spec = base();
     mutate(spec);
@@ -689,13 +645,6 @@ describe('validação do formatVersion 2 (plataformas, code e codeRef)', () => {
     });
   });
 
-  it('aceita codeRef restrito a um subconjunto de plataformas', () => {
-    const spec = base();
-    spec.layers[2].annotationTypes[0].fields[2].platforms = ['android', 'ios'];
-    expect(parseSpec(spec).ok).toBe(true);
-    expect(jsonValidator.safeParse(spec).success).toBe(true);
-  });
-
   it('aceita code parcial: plataformas sem entrada, params/values/notes opcionais', () => {
     const spec = base();
     spec.layers[0].annotationTypes[0].code = { ios: { symbol: 'DSButton' } };
@@ -708,12 +657,9 @@ describe('validação do formatVersion 2 (plataformas, code e codeRef)', () => {
     expect(parseSpec(spec).ok).toBe(true);
   });
 
-  it('aceita params que citam um campo table ou codeRef', () => {
+  it('aceita params que citam um campo table', () => {
     const spec = base();
     spec.layers[1].annotationTypes[0].code.android.params.parametros = 'params';
-    spec.layers[2].annotationTypes[0].code = {
-      android: { symbol: 'Screen', params: { implementacao: 'impl' } },
-    };
     expect(parseSpec(spec).ok).toBe(true);
   });
 });
@@ -750,16 +696,8 @@ const structuralV2: [string, (s: Json) => void][] = [
       }),
   ],
   [
-    'codeRef com platforms vazio',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].platforms = []),
-  ],
-  [
-    'codeRef com platforms repetido',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].platforms = ['ios', 'ios']),
-  ],
-  [
-    'codeRef com accepts',
-    (s) => (s.layers[2].annotationTypes[0].fields[2].accepts = { free: true }),
+    'platforms num campo comum',
+    (s) => (s.layers[2].annotationTypes[0].fields[0].platforms = ['android']),
   ],
 ];
 
@@ -778,7 +716,9 @@ describe('consistência zod × JSON Schema (formatVersion 2)', () => {
     expect(Object.keys(schema.$defs.tableField.properties)).toContain('sources');
     expect(Object.keys(schema.properties)).toContain('platforms');
     expect(Object.keys(schema.$defs.annotationType.properties)).toContain('code');
-    expect(schema.$defs.codeRefField.properties.type.const).toBe('codeRef');
+    // O tipo de campo removido na etapa 9 não faz parte do formato (a app só o lê e ignora).
+    expect(schema.$defs).not.toHaveProperty('codeRefField');
+    expect(JSON.stringify(schema)).not.toContain('codeRef');
     expect(Object.keys(schema.$defs.codeEntry.properties).sort()).toEqual([
       'notes',
       'params',
@@ -786,7 +726,90 @@ describe('consistência zod × JSON Schema (formatVersion 2)', () => {
       'symbol',
       'values',
     ]);
-    // codeRef não existe como coluna.
-    expect(JSON.stringify(schema.$defs.column)).not.toContain('codeRef');
+  });
+});
+
+describe('campo do tipo removido (codeRef, etapa 9): lido e ignorado', () => {
+  /** O SDUI com o campo removido de volta no Screen (como as especializações antigas). */
+  function legacy(field: Json = {}): Json {
+    const spec = base();
+    spec.layers[2].annotationTypes[0].fields.push({
+      key: 'implementacao',
+      label: 'implementação',
+      type: REMOVED_FIELD_TYPE,
+      ...field,
+    });
+    return spec;
+  }
+
+  it('importa: o campo sai do tipo e volta em `ignored`, com o caminho no arquivo', () => {
+    const result = parseSpec(legacy());
+    if (!result.ok) throw new Error(result.errors.join('\n'));
+    const screen = result.spec.layers[2]?.annotationTypes[0];
+    expect(screen?.fields.map((f) => f.key)).toEqual(['nome', 'rota']);
+    expect(result.ignored).toEqual([
+      { path: `${SCREEN}.fields[2]`, typeId: 'screen', key: 'implementacao' },
+    ]);
+  });
+
+  it('as regras antigas do campo não valem mais: platforms, default, etiquetas e v1', () => {
+    for (const field of [
+      { platforms: ['android', 'web'] },
+      { platforms: [] },
+      { default: [] },
+      { tags: ['data-field'] },
+      { required: true, description: 'onde foi implementado' },
+    ]) {
+      const result = parseSpec(legacy(field));
+      expect(result.ok, JSON.stringify(field)).toBe(true);
+    }
+    // Numa v1 (sem plataformas) o campo também é só ignorado.
+    const v1 = asV1(base());
+    v1.layers[1].annotationTypes[0].fields.push({
+      key: 'impl',
+      type: REMOVED_FIELD_TYPE,
+    });
+    const result = parseSpec(v1);
+    expect(result.ok && result.ignored.map((f) => f.key)).toEqual(['impl']);
+  });
+
+  it('os params do code que citam o campo saem junto (e params vazio some)', () => {
+    const spec = legacy();
+    spec.layers[2].annotationTypes[0].code = {
+      android: { symbol: 'Screen', params: { implementacao: 'impl' } },
+      ios: { symbol: 'ScreenView', params: { nome: 'title', implementacao: 'impl' } },
+    };
+    const result = parseSpec(spec);
+    if (!result.ok) throw new Error(result.errors.join('\n'));
+    const code = result.spec.layers[2]?.annotationTypes[0]?.code;
+    expect(code?.android).toEqual({ symbol: 'Screen' });
+    expect(code?.ios).toEqual({ symbol: 'ScreenView', params: { nome: 'title' } });
+  });
+
+  it('continua recusando chave repetida com outro campo do tipo', () => {
+    const duplicated = legacy({ key: 'nome' });
+    expect(errorsOf(parseSpec(duplicated))).toContain(
+      `${SCREEN}.fields[2].key: chave "nome" repetida`,
+    );
+  });
+
+  it('removedFieldKeys lê as chaves do JSON cru, por tipo, sem validar', () => {
+    const spec = legacy();
+    spec.layers[0].annotationTypes[0].fields.push({ key: 'x', type: REMOVED_FIELD_TYPE });
+    expect(removedFieldKeys(spec)).toEqual(
+      new Map([
+        ['button', new Set(['x'])],
+        ['screen', new Set(['implementacao'])],
+      ]),
+    );
+    expect(removedFieldKeys(null)).toEqual(new Map());
+    expect(removedFieldKeys({ layers: 'x' })).toEqual(new Map());
+    expect(removedFieldKeys(base())).toEqual(new Map());
+  });
+
+  it('o JSON Schema (formato atual) recusa o campo removido; a app o aceita e ignora', () => {
+    const spec = legacy();
+    expect(parseSpec(spec).ok).toBe(true);
+    expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 });

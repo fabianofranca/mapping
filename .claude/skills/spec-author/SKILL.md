@@ -1,6 +1,6 @@
 ---
 name: spec-author
-description: Escreve, revisa ou atualiza uma especialização do Mapping (arquivo JSON "mapping-spec" com camadas, tipos de anotação, campos, relações, plataformas/code e origens) a partir de um código-fonte, design system ou documento, e a valida antes de entregar. Use sempre que o pedido envolver criar ou mexer numa especialização, spec, "mapping-spec", tipos de anotação do Mapping, mapear componentes de um design system ou de um app para o Mapping, ou ligar tipos a código (code, codeRef, platforms) ou a uma origem externa (sources, Figma) — mesmo que a palavra "especialização" não apareça.
+description: Escreve, revisa ou atualiza uma especialização do Mapping (arquivo JSON "mapping-spec" com camadas, tipos de anotação, campos, relações, plataformas/code e origens) a partir de um código-fonte, design system ou documento, e a valida antes de entregar. Use sempre que o pedido envolver criar ou mexer numa especialização, spec, "mapping-spec", tipos de anotação do Mapping, mapear componentes de um design system ou de um app para o Mapping, ou ligar tipos a código (code com symbol e path, platforms) ou a uma origem externa (sources, Figma) — mesmo que a palavra "especialização" não apareça.
 ---
 
 # Autor de especializações do Mapping
@@ -57,9 +57,9 @@ Uma camada por natureza, não por módulo do código. `id` em `[a-z0-9-]+` e ún
 ### 4. Campos
 
 - `key` em `[A-Za-z0-9_]`, sem começar com `_` (reservado), única no tipo e nas colunas. `label` pode ter acentos; `key` não precisa.
-- Tipos: `string`, `number`, `date`, `enum`, `table`, `ref`, `codeRef`. Booleano é `enum` com duas opções (`["sim", "não"]`).
+- Tipos: `string`, `number`, `date`, `enum`, `table`, `ref`. Booleano é `enum` com duas opções (`["sim", "não"]`).
 - `required` só para o que a instância não faz sentido sem. Vazio é permitido ao salvar; a anotação fica **incompleta**, e incompletas aparecem numa lista própria da app. Marcar tudo como obrigatório transforma a lista em ruído.
-- `default` precisa ser válido para o tipo e, em `enum`, estar em `options`. Não existe para `table`, `ref` nem `codeRef`.
+- `default` precisa ser válido para o tipo e, em `enum`, estar em `options`. Não existe para `table` nem `ref`.
 - `table`: colunas só `string`, `number`, `date` ou `enum`. Com `tags`, cada linha vira alvo de referência e `rowLabel` (uma coluna `string`) é obrigatório.
 - `options` de `enum`: strings únicas, nos valores do domínio (os valores do código vão em `code.values`; os da origem externa, em `sources[].values`).
 
@@ -73,8 +73,8 @@ Uma camada por natureza, não por módulo do código. `id` em `[a-z0-9-]+` e ún
 
 - `platforms` na raiz: `{ id, name, language }`, `id` em `[a-z0-9-]+` e único. Plataformas com o mesmo `id` em especializações diferentes são a mesma plataforma; alinhe com as já usadas no projeto (`get_project` mostra).
 - `code` por tipo, por id de plataforma declarada: `symbol` (obrigatório; confira que existe no código, com caminho, antes de escrever), `path` (opcional: o arquivo que define o `symbol`, **relativo à raiz do repositório da plataforma**, `/` como separador, sem `.`, `..` nem linha; preencha quando o arquivo for conhecido porque você o viu, nunca invente), `params` (chave do campo → nome do parâmetro; só o que é passado), `values` (só campos `enum`; valor do mapping → valor no código), `notes` (orientação curta para quem implementa).
-- `codeRef` é um campo do tipo que guarda **onde a instância foi implementada**; `platforms` nele restringe as plataformas. Não entra em colunas de `table` nem tem `default`.
-- Nome de plataforma, linguagem ou framework só aparece dentro de `platforms`, `code` e `codeRef`. O resto da especialização descreve o domínio, não a tecnologia.
+- **Nunca crie um campo `codeRef`** (nem outro campo para guardar onde a instância foi implementada): esse tipo saiu do formato. A especialização guarda só o que ajuda a **gerar** o código (`symbol`, `path`, `params`, `values`, `notes`), não referência ao código gerado. Ao revisar ou atualizar uma especialização que tem um campo `"type": "codeRef"`, **remova o campo** (e as chaves de `params` que o citam), suba a `version` e registre a remoção na entrega; o validador o aceita só por compatibilidade, com o aviso `ignored-field`.
+- Nome de plataforma, linguagem ou framework só aparece dentro de `platforms` e `code`. O resto da especialização descreve o domínio, não a tecnologia.
 
 ### 7. Origens (`formatVersion` 3)
 
@@ -84,12 +84,12 @@ Uma camada por natureza, não por módulo do código. `id` em `[a-z0-9-]+` e ún
 
 ### 8. Versão
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas, `code` e `codeRef`; 2 com qualquer deles; 3 com `sources`. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
 
-A validação é a mesma da importação da app, com o caminho exato do erro (`layers[0].annotationTypes[2].fields[1].default: …`). Rode, corrija o trecho apontado, rode de novo, até **zero erros**. Para cada **aviso** (plataforma declarada e não usada, tipo sem `code` numa especialização com plataformas, `format` antigo), ou corrija ou explique na entrega por que fica.
+A validação é a mesma da importação da app, com o caminho exato do erro (`layers[0].annotationTypes[2].fields[1].default: …`). Rode, corrija o trecho apontado, rode de novo, até **zero erros**. Para cada **aviso** (plataforma declarada e não usada, tipo sem `code` numa especialização com plataformas, `format` antigo), ou corrija ou explique na entrega por que fica; o aviso `ignored-field` (campo `codeRef`) sempre se corrige, removendo o campo.
 
 1. **Com o servidor MCP** (o caminho normal): `validate_specialization({ text })` com o JSON, ou `validate_specialization({ path })` se o arquivo estiver dentro das raízes. Não aplica a projeto algum.
 2. **Sem MCP, com o repositório do Mapping ao alcance**: um teste descartável em `tests/model/`, rodado com `npx vitest run tests/model/spec-draft.test.ts` e apagado depois. Ele não dá avisos, só erros.
@@ -126,7 +126,8 @@ Não aplique a especialização a um projeto nem crie proposta, a menos que o pr
 - Camada por módulo do código em vez de por natureza: os eventos acabam na mesma camada dos componentes e `allowedChildren` não valida.
 - `id` de tipo repetido em camadas diferentes (`button` em Componentes e `button` em Telas): o id é único na especialização inteira.
 - Booleano como `string` com `default: "true"`: use `enum`.
-- `default` fora de `options`, ou `default` em `ref`/`codeRef`.
+- `default` fora de `options`, ou `default` em `ref`.
+- Campo `codeRef` (onde foi implementado): saiu do formato; remova.
 - `requiresOwner: true` sem nenhum tipo listando o filho em `allowedChildren`.
 - `code` referindo plataforma não declarada, ou `params` com chave que não é campo do tipo.
 - `sources[].values` em campo que não é `enum`, ou destino que não está em `options`.

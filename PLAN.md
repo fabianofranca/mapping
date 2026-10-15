@@ -155,13 +155,13 @@ Pedido do dono (2026-10-15): cada fase vai para um agente executor com o modelo 
 
 **Toca em:** `src/model/` (`types.ts`, `schema.ts` e `migrations.ts` para a v9; `spec.ts` lê e ignora `codeRef`; `typed.ts`, `issues.ts`, `typedDisplay.ts`, `codeRefs.ts`, `specWarnings.ts`, `index.ts`; `findByCode` pelos tipos), `src/store/project.ts` e `src/store/derived.ts` (aviso de plataforma sem repositório pelo `code.path`), `src/ui/` (`CodeRefField.tsx` sai; `CodeRefs.tsx` fica só para a "Definição"; `TypedFields.tsx`, `AnnotationSummary.tsx`, `PlatformRepos.tsx`, `HelpDialog.tsx`), `src/theme/details.css`, `src/i18n/*` (com `specHelp.ts`), `mcp/` (`operations.ts`, `batch.ts`, `views.ts`, `codeViews.ts`, `codeFiles.ts`, `findByCode.ts`, `changes.ts`, `tools.ts`, `server.ts`, `modelErrors.ts`, `errors.ts`, `version.ts`), `docs/FORMAT.md` (v9 e a migração), `docs/SPEC-FORMAT.md`, `docs/spec.schema.json`, `docs/MCP.md`, `docs/AGENT-GUIDE.md` (o fluxo "Do mapeamento ao código" sem o passo de registrar onde implementou), `docs/ARCHITECTURE.md`, `docs/TESTING.md` (R3 reescrito, R3.6, e a seção 6), `examples/specs/sdui.json` (o Screen sem `implementacao`), `examples/workspace/README.md` e `AGENTS.md`, `.claude/skills/spec-author/SKILL.md`, `README.md`, os testes que citam `codeRef` em `tests/model`, `tests/store`, `tests/components` e `tests/mcp`, e `tests/e2e/codeRefs.spec.ts` (vira o e2e da "Definição").
 
-- [ ] Migração v8 → v9 com teste: valores de campos `codeRef` descartados, backup pré-migração gravado; projeto v8 sem `codeRef` migra sem mudar mais nada
-- [ ] Especialização com campo `codeRef`: importa, o campo some do tipo e aparece o aviso (app e `validate_specialization`); testes
-- [ ] Pendências, exibição (Detalhes, Lista, resumo do zoom semântico) e editor sem `codeRef`; aviso de plataforma sem repositório pelo `code.path`
-- [ ] `find_by_code` pelo `path` e pelo `symbol` dos tipos, com as anotações desses tipos; testes no modelo e no MCP
-- [ ] Proposta antiga com mudança num campo `codeRef`: inválida na revisão e não aplicada; teste
-- [ ] MCP 0.4.0: sem `codeRefs` nas respostas nem `codeRef` nas operações; `unknown-type` no registro de erros e no `AGENT-GUIDE.md`; `npm run build:mcp` e `tests/mcp/version.test.ts`
-- [ ] Documentação, exemplos, skill e o R3 do guia sem `codeRef`; nenhum nome de plataforma no código do núcleo (`src/` e `mcp/`)
+- [x] Migração v8 → v9 com teste: valores de campos `codeRef` descartados, backup pré-migração gravado; projeto v8 sem `codeRef` migra sem mudar mais nada
+- [x] Especialização com campo `codeRef`: importa, o campo some do tipo e aparece o aviso (app e `validate_specialization`); testes
+- [x] Pendências, exibição (Detalhes, Lista, resumo do zoom semântico) e editor sem `codeRef`; aviso de plataforma sem repositório pelo `code.path`
+- [x] `find_by_code` pelo `path` e pelo `symbol` dos tipos, com as anotações desses tipos; testes no modelo e no MCP
+- [x] Proposta antiga com mudança num campo `codeRef`: inválida na revisão e não aplicada; teste
+- [x] MCP 0.4.0: sem `codeRefs` nas respostas nem `codeRef` nas operações; `unknown-type` no registro de erros e no `AGENT-GUIDE.md`; `npm run build:mcp` e `tests/mcp/version.test.ts`
+- [x] Documentação, exemplos, skill e o R3 do guia sem `codeRef`; nenhum nome de plataforma no código do núcleo (`src/` e `mcp/`)
 
 **Aceite**: um projeto v8 com `codeRef` preenchido abre, migra para v9 com backup e grava sem os valores; uma especialização antiga com campo `codeRef` importa com aviso; `grep -ri coderef src mcp` só encontra a migração e a leitura que ignora o campo; o dono cria a tag `mcp-v0.4.0`.
 

@@ -9,10 +9,10 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v8. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json v9. Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
-// anotações tipadas (inclusive as entradas de `codeRef`) são JSON livre aqui: a
-// conferência contra o tipo vira pendência (`issues.ts`).
+// anotações tipadas são JSON livre aqui: a conferência contra o tipo vira pendência
+// (`issues.ts`).
 
 const id = z.string().min(1);
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);

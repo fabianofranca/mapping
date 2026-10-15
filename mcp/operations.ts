@@ -90,9 +90,7 @@ const values = z
       'Campo `table`: a lista de linhas, que substitui a tabela (`{"_id": "…"}` mantém uma linha existente; `"_as": "$linha"` dá um apelido à linha). ' +
       'Campo `ref`: `{"annotation": <anotação>, "entry": <chave ou id do par>}` (par de anotação livre), ' +
       '`{"annotation": <anotação>, "key": <campo table>, "row": <id, apelido ou índice da linha>}` ou `{"annotation": <anotação>, "key": <campo>}`. ' +
-      'Campo `codeRef` (onde a instância foi implementada): a lista COMPLETA de entradas `{"platform": "<id da plataforma>", "path": "<arquivo relativo à raiz do repositório, com />", "symbol": "<opcional>", "line": <opcional, inteiro ≥ 1>}` ' +
-      '(`"_id"` mantém uma entrada existente, com as propriedades omitidas como estão; entrada sem `_id` é nova; uma lista vazia ou `null` limpa). ' +
-      'Para acrescentar uma entrada, envie TODAS as existentes (com o `_id` de `codeRefs` em get_annotation, que não filtra por plataforma) mais a nova: as que faltarem na lista são removidas (o resumo do plano mostra `+N, -N entrada(s)`).',
+      'Uma chave que não é campo do tipo falha com `unknown-field`.',
   );
 
 const owner = item('Anotação dona (mesma marcação, outra camada)')

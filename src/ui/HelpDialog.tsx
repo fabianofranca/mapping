@@ -92,12 +92,10 @@ function Shortcuts() {
 }
 
 const CODE_HELP_KEYS = [
-  'help.code.editor',
-  'help.code.issues',
+  'help.code.definition',
   'help.code.open',
   'help.code.copy',
   'help.code.repos',
-  'help.code.display',
 ] as const satisfies readonly TranslationKey[];
 
 const PROPOSALS_HELP_KEYS = [
@@ -123,7 +121,7 @@ function ProposalsUsage() {
   );
 }
 
-/** Uso das plataformas, de `code` e do `codeRef` no app (o formato fica nas Especializações). */
+/** Uso das plataformas e do `code` no app (o formato fica nas Especializações). */
 function CodeUsage() {
   return (
     <>

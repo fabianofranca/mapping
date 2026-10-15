@@ -1,6 +1,12 @@
-import { findByCode, normalizeCodePath, projectIndex } from '../src/model';
+import {
+  annotationShortLabel,
+  findByCode,
+  findSpecType,
+  normalizeCodePath,
+  projectIndex,
+} from '../src/model';
 import { LocalFileChecker } from './codeFiles';
-import { resolveCodeEntry } from './codeViews';
+import { typeCodeView } from './codeViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import type { Roots } from './paths';
@@ -12,13 +18,15 @@ import {
 } from './projects';
 
 // `find_by_code`: do código para o mapeamento. Procura, em um projeto ou em todos os das
-// raízes, as marcações cujos `codeRef` apontam para um arquivo ou símbolo. Só compara os
-// textos gravados nos projetos: nenhum arquivo de código é aberto.
+// raízes, os tipos das especializações aplicadas cujo `code` aponta para um arquivo
+// (`code.<plataforma>.path`) ou símbolo (`code.<plataforma>.symbol`), e as anotações desses
+// tipos ("estou neste arquivo: que tipos o usam e em que marcações"). Só compara os textos
+// das especializações: nenhum arquivo de código é aberto (só se confere se o `path` existe).
 
 type Json = Record<string, unknown>;
 
-/** Máximo de entradas devolvidas (o total vem sempre). */
-const MAX_MATCHES = 200;
+/** Máximo de anotações devolvidas, somando todos os tipos (os totais vêm sempre). */
+const MAX_ANNOTATIONS = 200;
 
 export interface FindByCodeArgs {
   readonly project?: string | undefined;
@@ -54,7 +62,8 @@ export async function findByCodeResult(
   const matches: Json[] = [];
   const searched: string[] = [];
   const unreadable: string[] = [];
-  let total = 0;
+  let annotationTotal = 0;
+  let returned = 0;
   for (const location of locations) {
     let loaded;
     try {
@@ -67,21 +76,37 @@ export async function findByCodeResult(
     }
     searched.push(location.name);
     const refs = new Refs(loaded);
-    const index = projectIndex(loaded.project);
-    for (const hit of findByCode(loaded.project, {
+    const p = loaded.project;
+    const index = projectIndex(p);
+    for (const hit of findByCode(p, {
       path: path === '' ? null : path,
       symbol: symbol === '' ? null : symbol,
     })) {
-      total++;
-      if (matches.length >= MAX_MATCHES) continue;
-      const marking = index.markings.get(hit.markingId);
+      const resolved = findSpecType(p, { specId: hit.specId, typeId: hit.typeId });
+      const code = Object.fromEntries(hit.code.map((c) => [c.platform, c.code]));
+      const room = Math.max(0, MAX_ANNOTATIONS - returned);
+      const shown = hit.annotations.slice(0, room);
+      annotationTotal += hit.annotations.length;
+      returned += shown.length;
       matches.push({
         project: location.name,
-        marking: refs.ref('m', hit.markingId),
-        markingName: marking?.name ?? null,
-        image: refs.ref('i', hit.imageId),
-        annotation: refs.ref('a', hit.annotationId),
-        ...(await resolveCodeEntry({ refs, files }, hit.entry, hit.key)),
+        type: {
+          specId: hit.specId,
+          typeId: hit.typeId,
+          name: resolved?.type.name ?? hit.typeId,
+        },
+        code: await typeCodeView({ refs, files }, code),
+        annotationCount: hit.annotations.length,
+        annotations: shown.map((found) => {
+          const annotation = index.annotations.get(found.annotationId);
+          return {
+            annotation: refs.ref('a', found.annotationId),
+            title: annotation ? annotationShortLabel(p, annotation) : null,
+            marking: refs.ref('m', found.markingId),
+            markingName: index.markings.get(found.markingId)?.name ?? null,
+            image: refs.ref('i', found.imageId),
+          };
+        }),
       });
     }
   }
@@ -92,9 +117,10 @@ export async function findByCodeResult(
     },
     searched,
     ...(unreadable.length > 0 ? { unreadable } : {}),
-    total,
-    returned: matches.length,
-    ...(total > matches.length ? { truncated: true } : {}),
+    total: matches.length,
+    annotationTotal,
+    returned,
+    ...(annotationTotal > returned ? { truncated: true } : {}),
     matches,
   };
 }

@@ -10,7 +10,7 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 2 liga a especialização ao código (plataformas, `code` e `codeRef`). A importação aceita as versões 1, 2 e 3; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas, code e codeRef").
+- A `formatVersion` 2 liga a especialização ao código (plataformas e `code`). A importação aceita as versões 1, 2 e 3; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 
 Arquivos de apoio:
@@ -65,17 +65,17 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1`, `2` ou `3`), 
 
 ### Tipo de anotação
 
-| Propriedade       | Obrigatória | Descrição                                                                                                             |
-| ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------- |
-| `id`              | sim         | Único **na especialização inteira**.                                                                                  |
-| `name`            | sim         | Nome exibido (ex: "Button").                                                                                          |
-| `description`     | não         | Texto de ajuda.                                                                                                       |
-| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.             |
-| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                           |
-| `allowedChildren` | não         | Ids dos tipos que podem ser **vinculados** a este.                                                                    |
-| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                                     |
-| `code`            | não         | A partir da `formatVersion` 2. Como o tipo vira código, por plataforma declarada (ver "Plataformas, code e codeRef"). |
-| `sources`         | não         | Só `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").                         |
+| Propriedade       | Obrigatória | Descrição                                                                                                    |
+| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------ |
+| `id`              | sim         | Único **na especialização inteira**.                                                                         |
+| `name`            | sim         | Nome exibido (ex: "Button").                                                                                 |
+| `description`     | não         | Texto de ajuda.                                                                                              |
+| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.    |
+| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                  |
+| `allowedChildren` | não         | Ids dos tipos que podem ser **vinculados** a este.                                                           |
+| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                            |
+| `code`            | não         | A partir da `formatVersion` 2. Como o tipo vira código, por plataforma declarada (ver "Plataformas e code"). |
+| `sources`         | não         | Só `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").                |
 
 ### Campo
 
@@ -83,15 +83,14 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1`, `2` ou `3`), 
 | ------------- | ------------------ | ------------------------------------------------------------------------------------------------------------- |
 | `key`         | sim                | Chave gravada no JSON. `[A-Za-z0-9_]`, **não pode começar com `_`** (reservado). Única dentro do tipo.        |
 | `label`       | não                | Rótulo exibido (pode ter acentos). Padrão: `key`.                                                             |
-| `type`        | sim                | `string`, `number`, `date`, `enum`, `table`, `ref` ou `codeRef`.                                              |
+| `type`        | sim                | `string`, `number`, `date`, `enum`, `table` ou `ref`.                                                         |
 | `required`    | não                | Padrão `false`. Vazio é permitido ao salvar, mas a anotação fica **incompleta**.                              |
-| `default`     | não                | Valor inicial. Precisa ser válido para o tipo. Não existe para `table`, `ref` nem `codeRef`.                  |
+| `default`     | não                | Valor inicial. Precisa ser válido para o tipo. Não existe para `table` nem `ref`.                             |
 | `options`     | só `enum`          | Lista não vazia de strings únicas.                                                                            |
 | `columns`     | só `table`         | Campos com a mesma estrutura, **apenas** `string`, `number`, `date` ou `enum`.                                |
 | `tags`        | não                | Etiquetas que tornam o campo **alvo de referências** (`[a-z0-9-]+`). Em `table`, cada **linha** vira um alvo. |
 | `rowLabel`    | `table` com `tags` | Chave de uma coluna `string` que nomeia cada linha como alvo.                                                 |
 | `accepts`     | só `ref`           | `{ "tags": [...], "free": true\|false }`. Precisa de pelo menos uma etiqueta ou `free: true`.                 |
-| `platforms`   | só `codeRef`       | Subconjunto dos ids declarados em `platforms` (padrão: todas). Não pode ser vazio nem repetir ids.            |
 | `description` | não                | Texto de ajuda exibido no editor.                                                                             |
 | `sources`     | não                | Só `formatVersion` 3. Propriedades de origem do campo, inclusive em colunas (ver "Origens (sources)").        |
 
@@ -103,7 +102,8 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1`, `2` ou `3`), 
 - `enum`: uma das `options`. Booleanos são `enum` (ex: `["sim", "não"]`).
 - `table`: lista de linhas; cada linha é um objeto com as chaves das `columns` (mais o id interno `_id`).
 - `ref`: **referência forte** a uma tupla de outra anotação. O valor do campo é a referência.
-- `codeRef`: **onde a instância foi implementada**, por plataforma (caminho do arquivo, símbolo e linha). Só existe na `formatVersion` 2; o valor (uma lista de entradas) é descrito em [`FORMAT.md`](FORMAT.md), "Campos da v7".
+
+**Tipo de campo removido: `codeRef`.** Até a etapa 9 existia o tipo `codeRef` (onde a instância foi implementada, por plataforma). Ele saiu do formato: a especialização guarda só o que ajuda a **gerar** código (o `code` dos tipos, com `symbol` e `path`), não referência ao código gerado. Um arquivo antigo com um campo `"type": "codeRef"` continua válido: a importação da app e o `validate_specialization` **leem e ignoram** o campo (ele sai do tipo, junto com as chaves de `params` do `code` que o citam) e dão um aviso com o caminho (`ignored-field`). Nenhuma `formatVersion` nova; as cópias em `specs/` dos projetos existentes continuam abrindo. O JSON Schema ([`spec.schema.json`](spec.schema.json)) descreve só o formato atual e recusa o campo. Ao encontrar um, remova-o do arquivo.
 
 ## Relações entre anotações
 
@@ -121,7 +121,7 @@ Um campo `ref` aponta para um **alvo**. São alvos válidos:
 
 Etiqueta recomendada (reutilize em novas especializações): **`data-field`** — atributo de um modelo de dados (classe, entidade, DTO).
 
-## Plataformas, code e codeRef
+## Plataformas e code
 
 A `formatVersion` 2 liga a especialização ao código: ela declara as **plataformas** (um app, um contrato de API…) e como cada tipo de anotação vira código em cada uma. A `formatVersion` 1 continua válida: é a 2 sem plataformas e sem `code`. O núcleo da app é genérico; plataformas, linguagens e componentes de código entram só por estas propriedades.
 
@@ -134,11 +134,10 @@ A `formatVersion` 2 liga a especialização ao código: ela declara as **platafo
 | `params`    | entrada de `code` (opcional)    | Chave de um campo do tipo → nome do parâmetro no código. Campos fora de `params` não são passados.                                                                                       |
 | `values`    | entrada de `code` (opcional)    | Chave de um campo `enum` → (valor no mapping → valor no código). Valor sem tradução é passado como está.                                                                                 |
 | `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente.                                                                                                                                                          |
-| `codeRef`   | tipo de campo                   | Onde a instância foi implementada. O `platforms` do campo é opcional e restringe as plataformas permitidas. Não é permitido em colunas de `table` nem como `default`.                    |
 
 O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link pelo `urlTemplate` e caminho local pelo `localPath` do repositório da plataforma, configurados no projeto (`platformRepos`, ver o [`FORMAT.md`](FORMAT.md)): a app mostra a linha "Definição" nos Detalhes da anotação tipada e o MCP devolve o endereço e o arquivo local (ver o [`AGENT-GUIDE.md`](AGENT-GUIDE.md)).
 
-`code` e `codeRef` só valem em especializações que declaram `platforms`. Os ids citados em `code` e no `platforms` do campo precisam existir em `platforms`, e as chaves de `params` e `values` precisam ser campos do tipo.
+`code` só vale em especializações que declaram `platforms`. Os ids citados em `code` precisam existir em `platforms`, e as chaves de `params` e `values` precisam ser campos do tipo.
 
 ```json
 {
@@ -182,29 +181,13 @@ O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link p
           }
         }
       ]
-    },
-    {
-      "id": "telas",
-      "name": "Telas",
-      "color": "#00897B",
-      "annotationTypes": [
-        {
-          "id": "screen",
-          "name": "Screen",
-          "labelField": "nome",
-          "fields": [
-            { "key": "nome", "type": "string", "required": true },
-            { "key": "implementacao", "type": "codeRef" }
-          ]
-        }
-      ]
     }
   ]
 }
 ```
 
 - Plataformas com o **mesmo id** em especializações diferentes são a mesma plataforma (a configuração do repositório fica no projeto, não na especialização).
-- O valor de um `codeRef` e o repositório de cada plataforma (`platformRepos`, no projeto) estão em [`FORMAT.md`](FORMAT.md), "Campos da v7". O editor do `codeRef` na app e o uso de `code` pelo servidor MCP chegam nas fases seguintes da etapa 3b.
+- O repositório de cada plataforma (`platformRepos`, no projeto) está em [`FORMAT.md`](FORMAT.md), "Campos da v7". Plataforma em que algum tipo tem `path`, sem repositório configurado no projeto, gera um aviso (não é pendência). O uso de `code` pelo servidor MCP (`get_code_hints`, `find_by_code`) está no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
 ## Origens (sources)
 
@@ -249,24 +232,25 @@ A `formatVersion` 3 diz a que elementos de um **sistema externo** (uma ferrament
 
 ## Regras de validação
 
-As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table", "ref" ou "codeRef"`.
+As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
 - `format`, `formatVersion` (1, 2 ou 3), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo;
-- `default` compatível com o tipo (e presente em `options` no `enum`); `ref` e `codeRef` sem `default`;
-- `columns` só com tipos simples (`codeRef` não pode ser coluna); `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
+- `default` compatível com o tipo (e presente em `options` no `enum`); `ref` sem `default`;
+- `columns` só com tipos simples; `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
 - `labelField` aponta para um campo `string` do tipo;
 - `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
-- `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` opcional; `platforms`, `code` e `codeRef` a partir da `formatVersion` 2;
+- `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` opcional; `platforms` e `code` a partir da `formatVersion` 2;
 - `sources` só na `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name`; `values` só em campos `enum` e com destinos que existam em `options`;
-- `code` e `codeRef` só em especializações que declaram `platforms`; os ids de `code` e do `platforms` do campo precisam existir em `platforms`;
-- `symbol` obrigatório em cada entrada de `code`; `path`, se houver, não vazio e relativo à raiz do repositório (a mesma regra do caminho de um `codeRef`: normalizado, sem `.`, `..`, `/` no começo nem unidade); chaves de `params` e `values` precisam ser campos do tipo; `values` só para campos `enum`, com chaves que existam em `options`;
+- `code` só em especializações que declaram `platforms`; os ids de `code` precisam existir em `platforms`;
+- `symbol` obrigatório em cada entrada de `code`; `path`, se houver, não vazio e relativo à raiz do repositório (normalizado, com `/`, sem `.`, `..`, `/` no começo nem unidade); chaves de `params` e `values` precisam ser campos do tipo; `values` só para campos `enum`, com chaves que existam em `options`;
 - `color` no formato `#RRGGBB`;
-- propriedades desconhecidas são rejeitadas.
+- propriedades desconhecidas são rejeitadas (o `platforms` de um campo só existia no tipo removido `codeRef`);
+- um campo do tipo removido `codeRef` (fora de `columns`) não é erro: é lido, ignorado e vira aviso (ver "Tipos de valor").
 
-**Validar antes de importar.** A importação da app e o servidor MCP usam a mesma validação (`parseSpecText`, em `src/model/`). A tool `validate_specialization` do servidor (um `path` dentro das raízes ou o `text` JSON) devolve exatamente esses erros, com o caminho, sem aplicar a nenhum projeto, e ainda avisa o que não impede a importação mas costuma ser descuido: plataforma declarada e não usada, tipo sem `code` numa especialização com plataformas e o `format` antigo (`mapeador-spec`).
+**Validar antes de importar.** A importação da app e o servidor MCP usam a mesma validação (`parseSpecText`, em `src/model/`). A tool `validate_specialization` do servidor (um `path` dentro das raízes ou o `text` JSON) devolve exatamente esses erros, com o caminho, sem aplicar a nenhum projeto, e ainda avisa o que não impede a importação mas costuma ser descuido: plataforma declarada e não usada, tipo sem `code` numa especialização com plataformas, o `format` antigo (`mapeador-spec`) e o campo do tipo removido `codeRef`, ignorado (`ignored-field`). A importação da app mostra o aviso dos campos ignorados.
 
 ## Exemplo comentado: SDUI
 
@@ -342,5 +326,5 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 
 ## Exemplos completos
 
-- [`examples/specs/sdui.json`](../examples/specs/sdui.json) (`formatVersion` 2): `string`, `number`, `enum`, `table` e `ref`; `required`, `default`, `label`, `description`; `allowedChildren` e `requiresOwner`; referência por etiqueta (`dado`) que também aceita tuplas livres; plataformas `android`, `ios` e `bff`, `code` em todos os tipos de componentes e eventos e a camada Telas com o `Screen` e o campo `codeRef`.
+- [`examples/specs/sdui.json`](../examples/specs/sdui.json) (`formatVersion` 2): `string`, `number`, `enum`, `table` e `ref`; `required`, `default`, `label`, `description`; `allowedChildren` e `requiresOwner`; referência por etiqueta (`dado`) que também aceita tuplas livres; plataformas `android`, `ios` e `bff`, `code` em todos os tipos de componentes e eventos e a camada Telas com o `Screen` (sem `code`).
 - [`examples/specs/modelo-de-dados.json`](../examples/specs/modelo-de-dados.json) (`formatVersion` 1, sem plataformas): `date`, `labelField`, `table` com etiqueta `data-field` e `rowLabel` (cada atributo vira um alvo de referência).

@@ -9,12 +9,7 @@ import {
   type BlueprintNode,
   type Project,
 } from '../../src/model';
-import {
-  CADASTRO_SCREEN_KT,
-  CADASTRO_VIEW_MODEL_KT,
-  codeProject,
-  layerOf,
-} from './specFixtures';
+import { codeProject, layerOf } from './specFixtures';
 
 function codeOf(fn: () => unknown): string | null {
   try {
@@ -169,7 +164,6 @@ describe('codeBlueprint', () => {
         estilo: 'primary',
         habilitado: 'sim',
       },
-      codeRefs: [],
     });
     const [onClick, onHold] = button?.linked ?? [];
     expect(onClick).toMatchObject({
@@ -240,7 +234,7 @@ describe('codeBlueprint', () => {
     expect(params.find((x) => x.key === 'tipo')?.value).toBe('email');
   });
 
-  it('tipo sem code na plataforma entra com symbol null e os codeRef existentes da plataforma', () => {
+  it('tipo sem code na plataforma entra com symbol null e só os valores do tipo', () => {
     const { root, repo } = codeBlueprint(codeProject(), 'MF', 'android');
     expect(repo).toEqual({
       urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
@@ -260,30 +254,6 @@ describe('codeBlueprint', () => {
       params: [],
       notes: null,
       values: { nome: 'Cadastro', rota: '/cadastro' },
-      codeRefs: [
-        {
-          key: 'implementacao',
-          entry: {
-            _id: 'C1',
-            platform: 'android',
-            path: CADASTRO_SCREEN_KT,
-            symbol: 'CadastroScreen',
-            line: null,
-          },
-          url: `https://github.com/org/app-android/blob/main/${CADASTRO_SCREEN_KT}`,
-        },
-        {
-          key: 'implementacao',
-          entry: {
-            _id: 'C2',
-            platform: 'android',
-            path: CADASTRO_VIEW_MODEL_KT,
-            symbol: 'CadastroViewModel',
-            line: 42,
-          },
-          url: `https://github.com/org/app-android/blob/main/${CADASTRO_VIEW_MODEL_KT}#L42`,
-        },
-      ],
       linked: [],
     });
     // Classe (especialização v1, sem plataformas): sem code, com os valores do mapping.
@@ -306,11 +276,11 @@ describe('codeBlueprint', () => {
         ],
       },
     });
-    // No iOS, o Screen traz só a entrada iOS, sem link (sem repositório).
+    // Nenhuma anotação traz referência ao código gerado (o campo saiu do formato na etapa 9).
     const ios = codeBlueprint(codeProject(), 'MF', 'ios').root.annotations.find(
       (a) => a.typeId === 'screen',
     );
-    expect(ios?.codeRefs.map((c) => [c.entry._id, c.url])).toEqual([['C3', null]]);
+    expect(Object.keys(ios ?? {})).not.toContain('codeRefs');
   });
 
   it('o path do code vem na planta; sem repositório da plataforma, sem endereço', () => {

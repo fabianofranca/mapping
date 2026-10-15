@@ -1,9 +1,4 @@
-import {
-  codeRefEntries,
-  codeRefPlatforms,
-  findPlatform,
-  isValidCodePath,
-} from './codeRefs';
+import { findPlatform } from './codeLocations';
 import {
   DEFAULT_LABEL_TEXTS,
   instanceLabel,
@@ -106,38 +101,10 @@ export interface DisplayTableLine {
   readonly alert: boolean;
 }
 
-/** Uma entrada de `codeRef` para exibir (Detalhes e Lista). */
-export interface DisplayCodeEntry {
-  readonly id: string;
-  /** Id da plataforma. */
-  readonly platform: string;
-  /** Nome da plataforma declarado pela especialização (o id se ninguém a declara). */
-  readonly platformName: string;
-  readonly path: string | null;
-  /** Último segmento do caminho (o nome do arquivo); `null` sem caminho. */
-  readonly fileName: string | null;
-  readonly symbol: string | null;
-  readonly line: number | null;
-  /** Incompleta: plataforma não permitida ou caminho ausente ou inválido. */
-  readonly alert: boolean;
-}
-
-/** Campo `codeRef` por inteiro (`tables: 'full'`): uma linha por entrada. */
-export interface DisplayCodeLine {
-  readonly kind: 'code';
-  readonly key: string;
-  readonly label: string;
-  readonly entries: readonly DisplayCodeEntry[];
-  readonly alert: boolean;
-}
-
-export type DisplayLine = DisplayValueLine | DisplayTableLine | DisplayCodeLine;
+export type DisplayLine = DisplayValueLine | DisplayTableLine;
 
 export interface DisplayOptions {
-  /**
-   * `summary` (zoom semântico): `atributos: 3 linhas` e `implementação: Alfa, Beta` (plataformas pelo nome);
-   * `full` (painel e lista): a tabela e as entradas do `codeRef`.
-   */
+  /** `summary` (zoom semântico): `atributos: 3 linhas`; `full` (painel e lista): a tabela. */
   readonly tables: 'summary' | 'full';
   readonly texts?: DisplayTexts;
 }
@@ -217,27 +184,6 @@ export function typedDisplayLines(
       }
       continue;
     }
-    if (field.type === 'codeRef') {
-      const code = codeRefDisplay(p, codeRefPlatforms(resolved.spec, field), value);
-      if (code.entries.length === 0 && !code.alert) {
-        if (field.required) {
-          lines.push({ kind: 'value', key, label, text: texts.empty, alert: true });
-        }
-        continue;
-      }
-      if (options.tables === 'summary') {
-        lines.push({
-          kind: 'value',
-          key,
-          label,
-          text: codePlatformSummary(code.entries) || texts.empty,
-          alert: code.alert,
-        });
-      } else {
-        lines.push({ kind: 'code', key, label, ...code });
-      }
-      continue;
-    }
     if (field.type === 'ref') {
       const ref = parseRefValue(value);
       const target = ref ? resolveRef(p, ref) : null;
@@ -266,62 +212,41 @@ function fileNameOf(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1);
 }
 
-/**
- * Entradas do `codeRef` para exibir, com a plataforma pelo nome e o alerta de cada uma;
- * `alert` do campo também vale para entrada malformada (que fica de fora da lista).
- */
-function codeRefDisplay(
-  p: Project,
-  allowed: readonly string[],
-  value: JsonValue | undefined,
-): { entries: DisplayCodeEntry[]; alert: boolean } {
-  const entries = codeRefEntries(value).map((entry): DisplayCodeEntry => {
-    const pathOk = entry.path !== null && isValidCodePath(entry.path);
-    return {
-      id: entry._id,
-      platform: entry.platform,
-      platformName: findPlatform(p, entry.platform)?.name ?? entry.platform,
-      path: entry.path,
-      fileName: entry.path === null ? null : fileNameOf(entry.path),
-      symbol: entry.symbol,
-      line: entry.line,
-      alert: !allowed.includes(entry.platform) || !pathOk,
-    };
-  });
-  const malformed = Array.isArray(value) && value.length !== entries.length;
-  return { entries, alert: malformed || entries.some((e) => e.alert) };
+/** "Definição" de um tipo numa plataforma: o arquivo que define o símbolo do `code`. */
+export interface CodeDefinition {
+  /** Id da plataforma. */
+  readonly platform: string;
+  /** Nome da plataforma declarado pela especialização (o id se ninguém a declara). */
+  readonly platformName: string;
+  /** `code.<plataforma>.path`, relativo à raiz do repositório. */
+  readonly path: string;
+  /** Último segmento do caminho (o nome do arquivo). */
+  readonly fileName: string;
+  /** `code.<plataforma>.symbol`. */
+  readonly symbol: string;
 }
 
 /**
  * "Definição" de um tipo: uma entrada por plataforma cujo `code` tem `path` (o arquivo que
- * define o símbolo), na ordem do `code`, no mesmo formato das entradas de `codeRef` para a
- * exibição (`id` é a plataforma; sem linha; o `symbol` vai para a dica).
+ * define o símbolo), na ordem do `code`.
  */
 export function typeCodeDefinitions(
   p: Project,
   type: Pick<SpecAnnotationType, 'code'>,
-): DisplayCodeEntry[] {
+): CodeDefinition[] {
   return Object.entries(type.code ?? {}).flatMap(([platform, code]) =>
     code.path === undefined
       ? []
       : [
           {
-            id: platform,
             platform,
             platformName: findPlatform(p, platform)?.name ?? platform,
             path: code.path,
             fileName: fileNameOf(code.path),
             symbol: code.symbol,
-            line: null,
-            alert: false,
           },
         ],
   );
-}
-
-/** Plataformas distintas das entradas, pelo nome e na ordem de aparição (ex.: "Alfa, Beta"). */
-export function codePlatformSummary(entries: readonly DisplayCodeEntry[]): string {
-  return [...new Set(entries.map((e) => e.platformName))].join(', ');
 }
 
 /** Valores crus de uma anotação de tipo inexistente (somente leitura). */

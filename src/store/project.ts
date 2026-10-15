@@ -1,7 +1,6 @@
 import * as model from '../model';
 import type {
   AnnotationTypeRef,
-  CodeRefEntryInput,
   EntryInput,
   JsonValue,
   LabelTexts,
@@ -187,9 +186,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
             parentAnnotationId,
           }),
       ),
-    /** No `codeRef`, `value` é a lista inteira; entradas sem `_id` ganham um id novo. */
     setFieldValue: (annotationId: string, key: string, value: JsonValue) =>
-      store.apply((p) => model.setFieldValue(p, annotationId, key, value, { newId })),
+      store.apply((p) => model.setFieldValue(p, annotationId, key, value)),
     addTableRow: (annotationId: string, key: string) =>
       create((rowId) => (p) => model.addTableRow(p, annotationId, key, rowId)),
     setTableCell: (
@@ -209,30 +207,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         model.convertAnnotationToFree(p, annotationId, { newId, texts }),
       ),
 
-    // Referências de código (etapa 3b): cada chamada é uma entrada no histórico.
-    /** Devolve o `_id` da entrada nova. */
-    addCodeRefEntry: (annotationId: string, key: string, input: CodeRefEntryInput) =>
-      create(
-        (entryId) => (p) => model.addCodeRefEntry(p, annotationId, key, entryId, input),
-      ),
-    updateCodeRefEntry: (
-      annotationId: string,
-      key: string,
-      entryId: string,
-      changes: Partial<CodeRefEntryInput>,
-    ) =>
-      store.apply((p) =>
-        model.updateCodeRefEntry(p, annotationId, key, entryId, changes),
-      ),
-    removeCodeRefEntry: (annotationId: string, key: string, entryId: string) =>
-      store.apply((p) => model.removeCodeRefEntry(p, annotationId, key, entryId)),
-    moveCodeRefEntry: (
-      annotationId: string,
-      key: string,
-      entryId: string,
-      toIndex: number,
-    ) =>
-      store.apply((p) => model.moveCodeRefEntry(p, annotationId, key, entryId, toIndex)),
+    // Repositórios por plataforma (etapa 3b): cada chamada é uma entrada no histórico.
     setPlatformRepo: (platformId: string, repo: PlatformRepoInput) =>
       store.apply((p) => model.setPlatformRepo(p, platformId, repo)),
     removePlatformRepo: (platformId: string) =>

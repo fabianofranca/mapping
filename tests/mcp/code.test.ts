@@ -3,39 +3,26 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deserialize, platformRepoWarnings } from '../../src/model';
 import {
-  CADASTRO_SCREEN_KT,
-  CADASTRO_VIEW_MODEL_KT,
-  CADASTRO_VIEW_SWIFT,
   DS_BUTTON_KT,
+  DS_BUTTON_SWIFT,
   createCodeWorkspace,
   type CodeWorkspace,
 } from './codeWorkspace';
 import { acceptAllAndApply, hashOf, propose } from './proposalSupport';
 import { codeOf, connect, type Call, type Connection } from './workspace';
 
-// Etapa 3b.4, passo 6 do roteiro: get_code_hints, get_marking com os codeRef, find_by_code e
-// um lote com codeRef + repositório (enviado como proposta e aplicado pelo modelo), pelo dist-mcp/mapping-mcp.js por stdio. O cenário é o
-// repositório do app com o projeto dentro (`repo/design/mapeamentos/<projeto>`), e o cliente
-// (diretório de trabalho do servidor) na raiz do repositório.
+// Etapa 3b.4 e etapa 9 (o R3 do guia): get_code_hints, get_marking com o `code` dos tipos,
+// find_by_code pelo `path` e pelo `symbol` dos tipos, um lote com repositório (enviado como
+// proposta e aplicado pelo modelo) e a leitura de um projeto v8 com o campo de código removido,
+// pelo dist-mcp/mapping-mcp.js por stdio. O cenário é o repositório do app com o projeto
+// dentro (`repo/design/mapeamentos/<projeto>`), e o cliente (diretório de trabalho do servidor)
+// na raiz do repositório.
 
-interface CodeRef {
-  field: string;
-  id: string;
-  platform: string;
-  path: string | null;
-  symbol: string | null;
-  line: number | null;
-  url: string | null;
-  localFile: string | null;
-  exists: boolean | null;
-  localFileProblem?: string;
-}
 interface Annotation {
   ref: string;
   kind: 'free' | 'typed';
   type?: { specId: string; typeId: string };
   values?: Record<string, unknown>;
-  codeRefs?: CodeRef[];
   code?: Record<string, CodeEntry>;
 }
 interface CodeEntry {
@@ -61,7 +48,6 @@ interface HintAnnotation {
   params?: { field: string; name: string; value: unknown }[];
   notes?: string;
   values?: Record<string, unknown>;
-  codeRefs?: CodeRef[];
   linked?: HintAnnotation[];
 }
 interface HintNode {
@@ -77,18 +63,27 @@ interface Hints {
   unmappedTypes?: string[];
   tree: HintNode;
 }
-interface Match extends CodeRef {
+interface Match {
   project: string;
-  marking: string;
-  markingName: string | null;
-  annotation: string;
+  type: { specId: string; typeId: string; name: string };
+  code: Record<string, CodeEntry>;
+  annotationCount: number;
+  annotations: {
+    annotation: string;
+    title: string | null;
+    marking: string;
+    markingName: string | null;
+    image: string;
+  }[];
 }
 interface Found {
   query: Record<string, string>;
   searched: string[];
   unreadable?: string[];
   total: number;
+  annotationTotal: number;
   returned: number;
+  truncated?: boolean;
   matches: Match[];
 }
 interface Plan {
@@ -98,7 +93,7 @@ interface Plan {
   errors?: { index: number; op: string; code: string; message: string }[];
   summary: string[];
   changes: Record<string, { created: number; updated: number; deleted: number }>;
-  warnings?: { code: string; platform: string; entries: number }[];
+  warnings?: { code: string; platform: string; types: number }[];
 }
 interface Failure {
   error: { code: string; message: string; [key: string]: unknown };
@@ -209,7 +204,7 @@ describe('get_code_hints', () => {
     );
   });
 
-  it('marca os tipos sem `code` na plataforma (symbol null) e traz onde o Screen já foi implementado', async () => {
+  it('marca os tipos sem `code` na plataforma (symbol null), e o Screen traz só os valores do tipo', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', {
         ref: refOf('cadastro', 'm', 'MF'),
@@ -222,13 +217,10 @@ describe('get_code_hints', () => {
     const screen = findAnnotation(hints.tree, (a) => a.type.typeId === 'screen')!;
     expect(screen.symbol).toBeNull();
     expect(screen.values).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
-    expect(screen.codeRefs?.map((c) => [c.symbol, c.exists])).toEqual([
-      ['CadastroScreen', true],
-      ['CadastroViewModel', false],
-    ]);
+    expect(Object.keys(screen)).not.toContain('codeRefs');
   });
 
-  it('usa os parâmetros da plataforma pedida e não vaza os codeRef das outras', async () => {
+  it('usa os parâmetros e o `code` da plataforma pedida', async () => {
     const ios = ok(
       await mcp.call<Hints>('get_code_hints', {
         ref: refOf('cadastro', 'm', 'MC'),
@@ -252,16 +244,10 @@ describe('get_code_hints', () => {
         platform: 'ios',
       }),
     );
-    const screen = findAnnotation(form.tree, (a) => a.type.typeId === 'screen')!;
-    expect(screen.codeRefs).toEqual([
-      expect.objectContaining({
-        platform: 'ios',
-        path: CADASTRO_VIEW_SWIFT,
-        url: null,
-        localFile: null,
-        exists: null,
-      }),
-    ]);
+    const input = findAnnotation(form.tree, (a) => a.type.typeId === 'input')!;
+    expect(input.symbol).toBe('DSTextField');
+    // O Input não tem `path` no iOS (só no Android): nada de arquivo.
+    expect(input).not.toHaveProperty('path');
   });
 
   it('traz o arquivo do símbolo (path) com o endereço, o arquivo local e se ele existe', async () => {
@@ -288,7 +274,7 @@ describe('get_code_hints', () => {
     const ios = ok(await hints('ios')).tree.annotations![0]!;
     expect(ios).toMatchObject({
       symbol: 'DSButton',
-      path: 'App/DesignSystem/DSButton.swift',
+      path: DS_BUTTON_SWIFT,
       url: null,
       localFile: null,
       exists: null,
@@ -339,47 +325,15 @@ describe('get_marking, get_annotation e get_project', () => {
       .find((a) => a.type?.typeId === 'screen')!;
   }
 
-  it('traz os codeRef do Formulário com url, localFile e exists (e os tira de values)', async () => {
+  it('as anotações tipadas trazem os valores do tipo e nenhuma referência ao código gerado', async () => {
     const screen = await screenAnnotation('cadastro');
     expect(screen.values).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
-    expect(screen.codeRefs).toEqual([
-      {
-        field: 'implementacao',
-        id: expect.any(String),
-        platform: 'android',
-        path: CADASTRO_SCREEN_KT,
-        symbol: 'CadastroScreen',
-        line: null,
-        url: `${REPO_URL}/${CADASTRO_SCREEN_KT}`,
-        localFile: CADASTRO_SCREEN_KT,
-        exists: true,
-      },
-      {
-        field: 'implementacao',
-        id: expect.any(String),
-        platform: 'android',
-        path: CADASTRO_VIEW_MODEL_KT,
-        symbol: 'CadastroViewModel',
-        line: 42,
-        url: `${REPO_URL}/${CADASTRO_VIEW_MODEL_KT}#L42`,
-        localFile: CADASTRO_VIEW_MODEL_KT,
-        exists: false,
-      },
-      {
-        field: 'implementacao',
-        id: expect.any(String),
-        platform: 'ios',
-        path: CADASTRO_VIEW_SWIFT,
-        symbol: 'CadastroView',
-        line: null,
-        url: null,
-        localFile: null,
-        exists: null,
-      },
-    ]);
+    expect(Object.keys(screen)).not.toContain('codeRefs');
+    // O Screen não tem `code` no exemplo: a anotação também não traz `code`.
+    expect(screen).not.toHaveProperty('code');
   });
 
-  it('traz o `code` das plataformas por anotação tipada e o filtro `platform` vale para os dois', async () => {
+  it('traz o `code` das plataformas por anotação tipada e o filtro `platform` vale para ele', async () => {
     const data = ok(
       await mcp.call<MarkingData>('get_marking', {
         ref: refOf('cadastro', 'm', 'MC'),
@@ -402,9 +356,6 @@ describe('get_marking, get_annotation e get_project', () => {
       .flatMap((l) => l.annotations)
       .find((a) => a.type?.typeId === 'button')!;
     expect(Object.keys(iosButton.code!)).toEqual(['ios']);
-
-    const form = await screenAnnotation('cadastro', 'ios');
-    expect(form.codeRefs?.map((c) => c.platform)).toEqual(['ios']);
   });
 
   it('o `code` traz o path de cada plataforma com url, localFile e exists ao lado', async () => {
@@ -422,7 +373,7 @@ describe('get_marking, get_annotation e get_project', () => {
       exists: true,
     });
     expect(button.code!.ios).toMatchObject({
-      path: 'App/DesignSystem/DSButton.swift',
+      path: DS_BUTTON_SWIFT,
       url: null,
       localFile: null,
       exists: null,
@@ -461,28 +412,8 @@ describe('get_marking, get_annotation e get_project', () => {
     expect(error.code).toBe('unknown-platform');
   });
 
-  it('get_annotation também traz os codeRef resolvidos', async () => {
-    const data = ok(
-      await mcp.call<Annotation>('get_annotation', { ref: refOf('cadastro', 'a', 'AS') }),
-    );
-    expect(data.codeRefs).toHaveLength(3);
-    expect(data.codeRefs![0]).toMatchObject({
-      localFile: CADASTRO_SCREEN_KT,
-      exists: true,
-    });
-  });
-
   it('só confere o que fica dentro do diretório de trabalho do cliente', async () => {
     // `localPath` acima do repositório: o arquivo existe em `base/`, mas não é conferido nem revelado.
-    const escapes = await screenAnnotation('escapa');
-    expect(escapes.codeRefs![0]).toMatchObject({
-      platform: 'android',
-      url: `${REPO_URL}/${CADASTRO_SCREEN_KT}`,
-      localFile: null,
-      exists: null,
-      localFileProblem: 'outside-workdir',
-    });
-    // O path do `code` do tipo segue a mesma regra de confinamento.
     const data = ok(
       await mcp.call<MarkingData>('get_marking', {
         ref: refOf('escapa', 'm', 'MC'),
@@ -494,24 +425,25 @@ describe('get_marking, get_annotation e get_project', () => {
       .find((a) => a.type?.typeId === 'button')!;
     expect(button.code!.android).toMatchObject({
       path: DS_BUTTON_KT,
+      url: `${REPO_URL}/${DS_BUTTON_KT}`,
       localFile: null,
       exists: null,
       localFileProblem: 'outside-workdir',
     });
     // Link simbólico do repositório que leva para fora (e o alvo existe): exists false.
-    const link = await screenAnnotation('link');
-    expect(link.codeRefs).toEqual([
-      expect.objectContaining({
-        path: 'saida/segredo.kt',
-        localFile: 'saida/segredo.kt',
-        exists: false,
-      }),
-    ]);
+    const link = ok(
+      await mcp.call<Annotation>('get_annotation', { ref: refOf('link', 'a', 'AIN') }),
+    );
+    expect(link.code!.android).toMatchObject({
+      path: 'saida/segredo.kt',
+      localFile: 'saida/segredo.kt',
+      exists: false,
+    });
   });
 
   it('get_project traz as plataformas, os platformRepos e o aviso de repositório ausente', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
-    expect(data.schemaVersion).toBe(8);
+    expect(data.schemaVersion).toBe(9);
     expect(data.platforms).toEqual([
       { id: 'android', name: 'Android', language: 'kotlin', specs: ['sdui'] },
       { id: 'ios', name: 'iOS', language: 'swift', specs: ['sdui'] },
@@ -520,92 +452,127 @@ describe('get_marking, get_annotation e get_project', () => {
     expect(data.platformRepos).toEqual({
       android: { urlTemplate: `${REPO_URL}/{path}#L{line}`, localPath: '../../..' },
     });
-    expect(data.warnings).toEqual([
-      { code: 'missing-repo', platform: 'ios', entries: 1 },
-    ]);
+    // Só o Button tem `path` no iOS, que não tem repositório; o Android tem.
+    expect(data.warnings).toEqual([{ code: 'missing-repo', platform: 'ios', types: 1 }]);
+  });
+
+  it('um projeto v8 com o campo de código removido abre migrado, sem os valores dele', async () => {
+    const data = ok(await mcp.call('get_project', { project: 'antigo' }));
+    expect(data.schemaVersion).toBe(9);
+    expect(data.migratedFrom).toBe(8);
+    const screen = ok(
+      await mcp.call<Annotation>('get_annotation', { ref: refOf('antigo', 'a', 'AS') }),
+    );
+    expect(screen.values).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
+    // O arquivo continua como está: o servidor não grava o projeto.
+    const text = readFileSync(join(ws.projectDir('antigo'), 'mapping.json'), 'utf8');
+    expect(JSON.parse(text).schemaVersion).toBe(8);
+    expect(text).toContain('implementacao');
   });
 });
 
 describe('find_by_code', () => {
-  it('acha o Screen Cadastro só pelo nome do arquivo, em todos os projetos', async () => {
-    const found = ok(
-      await mcp.call<Found>('find_by_code', { path: 'CadastroScreen.kt' }),
-    );
-    expect(found.query).toEqual({ path: 'CadastroScreen.kt' });
-    expect(found.searched).toEqual(['cadastro', 'escapa', 'escrita', 'link']);
-    expect(found.matches.map((m) => m.project)).toEqual([
-      'cadastro',
-      'escapa',
-      'escrita',
-    ]);
-    const [first] = found.matches;
-    expect(first).toMatchObject({
-      project: 'cadastro',
-      markingName: 'Formulário',
-      field: 'implementacao',
-      platform: 'android',
-      path: CADASTRO_SCREEN_KT,
-      symbol: 'CadastroScreen',
-      url: `${REPO_URL}/${CADASTRO_SCREEN_KT}`,
-      localFile: CADASTRO_SCREEN_KT,
-      exists: true,
+  it('acha o tipo Button só pelo nome do arquivo, em todos os projetos, com as anotações dele', async () => {
+    const found = ok(await mcp.call<Found>('find_by_code', { path: 'DSButton.kt' }));
+    expect(found.query).toEqual({ path: 'DSButton.kt' });
+    expect(found.searched).toEqual(['antigo', 'cadastro', 'escapa', 'escrita', 'link']);
+    expect(found.matches.map((m) => m.project)).toEqual(found.searched);
+    expect(found.total).toBe(5);
+    expect(found.annotationTotal).toBe(5);
+    expect(found.returned).toBe(5);
+    expect(found).not.toHaveProperty('truncated');
+    const first = found.matches.find((m) => m.project === 'cadastro')!;
+    expect(first.type).toEqual({ specId: 'sdui', typeId: 'button', name: 'Button' });
+    // Só a plataforma que casou, com o arquivo resolvido como em get_marking.
+    expect(first.code).toEqual({
+      android: expect.objectContaining({
+        symbol: 'com.app.ds.DSButton',
+        path: DS_BUTTON_KT,
+        url: `${REPO_URL}/${DS_BUTTON_KT}`,
+        localFile: DS_BUTTON_KT,
+        exists: true,
+      }),
     });
-    expect(first!.marking).toMatch(
-      /^mapping:\/\/cadastro\/m\/[0-9a-f]{8} \(cadastro\.png › Formulário\)$/,
+    expect(first.annotationCount).toBe(1);
+    expect(first.annotations).toHaveLength(1);
+    const [hit] = first.annotations;
+    expect(hit!.markingName).toBe('Cadastrar');
+    expect(hit!.title).toBe('Button btn_cadastrar');
+    expect(hit!.marking).toMatch(
+      /^mapping:\/\/cadastro\/m\/[0-9a-f]{8} \(cadastro\.png › Formulário › Cadastrar\)$/,
     );
-    expect(first!.annotation).toContain('Screen Cadastro');
+    expect(hit!.annotation).toMatch(/^mapping:\/\/cadastro\/a\/[0-9a-f]{8}/);
+    expect(hit!.image).toMatch(/^mapping:\/\/cadastro\/i\/[0-9a-f]{8}/);
   });
 
-  it('a referência devolvida leva de volta ao get_marking do Formulário', async () => {
+  it('a referência devolvida leva de volta à anotação e à marcação', async () => {
     const found = ok(
-      await mcp.call<Found>('find_by_code', {
-        project: 'cadastro',
-        path: 'CadastroScreen.kt',
-      }),
+      await mcp.call<Found>('find_by_code', { project: 'cadastro', path: 'DSButton.kt' }),
     );
     expect(found.matches).toHaveLength(1);
+    const hit = found.matches[0]!.annotations[0]!;
     const marking = ok(
-      await mcp.call<{ name: string }>('get_marking', { ref: found.matches[0]!.marking }),
+      await mcp.call<{ name: string }>('get_marking', { ref: hit.marking }),
     );
-    expect(marking.name).toBe('Formulário');
+    expect(marking.name).toBe('Cadastrar');
+    const annotation = ok(
+      await mcp.call<Annotation>('get_annotation', { ref: hit.annotation }),
+    );
+    expect(annotation.type).toMatchObject({ specId: 'sdui', typeId: 'button' });
   });
 
-  it('casa o caminho por segmentos inteiros, o símbolo por igualdade e exige os dois quando informados', async () => {
+  it('casa o caminho por segmentos inteiros, o símbolo por igualdade e exige os dois na mesma plataforma', async () => {
     const byPath = (path: string, extra: Record<string, unknown> = {}) =>
       mcp.call<Found>('find_by_code', { project: 'cadastro', path, ...extra });
-    expect(ok(await byPath(CADASTRO_SCREEN_KT)).total).toBe(1);
-    expect(ok(await byPath('cadastro/CadastroScreen.kt')).total).toBe(1);
-    expect(ok(await byPath('Screen.kt')).total).toBe(0);
-    expect(ok(await byPath('adastroScreen.kt')).total).toBe(0);
-    expect(
-      ok(await byPath('CadastroScreen.kt', { symbol: 'CadastroScreen' })).total,
-    ).toBe(1);
-    expect(ok(await byPath('CadastroScreen.kt', { symbol: 'CadastroView' })).total).toBe(
-      0,
+    expect(ok(await byPath(DS_BUTTON_KT)).total).toBe(1);
+    expect(ok(await byPath('ds/DSButton.kt')).total).toBe(1);
+    expect(ok(await byPath('Button.kt')).total).toBe(0);
+    expect(ok(await byPath('SButton.kt')).total).toBe(0);
+    expect(ok(await byPath('DSButton.kt', { symbol: 'com.app.ds.DSButton' })).total).toBe(
+      1,
     );
+    // `DSButton` é o símbolo do iOS, e `DSButton.kt` o arquivo do Android: não casam juntos.
+    expect(ok(await byPath('DSButton.kt', { symbol: 'DSButton' })).total).toBe(0);
 
     const bySymbol = ok(
-      await mcp.call<Found>('find_by_code', {
-        project: 'cadastro',
-        symbol: 'CadastroView',
-      }),
+      await mcp.call<Found>('find_by_code', { project: 'cadastro', symbol: 'DSButton' }),
     );
     expect(bySymbol.matches).toHaveLength(1);
-    expect(bySymbol.matches[0]).toMatchObject({
-      platform: 'ios',
-      path: CADASTRO_VIEW_SWIFT,
-      url: null,
-      localFile: null,
-      exists: null,
+    expect(bySymbol.matches[0]!.code).toEqual({
+      ios: expect.objectContaining({
+        path: DS_BUTTON_SWIFT,
+        url: null,
+        localFile: null,
+        exists: null,
+      }),
     });
     expect(
-      ok(
-        await mcp.call<Found>('find_by_code', {
-          project: 'cadastro',
-          symbol: 'Cadastro',
-        }),
-      ).total,
+      ok(await mcp.call<Found>('find_by_code', { project: 'cadastro', symbol: 'Button' }))
+        .total,
     ).toBe(0);
+  });
+
+  it('acha pelo símbolo um tipo sem path, e um tipo sem anotações vem com a lista vazia', async () => {
+    const onClick = ok(
+      await mcp.call<Found>('find_by_code', {
+        project: 'cadastro',
+        symbol: 'com.app.ds.OnClick',
+      }),
+    );
+    expect(onClick.matches).toHaveLength(1);
+    expect(onClick.matches[0]!.type.typeId).toBe('onClick');
+    expect(onClick.matches[0]!.code.android).not.toHaveProperty('path');
+    expect(onClick.matches[0]!.annotationCount).toBe(1);
+
+    const image = ok(
+      await mcp.call<Found>('find_by_code', {
+        project: 'cadastro',
+        symbol: 'com.app.ds.DSImage',
+      }),
+    );
+    expect(image.total).toBe(1);
+    expect(image.annotationTotal).toBe(0);
+    expect(image.matches[0]).toMatchObject({ annotationCount: 0, annotations: [] });
   });
 
   it('erros: sem path nem symbol, caminho inválido e projeto inexistente', async () => {
@@ -623,16 +590,14 @@ describe('find_by_code', () => {
   });
 });
 
-describe('plan_changes: codeRef e repositórios por plataforma', () => {
-  // Calculados na hora do teste: o workspace só existe depois do `beforeAll`.
+describe('plan_changes: repositórios por plataforma e campo inexistente', () => {
+  // Calculado na hora do teste: o workspace só existe depois do `beforeAll`.
   const screenRef = () => refOf('escrita', 'a', 'AS');
-  const existingEntries = () => ['C1', 'C2', 'C3'].map((key) => ({ _id: ws.ids[key]! }));
 
   const plan = (operations: unknown[], project = 'escrita') =>
     mcp.call<Plan>('plan_changes', { project, operations });
 
-  it('valida as operações novas e explica os erros pelo padrão do modelo', async () => {
-    const screen = screenRef();
+  it('valida as operações e explica os erros pelo padrão do modelo', async () => {
     const result = ok(
       await plan([
         { op: 'set_platform_repo', platform: 'web', urlTemplate: 'https://x.dev/{path}' },
@@ -640,20 +605,11 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
         { op: 'set_platform_repo', platform: 'ios', urlTemplate: 'ftp://x/{path}' },
         { op: 'set_platform_repo', platform: 'ios', localPath: '/abs/olute' },
         { op: 'remove_platform_repo', platform: 'ios' },
+        // O campo de código removido na etapa 9 não existe mais no tipo.
         {
           op: 'update_annotation',
-          annotation: screen,
-          values: { implementacao: [{ platform: 'web', path: 'a.js' }] },
-        },
-        {
-          op: 'update_annotation',
-          annotation: screen,
-          values: { implementacao: [{ platform: 'ios', path: '../fora.swift' }] },
-        },
-        {
-          op: 'update_annotation',
-          annotation: screen,
-          values: { implementacao: [{ platform: 'ios', path: 'A.swift', line: 0 }] },
+          annotation: screenRef(),
+          values: { implementacao: [{ platform: 'android', path: 'a.kt' }] },
         },
       ]),
     );
@@ -665,24 +621,10 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
       [2, 'invalid-url-template'],
       [3, 'invalid-local-path'],
       [4, 'not-found'],
-      [5, 'platform-not-allowed'],
-      [6, 'invalid-path'],
-      [7, 'invalid-value'],
+      [5, 'unknown-field'],
     ]);
     expect(result.errors![0]!.message).toContain('plataforma não declarada');
-  });
-
-  it('o resumo mostra as entradas de codeRef que saem quando a lista enviada é menor', async () => {
-    const result = ok(
-      await plan([
-        {
-          op: 'update_annotation',
-          annotation: screenRef(),
-          values: { implementacao: [{ _id: ws.ids.C1! }] },
-        },
-      ]),
-    );
-    expect(result.summary[0]).toContain('campos implementacao (-2 entrada(s))');
+    expect(result.errors![5]!.message).toContain('campo inexistente no tipo');
   });
 
   it('remover o repositório de uma plataforma usada vira aviso, e a prévia não grava nada', async () => {
@@ -691,40 +633,24 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     expect(result.valid).toBe(true);
     expect(result.summary).toEqual(['0. Remover o repositório da plataforma "android"']);
     expect(result.changes.platformRepos).toEqual({ created: 0, updated: 0, deleted: 1 });
-    // `warnings` descreve o projeto depois do lote: o ios (sem repositório desde o começo) também aparece.
+    // `warnings` descreve o projeto depois do lote: o ios (sem repositório desde o começo) também
+    // aparece. No Android, Button e Input têm `path`; no iOS, só o Button.
     expect(result.warnings).toEqual([
-      { code: 'missing-repo', platform: 'android', entries: 2 },
-      { code: 'missing-repo', platform: 'ios', entries: 1 },
+      { code: 'missing-repo', platform: 'android', types: 2 },
+      { code: 'missing-repo', platform: 'ios', types: 1 },
     ]);
     expect(readFileSync(join(ws.projectDir('escrita'), 'mapping.json'), 'utf8')).toBe(
       before,
     );
   });
 
-  it('o lote do roteiro (nova entrada no codeRef + repositório do ios) é aplicado e grava v8 com revision + 1', async () => {
+  it('o lote do roteiro (repositório do ios) é aplicado e grava v9 com revision + 1', async () => {
     const dir = ws.projectDir('escrita');
-    const screen = screenRef();
-    const existing = existingEntries();
     const operations = [
-      {
-        op: 'update_annotation',
-        annotation: screen,
-        values: {
-          implementacao: [
-            ...existing,
-            {
-              platform: 'ios',
-              path: 'App/Cadastro/CadastroViewModel.swift',
-              symbol: 'CadastroViewModel',
-              line: 7,
-            },
-          ],
-        },
-      },
       {
         op: 'set_platform_repo',
         platform: 'ios',
-        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}#L{line}',
+        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}',
         localPath: '../../..',
       },
     ];
@@ -732,8 +658,7 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
     expect(result.revision).toBe(0);
-    expect(result.summary[0]).toContain('campos implementacao (+1 entrada(s))');
-    expect(result.summary[1]).toContain('Configurar o repositório da plataforma "ios"');
+    expect(result.summary[0]).toContain('Configurar o repositório da plataforma "ios"');
     expect(result.changes.platformRepos).toEqual({ created: 1, updated: 0, deleted: 0 });
     expect(result.warnings).toBeUndefined();
 
@@ -757,64 +682,33 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     const saved = parsed.project;
-    expect(saved.schemaVersion).toBe(8);
+    expect(saved.schemaVersion).toBe(9);
     expect(saved.revision).toBe(1);
     expect(saved.platformRepos).toEqual({
       android: { urlTemplate: `${REPO_URL}/{path}#L{line}`, localPath: '../../..' },
       ios: {
-        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}#L{line}',
+        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}',
         localPath: '../../..',
       },
-    });
-    const annotation = saved.annotations.find((a) => a.id === ws.ids.AS)!;
-    const entries = annotation.values!.implementacao as {
-      _id: string;
-      platform: string;
-      path: string;
-      symbol: string | null;
-      line: number | null;
-    }[];
-    // As três entradas existentes mantêm id e propriedades; a nova ganha um id próprio.
-    expect(entries.map((e) => e._id).slice(0, 3)).toEqual(existing.map((e) => e._id));
-    expect(entries[1]).toMatchObject({
-      path: CADASTRO_VIEW_MODEL_KT,
-      symbol: 'CadastroViewModel',
-      line: 42,
-    });
-    expect(entries).toHaveLength(4);
-    expect(entries[3]).toEqual({
-      _id: expect.stringMatching(/^[0-9a-f-]{36}$/),
-      platform: 'ios',
-      path: 'App/Cadastro/CadastroViewModel.swift',
-      symbol: 'CadastroViewModel',
-      line: 7,
     });
     expect(platformRepoWarnings(saved)).toEqual([]);
 
     // Quem lê depois (a app aberta recarrega pelo mecanismo de alteração externa) já vê o ios configurado.
     const marking = ok(
       await mcp.call<MarkingData>('get_marking', {
-        ref: refOf('escrita', 'm', 'MF'),
+        ref: refOf('escrita', 'm', 'MC'),
         platform: 'ios',
       }),
     );
-    const refs = marking.layers
+    const button = marking.layers
       .flatMap((l) => l.annotations)
-      .find((a) => a.type?.typeId === 'screen')!.codeRefs!;
-    expect(refs.map((r) => [r.path, r.url, r.localFile, r.exists])).toEqual([
-      [
-        CADASTRO_VIEW_SWIFT,
-        `https://github.com/org/app-ios/blob/main/${CADASTRO_VIEW_SWIFT}`,
-        CADASTRO_VIEW_SWIFT,
-        false,
-      ],
-      [
-        'App/Cadastro/CadastroViewModel.swift',
-        'https://github.com/org/app-ios/blob/main/App/Cadastro/CadastroViewModel.swift#L7',
-        'App/Cadastro/CadastroViewModel.swift',
-        false,
-      ],
-    ]);
+      .find((a) => a.type?.typeId === 'button')!;
+    expect(button.code!.ios).toMatchObject({
+      path: DS_BUTTON_SWIFT,
+      url: `https://github.com/org/app-ios/blob/main/${DS_BUTTON_SWIFT}`,
+      localFile: DS_BUTTON_SWIFT,
+      exists: false,
+    });
     const project = ok(await mcp.call('get_project', { project: 'escrita' }));
     expect(project.revision).toBe(1);
     expect(project.warnings).toBeUndefined();
@@ -834,6 +728,6 @@ describe('plan_changes: codeRef e repositórios por plataforma', () => {
     const schema = JSON.stringify(planTool.inputSchema);
     expect(schema).toContain('set_platform_repo');
     expect(schema).toContain('remove_platform_repo');
-    expect(schema).toContain('Campo `codeRef`');
+    expect(schema).not.toMatch(/codeRef/i);
   });
 });

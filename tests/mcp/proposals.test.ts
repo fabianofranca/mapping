@@ -42,6 +42,10 @@ import { connect, type Connection } from './workspace';
 let root: string;
 let mcp: Connection;
 const dir = () => join(root, 'loja');
+
+/** Os avisos sem os de repositório ausente (que descrevem o projeto inteiro, não a proposta). */
+const withoutRepoWarnings = (warnings: { code: string }[] | undefined) =>
+  (warnings ?? []).filter((w) => w.code !== 'missing-repo');
 const mappingPath = () => join(dir(), 'mapping.json');
 /** Arquivos em `images/` do projeto (a pasta só existe depois da primeira imagem aplicada). */
 const projectImages = () =>
@@ -582,8 +586,10 @@ describe('nova proposta com supersedes (só as correções)', () => {
       baseRevision: 1,
     });
     expect(second.reviewChanges).toMatchObject({ total: 2, create: 2 });
-    // A revisão anterior estava completa: sem aviso, e ela continua `applied`.
-    expect(second.warnings).toBeUndefined();
+    // A revisão anterior estava completa: sem aviso, e ela continua `applied`. (Os avisos de
+    // repositório ausente, pelo `path` do `code` dos tipos, descrevem o projeto, não a proposta.)
+    expect(withoutRepoWarnings(second.warnings)).toEqual([]);
+    expect(second.warnings?.map((w) => w.code)).toEqual(['missing-repo', 'missing-repo']);
     expect(second.superseded).toMatchObject({
       ref: first.proposal.ref,
       status: 'applied',
@@ -653,7 +659,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
       ],
       { title: 'Ajustes no botão (2)', supersedes: third.proposal.ref },
     );
-    expect(fourth.warnings).toEqual([
+    expect(withoutRepoWarnings(fourth.warnings)).toEqual([
       expect.objectContaining({
         code: 'superseded-incomplete',
         proposal: third.proposal.ref,
@@ -703,7 +709,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
       operations({ id: 'input_senha', placeholder: 'Sua senha' }),
       { title: 'Senha (2)', supersedes: fifth.proposal.ref },
     );
-    expect(sixth.warnings).toEqual([
+    expect(withoutRepoWarnings(sixth.warnings)).toEqual([
       expect.objectContaining({
         code: 'superseded-incomplete',
         undecided: 3,

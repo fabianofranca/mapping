@@ -2,28 +2,26 @@ import {
   codeBlueprint,
   codeLink,
   codeLocalPath,
-  codeRefEntries,
   findPlatform,
   projectPlatforms,
   typeOfAnnotation,
   type Annotation,
   type BlueprintAnnotation,
   type BlueprintNode,
-  type CodeRefEntry,
-  type JsonValue,
+  type SpecCode,
 } from '../src/model';
 import type { LocalFileChecker } from './codeFiles';
 import { ToolError } from './errors';
 import type { Refs } from './items';
 
-// Visões em JSON das referências de código (etapa 3b.4): `codeRef` resolvidos (com a URL, o
-// caminho local e a existência do arquivo), o `code` das plataformas de cada tipo e o blueprint
-// de `get_code_hints`. O servidor só monta caminhos e confere a existência (`codeFiles.ts`):
-// nenhum arquivo de código é lido.
+// Visões em JSON do código das especializações (etapa 3b.4; etapa 9): o `code` das plataformas
+// de cada tipo, com o `path` resolvido (a URL, o caminho local e a existência do arquivo), e o
+// blueprint de `get_code_hints`. O servidor só monta caminhos e confere a existência
+// (`codeFiles.ts`): nenhum arquivo de código é lido.
 
 type Json = Record<string, unknown>;
 
-/** O que as visões precisam para resolver uma entrada de `codeRef`. */
+/** O que as visões precisam para resolver o `path` de um tipo. */
 export interface CodeContext {
   readonly refs: Refs;
   readonly files: LocalFileChecker;
@@ -40,10 +38,7 @@ export function assertPlatform(refs: Refs, platformId: string): void {
   );
 }
 
-/**
- * Onde um caminho de código está: a URL no repositório, o arquivo local e se ele existe.
- * O mesmo formato serve às entradas de `codeRef` e ao `path` do `code` de um tipo.
- */
+/** Onde um caminho de código está: a URL no repositório, o arquivo local e se ele existe. */
 async function resolveCodeFile(
   ctx: CodeContext,
   location: { readonly platform: string; readonly path: string | null },
@@ -61,27 +56,7 @@ async function resolveCodeFile(
   };
 }
 
-/** Uma entrada de `codeRef` com a URL do repositório e o arquivo local. */
-export async function resolveCodeEntry(
-  ctx: CodeContext,
-  entry: CodeRefEntry,
-  field?: string,
-): Promise<Json> {
-  return {
-    ...(field !== undefined ? { field } : {}),
-    id: entry._id,
-    platform: entry.platform,
-    path: entry.path,
-    symbol: entry.symbol,
-    line: entry.line,
-    ...(await resolveCodeFile(ctx, entry, codeLink(ctx.refs.project, entry))),
-  };
-}
-
-/**
- * O `path` do `code` de um tipo, resolvido: `path` com `url`, `localFile` e `exists` ao lado
- * (como nos `codeRef`). Vazio sem `path`.
- */
+/** O `path` do `code` de um tipo, resolvido: `path` com `url`, `localFile` e `exists` ao lado. Vazio sem `path`. */
 async function resolveDefinition(
   ctx: CodeContext,
   platform: string,
@@ -90,38 +65,6 @@ async function resolveDefinition(
 ): Promise<Json> {
   if (path === null || path === undefined) return {};
   return { path, ...(await resolveCodeFile(ctx, { platform, path }, url)) };
-}
-
-/** Campos `codeRef` do tipo da anotação, na ordem do tipo (vazio para anotação livre). */
-function codeRefFields(refs: Refs, annotation: Annotation): string[] {
-  const resolved = typeOfAnnotation(refs.project, annotation);
-  if (!resolved || !annotation.values) return [];
-  return resolved.type.fields.flatMap((f) => (f.type === 'codeRef' ? [f.key] : []));
-}
-
-/** Chaves dos campos `codeRef` da anotação (para tirá-los de `values`, que passam a vir em `codeRefs`). */
-export function codeRefKeys(refs: Refs, annotation: Annotation): ReadonlySet<string> {
-  return new Set(codeRefFields(refs, annotation));
-}
-
-/**
- * Entradas de `codeRef` da anotação tipada, resolvidas, na ordem dos campos. Com `platform`,
- * só as dessa plataforma.
- */
-export async function annotationCodeRefs(
-  ctx: CodeContext,
-  annotation: Annotation,
-  platform?: string,
-): Promise<Json[]> {
-  const result: Json[] = [];
-  for (const key of codeRefFields(ctx.refs, annotation)) {
-    const value: JsonValue | undefined = annotation.values?.[key];
-    for (const entry of codeRefEntries(value)) {
-      if (platform !== undefined && entry.platform !== platform) continue;
-      result.push(await resolveCodeEntry(ctx, entry, key));
-    }
-  }
-  return result;
 }
 
 /**
@@ -136,9 +79,23 @@ export async function annotationCode(
 ): Promise<Json | null> {
   const code = typeOfAnnotation(ctx.refs.project, annotation)?.type.code;
   if (!code) return null;
+  return typeCodeView(ctx, code, platform);
+}
+
+/**
+ * `code` de um tipo (ou só as plataformas de `only`) com o `path` resolvido; `null` se não
+ * sobrar nenhuma plataforma. `get_marking`, `get_annotation` e `find_by_code` usam o mesmo.
+ */
+export async function typeCodeView(
+  ctx: CodeContext,
+  code: Readonly<Record<string, SpecCode>>,
+  only?: string | ReadonlySet<string>,
+): Promise<Json | null> {
+  const wanted = (id: string) =>
+    only === undefined || (typeof only === 'string' ? id === only : only.has(id));
   const entries = await Promise.all(
     Object.entries(code)
-      .filter(([id]) => platform === undefined || id === platform)
+      .filter(([id]) => wanted(id))
       .map(async ([id, entry]): Promise<[string, Json]> => {
         const { symbol, path, ...rest } = entry;
         return [id, { symbol, ...(await resolveDefinition(ctx, id, path)), ...rest }];
@@ -161,9 +118,6 @@ async function hintAnnotation(
     platform,
     annotation.path,
     annotation.pathUrl,
-  );
-  const codeRefs = await Promise.all(
-    annotation.codeRefs.map((c) => resolveCodeEntry(ctx, c.entry, c.key)),
   );
   const linked = await Promise.all(
     annotation.linked.map((a) => hintAnnotation(ctx, platform, a)),
@@ -190,7 +144,6 @@ async function hintAnnotation(
       : {}),
     ...(annotation.notes !== null ? { notes: annotation.notes } : {}),
     ...(Object.keys(annotation.values).length > 0 ? { values: annotation.values } : {}),
-    ...(codeRefs.length > 0 ? { codeRefs } : {}),
     ...(linked.length > 0 ? { linked } : {}),
   };
 }

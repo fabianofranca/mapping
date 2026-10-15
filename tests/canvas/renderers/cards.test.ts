@@ -113,13 +113,13 @@ describe('semanticPlacement', () => {
   });
 });
 
-describe('cartão do zoom semântico: codeRef', () => {
-  it('só o resumo das plataformas, na ordem de aparição', () => {
+describe('cartão do zoom semântico: sem o campo de código removido (etapa 9)', () => {
+  it('o Screen mostra só os campos do tipo', () => {
     const p = codeProject();
     const card = cardsFor(p);
     const rows = card(markingOf(p, 'MF')).rows.filter((r) => r.kind === 'entry');
-    expect(rows.map((r) => (r.kind === 'entry' ? r.text : ''))).toContain(
-      'implementação: Android, iOS',
-    );
+    const texts = rows.map((r) => (r.kind === 'entry' ? r.text : ''));
+    expect(texts).toEqual(expect.arrayContaining(['nome: Cadastro', 'rota: /cadastro']));
+    expect(texts.some((t) => t.startsWith('implementação'))).toBe(false);
   });
 });

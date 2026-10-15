@@ -17,7 +17,7 @@ import {
 } from '../model';
 import { isSectionCollapsed, toggleSection, type AnnotationLocation } from '../store/ui';
 import { IssueBadge } from './AnnotationSummary';
-import { CodeDefinitions } from './CodeRefs';
+import { CodeDefinitions } from './CodeDefinitions';
 import { CommitInput } from './CommitInput';
 import { CopyButtons } from './CopyActions';
 import { Dialog } from './Dialog';

@@ -15,7 +15,7 @@ import { isWithin } from './paths';
 // estar dentro dele. O que escapa recebe `exists: null` (sem tocar no disco) ou `false`
 // (link simbólico que sai), sem revelar nada sobre o que existe fora.
 
-/** Onde o arquivo de uma entrada de `codeRef` está na máquina de quem roda o servidor. */
+/** Onde o arquivo do `path` de um tipo está na máquina de quem roda o servidor. */
 export interface LocalFile {
   /** Caminho relativo ao diretório de trabalho do cliente, com `/`; `null` se não dá para calcular. */
   readonly localFile: string | null;

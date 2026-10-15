@@ -10,6 +10,7 @@ import {
 import { proposalIndex } from './proposalReview';
 import { isRecord } from './refs';
 import type { Spec } from './spec';
+import { fieldOf, findTypeInSpec } from './specLookup';
 import type {
   Annotation,
   AnnotationTypeRef,
@@ -38,7 +39,9 @@ export type PatchProblemCode = 'entity-missing' | 'entity-exists' | 'field-misma
 /**
  * Mudança que não pôde ser aplicada: alteração de entidade que não existe mais
  * (`entity-missing`), criação de um id que já existe (`entity-exists`) ou campo que não
- * cabe na entidade atual (`field-mismatch`, ex: `values.*` numa anotação que virou livre).
+ * cabe na entidade atual (`field-mismatch`, ex: `values.*` numa anotação que virou livre,
+ * ou `values.<key>` de uma chave que não é campo do tipo, como o campo de código removido
+ * na etapa 9 numa proposta antiga).
  */
 export interface PatchProblem {
   readonly code: PatchProblemCode;
@@ -78,8 +81,30 @@ function decode(entity: ChangeEntity, value: JsonValue): Entity {
   return value as unknown as Entity;
 }
 
+/**
+ * `false` se a chave não é campo do tipo da anotação, na especialização como está no
+ * projeto sendo montado. Tipo que não dá para resolver (especialização ausente ou sem
+ * cópia) não decide: vale `true`, e o valor vira pendência como qualquer outro.
+ */
+function typeHasField(
+  specializations: ReadonlyMap<string, Entity>,
+  type: AnnotationTypeRef | null,
+  key: string,
+): boolean {
+  if (type === null) return true;
+  const spec = (specializations.get(type.specId) as ProjectSpecialization | undefined)
+    ?.spec;
+  const resolved = spec ? findTypeInSpec(spec, type.typeId) : null;
+  return resolved === null || fieldOf(resolved.type, key) !== null;
+}
+
 /** A entidade com o campo da mudança aplicado; `null` se o campo não cabe nela. */
-function withField(entity: ChangeEntity, current: Entity, c: Change): Entity | null {
+function withField(
+  entity: ChangeEntity,
+  current: Entity,
+  c: Change,
+  specializations: ReadonlyMap<string, Entity>,
+): Entity | null {
   const field = c.field ?? '';
   const to = c.to;
   switch (entity) {
@@ -123,6 +148,7 @@ function withField(entity: ChangeEntity, current: Entity, c: Change): Entity | n
       if (field.startsWith(VALUES_FIELD_PREFIX)) {
         if (a.values === null) return null;
         const key = field.slice(VALUES_FIELD_PREFIX.length);
+        if (!typeHasField(specializations, a.type, key)) return null;
         return { ...a, values: { ...a.values, [key]: to } };
       }
       if (field.startsWith(ENTRIES_FIELD_PREFIX)) {
@@ -192,7 +218,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       else problems.push({ code: 'entity-missing', changeId: c.id });
     } else {
       const current = map.get(c.entityId);
-      const next = current && withField(c.entity, current, c);
+      const next = current && withField(c.entity, current, c, maps.specialization);
       if (!current) problems.push({ code: 'entity-missing', changeId: c.id });
       else if (!next) problems.push({ code: 'field-mismatch', changeId: c.id });
       else map.set(c.entityId, next);

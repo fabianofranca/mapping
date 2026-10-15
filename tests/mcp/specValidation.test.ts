@@ -111,6 +111,24 @@ describe('arquivos válidos', () => {
     expect(result.warnings![1]!.message).toContain('desktop');
   });
 
+  it('campo do tipo removido (codeRef): válido, ignorado e com aviso no caminho exato', async () => {
+    const spec = sdui();
+    spec.layers[2].annotationTypes[0].fields.push({
+      key: 'implementacao',
+      type: 'codeRef',
+      platforms: ['android'],
+    });
+    const result = ok(
+      await mcp.call<Validated>('validate_specialization', { text: text(spec) }),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toContainEqual({
+      code: 'ignored-field',
+      path: 'layers[2].annotationTypes[0].fields[2]',
+      message: expect.stringContaining('"implementacao" do tipo "screen" é "codeRef"'),
+    });
+  });
+
   it('o format antigo (mapeador-spec) é aceito, com aviso', async () => {
     const spec = sdui();
     spec.format = 'mapeador-spec';

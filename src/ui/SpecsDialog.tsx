@@ -1,10 +1,12 @@
 import { useRef, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import {
+  REMOVED_FIELD_TYPE,
   checkSpecApply,
   parseSpecText,
   specializationRemovalImpact,
   specializationUpdateImpact,
+  type IgnoredSpecField,
   type Project,
   type ProjectSpecialization,
   type Spec,
@@ -32,7 +34,11 @@ interface Feedback {
 
 type Step =
   | { readonly kind: 'info'; readonly title: string; readonly lines: readonly string[] }
-  | { readonly kind: 'update'; readonly spec: Spec }
+  | {
+      readonly kind: 'update';
+      readonly spec: Spec;
+      readonly ignored: readonly IgnoredSpecField[];
+    }
   | { readonly kind: 'remove'; readonly entry: ProjectSpecialization };
 
 /** Sucesso com o texto dado; erro com o código da action. */
@@ -45,11 +51,25 @@ function feedback(
     : { tone: 'error', text: t('spec.failed', { code: result.error }) };
 }
 
+/**
+ * Aviso dos campos lidos e ignorados (tipo de campo que saiu do formato, etapa 9): a
+ * especialização foi aplicada sem eles. `null` sem campos ignorados.
+ */
+function ignoredText(ignored: readonly IgnoredSpecField[]): string | null {
+  if (ignored.length === 0) return null;
+  return t('spec.ignoredFields', {
+    type: REMOVED_FIELD_TYPE,
+    fields: ignored.map((f) => `${f.typeId}.${f.key}`).join(', '),
+  });
+}
+
 /** Menu Especializações: aplicar, atualizar versão e remover (docs/history/PLAN-etapas-1-2.md 13.4). */
 export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   const { actions } = useEditor();
   const [step, setStep] = useState<Step | null>(null);
   const [message, setMessage] = useState<Feedback | null>(null);
+  /** Campos ignorados da última especialização aplicada ou atualizada. */
+  const [ignored, setIgnored] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
   /** Especialização esperada ao escolher o arquivo (`null`: qualquer uma). */
   const expected = useRef<string | null>(null);
@@ -57,6 +77,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   const pick = (specId: string | null) => {
     expected.current = specId;
     setMessage(null);
+    setIgnored(null);
     input.current?.click();
   };
 
@@ -64,6 +85,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     setStep({ kind: 'info', title, lines });
 
   const onFile = async (file: File) => {
+    setIgnored(null);
     let text: string;
     try {
       text = await file.text();
@@ -92,7 +114,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     }
     const decision = checkSpecApply(project, spec);
     if (decision === 'update') {
-      setStep({ kind: 'update', spec });
+      setStep({ kind: 'update', spec, ignored: parsed.ignored });
     } else if (decision === 'not-newer') {
       const current = project.specializations.find((s) => s.id === spec.id);
       info(t('spec.notNewerTitle'), [
@@ -104,6 +126,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
       ]);
     } else {
       const result = actions.applySpecialization(spec);
+      if (result.ok) setIgnored(ignoredText(parsed.ignored));
       setMessage(
         feedback(
           result,
@@ -113,9 +136,10 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     }
   };
 
-  const confirmUpdate = (spec: Spec) => {
+  const confirmUpdate = (spec: Spec, ignoredFields: readonly IgnoredSpecField[]) => {
     setStep(null);
     const result = actions.updateSpecialization(spec, labelTexts());
+    if (result.ok) setIgnored(ignoredText(ignoredFields));
     setMessage(
       feedback(
         result,
@@ -149,6 +173,11 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
             role={message.tone === 'success' ? 'status' : 'alert'}
           >
             {message.text}
+          </p>
+        )}
+        {ignored && (
+          <p class="notice wrap-anywhere" role="status">
+            {ignored}
           </p>
         )}
         <input
@@ -239,7 +268,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
           project={project}
           spec={step.spec}
           onCancel={() => setStep(null)}
-          onConfirm={() => confirmUpdate(step.spec)}
+          onConfirm={() => confirmUpdate(step.spec, step.ignored)}
         />
       )}
 

@@ -41,10 +41,8 @@ export type ModelErrorCode =
   | 'ref-not-accepted'
   | 'spec-already-applied'
   | 'spec-not-newer'
-  // Referências de código (etapa 3b)
+  // Repositórios por plataforma (etapa 3b)
   | 'unknown-platform'
-  | 'platform-not-allowed'
-  | 'invalid-path'
   | 'invalid-url-template'
   | 'invalid-local-path'
   // Propostas de alteração (etapa 4)

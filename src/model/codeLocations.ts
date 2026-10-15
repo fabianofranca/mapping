@@ -1,20 +1,12 @@
 import { fail } from './errors';
 import { memoByProject, projectIndex } from './projectIndex';
-import { isRecord } from './refs';
-import type { Spec, SpecField } from './spec';
-import { typeOfAnnotation } from './specLookup';
-import type {
-  CodeRefEntry,
-  JsonValue,
-  PlatformRepo,
-  PlatformRepos,
-  Project,
-} from './types';
+import type { SpecCode } from './spec';
+import type { PlatformRepo, PlatformRepos, Project } from './types';
 
-// Referências de código (etapa 3b, schema v7): plataformas declaradas pelas
-// especializações aplicadas, repositório de cada plataforma (`platformRepos`),
-// entradas dos campos `codeRef`, link para o repositório, caminho local, busca por
-// arquivo ou símbolo e o aviso de plataforma sem repositório. Funções puras, sem
+// Código das especializações (etapa 3b, schema v7; etapa 9): plataformas declaradas pelas
+// especializações aplicadas, repositório de cada plataforma (`platformRepos`), link para o
+// repositório e caminho local do arquivo de um tipo (`code.<plataforma>.path`), busca de
+// tipos por arquivo ou símbolo e o aviso de plataforma sem repositório. Funções puras, sem
 // APIs de navegador: a app e o servidor MCP usam as mesmas.
 
 // ---------------------------------------------------------------------------
@@ -70,11 +62,6 @@ export function isValidUrlTemplate(template: string): boolean {
   return /^https?:\/\/\S+$/i.test(template) && template.includes('{path}');
 }
 
-/** `true` para um número de linha válido: inteiro ≥ 1. */
-export function isCodeLine(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
-}
-
 /** Texto aparado; vazio vira `null`. */
 function optionalText(value: string | null | undefined): string | null {
   const trimmed = value?.trim() ?? '';
@@ -126,16 +113,6 @@ const platformIndex = memoByProject(
 /** Plataforma declarada com esse id; `null` se nenhuma especialização aplicada a declara. */
 export function findPlatform(p: Project, platformId: string): ProjectPlatform | null {
   return platformIndex(p).get(platformId) ?? null;
-}
-
-/**
- * Plataformas permitidas num campo `codeRef`: o `platforms` do campo ou, sem ele, todas
- * as declaradas pela especialização do tipo.
- */
-export function codeRefPlatforms(spec: Spec, field: SpecField): string[] {
-  const declared = (spec.platforms ?? []).map((platform) => platform.id);
-  if (field.type !== 'codeRef' || !field.platforms) return declared;
-  return field.platforms.filter((id) => declared.includes(id));
 }
 
 // ---------------------------------------------------------------------------
@@ -213,97 +190,18 @@ export function removePlatformRepo(p: Project, platformId: string): Project {
 }
 
 // ---------------------------------------------------------------------------
-// Entradas de `codeRef`
-
-/** Chaves de uma entrada, na ordem gravada. */
-export const CODE_REF_KEYS = ['_id', 'platform', 'path', 'symbol', 'line'] as const;
-
-/**
- * Lê uma entrada de `codeRef`; `null` se não tiver o formato: objeto com `_id` e
- * `platform` (texto não vazio), `path` e `symbol` texto ou `null`, `line` inteiro ≥ 1
- * ou `null`. Propriedades opcionais ausentes e texto vazio valem `null`.
- */
-export function parseCodeRefEntry(value: JsonValue | undefined): CodeRefEntry | null {
-  if (!isRecord(value)) return null;
-  const { _id, platform, path = null, symbol = null, line = null } = value;
-  if (typeof _id !== 'string' || _id === '') return null;
-  if (typeof platform !== 'string' || platform === '') return null;
-  if (path !== null && typeof path !== 'string') return null;
-  if (symbol !== null && typeof symbol !== 'string') return null;
-  if (line !== null && !isCodeLine(line)) return null;
-  return {
-    _id,
-    platform,
-    path: path === '' ? null : path,
-    symbol: symbol === '' ? null : symbol,
-    line,
-  };
-}
-
-/** Entradas bem formadas de um valor de `codeRef` (as malformadas ficam de fora, como em `tableRows`). */
-export function codeRefEntries(value: JsonValue | undefined): CodeRefEntry[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item: JsonValue) => {
-    const entry = parseCodeRefEntry(item);
-    return entry ? [entry] : [];
-  });
-}
-
-/** Onde uma entrada de `codeRef` está no projeto (para montar a referência `mapping://`). */
-export interface CodeRefLocation {
-  readonly imageId: string;
-  readonly markingId: string;
-  readonly annotationId: string;
-  /** Campo `codeRef` da anotação. */
-  readonly key: string;
-  readonly entry: CodeRefEntry;
-}
-
-/**
- * Todas as entradas de `codeRef` do projeto, na ordem do projeto (anotação, campo,
- * entrada): só os campos `codeRef` de tipos existentes e as entradas bem formadas.
- */
-export const projectCodeRefs: (p: Project) => readonly CodeRefLocation[] = memoByProject(
-  (p) => {
-    const index = projectIndex(p);
-    const result: CodeRefLocation[] = [];
-    for (const a of p.annotations) {
-      if (!a.values) continue;
-      const type = typeOfAnnotation(p, a)?.type;
-      const marking = index.markings.get(a.markingId);
-      if (!type || !marking) continue;
-      for (const field of type.fields) {
-        if (field.type !== 'codeRef') continue;
-        for (const entry of codeRefEntries(a.values[field.key])) {
-          result.push({
-            imageId: marking.imageId,
-            markingId: marking.id,
-            annotationId: a.id,
-            key: field.key,
-            entry,
-          });
-        }
-      }
-    }
-    return result;
-  },
-);
-
-// ---------------------------------------------------------------------------
 // Link e caminho local
 
 /**
  * Onde um arquivo está: a plataforma (que dá o repositório) e o caminho relativo à raiz
- * dele. Uma entrada de `codeRef` serve, e também o `path` do `code` de um tipo da
- * especialização (sem linha).
+ * dele (o `path` do `code` de um tipo da especialização).
  */
 export interface CodeLocation {
   readonly platform: string;
   readonly path: string | null;
-  readonly line?: number | null;
 }
 
-/** Sem `line`: tira o fragmento final `#…{line}` (se não tiver `{path}`); senão, `{line}` vira vazio. */
+/** Sem linha: tira o fragmento final `#…{line}` (se não tiver `{path}`); senão, `{line}` vira vazio. */
 function withoutLine(template: string): string {
   if (!template.includes('{line}')) return template;
   const hash = template.lastIndexOf('#');
@@ -317,22 +215,19 @@ function withoutLine(template: string): string {
 }
 
 /**
- * URL da entrada no repositório da plataforma, a partir do `urlTemplate`; `null` sem
+ * URL do arquivo no repositório da plataforma, a partir do `urlTemplate`; `null` sem
  * repositório, sem `urlTemplate` (ou inválido) ou sem caminho válido.
  * - `{path}`: o caminho com cada segmento codificado (`encodeURIComponent`), mantendo as `/`;
- * - `{line}`: a linha; sem linha, o trecho a partir do último `#` que contém `{line}` é
- *   removido (ex: `…/{path}#L{line}` → `…/{path}`); se `{line}` não estiver num fragmento
- *   assim, vira vazio.
+ * - `{line}`: o caminho não tem linha, então o trecho a partir do último `#` que contém
+ *   `{line}` é removido (ex: `…/{path}#L{line}` → `…/{path}`); se `{line}` não estiver num
+ *   fragmento assim, vira vazio.
  */
-export function codeLink(p: Project, entry: CodeLocation): string | null {
-  const template = optionalText(platformRepoOf(p, entry.platform)?.urlTemplate);
+export function codeLink(p: Project, location: CodeLocation): string | null {
+  const template = optionalText(platformRepoOf(p, location.platform)?.urlTemplate);
   if (template === null || !isValidUrlTemplate(template)) return null;
-  if (entry.path === null || !isValidCodePath(entry.path)) return null;
-  const path = entry.path.split('/').map(encodeURIComponent).join('/');
-  const withLine = isCodeLine(entry.line)
-    ? template.replaceAll('{line}', String(entry.line))
-    : withoutLine(template);
-  return withLine.replaceAll('{path}', path);
+  if (location.path === null || !isValidCodePath(location.path)) return null;
+  const path = location.path.split('/').map(encodeURIComponent).join('/');
+  return withoutLine(template).replaceAll('{path}', path);
 }
 
 /** Junta caminhos relativos com `/`, resolvendo `.` e os `..` que dá para resolver. */
@@ -348,18 +243,46 @@ function joinRelative(base: string, path: string): string {
 
 /**
  * Caminho do arquivo relativo à pasta do projeto: o `localPath` da plataforma mais o
- * `path` da entrada (ex: `../..` + `app/Main.kt` → `../../app/Main.kt`). `null` sem
- * `localPath` (ou inválido) ou sem caminho válido. Não confere se o arquivo existe.
+ * `path` (ex: `../..` + `app/Main.kt` → `../../app/Main.kt`). `null` sem `localPath` (ou
+ * inválido) ou sem caminho válido. Não confere se o arquivo existe.
  */
-export function codeLocalPath(
-  p: Project,
-  entry: Pick<CodeLocation, 'platform' | 'path'>,
-): string | null {
-  const localPath = optionalText(platformRepoOf(p, entry.platform)?.localPath);
+export function codeLocalPath(p: Project, location: CodeLocation): string | null {
+  const localPath = optionalText(platformRepoOf(p, location.platform)?.localPath);
   if (localPath === null || !isValidLocalPath(localPath)) return null;
-  if (entry.path === null || !isValidCodePath(entry.path)) return null;
-  return joinRelative(localPath, entry.path);
+  if (location.path === null || !isValidCodePath(location.path)) return null;
+  return joinRelative(localPath, location.path);
 }
+
+// ---------------------------------------------------------------------------
+// Tipos com `code`
+
+/** Uma entrada do `code` de um tipo de uma especialização aplicada. */
+export interface TypeCodeEntry {
+  readonly specId: string;
+  readonly typeId: string;
+  readonly platform: string;
+  readonly code: SpecCode;
+}
+
+/**
+ * Entradas do `code` de todos os tipos das especializações aplicadas (com cópia válida),
+ * na ordem das especializações, das camadas, dos tipos e do `code`.
+ */
+export const projectTypeCode: (p: Project) => readonly TypeCodeEntry[] = memoByProject(
+  (p) =>
+    p.specializations.flatMap((s) =>
+      (s.spec?.layers ?? []).flatMap((layer) =>
+        layer.annotationTypes.flatMap((type) =>
+          Object.entries(type.code ?? {}).map(([platform, code]) => ({
+            specId: s.id,
+            typeId: type.id,
+            platform,
+            code,
+          })),
+        ),
+      ),
+    ),
+);
 
 // ---------------------------------------------------------------------------
 // Busca por arquivo ou símbolo
@@ -375,51 +298,99 @@ export function codePathMatches(path: string, query: string): boolean {
   return path === query || path.endsWith(`/${query}`);
 }
 
+/** Onde está uma anotação do tipo encontrado (para montar a referência `mapping://`). */
+export interface CodeAnnotationLocation {
+  readonly imageId: string;
+  readonly markingId: string;
+  readonly annotationId: string;
+}
+
+/** Tipo cujo `code` casou com a busca, com as anotações dele no projeto. */
+export interface CodeTypeMatch {
+  readonly specId: string;
+  readonly typeId: string;
+  /** Plataformas do `code` do tipo que casaram, na ordem do `code`. */
+  readonly code: readonly { readonly platform: string; readonly code: SpecCode }[];
+  /** Anotações tipadas do tipo, na ordem do projeto (vazio se nenhuma o usa). */
+  readonly annotations: readonly CodeAnnotationLocation[];
+}
+
 /**
- * Entradas de `codeRef` que casam com a busca, na ordem do projeto. `path` casa por
- * igualdade ou por sufixo de segmentos inteiros (`CheckoutScreen.kt` casa com
- * `app/…/CheckoutScreen.kt`, `Screen.kt` não); `symbol`, por igualdade. Com os dois,
- * a entrada precisa casar com ambos; sem nenhum, a lista é vazia. Diferencia
+ * Tipos das especializações aplicadas cujo `code` (em alguma plataforma) casa com a busca,
+ * com as anotações desses tipos. `path` casa com `code.<plataforma>.path` por igualdade ou
+ * por sufixo de segmentos inteiros (`CheckoutScreen.kt` casa com `app/…/CheckoutScreen.kt`,
+ * `Screen.kt` não); `symbol`, com `code.<plataforma>.symbol` por igualdade. Com os dois, a
+ * mesma entrada do `code` precisa casar com ambos; sem nenhum, a lista é vazia. Diferencia
  * maiúsculas de minúsculas.
  */
-export function findByCode(p: Project, query: CodeQuery): CodeRefLocation[] {
+export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
   const rawPath = query.path ? normalizeCodePath(query.path) : null;
   const path = rawPath?.replace(/^\/+/, '') || null;
   const symbol = optionalText(query.symbol);
   if (path === null && symbol === null) return [];
-  return projectCodeRefs(p).filter(({ entry }) => {
-    if (symbol !== null && entry.symbol?.trim() !== symbol) return false;
-    if (path === null) return true;
-    const entryPath = entry.path === null ? null : normalizeCodePath(entry.path);
-    return entryPath !== null && codePathMatches(entryPath, path);
-  });
+  const typeKey = (specId: string, typeId: string) => `${specId}\u0000${typeId}`;
+  const matches = new Map<
+    string,
+    { specId: string; typeId: string; code: TypeCodeEntry[] }
+  >();
+  for (const entry of projectTypeCode(p)) {
+    if (symbol !== null && entry.code.symbol.trim() !== symbol) continue;
+    if (path !== null) {
+      const own =
+        entry.code.path === undefined ? null : normalizeCodePath(entry.code.path);
+      if (own === null || !codePathMatches(own, path)) continue;
+    }
+    const key = typeKey(entry.specId, entry.typeId);
+    const known = matches.get(key);
+    if (known) known.code.push(entry);
+    else matches.set(key, { specId: entry.specId, typeId: entry.typeId, code: [entry] });
+  }
+  if (matches.size === 0) return [];
+  const annotations = new Map<string, CodeAnnotationLocation[]>();
+  const { markings } = projectIndex(p);
+  for (const a of p.annotations) {
+    if (!a.type) continue;
+    const key = typeKey(a.type.specId, a.type.typeId);
+    const marking = markings.get(a.markingId);
+    if (!matches.has(key) || !marking) continue;
+    const list = annotations.get(key) ?? [];
+    list.push({ imageId: marking.imageId, markingId: marking.id, annotationId: a.id });
+    annotations.set(key, list);
+  }
+  return [...matches.entries()].map(([key, match]) => ({
+    specId: match.specId,
+    typeId: match.typeId,
+    code: match.code.map((e) => ({ platform: e.platform, code: e.code })),
+    annotations: annotations.get(key) ?? [],
+  }));
 }
 
 // ---------------------------------------------------------------------------
 // Aviso de repositório ausente
 
-/** Aviso (não é pendência): plataforma usada em `codeRef` sem repositório configurado. */
+/** Aviso (não é pendência): plataforma usada em `code.<plataforma>.path` sem repositório. */
 export interface PlatformRepoWarning {
   readonly code: 'missing-repo';
   readonly platform: string;
-  /** Quantas entradas de `codeRef` usam a plataforma. */
-  readonly entries: number;
+  /** Quantos tipos das especializações aplicadas têm `path` nessa plataforma. */
+  readonly types: number;
 }
 
 /**
- * Avisos de repositório ausente, na ordem de `projectPlatforms`: plataformas declaradas
- * usadas por alguma entrada de `codeRef` e sem `urlTemplate` nem `localPath`. Entradas
- * de plataforma não declarada já são pendências e não entram aqui.
+ * Avisos de repositório ausente, na ordem de `projectPlatforms`: plataformas declaradas em
+ * cujo `code` algum tipo das especializações aplicadas tem `path` (o arquivo que define o
+ * símbolo), e sem `urlTemplate` nem `localPath`.
  */
 export const platformRepoWarnings: (p: Project) => readonly PlatformRepoWarning[] =
   memoByProject((p) => {
     const counts = new Map<string, number>();
-    for (const { entry } of projectCodeRefs(p)) {
+    for (const entry of projectTypeCode(p)) {
+      if (entry.code.path === undefined) continue;
       counts.set(entry.platform, (counts.get(entry.platform) ?? 0) + 1);
     }
     return projectPlatforms(p).flatMap((platform): PlatformRepoWarning[] => {
-      const entries = counts.get(platform.id) ?? 0;
-      if (entries === 0 || hasPlatformRepo(p, platform.id)) return [];
-      return [{ code: 'missing-repo', platform: platform.id, entries }];
+      const types = counts.get(platform.id) ?? 0;
+      if (types === 0 || hasPlatformRepo(p, platform.id)) return [];
+      return [{ code: 'missing-repo', platform: platform.id, types }];
     });
   });

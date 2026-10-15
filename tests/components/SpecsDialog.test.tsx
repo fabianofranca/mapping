@@ -12,6 +12,7 @@ import {
 import { locale } from '../../src/store/settings';
 import { SpecsDialog } from '../../src/ui/SpecsDialog';
 import { emptyProject } from '../model/fixtures';
+import { legacySduiText } from '../model/specFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
 beforeEach(() => {
@@ -102,6 +103,42 @@ describe('SpecsDialog', () => {
     const notice = await screen.findByRole('status');
     expect(notice.classList.contains('notice-success')).toBe(true);
     expect(notice.closest('dialog')?.classList.contains('dialog-md')).toBe(true);
+  });
+
+  it('campo do tipo removido (codeRef): aplica sem ele e avisa quais foram ignorados', async () => {
+    const { harness, choose } = setup();
+    choose(legacySduiText());
+    await screen.findByText(/"SDUI" aplicada/);
+    const notice = screen
+      .getAllByRole('status')
+      .find((n) => n.textContent?.startsWith('Campos ignorados'));
+    expect(notice?.textContent).toBe(
+      'Campos ignorados: screen.implementacao. O tipo de campo "codeRef" saiu do formato; a especialização foi aplicada sem eles. Remova-os do arquivo.',
+    );
+    const screenType = harness
+      .project()
+      .specializations[0]?.spec?.layers.flatMap((l) => l.annotationTypes)
+      .find((t) => t.id === 'screen');
+    expect(screenType?.fields.map((f) => f.key)).toEqual(['nome', 'rota']);
+  });
+
+  it('a atualização com o campo removido também avisa; a próxima escolha limpa o aviso', async () => {
+    const { choose, user } = setup();
+    choose(exampleText('sdui'));
+    await screen.findByText(/aplicada/);
+    expect(screen.queryByText(/^Campos ignorados/)).toBeNull();
+
+    const legacy = JSON.parse(legacySduiText()) as { version: number };
+    choose(JSON.stringify({ ...legacy, version: SDUI_VERSION + 1 }));
+    const dialog = await dialogTitled('Atualizar "SDUI"?');
+    await user.click(within(dialog).getByRole('button', { name: 'Atualizar' }));
+    await screen.findByText(`"SDUI" atualizada para a versão ${SDUI_VERSION + 1}.`);
+    expect(screen.getByText(/^Campos ignorados: screen\.implementacao\./)).toBeTruthy();
+
+    // Escolher outro arquivo limpa o aviso anterior.
+    choose(withVersion('sdui', SDUI_VERSION + 2));
+    await dialogTitled('Atualizar "SDUI"?');
+    expect(screen.queryByText(/^Campos ignorados/)).toBeNull();
   });
 
   it('arquivo inválido mostra os problemas e não altera o projeto', async () => {

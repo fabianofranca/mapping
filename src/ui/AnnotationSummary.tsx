@@ -1,6 +1,5 @@
 import { t } from '../i18n';
 import { rawValueLines, typeOfAnnotation, type Annotation, type Project } from '../model';
-import { CodeEntries } from './CodeRefs';
 import { annotationDisplayName, displayLines, issueMessage, issuesOf } from './typedText';
 
 /** Ícone de alerta de anotação incompleta, com os motivos no `title`. */
@@ -69,15 +68,7 @@ export function AnnotationLines({
   return (
     <>
       {displayLines(project, annotation, 'full').map((line) =>
-        line.kind === 'code' ? (
-          <CodeEntries
-            key={line.key}
-            project={project}
-            line={line}
-            lineClass={lineClass}
-            keyClass={keyClass}
-          />
-        ) : line.kind === 'value' ? (
+        line.kind === 'value' ? (
           <span
             key={line.key}
             class={line.alert ? `${lineClass} value-alert` : lineClass}

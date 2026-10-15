@@ -12,8 +12,9 @@ import { useEditor } from './EditorContext';
 
 // Repositórios por plataforma (etapa 3b.3), nas Configurações do editor: uma linha por
 // plataforma declarada pelas especializações aplicadas, com o endereço do arquivo
-// (`urlTemplate`), o caminho local da raiz (`localPath`) e o aviso de plataforma usada em
-// algum `codeRef` sem repositório. As actions validam e devolvem o motivo do erro.
+// (`urlTemplate`), o caminho local da raiz (`localPath`) e o aviso de plataforma em que algum
+// tipo das especializações aplicadas aponta um arquivo (`code.<plataforma>.path`) sem
+// repositório. As actions validam e devolvem o motivo do erro.
 
 type Property = 'urlTemplate' | 'localPath';
 
@@ -94,9 +95,9 @@ function RepoRow({
       </div>
       {warning && (
         <p class="notice repo-warning" role="status">
-          {warning.entries === 1
+          {warning.types === 1
             ? t('repos.missingOne', { name })
-            : t('repos.missingMany', { name, count: warning.entries })}
+            : t('repos.missingMany', { name, count: warning.types })}
         </p>
       )}
       <TextField

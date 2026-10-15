@@ -1,10 +1,10 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v8). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
+// Tipos do `mapping.json` (schema v9). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
 // seções 4, 12.1 e 13.3. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -133,23 +133,6 @@ export interface FieldRef {
 
 /** Valor de um campo `ref`: um dos três formatos da 13.3. */
 export type RefValue = EntryRef | RowRef | FieldRef;
-
-/**
- * Entrada de um campo `codeRef` (v7): onde a instância foi implementada numa plataforma.
- * O valor do campo é uma lista delas; `_id` é estável e único dentro da lista, como o
- * das linhas de `table`.
- */
-export type CodeRefEntry = {
-  readonly _id: string;
-  /** Id de uma plataforma declarada pela especialização do tipo. */
-  readonly platform: string;
-  /** Arquivo relativo à raiz do repositório da plataforma, com `/`; `null` = sem caminho (pendência). */
-  readonly path: string | null;
-  /** Componente, classe ou função no arquivo; `null` quando vazio. */
-  readonly symbol: string | null;
-  /** Linha (inteiro ≥ 1); `null` quando vazia. */
-  readonly line: number | null;
-};
 
 /** Repositório do código de uma plataforma (v7), no nível do projeto. */
 export interface PlatformRepo {

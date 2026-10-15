@@ -1,12 +1,17 @@
 import { z } from 'zod';
-import { isValidCodePath } from './codeRefs';
+import { isValidCodePath } from './codeLocations';
 
 // Formato da especialização (`formatVersion` 1, 2 e 3), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
-// etapas 3b e 4 do plano. A versão 2 acrescenta `platforms`, `code` e o campo `codeRef`;
-// a versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
-// externas nos tipos e nos campos, inclusive nas colunas de `table`).
+// etapas 3b e 4 do plano. A versão 2 acrescenta `platforms` e `code`; a versão 1 é a 2 sem
+// plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens externas nos tipos e
+// nos campos, inclusive nas colunas de `table`).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
+//
+// Campo removido (etapa 9, schema v9 do projeto): o tipo de campo `REMOVED_FIELD_TYPE` (onde
+// a instância foi implementada) saiu do formato. Um arquivo antigo que o declara continua
+// válido: o campo é lido e ignorado (sai do tipo, e os `params` do `code` que o citam também),
+// e quem importa recebe a lista em `ignored` para avisar (`specWarnings`).
 
 export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
@@ -18,7 +23,18 @@ export const SPEC_FORMAT_VERSIONS = [1, 2, 3] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
-export type FieldType = SimpleFieldType | 'table' | 'ref' | 'codeRef';
+export type FieldType = SimpleFieldType | 'table' | 'ref';
+
+/** Tipo de campo que saiu do formato na etapa 9: lido e ignorado (ver o cabeçalho). */
+export const REMOVED_FIELD_TYPE = 'codeRef';
+
+/** Campo de um tipo removido do formato, ignorado na leitura. */
+export interface IgnoredSpecField {
+  /** Caminho do campo no arquivo (ex: `layers[3].annotationTypes[0].fields[2]`). */
+  readonly path: string;
+  readonly typeId: string;
+  readonly key: string;
+}
 
 /** Plataforma declarada pela especialização (ex: um app, um contrato de API). */
 export interface SpecPlatform {
@@ -91,8 +107,7 @@ export type SpecColumn =
 export type SpecField =
   | SpecColumn
   | (SpecFieldBase & { type: 'table'; columns: SpecColumn[]; rowLabel?: string })
-  | (SpecFieldBase & { type: 'ref'; accepts: SpecRefAccepts })
-  | (SpecFieldBase & { type: 'codeRef'; platforms?: string[] });
+  | (SpecFieldBase & { type: 'ref'; accepts: SpecRefAccepts });
 
 export interface SpecAnnotationType {
   id: string;
@@ -146,12 +161,13 @@ const platformId = z
   .string()
   .regex(PLATFORM_ID_RE, 'id de plataforma inválido; use [a-z0-9-]+');
 
+// O tipo removido ainda é aceito aqui para o campo ser lido e ignorado (`dropRemovedFields`).
 const fieldType = z.enum(
-  ['string', 'number', 'date', 'enum', 'table', 'ref', 'codeRef'],
+  ['string', 'number', 'date', 'enum', 'table', 'ref', REMOVED_FIELD_TYPE],
   {
     error: (issue) =>
       typeof issue.input === 'string'
-        ? `"${issue.input}" inválido; use "string", "number", "date", "enum", "table", "ref" ou "codeRef"`
+        ? `"${issue.input}" inválido; use "string", "number", "date", "enum", "table" ou "ref"`
         : 'obrigatório',
   },
 );
@@ -202,7 +218,8 @@ const fieldShape = z
     tags: tags.optional(),
     rowLabel: z.string().optional(),
     accepts: acceptsSchema.optional(),
-    platforms: z.array(platformId).optional(),
+    // Só existia no tipo removido: aceito nele (que é ignorado) e recusado nos outros.
+    platforms: z.unknown().optional(),
     description: z.string().optional(),
     sources: z.array(fieldSourceShape).optional(),
   })
@@ -223,13 +240,15 @@ function checkField(
     ctx.addIssue({ code: 'custom', path: [...path, ...sub], message });
 
   const { type } = field;
-  if (column && (type === 'table' || type === 'ref' || type === 'codeRef')) {
+  if (column && (type === 'table' || type === 'ref' || type === REMOVED_FIELD_TYPE)) {
     add(
       'type',
       `"${type}" não é permitido dentro de table; use "string", "number", "date" ou "enum"`,
     );
     return;
   }
+  // Tipo removido: o campo é ignorado inteiro (com um aviso de quem importa), sem conferir nada.
+  if (type === REMOVED_FIELD_TYPE) return;
   if (type === 'enum') {
     const options = field.options;
     if (!options || options.length === 0) {
@@ -249,8 +268,8 @@ function checkField(
   if (type !== 'ref' && field.accepts !== undefined) {
     add('accepts', 'só é permitido em ref');
   }
-  if (type !== 'codeRef' && field.platforms !== undefined) {
-    add('platforms', 'só é permitido em codeRef');
+  if (field.platforms !== undefined) {
+    add('platforms', 'não é permitido neste tipo de campo');
   }
 
   if (field.default !== undefined) {
@@ -277,24 +296,12 @@ function checkField(
       case 'ref':
         add('default', 'não existe para ref');
         break;
-      case 'codeRef':
-        add('default', 'não existe para codeRef');
-        break;
     }
   }
 
   if (type === 'ref') {
     if (!field.accepts) add('accepts', 'obrigatório em ref');
     if (field.tags !== undefined) add('tags', 'ref não pode ter etiquetas');
-  }
-  if (type === 'codeRef' && field.tags !== undefined) {
-    add('tags', 'codeRef não pode ter etiquetas');
-  }
-  if (type === 'codeRef' && field.platforms !== undefined) {
-    if (field.platforms.length === 0) add('platforms', 'não pode ser vazio');
-    else if (new Set(field.platforms).size !== field.platforms.length) {
-      add('platforms', 'plataformas repetidas');
-    }
   }
   (field.sources ?? []).forEach((source, i) => {
     if (source.values === undefined) return;
@@ -629,27 +636,6 @@ export const specSchema = z
             }
           }
         }
-        type.fields.forEach((field, fi) => {
-          if (field.type !== 'codeRef') return;
-          const fp = [...tp, 'fields', fi];
-          if (!hasPlatforms) {
-            ctx.addIssue({
-              code: 'custom',
-              path: [...fp, 'type'],
-              message:
-                '"codeRef" só é permitido em especializações que declaram platforms',
-            });
-            return;
-          }
-          (field.platforms ?? []).forEach((id, i) => {
-            if (platformIds.has(id)) return;
-            ctx.addIssue({
-              code: 'custom',
-              path: [...fp, 'platforms', i],
-              message: `plataforma "${id}" não declarada em platforms`,
-            });
-          });
-        });
       });
     });
 
@@ -679,12 +665,99 @@ export function formatSpecPath(path: readonly PropertyKey[]): string {
 }
 
 export type SpecParseResult =
-  { ok: true; spec: Spec } | { ok: false; issues: SpecIssue[]; errors: string[] };
+  | { ok: true; spec: Spec; ignored: IgnoredSpecField[] }
+  | { ok: false; issues: SpecIssue[]; errors: string[] };
+
+type ParsedSpec = z.infer<typeof specSchema>;
+
+/** Sem as chaves de `removed`; `undefined` se não sobrar nenhuma. */
+function withoutKeys(
+  record: Record<string, string> | undefined,
+  removed: ReadonlySet<string>,
+): Record<string, string> | undefined {
+  if (record === undefined) return undefined;
+  const kept = Object.entries(record).filter(([k]) => !removed.has(k));
+  return kept.length > 0 ? Object.fromEntries(kept) : undefined;
+}
+
+/**
+ * Tira dos tipos os campos do tipo removido (`REMOVED_FIELD_TYPE`) e os `params` do `code`
+ * que os citam; devolve o que foi ignorado, com o caminho no arquivo original.
+ */
+function dropRemovedFields(parsed: ParsedSpec): {
+  spec: Spec;
+  ignored: IgnoredSpecField[];
+} {
+  const ignored: IgnoredSpecField[] = [];
+  const layers = parsed.layers.map((layer, li) => ({
+    ...layer,
+    annotationTypes: layer.annotationTypes.map((type, ti) => {
+      const removed = new Set<string>();
+      type.fields.forEach((field, fi) => {
+        if (field.type !== REMOVED_FIELD_TYPE) return;
+        removed.add(field.key);
+        ignored.push({
+          path: `layers[${li}].annotationTypes[${ti}].fields[${fi}]`,
+          typeId: type.id,
+          key: field.key,
+        });
+      });
+      if (removed.size === 0) return type;
+      const { code, ...rest } = type;
+      return {
+        ...rest,
+        fields: type.fields.filter((f) => f.type !== REMOVED_FIELD_TYPE),
+        ...(code === undefined
+          ? {}
+          : {
+              code: Object.fromEntries(
+                Object.entries(code).map(([platform, entry]) => {
+                  const { params, ...others } = entry;
+                  const kept = withoutKeys(params, removed);
+                  return [
+                    platform,
+                    kept === undefined ? others : { ...others, params: kept },
+                  ];
+                }),
+              ),
+            }),
+      };
+    }),
+  }));
+  return { spec: { ...parsed, layers } as Spec, ignored };
+}
+
+/**
+ * Chaves dos campos do tipo removido (`REMOVED_FIELD_TYPE`) por id de tipo, lidas do JSON
+ * cru de uma especialização (sem validar): a migração v8 → v9 do projeto as usa para
+ * descartar os valores desses campos. Vazio se o JSON não tiver a forma esperada.
+ */
+export function removedFieldKeys(data: unknown): Map<string, Set<string>> {
+  const result = new Map<string, Set<string>>();
+  const isObject = (v: unknown): v is Record<string, unknown> =>
+    typeof v === 'object' && v !== null && !Array.isArray(v);
+  const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+  if (!isObject(data)) return result;
+  for (const layer of list(data.layers)) {
+    if (!isObject(layer)) continue;
+    for (const type of list(layer.annotationTypes)) {
+      if (!isObject(type) || typeof type.id !== 'string') continue;
+      for (const field of list(type.fields)) {
+        if (!isObject(field) || field.type !== REMOVED_FIELD_TYPE) continue;
+        if (typeof field.key !== 'string') continue;
+        const keys = result.get(type.id) ?? new Set<string>();
+        keys.add(field.key);
+        result.set(type.id, keys);
+      }
+    }
+  }
+  return result;
+}
 
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseSpec(data: unknown): SpecParseResult {
   const result = specSchema.safeParse(data);
-  if (result.success) return { ok: true, spec: result.data as Spec };
+  if (result.success) return { ok: true, ...dropRemovedFields(result.data) };
   const issues = result.error.issues.map((i) => ({
     path: formatSpecPath(i.path),
     message: i.message,
