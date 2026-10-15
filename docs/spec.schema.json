@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
   "title": "Mapping — especialização (formatVersion 1, 2 e 3)",
-  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code/codeRef a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) só são verificadas pelo validador da app; veja SPEC-FORMAT.md.",
+  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) só são verificadas pelo validador da app; veja SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -140,9 +140,6 @@
         },
         {
           "$ref": "#/$defs/refField"
-        },
-        {
-          "$ref": "#/$defs/codeRefField"
         }
       ]
     },
@@ -479,43 +476,6 @@
         },
         "notes": {
           "type": "string"
-        }
-      }
-    },
-    "codeRefField": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["key", "type"],
-      "properties": {
-        "key": {
-          "$ref": "#/$defs/key"
-        },
-        "label": {
-          "type": "string",
-          "minLength": 1
-        },
-        "required": {
-          "type": "boolean"
-        },
-        "description": {
-          "type": "string"
-        },
-        "type": {
-          "const": "codeRef"
-        },
-        "platforms": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": {
-            "$ref": "#/$defs/platformId"
-          }
-        },
-        "sources": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/fieldSource"
-          }
         }
       }
     },

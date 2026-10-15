@@ -1,16 +1,24 @@
-import { LEGACY_SPEC_FORMAT, type Spec } from './spec';
+import {
+  LEGACY_SPEC_FORMAT,
+  REMOVED_FIELD_TYPE,
+  type IgnoredSpecField,
+  type Spec,
+} from './spec';
 
 // Avisos de uma especialização válida (etapa 4): coisas que não impedem a importação, mas
-// costumam ser descuido de quem escreve o arquivo. Puro: usado por `validate_specialization`
-// (MCP), no ciclo "gerar, validar, corrigir" de um agente que cria especializações.
+// costumam ser descuido de quem escreve o arquivo, ou campos lidos e ignorados (etapa 9). Puro:
+// usado por `validate_specialization` (MCP), no ciclo "gerar, validar, corrigir" de um agente
+// que cria especializações, e pela importação da app (só os campos ignorados).
 
 export type SpecWarningCode =
-  /** Plataforma declarada em `platforms` que nenhum tipo (`code`) nem campo `codeRef` usa. */
+  /** Plataforma declarada em `platforms` que nenhum tipo usa em `code`. */
   | 'unused-platform'
   /** Tipo sem `code` numa especialização que declara plataformas. */
   | 'type-without-code'
   /** O `format` antigo (`mapeador-spec`), ainda aceito na importação. */
-  | 'legacy-format';
+  | 'legacy-format'
+  /** Campo de um tipo que saiu do formato (`REMOVED_FIELD_TYPE`): lido e ignorado. */
+  | 'ignored-field';
 
 export interface SpecWarning {
   readonly code: SpecWarningCode;
@@ -19,8 +27,25 @@ export interface SpecWarning {
   readonly message: string;
 }
 
-/** Avisos da especialização (já validada), na ordem do arquivo. */
-export function specWarnings(spec: Spec): SpecWarning[] {
+/** Aviso de cada campo ignorado na leitura (`parseSpec` devolve a lista em `ignored`). */
+export function ignoredFieldWarnings(
+  ignored: readonly IgnoredSpecField[],
+): SpecWarning[] {
+  return ignored.map((field) => ({
+    code: 'ignored-field',
+    path: field.path,
+    message: `o campo "${field.key}" do tipo "${field.typeId}" é "${REMOVED_FIELD_TYPE}", que saiu do formato: foi ignorado (os valores dele não são gravados); remova-o do arquivo`,
+  }));
+}
+
+/**
+ * Avisos da especialização (já validada), na ordem do arquivo; `ignored` são os campos
+ * ignorados na leitura (`parseSpec`), que vêm logo depois do formato antigo.
+ */
+export function specWarnings(
+  spec: Spec,
+  ignored: readonly IgnoredSpecField[] = [],
+): SpecWarning[] {
   const warnings: SpecWarning[] = [];
   if (spec.format === LEGACY_SPEC_FORMAT) {
     warnings.push({
@@ -30,15 +55,13 @@ export function specWarnings(spec: Spec): SpecWarning[] {
     });
   }
 
+  warnings.push(...ignoredFieldWarnings(ignored));
+
   const platforms = spec.platforms ?? [];
   const used = new Set<string>();
   spec.layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
       for (const platform of Object.keys(type.code ?? {})) used.add(platform);
-      for (const field of type.fields) {
-        if (field.type !== 'codeRef') continue;
-        for (const platform of field.platforms ?? []) used.add(platform);
-      }
       if (platforms.length > 0 && Object.keys(type.code ?? {}).length === 0) {
         warnings.push({
           code: 'type-without-code',
@@ -53,7 +76,7 @@ export function specWarnings(spec: Spec): SpecWarning[] {
     warnings.push({
       code: 'unused-platform',
       path: `platforms[${i}]`,
-      message: `a plataforma "${platform.id}" é declarada, mas nenhum tipo a usa em \`code\` nem em campo codeRef`,
+      message: `a plataforma "${platform.id}" é declarada, mas nenhum tipo a usa em \`code\``,
     });
   });
   return warnings;

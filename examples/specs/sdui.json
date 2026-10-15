@@ -369,8 +369,7 @@
           "labelField": "nome",
           "fields": [
             { "key": "nome", "type": "string", "required": true },
-            { "key": "rota", "type": "string" },
-            { "key": "implementacao", "label": "implementação", "type": "codeRef" }
+            { "key": "rota", "type": "string" }
           ]
         }
       ]

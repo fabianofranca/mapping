@@ -148,7 +148,7 @@ const platformArg = z
 
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
 
-/** Visões que resolvem `codeRef`: o `workDir` do cliente limita a conferência de arquivos locais. */
+/** Visões que resolvem o `path` do `code`: o `workDir` do cliente limita a conferência de arquivos locais. */
 function codeContext(roots: Roots, refs: Refs): CodeContext {
   return { refs, files: new LocalFileChecker(roots.workDir) };
 }
@@ -299,15 +299,13 @@ export function registerTools(server: McpServer, roots: Roots): void {
     {
       description:
         'Tudo sobre uma marcação: caminho, imagem, retângulo em pixels da imagem original, trava, filhas, anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências. ' +
-        'Nas anotações tipadas, `codeRefs` traz onde foram implementadas (plataforma, caminho, símbolo, linha, `url` do repositório, `localFile` relativo ao diretório de trabalho do cliente e `exists`) e `code` o mapeamento do tipo por plataforma. O servidor só confere se o arquivo existe: nunca lê código.',
+        'Nas anotações tipadas, `code` traz o mapeamento do tipo por plataforma (`symbol`, `params`, `values`, `notes` e, com `path`, o arquivo que define o símbolo, com a `url` do repositório, o `localFile` relativo ao diretório de trabalho do cliente e `exists`). O servidor só confere se o arquivo existe: nunca lê código.',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
         platform: platformArg
           .optional()
-          .describe(
-            'Só os `codeRefs` e o `code` desta plataforma (ex: a que você vai implementar). Atenção: as entradas das outras plataformas ficam de fora; para alterar um `codeRef`, parta de get_annotation, que traz todas.',
-          ),
+          .describe('Só o `code` desta plataforma (ex: a que você vai implementar).'),
       },
       annotations: READ_ONLY,
     },
@@ -324,8 +322,8 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_code_hints',
     {
       description:
-        'O que implementar numa plataforma a partir de uma marcação: a árvore da marcação e das descendentes, e em cada uma as anotações tipadas com o componente de código da plataforma (`symbol`), os parâmetros com os valores já traduzidos (`params`), as orientações (`notes`), os eventos vinculados sob a dona (`linked`), os valores de referência resolvidos (ex: `User.name`) e onde já foi implementado (`codeRefs`). ' +
-        'Tipos com `symbol: null` não têm mapeamento nesta plataforma. Depois de implementar, registre onde com plan_changes (campo `codeRef` da anotação).',
+        'O que implementar numa plataforma a partir de uma marcação: a árvore da marcação e das descendentes, e em cada uma as anotações tipadas com o componente de código da plataforma (`symbol`), os parâmetros com os valores já traduzidos (`params`), as orientações (`notes`), os eventos vinculados sob a dona (`linked`), os valores de referência resolvidos (ex: `User.name`) e, quando a especialização informa, o arquivo que define o componente (`path`, com `url`, `localFile` e `exists`). ' +
+        'Tipos com `symbol: null` não têm mapeamento nesta plataforma.',
       inputSchema: { ref: refArg, platform: platformArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -340,7 +338,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'find_by_code',
     {
       description:
-        'Do código para o mapeamento: as marcações cujo `codeRef` aponta para um arquivo e/ou símbolo. `path` casa com o caminho inteiro ou com os últimos segmentos (`CheckoutScreen.kt` casa com `app/…/CheckoutScreen.kt`; `Screen.kt` não); `symbol` casa por igualdade; com os dois, ambos precisam casar. Sem `project`, procura em todos os projetos das raízes. Devolve as referências `mapping://` da marcação e da anotação. Não abre arquivos de código.',
+        'Do código para o mapeamento: os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Devolve o tipo, o `code` das plataformas que casaram e as referências `mapping://` da anotação, da marcação e da imagem. Não abre arquivos de código.',
       inputSchema: {
         project: projectArg
           .optional()
@@ -349,12 +347,12 @@ export function registerTools(server: McpServer, roots: Roots): void {
           .string()
           .optional()
           .describe(
-            'Arquivo: caminho inteiro (relativo à raiz do repositório) ou só o final por segmentos inteiros (ex: "CheckoutScreen.kt").',
+            'Arquivo: caminho inteiro (relativo à raiz do repositório) ou só o final por segmentos inteiros (ex: "DSButton.kt").',
           ),
         symbol: z
           .string()
           .optional()
-          .describe('Símbolo exato (classe, componente ou função).'),
+          .describe('Símbolo exato do `code` do tipo (classe, componente ou função).'),
       },
       annotations: READ_ONLY,
     },

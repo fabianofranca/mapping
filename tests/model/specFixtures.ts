@@ -13,6 +13,8 @@ import {
   setFieldValue,
   setPlatformRepo,
   setTableCell,
+  serialize,
+  specFiles,
   type JsonValue,
   type Project,
   type Spec,
@@ -211,48 +213,76 @@ export function cadastroProject(): Project {
   return p;
 }
 
-/** Caminhos do Screen `Cadastro` em `codeProject` (passo 3 do roteiro da 3b). */
-export const CADASTRO_SCREEN_KT = 'app/src/main/java/com/app/cadastro/CadastroScreen.kt';
-export const CADASTRO_VIEW_MODEL_KT =
-  'app/src/main/java/com/app/cadastro/CadastroViewModel.kt';
-export const CADASTRO_VIEW_SWIFT = 'App/Cadastro/CadastroView.swift';
-
 /**
- * `cadastroProject` com o roteiro da 3b (passos 2 e 3): o Screen `AS` (`Cadastro`,
- * `rota: /cadastro`) no Formulário, com duas entradas Android em `implementacao` (C1,
- * C2 com linha) e uma iOS (C3); repositório configurado só para `android`.
+ * `cadastroProject` com o roteiro R3: o Screen `AS` (`Cadastro`, `rota: /cadastro`) no
+ * Formulário e o repositório configurado só para `android`.
  */
 export function codeProject(): Project {
   let p = typed(cadastroProject(), 'AS', 'MF', 'sdui', 'screen', {
     nome: 'Cadastro',
     rota: '/cadastro',
-    implementacao: [
-      {
-        _id: 'C1',
-        platform: 'android',
-        path: CADASTRO_SCREEN_KT,
-        symbol: 'CadastroScreen',
-        line: null,
-      },
-      {
-        _id: 'C2',
-        platform: 'android',
-        path: CADASTRO_VIEW_MODEL_KT,
-        symbol: 'CadastroViewModel',
-        line: 42,
-      },
-      {
-        _id: 'C3',
-        platform: 'ios',
-        path: CADASTRO_VIEW_SWIFT,
-        symbol: 'CadastroView',
-        line: null,
-      },
-    ],
   });
   p = setPlatformRepo(p, 'android', {
     urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
     localPath: '../../..',
   });
   return p;
+}
+
+/** Campo de código removido na etapa 9, como as especializações antigas o declaravam. */
+export const LEGACY_CODE_FIELD = {
+  key: 'implementacao',
+  label: 'implementação',
+  type: 'codeRef',
+} as const;
+
+/** Valor do campo removido no Screen `AS` de um projeto v8 (duas entradas). */
+export const LEGACY_CODE_VALUE = [
+  {
+    _id: 'C1',
+    platform: 'android',
+    path: 'app/src/main/java/com/app/cadastro/CadastroScreen.kt',
+    symbol: 'CadastroScreen',
+    line: null,
+  },
+  {
+    _id: 'C2',
+    platform: 'ios',
+    path: 'App/Cadastro/CadastroView.swift',
+    symbol: 'CadastroView',
+    line: 12,
+  },
+];
+
+/** A cópia do SDUI (texto de `specs/sdui.json`) com o campo removido de volta no Screen. */
+export function legacySduiText(): string {
+  const spec = JSON.parse(
+    readFileSync(join(process.cwd(), 'examples', 'specs', 'sdui.json'), 'utf8'),
+  ) as { layers: { annotationTypes: { id: string; fields: unknown[] }[] }[] };
+  const screen = spec.layers
+    .flatMap((l) => l.annotationTypes)
+    .find((t) => t.id === 'screen');
+  if (!screen) throw new Error('Screen não encontrado no exemplo SDUI');
+  screen.fields.push(LEGACY_CODE_FIELD);
+  return `${JSON.stringify(spec, null, 2)}\n`;
+}
+
+/**
+ * Um projeto v8 como a etapa 3b deixava (o `codeProject` com o Screen `AS` preenchido no
+ * campo removido) e as cópias de `specs/` com o campo declarado: o que a migração v8 → v9 lê.
+ */
+export function legacyCodeFiles(p: Project = codeProject()): {
+  readonly text: string;
+  readonly specs: Map<string, string>;
+} {
+  const data = JSON.parse(serialize(p)) as {
+    annotations: { id: string; values: Record<string, unknown> | null }[];
+  };
+  const screen = data.annotations.find((a) => a.id === 'AS');
+  if (!screen?.values) throw new Error('Screen AS não encontrado');
+  screen.values.implementacao = LEGACY_CODE_VALUE;
+  const text = `${JSON.stringify({ ...data, schemaVersion: 8 }, null, 2)}\n`;
+  const specs = specFiles(p);
+  specs.set('specs/sdui.json', legacySduiText());
+  return { text, specs };
 }

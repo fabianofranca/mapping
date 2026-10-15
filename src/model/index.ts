@@ -36,7 +36,7 @@ export * from './revision';
 export * from './backups';
 export * from './issues';
 export * from './typedDisplay';
-export * from './codeRefs';
+export * from './codeLocations';
 export * from './codeBlueprint';
 export * from './sources';
 export * from './proposal';

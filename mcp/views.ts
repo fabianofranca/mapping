@@ -23,13 +23,7 @@ import {
   type ProjectImage,
   type ResolvedRef,
 } from '../src/model';
-import {
-  annotationCode,
-  annotationCodeRefs,
-  assertPlatform,
-  codeRefKeys,
-  type CodeContext,
-} from './codeViews';
+import { annotationCode, assertPlatform, type CodeContext } from './codeViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
@@ -113,8 +107,6 @@ export function annotationView(
   annotation: Annotation,
   options: {
     readonly withMarking?: boolean;
-    /** `codeRef` resolvidos da anotação (`annotationCodeRefs`); eles saem de `values`. */
-    readonly codeRefs?: readonly Json[];
     /** `code` do tipo (`annotationCode`, já com o `path` resolvido); sem ele, a anotação não traz `code`. */
     readonly code?: Json | null;
   } = {},
@@ -139,12 +131,6 @@ export function annotationView(
   }));
   const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.bare('a', a.id));
   const code = annotation.type ? (options.code ?? null) : null;
-  const inCodeRefs = codeRefKeys(refs, annotation);
-  const values = annotation.values
-    ? Object.fromEntries(
-        Object.entries(annotation.values).filter(([key]) => !inCodeRefs.has(key)),
-      )
-    : annotation.values;
 
   return {
     ref: refs.ref('a', annotation.id),
@@ -166,10 +152,7 @@ export function annotationView(
             typeId: annotation.type.typeId,
             name: resolvedType?.type.name ?? null,
           },
-          values,
-          ...(options.codeRefs && options.codeRefs.length > 0
-            ? { codeRefs: options.codeRefs }
-            : {}),
+          values: annotation.values,
           ...(code ? { code } : {}),
         }
       : { entries: annotation.entries }),
@@ -207,10 +190,7 @@ function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
   return own.filter((a) => a.parentAnnotationId === null).map(node);
 }
 
-/**
- * Tudo sobre a marcação (`get_marking`). Com `platform`, os `codeRef` e o `code` mostram só
- * essa plataforma.
- */
+/** Tudo sobre a marcação (`get_marking`). Com `platform`, o `code` mostra só essa plataforma. */
 export async function markingView(
   ctx: CodeContext,
   marking: Marking,
@@ -235,11 +215,6 @@ export async function markingView(
     }
   }
   const shown = [...own, ...[...inheritedBy.values()].flat().map((i) => i.annotation)];
-  const codeRefs = new Map<string, readonly Json[]>(
-    await Promise.all(
-      shown.map(async (a) => [a.id, await annotationCodeRefs(ctx, a, platform)] as const),
-    ),
-  );
   const codes = new Map<string, Json | null>(
     await Promise.all(
       shown.map(async (a) => [a.id, await annotationCode(ctx, a, platform)] as const),
@@ -247,7 +222,6 @@ export async function markingView(
   );
   const view = (a: Annotation) =>
     annotationView(refs, a, {
-      codeRefs: codeRefs.get(a.id) ?? [],
       code: codes.get(a.id) ?? null,
     });
   const layers = p.layers.flatMap((layer) => {
@@ -346,7 +320,6 @@ export async function annotationDetail(
 ): Promise<Json> {
   return annotationView(ctx.refs, annotation, {
     withMarking: true,
-    codeRefs: await annotationCodeRefs(ctx, annotation),
     code: await annotationCode(ctx, annotation),
   });
 }

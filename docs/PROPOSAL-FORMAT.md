@@ -122,7 +122,7 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 | `specialization` | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                               |
 | `platformRepo`   | — (`field: null`; `from`/`to` = `{ urlTemplate, localPath }`)                                                                                                                            |
 
-- `values.<key>` ausente vale `null`. Uma tabela (`table`) ou lista de `codeRef` muda inteira, numa mudança só.
+- `values.<key>` ausente vale `null`. Uma tabela (`table`) muda inteira, numa mudança só.
 - `type` é a **troca de tipo** de uma anotação (ex: tipada convertida em livre ao remover uma especialização): `{ type, values, entries }` mudam juntos, numa mudança só, sem `values.*` nem `entries.*` separados.
 - `position` só aparece nas camadas que mudam de **ordem relativa** (criar ou remover outra camada não gera `position`). Numa camada criada pela própria proposta, `from` é `null`.
 - Não viram mudança: a ordem dos pares e das marcações dentro da lista, `needsReview` (a revisão é a própria conferência; a criação leva o valor proposto) e `project.updatedAt`.
@@ -161,7 +161,7 @@ Mudanças de geometria (`rect` da marcação; `placement` e troca de arquivo de 
 
 ### Validação do conjunto aceito
 
-"Aplicar aceitas" aplica as mudanças aceitas e ainda não aplicadas a uma cópia do projeto e valida o resultado (`validateAccepted`): as invariantes do modelo (`validateProject`), especializações citadas que não ficariam aplicadas (`missing-specialization`) e mudanças que não cabem no projeto atual (`entity-missing`: alteração de algo que sumiu; `entity-exists`: criação de um id que já existe; `field-mismatch`: ex. `values.*` numa anotação que virou livre). Só contam os problemas novos. Cada problema traz as mudanças aceitas envolvidas (`changeIds`: rejeitar uma delas resolve) e as sem decisão nas mesmas entidades (`related`: aceitar uma delas pode resolver, ex. a posição do pai que falta). Com algum problema, aplicar fica bloqueado.
+"Aplicar aceitas" aplica as mudanças aceitas e ainda não aplicadas a uma cópia do projeto e valida o resultado (`validateAccepted`): as invariantes do modelo (`validateProject`), especializações citadas que não ficariam aplicadas (`missing-specialization`) e mudanças que não cabem no projeto atual (`entity-missing`: alteração de algo que sumiu; `entity-exists`: criação de um id que já existe; `field-mismatch`: ex. `values.*` numa anotação que virou livre, ou `values.<key>` de uma chave que não é campo do tipo, como o campo `codeRef` que saiu do formato na v9 numa proposta antiga). Só contam os problemas novos. Cada problema traz as mudanças aceitas envolvidas (`changeIds`: rejeitar uma delas resolve) e as sem decisão nas mesmas entidades (`related`: aceitar uma delas pode resolver, ex. a posição do pai que falta). Com algum problema, aplicar fica bloqueado.
 
 ### Aplicar aceitas
 

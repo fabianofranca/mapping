@@ -31,8 +31,8 @@ function load(text: string, p: Project) {
   return result;
 }
 
-/** Como a fase 3b.1 deixava um Screen novo: `implementacao: null`. */
-function withScreenFrom3b1(p: Project): Project {
+/** Um Screen no Formulário (o tipo do SDUI v2 sem `code`). */
+function withScreen(p: Project): Project {
   const screen: Annotation = {
     id: 'AS',
     markingId: 'MF',
@@ -41,7 +41,7 @@ function withScreenFrom3b1(p: Project): Project {
     inherit: false,
     parentAnnotationId: null,
     type: { specId: 'sdui', typeId: 'screen' },
-    values: { nome: 'Cadastro', rota: null, implementacao: null },
+    values: { nome: 'Cadastro', rota: null },
     entries: [],
   };
   return { ...p, annotations: [...p.annotations, screen] };
@@ -52,13 +52,13 @@ describe('migração v6 → v7 (referências de código)', () => {
     const result = load(v6Text(sampleProject()), sampleProject());
     expect(result.migratedFrom).toBe(6);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(8);
+    expect(result.project.schemaVersion).toBe(9);
     expect(result.project.platformRepos).toEqual({});
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('projeto com especializações (SDUI v2 e Modelo de dados v1), trava e codeRef da 3b.1', () => {
-    let p = withScreenFrom3b1(cadastroProject());
+  it('projeto com especializações (SDUI v2 e Modelo de dados v1) e trava', () => {
+    let p = withScreen(cadastroProject());
     p = setMarkingLocked(p, 'MF', true);
     p = setImageLocked(p, 'I1', true);
     expect(validateProject(p)).toEqual([]);
@@ -66,19 +66,19 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(result.migratedFrom).toBe(6);
     expect(result.specWarnings).toEqual([]);
     expect(result.project).toEqual({ ...p, platformRepos: {} });
-    // Nada mais muda nos dados: o `null` do codeRef continua `null`, sem pendência.
+    // Nada mais muda nos dados.
     const screen = result.project.annotations.find((a) => a.id === 'AS');
-    expect(screen?.values?.implementacao).toBeNull();
+    expect(screen?.values).toEqual({ nome: 'Cadastro', rota: null });
     expect(getAnnotationIssues(result.project, 'AS')).toEqual([]);
     expect(result.project.markings.find((m) => m.id === 'MF')?.locked).toBe(true);
     expect(result.project.images[0]?.locked).toBe(true);
   });
 
-  it('o v6 migrado salva como v8 estável (round-trip)', () => {
+  it('o v6 migrado salva como v9 estável (round-trip)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
-    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 8, platformRepos: {} });
+    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 9, platformRepos: {} });
     const again = load(saved, p);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -118,12 +118,6 @@ describe('schema v7', () => {
         localPath: '../../..',
       },
     });
-    const screen = data.annotations.find((a: { id: string }) => a.id === 'AS');
-    expect(screen.values.implementacao.map((e: object) => Object.keys(e))).toEqual([
-      ['_id', 'platform', 'path', 'symbol', 'line'],
-      ['_id', 'platform', 'path', 'symbol', 'line'],
-      ['_id', 'platform', 'path', 'symbol', 'line'],
-    ]);
     const loaded = load(text, p);
     expect(loaded.project).toEqual(p);
     expect(serialize(loaded.project)).toBe(text);
@@ -150,18 +144,6 @@ describe('schema v7', () => {
     const orphan = { web: { urlTemplate: '', localPath: null } };
     const loaded = deserialize(JSON.stringify({ ...data, platformRepos: orphan }));
     expect(loaded.ok && loaded.project.platformRepos).toEqual(orphan);
-  });
-
-  it('_id repetido numa lista de codeRef impede a abertura (como nas linhas de tabela)', () => {
-    const p = codeProject();
-    const data = JSON.parse(serialize(p));
-    const screen = data.annotations.find((a: { id: string }) => a.id === 'AS');
-    screen.values.implementacao[1]._id = 'C1';
-    const result = deserialize(JSON.stringify(data), migrations, specFiles(p));
-    expect(result).toMatchObject({
-      ok: false,
-      error: { code: 'invariant-violation', issues: [{ code: 'duplicate-row-id' }] },
-    });
   });
 
   it('versão mais nova com platformRepos abre somente leitura', () => {

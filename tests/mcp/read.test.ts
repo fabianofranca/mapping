@@ -157,7 +157,7 @@ describe('list_projects e descoberta', () => {
     expect(cadastro).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
-      schemaVersion: 8,
+      schemaVersion: 9,
       revision: 0,
       counts: { images: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
@@ -247,7 +247,7 @@ describe('get_project', () => {
       }),
     ]);
     const legado = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legado).toMatchObject({ schemaVersion: 8, revision: 0, migratedFrom: 5 });
+    expect(legado).toMatchObject({ schemaVersion: 9, revision: 0, migratedFrom: 5 });
   });
 
   it('ler nunca regrava o mapping.json (nem o de schema antigo)', () => {
@@ -799,7 +799,7 @@ describe('create_project', () => {
       name: 'loja',
       path: 'novos/loja',
       projectName: 'Loja',
-      schemaVersion: 8,
+      schemaVersion: 9,
       revision: 0,
       counts: { images: 0, markings: 0, annotations: 0, layers: 1 },
     });

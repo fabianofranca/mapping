@@ -153,7 +153,8 @@ export async function prepareBatch(
 /** Parte comum das respostas de `plan_changes` e `propose_changes`: o resultado do lote. */
 export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const { result, location, loaded, refs } = prepared;
-  // Avisos (não impedem nada): plataforma usada em `codeRef` sem repositório configurado.
+  // Avisos (não impedem nada): plataforma em que algum tipo tem `code.<plataforma>.path`, sem
+  // repositório configurado.
   const repoWarnings = platformRepoWarnings(result.project);
   return {
     valid: prepared.valid,

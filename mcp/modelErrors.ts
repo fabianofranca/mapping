@@ -39,7 +39,7 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'unknown-type': 'tipo de anotação inexistente nas especializações aplicadas',
   'type-not-in-layer': 'o tipo não pertence a esta camada',
   'owner-required': 'este tipo exige uma anotação dona (`owner`)',
-  'unknown-field': 'campo inexistente no tipo',
+  'unknown-field': 'campo inexistente no tipo (veja os campos em get_specialization)',
   'invalid-value': 'valor incompatível com o tipo do campo',
   'unknown-option': 'valor fora das opções do campo',
   'self-ref': 'a anotação não pode referenciar a si mesma',
@@ -47,10 +47,6 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'spec-already-applied': 'a especialização já está aplicada',
   'spec-not-newer': 'a versão não é maior que a aplicada',
   'unknown-platform': 'plataforma não declarada pelas especializações aplicadas',
-  'platform-not-allowed':
-    'plataforma não permitida no campo codeRef: precisa estar nas plataformas da especialização do tipo (e no `platforms` do campo, se houver)',
-  'invalid-path':
-    'caminho inválido: relativo à raiz do repositório, com `/`, sem `.`, `..` nem segmentos vazios',
   'invalid-url-template':
     'urlTemplate inválido: precisa começar com http:// ou https:// e conter {path} ({line} é opcional)',
   'invalid-local-path':

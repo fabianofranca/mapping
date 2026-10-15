@@ -33,7 +33,7 @@ Comece por `list_projects`. O servidor descreve seu uso nas próprias instruçõ
 - **Nunca edite `mapping.json`, `specs/` ou `proposals/` à mão.** Toda alteração vai por `plan_changes` (prévia) e `propose_changes` (grava uma proposta); a pessoa revisa e aplica na app. Depois de propor, avise e espere a revisão (`get_proposal`, `get_proposal_review`).
 - **Especializações nascem em `especializacoes/`**, com a skill `spec-author` (abaixo), são validadas com `validate_specialization` e aplicadas a um projeto só por proposta (`apply_specialization` dentro de `propose_changes`). Para mudar uma aplicada, edite a fonte, suba a `version` e envie `update_specialization`.
 - **Coordenadas** de marcação são sempre em pixels da imagem original.
-- **Código**: o servidor só confere se arquivos de código existem, e só dentro do diretório onde o cliente foi aberto. Para ligar marcações a código (`get_code_hints`, `find_by_code`, `codeRef`), abra o agente no repositório do código, com esta pasta como raiz do servidor por caminho absoluto.
+- **Código**: o servidor só confere se arquivos de código existem, e só dentro do diretório onde o cliente foi aberto. Para ligar marcações a código (`get_code_hints`, `find_by_code`), abra o agente no repositório do código, com esta pasta como raiz do servidor por caminho absoluto.
 
 ## Skill `spec-author`
 

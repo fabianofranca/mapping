@@ -4,7 +4,7 @@ Este guia é para o agente de IA (Claude Code, Claude Desktop ou outro cliente M
 
 O Mapping marca **áreas retangulares** em imagens, organiza as informações em **camadas** e as descreve com **anotações** (pares chave-valor livres ou anotações **tipadas** de uma especialização). O servidor lê projetos guardados **em pasta** dentro das raízes configuradas (`--root`). Projetos guardados só no navegador não são alcançáveis.
 
-> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`), **liga o mapeamento ao código** (`get_code_hints`, `find_by_code`, campos `codeRef`), **propõe alterações** para o usuário revisar (`propose_changes`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`), **casa elementos de uma origem externa** (`source`, `find_by_source`, `find_types_by_source`) e **valida especializações** (`validate_specialization`). **Você nunca grava o projeto**: o `apply_changes` não existe mais.
+> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`), **liga o mapeamento ao código** (`get_code_hints`, `find_by_code`), **propõe alterações** para o usuário revisar (`propose_changes`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`), **casa elementos de uma origem externa** (`source`, `find_by_source`, `find_types_by_source`) e **valida especializações** (`validate_specialization`). **Você nunca grava o projeto**: o `apply_changes` não existe mais.
 
 ## Conceitos que importam
 
@@ -15,7 +15,7 @@ O Mapping marca **áreas retangulares** em imagens, organiza as informações em
 - **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), na mesma marcação e em outra camada (ex: um evento `onClick` vinculado ao `Button`). `linked` lista as vinculadas e `linkTree` mostra a árvore.
 - **Referências fortes.** Campos do tipo `ref` apontam para uma tupla, uma linha de tabela ou um campo de outra anotação. Em `refs` você vê para onde cada campo aponta; em `backlinks`, quem aponta para a anotação.
 - **Pendências.** Anotação incompleta (`issues`): campo obrigatório vazio, valor inválido, referência quebrada, tipo inexistente etc. São calculadas na leitura, não gravadas.
-- **Plataformas e código.** Uma especialização pode declarar **plataformas** e dizer como cada tipo vira código nelas (`code`: componente, parâmetros, orientações). O campo `codeRef` de uma anotação guarda **onde ela foi implementada**; `platformRepos` (no projeto) diz onde fica o repositório de cada plataforma. Veja "Do mapeamento ao código".
+- **Plataformas e código.** Uma especialização pode declarar **plataformas** e dizer como cada tipo vira código nelas (`code`: componente, arquivo que o define, parâmetros, orientações); `platformRepos` (no projeto) diz onde fica o repositório de cada plataforma. O mapeamento guarda só o que ajuda a **gerar** código, não onde ele foi gerado. Veja "Do mapeamento ao código".
 - **Trava.** `lock.locked` indica marcação trancada; `lock.geometryLocked`, geometria travada (por ela ou por um ancestral trancado). Item trancado não pode ser movido, redimensionado nem excluído.
 
 ## Referências
@@ -74,7 +74,7 @@ No texto: `region` é a parte da imagem original que aparece (em pixels da image
    - `summary`: uma linha legível por operação válida;
    - `changes`: quantos itens serão criados, alterados e excluídos por coleção, e `reviewChanges`: quantas mudanças o usuário terá de revisar;
    - `issues`: pendências antes e depois, e as anotações que ficam incompletas (`new`);
-   - `warnings` (só se houver): avisos do projeto resultante, como plataforma usada em `codeRef` sem repositório configurado (`missing-repo`);
+   - `warnings` (só se houver): avisos do projeto resultante, como plataforma em que algum tipo aponta um arquivo (`code.<plataforma>.path`) sem repositório configurado (`missing-repo`);
    - `created`: as referências `mapping://` dos itens que serão criados (as definitivas), com o apelido de cada um.
 3. **`propose_changes(project, title, operations[], { description?, origin?, author?, supersedes? })`** faz a mesma validação e **grava a proposta** em `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). Um lote com qualquer erro não grava nada: corrija e mande o lote inteiro de novo. A resposta traz:
    - `proposal.ref`: a referência `mapping://<projeto>/p/<código>`; guarde-a;
@@ -180,7 +180,7 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 **Valores tipados** (`values`): por `key` do campo (veja `get_specialization`); `null` limpa.
 
 - Campo `table`: a lista de linhas, que **substitui** a tabela. `{"_id": "…"}` mantém uma linha existente (com as células informadas alteradas); `"_as": "$linha"` dá um apelido à linha, para uma referência no mesmo lote.
-- Campo `codeRef`: a lista completa de entradas `{"platform", "path", "symbol?", "line?", "_id?"}` (ver "Do mapeamento ao código").
+- Chave que não é campo do tipo: falha com `unknown-field` (veja os campos em `get_specialization`).
 - Campo `ref`: `{"annotation": "$user", "entry": "name"}` (par de anotação livre, pela chave ou id), `{"annotation": "$contato", "key": "atributos", "row": "$linha"}` (linha de tabela, pelo id, apelido ou índice) ou `{"annotation": "…", "key": "id"}` (campo).
 
 **Imagens.** Como na app: a orientação EXIF é aplicada, o lado maior fica em no máximo 2560 px e o arquivo é recodificado em WebP (sem perdas para PNG; com perdas, qualidade 0,85, para fotos), sem metadados. Sem redução nem rotação, o original é mantido se o WebP não ficar menor. `width` e `height` da imagem (e as coordenadas das marcações) são os do arquivo gravado. O nome em `images/` nunca sobrescreve um arquivo existente (`foto-2.webp`…). `file` é relativo à pasta do projeto ou a uma raiz, ou absoluto dentro das raízes.
@@ -195,87 +195,108 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 
 ## Do mapeamento ao código
 
-Quando o projeto aplica uma especialização com **plataformas** (veja `platforms` em `get_project`), dá para implementar o que foi mapeado e registrar onde.
+Quando o projeto aplica uma especialização com **plataformas** (veja `platforms` em `get_project`), dá para implementar o que foi mapeado. O mapeamento e a especialização guardam só o que ajuda a **gerar** o código (o componente de cada tipo, o arquivo que o define, os parâmetros e as orientações), não onde o código gerado ficou.
 
 ### Fluxo: implementar uma tela
 
-1. **Receba a referência** `mapping://…/m/…` (o dev a cola do app) e chame **`get_marking(ref, { platform })`** e **`get_marking_image(ref)`**: o primeiro dá as anotações e os `codeRefs` existentes; o segundo, o que a tela parece.
+1. **Receba a referência** `mapping://…/m/…` (o dev a cola do app) e chame **`get_marking(ref, { platform })`** e **`get_marking_image(ref)`**: o primeiro dá as anotações e o `code` de cada tipo; o segundo, o que a tela parece.
 2. **`get_code_hints(ref, platform)`** devolve a **planta de código**: uma árvore que espelha a marcação e as descendentes. Em cada marcação, as anotações tipadas com:
    - `symbol`: o componente ou tipo da plataforma (`null` = o tipo **não tem mapeamento** nessa plataforma; a resposta lista esses tipos em `unmappedTypes`);
-   - `path`, `url`, `localFile`, `exists` (quando a especialização informa o arquivo): **em que arquivo o `symbol` está** (relativo à raiz do repositório da plataforma), o endereço no repositório e o arquivo local, no mesmo formato dos `codeRefs`; leia esse arquivo para ver a assinatura do componente antes de usá-lo;
+   - `path`, `url`, `localFile`, `exists` (quando a especialização informa o arquivo): **em que arquivo o `symbol` está** (relativo à raiz do repositório da plataforma), o endereço no repositório e o arquivo local (ver abaixo); leia esse arquivo para ver a assinatura do componente antes de usá-lo;
    - `params`: `{ field, name, value }` — o parâmetro no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary` do código). Campo que não está em `params` não é passado;
    - `notes`: a orientação da especialização (leia: ela costuma dizer detalhes como "use o valor do campo id");
    - `values`: os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex: `dado: "User.name"`);
-   - `linked`: as anotações vinculadas, sob a dona (o `onClick` sob o `Button`);
-   - `codeRefs`: onde essa instância já foi implementada nessa plataforma.
-3. **Implemente** no repositório com as suas ferramentas. O servidor **não lê nem grava código**: use os `localFile` para achar os arquivos.
-4. **Registre onde implementou** com `propose_changes`: um `update_annotation` do `codeRef` (e, se faltar, um `set_platform_repo`), como abaixo. O usuário revisa e aplica como qualquer proposta.
+   - `linked`: as anotações vinculadas, sob a dona (o `onClick` sob o `Button`).
+3. **Implemente** no repositório com as suas ferramentas. O servidor **não lê nem grava código**: use os `localFile` para achar os arquivos dos componentes.
+4. Se faltar o repositório de uma plataforma (o `url` e o `localFile` vêm `null`), proponha um `set_platform_repo` com `propose_changes` (ver abaixo). Não há o que registrar sobre o código gerado.
 
-### `codeRefs`: onde já foi implementado
+### O `code` de um tipo: o arquivo do componente
 
-Em `get_marking`, `get_annotation`, `get_code_hints` e `find_by_code`, cada entrada vem resolvida:
+Em `get_marking` e `get_annotation`, cada anotação tipada traz o `code` do tipo por plataforma (`symbol`, `path`, `params`, `values`, `notes`), como na especialização; `get_marking(ref, { platform })` mostra só a plataforma pedida. Quando há `path`, o arquivo vem resolvido ao lado dele (como em `get_code_hints`):
 
 ```json
 {
-  "field": "implementacao",
-  "id": "7c1f…",
-  "platform": "android",
-  "path": "app/src/main/java/com/app/cadastro/CadastroScreen.kt",
-  "symbol": "CadastroScreen",
-  "line": null,
-  "url": "https://github.com/org/app-android/blob/main/app/src/main/java/com/app/cadastro/CadastroScreen.kt",
-  "localFile": "app/src/main/java/com/app/cadastro/CadastroScreen.kt",
-  "exists": true
+  "android": {
+    "symbol": "com.app.ds.DSButton",
+    "path": "app/src/main/java/com/app/ds/DSButton.kt",
+    "url": "https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt",
+    "localFile": "app/src/main/java/com/app/ds/DSButton.kt",
+    "exists": true,
+    "params": { "texto": "text", "estilo": "style" }
+  }
 }
 ```
 
 - `path` é relativo à **raiz do repositório da plataforma**, com `/`.
-- `url` vem do `urlTemplate` da plataforma (`null` sem ele).
-- `localFile` é o caminho **relativo ao diretório de trabalho do cliente** (o repositório, no Claude Code), calculado com o `localPath` da plataforma; `exists` diz se o arquivo está lá. Sem `localPath`, os dois são `null`. Se o `localPath` leva para fora do diretório de trabalho, vêm `null` e `localFileProblem: "outside-workdir"`: por segurança, o servidor não confere (nem revela) o que está fora.
-- Os campos `codeRef` **saem de `values`** nessas respostas e aparecem só em `codeRefs`. `get_marking(ref, { platform })` filtra `codeRefs` e `code` por plataforma. O `code` de uma anotação tipada é o mapeamento do tipo por plataforma (`symbol`, `path`, `params`, `values`, `notes`), como na especialização; quando há `path`, `url`, `localFile` e `exists` vêm ao lado dele, resolvidos como nos `codeRefs` (`exists` só confere se o arquivo está lá; o servidor não o lê).
+- `url` vem do `urlTemplate` da plataforma (`null` sem ele); o caminho não tem linha, então o trecho `#…{line}` do template sai.
+- `localFile` é o caminho **relativo ao diretório de trabalho do cliente** (o repositório, no Claude Code), calculado com o `localPath` da plataforma; `exists` diz se o arquivo está lá (o servidor só confere, não o lê). Sem `localPath`, os dois são `null`. Se o `localPath` leva para fora do diretório de trabalho, vêm `null` e `localFileProblem: "outside-workdir"`: por segurança, o servidor não confere (nem revela) o que está fora.
 
 ### `find_by_code`: do código para o mapeamento
 
-`find_by_code({ project?, path?, symbol? })` acha as entradas de `codeRef` que apontam para um arquivo ou símbolo, com as referências `mapping://` da marcação e da anotação. `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`CadastroScreen.kt` acha `app/…/CadastroScreen.kt`; `Screen.kt` não); `symbol`, por igualdade; informando os dois, ambos precisam casar. Sem `project`, procura em todos os projetos das raízes. Sem `path` nem `symbol` falha com `missing-query`. Use para ir de "estou mexendo neste arquivo" para "o que o design diz sobre ele".
+`find_by_code({ project?, path?, symbol? })` acha os **tipos** das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) ou símbolo (`code.<plataforma>.symbol`), e as **anotações desses tipos**: "estou neste arquivo: que tipos o usam e em que marcações". `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`DSButton.kt` acha `app/…/DSButton.kt`; `Button.kt` não); `symbol`, por igualdade; informando os dois, a **mesma plataforma** precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Sem `path` nem `symbol` falha com `missing-query`.
 
-### Registrando o `codeRef`
+```json
+{
+  "query": { "path": "DSButton.kt" },
+  "searched": ["cadastro"],
+  "total": 1,
+  "annotationTotal": 1,
+  "returned": 1,
+  "matches": [
+    {
+      "project": "cadastro",
+      "type": { "specId": "sdui", "typeId": "button", "name": "Button" },
+      "code": {
+        "android": {
+          "symbol": "com.app.ds.DSButton",
+          "path": "app/src/main/java/com/app/ds/DSButton.kt",
+          "url": "…",
+          "localFile": "…",
+          "exists": true
+        }
+      },
+      "annotationCount": 1,
+      "annotations": [
+        {
+          "annotation": "mapping://cadastro/a/5b2e91c0 (cadastro.png › Formulário › Cadastrar › Button btn_cadastrar)",
+          "title": "Button btn_cadastrar",
+          "marking": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+          "markingName": "Cadastrar",
+          "image": "mapping://cadastro/i/9d0e3b77 (cadastro.png)"
+        }
+      ]
+    }
+  ]
+}
+```
 
-O valor de um campo `codeRef` é a **lista completa** de entradas, em `values` de `create_annotation` ou `update_annotation`:
+- `total` conta os tipos encontrados; `annotationTotal`, as anotações deles. `code` traz só as plataformas que casaram. Um tipo sem anotações vem com `annotations: []`.
+- No máximo 200 anotações voltam, somando todos os tipos (`returned`; `truncated: true` quando houve corte); `annotationCount` de cada tipo é sempre o total dele.
+
+### Repositórios por plataforma
+
+- `set_platform_repo { platform, urlTemplate?, localPath? }` configura o repositório da plataforma (campo omitido mantém; `null` remove; sem nenhum dos dois, a configuração sai). `remove_platform_repo { platform }` a remove. `urlTemplate` precisa ser `http(s)://…` com `{path}` (`{line}` é aceito e sai, porque o caminho não tem linha); `localPath` é relativo à pasta do projeto (ex: `../../..`).
 
 ```json
 [
   {
-    "op": "update_annotation",
-    "annotation": "mapping://cadastro/a/d00bb3f3",
-    "values": {
-      "implementacao": [
-        { "_id": "7c1f…" },
-        {
-          "platform": "android",
-          "path": "app/src/main/java/com/app/cadastro/CadastroViewModel.kt",
-          "symbol": "CadastroViewModel",
-          "line": 42
-        }
-      ]
-    }
-  },
-  {
     "op": "set_platform_repo",
     "platform": "ios",
-    "urlTemplate": "https://github.com/org/app-ios/blob/main/{path}#L{line}",
+    "urlTemplate": "https://github.com/org/app-ios/blob/main/{path}",
     "localPath": "../../.."
   }
 ]
 ```
 
-- Cada entrada tem `platform` (declarada pela especialização do tipo e, se o campo restringe, em `platforms` do campo), `path`, e opcionalmente `symbol` e `line` (inteiro ≥ 1). O `path` é normalizado (`\` vira `/`), relativo, sem `.`, `..` nem `/` no começo.
-- `_id` mantém uma entrada existente (as propriedades omitidas ficam como estão; copie o `id` de `codeRefs`). Sem `_id`, a entrada é nova. **Entradas que você não repete são removidas**: para acrescentar uma, envie todas as existentes com o `_id` mais a nova (o resumo mostra `+N, -N entrada(s)`: confira). Parta de `get_annotation`, que traz todas as entradas; `get_marking` com `platform` esconde as das outras plataformas. `null` ou `[]` limpa.
-- `set_platform_repo { platform, urlTemplate?, localPath? }` configura o repositório da plataforma (campo omitido mantém; `null` remove; sem nenhum dos dois, a configuração sai). `remove_platform_repo { platform }` a remove. `urlTemplate` precisa ser `http(s)://…` com `{path}` (`{line}` é opcional); `localPath` é relativo à pasta do projeto (ex: `../../..`).
-- Plataforma usada em algum `codeRef` sem repositório configurado é só um **aviso** (`warnings`, em `get_project` e `plan_changes`); entrada com plataforma não permitida ou sem caminho deixa a anotação **incompleta** (`issues`).
+- Plataforma em que algum tipo das especializações aplicadas tem `path`, sem repositório configurado, é só um **aviso** (`warnings`, em `get_project`, `plan_changes` e `propose_changes`, com `types`: quantos tipos apontam arquivos nela).
 
 ### O que o servidor nunca faz
 
-Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas; o servidor guarda no `mapping.json` apenas **onde** você implementou.
+Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
+
+### Mudança na versão 0.4.0
+
+O campo `codeRef` (onde a instância foi implementada) saiu do formato: as respostas não trazem mais `codeRefs`, `find_by_code` procura pelo `code` dos tipos e um valor para esse campo no lote falha com `unknown-field`. Projetos antigos são migrados na leitura (schema v9, ver o `FORMAT.md`) e uma especialização antiga com o campo é aceita com o aviso `ignored-field` em `validate_specialization`. Uma proposta antiga com mudança nesse campo aparece na revisão como uma mudança que não cabe no projeto: o usuário a rejeita; reenvie sem ela.
 
 ## Erros
 
@@ -293,7 +314,7 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 | `spec-unavailable`                 | A cópia da especialização em `specs/` está ausente ou inválida.                                                                                                                  |
 | `outside-roots`                    | Caminho com `..`, absoluto fora das raízes ou link simbólico que sai delas.                                                                                                      |
 | `path-not-found`                   | O caminho informado (arquivo de origem, especialização) não existe em nenhuma raiz.                                                                                              |
-| `invalid-path`                     | Caminho vazio ou inválido; em `find_by_code`, caminho de código que não é relativo à raiz do repositório. Também é regra do modelo (`codeRef`).                                  |
+| `invalid-path`                     | Caminho vazio ou inválido; em `find_by_code`, caminho de código que não é relativo à raiz do repositório.                                                                        |
 | `not-a-file`                       | O caminho é uma pasta (ou outra coisa que não um arquivo).                                                                                                                       |
 | `file-too-large`                   | Arquivo lido grande demais (origem do lote, especialização ou `proposal.json` acima de 64 MB).                                                                                   |
 | `root-required`                    | `create_project` com caminho relativo e mais de uma raiz: informe `root`.                                                                                                        |
@@ -304,15 +325,16 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 
 **Referências e itens**
 
-| `code`                                                 | Significado                                                                                                |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `invalid-ref`                                          | Referência mal formada.                                                                                    |
-| `not-found`                                            | Sem item correspondente (referência, camada ou imagem por nome). Também é regra do modelo.                 |
-| `ambiguous-ref`                                        | O código curto ou o id casa com mais de um item (a resposta lista as candidatas).                          |
-| `ambiguous-image`, `ambiguous-layer`, `ambiguous-type` | Nome de imagem, de camada ou de tipo de anotação que casa com mais de um: use o id (ou `specId`/`typeId`). |
-| `wrong-kind`                                           | A referência é de outro tipo (ex: anotação passada a `get_marking`).                                       |
-| `missing-query`                                        | `find_by_code` sem `path` nem `symbol`; `find_by_source` e `find_types_by_source` sem o que procurar.      |
-| `unknown-platform`                                     | Plataforma não declarada pelas especializações aplicadas (a resposta lista as válidas).                    |
+| `code`                                                 | Significado                                                                                                                                                                         |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invalid-ref`                                          | Referência mal formada.                                                                                                                                                             |
+| `not-found`                                            | Sem item correspondente (referência, camada ou imagem por nome). Também é regra do modelo.                                                                                          |
+| `ambiguous-ref`                                        | O código curto ou o id casa com mais de um item (a resposta lista as candidatas).                                                                                                   |
+| `ambiguous-image`, `ambiguous-layer`, `ambiguous-type` | Nome de imagem, de camada ou de tipo de anotação que casa com mais de um: use o id (ou `specId`/`typeId`).                                                                          |
+| `unknown-type`                                         | Tipo de anotação (`type` de `create_annotation`) que não existe nas especializações aplicadas (a resposta lista até 50 em `types`, como `specId/typeId`). Também é regra do modelo. |
+| `wrong-kind`                                           | A referência é de outro tipo (ex: anotação passada a `get_marking`).                                                                                                                |
+| `missing-query`                                        | `find_by_code` sem `path` nem `symbol`; `find_by_source` e `find_types_by_source` sem o que procurar.                                                                               |
+| `unknown-platform`                                     | Plataforma não declarada pelas especializações aplicadas (a resposta lista as válidas).                                                                                             |
 
 **Imagens**
 
@@ -338,7 +360,6 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 | `invalid-spec`                       | `apply_specialization`/`update_specialization` com um arquivo de especialização inválido.                                   |
 | `spec-already-applied`               | A especialização já está aplicada (numa versão menor, use `update_specialization`). Também é regra do modelo.               |
 | `nothing-to-change`                  | `set_platform_repo` sem `urlTemplate` nem `localPath`.                                                                      |
-| `platform-not-allowed`               | Plataforma não permitida no campo `codeRef` (regra do modelo).                                                              |
 
 **Propostas**
 
@@ -358,7 +379,7 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 
 | `code`                  | Significado                                                                                                                                              |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `missing-repo`          | Plataforma usada em algum `codeRef` sem repositório configurado.                                                                                         |
+| `missing-repo`          | Plataforma em que algum tipo das especializações aplicadas tem `code.<plataforma>.path`, sem repositório configurado (`types`: quantos tipos).           |
 | `superseded-incomplete` | `propose_changes` com `supersedes`: a anterior ainda tinha mudanças sem decisão ou aceitas sem aplicar.                                                  |
 | `supersede-failed`      | `propose_changes` com `supersedes`: a nova proposta foi gravada, mas a anterior não pôde ser marcada como substituída. **Não reenvie**: avise o usuário. |
 

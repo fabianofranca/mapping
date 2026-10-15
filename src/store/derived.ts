@@ -82,7 +82,10 @@ export interface EditorDerived {
   readonly incompleteList: ReadonlySignal<readonly IncompleteImage[]>;
   /** Quantas anotações estão incompletas no projeto (todas as camadas). */
   readonly incompleteCount: ReadonlySignal<number>;
-  /** Plataformas usadas em `codeRef` sem repositório configurado (aviso, não pendência). */
+  /**
+   * Plataformas em que algum tipo das especializações aplicadas tem `code.<plataforma>.path`,
+   * sem repositório configurado (aviso, não pendência).
+   */
   readonly platformRepoWarnings: ReadonlySignal<readonly PlatformRepoWarning[]>;
 }
 

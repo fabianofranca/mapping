@@ -6,6 +6,7 @@ import {
   addLayer,
   applyAccepted,
   applySpecialization,
+  changeStatus,
   createMarking,
   deserialize,
   moveImage,
@@ -24,6 +25,7 @@ import {
   renameLayer,
   renameMarking,
   replaceImage,
+  reviewTree,
   serialize,
   setAnnotationInherit,
   setAnnotationParent,
@@ -444,5 +446,92 @@ describe('aplicar só as aceitas', () => {
     const preview = previewProject(base, p).project;
     expect(preview.images.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
     expect(preview.markings.find((m) => m.id === 'M1')?.name).toBe('Porta dianteira');
+  });
+});
+
+describe('proposta antiga com mudança no campo de código removido (etapa 9)', () => {
+  /** O Screen como era antes da v9: com o valor do campo removido (`implementacao`). */
+  function withLegacyValue(p: Project, value: unknown[]): Project {
+    return {
+      ...p,
+      annotations: p.annotations.map((a) =>
+        a.id === 'AS'
+          ? {
+              ...a,
+              values: { ...(a.values ?? {}), implementacao: value as never },
+            }
+          : a,
+      ),
+    };
+  }
+
+  /** O projeto v8 (com o valor), a proposta feita sobre ele e o projeto atual (migrado, v9). */
+  function oldProposal() {
+    const entry = { _id: 'C1', platform: 'android', path: 'a/Tela.kt' };
+    const v8 = withLegacyValue(codeProject(), [entry]);
+    let after = withLegacyValue(v8, [
+      entry,
+      { _id: 'C2', platform: 'ios', path: 'B.swift' },
+    ]);
+    after = setFieldValue(after, 'AS', 'rota', '/cadastro/novo');
+    const p = propose(v8, after);
+    return { p, current: codeProject() };
+  }
+
+  it('a mudança do campo removido aparece em conflito e, aceita, bloqueia como "não cabe"', () => {
+    const { p, current } = oldProposal();
+    const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
+    const rota = changeOf(p, 'annotation', 'AS', 'values.rota');
+    // A revisão monta a árvore e a situação de cada mudança sem erro.
+    expect(reviewTree(p, current).changeIdsOf({ level: 'proposal', id: null })).toEqual(
+      expect.arrayContaining([legacy.id, rota.id]),
+    );
+    expect(changeStatus(p, legacy, current)).toMatchObject({
+      conflict: true,
+      current: null,
+    });
+    const accepted = acceptAll(p, current);
+    const validation = validateAccepted(current, accepted);
+    expect(validation.ok).toBe(false);
+    expect(validation.issues).toEqual([
+      { code: 'field-mismatch', id: 'AS', changeIds: [legacy.id], related: [] },
+    ]);
+    expect(applyAccepted(current, accepted, AT).ok).toBe(false);
+  });
+
+  it('rejeitada a mudança do campo removido, o resto aplica sem trazê-lo de volta', () => {
+    const { p, current } = oldProposal();
+    const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
+    const decisions = decided(
+      acceptAll(p, current),
+      current,
+      { level: 'change', id: legacy.id },
+      'rejected',
+    );
+    const result = apply(current, decisions);
+    const screen = result.project.annotations.find((a) => a.id === 'AS');
+    expect(screen?.values).toEqual({ nome: 'Cadastro', rota: '/cadastro/novo' });
+    expect(result.proposal.status).toBe('applied');
+    expect(validateProject(result.project)).toEqual([]);
+  });
+
+  it('a visão Proposto deixa a mudança de fora (problems) e não traz o valor', () => {
+    const { p, current } = oldProposal();
+    const legacy = changeOf(p, 'annotation', 'AS', 'values.implementacao');
+    const preview = previewProject(current, p);
+    expect(preview.problems).toEqual([{ code: 'field-mismatch', changeId: legacy.id }]);
+    const screen = preview.project.annotations.find((a) => a.id === 'AS');
+    expect(screen?.values).toEqual({ nome: 'Cadastro', rota: '/cadastro/novo' });
+  });
+
+  it('tipo que não dá para resolver (sem a cópia da especialização) não decide: aplica', () => {
+    const { p, current } = oldProposal();
+    const missing: Project = {
+      ...current,
+      specializations: current.specializations.map((s) =>
+        s.id === 'sdui' ? { ...s, spec: null } : s,
+      ),
+    };
+    expect(previewProject(missing, p).problems).toEqual([]);
   });
 });

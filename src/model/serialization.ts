@@ -245,7 +245,7 @@ export function deserialize(
   if (readOnly) {
     data = { ...raw, schemaVersion: SCHEMA_VERSION };
   } else if (version < SCHEMA_VERSION) {
-    const migrated = migrate(raw, version, registry);
+    const migrated = migrate(raw, version, registry, SCHEMA_VERSION, { specs });
     if (!migrated.ok) {
       return {
         ok: false,

@@ -57,6 +57,7 @@ export const MCP_ERROR_CODES = [
   'unknown-alias',
   'unknown-platform',
   'unknown-root',
+  'unknown-type',
   'unsupported-image',
   'wrong-kind',
 ] as const;

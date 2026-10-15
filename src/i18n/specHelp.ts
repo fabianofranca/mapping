@@ -69,7 +69,7 @@ const SDUI_EXCERPT = `{
   ]
 }`;
 
-/** Trecho de uma especialização v2: plataforma, `code` de um tipo e um campo `codeRef`. */
+/** Trecho de uma especialização v2: plataforma e o `code` de um tipo. */
 const CODE_EXCERPT = `{
   "format": "mapping-spec",
   "formatVersion": 2,
@@ -107,22 +107,6 @@ const CODE_EXCERPT = `{
               "notes": "Passe o id como testId."
             }
           }
-        }
-      ]
-    },
-    {
-      "id": "telas",
-      "name": "Telas",
-      "color": "#00897B",
-      "annotationTypes": [
-        {
-          "id": "screen",
-          "name": "Screen",
-          "labelField": "nome",
-          "fields": [
-            { "key": "nome", "type": "string", "required": true },
-            { "key": "implementacao", "type": "codeRef" }
-          ]
         }
       ]
     }
@@ -220,7 +204,7 @@ const ptBR: readonly HelpSection[] = [
           { term: 'label', text: 'Rótulo exibido (pode ter acentos). Padrão: a key.' },
           {
             term: 'type',
-            text: 'Obrigatório: string, number, date, enum, table, ref ou codeRef.',
+            text: 'Obrigatório: string, number, date, enum, table ou ref.',
           },
           {
             term: 'required',
@@ -228,7 +212,7 @@ const ptBR: readonly HelpSection[] = [
           },
           {
             term: 'default',
-            text: 'Valor inicial, válido para o tipo. Não existe para table, ref nem codeRef.',
+            text: 'Valor inicial, válido para o tipo. Não existe para table nem ref.',
           },
           { term: 'options', text: 'Só enum: lista não vazia de strings únicas.' },
           {
@@ -246,10 +230,6 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'accepts',
             text: 'Só ref: { "tags": [...], "free": true|false }. Precisa de pelo menos uma etiqueta ou free: true.',
-          },
-          {
-            term: 'platforms',
-            text: 'Só codeRef: subconjunto das plataformas declaradas (padrão: todas).',
           },
           { term: 'description', text: 'Texto de ajuda exibido no editor.' },
         ],
@@ -277,10 +257,6 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'ref',
             text: 'Referência forte a uma tupla de outra anotação. O valor do campo é a referência.',
-          },
-          {
-            term: 'codeRef',
-            text: 'Onde a instância foi implementada, por plataforma (caminho do arquivo, símbolo e linha).',
           },
         ],
       },
@@ -334,7 +310,7 @@ const ptBR: readonly HelpSection[] = [
   },
   {
     id: 'code',
-    title: 'Plataformas, code e codeRef',
+    title: 'Plataformas e code',
     blocks: [
       {
         kind: 'p',
@@ -368,15 +344,11 @@ const ptBR: readonly HelpSection[] = [
             text: 'Só para campos enum: valor no mapping → valor no código. Valor sem tradução é passado como está.',
           },
           { term: 'notes', text: 'Orientação livre para o agente.' },
-          {
-            term: 'codeRef',
-            text: 'Tipo de campo que registra onde a instância foi implementada. O platforms do campo é opcional e restringe as plataformas permitidas. Não é permitido em colunas de table nem como default.',
-          },
         ],
       },
       {
         kind: 'p',
-        text: 'code e codeRef só valem em especializações que declaram platforms; os ids citados precisam estar em platforms, e as chaves de params e values precisam ser campos do tipo.',
+        text: 'code só vale em especializações que declaram platforms; os ids citados precisam estar em platforms, e as chaves de params e values precisam ser campos do tipo.',
       },
       { kind: 'code', code: CODE_EXCERPT },
     ],
@@ -428,12 +400,12 @@ const ptBR: readonly HelpSection[] = [
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
-          'default compatível com o tipo (e presente em options no enum); ref e codeRef sem default;',
-          'columns só com tipos simples (codeRef não pode ser coluna); rowLabel obrigatório em table com tags e apontando para uma coluna string;',
+          'default compatível com o tipo (e presente em options no enum); ref sem default;',
+          'columns só com tipos simples; rowLabel obrigatório em table com tags e apontando para uma coluna string;',
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
-          'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms, code e codeRef a partir da formatVersion 2; sources (origens externas) só na formatVersion 3;',
-          'code e codeRef só em especializações com platforms; os ids de code e do platforms do campo precisam existir em platforms;',
+          'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) só na formatVersion 3;',
+          'code só em especializações com platforms; os ids de code precisam existir em platforms;',
           'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório e path, se houver, relativo à raiz do repositório;',
           'color no formato #RRGGBB; propriedades desconhecidas são rejeitadas.',
         ],
@@ -527,7 +499,7 @@ const enUS: readonly HelpSection[] = [
           { term: 'label', text: 'Display label (may have accents). Defaults to key.' },
           {
             term: 'type',
-            text: 'Required: string, number, date, enum, table, ref or codeRef.',
+            text: 'Required: string, number, date, enum, table or ref.',
           },
           {
             term: 'required',
@@ -535,7 +507,7 @@ const enUS: readonly HelpSection[] = [
           },
           {
             term: 'default',
-            text: 'Initial value, valid for the type. Does not exist for table, ref or codeRef.',
+            text: 'Initial value, valid for the type. Does not exist for table or ref.',
           },
           { term: 'options', text: 'enum only: non-empty list of unique strings.' },
           {
@@ -553,10 +525,6 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'accepts',
             text: 'ref only: { "tags": [...], "free": true|false }. Needs at least one tag or free: true.',
-          },
-          {
-            term: 'platforms',
-            text: 'codeRef only: a subset of the declared platforms (default: all).',
           },
           { term: 'description', text: 'Help text shown in the editor.' },
         ],
@@ -584,10 +552,6 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'ref',
             text: 'Strong reference to a tuple of another annotation. The field value is the reference.',
-          },
-          {
-            term: 'codeRef',
-            text: 'Where the instance was implemented, per platform (file path, symbol and line).',
           },
         ],
       },
@@ -641,7 +605,7 @@ const enUS: readonly HelpSection[] = [
   },
   {
     id: 'code',
-    title: 'Platforms, code and codeRef',
+    title: 'Platforms and code',
     blocks: [
       {
         kind: 'p',
@@ -675,15 +639,11 @@ const enUS: readonly HelpSection[] = [
             text: 'Only for enum fields: value in the mapping → value in the code. A value without a translation is passed as is.',
           },
           { term: 'notes', text: 'Free-form guidance for the agent.' },
-          {
-            term: 'codeRef',
-            text: 'Field type that records where the instance was implemented. The field’s platforms is optional and restricts the allowed platforms. It is not allowed as a table column or as a default.',
-          },
         ],
       },
       {
         kind: 'p',
-        text: 'code and codeRef only work in specializations that declare platforms; the ids they cite must exist in platforms, and the keys of params and values must be fields of the type.',
+        text: 'code only works in specializations that declare platforms; the ids it cites must exist in platforms, and the keys of params and values must be fields of the type.',
       },
       { kind: 'code', code: CODE_EXCERPT },
     ],
@@ -735,12 +695,12 @@ const enUS: readonly HelpSection[] = [
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
-          'default compatible with the type (and present in options for enum); ref and codeRef without default;',
-          'columns with simple types only (codeRef cannot be a column); rowLabel required on a table with tags and pointing to a string column;',
+          'default compatible with the type (and present in options for enum); ref without default;',
+          'columns with simple types only; rowLabel required on a table with tags and pointing to a string column;',
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
-          'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms, code and codeRef from formatVersion 2 on; sources (external origins) only in formatVersion 3;',
-          'code and codeRef only in specializations with platforms; the ids in code and in the field’s platforms must exist in platforms;',
+          'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) only in formatVersion 3;',
+          'code only in specializations with platforms; the ids in code must exist in platforms;',
           'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required and path, if present, relative to the repository root;',
           'color in the #RRGGBB format; unknown properties are rejected.',
         ],

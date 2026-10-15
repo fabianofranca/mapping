@@ -1,10 +1,9 @@
 import {
   codeLink,
-  codeRefEntries,
   findPlatform,
   platformRepoOf,
   type ProjectPlatform,
-} from './codeRefs';
+} from './codeLocations';
 import { fail } from './errors';
 import { projectIndex } from './projectIndex';
 import { instanceLabel, parseRefValue, refLabel, resolveRef, tableRows } from './refs';
@@ -13,7 +12,6 @@ import { typeOfAnnotation, type ResolvedType } from './specLookup';
 import { isEmptyValue } from './typed';
 import type {
   Annotation,
-  CodeRefEntry,
   JsonValue,
   Marking,
   PlatformRepo,
@@ -41,15 +39,6 @@ export interface BlueprintParam {
   readonly value: JsonValue;
 }
 
-/** Entrada de `codeRef` da anotação na plataforma pedida, com o link do repositório. */
-export interface BlueprintCodeRef {
-  /** Campo `codeRef`. */
-  readonly key: string;
-  readonly entry: CodeRefEntry;
-  /** `codeLink` da entrada (`null` sem `urlTemplate`). */
-  readonly url: string | null;
-}
-
 export interface BlueprintAnnotation {
   readonly annotationId: string;
   readonly specId: string;
@@ -71,12 +60,10 @@ export interface BlueprintAnnotation {
   readonly notes: string | null;
   /**
    * Valores preenchidos, por campo e na ordem do tipo, como no mapping (sem traduzir):
-   * `ref` pelo rótulo do alvo e `table` sem `_id`. Os `codeRef` ficam em `codeRefs`.
-   * Servem às `notes` (ex: "use o valor do campo id").
+   * `ref` pelo rótulo do alvo e `table` sem `_id`. Servem às `notes` (ex: "use o valor
+   * do campo id").
    */
   readonly values: { readonly [key: string]: JsonValue };
-  /** Onde a instância já foi implementada nesta plataforma. */
-  readonly codeRefs: readonly BlueprintCodeRef[];
   /** Anotações vinculadas a esta (ex: eventos de um botão), com a mesma forma. */
   readonly linked: readonly BlueprintAnnotation[];
 }
@@ -114,8 +101,6 @@ function mappingValue(
       return tableRows(value).map((row) =>
         Object.fromEntries(field.columns.map((c) => [c.key, row[c.key] ?? null])),
       );
-    case 'codeRef':
-      return codeRefEntries(value);
     default:
       return value;
   }
@@ -169,7 +154,6 @@ export function codeBlueprint(
     const fields = resolved.type.fields;
     const params: BlueprintParam[] = [];
     const mapped: Record<string, JsonValue> = {};
-    const codeRefs: BlueprintCodeRef[] = [];
     for (const field of fields) {
       const value = values[field.key];
       if (code?.params && Object.hasOwn(code.params, field.key)) {
@@ -178,13 +162,6 @@ export function codeBlueprint(
           name: code.params[field.key] ?? field.key,
           value: paramValue(p, field, value, code),
         });
-      }
-      if (field.type === 'codeRef') {
-        for (const entry of codeRefEntries(value)) {
-          if (entry.platform !== platformId) continue;
-          codeRefs.push({ key: field.key, entry, url: codeLink(p, entry) });
-        }
-        continue;
       }
       const v = mappingValue(p, field, value);
       if (v !== null && !(Array.isArray(v) && v.length === 0)) mapped[field.key] = v;
@@ -208,7 +185,6 @@ export function codeBlueprint(
       params,
       notes: code?.notes ?? null,
       values: mapped,
-      codeRefs,
       linked,
     };
   };

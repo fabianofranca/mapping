@@ -6,7 +6,8 @@ import type { Roots } from './paths';
 // `validate_specialization` (etapa 4.2): o ciclo "gerar, validar, corrigir" de um agente que
 // cria especializações. Usa a mesma validação da importação da app (`parseSpecText`, em
 // `src/model/spec.ts`), então os erros são os mesmos, com o caminho exato; os avisos
-// (`specWarnings`) são só do servidor e não impedem nada. Não aplica a nenhum projeto.
+// (`specWarnings`, inclusive o dos campos do tipo removido que a leitura ignora) não impedem
+// nada. Não aplica a nenhum projeto.
 
 type Json = Record<string, unknown>;
 
@@ -73,7 +74,7 @@ export async function validateSpecialization(
       hint: 'corrija os erros (o caminho de cada um aponta o trecho do JSON) e valide de novo; o arquivo não foi aplicado a nenhum projeto',
     };
   }
-  const warnings = specWarnings(parsed.spec);
+  const warnings = specWarnings(parsed.spec, parsed.ignored);
   return {
     valid: true,
     ...origin,
