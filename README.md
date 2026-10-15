@@ -84,7 +84,7 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 - [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, mapa da interface, instalação do MCP, roteiros de teste manual, teste manual avançado e os templates do relato e do registro de uso real; apêndices para o agente testador e para operações de disco).
 - [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md): prompt do testador do Cowork (agente com controle do computador).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
-- [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v8).
+- [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v9).
 - [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md): formato da proposta de alteração e regras da revisão.
 - [`docs/MCP.md`](docs/MCP.md): servidor MCP (instalação, `.mcp.json`, raízes, tools, referências e solução de problemas); [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md) é o guia do agente.
 - [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): formato do arquivo de especialização (e [`docs/spec.schema.json`](docs/spec.schema.json)); exemplos em [`examples/specs/`](examples/specs/).

@@ -8,6 +8,7 @@
 > - **Rodada dirigida por achados de um relato:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: os achados 2 a 15 de `docs/history/relato-2026-10-11.md`." (vale número de achado ou código, como "A1 a A3 e G1 a G4")
 > - **Rodada dirigida por lista de passos:** "… no modo dirigido: R0, R4.1 a R4.5 e R6.8a a R6.11."
 > - **Rodada dirigida pelas fases de um plano:** "… no modo dirigido: as fases 7.1 e 7.2 de `docs/history/PLAN-etapa-7.md`."
+> - **Rodada dirigida da etapa 9 (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da etapa 9 (seção 9 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
 > - Nos modos dirigidos, acrescente do mesmo jeito o **build id esperado**.
 > - Em qualquer modo, acrescente se quiser a lista da **passada visual**: "passada visual: Detalhes, Propostas". Sem lista, vale a padrão (seção 5 abaixo).
 >
@@ -89,3 +90,30 @@ Entregue dois itens na pasta de trabalho e cole o conteúdo do primeiro na conve
 - Não abra PR nem edite o repositório.
 - Não apague projetos nem dados do site no navegador do dono.
 - Não dê como testado o que não observou: se um passo não puder ser executado, marque "não executado" e o motivo.
+
+---
+
+## 9. Rodada dirigida da etapa 9
+
+As fases da etapa 9 ([`docs/history/PLAN-etapa-9.md`](history/PLAN-etapa-9.md)) foram mergeadas **sem teste manual**, por pedido do dono: esta rodada é o primeiro teste à mão delas. Ela vale como o modo dirigido "pelas fases de um plano", com a lista já montada abaixo (ainda assim, mostre-a ao dono e peça confirmação, como na seção 5).
+
+**Antes de começar**
+
+- O **build id** esperado é o do commit que contém a fase 9.7; o MCP precisa ser o **0.4.0** ou mais novo (`node mapping-mcp.js --version`, seção 6 do guia). Com um `mapping-mcp.js` anterior, o R3.6 e o R5 não valem (ele não lê o `mapping.json` v9): marque "não executado (MCP anterior à 0.4.0)".
+- **Todos os roteiros partem de projetos novos.** O `sdui.json` de `examples/specs/` mudou sem subir a versão (ganhou `path` no `code` e perdeu o campo `implementacao`), e um projeto antigo não recebe o arquivo novo por **Atualizar versão…**. Não reaproveite pastas ou projetos de rodadas anteriores (`principal`, `loja`, `Loja` neste dispositivo): crie de novo, com o `sdui.json` da `main`. Registre em "Estado prévio do navegador" o que já existia, como em qualquer rodada.
+- O R3.8 precisa de um **projeto v8 de teste**. Não há fixture pronta no repositório: o roteiro monta um, a partir de um projeto novo, editando o `mapping.json` e a cópia da especialização à mão (o texto "Preparo do R3.8 e do R3.9" antes da tabela do R3, em `docs/TESTING.md`). Guarde o `mapping.json` v8 montado em `anexos/`.
+
+**Lista dirigida** (depois do **R0 inteiro**; as dependências do guia valem, então o R1 inteiro entra antes do R3, e o repositório de teste e o MCP da seção 6 antes do R3.6 e do R5):
+
+| Passos                   | Fase     | O que confere                                                                                                                                                                 |
+| ------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R3.1 a R3.7 (R3 inteiro) | 9.3      | A linha **Definição** nos Detalhes (o R3.4, antes R3.4b: arquivo do símbolo, **Abrir no repositório**, **Copiar caminho**); o `get_code_hints` e o `find_by_code` pelo `path` |
+| R3.8                     | 9.4      | Migração de um projeto **v8 com `codeRef`** para v9: abre, grava v9 sem o valor, backup em `backups/`                                                                         |
+| R3.9                     | 9.4      | Especialização antiga com campo `codeRef`: aplicada com aviso, sem o campo                                                                                                    |
+| R4.12 e R4.13            | 9.2      | Apagar a proposta aplicada (pasta `loja-apagar`): some do disco, sem aviso de "apagada por fora", `Ctrl+Z` sem erro                                                           |
+| R4.1 a R4.11             | 9.5, 9.6 | R4 decidindo pelo painel dos Detalhes: marcadores, popover, decisão no cabeçalho do item, notas, item trancado, conflito, **Comparar** na imagem trocada                      |
+| R5.1 a R5.7              | 9.4, 9.6 | R5 com o MCP 0.4.0 e as decisões, notas e substituição pelo painel                                                                                                            |
+
+Na **passada visual**, olhe com atenção o painel **Detalhes** na revisão (marcador, popover, cabeçalho do item e "Outras mudanças"), nas visões **Atual** e **Proposto**, nos temas claro e escuro, e a janela **Propostas** (menu ⋯ da linha e o diálogo **Apagar proposta?**). Em cada decisão do R4 e do R5, confira também o **teclado** (`Tab` até o marcador, `A`, `R`, `Backspace`, `Esc`, setas) e que o foco nunca cai no `body`.
+
+**Relato:** o mesmo template; use o código da fase (9.2 a 9.6) na coluna **Achado de origem** e liste em "O que atrapalhou" o que o passo novo do guia (R3.8 e R3.9, R4.12 e R4.13) deixou ambíguo. Se algo da lista não puder ser executado, marque "não executado (motivo)".
