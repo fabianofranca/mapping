@@ -390,8 +390,12 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         // regravação falha, as cópias ficam para a limpeza da sessão quando ela passar.
         compensate: async () => {
           abandoned = true;
-          if (applied !== null && store.project.peek() === applied) store.undo();
+          const undone = applied !== null && store.project.peek() === applied;
+          if (undone) store.undo();
           store.discardRedoOf(id);
+          // O projeto já não é o aplicado (recarregado por fora na janela da gravação): não há
+          // o que regravar, e o disco pode citar as cópias. Elas ficam.
+          if (!undone) return;
           const restored = await deps.flush();
           if (restored.ok) await rollback();
         },
