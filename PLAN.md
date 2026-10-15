@@ -43,6 +43,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das próximas etapas, marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3, concluída; referência): componentes, tokens, mudanças B#, propostas P# e decisões |
 | [`docs/redesign/HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) | Design das propostas de alteração (fase 4.0): telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto |
+| [`docs/redesign/BRIEF-REVIEW-DETAILS.md`](docs/redesign/BRIEF-REVIEW-DETAILS.md) | Briefing para o Claude Design dos Detalhes na revisão (fase 9.1): problema, estado atual, requisitos, restrições e os estados E1 a E17 |
 
 ---
 
@@ -97,11 +98,11 @@ Nada disso está nas Evoluções nem na lista do marco do [`docs/ROADMAP.md`](do
 
 **Toca em:** novo `docs/redesign/BRIEF-REVIEW-DETAILS.md`, `PLAN.md`.
 
-- [ ] Estado atual com `arquivo:linha`: a troca de painel na revisão (`src/app/EditorPanel.tsx`), `ReviewDetails`, `ChangeCard`, `DiffValue` e o resumo de uma criação (`src/ui/review/changeText.ts`, `valueParts`); o painel normal (`MarkingPanel`, `SelectionPanel`, `AnnotationsPanel`, `TypedFields`, `KeyValueGrid`) e as seções recolhíveis
-- [ ] As decisões do ponto 4 acima, como requisitos
-- [ ] Restrições: tokens de `src/theme/tokens.ts` (claro e escuro), controles de `src/ui/controls/` e ícones de `src/ui/icons.tsx` (o que faltar vem pedido como token, controle ou ícone novo), só desktop (900 px a 1920 px), modelo de foco e política de teclado (`docs/ARCHITECTURE.md`, "Foco e teclado"), pt-BR e en-US
-- [ ] Estados a desenhar: marcação alterada (um campo, vários, tabela, par livre, `rect`, pai); criada ("tudo novo", com anotações tipadas e livres); removida; conflito; item trancado; conjunto inválido; campo com decisão aceita, rejeitada e pendente; visão Atual e Proposto; imagem trocada; níveis Proposta e Projeto; notas; teclado (marcador focado, popover aberto)
-- [ ] O que o handoff precisa trazer (telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto) e onde ele entra (`docs/redesign/HANDOFF-REVIEW-DETAILS.md`)
+- [x] Estado atual com `arquivo:linha`: a troca de painel na revisão (`src/app/EditorPanel.tsx`), `ReviewDetails`, `ChangeCard`, `DiffValue` e o resumo de uma criação (`src/ui/review/changeText.ts`, `valueParts`); o painel normal (`MarkingPanel`, `SelectionPanel`, `AnnotationsPanel`, `TypedFields`, `KeyValueGrid`) e as seções recolhíveis
+- [x] As decisões do ponto 4 acima, como requisitos
+- [x] Restrições: tokens de `src/theme/tokens.ts` (claro e escuro), controles de `src/ui/controls/` e ícones de `src/ui/icons.tsx` (o que faltar vem pedido como token, controle ou ícone novo), só desktop (900 px a 1920 px), modelo de foco e política de teclado (`docs/ARCHITECTURE.md`, "Foco e teclado"), pt-BR e en-US
+- [x] Estados a desenhar: marcação alterada (um campo, vários, tabela, par livre, `rect`, pai); criada ("tudo novo", com anotações tipadas e livres); removida; conflito; item trancado; conjunto inválido; campo com decisão aceita, rejeitada e pendente; visão Atual e Proposto; imagem trocada; níveis Proposta e Projeto; notas; teclado (marcador focado, popover aberto)
+- [x] O que o handoff precisa trazer (telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto) e onde ele entra (`docs/redesign/HANDOFF-REVIEW-DETAILS.md`)
 
 **Aceite**: o dono cola o briefing no Claude Design sem precisar explicar nada além dele; o handoff volta com todos os estados listados.
 
