@@ -47,7 +47,7 @@ describe('Detalhes — marcação', () => {
     await user.click(screen.getByRole('button', { name: 'Copiar ID: MN' }));
     // O user-event troca a área de transferência por uma em memória.
     expect(await navigator.clipboard.readText()).toBe('MN');
-    expect(screen.getByRole('status').textContent).toBe('ID copiado.');
+    expect(screen.getByText('ID copiado.').getAttribute('role')).toBe('status');
   });
 
   it('seção Marcação: posição e tamanho em pares; recolhida, mostra o resumo', async () => {

@@ -115,8 +115,8 @@ export function annotationView(
     readonly withMarking?: boolean;
     /** `codeRef` resolvidos da anotação (`annotationCodeRefs`); eles saem de `values`. */
     readonly codeRefs?: readonly Json[];
-    /** Só o `code` dessa plataforma. */
-    readonly platform?: string;
+    /** `code` do tipo (`annotationCode`, já com o `path` resolvido); sem ele, a anotação não traz `code`. */
+    readonly code?: Json | null;
   } = {},
 ): Json {
   const p = refs.project;
@@ -138,9 +138,7 @@ export function annotationView(
     to: refLabel(p, link.ref),
   }));
   const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.bare('a', a.id));
-  const code = annotation.type
-    ? annotationCode(refs, annotation, options.platform)
-    : null;
+  const code = annotation.type ? (options.code ?? null) : null;
   const inCodeRefs = codeRefKeys(refs, annotation);
   const values = annotation.values
     ? Object.fromEntries(
@@ -242,10 +240,15 @@ export async function markingView(
       shown.map(async (a) => [a.id, await annotationCodeRefs(ctx, a, platform)] as const),
     ),
   );
+  const codes = new Map<string, Json | null>(
+    await Promise.all(
+      shown.map(async (a) => [a.id, await annotationCode(ctx, a, platform)] as const),
+    ),
+  );
   const view = (a: Annotation) =>
     annotationView(refs, a, {
       codeRefs: codeRefs.get(a.id) ?? [],
-      ...(platform !== undefined ? { platform } : {}),
+      code: codes.get(a.id) ?? null,
     });
   const layers = p.layers.flatMap((layer) => {
     const mine = own.filter((a) => a.layerId === layer.id);
@@ -344,6 +347,7 @@ export async function annotationDetail(
   return annotationView(ctx.refs, annotation, {
     withMarking: true,
     codeRefs: await annotationCodeRefs(ctx, annotation),
+    code: await annotationCode(ctx, annotation),
   });
 }
 

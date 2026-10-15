@@ -693,6 +693,9 @@ export const enUS: Dictionary = {
   'code.removeEntry': 'Remove entry',
   'code.moveUp': 'Move entry up',
   'code.moveDown': 'Move entry down',
+  'code.definition': 'Definition',
+  'code.definitionHint':
+    "File that defines the type's symbol on each platform, from the specialization.",
   'code.open': 'Open in repository',
   'code.openNamed': 'Open in repository: {file}',
   'code.copyPath': 'Copy path',

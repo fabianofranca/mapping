@@ -125,15 +125,18 @@ Etiqueta recomendada (reutilize em novas especializações): **`data-field`** �
 
 A `formatVersion` 2 liga a especialização ao código: ela declara as **plataformas** (um app, um contrato de API…) e como cada tipo de anotação vira código em cada uma. A `formatVersion` 1 continua válida: é a 2 sem plataformas e sem `code`. O núcleo da app é genérico; plataformas, linguagens e componentes de código entram só por estas propriedades.
 
-| Propriedade | Onde                            | Descrição                                                                                                                                                             |
-| ----------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `platforms` | raiz (opcional)                 | Lista de `{ id, name, language }`. `id` no formato `[a-z0-9-]+` e único na especialização; `name` é exibido; `language` é informativo (ajuda o agente).               |
-| `code`      | tipo de anotação (opcional)     | Objeto por **id de plataforma declarada**; cada entrada tem as propriedades abaixo.                                                                                   |
-| `symbol`    | entrada de `code` (obrigatória) | Componente ou tipo que implementa o tipo de anotação naquela plataforma.                                                                                              |
-| `params`    | entrada de `code` (opcional)    | Chave de um campo do tipo → nome do parâmetro no código. Campos fora de `params` não são passados.                                                                    |
-| `values`    | entrada de `code` (opcional)    | Chave de um campo `enum` → (valor no mapping → valor no código). Valor sem tradução é passado como está.                                                              |
-| `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente.                                                                                                                                       |
-| `codeRef`   | tipo de campo                   | Onde a instância foi implementada. O `platforms` do campo é opcional e restringe as plataformas permitidas. Não é permitido em colunas de `table` nem como `default`. |
+| Propriedade | Onde                            | Descrição                                                                                                                                                                                |
+| ----------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `platforms` | raiz (opcional)                 | Lista de `{ id, name, language }`. `id` no formato `[a-z0-9-]+` e único na especialização; `name` é exibido; `language` é informativo (ajuda o agente).                                  |
+| `code`      | tipo de anotação (opcional)     | Objeto por **id de plataforma declarada**; cada entrada tem as propriedades abaixo.                                                                                                      |
+| `symbol`    | entrada de `code` (obrigatória) | Componente ou tipo que implementa o tipo de anotação naquela plataforma.                                                                                                                 |
+| `path`      | entrada de `code` (opcional)    | Arquivo que define o `symbol`, **relativo à raiz do repositório da plataforma** (`/` como separador, sem `.`, `..`, `/` no começo nem letra de unidade). Sem linha: o `symbol` localiza. |
+| `params`    | entrada de `code` (opcional)    | Chave de um campo do tipo → nome do parâmetro no código. Campos fora de `params` não são passados.                                                                                       |
+| `values`    | entrada de `code` (opcional)    | Chave de um campo `enum` → (valor no mapping → valor no código). Valor sem tradução é passado como está.                                                                                 |
+| `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente.                                                                                                                                                          |
+| `codeRef`   | tipo de campo                   | Onde a instância foi implementada. O `platforms` do campo é opcional e restringe as plataformas permitidas. Não é permitido em colunas de `table` nem como `default`.                    |
+
+O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link pelo `urlTemplate` e caminho local pelo `localPath` do repositório da plataforma, configurados no projeto (`platformRepos`, ver o [`FORMAT.md`](FORMAT.md)): a app mostra a linha "Definição" nos Detalhes da anotação tipada e o MCP devolve o endereço e o arquivo local (ver o [`AGENT-GUIDE.md`](AGENT-GUIDE.md)).
 
 `code` e `codeRef` só valem em especializações que declaram `platforms`. Os ids citados em `code` e no `platforms` do campo precisam existir em `platforms`, e as chaves de `params` e `values` precisam ser campos do tipo.
 
@@ -166,6 +169,7 @@ A `formatVersion` 2 liga a especialização ao código: ela declara as **platafo
           "code": {
             "app": {
               "symbol": "DSButton",
+              "path": "app/src/main/java/com/app/ds/DSButton.kt",
               "params": { "texto": "text", "estilo": "style" },
               "values": {
                 "estilo": {
@@ -258,7 +262,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` opcional; `platforms`, `code` e `codeRef` a partir da `formatVersion` 2;
 - `sources` só na `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name`; `values` só em campos `enum` e com destinos que existam em `options`;
 - `code` e `codeRef` só em especializações que declaram `platforms`; os ids de `code` e do `platforms` do campo precisam existir em `platforms`;
-- `symbol` obrigatório em cada entrada de `code`; chaves de `params` e `values` precisam ser campos do tipo; `values` só para campos `enum`, com chaves que existam em `options`;
+- `symbol` obrigatório em cada entrada de `code`; `path`, se houver, não vazio e relativo à raiz do repositório (a mesma regra do caminho de um `codeRef`: normalizado, sem `.`, `..`, `/` no começo nem unidade); chaves de `params` e `values` precisam ser campos do tipo; `values` só para campos `enum`, com chaves que existam em `options`;
 - `color` no formato `#RRGGBB`;
 - propriedades desconhecidas são rejeitadas.
 

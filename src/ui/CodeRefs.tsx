@@ -5,9 +5,12 @@ import {
   type DisplayCodeEntry,
   type DisplayCodeLine,
   type Project,
+  type SpecAnnotationType,
+  typeCodeDefinitions,
 } from '../model';
 import { writeClipboardText } from '../utils/clipboard';
 import { IconButton, IconLink, Tooltip } from './controls';
+import { Property } from './PropertyGrid';
 
 // Referências de código (etapa 3b): a exibição de uma entrada de `codeRef` (Lista e
 // herdadas) e as ações dela, "Abrir no repositório" e "Copiar caminho". Os nomes de
@@ -129,5 +132,35 @@ export function CodeEntries({ project, line, lineClass, keyClass }: CodeEntriesP
         ))}
       </span>
     </span>
+  );
+}
+
+/**
+ * Linha "Definição" de uma anotação tipada: uma entrada por plataforma cujo `code` do tipo
+ * tem `path` ("<plataforma> · <arquivo>"), com as mesmas ações das entradas de `codeRef`.
+ * Só leitura (vem da especialização); sem repositório, mostra o caminho sem o link.
+ */
+export function CodeDefinitions({
+  project,
+  type,
+}: {
+  readonly project: Project;
+  readonly type: SpecAnnotationType;
+}) {
+  const definitions = typeCodeDefinitions(project, type);
+  if (definitions.length === 0) return null;
+  return (
+    <Property label={t('code.definition')} hint={t('code.definitionHint')}>
+      <span class="code-entries code-definitions">
+        {definitions.map((entry) => (
+          <span key={entry.id} class="code-entry-line" data-definition={entry.platform}>
+            <Tooltip label={codeEntryTooltip(entry)}>
+              <span class="code-entry-name">{codeEntryText(entry)}</span>
+            </Tooltip>
+            <CodeEntryActions project={project} entry={entry} />
+          </span>
+        ))}
+      </span>
+    </Property>
   );
 }

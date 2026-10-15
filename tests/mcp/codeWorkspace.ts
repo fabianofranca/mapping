@@ -17,8 +17,11 @@ import { PNG_1X1, allIds, uuidFor, withUuids } from './workspace';
 
 type Doc = Record<string, unknown>;
 
+/** Arquivo do `symbol` do Button no Android (`code.android.path` do exemplo SDUI). */
+export const DS_BUTTON_KT = 'app/src/main/java/com/app/ds/DSButton.kt';
+
 /** Código "vazio" que existe no repositório: só a conferência de existência é testada. */
-export const EXISTING_CODE_FILES = [CADASTRO_SCREEN_KT];
+export const EXISTING_CODE_FILES = [CADASTRO_SCREEN_KT, DS_BUTTON_KT];
 
 export interface CodeWorkspace {
   readonly base: string;

@@ -699,6 +699,9 @@ export const ptBR = {
   'code.removeEntry': 'Remover entrada',
   'code.moveUp': 'Subir entrada',
   'code.moveDown': 'Descer entrada',
+  'code.definition': 'Definição',
+  'code.definitionHint':
+    'Arquivo que define o símbolo do tipo em cada plataforma, vindo da especialização.',
   'code.open': 'Abrir no repositório',
   'code.openNamed': 'Abrir no repositório: {file}',
   'code.copyPath': 'Copiar caminho',

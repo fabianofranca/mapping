@@ -6,6 +6,7 @@ import {
   CADASTRO_SCREEN_KT,
   CADASTRO_VIEW_MODEL_KT,
   CADASTRO_VIEW_SWIFT,
+  DS_BUTTON_KT,
   createCodeWorkspace,
   type CodeWorkspace,
 } from './codeWorkspace';
@@ -35,7 +36,15 @@ interface Annotation {
   type?: { specId: string; typeId: string };
   values?: Record<string, unknown>;
   codeRefs?: CodeRef[];
-  code?: Record<string, { symbol: string }>;
+  code?: Record<string, CodeEntry>;
+}
+interface CodeEntry {
+  symbol: string;
+  path?: string;
+  url?: string | null;
+  localFile?: string | null;
+  exists?: boolean | null;
+  localFileProblem?: string;
 }
 interface MarkingData {
   platform?: string;
@@ -45,6 +54,10 @@ interface HintAnnotation {
   ref: string;
   type: { specId: string; typeId: string; name: string };
   symbol: string | null;
+  path?: string;
+  url?: string | null;
+  localFile?: string | null;
+  exists?: boolean | null;
   params?: { field: string; name: string; value: unknown }[];
   notes?: string;
   values?: Record<string, unknown>;
@@ -251,6 +264,37 @@ describe('get_code_hints', () => {
     ]);
   });
 
+  it('traz o arquivo do símbolo (path) com o endereço, o arquivo local e se ele existe', async () => {
+    const hints = (platform: string) =>
+      mcp.call<Hints>('get_code_hints', {
+        ref: refOf('cadastro', 'm', 'MC'),
+        platform,
+      });
+    const android = ok(await hints('android')).tree.annotations![0]!;
+    expect(android).toMatchObject({
+      symbol: 'com.app.ds.DSButton',
+      path: DS_BUTTON_KT,
+      url: `${REPO_URL}/${DS_BUTTON_KT}`,
+      localFile: DS_BUTTON_KT,
+      exists: true,
+    });
+    // O OnClick não tem path na especialização: nada de path, url nem exists.
+    const onClick = android.linked![0]!;
+    expect(onClick.symbol).toBe('com.app.ds.OnClick');
+    expect(onClick).not.toHaveProperty('path');
+    expect(onClick).not.toHaveProperty('exists');
+
+    // iOS: sem repositório configurado, o caminho vem sem endereço nem arquivo local.
+    const ios = ok(await hints('ios')).tree.annotations![0]!;
+    expect(ios).toMatchObject({
+      symbol: 'DSButton',
+      path: 'App/DesignSystem/DSButton.swift',
+      url: null,
+      localFile: null,
+      exists: null,
+    });
+  });
+
   it('erros claros: plataforma não declarada, referência de outro tipo, marcação inexistente', async () => {
     const unknown = errorOf(
       await mcp.call('get_code_hints', {
@@ -363,6 +407,50 @@ describe('get_marking, get_annotation e get_project', () => {
     expect(form.codeRefs?.map((c) => c.platform)).toEqual(['ios']);
   });
 
+  it('o `code` traz o path de cada plataforma com url, localFile e exists ao lado', async () => {
+    const data = ok(
+      await mcp.call<MarkingData>('get_marking', { ref: refOf('cadastro', 'm', 'MC') }),
+    );
+    const button = data.layers
+      .flatMap((l) => l.annotations)
+      .find((a) => a.type?.typeId === 'button')!;
+    expect(button.code!.android).toMatchObject({
+      symbol: 'com.app.ds.DSButton',
+      path: DS_BUTTON_KT,
+      url: `${REPO_URL}/${DS_BUTTON_KT}`,
+      localFile: DS_BUTTON_KT,
+      exists: true,
+    });
+    expect(button.code!.ios).toMatchObject({
+      path: 'App/DesignSystem/DSButton.swift',
+      url: null,
+      localFile: null,
+      exists: null,
+    });
+    // Plataforma sem path (bff no exemplo): a entrada continua como na especialização.
+    expect(button.code!.bff).not.toHaveProperty('path');
+    expect(button.code!.bff).not.toHaveProperty('exists');
+
+    const only = ok(
+      await mcp.call<MarkingData>('get_marking', {
+        ref: refOf('cadastro', 'm', 'MC'),
+        platform: 'android',
+      }),
+    );
+    const androidButton = only.layers
+      .flatMap((l) => l.annotations)
+      .find((a) => a.type?.typeId === 'button')!;
+    expect(Object.keys(androidButton.code!)).toEqual(['android']);
+    expect(androidButton.code!.android!.exists).toBe(true);
+  });
+
+  it('get_annotation também resolve o path do `code`', async () => {
+    const data = ok(
+      await mcp.call<Annotation>('get_annotation', { ref: refOf('cadastro', 'a', 'AB') }),
+    );
+    expect(data.code!.android).toMatchObject({ path: DS_BUTTON_KT, exists: true });
+  });
+
   it('recusa uma plataforma não declarada no filtro', async () => {
     const error = errorOf(
       await mcp.call('get_marking', {
@@ -390,6 +478,22 @@ describe('get_marking, get_annotation e get_project', () => {
     expect(escapes.codeRefs![0]).toMatchObject({
       platform: 'android',
       url: `${REPO_URL}/${CADASTRO_SCREEN_KT}`,
+      localFile: null,
+      exists: null,
+      localFileProblem: 'outside-workdir',
+    });
+    // O path do `code` do tipo segue a mesma regra de confinamento.
+    const data = ok(
+      await mcp.call<MarkingData>('get_marking', {
+        ref: refOf('escapa', 'm', 'MC'),
+        platform: 'android',
+      }),
+    );
+    const button = data.layers
+      .flatMap((l) => l.annotations)
+      .find((a) => a.type?.typeId === 'button')!;
+    expect(button.code!.android).toMatchObject({
+      path: DS_BUTTON_KT,
       localFile: null,
       exists: null,
       localFileProblem: 'outside-workdir',

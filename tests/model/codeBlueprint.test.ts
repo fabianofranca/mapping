@@ -153,6 +153,9 @@ describe('codeBlueprint', () => {
       label: null,
       layer: 'Componentes',
       symbol: 'com.app.ds.DSButton',
+      path: 'app/src/main/java/com/app/ds/DSButton.kt',
+      pathUrl:
+        'https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt',
       notes: 'Use o modifier de testTag com o valor do campo id.',
       params: [
         { key: 'texto', name: 'text', value: 'Cadastrar' },
@@ -252,6 +255,8 @@ describe('codeBlueprint', () => {
       label: 'Cadastro',
       layer: 'Telas',
       symbol: null,
+      path: null,
+      pathUrl: null,
       params: [],
       notes: null,
       values: { nome: 'Cadastro', rota: '/cadastro' },
@@ -306,6 +311,20 @@ describe('codeBlueprint', () => {
       (a) => a.typeId === 'screen',
     );
     expect(ios?.codeRefs.map((c) => [c.entry._id, c.url])).toEqual([['C3', null]]);
+  });
+
+  it('o path do code vem na planta; sem repositório da plataforma, sem endereço', () => {
+    const android = nodeOf(codeBlueprint(codeProject(), 'MF', 'android').root, 'MC')
+      .annotations[0];
+    expect(android?.path).toBe('app/src/main/java/com/app/ds/DSButton.kt');
+    // O OnClick não tem path no exemplo.
+    expect(android?.linked[0]).toMatchObject({ path: null, pathUrl: null });
+    const ios = nodeOf(codeBlueprint(codeProject(), 'MF', 'ios').root, 'MC')
+      .annotations[0];
+    expect(ios).toMatchObject({
+      path: 'App/DesignSystem/DSButton.swift',
+      pathUrl: null,
+    });
   });
 
   it('a partir de uma marcação interna, só ela e as descendentes', () => {
