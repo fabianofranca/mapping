@@ -72,11 +72,11 @@ Fechar o que a **rodada 7 do Cowork** (dirigida nas fases 9.2 a 9.6, build `303b
 
 **Toca em:** `src/ui/review/ChangePopover.tsx`, `src/ui/review/ChangeMark.tsx`, `src/ui/review/NoteField.tsx`, `src/ui/review/ReviewHeader.tsx` (se a nota do cabeçalho tiver o mesmo caminho), `src/store/review.ts` ou `src/app/useReviewSync.ts` (seleção depois de rejeitar a criação), `tests/components/review/fieldDecision.test.tsx`, `tests/components/review/itemHeader.test.tsx`, `tests/e2e/proposals.spec.ts` (se o e2e cobrir), `docs/TESTING.md` (R4.5 e R5.3).
 
-- [ ] Teste que reproduz, antes da correção: rejeitar pelo popover com o mouse, sem nota, abre o campo de nota com o foco (hoje não abre e o foco cai no `body`)
-- [ ] Rejeitar pelo popover com o mouse abre a nota sugerida vazia com o foco; se ficar vazia, some e o foco volta ao marcador; pelo teclado (`R`) o foco não se move (seção 5.5 do handoff); nunca no `body`
-- [ ] O 1º `Tab` no campo de nota sai do campo (teste de componente; se o problema era só da tecla sintética da extensão, o teste prova e a fase registra)
-- [ ] Rejeitar a criação de um item mantém a seleção nele (teste)
-- [ ] R4.5 e R5.3 do guia descrevendo o comportamento (inclusive a frase "sugerida numa rejeição")
+- [x] Teste que reproduz, antes da correção: rejeitar pelo popover com o mouse, sem nota, abre o campo de nota com o foco (hoje não abre e o foco cai no `body`)
+- [x] Rejeitar pelo popover com o mouse abre a nota sugerida vazia com o foco; se ficar vazia, some e o foco volta ao marcador; pelo teclado (`R`) o foco não se move (seção 5.5 do handoff); nunca no `body`
+- [x] O 1º `Tab` no campo de nota sai do campo (teste de componente; se o problema era só da tecla sintética da extensão, o teste prova e a fase registra)
+- [x] Rejeitar a criação de um item mantém a seleção nele (teste)
+- [x] R4.5 e R5.3 do guia descrevendo o comportamento (inclusive a frase "sugerida numa rejeição")
 
 **Aceite**: no R5.3, **Rejeitar** pelo popover da anotação Button abre o campo de nota com o foco na primeira vez; no R4.5, depois de rejeitar a criação do Campo Cupom, ele continua selecionado.
 

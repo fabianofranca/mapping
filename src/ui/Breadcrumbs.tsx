@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { ancestorsOf, type Marking, type Project, type ProjectImage } from '../model';
 import { resolveSelection, type Selection } from '../store/ui';
+import { selectionProject } from '../store/shownSelection';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { imageLabel, markingLabel } from './labels';
@@ -51,8 +52,9 @@ export function Breadcrumbs({
 }) {
   const { review, ui } = useEditor();
   // O projeto à vista: na visão Proposto da revisão, o item que só existe na proposta
-  // também tem caminho (fase 8.2, P1).
-  const crumbs = crumbsOf(review.derived.shownProject.value, ui.selection.value);
+  // também tem caminho (fase 8.2, P1), e o de uma criação rejeitada, pela prévia sem decisões.
+  const selection = ui.selection.value;
+  const crumbs = crumbsOf(selectionProject(review, selection), selection);
   return (
     <nav class="crumbs" aria-label={t('crumbs.label')}>
       {crumbs.length === 0 && (

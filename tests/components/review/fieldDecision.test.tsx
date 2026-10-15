@@ -11,9 +11,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { renameMarking, type DecisionState } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { sampleProject } from '../../model/fixtures';
-import { propose } from '../../model/proposalFixtures';
+import { changeOf, propose } from '../../model/proposalFixtures';
 import { richScenario } from '../../store/proposalHarness';
-import { showReviewPanel, type ReviewHarness } from './reviewHarness';
+import { firstImport, showReviewPanel, type ReviewHarness } from './reviewHarness';
 
 // Decidir no popover do campo (fase 9.6, HANDOFF-REVIEW-DETAILS 5.3, 6 e 7): Aceitar,
 // Rejeitar e Limpar gravam na hora e o popover fica aberto; em conflito os botões dizem o
@@ -150,6 +150,57 @@ describe('decisão no popover do campo', () => {
     await user.tab();
     expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
     expect(h.review.derived.notes.value.size).toBe(0);
+  });
+
+  it('rejeitar com o mouse a anotação criada (o cartão vira "Criação rejeitada") abre a nota com o foco', async () => {
+    const { base, proposal } = firstImport();
+    const h = await showReviewPanel(
+      { project: base, proposals: [proposal] },
+      { level: 'item', id: 'M1' },
+    );
+    const created = changeOf(proposal, 'annotation', 'A1');
+    const card = () => document.querySelector('[data-annotation="A1"]') as HTMLElement;
+    const user = userEvent.setup();
+    await user.click(
+      within(card()).getByRole('button', { name: /^Anotação onClick criada: novo/ }),
+    );
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Rejeitar Anotação onClick criada',
+      }),
+    );
+    await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
+    expect(within(card()).getByText('Criação rejeitada')).toBeTruthy();
+    const box = await screen.findByRole('textbox', { name: 'Nota para o agente' });
+    await waitFor(() => expect(document.activeElement).toBe(box));
+    // Vazia, ao sair ela some e o foco não cai no body.
+    await user.tab();
+    expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it('rejeitar com o mouse um campo alterado leva o foco à nota e, vazia, de volta ao marcador', async () => {
+    const { proposal, ids } = richScenario();
+    const h = await showReviewPanel(
+      { proposals: [proposal] },
+      { level: 'item', id: 'M1' },
+    );
+    const user = userEvent.setup();
+    await user.click(nameMark());
+    const pop = screen.getByRole('dialog');
+    await user.click(within(pop).getByRole('button', { name: 'Rejeitar Nome' }));
+    await waitFor(() => expect(stateOf(h, ids.name)).toBe('rejected'));
+    const box = within(pop).getByRole('textbox', { name: 'Nota para o agente' });
+    expect(document.activeElement).toBe(box);
+    // Escrever e sair com o primeiro Tab grava a nota e tira o foco do campo.
+    await user.type(box, 'Fica o nome antigo.');
+    await user.tab();
+    expect(document.activeElement).not.toBe(box);
+    await waitFor(() =>
+      expect(h.review.derived.notes.value.get(`change:${ids.name}`)?.[0]?.text).toBe(
+        'Fica o nome antigo.',
+      ),
+    );
   });
 
   it('a nota da mudança fica na proposta, aparece embaixo do campo e no nome do marcador', async () => {

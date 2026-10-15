@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'preact/hooks';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { ariaKeys } from '../../app/shortcuts';
 import { t } from '../../i18n';
 import {
@@ -397,6 +397,18 @@ export function ChangePopover({
   const [noteFocus, setNoteFocus] = useState(0);
   const reasonId = useId();
   const hasNote = useHasNote({ level: 'change', id: subject.change.id });
+  // Rejeitar com o mouse pede a nota sugerida pelo store (`review.requestNote`): a decisão
+  // pode trocar o cartão da anotação criada e remontar o marcador, e o popover novo (que
+  // reabre pelo `OpenMarkContext`) cumpre o pedido no commit que o desenha, com o foco no
+  // campo. Cada instância passa o pedido para o próprio estado; quem o apaga é o fechar
+  // do popover, a nota que sai vazia, outra seleção ou sair da revisão.
+  const noteAsk = review.noteRequest.value;
+  const asked = noteAsk?.changeId === subject.change.id ? noteAsk.seq : 0;
+  useLayoutEffect(() => {
+    if (asked === 0) return;
+    setNoteShown(true);
+    setNoteFocus((n) => n + 1);
+  }, [asked]);
   // O estado "mudou de decisão" é anunciado (região `status`), venha de onde vier.
   const decisionNow = names?.proposal.decisions[subject.change.id]?.state ?? null;
   const lastDecision = useRef(decisionNow);
@@ -540,10 +552,7 @@ export function ChangePopover({
                 decision={decision?.state ?? null}
                 disabled={disabled}
                 reasonId={reasonId}
-                onRejectedByMouse={() => {
-                  setNoteShown(true);
-                  setNoteFocus((n) => n + 1);
-                }}
+                onRejectedByMouse={() => review.requestNote(c.id)}
               />
             )}
             <div class="change-popover-more">
@@ -576,7 +585,10 @@ export function ChangePopover({
               target={{ level: 'change', id: c.id }}
               show={noteShown}
               focusSeq={noteFocus}
-              onHide={() => setNoteShown(false)}
+              onHide={() => {
+                setNoteShown(false);
+                review.clearNoteRequest();
+              }}
             />
             <span class="visually-hidden" role="status">
               {announce}

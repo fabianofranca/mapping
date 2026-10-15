@@ -157,7 +157,11 @@ export function ChangeMark(subject: MarkSubject) {
   };
   const hide = () => {
     clearTimeout(timer.current);
-    if (openMark.peek() === key) openMark.value = null;
+    if (openMark.peek() === key) {
+      openMark.value = null;
+      // Fechado, o pedido da nota sugerida (rejeitar com o mouse) não vale mais.
+      review.clearNoteRequest();
+    }
   };
 
   const d = review.derived;
