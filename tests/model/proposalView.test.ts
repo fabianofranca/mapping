@@ -3,6 +3,7 @@ import {
   NO_FILTERS,
   addAnnotation,
   addImage,
+  canRemoveProposal,
   changeImageFile,
   changeLayerId,
   changeTarget,
@@ -303,5 +304,15 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
     expect(needsExitReminder('applied', 2)).toBe(false);
     expect(needsExitReminder('withdrawn', 2)).toBe(false);
     expect(needsExitReminder(undefined, 2)).toBe(false);
+  });
+});
+
+describe('canRemoveProposal (fase 9.2)', () => {
+  it('só retirada, substituída e aplicada podem ser apagadas; aberta não', () => {
+    const { proposal } = scenario();
+    expect(canRemoveProposal({ ...proposal, status: 'open' })).toBe(false);
+    expect(canRemoveProposal({ ...proposal, status: 'withdrawn' })).toBe(true);
+    expect(canRemoveProposal({ ...proposal, status: 'superseded' })).toBe(true);
+    expect(canRemoveProposal({ ...proposal, status: 'applied' })).toBe(true);
   });
 });

@@ -656,6 +656,10 @@ export const ptBR = {
   'proposal.error.imageExists':
     'Já existe uma imagem do projeto com este arquivo: {path}',
   'proposal.error.readOnly': 'O projeto está somente leitura e não recebe mudanças.',
+  'proposal.error.reviewing': 'Saia da revisão para apagar uma proposta.',
+  'proposal.error.notRemovable':
+    'Esta proposta está aberta: só propostas retiradas, substituídas ou aplicadas podem ser apagadas.',
+  'proposal.error.removeFailed': 'Não foi possível apagar a proposta.',
   'proposal.error.saveFailed':
     'Não foi possível gravar o mapping.json: nada foi aplicado e as decisões continuam como estavam.',
   'proposal.notice.added': 'Nova proposta: {title}',

@@ -76,6 +76,9 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   'image-exists': 'proposal.error.imageExists',
   'save-failed': 'proposal.error.saveFailed',
   failed: 'proposal.error.generic',
+  reviewing: 'proposal.error.reviewing',
+  'not-removable': 'proposal.error.notRemovable',
+  'remove-failed': 'proposal.error.removeFailed',
 };
 
 /** Mensagem de uma ação recusada na revisão (`path`: a imagem de `image-missing` e `image-exists`). */

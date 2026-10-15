@@ -18,7 +18,7 @@ import type { FlushResult } from '../storage/autosave';
 import { imageMimeType, type ProjectStorage } from '../storage/types';
 import { reportError } from '../utils/report';
 import type { HistoryLink, ProjectStore } from './history';
-import type { ProposalErrorCode, ProposalStore } from './proposals';
+import type { ProposalErrorCode, ProposalStore, RemoveProposalError } from './proposals';
 
 // Ações da revisão sobre as propostas (etapa 4): decidir, anotar e aplicar as aceitas.
 // São as únicas que mudam uma proposta; a gravação é de `ProposalStore.mutate`. Cada
@@ -88,8 +88,20 @@ export type ApplyResult =
       readonly path?: string;
     };
 
+export type RemoveError =
+  /** Projeto somente leitura: nada do armazenamento muda. */
+  | 'read-only'
+  /** Há uma proposta em revisão: apagar é da lista, fora da revisão. */
+  | 'reviewing'
+  | RemoveProposalError;
+
+export type RemoveResult =
+  | { readonly ok: true; readonly proposal: Proposal }
+  | { readonly ok: false; readonly error: RemoveError };
+
 /** Todos os motivos de recusa das ações da revisão (para a mensagem ao usuário). */
-export type ProposalActionError = DecisionError | NoteError | RestoreError | ApplyError;
+export type ProposalActionError =
+  DecisionError | NoteError | RestoreError | ApplyError | RemoveError;
 
 export interface ProposalActions {
   /** Decide um nível (aceita, rejeita ou limpa) resolvendo as dependências. */
@@ -130,6 +142,14 @@ export interface ProposalActions {
    * entrada também desfazem e refazem o `applied` e a posição das imagens.
    */
   applyAccepted(proposalId: string): Promise<ApplyResult>;
+  /**
+   * Apaga uma proposta fechada (retirada, substituída ou aplicada) do armazenamento, com as
+   * imagens que esperavam a aceitação. Sem desfazer. A entrada de "Aplicar aceitas" dela no
+   * histórico perde o vínculo (`detachLinks`): o desfazer e o refazer do projeto continuam
+   * valendo, sem mexer em proposta nenhuma. As imagens que a aplicação copiou para
+   * `images/` são do projeto e seguem a limpeza normal da sessão.
+   */
+  removeProposal(proposalId: string): Promise<RemoveResult>;
 }
 
 export interface ProposalActionsDeps {
@@ -475,5 +495,11 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
       ),
 
     applyAccepted: applyAcceptedChanges,
+
+    async removeProposal(id) {
+      if (store.readOnly.peek()) return { ok: false, error: 'read-only' };
+      if (store.reviewing.peek()) return { ok: false, error: 'reviewing' };
+      return proposals.remove(id, () => store.detachLinks(id));
+    },
   };
 }

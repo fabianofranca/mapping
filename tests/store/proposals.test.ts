@@ -7,7 +7,7 @@ import {
   serializeProposal,
   type Proposal,
 } from '../../src/model';
-import { clearReportedErrors } from '../../src/utils/report';
+import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
 import {
   NEW_IMAGE_PATH,
@@ -282,6 +282,183 @@ describe('ProposalStore: conferência da pasta', () => {
     expect(await session.sync()).toBe('unchanged');
     expect(session.proposals.list.value.map((p) => p.id)).toEqual(['P1']);
     expect(session.proposals.notices.value[0]).toMatchObject({ kind: 'added', id: 'P1' });
+  });
+});
+
+describe('ProposalStore.remove: apagar proposta fechada (fase 9.2)', () => {
+  const closed = (id: string, status: Proposal['status']): Proposal => ({
+    ...richScenario(id).proposal,
+    status,
+  });
+
+  it('apaga proposals/<id>/ do disco (arquivo e imagens), tira da lista e não gera aviso "apagada por fora"', async () => {
+    const { session, root } = await openHarness({
+      proposals: [closed('P1', 'withdrawn'), closed('P2', 'superseded')],
+      files: { [NEW_IMAGE_PATH]: 'WEBP' },
+    });
+    const result = await session.proposals.remove('P1');
+    expect(result).toMatchObject({ ok: true });
+    expect(root.dirs.get('proposals')?.dirs.has('P1')).toBe(false);
+    expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
+    expect(session.proposals.list.value.map((p) => p.id)).toEqual(['P2']);
+    expect(session.proposals.notices.value).toEqual([]);
+
+    // A conferência seguinte da pasta não avisa nada.
+    expect(await session.proposals.scan()).toEqual({
+      added: [],
+      changed: [],
+      removed: [],
+    });
+    expect(session.proposals.notices.value).toEqual([]);
+    expect(session.proposals.get('P1')).toBeNull();
+    // A outra proposta segue intacta.
+    expect(await diskProposal(root, 'P2')).toMatchObject({ id: 'P2' });
+  });
+
+  it('o zip exportado depois não leva a proposta apagada nem as imagens dela', async () => {
+    const { session } = await openHarness({
+      proposals: [closed('P1', 'applied'), closed('P2', 'withdrawn')],
+      files: { [NEW_IMAGE_PATH]: 'WEBP', 'proposals/P2/images/nova.webp': 'W2' },
+    });
+    expect(await session.proposals.remove('P1')).toMatchObject({ ok: true });
+    const files = await session.collectFiles();
+    expect([...files.proposals.keys()]).toEqual([proposalFilePath('P2')]);
+    // As imagens só saem para a exportação se a proposta ainda espera por elas.
+    expect([...files.proposalImages.keys()]).not.toContain(NEW_IMAGE_PATH);
+  });
+
+  it('recusa a proposta aberta, sem apagar nada', async () => {
+    const { session, root } = await openHarness({ proposals: [richScenario().proposal] });
+    expect(await session.proposals.remove('P1')).toEqual({
+      ok: false,
+      error: 'not-removable',
+    });
+    expect(await diskProposal(root)).toMatchObject({ id: 'P1', status: 'open' });
+    expect(session.proposals.get('P1')).not.toBeNull();
+  });
+
+  it('relê o arquivo: se o agente reabriu a proposta por fora, recusa e adota a versão do disco', async () => {
+    const { session, root } = await openHarness({
+      proposals: [closed('P1', 'withdrawn')],
+    });
+    expect(session.proposals.get('P1')?.status).toBe('withdrawn');
+    // Fora da app, o arquivo volta a estar aberto (outra revision).
+    writeOutside(root, { ...richScenario().proposal, revision: 5 });
+
+    expect(await session.proposals.remove('P1')).toEqual({
+      ok: false,
+      error: 'not-removable',
+    });
+    expect(await diskProposal(root)).toMatchObject({ status: 'open', revision: 5 });
+    expect(session.proposals.get('P1')).toMatchObject({ status: 'open', revision: 5 });
+  });
+
+  it('arquivo que mudou por fora e ficou ilegível: recusa e não apaga', async () => {
+    const { session, root } = await openHarness({
+      proposals: [closed('P1', 'withdrawn')],
+      files: { [NEW_IMAGE_PATH]: 'WEBP' },
+    });
+    root.put(proposalFilePath('P1'), '{ editando...');
+    expect(await session.proposals.remove('P1')).toEqual({
+      ok: false,
+      error: 'unreadable',
+    });
+    expect(await root.read(proposalFilePath('P1'))).toBe('{ editando...');
+    expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
+    expect(session.proposals.get('P1')).not.toBeNull();
+  });
+
+  it('proposta desconhecida: unknown-proposal', async () => {
+    const { session } = await openHarness({ proposals: [closed('P1', 'withdrawn')] });
+    expect(await session.proposals.remove('nada')).toEqual({
+      ok: false,
+      error: 'unknown-proposal',
+    });
+  });
+
+  it('o arquivo já sumiu por fora: apaga o que sobrou da pasta, sem aviso', async () => {
+    const { session, root } = await openHarness({
+      proposals: [closed('P1', 'withdrawn')],
+      files: { [NEW_IMAGE_PATH]: 'WEBP' },
+    });
+    root.dirs.get('proposals')?.dirs.get('P1')?.files.delete('proposal.json');
+    expect(await session.proposals.remove('P1')).toMatchObject({ ok: true });
+    expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
+    expect(session.proposals.list.value).toEqual([]);
+    expect(session.proposals.notices.value).toEqual([]);
+  });
+
+  it('falha ao apagar: remove-failed, a proposta continua na lista e o erro vai ao Diagnóstico', async () => {
+    const { session, storage } = await openHarness({
+      proposals: [closed('P1', 'withdrawn')],
+    });
+    vi.spyOn(storage, 'removeProposal').mockRejectedValue(new Error('permissão negada'));
+    expect(await session.proposals.remove('P1')).toEqual({
+      ok: false,
+      error: 'remove-failed',
+    });
+    expect(session.proposals.get('P1')).not.toBeNull();
+    expect(reportedErrors.value.map((e) => e.context)).toContain('proposals.remove');
+  });
+
+  it('tira os avisos daquela proposta e chama onRemoved só depois de apagar', async () => {
+    const { session, root } = await openHarness({
+      proposals: [closed('P1', 'withdrawn')],
+    });
+    // Alterada por fora (ainda fechada): o aviso "changed" entra na fila.
+    writeOutside(root, { ...closed('P1', 'withdrawn'), title: 'Mexida', revision: 2 });
+    await session.proposals.scan();
+    expect(session.proposals.notices.value.map((n) => n.kind)).toEqual(['changed']);
+
+    let existedWhenCalled: boolean | null = null;
+    await session.proposals.remove('P1', () => {
+      existedWhenCalled = root.dirs.get('proposals')?.dirs.has('P1') ?? false;
+    });
+    expect(existedWhenCalled).toBe(false);
+    expect(session.proposals.notices.value).toEqual([]);
+  });
+
+  it('uma proposta nova com supersedes apontando para a apagada continua listada, sem erro', async () => {
+    const old = closed('P1', 'superseded');
+    const newer: Proposal = { ...richScenario('P2').proposal, supersedes: 'P1' };
+    const { session, review } = await openHarness({ proposals: [old, newer] });
+    expect(
+      review.derived.rows.value.find((r) => r.proposal.id === 'P1')?.supersededBy,
+    ).toMatchObject({ id: 'P2' });
+
+    expect(await session.proposals.remove('P1')).toMatchObject({ ok: true });
+
+    const rows = review.derived.rows.value;
+    expect(rows.map((r) => r.proposal.id)).toEqual(['P2']);
+    expect(rows[0]).toMatchObject({ supersededBy: null, leftBehind: null });
+    // Abrir a nova na revisão não depende da apagada.
+    expect(review.open('P2')).toMatchObject({ ok: true });
+    expect(review.derived.supersession.value).toBeNull();
+    review.close();
+    expect(await session.proposals.scan()).toEqual({
+      added: [],
+      changed: [],
+      removed: [],
+    });
+  });
+
+  it('entra na fila: uma gravação em curso termina antes de apagar', async () => {
+    const { session, root } = await openHarness({ proposals: [closed('P1', 'applied')] });
+    const note = session.proposals.mutate('P1', (p) => ({
+      ok: true,
+      proposal: { ...p, title: 'Com nota' },
+      value: null,
+    }));
+    const removal = session.proposals.remove('P1');
+    expect(await note).toMatchObject({ ok: true });
+    expect(await removal).toMatchObject({ ok: true });
+    expect(root.dirs.get('proposals')?.dirs.has('P1')).toBe(false);
+    // Nada de proposta ressuscitada pela gravação.
+    expect(await session.proposals.scan()).toEqual({
+      added: [],
+      changed: [],
+      removed: [],
+    });
   });
 });
 

@@ -17,7 +17,12 @@ import type { ProjectStorage } from '../storage/types';
 import { reportError } from '../utils/report';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 import { createReviewDerived, type ReviewDerived, type ReviewView } from './derived';
-import type { ApplyResult, DecisionResult, NoteResult } from './proposalActions';
+import type {
+  ApplyResult,
+  DecisionResult,
+  NoteResult,
+  RemoveResult,
+} from './proposalActions';
 import type { ProjectSession } from './session';
 
 // Estado da revisão de uma proposta (etapa 4): qual proposta está aberta, o item
@@ -114,6 +119,11 @@ export interface ReviewState {
   removeNote(noteId: string): Promise<NoteResult | null>;
   /** "Aplicar aceitas". */
   apply(): Promise<ApplyResult | null>;
+  /**
+   * Apaga uma proposta fechada (menu ⋯ da lista) e esquece o que esta cópia guardava dela
+   * (`seen` e o ponto onde parou). Só fora da revisão.
+   */
+  removeProposal(id: string): Promise<RemoveResult>;
 
   /**
    * Seleciona a mudança pendente (sem decisão) ou em conflito seguinte/anterior à
@@ -241,6 +251,18 @@ function withEntry(
     v: RESUME_VERSION,
     seen: blob.seen.includes(key) ? blob.seen : [...blob.seen, key],
     resume: Object.fromEntries([...others, ...own.slice(-MAX_RESUME_PER_COPY)]),
+  };
+}
+
+/** O blob sem o que esta cópia guardava da proposta (apagada); `null` se não havia nada. */
+function withoutEntry(blob: ResumeBlob, key: string): ResumeBlob | null {
+  const hasSeen = blob.seen.includes(key);
+  const hasResume = Object.hasOwn(blob.resume, key);
+  if (!hasSeen && !hasResume) return null;
+  return {
+    v: RESUME_VERSION,
+    seen: blob.seen.filter((k) => k !== key),
+    resume: Object.fromEntries(Object.entries(blob.resume).filter(([k]) => k !== key)),
   };
 }
 
@@ -543,6 +565,24 @@ export function createReviewState(session: ProjectSession): ReviewState {
           release();
         }
       }),
+
+    async removeProposal(id) {
+      // Dentro da revisão a lista nem aparece; a guarda é para quem chamar por outro caminho.
+      if (proposalId.peek() !== null) return { ok: false, error: 'reviewing' };
+      const result = await proposalActions.removeProposal(id);
+      if (!result.ok) return result;
+      // Esquece o que esta cópia guardava da proposta: uma de mesmo id que chegue depois é
+      // nova de verdade, e a entrada do retomar não fica órfã no blob.
+      const blob = readBlob();
+      const trimmed = withoutEntry(blob, keyOf(scope, id));
+      if (trimmed) writeBlob(trimmed);
+      if (seen.peek().has(id)) {
+        const next = new Set(seen.peek());
+        next.delete(id);
+        seen.value = next;
+      }
+      return result;
+    },
 
     step(kind, direction) {
       const visible = new Set(derived.visibleIds.peek());

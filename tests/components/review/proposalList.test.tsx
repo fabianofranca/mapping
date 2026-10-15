@@ -1,8 +1,17 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/preact';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/preact';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { supersedeProposal, type Proposal } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { ProposalNotices } from '../../../src/ui/review/ProposalNotices';
+import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
 import { ProposalList } from '../../../src/ui/review/ProposalList';
 import { formatWhen } from '../../../src/ui/review/format';
 import { StatusBar } from '../../../src/ui/StatusBar';
@@ -231,5 +240,205 @@ describe('formatWhen', () => {
     expect(formatWhen(new Date(2025, 9, 6, 8, 0).toISOString(), now, 'pt-BR')).toBe(
       '06/10/2025',
     );
+  });
+});
+
+// Fase 9.2: menu ⋯ "Apagar proposta…" só nas linhas fechadas, com confirmação e foco.
+describe('apagar proposta pelo menu ⋯ (fase 9.2)', () => {
+  /** P1 aberta, P2 retirada e P3 aplicada: a lista mostra P1, P2, P3 nessa ordem. */
+  async function threeProposals() {
+    const open = { ...richScenario('P1').proposal, title: 'Aberta' };
+    const withdrawn: Proposal = {
+      ...richScenario('P2').proposal,
+      title: 'Retirada pelo agente',
+      status: 'withdrawn',
+    };
+    const applied: Proposal = {
+      ...richScenario('P3').proposal,
+      title: 'Já aplicada',
+      status: 'applied',
+    };
+    const h = await openReviewHarness({
+      proposals: [open, withdrawn, applied],
+      files: { 'proposals/P2/images/nova.webp': 'W2' },
+    });
+    renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
+    return h;
+  }
+
+  const rowOf = (id: string) => {
+    const row = screen
+      .getAllByRole('listitem')
+      .find((r) => r.getAttribute('data-proposal') === id);
+    if (!row) throw new Error(`linha ${id}`);
+    return row;
+  };
+  const menuOf = (id: string) =>
+    within(rowOf(id)).queryByRole('button', { name: /^Ações da proposta:/ });
+  const actionOf = (id: string) =>
+    within(rowOf(id)).getByRole('button', { name: /^(Revisar|Continuar|Ver):/ });
+
+  async function askToRemove(user: ReturnType<typeof userEvent.setup>, id: string) {
+    const trigger = menuOf(id);
+    if (!trigger) throw new Error(`sem menu em ${id}`);
+    await user.click(trigger);
+    await user.click(screen.getByRole('menuitem', { name: 'Apagar proposta…' }));
+    return trigger;
+  }
+
+  it('o menu ⋯ só existe nas linhas fechadas: a aberta não tem a ação', async () => {
+    await threeProposals();
+    expect(menuOf('P1')).toBeNull();
+    expect(menuOf('P2')).not.toBeNull();
+    expect(menuOf('P3')).not.toBeNull();
+    expect(menuOf('P2')?.getAttribute('aria-label')).toBe(
+      'Ações da proposta: Retirada pelo agente',
+    );
+  });
+
+  it('durante a revisão a ação não existe (a janela mostra os níveis, não a lista)', async () => {
+    const h = await threeProposals();
+    cleanup();
+    renderInEditor(h, <ProposalsWindow onHelp={noop} />);
+    expect(menuOf('P2')).not.toBeNull();
+    act(() => {
+      h.review.open('P1');
+    });
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /^Ações da proposta:/ })).toBeNull();
+    expect(screen.queryByText('Apagar proposta…')).toBeNull();
+  });
+
+  it('a confirmação é um alertdialog com o título e o aviso; Cancelar não apaga e devolve o foco ao ⋯', async () => {
+    const h = await threeProposals();
+    const user = userEvent.setup();
+    const trigger = await askToRemove(user, 'P3');
+
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
+    const body = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
+    expect(body?.textContent).toContain('"Já aplicada"');
+    expect(body?.textContent).toContain('Isso não pode ser desfeito');
+    // A aplicada avisa que o projeto não perde as mudanças já aplicadas.
+    expect(body?.textContent).toContain('As mudanças já aplicadas continuam no projeto');
+
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Cancelar', hidden: true }),
+    );
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    expect(await diskProposal(h.root, 'P3')).toMatchObject({ id: 'P3' });
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
+  it('a retirada não leva o aviso das mudanças aplicadas', async () => {
+    await threeProposals();
+    const user = userEvent.setup();
+    await askToRemove(user, 'P2');
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    expect(dialog.textContent).toContain('"Retirada pelo agente"');
+    expect(dialog.textContent).not.toContain('já aplicadas');
+  });
+
+  it('Apagar: tira a pasta do disco, a linha some sem aviso "apagada por fora", há um aviso e o foco vai à ação da linha seguinte', async () => {
+    const h = await threeProposals();
+    const user = userEvent.setup();
+    await askToRemove(user, 'P2');
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+    );
+
+    await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2));
+    expect(screen.queryByText('Retirada pelo agente')).toBeNull();
+    expect(h.root.dirs.get('proposals')?.dirs.has('P2')).toBe(false);
+    expect(await h.root.read('proposals/P2/images/nova.webp')).toBeNull();
+    expect(h.session.proposals.notices.value).toEqual([]);
+    expect(h.ui.toast.value).toBe('Proposta apagada: Retirada pelo agente');
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    // Ocupou o lugar dela a P3.
+    await waitFor(() => expect(document.activeElement).toBe(actionOf('P3')));
+    // A conferência seguinte da pasta também não avisa nada.
+    await h.session.proposals.scan();
+    expect(h.session.proposals.notices.value).toEqual([]);
+  });
+
+  it('apagar a última linha leva o foco à anterior', async () => {
+    await threeProposals();
+    const user = userEvent.setup();
+    await askToRemove(user, 'P3');
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+    );
+    await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2));
+    await waitFor(() => expect(document.activeElement).toBe(actionOf('P2')));
+  });
+
+  it('apagar a única proposta mostra o estado vazio e o foco fica nele', async () => {
+    const only: Proposal = {
+      ...richScenario('P1').proposal,
+      title: 'Única',
+      status: 'withdrawn',
+    };
+    const h = await openReviewHarness({ proposals: [only] });
+    renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
+    const user = userEvent.setup();
+    await askToRemove(user, 'P1');
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+    );
+    await screen.findByRole('heading', { name: 'Nenhuma proposta ainda' });
+    await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole('button', { name: 'Como o agente envia propostas' }),
+      ),
+    );
+  });
+
+  it('falha ao apagar: a linha continua, o erro vai ao aviso e o foco volta ao ⋯', async () => {
+    const h = await threeProposals();
+    vi.spyOn(h.storage, 'removeProposal').mockRejectedValue(new Error('sem permissão'));
+    const user = userEvent.setup();
+    const trigger = await askToRemove(user, 'P2');
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+    );
+    await waitFor(() =>
+      expect(h.ui.toast.value).toBe('Não foi possível apagar a proposta.'),
+    );
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(await diskProposal(h.root, 'P2')).toMatchObject({ id: 'P2' });
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
+  it('se o agente reabriu a proposta por fora, a confirmação recusa e explica', async () => {
+    const h = await threeProposals();
+    const user = userEvent.setup();
+    await askToRemove(user, 'P2');
+    // O arquivo volta a estar aberto antes do clique em Apagar.
+    writeOutside(h.root, {
+      ...richScenario('P2').proposal,
+      title: 'Reaberta',
+      revision: 3,
+    });
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Apagar', hidden: true }),
+    );
+    await waitFor(() => expect(h.ui.toast.value).toContain('Esta proposta está aberta'));
+    expect(await diskProposal(h.root, 'P2')).toMatchObject({ status: 'open' });
+  });
+
+  it('projeto somente leitura: o menu fica desabilitado', async () => {
+    const h = await threeProposals();
+    act(() => {
+      const project = h.session.store.project.value;
+      if (project) h.session.store.load(project, { readOnly: true });
+    });
+    expect(menuOf('P2')?.hasAttribute('disabled')).toBe(true);
   });
 });

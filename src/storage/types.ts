@@ -66,6 +66,12 @@ export interface ProjectStorage {
   readProposal(id: string): Promise<string | null>;
   writeProposal(id: string, text: string): Promise<void>;
   /**
+   * Apaga a proposta inteira: `proposals/<id>/` com o `proposal.json` e as imagens que
+   * esperam a aceitação (recursivo). Não falha se ela já não existir. No projeto local
+   * marca "não exportado", como `writeProposal`.
+   */
+  removeProposal(id: string): Promise<void>;
+  /**
    * Carimbo (tamanho e `lastModified`) do `proposal.json`, ou `null` se ele não existir.
    * Só a pasta implementa, como `statMapping`: é como a app percebe propostas novas ou
    * alteradas por fora.

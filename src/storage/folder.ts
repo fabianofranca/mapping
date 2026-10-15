@@ -4,6 +4,7 @@ import {
   PROPOSAL_FILE,
   PROPOSAL_ID_RE,
   gitignoreWithBackups,
+  proposalDir,
   proposalFilePath,
 } from '../model';
 import {
@@ -39,7 +40,7 @@ export interface DirectoryHandleLike {
     options?: { create?: boolean },
   ): Promise<DirectoryHandleLike>;
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileHandleLike>;
-  removeEntry(name: string): Promise<void>;
+  removeEntry(name: string, options?: { recursive?: boolean }): Promise<void>;
   values(): AsyncIterable<FileHandleLike | DirectoryHandleLike>;
 }
 
@@ -215,6 +216,24 @@ async function removeFile(root: DirectoryHandleLike, path: string): Promise<void
   }
 }
 
+/** Remove a pasta e tudo o que há nela. Não falha se ela (ou o pai) já não existe. */
+async function removeDirectory(root: DirectoryHandleLike, path: string): Promise<void> {
+  const { dirs, name } = splitPath(path);
+  const parent = await resolveDir(root, dirs, false);
+  if (!parent) return;
+  try {
+    await parent.removeEntry(name, { recursive: true });
+  } catch (e) {
+    if (!isNotFound(e)) throw e;
+  }
+}
+
+async function removeProposalDir(root: DirectoryHandleLike, id: string): Promise<void> {
+  // Um id fora do padrão apontaria para outra pasta (ou para `proposals/` inteira).
+  if (!PROPOSAL_ID_RE.test(id)) throw new Error(`invalid proposal id: ${id}`);
+  await removeDirectory(root, proposalDir(id));
+}
+
 /**
  * A pasta tem `mapping.json`? Para conferir se ela é um projeto (abrir, Localizar) sem passar
  * pelo `loadMapping` de um `ProjectStorage`, que só a sessão usa. A pasta sumida conta como
@@ -278,6 +297,7 @@ export function createFolderStorage(
       return blob ? blob.text() : null;
     },
     writeProposal: (id, text) => writeFile(root, proposalFilePath(id), text),
+    removeProposal: (id) => removeProposalDir(root, id),
     async statProposal(id) {
       const file = await readFile(root, proposalFilePath(id));
       return file ? `${file.size}:${file.lastModified ?? 0}` : null;

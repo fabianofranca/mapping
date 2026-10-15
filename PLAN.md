@@ -83,6 +83,20 @@ Nada disso está nas Evoluções nem na lista do marco do [`docs/ROADMAP.md`](do
   - O índice "mudanças por entidade e campo" é estado derivado da revisão (`createReviewDerived` em `src/store/derived.ts`), sem regra de negócio nova no modelo.
 - **Ordem:** o briefing vai primeiro para o Claude Design correr em paralelo às fases 9.2 a 9.4. A 9.3 e a 9.4 vão nessa ordem (o `path` antes da remoção, que reaproveita a exibição do `codeRef` para a linha "Definição").
 
+### Execução: modelo por fase
+
+Pedido do dono (2026-10-15): cada fase vai para um agente executor com o modelo que ela pede, para gastar o limite de uso só onde rende; a sessão de planejamento coordena (passa a fase, revisa o diff contra o plano e o `CLAUDE.md`, roda os gates e abre o PR). Fase em Sonnet que voltar com problema que a revisão não corrija em pouco tempo é refeita em Opus, com registro no PR.
+
+| Fase | Modelo | Por quê |
+| ---- | ------ | ------- |
+| 9.1  | (sessão de planejamento) | Só documentação, escrita durante o planejamento |
+| 9.2  | Sonnet | Escopo fechado e com padrão a copiar; o ponto delicado (vínculo no histórico) é conferido na revisão |
+| 9.3  | Sonnet | Campo opcional novo seguindo o caminho do `codeRef` |
+| 9.4  | Opus   | Atravessa o projeto inteiro: migração v9, especialização com campo ignorado, `find_by_code`, propostas antigas e MCP |
+| 9.5  | Opus   | Ponto de extensão nos painéis normais sem quebrá-los, índice derivado e orçamentos de desempenho, interpretando o handoff |
+| 9.6  | Sonnet | Compõe a decisão sobre o que a 9.5 deixar pronto, mais testes e guia |
+| 9.7  | Sonnet | Documentação; precisa ler os PRs e consolidar as decisões |
+
 ### Fora desta etapa
 
 - Apagar várias propostas de uma vez, arquivar (esconder sem apagar) e apagar pelo MCP (`delete_proposal`).
@@ -112,12 +126,12 @@ Nada disso está nas Evoluções nem na lista do marco do [`docs/ROADMAP.md`](do
 
 **Toca em:** `src/model/proposalView.ts` (quem pode ser apagada: status diferente de `open`), `src/storage/types.ts` (`ProjectStorage.removeProposal`), `src/storage/folder.ts` (apaga `proposals/<id>/` inteira), `src/storage/local.ts` (apaga as chaves `proposals/<id>/…` e marca "não exportado", como `writeProposal`), `src/store/proposals.ts` (`remove(id)` na fila das propostas: relê o arquivo e recusa se ele voltou a estar aberto ou ficou ilegível; tira da lista sem o aviso "apagada por fora"), `src/store/history.ts` (tirar o `HistoryLink` daquela proposta), `src/store/review.ts` (a entrada do retomar sai do blob), `src/ui/review/ProposalRow.tsx` e `ProposalList.tsx` (menu ⋯ com **Apagar proposta…**, confirmação `alert`, foco na ação da linha seguinte ou no título da lista), `src/i18n/*`, `tests/model/proposalView.test.ts`, `tests/storage/proposals.test.ts`, `tests/store/proposals.test.ts`, `tests/components/review/proposalList.test.tsx`, `docs/ARCHITECTURE.md` (propostas), `docs/TESTING.md` (R4: um passo que apaga a proposta aplicada).
 
-- [ ] Regra no modelo com teste: só retirada, substituída e aplicada
-- [ ] `removeProposal` na pasta e no projeto local, com testes (o zip exportado depois não leva a proposta)
-- [ ] `proposals.remove(id)` na fila, com testes: recusa se o arquivo mudou para aberto ou ficou ilegível; a conferência seguinte (`scan`) não avisa "apagada por fora"; a nova que tinha `supersedes` para ela continua listada sem erro
-- [ ] Histórico: a entrada da aplicação perde o vínculo (decisão acima), com teste de desfazer e refazer depois de apagar
-- [ ] Interface: menu ⋯ só nas linhas que não estão abertas, confirmação com o título e o aviso de que não dá para desfazer, foco depois de apagar; teste de componente
-- [ ] `docs/ARCHITECTURE.md` e o passo novo no R4 do `docs/TESTING.md`
+- [x] Regra no modelo com teste: só retirada, substituída e aplicada
+- [x] `removeProposal` na pasta e no projeto local, com testes (o zip exportado depois não leva a proposta)
+- [x] `proposals.remove(id)` na fila, com testes: recusa se o arquivo mudou para aberto ou ficou ilegível; a conferência seguinte (`scan`) não avisa "apagada por fora"; a nova que tinha `supersedes` para ela continua listada sem erro
+- [x] Histórico: a entrada da aplicação perde o vínculo (decisão acima), com teste de desfazer e refazer depois de apagar
+- [x] Interface: menu ⋯ só nas linhas que não estão abertas, confirmação com o título e o aviso de que não dá para desfazer, foco depois de apagar; teste de componente
+- [x] `docs/ARCHITECTURE.md` e o passo novo no R4 do `docs/TESTING.md`
 
 **Aceite**: numa pasta, apagar a proposta aplicada do `proposta-exemplo` remove `proposals/<id>/` do disco, a linha some sem aviso "apagada por fora" e o `Ctrl+Z` não dá erro; uma proposta aberta não tem a ação.
 

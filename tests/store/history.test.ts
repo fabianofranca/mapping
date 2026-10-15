@@ -1,6 +1,6 @@
 import { effect } from '@preact/signals';
 import { describe, expect, it } from 'vitest';
-import { moveImage, moveMarking, renameLayer } from '../../src/model';
+import { moveImage, moveMarking, renameLayer, renameProject } from '../../src/model';
 import { HISTORY_LIMIT, createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
@@ -471,6 +471,51 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(store.canRedo.value).toBe(true);
     store.discardRedoOf('P1');
     expect(store.canRedo.value).toBe(false);
+  });
+
+  it('detachLinks tira o vínculo da proposta do desfazer e do refazer, mantendo as entradas (fase 9.2)', () => {
+    const { store, actions } = setup();
+    const { calls, link } = linked();
+    const other = {
+      tag: 'P2',
+      undo: () => calls.push('undo-P2'),
+      redo: () => calls.push('redo-P2'),
+    };
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
+    actions.renameLayer('L2', 'Normal');
+    store.apply((p) => renameProject(p, 'Outra'), { link: other });
+    store.undo();
+    expect(calls).toEqual(['undo-P2']);
+    expect(store.canRedo.value).toBe(true);
+
+    store.detachLinks('P1');
+
+    // O desfazer e o refazer do projeto seguem valendo, sem chamar o vínculo tirado.
+    store.undo();
+    store.undo();
+    expect(project(store).layers.find((l) => l.id === 'L1')?.name).not.toBe('Aplicado');
+    expect(store.canUndo.value).toBe(false);
+    store.redo();
+    store.redo();
+    expect(project(store).layers.find((l) => l.id === 'L1')?.name).toBe('Aplicado');
+    // O vínculo de outra proposta (P2) continua ligado.
+    store.redo();
+    expect(calls).toEqual(['undo-P2', 'redo-P2']);
+    // `discardRedoOf` já não enxerga a proposta tirada.
+    store.undo();
+    store.undo();
+    store.undo();
+    store.discardRedoOf('P1');
+    expect(store.canRedo.value).toBe(true);
+  });
+
+  it('detachLinks sem entradas daquela proposta não mexe no histórico', () => {
+    const { store, actions } = setup();
+    actions.renameLayer('L1', 'Antes');
+    store.undo();
+    store.detachLinks('P1');
+    expect(store.canUndo.value).toBe(false);
+    expect(store.canRedo.value).toBe(true);
   });
 
   it('fechar o projeto desliga a revisão; carregar outro (recarga externa) não', () => {

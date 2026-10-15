@@ -72,6 +72,15 @@ export const reviewPtBR = {
   'proposals.groupClosed': 'Fechadas',
   'proposals.noMatch': 'Nenhuma proposta com este filtro.',
   'proposals.problems': 'Arquivos de proposta que não puderam ser lidos',
+  'proposals.rowActions': 'Ações da proposta: {title}',
+  'proposals.remove': 'Apagar proposta…',
+  'proposals.removeTitle': 'Apagar proposta?',
+  'proposals.removeConfirm': 'Apagar',
+  'proposals.removeMessage':
+    '"{title}" será apagada do projeto, com o arquivo e as imagens que ela guarda. Isso não pode ser desfeito.',
+  'proposals.removeAppliedNote':
+    'As mudanças já aplicadas continuam no projeto; só o registro da proposta some.',
+  'proposals.removed': 'Proposta apagada: {title}',
   'review.count.undecided': 'sem decisão',
   'review.count.accepted': 'aceitas',
   'review.count.rejected': 'rejeitadas',
@@ -410,6 +419,15 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'proposals.groupClosed': 'Closed',
   'proposals.noMatch': 'No proposal matches this filter.',
   'proposals.problems': 'Proposal files that could not be read',
+  'proposals.rowActions': 'Proposal actions: {title}',
+  'proposals.remove': 'Delete proposal…',
+  'proposals.removeTitle': 'Delete proposal?',
+  'proposals.removeConfirm': 'Delete',
+  'proposals.removeMessage':
+    '"{title}" will be deleted from the project, with its file and the images it keeps. This cannot be undone.',
+  'proposals.removeAppliedNote':
+    'The changes already applied stay in the project; only the proposal record goes away.',
+  'proposals.removed': 'Proposal deleted: {title}',
   'review.count.undecided': 'undecided',
   'review.count.accepted': 'accepted',
   'review.count.rejected': 'rejected',
