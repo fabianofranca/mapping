@@ -68,7 +68,9 @@ async function updateSduiToV2(page: Page): Promise<void> {
     mimeType: 'application/json',
     buffer: await sduiV1(),
   });
-  await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: /^"SDUI" aplicada/ }),
+  ).toBeVisible();
   // Sem plataformas na v1.
   await expect(page.getByText('Plataformas', { exact: true })).toHaveCount(0);
 
@@ -266,7 +268,9 @@ test('passo 4: especialização antiga com campo codeRef é aplicada sem ele, co
     mimeType: 'application/json',
     buffer: await sduiWithCodeRef(),
   });
-  await expect(page.getByRole('status').filter({ hasText: 'aplicada' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: /^"SDUI" aplicada/ }),
+  ).toBeVisible();
   await expect(
     page
       .getByRole('status')
@@ -288,7 +292,14 @@ test('passo 5: repositório apagado por fora (JSON editado) acende o aviso; rest
   page,
 }) => {
   await createAnnotations(page);
-  await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
+  // Espera a última edição chegar ao disco: com uma gravação pendente, a mudança de fora
+  // vira o diálogo de conflito em vez da recarga.
+  await expect
+    .poll(async () => {
+      const m = await readMapping(page);
+      return m.annotations.find((a) => a.type?.typeId === 'button')?.values?.texto;
+    })
+    .toBe('Cadastrar');
 
   const before = await setAndroidRepo(page, null);
   await expect(
@@ -304,7 +315,7 @@ test('passo 5: repositório apagado por fora (JSON editado) acende o aviso; rest
     0,
   );
   // Nenhuma anotação fica incompleta por isso.
-  await expect(page.getByText(/^Incompleta/)).toHaveCount(0);
+  await expect(page.getByText(/^Incompleta: /)).toHaveCount(0);
 
   await setAndroidRepo(page, before);
   await expect(page.locator('[data-definition="android"]').getByRole('link')).toHaveCount(
@@ -329,7 +340,13 @@ async function sduiWithCodeRef(): Promise<Buffer> {
   return Buffer.from(JSON.stringify(spec));
 }
 
-async function readMapping(page: Page): Promise<{ revision: number }> {
+async function readMapping(page: Page): Promise<{
+  revision: number;
+  annotations: {
+    type: { typeId: string } | null;
+    values: Record<string, unknown> | null;
+  }[];
+}> {
   return page.evaluate(async (folder) => {
     const root = await navigator.storage.getDirectory();
     const dir = await root.getDirectoryHandle(folder);
@@ -353,7 +370,9 @@ async function setAndroidRepo(page: Page, repo: Repo): Promise<Repo> {
       const mapping = JSON.parse(await (await handle.getFile()).text());
       const previous = mapping.platformRepos.android ?? null;
       mapping.revision += 1;
-      mapping.platformRepos.android = next ?? { urlTemplate: null, localPath: null };
+      // Sem repositório = sem a entrada (o schema não aceita uma entrada vazia).
+      if (next === null) delete mapping.platformRepos.android;
+      else mapping.platformRepos.android = next;
       const writable = await handle.createWritable();
       await writable.write(JSON.stringify(mapping, null, 2));
       await writable.close();
