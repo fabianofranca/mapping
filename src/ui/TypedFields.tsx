@@ -13,6 +13,7 @@ import {
 import { BacklinkList, SimpleEditor, type FieldContext } from './FieldEditors';
 import { IconButton } from './controls';
 import { classes } from './controls/classes';
+import { useDetailsExtension } from './DetailsExtension';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { Property } from './PropertyGrid';
@@ -31,6 +32,7 @@ export function TypedField({
   ...ctx
 }: FieldContext & { readonly field: SpecField }) {
   const { actions } = useEditor();
+  const ext = useDetailsExtension();
   const id = useId();
   const { project, annotation, readOnly } = ctx;
 
@@ -54,6 +56,7 @@ export function TypedField({
       focusKey={field.key}
       issue={issue ? issueReason(project, annotation, issue) : null}
       note={field.description}
+      mark={ext?.mark(annotation.id, `values.${field.key}`)}
     >
       {field.type === 'ref' ? (
         <RefField id={id} field={field} invalid={issue !== undefined} {...ctx} />

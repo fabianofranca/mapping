@@ -25,6 +25,7 @@ import {
   type Annotation,
   type AnnotationIssue,
   type Change,
+  type ChangeEntity,
   type ChangeComparison,
   type ChangeStatus,
   type ChangeType,
@@ -297,6 +298,90 @@ export interface ProposalRow {
   readonly supersededBy: Proposal | null;
 }
 
+/**
+ * Mudanças de uma entidade (marcação, imagem, anotação ou camada), para os marcadores dos
+ * Detalhes na revisão: a criação ou a remoção dela inteira e as alterações por campo.
+ */
+export interface EntityChanges {
+  readonly entity: ChangeEntity;
+  /** Criação ou remoção da entidade inteira; `null` se só há alterações de campo. */
+  readonly whole: Change | null;
+  /**
+   * Alterações por campo, como em `Change.field`: `name`, `rect`, `parentId`, `file`,
+   * `markingColor`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `type`,
+   * `values.<chave>` (campo da tipada) e `entries.<id>` (par da livre).
+   */
+  readonly fields: ReadonlyMap<string, Change>;
+}
+
+/**
+ * Índice "mudanças por entidade e campo" da proposta aberta (fase 9.5): só depende das
+ * mudanças, então decidir não o recalcula. Especialização e repositório (sem painel nos
+ * Detalhes) ficam de fora.
+ */
+export interface FieldChangeIndex {
+  /** Por id da entidade. */
+  readonly entities: ReadonlyMap<string, EntityChanges>;
+  /** Mudanças de anotação de cada marcação em que aparecem (`Change.markingId`), na ordem da proposta. */
+  readonly annotationsOf: ReadonlyMap<string, readonly Change[]>;
+  /**
+   * Anotações que saem de cada marcação (pelo id da marcação de antes): a remoção e a troca
+   * de marcação (`markingId`). São os "fantasmas" da visão Proposto.
+   */
+  readonly leaving: ReadonlyMap<string, readonly Change[]>;
+}
+
+const PANEL_ENTITIES: ReadonlySet<ChangeEntity> = new Set([
+  'marking',
+  'image',
+  'annotation',
+  'layer',
+]);
+
+const NO_FIELD_INDEX: FieldChangeIndex = {
+  entities: new Map(),
+  annotationsOf: new Map(),
+  leaving: new Map(),
+};
+
+/** Acrescenta `item` à lista de `key` no mapa. */
+function pushTo<K, V>(map: Map<K, V[]>, key: K, item: V): void {
+  const list = map.get(key);
+  if (list) list.push(item);
+  else map.set(key, [item]);
+}
+
+/** Monta o índice "mudanças por entidade e campo" (função pura das mudanças). */
+export function fieldChangeIndex(changes: readonly Change[]): FieldChangeIndex {
+  const entities = new Map<
+    string,
+    { entity: ChangeEntity; whole: Change | null; fields: Map<string, Change> }
+  >();
+  const annotationsOf = new Map<string, Change[]>();
+  const leaving = new Map<string, Change[]>();
+  for (const c of changes) {
+    if (!PANEL_ENTITIES.has(c.entity)) continue;
+    let entry = entities.get(c.entityId);
+    if (!entry) {
+      entry = { entity: c.entity, whole: null, fields: new Map() };
+      entities.set(c.entityId, entry);
+    }
+    if (c.kind === 'update' && c.field !== null) {
+      // Um campo, uma mudança: a primeira vale (uma proposta editada à mão pode repetir).
+      if (!entry.fields.has(c.field)) entry.fields.set(c.field, c);
+    } else if (entry.whole === null) {
+      entry.whole = c;
+    }
+    if (c.entity !== 'annotation') continue;
+    if (c.markingId !== null) pushTo(annotationsOf, c.markingId, c);
+    if (c.kind === 'remove' && c.markingId !== null) pushTo(leaving, c.markingId, c);
+    if (c.kind === 'update' && c.field === 'markingId' && typeof c.from === 'string') {
+      pushTo(leaving, c.from, c);
+    }
+  }
+  return { entities, annotationsOf, leaving };
+}
+
 export interface ReviewDerived {
   /** Proposta aberta na revisão (a versão mais recente da sessão). */
   readonly proposal: ReadonlySignal<Proposal | null>;
@@ -347,6 +432,14 @@ export interface ReviewDerived {
    * do canvas leem daqui (uma importação nova tem imagens só na prévia).
    */
   readonly shownProject: ReadonlySignal<Project | null>;
+  /**
+   * O "como ficaria" com todas as mudanças ainda não aplicadas, sem olhar as decisões: o
+   * que uma criação rejeitada propunha (os Detalhes a mostram mesmo fora das duas visões).
+   * Memoizado pelas mudanças, pelas aplicadas e pelo projeto; lido só quando a interface pede.
+   */
+  readonly fullPreview: ReadonlySignal<Project | null>;
+  /** Mudanças por entidade e campo (os marcadores dos Detalhes); memoizado pelas mudanças. */
+  readonly fieldIndex: ReadonlySignal<FieldChangeIndex>;
   /** Mudanças que passam pelos filtros, na ordem da proposta. */
   readonly visibleIds: ReadonlySignal<readonly string[]>;
   /** Sem decisão (todas, na ordem da proposta). */
@@ -651,6 +744,20 @@ export function createReviewDerived(
     return preview.value?.project ?? project.value;
   });
 
+  const fullPreview = computed((): Project | null => {
+    const changes = changesOf.value;
+    const applied = appliedOf.value;
+    const current = project.value;
+    const p = untracked(() => proposal.value);
+    if (!changes || !applied || !current || !p) return null;
+    return previewProject(current, { ...p, decisions: NO_DECISIONS }).project;
+  });
+
+  const fieldIndex = computed((): FieldChangeIndex => {
+    const changes = changesOf.value;
+    return changes ? fieldChangeIndex(changes) : NO_FIELD_INDEX;
+  });
+
   const visibleIds = computed((): readonly string[] => {
     const p = proposal.value;
     const current = project.value;
@@ -710,6 +817,8 @@ export function createReviewDerived(
     hold,
     preview,
     shownProject,
+    fullPreview,
+    fieldIndex,
     visibleIds,
     pendingIds,
     notes,

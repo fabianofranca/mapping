@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useId } from 'preact/hooks';
 import { t } from '../i18n';
 import { MARKING_COLOR_PALETTE, type ProjectImage } from '../model';
@@ -6,13 +7,15 @@ import { useEditor } from './EditorContext';
 interface MarkingColorFieldProps {
   readonly image: ProjectImage;
   readonly disabled: boolean;
+  /** Peça depois do rótulo (o marcador da revisão). */
+  readonly mark?: ComponentChildren;
 }
 
 /**
  * Cor da borda das marcações da imagem: grupo de rádios (a neutra do tema e a paleta,
  * alvos de 24px) e uma cor livre.
  */
-export function MarkingColorField({ image, disabled }: MarkingColorFieldProps) {
+export function MarkingColorField({ image, disabled, mark }: MarkingColorFieldProps) {
   const { actions } = useEditor();
   const labelId = useId();
   const current = image.markingColor?.toUpperCase() ?? null;
@@ -20,9 +23,18 @@ export function MarkingColorField({ image, disabled }: MarkingColorFieldProps) {
   const name = `marking-color-${image.id}`;
   return (
     <div class="color-field">
-      <span id={labelId} class="props-label">
-        {t('image.markingColor')}
-      </span>
+      {mark ? (
+        <div class="color-field-head">
+          <span id={labelId} class="props-label">
+            {t('image.markingColor')}
+          </span>
+          {mark}
+        </div>
+      ) : (
+        <span id={labelId} class="props-label">
+          {t('image.markingColor')}
+        </span>
+      )}
       <div class="swatches" role="radiogroup" aria-labelledby={labelId}>
         <label class="swatch-theme">
           <input

@@ -4,15 +4,19 @@ import {
   addLayer,
   deserialize,
   moveMarking,
+  removeAnnotation,
+  removeEntry,
   removeImage,
   renameMarking,
   replaceImage,
   reviewKey,
   serialize,
   setMarkingRect,
+  updateEntry,
   type Project,
   type Proposal,
 } from '../../src/model';
+import { fieldChangeIndex } from '../../src/store/derived';
 import { locale } from '../../src/store/settings';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
@@ -1491,5 +1495,89 @@ describe('apagar proposta (fase 9.2)', () => {
       error: 'not-removable',
     });
     expect(await root.read('proposals/P1/proposal.json')).not.toBeNull();
+  });
+});
+
+// Fase 9.5: o índice "mudanças por entidade e campo" dos Detalhes na revisão.
+describe('mudanças por entidade e campo (fase 9.5)', () => {
+  it('agrupa por entidade: criação/remoção inteira e alterações por campo', async () => {
+    const { proposal, ids } = richScenario();
+    const { review } = await openHarness({ proposals: [proposal] });
+    review.open('P1');
+    const index = review.derived.fieldIndex.value;
+    // Alteração de campo: o nome de M1 e a posição de M4.
+    expect(index.entities.get('M1')?.whole).toBeNull();
+    expect(index.entities.get('M1')?.fields.get('name')?.id).toBe(ids.name);
+    expect(index.entities.get('M4')?.fields.get('rect')?.id).toBe(ids.rect);
+    // Criação: a entidade inteira, sem campos.
+    expect(index.entities.get('M5')?.whole?.id).toBe(ids.marking);
+    expect(index.entities.get('M5')?.fields.size).toBe(0);
+    expect(index.entities.get('I3')?.whole?.id).toBe(ids.image);
+    expect(index.entities.get('A9')?.entity).toBe('annotation');
+    // Anotações por marcação em que aparecem.
+    expect(index.annotationsOf.get('M5')?.map((c) => c.id)).toEqual([ids.annotation]);
+    expect(index.leaving.size).toBe(0);
+  });
+
+  it('pares e campos da anotação, a remoção e a troca de marcação (as que saem)', () => {
+    const base = sampleProject();
+    let after = updateEntry(base, 'A1', 'E1', { key: 'tipo', value: 'risco' });
+    after = removeEntry(after, 'A1', 'E2');
+    after = removeAnnotation(after, 'A2');
+    after = {
+      ...after,
+      annotations: after.annotations.map((a) =>
+        a.id === 'A3' ? { ...a, markingId: 'M1' } : a,
+      ),
+    };
+    const p = propose(base, after);
+    const index = fieldChangeIndex(p.changes);
+    const a1 = index.entities.get('A1');
+    expect([...(a1?.fields.keys() ?? [])].sort()).toEqual(['entries.E1', 'entries.E2']);
+    expect(a1?.fields.get('entries.E2')?.to).toBeNull();
+    expect(index.entities.get('A2')?.whole?.kind).toBe('remove');
+    // A2 sai de M1 (removida); A3 sai de M2 (vai para M1, onde aparece).
+    expect(index.leaving.get('M1')?.map((c) => c.entityId)).toEqual(['A2']);
+    expect(index.leaving.get('M2')?.map((c) => c.entityId)).toEqual(['A3']);
+    expect(
+      index.annotationsOf
+        .get('M1')
+        ?.map((c) => c.entityId)
+        .sort(),
+    ).toEqual(['A1', 'A1', 'A2', 'A3']);
+    // Grupo Projeto (camada) entra; especialização e repositório não têm painel.
+    expect(index.entities.has('L1')).toBe(false);
+  });
+
+  it('memoizado pela proposta: decidir não refaz o índice; outra proposta, sim', async () => {
+    const { proposal, ids } = richScenario();
+    const other = richScenario('P2').proposal;
+    const { review } = await openHarness({ proposals: [proposal, other] });
+    review.open('P1');
+    const index = review.derived.fieldIndex.value;
+    await review.decide({ level: 'change', id: ids.name }, 'accepted');
+    await review.decide({ level: 'item', id: 'M4' }, 'rejected');
+    expect(review.derived.fieldIndex.value).toBe(index);
+    review.close();
+    review.open('P2');
+    expect(review.derived.fieldIndex.value).not.toBe(index);
+    expect(review.derived.fieldIndex.value.entities.get('M1')?.fields.has('name')).toBe(
+      true,
+    );
+  });
+
+  it('o "como ficaria" sem as decisões guarda a criação rejeitada', async () => {
+    const { proposal, ids } = richScenario();
+    const { review } = await openHarness({ proposals: [proposal] });
+    review.open('P1');
+    await review.decide({ level: 'change', id: ids.marking }, 'rejected');
+    expect(
+      must(review.derived.preview.value).project.markings.some((m) => m.id === 'M5'),
+    ).toBe(false);
+    const full = must(review.derived.fullPreview.value);
+    expect(full.markings.some((m) => m.id === 'M5')).toBe(true);
+    // Memoizado pelas mudanças: decidir de novo não o refaz.
+    await review.decide({ level: 'change', id: ids.name }, 'accepted');
+    expect(review.derived.fullPreview.value).toBe(full);
   });
 });

@@ -71,6 +71,9 @@ describe('dicionários', () => {
       'repos.platform',
       'spec.platformItem',
       'spec.platformItemLanguage',
+      // Só parâmetros e pontuação (o marcador e o popover dos Detalhes na revisão).
+      'review.mark.label',
+      'review.pop.title',
       // Eixos da posição na revisão de propostas.
       'review.rect.x',
       'review.rect.y',

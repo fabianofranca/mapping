@@ -16,6 +16,7 @@ import { AnnotationsPanel } from './AnnotationsPanel';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { Button, IconButton, Select, TextField } from './controls';
 import { CopyButtons } from './CopyActions';
+import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
@@ -56,6 +57,7 @@ export function MarkingPanel({
   onGoToAnnotation,
 }: MarkingPanelProps) {
   const { actions, ui, derived } = useEditor();
+  const ext = useDetailsExtension();
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
   const nameId = useId();
@@ -108,6 +110,22 @@ export function MarkingPanel({
   );
 
   const candidates = parentCandidates(project, marking.id);
+  const identity = ext?.identity(marking.id) ?? null;
+  // Posição e tamanho são uma mudança só (`rect`): com um marcador, as duas linhas viram
+  // uma, com o rótulo de duas linhas e um colchete (HANDOFF-REVIEW-DETAILS 2.2).
+  const rectMark = ext?.mark(marking.id, 'rect') ?? null;
+  const position = (
+    <div class="props-pair">
+      {rectField('x', t('marking.x'), t('marking.x'))}
+      {rectField('y', t('marking.y'), t('marking.y'))}
+    </div>
+  );
+  const size = (
+    <div class="props-pair">
+      {rectField('width', t('marking.widthShort'), t('marking.width'))}
+      {rectField('height', t('marking.heightShort'), t('marking.height'))}
+    </div>
+  );
   const where = [
     imageLabel(image),
     ...ancestorsOf(project, marking.id).reverse().map(markingLabel),
@@ -120,6 +138,8 @@ export function MarkingPanel({
         name={markingLabel(marking)}
         sub={t('marking.inImage', { file: where })}
         id={marking.id}
+        flags={identity?.flags}
+        struck={identity?.struck}
         actions={
           <>
             <CopyButtons target={{ kind: 'm', id: marking.id }} />
@@ -164,7 +184,11 @@ export function MarkingPanel({
         summary={rectSummary(marking.rect)}
       >
         <PropertyGrid>
-          <Property label={t('marking.name')} for={nameId}>
+          <Property
+            label={t('marking.name')}
+            for={nameId}
+            mark={ext?.mark(marking.id, 'name')}
+          >
             <TextField
               id={nameId}
               size="sm"
@@ -178,7 +202,11 @@ export function MarkingPanel({
               }}
             />
           </Property>
-          <Property label={t('marking.parent')} for={parentId}>
+          <Property
+            label={t('marking.parent')}
+            for={parentId}
+            mark={ext?.mark(marking.id, 'parentId')}
+          >
             <Select
               id={parentId}
               size="sm"
@@ -197,18 +225,30 @@ export function MarkingPanel({
               ))}
             </Select>
           </Property>
-          <Property label={t('marking.position')} hint={t('marking.pixelsHint')}>
-            <div class="props-pair">
-              {rectField('x', t('marking.x'), t('marking.x'))}
-              {rectField('y', t('marking.y'), t('marking.y'))}
-            </div>
-          </Property>
-          <Property label={t('marking.size')} hint={t('marking.pixelsHint')}>
-            <div class="props-pair">
-              {rectField('width', t('marking.widthShort'), t('marking.width'))}
-              {rectField('height', t('marking.heightShort'), t('marking.height'))}
-            </div>
-          </Property>
+          {rectMark ? (
+            <Property
+              label={
+                <span class="props-label-rect">
+                  <span>{t('marking.position')}</span>
+                  <span>{t('marking.size')}</span>
+                </span>
+              }
+              hint={t('marking.pixelsHint')}
+              mark={<span class="props-rect-bracket">{rectMark}</span>}
+            >
+              {position}
+              {size}
+            </Property>
+          ) : (
+            <>
+              <Property label={t('marking.position')} hint={t('marking.pixelsHint')}>
+                {position}
+              </Property>
+              <Property label={t('marking.size')} hint={t('marking.pixelsHint')}>
+                {size}
+              </Property>
+            </>
+          )}
         </PropertyGrid>
       </Section>
 

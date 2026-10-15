@@ -14,18 +14,35 @@ interface DetailsIdentityProps {
   readonly id: string;
   /** Botões ao lado do ID (ex.: o cadeado). */
   readonly actions?: ComponentChildren;
+  /** Linha de selos embaixo (ex.: "Criada pela proposta", na revisão). */
+  readonly flags?: ComponentChildren;
+  /** O nome sai riscado (a entidade vai ser removida). */
+  readonly struck?: boolean;
 }
 
-export function DetailsIdentity({ icon, name, sub, id, actions }: DetailsIdentityProps) {
+export function DetailsIdentity({
+  icon,
+  name,
+  sub,
+  id,
+  actions,
+  flags,
+  struck,
+}: DetailsIdentityProps) {
   return (
     <div class="identity">
       <div class="identity-main">
         <Icon name={icon} />
-        <strong class="identity-name">{name}</strong>
+        {struck ? (
+          <del class="identity-name">{name}</del>
+        ) : (
+          <strong class="identity-name">{name}</strong>
+        )}
         <CopyIdButton id={id} />
         {actions}
       </div>
       <span class="identity-sub">{sub}</span>
+      {flags && <div class="identity-flags">{flags}</div>}
     </div>
   );
 }

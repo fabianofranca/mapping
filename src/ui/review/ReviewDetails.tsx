@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { t } from '../../i18n';
 import {
@@ -30,9 +31,10 @@ import { replaceChangeOf } from './ReviewCanvasControls';
 import { useDecide, useReviewNames, useReviewNavigate } from './useReview';
 import { useReviewCommands } from './useReviewCommands';
 
-// Detalhes na revisão (HANDOFF-PROPOSALS 5.2): o nível selecionado, com a decisão de
-// três estados e "Aceitar/Rejeitar item", os avisos (item trancado, aplicar bloqueado),
-// um ChangeCard por mudança e as notas. Nada aqui calcula regra: tudo vem do derivado.
+// Detalhes na revisão (HANDOFF-PROPOSALS 5.2 e, desde a fase 9.5, HANDOFF-REVIEW-DETAILS):
+// o nível selecionado com a decisão de três estados, os avisos e as notas. Imagem, item e
+// mudança de um item mostram o painel normal (`ReviewItemPanel`) entre a decisão e as
+// notas; a proposta e o grupo Projeto continuam com um ChangeCard por mudança até a 9.6.
 
 /** Até quantos cartões desenhar de uma vez (uma imagem grande pode ter centenas). */
 const MAX_CARDS = 60;
@@ -208,16 +210,14 @@ function Notes({
   );
 }
 
+/**
+ * Detalhes na revisão sem painel normal: a proposta, o grupo Projeto e as mudanças sem
+ * item (camadas, especializações, repositórios). Também o estado vazio.
+ */
 export function ReviewDetails() {
-  const { review, ui } = useEditor();
-  const names = useReviewNames();
-  const decide = useDecide();
-  const navigate = useReviewNavigate();
-  const d = review.derived;
+  const { review } = useEditor();
   const target = review.selected.value;
-  const tree = d.tree.value;
-  const p = d.proposal.value;
-  if (!names || !tree || !p) return null;
+  if (!review.derived.tree.value || !review.derived.proposal.value) return null;
   if (!target) {
     return (
       <div class="review-details review-details-empty">
@@ -225,7 +225,40 @@ export function ReviewDetails() {
       </div>
     );
   }
+  return <ReviewLevel target={target} />;
+}
 
+interface ReviewLevelProps {
+  readonly target: ReviewTarget;
+  /**
+   * O painel normal do item (fase 9.5): entra entre a decisão do nível e as notas, e a
+   * decisão de uma mudança selecionada fica no bloco (sem ela, os cartões a trazem).
+   */
+  readonly panel?: ComponentChildren;
+  /**
+   * Com `panel`: as mudanças do item sem campo no painel (origem, trava, troca de imagem,
+   * posição da imagem), que continuam em cartões sob "Outras mudanças" até a fase 9.6.
+   */
+  readonly otherIds?: readonly string[];
+}
+
+/**
+ * Um nível da revisão (HANDOFF-PROPOSALS 5.2): a decisão de três estados e "Aceitar/
+ * Rejeitar item", os avisos (item trancado, aplicar bloqueado), os cartões das mudanças
+ * (ou o painel normal do item, com os cartões só do que não tem campo) e as notas. Nada
+ * aqui calcula regra: tudo vem do derivado.
+ */
+export function ReviewLevel({ target, panel, otherIds }: ReviewLevelProps) {
+  const { review, ui } = useEditor();
+  const names = useReviewNames();
+  const decide = useDecide();
+  const navigate = useReviewNavigate();
+  const d = review.derived;
+  const tree = d.tree.value;
+  const p = d.proposal.value;
+  if (!names || !tree || !p) return null;
+
+  const withPanel = panel !== undefined;
   const key = reviewKey(target);
   const ids = tree.changeIdsOf(target);
   const changes = new Map(p.changes.map((c) => [c.id, c]));
@@ -265,18 +298,26 @@ export function ReviewDetails() {
   const path = levelPath(names, target);
   const levelValue: DecisionValue =
     levelState === 'accepted' || levelState === 'rejected' ? levelState : null;
-  const allApplied =
-    summary !== undefined && summary !== null && summary.applied === summary.total;
-  const shown = ids.slice(0, MAX_CARDS);
   const closedReason = open ? undefined : t('review.closedReason');
+  const changeSituation = isChange ? situation.get(target.id ?? '') : undefined;
+  const decisionDisabled = isChange
+    ? !open || changeSituation?.applied === true
+    : !open || (summary != null && summary.applied === summary.total);
+  const decisionReason = changeSituation?.applied
+    ? t('review.appliedReason')
+    : closedReason;
+  const cardIds = withPanel ? (otherIds ?? []) : ids;
+  const shown = cardIds.slice(0, MAX_CARDS);
   // A nota é sugerida numa rejeição: a própria mudança rejeitada ou alguma rejeitada no
   // nível ("parcial" só por aceitas e pendentes não é rejeição; fase 8.2, P8).
   const rejectedLevel = isChange
     ? levelState === 'rejected'
     : (summary?.rejected ?? 0) > 0;
+  // Sem o painel, a mudança selecionada é decidida no próprio cartão.
+  const showDecision = !isChange || withPanel;
 
   return (
-    <div class="review-details">
+    <div class={withPanel ? 'review-details review-details-panel' : 'review-details'}>
       <header class="review-details-head">
         <div class="review-details-name">
           <Icon name={LEVEL_ICONS[target.level]} />
@@ -284,7 +325,11 @@ export function ReviewDetails() {
         </div>
         {path && <p class="muted review-details-path">{path}</p>}
         <div class="review-details-flags">
-          {locked && <Flag icon="lock">{t('review.flag.locked')}</Flag>}
+          {locked && (
+            <Flag icon="lock" title={t('review.lockedItem')}>
+              {t('review.flag.locked')}
+            </Flag>
+          )}
           {type && !isChange && (
             <Flag>
               {t('review.details.typeCount', {
@@ -293,7 +338,8 @@ export function ReviewDetails() {
               })}
             </Flag>
           )}
-          {created && <Flag>{t('review.details.created')}</Flag>}
+          {/* Com o painel, a identidade do item já diz "Criada pela proposta". */}
+          {created && !withPanel && <Flag>{t('review.details.created')}</Flag>}
           {anyInvalid && (
             <Flag tone="danger" icon="blocked">
               {t('review.details.blocks')}
@@ -345,7 +391,7 @@ export function ReviewDetails() {
         </Notice>
       ))}
 
-      {!isChange && (
+      {showDecision && (
         <section class="review-decision" aria-label={t('review.details.decision')}>
           <div class="review-decision-state">
             <DecisionMark state={levelState} counts={summary ?? undefined} />
@@ -364,15 +410,18 @@ export function ReviewDetails() {
             variant="text"
             value={levelValue}
             name={name}
+            conflict={changeSituation?.conflict === true}
             acceptText={t(`review.details.accept.${target.level}`)}
             rejectText={t(`review.details.reject.${target.level}`)}
-            disabled={!open || allApplied}
-            disabledReason={closedReason}
+            disabled={decisionDisabled}
+            disabledReason={decisionReason}
             onDecide={(state) => decide(target, state)}
           />
-          <p class="change-card-hint">
-            {t('review.details.decideHint', { count: ids.length })}
-          </p>
+          {!isChange && (
+            <p class="change-card-hint">
+              {t('review.details.decideHint', { count: ids.length })}
+            </p>
+          )}
         </section>
       )}
 
@@ -382,52 +431,65 @@ export function ReviewDetails() {
         </Notice>
       )}
 
-      <section class="review-cards" aria-label={t('review.details.changes')}>
-        <h3 class="review-section-title">
-          <Icon name="changed" />
-          {t('review.details.changes')}
-          <span class="muted">
-            {t('review.details.changeCount', { count: ids.length })}
-          </span>
-        </h3>
-        {shown.map((id) => {
-          const c = changes.get(id);
-          if (!c) return null;
-          const s = situation.get(id);
-          const replaced =
-            c.entity === 'image' && c.field === 'file' && replaceChangeOf(p, c.entityId);
-          return (
-            <ChangeCard
-              key={id}
-              change={c}
-              names={names}
-              type={types.get(id) ?? null}
-              decision={decisionOf(id)}
-              situation={s}
-              newConflict={fresh.has(id)}
-              invalid={invalid.changeIds.has(id)}
-              together={together.has(id)}
-              comparison={comparison?.get(id) ?? null}
-              disabled={!open || s?.applied === true}
-              disabledReason={s?.applied ? t('review.appliedReason') : closedReason}
-              selected={isChange && target.id === id}
-              onDecide={(state) => decide({ level: 'change', id }, state)}
-              onSelect={() => navigate({ level: 'change', id })}
-              onCompare={
-                replaced ? () => (ui.compareImage.value = c.entityId) : undefined
-              }
-            />
-          );
-        })}
-        {ids.length > shown.length && (
-          <p class="muted">
-            {t('review.details.more', { count: ids.length - shown.length })}
-          </p>
-        )}
-      </section>
+      {panel}
+
+      {cardIds.length > 0 && (
+        <section
+          class="review-cards"
+          aria-label={
+            withPanel ? t('review.panel.otherChanges') : t('review.details.changes')
+          }
+        >
+          <h3 class="review-section-title">
+            <Icon name="changed" />
+            {withPanel ? t('review.panel.otherChanges') : t('review.details.changes')}
+            <span class="muted">
+              {withPanel
+                ? t('review.panel.changes', { count: cardIds.length })
+                : t('review.details.changeCount', { count: ids.length })}
+            </span>
+          </h3>
+          {shown.map((id) => {
+            const c = changes.get(id);
+            if (!c) return null;
+            const s = situation.get(id);
+            const replaced =
+              c.entity === 'image' &&
+              c.field === 'file' &&
+              replaceChangeOf(p, c.entityId);
+            return (
+              <ChangeCard
+                key={id}
+                change={c}
+                names={names}
+                type={types.get(id) ?? null}
+                decision={decisionOf(id)}
+                situation={s}
+                newConflict={fresh.has(id)}
+                invalid={invalid.changeIds.has(id)}
+                together={together.has(id)}
+                comparison={comparison?.get(id) ?? null}
+                disabled={!open || s?.applied === true}
+                disabledReason={s?.applied ? t('review.appliedReason') : closedReason}
+                selected={isChange && target.id === id}
+                onDecide={(state) => decide({ level: 'change', id }, state)}
+                onSelect={() => navigate({ level: 'change', id })}
+                onCompare={
+                  replaced ? () => (ui.compareImage.value = c.entityId) : undefined
+                }
+              />
+            );
+          })}
+          {cardIds.length > shown.length && (
+            <p class="muted">
+              {t('review.details.more', { count: cardIds.length - shown.length })}
+            </p>
+          )}
+        </section>
+      )}
 
       <Notes target={target} suggest={rejectedLevel} />
-      {target.level === 'change' && (
+      {target.level === 'change' && !withPanel && (
         <IconButton
           icon="arrowUp"
           label={t('review.details.up')}

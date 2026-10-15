@@ -1,12 +1,13 @@
 import { useId } from 'preact/hooks';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
-import { canDeleteImage, type ProjectImage } from '../model';
+import { canDeleteImage, type Project, type ProjectImage } from '../model';
 import { imageLabel } from './labels';
 import type { DisplayImage } from '../store/displayImages';
 import { useEditor } from './EditorContext';
 import { Button, IconButton, TextField } from './controls';
 import { CopyButtons } from './CopyActions';
+import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
 import { Icon } from './icons';
@@ -15,6 +16,11 @@ import { Property, PropertyGrid } from './PropertyGrid';
 
 interface SelectionPanelProps {
   readonly image: ProjectImage | null;
+  /**
+   * Projeto de onde a imagem veio (as marcações dela, a trava). Padrão: o projeto à vista
+   * (`review.derived.shownProject`, que fora da revisão é o confirmado).
+   */
+  readonly project?: Project | null;
   readonly display: DisplayImage<unknown> | undefined;
   readonly readOnly: boolean;
   readonly busy: boolean;
@@ -25,14 +31,17 @@ interface SelectionPanelProps {
 /** Detalhes da imagem selecionada (ou o estado vazio, sem seleção). */
 export function SelectionPanel({
   image,
+  project: given,
   display,
   readOnly,
   busy,
   onReplace,
   onDelete,
 }: SelectionPanelProps) {
-  const { actions, store } = useEditor();
-  const project = store.committed.value;
+  const { actions, review } = useEditor();
+  const shown = review.derived.shownProject.value;
+  const project = given === undefined ? shown : given;
+  const ext = useDetailsExtension();
   const nameId = useId();
   if (!image) {
     return (
@@ -51,6 +60,7 @@ export function SelectionPanel({
   const own = project?.markings.filter((m) => m.imageId === image.id) ?? [];
   const allMarkingsLocked = own.length > 0 && own.every((m) => m.locked);
   const deletable = project ? canDeleteImage(project, image.id) : true;
+  const identity = ext?.identity(image.id) ?? null;
 
   return (
     <div class="panel-details">
@@ -59,6 +69,8 @@ export function SelectionPanel({
         name={imageLabel(image)}
         sub={`${image.file} · ${dimensions}`}
         id={image.id}
+        flags={identity?.flags}
+        struck={identity?.struck}
         actions={
           <>
             <CopyButtons target={{ kind: 'i', id: image.id }} />
@@ -98,7 +110,11 @@ export function SelectionPanel({
         summary={dimensions}
       >
         <PropertyGrid>
-          <Property label={t('image.name')} for={nameId}>
+          <Property
+            label={t('image.name')}
+            for={nameId}
+            mark={ext?.mark(image.id, 'name')}
+          >
             <TextField
               id={nameId}
               size="sm"
@@ -112,14 +128,18 @@ export function SelectionPanel({
               }}
             />
           </Property>
-          <Property label={t('image.file')}>
+          <Property label={t('image.file')} mark={ext?.mark(image.id, 'file')}>
             <code class="props-text">{image.file}</code>
           </Property>
           <Property label={t('image.size')}>
             <span class="props-text">{dimensions}</span>
           </Property>
         </PropertyGrid>
-        <MarkingColorField image={image} disabled={disabled} />
+        <MarkingColorField
+          image={image}
+          disabled={disabled}
+          mark={ext?.mark(image.id, 'markingColor')}
+        />
       </Section>
       {own.length > 0 && (
         <div class="row">

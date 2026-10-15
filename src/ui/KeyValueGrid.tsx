@@ -6,6 +6,7 @@ import { getBacklinks, type Annotation, type Entry, type Project } from '../mode
 import type { AnnotationLocation } from '../store/ui';
 import { ActionMenu } from './ActionMenu';
 import { Button, IconButton, TextField } from './controls';
+import { useDetailsExtension } from './DetailsExtension';
 import { useEditor } from './EditorContext';
 import { useFocusRequest } from './focus';
 import { Icon } from './icons';
@@ -54,6 +55,11 @@ interface EntryRowProps {
   readonly onCreated: () => void;
   /** Remove o par gravado (com confirmação se ele for alvo de referências). */
   readonly onRemove: () => void;
+  /**
+   * No lugar do menu ⋯ da linha (ponto de extensão dos Detalhes: o marcador da revisão);
+   * `undefined`, o menu.
+   */
+  readonly aside?: ComponentChildren;
   readonly children?: ComponentChildren;
 }
 
@@ -72,6 +78,7 @@ function EntryRow({
   onDiscard,
   onCreated,
   onRemove,
+  aside,
   children,
 }: EntryRowProps) {
   const { actions } = useEditor();
@@ -225,7 +232,9 @@ function EntryRow({
         />
       </span>
       <span class="grid-cell grid-cell-menu" role="cell">
-        {entry ? (
+        {aside !== undefined ? (
+          aside
+        ) : entry ? (
           <ActionMenu
             label={t('annotation.entryActions', { key: entry.key })}
             disabled={readOnly}
@@ -270,6 +279,30 @@ interface KeyValueGridProps {
   readonly onRemoveEntry: (entryId: string) => void;
 }
 
+/** Um par que saiu (ponto de extensão dos Detalhes): riscado, no lugar onde estava. */
+function RemovedEntryRow({
+  entry,
+  aside,
+}: {
+  readonly entry: Entry;
+  readonly aside: ComponentChildren;
+}) {
+  return (
+    <div class="grid-row kv-row is-removed" role="row">
+      <span class="grid-cell grid-cell-grip" role="cell" />
+      <span class="grid-cell grid-cell-key" role="cell">
+        <del class="grid-cell-text">{entry.key}</del>
+      </span>
+      <span class="grid-cell" role="cell">
+        <del class="grid-cell-text">{entry.value}</del>
+      </span>
+      <span class="grid-cell grid-cell-menu" role="cell">
+        {aside}
+      </span>
+    </div>
+  );
+}
+
 /** Pares de uma anotação livre, com as referências recebidas por par. */
 export function KeyValueGrid({
   project,
@@ -279,6 +312,7 @@ export function KeyValueGrid({
   onRemoveEntry,
 }: KeyValueGridProps) {
   const { actions } = useEditor();
+  const ext = useDetailsExtension();
   const [adding, setAdding] = useState(false);
   const grid = useRef<HTMLDivElement>(null);
   const count = annotation.entries.length;
@@ -324,6 +358,7 @@ export function KeyValueGrid({
         onDiscard={() => undefined}
         onCreated={() => undefined}
         onRemove={() => onRemoveEntry(entry.id)}
+        aside={ext ? ext.mark(annotation.id, `entries.${entry.id}`) : undefined}
       >
         {received.length > 0 && (
           <div class="grid-row-note">
@@ -337,6 +372,18 @@ export function KeyValueGrid({
       </EntryRow>
     );
   });
+  // Os pares que saíram, riscados no lugar onde estavam.
+  for (const removed of ext?.removedEntries(annotation.id) ?? []) {
+    rows.splice(
+      Math.min(removed.index, rows.length),
+      0,
+      <RemovedEntryRow
+        key={`removed:${removed.entry.id}`}
+        entry={removed.entry}
+        aside={ext?.mark(annotation.id, `entries.${removed.entry.id}`)}
+      />,
+    );
+  }
   if (adding) {
     rows.push(
       <EntryRow
@@ -383,7 +430,13 @@ export function KeyValueGrid({
             <span class="grid-cell" role="columnheader">
               {t('annotation.value')}
             </span>
-            <span role="columnheader" aria-hidden="true" />
+            {ext ? (
+              <span role="columnheader" class="visually-hidden">
+                {ext.markColumn}
+              </span>
+            ) : (
+              <span role="columnheader" aria-hidden="true" />
+            )}
           </div>
           {rows}
         </div>
