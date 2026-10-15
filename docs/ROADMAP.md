@@ -102,6 +102,14 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Entregue:** fases 8.1 a 8.7, executadas por um coordenador de agentes em três ondas, cada uma com a nota de desenho aprovada antes do código (PRs #124 a #131 e #133; devoluções da segunda leitura do dono, [`history/auditoria-etapa-8.md`](history/auditoria-etapa-8.md), nos #136 e #137, e do portão nos #138 a #140; fechamento no #141; prompt em [`history/etapa-8-coordenador.md`](history/etapa-8-coordenador.md); notas em [`history/etapa-8-notas/`](history/etapa-8-notas/)): a sessão grava por uma fila única e um `mapping.json` vazio vira "tente depois", nunca "de ninguém"; a revisão mostra em toda a tela o projeto da visão aberta, retoma por cópia do projeto, marca **Nova** em toda proposta nova, compensa a falha do `proposal.json` depois do `mapping.json` e não mostra mais avisos falsos ao aplicar; o foco tem um dono por fechamento, Enter grava e mantém o foco no campo e o flake de foco saiu na causa; o `controller.ts` foi dividido e os recentes acompanham cada gravação; o MCP chegou à 0.3.4 (`root` relativo, `create_project` sem `images/`, limpeza do temporário em melhor esforço em pasta montada); o guia do testador foi reescrito para quem testa à mão, com o apêndice do agente, e o prompt do Cowork vive em [`TESTING-COWORK.md`](TESTING-COWORK.md). Portão: as rodadas 5 e 6 do Cowork, sem achado alto ou médio aberto. Nada do schema nem do formato da proposta mudou. Histórico, com as decisões consolidadas, em [`history/PLAN-etapa-8.md`](history/PLAN-etapa-8.md).
 - **Depende de:** etapa 7 (concluída) e da revisão técnica.
 
+## Etapa 9 — Ajustes do teste manual avançado (em andamento)
+
+- **Objetivo:** corrigir o que o dono encontrou ao começar o teste manual avançado (seção 9 do [`TESTING.md`](TESTING.md)) sobre o build `3e7a660`, antes do uso com pessoas.
+- **Entra:** apagar uma proposta que não está aberta (só na app, uma por vez, com confirmação); `code.<plataforma>.path` na especialização (o arquivo que define o símbolo, relativo ao repositório da plataforma, com a linha "Definição" nos Detalhes); remoção do `codeRef` (o mapeamento guarda o que ajuda a gerar código, não onde ele foi gerado: schema v9 com migração, `find_by_code` pelos tipos, MCP 0.4.0); Detalhes na revisão com o mesmo painel do modo normal e um marcador por campo alterado (valor atual, proposto e decisão), desenhado no Claude Design antes do código.
+- **Fora:** apagar em lote, arquivar e apagar pelo MCP; linha no `code`.
+- **Fases:** 9.1 a 9.7 no [`PLAN.md`](../PLAN.md).
+- **Depende de:** etapa 8 (concluída).
+
 ## Marco — Uso real
 
 - **Objetivo:** usar a ferramenta em trabalho de verdade antes de qualquer evolução.
