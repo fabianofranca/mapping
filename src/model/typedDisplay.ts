@@ -292,6 +292,33 @@ function codeRefDisplay(
   return { entries, alert: malformed || entries.some((e) => e.alert) };
 }
 
+/**
+ * "Definição" de um tipo: uma entrada por plataforma cujo `code` tem `path` (o arquivo que
+ * define o símbolo), na ordem do `code`, no mesmo formato das entradas de `codeRef` para a
+ * exibição (`id` é a plataforma; sem linha; o `symbol` vai para a dica).
+ */
+export function typeCodeDefinitions(
+  p: Project,
+  type: Pick<SpecAnnotationType, 'code'>,
+): DisplayCodeEntry[] {
+  return Object.entries(type.code ?? {}).flatMap(([platform, code]) =>
+    code.path === undefined
+      ? []
+      : [
+          {
+            id: platform,
+            platform,
+            platformName: findPlatform(p, platform)?.name ?? platform,
+            path: code.path,
+            fileName: fileNameOf(code.path),
+            symbol: code.symbol,
+            line: null,
+            alert: false,
+          },
+        ],
+  );
+}
+
 /** Plataformas distintas das entradas, pelo nome e na ordem de aparição (ex.: "Alfa, Beta"). */
 export function codePlatformSummary(entries: readonly DisplayCodeEntry[]): string {
   return [...new Set(entries.map((e) => e.platformName))].join(', ');

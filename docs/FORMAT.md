@@ -394,11 +394,15 @@ No nível do projeto, não da especialização, porque a mesma especialização 
 Ex.: `https://github.com/org/app-android/blob/main/{path}#L{line}` com `path: "app/Main.kt"` dá
 `…/blob/main/app/Main.kt#L12` (linha 12) ou `…/blob/main/app/Main.kt` (sem linha).
 
+O `path` do `code` de um tipo da especialização (`code.<plataforma>.path`, o arquivo que define o
+`symbol`; [`SPEC-FORMAT.md`](SPEC-FORMAT.md)) segue as mesmas regras, sempre sem linha: use a
+plataforma da chave de `code` no lugar de `entry.platform` e trate `line` como ausente.
+
 ### Como achar o arquivo local
 
 Junte `localPath` e `path` com `/`: o resultado é relativo à **pasta do projeto** (a do `mapping.json`).
 Ex.: `localPath: "../../.."` e `path: "app/Main.kt"` → `../../../app/Main.kt`. Sem `localPath`, não há
-caminho local.
+caminho local. Vale também para o `path` do `code` de um tipo.
 
 ### Pendências e aviso
 
@@ -452,8 +456,9 @@ novo de uma ferramenta de design) e proponha só o que mudou.
    o arquivo na máquina, junte o `localPath` e o `path` (relativos à pasta do projeto; ver "Campos da
    v7"). Para ir do código ao mapeamento, procure as entradas cujo `path` é igual ao arquivo ou termina
    com ele por segmentos inteiros (`CheckoutScreen.kt` casa com `app/…/CheckoutScreen.kt`, `Screen.kt`
-   não) ou cujo `symbol` é igual. Como o tipo vira código (`symbol`, `params`, `values`, `notes`) está
-   em `code`, no tipo da especialização.
+   não) ou cujo `symbol` é igual. Como o tipo vira código (`symbol`, `path`, `params`, `values`,
+   `notes`) está em `code`, no tipo da especialização; o `path` diz em que arquivo o `symbol` está
+   (relativo à raiz do repositório da plataforma).
 
 Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, markingId)`,
 `getLinkedAnnotations(project, annotationId)` e, para o código, `codeLink`, `codeLocalPath`,

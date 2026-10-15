@@ -39,6 +39,7 @@
           "code": {
             "android": {
               "symbol": "com.app.ds.DSButton",
+              "path": "app/src/main/java/com/app/ds/DSButton.kt",
               "params": { "texto": "text", "estilo": "style", "habilitado": "enabled" },
               "values": {
                 "estilo": {
@@ -52,6 +53,7 @@
             },
             "ios": {
               "symbol": "DSButton",
+              "path": "App/DesignSystem/DSButton.swift",
               "params": {
                 "texto": "title",
                 "estilo": "style",
@@ -109,6 +111,7 @@
           "code": {
             "android": {
               "symbol": "com.app.ds.DSTextField",
+              "path": "app/src/main/java/com/app/ds/DSTextField.kt",
               "params": {
                 "tipo": "keyboardType",
                 "placeholder": "placeholder",

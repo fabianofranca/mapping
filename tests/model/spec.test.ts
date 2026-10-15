@@ -65,6 +65,7 @@ describe('exemplos de especialização', () => {
     }
     const button = types[0]?.code?.android;
     expect(button?.symbol).toBe('com.app.ds.DSButton');
+    expect(button?.path).toBe('app/src/main/java/com/app/ds/DSButton.kt');
     expect(button?.params).toMatchObject({ texto: 'text', estilo: 'style' });
     expect(button?.values?.estilo?.primary).toBe('ButtonStyle.Primary');
   });
@@ -468,6 +469,36 @@ const platformCases: [string, (s: Json) => void, string][] = [
     `${BUTTON}.code.bff.symbol: deve ser texto`,
   ],
   [
+    'code com path vazio',
+    (s) => (s.layers[0].annotationTypes[0].code.android.path = ''),
+    `${BUTTON}.code.android.path: não pode ser vazio`,
+  ],
+  [
+    'code com path que não é texto',
+    (s) => (s.layers[0].annotationTypes[0].code.android.path = 3),
+    `${BUTTON}.code.android.path: deve ser texto`,
+  ],
+  [
+    'code com path absoluto',
+    (s) => (s.layers[0].annotationTypes[0].code.android.path = '/app/DSButton.kt'),
+    `${BUTTON}.code.android.path: caminho inválido`,
+  ],
+  [
+    'code com path com ..',
+    (s) => (s.layers[0].annotationTypes[0].code.ios.path = '../DSButton.swift'),
+    `${BUTTON}.code.ios.path: caminho inválido`,
+  ],
+  [
+    'code com path com barra invertida e unidade',
+    (s) => (s.layers[0].annotationTypes[0].code.bff.path = 'C:\\app\\DSButton.kt'),
+    `${BUTTON}.code.bff.path: caminho inválido`,
+  ],
+  [
+    'code com path com ./ no começo',
+    (s) => (s.layers[0].annotationTypes[0].code.android.path = './app/DSButton.kt'),
+    `${BUTTON}.code.android.path: caminho inválido`,
+  ],
+  [
     'code que não é objeto',
     (s) => (s.layers[0].annotationTypes[0].code = []),
     `${BUTTON}.code:`,
@@ -618,6 +649,35 @@ describe('validação do formatVersion 2 (plataformas, code e codeRef)', () => {
     ).toBe(true);
   });
 
+  it('`path` do code é opcional e vale nas formatVersion 2 e 3', () => {
+    for (const formatVersion of [2, 3]) {
+      const spec: Json = { ...base(), formatVersion };
+      spec.layers[0].annotationTypes[0].code.bff.path = 'bff/src/TDSButton.kt';
+      delete spec.layers[0].annotationTypes[0].code.android.path;
+      const result = parseSpec(spec);
+      if (!result.ok) throw new Error(result.errors.join('\n'));
+      const code = result.spec.layers[0]?.annotationTypes[0]?.code;
+      expect(code?.bff?.path).toBe('bff/src/TDSButton.kt');
+      expect(code?.android?.path).toBeUndefined();
+      expect(jsonValidator.safeParse(spec).success).toBe(true);
+    }
+  });
+
+  it('o JSON Schema recusa `path` vazio, absoluto ou com ..', () => {
+    for (const path of [
+      '',
+      '/app/A.kt',
+      '../A.kt',
+      'app/../A.kt',
+      'C:/A.kt',
+      'app//A.kt',
+    ]) {
+      const spec = base();
+      spec.layers[0].annotationTypes[0].code.android.path = path;
+      expect(jsonValidator.safeParse(spec).success, path).toBe(false);
+    }
+  });
+
   it('os erros também chegam em `issues` com o caminho separado da mensagem', () => {
     const spec = base();
     spec.layers[0].annotationTypes[0].code.android.params.naoExiste = 'x';
@@ -722,6 +782,7 @@ describe('consistência zod × JSON Schema (formatVersion 2)', () => {
     expect(Object.keys(schema.$defs.codeEntry.properties).sort()).toEqual([
       'notes',
       'params',
+      'path',
       'symbol',
       'values',
     ]);

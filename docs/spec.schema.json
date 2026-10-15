@@ -454,6 +454,12 @@
           "type": "string",
           "minLength": 1
         },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]+$",
+          "description": "Arquivo que define o symbol, relativo à raiz do repositório da plataforma (sem linha)."
+        },
         "params": {
           "type": "object",
           "additionalProperties": {

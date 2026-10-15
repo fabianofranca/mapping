@@ -17,6 +17,7 @@ import {
 } from '../model';
 import { isSectionCollapsed, toggleSection, type AnnotationLocation } from '../store/ui';
 import { IssueBadge } from './AnnotationSummary';
+import { CodeDefinitions } from './CodeRefs';
 import { CommitInput } from './CommitInput';
 import { CopyButtons } from './CopyActions';
 import { Dialog } from './Dialog';
@@ -102,6 +103,7 @@ function TypedBody({
         {resolved.type.fields.map((field) => (
           <TypedField key={field.key} field={field} {...ctx} />
         ))}
+        <CodeDefinitions project={project} type={resolved.type} />
       </PropertyGrid>
     </>
   );

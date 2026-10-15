@@ -72,7 +72,7 @@ Uma camada por natureza, não por módulo do código. `id` em `[a-z0-9-]+` e ún
 ### 6. Plataformas e `code` (`formatVersion` 2)
 
 - `platforms` na raiz: `{ id, name, language }`, `id` em `[a-z0-9-]+` e único. Plataformas com o mesmo `id` em especializações diferentes são a mesma plataforma; alinhe com as já usadas no projeto (`get_project` mostra).
-- `code` por tipo, por id de plataforma declarada: `symbol` (obrigatório; confira que existe no código, com caminho, antes de escrever), `params` (chave do campo → nome do parâmetro; só o que é passado), `values` (só campos `enum`; valor do mapping → valor no código), `notes` (orientação curta para quem implementa).
+- `code` por tipo, por id de plataforma declarada: `symbol` (obrigatório; confira que existe no código, com caminho, antes de escrever), `path` (opcional: o arquivo que define o `symbol`, **relativo à raiz do repositório da plataforma**, `/` como separador, sem `.`, `..` nem linha; preencha quando o arquivo for conhecido porque você o viu, nunca invente), `params` (chave do campo → nome do parâmetro; só o que é passado), `values` (só campos `enum`; valor do mapping → valor no código), `notes` (orientação curta para quem implementa).
 - `codeRef` é um campo do tipo que guarda **onde a instância foi implementada**; `platforms` nele restringe as plataformas. Não entra em colunas de `table` nem tem `default`.
 - Nome de plataforma, linguagem ou framework só aparece dentro de `platforms`, `code` e `codeRef`. O resto da especialização descreve o domínio, não a tecnologia.
 
@@ -108,7 +108,7 @@ A validação é a mesma da importação da app, com o caminho exato do erro (`l
 
 3. **Sem nenhum dos dois**: entregue dizendo que não validou. Não afirme que passa.
 
-Além do validador, releia o arquivo com estas perguntas: cada tipo do inventário está lá, ou está listado como fora de escopo? Algum tipo entrou sem evidência na origem? Toda `description` diz algo que o nome não diz? Os `symbol` de `code` existem mesmo?
+Além do validador, releia o arquivo com estas perguntas: cada tipo do inventário está lá, ou está listado como fora de escopo? Algum tipo entrou sem evidência na origem? Toda `description` diz algo que o nome não diz? Os `symbol` de `code` existem mesmo, e cada `path` aponta para o arquivo que os define?
 
 ## Entrega
 

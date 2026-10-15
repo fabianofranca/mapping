@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidCodePath } from './codeRefs';
 
 // Formato da especialização (`formatVersion` 1, 2 e 3), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
 // etapas 3b e 4 do plano. A versão 2 acrescenta `platforms`, `code` e o campo `codeRef`;
@@ -31,6 +32,11 @@ export interface SpecPlatform {
 export interface SpecCode {
   /** Componente ou tipo que implementa o tipo de anotação na plataforma. */
   symbol: string;
+  /**
+   * Arquivo que define o símbolo, relativo à raiz do repositório da plataforma (sem
+   * linha). Vira link pelo `urlTemplate` e caminho local pelo `localPath` do repositório.
+   */
+  path?: string;
   /** Chave do campo do tipo → nome do parâmetro no código. */
   params?: Record<string, string>;
   /** Chave de um campo `enum` → (valor no mapping → valor no código). */
@@ -392,6 +398,14 @@ const codeEntryShape = z
         error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
       })
       .min(1, 'não pode ser vazio'),
+    path: z
+      .string({ error: () => 'deve ser texto' })
+      .min(1, 'não pode ser vazio')
+      .refine(isValidCodePath, {
+        error:
+          'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: app/src/Main.kt)',
+      })
+      .optional(),
     params: z.record(z.string(), nonEmpty).optional(),
     values: z.record(z.string(), z.record(z.string(), nonEmpty)).optional(),
     notes: z.string().optional(),

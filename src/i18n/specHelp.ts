@@ -96,6 +96,7 @@ const CODE_EXCERPT = `{
           "code": {
             "app": {
               "symbol": "DSButton",
+              "path": "app/src/main/java/com/app/ds/DSButton.kt",
               "params": { "texto": "text", "estilo": "style" },
               "values": {
                 "estilo": {
@@ -355,6 +356,10 @@ const ptBR: readonly HelpSection[] = [
             text: 'Obrigatório em cada entrada de code: componente ou tipo que implementa o tipo naquela plataforma.',
           },
           {
+            term: 'path',
+            text: 'Opcional em cada entrada de code: o arquivo que define o symbol, relativo à raiz do repositório da plataforma (com /, sem ., .. nem letra de unidade) e sem linha. Vira link pelo repositório da plataforma e a app mostra a linha "Definição" nos Detalhes.',
+          },
+          {
             term: 'params',
             text: 'Chave do campo do tipo → nome do parâmetro no código. Campos fora de params não são passados.',
           },
@@ -429,7 +434,7 @@ const ptBR: readonly HelpSection[] = [
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms, code e codeRef a partir da formatVersion 2; sources (origens externas) só na formatVersion 3;',
           'code e codeRef só em especializações com platforms; os ids de code e do platforms do campo precisam existir em platforms;',
-          'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório;',
+          'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório e path, se houver, relativo à raiz do repositório;',
           'color no formato #RRGGBB; propriedades desconhecidas são rejeitadas.',
         ],
       },
@@ -658,6 +663,10 @@ const enUS: readonly HelpSection[] = [
             text: 'Required in each code entry: the component or type that implements the type on that platform.',
           },
           {
+            term: 'path',
+            text: 'Optional in each code entry: the file that defines the symbol, relative to the platform repository root (with /, no ., .. or drive letter) and without a line. It becomes a link through the platform repository, and the app shows a "Definition" line in the Details.',
+          },
+          {
             term: 'params',
             text: 'Key of a type field → parameter name in the code. Fields outside params are not passed.',
           },
@@ -732,7 +741,7 @@ const enUS: readonly HelpSection[] = [
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms, code and codeRef from formatVersion 2 on; sources (external origins) only in formatVersion 3;',
           'code and codeRef only in specializations with platforms; the ids in code and in the field’s platforms must exist in platforms;',
-          'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required;',
+          'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required and path, if present, relative to the repository root;',
           'color in the #RRGGBB format; unknown properties are rejected.',
         ],
       },

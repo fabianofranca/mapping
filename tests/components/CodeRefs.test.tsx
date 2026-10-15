@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { codeRefEntries, typeOfAnnotation, type Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
+import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
 import { AnnotationLines } from '../../src/ui/AnnotationSummary';
 import { HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
@@ -239,6 +240,76 @@ describe('Lista e herdadas (AnnotationLines)', () => {
       2,
     );
     expect(screen.getAllByRole('button', { name: /^Copiar caminho/ })).toHaveLength(3);
+  });
+});
+
+describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () => {
+  function setupDetails(annotationId: string, readOnly = false) {
+    const harness = createHarness(codeProject(), readOnly);
+    renderLive(harness, (p) => (
+      <AnnotationEditor
+        project={p}
+        annotation={annotationOf(p, annotationId)}
+        visibleLayerIds={new Set(p.layers.map((l) => l.id))}
+        onGoToAnnotation={() => undefined}
+        onShowLayer={() => undefined}
+        readOnly={readOnly}
+      />
+    ));
+    const lines = () => Array.from(document.querySelectorAll('[data-definition]'));
+    return { lines, user: userEvent.setup() };
+  }
+
+  it('uma linha por plataforma com path: "Plataforma · arquivo", com a dica do caminho e do símbolo', () => {
+    const { lines } = setupDetails('AB');
+    expect(screen.getByText('Definição')).toBeTruthy();
+    expect(lines().map((l) => l.querySelector('.code-entry-name')?.textContent)).toEqual([
+      'Android · DSButton.kt',
+      'iOS · DSButton.swift',
+    ]);
+    // O bff do exemplo não tem path: sem linha.
+    expect(document.querySelector('[data-definition="bff"]')).toBeNull();
+    expect(
+      screen.getByText('app/src/main/java/com/app/ds/DSButton.kt · com.app.ds.DSButton'),
+    ).toBeTruthy();
+  });
+
+  it('"Abrir no repositório" só onde há repositório; "Copiar caminho" em todas', async () => {
+    const { lines, user } = setupDetails('AB');
+    const [android, ios] = lines() as HTMLElement[];
+    const link = within(android!).getByRole('link', { name: /^Abrir no repositório/ });
+    expect(link.getAttribute('href')).toBe(
+      'https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt',
+    );
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    // iOS não tem repositório: mostra o caminho e "Copiar caminho", sem link.
+    expect(within(ios!).queryByRole('link')).toBeNull();
+    await user.click(within(ios!).getByRole('button', { name: /^Copiar caminho/ }));
+    expect(await navigator.clipboard.readText()).toBe('App/DesignSystem/DSButton.swift');
+    await waitFor(() =>
+      expect(within(ios!).getByRole('status').textContent).toBe('Caminho copiado'),
+    );
+  });
+
+  it('também aparece com o projeto somente leitura (não há o que editar)', () => {
+    const { lines } = setupDetails('AB', true);
+    expect(lines()).toHaveLength(2);
+  });
+
+  it('tipo sem path (Screen, onClick) não tem a linha', () => {
+    for (const id of ['AS', 'AOC']) {
+      cleanup();
+      const { lines } = setupDetails(id);
+      expect(lines()).toHaveLength(0);
+      expect(screen.queryByText('Definição')).toBeNull();
+    }
+  });
+
+  it('em en-US o rótulo é "Definition"', () => {
+    locale.value = 'en-US';
+    setupDetails('AB');
+    expect(screen.getByText('Definition')).toBeTruthy();
   });
 });
 

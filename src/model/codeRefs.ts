@@ -292,6 +292,17 @@ export const projectCodeRefs: (p: Project) => readonly CodeRefLocation[] = memoB
 // ---------------------------------------------------------------------------
 // Link e caminho local
 
+/**
+ * Onde um arquivo está: a plataforma (que dá o repositório) e o caminho relativo à raiz
+ * dele. Uma entrada de `codeRef` serve, e também o `path` do `code` de um tipo da
+ * especialização (sem linha).
+ */
+export interface CodeLocation {
+  readonly platform: string;
+  readonly path: string | null;
+  readonly line?: number | null;
+}
+
 /** Sem `line`: tira o fragmento final `#…{line}` (se não tiver `{path}`); senão, `{line}` vira vazio. */
 function withoutLine(template: string): string {
   if (!template.includes('{line}')) return template;
@@ -313,10 +324,7 @@ function withoutLine(template: string): string {
  *   removido (ex: `…/{path}#L{line}` → `…/{path}`); se `{line}` não estiver num fragmento
  *   assim, vira vazio.
  */
-export function codeLink(
-  p: Project,
-  entry: Pick<CodeRefEntry, 'platform' | 'path' | 'line'>,
-): string | null {
+export function codeLink(p: Project, entry: CodeLocation): string | null {
   const template = optionalText(platformRepoOf(p, entry.platform)?.urlTemplate);
   if (template === null || !isValidUrlTemplate(template)) return null;
   if (entry.path === null || !isValidCodePath(entry.path)) return null;
@@ -345,7 +353,7 @@ function joinRelative(base: string, path: string): string {
  */
 export function codeLocalPath(
   p: Project,
-  entry: Pick<CodeRefEntry, 'platform' | 'path'>,
+  entry: Pick<CodeLocation, 'platform' | 'path'>,
 ): string | null {
   const localPath = optionalText(platformRepoOf(p, entry.platform)?.localPath);
   if (localPath === null || !isValidLocalPath(localPath)) return null;

@@ -62,6 +62,10 @@ export interface BlueprintAnnotation {
   readonly layer: string | null;
   /** `code.<plataforma>.symbol`; `null` = o tipo não tem `code` para a plataforma. */
   readonly symbol: string | null;
+  /** `code.<plataforma>.path`: arquivo que define o símbolo, relativo à raiz do repositório; `null` sem ele. */
+  readonly path: string | null;
+  /** `codeLink` do `path` (`null` sem `path` ou sem `urlTemplate`). */
+  readonly pathUrl: string | null;
   /** Parâmetros na ordem dos campos do tipo; vazio sem `code`. */
   readonly params: readonly BlueprintParam[];
   readonly notes: string | null;
@@ -199,6 +203,8 @@ export function codeBlueprint(
       label: instanceLabel(p, a),
       layer: index.layers.get(a.layerId)?.name ?? null,
       symbol: code?.symbol ?? null,
+      path: code?.path ?? null,
+      pathUrl: code?.path ? codeLink(p, { platform: platformId, path: code.path }) : null,
       params,
       notes: code?.notes ?? null,
       values: mapped,

@@ -23,6 +23,8 @@ import {
   removeSpecialization,
   setFieldValue,
   setPlatformRepo,
+  typeCodeDefinitions,
+  typeOfAnnotation,
   updateCodeRefEntry,
   type Annotation,
   type CodeRefEntry,
@@ -592,6 +594,64 @@ describe('codeLocalPath', () => {
     expect(codeLocalPath(at('/abs'), entry)).toBeNull();
     expect(codeLocalPath(p, { ...entry, platform: 'ios' })).toBeNull();
     expect(codeLocalPath(p, { ...entry, path: null })).toBeNull();
+  });
+});
+
+describe('path do code de um tipo (sem linha)', () => {
+  const button = (p: Project) =>
+    typeOfAnnotation(
+      p,
+      p.annotations.find((a) => a.id === 'AB')!,
+    )!;
+  const DS_BUTTON = 'app/src/main/java/com/app/ds/DSButton.kt';
+
+  it('codeLink e codeLocalPath aceitam a plataforma e o caminho, sem linha', () => {
+    const p = codeProject();
+    expect(codeLink(p, { platform: 'android', path: DS_BUTTON })).toBe(
+      `https://github.com/org/app-android/blob/main/${DS_BUTTON}`,
+    );
+    expect(codeLocalPath(p, { platform: 'android', path: DS_BUTTON })).toBe(
+      `../../../${DS_BUTTON}`,
+    );
+    // Plataforma sem repositório: sem link nem caminho local.
+    expect(codeLink(p, { platform: 'ios', path: 'App/DSButton.swift' })).toBeNull();
+    expect(codeLocalPath(p, { platform: 'ios', path: 'App/DSButton.swift' })).toBeNull();
+    // Caminho inválido não vira link.
+    expect(codeLink(p, { platform: 'android', path: '../x.kt' })).toBeNull();
+  });
+
+  it('typeCodeDefinitions: uma entrada por plataforma com path, na ordem do code', () => {
+    const p = codeProject();
+    expect(
+      typeCodeDefinitions(p, button(p).type).map((d) => [
+        d.platform,
+        d.platformName,
+        d.path,
+        d.fileName,
+        d.symbol,
+        d.line,
+      ]),
+    ).toEqual([
+      ['android', 'Android', DS_BUTTON, 'DSButton.kt', 'com.app.ds.DSButton', null],
+      [
+        'ios',
+        'iOS',
+        'App/DesignSystem/DSButton.swift',
+        'DSButton.swift',
+        'DSButton',
+        null,
+      ],
+    ]);
+  });
+
+  it('tipo sem path (ou sem code) não tem definição', () => {
+    const p = codeProject();
+    const onClick = typeOfAnnotation(
+      p,
+      p.annotations.find((a) => a.id === 'AOC')!,
+    )!;
+    expect(typeCodeDefinitions(p, onClick.type)).toEqual([]);
+    expect(typeCodeDefinitions(p, { code: undefined })).toEqual([]);
   });
 });
 

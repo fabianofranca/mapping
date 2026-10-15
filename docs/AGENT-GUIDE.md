@@ -202,6 +202,7 @@ Quando o projeto aplica uma especialização com **plataformas** (veja `platform
 1. **Receba a referência** `mapping://…/m/…` (o dev a cola do app) e chame **`get_marking(ref, { platform })`** e **`get_marking_image(ref)`**: o primeiro dá as anotações e os `codeRefs` existentes; o segundo, o que a tela parece.
 2. **`get_code_hints(ref, platform)`** devolve a **planta de código**: uma árvore que espelha a marcação e as descendentes. Em cada marcação, as anotações tipadas com:
    - `symbol`: o componente ou tipo da plataforma (`null` = o tipo **não tem mapeamento** nessa plataforma; a resposta lista esses tipos em `unmappedTypes`);
+   - `path`, `url`, `localFile`, `exists` (quando a especialização informa o arquivo): **em que arquivo o `symbol` está** (relativo à raiz do repositório da plataforma), o endereço no repositório e o arquivo local, no mesmo formato dos `codeRefs`; leia esse arquivo para ver a assinatura do componente antes de usá-lo;
    - `params`: `{ field, name, value }` — o parâmetro no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary` do código). Campo que não está em `params` não é passado;
    - `notes`: a orientação da especialização (leia: ela costuma dizer detalhes como "use o valor do campo id");
    - `values`: os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex: `dado: "User.name"`);
@@ -231,7 +232,7 @@ Em `get_marking`, `get_annotation`, `get_code_hints` e `find_by_code`, cada entr
 - `path` é relativo à **raiz do repositório da plataforma**, com `/`.
 - `url` vem do `urlTemplate` da plataforma (`null` sem ele).
 - `localFile` é o caminho **relativo ao diretório de trabalho do cliente** (o repositório, no Claude Code), calculado com o `localPath` da plataforma; `exists` diz se o arquivo está lá. Sem `localPath`, os dois são `null`. Se o `localPath` leva para fora do diretório de trabalho, vêm `null` e `localFileProblem: "outside-workdir"`: por segurança, o servidor não confere (nem revela) o que está fora.
-- Os campos `codeRef` **saem de `values`** nessas respostas e aparecem só em `codeRefs`. `get_marking(ref, { platform })` filtra `codeRefs` e `code` por plataforma. O `code` de uma anotação tipada é o mapeamento do tipo por plataforma (`symbol`, `params`, `values`, `notes`), como na especialização.
+- Os campos `codeRef` **saem de `values`** nessas respostas e aparecem só em `codeRefs`. `get_marking(ref, { platform })` filtra `codeRefs` e `code` por plataforma. O `code` de uma anotação tipada é o mapeamento do tipo por plataforma (`symbol`, `path`, `params`, `values`, `notes`), como na especialização; quando há `path`, `url`, `localFile` e `exists` vêm ao lado dele, resolvidos como nos `codeRefs` (`exists` só confere se o arquivo está lá; o servidor não o lê).
 
 ### `find_by_code`: do código para o mapeamento
 

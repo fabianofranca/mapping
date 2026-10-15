@@ -141,11 +141,11 @@ Pedido do dono (2026-10-15): cada fase vai para um agente executor com o modelo 
 
 **Toca em:** `src/model/spec.ts` (`path` na entrada de `code`), `src/model/codeRefs.ts` (`codeLink` e `codeLocalPath` para um caminho de tipo), `src/model/codeBlueprint.ts` (`path` na planta), `src/ui/` (linha "Definição" nos Detalhes da anotação tipada, reaproveitando `CodeRefs.tsx`), `src/i18n/*` (e a ajuda de especializações, `src/i18n/specHelp.ts`), `mcp/codeViews.ts` e `mcp/codeFiles.ts` (endereço, arquivo local e existência do `path`), `docs/SPEC-FORMAT.md`, `docs/spec.schema.json`, `docs/AGENT-GUIDE.md`, `docs/MCP.md`, `.claude/skills/spec-author/SKILL.md` (preencher o `path` quando o arquivo for conhecido), `examples/specs/sdui.json`, `tests/model/spec.test.ts`, `tests/model/codeBlueprint.test.ts`, `tests/model/codeRefs.test.ts`, `tests/mcp/code.test.ts`, `tests/components/` (Detalhes), `tests/i18n/specHelp.test.ts`, `docs/TESTING.md` (R3).
 
-- [ ] Validação com testes: `path` opcional, não vazio, relativo à raiz (a regra de `isValidCodePath`), nas `formatVersion` 2 e 3
-- [ ] `codeBlueprint` com o `path`; link e caminho local do tipo com testes
-- [ ] Detalhes: linha "Definição: Plataforma · arquivo" com **Abrir no repositório** e **Copiar caminho**; teste de componente
-- [ ] MCP: `path`, endereço, arquivo local e `exists` no `code` de `get_code_hints` e `get_marking`; teste em `tests/mcp/code.test.ts`
-- [ ] `SPEC-FORMAT.md`, `spec.schema.json`, `AGENT-GUIDE.md`, `MCP.md`, a skill e o `sdui.json` com o `path`; o R3 confere a linha "Definição"
+- [x] Validação com testes: `path` opcional, não vazio, relativo à raiz (a regra de `isValidCodePath`), nas `formatVersion` 2 e 3
+- [x] `codeBlueprint` com o `path`; link e caminho local do tipo com testes
+- [x] Detalhes: linha "Definição: Plataforma · arquivo" com **Abrir no repositório** e **Copiar caminho**; teste de componente
+- [x] MCP: `path`, endereço, arquivo local e `exists` no `code` de `get_code_hints` e `get_marking`; teste em `tests/mcp/code.test.ts`
+- [x] `SPEC-FORMAT.md`, `spec.schema.json`, `AGENT-GUIDE.md`, `MCP.md`, a skill e o `sdui.json` com o `path`; o R3 confere a linha "Definição"
 
 **Aceite**: uma especialização com `code.bff = { symbol: "TDSButton", path: "…/TDSButton.kt" }` importa sem erro; os Detalhes do Button mostram "Definição: BFF · TDSButton.kt" com o link do repositório; o `get_code_hints` devolve o caminho e o endereço.
 
@@ -199,3 +199,4 @@ Pedido do dono (2026-10-15): cada fase vai para um agente executor com o modelo 
 
 - [ ] Esta seção vai para `docs/history/PLAN-etapa-9.md` com as decisões consolidadas dos PRs; `PLAN.md` volta a "nenhuma etapa em andamento"; `docs/ROADMAP.md` marca a etapa 9 concluída; `CLAUDE.md` atualiza "Etapa atual" e a lista das etapas
 - [ ] O briefing (`BRIEF-REVIEW-DETAILS.md`) fica em `docs/redesign/` como referência, ao lado do handoff
+- [ ] Rodada dirigida do Cowork para a etapa 9 (pedido do dono: as fases são mergeadas sem teste manual e testadas no fim): lista dirigida em `docs/TESTING-COWORK.md` (ou no prompt da rodada) com R3, R4.12 e R4.13, os passos novos do R4 e do R5 (9.6) e a migração de um projeto v8 com `codeRef` para v9; conferir que o guia e o apêndice A descrevem o comportamento novo
