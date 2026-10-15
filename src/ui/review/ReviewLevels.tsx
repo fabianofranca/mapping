@@ -410,7 +410,11 @@ export function ReviewLevels() {
             )}
           </>
         }
-        onSelect={() => navigate(target)}
+        onSelect={() => {
+          // Clique na mudança: o foco vai ao marcador dela nos Detalhes (as setas só rolam).
+          navigate(target);
+          review.requestMark(c.id);
+        }}
         onToggle={() => {}}
         onDecide={(state) => decide(target, state)}
       />
@@ -513,6 +517,9 @@ export function ReviewLevels() {
     else if (e.key === 'Enter' && selected) {
       e.preventDefault();
       navigate(selected, true);
+      if (selected.level === 'change' && selected.id !== null) {
+        review.requestMark(selected.id);
+      }
     } else if (!flat && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
       const row = rows[at];
       if (!row) return;
@@ -661,7 +668,13 @@ export function ProgressBar({
 }
 
 /** "Abrir a nova": a proposta que substituiu esta. */
-function OpenNewer({ id, title }: { readonly id: string; readonly title: string }) {
+export function OpenNewer({
+  id,
+  title,
+}: {
+  readonly id: string;
+  readonly title: string;
+}) {
   const { openReview } = useReviewCommands();
   return (
     <Button

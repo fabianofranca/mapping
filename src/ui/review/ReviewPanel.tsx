@@ -1,6 +1,12 @@
+import { signal, type Signal } from '@preact/signals';
 import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
-import { projectIndex, type Project, type ReviewTarget } from '../../model';
+import {
+  projectIndex,
+  proposalIndex,
+  type Project,
+  type ReviewTarget,
+} from '../../model';
 import type { ReviewView } from '../../store/derived';
 import {
   collapseSections,
@@ -16,15 +22,21 @@ import { MarkingPanel } from '../MarkingPanel';
 import { Notice } from '../Notice';
 import { SelectionPanel } from '../SelectionPanel';
 import { createOpenMark, OpenMarkContext } from './ChangeMark';
-import { ReviewDetails, ReviewLevel } from './ReviewDetails';
-import { otherChangeIds, reviewExtension, sectionsFor } from './reviewExtension';
+import { ReviewDetails } from './ReviewDetails';
+import {
+  isChangeLayerHidden,
+  reviewExtension,
+  sectionsFor,
+  sectionsForChange,
+} from './reviewExtension';
 
-// Detalhes na revisão (fase 9.5, HANDOFF-REVIEW-DETAILS 5.1): imagem e item mostram o
-// painel normal (`MarkingPanel`/`SelectionPanel` com as anotações), somente leitura, sobre
+// Detalhes na revisão (fases 9.5 e 9.6, HANDOFF-REVIEW-DETAILS 5.1): imagem e item mostram
+// o painel normal (`MarkingPanel`/`SelectionPanel` com as anotações), somente leitura, sobre
 // o projeto à vista (`review.derived.shownProject`), com um marcador em cada campo alterado
-// pelo ponto de extensão dos Detalhes. Acima, o bloco de decisão do nível de hoje (decisão,
-// avisos, notas) até a 9.6 levar a decisão para o cabeçalho e os popovers. A proposta, o
-// grupo Projeto e as mudanças sem item continuam no `ReviewDetails` (cartões).
+// e o cabeçalho de decisão logo abaixo da identidade, pelo ponto de extensão dos Detalhes.
+// A proposta, o grupo Projeto e as mudanças sem item têm o painel deles (`ReviewDetails`).
+// A mudança selecionada na janela Propostas abre o que a esconde, rola até o campo e o
+// destaca; um clique ou Enter na lista leva o foco ao marcador e abre o popover.
 
 /** O item que o painel mostra e de qual projeto ele vem. */
 interface ShownItem {
@@ -82,7 +94,7 @@ interface ReviewPanelProps {
   readonly onSelectMarking: (markingId: string) => void;
 }
 
-/** Detalhes na revisão: escolhe entre o painel do item e os cartões do nível. */
+/** Detalhes na revisão: escolhe entre o painel do item e o painel do nível. */
 export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelProps) {
   const { review, ui, store } = useEditor();
   const host = useRef<HTMLDivElement>(null);
@@ -119,6 +131,32 @@ export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelPr
     : null;
   const itemKey = item ? `${item.kind}:${item.id}` : '';
 
+  // Selecionar outra mudança do mesmo item (focar um marcador, as setas da janela Propostas)
+  // não pode refazer o painel inteiro: o item só é "outro" se mudou o que o painel mostra, e
+  // o elemento do painel só é refeito com ele.
+  const last = useRef<ShownItem | null>(null);
+  const same =
+    item !== null &&
+    last.current !== null &&
+    last.current.kind === item.kind &&
+    last.current.id === item.id &&
+    last.current.project === item.project &&
+    last.current.away === item.away;
+  const stable = same ? last.current : item;
+  last.current = stable;
+  const panel = useMemo(
+    () =>
+      stable ? (
+        <ReviewItemPanel
+          key={`${stable.kind}:${stable.id}`}
+          item={stable}
+          onGoToAnnotation={onGoToAnnotation}
+          onSelectMarking={onSelectMarking}
+        />
+      ) : null,
+    [stable, onGoToAnnotation, onSelectMarking],
+  );
+
   // Trocar de item desmonta o painel: se o foco estava nele (um marcador, o popover), fica
   // no contêiner, nunca no `body` (HANDOFF-REVIEW-DETAILS 12).
   useLayoutEffect(() => {
@@ -140,18 +178,52 @@ export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelPr
           hadFocus.current = false;
       }}
     >
-      {item ? (
-        <ReviewItemPanel
-          key={itemKey}
-          item={item}
-          onGoToAnnotation={onGoToAnnotation}
-          onSelectMarking={onSelectMarking}
-        />
-      ) : (
-        <ReviewDetails />
-      )}
+      {panel ?? <ReviewDetails />}
     </div>
   );
+}
+
+/**
+ * Segue a mudança selecionada na janela Propostas (HANDOFF-REVIEW-DETAILS 6): abre o que a
+ * esconde (a seção, a camada, a anotação e, numa camada escondida, o "Mostrar aqui"), deixa
+ * a anotação à vista além do "mostrar mais". Rolar até o marcador e levar o foco a ele é do
+ * próprio marcador (`ChangeMark`), no commit que o desenha. É um componente à parte para que
+ * mudar a seleção (ou focar um marcador) refaça só ele, não o painel.
+ */
+function FollowTarget({
+  item,
+  reveal,
+  onReveal,
+}: {
+  readonly item: ShownItem;
+  readonly reveal: Signal<string | null>;
+  readonly onReveal: (revealed: boolean) => void;
+}) {
+  const { review, ui, store, derived } = useEditor();
+  const { kind, id, project } = item;
+  const selected = review.selected.value;
+  const targetId = selected?.level === 'change' ? selected.id : null;
+  const proposal = review.derived.proposal.peek();
+  const change =
+    targetId !== null && proposal
+      ? (proposalIndex(proposal).changes.get(targetId) ?? null)
+      : null;
+  const current = store.committed.peek();
+  const hidden = ui.hiddenLayers.peek();
+  const activeLayerId = derived.activeLayerId.peek();
+  useLayoutEffect(() => {
+    reveal.value = change?.entity === 'annotation' ? change.entityId : null;
+    if (!current || !change) return;
+    const args = { kind, id, project, current };
+    expandSections(ui, sectionsForChange(change, args));
+    if (isChangeLayerHidden(change, { ...args, hiddenLayers: hidden, activeLayerId })) {
+      onReveal(true);
+    }
+    // Só ao mudar a mudança selecionada.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetId]);
+
+  return null;
 }
 
 function ReviewItemPanel({
@@ -170,7 +242,11 @@ function ReviewItemPanel({
   // "Mostrar aqui" das camadas escondidas: só no painel, até trocar de item (decisão 4).
   const [revealed, setRevealed] = useState(false);
   const openMark = useMemo(createOpenMark, []);
+  // A anotação da mudança selecionada, que o "mostrar mais" não pode deixar de fora.
+  const reveal = useMemo(() => signal<string | null>(null), []);
   const { kind, id, project } = item;
+  const level = kind === 'marking' ? 'item' : 'image';
+  const hasNode = tree?.nodes.has(`${level}:${id}`) === true;
 
   const ext = useMemo(
     () =>
@@ -187,9 +263,28 @@ function ReviewItemPanel({
             revealed,
             onReveal: setRevealed,
             onShowCurrent: () => review.setView('current'),
+            proposal: d.proposal,
+            hasNode,
+            reveal,
+            full: () => d.fullPreview.value,
           })
         : null,
-    [kind, id, project, current, index, view, hidden, activeLayerId, revealed, review],
+    [
+      kind,
+      id,
+      project,
+      current,
+      index,
+      view,
+      hidden,
+      activeLayerId,
+      revealed,
+      review,
+      d.proposal,
+      d.fullPreview,
+      hasNode,
+      reveal,
+    ],
   );
 
   // Ao mostrar o item, abrem as seções com mudanças (as outras ficam como a pessoa deixou).
@@ -204,24 +299,6 @@ function ReviewItemPanel({
   }, [proposalId, kind, id]);
 
   if (!current || !ext) return null;
-
-  const target = review.selected.value;
-  const level = kind === 'marking' ? 'item' : 'image';
-  const proposal = d.proposal.peek();
-  const belongs = (t: ReviewTarget): boolean => {
-    if (t.level === level) return t.id === id;
-    if (t.level !== 'change') return false;
-    const c = proposal?.changes.find((x) => x.id === t.id);
-    return kind === 'marking'
-      ? c?.markingId === id
-      : c?.imageId === id && c.markingId === null;
-  };
-  const header: ReviewTarget | null =
-    target && belongs(target)
-      ? target
-      : tree?.nodes.has(`${level}:${id}`)
-        ? { level, id }
-        : null;
 
   const resolved = resolveSelection(project, { kind, id } as NonNullable<Selection>);
   const away =
@@ -258,46 +335,43 @@ function ReviewItemPanel({
   const image = resolved?.kind === 'image' ? resolved.image : null;
   const sameFile =
     image !== null && projectIndex(current).images.get(image.id)?.file === image.file;
-  const panel = (
-    <DetailsExtensionContext.Provider value={ext}>
-      <OpenMarkContext.Provider value={openMark}>
-        {away}
-        <div class="review-panel">
-          {resolved?.kind === 'marking' ? (
-            <MarkingPanel
-              project={project}
-              marking={resolved.marking}
-              image={resolved.image}
-              readOnly
-              onDelete={() => undefined}
-              onSelectMarking={onSelectMarking}
-              onGoToAnnotation={onGoToAnnotation}
-            />
-          ) : (
-            <SelectionPanel
-              image={image}
-              project={project}
-              display={
-                image && sameFile ? display.images.value.get(image.file) : undefined
-              }
-              readOnly
-              busy={false}
-              onReplace={() => undefined}
-              onDelete={() => undefined}
-            />
-          )}
-        </div>
-      </OpenMarkContext.Provider>
-    </DetailsExtensionContext.Provider>
-  );
 
-  return header ? (
-    <ReviewLevel
-      target={header}
-      panel={panel}
-      otherIds={otherChangeIds(index, kind, id)}
-    />
-  ) : (
-    <div class="review-details review-details-panel">{panel}</div>
+  return (
+    <div class="review-details review-details-panel">
+      <DetailsExtensionContext.Provider value={ext}>
+        <OpenMarkContext.Provider value={openMark}>
+          {away}
+          <div class="review-panel">
+            {resolved?.kind === 'marking' ? (
+              <MarkingPanel
+                project={project}
+                marking={resolved.marking}
+                image={resolved.image}
+                readOnly
+                onDelete={noop}
+                onSelectMarking={onSelectMarking}
+                onGoToAnnotation={onGoToAnnotation}
+              />
+            ) : (
+              <SelectionPanel
+                image={image}
+                project={project}
+                display={
+                  image && sameFile ? display.images.value.get(image.file) : undefined
+                }
+                readOnly
+                busy={false}
+                onReplace={noop}
+                onDelete={noop}
+              />
+            )}
+          </div>
+          <FollowTarget item={item} reveal={reveal} onReveal={setRevealed} />
+        </OpenMarkContext.Provider>
+      </DetailsExtensionContext.Provider>
+    </div>
   );
 }
+
+/** Ações de edição que o painel somente leitura não usa. */
+const noop = () => undefined;

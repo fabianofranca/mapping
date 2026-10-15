@@ -62,6 +62,17 @@ export interface DecisionUndo {
   readonly state: 'accepted' | 'rejected' | null;
 }
 
+/**
+ * Pedido de levar o foco ao marcador de uma mudança nos Detalhes (clique ou Enter numa
+ * mudança da janela Propostas, fase 9.6): quem desenha o marcador cumpre e limpa. As setas
+ * só selecionam: o foco fica na lista (HANDOFF-REVIEW-DETAILS, decisão 2).
+ */
+export interface MarkRequest {
+  readonly changeId: string;
+  /** Distingue dois pedidos seguidos da mesma mudança. */
+  readonly seq: number;
+}
+
 export type OpenReviewResult =
   | {
       readonly ok: true;
@@ -92,6 +103,8 @@ export interface ReviewState {
   readonly newConflicts: ReadonlySignal<ReadonlySet<string>>;
   /** A última decisão, enquanto o "Desfazer" vale; `null` depois de outra ação. */
   readonly undoable: ReadonlySignal<DecisionUndo | null>;
+  /** Pedido pendente de focar o marcador de uma mudança (Detalhes); `null` sem pedido. */
+  readonly markRequest: ReadonlySignal<MarkRequest | null>;
   /** Estado derivado (níveis, contagens, "como ficaria", pendências, conflitos). */
   readonly derived: ReviewDerived;
 
@@ -100,6 +113,10 @@ export interface ReviewState {
   /** Sai da revisão, guardando o ponto onde parou. As decisões ficam na proposta. */
   close(): void;
   select(target: ReviewTarget | null): void;
+  /** Pede que os Detalhes levem o foco ao marcador da mudança e abram o popover dela. */
+  requestMark(changeId: string): void;
+  /** Cumpriu (ou desistiu de) o pedido do `requestMark`. */
+  clearMarkRequest(): void;
   setView(view: ReviewView): void;
   setFilters(patch: Partial<ReviewFilters>): void;
   clearFilters(): void;
@@ -283,6 +300,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
   const view = signal<ReviewView>(START_VIEW);
   const filters = signal<ReviewFilters>(NO_FILTERS);
   const undoable = signal<DecisionUndo | null>(null);
+  const markRequest = signal<MarkRequest | null>(null);
+  let markSeq = 0;
   // Os conflitos que a pessoa conhecia ao abrir: o que estiver fora deles é "novo". E os
   // que estavam à vista na abertura (anunciados pelo aviso), que ao fechar ficam conhecidos.
   const knownAtOpen = signal<ReadonlySet<string>>(NO_CONFLICTS);
@@ -387,6 +406,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       knownAtOpen.value = NO_CONFLICTS;
       conflictsAtOpen = NO_CONFLICTS;
       undoable.value = null;
+      markRequest.value = null;
       view.value = START_VIEW;
       filters.value = NO_FILTERS;
       store.setReviewing(false);
@@ -424,6 +444,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     seen,
     newConflicts,
     undoable,
+    markRequest,
     derived,
 
     open(id) {
@@ -490,9 +511,25 @@ export function createReviewState(session: ProjectSession): ReviewState {
     close: closeReview,
 
     select(target) {
+      // Um pedido de foco vale para a mudança que ele nomeia; ir para outra o descarta.
+      const pending = markRequest.peek();
+      if (
+        pending !== null &&
+        !(target?.level === 'change' && target.id === pending.changeId)
+      ) {
+        markRequest.value = null;
+      }
       if (sameTarget(selected.peek(), target)) return;
       selected.value = target;
       remember();
+    },
+
+    requestMark(changeId) {
+      markRequest.value = { changeId, seq: ++markSeq };
+    },
+
+    clearMarkRequest() {
+      markRequest.value = null;
     },
 
     setView(next) {

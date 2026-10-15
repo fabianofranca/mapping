@@ -86,6 +86,7 @@ export function SelectionPanel({
           </>
         }
       />
+      {ext?.header(image.id)}
       {image.locked && (
         <p class="notice notice-info" role="status">
           {t('lock.imageNotice')}
@@ -114,6 +115,7 @@ export function SelectionPanel({
             label={t('image.name')}
             for={nameId}
             mark={ext?.mark(image.id, 'name')}
+            below={ext?.below(image.id, 'name')}
           >
             <TextField
               id={nameId}
@@ -128,7 +130,11 @@ export function SelectionPanel({
               }}
             />
           </Property>
-          <Property label={t('image.file')} mark={ext?.mark(image.id, 'file')}>
+          <Property
+            label={t('image.file')}
+            mark={ext?.mark(image.id, 'file')}
+            below={ext?.below(image.id, 'file')}
+          >
             <code class="props-text">{image.file}</code>
           </Property>
           <Property label={t('image.size')}>
@@ -139,8 +145,10 @@ export function SelectionPanel({
           image={image}
           disabled={disabled}
           mark={ext?.mark(image.id, 'markingColor')}
+          below={ext?.below(image.id, 'markingColor')}
         />
       </Section>
+      {ext?.others(image.id)}
       {own.length > 0 && (
         <div class="row">
           <Button

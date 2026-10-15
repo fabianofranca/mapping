@@ -1581,3 +1581,37 @@ describe('mudanças por entidade e campo (fase 9.5)', () => {
     expect(review.derived.fullPreview.value).toBe(full);
   });
 });
+
+describe('pedido de foco no marcador (Detalhes, fase 9.6)', () => {
+  it('vale para a mudança que nomeia; ir para outra, fechar ou sair da revisão o descarta', async () => {
+    const { proposal, ids } = richScenario();
+    const { review } = await openHarness({ proposals: [proposal] });
+    review.open('P1');
+    expect(review.markRequest.value).toBeNull();
+
+    review.select({ level: 'change', id: ids.name });
+    review.requestMark(ids.name);
+    const first = must(review.markRequest.value);
+    expect(first.changeId).toBe(ids.name);
+    // Selecionar a mesma mudança de novo (o clique que pediu) não descarta o pedido.
+    review.select({ level: 'change', id: ids.name });
+    expect(review.markRequest.value).toBe(first);
+    // Dois pedidos seguidos da mesma mudança se distinguem.
+    review.requestMark(ids.name);
+    expect(must(review.markRequest.value).seq).toBeGreaterThan(first.seq);
+
+    // Quem cumpre limpa.
+    review.clearMarkRequest();
+    expect(review.markRequest.value).toBeNull();
+
+    // Ir para outra mudança descarta o que ficou pendente.
+    review.requestMark(ids.name);
+    review.select({ level: 'change', id: ids.rect });
+    expect(review.markRequest.value).toBeNull();
+
+    // Sair da revisão também.
+    review.requestMark(ids.rect);
+    review.close();
+    expect(review.markRequest.value).toBeNull();
+  });
+});

@@ -29,6 +29,8 @@ interface PropertyProps {
    * `<label>`.
    */
   readonly mark?: ComponentChildren;
+  /** Linha embaixo do controle (a nota da mudança, na revisão), pelo ponto de extensão. */
+  readonly below?: ComponentChildren;
   readonly children: ComponentChildren;
 }
 
@@ -43,6 +45,7 @@ export function Property({
   note,
   focusKey,
   mark,
+  below,
   children,
 }: PropertyProps) {
   const text = (
@@ -88,6 +91,7 @@ export function Property({
         )}
         {issue && !error && <p class="field-error">{issue}</p>}
         {note && <small class="muted props-note">{note}</small>}
+        {below}
       </div>
     </>
   );

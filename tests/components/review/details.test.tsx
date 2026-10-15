@@ -38,10 +38,11 @@ import {
   type ReviewHarness,
 } from './reviewHarness';
 
-// Detalhes na revisão (fase 9.5, HANDOFF-REVIEW-DETAILS): imagem e item mostram o painel
-// normal, somente leitura, sobre o projeto à vista, com um marcador em cada campo alterado
-// e o popover com os valores; acima, o bloco de decisão do nível (até a 9.6). A proposta e
-// o grupo Projeto continuam com os cartões (`ReviewDetails`, no fim deste arquivo).
+// Detalhes na revisão (fases 9.5 e 9.6, HANDOFF-REVIEW-DETAILS): imagem e item mostram o
+// painel normal, somente leitura, sobre o projeto à vista, com um marcador em cada campo
+// alterado e o popover com os valores e a decisão do campo; o cabeçalho do item decide o
+// item. As decisões, a criação, a remoção, as notas, "Outras mudanças" e a navegação têm os
+// arquivos deles nesta pasta; aqui ficam o painel, os valores e o teclado do marcador.
 
 beforeEach(() => {
   locale.value = 'pt-BR';
@@ -105,7 +106,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     ).toEqual(['Proposto', 'Atual']);
   });
 
-  it('a decisão do nível continua acima do painel e o marcador mostra a decisão', async () => {
+  it('o cabeçalho do item decide o item e o marcador mostra a decisão', async () => {
     const { proposal } = richScenario();
     const h = await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M4' });
     // Posição e tamanho: um marcador só, com a ajuda e só o número que muda em negrito.
@@ -281,9 +282,14 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(
       within(pop).getByText(/Aceitar troca Porta traseira por Porta dianteira/),
     ).toBeTruthy();
-    // A mudança selecionada é decidida no bloco acima, que diz o efeito.
+    // A decisão do campo é no popover, e os botões dizem o efeito.
     expect(
-      screen.getByRole('button', { name: /^Aceitar .*: sobrescreve o valor atual$/ }),
+      within(pop).getByRole('button', {
+        name: 'Aceitar: sobrescreve Porta traseira por Porta dianteira',
+      }),
+    ).toBeTruthy();
+    expect(
+      within(pop).getByRole('button', { name: 'Rejeitar: mantém Porta traseira' }),
     ).toBeTruthy();
   });
 
@@ -306,10 +312,16 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(mark);
-    // Enter fixa aberto; Tab depois do último fecha e segue para o próximo controle.
+    // Enter fixa aberto; Tab percorre Ver tudo, Aceitar, Rejeitar e Nota, e depois do
+    // último o popover fecha e o foco segue para o próximo controle.
     await user.keyboard('{Enter}');
     expect(screen.getByRole('dialog')).toBeTruthy();
-    await user.tab();
+    for (const name of ['Ver tudo', /^Aceitar /, /^Rejeitar /, 'Adicionar nota']) {
+      await user.tab();
+      expect(document.activeElement).toBe(
+        within(screen.getByRole('dialog')).getByRole('button', { name }),
+      );
+    }
     await user.tab();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).not.toBe(document.body);
@@ -404,7 +416,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(within(group).getByText('9 mudança(s)')).toBeTruthy();
   });
 
-  it('o que não tem campo no painel continua decidível em "Outras mudanças"', async () => {
+  it('o que não tem campo no painel continua decidível em "Outras mudanças", pelo marcador', async () => {
     const base = sampleProject();
     const proposal = propose(base, setMarkingLocked(base, 'M4', true));
     const h = await showLevel(
@@ -412,8 +424,12 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
       { level: 'item', id: 'M4' },
     );
     const others = screen.getByRole('region', { name: 'Outras mudanças' });
-    const card = within(others).getByRole('article', { name: 'Trava' });
-    fireEvent.click(within(card).getByRole('button', { name: /^Aceitar Trava$/ }));
+    fireEvent.click(
+      within(others).getByRole('button', { name: /^Trava: alterado, pendente\./ }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /^Aceitar Trava$/ }),
+    );
     await waitFor(() =>
       expect(h.review.derived.levels.value.get('item:M4')?.state).toBe('accepted'),
     );
@@ -431,21 +447,25 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect((accept as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('nota em qualquer nível, gravada na proposta', async () => {
+  it('nota do item: o botão do cabeçalho abre o campo, que grava ao sair dele', async () => {
     const { proposal } = richScenario();
     const h = await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M1' });
-    fireEvent.input(screen.getByRole('textbox', { name: 'Nova nota para o agente' }), {
-      target: { value: 'O nome antigo estava certo.' },
-    });
+    expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar nota' }));
+    const box = screen.getByRole('textbox', { name: 'Nota para o agente' });
+    expect(document.activeElement).toBe(box);
+    fireEvent.input(box, { target: { value: 'O nome antigo estava certo.' } });
+    fireEvent.blur(box);
     await waitFor(() =>
       expect(h.review.derived.notes.value.get('item:M1')?.[0]?.text).toBe(
         'O nome antigo estava certo.',
       ),
     );
-    expect(
-      await screen.findByRole('textbox', { name: 'Nota para o agente' }),
-    ).toBeTruthy();
+    // Texto vazio apaga a nota.
+    const saved = await screen.findByRole('textbox', { name: 'Nota para o agente' });
+    fireEvent.input(saved, { target: { value: '  ' } });
+    fireEvent.blur(saved);
+    await waitFor(() => expect(h.review.derived.notes.value.has('item:M1')).toBe(false));
   });
 
   // Fase 8.2 (P8, O9 da rodada 4): "sugerida numa rejeição" só com uma rejeição no nível;
@@ -466,7 +486,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(
       screen.getByRole('button', { name: /^Arquivo da imagem: novo, parte da criação/ }),
     ).toBeTruthy();
-    expect(screen.getByText('opcional, o agente lê na próxima rodada')).toBeTruthy();
+    expect(screen.queryByText(/sugerida numa rejeição/)).toBeNull();
     // Uma rejeição no nível: a nota passa a ser sugerida.
     await act(async () => {
       await h.review.decide({ level: 'change', id: ids.annotation }, 'rejected');
@@ -500,10 +520,43 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(screen.getAllByRole('button', { name: /^Ações do par/ }).length).toBe(3);
   });
 
-  it('a proposta e o grupo Projeto continuam com os cartões', async () => {
-    const { proposal } = richScenario();
-    await showLevel({ proposals: [proposal] }, { level: 'proposal', id: null });
-    expect(screen.getAllByRole('article').length).toBe(proposal.changes.length);
+  it('a proposta tem identidade, Aceitar tudo, "Outras mudanças" do grupo Projeto e as imagens com Abrir', async () => {
+    const { base, proposal } = firstImport();
+    const h = await showLevel(
+      { project: base, proposals: [proposal] },
+      { level: 'proposal', id: null },
+    );
+    expect(screen.getByText('Importação', { selector: 'strong' })).toBeTruthy();
+    expect(screen.getByText('Proposta')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Aceitar Importação' }).textContent).toBe(
+      'Aceitar tudo',
+    );
+    // O grupo Projeto: a criação da camada, com marcador e popover.
+    const others = screen.getByRole('region', { name: 'Outras mudanças' });
+    expect(within(others).getAllByRole('listitem')).toHaveLength(1);
+    expect(
+      within(others).getByRole('button', {
+        name: /^Camada Eventos criada: novo, pendente/,
+      }),
+    ).toBeTruthy();
+    // As imagens: uma linha por imagem com mudanças e Abrir.
+    const images = screen.getByRole('region', { name: 'Imagens' });
+    fireEvent.click(within(images).getByRole('button', { name: /^Abrir / }));
+    expect(h.review.selected.value).toEqual({ level: 'image', id: 'I1' });
+  });
+
+  it('o grupo Projeto é o mesmo painel, só com "Outras mudanças"', async () => {
+    const { base, proposal } = firstImport();
+    await showLevel(
+      { project: base, proposals: [proposal] },
+      { level: 'project', id: null },
+    );
+    expect(screen.getByText('Grupo Projeto')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Outras mudanças' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Imagens' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Aceitar Projeto' }).textContent).toBe(
+      'Aceitar o grupo Projeto',
+    );
   });
 });
 

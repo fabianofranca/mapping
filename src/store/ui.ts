@@ -109,7 +109,7 @@ export function showToast(ui: EditorUi, text: string, duration = TOAST_MS): void
 
 /** Seções recolhíveis de Detalhes. */
 export type DetailsSection =
-  | { readonly kind: 'marking' | 'image' | 'annotations' }
+  | { readonly kind: 'marking' | 'image' | 'annotations' | 'others' | 'images' }
   | { readonly kind: 'layer' | 'annotation'; readonly id: string };
 
 /** Chave da seção no conjunto `collapsed`. */

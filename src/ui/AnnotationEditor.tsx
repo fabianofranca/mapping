@@ -242,6 +242,7 @@ export function AnnotationEditor({
         {ext?.mark(annotation.id, 'name')}
         {ext?.mark(annotation.id, 'layerId')}
         {ext?.mark(annotation.id, 'markingId')}
+        {ext?.decision(annotation.id)}
         <CopyButtons target={{ kind: 'a', id: annotation.id }} />
         <IconButton
           icon="trash"
@@ -283,6 +284,7 @@ export function AnnotationEditor({
             <Property
               label={t('annotation.inheritLabel')}
               mark={ext?.mark(annotation.id, 'inherit')}
+              below={ext?.below(annotation.id, 'inherit')}
             >
               <Choice
                 label={t('annotation.inherit')}
@@ -299,6 +301,7 @@ export function AnnotationEditor({
               focusKey="owner"
               hint={t('annotation.ownerHelp')}
               mark={ext?.mark(annotation.id, 'parentAnnotationId')}
+              below={ext?.below(annotation.id, 'parentAnnotationId')}
               note={
                 <>
                   <span>{t('annotation.ownerHelp')}</span>

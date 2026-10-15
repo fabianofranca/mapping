@@ -1,4 +1,5 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useId, useRef, useState } from 'preact/hooks';
+import { ariaKeys } from '../../app/shortcuts';
 import { t } from '../../i18n';
 import {
   ENTRIES_FIELD_PREFIX,
@@ -10,23 +11,26 @@ import {
   type JsonValue,
 } from '../../model';
 import type { ChangeSituation, ReviewView } from '../../store/derived';
-import { Button } from '../controls';
+import { locale } from '../../store/settings';
+import { Button, IconButton } from '../controls';
 import { useEditor } from '../EditorContext';
 import { Icon, type IconName } from '../icons';
-import { diffRows } from './ChangeCard';
 import { ChangeKind } from './ChangeKind';
 import { changeTitle, valueParts, type ReviewNames, type ValuePart } from './changeText';
+import { REVIEW_KEYS, type DecisionValue } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
 import { DiffValue, type DiffRow } from './DiffValue';
 import { Flag } from './Flag';
+import { formatFullDate } from './format';
+import { NoteField, useHasNote } from './NoteField';
 import { replaceChangeOf } from './ReviewCanvasControls';
-import { useReviewNames } from './useReview';
+import { useDecide, useReviewNames } from './useReview';
 
-// Conteúdo do popover de um marcador (HANDOFF-REVIEW-DETAILS 2.1 e 5.3, fase 9.5): título
-// com o tipo e o campo, os valores (o outro lado primeiro; em conflito, Atual, Antes e
-// Depois), a ajuda do efeito e o rodapé. Nesta fase o rodapé só diz a decisão e onde
-// decidir; os botões de decisão chegam na 9.6. Só existe aberto: o painel desenha os
-// marcadores, nunca popovers fechados.
+// Conteúdo do popover de um marcador (HANDOFF-REVIEW-DETAILS 2.1 e 5.3, fases 9.5 e 9.6):
+// título com o tipo e o campo, os valores (o outro lado primeiro; em conflito, Atual, Antes
+// e Depois), a ajuda do efeito e o rodapé com a decisão do campo (Aceitar, Rejeitar,
+// Limpar; em conflito, Sobrescrever e Manter atual), a nota da mudança e Comparar. Só
+// existe aberto: o painel desenha os marcadores, nunca popovers fechados.
 
 /** O que um marcador representa: uma mudança, ou um campo da entidade criada ou removida. */
 export interface MarkSubject {
@@ -37,6 +41,37 @@ export interface MarkSubject {
   readonly part: boolean;
   /** Na parte: o valor do campo na entidade mostrada, na forma de `from`/`to`. */
   readonly value?: JsonValue;
+}
+
+/** Linhas do corpo em conflito: Atual, Antes e Depois (as duas últimas só quando existem). */
+export function diffRows(
+  names: ReviewNames,
+  c: Change,
+  situation: ChangeSituation | undefined,
+): DiffRow[] {
+  const rows: DiffRow[] = [];
+  if (situation?.conflict) {
+    rows.push({
+      kind: 'current',
+      label: t('review.diff.current'),
+      parts: valueParts(names, c, situation.current, c.to),
+    });
+  }
+  if (c.kind !== 'create') {
+    rows.push({
+      kind: 'before',
+      label: t('review.diff.before'),
+      parts: valueParts(names, c, c.from, c.to),
+    });
+  }
+  if (c.kind !== 'remove') {
+    rows.push({
+      kind: 'after',
+      label: t('review.diff.after'),
+      parts: valueParts(names, c, c.to, c.from),
+    });
+  }
+  return rows;
 }
 
 /** Até quantos caracteres (ou linhas) um valor aparece inteiro antes do "Ver tudo". */
@@ -242,10 +277,138 @@ export function popoverTitle(names: ReviewNames, subject: MarkSubject): string {
   });
 }
 
-export function ChangePopover({ subject }: { readonly subject: MarkSubject }) {
+/** Ações do rodapé: a decisão do campo. Em conflito, os rótulos dizem o efeito. */
+function PopoverDecision({
+  subject,
+  names,
+  situation,
+  decision,
+  disabled,
+  reasonId,
+  onRejectedByMouse,
+}: {
+  readonly subject: MarkSubject;
+  readonly names: ReviewNames;
+  readonly situation: ChangeSituation | undefined;
+  readonly decision: DecisionValue;
+  readonly disabled: boolean;
+  readonly reasonId: string;
+  /** Rejeitou com o mouse: a nota é sugerida (campo vazio com o foco). */
+  readonly onRejectedByMouse: () => void;
+}) {
+  const decide = useDecide();
+  const accept = useRef<HTMLButtonElement>(null);
+  const c = subject.change;
+  const field = markFieldLabel(names, subject);
+  const conflict = situation?.conflict === true;
+  const apply = (state: DecisionValue) => decide({ level: 'change', id: c.id }, state);
+  const describedBy = disabled ? reasonId : undefined;
+
+  let acceptLabel = t(
+    decision === 'accepted' ? 'review.decide.accepted' : 'review.decide.accept',
+    {
+      name: field,
+    },
+  );
+  let rejectLabel = t(
+    decision === 'rejected' ? 'review.decide.rejected' : 'review.decide.reject',
+    {
+      name: field,
+    },
+  );
+  if (conflict) {
+    if (c.kind === 'update') {
+      const current = text(valueParts(names, c, situation.current, c.to));
+      const after = text(valueParts(names, c, c.to, c.from));
+      acceptLabel = t('review.pop.acceptConflict', { current, after });
+      rejectLabel = t('review.pop.rejectConflict', { current });
+    } else {
+      acceptLabel = t('review.decide.acceptConflict', { name: field });
+      rejectLabel = t('review.decide.rejectConflict', { name: field });
+    }
+  }
+
+  return (
+    <div class="change-popover-actions" role="group" aria-label={field}>
+      <Button
+        size="sm"
+        variant="accept"
+        buttonRef={accept}
+        aria-pressed={decision === 'accepted'}
+        aria-label={acceptLabel}
+        aria-keyshortcuts={ariaKeys(REVIEW_KEYS.accept)}
+        aria-describedby={describedBy}
+        title={`${t('review.accept')}  ${REVIEW_KEYS.accept}`}
+        disabled={disabled}
+        onClick={() => apply(decision === 'accepted' ? null : 'accepted')}
+      >
+        <Icon name="check" />
+        {conflict ? t('review.pop.overwrite') : t('review.accept')}
+      </Button>
+      <Button
+        size="sm"
+        variant="reject"
+        aria-pressed={decision === 'rejected'}
+        aria-label={rejectLabel}
+        aria-keyshortcuts={ariaKeys(REVIEW_KEYS.reject)}
+        aria-describedby={describedBy}
+        title={`${t('review.reject')}  ${REVIEW_KEYS.reject}`}
+        disabled={disabled}
+        onClick={(e) => {
+          const next = decision === 'rejected' ? null : 'rejected';
+          apply(next);
+          // Mouse (detail > 0) sugere a nota; o teclado não move o foco (a nota abre com Enter).
+          if (next === 'rejected' && e.detail > 0) onRejectedByMouse();
+        }}
+      >
+        <Icon name="close" />
+        {conflict ? t('review.pop.keepCurrent') : t('review.reject')}
+      </Button>
+      {decision !== null && !disabled && (
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-keyshortcuts={ariaKeys(REVIEW_KEYS.clear)}
+          onClick={() => {
+            // O botão sai do DOM ao limpar: o foco vai ao Aceitar, que fica (nunca ao body).
+            accept.current?.focus();
+            apply(null);
+          }}
+        >
+          {t('review.pop.clear')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+export function ChangePopover({
+  subject,
+  close,
+}: {
+  readonly subject: MarkSubject;
+  /** Fecha o popover devolvendo o foco ao marcador (o `Popover` passa). */
+  readonly close: () => void;
+}) {
   const { review, ui } = useEditor();
   const names = useReviewNames();
   const [all, setAll] = useState(false);
+  const [noteShown, setNoteShown] = useState(false);
+  const [noteFocus, setNoteFocus] = useState(0);
+  const reasonId = useId();
+  const hasNote = useHasNote({ level: 'change', id: subject.change.id });
+  // O estado "mudou de decisão" é anunciado (região `status`), venha de onde vier.
+  const decisionNow = names?.proposal.decisions[subject.change.id]?.state ?? null;
+  const lastDecision = useRef(decisionNow);
+  const [announce, setAnnounce] = useState('');
+  const fieldName = names ? markFieldLabel(names, subject) : '';
+  useEffect(() => {
+    if (lastDecision.current === decisionNow) return;
+    lastDecision.current = decisionNow;
+    setAnnounce(
+      t(`review.pop.announce.${decisionNow ?? 'cleared'}`, { field: fieldName }),
+    );
+  }, [decisionNow, fieldName]);
   if (!names) return null;
   const c = subject.change;
   const p = names.proposal;
@@ -254,7 +417,8 @@ export function ChangePopover({ subject }: { readonly subject: MarkSubject }) {
   const situation = d.situation.value.get(c.id);
   const conflict = !subject.part && situation?.conflict === true;
   const type = markType(subject);
-  const decision = p.decisions[c.id]?.state ?? null;
+  const decision = p.decisions[c.id] ?? null;
+  const state = decision?.state ?? 'undecided';
   const invalid = !subject.part && d.invalid.value.changeIds.has(c.id);
   const together =
     !subject.part && review.undoable.value?.cascaded.includes(c.id) === true;
@@ -291,7 +455,22 @@ export function ChangePopover({ subject }: { readonly subject: MarkSubject }) {
     ? Math.max(fromRows.length, toRows.length) > TABLE_ROWS
     : rows.some((row) => isLong(row.parts));
   const hint = effectHint(names, subject, situation, table);
-  const state = decision ?? 'undecided';
+
+  // Decidir só numa proposta aberta e numa mudança ainda não aplicada (o motivo vai no
+  // `aria-describedby` dos botões desabilitados).
+  const open = p.status === 'open';
+  const disabled = !open || applied;
+  const reason = applied
+    ? t('review.appliedReason')
+    : p.status === 'superseded'
+      ? decision === null
+        ? t('review.pop.supersededPending')
+        : t('review.closedReason')
+      : t('review.closedReason');
+  // Aplicada ou retirada: o popover só mostra a decisão e as datas, sem botões.
+  const closedForGood = p.status === 'applied' || p.status === 'withdrawn';
+  const appliedAt = p.applied[c.id]?.at;
+  const when = (iso: string) => formatFullDate(iso, locale.value);
 
   return (
     <div class={all ? 'change-popover-content is-expanded' : 'change-popover-content'}>
@@ -330,7 +509,7 @@ export function ChangePopover({ subject }: { readonly subject: MarkSubject }) {
           {t('review.pop.showAll')}
         </Button>
       )}
-      {hint && <p class="change-card-hint">{hint}</p>}
+      {hint && <p class="review-hint">{hint}</p>}
       <footer class="change-popover-foot">
         {subject.part ? (
           <p class="muted">{partHint(c)}</p>
@@ -340,14 +519,69 @@ export function ChangePopover({ subject }: { readonly subject: MarkSubject }) {
               <DecisionMark state={state} decorative />
               {t('review.pop.decision', { state: t(`review.details.state.${state}`) })}
             </span>
-            <p class="muted">{t('review.pop.decideElsewhere')}</p>
+            {decision && appliedAt && (
+              <p class="muted">
+                {t('review.pop.closed', {
+                  accepted: when(decision.at),
+                  applied: when(appliedAt),
+                })}
+              </p>
+            )}
+            {disabled && (
+              <p class="muted" id={reasonId}>
+                {reason}
+              </p>
+            )}
+            {!closedForGood && (
+              <PopoverDecision
+                subject={subject}
+                names={names}
+                situation={situation}
+                decision={decision?.state ?? null}
+                disabled={disabled}
+                reasonId={reasonId}
+                onRejectedByMouse={() => {
+                  setNoteShown(true);
+                  setNoteFocus((n) => n + 1);
+                }}
+              />
+            )}
+            <div class="change-popover-more">
+              {open && (
+                <IconButton
+                  icon="note"
+                  size="sm"
+                  label={t('review.note.add')}
+                  pressed={noteShown || hasNote}
+                  onClick={() => {
+                    setNoteShown(true);
+                    setNoteFocus((n) => n + 1);
+                  }}
+                />
+              )}
+              {replaced && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    close();
+                    ui.compareImage.value = c.entityId;
+                  }}
+                >
+                  <Icon name="compare" />
+                  {t('review.compare.button')}
+                </Button>
+              )}
+            </div>
+            <NoteField
+              target={{ level: 'change', id: c.id }}
+              show={noteShown}
+              focusSeq={noteFocus}
+              onHide={() => setNoteShown(false)}
+            />
+            <span class="visually-hidden" role="status">
+              {announce}
+            </span>
           </>
-        )}
-        {replaced && (
-          <Button size="sm" onClick={() => (ui.compareImage.value = c.entityId)}>
-            <Icon name="compare" />
-            {t('review.compare.open')}
-          </Button>
         )}
       </footer>
     </div>

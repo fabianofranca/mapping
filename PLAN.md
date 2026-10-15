@@ -186,11 +186,11 @@ Pedido do dono (2026-10-15): cada fase vai para um agente executor com o modelo 
 
 **Toca em:** `src/ui/review/` (decisão no popover do marcador e no cabeçalho do item, notas, avisos de item trancado e de conjunto inválido; os níveis Proposta, Projeto e Imagem como o handoff decidir; `ChangeCard`/`DiffValue` saem do nível do item e ficam só onde ainda forem usados), `src/ui/review/ReviewDetails.tsx`, `src/i18n/*`, `tests/components/review/*`, `tests/e2e/` (revisão), `docs/ARCHITECTURE.md` (Detalhes na revisão), `docs/TESTING.md` (R4 e R5, que descrevem os cartões Antes/Depois), e `docs/TESTING-COWORK.md` e o apêndice A do guia, se citarem os cartões.
 
-- [ ] Decisão de três estados no popover de cada campo alterado e no cabeçalho do item e de cada anotação criada; "junto" (dependências) visível como hoje
-- [ ] Notas, item trancado e conjunto inválido no cabeçalho do item
-- [ ] Níveis Proposta, Projeto e Imagem conforme o handoff (com **Comparar** na imagem trocada)
-- [ ] Testes de componente das decisões (campo, item, criação, remoção) e o e2e da revisão atualizado
-- [ ] `ARCHITECTURE.md` e os roteiros R4 e R5 do guia descrevendo o painel novo
+- [x] Decisão de três estados no popover de cada campo alterado e no cabeçalho do item e de cada anotação criada; "junto" (dependências) visível como hoje
+- [x] Notas, item trancado e conjunto inválido no cabeçalho do item
+- [x] Níveis Proposta, Projeto e Imagem conforme o handoff (com **Comparar** na imagem trocada)
+- [x] Testes de componente das decisões (campo, item, criação, remoção) e o e2e da revisão atualizado
+- [x] `ARCHITECTURE.md` e os roteiros R4 e R5 do guia descrevendo o painel novo
 
 **Aceite**: o R4 e o R5 do guia passam decidindo pelo painel; nenhuma decisão que hoje se faz pelos cartões fica sem caminho (inclusive pelo teclado).
 

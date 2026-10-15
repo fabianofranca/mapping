@@ -1,3 +1,4 @@
+import type { ReadonlySignal } from '@preact/signals';
 import { createContext, type ComponentChildren } from 'preact';
 import { useContext } from 'preact/hooks';
 import type { Entry, Layer } from '../model';
@@ -43,6 +44,17 @@ export interface DetailsExtension {
    * `entries.<id>`); `''` é a entidade inteira (o cabeçalho da anotação).
    */
   readonly mark: (entityId: string, field: string) => ComponentChildren;
+  /**
+   * Linha embaixo do controle do campo (a nota da mudança, o selo da proposta substituída),
+   * ou `null`.
+   */
+  readonly below: (entityId: string, field: string) => ComponentChildren;
+  /** Cabeçalho do item logo abaixo da identidade (a decisão e os avisos); `null` sem ele. */
+  readonly header: (entityId: string) => ComponentChildren;
+  /** Decisão da anotação criada ou removida (✓ ✕), no cabeçalho dela; `null` nas demais. */
+  readonly decision: (entityId: string) => ComponentChildren;
+  /** Seção "Outras mudanças" no fim do painel do item (o que não tem campo), ou `null`. */
+  readonly others: (entityId: string) => ComponentChildren;
   /** Selos embaixo do nome da entidade e se o nome sai riscado. */
   readonly identity: (entityId: string) => {
     readonly flags: ComponentChildren;
@@ -73,6 +85,11 @@ export interface DetailsExtension {
     readonly first: number;
     readonly step: number;
     readonly label: (count: number) => string;
+    /**
+     * Id da anotação que precisa estar à vista, ainda que passe do "mostrar mais" (a mudança
+     * selecionada na janela Propostas). Um signal: só o grupo que o lê refaz.
+     */
+    readonly reveal: ReadonlySignal<string | null>;
   } | null;
   /** Nome (só para leitor de tela) da coluna das grades onde o marcador fica. */
   readonly markColumn: string;
