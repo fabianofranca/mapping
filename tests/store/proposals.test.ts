@@ -393,6 +393,50 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     return parsed.project;
   }
 
+  // Terceira leitura da etapa 8 (auditoria, §6.1): uma conferência adota um mapping.json de
+  // fora durante a falha do proposal.json. O arquivo de fora cita a cópia; o rollback da
+  // compensação não pode apagá-la.
+  it('proposal.json falhando com o mapping.json recarregado por fora na janela: a cópia citada pelo disco fica', async () => {
+    const h = await readyToApply();
+    vi.spyOn(h.storage, 'writeProposal').mockImplementationOnce(async () => {
+      // O mapping.json aplicado já gravou e cita images/nova.webp. Nessa janela, o MCP o
+      // relê, edita o nome do projeto e grava revision + 1 (o arquivo continua citando a cópia).
+      const applied = await diskProject(h);
+      expect(applied.images.map((i) => i.file)).toContain('images/nova.webp');
+      h.root.put(
+        'mapping.json',
+        serialize({
+          ...applied,
+          revision: applied.revision + 1,
+          project: { ...applied.project, name: 'Do agente' },
+        }),
+      );
+      // O poll do useExternalChanges confere e recarrega (sem pendência local: 'reloaded').
+      // Não dá para esperar a promessa inteira do sync aqui (a varredura das propostas fica
+      // atrás desta mesma mutação): espera só o trabalho da fila da sessão.
+      void h.session.sync();
+      await h.session.flush();
+      expect(h.session.reloads.value).toBe(1);
+      throw new Error('disco cheio');
+    });
+
+    expect(await h.review.apply()).toEqual({ ok: false, error: 'write-failed' });
+    await h.session.proposals.settled();
+    // O projeto em memória e no disco são o de fora, e ele cita a cópia.
+    expect(h.session.store.project.value?.project.name).toBe('Do agente');
+    expect(h.session.store.project.value?.images.map((i) => i.file)).toContain(
+      'images/nova.webp',
+    );
+    expect((await diskProject(h)).images.map((i) => i.file)).toContain(
+      'images/nova.webp',
+    );
+    // A proposta continua sem `applied` e a origem continua lá.
+    expect((await diskProposal(h.root)).applied).toEqual({});
+    expect(await h.root.read(NEW_IMAGE_PATH)).toBe('WEBP');
+    // O ponto da pergunta: o rollback da compensação não pode apagar um arquivo que o disco cita.
+    expect(await h.root.read('images/nova.webp')).toBe('WEBP');
+  });
+
   // Fase 8.2 (P7): o `mapping.json` gravou, mas o `proposal.json` falhou. Sem compensar, o
   // projeto ficava com as mudanças e a proposta sem `applied` (reaplicar dava conflito,
   // imagens duplicadas). Agora o aplicar é desfeito como no `save-failed`: a entrada de
