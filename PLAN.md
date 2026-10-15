@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje, nenhuma: a etapa 9 foi a última detalhada). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje, as da etapa 10). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -40,9 +40,56 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/relato-2026-10-12-dirigida-r4.md`](docs/history/relato-2026-10-12-dirigida-r4.md) | Relato da rodada 4 (dirigida) do Cowork sobre o build `48f8e32`; observações O1 a O9, citadas no aceite das fases 8.2 e 8.4 |
 | [`docs/history/relato-2026-10-13-portao.md`](docs/history/relato-2026-10-13-portao.md) | Relato da rodada 5 (completa, portão da etapa 8) do Cowork sobre o build `e701862`; achados devolvidos às fases 8.2, 8.4 e 8.5 |
 | [`docs/history/relato-2026-10-14-dirigida.md`](docs/history/relato-2026-10-14-dirigida.md) | Relato da rodada 6 (dirigida) do Cowork sobre o build `1710ed5`; confirma as devoluções do portão e fecha a etapa 8 |
+| [`docs/history/relato-2026-10-15-dirigida.md`](docs/history/relato-2026-10-15-dirigida.md) | Relato da rodada 7 (dirigida, etapa 9) do Cowork sobre o build `303b576`; 58 ✅, 1 achado baixo; origem da etapa 10 |
 | [`docs/history/revisao-tecnica-2026-10-12.md`](docs/history/revisao-tecnica-2026-10-12.md) | Revisão técnica dirigida (síntese e seis relatórios, 71 achados); origem da etapa 8 |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das próximas etapas, marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3, concluída; referência): componentes, tokens, mudanças B#, propostas P# e decisões |
 | [`docs/redesign/HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) | Design das propostas de alteração (fase 4.0): telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto |
 | [`docs/redesign/BRIEF-REVIEW-DETAILS.md`](docs/redesign/BRIEF-REVIEW-DETAILS.md) | Briefing para o Claude Design dos Detalhes na revisão (fase 9.1, concluída; referência): problema, estado atual, requisitos, restrições e os estados E1 a E17 |
 | [`docs/redesign/HANDOFF-REVIEW-DETAILS.md`](docs/redesign/HANDOFF-REVIEW-DETAILS.md) | Design dos Detalhes na revisão (etapa 9, aprovado; referência): marcador e popover por campo, cabeçalho do item, “Outras mudanças”, comportamento, textos e decisões |
+
+---
+
+## Fases pendentes — Etapa 10: correções da rodada dirigida da etapa 9
+
+### Objetivo
+
+Fechar o que a **rodada 7 do Cowork** (dirigida nas fases 9.2 a 9.6, build `303b576 · 2026-10-15`) encontrou. Relato em [`docs/history/relato-2026-10-15-dirigida.md`](docs/history/relato-2026-10-15-dirigida.md): 60 linhas, 58 ✅, nenhum ❌, nenhuma regressão e **1 achado baixo**. Nada impede o uso com pessoas; a etapa é curta e sem rodada nova do Cowork. O próximo passo depois dela continua sendo o teste manual avançado do dono.
+
+### Decisões
+
+- **Mesmas regras da etapa 9:** um branch e um PR por fase, a partir da `main`; gates antes do PR (`npm run lint && npm run typecheck && npm test && npm run build`, e o e2e local quando a fase toca a revisão); defeito com o teste que o reproduz antes da correção; descrição do PR com Resumo, Como testar e Decisões tomadas; checkboxes marcados no mesmo PR; merge pelo coordenador com o CI verde (pedido do dono na etapa 9).
+- **Modelo por fase:** 10.1 em Sonnet (interface pequena, com padrão a seguir); 10.2 em Sonnet (documentação).
+- **O achado é defeito** (R5.3): rejeitar pelo popover do marcador não abre a nota sugerida (seção 5.5 do `docs/redesign/HANDOFF-REVIEW-DETAILS.md`) e deixa o foco no `body` (regra "um dono por fechamento", `docs/ARCHITECTURE.md`, "Foco e teclado"). Na segunda vez, com nota já escrita, o campo abre.
+- **Rejeitar a criação mantém a seleção** (R4.5): hoje a seleção vira "Nada selecionado" porque o item some da visão Proposto; os Detalhes continuam mostrando o item ("A criação foi rejeitada…"), então a seleção fica nele.
+- **Ficam para a lista do marco** (ROADMAP), sem código nesta etapa: o nome da imagem com o prefixo `images/` na Árvore, no título dos Detalhes e na barra de status quando a imagem não tem nome (`imageLabel` usa o `file`; comportamento antigo, a referência copiável já usa só o nome do arquivo); e o que já está lá (lista da revisão espremida em altura baixa e títulos cortados, achados 4 e 10 do portão; cadeado da Árvore com `title` diferente do `aria-label`; cartão de texto do Formulário no canvas).
+
+### Fases
+
+#### 10.1 — Nota sugerida e foco ao rejeitar pelo marcador
+
+**Achado baixo do R5.3 e observações do R4.5 e do R4.6.**
+
+**Toca em:** `src/ui/review/ChangePopover.tsx`, `src/ui/review/ChangeMark.tsx`, `src/ui/review/NoteField.tsx`, `src/ui/review/ReviewHeader.tsx` (se a nota do cabeçalho tiver o mesmo caminho), `src/store/review.ts` ou `src/app/useReviewSync.ts` (seleção depois de rejeitar a criação), `tests/components/review/fieldDecision.test.tsx`, `tests/components/review/itemHeader.test.tsx`, `tests/e2e/proposals.spec.ts` (se o e2e cobrir), `docs/TESTING.md` (R4.5 e R5.3).
+
+- [ ] Teste que reproduz, antes da correção: rejeitar pelo popover com o mouse, sem nota, abre o campo de nota com o foco (hoje não abre e o foco cai no `body`)
+- [ ] Rejeitar pelo popover com o mouse abre a nota sugerida vazia com o foco; se ficar vazia, some e o foco volta ao marcador; pelo teclado (`R`) o foco não se move (seção 5.5 do handoff); nunca no `body`
+- [ ] O 1º `Tab` no campo de nota sai do campo (teste de componente; se o problema era só da tecla sintética da extensão, o teste prova e a fase registra)
+- [ ] Rejeitar a criação de um item mantém a seleção nele (teste)
+- [ ] R4.5 e R5.3 do guia descrevendo o comportamento (inclusive a frase "sugerida numa rejeição")
+
+**Aceite**: no R5.3, **Rejeitar** pelo popover da anotação Button abre o campo de nota com o foco na primeira vez; no R4.5, depois de rejeitar a criação do Campo Cupom, ele continua selecionado.
+
+#### 10.2 — Guia e fechamento
+
+**"O que atrapalhou" e observações do relato.**
+
+**Toca em:** `docs/TESTING.md`, `docs/TESTING-COWORK.md`, `docs/ROADMAP.md`, `CLAUDE.md`, `PLAN.md`, novo `docs/history/PLAN-etapa-10.md`.
+
+- [ ] R4.12 e R4.13: o estado de `images/` depois de apagar a proposta e depois do `Ctrl+Z` (as imagens que ficam órfãs saem)
+- [ ] R3.3: sem a promessa do cartão de texto no Formulário (marcação com filhas), ou com a condição em que ele aparece
+- [ ] R3.8: o aviso da migração é uma faixa que some sozinha; onde conferir depois (o backup em `backups/` e o `schemaVersion`)
+- [ ] Apêndice A: a extensão do Chrome que não injeta arquivos de uma pasta montada (tudo entra pelo seletor, com a pessoa)
+- [ ] ROADMAP: rodada 7 no andamento do marco; o prefixo `images/` na lista de observações; etapa 10 concluída
+- [ ] Esta seção vai para `docs/history/PLAN-etapa-10.md` com as decisões dos PRs; `PLAN.md` sem etapa em andamento; `CLAUDE.md` atualizado
+

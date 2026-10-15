@@ -111,6 +111,13 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Entregue:** fases 9.1 a 9.7, uma por agente executor (PRs #145 a #152; o handoff do Claude Design no #150, do dono): a janela Propostas **apaga** a proposta que não está aberta (menu ⋯ › **Apagar proposta…**, com confirmação e sem desfazer; o vínculo da aplicação sai do histórico); o `code` da especialização ganhou `path` (o arquivo que define o símbolo, relativo ao repositório da plataforma), que vira a linha **Definição** dos Detalhes e entra no `get_code_hints` e no `get_marking`; o **`codeRef` saiu do formato** (schema **v9**, migração com backup que descarta os valores pela cópia em `specs/`, campo ignorado com aviso nas especializações antigas, `find_by_code` pelo `path` e pelo `symbol` dos tipos, **MCP 0.4.0**); e os Detalhes da revisão mostram o **painel normal** em somente leitura sobre o projeto à vista, com um marcador por campo alterado (valor atual, proposto e decisão no popover; decisão do item e das anotações criadas no cabeçalho), no desenho aprovado em [`redesign/HANDOFF-REVIEW-DETAILS.md`](redesign/HANDOFF-REVIEW-DETAILS.md). As fases foram mergeadas **sem teste manual**, por pedido do dono: o teste é a rodada dirigida do Cowork descrita em [`TESTING-COWORK.md`](TESTING-COWORK.md). Histórico, com as decisões consolidadas e as pendências, em [`history/PLAN-etapa-9.md`](history/PLAN-etapa-9.md).
 - **Depende de:** etapa 8 (concluída).
 
+## Etapa 10 — Correções da rodada dirigida da etapa 9 (em andamento)
+
+- **Objetivo:** fechar o que a rodada 7 do Cowork (dirigida nas fases 9.2 a 9.6, build `303b576`; [`history/relato-2026-10-15-dirigida.md`](history/relato-2026-10-15-dirigida.md): 58 ✅, nenhum ❌, 1 achado baixo) encontrou. Nada impede o uso com pessoas.
+- **Entra:** a nota sugerida que não abre e o foco no `body` ao rejeitar pelo marcador; a seleção que some ao rejeitar uma criação; o guia do testador (estado de `images/` depois de apagar a proposta e desfazer, o cartão de texto do R3.3, a faixa da migração, a extensão que não injeta arquivos).
+- **Fases:** 10.1 e 10.2 no [`PLAN.md`](../PLAN.md).
+- **Depende de:** etapa 9 (concluída) e da rodada 7.
+
 ## Marco — Uso real
 
 - **Objetivo:** usar a ferramenta em trabalho de verdade antes de qualquer evolução.
