@@ -28,6 +28,22 @@ interface PopoverProps {
   readonly align?: 'start' | 'end';
   /** O botão que abre o popover. */
   readonly trigger: (state: PopoverState) => ComponentChildren;
+  /**
+   * Controlado: quem usa diz se está aberto e recebe os pedidos de abrir e fechar (o
+   * marcador da revisão abre pelo hover e pelo foco, e só um fica aberto por vez). Sem
+   * `open`, o popover guarda o próprio estado, como sempre.
+   */
+  readonly open?: boolean;
+  readonly onOpenChange?: (open: boolean) => void;
+  /** `id` do painel (para o `aria-controls` do gatilho). */
+  readonly id?: string;
+  /** Classe extra do painel (a do host é `class`). */
+  readonly panelClass?: string;
+  /**
+   * Rolar a página (fora do painel): `close` fecha (padrão); `follow` reposiciona, para um
+   * popover aberto pelo foco não fechar com a rolagem que leva o gatilho à vista.
+   */
+  readonly scroll?: 'close' | 'follow';
   /** Conteúdo; a função recebe `close` para fechar ao escolher algo. */
   readonly children: ComponentChildren | ((close: () => void) => ComponentChildren);
 }
@@ -58,9 +74,20 @@ export function Popover({
   label,
   align = 'start',
   trigger,
+  open: controlledOpen,
+  onOpenChange,
+  id,
+  panelClass,
+  scroll = 'close',
   children,
 }: PopoverProps) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const controlled = controlledOpen !== undefined;
+  const open = controlled ? controlledOpen : ownOpen;
+  const setOpen = (next: boolean) => {
+    if (controlled) onOpenChange?.(next);
+    else setOwnOpen(next);
+  };
   const host = useRef<HTMLSpanElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   /** O botão que abre: o primeiro controle do host fora do painel. */
@@ -85,7 +112,9 @@ export function Popover({
     };
     const onScroll = (e: Event) => {
       // Rolar o próprio popover (paleta longa) não fecha.
-      if (!panel.current?.contains(e.target as Node)) close();
+      if (panel.current?.contains(e.target as Node)) return;
+      if (scroll === 'close') close();
+      else if (host.current && panel.current) place(host.current, panel.current, align);
     };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('scroll', onScroll, true);
@@ -95,9 +124,9 @@ export function Popover({
       document.removeEventListener('scroll', onScroll, true);
       globalThis.removeEventListener('resize', close);
     };
-    // `close` só lê refs e escreve no estado.
+    // `close` só lê refs e escreve no estado (ou avisa quem controla).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, scroll, align]);
 
   return (
     <span
@@ -111,7 +140,13 @@ export function Popover({
     >
       {trigger({ open, toggle: () => setOpen(!open) })}
       {open && (
-        <div class="popover" role={role} aria-label={label} ref={panel}>
+        <div
+          class={panelClass ? `popover ${panelClass}` : 'popover'}
+          id={id}
+          role={role}
+          aria-label={label}
+          ref={panel}
+        >
           {typeof children === 'function' ? children(close) : children}
         </div>
       )}

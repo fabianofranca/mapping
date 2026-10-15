@@ -1281,3 +1281,295 @@
   justify-content: flex-end;
   gap: var(--space-2);
 }
+
+/* ---------- Detalhes na revisão: o painel normal com os marcadores (fase 9.5) ---------- */
+/*
+ * Somente leitura legível (decisão 1 do HANDOFF-REVIEW-DETAILS): os controles do painel
+ * ficam desabilitados, mas com o valor em contraste cheio, como o estado "Somente leitura"
+ * do DS (borda `color-border`), em vez da opacidade do desabilitado.
+ */
+.review-panel .input:disabled,
+.review-panel .ref-control:disabled {
+  opacity: 1;
+  color: var(--color-text);
+  background: var(--color-selection-muted);
+  border-color: var(--color-border);
+}
+
+.review-panel .select-control:disabled + .select-chevron,
+.review-panel .segmented-item:disabled,
+.review-panel .choice:has(:disabled),
+.review-panel .swatch:has(input:disabled),
+.review-panel .swatch-theme:has(input:disabled),
+.review-panel .identity .icon-button:disabled {
+  opacity: 1;
+}
+
+.review-panel .grid-cell .input:disabled,
+.review-panel .annotation-header .annotation-name:disabled {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Ações de edição não existem na revisão (o projeto é somente leitura). */
+.review-panel .panel-details > .row,
+.review-panel .details-section-head > .button,
+.review-panel .layer-group-head > .tooltip-anchor,
+.review-panel .annotation-header .tooltip-anchor:has(.icon-button-danger),
+.review-panel .grid-foot,
+.review-panel .table-field-head > .button,
+.review-panel .child-actions {
+  display: none;
+}
+
+.review-details-panel {
+  gap: var(--space-3);
+}
+
+/* Rótulo com o marcador no fim da coluna (o rótulo quebra linha, o controle não anda). */
+.props-label-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.props-label-cell > .props-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.props-label-cell > .change-mark-host,
+.props-label-cell > .props-rect-bracket {
+  margin-top: calc((var(--control-height-sm) - var(--size-icon) - var(--space-0-5)) / 2);
+}
+
+/* `rect`: Posição e Tamanho num rótulo de duas linhas, com um colchete e um marcador. */
+.props-label-cell > .props-label:has(.props-label-rect) {
+  padding-top: 0;
+}
+
+.props-label-rect {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.props-label-rect > span {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height-sm);
+}
+
+.props-rect-bracket {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  gap: var(--space-0-5);
+}
+
+.props-rect-bracket::before {
+  content: '';
+  align-self: stretch;
+  width: var(--space-1);
+  border: 1px solid var(--color-border-control);
+  border-left: none;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+}
+
+.color-field-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.identity-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+del.identity-name {
+  color: var(--color-text-muted);
+}
+
+.details-section-changes {
+  flex: none;
+  font: var(--t-micro);
+  color: var(--color-text-muted);
+}
+
+/* Marcador (ChangeMark): tipo à esquerda, decisão à direita, 18px. */
+.change-mark-host {
+  display: inline-flex;
+  flex: none;
+}
+
+.change-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  height: calc(var(--size-icon) + var(--space-0-5));
+  padding: 0 var(--space-0-5);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.change-mark .icon {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
+.change-mark > .icon {
+  stroke-width: 1.5;
+}
+
+.change-mark:hover {
+  background: var(--color-hover);
+}
+
+.change-mark:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.change-mark.is-open {
+  background: var(--color-selection);
+  border-color: var(--color-accent);
+}
+
+.change-mark.is-conflict {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+}
+
+.change-mark.is-part {
+  justify-content: center;
+  width: calc(var(--size-icon) + var(--space-0-5));
+  padding: 0;
+  color: var(--color-text-muted);
+  border-style: dashed;
+}
+
+.change-mark.is-invalid {
+  box-shadow: 0 0 0 2px var(--color-danger);
+}
+
+/* Popover da mudança (ChangePopover) */
+.change-popover {
+  width: var(--size-change-popover);
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.change-popover-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.change-popover-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.change-popover-title {
+  font: var(--t-text-heading);
+}
+
+.change-popover-body {
+  width: 100%;
+}
+
+.change-popover-body .diff-value-value {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+}
+
+.change-popover-content.is-expanded .diff-value-value {
+  display: block;
+  -webkit-line-clamp: none;
+}
+
+.change-popover-rows {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.change-popover-foot {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.change-popover-foot p {
+  margin: 0;
+  font: var(--t-text-small);
+}
+
+.change-popover-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--t-text-small);
+}
+
+/* Par e linha de tabela que saem ou entram; anotação que sai (fantasma). */
+.grid-row.is-removed {
+  color: var(--color-text-muted);
+}
+
+.grid-cell-text {
+  display: block;
+  padding: 0 var(--space-1-5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grid-row.is-added {
+  background: var(--color-selection);
+}
+
+.grid-row-added {
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+.grid-row-added .icon {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
+.table-field-note {
+  margin: 0;
+  font: var(--t-text-small);
+}
+
+.layer-group .annotation.annotation-removed {
+  padding: var(--space-1-5);
+  border: 1px dashed var(--color-border-control);
+  border-radius: var(--radius-sm);
+}
+
+.annotation-removed-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: var(--t-text-heading);
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

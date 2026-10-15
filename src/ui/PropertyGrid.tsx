@@ -23,6 +23,12 @@ interface PropertyProps {
   readonly note?: ComponentChildren;
   /** Alvo do link de uma pendência (`data-focus`). */
   readonly focusKey?: string;
+  /**
+   * Peça no fim da coluna do rótulo (o marcador da revisão, pelo ponto de extensão dos
+   * Detalhes). Com ela o rótulo fica numa célula própria: um botão não pode ir dentro do
+   * `<label>`.
+   */
+  readonly mark?: ComponentChildren;
   readonly children: ComponentChildren;
 }
 
@@ -36,6 +42,7 @@ export function Property({
   issue,
   note,
   focusKey,
+  mark,
   children,
 }: PropertyProps) {
   const text = (
@@ -52,16 +59,25 @@ export function Property({
       )}
     </>
   );
+  const labelCell = htmlFor ? (
+    <label class="props-label" for={htmlFor} title={hint}>
+      {text}
+    </label>
+  ) : (
+    <span class="props-label" title={hint}>
+      {text}
+    </span>
+  );
+  const marked = mark !== undefined && mark !== null && mark !== false;
   return (
     <>
-      {htmlFor ? (
-        <label class="props-label" for={htmlFor} title={hint}>
-          {text}
-        </label>
+      {marked ? (
+        <div class="props-label-cell">
+          {labelCell}
+          {mark}
+        </div>
       ) : (
-        <span class="props-label" title={hint}>
-          {text}
-        </span>
+        labelCell
       )}
       <div class="props-value" data-focus={focusKey}>
         {children}

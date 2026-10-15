@@ -139,6 +139,19 @@ export function expandSections(ui: EditorUi, sections: readonly DetailsSection[]
   ui.collapsed.value = next;
 }
 
+/** Recolhe as seções (ex.: um grupo grande que a revisão mostra só pelos cabeçalhos). */
+export function collapseSections(
+  ui: EditorUi,
+  sections: readonly DetailsSection[],
+): void {
+  const current = ui.collapsed.peek();
+  const keys = sections.map(sectionKey).filter((key) => !current.has(key));
+  if (keys.length === 0) return;
+  const next = new Set(current);
+  for (const key of keys) next.add(key);
+  ui.collapsed.value = next;
+}
+
 /** Camada ativa efetiva: a escolhida, se ainda existir; senão a primeira do projeto. */
 export function resolveActiveLayerId(
   project: Project | null,

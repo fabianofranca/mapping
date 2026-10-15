@@ -44,8 +44,6 @@ const ALLOWLIST = [
   'src/app/EditorDialogs.tsx',
   // O nome do projeto na barra é o real; o nome proposto aparece na revisão como mudança.
   'src/app/EditorMainBar.tsx',
-  // Detalhes fora da revisão (na revisão o painel é `ReviewDetails`): edita o projeto real.
-  'src/app/EditorPanel.tsx',
   // Fora do editor: sessão e recentes.
   'src/app/controller.ts',
   // Referências `mapping://` e recortes apontam para o projeto real.
@@ -56,8 +54,10 @@ const ALLOWLIST = [
   'src/app/useImageIntake.tsx',
   // Diagnóstico do projeto real.
   'src/ui/DiagnosticsView.tsx',
-  // Painel de seleção fora da revisão: edita o projeto real.
-  'src/ui/SelectionPanel.tsx',
+  // Detalhes na revisão (fase 9.5): o painel lê o projeto à vista; o atual é o outro lado
+  // de um item que não existe na visão Proposto (removido) e a origem dos fantasmas
+  // (anotações e pares que saem, desenhados no lugar onde estavam).
+  'src/ui/review/ReviewPanel.tsx',
   // `CompareDialog`: a imagem "antes" é a do confirmado por definição.
   'src/ui/review/ReviewCanvasControls.tsx',
   // `useReviewNames`: precisa do atual e da prévia (nomes antes/depois).

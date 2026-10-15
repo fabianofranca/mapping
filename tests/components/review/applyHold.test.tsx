@@ -19,7 +19,7 @@ import { locale } from '../../../src/store/settings';
 import { createEditorUi } from '../../../src/store/ui';
 import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
 import { ReviewBar } from '../../../src/ui/review/ReviewBar';
-import { ReviewDetails } from '../../../src/ui/review/ReviewDetails';
+import { ReviewPanel } from '../../../src/ui/review/ReviewPanel';
 import { installFakeCanvas } from '../../canvas/harness';
 import { sampleProject } from '../../model/fixtures';
 import { propose } from '../../model/proposalFixtures';
@@ -92,7 +92,7 @@ function renderReview(h: ReviewHarness) {
     h,
     <>
       <ReviewBar onExit={() => {}} />
-      <ReviewDetails />
+      <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />
       <ProposalsWindow onHelp={() => {}} />
     </>,
   );
@@ -174,9 +174,12 @@ describe('aplicar aceitas sem avisos falsos (devolução do portão da 8.2)', ()
       review: h.review,
     });
     flushFrames();
+    // Antes de aplicar: o painel da marcação que sai, do projeto atual (visão Proposto).
+    expect(screen.getAllByText('Será removida').length).toBeGreaterThan(0);
 
     const { hold } = await applyAndHold(h);
-    // A marcação já saiu do projeto ao vivo; os cartões e os níveis continuam de pé.
+    // A marcação já saiu do projeto ao vivo (e da prévia): os Detalhes caem nos cartões
+    // da mudança e os níveis continuam de pé.
     expect(h.session.store.committed.value?.markings.some((m) => m.id === 'M3')).toBe(
       false,
     );

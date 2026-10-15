@@ -172,11 +172,11 @@ Pedido do dono (2026-10-15): cada fase vai para um agente executor com o modelo 
 
 **Toca em:** `src/app/EditorPanel.tsx` (na revisão, o painel normal sobre o projeto à vista), `src/ui/MarkingPanel.tsx`, `SelectionPanel.tsx`, `AnnotationsPanel.tsx`, `TypedFields.tsx`, `KeyValueGrid.tsx`, `FieldEditors.tsx`, `TableField.tsx` (um ponto de extensão para o marcador do campo, sem saber de revisão), `src/ui/review/` (marcador e popover), `src/store/derived.ts` (índice de mudanças por entidade e campo), `src/theme/tokens.ts` e CSS (o que o handoff trouxer), `src/ui/icons.tsx` (ícones novos do handoff), `src/i18n/*`, `tests/tooling/shownProjectReaders.test.ts` (os Detalhes passam a ler o projeto à vista também na revisão), `tests/components/review/details.test.tsx`, `tests/store/review.test.ts`.
 
-- [ ] Índice derivado "mudanças por entidade e campo" com teste (memoizado pela proposta, como o resto de `review.derived`)
-- [ ] Na revisão, Detalhes mostra o painel normal em somente leitura sobre `shownProject` (Atual e Proposto); seções recolhidas que contêm mudanças abrem
-- [ ] Marcador focável em cada campo alterado, com popover (hover e foco) mostrando o valor atual e o proposto; conflito com Atual, Antes e Depois
-- [ ] Criação com o marcador "novo" em cada campo; remoção com o estado "será removida"
-- [ ] Testes de componente: alteração, criação ("tudo novo"), remoção, conflito, teclado (Tab até o marcador, popover, Esc); `tests/components/editorRenders.test.tsx` no limite
+- [x] Índice derivado "mudanças por entidade e campo" com teste (memoizado pela proposta, como o resto de `review.derived`)
+- [x] Na revisão, Detalhes mostra o painel normal em somente leitura sobre `shownProject` (Atual e Proposto); seções recolhidas que contêm mudanças abrem
+- [x] Marcador focável em cada campo alterado, com popover (hover e foco) mostrando o valor atual e o proposto; conflito com Atual, Antes e Depois
+- [x] Criação com o marcador "novo" em cada campo; remoção com o estado "será removida"
+- [x] Testes de componente: alteração, criação ("tudo novo"), remoção, conflito, teclado (Tab até o marcador, popover, Esc); `tests/components/editorRenders.test.tsx` no limite
 
 **Aceite**: no R4 do guia, com o `proposta-exemplo.zip` e uma importação nova, selecionar uma marcação mostra o painel normal com os campos e os marcadores, nas visões Atual e Proposto.
 

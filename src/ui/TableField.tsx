@@ -12,6 +12,7 @@ import {
 } from '../model';
 import { ActionMenu } from './ActionMenu';
 import { Button } from './controls';
+import { useDetailsExtension } from './DetailsExtension';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
@@ -31,9 +32,11 @@ export function TableField({
   ...ctx
 }: FieldContext & { readonly field: TableFieldDef }) {
   const { actions } = useEditor();
+  const ext = useDetailsExtension();
   const { project, annotation, readOnly } = ctx;
   const grid = useRef<HTMLDivElement>(null);
   const rows = tableRows(annotation.values?.[field.key]);
+  const extra = ext?.tableRows(annotation.id, field.key) ?? null;
   // As linhas da última renderização e os botões de ações e "+ Linha": o retorno do foco
   // do "Referências vão quebrar" é lido ao fechar, já com a tabela nova.
   const rowsNow = useRef(rows);
@@ -121,6 +124,7 @@ export function TableField({
             </span>
           )}
         </span>
+        {ext?.mark(annotation.id, `values.${field.key}`)}
         <span class="table-field-count">
           {rows.length === 1
             ? t('typed.rowsOne')
@@ -160,7 +164,13 @@ export function TableField({
                 {c.required ? ' *' : ''}
               </span>
             ))}
-            <span role="columnheader" aria-hidden="true" />
+            {ext ? (
+              <span role="columnheader" class="visually-hidden">
+                {ext.markColumn}
+              </span>
+            ) : (
+              <span role="columnheader" aria-hidden="true" />
+            )}
           </div>
           {rows.map((row, index) => {
             const name = rowName(row, index);
@@ -168,10 +178,17 @@ export function TableField({
               (b) =>
                 'rowId' in b.ref && b.ref.key === field.key && b.ref.rowId === row._id,
             );
+            const added = extra?.added.has(row._id) === true;
             return (
               <div
                 key={row._id}
-                class={drag.state?.from === index ? 'grid-row is-dragging' : 'grid-row'}
+                class={
+                  drag.state?.from === index
+                    ? 'grid-row is-dragging'
+                    : added
+                      ? 'grid-row is-added'
+                      : 'grid-row'
+                }
                 role="row"
                 data-drag-row=""
                 data-row-id={row._id}
@@ -201,6 +218,16 @@ export function TableField({
                   )}
                 </span>
                 <span class="grid-cell grid-cell-num" role="cell">
+                  {added && (
+                    <span
+                      class="grid-row-added"
+                      role="img"
+                      aria-label={extra?.addedLabel}
+                      title={extra?.addedLabel}
+                    >
+                      <Icon name="plus" />
+                    </span>
+                  )}
                   <span class="grid-row-index">{index + 1}</span>
                   <strong class="grid-row-title">{name}</strong>
                 </span>
@@ -245,31 +272,34 @@ export function TableField({
                   );
                 })}
                 <span class="grid-cell grid-cell-menu" role="cell">
-                  <ActionMenu
-                    label={t('typed.rowActions', { row: name })}
-                    triggerRef={(el) => {
-                      if (el) menuButtons.current.set(row._id, el);
-                      else menuButtons.current.delete(row._id);
-                    }}
-                    disabled={readOnly}
-                    items={[
-                      {
-                        label: t('typed.moveRowUp'),
-                        disabled: index === 0,
-                        onSelect: () => move(index, index - 1, true),
-                      },
-                      {
-                        label: t('typed.moveRowDown'),
-                        disabled: index === rows.length - 1,
-                        onSelect: () => move(index, index + 1, true),
-                      },
-                      {
-                        label: t('typed.removeRow'),
-                        danger: true,
-                        onSelect: () => remove(row),
-                      },
-                    ]}
-                  />
+                  {/* Com a extensão (revisão), a coluna de ações fica vazia: o marcador é do campo. */}
+                  {!ext && (
+                    <ActionMenu
+                      label={t('typed.rowActions', { row: name })}
+                      triggerRef={(el) => {
+                        if (el) menuButtons.current.set(row._id, el);
+                        else menuButtons.current.delete(row._id);
+                      }}
+                      disabled={readOnly}
+                      items={[
+                        {
+                          label: t('typed.moveRowUp'),
+                          disabled: index === 0,
+                          onSelect: () => move(index, index - 1, true),
+                        },
+                        {
+                          label: t('typed.moveRowDown'),
+                          disabled: index === rows.length - 1,
+                          onSelect: () => move(index, index + 1, true),
+                        },
+                        {
+                          label: t('typed.removeRow'),
+                          danger: true,
+                          onSelect: () => remove(row),
+                        },
+                      ]}
+                    />
+                  )}
                 </span>
                 {received.length > 0 && (
                   <div class="grid-row-note">
@@ -285,6 +315,7 @@ export function TableField({
           })}
         </div>
       )}
+      {extra?.note && <p class="muted table-field-note">{extra.note}</p>}
       {confirm && (
         <Dialog
           title={t('ref.deleteTitle')}

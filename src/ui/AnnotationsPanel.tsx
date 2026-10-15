@@ -1,5 +1,5 @@
-import type { ComponentChildren } from 'preact';
-import { useLayoutEffect, useRef } from 'preact/hooks';
+import { Fragment, type ComponentChildren } from 'preact';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationsOf,
@@ -22,6 +22,7 @@ import {
 } from '../store/ui';
 import { AnnotationEditor } from './AnnotationEditor';
 import { AnnotationLines, AnnotationTitle } from './AnnotationSummary';
+import { useDetailsExtension, type DetailsExtension } from './DetailsExtension';
 import { Dialog } from './Dialog';
 import { DialogSlotContext, useDialogSlot } from './focus';
 import { Section } from './DetailsSection';
@@ -83,7 +84,7 @@ export const ADD_ANNOTATION_ACTION = 'add-annotation';
 export function AnnotationsPanel({
   project,
   marking,
-  layers,
+  layers: visible,
   activeLayer,
   readOnly,
   onShowLayer,
@@ -93,6 +94,9 @@ export function AnnotationsPanel({
   onFocusDone,
 }: AnnotationsPanelProps) {
   const { actions, ui } = useEditor();
+  const ext = useDetailsExtension();
+  // Com a extensão (revisão), ela diz que camadas mostrar (ex.: uma escondida com mudanças).
+  const layers = ext ? ext.layers(visible) : visible;
   const root = useRef<HTMLDivElement>(null);
   // Os passos da criação (tipo › dono) são um slot: a troca mantém quem abriu o primeiro.
   const steps = useDialogSlot<CreateStep>();
@@ -107,6 +111,7 @@ export function AnnotationsPanel({
   const byLayer = layers.map((layer) => ({
     layer,
     annotations: annotationsOf(project, marking.id, layer.id),
+    removed: ext?.removedAnnotations(marking.id, layer.id) ?? [],
   }));
   const count = byLayer.reduce((n, g) => n + g.annotations.length, 0);
 
@@ -198,22 +203,14 @@ export function AnnotationsPanel({
           )
         }
       >
-        {byLayer.map(({ layer, annotations }) => {
+        {ext?.annotationsNotice(marking.id)}
+        {byLayer.map(({ layer, annotations, removed }) => {
           const inheritedHere = inherited.filter((a) => a.layerId === layer.id);
-          return (
-            <LayerGroup
-              key={layer.id}
-              hasBody={annotations.length > 0 || inheritedHere.length > 0}
-              project={project}
-              layer={layer}
-              active={layer.id === activeLayer?.id}
-              annotations={annotations}
-              readOnly={readOnly}
-              onAdd={() => add(layer)}
-            >
-              {annotations.map((annotation) => (
+          const items: { readonly key: string; readonly node: ComponentChildren }[] =
+            annotations.map((annotation) => ({
+              key: annotation.id,
+              node: (
                 <AnnotationEditor
-                  key={annotation.id}
                   project={project}
                   annotation={annotation}
                   visibleLayerIds={visibleLayerIds}
@@ -221,7 +218,24 @@ export function AnnotationsPanel({
                   onShowLayer={onShowLayer}
                   readOnly={readOnly}
                 />
-              ))}
+              ),
+            }));
+          // As que saíram, no lugar onde estavam (na ordem da posição de antes).
+          for (const r of removed) {
+            items.splice(Math.min(r.index, items.length), 0, { key: r.id, node: r.node });
+          }
+          return (
+            <LayerGroup
+              key={layer.id}
+              hasBody={items.length > 0 || inheritedHere.length > 0}
+              project={project}
+              layer={layer}
+              active={layer.id === activeLayer?.id}
+              annotations={annotations}
+              readOnly={readOnly}
+              onAdd={() => add(layer)}
+            >
+              <PagedList items={items} page={ext?.annotationPage ?? null} />
               <InheritedList
                 project={project}
                 items={inheritedHere}
@@ -298,6 +312,34 @@ interface LayerGroupProps {
 }
 
 /**
+ * As anotações de um grupo; com `page` (grupos grandes na revisão), as primeiras e um
+ * botão que mostra mais de `step` em `step`. Estado de UI do grupo, até ele desmontar.
+ */
+function PagedList({
+  items,
+  page,
+}: {
+  readonly items: readonly { readonly key: string; readonly node: ComponentChildren }[];
+  readonly page: DetailsExtension['annotationPage'];
+}) {
+  const [limit, setLimit] = useState(page?.first ?? Number.POSITIVE_INFINITY);
+  const shown = page ? items.slice(0, limit) : items;
+  const rest = items.length - shown.length;
+  return (
+    <>
+      {shown.map((item) => (
+        <Fragment key={item.key}>{item.node}</Fragment>
+      ))}
+      {page && rest > 0 && (
+        <Button size="sm" class="button-link" onClick={() => setLimit(limit + page.step)}>
+          {page.label(Math.min(rest, page.step))}
+        </Button>
+      )}
+    </>
+  );
+}
+
+/**
  * Grupo de uma camada (LayerGroup do DS 2.0): borda, faixa de 3px na cor da camada,
  * selo da especialização, "· ativa", contagem e ⚠. Recolhido, resume a primeira
  * anotação e não monta as anotações.
@@ -313,8 +355,10 @@ function LayerGroup({
   children,
 }: LayerGroupProps) {
   const { ui } = useEditor();
+  const ext = useDetailsExtension();
   const section = { kind: 'layer', id: layer.id } as const;
   const collapsed = isSectionCollapsed(ui, section);
+  const changes = collapsed ? (ext?.sectionSummary(section) ?? null) : null;
   const empty = annotations.length === 0;
   const incomplete = annotations.some((a) => issuesOf(project, a.id).length > 0);
   const spec = layer.spec
@@ -331,6 +375,7 @@ function LayerGroup({
       <span class="layer-dot" aria-hidden="true" />
       <strong class="layer-group-name">{layer.name}</strong>
       {spec && <span class="tag">{spec.spec?.name ?? spec.id}</span>}
+      {ext?.layerTag(layer.id)}
       {meta.length > 0 && (
         <span class="layer-group-meta">{` · ${meta.join(' · ')}`}</span>
       )}
@@ -341,6 +386,7 @@ function LayerGroup({
             ? annotationSummary(project, first)
             : ''}
       </span>
+      {changes && <span class="details-section-changes">{changes}</span>}
       {incomplete && (
         <span
           class="issue-badge"

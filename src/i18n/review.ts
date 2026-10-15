@@ -277,6 +277,65 @@ export const reviewPtBR = {
   'review.diff.current': 'Atual',
   'review.diff.before': 'Antes',
   'review.diff.after': 'Depois',
+  // Detalhes na revisão (fase 9.5): marcador do campo, popover e o painel normal.
+  'review.mark.label': '{field}: {kind}, {state}.',
+  'review.mark.values': 'Atual: {current}. Proposto: {proposed}',
+  'review.mark.part.create': '{field}: novo, parte da criação de {entity}',
+  'review.mark.part.remove': '{field}: será removido com {entity}',
+  'review.mark.kind.created': 'novo',
+  'review.mark.kind.removed': 'removido',
+  'review.mark.kind.changed': 'alterado',
+  'review.mark.kind.moved': 'movido',
+  'review.mark.kind.replaced': 'trocado',
+  'review.mark.state.undecided': 'pendente',
+  'review.mark.state.accepted': 'aceito',
+  'review.mark.state.rejected': 'rejeitado',
+  'review.mark.conflict': 'em conflito',
+  'review.mark.invalid': 'envolvido no conjunto inválido',
+  'review.mark.together': 'decidido junto',
+  'review.mark.applied': 'aplicado',
+  'review.mark.column': 'Mudança',
+  'review.pop.title': '{field} · {kind}',
+  'review.pop.proposed': 'Proposto',
+  'review.pop.notThere': '(não existe)',
+  'review.pop.decideOnItem.create':
+    'Faz parte da criação da marcação: decida no cabeçalho, acima.',
+  'review.pop.decideOnItem.remove':
+    'Sai com a marcação: decida a remoção no cabeçalho, acima.',
+  'review.pop.decideOnImage.create':
+    'Faz parte da criação da imagem: decida no cabeçalho, acima.',
+  'review.pop.decideOnImage.remove':
+    'Sai com a imagem: decida a remoção no cabeçalho, acima.',
+  'review.pop.decideOnAnnotation.create':
+    'Faz parte da criação da anotação: decida a anotação inteira na janela Propostas.',
+  'review.pop.decideOnAnnotation.remove':
+    'Sai com a anotação: decida a remoção na janela Propostas.',
+  'review.pop.decision': 'Decisão: {state}',
+  'review.pop.decideElsewhere':
+    'Decida no cabeçalho, acima, ou na linha desta mudança na janela Propostas.',
+  'review.pop.showAll': 'Ver tudo',
+  'review.pop.tableHint': 'A tabela é um campo: decide-se inteira.',
+  'review.pop.rectHint': 'Posição e tamanho são decididos juntos.',
+  'review.panel.notInView.proposed':
+    'Na visão Proposto este item não existe. O painel mostra o projeto atual.',
+  'review.panel.notInView.current':
+    'Ainda não existe no projeto atual. O painel mostra como ficaria.',
+  'review.panel.rejectedCreation':
+    'A criação foi rejeitada: o painel mostra o que a proposta criaria.',
+  'review.panel.seeProposed': 'Ver em Proposto',
+  'review.panel.seeCurrent': 'Ver na visão Atual',
+  'review.panel.willBeRemoved': 'Será removida',
+  'review.panel.createdByProposal': 'Criada pela proposta',
+  'review.panel.changes': '{count} mudança(s)',
+  'review.panel.allNew': 'tudo novo',
+  'review.panel.otherChanges': 'Outras mudanças',
+  'review.panel.hiddenLayers': '{count} mudança(s) em camada escondida: {layers}',
+  'review.panel.showHere': 'Mostrar aqui',
+  'review.panel.hideAgain': 'Ocultar de novo',
+  'review.panel.hiddenTag': 'escondida',
+  'review.panel.showMore': 'Mostrar mais {count} anotação(ões)',
+  'review.panel.rowAdded': 'Linha nova',
+  'review.panel.rowsRemoved': '{count} linha(s) sai(em): veja no marcador',
   'review.flag.locked': 'Trancado',
   'review.hint.conflict':
     'O projeto mudou depois desta proposta. Aceitar troca {current} por {after}; rejeitar mantém {current}.',
@@ -345,7 +404,7 @@ export const reviewPtBR = {
   'help.proposals.decide':
     'Cada nível tem Aceitar e Rejeitar; decidir um nível decide todas as mudanças dentro dele, e cada mudança pode contrariar o nível. Clicar de novo no mesmo botão volta para "sem decisão". Os filtros (decisão, tipo, imagem, camada, só conflitos) limitam a lista e as ações em lote.',
   'help.proposals.details':
-    'A janela Detalhes mostra o valor atual, o de antes e o proposto de cada mudança, os conflitos (o projeto mudou depois da proposta) e os itens trancados. Ali também ficam as notas, que vão junto com a proposta e o agente pode ler.',
+    'A janela Detalhes mostra o item selecionado com os campos de sempre, só para ler, e um marcador em cada campo alterado: passar o mouse ou chegar nele com Tab abre o valor atual e o proposto (num conflito, o atual, o de antes e o proposto). Os conflitos (o projeto mudou depois da proposta) e os itens trancados aparecem no topo, com a decisão do nível. Ali também ficam as notas, que vão junto com a proposta e o agente pode ler.',
   'help.proposals.apply':
     'Aplicar aceitas · N grava as mudanças aceitas no projeto de uma vez (e pode ser desfeito com Ctrl+Z). Se uma aceita depende de outra que não foi aceita, o botão explica o que falta antes de aplicar.',
   'help.proposals.resume':
@@ -623,6 +682,64 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.diff.current': 'Current',
   'review.diff.before': 'Before',
   'review.diff.after': 'After',
+  'review.mark.label': '{field}: {kind}, {state}.',
+  'review.mark.values': 'Current: {current}. Proposed: {proposed}',
+  'review.mark.part.create': '{field}: new, part of creating {entity}',
+  'review.mark.part.remove': '{field}: removed with {entity}',
+  'review.mark.kind.created': 'new',
+  'review.mark.kind.removed': 'removed',
+  'review.mark.kind.changed': 'changed',
+  'review.mark.kind.moved': 'moved',
+  'review.mark.kind.replaced': 'replaced',
+  'review.mark.state.undecided': 'pending',
+  'review.mark.state.accepted': 'accepted',
+  'review.mark.state.rejected': 'rejected',
+  'review.mark.conflict': 'in conflict',
+  'review.mark.invalid': 'involved in the invalid set',
+  'review.mark.together': 'decided together',
+  'review.mark.applied': 'applied',
+  'review.mark.column': 'Change',
+  'review.pop.title': '{field} · {kind}',
+  'review.pop.proposed': 'Proposed',
+  'review.pop.notThere': "(doesn't exist)",
+  'review.pop.decideOnItem.create':
+    'Part of creating the marking: decide in the header above.',
+  'review.pop.decideOnItem.remove':
+    'Goes with the marking: decide the removal in the header above.',
+  'review.pop.decideOnImage.create':
+    'Part of creating the image: decide in the header above.',
+  'review.pop.decideOnImage.remove':
+    'Goes with the image: decide the removal in the header above.',
+  'review.pop.decideOnAnnotation.create':
+    'Part of creating the annotation: decide the whole annotation in the Proposals window.',
+  'review.pop.decideOnAnnotation.remove':
+    'Goes with the annotation: decide the removal in the Proposals window.',
+  'review.pop.decision': 'Decision: {state}',
+  'review.pop.decideElsewhere':
+    "Decide in the header above, or on this change's row in the Proposals window.",
+  'review.pop.showAll': 'Show all',
+  'review.pop.tableHint': "The table is one field: it's decided as a whole.",
+  'review.pop.rectHint': 'Position and size are decided together.',
+  'review.panel.notInView.proposed':
+    "This item doesn't exist in the Proposed view. Showing the current project.",
+  'review.panel.notInView.current':
+    'Not in the current project yet. Showing how it would look.',
+  'review.panel.rejectedCreation':
+    'The creation was rejected: showing what the proposal would create.',
+  'review.panel.seeProposed': 'See in Proposed',
+  'review.panel.seeCurrent': 'See in the Current view',
+  'review.panel.willBeRemoved': 'Will be removed',
+  'review.panel.createdByProposal': 'Created by the proposal',
+  'review.panel.changes': '{count} change(s)',
+  'review.panel.allNew': 'all new',
+  'review.panel.otherChanges': 'Other changes',
+  'review.panel.hiddenLayers': '{count} change(s) in a hidden layer: {layers}',
+  'review.panel.showHere': 'Show here',
+  'review.panel.hideAgain': 'Hide again',
+  'review.panel.hiddenTag': 'hidden',
+  'review.panel.showMore': 'Show {count} more annotation(s)',
+  'review.panel.rowAdded': 'New row',
+  'review.panel.rowsRemoved': '{count} row(s) removed: see the marker',
   'review.flag.locked': 'Locked',
   'review.hint.conflict':
     'The project changed after this proposal. Accepting replaces {current} with {after}; rejecting keeps {current}.',
@@ -690,7 +807,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'help.proposals.decide':
     'Each level has Accept and Reject; deciding a level decides every change inside it, and each change can go against the level. Pressing the same button again sets it back to "undecided". The filters (decision, kind, image, layer, conflicts only) narrow the list and the bulk actions.',
   'help.proposals.details':
-    'The Details window shows the current, the previous and the proposed value of each change, the conflicts (the project changed after the proposal) and the locked items. Notes live there too; they stay with the proposal and the agent can read them.',
+    'The Details window shows the selected item with its usual fields, read-only, and a marker on each changed field: hovering it or reaching it with Tab shows the current and the proposed value (in a conflict, the current, the previous and the proposed one). Conflicts (the project changed after the proposal) and locked items show at the top, with the decision for the level. Notes live there too; they stay with the proposal and the agent can read them.',
   'help.proposals.apply':
     'Apply accepted · N writes the accepted changes into the project at once (and can be undone with Ctrl+Z). If an accepted change depends on another one that was not accepted, the button explains what is missing before applying.',
   'help.proposals.resume':

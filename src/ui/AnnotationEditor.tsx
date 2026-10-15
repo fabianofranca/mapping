@@ -20,6 +20,7 @@ import { IssueBadge } from './AnnotationSummary';
 import { CodeDefinitions } from './CodeDefinitions';
 import { CommitInput } from './CommitInput';
 import { CopyButtons } from './CopyActions';
+import { useDetailsExtension } from './DetailsExtension';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { Button, Choice, IconButton, Select } from './controls';
@@ -123,6 +124,7 @@ export function AnnotationEditor({
   readOnly,
 }: AnnotationEditorProps) {
   const { actions, ui } = useEditor();
+  const ext = useDetailsExtension();
   const ownerId = useId();
   const [pending, setPending] = useState<PendingDelete | null>(null);
   /** Filho criado numa camada oculta: oferece mostrá-la. */
@@ -216,9 +218,11 @@ export function AnnotationEditor({
           aria-expanded={!collapsed}
           onClick={() => toggleSection(ui, section)}
         />
+        {ext?.mark(annotation.id, '')}
         {typed && (
           <span class="type">{resolved?.type.name ?? annotation.type?.typeId}</span>
         )}
+        {ext?.mark(annotation.id, 'type')}
         <IssueBadge project={project} annotation={annotation} />
         <CommitInput
           class="input input-sm annotation-name"
@@ -235,6 +239,9 @@ export function AnnotationEditor({
             return actions.renameAnnotation(annotation.id, text).ok;
           }}
         />
+        {ext?.mark(annotation.id, 'name')}
+        {ext?.mark(annotation.id, 'layerId')}
+        {ext?.mark(annotation.id, 'markingId')}
         <CopyButtons target={{ kind: 'a', id: annotation.id }} />
         <IconButton
           icon="trash"
@@ -273,7 +280,10 @@ export function AnnotationEditor({
           )}
 
           <PropertyGrid>
-            <Property label={t('annotation.inheritLabel')}>
+            <Property
+              label={t('annotation.inheritLabel')}
+              mark={ext?.mark(annotation.id, 'inherit')}
+            >
               <Choice
                 label={t('annotation.inherit')}
                 checked={annotation.inherit}
@@ -288,6 +298,7 @@ export function AnnotationEditor({
               for={ownerId}
               focusKey="owner"
               hint={t('annotation.ownerHelp')}
+              mark={ext?.mark(annotation.id, 'parentAnnotationId')}
               note={
                 <>
                   <span>{t('annotation.ownerHelp')}</span>

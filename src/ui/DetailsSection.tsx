@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useId } from 'preact/hooks';
 import { isSectionCollapsed, toggleSection, type DetailsSection } from '../store/ui';
+import { useDetailsExtension } from './DetailsExtension';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 
@@ -28,6 +29,7 @@ export function Section({
   children,
 }: SectionProps) {
   const { ui } = useEditor();
+  const extra = useDetailsExtension()?.sectionSummary(section) ?? null;
   const collapsed = isSectionCollapsed(ui, section);
   const bodyId = useId();
   return (
@@ -44,6 +46,7 @@ export function Section({
           <span class="details-section-title">{title}</span>
           {count !== undefined && <span class="details-section-count">{count}</span>}
           {collapsed && summary && <span class="details-section-summary">{summary}</span>}
+          {collapsed && extra && <span class="details-section-changes">{extra}</span>}
         </button>
         {actions}
       </div>

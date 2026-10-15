@@ -204,6 +204,11 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-home-main': '960px',
   /** Seletor de referência (popup no topo, B14). */
   'size-picker': '600px',
+  /**
+   * Popover de uma mudança nos Detalhes da revisão (`ChangePopover`, HANDOFF-REVIEW-DETAILS
+   * 3.1): cabe na janela Detalhes na largura inicial e dá para as três linhas do conflito.
+   */
+  'size-change-popover': '320px',
   // Opacidades
   'opacity-disabled': '0.45',
   'opacity-dimmed': '0.35',
@@ -219,6 +224,11 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'duration-fast': '100ms',
   'duration-base': '160ms',
   'duration-slow': '240ms',
+  /**
+   * Atraso para abrir o popover de uma mudança pelo hover (HANDOFF-REVIEW-DETAILS 3.1):
+   * pede intenção, senão percorrer o painel abriria um popover por linha.
+   */
+  'duration-hover-intent': '300ms',
   'easing-standard': 'cubic-bezier(0.2, 0, 0, 1)',
   // Camadas de empilhamento
   'z-canvas': '0',
