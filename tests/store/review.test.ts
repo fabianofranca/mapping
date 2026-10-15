@@ -1323,3 +1323,173 @@ describe('grupo Projeto e camadas', () => {
     expect(review.derived.visibleIds.value).toHaveLength(0);
   });
 });
+
+// Fase 9.2: apagar uma proposta fechada. O desfazer do projeto continua valendo (o vínculo
+// da aplicação sai do histórico), o retomar daquela proposta sai do blob e a revisão aberta
+// recusa.
+describe('apagar proposta (fase 9.2)', () => {
+  const files = { [NEW_IMAGE_PATH]: 'WEBP' };
+  const RESUME_KEY = 'mapping.reviewResume';
+
+  /** Aplica tudo de P1 (fecha a revisão): a proposta fica "aplicada" e o projeto muda. */
+  async function appliedHarness(
+    options: { copyId?: string; others?: readonly Proposal[] } = {},
+  ) {
+    const { proposal } = richScenario();
+    const h = await openHarness({
+      proposals: [proposal, ...(options.others ?? [])],
+      files,
+      ...(options.copyId === undefined ? {} : { copyId: options.copyId }),
+    });
+    h.review.open('P1');
+    await h.review.decide({ level: 'proposal', id: null }, 'accepted');
+    expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
+    h.review.close();
+    return h;
+  }
+
+  it('apaga a aplicada do disco e da lista; desfazer e refazer o projeto depois não dão erro nem deixam arquivo órfão citado', async () => {
+    const h = await appliedHarness();
+    const { session, review, root } = h;
+    expect((await diskProposal(root)).status).toBe('applied');
+
+    expect(await review.removeProposal('P1')).toMatchObject({ ok: true });
+
+    expect(root.dirs.get('proposals')?.dirs.has('P1')).toBe(false);
+    expect(session.proposals.list.value).toEqual([]);
+    expect(review.derived.rows.value).toEqual([]);
+    expect(await session.proposals.scan()).toEqual({
+      added: [],
+      changed: [],
+      removed: [],
+    });
+    expect(session.proposals.notices.value).toEqual([]);
+    // A entrada da aplicação continua no histórico, agora só do projeto.
+    expect(session.store.canUndo.value).toBe(true);
+
+    clearReportedErrors();
+    expect(session.store.undo()).toBe(true);
+    await session.proposals.settled();
+    expect(session.store.project.value?.images.map((i) => i.id)).not.toContain('I3');
+    const undone = await projectOnDisk(h);
+    expect(undone.images.map((i) => i.id)).not.toContain('I3');
+    // Nada de proposta ressuscitada, nem imagem devolvida a proposals/P1/.
+    expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
+    expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
+    // O arquivo copiado para images/ segue a limpeza normal da sessão: o mapping.json
+    // gravado já não o cita, então ele saiu.
+    expect(await root.read('images/nova.webp')).toBeNull();
+
+    expect(session.store.redo()).toBe(true);
+    await session.proposals.settled();
+    const redone = await projectOnDisk(h);
+    expect(redone.images.map((i) => i.id)).toContain('I3');
+    // O mapping.json cita images/nova.webp e o arquivo está lá (restaurado da lixeira).
+    expect(redone.images.find((i) => i.id === 'I3')?.file).toBe('images/nova.webp');
+    expect(await root.read('images/nova.webp')).toBe('WEBP');
+    expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
+    expect(await session.proposals.scan()).toEqual({
+      added: [],
+      changed: [],
+      removed: [],
+    });
+    expect(reportedErrors.value).toEqual([]);
+  });
+
+  it('o refazer pendente de uma aplicação desfeita antes de apagar também fica só do projeto', async () => {
+    const h = await appliedHarness();
+    const { session, review, root } = h;
+    // Desfaz a aplicação (a proposta volta a "aberta"): ela não pode ser apagada assim.
+    expect(session.store.undo()).toBe(true);
+    await session.proposals.settled();
+    expect((await diskProposal(root)).status).toBe('open');
+    expect(await review.removeProposal('P1')).toEqual({
+      ok: false,
+      error: 'not-removable',
+    });
+    // Refazer volta a aplicar; agora a proposta está aplicada e pode ser apagada.
+    expect(session.store.redo()).toBe(true);
+    await session.proposals.settled();
+    expect((await diskProposal(root)).status).toBe('applied');
+    // Desfaz de novo e apaga com a entrada no "refazer": refazer só mexe no projeto.
+    expect(session.store.undo()).toBe(true);
+    await session.proposals.settled();
+    writeOutside(root, { ...(await diskProposal(root)), status: 'withdrawn' });
+    await session.proposals.scan();
+    expect(await review.removeProposal('P1')).toMatchObject({ ok: true });
+    clearReportedErrors();
+    expect(session.store.canRedo.value).toBe(true);
+    expect(session.store.redo()).toBe(true);
+    await session.proposals.settled();
+    await session.flush();
+    expect(session.store.project.value?.images.map((i) => i.id)).toContain('I3');
+    expect(await root.read('images/nova.webp')).toBe('WEBP');
+    expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
+    expect(reportedErrors.value).toEqual([]);
+  });
+
+  it('a entrada do retomar e a "vista" daquela proposta saem do blob; as das outras ficam', async () => {
+    const p2 = richScenario('P2').proposal;
+    const h = await appliedHarness({ copyId: 'copia-9', others: [p2] });
+    const { review } = h;
+    review.open('P2');
+    review.select({ level: 'item', id: 'M4' });
+    review.close();
+    const before = JSON.parse(localStorage.getItem(RESUME_KEY) ?? 'null');
+    expect(before.seen).toEqual(['copia-9|P1', 'copia-9|P2']);
+    expect(Object.keys(before.resume).sort()).toEqual(['copia-9|P1', 'copia-9|P2']);
+
+    expect(await review.removeProposal('P1')).toMatchObject({ ok: true });
+
+    const after = JSON.parse(localStorage.getItem(RESUME_KEY) ?? 'null');
+    expect(after.seen).toEqual(['copia-9|P2']);
+    expect(Object.keys(after.resume)).toEqual(['copia-9|P2']);
+    expect(review.seen.value.has('P1')).toBe(false);
+    expect(review.seen.value.has('P2')).toBe(true);
+  });
+
+  it('com o localStorage bloqueado, apagar não lança', async () => {
+    const h = await appliedHarness();
+    const original = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new Error('bloqueado');
+      },
+    });
+    try {
+      expect(await h.review.removeProposal('P1')).toMatchObject({ ok: true });
+      expect(h.session.proposals.list.value).toEqual([]);
+    } finally {
+      if (original) Object.defineProperty(window, 'localStorage', original);
+    }
+  });
+
+  it('recusa durante a revisão e em projeto somente leitura, sem apagar nada', async () => {
+    const closed: Proposal = { ...richScenario('P1').proposal, status: 'withdrawn' };
+    const open = richScenario('P2').proposal;
+    const { review, session, root } = await openHarness({ proposals: [closed, open] });
+
+    review.open('P2');
+    expect(await review.removeProposal('P1')).toEqual({ ok: false, error: 'reviewing' });
+    expect(await session.proposalActions.removeProposal('P1')).toEqual({
+      ok: false,
+      error: 'reviewing',
+    });
+    review.close();
+
+    session.store.load(must(session.store.project.value), { readOnly: true });
+    expect(await review.removeProposal('P1')).toEqual({ ok: false, error: 'read-only' });
+    expect(await root.read('proposals/P1/proposal.json')).not.toBeNull();
+    expect(session.proposals.get('P1')).not.toBeNull();
+  });
+
+  it('proposta aberta não se apaga', async () => {
+    const { review, root } = await openHarness({ proposals: [richScenario().proposal] });
+    expect(await review.removeProposal('P1')).toEqual({
+      ok: false,
+      error: 'not-removable',
+    });
+    expect(await root.read('proposals/P1/proposal.json')).not.toBeNull();
+  });
+});

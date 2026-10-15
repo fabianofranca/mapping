@@ -95,6 +95,11 @@ export interface ProjectStore {
    * depois do desfazer, então refazer deixaria projeto e proposta em desacordo.
    */
   discardRedoOf(tag: string): void;
+  /**
+   * Tira o vínculo (`HistoryLink`) de `tag` de todas as entradas, do desfazer e do refazer:
+   * a proposta foi apagada, então desfazer e refazer só mexem no projeto. As entradas ficam.
+   */
+  detachLinks(tag: string): void;
   undo(): boolean;
   redo(): boolean;
 
@@ -237,6 +242,17 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
 
     discardRedoOf(tag) {
       if (future.value.some((frame) => frame.link?.tag === tag)) future.value = [];
+    },
+
+    detachLinks(tag) {
+      const detach = (frames: readonly Frame[]): readonly Frame[] =>
+        frames.some((frame) => frame.link?.tag === tag)
+          ? frames.map((frame) =>
+              frame.link?.tag === tag ? { project: frame.project, link: null } : frame,
+            )
+          : frames;
+      past.value = detach(past.value);
+      future.value = detach(future.value);
     },
 
     undo() {

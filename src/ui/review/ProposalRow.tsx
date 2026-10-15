@@ -1,8 +1,13 @@
 import type { ComponentChildren } from 'preact';
 import { t } from '../../i18n';
-import { proposalListStatus, type ProposalListFlag } from '../../model';
+import {
+  canRemoveProposal,
+  proposalListStatus,
+  type ProposalListFlag,
+} from '../../model';
 import type { ProposalRow as ProposalRowData } from '../../store/derived';
 import { locale } from '../../store/settings';
+import { ActionMenu } from '../ActionMenu';
 import { Button } from '../controls';
 import { Icon } from '../icons';
 import { DecisionMark } from './DecisionMark';
@@ -123,9 +128,23 @@ interface ProposalRowProps {
   readonly onAction: (row: ProposalRowData, action: ProposalAction) => void;
   /** "Abrir a nova": a proposta que substituiu esta (`row.supersededBy`). */
   readonly onOpenNewer: (proposalId: string) => void;
+  /**
+   * "Apagar proposta…" do menu ⋯ (fase 9.2). Só nas linhas que não estão abertas, e só se
+   * a janela passa o callback: a lista passa, a revisão não tem linhas de proposta.
+   */
+  readonly onRemove?: (row: ProposalRowData) => void;
+  /** O menu ⋯ fica desabilitado (projeto somente leitura). */
+  readonly removeDisabled?: boolean;
 }
 
-export function ProposalRow({ row, now, onAction, onOpenNewer }: ProposalRowProps) {
+export function ProposalRow({
+  row,
+  now,
+  onAction,
+  onOpenNewer,
+  onRemove,
+  removeDisabled = false,
+}: ProposalRowProps) {
   const { proposal: p, progress } = row;
   const status = proposalStatus(row);
   const lang = locale.value;
@@ -206,10 +225,24 @@ export function ProposalRow({ row, now, onAction, onOpenNewer }: ProposalRowProp
         <Button
           variant={status.primary ? 'primary' : 'default'}
           aria-label={`${actionLabel}: ${p.title}`}
+          data-proposal-action=""
           onClick={() => onAction(row, status.action)}
         >
           {actionLabel}
         </Button>
+        {onRemove && canRemoveProposal(p) && (
+          <ActionMenu
+            label={t('proposals.rowActions', { title: p.title })}
+            disabled={removeDisabled}
+            items={[
+              {
+                label: t('proposals.remove'),
+                danger: true,
+                onSelect: () => onRemove(row),
+              },
+            ]}
+          />
+        )}
       </div>
     </div>
   );

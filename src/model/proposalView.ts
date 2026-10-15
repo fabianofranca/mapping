@@ -250,6 +250,15 @@ export interface ProposalListStatus {
 }
 
 /**
+ * Pode apagar a proposta (fase 9.2)? Só as que não estão abertas (retirada, substituída,
+ * aplicada): uma aberta ainda espera decisão do dono, e o arquivo dela é o que o agente e
+ * a revisão leem.
+ */
+export function canRemoveProposal(p: Pick<Proposal, 'status'>): boolean {
+  return p.status !== 'open';
+}
+
+/**
  * Status mostrado e ação de uma linha da janela Propostas. `fresh`: aberta, sem decisão
  * nem nota e ainda não aberta neste dispositivo ("Nova"); é a mesma verdade da contagem
  * da barra de status, então toda linha `fresh` leva o selo e a ação principal.

@@ -2,7 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { channelDbName } from '../utils/channel';
 import type { ReopenableDirectory } from './folder';
 import type { ProjectFiles } from './zip';
-import { proposalFilePath } from '../model';
+import { PROPOSAL_ID_RE, proposalDir, proposalFilePath } from '../model';
 import {
   BACKUPS_DIR,
   backupTimestamp,
@@ -212,6 +212,25 @@ function createLibrary(db: Db): LocalLibrary {
           await Promise.all([
             tx.objectStore('projects').put({ ...meta, unexported: true }),
             tx.objectStore('files').put(stored),
+            tx.done,
+          ]);
+        },
+        async removeProposal(proposalId) {
+          if (!PROPOSAL_ID_RE.test(proposalId)) {
+            throw new Error(`invalid proposal id: ${proposalId}`);
+          }
+          const prefix = `${proposalDir(proposalId)}/`;
+          // Tudo na mesma transação: `proposals/<id>/…` (o `proposal.json` e as imagens).
+          const tx = db.transaction(['projects', 'files'], 'readwrite');
+          const meta = await tx.objectStore('projects').get(id);
+          if (!meta) throw new Error(`local project not found: ${id}`);
+          const files = tx.objectStore('files');
+          const keys = await files.index('byProject').getAllKeys(id);
+          await Promise.all([
+            tx.objectStore('projects').put({ ...meta, unexported: true }),
+            ...keys
+              .filter(([, path]) => path.startsWith(prefix))
+              .map((key) => files.delete(key)),
             tx.done,
           ]);
         },

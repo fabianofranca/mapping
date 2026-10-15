@@ -107,6 +107,47 @@ describe('pasta: proposals/', () => {
   });
 });
 
+describe('pasta: removeProposal (fase 9.2)', () => {
+  it('apaga proposals/<id>/ inteira (proposal.json e imagens), só dela', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    root.put(proposalFilePath('A'), 'a');
+    root.put('proposals/A/images/nova.webp', 'WEBP');
+    root.put('proposals/A/images/sub/outra.png', 'PNG');
+    root.put(proposalFilePath('B'), 'b');
+    root.put('images/final.webp', 'FINAL');
+    expect(await storage.listProposals()).toEqual(['A', 'B']);
+
+    await storage.removeProposal('A');
+
+    expect(await storage.listProposals()).toEqual(['B']);
+    expect(root.dirs.get('proposals')?.dirs.has('A')).toBe(false);
+    expect(await storage.readImage('proposals/A/images/nova.webp')).toBeNull();
+    expect(await root.read(proposalFilePath('B'))).toBe('b');
+    expect(await root.read('images/final.webp')).toBe('FINAL');
+  });
+
+  it('não falha se a proposta (ou a pasta proposals/) já não existe', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    await expect(storage.removeProposal('A')).resolves.toBeUndefined();
+    root.put(proposalFilePath('B'), 'b');
+    await expect(storage.removeProposal('A')).resolves.toBeUndefined();
+    await storage.removeProposal('B');
+    await expect(storage.removeProposal('B')).resolves.toBeUndefined();
+  });
+
+  it('recusa um id que apontaria para fora da pasta da proposta', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    root.put(proposalFilePath('A'), 'a');
+    for (const bad of ['', '..', '.git', 'a/b']) {
+      await expect(storage.removeProposal(bad)).rejects.toThrow('invalid proposal id');
+    }
+    expect(await storage.listProposals()).toEqual(['A']);
+  });
+});
+
 describe('loadProposals', () => {
   it('lê as válidas, guarda o texto exato e separa as inválidas', async () => {
     const root = new MemoryDirectory('p');
@@ -195,6 +236,57 @@ describe('projeto local (IndexedDB)', () => {
     expect(await library.open('a').readProposal('P1')).toBe('texto');
   });
 
+  it('removeProposal apaga o proposal.json e as imagens da proposta, só dela, e marca não exportado', async () => {
+    await library.create(
+      'a',
+      files({
+        proposals: new Map([
+          [proposalFilePath('P1'), 'um'],
+          [proposalFilePath('P2'), 'dois'],
+        ]),
+        proposalImages: new Map([
+          ['proposals/P1/images/nova.webp', new Blob(['W1'], { type: 'image/webp' })],
+          ['proposals/P1/images/sub/outra.png', new Blob(['P1'], { type: 'image/png' })],
+          ['proposals/P2/images/nova.webp', new Blob(['W2'], { type: 'image/webp' })],
+        ]),
+        images: new Map([['images/final.jpg', new Blob(['F'], { type: 'image/jpeg' })]]),
+      }),
+      { unexported: false },
+    );
+    const storage = library.open('a');
+
+    await storage.removeProposal('P1');
+
+    expect(await storage.listProposals()).toEqual(['P2']);
+    expect(await storage.readProposal('P1')).toBeNull();
+    expect(await storage.readImage('proposals/P1/images/nova.webp')).toBeNull();
+    expect(await storage.readImage('proposals/P1/images/sub/outra.png')).toBeNull();
+    expect(await (await storage.readImage('proposals/P2/images/nova.webp'))?.text()).toBe(
+      'W2',
+    );
+    expect(await (await storage.readImage('images/final.jpg'))?.text()).toBe('F');
+    expect((await library.get('a'))?.unexported).toBe(true);
+    // De novo, sem nada a apagar: não falha.
+    await expect(storage.removeProposal('P1')).resolves.toBeUndefined();
+  });
+
+  it('removeProposal não confunde ids que começam igual (P1 e P10) e recusa id inválido', async () => {
+    await library.create(
+      'a',
+      files({
+        proposals: new Map([
+          [proposalFilePath('P1'), 'um'],
+          [proposalFilePath('P10'), 'dez'],
+        ]),
+      }),
+    );
+    const storage = library.open('a');
+    await storage.removeProposal('P1');
+    expect(await storage.listProposals()).toEqual(['P10']);
+    await expect(storage.removeProposal('')).rejects.toThrow('invalid proposal id');
+    await expect(storage.removeProposal('../x')).rejects.toThrow('invalid proposal id');
+  });
+
   it('as propostas de um projeto não aparecem em outro', async () => {
     await library.create('a', files());
     await library.create('b', files());
@@ -276,6 +368,28 @@ describe('zip com propostas', () => {
     expect([...read.files.proposalImages.keys()]).toEqual([
       'proposals/P1/images/nova.webp',
     ]);
+  });
+
+  it('depois de apagar a proposta, o zip exportado não a leva (pasta e projeto local)', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    root.put(proposalFilePath('P1'), serializeProposal(sampleProposal('P1')));
+    root.put('proposals/P1/images/nova.webp', 'WEBP');
+    root.put(proposalFilePath('P2'), serializeProposal(sampleProposal('P2', 'Outra')));
+    await storage.removeProposal('P1');
+
+    // A exportação lê o que a sessão lista (`collect`), que sai da pasta.
+    const loaded = await loadProposals(storage);
+    const proposals = new Map(
+      loaded.proposals.map((p) => [proposalFilePath(p.proposal.id), p.text]),
+    );
+    const images = new Map<string, Blob>();
+    const blob = await storage.readImage('proposals/P1/images/nova.webp');
+    if (blob) images.set('proposals/P1/images/nova.webp', blob);
+    const read = await readProjectZip(await zipWith(proposals, images));
+    if (!read.ok) throw new Error(read.error);
+    expect([...read.files.proposals.keys()]).toEqual([proposalFilePath('P2')]);
+    expect(read.files.proposalImages.size).toBe(0);
   });
 
   it('um zip sem propostas continua abrindo', async () => {

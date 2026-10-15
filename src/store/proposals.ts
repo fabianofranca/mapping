@@ -1,5 +1,6 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
 import {
+  canRemoveProposal,
   changeImageFile,
   proposalImagePath,
   serializeProposal,
@@ -46,6 +47,21 @@ export type ProposalErrorCode =
   /** O arquivo mudou por fora e ficou ilegível. */
   | 'unreadable'
   | 'write-failed';
+
+/** Por que `ProposalStore.remove` recusou ou falhou. */
+export type RemoveProposalError =
+  /** Não há proposta legível com esse id na lista. */
+  | 'unknown-proposal'
+  /** A proposta está (ou voltou a estar) aberta: só as fechadas se apagam. */
+  | 'not-removable'
+  /** O arquivo mudou por fora e ficou ilegível: não se apaga o que não se leu. */
+  | 'unreadable'
+  /** O armazenamento não conseguiu apagar `proposals/<id>/`. */
+  | 'remove-failed';
+
+export type RemoveProposalResult =
+  | { readonly ok: true; readonly proposal: Proposal }
+  | { readonly ok: false; readonly error: RemoveProposalError };
 
 export type MutationOutcome<T, E extends string> =
   | { readonly ok: true; readonly proposal: Proposal; readonly value: T }
@@ -106,6 +122,14 @@ export interface ProposalStore {
     id: string,
     mutation: Mutation<T, E>,
   ): Promise<MutationOutcome<T, E>>;
+  /**
+   * Apaga a proposta do armazenamento (`proposals/<id>/` inteira) e da lista, na mesma fila:
+   * relê o arquivo antes e recusa se ele voltou a estar aberto (o agente pode ter reaberto
+   * a proposta) ou ficou ilegível. Não gera o aviso "apagada por fora": a pessoa apagou.
+   * `onRemoved` roda de forma síncrona logo depois de o armazenamento apagar (a sessão tira
+   * o vínculo do histórico sem janela para um desfazer no meio).
+   */
+  remove(id: string, onRemoved?: () => void): Promise<RemoveProposalResult>;
   /** Confere a pasta: propostas novas, alteradas e apagadas por fora. */
   scan(): Promise<ProposalScan>;
   /** Espera as gravações em andamento (ao fechar o projeto). */
@@ -260,6 +284,51 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     return { ok: true, proposal: next, value: plan.value };
   };
 
+  const removeNow = async (
+    id: string,
+    onRemoved?: () => void,
+  ): Promise<RemoveProposalResult> => {
+    let entry = known.get(id);
+    if (!entry) return { ok: false, error: 'unknown-proposal' };
+    // Confere o arquivo: se mudou por fora, decide sobre a versão do disco.
+    let text: string | null;
+    try {
+      text = await storage.readProposal(id);
+    } catch (e) {
+      reportError('proposals.read', e);
+      return { ok: false, error: 'unreadable' };
+    }
+    if (text !== null && text !== entry.text) {
+      const parsed = parseProposalFile(id, text, await stampOf(id));
+      if (!parsed.ok) return { ok: false, error: 'unreadable' };
+      entry = { proposal: parsed.proposal, text: parsed.text, stamp: parsed.stamp };
+      adopt(entry);
+      publish();
+      notify('changed', id, parsed.proposal.title);
+    }
+    // Sem arquivo (apagado por fora no meio): só falta limpar o que sobrou da pasta.
+    if (text !== null && !canRemoveProposal(entry.proposal)) {
+      return { ok: false, error: 'not-removable' };
+    }
+    try {
+      await storage.removeProposal(id);
+    } catch (e) {
+      reportError('proposals.remove', e);
+      return { ok: false, error: 'remove-failed' };
+    }
+    known.delete(id);
+    problemMap.delete(id);
+    notices.value = notices.value.filter((n) => n.id !== id);
+    publish();
+    options.onChanged?.();
+    try {
+      onRemoved?.();
+    } catch (e) {
+      reportError('proposals.removed', e);
+    }
+    return { ok: true, proposal: entry.proposal };
+  };
+
   const scanNow = async (): Promise<ProposalScan> => {
     const added: string[] = [];
     const changed: string[] = [];
@@ -325,6 +394,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     notices,
     get: (id) => known.get(id)?.proposal ?? null,
     mutate: (id, mutation) => enqueue(() => runMutation(id, mutation)),
+    remove: (id, onRemoved) => enqueue(() => removeNow(id, onRemoved)),
     scan: () => enqueue(scanNow),
     settled: () => enqueue(() => Promise.resolve()),
     clearNotices() {
