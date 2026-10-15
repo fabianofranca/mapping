@@ -1615,3 +1615,33 @@ describe('pedido de foco no marcador (Detalhes, fase 9.6)', () => {
     expect(review.markRequest.value).toBeNull();
   });
 });
+
+describe('pedido da nota sugerida (rejeitar pelo marcador, fase 10.1)', () => {
+  it('vale para a mudança que nomeia; limpar, ir para outra ou sair da revisão o descarta', async () => {
+    const { proposal, ids } = richScenario();
+    const { review } = await openHarness({ proposals: [proposal] });
+    review.open('P1');
+    expect(review.noteRequest.value).toBeNull();
+
+    review.select({ level: 'change', id: ids.name });
+    review.requestNote(ids.name);
+    const first = must(review.noteRequest.value);
+    expect(first.changeId).toBe(ids.name);
+    // Selecionar a mesma mudança de novo (o clique que pediu) não o descarta.
+    review.select({ level: 'change', id: ids.name });
+    expect(review.noteRequest.value).toBe(first);
+    review.requestNote(ids.name);
+    expect(must(review.noteRequest.value).seq).toBeGreaterThan(first.seq);
+
+    review.clearNoteRequest();
+    expect(review.noteRequest.value).toBeNull();
+
+    review.requestNote(ids.name);
+    review.select({ level: 'change', id: ids.rect });
+    expect(review.noteRequest.value).toBeNull();
+
+    review.requestNote(ids.rect);
+    review.close();
+    expect(review.noteRequest.value).toBeNull();
+  });
+});

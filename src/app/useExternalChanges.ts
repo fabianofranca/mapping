@@ -1,7 +1,8 @@
 import { effect } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { t } from '../i18n';
-import { resolveSelection, showToast } from '../store/ui';
+import { resolveShownSelection } from '../store/shownSelection';
+import { showToast } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
 import { reportError } from '../utils/report';
 
@@ -46,13 +47,12 @@ export function useExternalChanges(interval = EXTERNAL_POLL_MS): void {
 
   // Depois de recarregar (sozinho ou pelo diálogo), a seleção que sumiu do arquivo é limpa.
   // Pelo projeto à vista: na visão Proposto da revisão, o item que só existe na prévia
-  // continua selecionado (fase 8.2, P1).
+  // continua selecionado (fase 8.2, P1), e o de uma criação rejeitada também.
   useEffect(
     () =>
       effect(() => {
         void session.reloads.value;
-        const shown = review.derived.shownProject.peek();
-        if (!resolveSelection(shown, ui.selection.peek())) {
+        if (!resolveShownSelection(review, ui.selection.peek(), true)) {
           ui.selection.value = null;
         }
       }),

@@ -105,6 +105,13 @@ export interface ReviewState {
   readonly undoable: ReadonlySignal<DecisionUndo | null>;
   /** Pedido pendente de focar o marcador de uma mudança (Detalhes); `null` sem pedido. */
   readonly markRequest: ReadonlySignal<MarkRequest | null>;
+  /**
+   * Pedido de abrir a nota sugerida de uma mudança, com o foco no campo (rejeitar pelo
+   * popover com o mouse). Vive aqui, e não no popover, porque rejeitar pode trocar o cartão
+   * da anotação criada e remontar o marcador: o popover novo cumpre o pedido. `null` sem
+   * pedido.
+   */
+  readonly noteRequest: ReadonlySignal<MarkRequest | null>;
   /** Estado derivado (níveis, contagens, "como ficaria", pendências, conflitos). */
   readonly derived: ReviewDerived;
 
@@ -117,6 +124,10 @@ export interface ReviewState {
   requestMark(changeId: string): void;
   /** Cumpriu (ou desistiu de) o pedido do `requestMark`. */
   clearMarkRequest(): void;
+  /** Pede a nota sugerida da mudança (`noteRequest`); cada pedido tem um `seq` novo. */
+  requestNote(changeId: string): void;
+  /** A nota foi fechada vazia, ou o popover foi fechado: o pedido deixa de valer. */
+  clearNoteRequest(): void;
   setView(view: ReviewView): void;
   setFilters(patch: Partial<ReviewFilters>): void;
   clearFilters(): void;
@@ -302,6 +313,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
   const undoable = signal<DecisionUndo | null>(null);
   const markRequest = signal<MarkRequest | null>(null);
   let markSeq = 0;
+  const noteRequest = signal<MarkRequest | null>(null);
   // Os conflitos que a pessoa conhecia ao abrir: o que estiver fora deles é "novo". E os
   // que estavam à vista na abertura (anunciados pelo aviso), que ao fechar ficam conhecidos.
   const knownAtOpen = signal<ReadonlySet<string>>(NO_CONFLICTS);
@@ -407,6 +419,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       conflictsAtOpen = NO_CONFLICTS;
       undoable.value = null;
       markRequest.value = null;
+      noteRequest.value = null;
       view.value = START_VIEW;
       filters.value = NO_FILTERS;
       store.setReviewing(false);
@@ -445,6 +458,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     newConflicts,
     undoable,
     markRequest,
+    noteRequest,
     derived,
 
     open(id) {
@@ -519,6 +533,10 @@ export function createReviewState(session: ProjectSession): ReviewState {
       ) {
         markRequest.value = null;
       }
+      const note = noteRequest.peek();
+      if (note !== null && !(target?.level === 'change' && target.id === note.changeId)) {
+        noteRequest.value = null;
+      }
       if (sameTarget(selected.peek(), target)) return;
       selected.value = target;
       remember();
@@ -530,6 +548,14 @@ export function createReviewState(session: ProjectSession): ReviewState {
 
     clearMarkRequest() {
       markRequest.value = null;
+    },
+
+    requestNote(changeId) {
+      noteRequest.value = { changeId, seq: ++markSeq };
+    },
+
+    clearNoteRequest() {
+      noteRequest.value = null;
     },
 
     setView(next) {

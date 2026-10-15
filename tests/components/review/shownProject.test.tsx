@@ -1,7 +1,11 @@
+import type { Signal } from '@preact/signals';
 import { act, cleanup, screen, within } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../../src/i18n';
+import { useExternalChanges } from '../../../src/app/useExternalChanges';
+import { useReviewSync } from '../../../src/app/useReviewSync';
 import { locale } from '../../../src/store/settings';
+import { changeOf } from '../../model/proposalFixtures';
 import { Breadcrumbs } from '../../../src/ui/Breadcrumbs';
 import { LayersWindow } from '../../../src/ui/LayersWindow';
 import { Minimap } from '../../../src/ui/Minimap';
@@ -90,6 +94,55 @@ describe('projeto à vista na revisão (contrato do shownProject)', () => {
     expect(images()).toBe(1);
     act(() => h.review.setView('current'));
     expect(images()).toBe(0);
+  });
+
+  it('rejeitar a criação do item mantém a seleção nele: a trilha e a barra de status seguem mostrando-o', async () => {
+    const h = await openProposed();
+    const marking = changeOf(
+      h.review.derived.proposal.value as NonNullable<
+        typeof h.review.derived.proposal.value
+      >,
+      'marking',
+      'M1',
+    );
+    function Wired() {
+      useReviewSync();
+      useExternalChanges();
+      return (
+        <>
+          <Breadcrumbs onSelect={() => {}} />
+          <StatusBar />
+        </>
+      );
+    }
+    renderInEditor(h, <Wired />);
+    expect(within(screen.getByRole('navigation')).getAllByRole('button')).toHaveLength(2);
+    await act(async () => {
+      await h.review.decide({ level: 'change', id: marking.id }, 'rejected');
+    });
+    // O item saiu do "como ficaria" (a criação não vale mais), mas continua selecionado.
+    expect(h.review.derived.shownProject.value?.markings.some((m) => m.id === 'M1')).toBe(
+      false,
+    );
+    expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    expect(
+      within(screen.getByRole('navigation'))
+        .getAllByRole('button')
+        .map((c) => c.getAttribute('aria-label')),
+    ).toEqual([
+      t('crumbs.image', { name: 'images/cadastro.webp' }),
+      t('crumbs.marking', { name: 'Formulário' }),
+    ]);
+    const bar = screen.getByRole('contentinfo');
+    expect(within(bar).getByTitle(t('status.selectionLabel', { name: 'Formulário' })));
+    // Recarregar o arquivo (alteração por fora) não limpa a seleção: valida pelo projeto à vista.
+    act(() => {
+      (h.context.session.reloads as unknown as Signal<number>).value++;
+    });
+    expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    // Na visão Atual a criação não existe: "Nada selecionado", como antes.
+    act(() => h.review.setView('current'));
+    expect(screen.getAllByText(nothing())).toHaveLength(2);
   });
 
   it('fora da revisão, tudo volta ao projeto confirmado', async () => {
