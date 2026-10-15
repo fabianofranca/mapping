@@ -95,7 +95,7 @@ Entregue dois itens na pasta de trabalho e cole o conteúdo do primeiro na conve
 
 ## 9. Rodada dirigida da etapa 9
 
-As fases da etapa 9 ([`docs/history/PLAN-etapa-9.md`](history/PLAN-etapa-9.md)) foram mergeadas **sem teste manual**, por pedido do dono: esta rodada é o primeiro teste à mão delas. Ela vale como o modo dirigido "pelas fases de um plano", com a lista já montada abaixo (ainda assim, mostre-a ao dono e peça confirmação, como na seção 5).
+As fases da etapa 9 ([`docs/history/PLAN-etapa-9.md`](history/PLAN-etapa-9.md)) foram mergeadas **sem teste manual**, por pedido do dono: esta rodada é o primeiro teste à mão delas. Ela foi executada em 2026-10-15 (rodada 7, [`relato-2026-10-15-dirigida.md`](history/relato-2026-10-15-dirigida.md): 58 ✅ e 1 achado baixo, corrigido na etapa 10, [`PLAN-etapa-10.md`](history/PLAN-etapa-10.md)); a lista fica como referência para repetir. Ela vale como o modo dirigido "pelas fases de um plano", com a lista já montada abaixo (ainda assim, mostre-a ao dono e peça confirmação, como na seção 5).
 
 **Antes de começar**
 
