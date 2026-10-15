@@ -871,6 +871,72 @@ describe('sessão de projeto', () => {
       expect(await root.read('images/a.jpg')).toBeNull();
     });
 
+    it('imagem adicionada durante uma gravação em curso: a primeira não a cita e a apaga; a segunda a regrava antes de citar (auditoria §6.2)', async () => {
+      const root = new MemoryDirectory('p');
+      const project = sampleProject();
+      root.put('mapping.json', serialize(project));
+      const h = hookedStart(root, project);
+      session = h.session;
+      session.actions.renameProject('Um');
+      const first = h.holdSave();
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
+      const adding = session.addImages([file('a.jpg', '400x300')]);
+      await vi.waitFor(async () =>
+        expect(await root.read('images/a.jpg')).toBe('400x300'),
+      );
+      const second = h.holdSave();
+      first.resolve();
+      await vi.waitFor(() => expect(h.savesStarted()).toBe(2));
+      // A primeira gravação não cita a imagem; a segunda já a regravou (está parada no saveMapping).
+      const between = await savedProject(root);
+      expect(between.project.name).toBe('Um');
+      expect(between.images.map((i) => i.file)).not.toContain('images/a.jpg');
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+      second.resolve();
+      await adding;
+      expect(session.saveStatus.value).toBe('saved');
+      const after = await savedProject(root);
+      expect(after.images.map((i) => i.file)).toContain('images/a.jpg');
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+    });
+
+    it('imagem adicionada durante uma gravação, desfeita antes da seguinte e refeita: o disco nunca cita arquivo ausente (auditoria §6.2)', async () => {
+      const root = new MemoryDirectory('p');
+      const project = sampleProject();
+      root.put('mapping.json', serialize(project));
+      const h = hookedStart(root, project);
+      session = h.session;
+      session.actions.renameProject('Um');
+      const first = h.holdSave();
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      await vi.waitFor(() => expect(h.savesStarted()).toBe(1));
+      const adding = session.addImages([file('a.jpg', '400x300')]);
+      await vi.waitFor(async () =>
+        expect(await root.read('images/a.jpg')).toBe('400x300'),
+      );
+      expect(session.store.undo()).toBe(true);
+      first.resolve();
+      await adding;
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS * 2);
+      expect(session.saveStatus.value).toBe('saved');
+      // Nada a gravar depois do desfazer (o disco já tem 'Um'); a limpeza da primeira apagou o arquivo.
+      expect(h.savesStarted()).toBe(1);
+      expect((await savedProject(root)).images.map((i) => i.file)).not.toContain(
+        'images/a.jpg',
+      );
+      expect(await root.read('images/a.jpg')).toBeNull();
+      // Refazer: a imagem volta da lixeira em memória antes do mapping.json que a cita.
+      expect(session.store.redo()).toBe(true);
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS * 2);
+      await vi.waitFor(() => expect(h.session.saveStatus.value).toBe('saved'));
+      expect(h.savesStarted()).toBe(2);
+      expect((await savedProject(root)).images.map((i) => i.file)).toContain(
+        'images/a.jpg',
+      );
+      expect(await root.read('images/a.jpg')).toBe('400x300');
+    });
+
     it('collectFiles com a gravação em erro devolve saved: false e leva o confirmado (S8)', async () => {
       const root = new MemoryDirectory('p');
       const h = hookedStart(root, emptyProject());
