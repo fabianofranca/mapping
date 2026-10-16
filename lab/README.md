@@ -4,7 +4,7 @@ Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (
 
 ## Como entregar mudanças (épico)
 
-O laboratório inteiro vive num **branch de épico** (o do PR [#157](https://github.com/fabianofranca/mapping/pull/157), `ccr-fd30ea34-usc5u8`, base `main`), para nada dele chegar à `main` antes de a validação terminar. O fluxo:
+O laboratório inteiro vive num **branch de épico** (o do PR [#157](https://github.com/fabianofranca/mapping/pull/157), `epic/lab`, base `main`), para nada dele chegar à `main` antes de a validação terminar. O fluxo:
 
 1. **Branch curto a partir do branch do épico**, um por alteração (uma página, um componente, um teste).
 2. **PR com base no branch do épico**, nunca na `main`, com a descrição de sempre (Resumo, Como testar, Decisões). O CI roda nele como em qualquer PR; para ver no navegador, Actions › Deploy › Run workflow com o branch curto (ou o do épico, depois do merge) publica em `/preview/lab/…`.
