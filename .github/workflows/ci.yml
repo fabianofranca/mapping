@@ -106,6 +106,7 @@ jobs:
             exit 1
           fi
       - run: npm run build:mcp
+      - run: npm run build:viewer
 
   # Ponta a ponta no `dist/index.html` final, no desktop (a app é só desktop desde a fase 5.8).
   # Só roda aqui: o ambiente de desenvolvimento pode não conseguir baixar o navegador.
