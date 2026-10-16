@@ -9,7 +9,7 @@ import {
   type RectNode,
   type SceneNode,
   type TextNode,
-} from '../../../lab/figma/scene';
+} from '../../../lab/scene/scene';
 
 const solid = (r: number, g: number, b: number, a = 1, opacity?: number) => ({
   type: 'SOLID',

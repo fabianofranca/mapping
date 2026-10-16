@@ -222,14 +222,18 @@ class Renderer {
       case 'group':
         return shapes;
       case 'unknown': {
-        this.warnings.add(`nó não desenhado (${node.sourceType}): só a caixa`);
+        // Um `slot` (laboratório de componentes) é um espaço reservado, não uma falha:
+        // contorno discreto e sem aviso.
+        const slot = node.sourceType === 'slot';
+        if (!slot) this.warnings.add(`nó não desenhado (${node.sourceType}): só a caixa`);
         shapes.push(
           new Konva.Rect({
             width: node.width,
             height: node.height,
-            stroke: UNKNOWN_LINE,
+            stroke: slot ? PLACEHOLDER_LINE : UNKNOWN_LINE,
             strokeWidth: 1,
-            dash: [4, 4],
+            dash: slot ? [3, 5] : [4, 4],
+            opacity: slot ? 0.6 : 1,
             strokeScaleEnabled: false,
           }),
         );

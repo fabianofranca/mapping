@@ -8,7 +8,7 @@
  * - um JSON é a resposta da API REST (`/v1/files/:key/nodes`) ou um nó solto.
  */
 import { figmaJsonToScene } from './figmaJsonToScene';
-import type { Scene } from './scene';
+import type { Scene } from '../scene/scene';
 import { svgToScene } from './svgToScene';
 
 export type InputKind = 'svg' | 'json' | 'figma-native' | 'unknown';

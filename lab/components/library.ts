@@ -1,0 +1,274 @@
+/**
+ * Laboratório "Componentes": a biblioteca, lida de arquivos. A especialização (`mapping-spec`)
+ * aponta, em cada tipo de anotação, para o arquivo do componente (`component`, caminho relativo
+ * ao arquivo da especialização); cada componente é validado por `parseComponent`.
+ *
+ * As fontes dos arquivos (exemplos embutidos, `<input type="file" multiple>`, pasta pelo
+ * `showDirectoryPicker`) viram a mesma lista `{ path, text }` antes de chegar aqui.
+ */
+import type { ComponentFile, FieldValue } from './componentFormat';
+import { parseComponent } from './parseComponent';
+
+export interface TextFile {
+  /** Caminho relativo à raiz escolhida, com `/`. */
+  readonly path: string;
+  readonly text: string;
+}
+
+export type FieldType = 'string' | 'number' | 'date' | 'enum' | 'table' | 'ref';
+
+export interface FieldDef {
+  readonly key: string;
+  readonly label: string;
+  readonly type: FieldType;
+  readonly required: boolean;
+  readonly options?: readonly string[];
+  readonly default?: FieldValue;
+  readonly description?: string;
+}
+
+export interface TypeDef {
+  readonly id: string;
+  readonly name: string;
+  readonly layerId: string;
+  readonly layerName: string;
+  readonly layerColor: string;
+  readonly labelField?: string;
+  readonly fields: readonly FieldDef[];
+  /** Caminho do arquivo do componente, como está na especialização. */
+  readonly componentPath?: string;
+  /** O componente carregado (ausente quando o arquivo faltou ou era inválido). */
+  readonly component?: ComponentFile;
+}
+
+export interface Library {
+  readonly specId: string;
+  readonly specName: string;
+  readonly specPath: string;
+  readonly types: readonly TypeDef[];
+  /** O que não carregou: arquivo ausente, componente inválido, tipo sem componente. */
+  readonly problems: readonly string[];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseJson(file: TextFile): unknown {
+  try {
+    return JSON.parse(file.text);
+  } catch (error) {
+    throw new Error(
+      `${file.path}: JSON inválido (${error instanceof Error ? error.message : String(error)})`,
+      { cause: error },
+    );
+  }
+}
+
+/** Resolve `ref` relativo ao diretório de `from` (`a/b/spec.json` + `components/x.json` → `a/b/components/x.json`). */
+export function resolvePath(from: string, ref: string): string {
+  const dir = from.includes('/') ? from.slice(0, from.lastIndexOf('/') + 1) : '';
+  const parts: string[] = [];
+  for (const part of `${dir}${ref}`.split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') parts.pop();
+    else parts.push(part);
+  }
+  return parts.join('/');
+}
+
+function readField(raw: unknown, path: string, problems: string[]): FieldDef | undefined {
+  if (!isRecord(raw) || typeof raw.key !== 'string' || typeof raw.type !== 'string') {
+    problems.push(`${path}: campo sem key/type`);
+    return undefined;
+  }
+  const type = raw.type as FieldType;
+  const def = raw.default;
+  return {
+    key: raw.key,
+    label: typeof raw.label === 'string' ? raw.label : raw.key,
+    type,
+    required: raw.required === true,
+    options: Array.isArray(raw.options)
+      ? raw.options.filter((o): o is string => typeof o === 'string')
+      : undefined,
+    default: typeof def === 'string' || typeof def === 'number' ? def : undefined,
+    description: typeof raw.description === 'string' ? raw.description : undefined,
+  };
+}
+
+/**
+ * Monta a biblioteca a partir dos arquivos. Acha a especialização (o arquivo com
+ * `"format": "mapping-spec"`; se houver mais de uma, usa a primeira e avisa) e carrega cada
+ * componente referenciado. Lança só quando não há especialização.
+ */
+export function loadLibrary(files: readonly TextFile[]): Library {
+  const problems: string[] = [];
+  const parsed = new Map<string, unknown>();
+  for (const file of files) {
+    if (!file.path.toLowerCase().endsWith('.json')) continue;
+    try {
+      parsed.set(file.path, parseJson(file));
+    } catch (error) {
+      problems.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+  const specs = [...parsed].filter(
+    ([, json]) => isRecord(json) && json.format === 'mapping-spec',
+  );
+  const first = specs[0];
+  if (!first) {
+    throw new Error(
+      'Nenhuma especialização encontrada: a pasta precisa de um arquivo com "format": "mapping-spec".',
+    );
+  }
+  if (specs.length > 1) {
+    problems.push(`há ${specs.length} especializações; usando ${first[0]}`);
+  }
+  const [specPath, specJson] = first;
+  const spec = specJson as Record<string, unknown>;
+  const types: TypeDef[] = [];
+  const layers = Array.isArray(spec.layers) ? spec.layers : [];
+  layers.forEach((layer, li) => {
+    if (!isRecord(layer)) return;
+    const layerId = typeof layer.id === 'string' ? layer.id : `layer-${li}`;
+    const layerName = typeof layer.name === 'string' ? layer.name : layerId;
+    const layerColor = typeof layer.color === 'string' ? layer.color : '#1E88E5';
+    const annotationTypes = Array.isArray(layer.annotationTypes)
+      ? layer.annotationTypes
+      : [];
+    annotationTypes.forEach((type, ti) => {
+      if (!isRecord(type) || typeof type.id !== 'string') {
+        problems.push(`layers[${li}].annotationTypes[${ti}]: tipo sem id`);
+        return;
+      }
+      const fieldsRaw = Array.isArray(type.fields) ? type.fields : [];
+      const fields = fieldsRaw
+        .map((f, fi) => readField(f, `${type.id}.fields[${fi}]`, problems))
+        .filter((f): f is FieldDef => f !== undefined);
+      const componentPath =
+        typeof type.component === 'string' ? type.component : undefined;
+      let component: ComponentFile | undefined;
+      if (componentPath) {
+        const full = resolvePath(specPath, componentPath);
+        const json = parsed.get(full);
+        if (json === undefined) {
+          problems.push(`${type.id}: arquivo do componente não encontrado: ${full}`);
+        } else {
+          try {
+            component = parseComponent(json);
+          } catch (error) {
+            problems.push(
+              `${full}: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
+        }
+      }
+      types.push({
+        id: type.id,
+        name: typeof type.name === 'string' ? type.name : type.id,
+        layerId,
+        layerName,
+        layerColor,
+        labelField: typeof type.labelField === 'string' ? type.labelField : undefined,
+        fields,
+        componentPath,
+        component,
+      });
+    });
+  });
+  return {
+    specId: typeof spec.id === 'string' ? spec.id : 'spec',
+    specName: typeof spec.name === 'string' ? spec.name : 'Especialização',
+    specPath,
+    types,
+    problems,
+  };
+}
+
+/** Valores iniciais de uma instância nova: `preview` do componente, senão o `default` do campo. */
+export function initialValues(type: TypeDef): Record<string, FieldValue> {
+  const values: Record<string, FieldValue> = {};
+  for (const field of type.fields) {
+    const preview = type.component?.preview?.[field.key];
+    values[field.key] = preview !== undefined ? preview : (field.default ?? null);
+  }
+  return values;
+}
+
+/** Rótulo de uma instância: `labelField` preenchido, senão o nome do tipo. */
+export function instanceLabel(
+  type: TypeDef,
+  values: Readonly<Record<string, FieldValue>>,
+): string {
+  const key = type.labelField;
+  const value = key ? values[key] : undefined;
+  return value === null || value === undefined || String(value).trim() === ''
+    ? type.name
+    : String(value);
+}
+
+// ---------------------------------------------------------------------------------------
+// Fontes de arquivos (navegador)
+// ---------------------------------------------------------------------------------------
+
+/** `<input type="file" multiple webkitdirectory>` ou arquivos soltos: usa o caminho relativo se houver. */
+export async function readFileList(files: ArrayLike<File>): Promise<TextFile[]> {
+  const out: TextFile[] = [];
+  for (const file of Array.from(files)) {
+    const relative = (file as File & { webkitRelativePath?: string }).webkitRelativePath;
+    const path = relative && relative !== '' ? stripRoot(relative) : file.name;
+    out.push({ path, text: await file.text() });
+  }
+  return out;
+}
+
+/** O `webkitRelativePath` começa pelo nome da pasta escolhida: tira-o para os caminhos ficarem relativos a ela. */
+function stripRoot(path: string): string {
+  const slash = path.indexOf('/');
+  return slash >= 0 ? path.slice(slash + 1) : path;
+}
+
+interface FileHandleLike {
+  readonly kind: 'file';
+  readonly name: string;
+  getFile(): Promise<File>;
+}
+interface DirectoryHandleLike {
+  readonly kind: 'directory';
+  readonly name: string;
+  values(): AsyncIterable<FileHandleLike | DirectoryHandleLike>;
+}
+
+/** Lê todos os `.json` de uma pasta (recursivo, até 4 níveis, ignorando pastas ocultas e `node_modules`). */
+export async function readDirectory(
+  dir: DirectoryHandleLike,
+  prefix = '',
+  depth = 0,
+): Promise<TextFile[]> {
+  const out: TextFile[] = [];
+  for await (const entry of dir.values()) {
+    if (entry.kind === 'file') {
+      if (!entry.name.toLowerCase().endsWith('.json')) continue;
+      const file = await entry.getFile();
+      out.push({ path: `${prefix}${entry.name}`, text: await file.text() });
+    } else if (
+      depth < 4 &&
+      !entry.name.startsWith('.') &&
+      entry.name !== 'node_modules'
+    ) {
+      out.push(...(await readDirectory(entry, `${prefix}${entry.name}/`, depth + 1)));
+    }
+  }
+  return out;
+}
+
+/** `showDirectoryPicker`, quando existe (Chrome/Edge em https ou file://). */
+export async function pickDirectory(): Promise<TextFile[] | undefined> {
+  const picker: unknown = Reflect.get(globalThis, 'showDirectoryPicker');
+  if (typeof picker !== 'function') return undefined;
+  const handle = (await (
+    picker as () => Promise<DirectoryHandleLike>
+  )()) as DirectoryHandleLike;
+  return readDirectory(handle);
+}

@@ -11,7 +11,13 @@ import 'virtual:tokens.css';
 import './lab.css';
 import { detectInput, toScene, type InputKind } from './detectInput';
 import { SAMPLE_JSON, SAMPLE_SVG } from './samples';
-import { type Scene, type SceneNode, countNodes, hasChildren, walk } from './scene';
+import {
+  type Scene,
+  type SceneNode,
+  countNodes,
+  hasChildren,
+  walk,
+} from '../scene/scene';
 import { LabViewer } from './viewer';
 
 interface Loaded {

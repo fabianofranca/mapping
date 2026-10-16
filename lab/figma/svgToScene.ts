@@ -21,7 +21,7 @@ import {
   type Stroke,
   type GradientStop,
   type TextStyle,
-} from './scene';
+} from '../scene/scene';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
@@ -151,9 +151,12 @@ function length(raw: string | null | undefined, fallback: number, ctx: Ctx): num
   const match = LENGTH_RE.exec(raw);
   if (!match) return fallback;
   const unit = (match[2] ?? '').toLowerCase();
-  if (unit && unit !== 'px') ctx.warnings.add(`unidade não suportada: ${unit}`);
   const value = Number(match[1]);
-  return Number.isFinite(value) ? value : fallback;
+  if (!Number.isFinite(value)) return fallback;
+  // Zero é zero em qualquer unidade (o Figma emite `letter-spacing="0em"` em todo texto).
+  if (unit && unit !== 'px' && value !== 0)
+    ctx.warnings.add(`unidade não suportada: ${unit}`);
+  return value;
 }
 
 /** Primeiro valor de uma lista (`x="10 20 30"`). */

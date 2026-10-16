@@ -21,7 +21,7 @@ import {
   type Shadow,
   type Stroke,
   type TextStyle,
-} from './scene';
+} from '../scene/scene';
 
 type Rec = Record<string, unknown>;
 

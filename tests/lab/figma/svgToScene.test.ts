@@ -5,7 +5,7 @@ import {
   type Matrix,
   type Scene,
   type SceneNode,
-} from '../../../lab/figma/scene';
+} from '../../../lab/scene/scene';
 import { svgToScene } from '../../../lab/figma/svgToScene';
 
 const PNG =

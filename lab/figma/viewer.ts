@@ -9,8 +9,8 @@
  *   para comparar a fidelidade do desenho nativo com o do navegador.
  */
 import Konva from 'konva';
-import { type RenderResult, renderScene, sceneIdOf } from './renderScene';
-import type { Scene } from './scene';
+import { type RenderResult, renderScene, sceneIdOf } from '../scene/renderScene';
+import type { Scene } from '../scene/scene';
 
 export interface ViewerCallbacks {
   readonly onHover?: (id: string | undefined) => void;

@@ -7,14 +7,14 @@ import {
   fontStyle,
   renderScene,
   sceneIdOf,
-} from '../../../lab/figma/renderScene';
+} from '../../../lab/scene/renderScene';
 import {
   type FrameNode,
   type Scene,
   type SceneNode,
   baseNode,
   translate,
-} from '../../../lab/figma/scene';
+} from '../../../lab/scene/scene';
 
 beforeAll(() => installFakeCanvas());
 
