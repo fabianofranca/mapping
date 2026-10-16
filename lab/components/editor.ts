@@ -10,7 +10,7 @@
  */
 import Konva from 'konva';
 import { renderScene } from '../scene/renderScene';
-import { attachPinchZoom } from '../shared/pinch';
+import { attachPinchZoom, capPixelRatio, freezeGroup, thawGroup } from '../shared/pinch';
 import type { FieldValues } from './componentFormat';
 import { type TextMeasurer, instantiate } from './instantiate';
 import { type Library, type TypeDef, instanceLabel } from './library';
@@ -25,6 +25,8 @@ export interface EditorCallbacks {
   /** Avisos da instanciação, por instância (vazio = nenhum). */
   readonly onWarnings?: (byInstance: ReadonlyMap<string, readonly string[]>) => void;
 }
+
+capPixelRatio(Konva);
 
 const SELECT_COLOR = '#1A63CC';
 const HOVER_COLOR = 'rgba(26, 99, 204, 0.8)';
@@ -58,12 +60,19 @@ export class ScreenEditor {
   private readonly stage: Konva.Stage;
   private readonly board = new Konva.Layer();
   private readonly content = new Konva.Layer();
+  /** Todas as instâncias; congelado como bitmap durante pan, pinça e arrasto. */
+  private readonly world = new Konva.Group();
+  /** A instância em arrasto ou redimensionamento, fora do bitmap congelado. */
+  private readonly dragLayer = new Konva.Layer();
   private readonly overlay = new Konva.Layer({ listening: true });
   private readonly artboard = new Konva.Rect({
     fill: '#FFFFFF',
-    shadowColor: 'rgba(0, 0, 0, 0.25)',
-    shadowBlur: 24,
-    shadowOffset: { x: 0, y: 8 },
+    // Contorno em vez de sombra: a sombra de um retângulo do tamanho da tela custa um
+    // desfoque inteiro por quadro durante o pan.
+    stroke: 'rgba(0, 0, 0, 0.18)',
+    strokeWidth: 1,
+    strokeScaleEnabled: false,
+    listening: false,
   });
   private readonly transformer = new Konva.Transformer({
     rotateEnabled: false,
@@ -109,9 +118,11 @@ export class ScreenEditor {
       draggable: true,
     });
     this.board.add(this.artboard);
+    this.board.listening(false);
+    this.content.add(this.world);
     this.label.add(new Konva.Tag({ fill: HOVER_COLOR, cornerRadius: 2 }), this.labelText);
     this.overlay.add(this.hoverRect, this.label, this.transformer);
-    this.stage.add(this.board, this.content, this.overlay);
+    this.stage.add(this.board, this.content, this.dragLayer, this.overlay);
 
     this.stage.on('wheel', (e) => this.onWheel(e.evt));
     this.stage.on('click tap', (e) => {
@@ -121,13 +132,28 @@ export class ScreenEditor {
     });
     this.stage.on('mousemove', (e) => this.setHover(this.instanceIdOf(e.target)));
     this.stage.on('mouseleave', () => this.setHover(undefined));
-    this.stage.on('dragmove', () => this.syncOverlay());
-    attachPinchZoom(this.stage, { min: MIN_SCALE, max: MAX_SCALE }, (scale) => {
-      this.callbacks.onZoom?.(scale);
-      this.syncOverlay();
+    // Pan do palco: o conteúdo vira um bitmap até soltar.
+    this.stage.on('dragstart', (e) => {
+      if (e.target === this.stage) this.freeze();
     });
+    this.stage.on('dragend', (e) => {
+      if (e.target === this.stage) this.thaw();
+    });
+    attachPinchZoom(
+      this.stage,
+      { min: MIN_SCALE, max: MAX_SCALE },
+      {
+        onStart: () => this.freeze(),
+        onEnd: () => this.thaw(),
+        onZoom: (scale) => this.callbacks.onZoom?.(scale),
+      },
+    );
+    this.transformer.on('transformstart', () => this.lift(this.selectedWrapper()));
     this.transformer.on('transform', () => this.onTransform());
-    this.transformer.on('transformend', () => this.commitBox());
+    this.transformer.on('transformend', () => {
+      this.drop(this.selectedWrapper());
+      this.commitBox();
+    });
     this.transformer.boundBoxFunc((oldBox, newBox) => {
       const min = this.minSizeOfSelected();
       const scale = this.stage.scaleX();
@@ -162,6 +188,7 @@ export class ScreenEditor {
 
   /** Atualiza a tela: só as instâncias cujo objeto mudou são re-instanciadas. */
   setScreen(screen: Screen, force = false): void {
+    this.thaw();
     const previous = this.screen;
     this.screen = screen;
     if (
@@ -189,11 +216,15 @@ export class ScreenEditor {
         const wrapper = new Konva.Group({ draggable: true });
         wrapper.setAttr('instanceId', instance.id);
         wrapper.on('dragend', () => {
+          this.drop(wrapper);
           const box = { ...this.boxOfWrapper(wrapper), x: wrapper.x(), y: wrapper.y() };
           this.callbacks.onBoxChange?.(instance.id, box);
         });
-        wrapper.on('dragstart', () => this.select(instance.id));
-        this.content.add(wrapper);
+        wrapper.on('dragstart', () => {
+          this.select(instance.id);
+          this.lift(wrapper);
+        });
+        this.world.add(wrapper);
         this.renderInto(wrapper, instance);
         this.mounted.set(instance.id, { instance, wrapper });
         wrapper.zIndex(index);
@@ -264,6 +295,7 @@ export class ScreenEditor {
   toDataURL(): string {
     const screen = this.screen;
     if (!screen) return '';
+    this.thaw();
     const previousSelection = this.selectedId;
     this.transformer.nodes([]);
     this.hoverRect.visible(false);
@@ -285,6 +317,39 @@ export class ScreenEditor {
   }
 
   // -----------------------------------------------------------------------------------
+
+  private selectedWrapper(): Konva.Group | undefined {
+    return this.selectedId ? this.mounted.get(this.selectedId)?.wrapper : undefined;
+  }
+
+  /** Congela as instâncias como um bitmap na resolução atual (pan, pinça, arrasto). */
+  private freeze(): void {
+    freezeGroup(this.world, this.stage.scaleX());
+  }
+
+  private thaw(): void {
+    if (!this.world.isCached()) return;
+    thawGroup(this.world);
+    this.draw();
+  }
+
+  /** Tira a instância do bitmap congelado para ela se mover sozinha, numa camada à parte. */
+  private lift(wrapper: Konva.Group | undefined): void {
+    if (!wrapper || wrapper.getLayer() === this.dragLayer) return;
+    this.thaw();
+    wrapper.moveTo(this.dragLayer);
+    this.freeze();
+  }
+
+  private drop(wrapper: Konva.Group | undefined): void {
+    if (!wrapper || wrapper.getLayer() !== this.dragLayer) return;
+    this.thaw();
+    wrapper.moveTo(this.world);
+    const id: unknown = wrapper.getAttr('instanceId');
+    const index = this.screen?.instances.findIndex((i) => i.id === id) ?? -1;
+    if (index >= 0) wrapper.zIndex(index);
+    this.draw();
+  }
 
   private typeOf(instance: Instance): TypeDef | undefined {
     return this.library?.types.find((t) => t.id === instance.typeId);

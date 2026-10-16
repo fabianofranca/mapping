@@ -10,7 +10,7 @@
  */
 import Konva from 'konva';
 import { type RenderResult, renderScene, sceneIdOf } from '../scene/renderScene';
-import { attachPinchZoom } from '../shared/pinch';
+import { attachPinchZoom, capPixelRatio, freezeGroup, thawGroup } from '../shared/pinch';
 import type { Scene } from '../scene/scene';
 
 export interface ViewerCallbacks {
@@ -19,6 +19,8 @@ export interface ViewerCallbacks {
   readonly onZoom?: (scale: number) => void;
   readonly onRenderWarnings?: (warnings: readonly string[]) => void;
 }
+
+capPixelRatio(Konva);
 
 const HOVER_COLOR = '#1a63cc';
 const SELECT_COLOR = '#d81b60';
@@ -84,11 +86,21 @@ export class LabViewer {
       if (e.evt instanceof MouseEvent && e.evt.button !== 0) return;
       this.select(sceneIdOf(e.target));
     });
-    this.stage.on('dragmove', () => this.syncOverlays());
-    attachPinchZoom(this.stage, { min: MIN_SCALE, max: MAX_SCALE }, (scale) => {
-      this.callbacks.onZoom?.(scale);
-      this.syncOverlays();
-    });
+    // Pan e pinça: a cena vira um bitmap até soltar (um SVG grande tem milhares de nós).
+    this.stage.on('dragstart', () => this.freeze());
+    this.stage.on('dragend', () => this.thaw());
+    attachPinchZoom(
+      this.stage,
+      { min: MIN_SCALE, max: MAX_SCALE },
+      {
+        onStart: () => this.freeze(),
+        onEnd: () => this.thaw(),
+        onZoom: (scale) => {
+          this.callbacks.onZoom?.(scale);
+          this.syncOverlays();
+        },
+      },
+    );
     this.resize = new ResizeObserver(() => {
       this.stage.size({
         width: Math.max(1, container.clientWidth),
@@ -103,6 +115,16 @@ export class LabViewer {
     this.resize.disconnect();
     cancelAnimationFrame(this.frame);
     this.stage.destroy();
+  }
+
+  private freeze(): void {
+    if (this.rendered) freezeGroup(this.rendered.root, this.stage.scaleX());
+  }
+
+  private thaw(): void {
+    if (!this.rendered?.root.isCached()) return;
+    thawGroup(this.rendered.root);
+    this.draw();
   }
 
   /** Troca a cena (ou limpa, com `undefined`) e enquadra. */

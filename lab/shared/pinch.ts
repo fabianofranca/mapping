@@ -1,14 +1,21 @@
 /**
  * Pinça com dois dedos no palco Konva (zoom em torno do centro dos dedos e pan), para dar uma
  * olhada no laboratório pelo celular. O Konva só traz arrastar com um dedo; durante a pinça
- * o arrasto do palco é interrompido.
+ * o arrasto do palco é interrompido. `onStart`/`onEnd` delimitam o gesto (o palco congela o
+ * conteúdo como bitmap nesse intervalo).
  */
-import type Konva from 'konva';
+import Konva from 'konva';
+
+export interface PinchCallbacks {
+  readonly onZoom?: (scale: number) => void;
+  readonly onStart?: () => void;
+  readonly onEnd?: () => void;
+}
 
 export function attachPinchZoom(
   stage: Konva.Stage,
   limits: { readonly min: number; readonly max: number },
-  onZoom?: (scale: number) => void,
+  callbacks: PinchCallbacks = {},
 ): void {
   let lastCenter: { x: number; y: number } | undefined;
   let lastDist = 0;
@@ -26,6 +33,7 @@ export function attachPinchZoom(
     if (!lastCenter) {
       lastCenter = center;
       lastDist = dist;
+      callbacks.onStart?.();
       return;
     }
     const oldScale = stage.scaleX();
@@ -44,11 +52,48 @@ export function attachPinchZoom(
     });
     lastCenter = center;
     lastDist = dist;
-    onZoom?.(scale);
+    callbacks.onZoom?.(scale);
     stage.batchDraw();
   });
-  stage.on('touchend', () => {
+  stage.on('touchend touchcancel', () => {
+    if (lastCenter) callbacks.onEnd?.();
     lastCenter = undefined;
     lastDist = 0;
   });
+}
+
+/**
+ * Congela um grupo como bitmap durante pan/zoom/arrasto (o Konva redesenha só a imagem) e o
+ * descongela no fim do gesto. A resolução segue a escala atual, com um teto para o bitmap não
+ * estourar a memória em zoom alto.
+ */
+export function freezeGroup(
+  group: Konva.Group,
+  stageScale: number,
+  maxSide = 4096,
+): void {
+  if (group.isCached() || !group.hasChildren()) return;
+  const rect = group.getClientRect({ skipTransform: true });
+  if (rect.width <= 0 || rect.height <= 0) return;
+  const pixelRatio = Math.min(
+    (Konva.pixelRatio || 1) * stageScale,
+    maxSide / Math.max(rect.width, rect.height),
+  );
+  group.cache({
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+    pixelRatio: Math.max(0.25, pixelRatio),
+  });
+}
+
+export function thawGroup(group: Konva.Group): void {
+  if (group.isCached()) group.clearCache();
+}
+
+/** Teto do pixel ratio do Konva: telas 3× redesenham 2,25× mais pixels que 2× por nada visível no laboratório. */
+export function capPixelRatio(konva: { pixelRatio: number }, max = 2): void {
+  const device = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+  konva.pixelRatio = Math.min(device, max);
 }

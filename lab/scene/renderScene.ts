@@ -375,7 +375,26 @@ function placeholder(shape: Konva.Shape, box: Box): Konva.Shape[] {
   return [shape, cross];
 }
 
+/** Sombra totalmente transparente ou sem desfoque nem deslocamento: não custa desenhar. */
+export function isInvisibleShadow(shadow: Shadow): boolean {
+  if (shadow.blur <= 0 && shadow.offset.x === 0 && shadow.offset.y === 0) return true;
+  const color = shadow.color.trim().toLowerCase();
+  if (color === 'transparent' || color === 'none') return true;
+  const rgba = /^rgba?\(([^)]*)\)$/.exec(color);
+  if (rgba) {
+    const parts = (rgba[1] ?? '').split(',').map((p) => p.trim());
+    return parts.length === 4 && Number(parts[3]) === 0;
+  }
+  const hex8 = /^#([0-9a-f]{8})$/.exec(color);
+  if (hex8) return (hex8[1] ?? '').endsWith('00');
+  const hex4 = /^#([0-9a-f]{4})$/.exec(color);
+  if (hex4) return (hex4[1] ?? '').endsWith('0');
+  return false;
+}
+
 function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
+  // Uma sombra invisível ainda custa um `shadowBlur` do canvas por desenho: fica de fora.
+  if (isInvisibleShadow(shadow)) return;
   shape.shadowColor(shadow.color);
   shape.shadowBlur(shadow.blur);
   shape.shadowOffset(shadow.offset);
