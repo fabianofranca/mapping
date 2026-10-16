@@ -2,6 +2,8 @@
 
 Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (`dist/lab/…`) para validar uma possibilidade antes de ela virar etapa do [`PLAN.md`](../PLAN.md). Nada daqui entra no `index.html` da app, nem nas regras do núcleo (i18n, store, tokens de design obrigatórios). As regras que continuam valendo: TypeScript strict, sem `any`, sem dependências novas, sem requisição de rede (a página leva a mesma CSP da app) e testes no Vitest.
 
+O laboratório é o épico `epic/lab` (PR [#157](https://github.com/fabianofranca/mapping/pull/157)): toda mudança entra por um PR com base nesse branch, nunca na `main`, conforme o [`CLAUDE.md`](../CLAUDE.md) ("Fluxo de trabalho").
+
 ## `figma/` — Figma somente leitura (Konva)
 
 **Pergunta:** dá para copiar um componente do Figma e desenhá-lo nativamente no canvas (Konva), com estrutura de camadas, em vez de usar uma captura de tela?
