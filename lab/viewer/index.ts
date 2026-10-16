@@ -7,7 +7,11 @@
 export { createViewer } from './viewer';
 export type { Viewer, ViewerInput, ViewerOptions } from './viewer';
 export { ScreenRenderer } from './screenRenderer';
-export type { InstanceWarnings, ScreenRendererOptions } from './screenRenderer';
+export type {
+  InstanceWarnings,
+  ScreenRendererOptions,
+  ScreenRendererUpdateOptions,
+} from './screenRenderer';
 export { konvaMeasurer } from './measure';
 export { loadLibrary, resolvePath } from '../components/library';
 export type {

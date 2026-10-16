@@ -25,7 +25,8 @@ import {
   screenOfInstance,
 } from './board';
 import type { FieldValue } from './componentFormat';
-import { ScreenEditor, konvaMeasurer } from './editor';
+import { ScreenEditor } from './editor';
+import { konvaMeasurer } from '../viewer/measure';
 import { type FontStatus, describeFont, registerFonts } from './fonts';
 import {
   type FieldDef,
