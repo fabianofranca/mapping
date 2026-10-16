@@ -29,7 +29,7 @@ Requer Node 22 (fixado em `.nvmrc` e em `engines` no `package.json`; com nvm, `n
 npm ci
 npm run dev        # servidor de desenvolvimento (Vite)
 npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a CSP, e o laboratório em dist/lab/
-npm run dev:lab    # laboratório "Figma somente leitura" (lab/README.md), à parte da app
+npm run dev:lab    # laboratório de componentes (lab/README.md), à parte da app
 ```
 
 ## Como testar
