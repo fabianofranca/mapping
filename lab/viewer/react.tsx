@@ -9,6 +9,8 @@
  *   a cada render NÃO recria o viewer.
  * - `library`/`screen` → `update`, `selection` → `setSelection`, `hover` → `setHover`,
  *   `fontsVersion` → `redraw`.
+ * - `interactive` (padrão `true`) → `setInteractive`: com `false` o canvas não seleciona nem
+ *   avisa `onHover`/`onClick`; `selection` e `hover` do hospedeiro continuam valendo.
  * - `fit` e `padding` valem só na criação (mudá-los depois não reenquadra). Para reenquadrar
  *   a pedido, use `createViewer` direto e chame `viewer.fit()`.
  */
@@ -27,6 +29,8 @@ export interface MappingViewerProps {
   readonly onHover?: ViewerOptions['onHover'];
   readonly onClick?: ViewerOptions['onClick'];
   readonly onWarnings?: ViewerOptions['onWarnings'];
+  /** Padrão `true`; `false` = o canvas é só imagem (seleção e hover só pelas props). */
+  readonly interactive?: boolean;
   /** Só na criação do viewer (mudar depois não tem efeito). */
   readonly fit?: ViewerOptions['fit'];
   /** Só na criação do viewer (mudar depois não tem efeito). */
@@ -43,6 +47,7 @@ const FILL: CSSProperties = { width: '100%', height: '100%' };
 
 export function MappingViewer(props: MappingViewerProps): JSX.Element {
   const { library, screen, selection, hover, fontsVersion, className, style } = props;
+  const interactive = props.interactive ?? true;
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
   /** Sempre a última versão das props: callbacks e valores iniciais da criação. */
@@ -61,6 +66,7 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
       screen: initial.screen,
       fit: initial.fit,
       padding: initial.padding,
+      interactive: initial.interactive,
       onHover: (id) => latest.current.onHover?.(id),
       onClick: (id, point) => latest.current.onClick?.(id, point),
       onWarnings: (warnings) => latest.current.onWarnings?.(warnings),
@@ -83,6 +89,10 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
   useEffect(() => {
     viewerRef.current?.setHover(hover);
   }, [hover]);
+
+  useEffect(() => {
+    viewerRef.current?.setInteractive(interactive);
+  }, [interactive]);
 
   const drawnFonts = useRef(fontsVersion);
   useEffect(() => {

@@ -195,6 +195,32 @@ describe('<MappingViewer/>', () => {
     expect(second.mock.calls[0]?.[0]).toBeUndefined();
   });
 
+  it('interactive liga e desliga o ponteiro do stage sem recriá-lo', async () => {
+    const onClick = vi.fn();
+    await mount({ library, screen: SAMPLE_SCREEN, onClick, interactive: false });
+    const div = viewerDiv();
+    const stage = stageOf(div);
+    expect(stage.listening()).toBe(false);
+    await act(async () => {
+      stage.fire('click', { evt: new MouseEvent('click', { button: 0 }), target: stage });
+    });
+    expect(onClick).not.toHaveBeenCalled();
+
+    await render({ library, screen: SAMPLE_SCREEN, onClick, interactive: true });
+    expect(stageOf(div)).toBe(stage);
+    expect(stage.listening()).toBe(true);
+    await act(async () => {
+      stage.fire('click', { evt: new MouseEvent('click', { button: 0 }), target: stage });
+    });
+    expect(onClick).toHaveBeenCalledTimes(1);
+
+    await render({ library, screen: SAMPLE_SCREEN, onClick });
+    expect(stage.listening()).toBe(true);
+    await render({ library, screen: SAMPLE_SCREEN, onClick, interactive: false });
+    expect(stageOf(div)).toBe(stage);
+    expect(stage.listening()).toBe(false);
+  });
+
   it('fontsVersion refaz o desenho sem recriar o stage', async () => {
     await mount({ library, screen: SAMPLE_SCREEN, fontsVersion: 0 });
     const div = viewerDiv();

@@ -13,7 +13,7 @@ export type {
   ScreenRendererUpdateOptions,
 } from './screenRenderer';
 export { konvaMeasurer } from './measure';
-export { loadLibrary, resolvePath } from '../components/library';
+export { instanceLabel, loadLibrary, resolvePath } from '../components/library';
 export type {
   FieldDef,
   Library,
@@ -21,7 +21,12 @@ export type {
   TextFile,
   TypeDef,
 } from '../components/library';
-export { parseScreen, serializeScreen } from '../components/screen';
+export {
+  childrenOf,
+  parseScreen,
+  renderOrder,
+  serializeScreen,
+} from '../components/screen';
 export type { Box, Instance, Screen } from '../components/screen';
 export type {
   ComponentFile,

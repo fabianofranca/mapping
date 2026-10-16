@@ -283,6 +283,81 @@ describe('createViewer', () => {
     expect(onClick).toHaveBeenCalledTimes(2);
   });
 
+  it('interactive: false ignora o ponteiro; seleção e hover do hospedeiro continuam', () => {
+    const el = container();
+    const onHover = vi.fn();
+    const onClick = vi.fn();
+    const viewer = make(el, {
+      library,
+      screen: SAMPLE_SCREEN,
+      onHover,
+      onClick,
+      interactive: false,
+    });
+    const stage = stageOf(el);
+    expect(stage.listening()).toBe(false);
+    const target = instanceNode(stage, 'i-enter').findOne('.hit');
+
+    stage.fire('mousemove', { target, evt: new MouseEvent('mousemove') });
+    stage.fire('mouseleave', { target: stage, evt: new MouseEvent('mouseleave') });
+    stage.fire('click', { target, evt: new MouseEvent('click', { button: 0 }) });
+    stage.fire('tap', { target, evt: new Event('tap') });
+    expect(onHover).not.toHaveBeenCalled();
+    expect(onClick).not.toHaveBeenCalled();
+
+    // A seleção e o hover vindos do hospedeiro ainda aparecem.
+    viewer.setSelection(['i-enter']);
+    expect(overlayRects(stage).filter((r) => r.strokeWidth() === 2)).toHaveLength(1);
+    viewer.setHover('i-bar');
+    expect(
+      overlayRects(stage)
+        .find((r) => r.strokeWidth() === 1)
+        ?.visible(),
+    ).toBe(true);
+    // As consultas seguem valendo.
+    expect(viewer.boxOf('i-enter')).toBeDefined();
+    expect(viewer.instanceAt({ x: 1, y: 1 })).toBeDefined();
+    expect(viewer.clientToScreen({ x: 0, y: 0 })).toEqual({
+      x: expect.any(Number),
+      y: expect.any(Number),
+    });
+
+    // Ligar de novo devolve os callbacks.
+    viewer.setInteractive(true);
+    expect(stage.listening()).toBe(true);
+    stage.fire('mousemove', { target, evt: new MouseEvent('mousemove') });
+    expect(onHover).toHaveBeenLastCalledWith('i-enter');
+    stage.fire('click', { target, evt: new MouseEvent('click', { button: 0 }) });
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onClick.mock.calls[0]?.[0]).toBe('i-enter');
+  });
+
+  it('setInteractive(false) com hover do ponteiro ativo avisa onHover(undefined) uma vez', () => {
+    const el = container();
+    const onHover = vi.fn();
+    const viewer = make(el, { library, screen: SAMPLE_SCREEN, onHover });
+    const stage = stageOf(el);
+    const target = instanceNode(stage, 'i-enter').findOne('.hit');
+
+    stage.fire('mousemove', { target, evt: new MouseEvent('mousemove') });
+    expect(onHover).toHaveBeenCalledTimes(1);
+    viewer.setInteractive(false);
+    expect(onHover).toHaveBeenCalledTimes(2);
+    expect(onHover).toHaveBeenLastCalledWith(undefined);
+    expect(
+      overlayRects(stage)
+        .find((r) => r.strokeWidth() === 1)
+        ?.visible(),
+    ).toBe(false);
+    // Repetir não avisa de novo; sem hover ativo, desligar não avisa nada.
+    viewer.setInteractive(false);
+    expect(onHover).toHaveBeenCalledTimes(2);
+    const quiet = vi.fn();
+    const other = make(container(), { library, screen: SAMPLE_SCREEN, onHover: quiet });
+    other.setInteractive(false);
+    expect(quiet).not.toHaveBeenCalled();
+  });
+
   it('clientToScreen inverte a escala e o deslocamento', () => {
     const el = container(800, 600);
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });

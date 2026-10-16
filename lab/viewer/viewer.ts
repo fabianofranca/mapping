@@ -9,6 +9,11 @@
  * coordenadas da tela. Não há pan nem zoom pela roda: o hospedeiro dimensiona o contêiner e o
  * `ResizeObserver` (quando existe) reenquadra. O desenho acontece no máximo uma vez por quadro.
  *
+ * Interação: por padrão o ponteiro avisa `onHover`/`onClick`. Com `interactive: false` (ou
+ * `setInteractive(false)`) o canvas vira só imagem: o ponteiro não faz nada, mas `setSelection`
+ * e `setHover` continuam valendo (seleção e hover vindos do hospedeiro, ex.: uma árvore), assim
+ * como `clientToScreen`, `instanceAt` e `boxOf`.
+ *
  * As fontes são do hospedeiro: depois que uma fonte carregar, chame `redraw()` para remedir os
  * textos. O módulo não faz requisição de rede nem registra fonte.
  */
@@ -41,6 +46,11 @@ export interface ViewerOptions {
   readonly fit?: 'contain' | number;
   /** Margem, em px do contêiner, do enquadramento `'contain'` (padrão 16). */
   readonly padding?: number;
+  /**
+   * O ponteiro seleciona/realça (padrão `true`). Com `false` o canvas é só imagem: nenhum
+   * `onHover`/`onClick`; `setSelection` e `setHover` do hospedeiro seguem funcionando.
+   */
+  readonly interactive?: boolean;
   /** Cores do realce (CSS); padrões: seleção '#1A63CC', hover 'rgba(26, 99, 204, 0.8)'. */
   readonly selectionColor?: string;
   readonly hoverColor?: string;
@@ -55,6 +65,11 @@ export interface Viewer {
   setSelection(ids: readonly string[]): void;
   /** Realce de hover vindo do hospedeiro (ex.: a lista ao lado); não dispara `onHover`. */
   setHover(id: string | undefined): void;
+  /**
+   * Liga/desliga a interação do ponteiro (ver `ViewerOptions.interactive`). Ao desligar com
+   * hover do ponteiro ativo, `onHover(undefined)` é chamado uma vez.
+   */
+  setInteractive(on: boolean): void;
   /** Reaplica o enquadramento (também automático ao redimensionar o contêiner). */
   fit(): void;
   scale(): number;
@@ -93,6 +108,8 @@ export function createViewer(
   const hoverColor = options.hoverColor ?? HOVER_COLOR;
   const padding = options.padding ?? DEFAULT_PADDING;
   const fitMode = options.fit ?? 'contain';
+
+  let interactive = options.interactive ?? true;
 
   const stage = new Konva.Stage({
     container: container as HTMLDivElement,
@@ -238,9 +255,22 @@ export function createViewer(
     syncOverlay();
   };
 
-  stage.on('mousemove', (e) => setPointer(renderer.instanceIdOf(e.target)));
-  stage.on('mouseleave', () => setPointer(undefined));
+  /** Liga/desliga o ponteiro; ao desligar, o hover que veio dele é limpo (o hospedeiro é avisado). */
+  const applyInteractive = (on: boolean): void => {
+    interactive = on;
+    stage.listening(on);
+    if (!on) setPointer(undefined);
+  };
+  stage.listening(interactive);
+
+  stage.on('mousemove', (e) => {
+    if (interactive) setPointer(renderer.instanceIdOf(e.target));
+  });
+  stage.on('mouseleave', () => {
+    if (interactive) setPointer(undefined);
+  });
   stage.on('click tap', (e) => {
+    if (!interactive) return;
     if (e.evt instanceof MouseEvent && e.evt.button !== 0) return;
     const pointer = stage.getPointerPosition();
     const point = pointer
@@ -282,6 +312,10 @@ export function createViewer(
       if (disposed) return;
       hoverId = id;
       syncOverlay();
+    },
+    setInteractive(on) {
+      if (disposed || on === interactive) return;
+      applyInteractive(on);
     },
     fit() {
       if (!disposed) applyFit();
