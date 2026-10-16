@@ -312,3 +312,7 @@ body {
     overflow: visible;
   }
 }
+
+.lab-toolbar input.screen-name {
+  width: 10em;
+}
