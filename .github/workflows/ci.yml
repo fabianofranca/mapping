@@ -30,6 +30,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # A `main` só recebe PR de um branch `epic/*` (CLAUDE.md, "Fluxo de trabalho"): o ruleset
+  # "main protegida" exige este check, que falha para qualquer outra origem. Exceção: os PRs
+  # do Dependabot (`dependabot/*`), pequenos e aprovados pelo dono. Em push e no deploy
+  # (`workflow_call`) não há PR: o job é pulado, o que o GitHub conta como sucesso.
+  epic:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Origem do PR
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          case "$HEAD" in
+            epic/*|dependabot/*) allowed=1 ;;
+            *) allowed=0 ;;
+          esac
+          if [ "$BASE" = "main" ] && [ "$allowed" = 0 ]; then
+            echo "::error::A main só recebe PR de um branch epic/* (origem: $HEAD). Abra o PR com base no branch do épico, não na main."
+            exit 1
+          fi
+          echo "PR de $HEAD para $BASE: permitido."
+
   check:
     runs-on: ubuntu-latest
     env:

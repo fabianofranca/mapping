@@ -4,10 +4,10 @@ Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (
 
 ## Como entregar mudanças (épico)
 
-O laboratório inteiro vive num **branch de épico** (o do PR [#157](https://github.com/fabianofranca/mapping/pull/157), `epic/lab`, base `main`), para nada dele chegar à `main` antes de a validação terminar. O fluxo:
+O laboratório inteiro vive num **branch de épico** (o do PR [#157](https://github.com/fabianofranca/mapping/pull/157), `epic/lab`, base `main`), para nada dele chegar à `main` antes de a validação terminar (a `main` só aceita PR de `epic/*`: `CLAUDE.md`, "Fluxo de trabalho"). O fluxo:
 
 1. **Branch curto a partir do branch do épico**, um por alteração (uma página, um componente, um teste).
-2. **PR com base no branch do épico**, nunca na `main`, com a descrição de sempre (Resumo, Como testar, Decisões). O CI roda nele como em qualquer PR; para ver no navegador, Actions › Deploy › Run workflow com o branch curto (ou o do épico, depois do merge) publica em `/preview/lab/…`.
+2. **PR com base no branch do épico**, nunca na `main` (o check `epic` do CI barraria), com a descrição de sempre (Resumo, Como testar, Decisões). O CI roda nele como em qualquer PR; para ver no navegador, Actions › Deploy › Run workflow com o branch curto (ou o do épico, depois do merge) publica em `/preview/lab/…`.
 3. **Merge no épico** fecha a alteração. A descrição do PR do épico não muda a cada parte; ela é fechada uma vez, quando o dono decidir mesclar o épico na `main`.
 4. **`main` no épico por merge** (nunca rebase nem force-push), quando houver conflito ou algo de que o laboratório precise.
 
