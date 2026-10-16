@@ -69,6 +69,7 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 
 - O dono do projeto usa o Claude Code **pelo celular** e não roda nada localmente.
 - Um branch e um PR por fase (ou por parte de uma fase, se ela for grande).
+- **Épicos:** uma frente que só deve chegar à `main` depois de validada inteira (hoje, o laboratório `lab/`) vive num **branch de épico**, com um PR para a `main` que fica aberto até o fim. Cada alteração dela é um branch curto e um PR **com base no branch do épico** (nunca na `main`), com a descrição de sempre; mesclado, ele some e o branch do épico avança. A descrição do PR do épico não é reescrita a cada parte: ela é fechada uma vez, quando o dono decidir mesclar. A `main` entra no épico por merge (nunca rebase nem force-push) quando houver conflito ou algo de que o épico precise. O CI roda igual em PRs para o épico e em push no branch dele; o preview publica qualquer branch pelo `workflow_dispatch`. Os épicos abertos estão em "Etapa atual".
 - Toda descrição de PR contém:
   1. **Resumo** do que mudou;
   2. **Como testar**: passos manuais objetivos no desktop, lembrando que o deploy do branch pode ser disparado pelo `workflow_dispatch`;
@@ -89,6 +90,8 @@ O dono quer gastar pouco da cota do modelo mais caro. O que segura a qualidade �
 ## Etapa atual e etapas futuras
 
 **Etapa atual: nenhuma em andamento.** A etapa 10 está concluída (correções da rodada 7 do Cowork; schema v9 e MCP 0.4.0 sem mudança). O próximo passo é o **teste manual avançado do dono** (seção 9 do [`docs/TESTING.md`](docs/TESTING.md)) e, depois, o uso com pessoas no marco "Uso real" ([`docs/ROADMAP.md`](docs/ROADMAP.md)). Testes guiados por [`docs/TESTING.md`](docs/TESTING.md); o prompt do testador do Cowork, para uma rodada completa ou dirigida, está em [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md). Não implementar nada do roadmap antes de o `PLAN.md` detalhar a etapa. As funcionalidades do núcleo são genéricas: nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
+
+**Épico aberto — Laboratório (`lab/`):** PR #157 (branch `ccr-fd30ea34-usc5u8`, base `main`), fora do produto. Toda alteração em `lab/` (e no que só existe para ele: `vite.lab.config.ts`, `tests/lab/`, `tests/e2e/lab.spec.ts` e `components.spec.ts`) entra por um PR **com base nesse branch**, nunca na `main`. O PR #157 só é mesclado quando o dono fechar a validação (`lab/README.md`, "O que observar no teste"). Como entregar: `lab/README.md`, "Como entregar mudanças".
 
 - **Etapa 2 — Especialização (concluída):** seção 13 do plano histórico (`docs/history/PLAN-etapas-1-2.md`), fases 13 a 17.
 - **Etapa 2.1 — Revisão técnica (concluída):** fases 18 a 25 (detalhes em `docs/history/PLAN-etapa-2-1.md`).

@@ -2,6 +2,17 @@
 
 Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (`dist/lab/…`) para validar uma possibilidade antes de ela virar etapa do [`PLAN.md`](../PLAN.md). Nada daqui entra no `index.html` da app, nem nas regras do núcleo (i18n, store, tokens de design obrigatórios). As regras que continuam valendo: TypeScript strict, sem `any`, sem dependências novas, sem requisição de rede (a página leva a mesma CSP da app) e testes no Vitest.
 
+## Como entregar mudanças (épico)
+
+O laboratório inteiro vive num **branch de épico** (o do PR [#157](https://github.com/fabianofranca/mapping/pull/157), `ccr-fd30ea34-usc5u8`, base `main`), para nada dele chegar à `main` antes de a validação terminar. O fluxo:
+
+1. **Branch curto a partir do branch do épico**, um por alteração (uma página, um componente, um teste).
+2. **PR com base no branch do épico**, nunca na `main`, com a descrição de sempre (Resumo, Como testar, Decisões). O CI roda nele como em qualquer PR; para ver no navegador, Actions › Deploy › Run workflow com o branch curto (ou o do épico, depois do merge) publica em `/preview/lab/…`.
+3. **Merge no épico** fecha a alteração. A descrição do PR do épico não muda a cada parte; ela é fechada uma vez, quando o dono decidir mesclar o épico na `main`.
+4. **`main` no épico por merge** (nunca rebase nem force-push), quando houver conflito ou algo de que o laboratório precise.
+
+Validado o laboratório, o caminho é uma etapa no `PLAN.md` (seção "Caminho para o produto" de cada página); o épico só é mesclado quando isso estiver decidido.
+
 ## `figma/` — Figma somente leitura (Konva)
 
 **Pergunta:** dá para copiar um componente do Figma e desenhá-lo nativamente no canvas (Konva), com estrutura de camadas, em vez de usar uma captura de tela?
