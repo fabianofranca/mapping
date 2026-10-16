@@ -1,4 +1,4 @@
-// Laboratório Figma: a cena vira nós Konva com a estrutura, as transformações e os paints esperados.
+// Laboratório de componentes: a cena vira nós Konva com a estrutura, as transformações e os paints esperados.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../../canvas/harness';
@@ -19,7 +19,7 @@ import {
 beforeAll(() => installFakeCanvas());
 
 function scene(root: SceneNode): Scene {
-  return { source: 'svg', root, warnings: [] };
+  return { root, warnings: [] };
 }
 
 const card: FrameNode = {

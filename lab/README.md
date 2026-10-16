@@ -4,34 +4,13 @@ Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (
 
 O laboratório é o épico `epic/lab` (PR [#157](https://github.com/fabianofranca/mapping/pull/157)): toda mudança entra por um PR com base nesse branch, nunca na `main`, conforme o [`CLAUDE.md`](../CLAUDE.md) ("Fluxo de trabalho").
 
-## `figma/` — Figma somente leitura (Konva)
-
-**Pergunta:** dá para copiar um componente do Figma e desenhá-lo nativamente no canvas (Konva), com estrutura de camadas, em vez de usar uma captura de tela?
-
-**Onde:** `https://fabianofranca.github.io/mapping/preview/lab/figma/` depois de publicar o branch em Actions › Deploy (ou `npm run dev:lab` localmente; o build fica em `dist/lab/figma/index.html`, que também abre por `file://`).
-
-**Ponte para o laboratório de componentes:** o botão **Baixar como componente** gera um arquivo `mapping-component` a partir da cena (posições fixas, textos viram campos com o texto atual como `default`), para abrir na página de componentes e editar à mão.
-
-**Como usar:**
-
-1. No Figma, selecione o componente e use **botão direito › Copy/Paste as › Copy as SVG**. Se quiser os nomes das camadas na árvore, ligue **Include "id" attribute** nas preferências de exportação SVG do arquivo (sem isso, os nós aparecem pelo tipo: `rect`, `path`, `g`).
-2. Na página do laboratório, `Ctrl+V`. Também vale soltar/abrir um `.svg`.
-3. Compare com **Referência SVG** (o mesmo SVG rasterizado pelo navegador, por cima, com opacidade ajustável) e ligue **Contornos** para ver a estrutura. Passe o mouse ou clique nos nós (no canvas ou na árvore) para ver nome, caixa, preenchimentos e fonte.
-4. Alternativa com mais informação: o JSON da API REST (`GET https://api.figma.com/v1/files/:key/nodes?ids=<id>&geometry=paths`, com o token em `X-Figma-Token`), colado como texto ou solto como `.json`. Vem com nomes, tipos do Figma (`FRAME`, `INSTANCE`, `TEXT`…), `relativeTransform` e os vetores como caminhos (`fillGeometry`). Sem `geometry=paths` os vetores viram só caixas.
-
-**O que o `Ctrl+C` comum do Figma cola:** um HTML com `data-metadata="<!--(figmeta)…-->"` e `data-buffer="<!--(figma)…-->"`, que é o formato binário interno (fig-kiwi, comprimido), não documentado. A página só o detecta e explica: decodificá-lo exigiria reimplementar o formato interno e quebraria a cada versão do Figma. **Decisão:** a possibilidade validada é "Copy as SVG" (e o JSON da API), não a cópia nativa.
-
-**Arquitetura:** `scene.ts` é o modelo intermediário (frame, group, rect, ellipse, line, path, text, unknown; paints sólido/gradiente/imagem; traço; sombra; matriz relativa ao pai). `svgToScene.ts` e `figmaJsonToScene.ts` produzem a cena, com uma lista de **avisos** do que ficou de fora ou foi aproximado. `renderScene.ts` transforma a cena em nós Konva (um `Konva.Group` por nó, com `sceneId` para o hover). `viewer.ts` é o palco (zoom na roda, pan arrastando, hover, seleção, contornos, referência). `main.tsx` é a página Preact. Testes em `tests/lab/figma/` e ponta a ponta em `tests/e2e/lab.spec.ts`.
-
-**Limites conhecidos (aparecem como avisos na página):** sombra interna, desfoques, máscaras e modos de mesclagem não existem no canvas 2D ou não foram feitos; fontes só se estiverem instaladas na máquina (a CSP não deixa baixar); imagens só quando embutidas no SVG (`data:`), no JSON a API dá só o `imageRef`; estilos por trecho de texto e arcos de elipse são aproximados; traço por dentro/por fora só em retângulos e elipses.
-
-**O que observar no teste:** fidelidade do desenho nativo contra a referência (texto é o ponto fraco: fonte, espaçamento e quebra de linha são do navegador, não do Figma); se a árvore e as caixas por nó bastam para "marcar" componentes sem imagem; desempenho com componentes grandes (o rodapé mostra nós, tamanho e tempo de conversão).
+> O experimento "Figma somente leitura" (colar "Copy as SVG" ou o JSON da API e desenhar com Konva) foi encerrado e removido; o laboratório segue só com os componentes. O que ele mostrou: "Copy as SVG" e o JSON da API dão para desenhar, a cópia nativa do Figma (fig-kiwi) não. O código fica no histórico do git.
 
 ## `components/` — Componentes por template
 
 **Pergunta:** dá para montar telas **sem importar imagens**, só com componentes genéricos de uma especialização, e ter o desenho refletindo as propriedades da anotação?
 
-**Onde:** `https://fabianofranca.github.io/mapping/preview/lab/components/` (ou `npm run dev:lab:components`; build em `dist/lab/components/index.html`).
+**Onde:** `https://fabianofranca.github.io/mapping/preview/lab/components/` (ou `npm run dev:lab`; build em `dist/lab/components/index.html`).
 
 **Decisões (do dono):** instâncias posicionadas por **retângulo**, como as marcações de hoje (uma tela sem imagem é um canvas em branco; cada instância ocupa o próprio retângulo; o template se adapta ao tamanho, nada é esticado). **Um arquivo por componente**; a especialização só referencia (`"component": "components/button.json"`, caminho relativo ao arquivo da especialização; chave nova, `formatVersion` 4 experimental).
 
@@ -45,6 +24,6 @@ O laboratório é o épico `epic/lab` (PR [#157](https://github.com/fabianofranc
 
 **Fontes do design system:** a especialização declara `fonts` (`[{ "family": "Roboto", "file": "fonts/Roboto-Regular.ttf", "weight": 400 }]`; `weight` aceita faixa de fonte variável, `"100 900"`; `style: "italic"`). Os arquivos (`.ttf`, `.otf`, `.woff`, `.woff2`) são lidos como bytes da pasta ou dos arquivos escolhidos e registrados com `FontFace` (`fonts.ts`): a CSP bloqueia fonte por URL, não uma face construída de bytes em memória. Depois da carga os textos são remedidos e a tela redesenhada. O painel **Fontes** mostra carregada, ausente ou falhou; ausente cai na fonte do sistema. O zip traz `material3/fonts/LEIA-ME.txt` com os arquivos da Roboto a baixar (as fontes não ficam no repositório nem no build: licença e tamanho).
 
-**O que observar no teste:** se escrever um componente à mão é razoável (o formato é a parte que iria para o produto); se o layout `row`/`column` + âncoras cobre os componentes reais de um design system ou falta algo (empilhamento automático entre instâncias ficou de fora de propósito); a fidelidade do texto (fonte do sistema); e se o fluxo "SVG do Figma → componente → editar à mão" é um bom ponto de partida.
+**O que observar no teste:** se escrever um componente à mão é razoável (o formato é a parte que iria para o produto); se o layout `row`/`column` + âncoras cobre os componentes reais de um design system ou falta algo (empilhamento automático entre instâncias ficou de fora de propósito); a fidelidade do texto (fonte do sistema).
 
 **Caminho para o produto, se der certo:** `component` no tipo da especialização (formatVersion 4), o renderizador `instantiate` + `renderScene` dentro de `src/canvas/` desenhando as marcações que têm anotação tipada com componente, e uma "imagem sem arquivo" (tela em branco com tamanho) no `mapping.json`.

@@ -127,7 +127,7 @@ describe('sw.js', () => {
     for (const channel of ['main', 'preview'] as const) {
       const worker = loadWorker([], channel);
       await worker.dispatch('install');
-      for (const path of ['lab/figma/', 'lab/figma/index.html', 'outra.html']) {
+      for (const path of ['lab/components/', 'lab/components/index.html', 'outra.html']) {
         const responses = await worker.dispatch('fetch', {
           request: {
             method: 'GET',

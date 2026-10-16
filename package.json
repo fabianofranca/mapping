@@ -8,10 +8,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:lab": "vite --config vite.lab.config.ts --mode figma",
-    "dev:lab:components": "vite --config vite.lab.config.ts --mode components",
+    "dev:lab": "vite --config vite.lab.config.ts --mode components",
     "build": "tsc --noEmit && vite build && npm run build:lab",
-    "build:lab": "vite build --config vite.lab.config.ts --mode figma && vite build --config vite.lab.config.ts --mode components",
+    "build:lab": "vite build --config vite.lab.config.ts --mode components",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

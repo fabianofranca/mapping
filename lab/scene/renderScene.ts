@@ -1,5 +1,5 @@
 /**
- * Laboratório "Figma somente leitura": desenha uma `Scene` com Konva.
+ * Laboratório de componentes: desenha uma `Scene` com Konva.
  *
  * Cada nó da cena vira um `Konva.Group` (o "contêiner" do nó, com a transformação, a
  * opacidade e a visibilidade) que guarda as formas do próprio nó (um shape por
@@ -62,8 +62,8 @@ class Renderer {
     container.setAttr(SCENE_ID_ATTR, node.id);
     this.byId.set(node.id, container);
 
-    // A sombra vai na primeira forma que a aceitar. Um grupo com efeito (SVG do Figma:
-    // `filter` no <g> que envolve a forma) repassa a sombra à primeira forma descendente.
+    // A sombra vai na primeira forma que a aceitar. Um grupo com efeito
+    // (ex.: `filter` num grupo que envolve a forma) repassa a sombra à primeira forma descendente.
     const shadows = [...(pendingShadow ? [pendingShadow] : []), ...node.effects];
     const shadow = this.pickShadow(shadows);
 

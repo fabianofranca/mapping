@@ -1,13 +1,13 @@
 /**
- * Laboratório "Figma somente leitura" (experimento, fora do produto).
+ * Laboratório de componentes (experimento, fora do produto).
  *
- * Modelo intermediário de cena: o que os conversores produzem (SVG copiado do Figma,
- * JSON da API REST do Figma) e o que o renderizador Konva consome. É um subconjunto
- * pequeno e neutro do modelo do Figma, só com o que dá para desenhar no canvas sem rede:
+ * Modelo de cena: o que `instantiate` produz a partir de um template de componente e o
+ * que o renderizador Konva consome. É um subconjunto pequeno e neutro de um modelo de
+ * design, só com o que dá para desenhar no canvas sem rede:
  * nada de fontes remotas, imagens por `imageRef` ou efeitos que o canvas 2D não tem.
  *
  * Convenções:
- * - Unidades em px do design (coordenadas do Figma/SVG), sem nenhuma conversão de tela.
+ * - Unidades em px do design, sem nenhuma conversão de tela.
  * - `transform` é a matriz 2D do nó **relativa ao pai** (a, b, c, d, e, f, como no CSS/SVG:
  *   x' = a·x + c·y + e; y' = b·x + d·y + f). A geometria do nó (`width`/`height`, `d`,
  *   `points`) fica no espaço local, com origem no canto superior esquerdo do nó.
@@ -184,10 +184,7 @@ export type SceneNode =
   | TextNode
   | UnknownNode;
 
-export type SceneSource = 'svg' | 'figma-json';
-
 export interface Scene {
-  readonly source: SceneSource;
   /** Raiz: um `frame` (do tamanho do design) ou `group` com os nós de nível superior. */
   readonly root: SceneNode;
   /** O que ficou de fora ou foi aproximado, para o painel do laboratório mostrar. */

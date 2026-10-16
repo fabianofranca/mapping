@@ -1,7 +1,7 @@
 /// <reference types="vitest/config" />
 // Build do laboratório (`lab/`): páginas autocontidas à parte da app, publicadas em
 // `dist/lab/<página>/index.html` depois do build da app (`npm run build`). Uma página por
-// build (`--mode figma`, `--mode components`): o vite-plugin-singlefile embute tudo numa
+// build (`--mode components`): o vite-plugin-singlefile embute tudo numa
 // entrada só. Experimentos fora do produto: sem service worker nem manifest; a CSP é a mesma
 // da app (nenhuma requisição de rede, nada embutido sem hash).
 import { defineConfig, type Plugin } from 'vite';
@@ -10,7 +10,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { applyCsp } from './pwa/csp';
 import { tokensCss } from './pwa/tokensCss';
 
-export const LAB_PAGES = ['figma', 'components'] as const;
+export const LAB_PAGES = ['components'] as const;
 type LabPage = (typeof LAB_PAGES)[number];
 
 function contentSecurityPolicy(): Plugin {

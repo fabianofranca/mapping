@@ -768,7 +768,6 @@ function Lab() {
           Experimento: telas sem imagem, montadas com componentes genéricos cujo desenho
           segue as propriedades da anotação.
         </p>
-        <a href="../figma/">Figma somente leitura →</a>
       </header>
       <Toolbar />
       <div class="lab-main">
