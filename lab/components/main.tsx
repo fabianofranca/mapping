@@ -10,8 +10,9 @@ import { signal } from '@preact/signals';
 import 'virtual:tokens.css';
 import './components.css';
 import { downloadBlob, downloadText } from '../shared/download';
+import { arrange, dropIndex, findSlot, isContainer, resolveSlotLayout } from './arrange';
 import type { FieldValue } from './componentFormat';
-import { ScreenEditor } from './editor';
+import { ScreenEditor, konvaMeasurer } from './editor';
 import {
   type FieldDef,
   type Library,
@@ -29,12 +30,17 @@ import {
   type Instance,
   type Screen,
   addInstance,
+  ancestorsOf,
   bringToFront,
+  childrenOf,
+  moveSibling,
   newScreen,
   parseScreen,
   removeInstance,
+  removeSubtree,
   resize,
   serializeScreen,
+  setParent,
   setValue,
   updateBox,
 } from './screen';
@@ -53,13 +59,36 @@ let editor: ScreenEditor | undefined;
 
 /** Toda mudança da tela passa aqui (como uma action do store), com desfazer simples. */
 function commit(next: Screen, undoable = true): void {
-  if (next === screen.value) return;
+  // Containers com layout (Row/Column) recalculam e gravam os retângulos dos filhos.
+  const arranged = library.value ? arrange(next, library.value, konvaMeasurer) : next;
+  if (arranged === screen.value) return;
   if (undoable) {
     historyPast.push(screen.value);
     if (historyPast.length > 100) historyPast.shift();
   }
-  screen.value = next;
-  editor?.setScreen(next);
+  screen.value = arranged;
+  editor?.setScreen(arranged);
+}
+
+/** Fim de um arrasto: entra (ou sai) de um container e assume a posição entre os irmãos. */
+function dropped(
+  id: string,
+  box: { x: number; y: number; width: number; height: number },
+  parentId: string | undefined,
+  center: { x: number; y: number },
+): void {
+  let next = updateBox(screen.value, id, box);
+  const parent = parentId ? next.instances.find((i) => i.id === parentId) : undefined;
+  const parentType = typeOf(parent);
+  const slot = parentType?.component ? findSlot(parentType.component) : undefined;
+  if (parent && slot) {
+    const layout = resolveSlotLayout(slot, parent.values);
+    const index = dropIndex(next, parent.id, layout, center, id);
+    next = setParent(next, id, parent.id, index);
+  } else if (!parentId) {
+    next = setParent(next, id, undefined);
+  }
+  commit(next);
 }
 
 function undo(): void {
@@ -147,14 +176,29 @@ function addFromType(type: TypeDef): void {
   const n = screen.value.instances.length;
   const size = type.component?.size ?? { width: 160, height: 48 };
   const offset = 24 + (n % 8) * 16;
-  commit(
-    addInstance(screen.value, {
-      typeId: type.id,
-      box: { x: offset, y: offset, width: size.width, height: size.height },
-      values: initialValues(type),
-    }),
-  );
-  const added = screen.value.instances[screen.value.instances.length - 1];
+  // Com um container selecionado que aceite o tipo, a instância nova entra nele.
+  const selected = screen.value.instances.find((i) => i.id === selectedId.value);
+  const selectedType = typeOf(selected);
+  const intoContainer =
+    selected &&
+    isContainer(selectedType) &&
+    (!selectedType?.allowedChildren || selectedType.allowedChildren.includes(type.id));
+  const box = intoContainer
+    ? {
+        x: selected.box.x + 8,
+        y: selected.box.y + 8,
+        width: size.width,
+        height: size.height,
+      }
+    : { x: offset, y: offset, width: size.width, height: size.height };
+  const withNew = addInstance(screen.value, {
+    typeId: type.id,
+    box,
+    values: initialValues(type),
+    ...(intoContainer ? { parentId: selected.id } : {}),
+  });
+  const added = withNew.instances[withNew.instances.length - 1];
+  commit(withNew);
   if (added) editor?.select(added.id);
 }
 
@@ -300,6 +344,7 @@ function LibraryPanel() {
             <li key={type.id} data-type-id={type.id}>
               <span class="name" title={type.component?.description ?? type.name}>
                 {type.name}
+                {isContainer(type) ? ' ▣' : ''}
               </span>
               {!type.component && <span class="missing">sem componente</span>}
               <button
@@ -333,6 +378,7 @@ function CanvasArea() {
       onZoom: (scale) => (zoom.value = scale),
       onWarnings: (map) => (warnings.value = map),
       onBoxChange: (id, box) => commit(updateBox(screen.value, id, box)),
+      onDrop: dropped,
     });
     editor.setLibrary(library.value);
     editor.setScreen(screen.value);
@@ -423,6 +469,77 @@ function FieldEditor({ field, instance }: { field: FieldDef; instance: Instance 
   );
 }
 
+/** Pai (container) e posição entre os irmãos da instância selecionada. */
+function ParentRow({ instance }: { instance: Instance }) {
+  const current = screen.value;
+  const lib = library.value;
+  const blocked = new Set([
+    instance.id,
+    ...ancestorsOf(current, instance.id).filter(() => false),
+  ]);
+  const containers = current.instances.filter((i) => {
+    if (i.id === instance.id || blocked.has(i.id)) return false;
+    const type = lib?.types.find((t) => t.id === i.typeId);
+    if (!isContainer(type)) return false;
+    if (type?.allowedChildren && !type.allowedChildren.includes(instance.typeId))
+      return false;
+    // Um ancestral não pode virar filho do descendente.
+    return !ancestorsOf(current, i.id).includes(instance.id);
+  });
+  const siblings = childrenOf(current, instance.parentId ?? undefined);
+  const index = siblings.findIndex((i) => i.id === instance.id);
+  const label = (i: Instance) => {
+    const type = lib?.types.find((t) => t.id === i.typeId);
+    return type ? `${type.name} · ${instanceLabel(type, i.values)}` : i.typeId;
+  };
+  return (
+    <>
+      <div class="row">
+        <label for={`parent-${instance.id}`}>Pai</label>
+        <select
+          id={`parent-${instance.id}`}
+          value={instance.parentId ?? ''}
+          onChange={(e) => {
+            const value = e.currentTarget.value;
+            commit(setParent(current, instance.id, value === '' ? undefined : value));
+          }}
+        >
+          <option value="">(tela)</option>
+          {containers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {label(c)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div class="row">
+        <span>Ordem</span>
+        <span class="actions">
+          <button
+            type="button"
+            disabled={index <= 0}
+            onClick={() => commit(moveSibling(current, instance.id, -1))}
+            title="Antes do irmão anterior"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            disabled={index < 0 || index >= siblings.length - 1}
+            onClick={() => commit(moveSibling(current, instance.id, 1))}
+            title="Depois do próximo irmão"
+          >
+            ↓
+          </button>
+          <span class="hint">
+            {index + 1} de {siblings.length}
+          </span>
+        </span>
+      </div>
+    </>
+  );
+}
+
 function Properties() {
   const current = screen.value;
   const instance = current.instances.find((i) => i.id === selectedId.value);
@@ -461,10 +578,13 @@ function Properties() {
         {type?.fields.map((field) => (
           <FieldEditor key={field.key} field={field} instance={instance} />
         ))}
+        <ParentRow instance={instance} />
         <div class="actions">
           <button
             type="button"
             onClick={() => commit(bringToFront(current, instance.id))}
+            disabled={Boolean(instance.parentId)}
+            title="Só no nível da tela; dentro de um container, use a ordem entre irmãos"
           >
             Trazer para frente
           </button>
@@ -475,9 +595,22 @@ function Properties() {
               commit(removeInstance(current, instance.id));
               editor?.select(undefined);
             }}
+            title="Os filhos sobem para o pai"
           >
             Excluir
           </button>
+          {childrenOf(current, instance.id).length > 0 && (
+            <button
+              type="button"
+              class="danger"
+              onClick={() => {
+                commit(removeSubtree(current, instance.id));
+                editor?.select(undefined);
+              }}
+            >
+              Excluir com filhos
+            </button>
+          )}
         </div>
       </div>
     </div>

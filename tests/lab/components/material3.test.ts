@@ -13,11 +13,11 @@ import {
 import { walk } from '../../../lab/scene/scene';
 
 describe('Material 3 no formato de componente', () => {
-  it('a biblioteca carrega os doze tipos, todos com componente válido e sem problemas', () => {
+  it('a biblioteca carrega os quinze tipos, todos com componente válido e sem problemas', () => {
     const lib = loadLibrary(M3_FILES);
     expect(lib.specId).toBe('material3');
     expect(lib.problems).toEqual([]);
-    expect(lib.types).toHaveLength(12);
+    expect(lib.types).toHaveLength(15);
     for (const type of lib.types) expect(type.component?.id, type.id).toBe(type.id);
   });
 
@@ -35,7 +35,7 @@ describe('Material 3 no formato de componente', () => {
     }
   });
 
-  it('a tela de configurações instancia todas as 19 instâncias; só o cartão avisa (texto longo)', () => {
+  it('a tela de configurações instancia todas as 21 instâncias; só o cartão avisa (texto longo)', () => {
     const lib = loadLibrary(M3_FILES);
     const warnings: string[] = [];
     for (const instance of M3_SCREEN.instances) {

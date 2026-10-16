@@ -344,7 +344,8 @@ function checkLayout(value: unknown, path: string, out: string[]): void {
   }
   checkKeys(value, ['type', 'gap', 'padding', 'align', 'justify'], path, out);
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
-  if ('padding' in value) checkPadding(value.padding, join(path, 'padding'), out);
+  if ('padding' in value)
+    checkExpr(value.padding, join(path, 'padding'), checkPadding, out);
   if ('align' in value)
     oneOf(['start', 'center', 'end', 'stretch'])(value.align, join(path, 'align'), out);
   if ('justify' in value)
@@ -379,14 +380,16 @@ function checkNode(value: unknown, path: string, out: string[]): void {
     ellipse: [],
     text: ['text', 'font', 'color'],
     path: ['d', 'viewBox', 'fillRule'],
-    slot: ['label'],
+    slot: ['label', 'layout'],
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
   for (const key of ['children', 'layout']) {
+    if (type === 'slot' && key === 'layout') continue;
     if (type !== 'frame' && key in value)
       add(out, join(path, key), `só nós do tipo frame aceitam ${key} (este é ${type})`);
   }
   for (const key of Object.keys(value)) {
+    if (type === 'slot' && key === 'layout') continue;
     if (type !== 'frame' && (key === 'children' || key === 'layout')) continue;
     if (!BASE_KEYS.includes(key) && !extra[type]?.includes(key))
       add(out, join(path, key), `chave desconhecida: ${key}`);
@@ -434,6 +437,7 @@ function checkNode(value: unknown, path: string, out: string[]): void {
       return;
     case 'slot':
       if ('label' in value) checkExpr(value.label, join(path, 'label'), checkString, out);
+      if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
       return;
   }
 }

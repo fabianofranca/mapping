@@ -128,8 +128,9 @@ export type LayoutSpec =
       readonly type: 'row' | 'column';
       readonly gap?: Expr<number>;
       /** Um valor, [vertical, horizontal] ou [cima, direita, baixo, esquerda]. */
-      readonly padding?:
-        number | readonly [number, number] | readonly [number, number, number, number];
+      readonly padding?: Expr<
+        number | readonly [number, number] | readonly [number, number, number, number]
+      >;
       /** No eixo cruzado. */
       readonly align?: 'start' | 'center' | 'end' | 'stretch';
       /** No eixo principal. */
@@ -194,6 +195,12 @@ export interface PathTemplate extends TemplateNodeBase {
 export interface SlotTemplate extends TemplateNodeBase {
   readonly type: 'slot';
   readonly label?: Expr<string>;
+  /**
+   * Como as instâncias filhas se organizam dentro do slot (container): `row`/`column`
+   * posicionam os filhos pela ordem entre irmãos e gravam os retângulos deles; `none` (ou
+   * ausente) deixa cada filho no próprio retângulo. `gap` e `padding` podem vir de campos.
+   */
+  readonly layout?: LayoutSpec;
 }
 
 export type TemplateNode =

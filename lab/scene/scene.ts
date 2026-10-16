@@ -225,3 +225,26 @@ export function baseNode(
     ...partial,
   };
 }
+
+export interface AbsoluteBox {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * Caixa de cada nó no espaço da raiz, compondo só as translações (rotação e escala são
+ * ignoradas: servem os quadros e slots de um template, que não giram).
+ */
+export function absoluteBoxes(root: SceneNode): ReadonlyMap<string, AbsoluteBox> {
+  const out = new Map<string, AbsoluteBox>();
+  const visit = (node: SceneNode, ox: number, oy: number) => {
+    const x = ox + node.transform[4];
+    const y = oy + node.transform[5];
+    out.set(node.id, { x, y, width: node.width, height: node.height });
+    if (hasChildren(node)) for (const child of node.children) visit(child, x, y);
+  };
+  visit(root, 0, 0);
+  return out;
+}

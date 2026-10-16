@@ -878,6 +878,111 @@ export const M3_SCRIM: ComponentFile = {
   },
 };
 
+/** Preenchimento e forma dos containers do Compose (Box, Row, Column), por campo. */
+const containerFill: Expr<Color> = {
+  $switch: 'background',
+  cases: {
+    surface: C.surface,
+    'surface-container': C.surfaceContainer,
+    'primary-container': C.primaryContainer,
+    'secondary-container': C.secondaryContainer,
+  },
+  default: C.transparent,
+};
+const containerRadius: Expr<number> = {
+  $switch: 'shape',
+  cases: { small: 8, medium: 12, large: 16, 'extra-large': 28 },
+  default: 0,
+};
+
+function container(
+  id: string,
+  name: string,
+  description: string,
+  layout: { type: 'none' } | { type: 'row' | 'column' },
+  preview: Record<string, string | number>,
+  size: { width: number; height: number },
+): ComponentFile {
+  const slotLayout =
+    layout.type === 'none'
+      ? { type: 'none' as const }
+      : {
+          type: layout.type,
+          gap: { $field: 'spacing', default: 8 } as Expr<number>,
+          padding: { $field: 'padding', default: 0 } as Expr<number>,
+          // Compose: Arrangement no eixo principal, Alignment no cruzado.
+          align: 'start' as const,
+          justify: 'start' as const,
+        };
+  return {
+    ...base,
+    id,
+    name,
+    description,
+    size,
+    minSize: { width: 24, height: 24 },
+    preview,
+    template: {
+      type: 'frame',
+      name: id,
+      clip: false,
+      layout: { type: 'none' },
+      fill: containerFill,
+      cornerRadius: containerRadius,
+      children: [
+        {
+          type: 'slot',
+          name: 'content',
+          label: name,
+          anchors: { left: 0, right: 0, top: 0, bottom: 0 },
+          layout: slotLayout,
+        },
+      ],
+    },
+  };
+}
+
+export const M3_BOX = container(
+  'm3-box',
+  'Box',
+  'Container livre do Compose: os filhos ficam onde o retângulo deles diz.',
+  { type: 'none' },
+  { background: 'none', shape: 'none', padding: 0 },
+  { width: 200, height: 120 },
+);
+
+export const M3_ROW = container(
+  'm3-row',
+  'Row',
+  'Container horizontal do Compose: os filhos se enfileiram pela ordem, com spacing e padding.',
+  { type: 'row' },
+  {
+    background: 'none',
+    shape: 'none',
+    spacing: 8,
+    padding: 0,
+    alignment: 'top',
+    arrangement: 'start',
+  },
+  { width: 380, height: 48 },
+);
+
+export const M3_COLUMN = container(
+  'm3-column',
+  'Column',
+  'Container vertical do Compose: os filhos se empilham pela ordem, com spacing e padding.',
+  { type: 'column' },
+  {
+    background: 'none',
+    shape: 'none',
+    spacing: 8,
+    padding: 0,
+    alignment: 'start',
+    arrangement: 'start',
+  },
+  { width: 380, height: 200 },
+);
+
 export const M3_COMPONENTS: readonly ComponentFile[] = [
   M3_TOP_APP_BAR,
   M3_BUTTON,
@@ -891,6 +996,9 @@ export const M3_COMPONENTS: readonly ComponentFile[] = [
   M3_NAVIGATION_BAR,
   M3_BOTTOM_SHEET,
   M3_SCRIM,
+  M3_BOX,
+  M3_ROW,
+  M3_COLUMN,
 ];
 
 const yesNo = (key: string, label: string, def: 'sim' | 'não') => ({
@@ -1044,6 +1152,76 @@ export const M3_SPEC = {
           iconField('icon3', 'Icon 3'),
         ]),
         type('m3-scrim', 'Scrim', null, []),
+        type('m3-box', 'Box', null, [
+          {
+            key: 'background',
+            label: 'Background',
+            type: 'enum',
+            options: [
+              'none',
+              'surface',
+              'surface-container',
+              'primary-container',
+              'secondary-container',
+            ],
+            default: 'none',
+          },
+          {
+            key: 'shape',
+            label: 'Shape',
+            type: 'enum',
+            options: ['none', 'small', 'medium', 'large', 'extra-large'],
+            default: 'none',
+          },
+        ]),
+        type('m3-row', 'Row', null, [
+          { key: 'spacing', label: 'Spacing (dp)', type: 'number', default: 8 },
+          { key: 'padding', label: 'Padding (dp)', type: 'number', default: 0 },
+          {
+            key: 'background',
+            label: 'Background',
+            type: 'enum',
+            options: [
+              'none',
+              'surface',
+              'surface-container',
+              'primary-container',
+              'secondary-container',
+            ],
+            default: 'none',
+          },
+          {
+            key: 'shape',
+            label: 'Shape',
+            type: 'enum',
+            options: ['none', 'small', 'medium', 'large', 'extra-large'],
+            default: 'none',
+          },
+        ]),
+        type('m3-column', 'Column', null, [
+          { key: 'spacing', label: 'Spacing (dp)', type: 'number', default: 8 },
+          { key: 'padding', label: 'Padding (dp)', type: 'number', default: 0 },
+          {
+            key: 'background',
+            label: 'Background',
+            type: 'enum',
+            options: [
+              'none',
+              'surface',
+              'surface-container',
+              'primary-container',
+              'secondary-container',
+            ],
+            default: 'none',
+          },
+          {
+            key: 'shape',
+            label: 'Shape',
+            type: 'enum',
+            options: ['none', 'small', 'medium', 'large', 'extra-large'],
+            default: 'none',
+          },
+        ]),
       ],
     },
   ],
@@ -1064,8 +1242,20 @@ const i = (
   y: number,
   width: number,
   height: number,
-  values: Record<string, string>,
+  values: Record<string, string | number>,
 ) => ({ id, typeId, box: { x, y, width, height }, values });
+
+/** Instância dentro de um container (`parentId`); a posição é recalculada pelo layout do slot. */
+const ic = (
+  parentId: string,
+  id: string,
+  typeId: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  values: Record<string, string | number>,
+) => ({ ...i(id, typeId, x, y, width, height, values), parentId });
 
 /** Tela de configurações num Pixel (412 × 917), só com instâncias do Material 3. */
 export const M3_SCREEN: Screen = {
@@ -1089,13 +1279,23 @@ export const M3_SCREEN: Screen = {
       state: 'enabled',
       trailing: 'search',
     }),
-    i('m-chip1', 'm3-chip', 16, 168, 96, 32, { label: 'All', selected: 'sim', icon: '' }),
-    i('m-chip2', 'm3-chip', 120, 168, 120, 32, {
+    i('m-row-chips', 'm3-row', 16, 168, 380, 32, {
+      spacing: 8,
+      padding: 0,
+      background: 'none',
+      shape: 'none',
+    }),
+    ic('m-row-chips', 'm-chip1', 'm3-chip', 16, 168, 96, 32, {
+      label: 'All',
+      selected: 'sim',
+      icon: '',
+    }),
+    ic('m-row-chips', 'm-chip2', 'm3-chip', 120, 168, 120, 32, {
       label: 'Network',
       selected: 'não',
       icon: 'settings',
     }),
-    i('m-chip3', 'm3-chip', 248, 168, 132, 32, {
+    ic('m-row-chips', 'm-chip3', 'm3-chip', 248, 168, 132, 32, {
       label: 'Privacy',
       selected: 'não',
       icon: 'notifications',
@@ -1148,13 +1348,19 @@ export const M3_SCREEN: Screen = {
       checked: 'sim',
       error: 'não',
     }),
-    i('m-btn1', 'm3-button', 16, 764, 184, 40, {
+    i('m-row-actions', 'm3-row', 16, 764, 380, 40, {
+      spacing: 12,
+      padding: 0,
+      background: 'none',
+      shape: 'none',
+    }),
+    ic('m-row-actions', 'm-btn1', 'm3-button', 16, 764, 184, 40, {
       label: 'Reset options',
       variant: 'outlined',
       icon: '',
       disabled: 'não',
     }),
-    i('m-btn2', 'm3-button', 212, 764, 184, 40, {
+    ic('m-row-actions', 'm-btn2', 'm3-button', 212, 764, 184, 40, {
       label: 'Save',
       variant: 'filled',
       icon: 'check',

@@ -13,14 +13,31 @@ import { renderScene } from '../scene/renderScene';
 import { attachPinchZoom, capPixelRatio, freezeGroup, thawGroup } from '../shared/pinch';
 import type { FieldValues } from './componentFormat';
 import { type TextMeasurer, instantiate } from './instantiate';
+import { isContainer } from './arrange';
 import { type Library, type TypeDef, instanceLabel } from './library';
-import type { Box, Instance, Screen } from './screen';
+import {
+  type Box,
+  type Instance,
+  type Screen,
+  descendantsOf,
+  renderOrder,
+} from './screen';
 
 export interface EditorCallbacks {
   readonly onSelect?: (id: string | undefined) => void;
   readonly onHover?: (id: string | undefined) => void;
-  /** Fim de um arrasto ou redimensionamento. */
+  /** Fim de um redimensionamento. */
   readonly onBoxChange?: (id: string, box: Box) => void;
+  /**
+   * Fim de um arrasto: a caixa nova, o container sob o centro da instância (ou nenhum, nível
+   * da tela) e o ponto do centro, para a página decidir a posição entre os irmãos.
+   */
+  readonly onDrop?: (
+    id: string,
+    box: Box,
+    parentId: string | undefined,
+    center: { x: number; y: number },
+  ) => void;
   readonly onZoom?: (scale: number) => void;
   /** Avisos da instanciação, por instância (vazio = nenhum). */
   readonly onWarnings?: (byInstance: ReadonlyMap<string, readonly string[]>) => void;
@@ -84,6 +101,16 @@ export class ScreenEditor {
     anchorCornerRadius: 2,
     flipEnabled: false,
   });
+  /** Container que receberia a instância arrastada (realce durante o arrasto). */
+  private readonly dropTarget = new Konva.Rect({
+    stroke: SELECT_COLOR,
+    strokeWidth: 2,
+    dash: [6, 4],
+    strokeScaleEnabled: false,
+    fill: 'rgba(26, 99, 204, 0.08)',
+    listening: false,
+    visible: false,
+  });
   private readonly hoverRect = new Konva.Rect({
     stroke: HOVER_COLOR,
     strokeWidth: 1,
@@ -121,7 +148,7 @@ export class ScreenEditor {
     this.board.listening(false);
     this.content.add(this.world);
     this.label.add(new Konva.Tag({ fill: HOVER_COLOR, cornerRadius: 2 }), this.labelText);
-    this.overlay.add(this.hoverRect, this.label, this.transformer);
+    this.overlay.add(this.dropTarget, this.hoverRect, this.label, this.transformer);
     this.stage.add(this.board, this.content, this.dragLayer, this.overlay);
 
     this.stage.on('wheel', (e) => this.onWheel(e.evt));
@@ -201,7 +228,7 @@ export class ScreenEditor {
     }
     this.artboard.fill(screen.background);
     const seen = new Set<string>();
-    screen.instances.forEach((instance, index) => {
+    renderOrder(screen).forEach((instance, index) => {
       seen.add(instance.id);
       const current = this.mounted.get(instance.id);
       if (current && current.instance === instance && !force) {
@@ -217,8 +244,22 @@ export class ScreenEditor {
         wrapper.setAttr('instanceId', instance.id);
         wrapper.on('dragend', () => {
           this.drop(wrapper);
+          this.dropTarget.visible(false);
           const box = { ...this.boxOfWrapper(wrapper), x: wrapper.x(), y: wrapper.y() };
-          this.callbacks.onBoxChange?.(instance.id, box);
+          const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+          const target = this.containerAt(center, instance.id);
+          this.callbacks.onDrop?.(instance.id, box, target, center);
+        });
+        wrapper.on('dragmove', () => {
+          const box = { ...this.boxOfWrapper(wrapper), x: wrapper.x(), y: wrapper.y() };
+          const target = this.containerAt(
+            { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+            instance.id,
+          );
+          const targetBox = target ? this.mounted.get(target)?.instance.box : undefined;
+          if (targetBox) this.dropTarget.setAttrs({ ...targetBox, visible: true });
+          else this.dropTarget.visible(false);
+          this.draw();
         });
         wrapper.on('dragstart', () => {
           this.select(instance.id);
@@ -456,6 +497,40 @@ export class ScreenEditor {
     const mounted = this.selectedId ? this.mounted.get(this.selectedId) : undefined;
     if (!mounted) return;
     this.callbacks.onBoxChange?.(mounted.instance.id, mounted.instance.box);
+  }
+
+  /**
+   * O container mais acima (último na ordem de desenho) cujo retângulo contém o ponto e que
+   * aceita o tipo da instância arrastada; nunca a própria instância nem um descendente dela.
+   */
+  private containerAt(
+    point: { x: number; y: number },
+    draggedId: string,
+  ): string | undefined {
+    const screen = this.screen;
+    const library = this.library;
+    if (!screen || !library) return undefined;
+    const dragged = screen.instances.find((i) => i.id === draggedId);
+    if (!dragged) return undefined;
+    const excluded = new Set([draggedId, ...descendantsOf(screen, draggedId)]);
+    let found: string | undefined;
+    for (const candidate of renderOrder(screen)) {
+      if (excluded.has(candidate.id)) continue;
+      const type = library.types.find((t) => t.id === candidate.typeId);
+      if (!isContainer(type)) continue;
+      if (type?.allowedChildren && !type.allowedChildren.includes(dragged.typeId))
+        continue;
+      const b = candidate.box;
+      if (
+        point.x >= b.x &&
+        point.x <= b.x + b.width &&
+        point.y >= b.y &&
+        point.y <= b.y + b.height
+      ) {
+        found = candidate.id;
+      }
+    }
+    return found;
   }
 
   private instanceIdOf(target: Konva.Node | null): string | undefined {

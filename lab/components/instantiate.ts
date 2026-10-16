@@ -297,7 +297,7 @@ export function instantiate(
       kind: layout.type,
       main: layout.type === 'row' ? 'w' : 'h',
       gap: Math.max(0, num(layout.gap, 0)),
-      pad: normalizePadding(layout.padding),
+      pad: normalizePadding(evaluate(layout.padding, values, 0)),
       align: layout.align ?? 'start',
       justify: layout.justify ?? 'start',
     };
