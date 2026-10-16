@@ -12,7 +12,29 @@ import { parseComponent } from './parseComponent';
 export interface TextFile {
   /** Caminho relativo à raiz escolhida, com `/`. */
   readonly path: string;
-  readonly text: string;
+  /** Conteúdo dos `.json` (ausente nos arquivos binários). */
+  readonly text?: string;
+  /** Bytes dos arquivos de fonte (`.ttf`, `.otf`, `.woff`, `.woff2`). */
+  readonly bytes?: ArrayBuffer;
+}
+
+/** Extensões lidas como bytes (fontes do design system). */
+export const FONT_EXTENSIONS = ['.ttf', '.otf', '.woff', '.woff2'] as const;
+
+export function isFontPath(path: string): boolean {
+  const lower = path.toLowerCase();
+  return FONT_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+/** Fonte declarada na especialização (`fonts`), com os bytes quando o arquivo veio junto. */
+export interface LoadedFont {
+  readonly family: string;
+  /** Peso CSS: `"400"`, `"500"` ou uma faixa de fonte variável, `"100 900"`. */
+  readonly weight: string;
+  readonly style: 'normal' | 'italic';
+  /** Caminho resolvido, relativo à raiz. */
+  readonly path: string;
+  readonly bytes?: ArrayBuffer;
 }
 
 export type FieldType = 'string' | 'number' | 'date' | 'enum' | 'table' | 'ref';
@@ -48,6 +70,8 @@ export interface Library {
   readonly specName: string;
   readonly specPath: string;
   readonly types: readonly TypeDef[];
+  /** Fontes declaradas pela especialização (`fonts`), com bytes quando o arquivo existe. */
+  readonly fonts: readonly LoadedFont[];
   /** O que não carregou: arquivo ausente, componente inválido, tipo sem componente. */
   readonly problems: readonly string[];
 }
@@ -58,7 +82,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function parseJson(file: TextFile): unknown {
   try {
-    return JSON.parse(file.text);
+    return JSON.parse(file.text ?? '');
   } catch (error) {
     throw new Error(
       `${file.path}: JSON inválido (${error instanceof Error ? error.message : String(error)})`,
@@ -182,13 +206,62 @@ export function loadLibrary(files: readonly TextFile[]): Library {
       });
     });
   });
+  const fonts = readFonts(spec.fonts, specPath, files, problems);
   return {
     specId: typeof spec.id === 'string' ? spec.id : 'spec',
     specName: typeof spec.name === 'string' ? spec.name : 'Especialização',
     specPath,
     types,
+    fonts,
     problems,
   };
+}
+
+/**
+ * `fonts` da especialização: `[{ "family": "Roboto", "file": "fonts/Roboto-Regular.ttf",
+ * "weight": 400, "style": "normal" }]`. `weight` aceita número ou faixa (`"100 900"`, fonte
+ * variável). Arquivo ausente não é problema da biblioteca: aparece no status das fontes.
+ */
+function readFonts(
+  raw: unknown,
+  specPath: string,
+  files: readonly TextFile[],
+  problems: string[],
+): LoadedFont[] {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) {
+    problems.push('fonts: esperava uma lista');
+    return [];
+  }
+  const byPath = new Map(files.filter((f) => f.bytes).map((f) => [f.path, f.bytes]));
+  // Arquivos escolhidos soltos ("Abrir arquivos…") chegam só com o nome: vale o nome do arquivo.
+  const byName = new Map(
+    files
+      .filter((f) => f.bytes)
+      .map((f) => [f.path.slice(f.path.lastIndexOf('/') + 1), f.bytes]),
+  );
+  const out: LoadedFont[] = [];
+  raw.forEach((entry, index) => {
+    if (
+      !isRecord(entry) ||
+      typeof entry.family !== 'string' ||
+      typeof entry.file !== 'string'
+    ) {
+      problems.push(`fonts[${index}]: precisa de family e file`);
+      return;
+    }
+    const weight =
+      typeof entry.weight === 'number'
+        ? String(entry.weight)
+        : typeof entry.weight === 'string' && entry.weight.trim() !== ''
+          ? entry.weight.trim()
+          : '400';
+    const style = entry.style === 'italic' ? 'italic' : 'normal';
+    const path = resolvePath(specPath, entry.file);
+    const bytes = byPath.get(path) ?? byName.get(path.slice(path.lastIndexOf('/') + 1));
+    out.push({ family: entry.family, weight, style, path, bytes });
+  });
+  return out;
 }
 
 /** Valores iniciais de uma instância nova: `preview` do componente, senão o `default` do campo. */
@@ -223,7 +296,9 @@ export async function readFileList(files: ArrayLike<File>): Promise<TextFile[]> 
   for (const file of Array.from(files)) {
     const relative = (file as File & { webkitRelativePath?: string }).webkitRelativePath;
     const path = relative && relative !== '' ? stripRoot(relative) : file.name;
-    out.push({ path, text: await file.text() });
+    if (isFontPath(path)) out.push({ path, bytes: await file.arrayBuffer() });
+    else if (path.toLowerCase().endsWith('.json'))
+      out.push({ path, text: await file.text() });
   }
   return out;
 }
@@ -245,7 +320,7 @@ interface DirectoryHandleLike {
   values(): AsyncIterable<FileHandleLike | DirectoryHandleLike>;
 }
 
-/** Lê todos os `.json` de uma pasta (recursivo, até 4 níveis, ignorando pastas ocultas e `node_modules`). */
+/** Lê os `.json` e as fontes de uma pasta (recursivo, até 4 níveis, ignorando pastas ocultas e `node_modules`). */
 export async function readDirectory(
   dir: DirectoryHandleLike,
   prefix = '',
@@ -254,9 +329,15 @@ export async function readDirectory(
   const out: TextFile[] = [];
   for await (const entry of dir.values()) {
     if (entry.kind === 'file') {
+      const path = `${prefix}${entry.name}`;
+      if (isFontPath(path)) {
+        const file = await entry.getFile();
+        out.push({ path, bytes: await file.arrayBuffer() });
+        continue;
+      }
       if (!entry.name.toLowerCase().endsWith('.json')) continue;
       const file = await entry.getFile();
-      out.push({ path: `${prefix}${entry.name}`, text: await file.text() });
+      out.push({ path, text: await file.text() });
     } else if (
       depth < 4 &&
       !entry.name.startsWith('.') &&

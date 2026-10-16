@@ -13,6 +13,7 @@ import { downloadBlob, downloadText } from '../shared/download';
 import { arrange, dropIndex, findSlot, isContainer, resolveSlotLayout } from './arrange';
 import type { FieldValue } from './componentFormat';
 import { ScreenEditor, konvaMeasurer } from './editor';
+import { type FontStatus, describeFont, registerFonts } from './fonts';
 import {
   type FieldDef,
   type Library,
@@ -51,6 +52,7 @@ const selectedId = signal<string | undefined>(undefined);
 const hoverId = signal<string | undefined>(undefined);
 const warnings = signal<ReadonlyMap<string, readonly string[]>>(new Map());
 const zoom = signal(1);
+const fontStatus = signal<readonly FontStatus[]>([]);
 const error = signal<string | undefined>(undefined);
 const notice = signal<string | undefined>(undefined);
 const historyPast: Screen[] = [];
@@ -108,11 +110,24 @@ function fail(e: unknown): void {
   notice.value = undefined;
 }
 
+/** Depois de as fontes carregarem, os textos medem diferente: redesenha e re-arranja. */
+async function applyFonts(loaded: Library): Promise<void> {
+  fontStatus.value = await registerFonts(loaded.fonts);
+  if (library.value !== loaded) return;
+  editor?.setLibrary(loaded);
+  commit(screen.value, false);
+}
+
+/** Arquivos da biblioteca atual, para juntar fontes escolhidas depois. */
+let currentFiles: readonly TextFile[] = [];
+
 function loadFiles(files: readonly TextFile[], origin: string): void {
   try {
     const loaded = loadLibrary(files);
+    currentFiles = files;
     library.value = loaded;
     editor?.setLibrary(loaded);
+    void applyFonts(loaded);
     const withComponent = loaded.types.filter((t) => t.component).length;
     say(
       `${origin}: ${loaded.specName}, ${loaded.types.length} tipo(s), ${withComponent} com componente` +
@@ -150,9 +165,18 @@ async function openFiles(list: FileList | null): Promise<void> {
   if (!list || list.length === 0) return;
   try {
     const files = await readFileList(list);
-    const screenFile = files.find((f) => f.text.includes('"mapping-lab-screen"'));
+    // Só fontes (sem especialização) e uma biblioteca já aberta: junta as fontes a ela.
+    const hasSpec = files.some((f) => f.text?.includes('"mapping-spec"'));
+    if (!hasSpec && files.some((f) => f.bytes) && library.value) {
+      loadFiles(
+        [...currentFiles.filter((f) => !f.bytes), ...files.filter((f) => f.bytes)],
+        'Fontes',
+      );
+      return;
+    }
+    const screenFile = files.find((f) => f.text?.includes('"mapping-lab-screen"'));
     if (screenFile && files.length === 1) {
-      commit(parseScreen(JSON.parse(screenFile.text)));
+      commit(parseScreen(JSON.parse(screenFile.text ?? '')));
       editor?.fit();
       say(`Tela importada: ${screenFile.path}`);
       return;
@@ -165,10 +189,23 @@ async function openFiles(list: FileList | null): Promise<void> {
 
 async function downloadSamples(): Promise<void> {
   const zip = new JSZip();
-  for (const file of SAMPLE_FILES) zip.file(`lab-components/${file.path}`, file.text);
+  for (const file of SAMPLE_FILES)
+    zip.file(`lab-components/${file.path}`, file.text ?? '');
   zip.file('lab-components/telas/entrar.screen.json', serializeScreen(SAMPLE_SCREEN));
-  for (const file of M3_FILES) zip.file(`material3/${file.path}`, file.text);
+  for (const file of M3_FILES) zip.file(`material3/${file.path}`, file.text ?? '');
   zip.file('material3/telas/settings.screen.json', serializeScreen(M3_SCREEN));
+  zip.file(
+    'material3/fonts/LEIA-ME.txt',
+    [
+      'Ponha aqui os arquivos da Roboto (Apache 2.0), baixados de https://fonts.google.com/specimen/Roboto:',
+      '  Roboto-Regular.ttf  (peso 400)',
+      '  Roboto-Medium.ttf   (peso 500)',
+      'Depois reabra a pasta material3/ no laboratório (Abrir pasta… ou Abrir arquivos… com tudo selecionado).',
+      'A especialização (material3.spec.json, chave "fonts") diz qual arquivo é qual peso; uma fonte',
+      'variável (um arquivo só) serve com "weight": "100 900".',
+      '',
+    ].join('\n'),
+  );
   downloadBlob(await zip.generateAsync({ type: 'blob' }), 'lab-components.zip');
 }
 
@@ -235,7 +272,7 @@ function Toolbar() {
         <input
           type="file"
           multiple
-          accept=".json,application/json"
+          accept=".json,.ttf,.otf,.woff,.woff2,application/json,font/ttf,font/otf,font/woff,font/woff2"
           onChange={(e) => {
             void openFiles(e.currentTarget.files);
             e.currentTarget.value = '';
@@ -362,6 +399,39 @@ function LibraryPanel() {
         <p class="hint">
           {lib.specName} · {lib.specPath}
         </p>
+      )}
+      {lib && lib.fonts.length > 0 && (
+        <>
+          <h2>Fontes</h2>
+          <ul data-testid="fonts">
+            {lib.fonts.map((font) => {
+              const status = fontStatus.value.find((f) => f.font === font);
+              const label =
+                status?.status === 'loaded'
+                  ? 'carregada'
+                  : status?.status === 'failed'
+                    ? `falhou: ${status.detail ?? ''}`
+                    : font.bytes
+                      ? 'carregando…'
+                      : 'ausente';
+              return (
+                <li key={`${font.family}-${font.weight}-${font.style}`} title={font.path}>
+                  <span class="name">{describeFont(font)}</span>
+                  <span class={status?.status === 'loaded' ? 'hint' : 'missing'}>
+                    {label}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {fontStatus.value.some((f) => f.status === 'missing') && (
+            <p class="hint">
+              Fonte ausente: o texto usa a fonte do sistema. Ponha os arquivos (ex.:{' '}
+              <code>fonts/Roboto-Regular.ttf</code>) na pasta e reabra; o zip dos exemplos
+              traz um LEIA-ME.
+            </p>
+          )}
+        </>
       )}
     </aside>
   );

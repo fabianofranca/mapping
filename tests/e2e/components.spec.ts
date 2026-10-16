@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { existsSync, readFileSync } from 'node:fs';
 
 // Laboratório "Componentes" (lab/components): telas sem imagem, montadas com componentes
 // genéricos desenhados por template; editar um campo redesenha a instância.
@@ -45,7 +46,51 @@ test('o Material 3 carrega quinze componentes e a tela de configurações', asyn
   await expect(page.getByTestId('status')).toContainText('15 tipo(s), 15 com componente');
   await expect(page.getByTestId('status')).toContainText('21 instância(s)');
   await expect(page.locator('.lab-warnings')).toContainText('Nada ficou de fora');
+  // Fontes declaradas pela especialização, sem os arquivos na pasta: status "ausente".
+  await expect(page.getByTestId('fonts')).toContainText('Roboto 400');
+  await expect(page.getByTestId('fonts')).toContainText('ausente');
   expect(await paintedPixels(page)).toBeGreaterThan(5000);
+});
+
+// Fonte do DS a partir dos bytes do arquivo: usa uma fonte do sistema do runner no lugar da
+// Roboto (o nome do arquivo é o que a especialização declara), via "Abrir arquivos…".
+const SYSTEM_TTF = '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf';
+
+/** Soma ponderada dos pixels dos canvases: muda quando o desenho muda (a contagem de pixels opacos não, com fundo opaco). */
+async function canvasChecksum(page: import('@playwright/test').Page): Promise<number> {
+  return page.evaluate(() => {
+    const canvases = document.querySelectorAll('[data-testid="stage"] canvas');
+    let sum = 0;
+    for (const canvas of canvases) {
+      if (!(canvas instanceof HTMLCanvasElement)) continue;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) continue;
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < data.length; i += 16)
+        sum = (sum + (data[i] ?? 0) * ((i >> 4) % 251)) % 1e12;
+    }
+    return sum;
+  });
+}
+
+test('fontes do design system são registradas a partir do arquivo e mudam o desenho', async ({
+  page,
+}) => {
+  test.skip(!existsSync(SYSTEM_TTF), 'sem fonte TrueType no sistema');
+  await page.goto(LAB);
+  await page.getByRole('button', { name: 'Material 3' }).click();
+  await expect(page.getByTestId('fonts')).toContainText('ausente');
+  const before = await canvasChecksum(page);
+  const buffer = readFileSync(SYSTEM_TTF);
+  await page.locator('input[type="file"]').setInputFiles([
+    { name: 'Roboto-Regular.ttf', mimeType: 'font/ttf', buffer },
+    { name: 'Roboto-Medium.ttf', mimeType: 'font/ttf', buffer },
+  ]);
+  await expect(page.getByTestId('fonts')).toContainText('carregada');
+  await expect(page.getByTestId('fonts')).not.toContainText('ausente');
+  await expect(page.getByTestId('status')).toContainText('Fontes:');
+  // A fonte serifada desenha outros pixels que a fonte do sistema padrão.
+  await expect.poll(() => canvasChecksum(page)).not.toBe(before);
 });
 
 test('adicionar um botão e editar os campos reflete no desenho', async ({ page }) => {

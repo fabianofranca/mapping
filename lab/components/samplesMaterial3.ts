@@ -1037,6 +1037,12 @@ export const M3_SPEC = {
   version: 1,
   description:
     'Componentes do Material 3, tema claro baseline, escritos no formato de componente do laboratório.',
+  // Fontes do DS, por arquivo na pasta (`material3/fonts/`): Roboto (Apache 2.0) nos pesos que o
+  // M3 usa aqui. Uma fonte variável serviria com `"weight": "100 900"`.
+  fonts: [
+    { family: 'Roboto', file: 'fonts/Roboto-Regular.ttf', weight: 400 },
+    { family: 'Roboto', file: 'fonts/Roboto-Medium.ttf', weight: 500 },
+  ],
   layers: [
     {
       id: 'componentes',
