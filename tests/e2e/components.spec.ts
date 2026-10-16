@@ -56,6 +56,16 @@ test('o Material 3 carrega quinze componentes e a tela de configurações', asyn
 // Roboto (o nome do arquivo é o que a especialização declara), via "Abrir arquivos…".
 const SYSTEM_TTF = '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf';
 
+/** Espera o palco desenhar (ele desenha no máximo uma vez por quadro). */
+async function settle(page: import('@playwright/test').Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+}
+
 /** Soma ponderada dos pixels dos canvases: muda quando o desenho muda (a contagem de pixels opacos não, com fundo opaco). */
 async function canvasChecksum(page: import('@playwright/test').Page): Promise<number> {
   return page.evaluate(() => {
@@ -98,7 +108,8 @@ test('adicionar um botão e editar os campos reflete no desenho', async ({ page 
   await page.getByRole('button', { name: 'Exemplos', exact: true }).click();
   await page.getByRole('button', { name: 'Nova tela' }).click();
   await expect(page.getByTestId('status')).toContainText('0 instância(s)');
-  const before = await paintedPixels(page);
+  await settle(page);
+  const before = await canvasChecksum(page);
   const addButton = page
     .locator('[data-type-id="button"]')
     .getByRole('button', { name: 'Adicionar' });
@@ -106,27 +117,29 @@ test('adicionar um botão e editar os campos reflete no desenho', async ({ page 
   await addButton.click();
   await expect(page.getByTestId('status')).toContainText('1 instância(s)');
   await expect(page.getByRole('heading', { name: 'Botão · Entrar' })).toBeVisible();
-  const withButton = await paintedPixels(page);
-  expect(withButton).toBeGreaterThan(before);
+  await expect.poll(() => canvasChecksum(page)).not.toBe(before);
+  const withButton = await canvasChecksum(page);
 
   // A instância recém-criada fica selecionada: Delete (fora de um campo) exclui.
   await page.keyboard.press('Delete');
   await expect(page.getByTestId('status')).toContainText('0 instância(s)');
+  await expect.poll(() => canvasChecksum(page)).toBe(before);
 
   // De novo, agora editando os campos: o rótulo muda o cabeçalho (labelField) e o desenho.
   await addButton.click();
   await expect(page.getByTestId('status')).toContainText('1 instância(s)');
+  await expect.poll(() => canvasChecksum(page)).toBe(withButton);
   const label = page.getByTestId('properties').getByLabel('Rótulo *');
   await label.fill('Continuar com um rótulo bem mais longo');
   await expect(
     page.getByRole('heading', { name: /Continuar com um rótulo/ }),
   ).toBeVisible();
-  const longer = await paintedPixels(page);
-  expect(longer).not.toBe(withButton);
+  await expect.poll(() => canvasChecksum(page)).not.toBe(withButton);
+  const longer = await canvasChecksum(page);
 
   // Desabilitar baixa a opacidade: o desenho muda.
   await page.getByTestId('properties').getByLabel('Desabilitado').selectOption('sim');
-  await expect.poll(() => paintedPixels(page)).not.toBe(longer);
+  await expect.poll(() => canvasChecksum(page)).not.toBe(longer);
 
   // Excluir pelo botão do painel.
   await page.getByTestId('properties').getByRole('button', { name: 'Excluir' }).click();
