@@ -6,11 +6,24 @@
 import JSZip from 'jszip';
 import { render } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
-import { signal } from '@preact/signals';
+import { effect, signal } from '@preact/signals';
 import 'virtual:tokens.css';
 import './components.css';
 import { downloadBlob, downloadText } from '../shared/download';
 import { arrange, dropIndex, findSlot, isContainer, resolveSlotLayout } from './arrange';
+import {
+  type Board,
+  type PlacedScreen,
+  addScreen,
+  cloneScreen,
+  duplicateScreen,
+  findScreen,
+  moveScreen,
+  newBoard,
+  removeScreen,
+  replaceScreen,
+  screenOfInstance,
+} from './board';
 import type { FieldValue } from './componentFormat';
 import { ScreenEditor, konvaMeasurer } from './editor';
 import { type FontStatus, describeFont, registerFonts } from './fonts';
@@ -47,29 +60,56 @@ import {
 } from './screen';
 
 const library = signal<Library | undefined>(undefined);
-const screen = signal<Screen>(newScreen('Tela', 390, 844));
+const board = signal<Board>(newBoard(newScreen('Tela', 390, 844)));
+/** Tela ativa: a do último clique no canvas (ou da última ação da barra). Painel e ações agem nela. */
+const activeScreenId = signal<string>(board.value.screens[0]?.screen.id ?? '');
 const selectedId = signal<string | undefined>(undefined);
 const hoverId = signal<string | undefined>(undefined);
 const warnings = signal<ReadonlyMap<string, readonly string[]>>(new Map());
 const zoom = signal(1);
+/** Modo "posições fixas": só as propriedades mudam; nada se arrasta nem redimensiona. */
+const fixed = signal(false);
 const fontStatus = signal<readonly FontStatus[]>([]);
 const error = signal<string | undefined>(undefined);
 const notice = signal<string | undefined>(undefined);
-const historyPast: Screen[] = [];
+const historyPast: Board[] = [];
 
 let editor: ScreenEditor | undefined;
 
-/** Toda mudança da tela passa aqui (como uma action do store), com desfazer simples. */
-function commit(next: Screen, undoable = true): void {
-  // Containers com layout (Row/Column) recalculam e gravam os retângulos dos filhos.
-  const arranged = library.value ? arrange(next, library.value, konvaMeasurer) : next;
-  if (arranged === screen.value) return;
+/** A tela ativa com a posição dela no quadro (a primeira, se o id não existir mais). */
+function activePlaced(): PlacedScreen {
+  const found = findScreen(board.value, activeScreenId.value) ?? board.value.screens[0];
+  if (!found) throw new Error('quadro sem telas');
+  return found;
+}
+
+function activeScreen(): Screen {
+  return activePlaced().screen;
+}
+
+/** Toda mudança do quadro passa aqui (como uma action do store), com desfazer simples. */
+function commit(next: Board, undoable = true): void {
+  // Containers com layout (Row/Column) recalculam e gravam os retângulos dos filhos, por tela.
+  const lib = library.value;
+  let arranged = next;
+  if (lib) {
+    for (const placed of next.screens) {
+      const result = arrange(placed.screen, lib, konvaMeasurer);
+      if (result !== placed.screen) arranged = replaceScreen(arranged, result);
+    }
+  }
+  if (arranged === board.value) return;
   if (undoable) {
-    historyPast.push(screen.value);
+    historyPast.push(board.value);
     if (historyPast.length > 100) historyPast.shift();
   }
-  screen.value = arranged;
-  editor?.setScreen(arranged);
+  board.value = arranged;
+  editor?.setBoard(arranged);
+}
+
+/** Muda uma tela do quadro (a posição dela fica). */
+function commitScreen(next: Screen, undoable = true): void {
+  commit(replaceScreen(board.value, next), undoable);
 }
 
 /** Fim de um arrasto: entra (ou sai) de um container e assume a posição entre os irmãos. */
@@ -79,7 +119,9 @@ function dropped(
   parentId: string | undefined,
   center: { x: number; y: number },
 ): void {
-  let next = updateBox(screen.value, id, box);
+  const placed = screenOfInstance(board.value, id);
+  if (!placed) return;
+  let next = updateBox(placed.screen, id, box);
   const parent = parentId ? next.instances.find((i) => i.id === parentId) : undefined;
   const parentType = typeOf(parent);
   const slot = parentType?.component ? findSlot(parentType.component) : undefined;
@@ -90,14 +132,18 @@ function dropped(
   } else if (!parentId) {
     next = setParent(next, id, undefined);
   }
-  commit(next);
+  commitScreen(next);
 }
 
 function undo(): void {
   const previous = historyPast.pop();
   if (!previous) return;
-  screen.value = previous;
-  editor?.setScreen(previous);
+  board.value = previous;
+  if (!findScreen(previous, activeScreenId.value)) {
+    const first = previous.screens[0]?.screen.id;
+    if (first) activeScreenId.value = first;
+  }
+  editor?.setBoard(previous);
 }
 
 function say(message: string): void {
@@ -115,7 +161,7 @@ async function applyFonts(loaded: Library): Promise<void> {
   fontStatus.value = await registerFonts(loaded.fonts);
   if (library.value !== loaded) return;
   editor?.setLibrary(loaded);
-  commit(screen.value, false);
+  commit(board.value, false);
 }
 
 /** Arquivos da biblioteca atual, para juntar fontes escolhidas depois. */
@@ -140,14 +186,18 @@ function loadFiles(files: readonly TextFile[], origin: string): void {
 
 function loadSamples(): void {
   loadFiles(SAMPLE_FILES, 'Exemplos');
-  commit(SAMPLE_SCREEN);
+  editor?.select(undefined);
+  commit(newBoard(SAMPLE_SCREEN));
+  activeScreenId.value = SAMPLE_SCREEN.id;
   editor?.fit();
 }
 
 /** Material Design 3 (baseline) escrito no formato do laboratório: um design system de verdade. */
 function loadMaterial3(): void {
   loadFiles(M3_FILES, 'Material 3');
-  commit(M3_SCREEN);
+  editor?.select(undefined);
+  commit(newBoard(M3_SCREEN));
+  activeScreenId.value = M3_SCREEN.id;
   editor?.fit();
 }
 
@@ -176,7 +226,16 @@ async function openFiles(list: FileList | null): Promise<void> {
     }
     const screenFile = files.find((f) => f.text?.includes('"mapping-lab-screen"'));
     if (screenFile && files.length === 1) {
-      commit(parseScreen(JSON.parse(screenFile.text ?? '')));
+      const parsed = parseScreen(JSON.parse(screenFile.text ?? ''));
+      // Importar a mesma tela duas vezes: ids repetidos viram ids novos.
+      const taken = board.value.screens.some(
+        (p) =>
+          p.screen.id === parsed.id ||
+          p.screen.instances.some((i) => parsed.instances.some((j) => j.id === i.id)),
+      );
+      const imported = taken ? cloneScreen(parsed, parsed.name) : parsed;
+      commit(addScreen(board.value, imported));
+      activeScreenId.value = imported.id;
       editor?.fit();
       say(`Tela importada: ${screenFile.path}`);
       return;
@@ -210,11 +269,12 @@ async function downloadSamples(): Promise<void> {
 }
 
 function addFromType(type: TypeDef): void {
-  const n = screen.value.instances.length;
+  const current = activeScreen();
+  const n = current.instances.length;
   const size = type.component?.size ?? { width: 160, height: 48 };
   const offset = 24 + (n % 8) * 16;
   // Com um container selecionado que aceite o tipo, a instância nova entra nele.
-  const selected = screen.value.instances.find((i) => i.id === selectedId.value);
+  const selected = current.instances.find((i) => i.id === selectedId.value);
   const selectedType = typeOf(selected);
   const intoContainer =
     selected &&
@@ -228,14 +288,14 @@ function addFromType(type: TypeDef): void {
         height: size.height,
       }
     : { x: offset, y: offset, width: size.width, height: size.height };
-  const withNew = addInstance(screen.value, {
+  const withNew = addInstance(current, {
     typeId: type.id,
     box,
     values: initialValues(type),
     ...(intoContainer ? { parentId: selected.id } : {}),
   });
   const added = withNew.instances[withNew.instances.length - 1];
-  commit(withNew);
+  commitScreen(withNew);
   if (added) editor?.select(added.id);
 }
 
@@ -248,7 +308,8 @@ function typeOf(instance: Instance | undefined): TypeDef | undefined {
 // ---------------------------------------------------------------------------------------
 
 function Toolbar() {
-  const current = screen.value;
+  const current = activeScreen();
+  const count = board.value.screens.length;
   const canPick = typeof Reflect.get(globalThis, 'showDirectoryPicker') === 'function';
   return (
     <div class="lab-toolbar" role="toolbar" aria-label="Ações do laboratório">
@@ -283,13 +344,20 @@ function Toolbar() {
         Baixar exemplos (zip)
       </button>
       <span class="sep" />
+      <input
+        type="text"
+        class="screen-name"
+        aria-label="Nome da tela"
+        value={current.name}
+        onChange={(e) => commitScreen({ ...current, name: e.currentTarget.value })}
+      />
       <select
         aria-label="Tamanho da tela"
         value={`${current.width}x${current.height}`}
         onChange={(e) => {
           const [w, h] = e.currentTarget.value.split('x').map(Number);
           if (w && h) {
-            commit(resize(current, w, h));
+            commitScreen(resize(current, w, h));
             editor?.fit();
           }
         }}
@@ -315,15 +383,48 @@ function Toolbar() {
       <button
         type="button"
         onClick={() => {
-          commit(newScreen('Tela', current.width, current.height));
+          const next = duplicateScreen(board.value, current.id);
+          const copy = next.screens[next.screens.length - 1];
+          editor?.select(undefined);
+          commit(next);
+          if (copy) activeScreenId.value = copy.screen.id;
           editor?.fit();
         }}
       >
-        Nova tela
+        Duplicar tela
+      </button>
+      <button
+        type="button"
+        disabled={count <= 1}
+        onClick={() => {
+          const next = removeScreen(board.value, current.id);
+          const first = next.screens[0]?.screen.id;
+          editor?.select(undefined);
+          commit(next);
+          if (first) activeScreenId.value = first;
+          editor?.fit();
+        }}
+      >
+        Excluir tela
       </button>
       <button type="button" onClick={undo} title="Ctrl+Z">
         Desfazer
       </button>
+      <label
+        class="toggle"
+        title="A tela inteira continua arrastável; os componentes dentro dela não se arrastam nem redimensionam, só as propriedades mudam"
+      >
+        <input
+          type="checkbox"
+          checked={fixed.value}
+          onChange={(e) => {
+            const value = e.currentTarget.checked;
+            fixed.value = value;
+            editor?.setFixed(value);
+          }}
+        />
+        Posições fixas
+      </label>
       <span class="sep" />
       <button
         type="button"
@@ -336,7 +437,7 @@ function Toolbar() {
       <button
         type="button"
         onClick={() => {
-          const url = editor?.toDataURL();
+          const url = editor?.toDataURL(current.id);
           if (!url) return;
           const link = document.createElement('a');
           link.href = url;
@@ -447,12 +548,24 @@ function CanvasArea() {
       onHover: (id) => (hoverId.value = id),
       onZoom: (scale) => (zoom.value = scale),
       onWarnings: (map) => (warnings.value = map),
-      onBoxChange: (id, box) => commit(updateBox(screen.value, id, box)),
+      onActiveScreen: (id) => {
+        if (id) activeScreenId.value = id;
+      },
+      onScreenMove: (id, x, y) => commit(moveScreen(board.value, id, x, y)),
+      onBoxChange: (id, box) => {
+        const placed = screenOfInstance(board.value, id);
+        if (placed) commitScreen(updateBox(placed.screen, id, box));
+      },
       onDrop: dropped,
     });
     editor.setLibrary(library.value);
-    editor.setScreen(screen.value);
+    editor.setBoard(board.value);
+    editor.setActiveScreen(activeScreenId.value);
+    editor.setFixed(fixed.value);
+    // Mudar a tela ativa fora do canvas (barra, desfazer) reflete no realce do palco.
+    const stop = effect(() => editor?.setActiveScreen(activeScreenId.value));
     return () => {
+      stop();
       editor?.dispose();
       editor = undefined;
     };
@@ -460,7 +573,7 @@ function CanvasArea() {
   return (
     <div class="lab-canvas">
       <div class="stage" ref={host} data-testid="stage" />
-      {screen.value.instances.length === 0 && (
+      {board.value.screens.every((p) => p.screen.instances.length === 0) && (
         <div class="lab-empty">
           <p>
             Tela em branco. Clique em <b>Adicionar</b> num componente da biblioteca, ou
@@ -476,7 +589,7 @@ function FieldEditor({ field, instance }: { field: FieldDef; instance: Instance 
   const value = instance.values[field.key];
   const text = value === null || value === undefined ? '' : String(value);
   const set = (next: FieldValue) =>
-    commit(setValue(screen.value, instance.id, field.key, next));
+    commitScreen(setValue(activeScreen(), instance.id, field.key, next));
   const id = `field-${instance.id}-${field.key}`;
   let control;
   switch (field.type) {
@@ -540,8 +653,8 @@ function FieldEditor({ field, instance }: { field: FieldDef; instance: Instance 
 }
 
 /** Pai (container) e posição entre os irmãos da instância selecionada. */
-function ParentRow({ instance }: { instance: Instance }) {
-  const current = screen.value;
+function ParentRow({ instance, disabled }: { instance: Instance; disabled: boolean }) {
+  const current = activeScreen();
   const lib = library.value;
   const blocked = new Set([
     instance.id,
@@ -569,9 +682,12 @@ function ParentRow({ instance }: { instance: Instance }) {
         <select
           id={`parent-${instance.id}`}
           value={instance.parentId ?? ''}
+          disabled={disabled}
           onChange={(e) => {
             const value = e.currentTarget.value;
-            commit(setParent(current, instance.id, value === '' ? undefined : value));
+            commitScreen(
+              setParent(current, instance.id, value === '' ? undefined : value),
+            );
           }}
         >
           <option value="">(tela)</option>
@@ -587,16 +703,16 @@ function ParentRow({ instance }: { instance: Instance }) {
         <span class="actions">
           <button
             type="button"
-            disabled={index <= 0}
-            onClick={() => commit(moveSibling(current, instance.id, -1))}
+            disabled={disabled || index <= 0}
+            onClick={() => commitScreen(moveSibling(current, instance.id, -1))}
             title="Antes do irmão anterior"
           >
             ↑
           </button>
           <button
             type="button"
-            disabled={index < 0 || index >= siblings.length - 1}
-            onClick={() => commit(moveSibling(current, instance.id, 1))}
+            disabled={disabled || index < 0 || index >= siblings.length - 1}
+            onClick={() => commitScreen(moveSibling(current, instance.id, 1))}
             title="Depois do próximo irmão"
           >
             ↓
@@ -611,7 +727,7 @@ function ParentRow({ instance }: { instance: Instance }) {
 }
 
 function Properties() {
-  const current = screen.value;
+  const current = activeScreen();
   const instance = current.instances.find((i) => i.id === selectedId.value);
   const type = typeOf(instance);
   if (!instance) {
@@ -624,7 +740,7 @@ function Properties() {
   }
   const { box } = instance;
   const setBox = (patch: Partial<typeof box>) =>
-    commit(updateBox(current, instance.id, { ...box, ...patch }));
+    commitScreen(updateBox(current, instance.id, { ...box, ...patch }));
   return (
     <div>
       <h2>
@@ -633,6 +749,7 @@ function Properties() {
           : instance.typeId}
       </h2>
       <div class="lab-props" data-testid="properties">
+        {fixed.value && <p class="hint">Posições fixas: só as propriedades mudam.</p>}
         <div class="box">
           {(['x', 'y', 'width', 'height'] as const).map((key) => (
             <label key={key}>
@@ -640,6 +757,7 @@ function Properties() {
               <input
                 type="number"
                 value={box[key]}
+                disabled={fixed.value}
                 onChange={(e) => setBox({ [key]: Number(e.currentTarget.value) })}
               />
             </label>
@@ -648,12 +766,12 @@ function Properties() {
         {type?.fields.map((field) => (
           <FieldEditor key={field.key} field={field} instance={instance} />
         ))}
-        <ParentRow instance={instance} />
+        <ParentRow instance={instance} disabled={fixed.value} />
         <div class="actions">
           <button
             type="button"
-            onClick={() => commit(bringToFront(current, instance.id))}
-            disabled={Boolean(instance.parentId)}
+            onClick={() => commitScreen(bringToFront(current, instance.id))}
+            disabled={fixed.value || Boolean(instance.parentId)}
             title="Só no nível da tela; dentro de um container, use a ordem entre irmãos"
           >
             Trazer para frente
@@ -662,7 +780,7 @@ function Properties() {
             type="button"
             class="danger"
             onClick={() => {
-              commit(removeInstance(current, instance.id));
+              commitScreen(removeInstance(current, instance.id));
               editor?.select(undefined);
             }}
             title="Os filhos sobem para o pai"
@@ -674,7 +792,7 @@ function Properties() {
               type="button"
               class="danger"
               onClick={() => {
-                commit(removeSubtree(current, instance.id));
+                commitScreen(removeSubtree(current, instance.id));
                 editor?.select(undefined);
               }}
             >
@@ -719,15 +837,19 @@ function Warnings() {
 }
 
 function Status() {
-  const current = screen.value;
-  const hovered = current.instances.find((i) => i.id === hoverId.value);
+  const placed = activePlaced();
+  const current = placed.screen;
+  const hovered = board.value.screens
+    .flatMap((p) => p.screen.instances)
+    .find((i) => i.id === hoverId.value);
   const hoveredType = typeOf(hovered);
   return (
     <div class="lab-status" data-testid="status">
       {error.value && <span class="error">{error.value}</span>}
       {!error.value && notice.value && <span>{notice.value}</span>}
       <span>
-        {current.name}: {current.width} × {current.height} px, {current.instances.length}{' '}
+        {board.value.screens.length} tela(s) · {current.name}: {current.width} ×{' '}
+        {current.height} px em ({placed.x}, {placed.y}), {current.instances.length}{' '}
         instância(s)
       </span>
       {hovered && hoveredType && (
@@ -748,7 +870,8 @@ function Lab() {
         target instanceof HTMLSelectElement ||
         target instanceof HTMLTextAreaElement;
       if ((e.key === 'Delete' || e.key === 'Backspace') && !typing && selectedId.value) {
-        commit(removeInstance(screen.value, selectedId.value));
+        const owner = screenOfInstance(board.value, selectedId.value);
+        if (owner) commitScreen(removeInstance(owner.screen, selectedId.value));
         editor?.select(undefined);
         e.preventDefault();
       }
@@ -765,8 +888,8 @@ function Lab() {
       <header class="lab-header">
         <h1>Componentes por template</h1>
         <p>
-          Experimento: telas sem imagem, montadas com componentes genéricos cujo desenho
-          segue as propriedades da anotação.
+          Experimento: telas sem imagem, várias no mesmo canvas e reorganizáveis, montadas
+          com componentes genéricos cujo desenho segue as propriedades da anotação.
         </p>
       </header>
       <Toolbar />

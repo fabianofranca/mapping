@@ -103,11 +103,12 @@ test('fontes do design system são registradas a partir do arquivo e mudam o des
   await expect.poll(() => canvasChecksum(page)).not.toBe(before);
 });
 
-test('adicionar um botão e editar os campos reflete no desenho', async ({ page }) => {
+test('adicionar um botão à tela de exemplo e editar os campos reflete no desenho', async ({
+  page,
+}) => {
   await page.goto(LAB);
   await page.getByRole('button', { name: 'Exemplos', exact: true }).click();
-  await page.getByRole('button', { name: 'Nova tela' }).click();
-  await expect(page.getByTestId('status')).toContainText('0 instância(s)');
+  await expect(page.getByTestId('status')).toContainText('9 instância(s)');
   await settle(page);
   const before = await canvasChecksum(page);
   const addButton = page
@@ -115,19 +116,19 @@ test('adicionar um botão e editar os campos reflete no desenho', async ({ page 
     .getByRole('button', { name: 'Adicionar' });
 
   await addButton.click();
-  await expect(page.getByTestId('status')).toContainText('1 instância(s)');
+  await expect(page.getByTestId('status')).toContainText('10 instância(s)');
   await expect(page.getByRole('heading', { name: 'Botão · Entrar' })).toBeVisible();
   await expect.poll(() => canvasChecksum(page)).not.toBe(before);
   const withButton = await canvasChecksum(page);
 
   // A instância recém-criada fica selecionada: Delete (fora de um campo) exclui.
   await page.keyboard.press('Delete');
-  await expect(page.getByTestId('status')).toContainText('0 instância(s)');
+  await expect(page.getByTestId('status')).toContainText('9 instância(s)');
   await expect.poll(() => canvasChecksum(page)).toBe(before);
 
   // De novo, agora editando os campos: o rótulo muda o cabeçalho (labelField) e o desenho.
   await addButton.click();
-  await expect(page.getByTestId('status')).toContainText('1 instância(s)');
+  await expect(page.getByTestId('status')).toContainText('10 instância(s)');
   await expect.poll(() => canvasChecksum(page)).toBe(withButton);
   const label = page.getByTestId('properties').getByLabel('Rótulo *');
   await label.fill('Continuar com um rótulo bem mais longo');
@@ -143,7 +144,128 @@ test('adicionar um botão e editar os campos reflete no desenho', async ({ page 
 
   // Excluir pelo botão do painel.
   await page.getByTestId('properties').getByRole('button', { name: 'Excluir' }).click();
-  await expect(page.getByTestId('status')).toContainText('0 instância(s)');
+  await expect(page.getByTestId('status')).toContainText('9 instância(s)');
+});
+
+test('posições fixas: editar um campo redesenha, mas arrastar não move', async ({
+  page,
+}) => {
+  await page.goto(LAB);
+  await page.getByRole('button', { name: 'Exemplos', exact: true }).click();
+  await expect(page.getByTestId('status')).toContainText('9 instância(s)');
+  await settle(page);
+
+  // O centro do palco é o centro da tela de exemplo: cai sobre um campo de texto.
+  await expect(page.getByTestId('status')).toContainText('em (0, 0)');
+  const stage = page.getByTestId('stage');
+  const area = await stage.boundingBox();
+  if (!area) throw new Error('palco sem caixa');
+  const point = { x: area.x + area.width / 2, y: area.y + area.height / 2 };
+  await page.mouse.click(point.x, point.y);
+  const props = page.getByTestId('properties');
+  await expect(props).toBeVisible();
+
+  const x = props.locator('.box input').nth(0);
+  const y = props.locator('.box input').nth(1);
+  await expect(x).toBeEnabled();
+  const startX = await x.inputValue();
+  const startY = await y.inputValue();
+
+  await page.getByLabel('Posições fixas').check();
+  await expect(x).toBeDisabled();
+  await expect(y).toBeDisabled();
+
+  // Arrastar a partir do mesmo ponto move a tela inteira (a instância não é arrastável no
+  // modo fixo, então o arrasto sobe para a tela), não a instância.
+  const beforePan = await canvasChecksum(page);
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.mouse.move(point.x + 40, point.y + 40, { steps: 4 });
+  await page.mouse.move(point.x + 80, point.y + 80, { steps: 4 });
+  await page.mouse.up();
+  await settle(page);
+  // O desenho mudou de lugar e a posição da tela no quadro mudou, enquanto x/y da instância
+  // (coordenadas da tela) ficaram iguais.
+  expect(await canvasChecksum(page)).not.toBe(beforePan);
+  await expect(page.getByTestId('status')).not.toContainText('em (0, 0)');
+  await expect(x).toHaveValue(startX);
+  await expect(y).toHaveValue(startY);
+
+  // As propriedades continuam editáveis e o desenho acompanha.
+  const before = await canvasChecksum(page);
+  await props.getByLabel('Rótulo *').fill('Um rótulo bem mais longo que o anterior');
+  await expect.poll(() => canvasChecksum(page)).not.toBe(before);
+  await expect(x).toHaveValue(startX);
+  await expect(y).toHaveValue(startY);
+
+  await page.getByLabel('Posições fixas').uncheck();
+  await expect(x).toBeEnabled();
+  await expect(y).toBeEnabled();
+});
+
+test('várias telas: duplicar e arrastar a tela move a tela, não os componentes', async ({
+  page,
+}) => {
+  await page.goto(LAB);
+  await page.getByRole('button', { name: 'Exemplos', exact: true }).click();
+  await expect(page.getByTestId('status')).toContainText('1 tela(s)');
+  await page.getByRole('button', { name: 'Duplicar tela' }).click();
+  const status = page.getByTestId('status');
+  await expect(status).toContainText('2 tela(s)');
+  await expect(status).toContainText('Entrar (cópia)');
+  await expect(status).toContainText('em (470, 0)');
+  await settle(page);
+
+  // Duplicar enquadra o quadro: duas telas de 390 × 844 com 80 de espaço, margem 32.
+  const area = await page.getByTestId('stage').boundingBox();
+  if (!area) throw new Error('palco sem caixa');
+  const scale = Math.min((area.width - 64) / (2 * 390 + 80), (area.height - 64) / 844);
+  const point = {
+    x: area.x + area.width / 2 + (80 / 2 + 390 / 2) * scale,
+    y: area.y + area.height / 2,
+  };
+  // O centro da cópia cai sobre o campo de texto dela.
+  await page.mouse.click(point.x, point.y);
+  const props = page.getByTestId('properties');
+  await expect(props).toBeVisible();
+  const x = props.locator('.box input').nth(0);
+  const y = props.locator('.box input').nth(1);
+  const startX = await x.inputValue();
+  const startY = await y.inputValue();
+
+  const drag = async (from: { x: number; y: number }) => {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + 40, from.y + 40, { steps: 4 });
+    await page.mouse.move(from.x + 80, from.y + 80, { steps: 4 });
+    await page.mouse.up();
+    await settle(page);
+  };
+  const position = async (): Promise<string> => {
+    const text = await status.innerText();
+    const match = /em \(-?\d+, -?\d+\)/.exec(text);
+    if (!match) throw new Error(`status sem posição: ${text}`);
+    return match[0];
+  };
+
+  // Posições fixas: arrastar por cima do componente move a tela inteira.
+  await page.getByLabel('Posições fixas').check();
+  await drag(point);
+  const movedTo = await position();
+  expect(movedTo).not.toBe('em (470, 0)');
+  await expect(x).toHaveValue(startX);
+  await expect(y).toHaveValue(startY);
+
+  // Sem o modo fixo, o mesmo gesto (a partir do ponto, já dentro da tela movida) move o
+  // componente: x/y da instância mudam e a tela fica onde estava.
+  await page.getByLabel('Posições fixas').uncheck();
+  await drag({ x: point.x + 80, y: point.y + 80 });
+  await expect(x).not.toHaveValue(startX);
+  await expect(y).not.toHaveValue(startY);
+  expect(await position()).toBe(movedTo);
+
+  await page.getByRole('button', { name: 'Excluir tela' }).click();
+  await expect(status).toContainText('1 tela(s)');
 });
 
 test('a página leva a CSP gerada no build', async ({ page }) => {
