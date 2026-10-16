@@ -192,6 +192,7 @@ export default tseslint.config(
     ignores: [
       'dist',
       'dist-mcp',
+      'dist-viewer',
       'node_modules',
       'coverage',
       'playwright-report',
