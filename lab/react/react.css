@@ -60,6 +60,11 @@ body {
   background: var(--color-hover);
 }
 
+.react-lab button[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .react-lab button:disabled {
   opacity: var(--opacity-disabled);
   cursor: default;
@@ -110,4 +115,12 @@ body {
   font: var(--t-text-small);
   display: grid;
   gap: var(--space-0-5);
+}
+
+.react-lab-hint {
+  color: var(--color-text-muted);
+}
+
+.react-lab code {
+  font-family: var(--font-mono);
 }
