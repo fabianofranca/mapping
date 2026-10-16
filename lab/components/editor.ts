@@ -10,6 +10,7 @@
  */
 import Konva from 'konva';
 import { renderScene } from '../scene/renderScene';
+import { attachPinchZoom } from '../shared/pinch';
 import type { FieldValues } from './componentFormat';
 import { type TextMeasurer, instantiate } from './instantiate';
 import { type Library, type TypeDef, instanceLabel } from './library';
@@ -121,6 +122,10 @@ export class ScreenEditor {
     this.stage.on('mousemove', (e) => this.setHover(this.instanceIdOf(e.target)));
     this.stage.on('mouseleave', () => this.setHover(undefined));
     this.stage.on('dragmove', () => this.syncOverlay());
+    attachPinchZoom(this.stage, { min: MIN_SCALE, max: MAX_SCALE }, (scale) => {
+      this.callbacks.onZoom?.(scale);
+      this.syncOverlay();
+    });
     this.transformer.on('transform', () => this.onTransform());
     this.transformer.on('transformend', () => this.commitBox());
     this.transformer.boundBoxFunc((oldBox, newBox) => {

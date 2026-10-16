@@ -277,3 +277,39 @@ body {
 .lab-status .kind {
   font-family: var(--font-mono);
 }
+
+/* Celular e janelas estreitas: uma coluna, o canvas em cima e os painéis embaixo. */
+@media (max-width: 899px) {
+  .lab {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .lab-main {
+    grid-template-columns: 1fr;
+  }
+
+  .lab-canvas {
+    height: 55dvh;
+  }
+
+  .lab-side {
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .lab-tree {
+    flex: none;
+    max-height: 40dvh;
+  }
+
+  .lab-details,
+  .lab-warnings {
+    max-height: none;
+  }
+
+  .lab-header a {
+    margin-left: 0;
+  }
+}

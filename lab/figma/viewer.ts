@@ -10,6 +10,7 @@
  */
 import Konva from 'konva';
 import { type RenderResult, renderScene, sceneIdOf } from '../scene/renderScene';
+import { attachPinchZoom } from '../shared/pinch';
 import type { Scene } from '../scene/scene';
 
 export interface ViewerCallbacks {
@@ -84,6 +85,10 @@ export class LabViewer {
       this.select(sceneIdOf(e.target));
     });
     this.stage.on('dragmove', () => this.syncOverlays());
+    attachPinchZoom(this.stage, { min: MIN_SCALE, max: MAX_SCALE }, (scale) => {
+      this.callbacks.onZoom?.(scale);
+      this.syncOverlays();
+    });
     this.resize = new ResizeObserver(() => {
       this.stage.size({
         width: Math.max(1, container.clientWidth),

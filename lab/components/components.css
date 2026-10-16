@@ -278,3 +278,32 @@ body {
 .lab-status .error {
   color: var(--color-danger);
 }
+
+/* Celular e janelas estreitas: uma coluna, o canvas em cima e os painéis embaixo. */
+@media (max-width: 899px) {
+  .lab {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .lab-main {
+    grid-template-columns: 1fr;
+  }
+
+  .lab-canvas {
+    height: 55dvh;
+    order: -1;
+  }
+
+  .lab-library,
+  .lab-side {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    overflow: visible;
+  }
+
+  .lab-header a {
+    margin-left: 0;
+  }
+}
