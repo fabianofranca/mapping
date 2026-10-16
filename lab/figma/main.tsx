@@ -9,8 +9,10 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { signal, useSignal } from '@preact/signals';
 import 'virtual:tokens.css';
 import './lab.css';
+import { downloadText } from '../shared/download';
 import { detectInput, toScene, type InputKind } from './detectInput';
 import { SAMPLE_JSON, SAMPLE_SVG } from './samples';
+import { sceneToComponent } from './sceneToComponent';
 import {
   type Scene,
   type SceneNode,
@@ -30,6 +32,7 @@ interface Loaded {
 
 const loaded = signal<Loaded | undefined>(undefined);
 const error = signal<string | undefined>(undefined);
+const notice = signal<string | undefined>(undefined);
 const hoverId = signal<string | undefined>(undefined);
 const selectedId = signal<string | undefined>(undefined);
 const renderWarnings = signal<readonly string[]>([]);
@@ -65,6 +68,33 @@ async function loadFile(file: File): Promise<void> {
       ? 'json'
       : detectInput({ text }).kind;
   load(kind, text);
+}
+
+/** Ponte para o laboratório de componentes: a cena vira um arquivo `mapping-component`. */
+function downloadAsComponent(): void {
+  const current = loaded.value;
+  if (!current) return;
+  try {
+    const name = current.scene.root.name || 'componente';
+    const id =
+      name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'componente';
+    const { component, fields, warnings } = sceneToComponent(current.scene, id, name);
+    downloadText(JSON.stringify(component, null, 2), `${id}.json`);
+    notice.value =
+      `Componente "${id}.json" gerado: ${fields.length} campo(s) de texto` +
+      (warnings.length > 0
+        ? `, ${warnings.length} aviso(s): ${warnings.join('; ')}`
+        : '') +
+      '. Abra-o no laboratório de componentes junto com uma especialização que o referencie.';
+    error.value = undefined;
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e);
+  }
 }
 
 function clear(): void {
@@ -124,6 +154,14 @@ function Toolbar() {
       </label>
       <button type="button" onClick={clear} disabled={!current}>
         Limpar
+      </button>
+      <button
+        type="button"
+        onClick={downloadAsComponent}
+        disabled={!current}
+        title="Gera um arquivo mapping-component a partir da cena (textos viram campos)"
+      >
+        Baixar como componente
       </button>
       <span class="sep" />
       <button
@@ -418,6 +456,7 @@ function Status() {
   return (
     <div class="lab-status" data-testid="status">
       {error.value && <span class="error">{error.value}</span>}
+      {!error.value && notice.value && <span>{notice.value}</span>}
       {current && (
         <>
           <span>
