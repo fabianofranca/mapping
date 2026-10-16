@@ -28,4 +28,30 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 
 **O que observar no teste:** se escrever um componente à mão é razoável (o formato é a parte que iria para o produto); se o layout `row`/`column` + âncoras cobre os componentes reais de um design system ou falta algo (empilhamento automático entre instâncias ficou de fora de propósito); a fidelidade do texto (fonte do sistema).
 
-**Caminho para o produto, se der certo:** `component` no tipo da especialização (formatVersion 4), o renderizador `instantiate` + `renderScene` dentro de `src/canvas/` desenhando as marcações que têm anotação tipada com componente, e uma "imagem sem arquivo" (tela em branco com tamanho) no `mapping.json`, e várias telas reorganizáveis no mesmo canvas.
+**Caminho para o produto (conclusão da análise de 2026-10-16):** deu certo. O **motor** (formato, parser, expressões, instanciação, cena, renderizador Konva e arrumação) vai para o produto como a etapa **Biblioteca** do [`docs/ROADMAP.md`](../docs/ROADMAP.md). O **editor do laboratório** (`editor.ts` e a página) não vai: o canvas da app já faz esse papel (entrada geométrica, seleção na UI, alças no overlay, undo no histórico). No produto não existe entidade "instância": uma instância é **uma marcação com uma anotação tipada**, e o desenho é derivado (retângulo da marcação, tipo e valores da anotação, molde da especialização) e não é gravado. Uma tela sem imagem é uma **imagem sem arquivo** (tela em branco com tamanho e cor de fundo); o quadro com telas reorganizáveis já existe na app (`placement` das imagens). O desenho é opcional por tipo, então projetos só com fotos não executam nada novo.
+
+## Próximas fases (L1 e L2)
+
+Detalhes e checkboxes no [`PLAN.md`](../PLAN.md), seção "Etapa em andamento".
+
+- **L1, visualizador embutível:** núcleo de só leitura sem framework, o editor passando a usar o núcleo, build de biblioteca à parte e invólucro React com página de demonstração.
+- **L2, tela a partir de um JSON sem geometria:** dimensionamento por componente, arrumação por tamanhos, declaração de origem executável e a página colando um JSON do SDUI.
+
+## `components/sdui/` — Exemplo de JSON do SDUI
+
+Dois arquivos, entrada da fase L2:
+
+- `settings.sdui.json`: a tela de configurações do Material 3 escrita como um backend de SDUI escreveria. É uma árvore com `type`, `props`, `children`, `actions`, `binding`, `floating`, `bottomBar` e `modal`, **sem retângulos**.
+- `origem-material3.sketch.json`: **esboço** da declaração de origem que traduz esse JSON para a biblioteca. As chaves ainda não existem no formato; a L2 define a declaração.
+
+O que o exemplo exercita, de propósito:
+
+- nomes diferentes dos do componente (`text` e `style` contra `label` e `variant`);
+- booleanos de verdade, traduzidos para `sim`/`não`;
+- valor com outro domínio (`selectedIndex: 2` vira `active: "3"`);
+- listas que viram campos numerados (`items[0].label` vira `label1`); é frágil e é o argumento para a barra de navegação e o bottom sheet aceitarem campo de tabela no produto;
+- propriedade aninhada (`avatar.initials`);
+- elementos fora do fluxo: o FAB em `floating` com âncora, a `bottomBar` e o `modal` com scrim implícito;
+- chaves ignoradas pelo desenho (`actions`, `binding`, `id`, `route`); `binding` é a relação com o modelo e viraria campo de referência na importação.
+
+Antecipa duas necessidades: o cartão precisa de um slot de ações (o do laboratório não tem) e o texto de apoio do cartão com altura `hug` dentro de coluna `hug` é o caso que prova a arrumação por tamanhos. O dono não consegue testar com o JSON real do backend por enquanto.

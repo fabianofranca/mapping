@@ -1,0 +1,149 @@
+{
+  "_comentario": [
+    "Esboço, só para conversa: o que a especialização Material 3 declararia para o núcleo",
+    "ler o JSON de sdui-settings.json sem saber o que é SDUI. Chaves e nomes ainda não",
+    "existem no formato; a fase L2 do laboratório define o formato de verdade.",
+    "Caminhos usam a notação a.b[0].c dentro do nó. Tudo o que não está declarado",
+    "(actions, binding, id, route) é ignorado pelo desenho e vira aviso só se for props."
+  ],
+  "import": {
+    "sdui": {
+      "node": {
+        "typeKey": "type",
+        "propsKey": "props",
+        "childrenKey": "children"
+      },
+      "screen": {
+        "width": "screen.device.width",
+        "height": "screen.device.height",
+        "roots": [
+          { "path": "content", "layout": "column" },
+          { "path": "bottomBar", "anchor": "bottom" },
+          { "path": "floating[*]", "anchor": "$.anchor", "margin": "$.margin" },
+          { "path": "modal", "anchor": "bottom", "overlay": true, "scrim": "m3-scrim" }
+        ]
+      },
+      "values": {
+        "boolean": { "true": "sim", "false": "não" }
+      },
+      "types": {
+        "Column": {
+          "type": "m3-column",
+          "fields": { "spacing": "spacing", "padding": "padding" }
+        },
+        "Row": {
+          "type": "m3-row",
+          "fields": { "spacing": "spacing", "padding": "padding" }
+        },
+        "TopAppBar": {
+          "type": "m3-top-app-bar",
+          "fields": {
+            "title": "title",
+            "navigation": "navigationIcon",
+            "action": "actionIcon",
+            "align": "titleAlign"
+          }
+        },
+        "TextField": {
+          "type": "m3-text-field",
+          "fields": {
+            "label": "label",
+            "value": "value",
+            "placeholder": "placeholder",
+            "supporting": "supportingText",
+            "state": "state",
+            "trailing": "trailingIcon"
+          }
+        },
+        "Chip": {
+          "type": "m3-chip",
+          "fields": { "label": "text", "selected": "selected", "icon": "icon" }
+        },
+        "Card": {
+          "type": "m3-card",
+          "fields": {
+            "headline": "headline",
+            "subhead": "subhead",
+            "body": "body",
+            "variant": "style"
+          },
+          "children": { "slot": "actions" }
+        },
+        "Button": {
+          "type": "m3-button",
+          "fields": {
+            "label": "text",
+            "variant": "style",
+            "icon": "icon",
+            "disabled": "disabled"
+          }
+        },
+        "ListItem": {
+          "type": "m3-list-item",
+          "fields": {
+            "headline": "headline",
+            "supporting": "supportingText",
+            "leading": "leadingIcon",
+            "initials": "avatar.initials",
+            "trailing": "trailingIcon"
+          }
+        },
+        "Switch": {
+          "type": "m3-switch",
+          "fields": { "label": "label", "selected": "checked", "icon": "showIcon" }
+        },
+        "Checkbox": {
+          "type": "m3-checkbox",
+          "fields": { "label": "label", "checked": "checked", "error": "error" }
+        },
+        "FAB": {
+          "type": "m3-fab",
+          "fields": { "icon": "icon", "label": "label", "color": "color" }
+        },
+        "NavigationBar": {
+          "type": "m3-navigation-bar",
+          "fields": {
+            "label1": "items[0].label",
+            "icon1": "items[0].icon",
+            "label2": "items[1].label",
+            "icon2": "items[1].icon",
+            "label3": "items[2].label",
+            "icon3": "items[2].icon",
+            "active": "selectedIndex"
+          },
+          "map": { "active": { "0": "1", "1": "2", "2": "3" } }
+        },
+        "BottomSheet": {
+          "type": "m3-bottom-sheet",
+          "fields": {
+            "title": "title",
+            "handle": "dragHandle",
+            "item1": "items[0].label",
+            "icon1": "items[0].icon",
+            "item2": "items[1].label",
+            "icon2": "items[1].icon",
+            "item3": "items[2].label",
+            "icon3": "items[2].icon"
+          }
+        }
+      }
+    }
+  },
+  "_dimensionamento_nos_componentes": {
+    "_comentario": "Iria em cada arquivo de componente, não aqui: como a instância se dimensiona quando chega sem retângulo.",
+    "m3-top-app-bar": { "width": "fill", "height": 64 },
+    "m3-text-field": { "width": "fill", "height": 56 },
+    "m3-chip": { "width": "hug", "height": 32 },
+    "m3-card": { "width": "fill", "height": "hug" },
+    "m3-button": { "width": "hug", "height": 40 },
+    "m3-list-item": { "width": "fill", "height": 72 },
+    "m3-switch": { "width": "fill", "height": 32 },
+    "m3-checkbox": { "width": "fill", "height": 40 },
+    "m3-row": { "width": "fill", "height": "hug" },
+    "m3-column": { "width": "fill", "height": "hug" },
+    "m3-fab": { "width": 56, "height": 56 },
+    "m3-navigation-bar": { "width": "fill", "height": 80 },
+    "m3-bottom-sheet": { "width": "fill", "height": "hug" },
+    "m3-scrim": { "width": "fill", "height": "fill" }
+  }
+}
