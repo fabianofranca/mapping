@@ -383,18 +383,6 @@ function Toolbar() {
       <button
         type="button"
         onClick={() => {
-          const created = newScreen(`Tela ${count + 1}`, current.width, current.height);
-          editor?.select(undefined);
-          commit(addScreen(board.value, created));
-          activeScreenId.value = created.id;
-          editor?.fit();
-        }}
-      >
-        Nova tela
-      </button>
-      <button
-        type="button"
-        onClick={() => {
           const next = duplicateScreen(board.value, current.id);
           const copy = next.screens[next.screens.length - 1];
           editor?.select(undefined);
