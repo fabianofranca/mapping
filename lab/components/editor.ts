@@ -442,7 +442,6 @@ export class ScreenEditor {
       idPrefix: instance.id,
     });
     const rendered = renderScene({
-      source: 'figma-json',
       root: result.root,
       warnings: [],
     });
