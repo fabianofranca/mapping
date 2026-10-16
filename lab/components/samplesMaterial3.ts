@@ -775,6 +775,109 @@ export const M3_NAVIGATION_BAR: ComponentFile = {
   },
 };
 
+function sheetItem(n: 1 | 2 | 3) {
+  return {
+    type: 'frame' as const,
+    name: `item ${n}`,
+    width: 'fill' as const,
+    height: 56,
+    visible: { $has: `item${n}` },
+    layout: {
+      type: 'row' as const,
+      gap: 16,
+      padding: [0, 24] as const,
+      align: 'center' as const,
+    },
+    children: [
+      icon(`icon${n}`, 24, C.onSurfaceVariant, { visible: { $has: `icon${n}` } }),
+      text(`rótulo ${n}`, { $field: `item${n}` }, T.bodyLarge, C.onSurface, {
+        width: 'fill',
+      }),
+    ],
+  };
+}
+
+export const M3_BOTTOM_SHEET: ComponentFile = {
+  ...base,
+  id: 'm3-bottom-sheet',
+  name: 'Bottom sheet',
+  description:
+    'Modal bottom sheet: surface-container-low, cantos superiores extra-large (28), alça de 32 × 4 a 22 dp do topo, título e itens de lista.',
+  size: { width: 412, height: 320 },
+  minSize: { width: 240, height: 96 },
+  preview: {
+    title: 'Title',
+    handle: 'sim',
+    item1: 'Item one',
+    icon1: 'favorite',
+    item2: 'Item two',
+    icon2: 'edit',
+    item3: 'Item three',
+    icon3: 'settings',
+  },
+  template: {
+    type: 'frame',
+    name: 'bottom sheet',
+    layout: { type: 'column', gap: 0, padding: [0, 0, 16, 0] },
+    cornerRadius: [28, 28, 0, 0],
+    fill: C.surfaceContainerLow,
+    shadow: { color: C.shadow, y: -1, blur: 3 },
+    children: [
+      {
+        type: 'frame',
+        name: 'área da alça',
+        width: 'fill',
+        height: 48,
+        layout: { type: 'row', align: 'center', justify: 'center' },
+        children: [
+          {
+            type: 'rect',
+            name: 'alça',
+            visible: { $field: 'handle' },
+            width: 32,
+            height: 4,
+            cornerRadius: 2,
+            fill: 'rgba(73, 69, 79, 0.4)',
+          },
+        ],
+      },
+      {
+        type: 'frame',
+        name: 'cabeçalho',
+        width: 'fill',
+        height: 'hug',
+        visible: { $has: 'title' },
+        layout: { type: 'row', padding: [8, 24, 16, 24] },
+        children: [
+          text('título', { $field: 'title' }, T.titleLarge, C.onSurface, {
+            width: 'fill',
+          }),
+        ],
+      },
+      sheetItem(1),
+      sheetItem(2),
+      sheetItem(3),
+    ],
+  },
+};
+
+export const M3_SCRIM: ComponentFile = {
+  ...base,
+  id: 'm3-scrim',
+  name: 'Scrim',
+  description:
+    'Película que escurece a tela atrás de um modal: scrim (#000) a 32 %. Cobre a tela inteira, por baixo da folha.',
+  size: { width: 412, height: 917 },
+  minSize: { width: 16, height: 16 },
+  preview: {},
+  template: {
+    type: 'frame',
+    name: 'scrim',
+    layout: { type: 'none' },
+    fill: 'rgba(0, 0, 0, 0.32)',
+  },
+};
+
 export const M3_COMPONENTS: readonly ComponentFile[] = [
   M3_TOP_APP_BAR,
   M3_BUTTON,
@@ -786,6 +889,8 @@ export const M3_COMPONENTS: readonly ComponentFile[] = [
   M3_CARD,
   M3_LIST_ITEM,
   M3_NAVIGATION_BAR,
+  M3_BOTTOM_SHEET,
+  M3_SCRIM,
 ];
 
 const yesNo = (key: string, label: string, def: 'sim' | 'não') => ({
@@ -928,6 +1033,17 @@ export const M3_SPEC = {
             default: '1',
           },
         ]),
+        type('m3-bottom-sheet', 'Bottom sheet', 'title', [
+          str('title', 'Title'),
+          yesNo('handle', 'Drag handle', 'sim'),
+          str('item1', 'Item 1'),
+          iconField('icon1', 'Icon 1'),
+          str('item2', 'Item 2'),
+          iconField('icon2', 'Icon 2'),
+          str('item3', 'Item 3'),
+          iconField('icon3', 'Icon 3'),
+        ]),
+        type('m3-scrim', 'Scrim', null, []),
       ],
     },
   ],
@@ -1053,6 +1169,17 @@ export const M3_SCREEN: Screen = {
       label3: 'Profile',
       icon3: 'person',
       active: '3',
+    }),
+    i('m-scrim', 'm3-scrim', 0, 0, 412, 917, {}),
+    i('m-sheet', 'm3-bottom-sheet', 0, 597, 412, 320, {
+      title: 'Sort by',
+      handle: 'sim',
+      item1: 'Name',
+      icon1: 'person',
+      item2: 'Date modified',
+      icon2: 'edit',
+      item3: 'Size',
+      icon3: 'settings',
     }),
   ],
 };
