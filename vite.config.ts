@@ -8,7 +8,7 @@ import { createRequire } from 'node:module';
 import { wasmFiles } from './mcp/wasmFiles.mjs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
 import { applyCsp } from './pwa/csp';
-import { renderTokensCss } from './src/theme/tokens';
+import { tokensCss } from './pwa/tokensCss';
 import { resolveBuildId } from './src/utils/build';
 
 /** `VITE_CHANNEL=preview` no build do branch publicado em /preview/ (deploy.yml). */
@@ -90,19 +90,6 @@ function serviceWorker(): Plugin {
         });
       },
     },
-  };
-}
-
-/**
- * Entrega `src/theme/tokens.ts` como CSS (`import 'virtual:tokens.css'`): os tokens têm
- * uma fonte só e não há arquivo gerado para ficar desatualizado.
- */
-function tokensCss(): Plugin {
-  const id = 'virtual:tokens.css';
-  return {
-    name: 'tokens-css',
-    resolveId: (source) => (source === id ? `\0${id}` : undefined),
-    load: (loaded) => (loaded === `\0${id}` ? renderTokensCss() : undefined),
   };
 }
 

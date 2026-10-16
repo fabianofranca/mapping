@@ -6,7 +6,7 @@ Mapping: app web para marcar áreas retangulares em imagens, organizar em camada
 
 **Leia o `PLAN.md` antes de qualquer tarefa** (resumo do produto e fases pendentes, quando houver). Trabalhe **uma fase por vez**, na ordem, e marque os checkboxes concluídos no próprio PR. A referência atual está em `docs/` (`ARCHITECTURE.md`, `FORMAT.md`, `SPEC-FORMAT.md`, `MCP.md`, `AGENT-GUIDE.md`); o plano das etapas concluídas está em `docs/history/`. Os roteiros de teste manual e o template do relato estão em `docs/TESTING.md`.
 
-Skills do Claude Code ficam em `.claude/skills/`: **`spec-author`** escreve e valida especializações (`docs/SPEC-FORMAT.md`); o prompt que a invoca só especifica a origem, o `id`, a `formatVersion` e as plataformas (modelo no fim da própria skill). Para usá-la no repositório do código que está sendo mapeado, copie a pasta para o `.claude/skills/` dele ou para `~/.claude/skills/`. `examples/workspace/` é o esqueleto de uma pasta central de mapeamentos (servidor, raízes, skill e `AGENTS.md` para qualquer cliente MCP).
+Skills do Claude Code ficam em `.claude/skills/`: **`spec-author`** escreve e valida especializações (`docs/SPEC-FORMAT.md`); o prompt que a invoca só especifica a origem, o `id`, a `formatVersion` e as plataformas (modelo no fim da própria skill). Para usá-la no repositório do código que está sendo mapeado, copie a pasta para o `.claude/skills/` dele ou para `~/.claude/skills/`. `examples/workspace/` é o esqueleto de uma pasta central de mapeamentos (servidor, raízes, skill e `AGENTS.md` para qualquer cliente MCP). `lab/` guarda experimentos fora do produto (páginas à parte em `dist/lab/`, sem i18n nem store; regras e o que cada um valida em `lab/README.md`).
 
 ## Stack
 
