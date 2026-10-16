@@ -24,6 +24,7 @@ import {
   readFileList,
 } from './library';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from './samples';
+import { M3_FILES, M3_SCREEN } from './samplesMaterial3';
 import {
   type Instance,
   type Screen,
@@ -99,6 +100,13 @@ function loadSamples(): void {
   editor?.fit();
 }
 
+/** Material Design 3 (baseline) escrito no formato do laboratório: um design system de verdade. */
+function loadMaterial3(): void {
+  loadFiles(M3_FILES, 'Material 3');
+  commit(M3_SCREEN);
+  editor?.fit();
+}
+
 async function openFolder(): Promise<void> {
   try {
     const files = await pickDirectory();
@@ -128,8 +136,10 @@ async function openFiles(list: FileList | null): Promise<void> {
 
 async function downloadSamples(): Promise<void> {
   const zip = new JSZip();
-  for (const file of SAMPLE_FILES) zip.file(file.path, file.text);
-  zip.file('telas/entrar.screen.json', serializeScreen(SAMPLE_SCREEN));
+  for (const file of SAMPLE_FILES) zip.file(`lab-components/${file.path}`, file.text);
+  zip.file('lab-components/telas/entrar.screen.json', serializeScreen(SAMPLE_SCREEN));
+  for (const file of M3_FILES) zip.file(`material3/${file.path}`, file.text);
+  zip.file('material3/telas/settings.screen.json', serializeScreen(M3_SCREEN));
   downloadBlob(await zip.generateAsync({ type: 'blob' }), 'lab-components.zip');
 }
 
@@ -163,6 +173,13 @@ function Toolbar() {
     <div class="lab-toolbar" role="toolbar" aria-label="Ações do laboratório">
       <button type="button" onClick={loadSamples}>
         Exemplos
+      </button>
+      <button
+        type="button"
+        onClick={loadMaterial3}
+        title="Material Design 3 (baseline, tema claro)"
+      >
+        Material 3
       </button>
       {canPick && (
         <button type="button" onClick={() => void openFolder()}>

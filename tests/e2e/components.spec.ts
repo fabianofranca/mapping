@@ -37,6 +37,17 @@ test('os exemplos carregam a biblioteca e desenham a tela de login', async ({ pa
   expect(violations).toEqual([]);
 });
 
+test('o Material 3 carrega dez componentes e a tela de configurações', async ({
+  page,
+}) => {
+  await page.goto(LAB);
+  await page.getByRole('button', { name: 'Material 3' }).click();
+  await expect(page.getByTestId('status')).toContainText('10 tipo(s), 10 com componente');
+  await expect(page.getByTestId('status')).toContainText('17 instância(s)');
+  await expect(page.locator('.lab-warnings')).toContainText('Nada ficou de fora');
+  expect(await paintedPixels(page)).toBeGreaterThan(5000);
+});
+
 test('adicionar um botão e editar os campos reflete no desenho', async ({ page }) => {
   await page.goto(LAB);
   await page.getByRole('button', { name: 'Exemplos', exact: true }).click();
