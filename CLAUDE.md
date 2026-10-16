@@ -84,6 +84,7 @@ O dono quer gastar pouco da cota do modelo mais caro. O que segura a qualidade �
 - **O modelo principal (Fable/Opus) faz só o que exige julgamento:** entender o pedido, decidir formato e arquitetura, escrever o briefing dos subagentes, revisar o que volta, integrar e conversar com o dono.
 - **Subagentes Sonnet produzem o resto, sempre com um briefing que diga o objetivo, os arquivos a ler, o que fica fora, e os comandos de validação (`npx vitest run <arquivos>`, `npx eslint`, `npx prettier --check`, `npx tsc --noEmit`) que precisam passar antes de devolver:** código a partir de especificação, componentes e exemplos, testes unitários e ponta a ponta, correção de teste frágil, documentação e descrição de PR, scripts de captura e medição, triagem de log do CI, refatorações mecânicas.
 - **Haiku para o mecânico:** renomear, formatar, varrer logs, atualizar contagens em testes.
+- **Vale também para mudanças pequenas e para texto de PR.** Uma linha de documentação, um job de CI ou a descrição de um PR são produzidos por subagente a partir do briefing; o modelo principal decide o conteúdo e revisa. Tamanho não é exceção.
 - **Menos idas e vindas do modelo principal:** validar em lote (`npm run lint && npm run typecheck && npm test && npm run build` uma vez, no fim), uma captura de tela por entrega, respostas curtas que se sustentam sozinhas.
 - **Nunca delegar sem contexto:** o subagente só sabe o que está no briefing; apontar os arquivos e as regras deste `CLAUDE.md` que valem para a tarefa.
 
