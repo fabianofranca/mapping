@@ -33,12 +33,13 @@ import {
   type InstanceWarnings,
   type Library,
   type Screen,
+  type TreeNode,
   type TypeDef,
   MappingViewer,
-  instanceLabel,
+  flattenTree,
   loadLibrary,
   parseScreen,
-  renderOrder,
+  screenTree,
   serializeScreen,
 } from '../viewer/react';
 
@@ -67,32 +68,13 @@ function valueText(value: FieldValue): string {
     : String(value);
 }
 
-interface TreeRow {
-  readonly instance: Instance;
-  readonly type: TypeDef | undefined;
-  readonly depth: number;
-}
-
-/** As instâncias em hierarquia (pré-ordem de `renderOrder`), com a profundidade de cada uma. */
-function treeRows(screen: Screen, library: Library): TreeRow[] {
-  const types = new Map(library.types.map((t) => [t.id, t]));
-  const depths = new Map<string, number>();
-  return renderOrder(screen).map((instance) => {
-    const parentDepth =
-      instance.parentId === undefined ? undefined : depths.get(instance.parentId);
-    const depth = parentDepth === undefined ? 0 : parentDepth + 1;
-    depths.set(instance.id, depth);
-    return { instance, type: types.get(instance.typeId), depth };
-  });
-}
-
 function InstanceTree({
   rows,
   selected,
   onSelect,
   onHover,
 }: {
-  rows: readonly TreeRow[];
+  rows: readonly TreeNode[];
   selected: string | undefined;
   onSelect: (id: string) => void;
   onHover: (id: string | undefined) => void;
@@ -100,7 +82,7 @@ function InstanceTree({
   if (rows.length === 0) return <p className="react-lab-empty">Nenhuma instância.</p>;
   return (
     <ul className="react-lab-tree">
-      {rows.map(({ instance, type, depth }) => {
+      {rows.map(({ instance, label, typeName, depth }) => {
         const isSelected = instance.id === selected;
         return (
           <li key={instance.id}>
@@ -115,11 +97,9 @@ function InstanceTree({
               onMouseEnter={() => onHover(instance.id)}
               onMouseLeave={() => onHover(undefined)}
             >
-              <span className="react-lab-tree-label">
-                {type ? instanceLabel(type, instance.values) : instance.typeId}
-              </span>
+              <span className="react-lab-tree-label">{label}</span>
               <span className="react-lab-tree-type">
-                {type ? type.name : 'tipo desconhecido'}
+                {typeName ?? 'tipo desconhecido'}
               </span>
             </button>
           </li>
@@ -224,9 +204,10 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   const selectOne = (id: string): void =>
     setSelection((current) => (current.includes(id) ? [] : [id]));
 
-  const rows = useMemo(() => treeRows(screen, library), [screen, library]);
+  const rows = useMemo(() => flattenTree(screenTree(screen, library)), [screen, library]);
   const selectedId = selection[0];
-  const selected = rows.find((row) => row.instance.id === selectedId);
+  const selected = rows.find((row) => row.id === selectedId);
+  const selectedType = library.types.find((type) => type.id === selected?.typeId);
 
   const warned = [...warnings].filter(([, list]) => list.length > 0);
 
@@ -338,7 +319,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
         </section>
         <section className="react-lab-section">
           <h2>Propriedades</h2>
-          <Properties instance={selected?.instance} type={selected?.type} />
+          <Properties instance={selected?.instance} type={selectedType} />
         </section>
       </aside>
     </div>
