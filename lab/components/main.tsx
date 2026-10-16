@@ -328,7 +328,7 @@ function Toolbar() {
       </button>
       <label
         class="toggle"
-        title="Só as propriedades mudam; nada se arrasta nem redimensiona (ensaio da visualização na app)"
+        title="A tela continua se movendo (pan e zoom); os componentes dentro dela não se arrastam nem redimensionam, só as propriedades mudam"
       >
         <input
           type="checkbox"

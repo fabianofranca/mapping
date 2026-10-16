@@ -173,13 +173,16 @@ test('posições fixas: editar um campo redesenha, mas arrastar não move', asyn
   await expect(x).toBeDisabled();
   await expect(y).toBeDisabled();
 
-  // Arrastar a partir do mesmo ponto não move a instância (só o pan do palco).
+  // Arrastar a partir do mesmo ponto move a tela (pan), não a instância.
+  const beforePan = await canvasChecksum(page);
   await page.mouse.move(point.x, point.y);
   await page.mouse.down();
   await page.mouse.move(point.x + 40, point.y + 40, { steps: 4 });
   await page.mouse.move(point.x + 80, point.y + 80, { steps: 4 });
   await page.mouse.up();
   await settle(page);
+  // O desenho mudou de lugar (a tela fez pan), enquanto x/y da instância ficaram iguais.
+  expect(await canvasChecksum(page)).not.toBe(beforePan);
   await expect(x).toHaveValue(startX);
   await expect(y).toHaveValue(startY);
 
