@@ -182,10 +182,11 @@ export default defineConfig({
       {
         // Invólucro React do visualizador (fase L1): React de verdade. Sem o plugin
         // `preact()`, que apelida react para preact/compat; por isso `extends: false` (Vitest 5:
-        // o projeto inline herdaria os plugins do arquivo).
+        // o projeto inline herdaria os plugins do arquivo). Sem `tokensCss()`: a página React não
+        // usa os tokens da app.
         extends: false,
         base: './',
-        plugins: [tokensCss()],
+        plugins: [],
         oxc: { jsx: { runtime: 'automatic', importSource: 'react' } },
         test: {
           name: 'viewer-react',

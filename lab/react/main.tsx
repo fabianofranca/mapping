@@ -23,7 +23,6 @@ import {
 } from 'react';
 import type { ChangeEvent } from 'react';
 import { createRoot } from 'react-dom/client';
-import 'virtual:tokens.css';
 import './react.css';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../components/samples';
 import { M3_FILES, M3_SCREEN } from '../components/samplesMaterial3';
@@ -91,7 +90,7 @@ function InstanceTree({
               ref={isSelected ? revealRow : undefined}
               aria-current={isSelected ? 'true' : undefined}
               style={{
-                paddingLeft: `calc(var(--space-2) + ${depth} * var(--space-3))`,
+                paddingLeft: `calc(var(--demo-space-2) + ${depth} * var(--demo-space-3))`,
               }}
               onClick={() => onSelect(instance.id)}
               onMouseEnter={() => onHover(instance.id)}

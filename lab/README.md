@@ -36,7 +36,7 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 
 **Pergunta:** o motor dos componentes dá um **visualizador de só leitura**, sem framework, que qualquer site hospedeiro embute (inclusive React) para desenhar uma tela a partir da biblioteca e de uma descrição de tela, atualizando em tempo real? E a API basta para o hospedeiro construir a edição por cima?
 
-**Onde:** `https://fabianofranca.github.io/mapping/preview/lab/react/` (o deploy do branch é disparado pelo `workflow_dispatch`, como a página de componentes em `.../preview/lab/components/`); `npm run dev:lab:react` para rodar à parte; `npm run build:viewer` gera `dist-viewer/`; a página buildada fica em `dist/lab/react/index.html`.
+**Onde:** `https://fabianofranca.github.io/mapping/preview/lab/react/` (o deploy do branch é disparado pelo `workflow_dispatch`, como a página de componentes em `.../preview/lab/components/`); `npm run dev:lab:react` para rodar à parte; `npm run build:viewer` gera `dist-viewer/`; a página buildada fica em `dist/lab/react/index.html`. A página de demonstração não usa os tokens nem o CSS da app: tem variáveis próprias (`--demo-*`, tema claro e escuro) em `lab/react/react.css`, para ser um exemplo copiável de hospedeiro.
 
 **O que é:**
 
@@ -63,7 +63,7 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 - **Custo das atualizações frequentes.** O teste `tests/lab/viewer/viewer.test.ts` mede, em jsdom com canvas falso e medidor aproximado, a tela do Material 3 com 21 instâncias: atualizar **uma** instância leva cerca de **1 ms** e um `redraw()` completo cerca de **7,5 ms**. O diff por identidade deixa a atualização frequente proporcional ao que mudou. O desenho do Konva fica fora dessa medição (é no `requestAnimationFrame`, no máximo uma vez por quadro). Os números são de ordem de grandeza (canvas falso); a página de demonstração mostra o tempo aproximado de cada edição do JSON no navegador.
 - **A API basta para o hospedeiro construir a edição para leigos por cima (conclusão da fase).** Basta para o que uma ferramenta administrativa precisa: selecionar pelo clique, realçar pelo hover vindo da lista (`setHover`), editar os campos num formulário do hospedeiro e ver o redesenho na hora (`update` com a tela nova). `boxOf`, `scale` e `clientToScreen` deixam o hospedeiro desenhar as próprias alças ou rótulos em DOM por cima do contêiner, se quiser. A seleção pela árvore e o modo sem interação no canvas (`interactive: false`) são o caminho para a ferramenta administrativa: o canvas vira pré-visualização e a edição acontece na árvore e no formulário do hospedeiro. O que o núcleo **não** dá, de propósito, é arrastar e redimensionar: isso é edição (no laboratório fica no editor; no produto, no canvas da app). Se a ferramenta precisar de arrastar, a saída é a do editor: ligar o arrasto nos grupos via `ScreenRenderer` (exportado), em vez do `createViewer`.
 - **Pontos em aberto.** (1) `toDataURL` captura só o que cabe no `Stage`: com `fit` numérico maior que o contêiner, a tela sai cortada. (2) Os dois bundles duplicam o Konva: quem usar os dois no mesmo site carrega duas cópias; se incomodar, a saída é um bundle só com o invólucro dentro.
-- **Tamanho.** Página `dist/lab/react/index.html`: 495 kB (sem nenhuma ocorrência de "preact"); `dist/lab/components/index.html`: 418 kB.
+- **Tamanho.** Página `dist/lab/react/index.html`: 491 kB (sem nenhuma ocorrência de "preact"); `dist/lab/components/index.html`: 418 kB.
 
 **Estrutura:**
 
@@ -76,7 +76,7 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 - `lab/viewer/host.ts`: `loadLibraryFromUrl`, `registerLibraryFonts` (funções do hospedeiro).
 - `lab/viewer/PACKAGE-README.md`: o README do pacote (copiado para `dist-viewer/README.md`).
 - `lab/viewer/build.mjs` e `lab/viewer/tsconfig.json`: build de biblioteca, pacote npm e declarações de tipo.
-- `lab/react/` (`index.html`, `main.tsx`, `react.css`): a página de demonstração; `vite.lab.config.ts` com `--mode react` (sem o plugin `preact()`).
+- `lab/react/` (`index.html`, `main.tsx`, `react.css`): a página de demonstração, com CSS próprio (`--demo-*`, sem os tokens da app); `vite.lab.config.ts` com `--mode react` (sem o plugin `preact()` nem `tokensCss()`).
 - `tests/lab/viewer/`: núcleo, `ScreenRenderer`, árvore, funções do hospedeiro, invólucro e página React.
 
 React 19 é dependência de desenvolvimento **só do laboratório**: a app continua em Preact e nada de React entra no `dist/index.html`.

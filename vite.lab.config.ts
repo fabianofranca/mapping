@@ -3,8 +3,10 @@
 // `dist/lab/<página>/index.html` depois do build da app (`npm run build`). Uma página por
 // build (`--mode components`, `--mode react`): o vite-plugin-singlefile embute tudo numa
 // entrada só. A página `react` usa React de verdade (sem o plugin `preact()`, que apelida
-// react para preact/compat): é a prova de que o visualizador embutível roda num hospedeiro React. Experimentos fora do produto: sem service worker nem manifest; a CSP é a mesma
-// da app (nenhuma requisição de rede, nada embutido sem hash).
+// react para preact/compat): é a prova de que o visualizador embutível roda num hospedeiro React.
+// Experimentos fora do produto: sem service worker nem manifest; a CSP é a mesma da app
+// (nenhuma requisição de rede, nada embutido sem hash). Os tokens da app (`tokensCss()`) entram
+// só na página `components`; a `react` tem variáveis próprias (`--demo-*`) em `react.css`.
 import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
@@ -45,7 +47,7 @@ export default defineConfig(({ mode }) => {
     base: './',
     publicDir: false,
     plugins: [
-      tokensCss(),
+      ...(isReact ? [] : [tokensCss()]),
       ...(isReact ? [] : [preact()]),
       viteSingleFile(),
       contentSecurityPolicy(),
