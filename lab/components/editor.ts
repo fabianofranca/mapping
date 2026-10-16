@@ -133,6 +133,8 @@ export class ScreenEditor {
   private selectedId: string | undefined;
   private hoverId: string | undefined;
   private frame = 0;
+  /** Modo "posições fixas": nada se arrasta nem redimensiona (só as propriedades mudam). */
+  private fixed = false;
 
   constructor(
     container: HTMLDivElement,
@@ -240,7 +242,7 @@ export class ScreenEditor {
         current.instance = instance;
         current.wrapper.zIndex(index);
       } else {
-        const wrapper = new Konva.Group({ draggable: true });
+        const wrapper = new Konva.Group({ draggable: !this.fixed });
         wrapper.setAttr('instanceId', instance.id);
         wrapper.on('dragend', () => {
           this.drop(wrapper);
@@ -281,6 +283,17 @@ export class ScreenEditor {
     }
     this.callbacks.onWarnings?.(new Map(this.warnings));
     this.syncOverlay();
+  }
+
+  /**
+   * Posições fixas: as instâncias não arrastam e o Transformer perde as alças (a borda da
+   * seleção continua). É um modo da visualização, não um dado da tela.
+   */
+  setFixed(fixed: boolean): void {
+    this.fixed = fixed;
+    for (const { wrapper } of this.mounted.values()) wrapper.draggable(!fixed);
+    this.transformer.resizeEnabled(!fixed);
+    this.draw();
   }
 
   select(id: string | undefined): void {

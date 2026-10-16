@@ -52,6 +52,8 @@ const selectedId = signal<string | undefined>(undefined);
 const hoverId = signal<string | undefined>(undefined);
 const warnings = signal<ReadonlyMap<string, readonly string[]>>(new Map());
 const zoom = signal(1);
+/** Modo "posições fixas": só as propriedades mudam; nada se arrasta nem redimensiona. */
+const fixed = signal(false);
 const fontStatus = signal<readonly FontStatus[]>([]);
 const error = signal<string | undefined>(undefined);
 const notice = signal<string | undefined>(undefined);
@@ -324,6 +326,21 @@ function Toolbar() {
       <button type="button" onClick={undo} title="Ctrl+Z">
         Desfazer
       </button>
+      <label
+        class="toggle"
+        title="Só as propriedades mudam; nada se arrasta nem redimensiona (ensaio da visualização na app)"
+      >
+        <input
+          type="checkbox"
+          checked={fixed.value}
+          onChange={(e) => {
+            const value = e.currentTarget.checked;
+            fixed.value = value;
+            editor?.setFixed(value);
+          }}
+        />
+        Posições fixas
+      </label>
       <span class="sep" />
       <button
         type="button"
@@ -452,6 +469,7 @@ function CanvasArea() {
     });
     editor.setLibrary(library.value);
     editor.setScreen(screen.value);
+    editor.setFixed(fixed.value);
     return () => {
       editor?.dispose();
       editor = undefined;
@@ -540,7 +558,7 @@ function FieldEditor({ field, instance }: { field: FieldDef; instance: Instance 
 }
 
 /** Pai (container) e posição entre os irmãos da instância selecionada. */
-function ParentRow({ instance }: { instance: Instance }) {
+function ParentRow({ instance, disabled }: { instance: Instance; disabled: boolean }) {
   const current = screen.value;
   const lib = library.value;
   const blocked = new Set([
@@ -569,6 +587,7 @@ function ParentRow({ instance }: { instance: Instance }) {
         <select
           id={`parent-${instance.id}`}
           value={instance.parentId ?? ''}
+          disabled={disabled}
           onChange={(e) => {
             const value = e.currentTarget.value;
             commit(setParent(current, instance.id, value === '' ? undefined : value));
@@ -587,7 +606,7 @@ function ParentRow({ instance }: { instance: Instance }) {
         <span class="actions">
           <button
             type="button"
-            disabled={index <= 0}
+            disabled={disabled || index <= 0}
             onClick={() => commit(moveSibling(current, instance.id, -1))}
             title="Antes do irmão anterior"
           >
@@ -595,7 +614,7 @@ function ParentRow({ instance }: { instance: Instance }) {
           </button>
           <button
             type="button"
-            disabled={index < 0 || index >= siblings.length - 1}
+            disabled={disabled || index < 0 || index >= siblings.length - 1}
             onClick={() => commit(moveSibling(current, instance.id, 1))}
             title="Depois do próximo irmão"
           >
@@ -633,6 +652,7 @@ function Properties() {
           : instance.typeId}
       </h2>
       <div class="lab-props" data-testid="properties">
+        {fixed.value && <p class="hint">Posições fixas: só as propriedades mudam.</p>}
         <div class="box">
           {(['x', 'y', 'width', 'height'] as const).map((key) => (
             <label key={key}>
@@ -640,6 +660,7 @@ function Properties() {
               <input
                 type="number"
                 value={box[key]}
+                disabled={fixed.value}
                 onChange={(e) => setBox({ [key]: Number(e.currentTarget.value) })}
               />
             </label>
@@ -648,12 +669,12 @@ function Properties() {
         {type?.fields.map((field) => (
           <FieldEditor key={field.key} field={field} instance={instance} />
         ))}
-        <ParentRow instance={instance} />
+        <ParentRow instance={instance} disabled={fixed.value} />
         <div class="actions">
           <button
             type="button"
             onClick={() => commit(bringToFront(current, instance.id))}
-            disabled={Boolean(instance.parentId)}
+            disabled={fixed.value || Boolean(instance.parentId)}
             title="Só no nível da tela; dentro de um container, use a ordem entre irmãos"
           >
             Trazer para frente

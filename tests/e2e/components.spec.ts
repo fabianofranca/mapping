@@ -146,6 +146,55 @@ test('adicionar um botão e editar os campos reflete no desenho', async ({ page 
   await expect(page.getByTestId('status')).toContainText('0 instância(s)');
 });
 
+test('posições fixas: editar um campo redesenha, mas arrastar não move', async ({
+  page,
+}) => {
+  await page.goto(LAB);
+  await page.getByRole('button', { name: 'Exemplos', exact: true }).click();
+  await expect(page.getByTestId('status')).toContainText('9 instância(s)');
+  await settle(page);
+
+  // O centro do palco é o centro da tela de exemplo: cai sobre um campo de texto.
+  const stage = page.getByTestId('stage');
+  const area = await stage.boundingBox();
+  if (!area) throw new Error('palco sem caixa');
+  const point = { x: area.x + area.width / 2, y: area.y + area.height / 2 };
+  await page.mouse.click(point.x, point.y);
+  const props = page.getByTestId('properties');
+  await expect(props).toBeVisible();
+
+  const x = props.locator('.box input').nth(0);
+  const y = props.locator('.box input').nth(1);
+  await expect(x).toBeEnabled();
+  const startX = await x.inputValue();
+  const startY = await y.inputValue();
+
+  await page.getByLabel('Posições fixas').check();
+  await expect(x).toBeDisabled();
+  await expect(y).toBeDisabled();
+
+  // Arrastar a partir do mesmo ponto não move a instância (só o pan do palco).
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.mouse.move(point.x + 40, point.y + 40, { steps: 4 });
+  await page.mouse.move(point.x + 80, point.y + 80, { steps: 4 });
+  await page.mouse.up();
+  await settle(page);
+  await expect(x).toHaveValue(startX);
+  await expect(y).toHaveValue(startY);
+
+  // As propriedades continuam editáveis e o desenho acompanha.
+  const before = await canvasChecksum(page);
+  await props.getByLabel('Rótulo *').fill('Um rótulo bem mais longo que o anterior');
+  await expect.poll(() => canvasChecksum(page)).not.toBe(before);
+  await expect(x).toHaveValue(startX);
+  await expect(y).toHaveValue(startY);
+
+  await page.getByLabel('Posições fixas').uncheck();
+  await expect(x).toBeEnabled();
+  await expect(y).toBeEnabled();
+});
+
 test('a página leva a CSP gerada no build', async ({ page }) => {
   await page.goto(LAB);
   const csp = await page
