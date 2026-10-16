@@ -75,6 +75,17 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
   3. **Decisões tomadas** que não estavam no `PLAN.md`.
 - Se algo no `PLAN.md` estiver ambíguo ou for inviável, registre a dúvida no PR em vez de inventar comportamento grande. Para detalhes pequenos, decida, siga e documente.
 
+## Uso de modelos (economia de cota sem perder qualidade)
+
+O dono quer gastar pouco da cota do modelo mais caro. O que segura a qualidade é a especificação fechada e os testes, não o modelo que digita.
+
+- **Sessão nova por assunto.** Cada turno relê a sessão inteira; quando um tema fecha (PR aberto e descrito), o próximo começa em outra sessão. O PR, o `PLAN.md` e os `README` são o contexto de entrada.
+- **O modelo principal (Fable/Opus) faz só o que exige julgamento:** entender o pedido, decidir formato e arquitetura, escrever o briefing dos subagentes, revisar o que volta, integrar e conversar com o dono.
+- **Subagentes Sonnet produzem o resto, sempre com um briefing que diga o objetivo, os arquivos a ler, o que fica fora, e os comandos de validação (`npx vitest run <arquivos>`, `npx eslint`, `npx prettier --check`, `npx tsc --noEmit`) que precisam passar antes de devolver:** código a partir de especificação, componentes e exemplos, testes unitários e ponta a ponta, correção de teste frágil, documentação e descrição de PR, scripts de captura e medição, triagem de log do CI, refatorações mecânicas.
+- **Haiku para o mecânico:** renomear, formatar, varrer logs, atualizar contagens em testes.
+- **Menos idas e vindas do modelo principal:** validar em lote (`npm run lint && npm run typecheck && npm test && npm run build` uma vez, no fim), uma captura de tela por entrega, respostas curtas que se sustentam sozinhas.
+- **Nunca delegar sem contexto:** o subagente só sabe o que está no briefing; apontar os arquivos e as regras deste `CLAUDE.md` que valem para a tarefa.
+
 ## Etapa atual e etapas futuras
 
 **Etapa atual: nenhuma em andamento.** A etapa 10 está concluída (correções da rodada 7 do Cowork; schema v9 e MCP 0.4.0 sem mudança). O próximo passo é o **teste manual avançado do dono** (seção 9 do [`docs/TESTING.md`](docs/TESTING.md)) e, depois, o uso com pessoas no marco "Uso real" ([`docs/ROADMAP.md`](docs/ROADMAP.md)). Testes guiados por [`docs/TESTING.md`](docs/TESTING.md); o prompt do testador do Cowork, para uma rodada completa ou dirigida, está em [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md). Não implementar nada do roadmap antes de o `PLAN.md` detalhar a etapa. As funcionalidades do núcleo são genéricas: nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
