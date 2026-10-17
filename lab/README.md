@@ -161,13 +161,24 @@ Caminhos são `a.b[0].c`; `[*]` em `roots[].path` faz cada elemento virar uma ra
 - O cartão sem ações fica com o gap de 8 a mais embaixo, e conteúdo maior que o slot só avisa.
 - Na demonstração por desenho (botão **Material 3**), o FAB e a barra de navegação ficam sob a folha do modal; no SDUI, sem o `modal` aparecem.
 
-## Próxima fase
+## Conclusões do laboratório
 
-Detalhes e checkboxes no [`PLAN.md`](../PLAN.md), seção "Etapa em andamento".
+Detalhes e checkboxes das fases no [`PLAN.md`](../PLAN.md), seção "Etapa em andamento". L1 (visualizador embutível) e L2 (tela a partir de um JSON sem geometria) estão concluídas; falta só o teste com o JSON real do backend, quando o dono tiver (até lá, o exemplo passa sem avisos).
 
-- **L1, visualizador embutível: concluída.** Ver a seção `viewer/` acima.
-- **L2, tela a partir de um JSON sem geometria: concluída**, falta só o teste com o JSON real do backend, quando o dono tiver (até lá, o exemplo passa sem avisos). Ver a seção acima.
-- **Próximo: Fechamento** (README com as conclusões, mesclar o épico `epic/lab` na `main` e abrir o épico "Biblioteca").
+**O que o laboratório provou**
+
+- O formato `mapping-component` (template de primitivas com expressões sobre os campos), os containers com arrumação, as fontes do design system carregadas por bytes e o Material 3 escrito nesse formato funcionam.
+- O **motor** (formato, parser, expressões, instanciação, cena, renderizador Konva, arrumação por tamanhos) vai para o produto. O **editor do laboratório** (`editor.ts` e a página) não vai: o canvas da app já faz esse papel.
+- O visualizador embutível funciona sem framework, com invólucro React fino; uma instância custa cerca de 1 ms e o `redraw()` completo cerca de 7,5 ms. A API basta para o hospedeiro construir a edição para leigos por cima.
+- Um JSON de SDUI sem geometria vira tela por uma declaração de origem executável; o núcleo executa a declaração e nunca código da especialização.
+
+**O que o produto herda** (decisões em "Decisões registradas" do `PLAN.md`)
+
+- Instância = marcação com anotação tipada; o desenho é derivado e não é gravado. Tela sem imagem = imagem sem arquivo.
+- Declaração de origem: chave `path` própria para o caminho do campo e `slot`/`ignore` aceitos nas `sources` de sistemas executáveis (B1).
+- Em aberto: regra para conteúdo maior que o slot (hoje só avisa), campos de tabela no lugar de listas numeradas, props no próprio nó e vários slots por componente.
+
+**Fechamento:** com o README fechado, o épico `epic/lab` é mesclado na `main` por decisão do dono, e a etapa seguinte é a **Biblioteca** (B1 a B5 em [`docs/ROADMAP.md`](../docs/ROADMAP.md)), em épico próprio.
 
 ## `components/sdui/` — Exemplo de JSON do SDUI
 
