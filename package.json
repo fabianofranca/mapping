@@ -21,6 +21,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit && tsc --noEmit -p mcp/tsconfig.json",
     "build:mcp": "tsc --noEmit -p mcp/tsconfig.json && node mcp/build.mjs",
+    "build:examples": "node scripts/buildLibraryExamples.mjs",
     "build:viewer": "node lab/viewer/build.mjs"
   },
   "dependencies": {

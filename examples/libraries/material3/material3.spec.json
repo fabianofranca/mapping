@@ -1,0 +1,1630 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 4,
+  "id": "material3",
+  "name": "Material Design 3 (baseline)",
+  "version": 1,
+  "description": "Componentes do Material 3, tema claro baseline, escritos no formato de componente do laboratório.",
+  "fonts": [
+    {
+      "family": "Roboto",
+      "file": "fonts/Roboto-Regular.ttf",
+      "weight": 400
+    },
+    {
+      "family": "Roboto",
+      "file": "fonts/Roboto-Medium.ttf",
+      "weight": 500
+    }
+  ],
+  "origins": [
+    {
+      "system": "sdui",
+      "name": "SDUI do backend",
+      "node": {
+        "type": "type",
+        "props": "props",
+        "children": "children"
+      },
+      "screen": {
+        "id": {
+          "path": "screen.id"
+        },
+        "name": {
+          "path": "screen.title",
+          "default": "Tela"
+        },
+        "width": {
+          "path": "screen.device.width"
+        },
+        "height": {
+          "path": "screen.device.height"
+        },
+        "background": {
+          "path": "screen.background",
+          "values": {
+            "surface": "#FEF7FF"
+          },
+          "default": "#FFFFFF"
+        },
+        "roots": [
+          {
+            "path": "content"
+          },
+          {
+            "path": "bottomBar",
+            "anchor": "bottom"
+          },
+          {
+            "path": "floating[*]",
+            "anchor": {
+              "path": "anchor"
+            },
+            "margin": {
+              "path": "margin"
+            }
+          },
+          {
+            "path": "modal",
+            "anchor": "bottom",
+            "scrim": "m3-scrim"
+          }
+        ]
+      },
+      "booleans": {
+        "true": "sim",
+        "false": "não"
+      },
+      "examples": [
+        {
+          "name": "Configurações",
+          "file": "examples/settings.sdui.json"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "m3-top-app-bar",
+          "name": "Top app bar",
+          "labelField": "title",
+          "component": "components/m3-top-app-bar.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "TopAppBar"
+            }
+          ],
+          "fields": [
+            {
+              "key": "title",
+              "label": "Title",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "title"
+                }
+              ]
+            },
+            {
+              "key": "navigation",
+              "label": "Navigation icon",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "default": "menu",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "navigationIcon"
+                }
+              ]
+            },
+            {
+              "key": "action",
+              "label": "Action icon",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "default": "more",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "actionIcon"
+                }
+              ]
+            },
+            {
+              "key": "align",
+              "label": "Title align",
+              "type": "enum",
+              "options": ["start", "center"],
+              "default": "start",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "titleAlign"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-top-app-bar.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "title": "Title",
+                "navigation": "menu",
+                "action": "more",
+                "align": "start"
+              }
+            },
+            {
+              "name": "Centralizado",
+              "values": {
+                "title": "Title",
+                "navigation": "menu",
+                "action": "more",
+                "align": "center"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-button",
+          "name": "Button",
+          "labelField": "label",
+          "component": "components/m3-button.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Button",
+              "ignore": ["contentDescription"]
+            }
+          ],
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "text"
+                }
+              ]
+            },
+            {
+              "key": "variant",
+              "label": "Variant",
+              "type": "enum",
+              "options": ["filled", "tonal", "outlined", "text", "elevated"],
+              "default": "filled",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "style"
+                }
+              ]
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "icon"
+                }
+              ]
+            },
+            {
+              "key": "disabled",
+              "label": "Disabled",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "disabled"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-button.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "label": "Label",
+                "variant": "filled",
+                "disabled": "não"
+              }
+            },
+            {
+              "name": "Tonal",
+              "values": {
+                "label": "Label",
+                "variant": "tonal",
+                "disabled": "não"
+              }
+            },
+            {
+              "name": "Contornado",
+              "values": {
+                "label": "Label",
+                "variant": "outlined",
+                "disabled": "não"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-fab",
+          "name": "FAB",
+          "labelField": "label",
+          "component": "components/m3-fab.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "FAB"
+            }
+          ],
+          "fields": [
+            {
+              "key": "icon",
+              "label": "Icon",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "default": "add",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "icon"
+                }
+              ]
+            },
+            {
+              "key": "label",
+              "label": "Label (extended)",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "label"
+                }
+              ]
+            },
+            {
+              "key": "color",
+              "label": "Color",
+              "type": "enum",
+              "options": ["primary", "secondary", "surface"],
+              "default": "primary",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "color"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-fab.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "icon": "add",
+                "color": "primary"
+              }
+            },
+            {
+              "name": "Secundário",
+              "values": {
+                "icon": "add",
+                "color": "secondary"
+              }
+            },
+            {
+              "name": "Superfície",
+              "values": {
+                "icon": "add",
+                "color": "surface"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-text-field",
+          "name": "Text field",
+          "labelField": "label",
+          "component": "components/m3-text-field.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "TextField"
+            }
+          ],
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "label"
+                }
+              ]
+            },
+            {
+              "key": "value",
+              "label": "Input text",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "value"
+                }
+              ]
+            },
+            {
+              "key": "placeholder",
+              "label": "Placeholder",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "placeholder"
+                }
+              ]
+            },
+            {
+              "key": "supporting",
+              "label": "Supporting text",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "supportingText"
+                }
+              ]
+            },
+            {
+              "key": "state",
+              "label": "State",
+              "type": "enum",
+              "options": ["enabled", "focused", "error", "disabled"],
+              "default": "enabled",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "state"
+                }
+              ]
+            },
+            {
+              "key": "trailing",
+              "label": "Trailing icon",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "trailingIcon"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-text-field.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "label": "Label",
+                "value": "Input text",
+                "supporting": "Supporting text",
+                "state": "enabled"
+              }
+            },
+            {
+              "name": "Focado",
+              "values": {
+                "label": "Label",
+                "value": "Input text",
+                "supporting": "Supporting text",
+                "state": "focused"
+              }
+            },
+            {
+              "name": "Com erro",
+              "values": {
+                "label": "Label",
+                "value": "Input text",
+                "supporting": "Supporting text",
+                "state": "error"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-switch",
+          "name": "Switch",
+          "labelField": "label",
+          "component": "components/m3-switch.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Switch"
+            }
+          ],
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "label"
+                }
+              ]
+            },
+            {
+              "key": "selected",
+              "label": "Selected",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "checked"
+                }
+              ]
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "showIcon"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-switch.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "label": "Label",
+                "selected": "sim",
+                "icon": "não"
+              }
+            },
+            {
+              "name": "Desligado",
+              "values": {
+                "label": "Label",
+                "selected": "não",
+                "icon": "não"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-checkbox",
+          "name": "Checkbox",
+          "labelField": "label",
+          "component": "components/m3-checkbox.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Checkbox"
+            }
+          ],
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "label"
+                }
+              ]
+            },
+            {
+              "key": "checked",
+              "label": "Checked",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "checked"
+                }
+              ]
+            },
+            {
+              "key": "error",
+              "label": "Error",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "error"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-checkbox.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "label": "Label",
+                "checked": "sim",
+                "error": "não"
+              }
+            },
+            {
+              "name": "Desmarcado",
+              "values": {
+                "label": "Label",
+                "checked": "não",
+                "error": "não"
+              }
+            },
+            {
+              "name": "Com erro",
+              "values": {
+                "label": "Label",
+                "checked": "sim",
+                "error": "sim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-chip",
+          "name": "Chip",
+          "labelField": "label",
+          "component": "components/m3-chip.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Chip"
+            }
+          ],
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "text"
+                }
+              ]
+            },
+            {
+              "key": "selected",
+              "label": "Selected",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "selected"
+                }
+              ]
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "icon"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-chip.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "label": "Label",
+                "selected": "não"
+              }
+            },
+            {
+              "name": "Selecionado",
+              "values": {
+                "label": "Label",
+                "selected": "sim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-card",
+          "name": "Card",
+          "labelField": "headline",
+          "component": "components/m3-card.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Card",
+              "slot": "ações"
+            }
+          ],
+          "fields": [
+            {
+              "key": "headline",
+              "label": "Headline",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "headline"
+                }
+              ]
+            },
+            {
+              "key": "subhead",
+              "label": "Subhead",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "subhead"
+                }
+              ]
+            },
+            {
+              "key": "body",
+              "label": "Supporting text",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "body"
+                }
+              ]
+            },
+            {
+              "key": "variant",
+              "label": "Variant",
+              "type": "enum",
+              "options": ["elevated", "filled", "outlined"],
+              "default": "elevated",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "style"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-card.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "headline": "Headline",
+                "subhead": "Subhead",
+                "body": "Explain more about the topic shown in the headline and subhead through supporting text.",
+                "variant": "elevated"
+              }
+            },
+            {
+              "name": "Preenchido",
+              "values": {
+                "headline": "Headline",
+                "subhead": "Subhead",
+                "body": "Explain more about the topic shown in the headline and subhead through supporting text.",
+                "variant": "filled"
+              }
+            },
+            {
+              "name": "Contornado",
+              "values": {
+                "headline": "Headline",
+                "subhead": "Subhead",
+                "body": "Explain more about the topic shown in the headline and subhead through supporting text.",
+                "variant": "outlined"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-list-item",
+          "name": "List item",
+          "labelField": "headline",
+          "component": "components/m3-list-item.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "ListItem"
+            }
+          ],
+          "fields": [
+            {
+              "key": "headline",
+              "label": "Headline",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "headline"
+                }
+              ]
+            },
+            {
+              "key": "supporting",
+              "label": "Supporting text",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "supportingText"
+                }
+              ]
+            },
+            {
+              "key": "leading",
+              "label": "Leading icon",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "leadingIcon"
+                }
+              ]
+            },
+            {
+              "key": "initials",
+              "label": "Avatar initials",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "avatar.initials"
+                }
+              ]
+            },
+            {
+              "key": "trailing",
+              "label": "Trailing icon",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "trailingIcon"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-list-item.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "headline": "Headline",
+                "supporting": "Supporting text",
+                "leading": "person",
+                "trailing": "chevron"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-navigation-bar",
+          "name": "Navigation bar",
+          "labelField": null,
+          "component": "components/m3-navigation-bar.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "NavigationBar"
+            }
+          ],
+          "fields": [
+            {
+              "key": "label1",
+              "label": "Label 1",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[0].label"
+                }
+              ]
+            },
+            {
+              "key": "icon1",
+              "label": "Icon 1",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "default": "home",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[0].icon"
+                }
+              ]
+            },
+            {
+              "key": "label2",
+              "label": "Label 2",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[1].label"
+                }
+              ]
+            },
+            {
+              "key": "icon2",
+              "label": "Icon 2",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "default": "search",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[1].icon"
+                }
+              ]
+            },
+            {
+              "key": "label3",
+              "label": "Label 3",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[2].label"
+                }
+              ]
+            },
+            {
+              "key": "icon3",
+              "label": "Icon 3",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "default": "person",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[2].icon"
+                }
+              ]
+            },
+            {
+              "key": "active",
+              "label": "Active",
+              "type": "enum",
+              "options": ["1", "2", "3"],
+              "default": "1",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "selectedIndex",
+                  "values": {
+                    "0": "1",
+                    "1": "2",
+                    "2": "3"
+                  }
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-navigation-bar.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "label1": "Home",
+                "icon1": "home",
+                "label2": "Search",
+                "icon2": "search",
+                "label3": "Profile",
+                "icon3": "person",
+                "active": "1"
+              }
+            },
+            {
+              "name": "Segunda aba ativa",
+              "values": {
+                "label1": "Home",
+                "icon1": "home",
+                "label2": "Search",
+                "icon2": "search",
+                "label3": "Profile",
+                "icon3": "person",
+                "active": "2"
+              }
+            },
+            {
+              "name": "Terceira aba ativa",
+              "values": {
+                "label1": "Home",
+                "icon1": "home",
+                "label2": "Search",
+                "icon2": "search",
+                "label3": "Profile",
+                "icon3": "person",
+                "active": "3"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-bottom-sheet",
+          "name": "Bottom sheet",
+          "labelField": "title",
+          "component": "components/m3-bottom-sheet.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "BottomSheet"
+            }
+          ],
+          "fields": [
+            {
+              "key": "title",
+              "label": "Title",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "title"
+                }
+              ]
+            },
+            {
+              "key": "handle",
+              "label": "Drag handle",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "sim",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "dragHandle"
+                }
+              ]
+            },
+            {
+              "key": "item1",
+              "label": "Item 1",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[0].label"
+                }
+              ]
+            },
+            {
+              "key": "icon1",
+              "label": "Icon 1",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[0].icon"
+                }
+              ]
+            },
+            {
+              "key": "item2",
+              "label": "Item 2",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[1].label"
+                }
+              ]
+            },
+            {
+              "key": "icon2",
+              "label": "Icon 2",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[1].icon"
+                }
+              ]
+            },
+            {
+              "key": "item3",
+              "label": "Item 3",
+              "type": "string",
+              "required": false,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[2].label"
+                }
+              ]
+            },
+            {
+              "key": "icon3",
+              "label": "Icon 3",
+              "type": "enum",
+              "options": [
+                "home",
+                "search",
+                "person",
+                "menu",
+                "more",
+                "add",
+                "check",
+                "back",
+                "favorite",
+                "edit",
+                "notifications",
+                "chevron",
+                "settings"
+              ],
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "items[2].icon"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-bottom-sheet.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "title": "Title",
+                "handle": "sim",
+                "item1": "Item one",
+                "icon1": "favorite",
+                "item2": "Item two",
+                "icon2": "edit",
+                "item3": "Item three",
+                "icon3": "settings"
+              }
+            },
+            {
+              "name": "Sem alça",
+              "values": {
+                "title": "Title",
+                "handle": "não",
+                "item1": "Item one",
+                "icon1": "favorite",
+                "item2": "Item two",
+                "icon2": "edit",
+                "item3": "Item three",
+                "icon3": "settings"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-scrim",
+          "name": "Scrim",
+          "labelField": null,
+          "component": "components/m3-scrim.json",
+          "fields": [],
+          "doc": "docs/m3-scrim.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {}
+            }
+          ]
+        },
+        {
+          "id": "m3-box",
+          "name": "Box",
+          "labelField": null,
+          "component": "components/m3-box.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Box"
+            }
+          ],
+          "fields": [
+            {
+              "key": "background",
+              "label": "Background",
+              "type": "enum",
+              "options": [
+                "none",
+                "surface",
+                "surface-container",
+                "primary-container",
+                "secondary-container"
+              ],
+              "default": "none",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "background"
+                }
+              ]
+            },
+            {
+              "key": "shape",
+              "label": "Shape",
+              "type": "enum",
+              "options": ["none", "small", "medium", "large", "extra-large"],
+              "default": "none",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "shape"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-box.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "background": "none",
+                "shape": "none"
+              }
+            },
+            {
+              "name": "Fundo primário",
+              "values": {
+                "background": "primary-container",
+                "shape": "none"
+              }
+            },
+            {
+              "name": "Cantos grandes",
+              "values": {
+                "background": "none",
+                "shape": "large"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-row",
+          "name": "Row",
+          "labelField": null,
+          "component": "components/m3-row.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Row"
+            }
+          ],
+          "fields": [
+            {
+              "key": "spacing",
+              "label": "Spacing (dp)",
+              "type": "number",
+              "default": 8,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "spacing"
+                }
+              ]
+            },
+            {
+              "key": "padding",
+              "label": "Padding (dp)",
+              "type": "number",
+              "default": 0,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "padding"
+                }
+              ]
+            },
+            {
+              "key": "background",
+              "label": "Background",
+              "type": "enum",
+              "options": [
+                "none",
+                "surface",
+                "surface-container",
+                "primary-container",
+                "secondary-container"
+              ],
+              "default": "none",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "background"
+                }
+              ]
+            },
+            {
+              "key": "shape",
+              "label": "Shape",
+              "type": "enum",
+              "options": ["none", "small", "medium", "large", "extra-large"],
+              "default": "none",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "shape"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-row.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "background": "none",
+                "shape": "none",
+                "spacing": 8,
+                "padding": 0
+              }
+            },
+            {
+              "name": "Fundo primário",
+              "values": {
+                "background": "primary-container",
+                "shape": "none",
+                "spacing": 8,
+                "padding": 0
+              }
+            },
+            {
+              "name": "Cantos grandes",
+              "values": {
+                "background": "none",
+                "shape": "large",
+                "spacing": 8,
+                "padding": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3-column",
+          "name": "Column",
+          "labelField": null,
+          "component": "components/m3-column.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Column"
+            }
+          ],
+          "fields": [
+            {
+              "key": "spacing",
+              "label": "Spacing (dp)",
+              "type": "number",
+              "default": 8,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "spacing"
+                }
+              ]
+            },
+            {
+              "key": "padding",
+              "label": "Padding (dp)",
+              "type": "number",
+              "default": 0,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "padding"
+                }
+              ]
+            },
+            {
+              "key": "background",
+              "label": "Background",
+              "type": "enum",
+              "options": [
+                "none",
+                "surface",
+                "surface-container",
+                "primary-container",
+                "secondary-container"
+              ],
+              "default": "none",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "background"
+                }
+              ]
+            },
+            {
+              "key": "shape",
+              "label": "Shape",
+              "type": "enum",
+              "options": ["none", "small", "medium", "large", "extra-large"],
+              "default": "none",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "shape"
+                }
+              ]
+            }
+          ],
+          "doc": "docs/m3-column.md",
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "background": "none",
+                "shape": "none",
+                "spacing": 8,
+                "padding": 0
+              }
+            },
+            {
+              "name": "Fundo primário",
+              "values": {
+                "background": "primary-container",
+                "shape": "none",
+                "spacing": 8,
+                "padding": 0
+              }
+            },
+            {
+              "name": "Cantos grandes",
+              "values": {
+                "background": "none",
+                "shape": "large",
+                "spacing": 8,
+                "padding": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
