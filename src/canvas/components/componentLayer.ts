@@ -42,6 +42,11 @@ export class ComponentLayerRenderer {
     private readonly options: ComponentLayerOptions = {},
   ) {}
 
+  /** Quantos desenhos estão montados (publicado no container para os testes e2e). */
+  get size(): number {
+    return this.mounted.size;
+  }
+
   /**
    * Desenha os desenhos de `drawings` (a ordem do Map é a ordem de desenho, de baixo para cima)
    * que passam em `visible` e cuja imagem tem `placement`. Diff por identidade: só o desenho

@@ -80,6 +80,14 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
    * opaco que `cv-halo` para o `cv-invalid` passar de 3:1 sobre foto branca.
    */
   'cv-badge': 'rgba(10, 12, 16, 0.9)',
+  /**
+   * Desenho dos componentes (B3): reservado de imagem e seu contorno (cinza neutro, legível sobre
+   * fundos claros e escuros) e a caixa de um nó que o desenho não conhece. Ficam sobre a tela
+   * em branco ou a foto: iguais nos dois temas.
+   */
+  'cv-component-placeholder': 'rgba(128, 128, 128, 0.25)',
+  'cv-component-placeholder-line': 'rgba(128, 128, 128, 0.8)',
+  'cv-component-unknown': '#d81b60',
   ...Object.fromEntries(
     LAYER_COLORS.map((c, i) => [`layer-${String(i + 1).padStart(2, '0')}`, c]),
   ),

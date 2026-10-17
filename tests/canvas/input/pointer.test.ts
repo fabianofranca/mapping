@@ -19,6 +19,7 @@ function setup(readOnly = false) {
     preview: signal<ImagePreview | null>(null),
     draft: signal<Draft | null>(null),
     hoverLock: signal<HoverLock | null>(null),
+    hoverMarking: signal<string | null>(null),
   };
   let spaceDown = false;
   const input = new PointerInput({

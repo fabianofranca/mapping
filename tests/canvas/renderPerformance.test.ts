@@ -16,14 +16,27 @@ import {
   loadLibrary,
 } from '../../src/model/components/library';
 import type { Instance } from '../../src/model/components/screen';
-import { projectIndex, projectIssues } from '../../src/model';
+import {
+  addBlankImage,
+  addComponentMarking,
+  applySpecialization,
+  loadSpecComponents,
+  projectIndex,
+  projectIssues,
+  type ComponentCatalog,
+  type Project,
+} from '../../src/model';
+import { signal } from '@preact/signals';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
+import { textMeasurer } from '../../src/store/textMeasure';
 import { createEditorUi } from '../../src/store/ui';
 import { M3_SCREEN } from '../../lab/components/samplesMaterial3';
+import { emptyProject } from '../model/fixtures';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
+import { material3Spec } from '../storage/packageFixture';
 import { installFakeCanvas } from './harness';
 
 // Orçamento de uma renderização do canvas (docs/history/PLAN-etapa-2-1.md 14.3) com o projeto grande já
@@ -274,6 +287,195 @@ describe('desenho de componentes (Material 3)', () => {
       const median = [...times.slice(5)].sort((a, b) => a - b)[7] ?? Number.NaN;
       expect(median).toBeLessThan(RENDER_BUDGET_MS / 4);
       layer.destroy();
+    },
+  );
+});
+
+// A tela de configurações do Material 3 (21 instâncias) numa tela em branco, dentro do
+// `CanvasController`: o quadro inteiro (todos os desenhos reinstanciados e refeitos), editar um
+// campo (só uma marcação) e o zoom (a camada não se refaz). Medido (jsdom, máquina de
+// desenvolvimento, medidor aproximado): quadro inteiro ~11 ms (10 a 13; até ~20 com a máquina
+// ocupada), edição ~2 a 5 ms, zoom ~2 a 3 ms. A edição e o zoom têm o orçamento do quadro; o
+// quadro inteiro (que acontece só ao carregar fontes ou trocar o medidor) tem 1,5x, porque
+// reinstancia e refaz os 21 desenhos de uma vez. Sempre a mediana de várias repetições.
+const FULL_FRAME_BUDGET_MS = RENDER_BUDGET_MS * 1.5;
+describe('tela de componentes dentro do CanvasController (Material 3)', () => {
+  const frames: FrameRequestCallback[] = [];
+  const flush = (): void => {
+    for (const frame of frames.splice(0)) frame(performance.now());
+  };
+
+  beforeAll(() => {
+    installFakeCanvas();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      frames.push(cb);
+      return frames.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+  });
+  afterAll(() => {
+    textMeasurer.value = approximateMeasurer;
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  /** Catálogo do pacote de exemplo, lido do disco como a sessão lê da pasta do projeto. */
+  function m3Catalog(): ComponentCatalog {
+    const loaded = loadSpecComponents(
+      material3Spec(),
+      'specs/material3/material3.spec.json',
+      1,
+      (path) => {
+        try {
+          return readFileSync(
+            join(MATERIAL3_DIR, path.slice('specs/material3/'.length)),
+            'utf8',
+          );
+        } catch {
+          return undefined;
+        }
+      },
+    );
+    if (loaded.problems.length > 0) throw new Error(loaded.problems.join('\n'));
+    return new Map([['material3', loaded]]);
+  }
+
+  function m3Project(catalog: ComponentCatalog): Project {
+    let p = applySpecialization(emptyProject(), material3Spec(), {
+      newId: (() => {
+        let n = 0;
+        return () => `S${++n}`;
+      })(),
+      packageSpecName: 'material3.spec.json',
+    });
+    p = addBlankImage(p, {
+      id: 'screen',
+      width: M3_SCREEN.width,
+      height: M3_SCREEN.height,
+      background: M3_SCREEN.background,
+    });
+    for (const instance of M3_SCREEN.instances) {
+      p = addComponentMarking(
+        p,
+        catalog,
+        {
+          markingId: instance.id,
+          annotationId: `A_${instance.id}`,
+          imageId: 'screen',
+          parentId: instance.parentId ?? null,
+          specId: 'material3',
+          typeId: instance.typeId,
+          rect: instance.box,
+          values: Object.fromEntries(
+            Object.entries(instance.values).flatMap(([key, value]) =>
+              typeof value === 'string' || typeof value === 'number'
+                ? [[key, value]]
+                : [],
+            ),
+          ),
+        },
+        approximateMeasurer,
+      );
+    }
+    return p;
+  }
+
+  function setup() {
+    const catalog = m3Catalog();
+    const project = m3Project(catalog);
+    const store = createProjectStore({ now: () => '2026-10-02T12:00:00.000Z' });
+    store.load(project, { readOnly: false });
+    const sources = { catalog: signal(catalog), fontsEpoch: signal(0) };
+    const actions = createProjectActions(store, {
+      components: () => sources.catalog.peek(),
+      measure: () => textMeasurer.peek(),
+    });
+    const ui = createEditorUi();
+    const derived = createEditorDerived(store, ui, undefined, sources);
+    const container = document.createElement('div');
+    Object.defineProperty(container, 'clientWidth', { value: 412 });
+    Object.defineProperty(container, 'clientHeight', { value: 917 });
+    document.body.append(container);
+    const controller = new CanvasController({
+      container,
+      store,
+      actions,
+      display: createDisplayImages<ImageBitmap>(() => new Promise(() => undefined)),
+      ui,
+      derived,
+      view: createCanvasViewState(),
+    });
+    projectIndex(project);
+    projectIssues(project);
+    flush();
+    return { actions, controller, container, derived, sources };
+  }
+
+  /** Mediana de `runs` medidas de `run`, que devolve o tempo gasto (ms). */
+  const medianOf = (runs: number, run: () => number): number => {
+    const times = Array.from({ length: runs }, run);
+    return [...times].sort((a, b) => a - b)[Math.floor(runs / 2)] ?? Number.NaN;
+  };
+
+  it('desenha as 21 instâncias da tela de configurações', () => {
+    const { controller, container, derived } = setup();
+    expect(derived.drawnMarkings.value.size).toBe(21);
+    expect(container.dataset.components).toBe('21');
+    controller.destroy();
+  });
+
+  budgetIt(
+    `o quadro inteiro (21 desenhos reinstanciados e refeitos) cabe em ${FULL_FRAME_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const { controller, sources } = setup();
+      const whole = (): number => {
+        const start = performance.now();
+        sources.fontsEpoch.value++; // Reinstancia todos os desenhos.
+        flush();
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 4; i++) whole(); // Aquecimento.
+      expect(medianOf(15, whole)).toBeLessThan(FULL_FRAME_BUDGET_MS);
+      controller.destroy();
+    },
+  );
+
+  budgetIt(
+    `editar um campo e redesenhar cabe em ${RENDER_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const { controller, actions, container } = setup();
+      let n = 0;
+      const edit = (): number => {
+        const start = performance.now();
+        const result = actions.setFieldValue('A_m-search', 'label', `Busca ${n++}`);
+        flush();
+        const elapsed = performance.now() - start;
+        expect(result.ok).toBe(true);
+        return elapsed;
+      };
+      for (let i = 0; i < 4; i++) edit();
+      expect(medianOf(15, edit)).toBeLessThan(RENDER_BUDGET_MS);
+      expect(container.dataset.components).toBe('21');
+      controller.destroy();
+    },
+  );
+
+  budgetIt(
+    `o zoom da tela (sem refazer os desenhos) cabe em ${RENDER_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const { controller } = setup();
+      const zoom = (): number => {
+        const start = performance.now();
+        controller.zoomBy(1.1);
+        flush();
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 3; i++) zoom();
+      expect(medianOf(15, zoom)).toBeLessThan(RENDER_BUDGET_MS);
+      controller.destroy();
     },
   );
 });

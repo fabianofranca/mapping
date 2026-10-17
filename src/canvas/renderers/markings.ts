@@ -79,6 +79,8 @@ export type MarkingFrame = Pick<
   | 'tokens'
   | 'card'
   | 'review'
+  | 'drawn'
+  | 'hoverMarking'
 >;
 
 /** Consulta do rótulo de nome desenhado de uma marcação (canvas). */
@@ -114,7 +116,8 @@ export class MarkingRenderer {
 
   /** Marcações de cima para baixo na hierarquia: as filhas ficam por cima dos pais. */
   render(frame: MarkingFrame, placements: ReadonlyMap<string, Placement>): void {
-    const { project, selection, semantic, dots, incomplete, tokens, review } = frame;
+    const { project, selection, semantic, dots, incomplete, tokens, review, drawn } =
+      frame;
     const zoom = frame.viewport.scale;
     const view = visibleArea(frame.size, frame.viewport);
     const lookup = project ? projectIndex(project) : null;
@@ -145,12 +148,21 @@ export class MarkingRenderer {
       const markingDots = dots.get(marking.id) ?? NO_LAYER_DOTS;
       const markingIncomplete = incomplete.has(marking.id);
       const reviewMark = review?.markings.get(marking.id) ?? null;
+      // Marcação com o desenho à vista: a borda só aparece sob o mouse ou selecionada (a
+      // revisão de propostas, que marca a mudança na própria borda, a mantém).
+      const withDrawing = drawn.has(marking.id);
+      const showBorder =
+        !withDrawing ||
+        selected ||
+        frame.hoverMarking === marking.id ||
+        (reviewMark?.line ?? null) !== null;
       // Pan sem mudar nada da marcação (o caso comum): borda e indicadores ficam.
       const inputs = [
         reviewMark,
         marking,
         placement,
         selected,
+        showBorder,
         visibility,
         markingDots,
         markingIncomplete,
@@ -165,6 +177,7 @@ export class MarkingRenderer {
           marking,
           placement,
           selected,
+          showBorder,
           visibility,
           markingDots,
           markingIncomplete,
@@ -179,7 +192,8 @@ export class MarkingRenderer {
         marking,
         placement,
         zoom,
-        semantic && visibility !== 'outline',
+        // O desenho ocupa o lugar do cartão (e do nome) das marcações com componente à vista.
+        semantic && visibility !== 'outline' && !withDrawing,
         children.get(marking.id) ?? [],
         frame.visibility,
       );
@@ -262,6 +276,7 @@ function updateMarkingNode(
   marking: Marking,
   placement: Placement,
   selected: boolean,
+  showBorder: boolean,
   visibility: MarkingVisibility,
   dots: readonly LayerDot[],
   incomplete: boolean,
@@ -300,19 +315,20 @@ function updateMarkingNode(
   // a linha aparece sobre fotos claras e escuras.
   node.halo.setAttrs({
     ...rect,
-    visible: true,
+    visible: showBorder,
     stroke: tokens.halo,
     strokeWidth: stroke + (2 * HALO_WIDTH) / zoom,
     dash,
   });
   node.border.setAttrs({
     ...rect,
+    visible: showBorder,
     stroke: selected ? tokens.select : line === 'invalid' ? tokens.invalid : lineColor,
     strokeWidth: stroke,
     dash,
   });
   // Alterada: linha dupla (o traço de 3px com um fio do halo no meio).
-  if (line === 'changed') {
+  if (line === 'changed' && showBorder) {
     node.inner.setAttrs({
       ...rect,
       visible: true,

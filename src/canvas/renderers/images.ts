@@ -4,7 +4,12 @@ import { Image as KonvaImage } from 'konva/lib/shapes/Image';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../../i18n';
-import { imageCanvasRect, type Placement, type ProjectImage } from '../../model';
+import {
+  imageCanvasRect,
+  isBlankImage,
+  type Placement,
+  type ProjectImage,
+} from '../../model';
 import type { DisplayImage } from '../../store/displayImages';
 import type { Frame } from '../frame';
 import type { CanvasTokens } from '../theme';
@@ -110,6 +115,23 @@ function updateNode(
   const rect = imageCanvasRect(image, placement);
   node.group.position({ x: rect.x, y: rect.y });
   const box = { width: rect.width, height: rect.height };
+
+  // Tela em branco (sem arquivo): um retângulo cheio com a cor de fundo, sempre pronto. Nunca o
+  // reservado de "carregando": não há bitmap para esperar.
+  if (isBlankImage(image)) {
+    node.bitmap.setAttrs({ ...box, visible: false, image: undefined });
+    node.placeholder.setAttrs({
+      ...box,
+      visible: true,
+      fill: image.background ?? tokens.surface,
+      stroke: tokens.border,
+      strokeWidth: 1 / zoom,
+      dash: [],
+    });
+    node.label.visible(false);
+    updateTitle(node, image, rect.width, tokens, zoom);
+    return;
+  }
 
   const ready = state?.status === 'ready' && !isClosed(state.bitmap);
   node.bitmap.setAttrs({
