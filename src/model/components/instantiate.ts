@@ -1,6 +1,6 @@
 /**
- * Laboratório "Componentes": instancia um componente (`mapping-component`) numa caixa e
- * produz a árvore de cena que o renderizador Konva já desenha (`lab/scene/scene.ts`).
+ * Motor dos componentes (etapa Biblioteca): instancia um componente (`mapping-component`) numa caixa e
+ * produz a árvore de cena que o renderizador Konva já desenha (`src/model/components/scene.ts`).
  *
  * Passos: (1) avalia as expressões contra os valores dos campos; (2) calcula o tamanho de cada
  * nó (px, %, `fill`, `hug`); (3) posiciona os filhos conforme o `layout` do pai; (4) monta os
@@ -53,7 +53,7 @@ import {
   type TextStyle,
   baseNode,
   translate,
-} from '../scene/scene';
+} from './scene';
 
 export interface Box {
   readonly x: number;

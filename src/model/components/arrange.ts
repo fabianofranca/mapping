@@ -1,5 +1,5 @@
 /**
- * Laboratório "Componentes": organização dos filhos de um container. Um container é uma
+ * Motor dos componentes (etapa Biblioteca): organização dos filhos de um container. Um container é uma
  * instância cujo componente tem um nó `slot`; as instâncias filhas (`parentId`) ficam na ordem
  * em que aparecem em `screen.instances`. Quando o slot declara `layout` `row`/`column`, o
  * editor calcula os retângulos dos filhos e os **grava** (o arquivo guarda só retângulos
@@ -23,7 +23,7 @@ import {
 } from './instantiate';
 import type { Library, TypeDef } from './library';
 import { type Instance, type Screen, childrenOf, renderOrder, updateBox } from './screen';
-import { absoluteBoxes, walk } from '../scene/scene';
+import { absoluteBoxes, walk } from './scene';
 
 export interface ResolvedSlotLayout {
   readonly type: 'none' | 'row' | 'column';

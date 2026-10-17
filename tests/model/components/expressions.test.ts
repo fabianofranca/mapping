@@ -1,6 +1,6 @@
 // Laboratório Componentes: avaliação das expressões contra os valores dos campos.
 import { describe, expect, it } from 'vitest';
-import type { Condition, Expr } from '../../../lab/components/componentFormat';
+import type { Condition, Expr } from '../../../src/model/components/componentFormat';
 import {
   evaluate,
   evaluateBoolean,
@@ -9,7 +9,7 @@ import {
   isEmpty,
   referencedFields,
   truthy,
-} from '../../../lab/components/expressions';
+} from '../../../src/model/components/expressions';
 
 describe('isEmpty e truthy', () => {
   it('vazio: null, undefined e texto só com espaços', () => {

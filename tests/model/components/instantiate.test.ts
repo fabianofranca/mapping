@@ -4,21 +4,21 @@ import type {
   ComponentFile,
   FieldValues,
   FrameTemplate,
-} from '../../../lab/components/componentFormat';
+} from '../../../src/model/components/componentFormat';
 import {
   approximateMeasurer,
   instantiate,
   measureComponent,
   normalizePadding,
   type Box,
-} from '../../../lab/components/instantiate';
+} from '../../../src/model/components/instantiate';
 import {
   walk,
   type FrameNode,
   type PathNode,
   type SceneNode,
   type TextNode,
-} from '../../../lab/scene/scene';
+} from '../../../src/model/components/scene';
 
 type Values = FieldValues;
 

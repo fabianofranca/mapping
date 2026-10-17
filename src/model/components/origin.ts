@@ -1,5 +1,5 @@
 /**
- * Laboratório "Componentes": declaração de origem executável (fase L2). A especialização diz
+ * Motor dos componentes (etapa Biblioteca): declaração de origem executável (fase L2). A especialização diz
  * como ler um JSON externo (SDUI de um backend, por exemplo) e transformá-lo numa tela:
  *
  * - `origins` (raiz da especialização): onde ficam a largura, a altura e as raízes da tela, e
@@ -24,6 +24,7 @@ import {
 } from './layout';
 import type { FieldDef, Library, TypeDef } from './library';
 import type { Screen } from './screen';
+import { packagePathProblem } from '../packagePaths';
 
 // ---------------------------------------------------------------------------------------
 // Tipos
@@ -73,6 +74,14 @@ export interface Origin {
   readonly screen: ScreenSource;
   /** Tradução de um booleano JSON para texto, nos campos sem `values` próprio. */
   readonly booleans?: { readonly true: string; readonly false: string };
+  /** Telas de exemplo (JSON inteiro de uma tela) no pacote da especialização. */
+  readonly examples?: readonly OriginExample[];
+}
+
+/** Uma tela de exemplo de um sistema externo: nome único na origem e arquivo `.json` do pacote. */
+export interface OriginExample {
+  readonly name: string;
+  readonly file: string;
 }
 
 /** `sources` de um tipo de anotação (formato v3 + `slot` e `ignore`). */
@@ -434,7 +443,12 @@ function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | u
     return undefined;
   }
   const before = problems.length;
-  checkKeys(raw, ['system', 'name', 'node', 'screen', 'booleans'], path, problems);
+  checkKeys(
+    raw,
+    ['system', 'name', 'node', 'screen', 'booleans', 'examples'],
+    path,
+    problems,
+  );
   if (!nonEmptyString(raw.system)) {
     problems.push(`${path}.system: esperava texto não vazio`);
   }
@@ -481,6 +495,10 @@ function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | u
         booleans = { true: t, false: f };
     }
   }
+  const examples =
+    raw.examples === undefined
+      ? undefined
+      : parseOriginExamples(raw.examples, `${path}.examples`, problems);
   if (problems.length > before || !node || !screen) return undefined;
   return {
     system: raw.system as string,
@@ -488,7 +506,47 @@ function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | u
     node,
     screen,
     ...(booleans ? { booleans } : {}),
+    ...(examples ? { examples } : {}),
   };
+}
+
+/** `examples` de uma origem: `name` não vazio e único, `file` caminho de pacote `.json`. */
+function parseOriginExamples(
+  raw: unknown,
+  path: string,
+  problems: string[],
+): OriginExample[] | undefined {
+  if (!Array.isArray(raw)) {
+    problems.push(`${path}: esperava uma lista`);
+    return undefined;
+  }
+  const out: OriginExample[] = [];
+  const seen = new Set<string>();
+  raw.forEach((item, index) => {
+    const at = `${path}[${index}]`;
+    if (!isRecord(item)) {
+      problems.push(`${at}: esperava um objeto`);
+      return;
+    }
+    const before = problems.length;
+    checkKeys(item, ['name', 'file'], at, problems);
+    if (!nonEmptyString(item.name)) {
+      problems.push(`${at}.name: esperava texto não vazio`);
+    } else if (seen.has(item.name)) {
+      problems.push(`${at}.name: nome "${item.name}" repetido`);
+    } else {
+      seen.add(item.name);
+    }
+    if (typeof item.file !== 'string') {
+      problems.push(`${at}.file: esperava o caminho de um arquivo .json do pacote`);
+    } else {
+      const problem = packagePathProblem(item.file, '.json');
+      if (problem !== undefined) problems.push(`${at}.file: ${problem}`);
+    }
+    if (problems.length > before) return;
+    out.push({ name: item.name as string, file: item.file as string });
+  });
+  return out;
 }
 
 /**

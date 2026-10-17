@@ -16,39 +16,47 @@ export type {
   ScreenRendererUpdateOptions,
 } from './screenRenderer';
 export { konvaMeasurer } from './measure';
-export { instanceLabel, loadLibrary, resolvePath } from '../components/library';
+export {
+  instanceLabel,
+  loadLibrary,
+  resolvePath,
+} from '../../src/model/components/library';
 export type {
   FieldDef,
   Library,
   LoadedFont,
   TextFile,
   TypeDef,
-} from '../components/library';
+} from '../../src/model/components/library';
 export {
   childrenOf,
   parseScreen,
   renderOrder,
   serializeScreen,
-} from '../components/screen';
-export type { Box, Instance, Screen } from '../components/screen';
+} from '../../src/model/components/screen';
+export type { Box, Instance, Screen } from '../../src/model/components/screen';
 export type {
   ComponentFile,
   FieldValue,
   FieldValues,
-} from '../components/componentFormat';
-export { approximateMeasurer } from '../components/instantiate';
-export type { TextMeasurer } from '../components/instantiate';
+} from '../../src/model/components/componentFormat';
+export { approximateMeasurer } from '../../src/model/components/instantiate';
+export type { TextMeasurer } from '../../src/model/components/instantiate';
 export { flattenTree, screenTree } from './tree';
 export type { TreeNode } from './tree';
-export { screenFromSource, translateSource } from '../components/origin';
-export type { SourceOptions, SourceResult, TranslateResult } from '../components/origin';
-export { SCREEN_ANCHORS, layoutScreen } from '../components/layout';
+export { screenFromSource, translateSource } from '../../src/model/components/origin';
+export type {
+  SourceOptions,
+  SourceResult,
+  TranslateResult,
+} from '../../src/model/components/origin';
+export { SCREEN_ANCHORS, layoutScreen } from '../../src/model/components/layout';
 export type {
   LayoutNode,
   LayoutResult,
   LayoutRoot,
   LayoutScreen,
   ScreenAnchor,
-} from '../components/layout';
+} from '../../src/model/components/layout';
 export { loadLibraryFromUrl, registerLibraryFonts } from './host';
 export type { FontHost, FontStatus, LoadFromUrlOptions } from './host';

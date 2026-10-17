@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest';
 import type {
   ComponentFile,
   TemplateNode,
-} from '../../../lab/components/componentFormat';
-import { approximateMeasurer } from '../../../lab/components/instantiate';
+} from '../../../src/model/components/componentFormat';
+import { approximateMeasurer } from '../../../src/model/components/instantiate';
 import {
   type LayoutNode,
   type LayoutRoot,
   type ScreenAnchor,
   layoutScreen,
-} from '../../../lab/components/layout';
-import { type Library, loadLibrary } from '../../../lab/components/library';
+} from '../../../src/model/components/layout';
+import { type Library, loadLibrary } from '../../../src/model/components/library';
 import { M3_CARD, M3_COLUMN, M3_BUTTON } from '../../../lab/components/samplesMaterial3';
 
 // --- biblioteca montada em memória ----------------------------------------------------------

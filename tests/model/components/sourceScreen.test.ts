@@ -2,11 +2,11 @@
 // do Material 3. Depende de `layoutScreen` (layout.ts).
 import { describe, expect, it } from 'vitest';
 import settings from '../../../lab/components/sdui/settings.sdui.json';
-import { approximateMeasurer } from '../../../lab/components/instantiate';
-import { loadLibrary } from '../../../lab/components/library';
-import { screenFromSource } from '../../../lab/components/origin';
+import { approximateMeasurer } from '../../../src/model/components/instantiate';
+import { loadLibrary } from '../../../src/model/components/library';
+import { screenFromSource } from '../../../src/model/components/origin';
 import { M3_FILES } from '../../../lab/components/samplesMaterial3';
-import { childrenOf } from '../../../lab/components/screen';
+import { childrenOf } from '../../../src/model/components/screen';
 
 describe('screenFromSource com o Material 3', () => {
   const library = loadLibrary(M3_FILES);

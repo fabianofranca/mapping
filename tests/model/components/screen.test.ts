@@ -10,7 +10,7 @@ import {
   serializeScreen,
   setValue,
   updateBox,
-} from '../../../lab/components/screen';
+} from '../../../src/model/components/screen';
 import { SAMPLE_SCREEN } from '../../../lab/components/samples';
 
 describe('screen', () => {

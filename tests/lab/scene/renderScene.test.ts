@@ -14,7 +14,7 @@ import {
   type SceneNode,
   baseNode,
   translate,
-} from '../../../lab/scene/scene';
+} from '../../../src/model/components/scene';
 
 beforeAll(() => installFakeCanvas());
 

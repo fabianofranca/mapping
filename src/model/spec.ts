@@ -1,10 +1,17 @@
 import { z } from 'zod';
 import { isValidCodePath } from './codeLocations';
+import { parseOrigins, parsePath, type Origin } from './components/origin';
+import { isPackagePath, packagePathProblem } from './packagePaths';
 
-// Formato da especialização (`formatVersion` 1, 2 e 3), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
-// etapas 3b e 4 do plano. A versão 2 acrescenta `platforms` e `code`; a versão 1 é a 2 sem
-// plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens externas nos tipos e
-// nos campos, inclusive nas colunas de `table`).
+export { isPackagePath };
+
+// Formato da especialização (`formatVersion` 1 a 4), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
+// etapas 3b e 4 e etapa Biblioteca do plano. A versão 2 acrescenta `platforms` e `code`; a
+// versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
+// externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
+// biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
+// tipos, `fonts`, `origins` (origens executáveis, com `slot`, `ignore` e `path` nas `sources`)
+// e `migrations` (o contrato de versão).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -17,9 +24,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 3;
+export const SPEC_FORMAT_VERSION = 4;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -65,22 +72,68 @@ export type SpecCodeMap = Record<string, SpecCode>;
 
 /**
  * Elemento de um sistema externo a que um tipo de anotação corresponde (v3), ex:
- * `{ system: "figma", name: "DS/Button" }`. Tem `id`, `name` ou os dois.
+ * `{ system: "figma", name: "DS/Button" }`. Tem `id`, `name` ou os dois. `slot` e `ignore`
+ * (v4) só valem em sistema declarado em `origins`.
  */
 export interface SpecTypeSource {
   system: string;
   id?: string;
   name?: string;
+  /** Nome do slot do componente que recebe os filhos (v4, sistema executável). */
+  slot?: string;
+  /** Props aceitas e não desenhadas (v4, sistema executável). */
+  ignore?: string[];
 }
 
 /**
  * Propriedade de origem de um campo (v3), ex: `{ system: "figma", name: "Style" }`.
- * `values` (só em `enum`) traduz o valor de origem para uma das `options`.
+ * `values` (só em `enum`) traduz o valor de origem para uma das `options`. Em sistema
+ * declarado em `origins` (v4) vale `path` (o caminho do valor nas `props` do nó externo,
+ * obrigatório) e `name` é só o nome de exibição; nos demais, `name` é obrigatório e `path`
+ * proibido (a obrigatoriedade é regra de validação, não do tipo).
  */
 export interface SpecFieldSource {
   system: string;
-  name: string;
+  name?: string;
+  path?: string;
   values?: Record<string, string>;
+}
+
+/** Fonte tipográfica do pacote (v4): `file` é um caminho do pacote (`.ttf`, `.otf`, `.woff`, `.woff2`). */
+export interface SpecFont {
+  family: string;
+  file: string;
+  /** Inteiro de 100 a 1000 ou faixa `"100 900"`. */
+  weight?: number | string;
+  style?: 'normal' | 'italic';
+}
+
+/**
+ * Exemplo de um tipo (v4), em um de dois modos: `values` (valores dos campos do tipo) ou
+ * `system` + `file` (o JSON de um nó de um sistema externo declarado em `origins`).
+ */
+export interface SpecExample {
+  name: string;
+  description?: string;
+  values?: Record<string, string | number | null>;
+  system?: string;
+  file?: string;
+}
+
+/** Passo de migração do contrato de versão (v4); ver `docs/SPEC-FORMAT.md`. */
+export type SpecMigrationStep =
+  | { op: 'rename-type'; from: string; to: string }
+  | { op: 'remove-type'; type: string; mode: 'convert' | 'delete' }
+  | { op: 'rename-field'; type: string; from: string; to: string }
+  | { op: 'remove-field'; type: string; field: string }
+  | { op: 'map-values'; type: string; field: string; values: Record<string, string> }
+  | { op: 'fill-field'; type: string; field: string; default: string | number };
+
+/** Como ir da versão `from` do pacote até a `to` (v4). */
+export interface SpecMigration {
+  from: number;
+  to: number;
+  steps: SpecMigrationStep[];
 }
 
 export interface SpecRefAccepts {
@@ -94,7 +147,7 @@ interface SpecFieldBase {
   required?: boolean;
   description?: string;
   tags?: string[];
-  /** Propriedades de origem (só `formatVersion` 3). */
+  /** Propriedades de origem (`formatVersion` 3 em diante). */
   sources?: SpecFieldSource[];
 }
 
@@ -118,8 +171,14 @@ export interface SpecAnnotationType {
   allowedChildren?: string[];
   fields: SpecField[];
   code?: SpecCodeMap;
-  /** Elementos de origem a que o tipo corresponde (só `formatVersion` 3). */
+  /** Elementos de origem a que o tipo corresponde (`formatVersion` 3 em diante). */
   sources?: SpecTypeSource[];
+  /** Caminho do pacote do componente `.json` que desenha o tipo (só `formatVersion` 4). */
+  component?: string;
+  /** Caminho do pacote do documento `.md` do tipo (só `formatVersion` 4). */
+  doc?: string;
+  /** Exemplos do tipo (só `formatVersion` 4). */
+  examples?: SpecExample[];
 }
 
 export interface SpecLayer {
@@ -138,6 +197,12 @@ export interface Spec {
   description?: string;
   platforms?: SpecPlatform[];
   layers: SpecLayer[];
+  /** Fontes do pacote (só `formatVersion` 4). */
+  fonts?: SpecFont[];
+  /** Origens executáveis, validadas por `parseOrigins` (só `formatVersion` 4). */
+  origins?: Origin[];
+  /** Contrato de versão (só `formatVersion` 4). */
+  migrations?: SpecMigration[];
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
@@ -184,15 +249,32 @@ const dateString = z
   .regex(DATE_RE, 'data inválida; use AAAA-MM-DD')
   .refine(isIsoDate, 'data inexistente');
 
+/** Caminho de arquivo do pacote com a extensão (ou uma das extensões) dada. */
+function packagePath(ext: string | readonly string[]) {
+  return z.string({ error: () => 'deve ser texto' }).superRefine((path, ctx) => {
+    const problem = packagePathProblem(path, ext);
+    if (problem !== undefined) ctx.addIssue({ code: 'custom', message: problem });
+  });
+}
+
 const typeSourceShape = z
-  .object({ system: nonEmpty, id: nonEmpty.optional(), name: nonEmpty.optional() })
+  .object({
+    system: nonEmpty,
+    id: nonEmpty.optional(),
+    name: nonEmpty.optional(),
+    slot: nonEmpty.optional(),
+    ignore: z.array(nonEmpty).optional(),
+  })
   .strict()
   .refine((s) => s.id !== undefined || s.name !== undefined, 'precisa de "id" ou "name"');
 
+// `name` e `path` são opcionais aqui; qual é obrigatório depende de o `system` estar em
+// `origins` (regra cruzada, `checkFieldSources`).
 const fieldSourceShape = z
   .object({
     system: nonEmpty,
-    name: nonEmpty,
+    name: nonEmpty.optional(),
+    path: nonEmpty.optional(),
     values: z.record(z.string(), nonEmpty).optional(),
   })
   .strict();
@@ -226,6 +308,39 @@ const fieldShape = z
   .strict();
 
 type RawField = z.infer<typeof fieldShape>;
+
+/**
+ * Por que `value` não serve como valor de um campo do tipo `type` (o `default` de um campo, o
+ * `default` de um passo `fill-field`, o valor de um exemplo); `undefined` se serve.
+ */
+function valueProblem(
+  type: RawField['type'],
+  options: readonly string[] | undefined,
+  value: unknown,
+): string | undefined {
+  switch (type) {
+    case 'string':
+      return typeof value === 'string' ? undefined : 'deve ser texto';
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value)
+        ? undefined
+        : 'deve ser número';
+    case 'date':
+      return dateString.safeParse(value).success
+        ? undefined
+        : 'deve ser uma data AAAA-MM-DD válida';
+    case 'enum':
+      return typeof value === 'string' && (options ?? []).includes(value)
+        ? undefined
+        : 'deve ser uma das options';
+    case 'table':
+      return 'não existe para table';
+    case 'ref':
+      return 'não existe para ref';
+    default:
+      return undefined;
+  }
+}
 
 /** Valida um campo; `column` = dentro de `table` (só tipos simples). */
 function checkField(
@@ -273,30 +388,8 @@ function checkField(
   }
 
   if (field.default !== undefined) {
-    const d = field.default;
-    switch (type) {
-      case 'string':
-        if (typeof d !== 'string') add('default', 'deve ser texto');
-        break;
-      case 'number':
-        if (typeof d !== 'number' || !Number.isFinite(d))
-          add('default', 'deve ser número');
-        break;
-      case 'date':
-        if (!dateString.safeParse(d).success)
-          add('default', 'deve ser uma data AAAA-MM-DD válida');
-        break;
-      case 'enum':
-        if (typeof d !== 'string' || !(field.options ?? []).includes(d))
-          add('default', 'deve ser uma das options');
-        break;
-      case 'table':
-        add('default', 'não existe para table');
-        break;
-      case 'ref':
-        add('default', 'não existe para ref');
-        break;
-    }
+    const problem = valueProblem(type, field.options, field.default);
+    if (problem !== undefined) add('default', problem);
   }
 
   if (type === 'ref') {
@@ -456,6 +549,66 @@ function checkCode(
   }
 }
 
+const exampleShape = z
+  .object({
+    name: nonEmpty,
+    description: z.string().optional(),
+    values: z
+      .record(
+        z.string(),
+        z.union([z.string(), z.number(), z.null()], {
+          error: 'deve ser texto, número ou null',
+        }),
+      )
+      .optional(),
+    system: nonEmpty.optional(),
+    file: packagePath('.json').optional(),
+  })
+  .strict();
+
+type RawExample = z.infer<typeof exampleShape>;
+
+/** Nomes únicos, um só modo (`values` ou `system` + `file`) e valores que cabem nos campos. */
+function checkExamples(
+  type: { fields: RawField[]; examples?: RawExample[] },
+  ctx: z.RefinementCtx,
+): void {
+  const fields = new Map(
+    type.fields.filter((f) => f.type !== REMOVED_FIELD_TYPE).map((f) => [f.key, f]),
+  );
+  const names = new Set<string>();
+  (type.examples ?? []).forEach((example, i) => {
+    const p = ['examples', i];
+    const add = (sub: (string | number)[], message: string) =>
+      ctx.addIssue({ code: 'custom', path: [...p, ...sub], message });
+
+    if (names.has(example.name)) add(['name'], `nome "${example.name}" repetido`);
+    names.add(example.name);
+
+    const external = example.system !== undefined || example.file !== undefined;
+    if (example.values !== undefined && external) {
+      add([], 'use "values" ou "system" com "file", não os dois modos juntos');
+    } else if (example.values === undefined && !external) {
+      add([], 'precisa de "values" ou de "system" com "file"');
+    } else if (example.values === undefined) {
+      if (example.system === undefined) add(['system'], 'obrigatório com "file"');
+      if (example.file === undefined) add(['file'], 'obrigatório com "system"');
+    }
+
+    for (const [k, value] of Object.entries(example.values ?? {})) {
+      const field = fields.get(k);
+      if (!field) {
+        add(['values', k], `"${k}" não é um campo do tipo`);
+      } else if (field.type === 'table' || field.type === 'ref') {
+        add(['values', k], `campo "${field.type}" não aceita valor em exemplo`);
+      } else if (value !== null) {
+        const problem = valueProblem(field.type, field.options, value);
+        if (problem !== undefined) add(['values', k], problem);
+      }
+    }
+  });
+}
+
 const annotationTypeShape = z
   .object({
     id: nonEmpty,
@@ -467,11 +620,15 @@ const annotationTypeShape = z
     fields: z.array(fieldShape),
     code: z.record(z.string(), codeEntryShape).optional(),
     sources: z.array(typeSourceShape).optional(),
+    component: packagePath('.json').optional(),
+    doc: packagePath('.md').optional(),
+    examples: z.array(exampleShape).optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
     checkFields(type.fields, ctx, ['fields']);
     checkCode(type, ctx);
+    checkExamples(type, ctx);
     if (type.labelField != null) {
       const f = type.fields.find((x) => x.key === type.labelField);
       if (!f || f.type !== 'string') {
@@ -501,6 +658,91 @@ const platformShape = z
   })
   .strict();
 
+const FONT_EXTENSIONS = ['.ttf', '.otf', '.woff', '.woff2'] as const;
+const WEIGHT_MIN = 100;
+const WEIGHT_MAX = 1000;
+const WEIGHT_RANGE_RE = /^(\d+) (\d+)$/;
+const WEIGHT_MESSAGE = `peso inválido; use um inteiro de ${WEIGHT_MIN} a ${WEIGHT_MAX} ou uma faixa "100 900" (o primeiro menor que o segundo)`;
+
+const fontWeight = z.union([z.number(), z.string()], { error: WEIGHT_MESSAGE }).refine(
+  (w) => {
+    if (typeof w === 'number') {
+      return Number.isInteger(w) && w >= WEIGHT_MIN && w <= WEIGHT_MAX;
+    }
+    const m = WEIGHT_RANGE_RE.exec(w);
+    if (!m) return false;
+    const [lo, hi] = [Number(m[1]), Number(m[2])];
+    return lo >= WEIGHT_MIN && hi <= WEIGHT_MAX && lo < hi;
+  },
+  { error: WEIGHT_MESSAGE },
+);
+
+const fontShape = z
+  .object({
+    family: nonEmpty,
+    file: packagePath(FONT_EXTENSIONS),
+    weight: fontWeight.optional(),
+    style: z
+      .enum(['normal', 'italic'], { error: 'estilo inválido; use "normal" ou "italic"' })
+      .optional(),
+  })
+  .strict();
+
+const migrationVersion = z.number({ error: 'deve ser um número' }).int('deve ser inteiro');
+
+const migrationStepShape = z.discriminatedUnion(
+  'op',
+  [
+    z.object({ op: z.literal('rename-type'), from: nonEmpty, to: nonEmpty }).strict(),
+    z
+      .object({
+        op: z.literal('remove-type'),
+        type: nonEmpty,
+        mode: z.enum(['convert', 'delete'], { error: 'use "convert" ou "delete"' }),
+      })
+      .strict(),
+    z
+      .object({ op: z.literal('rename-field'), type: nonEmpty, from: nonEmpty, to: nonEmpty })
+      .strict(),
+    z.object({ op: z.literal('remove-field'), type: nonEmpty, field: nonEmpty }).strict(),
+    z
+      .object({
+        op: z.literal('map-values'),
+        type: nonEmpty,
+        field: nonEmpty,
+        values: z.record(z.string(), nonEmpty),
+      })
+      .strict(),
+    z
+      .object({
+        op: z.literal('fill-field'),
+        type: nonEmpty,
+        field: nonEmpty,
+        default: z.union([z.string(), z.number()], { error: 'deve ser texto ou número' }),
+      })
+      .strict(),
+  ],
+  {
+    error:
+      '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values" ou "fill-field"',
+  },
+);
+
+const migrationShape = z
+  .object({
+    from: migrationVersion.min(1, 'deve ser >= 1'),
+    to: migrationVersion,
+    steps: z.array(migrationStepShape).min(1, 'não pode ser vazia'),
+  })
+  .strict();
+
+type RawLayers = readonly {
+  annotationTypes: readonly {
+    sources?: readonly z.infer<typeof typeSourceShape>[] | undefined;
+    fields: readonly RawField[];
+  }[];
+}[];
+
 /** `sources` só existe na `formatVersion` 3: aponta cada uso numa versão anterior. */
 function checkNoSources(
   layers: readonly {
@@ -527,12 +769,367 @@ function checkNoSources(
   });
 }
 
+type PathKeys = (string | number)[];
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Chaves da `formatVersion` 4 nos tipos (`component`, `doc`, `examples`) em versão anterior. */
+function checkNoLibraryKeys(
+  layers: readonly {
+    annotationTypes: readonly { component?: unknown; doc?: unknown; examples?: unknown }[];
+  }[],
+  ctx: z.RefinementCtx,
+): void {
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      for (const k of ['component', 'doc', 'examples'] as const) {
+        if (type[k] !== undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['layers', li, 'annotationTypes', ti, k],
+            message: 'só é permitido com formatVersion 4',
+          });
+        }
+      }
+    });
+  });
+}
+
+/**
+ * `path` de uma origem de campo (`a.b[0].c`): sintaxe válida e sem `[*]`. `undefined` se vale.
+ */
+function fieldPathProblem(path: string): string | undefined {
+  const parsed = parsePath(path);
+  if (!parsed.ok) return `caminho inválido "${path}" (${parsed.error})`;
+  if (parsed.segments.includes(null)) {
+    return `caminho inválido "${path}" ("[*]" só vale em roots[].path de uma origem)`;
+  }
+  return undefined;
+}
+
+/**
+ * Regras cruzadas das `sources` de um campo ou coluna (v3 em diante) que dependem de o `system`
+ * estar em `origins`: sistema executável pede `path` (e `name` vira só o nome de exibição);
+ * os demais pedem `name` e não aceitam `path`.
+ */
+function checkFieldSources(
+  sources: readonly z.infer<typeof fieldSourceShape>[] | undefined,
+  path: PathKeys,
+  version: number,
+  executable: ReadonlySet<string>,
+  ctx: z.RefinementCtx,
+): void {
+  (sources ?? []).forEach((source, i) => {
+    const at = [...path, 'sources', i];
+    const add = (key: string, message: string) =>
+      ctx.addIssue({ code: 'custom', path: [...at, key], message });
+    const isExecutable = version >= 4 && executable.has(source.system);
+    if (source.path !== undefined) {
+      if (version < 4) add('path', 'só é permitido com formatVersion 4');
+      else if (!isExecutable) add('path', 'só é permitido em sistema declarado em origins');
+      else {
+        const problem = fieldPathProblem(source.path);
+        if (problem !== undefined) add('path', problem);
+      }
+    } else if (isExecutable) {
+      add('path', 'obrigatório em sistema declarado em origins');
+    }
+    if (source.name === undefined && !isExecutable) {
+      add('name', 'obrigatório em sistema que não está em origins');
+    }
+  });
+}
+
+/** `slot` e `ignore` das `sources` de um tipo: só em sistema declarado em `origins`. */
+function checkTypeSources(
+  sources: readonly z.infer<typeof typeSourceShape>[] | undefined,
+  path: PathKeys,
+  version: number,
+  executable: ReadonlySet<string>,
+  ctx: z.RefinementCtx,
+): void {
+  (sources ?? []).forEach((source, i) => {
+    const at = [...path, 'sources', i];
+    for (const key of ['slot', 'ignore'] as const) {
+      if (source[key] === undefined) continue;
+      if (version < 4) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [...at, key],
+          message: 'só é permitido com formatVersion 4',
+        });
+      } else if (!executable.has(source.system)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [...at, key],
+          message: 'só é permitido em sistema declarado em origins',
+        });
+      }
+    }
+    const seen = new Set<string>();
+    (source.ignore ?? []).forEach((prop, pi) => {
+      if (seen.has(prop)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [...at, 'ignore', pi],
+          message: `"${prop}" repetido`,
+        });
+      }
+      seen.add(prop);
+    });
+  });
+}
+
+/** Aplica `checkFieldSources`/`checkTypeSources`/o `system` dos exemplos a todos os tipos. */
+function checkSources(
+  layers: RawLayers & readonly { annotationTypes: readonly { examples?: unknown }[] }[],
+  version: number,
+  executable: ReadonlySet<string>,
+  ctx: z.RefinementCtx,
+): void {
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      const tp = ['layers', li, 'annotationTypes', ti];
+      checkTypeSources(type.sources, tp, version, executable, ctx);
+      type.fields.forEach((field, fi) => {
+        const fp = [...tp, 'fields', fi];
+        checkFieldSources(field.sources, fp, version, executable, ctx);
+        (field.columns ?? []).forEach((raw, ci) => {
+          const column = fieldShape.safeParse(raw);
+          if (column.success) {
+            checkFieldSources(
+              column.data.sources,
+              [...fp, 'columns', ci],
+              version,
+              executable,
+              ctx,
+            );
+          }
+        });
+      });
+    });
+  });
+}
+
+/** O `system` de um exemplo de sistema externo precisa estar em `origins`. */
+function checkExampleSystems(
+  layers: readonly {
+    annotationTypes: readonly { examples?: readonly RawExample[] | undefined }[];
+  }[],
+  executable: ReadonlySet<string>,
+  ctx: z.RefinementCtx,
+): void {
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      (type.examples ?? []).forEach((example, ei) => {
+        if (example.system === undefined || executable.has(example.system)) return;
+        ctx.addIssue({
+          code: 'custom',
+          path: ['layers', li, 'annotationTypes', ti, 'examples', ei, 'system'],
+          message: `sistema "${example.system}" não declarado em origins`,
+        });
+      });
+    });
+  });
+}
+
+/** Texto do peso para a mensagem de fonte repetida. */
+function weightLabel(weight: number | string | undefined): string {
+  return weight === undefined ? 'sem peso' : `peso ${weight}`;
+}
+
+/** Par `family` + `weight` + `style` repetido em `fonts`. */
+function checkFonts(
+  fonts: readonly z.infer<typeof fontShape>[],
+  ctx: z.RefinementCtx,
+): void {
+  const seen = new Set<string>();
+  fonts.forEach((font, i) => {
+    const style = font.style ?? 'normal';
+    const id = JSON.stringify([font.family, font.weight ?? null, style]);
+    if (seen.has(id)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['fonts', i],
+        message: `fonte "${font.family}" (${weightLabel(font.weight)}, ${style}) repetida`,
+      });
+    }
+    seen.add(id);
+  });
+}
+
+/**
+ * Conferências das `migrations` que um arquivo só permite: versões, `from` único e, em cada
+ * passo, o lado novo existe e o lado antigo não existe mais nesta versão. Se o lado antigo
+ * existia na versão anterior é coisa do `diffSpecs`, que compara duas versões.
+ */
+function checkMigrations(
+  spec: {
+    version: number;
+    layers: readonly {
+      annotationTypes: readonly { id: string; fields: readonly RawField[] }[];
+    }[];
+  },
+  migrations: readonly z.infer<typeof migrationShape>[],
+  ctx: z.RefinementCtx,
+): void {
+  /** id do tipo → campos (sem o tipo removido) por chave. */
+  const types = new Map<string, Map<string, RawField>>();
+  for (const layer of spec.layers) {
+    for (const type of layer.annotationTypes) {
+      types.set(
+        type.id,
+        new Map(type.fields.filter((f) => f.type !== REMOVED_FIELD_TYPE).map((f) => [f.key, f])),
+      );
+    }
+  }
+  const fromSeen = new Set<number>();
+  migrations.forEach((migration, mi) => {
+    const mp: PathKeys = ['migrations', mi];
+    const add = (sub: PathKeys, message: string) =>
+      ctx.addIssue({ code: 'custom', path: [...mp, ...sub], message });
+
+    if (fromSeen.has(migration.from)) {
+      add(['from'], `já existe uma migração a partir da versão ${migration.from}`);
+    }
+    fromSeen.add(migration.from);
+    if (migration.to <= migration.from) {
+      add(['to'], `deve ser maior que "from" (${migration.from})`);
+    }
+    if (migration.to > spec.version) {
+      add(['to'], `não pode passar de "version" (${spec.version})`);
+    }
+
+    migration.steps.forEach((step, si) => {
+      const sp: PathKeys = ['steps', si];
+      const stepAdd = (key: string | PathKeys, message: string) =>
+        add([...sp, ...(typeof key === 'string' ? [key] : key)], message);
+      /** O tipo existe nesta versão (o passo trata de um campo dele). */
+      const typeHere = (id: string): Map<string, RawField> | undefined => {
+        const fields = types.get(id);
+        if (!fields) stepAdd('type', `tipo "${id}" não existe nesta versão`);
+        return fields;
+      };
+      /** O campo existe no tipo (lado novo). */
+      const fieldHere = (
+        fields: Map<string, RawField>,
+        typeId: string,
+        key: string,
+        where: string,
+      ): RawField | undefined => {
+        const field = fields.get(key);
+        if (!field) stepAdd(where, `"${key}" não é um campo do tipo "${typeId}"`);
+        return field;
+      };
+      /** O campo não existe mais no tipo (lado antigo). */
+      const fieldGone = (
+        fields: Map<string, RawField>,
+        typeId: string,
+        key: string,
+        where: string,
+      ): void => {
+        if (fields.has(key)) {
+          stepAdd(where, `campo "${key}" ainda existe no tipo "${typeId}" nesta versão`);
+        }
+      };
+      const typeGone = (id: string, where: string): void => {
+        if (types.has(id)) stepAdd(where, `tipo "${id}" ainda existe nesta versão`);
+      };
+
+      switch (step.op) {
+        case 'rename-type':
+          if (!types.has(step.to)) stepAdd('to', `tipo "${step.to}" não existe nesta versão`);
+          typeGone(step.from, 'from');
+          break;
+        case 'remove-type':
+          typeGone(step.type, 'type');
+          break;
+        case 'rename-field': {
+          const fields = typeHere(step.type);
+          if (!fields) break;
+          fieldHere(fields, step.type, step.to, 'to');
+          fieldGone(fields, step.type, step.from, 'from');
+          break;
+        }
+        case 'remove-field': {
+          const fields = typeHere(step.type);
+          if (fields) fieldGone(fields, step.type, step.field, 'field');
+          break;
+        }
+        case 'map-values': {
+          const fields = typeHere(step.type);
+          if (!fields) break;
+          const field = fieldHere(fields, step.type, step.field, 'field');
+          if (!field) break;
+          if (field.type !== 'enum') {
+            stepAdd('field', `"${step.field}" deve ser um campo enum do tipo`);
+            break;
+          }
+          for (const [from, to] of Object.entries(step.values)) {
+            if (!(field.options ?? []).includes(to)) {
+              stepAdd(['values', from], `"${to}" não está nas options`);
+            }
+          }
+          break;
+        }
+        case 'fill-field': {
+          const fields = typeHere(step.type);
+          if (!fields) break;
+          const field = fieldHere(fields, step.type, step.field, 'field');
+          if (!field) break;
+          const problem = valueProblem(field.type, field.options, step.default);
+          if (problem !== undefined) stepAdd('default', problem);
+          break;
+        }
+      }
+    });
+  });
+}
+
+/** Cada problema `"caminho: mensagem"` do `parseOrigins` vira uma issue no caminho exato. */
+function addOriginIssues(raw: unknown, ctx: z.RefinementCtx): void {
+  for (const problem of parseOrigins(raw, 'origins').problems) {
+    const cut = problem.indexOf(': ');
+    ctx.addIssue({
+      code: 'custom',
+      path: cut < 0 ? [] : parseSpecPath(problem.slice(0, cut)),
+      message: cut < 0 ? problem : problem.slice(cut + 2),
+    });
+  }
+}
+
+/** Sistemas declarados em `origins` (lidos do JSON cru, mesmo se uma origem tiver problema). */
+function declaredSystems(raw: unknown): Set<string> {
+  const systems = new Set<string>();
+  if (!Array.isArray(raw)) return systems;
+  for (const item of raw) {
+    if (isRecord(item) && typeof item.system === 'string' && item.system.trim() !== '') {
+      systems.add(item.system);
+    }
+  }
+  return systems;
+}
+
+/**
+ * `layers[1].annotationTypes[0].fields[2]` → `['layers', 1, 'annotationTypes', 0, 'fields', 2]`:
+ * o inverso de `formatSpecPath`, para montar o caminho de uma issue do zod a partir de um
+ * caminho em texto (os do `parseOrigins`). Chaves com `.`, `[` ou `]` não são suportadas.
+ */
+export function parseSpecPath(text: string): (string | number)[] {
+  const keys: (string | number)[] = [];
+  for (const match of text.matchAll(/([^.[\]]+)|\[(\d+)\]/g)) {
+    keys.push(match[2] !== undefined ? Number(match[2]) : (match[1] ?? ''));
+  }
+  return keys;
+}
+
 export const specSchema = z
   .object({
     format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
       error: `deve ser "${SPEC_FORMAT}"`,
     }),
-    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3)], {
+    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)], {
       error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
     }),
     id: nonEmpty,
@@ -541,6 +1138,10 @@ export const specSchema = z
     description: z.string().optional(),
     platforms: z.array(platformShape).optional(),
     layers: z.array(layerShape),
+    fonts: z.array(fontShape).optional(),
+    // Validado por `parseOrigins` (a fonte da verdade da declaração de origem), no superRefine.
+    origins: z.unknown().optional(),
+    migrations: z.array(migrationShape).optional(),
   })
   .strict()
   .superRefine((spec, ctx) => {
@@ -564,6 +1165,32 @@ export const specSchema = z
     });
     const hasPlatforms = platformIds.size > 0;
     if (spec.formatVersion < 3) checkNoSources(spec.layers, ctx);
+
+    // v4: biblioteca. Antes dela, cada chave nova é erro no caminho exato.
+    const v4 = spec.formatVersion >= 4;
+    const executable = v4 ? declaredSystems(spec.origins) : new Set<string>();
+    if (!v4) {
+      for (const key of ['fonts', 'origins', 'migrations'] as const) {
+        if (spec[key] !== undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: 'só é permitido com formatVersion 4',
+          });
+        }
+      }
+      checkNoLibraryKeys(spec.layers, ctx);
+    } else if (spec.origins !== undefined) {
+      addOriginIssues(spec.origins, ctx);
+    }
+    if (spec.formatVersion >= 3) {
+      checkSources(spec.layers, spec.formatVersion, executable, ctx);
+    }
+    if (v4) {
+      checkExampleSystems(spec.layers, executable, ctx);
+      checkFonts(spec.fonts ?? [], ctx);
+      checkMigrations(spec, spec.migrations ?? [], ctx);
+    }
     const layerIds = new Set<string>();
     /** id do tipo → índice da camada onde está definido. */
     const typeLayer = new Map<string, number>();

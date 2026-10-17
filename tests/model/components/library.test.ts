@@ -1,13 +1,13 @@
 // Laboratório Componentes: a especialização aponta para um arquivo por componente.
 import { describe, expect, it } from 'vitest';
-import { findSlot } from '../../../lab/components/arrange';
+import { findSlot } from '../../../src/model/components/arrange';
 import {
   type TextFile,
   initialValues,
   instanceLabel,
   loadLibrary,
   resolvePath,
-} from '../../../lab/components/library';
+} from '../../../src/model/components/library';
 import {
   SAMPLE_COMPONENTS,
   SAMPLE_FILES,
@@ -65,10 +65,12 @@ describe('library', () => {
       lib.problems.some((p) => p.includes('avatar') && p.includes('não encontrado')),
     ).toBe(true);
     expect(
-      lib.problems.some(
-        (p) => p.includes('card.json') && p.includes('Componente inválido'),
-      ),
+      lib.problems.some((p) => p.endsWith('card.json: formatVersion: esperava 1')),
     ).toBe(true);
+    // um problema por issue, cada um com o caminho do arquivo
+    expect(lib.problems.filter((p) => p.includes('card.json: ')).length).toBeGreaterThan(
+      1,
+    );
     expect(
       lib.problems.some(
         (p) => p.includes('quebrado.json') && p.includes('JSON inválido'),

@@ -1,5 +1,5 @@
 /**
- * Laboratório de componentes (experimento, fora do produto).
+ * Motor dos componentes (etapa Biblioteca): cena.
  *
  * Modelo de cena: o que `instantiate` produz a partir de um template de componente e o
  * que o renderizador Konva consome. É um subconjunto pequeno e neutro de um modelo de

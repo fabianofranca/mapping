@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseComponent,
   validateComponent,
-} from '../../../lab/components/parseComponent';
+} from '../../../src/model/components/parseComponent';
 import {
   addInstance,
   ancestorsOf,
@@ -18,7 +18,7 @@ import {
   serializeScreen,
   setParent,
   updateBox,
-} from '../../../lab/components/screen';
+} from '../../../src/model/components/screen';
 
 function tree() {
   let s = newScreen('T', 400, 400);
@@ -146,7 +146,7 @@ describe('slot com layout no formato', () => {
         }),
       ),
     ).toEqual([]);
-    expect(() => parseComponent(component({ layout: { type: 'none' } }))).not.toThrow();
+    expect(parseComponent(component({ layout: { type: 'none' } })).ok).toBe(true);
   });
 
   it('recusa layout inválido no slot e layout em nós que não são frame nem slot', () => {

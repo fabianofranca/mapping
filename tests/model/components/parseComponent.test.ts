@@ -1,10 +1,19 @@
 // Laboratório Componentes: validação do arquivo `mapping-component`.
 import { describe, expect, it } from 'vitest';
+import type { ComponentFile } from '../../../src/model/components/componentFormat';
 import {
   collectFieldKeys,
   parseComponent,
+  parseComponentText,
   validateComponent,
-} from '../../../lab/components/parseComponent';
+} from '../../../src/model/components/parseComponent';
+
+/** Valida e devolve o arquivo tipado; falha o teste se o resultado não for ok. */
+function parsedOf(input: unknown): ComponentFile {
+  const result = parseComponent(input);
+  if (!result.ok) throw new Error(result.errors.join('; '));
+  return result.component;
+}
 
 /** Um botão realista: ícone opcional, rótulo ligado ao campo, cor por variante, borda condicional. */
 function button(): Record<string, unknown> {
@@ -134,13 +143,13 @@ describe('parseComponent: componente válido', () => {
   it('aceita o botão completo e devolve o mesmo objeto', () => {
     const input = button();
     expect(validateComponent(input)).toEqual([]);
-    const parsed = parseComponent(input);
+    const parsed = parsedOf(input);
     expect(parsed.id).toBe('button');
     expect(parsed.template.children).toHaveLength(3);
   });
 
   it('collectFieldKeys lista as chaves citadas, ordenadas e sem repetição', () => {
-    expect(collectFieldKeys(parseComponent(button()))).toEqual([
+    expect(collectFieldKeys(parsedOf(button()))).toEqual([
       'badge',
       'count',
       'disabled',
@@ -163,7 +172,7 @@ describe('parseComponent: componente válido', () => {
       template: { type: 'frame' },
     };
     expect(validateComponent(minimal)).toEqual([]);
-    expect(collectFieldKeys(parseComponent(minimal))).toEqual([]);
+    expect(collectFieldKeys(parsedOf(minimal))).toEqual([]);
   });
 });
 
@@ -434,7 +443,7 @@ describe('parseComponent: visible e italic como BoolExpr', () => {
   it('campos da condição direta entram em collectFieldKeys', () => {
     const c = button();
     (c.template as Record<string, unknown>).visible = { $has: 'extra' };
-    expect(collectFieldKeys(parseComponent(c))).toContain('extra');
+    expect(collectFieldKeys(parsedOf(c))).toContain('extra');
   });
 
   it('$has com valor que não é texto é inválido', () => {
@@ -569,21 +578,35 @@ describe('validateComponent e parseComponent', () => {
     expectProblem(problems, 'template.children[2].children[1].children', 'frame');
   });
 
-  it('parseComponent lança com a primeira falha e a contagem das demais', () => {
+  it('parseComponent devolve issues com caminho e mensagem, e errors no formato de validateComponent', () => {
     const input = button();
     input.format = 'x';
     input.id = 'Ruim';
     input.name = '';
-    expect(() => parseComponent(input)).toThrow(
-      new Error(
-        'Componente inválido: format: esperava "mapping-component" (+2 problemas)',
-      ),
-    );
+    const result = parseComponent(input);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues).toHaveLength(3);
+    expect(result.issues[0]).toEqual({
+      path: 'format',
+      message: 'esperava "mapping-component"',
+    });
+    expect(result.errors).toEqual(validateComponent(input));
   });
 
-  it('com um problema só, a mensagem não traz a contagem', () => {
+  it('parseComponent devolve o componente quando válido', () => {
     const input = button();
-    input.id = 'Ruim';
-    expect(() => parseComponent(input)).toThrow(/^Componente inválido: id: [^(]*$/);
+    expect(parseComponent(input)).toEqual({ ok: true, component: input });
+  });
+
+  it('parseComponentText lê o texto JSON e trata JSON inválido como issue de caminho vazio', () => {
+    expect(parseComponentText(JSON.stringify(button())).ok).toBe(true);
+    const bad = parseComponentText('{ nao json');
+    expect(bad.ok).toBe(false);
+    if (bad.ok) return;
+    expect(bad.issues).toHaveLength(1);
+    expect(bad.issues[0]?.path).toBe('');
+    expect(bad.issues[0]?.message).toMatch(/^JSON inválido: /);
+    expect(bad.errors[0]).toMatch(/^JSON inválido: /);
   });
 });

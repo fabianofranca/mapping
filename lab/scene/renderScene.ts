@@ -17,7 +17,7 @@ import {
   type Shadow,
   type Stroke,
   hasChildren,
-} from './scene';
+} from '../../src/model/components/scene';
 
 export interface RenderOptions {
   /** Uma imagem embutida (`data:`) terminou de carregar: hora de redesenhar. */

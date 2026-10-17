@@ -1,5 +1,5 @@
 /**
- * Laboratório "Componentes": avaliação das expressões do template contra os valores dos
+ * Motor dos componentes (etapa Biblioteca): avaliação das expressões do template contra os valores dos
  * campos da anotação (`componentFormat.ts`). Funções puras, sem DOM.
  */
 import type {

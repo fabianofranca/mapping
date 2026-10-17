@@ -1,17 +1,20 @@
 // Material Design 3 escrito no formato do laboratório: um design system público inteiro
 // (dez componentes) passa pela validação e instancia sem avisos, nos tamanhos e valores padrão.
 import { describe, expect, it } from 'vitest';
-import { findSlot, resolveSlotLayout } from '../../../lab/components/arrange';
-import { approximateMeasurer, instantiate } from '../../../lab/components/instantiate';
-import { initialValues, loadLibrary } from '../../../lab/components/library';
-import { parseComponent } from '../../../lab/components/parseComponent';
+import { findSlot, resolveSlotLayout } from '../../../src/model/components/arrange';
+import {
+  approximateMeasurer,
+  instantiate,
+} from '../../../src/model/components/instantiate';
+import { initialValues, loadLibrary } from '../../../src/model/components/library';
+import { parseComponent } from '../../../src/model/components/parseComponent';
 import {
   ICONS,
   M3_COMPONENTS,
   M3_FILES,
   M3_SCREEN,
 } from '../../../lab/components/samplesMaterial3';
-import { walk } from '../../../lab/scene/scene';
+import { walk } from '../../../src/model/components/scene';
 
 describe('Material 3 no formato de componente', () => {
   it('a biblioteca carrega os quinze tipos, todos com componente válido e sem problemas', () => {
@@ -25,7 +28,7 @@ describe('Material 3 no formato de componente', () => {
   it('cada componente instancia no tamanho padrão com os valores de pré-visualização, sem avisos', () => {
     const lib = loadLibrary(M3_FILES);
     for (const component of M3_COMPONENTS) {
-      parseComponent(component);
+      expect(parseComponent(component).ok, component.id).toBe(true);
       const type = lib.types.find((t) => t.id === component.id);
       expect(type, component.id).toBeDefined();
       const values = initialValues(type!);

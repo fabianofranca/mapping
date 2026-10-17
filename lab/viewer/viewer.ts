@@ -24,10 +24,10 @@
  * textos. O módulo não faz requisição de rede nem registra fonte.
  */
 import Konva from 'konva';
-import type { Library } from '../components/library';
-import type { TextMeasurer } from '../components/instantiate';
-import type { Box, Screen } from '../components/screen';
-import { type SourceResult, screenFromSource } from '../components/origin';
+import type { Library } from '../../src/model/components/library';
+import type { TextMeasurer } from '../../src/model/components/instantiate';
+import type { Box, Screen } from '../../src/model/components/screen';
+import { type SourceResult, screenFromSource } from '../../src/model/components/origin';
 import { capPixelRatio } from '../shared/pinch';
 import { konvaMeasurer } from './measure';
 import { type InstanceWarnings, ScreenRenderer } from './screenRenderer';

@@ -8,10 +8,10 @@ import {
   readPath,
   translateSource,
   screenFromSource,
-} from '../../../lab/components/origin';
-import type { LayoutNode } from '../../../lab/components/layout';
-import { approximateMeasurer } from '../../../lab/components/instantiate';
-import { loadLibrary, type TextFile } from '../../../lab/components/library';
+} from '../../../src/model/components/origin';
+import type { LayoutNode } from '../../../src/model/components/layout';
+import { approximateMeasurer } from '../../../src/model/components/instantiate';
+import { loadLibrary, type TextFile } from '../../../src/model/components/library';
 import { M3_FILES } from '../../../lab/components/samplesMaterial3';
 
 describe('caminhos', () => {

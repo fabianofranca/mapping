@@ -4,7 +4,7 @@
  * sem canvas use `approximateMeasurer`.
  */
 import Konva from 'konva';
-import type { TextMeasurer } from '../components/instantiate';
+import type { TextMeasurer } from '../../src/model/components/instantiate';
 
 /** Mede texto com o próprio Konva, para o layout bater com o desenho. */
 export const konvaMeasurer: TextMeasurer = (text, font, maxWidth) => {

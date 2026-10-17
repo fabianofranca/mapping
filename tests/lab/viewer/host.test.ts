@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SAMPLE_FILES } from '../../../lab/components/samples';
 import { M3_FILES } from '../../../lab/components/samplesMaterial3';
-import { loadLibrary } from '../../../lab/components/library';
+import { loadLibrary } from '../../../src/model/components/library';
 import { loadLibraryFromUrl, registerLibraryFonts } from '../../../lab/viewer/host';
 
 const BASE = 'https://exemplo.test/ds/';

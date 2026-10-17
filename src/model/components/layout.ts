@@ -1,5 +1,5 @@
 /**
- * Laboratório "Componentes": arrumação por tamanhos (fase L2). Recebe uma tela **sem
+ * Motor dos componentes (etapa Biblioteca): arrumação por tamanhos (fase L2). Recebe uma tela **sem
  * geometria** (uma árvore de nós com tipo, valores e filhos, mais as raízes ancoradas) e
  * calcula o retângulo de cada instância a partir do dimensionamento dos componentes
  * (`sizing`: px, `fill` ou `hug`). A tela é o container raiz, em coluna. A saída é a descrição
@@ -27,7 +27,7 @@ import {
 } from './instantiate';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
-import { absoluteBoxes, walk } from '../scene/scene';
+import { absoluteBoxes, walk } from './scene';
 
 /** Nó da árvore sem geometria. */
 export interface LayoutNode {

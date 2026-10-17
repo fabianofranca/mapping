@@ -7,16 +7,16 @@ import {
   isContainer,
   resolveSlotLayout,
   slotBox,
-} from '../../../lab/components/arrange';
-import { approximateMeasurer } from '../../../lab/components/instantiate';
-import { loadLibrary } from '../../../lab/components/library';
+} from '../../../src/model/components/arrange';
+import { approximateMeasurer } from '../../../src/model/components/instantiate';
+import { loadLibrary } from '../../../src/model/components/library';
 import {
   type Box,
   type Instance,
   type Screen,
   setValue,
   updateBox,
-} from '../../../lab/components/screen';
+} from '../../../src/model/components/screen';
 
 // --- biblioteca montada em memória ----------------------------------------------------------
 

@@ -1,5 +1,5 @@
 /**
- * Laboratório "Componentes": formato do arquivo de componente (`mapping-component`).
+ * Motor dos componentes (etapa Biblioteca): formato do arquivo de componente (`mapping-component`).
  *
  * Um componente é o desenho genérico de um tipo de anotação da especialização. Cada componente
  * fica no **próprio arquivo**; o tipo da especialização só o referencia

@@ -1,5 +1,5 @@
 /**
- * Laboratório "Componentes": validação do arquivo `mapping-component` (`componentFormat.ts`).
+ * Motor dos componentes (etapa Biblioteca): validação do arquivo `mapping-component` (`componentFormat.ts`).
  *
  * Estreitamento escrito à mão sobre `unknown` (sem zod). O formato é estrito: chave desconhecida
  * em nó ou expressão é problema, para que erros de digitação apareçam. Cada problema é
@@ -13,9 +13,16 @@ import {
 } from './componentFormat';
 import { referencedFields } from './expressions';
 
+/** Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem. */
+export type ComponentIssue = { path: string; message: string };
+
+export type ComponentParseResult =
+  | { ok: true; component: ComponentFile }
+  | { ok: false; issues: ComponentIssue[]; errors: string[] };
+
 type Rec = Record<string, unknown>;
 /** Confere um literal (valor que não é expressão) e acrescenta os problemas a `out`. */
-type Check = (value: unknown, path: string, out: string[]) => void;
+type Check = (value: unknown, path: string, out: ComponentIssue[]) => void;
 
 const NODE_TYPES = ['frame', 'rect', 'ellipse', 'text', 'path', 'slot'] as const;
 const EXPR_OPS = ['$field', '$if', '$switch', '$concat'] as const;
@@ -51,8 +58,8 @@ function join(path: string, key: string): string {
   return path === '' ? key : `${path}.${key}`;
 }
 
-function add(out: string[], path: string, message: string): void {
-  out.push(`${path}: ${message}`);
+function add(out: ComponentIssue[], path: string, message: string): void {
+  out.push({ path, message });
 }
 
 /** Acrescenta "chave desconhecida" para cada chave fora de `allowed`. */
@@ -60,7 +67,7 @@ function checkKeys(
   value: Rec,
   allowed: readonly string[],
   path: string,
-  out: string[],
+  out: ComponentIssue[],
 ): void {
   for (const key of Object.keys(value)) {
     if (!allowed.includes(key)) add(out, join(path, key), `chave desconhecida: ${key}`);
@@ -142,7 +149,7 @@ const checkFill: Check = (v, p, out) => {
 // Condições e expressões
 // ---------------------------------------------------------------------------------------
 
-function checkCondition(value: unknown, path: string, out: string[]): void {
+function checkCondition(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava condição (objeto)');
   const ops = Object.keys(value).filter((k) =>
     (CONDITION_OPS as readonly string[]).includes(k),
@@ -187,13 +194,18 @@ function checkCondition(value: unknown, path: string, out: string[]): void {
   }
 }
 
-function checkFieldKey(value: unknown, path: string, out: string[]): void {
+function checkFieldKey(value: unknown, path: string, out: ComponentIssue[]): void {
   if (typeof value !== 'string' || value === '')
     add(out, path, 'esperava chave de campo (texto não vazio)');
 }
 
 /** Confere uma expressão: operador (`$field`, `$if`…) ou o literal conferido por `check`. */
-function checkExpr(value: unknown, path: string, check: Check, out: string[]): void {
+function checkExpr(
+  value: unknown,
+  path: string,
+  check: Check,
+  out: ComponentIssue[],
+): void {
   if (!isRecord(value) || !Object.keys(value).some((k) => k.startsWith('$'))) {
     return check(value, path, out);
   }
@@ -248,20 +260,20 @@ function checkExpr(value: unknown, path: string, check: Check, out: string[]): v
 // ---------------------------------------------------------------------------------------
 
 /** `BoolExpr`: condição direta (`$has`, `$not`…) ou expressão booleana (`$field`, `$if`…). */
-function checkBoolExpr(value: unknown, path: string, out: string[]): void {
+function checkBoolExpr(value: unknown, path: string, out: ComponentIssue[]): void {
   if (isRecord(value) && Object.keys(value).some((k) => DIRECT_CONDITION_OPS.includes(k)))
     return checkCondition(value, path, out);
   checkExpr(value, path, checkBoolean, out);
 }
 
-function checkSize(value: unknown, path: string, out: string[]): void {
+function checkSize(value: unknown, path: string, out: ComponentIssue[]): void {
   if (isFiniteNumber(value) && value >= 0) return;
   if (value === 'fill' || value === 'hug') return;
   if (typeof value === 'string' && PERCENT_PATTERN.test(value)) return;
   add(out, path, 'esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"');
 }
 
-function checkAnchors(value: unknown, path: string, out: string[]): void {
+function checkAnchors(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(value, ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'], path, out);
   for (const key of ['left', 'right', 'top', 'bottom']) {
@@ -272,7 +284,7 @@ function checkAnchors(value: unknown, path: string, out: string[]): void {
   }
 }
 
-function checkStroke(value: unknown, path: string, out: string[]): void {
+function checkStroke(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(value, ['color', 'width', 'align', 'dash'], path, out);
   if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
@@ -288,7 +300,7 @@ function checkStroke(value: unknown, path: string, out: string[]): void {
   }
 }
 
-function checkShadow(value: unknown, path: string, out: string[]): void {
+function checkShadow(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(value, ['color', 'x', 'y', 'blur'], path, out);
   if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
@@ -298,7 +310,7 @@ function checkShadow(value: unknown, path: string, out: string[]): void {
   if ('blur' in value) checkNonNegative(value.blur, join(path, 'blur'), out);
 }
 
-function checkFont(value: unknown, path: string, out: string[]): void {
+function checkFont(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   const specs: Record<string, Check> = {
     family: checkString,
@@ -319,7 +331,7 @@ function checkFont(value: unknown, path: string, out: string[]): void {
   }
 }
 
-function checkPadding(value: unknown, path: string, out: string[]): void {
+function checkPadding(value: unknown, path: string, out: ComponentIssue[]): void {
   const ok = (n: unknown): boolean => isFiniteNumber(n) && n >= 0;
   if (ok(value)) return;
   if (
@@ -335,7 +347,7 @@ function checkPadding(value: unknown, path: string, out: string[]): void {
   );
 }
 
-function checkLayout(value: unknown, path: string, out: string[]): void {
+function checkLayout(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   if (value.type === 'none') return checkKeys(value, ['type'], path, out);
   if (value.type !== 'row' && value.type !== 'column') {
@@ -356,13 +368,13 @@ function checkLayout(value: unknown, path: string, out: string[]): void {
     );
 }
 
-function checkViewBox(value: unknown, path: string, out: string[]): void {
+function checkViewBox(value: unknown, path: string, out: ComponentIssue[]): void {
   const ok = (n: unknown): boolean => isFiniteNumber(n) && n > 0;
   if (!Array.isArray(value) || value.length !== 2 || !value.every(ok))
     add(out, path, 'esperava [largura, altura] com números positivos');
 }
 
-function checkNode(value: unknown, path: string, out: string[]): void {
+function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto (nó)');
   const type = value.type;
   if (typeof type !== 'string' || !(NODE_TYPES as readonly string[]).includes(type)) {
@@ -450,7 +462,7 @@ function checkNode(value: unknown, path: string, out: string[]): void {
 function checkDimensions(
   value: unknown,
   path: string,
-  out: string[],
+  out: ComponentIssue[],
 ): { width: number; height: number } | null {
   if (!isRecord(value)) {
     add(out, path, 'esperava objeto { width, height }');
@@ -482,7 +494,7 @@ const ROOT_KEYS = [
 ];
 
 /** `sizing`: `{ width?, height? }`, cada eixo px (≥ 0), `"fill"` ou `"hug"`. */
-function checkSizing(value: unknown, path: string, out: string[]): void {
+function checkSizing(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto { width?, height? }');
   checkKeys(value, ['width', 'height'], path, out);
   for (const key of ['width', 'height']) {
@@ -493,9 +505,9 @@ function checkSizing(value: unknown, path: string, out: string[]): void {
   }
 }
 
-/** Todos os problemas do arquivo, cada um `"<caminho>: <mensagem>"`; lista vazia = válido. */
-export function validateComponent(input: unknown): string[] {
-  const out: string[] = [];
+/** Todos os problemas do arquivo, com caminho e mensagem separados; lista vazia = válido. */
+function collectIssues(input: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
   if (!isRecord(input)) {
     add(out, 'componente', 'esperava objeto');
     return out;
@@ -545,14 +557,33 @@ export function validateComponent(input: unknown): string[] {
   return out;
 }
 
-/** Valida e devolve o arquivo tipado; lança na primeira falha (`Componente inválido: …`). */
-export function parseComponent(input: unknown): ComponentFile {
-  const problems = validateComponent(input);
-  if (problems.length > 0) {
-    const more = problems.length > 1 ? ` (+${problems.length - 1} problemas)` : '';
-    throw new Error(`Componente inválido: ${problems[0]}${more}`);
+function formatIssue(issue: ComponentIssue): string {
+  return issue.path ? `${issue.path}: ${issue.message}` : issue.message;
+}
+
+/** Todos os problemas do arquivo, cada um `"<caminho>: <mensagem>"`; lista vazia = válido. */
+export function validateComponent(input: unknown): string[] {
+  return collectIssues(input).map(formatIssue);
+}
+
+/** Valida um JSON já lido (não lança). */
+export function parseComponent(input: unknown): ComponentParseResult {
+  const issues = collectIssues(input);
+  if (issues.length > 0) return { ok: false, issues, errors: issues.map(formatIssue) };
+  return { ok: true, component: input as ComponentFile };
+}
+
+/** Lê o texto JSON de um arquivo de componente (JSON inválido vira issue de caminho vazio). */
+export function parseComponentText(text: string): ComponentParseResult {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const issues = [{ path: '', message: `JSON inválido: ${message}` }];
+    return { ok: false, issues, errors: issues.map(formatIssue) };
   }
-  return input as ComponentFile;
+  return parseComponent(json);
 }
 
 /** Chaves de campo citadas em qualquer ponto do template, ordenadas e sem repetição. */

@@ -13,10 +13,18 @@
  */
 import Konva from 'konva';
 import { renderScene } from '../scene/renderScene';
-import type { FieldValues } from '../components/componentFormat';
-import { type TextMeasurer, instantiate } from '../components/instantiate';
-import { type Library, type TypeDef, instanceLabel } from '../components/library';
-import { type Instance, type Screen, renderOrder } from '../components/screen';
+import type { FieldValues } from '../../src/model/components/componentFormat';
+import { type TextMeasurer, instantiate } from '../../src/model/components/instantiate';
+import {
+  type Library,
+  type TypeDef,
+  instanceLabel,
+} from '../../src/model/components/library';
+import {
+  type Instance,
+  type Screen,
+  renderOrder,
+} from '../../src/model/components/screen';
 import { konvaMeasurer } from './measure';
 
 const MISSING_COLOR = '#D81B60';

@@ -1,5 +1,5 @@
 /**
- * Laboratório "Componentes": a tela sem imagem. Uma tela é um retângulo em branco com
+ * Motor dos componentes (etapa Biblioteca): a tela sem imagem. Uma tela é um retângulo em branco com
  * instâncias; cada instância é um retângulo (como uma marcação) com o tipo da especialização
  * e os valores dos campos (como uma anotação). Funções puras e imutáveis.
  */

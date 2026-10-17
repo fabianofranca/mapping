@@ -21,8 +21,8 @@ import {
   type Color,
   type PathTemplate,
   type TextTemplate,
-} from './componentFormat';
-import type { Screen } from './screen';
+} from '../../src/model/components/componentFormat';
+import type { Screen } from '../../src/model/components/screen';
 
 const base = {
   format: COMPONENT_FORMAT,

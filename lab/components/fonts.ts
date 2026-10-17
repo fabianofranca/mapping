@@ -4,7 +4,7 @@
  * não uma `FontFace` construída de um `ArrayBuffer` já em memória. Depois de carregadas, o
  * canvas usa a família pelo nome; quem chama precisa remedir os textos e redesenhar.
  */
-import type { LoadedFont } from './library';
+import type { LoadedFont } from '../../src/model/components/library';
 
 export interface FontStatus {
   readonly font: LoadedFont;
