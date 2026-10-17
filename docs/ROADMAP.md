@@ -141,26 +141,28 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Decisão do dono (2026-10-16):** o uso real foi feito, em volume grande, e a ferramenta já serve. O marco está **alcançado** e a prioridade passa à biblioteca de componentes (laboratório e etapa Biblioteca, abaixo), que traz o maior ganho ao desenvolvimento. O registro do marco e as observações acima continuam valendo para o uso contínuo.
 - **Depende de:** etapa 5 (as etapas 6 a 10 fecharam o que as rodadas, a revisão técnica e o teste manual do dono encontraram). As evoluções só começam depois dele; como ele foi alcançado, a primeira é a etapa Biblioteca.
 
-## Laboratório de componentes (em andamento, épico `epic/lab`)
+## Laboratório de componentes (concluído)
 
+- **Concluído em 2026-10-17** (épico `epic/lab`, PR #160); histórico em [`history/PLAN-etapa-lab.md`](history/PLAN-etapa-lab.md).
 - **Objetivo:** terminar de provar, fora do produto, o formato de componente e o visualizador antes de a etapa Biblioteca levá-los para a app. Descrição do que já foi provado em [`lab/README.md`](../lab/README.md).
 - **Entra:**
-  - **L1, visualizador embutível:** núcleo de só leitura sem framework, invólucro React fino e página de demonstração em React (fases no [`PLAN.md`](../PLAN.md)). Coordenador: Sonnet (especificação fechada, pouca decisão nova). Esforço: medium; subagentes medium (mecânicos: low).
-  - **L2, tela a partir de um JSON sem geometria:** dimensionamento por componente, arrumação por tamanhos e declaração de origem executável, com o exemplo de SDUI (fases no [`PLAN.md`](../PLAN.md)). Coordenador: Opus (define formato e arrumação; decisões que o produto herda). Esforço: high; subagentes medium, e high nos briefings de formato e de arrumação.
+  - **L1, visualizador embutível:** núcleo de só leitura sem framework, invólucro React fino e página de demonstração em React (histórico em [`history/PLAN-etapa-lab.md`](history/PLAN-etapa-lab.md)). Coordenador: Sonnet (especificação fechada, pouca decisão nova). Esforço: medium; subagentes medium (mecânicos: low).
+  - **L2, tela a partir de um JSON sem geometria:** dimensionamento por componente, arrumação por tamanhos e declaração de origem executável, com o exemplo de SDUI (histórico em [`history/PLAN-etapa-lab.md`](history/PLAN-etapa-lab.md)). Coordenador: Opus (define formato e arrumação; decisões que o produto herda). Esforço: high; subagentes medium, e high nos briefings de formato e de arrumação.
 - **Depende de:** nada.
 
-## Etapa — Biblioteca (próxima)
+## Etapa — Biblioteca (em andamento, épico `epic/biblioteca`)
 
 - **Objetivo:** a especialização passa a entregar uma **Biblioteca** (o pacote: componentes, fontes, documentos e exemplos numa pasta) que a app e os agentes validam, aplicam e usam para montar telas com componentes. O ganho esperado é no desenvolvimento: agentes e pessoas montam e conferem telas a partir do design system.
+- **Fases:** B1 a B5 e Fechamento detalhadas no [`PLAN.md`](../PLAN.md).
 - **Princípio:** nada do SDUI nem de outro sistema externo entra no núcleo. A especialização declara (formato, origem, dimensionamento) e o núcleo executa a declaração, sem saber de que sistema se trata e sem nunca executar código vindo da especialização. A app é só leitura da biblioteca: os pacotes e os pedidos de alteração são escritos por agentes.
 - **Entra:**
-  - **B1, formato da biblioteca:** especialização v4 apontando para componentes, fontes, documentos e exemplos; formato de componente no modelo com a validação em três níveis; regra da pasta como pacote; JSON Schemas; declaração de origem executável (com chave `path` própria para o caminho do campo em sistemas executáveis e `slot`/`ignore` no schema; ver as decisões da L2 no `PLAN.md`) e regras de dimensionamento; contrato de versão (aditiva contra quebra, migrações declaradas no pacote). Coordenador: Opus (fundação de tudo que vem depois). Esforço: high; subagentes medium, e high nos briefings de validação e de contrato de versão.
+  - **B1, formato da biblioteca:** especialização v4 apontando para componentes, fontes, documentos e exemplos; formato de componente no modelo com a validação em três níveis; regra da pasta como pacote; JSON Schemas; declaração de origem executável (com chave `path` própria para o caminho do campo em sistemas executáveis e `slot`/`ignore` no schema; ver as decisões da L2 em [`history/PLAN-etapa-lab.md`](history/PLAN-etapa-lab.md)) e regras de dimensionamento; contrato de versão (aditiva contra quebra, migrações declaradas no pacote). Coordenador: Opus (fundação de tudo que vem depois). Esforço: high; subagentes medium, e high nos briefings de validação e de contrato de versão.
   - **B2, validação pelas três portas:** ferramenta do MCP que valida a biblioteca e serve os documentos; a skill escreve a biblioteca inteira e valida antes de entregar; a app valida ao aplicar e copia a pasta; exemplos em JSON do sistema externo validados pela declaração. Marco: converter o design system do Figma do dono para o formato e validar. Coordenador: Sonnet (implementação a partir do formato da B1). Esforço: medium; subagentes medium.
   - **B3, telas com componentes na app:** tela em branco no formato do projeto (schema novo), camada de desenho no canvas, paleta para adicionar instância, tamanho mínimo, arrumação dentro das ações, referências resolvidas no desenho, fontes, decisões de borda e zoom semântico; o MCP cria tela em branco e instâncias. Marco: montar uma tela com componentes pela app e pelo agente. Coordenador: Opus (atravessa modelo, store, canvas, interface e MCP). Esforço: high; subagentes medium, e high nos briefings de store, canvas e invariantes.
   - **B4, atualização da biblioteca:** fluxo de subir a versão num projeto aplicando as migrações e relatando pendências; ferramenta do MCP para o agente; regras no guia do agente. Marco: agentes adicionam componentes e propriedades sem quebrar projetos. Coordenador: Opus (migrações com risco de perda de dados). Esforço: high; subagentes high (migrações).
   - **B5, Catálogo:** abrir biblioteca pela tela inicial; documentos, tabela de propriedades gerada dos campos, código por plataforma e origem; galeria de exemplos como imagens estáticas; playground vivo (o mesmo formulário de anotação tipada dos Detalhes); janela de ferramenta dentro do projeto (também a paleta); renderizador próprio de um subconjunto do markdown, sem dependência nova e sem injetar HTML (CSP); o MCP serve documentos e exemplos. Coordenador: Sonnet (interface e renderizador bem especificados, sem decisão de formato). Esforço: medium; subagentes medium (mecânicos: low).
 - **Depois, sem data:** revisão visual de versão nova lado a lado; exportar o catálogo como site estático; visualizador distribuído pelo build do produto; saída tela para sistema externo pela mesma declaração de origem; importação de telas do sistema externo para projetos.
-- **Depende de:** laboratório de componentes concluído. Não implementar nada daqui antes de o [`PLAN.md`](../PLAN.md) detalhar a etapa.
+- **Depende de:** laboratório de componentes concluído. As fases estão detalhadas no `PLAN.md`.
 
 ## Evoluções
 
@@ -168,7 +170,7 @@ Só depois do marco (alcançado em 2026-10-16), se a ferramenta se provar útil.
 
 **Decisão de 2026-10-16:** o "Editor de especializações dentro da app" saiu do roadmap. A app é só leitura da biblioteca; os pacotes são escritos por agentes (skill e MCP).
 
-- Biblioteca de componentes do DS e telas compostas: virou a [etapa Biblioteca](#etapa--biblioteca-próxima) (núcleo agnóstico; origens e saídas como SDUI, Figma ou código definidas por especializações).
+- Biblioteca de componentes do DS e telas compostas: virou a [etapa Biblioteca](#etapa--biblioteca-em-andamento-épico-epicbiblioteca) (núcleo agnóstico; origens e saídas como SDUI, Figma ou código definidas por especializações).
 - Agentes gerando telas a partir da biblioteca e migração de Figmas antigos para o DS novo por inferência sobre as imagens (dependem da etapa Biblioteca).
 - Skills para agentes que usam as propostas: importação e reexportação a partir do Figma (com `source` para reconhecer os elementos e o mapeamento componente → tipo vindo da especialização), migração de telas antigas por inferência sobre as imagens (dependem da etapa Biblioteca).
 - Reverter, depois de aplicada, uma mudança específica de uma proposta.
