@@ -452,14 +452,59 @@ describe('arrangeMarking: Material 3', () => {
     p = m3(p, 'C3', 'm3-chip', box(100, 35, 96, 32), 'Row', { label: 'Três' });
     expect(canArrange(p, m3Catalog, 'Row')).toBe(true);
     const { project, warnings } = arrange(p, 'Row', m3Catalog);
-    expect(rectOf(project, 'C1')).toEqual(box(20, 20, 96, 32));
-    expect(rectOf(project, 'C2')).toEqual(box(124, 20, 96, 32));
-    expect(rectOf(project, 'C3')).toEqual(box(228, 20, 96, 32));
+    // Os chips são `hug` na largura: cada um ocupa o texto mais o padding (nunca abaixo de 40).
+    expect(rectOf(project, 'C1')).toEqual(box(20, 20, 48, 32));
+    expect(rectOf(project, 'C2')).toEqual(box(76, 20, 63, 32));
+    expect(rectOf(project, 'C3')).toEqual(box(147, 20, 63, 32));
     // largura fill (fica), altura hug: a dos chips.
     expect(rectOf(project, 'Row')).toEqual(box(20, 20, 380, 32));
     expect(warnings).toEqual([]);
     expectValid(project);
     expect(arrange(project, 'Row', m3Catalog).project).toBe(project);
+  });
+
+  /** Row com três chips de 96 de largura (como nascem), o do meio com `label`. */
+  function chipRow(label: string, otherLabel = 'Um'): Project {
+    let p = m3Project();
+    p = m3(p, 'Row', 'm3-row', box(20, 20, 380, 48), null);
+    p = m3(p, 'C1', 'm3-chip', box(20, 20, 96, 32), 'Row', { label: otherLabel });
+    p = m3(p, 'C2', 'm3-chip', box(124, 20, 96, 32), 'Row', { label });
+    p = m3(p, 'C3', 'm3-chip', box(228, 20, 96, 32), 'Row', { label: otherLabel });
+    return p;
+  }
+
+  it('chip hug: trocar o texto e arrumar ajusta a largura (caso "Wi-Fi")', () => {
+    const arranged = arrange(chipRow('Um'), 'Row', m3Catalog).project;
+    const edited = setFieldValue(arranged, 'A_C2', 'label', 'Wi-Fi');
+    const { project, warnings } = arrange(edited, 'Row', m3Catalog);
+    expect(project).not.toBe(edited);
+    const wifi = rectOf(project, 'C2');
+    expect(wifi.width).toBeGreaterThan(48);
+    expect(wifi.width).toBeLessThan(96);
+    expect(wifi.height).toBe(32);
+    // As vizinhas seguem coladas (gap 8).
+    expect(rectOf(project, 'C3').x).toBe(wifi.x + wifi.width + 8);
+    expect(warnings).toEqual([]);
+    expectValid(project);
+    expect(arrange(project, 'Row', m3Catalog).project).toBe(project);
+  });
+
+  it('chip hug: texto curto encolhe sem passar do minSize, texto longo cresce', () => {
+    const short = arrange(chipRow('A', 'A'), 'Row', m3Catalog).project;
+    expect(rectOf(short, 'C2').width).toBe(40);
+    const long = arrange(
+      chipRow('Texto bem comprido de um chip'),
+      'Row',
+      m3Catalog,
+    ).project;
+    expect(rectOf(long, 'C2').width).toBeGreaterThan(96);
+    expect(rectOf(long, 'C2').width).toBeGreaterThan(rectOf(long, 'C1').width);
+    expect(arrange(long, 'Row', m3Catalog).project).toBe(long);
+  });
+
+  it('filha hug com a geometria travada: Arrumar falha com locked', () => {
+    const p = setMarkingLocked(chipRow('Um'), 'C2', true);
+    expect(() => arrange(p, 'Row', m3Catalog)).toThrow('locked');
   });
 
   /** Coluna hug › cartão (altura hug) › botão: o texto de apoio do cartão decide a altura. */

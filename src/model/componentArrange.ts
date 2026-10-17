@@ -111,7 +111,7 @@ function clampRect(inner: Rect, outer: Rect, mode: 'push' | 'shrink'): Rect {
 /**
  * Arruma o container escolhido e os containers dentro dele (a subárvore). Do mais fundo para
  * o raso, cada container posiciona as filhas na caixa do slot (a ordem é a do array; o
- * tamanho no eixo principal fica, `align: stretch` estica o cruzado, `justify` distribui) e,
+ * tamanho no eixo principal fica (menos o das filhas `hug`, remedidas), `align: stretch` estica o cruzado, `justify` distribui) e,
  * se o componente é `hug` num eixo, ajusta o container ao conteúdo (nunca abaixo do
  * `minSize`; a posição fica). Eixo fixo não muda: se o conteúdo não cabe, avisa. Mover uma
  * filha leva os descendentes dela. No fim, toda marcação fica inteira e dentro do pai e da
@@ -177,10 +177,46 @@ export function arrangeMarking(
 
   let warnings = new Set<string>();
 
+  /**
+   * Remede as filhas folha cujo componente é `hug` num eixo: o eixo vira o tamanho medido
+   * (inteiro para cima, nunca abaixo do `minSize`). O container filho já se ajustou na própria
+   * volta (do mais fundo para o raso). O eixo que o `stretch` do pai estica fica.
+   */
+  const remeasureHugKids = (kids: readonly Marking[]) => {
+    for (const kid of kids) {
+      if (containerAt(kid.id) !== null) continue;
+      const mc = markingComponent(p, catalog, kid.id);
+      const sizing = mc?.component.sizing;
+      if (mc === undefined || mc === null || sizing === undefined) continue;
+      const hugW = sizing.width === 'hug' && !stretchedByParent(kid.id, 'width');
+      const hugH = sizing.height === 'hug' && !stretchedByParent(kid.id, 'height');
+      if (!hugW && !hugH) continue;
+      const rect = rects.get(kid.id) as Rect;
+      const values = drawingValues(p, mc.annotation, mc.type).values;
+      const measured = measureComponent(
+        mc.component,
+        values,
+        { width: hugW ? null : rect.width, height: hugH ? null : rect.height },
+        { measure },
+      );
+      const min = mc.component.minSize;
+      rects.set(kid.id, {
+        ...rect,
+        width: hugW
+          ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_MARKING_SIZE)
+          : rect.width,
+        height: hugH
+          ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_MARKING_SIZE)
+          : rect.height,
+      });
+    }
+  };
+
   const arrangeOne = (id: string) => {
     const info = containerAt(id);
     if (info === null) return;
     const { component, values, layout, kids } = info;
+    remeasureHugKids(kids);
     const sizes = kids.map((k) => rects.get(k.id) as Rect);
     const row = layout.type === 'row';
     const pad = layout.padding;

@@ -218,6 +218,7 @@ Uma biblioteca (especialização `formatVersion` 4, aplicada **pela app**) traz 
 Regras:
 
 - **O servidor nunca arruma.** Os retângulos dos filhos são os que você informou. Quem recalcula as posições pelo `layout` do slot é a pessoa, com **Arrumar** na app. Posicione as filhas do jeito mais próximo do que o `layout` produziria e diga na descrição da proposta que a pessoa pode usar Arrumar.
+- **Componentes de primeiro nível sem `rect` nascem todos no centro da tela, sobrepostos.** Para uma tela inteira, crie um container `Column` cobrindo a tela e ponha os componentes dentro dele, sem `rect` (entram um depois do outro, no eixo do layout), ou passe o `rect` de cada um.
 - **Respeite o `minSize`.** Um `rect` menor que o `minSize` do componente falha com `rect-too-small` (a mensagem traz o mínimo); vale também no `update_marking` com `rect`.
 - **Não grave nada de desenho.** Cores, formas e textos do componente vêm do pacote da biblioteca e dos `values`; o projeto guarda só a marcação, o `rect` e a anotação tipada.
 - **Tipo sem componente** (ou biblioteca não aplicada na app) é uma marcação comum: `rect` é obrigatório e nada é desenhado.

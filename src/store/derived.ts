@@ -291,6 +291,33 @@ export function createEditorDerived(
     return p && layer ? layerDotsByMarking(p, [layer]) : NO_DOTS;
   });
 
+  // Marcações cujo desenho pode aparecer: tela em branco, ou foto com a opção ligada. Não depende
+  // da visibilidade: ao contrário, o filtro "sem anotação" não esconde o que desenha.
+  const drawn = computed((): ReadonlySet<string> => {
+    const all = scenes.value;
+    const p = project.value;
+    if (!p || all.size === 0) return NO_DRAWN;
+    const { images } = projectIndex(p);
+    const onPhotos = showComponentsOnPhotos.value;
+    const result = new Set<string>();
+    for (const [id, drawing] of all) {
+      const image = images.get(drawing.imageId);
+      if (!image || (image.file !== null && !onPhotos)) continue;
+      result.add(id);
+    }
+    return result;
+  });
+
+  let lastDrawn: ReadonlySet<string> = NO_DRAWN;
+  const drawnMarkings = computed(() => {
+    const next = drawn.value;
+    if (next.size === lastDrawn.size && [...next].every((id) => lastDrawn.has(id))) {
+      return lastDrawn;
+    }
+    lastDrawn = next;
+    return next;
+  });
+
   const visibility = computed(() => {
     const p = project.value;
     if (!p) return NO_VISIBILITY;
@@ -300,6 +327,7 @@ export function createEditorDerived(
       activeDots.value,
       markingDisplay.value,
       selection?.kind === 'marking' ? selection.id : null,
+      drawnMarkings.value,
     );
   });
 
@@ -353,32 +381,6 @@ export function createEditorDerived(
   const repoWarnings = computed(() => {
     const p = project.value;
     return p ? platformRepoWarnings(p) : NO_WARNINGS;
-  });
-
-  const drawn = computed((): ReadonlySet<string> => {
-    const all = scenes.value;
-    const p = project.value;
-    if (!p || all.size === 0) return NO_DRAWN;
-    const { images } = projectIndex(p);
-    const onPhotos = showComponentsOnPhotos.value;
-    const marks = visibility.value;
-    const result = new Set<string>();
-    for (const [id, drawing] of all) {
-      const image = images.get(drawing.imageId);
-      if (!image || (image.file !== null && !onPhotos)) continue;
-      if (marks.get(id) === 'hidden') continue;
-      result.add(id);
-    }
-    return result;
-  });
-  let lastDrawn: ReadonlySet<string> = NO_DRAWN;
-  const drawnMarkings = computed(() => {
-    const next = drawn.value;
-    if (next.size === lastDrawn.size && [...next].every((id) => lastDrawn.has(id))) {
-      return lastDrawn;
-    }
-    lastDrawn = next;
-    return next;
   });
 
   let lastMinSizes = NO_MIN_SIZES;

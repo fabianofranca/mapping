@@ -2,6 +2,7 @@ import { signal } from '@preact/signals';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
+  createMarking,
   approximateMeasurer,
   setFieldValue,
   type ComponentCatalog,
@@ -231,19 +232,59 @@ describe('derivado: marcações desenhadas', () => {
     expect(store.project.value?.markings).toHaveLength(3);
   });
 
-  it('marcação oculta pelo modo de exibição não é desenhada', () => {
-    const { derived, ui, store } = setup();
+  it('o filtro "sem anotação" não esconde marcação que desenha; a comum segue a regra', () => {
+    // Container com filha, mais uma marcação comum sem anotação, na tela em branco... e na foto.
+    let p = add(screen(), 'C', 'row', box(100, 300, 300, 100));
+    p = add(p, 'K', 'text', box(100, 300, 100, 40), { parentId: 'C' });
+    p = createMarking(p, { id: 'P', imageId: 'I1', rect: box(500, 500, 50, 50) });
+    const { derived, ui, store } = setup(p);
     setShowComponentsOnPhotos(true);
     const layers = store.project.value?.layers ?? [];
     const other = layers.find((l) => l.spec === null);
     const typed = layers.find((l) => l.spec !== null);
     if (!other || !typed) throw new Error('camadas');
-    // "Ocultar" mede só a camada ativa: com a camada livre ativa, as tipadas somem.
+    const drawable = ['T1', 'T2', 'C', 'K'];
+    for (const mode of ['hide', 'dim'] as const) {
+      setMarkingDisplay(mode);
+      // Camada ativa sem as anotações dos componentes: eles seguem por inteiro e desenhados.
+      setActiveLayer(ui, other.id);
+      const marks = derived.markingVisibility.value;
+      for (const id of drawable) expect(marks.get(id)).toBe('full');
+      expect(marks.get('P')).toBe(mode === 'hide' ? 'hidden' : 'dim');
+      expect([...derived.drawnMarkings.value].sort()).toEqual([...drawable].sort());
+      setActiveLayer(ui, typed.id);
+      expect(derived.markingVisibility.value.get('C')).toBe('full');
+    }
+    // Sem a opção, na foto nada desenha; o filtro volta a valer para o que não desenha.
+    setShowComponentsOnPhotos(false);
     setMarkingDisplay('hide');
     setActiveLayer(ui, other.id);
     expect(derived.drawnMarkings.value.size).toBe(0);
-    setActiveLayer(ui, typed.id);
-    expect([...derived.drawnMarkings.value]).toEqual(['T1', 'T2']);
+    expect(derived.markingVisibility.value.get('T1')).toBe('hidden');
+  });
+
+  it('na tela em branco o componente aparece mesmo com a opção de fotos desligada', () => {
+    const { derived, actions, ui, store } = setup();
+    const blank = actions.addBlankImage({
+      name: null,
+      width: 400,
+      height: 600,
+      background: '#FFFFFF',
+    });
+    if (!blank.ok) throw new Error('addBlankImage');
+    const created = actions.addComponent({
+      imageId: blank.value,
+      parentId: null,
+      specId: SPEC_ID,
+      typeId: 'row',
+    });
+    if (!created.ok) throw new Error('addComponent');
+    const other = store.project.value?.layers.find((l) => l.spec === null);
+    if (!other) throw new Error('camada');
+    setMarkingDisplay('hide');
+    setActiveLayer(ui, other.id);
+    expect(derived.markingVisibility.value.get(created.value)).toBe('full');
+    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
   });
 
   it('mantém o mesmo conjunto quando nada muda', () => {
