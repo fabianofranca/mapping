@@ -476,9 +476,22 @@ const ROOT_KEYS = [
   'description',
   'size',
   'minSize',
+  'sizing',
   'preview',
   'template',
 ];
+
+/** `sizing`: `{ width?, height? }`, cada eixo px (≥ 0), `"fill"` ou `"hug"`. */
+function checkSizing(value: unknown, path: string, out: string[]): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto { width?, height? }');
+  checkKeys(value, ['width', 'height'], path, out);
+  for (const key of ['width', 'height']) {
+    if (!(key in value)) continue;
+    const v = value[key];
+    if (v === 'fill' || v === 'hug' || (isFiniteNumber(v) && v >= 0)) continue;
+    add(out, join(path, key), 'esperava número maior ou igual a 0, "fill" ou "hug"');
+  }
+}
 
 /** Todos os problemas do arquivo, cada um `"<caminho>: <mensagem>"`; lista vazia = válido. */
 export function validateComponent(input: unknown): string[] {
@@ -509,6 +522,8 @@ export function validateComponent(input: unknown): string[] {
     if (min && size && (min.width > size.width || min.height > size.height))
       add(out, 'minSize', 'não pode ser maior que size');
   }
+
+  if ('sizing' in input) checkSizing(input.sizing, 'sizing', out);
 
   if ('preview' in input) {
     if (!isRecord(input.preview)) add(out, 'preview', 'esperava objeto');

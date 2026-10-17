@@ -215,6 +215,19 @@ export type TemplateNode =
 // Arquivo
 // ---------------------------------------------------------------------------------------
 
+/**
+ * Como a instância se dimensiona quando chega **sem retângulo** (tela a partir de um JSON
+ * externo, arrumada por `layoutScreen` em `layout.ts`): px fixos, `"fill"` (ocupa o espaço que
+ * o pai dá nesse eixo) ou `"hug"` (do conteúdo: o template medido, ou os filhos do slot). Eixo
+ * ausente = px de `size`. Não vale para instâncias com retângulo (editor, `*.screen.json`).
+ */
+export type InstanceSizeSpec = number | 'fill' | 'hug';
+
+export interface ComponentSizing {
+  readonly width?: InstanceSizeSpec;
+  readonly height?: InstanceSizeSpec;
+}
+
 export interface ComponentFile {
   readonly format: typeof COMPONENT_FORMAT;
   readonly formatVersion: typeof COMPONENT_FORMAT_VERSION;
@@ -226,6 +239,8 @@ export interface ComponentFile {
   readonly size: { readonly width: number; readonly height: number };
   /** Tamanho mínimo (px), para o redimensionar não quebrar o desenho. */
   readonly minSize?: { readonly width: number; readonly height: number };
+  /** Dimensionamento sem retângulo (ver `ComponentSizing`); ausente = `size` nos dois eixos. */
+  readonly sizing?: ComponentSizing;
   /**
    * Valores de pré-visualização dos campos (biblioteca e instância nova): os campos vêm do
    * tipo da especialização; aqui só os valores de exemplo.
