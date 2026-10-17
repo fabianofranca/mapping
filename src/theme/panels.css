@@ -451,6 +451,24 @@ button.tree-toggle:hover {
   font: var(--t-text);
 }
 
+/* Lista e Incompletas: larguras vêm do cabeçalho, então a tabela nunca passa da janela,
+   qualquer que seja a fonte. A última coluna (conteúdo/motivos) fica com o resto. */
+.list-table-fixed {
+  table-layout: fixed;
+}
+
+.list-col-marking {
+  width: 24%;
+}
+
+.list-col-layer {
+  width: 26%;
+}
+
+.list-col-annotation {
+  width: 20%;
+}
+
 .list-table thead th {
   position: sticky;
   top: 0;
@@ -499,27 +517,22 @@ button.tree-toggle:hover {
   overflow-wrap: anywhere;
 }
 
-.list-cell-marking {
-  width: 25%;
-  min-width: 8em;
-}
-
 .list-cell-layer {
-  width: 1%;
   white-space: nowrap;
 }
 
 .list-layer-name {
   /* inline-block para o max-width valer e o nome longo ganhar reticências */
   display: inline-block;
-  max-width: 16ch;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: bottom;
 }
 
 .list-cell-content {
-  width: 40%;
+  overflow-wrap: anywhere;
 }
 
 .list-marking {
@@ -539,6 +552,7 @@ button.tree-toggle:hover {
 .list-layer-tag {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   gap: var(--space-1-5);
 }
 

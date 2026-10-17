@@ -153,12 +153,18 @@ export function ListView({ onSelect }: ListViewProps) {
         </p>
       ) : (
         <div class="list-scroll">
-          <table class="list-table" aria-label={t('list.title')}>
+          <table class="list-table list-table-fixed" aria-label={t('list.title')}>
             <thead>
               <tr>
-                <th scope="col">{t('list.col.marking')}</th>
-                <th scope="col">{t('list.col.layer')}</th>
-                <th scope="col">{t('list.col.annotation')}</th>
+                <th scope="col" class="list-col-marking">
+                  {t('list.col.marking')}
+                </th>
+                <th scope="col" class="list-col-layer">
+                  {t('list.col.layer')}
+                </th>
+                <th scope="col" class="list-col-annotation">
+                  {t('list.col.annotation')}
+                </th>
                 <th scope="col">{t('list.col.content')}</th>
               </tr>
             </thead>

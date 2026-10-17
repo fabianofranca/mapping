@@ -23,6 +23,16 @@ async function open(page: Page): Promise<void> {
   await page.keyboard.press('Control+Shift+3');
 }
 
+// Fonte mais larga que a de qualquer máquina (o CI usa outras fontes): a tabela não pode depender dela.
+async function widerFont(page: Page): Promise<void> {
+  // A CSP proíbe <style> inline; a CSSOM (folha adotada) é permitida.
+  await page.evaluate(() => {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync('.list-table { letter-spacing: 0.08em; font-size: 1.1em }');
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+  });
+}
+
 async function shot(page: Page, name: string): Promise<void> {
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/layout-${name}.png` });
 }
@@ -115,6 +125,7 @@ test('Incompletas sem rolagem horizontal', async ({ page }) => {
   await page.keyboard.press('Control+Shift+5');
   const win = page.locator('[data-window="incomplete"]');
   await expect(win).toBeVisible();
+  await widerFont(page);
   await shot(page, 'incompletas');
   const over = await win
     .locator('.tool-window-body, .list-scroll')
@@ -128,6 +139,8 @@ test('Lista sem rolagem horizontal', async ({ page }) => {
   await page.keyboard.press('Control+Shift+4');
   const win = page.locator('[data-window="list"]');
   await expect(win.locator('.list-row').first()).toBeVisible();
+  await widerFont(page);
+  await shot(page, 'lista');
   const over = await win
     .locator('.tool-window-body, .list-scroll')
     .evaluateAll((els) => els.map((e) => e.scrollWidth - e.clientWidth));
