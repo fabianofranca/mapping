@@ -15,7 +15,9 @@ import { modelToolError } from './modelErrors';
 import { operationSchema } from './operations';
 import { Proposals } from './proposals';
 import { findBySourceResult, findTypesBySourceResult } from './sourceTools';
-import { validateSpecialization } from './specValidation';
+import { getComponent, listComponents } from './componentTools';
+import { listPackageFiles, validateLibraryTool } from './library';
+import { summary as specSummary, validateSpecialization } from './specValidation';
 import type { Roots } from './paths';
 import { discoverProjects, findProject, loadProject } from './projects';
 import {
@@ -439,7 +441,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_specialization',
     {
       description:
-        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas.',
+        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes).',
       inputSchema: {
         project: projectArg,
         specId: z
@@ -451,7 +453,10 @@ export function registerTools(server: McpServer, roots: Roots): void {
     ({ project, specId }) =>
       respond(async () => {
         const loaded = await loadProject(roots, await findProject(roots, project));
-        return specializationView(new Refs(loaded), specId);
+        const view = specializationView(new Refs(loaded), specId);
+        // Pacote v4 aplicado: a lista dos arquivos da pasta `specs/<id>/` (cópia da app).
+        const pkg = await listPackageFiles(roots, loaded.location.dir, String(view.file));
+        return pkg === null ? view : { ...view, package: pkg };
       }),
   );
 
@@ -692,7 +697,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'validate_specialization',
     {
       description:
-        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto. Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (plataforma declarada e não usada, tipo sem `code`). É o ciclo gerar, validar, corrigir.',
+        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto. Aceita a formatVersion 4, mas valida só o ARQUIVO (para o pacote inteiro use validate_library). Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (plataforma declarada e não usada, tipo sem `code`). É o ciclo gerar, validar, corrigir.',
       inputSchema: {
         path: z
           .string()
@@ -705,5 +710,78 @@ export function registerTools(server: McpServer, roots: Roots): void {
       annotations: READ_ONLY,
     },
     (args) => respond(() => validateSpecialization(roots, args)),
+  );
+
+  server.registerTool(
+    'validate_library',
+    {
+      description:
+        'Valida o PACOTE de uma biblioteca (especialização formatVersion 4 com `components/`, `docs/`, `examples/` e `fonts/`) com os mesmos três níveis da app e da skill: (1) cada arquivo, (2) a coerência entre eles (componente, slot, campos, exemplos, fontes, origens e, com `previous`, o contrato de versão) e (3) a prova de desenho (instancia cada componente e passa os exemplos de sistema externo pela declaração). `path` é a pasta do pacote ou o arquivo da especialização dentro dela, dentro das raízes. Devolve `valid`, `errors` e `warnings` (cada um com `file`, `path`, `message`, `severity`): erro impede usar, aviso deixa usar. Somente leitura: não aplica nada a projeto algum (um pacote v4 é aplicado pela app). É o ciclo gerar, validar, corrigir.',
+      inputSchema: {
+        path: z
+          .string()
+          .describe(
+            'Pasta do pacote ou arquivo da especialização dentro dela, relativo a uma raiz ou absoluto dentro delas.',
+          ),
+        previous: z
+          .string()
+          .optional()
+          .describe(
+            'Arquivo da versão anterior da especialização (liga o contrato de versão: quebra sem `migrations` é erro).',
+          ),
+        level: z
+          .union([z.literal(1), z.literal(2), z.literal(3)])
+          .optional()
+          .describe('Até que nível validar (padrão 3, a prova de desenho).'),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => validateLibraryTool(roots, args, specSummary)),
+  );
+
+  const packageArgs = {
+    project: z
+      .string()
+      .optional()
+      .describe(
+        'Projeto com a biblioteca aplicada (lê a cópia em `specs/<pasta>/`); use com `specId`.',
+      ),
+    specId: z
+      .string()
+      .optional()
+      .describe('Id da especialização aplicada ao projeto (veja get_project).'),
+    path: z
+      .string()
+      .optional()
+      .describe(
+        'Alternativa a project + specId: a pasta do pacote ou o arquivo da especialização dentro dela.',
+      ),
+  };
+
+  server.registerTool(
+    'list_components',
+    {
+      description:
+        'Os componentes de uma biblioteca (formatVersion 4): por tipo de anotação com componente, `type`, `name`, `layer`, `size` e `minSize` (px), se tem documento (`hasDoc`) e quantos exemplos. Informe `project` + `specId` (a cópia aplicada) ou `path` do pacote. Somente leitura.',
+      inputSchema: packageArgs,
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => listComponents(roots, args)),
+  );
+
+  server.registerTool(
+    'get_component',
+    {
+      description:
+        'Tudo de um tipo da biblioteca para montar telas com ele: o documento markdown (`doc`), os campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), os exemplos nomeados (valores, ou sistema + arquivo com o JSON do exemplo externo quando pequeno), `code`, `sources` e o JSON do componente (`component`). `type` é o id (ou o nome) do tipo. Tipo sem componente ou documento: resposta com `hasComponent: false` e `hint`. Informe `project` + `specId` ou `path` do pacote. Somente leitura.',
+      inputSchema: {
+        ...packageArgs,
+        type: z
+          .string()
+          .describe('Id do tipo de anotação (ou o nome), veja list_components.'),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => getComponent(roots, args)),
   );
 }

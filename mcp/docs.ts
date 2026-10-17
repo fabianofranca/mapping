@@ -1,4 +1,5 @@
 import agentGuide from '../docs/AGENT-GUIDE.md?raw';
+import componentFormat from '../docs/COMPONENT-FORMAT.md?raw';
 import format from '../docs/FORMAT.md?raw';
 import specFormat from '../docs/SPEC-FORMAT.md?raw';
 
@@ -25,7 +26,7 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     uri: 'mapping-docs://FORMAT.md',
     title: 'Formato do mapping.json',
     description:
-      'Referência do mapping.json (schema v8): imagens, marcações, camadas, anotações, referências de código e origem externa.',
+      'Referência do mapping.json (schema v9): imagens, marcações, camadas, anotações, referências de código e origem externa.',
     text: format,
   },
   {
@@ -33,7 +34,15 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     uri: 'mapping-docs://SPEC-FORMAT.md',
     title: 'Formato da especialização',
     description:
-      'Formato do arquivo de especialização (camadas, tipos de anotação, campos e referências).',
+      'Formato do arquivo de especialização (formatVersion 1 a 4): camadas, tipos de anotação, campos, referências, plataformas, origens e, na v4, o pacote da biblioteca (componentes, documentos, exemplos, fontes, origens executáveis e contrato de versão).',
     text: specFormat,
+  },
+  {
+    name: 'component-format',
+    uri: 'mapping-docs://COMPONENT-FORMAT.md',
+    title: 'Formato do componente',
+    description:
+      'Formato do arquivo de componente da biblioteca (mapping-component): template, tamanhos e dimensionamento, expressões e avisos do motor de desenho.',
+    text: componentFormat,
   },
 ];
