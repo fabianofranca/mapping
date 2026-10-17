@@ -5,10 +5,12 @@ import {
   migrationChain,
   migrationFor,
   missingMigrations,
+  parseSpec,
   specializationUpdateImpact,
   type Project,
   type Spec,
   type SpecAnnotationType,
+  type SpecColumn,
   type SpecChange,
   type SpecField,
   type SpecLayer,
@@ -536,6 +538,9 @@ describe('migrationFor e missingMigrations: cada quebra, com e sem a migração'
     expect(missingMigrations(v1, next)).toHaveLength(1);
 
     const covered = migrated(next, ...cover);
+    // O formato aceita os passos que cobrem (inclusive `tabela.coluna`), não só o `Spec` montado.
+    const parsed = parseSpec(JSON.parse(JSON.stringify(covered)));
+    expect(parsed.ok, parsed.ok ? '' : parsed.errors.join('\n')).toBe(true);
     expect(missingMigrations(v1, covered)).toEqual([]);
     expect(migrationFor(covered, 1, change)).toEqual(cover[0]);
     if (wrong.length > 0) {
@@ -662,19 +667,25 @@ describe('migrationFor e missingMigrations: cada quebra, com e sem a migração'
     );
   });
 
+  /** `button` com a tabela `rows` trocada por estas colunas. */
+  const withColumns = (columns: SpecColumn[]): SpecAnnotationType =>
+    withFields((f) => [...f.slice(0, 3), { key: 'rows', type: 'table', columns }]);
+
+  /** Sem passo nenhum a quebra de coluna fica faltando, com o `fieldKey` `tabela.coluna`. */
+  function expectMissing(next: Spec, code: string, fieldKey: string): SpecChange {
+    const missing = missingMigrations(v1, next);
+    expect(missing).toHaveLength(1);
+    expect(missing[0]).toMatchObject({ kind: 'breaking', code, fieldKey });
+    return missing[0] as SpecChange;
+  }
+
   it('coluna removida: remove-field com tabela.coluna cobre', () => {
     const next = spec(2, [
-      withFields((f) => [
-        ...f.slice(0, 3),
-        {
-          key: 'rows',
-          type: 'table',
-          columns: [{ key: 'kind', type: 'enum', options: ['a', 'b'] }],
-        },
-      ]),
+      withColumns([{ key: 'kind', type: 'enum', options: ['a', 'b'] }]),
       badge,
     ]);
-    const change = check(
+    const change = expectMissing(next, 'removed-field', 'rows.col');
+    check(
       next,
       'removed-field',
       [{ op: 'remove-field', type: 'button', field: 'rows.col' }],
@@ -684,28 +695,91 @@ describe('migrationFor e missingMigrations: cada quebra, com e sem a migração'
     expect(change.fieldKey).toBe('rows.col');
   });
 
-  it('coluna com type trocado: fill-field com tabela.coluna cobre', () => {
+  it('coluna renomeada: rename-field com tabela.coluna cobre', () => {
     const next = spec(2, [
-      withFields((f) => [
-        ...f.slice(0, 3),
-        {
-          key: 'rows',
-          type: 'table',
-          columns: [
-            { key: 'col', type: 'number' },
-            { key: 'kind', type: 'enum', options: ['a', 'b'] },
-          ],
-        },
+      withColumns([
+        { key: 'name', type: 'string' },
+        { key: 'kind', type: 'enum', options: ['a', 'b'] },
       ]),
       badge,
     ]);
-    // Montado direto (sem passar pelo parseSpec): o formato atual só confere o lado novo de
-    // `fill-field` contra os campos de nível superior do tipo.
+    expectMissing(next, 'removed-field', 'rows.col');
+    check(
+      next,
+      'removed-field',
+      [{ op: 'rename-field', type: 'button', from: 'rows.col', to: 'rows.name' }],
+      [{ op: 'rename-field', type: 'button', from: 'col', to: 'name' }],
+    );
+  });
+
+  it('coluna com type trocado: fill-field com tabela.coluna cobre', () => {
+    const next = spec(2, [
+      withColumns([
+        { key: 'col', type: 'number' },
+        { key: 'kind', type: 'enum', options: ['a', 'b'] },
+      ]),
+      badge,
+    ]);
+    expectMissing(next, 'field-type', 'rows.col');
     check(
       next,
       'field-type',
       [{ op: 'fill-field', type: 'button', field: 'rows.col', default: 0 }],
       [{ op: 'fill-field', type: 'button', field: 'rows', default: 0 }],
+    );
+  });
+
+  it('coluna que passou a obrigatória: fill-field com tabela.coluna cobre', () => {
+    const next = spec(2, [
+      withColumns([
+        { key: 'col', type: 'string', required: true },
+        { key: 'kind', type: 'enum', options: ['a', 'b'] },
+      ]),
+      badge,
+    ]);
+    expectMissing(next, 'field-required', 'rows.col');
+    check(
+      next,
+      'field-required',
+      [{ op: 'fill-field', type: 'button', field: 'rows.col', default: '-' }],
+      [{ op: 'fill-field', type: 'button', field: 'rows.kind', default: 'a' }],
+    );
+  });
+
+  it('coluna nova obrigatória: fill-field com tabela.coluna cobre', () => {
+    const next = spec(2, [
+      withColumns([
+        { key: 'col', type: 'string' },
+        { key: 'kind', type: 'enum', options: ['a', 'b'] },
+        { key: 'extra', type: 'number', required: true },
+      ]),
+      badge,
+    ]);
+    expectMissing(next, 'field-required', 'rows.extra');
+    check(
+      next,
+      'field-required',
+      [{ op: 'fill-field', type: 'button', field: 'rows.extra', default: 0 }],
+      [{ op: 'fill-field', type: 'button', field: 'extra', default: 0 }],
+    );
+  });
+
+  it('opção removida de coluna enum: map-values com tabela.coluna cobre', () => {
+    const next = spec(2, [
+      withColumns([
+        { key: 'col', type: 'string' },
+        { key: 'kind', type: 'enum', options: ['a', 'c'] },
+      ]),
+      badge,
+    ]);
+    const change = expectMissing(next, 'removed-option', 'rows.kind');
+    expect(change.option).toBe('b');
+    check(
+      next,
+      'removed-option',
+      [{ op: 'map-values', type: 'button', field: 'rows.kind', values: { b: 'c' } }],
+      // a coluna certa, mas sem a opção removida nas chaves: não cobre
+      [{ op: 'map-values', type: 'button', field: 'rows.kind', values: { x: 'c' } }],
     );
   });
 

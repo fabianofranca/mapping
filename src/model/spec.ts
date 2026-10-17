@@ -973,9 +973,45 @@ function checkFonts(
   });
 }
 
+/** Coluna `key` de um campo `table` (lida pela mesma forma dos campos); `undefined` se não há. */
+function columnOf(table: RawField, key: string): RawField | undefined {
+  for (const raw of table.columns ?? []) {
+    const parsed = fieldShape.safeParse(raw);
+    if (parsed.success && parsed.data.key === key) return parsed.data;
+  }
+  return undefined;
+}
+
+/** A chave de campo de um passo: `key` (nível superior) ou `tabela.coluna`. */
+type FieldRef =
+  | { kind: 'field' }
+  | { kind: 'column'; table: string; column: string }
+  | { kind: 'invalid'; message: string };
+
+function parseFieldRef(ref: string): FieldRef {
+  const parts = ref.split('.');
+  if (parts.length === 1) return { kind: 'field' };
+  if (parts.length > 2) {
+    return {
+      kind: 'invalid',
+      message: `"${ref}" tem mais de um ponto; use "campo" ou "tabela.coluna"`,
+    };
+  }
+  const [table = '', column = ''] = parts;
+  if (table === '' || column === '') {
+    return {
+      kind: 'invalid',
+      message: `"${ref}" tem uma parte vazia; use "campo" ou "tabela.coluna"`,
+    };
+  }
+  return { kind: 'column', table, column };
+}
+
 /**
  * Conferências das `migrations` que um arquivo só permite: versões, `from` único e, em cada
- * passo, o lado novo existe e o lado antigo não existe mais nesta versão. Se o lado antigo
+ * passo, o lado novo existe e o lado antigo não existe mais nesta versão. A chave de campo de um
+ * passo é `key` (campo de nível superior) ou `tabela.coluna` (coluna de um campo `table`, que
+ * também guarda dados). Se o lado antigo
  * existia na versão anterior é coisa do `diffSpecs`, que compara duas versões.
  */
 function checkMigrations(
@@ -1027,26 +1063,70 @@ function checkMigrations(
         if (!fields) stepAdd('type', `tipo "${id}" não existe nesta versão`);
         return fields;
       };
-      /** O campo existe no tipo (lado novo). */
+      /** O campo (ou a coluna `tabela.coluna`) existe no tipo (lado novo). */
       const fieldHere = (
         fields: Map<string, RawField>,
         typeId: string,
         key: string,
         where: string,
       ): RawField | undefined => {
-        const field = fields.get(key);
-        if (!field) stepAdd(where, `"${key}" não é um campo do tipo "${typeId}"`);
-        return field;
+        const ref = parseFieldRef(key);
+        if (ref.kind === 'invalid') {
+          stepAdd(where, ref.message);
+          return undefined;
+        }
+        if (ref.kind === 'field') {
+          const field = fields.get(key);
+          if (!field) stepAdd(where, `"${key}" não é um campo do tipo "${typeId}"`);
+          return field;
+        }
+        const table = fields.get(ref.table);
+        if (!table) {
+          stepAdd(where, `"${ref.table}" não é um campo do tipo "${typeId}"`);
+          return undefined;
+        }
+        if (table.type !== 'table') {
+          stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
+          return undefined;
+        }
+        const column = columnOf(table, ref.column);
+        if (!column) {
+          stepAdd(
+            where,
+            `"${key}" não é uma coluna da tabela "${ref.table}" do tipo "${typeId}"`,
+          );
+        }
+        return column;
       };
-      /** O campo não existe mais no tipo (lado antigo). */
+      /** O campo (ou a coluna `tabela.coluna`) não existe mais no tipo (lado antigo). */
       const fieldGone = (
         fields: Map<string, RawField>,
         typeId: string,
         key: string,
         where: string,
       ): void => {
-        if (fields.has(key)) {
-          stepAdd(where, `campo "${key}" ainda existe no tipo "${typeId}" nesta versão`);
+        const ref = parseFieldRef(key);
+        if (ref.kind === 'invalid') {
+          stepAdd(where, ref.message);
+        } else if (ref.kind === 'field') {
+          if (fields.has(key)) {
+            stepAdd(
+              where,
+              `campo "${key}" ainda existe no tipo "${typeId}" nesta versão`,
+            );
+          }
+        } else {
+          // Tabela que não existe mais: a coluna foi junto, e é isso que o passo declara.
+          const table = fields.get(ref.table);
+          if (!table) return;
+          if (table.type !== 'table') {
+            stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
+          } else if (columnOf(table, ref.column)) {
+            stepAdd(
+              where,
+              `coluna "${ref.column}" ainda existe na tabela "${ref.table}" do tipo "${typeId}" nesta versão`,
+            );
+          }
         }
       };
       const typeGone = (id: string, where: string): void => {
@@ -1080,7 +1160,12 @@ function checkMigrations(
           const field = fieldHere(fields, step.type, step.field, 'field');
           if (!field) break;
           if (field.type !== 'enum') {
-            stepAdd('field', `"${step.field}" deve ser um campo enum do tipo`);
+            stepAdd(
+              'field',
+              step.field.includes('.')
+                ? `"${step.field}" deve ser uma coluna enum da tabela`
+                : `"${step.field}" deve ser um campo enum do tipo`,
+            );
             break;
           }
           for (const [from, to] of Object.entries(step.values)) {
