@@ -79,10 +79,11 @@ jobs:
           if gh release view "$TAG" > /dev/null 2>&1; then
             # Criada pela tela do GitHub (ou numa execução anterior): só anexa os arquivos.
             gh release upload "$TAG" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 --clobber
+            gh release edit "$TAG" --title "$TAG"
           else
             gh release create "$TAG" \
               dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
-              --title "Servidor MCP ${TAG#mcp-v}" \
+              --title "$TAG" \
               --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Instruções em docs/MCP.md."
           fi
 

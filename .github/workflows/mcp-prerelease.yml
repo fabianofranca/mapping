@@ -85,7 +85,7 @@ jobs:
       - name: Publicar no snapshot do PR
         run: |
           tag="mcp-snapshot-pr${PR}"
-          title="Servidor MCP ${EXPECTED} (snapshot do PR #${PR})"
+          title="$tag"
           notes="Build provisório do PR #${PR}, para testar antes de entrar no épico. Commit ${HEAD_SHA:0:7}. Sobrescrito a cada push e apagado quando o PR fecha. Instalação: \`./setup.sh ${tag}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`."
           if gh release view "$tag" > /dev/null 2>&1; then
             # Já existe: move a tag para o commit novo e troca os arquivos.
@@ -169,5 +169,5 @@ jobs:
           gh release create "$RC_TAG" \
             dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
             --prerelease --target "$GITHUB_SHA" \
-            --title "Servidor MCP ${EXPECTED}" \
+            --title "$RC_TAG" \
             --notes "Release candidate do épico \`${GITHUB_REF_NAME}\`, commit ${GITHUB_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`."
