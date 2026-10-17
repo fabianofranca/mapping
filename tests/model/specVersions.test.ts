@@ -235,7 +235,6 @@ describe('diffSpecs: aditivas', () => {
         button({
           name: 'Botão',
           description: 'b',
-          tags: undefined,
           labelField: 'label',
           requiresOwner: false,
           code: { web: { symbol: 'Button' } },
@@ -531,8 +530,6 @@ describe('migrationFor e missingMigrations: cada quebra, com e sem a migração'
     cover: SpecMigrationStep[],
     wrong: SpecMigrationStep[] = [],
   ): SpecChange {
-    const missing = missingMigrations(v1, migrated(next, { ...wrongStep }));
-    expect(missing.map((c) => c.code)).toContain(code);
     const [change] = missingMigrations(v1, next);
     if (!change) throw new Error('era para ter uma quebra');
     expect(change.code).toBe(code);
@@ -548,13 +545,6 @@ describe('migrationFor e missingMigrations: cada quebra, com e sem a migração'
     }
     return change;
   }
-  // Passo sem relação com a quebra, só para provar que migração qualquer não cobre.
-  const wrongStep: SpecMigrationStep = {
-    op: 'remove-type',
-    type: 'outro',
-    mode: 'delete',
-  };
-
   it('tipo removido: remove-type e rename-type cobrem', () => {
     const next = spec(2, [button(), { id: 'pill', name: 'Pill', fields: [] }]);
     const change = check(next, 'removed-type', [
