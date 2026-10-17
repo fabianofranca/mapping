@@ -1,7 +1,9 @@
 name: MCP release
 
 # Tag `mcp-v<versão>` (ex: mcp-v0.3.0): gera o `mapping-mcp.js` e o anexa à Release.
-# A versão da tag precisa ser a de `SERVER_VERSION` em `mcp/version.ts`.
+# A versão da tag precisa ser a de `SERVER_VERSION` em `mcp/version.ts`. Só `x.y.z` dispara a
+# estável: as pre-releases `mcp-v<versão>-rc.<n>` e `mcp-snapshot-pr<N>` (`mcp-prerelease.yml`)
+# nunca a disparam. Ao publicar, apaga as rc (release e tag) da mesma versão.
 # A Release pode ter sido criada antes pela tela do GitHub (que cria a tag junto): nesse
 # caso os arquivos são anexados a ela. `workflow_dispatch` gera e anexa os arquivos de uma
 # tag que já existe (ex.: uma Release que ficou sem eles), sem apagar nem recriar nada.
@@ -60,7 +62,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/smoke"
           cp dist-mcp/mapping-mcp.js "$RUNNER_TEMP/smoke/"
           cd "$RUNNER_TEMP/smoke"
-          node mapping-mcp.js --version
+          got="$(node mapping-mcp.js --version)"
+          if [ "$got" != "${TAG#mcp-v}" ]; then
+            echo "--version imprimiu '$got', esperado '${TAG#mcp-v}' (sem sufixo)." >&2
+            exit 1
+          fi
 
       - name: Checksum
         working-directory: dist-mcp
@@ -79,3 +85,18 @@ jobs:
               --title "Servidor MCP ${TAG#mcp-v}" \
               --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Instruções em docs/MCP.md."
           fi
+
+      - name: Apagar as release candidates desta versão
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${TAG#mcp-v}"
+          # Releases rc (com a tag) e tags rc que ficaram sem release.
+          for rc in $(gh release list --limit 200 --json tagName --jq ".[].tagName" |
+            grep -E '^mcp-v[0-9.]+-rc\.[0-9]+$' | grep -F "mcp-v${version}-rc." || true); do
+            gh release delete "$rc" --cleanup-tag --yes
+          done
+          for rc in $(git ls-remote --tags origin "refs/tags/mcp-v${version}-rc.*" |
+            sed -n "s#.*refs/tags/\(.*\)\$#\1#p"); do
+            git push origin --delete "refs/tags/$rc" || true
+          done
