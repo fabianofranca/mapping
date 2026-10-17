@@ -98,7 +98,7 @@ React 19 é dependência de desenvolvimento **só do laboratório**: a app conti
 - `fill` no eixo principal dentro de pai `hug` cai em `hug`, com aviso (dentro de templates continua virando 0). No eixo cruzado de uma row `hug`, os `fill` recebem a maior altura dos outros filhos.
 - `stretch` só afeta filhos `hug`; filho `hug` em column é limitado à largura do conteúdo.
 - Slot invisível ignora os filhos, com aviso. Slot vazio conta só o padding (o cartão sem ações fica com o gap de 8 a mais embaixo: ponto conhecido).
-- Conteúdo maior que a tela: o laboratório **avisa** (`tela: conteúdo maior que a altura da tela`) e não recorta nem recusa; a regra do produto continua "a decidir" no `PLAN.md`.
+- Conteúdo maior que a tela: o laboratório **avisa** (`tela: conteúdo maior que a altura da tela`) e não recorta nem recusa; o produto segue a mesma regra, avisar sem recortar nem recusar, por decisão do plano da etapa Biblioteca ([`PLAN.md`](../PLAN.md)).
 - Caso de prova (`tests/lab/components/layout.test.ts`): com um texto de apoio mais longo, o cartão, a coluna que o contém e o irmão seguinte crescem os mesmos 80 px.
 
 O editor (`arrange.ts`) **não mudou**: lá o retângulo continua sendo a fonte de verdade e o layout do slot só posiciona; a arrumação por tamanhos vale para telas sem geometria. No produto, a ação "Arrumar" pode usar o `layoutScreen`.
@@ -163,7 +163,7 @@ Caminhos são `a.b[0].c`; `[*]` em `roots[].path` faz cada elemento virar uma ra
 
 ## Conclusões do laboratório
 
-Detalhes e checkboxes das fases no [`PLAN.md`](../PLAN.md), seção "Etapa em andamento". L1 (visualizador embutível) e L2 (tela a partir de um JSON sem geometria) estão concluídas; falta só o teste com o JSON real do backend, quando o dono tiver (até lá, o exemplo passa sem avisos).
+Detalhes e checkboxes das fases em [`docs/history/PLAN-etapa-lab.md`](../docs/history/PLAN-etapa-lab.md). L1 (visualizador embutível) e L2 (tela a partir de um JSON sem geometria) estão concluídas; falta só o teste com o JSON real do backend, quando o dono tiver (até lá, o exemplo passa sem avisos).
 
 **O que o laboratório provou**
 
@@ -172,13 +172,13 @@ Detalhes e checkboxes das fases no [`PLAN.md`](../PLAN.md), seção "Etapa em an
 - O visualizador embutível funciona sem framework, com invólucro React fino; uma instância custa cerca de 1 ms e o `redraw()` completo cerca de 7,5 ms. A API basta para o hospedeiro construir a edição para leigos por cima.
 - Um JSON de SDUI sem geometria vira tela por uma declaração de origem executável; o núcleo executa a declaração e nunca código da especialização.
 
-**O que o produto herda** (decisões em "Decisões registradas" do `PLAN.md`)
+**O que o produto herda** (decisões em "Decisões registradas" de [`docs/history/PLAN-etapa-lab.md`](../docs/history/PLAN-etapa-lab.md))
 
 - Instância = marcação com anotação tipada; o desenho é derivado e não é gravado. Tela sem imagem = imagem sem arquivo.
 - Declaração de origem: chave `path` própria para o caminho do campo e `slot`/`ignore` aceitos nas `sources` de sistemas executáveis (B1).
-- Em aberto: regra para conteúdo maior que o slot (hoje só avisa), campos de tabela no lugar de listas numeradas, props no próprio nó e vários slots por componente.
+- Em aberto: campos de tabela no lugar de listas numeradas, props no próprio nó e vários slots por componente.
 
-**Fechamento:** com o README fechado, o épico `epic/lab` é mesclado na `main` por decisão do dono, e a etapa seguinte é a **Biblioteca** (B1 a B5 em [`docs/ROADMAP.md`](../docs/ROADMAP.md)), em épico próprio.
+**Fechamento:** o épico `epic/lab` foi mesclado na `main` em 2026-10-17 (PR #160); a etapa seguinte, a **Biblioteca**, está detalhada no [`PLAN.md`](../PLAN.md) (B1 a B5, em épico próprio).
 
 ## `components/sdui/` — Exemplo de JSON do SDUI
 
