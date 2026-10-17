@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import settings from '../../../lab/components/sdui/settings.sdui.json';
 import {
   formatPath,
+  parseFieldSources,
   parseOrigins,
   parsePath,
   readPath,
@@ -229,7 +230,7 @@ function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unkno
               {
                 key: 'label',
                 type: 'string',
-                sources: [{ system: 'sdui', name: 'text' }],
+                sources: [{ system: 'sdui', path: 'text' }],
               },
               {
                 key: 'style',
@@ -237,26 +238,26 @@ function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unkno
                 options: ['filled', 'text'],
                 default: 'filled',
                 sources: [
-                  { system: 'sdui', name: 'kind', values: { Primary: 'filled' } },
+                  { system: 'sdui', path: 'kind', values: { Primary: 'filled' } },
                 ],
               },
               {
                 key: 'on',
                 type: 'enum',
                 options: ['sim', 'não', 'x'],
-                sources: [{ system: 'sdui', name: 'on', values: { true: 'x' } }],
+                sources: [{ system: 'sdui', path: 'on', values: { true: 'x' } }],
               },
               {
                 key: 'off',
                 type: 'enum',
                 options: ['sim', 'não'],
                 default: 'não',
-                sources: [{ system: 'sdui', name: 'off' }],
+                sources: [{ system: 'sdui', path: 'off' }],
               },
               {
                 key: 'count',
                 type: 'number',
-                sources: [{ system: 'sdui', name: 'count' }],
+                sources: [{ system: 'sdui', path: 'count' }],
               },
               {
                 key: 'step',
@@ -265,7 +266,7 @@ function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unkno
                 sources: [
                   {
                     system: 'sdui',
-                    name: 'step',
+                    path: 'step',
                     values: { '0': '1', '1': '2', '2': '3' },
                   },
                 ],
@@ -273,12 +274,12 @@ function miniSpec(overrides: Record<string, unknown> = {}): Record<string, unkno
               {
                 key: 'inner',
                 type: 'string',
-                sources: [{ system: 'sdui', name: 'avatar.initials' }],
+                sources: [{ system: 'sdui', path: 'avatar.initials' }],
               },
               {
                 key: 'second',
                 type: 'string',
-                sources: [{ system: 'sdui', name: 'items[1].label' }],
+                sources: [{ system: 'sdui', path: 'items[1].label' }],
               },
               { key: 'solto', type: 'string', default: 'padrão' },
             ],
@@ -512,6 +513,87 @@ describe('translateSource', () => {
     expect(bad.screen).toBeUndefined();
     expect(bad.error).toMatch(/largura/);
     expect(bad.warnings).toEqual([]);
+  });
+});
+
+describe('parseFieldSources: path', () => {
+  const parse = (raw: unknown) => {
+    const problems: string[] = [];
+    const sources = parseFieldSources(raw, 'f.sources', problems);
+    return { sources, problems };
+  };
+
+  it('lê path e name juntos, ou só um dos dois', () => {
+    const { sources, problems } = parse([
+      { system: 'sdui', path: 'a.b[0]', name: 'Rótulo' },
+      { system: 'sdui', path: 'c' },
+      { system: 'figma', name: 'Kind' },
+    ]);
+    expect(problems).toEqual([]);
+    expect(sources).toEqual([
+      { system: 'sdui', name: 'Rótulo', path: 'a.b[0]' },
+      { system: 'sdui', path: 'c' },
+      { system: 'figma', name: 'Kind' },
+    ]);
+  });
+
+  it('recusa path com sintaxe inválida ou com [*], e entrada sem name nem path', () => {
+    const { sources, problems } = parse([
+      { system: 'sdui', path: 'a..b' },
+      { system: 'sdui', path: 'a[*]' },
+      { system: 'sdui', path: '' },
+      { system: 'sdui' },
+      { system: 'sdui', path: 'ok' },
+    ]);
+    expect(sources).toEqual([{ system: 'sdui', path: 'ok' }]);
+    expect(problems).toEqual([
+      'f.sources[0].path: caminho inválido "a..b" (segmento vazio)',
+      'f.sources[1].path: "[*]" só vale em roots[].path',
+      'f.sources[2].path: esperava um caminho (texto não vazio)',
+      'f.sources[3]: precisa de name ou path',
+    ]);
+  });
+});
+
+describe('translateSource: o caminho do campo vem de path, nunca de name', () => {
+  const specWithField = (source: Record<string, unknown>) => {
+    const spec = miniSpec();
+    const layer = (spec.layers as { annotationTypes: { fields: unknown[] }[] }[])[0]!;
+    layer.annotationTypes[0]!.fields = [
+      { key: 'label', type: 'string', sources: [source] },
+    ];
+    return spec;
+  };
+  const labelOf = (spec: Record<string, unknown>) => {
+    const library = loadLibrary(files(spec));
+    const result = translateSource(library, DOC);
+    return {
+      library,
+      result,
+      label: result.layout!.roots[0]!.node.children[0]!.values.label,
+    };
+  };
+
+  it('name e path convivem: lê o valor de path e ignora name', () => {
+    const { library, label } = labelOf(
+      specWithField({ system: 'sdui', name: 'kind', path: 'text' }),
+    );
+    expect(library.problems).toEqual([]);
+    expect(label).toBe('Entrar');
+  });
+
+  it('name que parece um caminho existente não é lido sem path', () => {
+    const { library, result, label } = labelOf(
+      specWithField({ system: 'sdui', name: 'text' }),
+    );
+    expect(library.problems).toEqual([
+      'btn.fields[0].sources[0].path: obrigatório em sistema declarado em origins',
+    ]);
+    expect(label).toBeNull();
+    // `text` não é lido como campo: vira propriedade desconhecida.
+    expect(result.warnings).toContain(
+      'content.children[0].props.text: propriedade desconhecida em Button',
+    );
   });
 });
 

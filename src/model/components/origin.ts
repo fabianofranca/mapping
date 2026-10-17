@@ -95,10 +95,16 @@ export interface TypeSource {
   readonly ignore?: readonly string[];
 }
 
-/** `sources` de um campo: `name` é o caminho dentro de `props` numa origem executável. */
+/**
+ * `sources` de um campo. Numa origem executável o caminho do valor dentro de `props` vem de
+ * `path` (obrigatório ali, conferido por `readField`) e `name` é só o nome da propriedade de
+ * origem; nos demais sistemas vale `name`. Nunca se lê o caminho de `name`.
+ */
 export interface FieldSource {
   readonly system: string;
-  readonly name: string;
+  readonly name?: string;
+  /** Caminho do valor dentro de `props` do nó externo (`a.b[0].c`, sem `[*]`). */
+  readonly path?: string;
   readonly values?: Readonly<Record<string, string>>;
 }
 
@@ -645,10 +651,14 @@ export function parseFieldSources(
       return;
     }
     const before = problems.length;
-    checkKeys(item, ['system', 'name', 'values'], at, problems);
+    checkKeys(item, ['system', 'name', 'path', 'values'], at, problems);
     if (!nonEmptyString(item.system))
       problems.push(`${at}.system: esperava texto não vazio`);
-    if (!nonEmptyString(item.name)) problems.push(`${at}.name: esperava texto não vazio`);
+    if (item.name !== undefined && !nonEmptyString(item.name))
+      problems.push(`${at}.name: esperava texto não vazio`);
+    if (item.path !== undefined) checkPath(item.path, `${at}.path`, problems);
+    if (item.name === undefined && item.path === undefined)
+      problems.push(`${at}: precisa de name ou path`);
     const values =
       item.values === undefined
         ? undefined
@@ -656,7 +666,8 @@ export function parseFieldSources(
     if (problems.length > before) return;
     out.push({
       system: item.system as string,
-      name: item.name as string,
+      ...(typeof item.name === 'string' ? { name: item.name } : {}),
+      ...(typeof item.path === 'string' ? { path: item.path } : {}),
       ...(values ? { values } : {}),
     });
   });
@@ -707,7 +718,7 @@ function sourceOf(type: TypeDef, system: string, name: string): TypeSource | und
 }
 
 function fieldPath(field: FieldDef, system: string): string | undefined {
-  return field.sources.find((s) => s.system === system)?.name;
+  return field.sources.find((s) => s.system === system)?.path;
 }
 
 function firstKey(path: string): string | undefined {
@@ -725,9 +736,11 @@ function translateFieldValue(
   const fallback: FieldValue = field.default ?? null;
   const source = field.sources.find((s) => s.system === ctx.origin.system);
   if (!source) return fallback;
-  const read = readPath(props, source.name);
+  // Entrada sem `path` (a biblioteca já a registrou como problema) não lê nada.
+  if (source.path === undefined) return fallback;
+  const read = readPath(props, source.path);
   if (!read.found) return fallback;
-  const where = `${nodePath}.${ctx.origin.node.props}.${source.name}`;
+  const where = `${nodePath}.${ctx.origin.node.props}.${source.path}`;
   const raw = read.value;
   if (!isScalar(raw)) {
     ctx.warnings.push(`${where}: esperava valor simples`);

@@ -1024,9 +1024,9 @@ export const M3_COMPONENTS: readonly ComponentFile[] = [
 /** Sistema da origem executável que a especialização declara (`origins`): o SDUI do backend. */
 const SDUI = 'sdui';
 
-/** `sources` de um campo: o caminho dentro de `props` do nó SDUI (e a tradução de valores). */
-const fromProp = (name: string, values?: Record<string, string>) => ({
-  sources: [{ system: SDUI, name, ...(values ? { values } : {}) }],
+/** `sources` de um campo: o caminho (`path`) dentro de `props` do nó SDUI (e a tradução de valores). */
+const fromProp = (path: string, values?: Record<string, string>) => ({
+  sources: [{ system: SDUI, path, ...(values ? { values } : {}) }],
 });
 
 const yesNo = (key: string, label: string, def: 'sim' | 'não', prop?: string) => ({

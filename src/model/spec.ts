@@ -599,9 +599,11 @@ function checkExamples(
       const field = fields.get(k);
       if (!field) {
         add(['values', k], `"${k}" não é um campo do tipo`);
+      } else if (value === null) {
+        continue;
       } else if (field.type === 'table' || field.type === 'ref') {
         add(['values', k], `campo "${field.type}" não aceita valor em exemplo`);
-      } else if (value !== null) {
+      } else {
         const problem = valueProblem(field.type, field.options, value);
         if (problem !== undefined) add(['values', k], problem);
       }

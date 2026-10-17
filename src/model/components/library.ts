@@ -57,7 +57,7 @@ export interface FieldDef {
   readonly options?: readonly string[];
   readonly default?: FieldValue;
   readonly description?: string;
-  /** Origens do campo (`sources`); numa origem executável o `name` é o caminho dentro de `props`. */
+  /** Origens do campo (`sources`); numa origem executável o `path` é o caminho dentro de `props`. */
   readonly sources: readonly FieldSource[];
 }
 
@@ -148,11 +148,15 @@ function readField(
         }
       }
     }
-    // Numa origem executável o `name` é um caminho dentro de `props` (sem `[*]`).
+    // Numa origem executável o `path` é o caminho dentro de `props` (sem `[*]`) e é obrigatório.
     if (systems.has(source.system)) {
-      const parsed = parsePath(source.name);
-      if (!parsed.ok || parsed.segments.includes(null)) {
-        problems.push(`${at}.name: caminho inválido "${source.name}"`);
+      if (source.path === undefined) {
+        problems.push(`${at}.path: obrigatório em sistema declarado em origins`);
+      } else {
+        const parsed = parsePath(source.path);
+        if (!parsed.ok || parsed.segments.includes(null)) {
+          problems.push(`${at}.path: caminho inválido "${source.path}"`);
+        }
       }
     }
   });

@@ -13,8 +13,11 @@ import {
   M3_COMPONENTS,
   M3_FILES,
   M3_SCREEN,
+  M3_SPEC,
 } from '../../../lab/components/samplesMaterial3';
 import { walk } from '../../../src/model/components/scene';
+import { parseSpec } from '../../../src/model';
+import { SAMPLE_SPEC } from '../../../lab/components/samples';
 
 describe('Material 3 no formato de componente', () => {
   it('a biblioteca carrega os quinze tipos, todos com componente válido e sem problemas', () => {
@@ -143,5 +146,20 @@ describe('Material 3 no formato de componente', () => {
     expect(lib.types.filter((t) => t.sources.length === 0).map((t) => t.id)).toEqual([
       'm3-scrim',
     ]);
+  });
+});
+
+describe('especializações do laboratório na formatVersion 4', () => {
+  it('o M3_SPEC passa pelo parseSpec v4 sem nenhum erro', () => {
+    expect(M3_SPEC.formatVersion).toBe(4);
+    const result = parseSpec(M3_SPEC);
+    expect(result.ok ? [] : result.errors).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it('o SAMPLE_SPEC passa pelo parseSpec na versão que declara', () => {
+    const result = parseSpec(SAMPLE_SPEC);
+    expect(result.ok ? [] : result.errors).toEqual([]);
+    expect(result.ok).toBe(true);
   });
 });

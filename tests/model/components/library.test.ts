@@ -142,7 +142,7 @@ describe('library', () => {
                 options: ['a', 'b'],
                 sources: [
                   { system: 'figma', name: 'Kind', values: { A: 'a' } },
-                  { system: 'sdui', name: 'x.y[0]', values: { '0': 'b' } },
+                  { system: 'sdui', path: 'x.y[0]', values: { '0': 'b' } },
                 ],
               },
             ],
@@ -298,7 +298,7 @@ describe('library', () => {
       expect(lib.types[0]!.sources).toEqual([{ system: 'sdui', name: 'Certo' }]);
       expect(lib.types[0]!.fields[0]!.sources).toEqual([{ system: 'sdui', name: 'ok' }]);
       expect(lib.problems).toEqual([
-        'card.fields[0].sources[0].name: esperava texto não vazio',
+        'card.fields[0].sources[0]: precisa de name ou path',
         'card.fields[0].sources[2]: esperava um objeto',
         'card.sources[0]: precisa de id ou name',
         'card.sources[1].system: esperava texto não vazio',
@@ -307,7 +307,7 @@ describe('library', () => {
       ]);
     });
 
-    it('o name de um campo, numa origem executável, é um caminho válido sem [*]', () => {
+    it('o path de um campo, numa origem executável, é um caminho válido sem [*]', () => {
       const lib = loadLibrary(
         specWith(
           {
@@ -316,8 +316,9 @@ describe('library', () => {
                 key: 'a',
                 type: 'string',
                 sources: [
-                  { system: 'sdui', name: 'a..b' },
-                  { system: 'sdui', name: 'a[*]' },
+                  { system: 'sdui', path: 'a..b' },
+                  { system: 'sdui', path: 'a[*]' },
+                  { system: 'sdui', path: 'a.b[0]' },
                   { system: 'figma', name: 'qualquer coisa..' },
                 ],
               },
@@ -327,8 +328,53 @@ describe('library', () => {
         ),
       );
       expect(lib.problems).toEqual([
-        'card.fields[0].sources[0].name: caminho inválido "a..b"',
-        'card.fields[0].sources[1].name: caminho inválido "a[*]"',
+        'card.fields[0].sources[0].path: caminho inválido "a..b" (segmento vazio)',
+        'card.fields[0].sources[1].path: "[*]" só vale em roots[].path',
+      ]);
+      expect(lib.types[0]!.fields[0]!.sources.map((s) => s.system)).toEqual([
+        'sdui',
+        'figma',
+      ]);
+    });
+
+    it('campo de sistema executável sem path é problema, com o caminho do campo', () => {
+      const lib = loadLibrary(
+        specWith(
+          {
+            fields: [
+              {
+                key: 'a',
+                type: 'string',
+                sources: [{ system: 'sdui', name: 'so-o-nome' }],
+              },
+            ],
+          },
+          { origins: [originOf()] },
+        ),
+      );
+      expect(lib.problems).toEqual([
+        'card.fields[0].sources[0].path: obrigatório em sistema declarado em origins',
+      ]);
+    });
+
+    it('name e path convivem: o name é só o nome e o path é o caminho', () => {
+      const lib = loadLibrary(
+        specWith(
+          {
+            fields: [
+              {
+                key: 'a',
+                type: 'string',
+                sources: [{ system: 'sdui', name: 'a.b[', path: 'x.y' }],
+              },
+            ],
+          },
+          { origins: [originOf()] },
+        ),
+      );
+      expect(lib.problems).toEqual([]);
+      expect(lib.types[0]!.fields[0]!.sources).toEqual([
+        { system: 'sdui', name: 'a.b[', path: 'x.y' },
       ]);
     });
   });
