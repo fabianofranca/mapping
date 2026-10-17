@@ -454,6 +454,9 @@ function lockWarning(c: Change, project: Project): boolean {
     if (c.kind === 'update' && c.field === 'placement') {
       return !canEditImagePlacement(project, c.entityId);
     }
+    if (c.kind === 'update' && c.field === 'size') {
+      return !canEditImagePlacement(project, c.entityId);
+    }
     if (c.kind === 'update' && c.field === 'file' && isRecord(c.to)) {
       const { width, height } = c.to;
       if (typeof width === 'number' && typeof height === 'number') {

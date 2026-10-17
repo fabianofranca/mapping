@@ -15,6 +15,10 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'invalid-placement': 'posição ou escala da imagem inválida (escala > 0)',
   'image-overlap': 'a imagem ficaria sobre outra imagem no canvas',
   'duplicate-file': 'já existe uma imagem com esse arquivo',
+  'blank-image':
+    'a imagem é uma tela em branco (sem arquivo): não há arquivo para trocar',
+  'not-blank':
+    'a imagem tem arquivo: só a tela em branco tem cor de fundo e tamanho editáveis',
   'aspect-change-not-confirmed':
     'a nova imagem tem outra proporção: informe confirmAspectChange: true (as marcações serão reescaladas e ficarão "a revisar")',
   'image-too-small': 'a nova imagem é pequena demais para as marcações',

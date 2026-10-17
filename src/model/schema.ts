@@ -9,7 +9,7 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v9. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json v10. Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
 // anotações tipadas são JSON livre aqui: a conferência contra o tipo vira pendência
 // (`issues.ts`).
@@ -56,13 +56,14 @@ export const layerSchema = z.object({
 export const imageSchema = z.object({
   id,
   name: z.string().nullable(),
-  file: z.string().min(1),
+  file: z.string().min(1).nullable(),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
   placement: placementSchema,
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
   source: sourceSchema.nullable(),
+  background: hexColor.nullable(),
 });
 
 export const markingSchema = z.object({

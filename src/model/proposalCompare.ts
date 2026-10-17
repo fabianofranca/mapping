@@ -77,7 +77,7 @@ class Created {
       typeof value === 'string' && value !== '' ? this.path(e, value, seen) : '-';
     let path: string;
     if (entity === 'image') {
-      path = `image(${text(to.name) || text(to.file)})`;
+      path = `image(${text(to.name) || text(to.file) || `${text(to.background)} ${String(to.width)}x${String(to.height)}`})`;
     } else if (entity === 'marking') {
       path = `marking(${ref('image', to.imageId)} › ${ref('marking', to.parentId)} › ${text(to.name)})`;
     } else if (entity === 'annotation') {

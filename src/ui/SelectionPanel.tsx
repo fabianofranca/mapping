@@ -52,8 +52,9 @@ export function SelectionPanel({
       </div>
     );
   }
-  const missing = display?.status === 'missing';
-  const broken = missing || display?.status === 'error';
+  const blank = image.file === null;
+  const missing = !blank && display?.status === 'missing';
+  const broken = missing || (!blank && display?.status === 'error');
   const disabled = readOnly || busy;
   const dimensions = t('image.dimensions', { width: image.width, height: image.height });
   // Trava: a da imagem e a das marcações dela ("trancar todas" vira "destrancar todas").
@@ -67,7 +68,7 @@ export function SelectionPanel({
       <DetailsIdentity
         icon="image"
         name={imageLabel(image)}
-        sub={`${image.file} · ${dimensions}`}
+        sub={blank ? dimensions : `${image.file} · ${dimensions}`}
         id={image.id}
         flags={identity?.flags}
         struck={identity?.struck}
@@ -97,7 +98,7 @@ export function SelectionPanel({
           <strong>{t(missing ? 'image.missingTitle' : 'canvas.imageError')}</strong>
           <p>
             {missing
-              ? t('image.missingMessage', { file: image.file })
+              ? t('image.missingMessage', { file: image.file ?? '' })
               : t('image.errorMessage')}
           </p>
           <Button variant="primary" disabled={disabled} onClick={() => onReplace(image)}>
@@ -121,7 +122,7 @@ export function SelectionPanel({
               id={nameId}
               size="sm"
               value={image.name ?? ''}
-              placeholder={image.file}
+              placeholder={image.file ?? t('image.blankUntitled')}
               disabled={disabled}
               onCommit={(text) => {
                 // Espaços em volta não contam como alteração.
@@ -130,13 +131,15 @@ export function SelectionPanel({
               }}
             />
           </Property>
-          <Property
-            label={t('image.file')}
-            mark={ext?.mark(image.id, 'file')}
-            below={ext?.below(image.id, 'file')}
-          >
-            <code class="props-text">{image.file}</code>
-          </Property>
+          {image.file !== null && (
+            <Property
+              label={t('image.file')}
+              mark={ext?.mark(image.id, 'file')}
+              below={ext?.below(image.id, 'file')}
+            >
+              <code class="props-text">{image.file}</code>
+            </Property>
+          )}
           <Property label={t('image.size')}>
             <span class="props-text">{dimensions}</span>
           </Property>
@@ -160,7 +163,7 @@ export function SelectionPanel({
         </div>
       )}
       <div class="row">
-        {!broken && (
+        {!broken && !blank && (
           <Button disabled={disabled} onClick={() => onReplace(image)}>
             {t('image.replace')}
           </Button>

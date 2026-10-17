@@ -443,7 +443,7 @@ describe('get_marking, get_annotation e get_project', () => {
 
   it('get_project traz as plataformas, os platformRepos e o aviso de repositório ausente', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
-    expect(data.schemaVersion).toBe(9);
+    expect(data.schemaVersion).toBe(10);
     expect(data.platforms).toEqual([
       { id: 'android', name: 'Android', language: 'kotlin', specs: ['sdui'] },
       { id: 'ios', name: 'iOS', language: 'swift', specs: ['sdui'] },
@@ -458,7 +458,7 @@ describe('get_marking, get_annotation e get_project', () => {
 
   it('um projeto v8 com o campo de código removido abre migrado, sem os valores dele', async () => {
     const data = ok(await mcp.call('get_project', { project: 'antigo' }));
-    expect(data.schemaVersion).toBe(9);
+    expect(data.schemaVersion).toBe(10);
     expect(data.migratedFrom).toBe(8);
     const screen = ok(
       await mcp.call<Annotation>('get_annotation', { ref: refOf('antigo', 'a', 'AS') }),
@@ -644,7 +644,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     );
   });
 
-  it('o lote do roteiro (repositório do ios) é aplicado e grava v9 com revision + 1', async () => {
+  it('o lote do roteiro (repositório do ios) é aplicado e grava v10 com revision + 1', async () => {
     const dir = ws.projectDir('escrita');
     const operations = [
       {
@@ -682,7 +682,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     const saved = parsed.project;
-    expect(saved.schemaVersion).toBe(9);
+    expect(saved.schemaVersion).toBe(10);
     expect(saved.revision).toBe(1);
     expect(saved.platformRepos).toEqual({
       android: { urlTemplate: `${REPO_URL}/{path}#L{line}`, localPath: '../../..' },

@@ -357,7 +357,9 @@ function ReviewItemPanel({
                 image={image}
                 project={project}
                 display={
-                  image && sameFile ? display.images.value.get(image.file) : undefined
+                  image?.file && sameFile
+                    ? display.images.value.get(image.file)
+                    : undefined
                 }
                 readOnly
                 busy={false}

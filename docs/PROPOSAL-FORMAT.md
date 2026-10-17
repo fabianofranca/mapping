@@ -18,6 +18,7 @@ meu-projeto/
 ```
 
 - Uma pasta por proposta, `proposals/<id>/`, com o `proposal.json`. O id só usa `[A-Za-z0-9._-]` e não começa com ponto (vira nome de pasta).
+- Tela em branco (schema v10): a criação traz a imagem inteira com `file: null` e `background`, sem arquivo para mover; `background` e `size` só existem como campos de `update` quando a imagem é tela em branco nos dois lados (na foto, o tamanho vem da troca de arquivo, campo `file`).
 - Imagem nova ou trocada: a mudança traz o caminho definitivo (`images/checkout.webp`) e o arquivo espera em `proposals/<id>/` mais esse caminho (`proposals/<id>/images/checkout.webp`). Ao aplicar, ele é movido para o lugar definitivo.
 - As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado.
 
@@ -115,7 +116,7 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 
 | Entidade         | Campos (`field`)                                                                                                                                                                         |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `placement`, `markingColor`, `locked`, `source`                                                                                     |
+| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `background` (cor `#RRGGBB`) e `size` (`{ width, height }`) só na tela em branco, `placement`, `markingColor`, `locked`, `source`   |
 | `marking`        | `name`, `rect`, `parentId`, `imageId`, `locked`, `source`                                                                                                                                |
 | `annotation`     | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type` |
 | `layer`          | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                    |

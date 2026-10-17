@@ -143,6 +143,15 @@ export const migrateFrom8To9: Migration = (data, context = NO_CONTEXT) => {
   };
 };
 
+/**
+ * v9 → v10 (tela em branco): imagens ganham `background: null` (a imagem com arquivo não
+ * tem cor de fundo). Um valor já presente é preservado.
+ */
+export const migrateFrom9To10: Migration = (data) => ({
+  ...data,
+  images: mapItems(data.images, (i) => ({ background: null, ...i })),
+});
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -153,6 +162,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [6, migrateFrom6To7],
   [7, migrateFrom7To8],
   [8, migrateFrom8To9],
+  [9, migrateFrom9To10],
 ]);
 
 export type MigrationResult =

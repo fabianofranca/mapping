@@ -4,7 +4,7 @@ import { imageDeletionImpact, markingDeletionImpact } from '../model';
 import { Dialog } from '../ui/Dialog';
 import { DialogSlotContext } from '../ui/focus';
 import { useEditor, type EditorContextValue } from '../ui/EditorContext';
-import { markingLabel } from '../ui/labels';
+import { imageLabel, markingLabel } from '../ui/labels';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
 import { SettingsDialog } from '../ui/SettingsDialog';
 import { SpecsDialog } from '../ui/SpecsDialog';
@@ -98,7 +98,7 @@ function renderDialog(
         >
           <p>
             {t('image.deleteMessage', {
-              file: image.file,
+              file: image.file ?? imageLabel(image),
               ...impact,
             })}
           </p>

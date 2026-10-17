@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateProject, type Project } from '../../src/model';
+import { addBlankImage, validateProject, type Project } from '../../src/model';
 import { sampleProject } from './fixtures';
 
 function codes(p: Project) {
@@ -179,5 +179,42 @@ describe('validador de invariantes', () => {
       ),
     };
     expect(codes(bad)).toEqual(['duplicate-key:A1', 'empty-key:A1']);
+  });
+});
+
+describe('validador de invariantes: tela em branco', () => {
+  const blank = () =>
+    addBlankImage(sampleProject(), {
+      id: 'B1',
+      width: 390,
+      height: 844,
+      background: '#FFFFFF',
+    });
+
+  it('tela em branco com cor é válida e não conta como arquivo repetido', () => {
+    const p = blank();
+    const two = addBlankImage(p, {
+      id: 'B2',
+      width: 100,
+      height: 100,
+      background: '#000000',
+    });
+    expect(validateProject(p)).toEqual([]);
+    expect(validateProject(two)).toEqual([]);
+  });
+
+  it('blank-background: sem arquivo e sem cor, ou com arquivo e com cor', () => {
+    const p = blank();
+    const patch = (id: string, change: object): Project => ({
+      ...p,
+      images: p.images.map((i) => (i.id === id ? { ...i, ...change } : i)),
+    });
+    expect(validateProject(patch('B1', { background: null }))).toEqual([
+      { code: 'blank-background', entity: 'image', id: 'B1' },
+    ]);
+    expect(codes(patch('B1', { file: 'images/x.png' }))).toEqual(['blank-background:B1']);
+    expect(codes(patch('I2', { background: '#000000' }))).toEqual([
+      'blank-background:I2',
+    ]);
   });
 });

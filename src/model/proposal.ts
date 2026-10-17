@@ -54,10 +54,15 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'annotation',
 ];
 
-/** Campos alterados de uma imagem (`file` é a troca: `{ file, width, height }`). */
+/**
+ * Campos alterados de uma imagem (`file` é a troca: `{ file, width, height }`). `background` e
+ * `size` (`{ width, height }`) só existem na tela em branco (v10).
+ */
 export const IMAGE_FIELDS = [
   'name',
   'file',
+  'background',
+  'size',
   'placement',
   'markingColor',
   'locked',
@@ -207,6 +212,11 @@ const imageFileValue = z.object({
   height: z.number().int().positive(),
 });
 
+const imageSizeValue = z.object({
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+
 const typeRef = z.object({ specId: id, typeId: id });
 
 /** Valor do campo `type` de uma anotação: o tipo com os valores e pares que vão junto. */
@@ -264,6 +274,8 @@ const entitySchemas: Record<ChangeEntity, z.ZodType> = {
 const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   name: z.string().nullable(),
   file: imageFileValue,
+  background: hexColor,
+  size: imageSizeValue,
   placement: placementSchema,
   markingColor: hexColor.nullable(),
   locked: z.boolean(),

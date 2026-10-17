@@ -34,6 +34,7 @@ import { useApplyAccepted, useDecide } from '../ui/review/useReview';
 import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
 import {
   canCopyItems,
+  canCopyCrop,
   copyCrop,
   copyReference,
   copyShortcutTarget,
@@ -144,7 +145,10 @@ export function useEditorShortcuts(
       if (!canCopyItems(editor)) return null;
       if (shortcut.kind === 'copy-crop') {
         const target = copyShortcutTarget(editor);
-        return target?.kind === 'm' ? target : null;
+        // Tela em branco não tem recorte: o atalho não assume a tecla.
+        return target?.kind === 'm' && canCopyCrop(shown.peek(), target.id)
+          ? target
+          : null;
       }
       if (globalThis.getSelection?.()?.toString()) return null;
       return copyShortcutTarget(editor);

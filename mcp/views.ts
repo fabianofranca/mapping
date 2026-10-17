@@ -1,4 +1,5 @@
 import {
+  isBlankImage,
   annotationShortLabel,
   getBacklinks,
   getLinkedAnnotations,
@@ -285,6 +286,7 @@ function imageSummary(refs: Refs, image: ProjectImage): Json {
     ref: refs.ref('i', image.id),
     name: image.name,
     file: image.file,
+    ...(isBlankImage(image) ? { blank: true, background: image.background } : {}),
     width: image.width,
     height: image.height,
     locked: image.locked,
@@ -299,11 +301,15 @@ export async function imageView(
 ): Promise<Json> {
   const p = refs.project;
   const index = projectIndex(p);
-  const absolute = await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
+  const absolute =
+    image.file === null
+      ? null
+      : await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
   const topLevel = (index.children.get(null) ?? []).filter((m) => m.imageId === image.id);
   return {
     ...imageSummary(refs, image),
-    exists: absolute !== null,
+    // Tela em branco não tem arquivo: nada a conferir.
+    exists: image.file === null ? true : absolute !== null,
     path: absolute,
     placement: image.placement,
     markingColor: image.markingColor,

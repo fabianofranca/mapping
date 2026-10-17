@@ -173,7 +173,7 @@ export function CompareDialog() {
   const newFile = change ? changeImageFile(change) : null;
   const afterPath = p && newFile ? proposalImagePath(p.id, newFile) : null;
   useEffect(() => {
-    if (image) display.ensure(image.file);
+    if (image?.file) display.ensure(image.file);
     if (afterPath) display.ensure(afterPath);
   }, [image, afterPath, display]);
   if (!imageId || !p || !change || !afterPath || !newFile) return null;
@@ -189,7 +189,7 @@ export function CompareDialog() {
       actions={<Button onClick={close}>{t('common.close')}</Button>}
     >
       <ImageCompare
-        before={image ? bitmaps.get(image.file) : undefined}
+        before={image?.file ? bitmaps.get(image.file) : undefined}
         after={bitmaps.get(afterPath)}
         beforeName={image?.file ?? ''}
         afterName={newFile}
