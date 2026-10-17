@@ -1,0 +1,14 @@
+{
+  // Declarações de tipo do visualizador embutível (fase L1): `npm run build:viewer` gera
+  // dist-viewer/types/. O tsc segue os imports a partir das duas entradas. O `react.tsx` usa o
+  // pragma `@jsxImportSource react` por arquivo (o tsconfig raiz usa preact).
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "../../dist-viewer/types",
+    "rootDir": "../.."
+  },
+  "include": ["index.ts", "react.tsx"]
+}

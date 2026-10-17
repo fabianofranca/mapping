@@ -1,6 +1,6 @@
 # Laboratório
 
-Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (`dist/lab/…`) para validar uma possibilidade antes de ela virar etapa do [`PLAN.md`](../PLAN.md). Nada daqui entra no `index.html` da app, nem nas regras do núcleo (i18n, store, tokens de design obrigatórios). As regras que continuam valendo: TypeScript strict, sem `any`, sem dependências novas, sem requisição de rede (a página leva a mesma CSP da app) e testes no Vitest.
+Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (`dist/lab/…`) para validar uma possibilidade antes de ela virar etapa do [`PLAN.md`](../PLAN.md). Nada daqui entra no `index.html` da app, nem nas regras do núcleo (i18n, store, tokens de design obrigatórios). As regras que continuam valendo: TypeScript strict, sem `any`, sem dependências novas além do React 19, que é só de desenvolvimento e só da página `react` (ver `viewer/`), sem requisição de rede (a página leva a mesma CSP da app) e testes no Vitest.
 
 O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranca/mapping/pull/160)): toda mudança entra por um PR com base nesse branch, nunca na `main`, conforme o [`CLAUDE.md`](../CLAUDE.md) ("Fluxo de trabalho").
 
@@ -30,11 +30,62 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 
 **Caminho para o produto (conclusão da análise de 2026-10-16):** deu certo. O **motor** (formato, parser, expressões, instanciação, cena, renderizador Konva e arrumação) vai para o produto como a etapa **Biblioteca** do [`docs/ROADMAP.md`](../docs/ROADMAP.md). O **editor do laboratório** (`editor.ts` e a página) não vai: o canvas da app já faz esse papel (entrada geométrica, seleção na UI, alças no overlay, undo no histórico). No produto não existe entidade "instância": uma instância é **uma marcação com uma anotação tipada**, e o desenho é derivado (retângulo da marcação, tipo e valores da anotação, molde da especialização) e não é gravado. Uma tela sem imagem é uma **imagem sem arquivo** (tela em branco com tamanho e cor de fundo); o quadro com telas reorganizáveis já existe na app (`placement` das imagens). O desenho é opcional por tipo, então projetos só com fotos não executam nada novo.
 
-## Próximas fases (L1 e L2)
+**Desenho pelo núcleo (fase L1):** o editor deixou de desenhar por conta própria e passou a desenhar pelo `ScreenRenderer` do núcleo do visualizador (`lab/viewer/`, ver a seção `viewer/` abaixo): um por tela do quadro, com `onInstanceCreated` ligando o arrasto de cada instância. O editor ficou só com o que é edição: quadro, pan, zoom, pinça, `Transformer`, arrasto para container e rótulos. O medidor de texto do Konva (`konvaMeasurer`) mudou para `lab/viewer/measure.ts`. A página e o comportamento não mudaram.
+
+## `viewer/` — Visualizador embutível
+
+**Pergunta:** o motor dos componentes dá um **visualizador de só leitura**, sem framework, que qualquer site hospedeiro embute (inclusive React) para desenhar uma tela a partir da biblioteca e de uma descrição de tela, atualizando em tempo real? E a API basta para o hospedeiro construir a edição por cima?
+
+**Onde:** `https://fabianofranca.github.io/mapping/preview/lab/react/` (o deploy do branch é disparado pelo `workflow_dispatch`, como a página de componentes em `.../preview/lab/components/`); `npm run dev:lab:react` para rodar à parte; `npm run build:viewer` gera `dist-viewer/`; a página buildada fica em `dist/lab/react/index.html`. A página de demonstração não usa os tokens nem o CSS da app: tem variáveis próprias (`--demo-*`, tema claro e escuro) em `lab/react/react.css`, para ser um exemplo copiável de hospedeiro.
+
+**O que é:**
+
+- **Núcleo sem framework** (`lab/viewer/index.ts`, `viewer.ts`, `screenRenderer.ts`, `measure.ts`): `createViewer(contêiner, opções)` desenha uma tela com Konva, só leitura. O `ScreenRenderer` desenha **uma** tela num `Konva.Group` fornecido por quem chama e não conhece quadro nem "tela ativa"; o `createViewer` usa um por `Stage` e o editor do laboratório usa um por tela do quadro. `update` faz o diff por identidade (`===`): só as instâncias novas ou com objeto novo são re-instanciadas, as que sumiram são destruídas. O desenho do Konva roda no `requestAnimationFrame`, no máximo uma vez por quadro.
+- **Invólucro React fino** (`lab/viewer/react.tsx`): `<MappingViewer/>` é um `<div>` que hospeda um `createViewer`.
+- **Build de biblioteca e pacote npm** (`lab/viewer/build.mjs`, `npm run build:viewer`): o `tsc` roda primeiro (e verifica os tipos), depois o esbuild gera, **minificados e com mapas externos** (`.js.map`), `dist-viewer/mapping-viewer.js` (cerca de 227 kB, mapa de 1,2 MB; eram 487 kB sem minificar) e `dist-viewer/mapping-viewer-react.js` (cerca de 228 kB, mapa de 1,2 MB; eram 489 kB). O script também escreve o pacote instalável: `dist-viewer/package.json` (`name: "mapping-viewer"`, versão **`0.1.0`**, lida da constante `VIEWER_VERSION` do `build.mjs`, que sobe junto com mudanças da API; `type: "module"`; `exports` `.` e `./react`, cada um com `types` e `import`; `peerDependencies` com `react >=18` opcional, para quem usa só o núcleo; sem `license`, porque o repositório ainda não tem `LICENSE`), `dist-viewer/types/` (`.d.ts`) e `dist-viewer/README.md` (copiado de `lab/viewer/PACKAGE-README.md`: instalação, uso do núcleo e do React, biblioteca, fontes, árvore e exports). No fim, o build confere que todo arquivo apontado por `exports` existe e falha com a lista dos que faltam. Para instalar: `npm pack` dentro de `dist-viewer/` gera `mapping-viewer-0.1.0.tgz` (`npm install ./mapping-viewer-0.1.0.tgz` no projeto hospedeiro) ou a pasta é copiada. Cada `.js` é ESM e autocontido, com o Konva e o motor embutidos; o do React deixa `react`, `react/jsx-runtime` e `react-dom` de fora (o hospedeiro fornece o dele). O hospedeiro usa um **ou** outro.
+
+**Entrada:** a biblioteca (`Library`, montada por `loadLibrary(files)`) e a tela (`Screen`, de `parseScreen(json)` ou um objeto): a descrição neutra que o laboratório já tinha (tamanho, fundo, instâncias com retângulo, tipo, valores e pai). O hospedeiro ou a app traduzem o que têm para isso.
+
+**API:**
+
+- `createViewer(container, { library, screen, onHover, onClick, onWarnings, measure, fit: 'contain' | número, padding, interactive, selectionColor, hoverColor })` devolve `{ update({ library?, screen? }), redraw(), setSelection(ids), setHover(id), setInteractive(on), fit(), scale(), boxOf(id), instanceAt(ponto), clientToScreen(ponto), warnings(), toDataURL(pixelRatio?), dispose() }`. `fit` e `padding` valem só na criação; o enquadramento se refaz sozinho quando o contêiner muda de tamanho. `interactive` (padrão `true`) e `setInteractive(on)`: com `false` o canvas vira só imagem (`stage.listening(false)`; o ponteiro não chama `onHover` nem `onClick`), e `setSelection` e `setHover` continuam valendo, porque a seleção e o hover vêm do hospedeiro; `boxOf`, `instanceAt` e `clientToScreen` funcionam nos dois modos. Ao desligar com hover do ponteiro ativo, o hospedeiro recebe `onHover(undefined)` uma vez.
+- Invólucro: `<MappingViewer library screen selection hover interactive onHover onClick onWarnings fit padding className style fontsVersion />`. Os callbacks são lidos por ref (passar uma função nova a cada render não recria o viewer); `library`/`screen` viram `update`, `selection` vira `setSelection`, `hover` vira `setHover`, `interactive` vira `setInteractive` (muda sem recriar o viewer) e `fontsVersion` vira `redraw`. Em `<StrictMode>` o viewer é criado, destruído e criado de novo sem vazar.
+- Árvore (`lab/viewer/tree.ts`, puro): `screenTree(screen, library)` devolve as raízes na ordem de desenho (`renderOrder`), com os filhos aninhados (`parentId` que não existe na tela = raiz); cada `TreeNode` traz `id`, `parentId`, `depth`, `label` (`instanceLabel`; tipo desconhecido ou biblioteca `undefined`: o `typeId`), `typeId`, `typeName` (ausente se o tipo não existe), `instance` e `children`. `flattenTree(nodes)` dá a lista em pré-ordem (a mesma de `renderOrder`).
+- **Funções do hospedeiro** (`lab/viewer/host.ts`): `loadLibraryFromUrl(specUrl, { fetch?, fonts? })` busca a especialização, os componentes (texto) e as fontes (bytes, salvo `fonts: false`) relativos à URL dela e devolve `loadLibrary(arquivos)`; um componente ou fonte que não vem fica de fora (o `loadLibrary` relata), uma especialização não-ok ou a falta de `fetch` lançam `Error`. `registerLibraryFonts(library, host?)` registra as fontes da biblioteca (`registerFonts`) e devolve o status de cada uma. **As duas existem para o site que instala o pacote e não rodam nas páginas do laboratório**, que não fazem rede (CSP `connect-src 'none'`) e carregam a biblioteca de arquivos escolhidos ou dos exemplos embutidos.
+- Também exportados: `ScreenRenderer`, `konvaMeasurer`, `loadLibrary`, `resolvePath`, `parseScreen`, `serializeScreen`, `instanceLabel`, `renderOrder`, `childrenOf` e os tipos (`TreeNode`, `LoadFromUrlOptions`, `FontStatus`, `FontHost` entre eles).
+
+**Fontes:** o núcleo não registra fonte. O hospedeiro fornece (`@font-face` no CSS, `FontFace` de bytes ou `registerLibraryFonts(library)` com a biblioteca de `loadLibraryFromUrl`) e chama `redraw()` (ou muda `fontsVersion` no invólucro) para remedir os textos. A demonstração usa a fonte do sistema.
+
+**Página de demonstração (`lab/react/`):** hospedeiro React 19 de verdade (`react-dom/client`, sem `preact/compat`). À esquerda, o JSON da tela numa caixa de texto: cada edição válida vira a `screen` do visualizador (atualização em tempo real); uma edição inválida mostra o erro e mantém a última tela válida. **Exemplos** e **Material 3** trocam a biblioteca e a tela. **Desmontar/Montar** exercita a criação e a destruição do viewer, o toggle **StrictMode** recria o root em modo estrito e o checkbox **Seleção pelo canvas** (ligado por padrão) liga e desliga a prop `interactive`. No centro, o visualizador e um painel com a tela, o hover, o último clique (id e posição em px da tela), a seleção (o clique seleciona), os avisos e o tempo aproximado da última edição (da edição até o efeito do invólucro, sem o desenho do Konva). À direita, a **Árvore** das instâncias (montada por `flattenTree(screenTree(screen, library))`: hierarquia pelo `parentId`, na ordem de `renderOrder`, cada linha com o rótulo e o nome do tipo): clicar numa linha seleciona (clicar de novo deseleciona), passar o mouse realça a instância no canvas (`hover`), e a seleção feita no canvas acende a mesma linha. Abaixo, as **Propriedades** (só leitura) da instância selecionada: tipo, id, caixa e os campos do tipo com os valores. Com a seleção pelo canvas desligada, a árvore é a única forma de selecionar.
+
+**Observações da fase:**
+
+- **Custo das atualizações frequentes.** O teste `tests/lab/viewer/viewer.test.ts` mede, em jsdom com canvas falso e medidor aproximado, a tela do Material 3 com 21 instâncias: atualizar **uma** instância leva cerca de **1 ms** e um `redraw()` completo cerca de **7,5 ms**. O diff por identidade deixa a atualização frequente proporcional ao que mudou. O desenho do Konva fica fora dessa medição (é no `requestAnimationFrame`, no máximo uma vez por quadro). Os números são de ordem de grandeza (canvas falso); a página de demonstração mostra o tempo aproximado de cada edição do JSON no navegador.
+- **A API basta para o hospedeiro construir a edição para leigos por cima (conclusão da fase).** Basta para o que uma ferramenta administrativa precisa: selecionar pelo clique, realçar pelo hover vindo da lista (`setHover`), editar os campos num formulário do hospedeiro e ver o redesenho na hora (`update` com a tela nova). `boxOf`, `scale` e `clientToScreen` deixam o hospedeiro desenhar as próprias alças ou rótulos em DOM por cima do contêiner, se quiser. A seleção pela árvore e o modo sem interação no canvas (`interactive: false`) são o caminho para a ferramenta administrativa: o canvas vira pré-visualização e a edição acontece na árvore e no formulário do hospedeiro. O que o núcleo **não** dá, de propósito, é arrastar e redimensionar: isso é edição (no laboratório fica no editor; no produto, no canvas da app). Se a ferramenta precisar de arrastar, a saída é a do editor: ligar o arrasto nos grupos via `ScreenRenderer` (exportado), em vez do `createViewer`.
+- **Pontos em aberto.** (1) `toDataURL` captura só o que cabe no `Stage`: com `fit` numérico maior que o contêiner, a tela sai cortada. (2) Os dois bundles duplicam o Konva: quem usar os dois no mesmo site carrega duas cópias; se incomodar, a saída é um bundle só com o invólucro dentro.
+- **Tamanho.** Página `dist/lab/react/index.html`: 491 kB (sem nenhuma ocorrência de "preact"); `dist/lab/components/index.html`: 418 kB.
+
+**Estrutura:**
+
+- `lab/viewer/index.ts`: entrada pública do núcleo.
+- `lab/viewer/viewer.ts`: `createViewer`, `Viewer`, `ViewerOptions`.
+- `lab/viewer/screenRenderer.ts`: `ScreenRenderer`, o desenho de uma tela num grupo.
+- `lab/viewer/measure.ts`: `konvaMeasurer`.
+- `lab/viewer/react.tsx`: `<MappingViewer/>`.
+- `lab/viewer/tree.ts`: `screenTree`, `flattenTree`, `TreeNode`.
+- `lab/viewer/host.ts`: `loadLibraryFromUrl`, `registerLibraryFonts` (funções do hospedeiro).
+- `lab/viewer/PACKAGE-README.md`: o README do pacote (copiado para `dist-viewer/README.md`).
+- `lab/viewer/build.mjs` e `lab/viewer/tsconfig.json`: build de biblioteca, pacote npm e declarações de tipo.
+- `lab/react/` (`index.html`, `main.tsx`, `react.css`): a página de demonstração, com CSS próprio (`--demo-*`, sem os tokens da app); `vite.lab.config.ts` com `--mode react` (sem o plugin `preact()` nem `tokensCss()`).
+- `tests/lab/viewer/`: núcleo, `ScreenRenderer`, árvore, funções do hospedeiro, invólucro e página React.
+
+React 19 é dependência de desenvolvimento **só do laboratório**: a app continua em Preact e nada de React entra no `dist/index.html`.
+
+## Próxima fase (L2)
 
 Detalhes e checkboxes no [`PLAN.md`](../PLAN.md), seção "Etapa em andamento".
 
-- **L1, visualizador embutível:** núcleo de só leitura sem framework, o editor passando a usar o núcleo, build de biblioteca à parte e invólucro React com página de demonstração.
+- **L1, visualizador embutível: concluída.** Ver a seção `viewer/` acima.
 - **L2, tela a partir de um JSON sem geometria:** dimensionamento por componente, arrumação por tamanhos, declaração de origem executável e a página colando um JSON do SDUI.
 
 ## `components/sdui/` — Exemplo de JSON do SDUI

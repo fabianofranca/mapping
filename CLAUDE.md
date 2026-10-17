@@ -26,6 +26,8 @@ npm run test:coverage # vitest com relatório de cobertura (coverage/); pula os 
 npm run test:perf # só os orçamentos de desempenho (sem cobertura; o CI roda separado)
 npm run test:e2e  # Playwright contra dist/index.html; roda no CI (localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
 npm run build:mcp # gera dist-mcp/mapping-mcp.js (servidor MCP, etapa 3a)
+npm run dev:lab:react # página de demonstração do visualizador embutível (lab/viewer, fase L1)
+npm run build:viewer # gera dist-viewer/ (mapping-viewer.js, mapping-viewer-react.js e types/)
 npm run lint      # eslint + prettier --check
 npm run typecheck # tsc --noEmit (app e mcp/)
 ```

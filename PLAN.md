@@ -57,14 +57,14 @@ O laboratório `lab/components/` (PR [#160](https://github.com/fabianofranca/map
 
 **Coordenador:** Sonnet. Especificação fechada: extrair o núcleo de só leitura, build de biblioteca, invólucro React e demonstração; pouca decisão nova. **Esforço:** medium; subagentes medium (mecânicos: low).
 
-- [ ] Núcleo de só leitura, sem framework: recebe um contêiner, a biblioteca e a descrição de tela e desenha; `update` redesenha só o que mudou; expõe hover, clique e realce de seleção por callbacks; não edita.
-- [ ] O editor do laboratório passa a usar o núcleo para desenhar (separação verdadeira entre motor e editor).
-- [ ] Build de biblioteca à parte, gerando um arquivo importável (como o build do MCP); as fontes são fornecidas pelo site hospedeiro.
-- [ ] Invólucro React fino sobre o núcleo.
-- [ ] Página de demonstração em React de verdade (React como dependência de desenvolvimento só do laboratório, justificada no PR): montar, atualizar o JSON em tempo real, StrictMode e desmontar.
-- [ ] Entrada do visualizador: a descrição neutra de tela que o laboratório já tem (tamanho, fundo, instâncias com retângulo, tipo, valores e pai) mais a biblioteca; o hospedeiro ou a app traduzem para isso.
-- [ ] Observar o custo de atualizações frequentes.
-- [ ] Observar se a API basta para o hospedeiro construir a edição para leigos por cima.
+- [x] Núcleo de só leitura, sem framework: recebe um contêiner, a biblioteca e a descrição de tela e desenha; `update` redesenha só o que mudou; expõe hover, clique e realce de seleção por callbacks; não edita.
+- [x] O editor do laboratório passa a usar o núcleo para desenhar (separação verdadeira entre motor e editor).
+- [x] Build de biblioteca à parte, gerando um arquivo importável (como o build do MCP); as fontes são fornecidas pelo site hospedeiro.
+- [x] Invólucro React fino sobre o núcleo.
+- [x] Página de demonstração em React de verdade (React como dependência de desenvolvimento só do laboratório, justificada no PR): montar, atualizar o JSON em tempo real, StrictMode e desmontar.
+- [x] Entrada do visualizador: a descrição neutra de tela que o laboratório já tem (tamanho, fundo, instâncias com retângulo, tipo, valores e pai) mais a biblioteca; o hospedeiro ou a app traduzem para isso.
+- [x] Observar o custo de atualizações frequentes (uma instância ≈ 1 ms, `redraw()` completo ≈ 7,5 ms; ver `viewer/` em [`lab/README.md`](lab/README.md)).
+- [x] Observar se a API basta para o hospedeiro construir a edição para leigos por cima (basta, sem arrastar; ver `viewer/` em [`lab/README.md`](lab/README.md)).
 
 ### L2 — Tela a partir de um JSON sem geometria
 

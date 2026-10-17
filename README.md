@@ -30,6 +30,8 @@ npm ci
 npm run dev        # servidor de desenvolvimento (Vite)
 npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a CSP, e o laboratório em dist/lab/
 npm run dev:lab    # laboratório de componentes (lab/README.md), à parte da app
+npm run dev:lab:react # demonstração do visualizador embutível em React (lab/README.md)
+npm run build:viewer # gera dist-viewer/ (visualizador embutível: núcleo, invólucro React e tipos)
 ```
 
 ## Como testar

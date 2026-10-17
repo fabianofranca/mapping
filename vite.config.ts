@@ -176,7 +176,23 @@ export default defineConfig({
           env: testEnv,
           setupFiles: ['tests/setup.ts'],
           include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
-          exclude: ['tests/model/**', 'tests/mcp/**'],
+          exclude: ['tests/model/**', 'tests/mcp/**', 'tests/lab/viewer/react*.test.tsx'],
+        },
+      },
+      {
+        // Invólucro React do visualizador (fase L1): React de verdade. Sem o plugin
+        // `preact()`, que apelida react para preact/compat; por isso `extends: false` (Vitest 5:
+        // o projeto inline herdaria os plugins do arquivo). Sem `tokensCss()`: a página React não
+        // usa os tokens da app.
+        extends: false,
+        base: './',
+        plugins: [],
+        oxc: { jsx: { runtime: 'automatic', importSource: 'react' } },
+        test: {
+          name: 'viewer-react',
+          environment: 'jsdom',
+          env: testEnv,
+          include: ['tests/lab/viewer/react*.test.tsx'],
         },
       },
     ],

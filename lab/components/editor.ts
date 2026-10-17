@@ -3,9 +3,10 @@
  * da app); a página Preact chama métodos e recebe callbacks.
  *
  * - o canvas é um **quadro** com várias telas; cada tela é um `Konva.Group` arrastável (como
- *   um todo) na posição dela no quadro, com o retângulo branco da tela (`artboard`) e, por
- *   cima, um `Konva.Group` por instância na posição do retângulo (coordenadas da tela), com o
- *   componente instanciado dentro (`instantiate` → `renderScene`);
+ *   um todo) na posição dela no quadro, com o retângulo branco da tela (`artboard`, índice 0)
+ *   e, por cima, o desenho das instâncias, que é do `ScreenRenderer` (`lab/viewer`, o mesmo
+ *   núcleo do visualizador embutível): um grupo por instância na posição do retângulo
+ *   (coordenadas da tela). O editor só liga a edição por cima do que o núcleo desenha;
  * - o que arrasta o quê: sobre uma instância arrastável, a instância; sobre o fundo da tela
  *   (ou sobre uma instância no modo "posições fixas", que não arrasta), a tela inteira; no
  *   vazio, o palco (pan). O `Transformer` redimensiona a instância e, a cada movimento, o
@@ -14,13 +15,11 @@
  *   leva o nome acima do canto, e a tela ativa (a do último clique) fica em destaque.
  */
 import Konva from 'konva';
-import { renderScene } from '../scene/renderScene';
 import { attachPinchZoom, capPixelRatio, freezeGroup, thawGroup } from '../shared/pinch';
-import type { FieldValues } from './componentFormat';
-import { type TextMeasurer, instantiate } from './instantiate';
+import { ScreenRenderer } from '../viewer/screenRenderer';
 import { isContainer } from './arrange';
 import { type Board, boardBounds, findScreen } from './board';
-import { type Library, type TypeDef, instanceLabel } from './library';
+import type { Library, TypeDef } from './library';
 import {
   type Box,
   type Instance,
@@ -58,41 +57,19 @@ capPixelRatio(Konva);
 
 const SELECT_COLOR = '#1A63CC';
 const HOVER_COLOR = 'rgba(26, 99, 204, 0.8)';
-const MISSING_COLOR = '#D81B60';
 const ARTBOARD_STROKE = 'rgba(0, 0, 0, 0.18)';
 const SCREEN_LABEL_COLOR = '#5F6368';
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 16;
 
-interface Mounted {
-  instance: Instance;
-  readonly wrapper: Konva.Group;
-  readonly screenId: string;
-}
-
-/** Uma tela no palco: o grupo arrastável, o retângulo branco e o rótulo (no overlay). */
+/** Uma tela no palco: o grupo arrastável, o retângulo branco, o desenho e o rótulo (no overlay). */
 interface MountedScreen {
   readonly group: Konva.Group;
   readonly artboard: Konva.Rect;
   readonly label: Konva.Text;
+  /** Desenha as instâncias dentro de `group` (o artboard fica no índice 0). */
+  readonly renderer: ScreenRenderer;
 }
-
-/** Mede texto com o próprio Konva, para o layout bater com o desenho. */
-export const konvaMeasurer: TextMeasurer = (text, font, maxWidth) => {
-  const probe = new Konva.Text({
-    text,
-    fontFamily: `"${font.family}", sans-serif`,
-    fontSize: font.size,
-    fontStyle: `${font.italic ? 'italic ' : ''}${font.weight === 400 ? 'normal' : String(font.weight)}`,
-    lineHeight: font.lineHeight / font.size,
-    letterSpacing: font.letterSpacing,
-    wrap: 'word',
-    ...(maxWidth !== undefined ? { width: maxWidth } : {}),
-  });
-  const metrics = { width: probe.width(), height: probe.height() };
-  probe.destroy();
-  return metrics;
-};
 
 export class ScreenEditor {
   private readonly stage: Konva.Stage;
@@ -136,8 +113,6 @@ export class ScreenEditor {
   });
   private readonly resize: ResizeObserver;
   private readonly screens = new Map<string, MountedScreen>();
-  private readonly mounted = new Map<string, Mounted>();
-  private readonly warnings = new Map<string, readonly string[]>();
   private library: Library | undefined;
   private board: Board | undefined;
   private activeScreenId: string | undefined;
@@ -166,7 +141,7 @@ export class ScreenEditor {
     this.stage.on('click tap', (e) => {
       if (e.evt instanceof MouseEvent && e.evt.button !== 0) return;
       const instanceId = this.instanceIdOf(e.target);
-      if (instanceId) {
+      if (instanceId !== undefined) {
         // `select` ativa a tela da instância.
         this.select(instanceId);
         return;
@@ -215,15 +190,14 @@ export class ScreenEditor {
   dispose(): void {
     this.resize.disconnect();
     cancelAnimationFrame(this.frame);
+    for (const { renderer } of this.screens.values()) renderer.dispose();
+    this.screens.clear();
     this.stage.destroy();
   }
 
   setLibrary(library: Library | undefined): void {
     this.library = library;
-    // Tudo depende da biblioteca: remonta as instâncias.
-    for (const { wrapper } of this.mounted.values()) wrapper.destroy();
-    this.mounted.clear();
-    this.warnings.clear();
+    // Tudo depende da biblioteca: o renderer re-instancia (biblioteca nova equivale a `force`).
     if (this.board) this.setBoard(this.board, true);
   }
 
@@ -245,22 +219,23 @@ export class ScreenEditor {
       mountedScreen.artboard.size({ width: screen.width, height: screen.height });
       mountedScreen.artboard.fill(screen.background);
       mountedScreen.label.text(screen.name);
-      this.syncInstances(mountedScreen.group, screen, force);
+      // O artboard é o índice 0 do grupo; as instâncias começam em 1.
+      mountedScreen.renderer.update(this.library, screen, { force, zBase: 1 });
     });
     for (const [id, mountedScreen] of this.screens) {
       if (seen.has(id)) continue;
-      for (const [instanceId, m] of this.mounted) {
-        if (m.screenId !== id) continue;
-        this.mounted.delete(instanceId);
-        this.warnings.delete(instanceId);
-        if (this.selectedId === instanceId) this.select(undefined);
-      }
+      if (this.selectedId !== undefined && mountedScreen.renderer.nodeOf(this.selectedId))
+        this.select(undefined);
+      mountedScreen.renderer.dispose();
       mountedScreen.group.destroy();
       mountedScreen.label.destroy();
       this.screens.delete(id);
     }
+    // A instância selecionada pode ter saído da tela.
+    if (this.selectedId !== undefined && !this.findInstance(this.selectedId))
+      this.select(undefined);
     if (first) this.fit();
-    this.callbacks.onWarnings?.(new Map(this.warnings));
+    this.callbacks.onWarnings?.(this.allWarnings());
     this.transformer.forceUpdate();
     this.syncOverlay();
   }
@@ -279,19 +254,20 @@ export class ScreenEditor {
    */
   setFixed(fixed: boolean): void {
     this.fixed = fixed;
-    for (const { wrapper } of this.mounted.values()) wrapper.draggable(!fixed);
+    for (const { renderer } of this.screens.values())
+      for (const id of renderer.ids()) renderer.nodeOf(id)?.draggable(!fixed);
     this.transformer.resizeEnabled(!fixed);
     this.draw();
   }
 
   select(id: string | undefined): void {
-    if (id !== undefined && !this.mounted.has(id)) id = undefined;
-    const screenId = id ? this.mounted.get(id)?.screenId : undefined;
-    if (screenId) this.activate(screenId);
+    const found = id !== undefined ? this.findInstance(id) : undefined;
+    if (!found) id = undefined;
+    if (found) this.activate(found.screenId);
     if (id === this.selectedId) return;
     this.selectedId = id;
-    const wrapper = id ? this.mounted.get(id)?.wrapper : undefined;
-    this.transformer.nodes(wrapper ? [wrapper] : []);
+    const node = found && id !== undefined ? found.renderer.nodeOf(id) : undefined;
+    this.transformer.nodes(node ? [node] : []);
     this.callbacks.onSelect?.(id);
     this.syncOverlay();
   }
@@ -358,8 +334,9 @@ export class ScreenEditor {
       pixelRatio: 2 / scale,
     });
     if (previousSelection) {
-      const wrapper = this.mounted.get(previousSelection)?.wrapper;
-      if (wrapper) this.transformer.nodes([wrapper]);
+      const node =
+        this.findInstance(previousSelection)?.renderer.nodeOf(previousSelection);
+      if (node) this.transformer.nodes([node]);
     }
     this.syncOverlay();
     return url;
@@ -413,84 +390,72 @@ export class ScreenEditor {
     });
     this.world.add(group);
     this.overlay.add(label);
-    const mountedScreen = { group, artboard, label };
+    const renderer = new ScreenRenderer(group, {
+      onInstanceCreated: (id, node) => this.attachDrag(node, id, screenId),
+    });
+    const mountedScreen = { group, artboard, label, renderer };
     this.screens.set(screenId, mountedScreen);
     return mountedScreen;
   }
 
-  /** Diff das instâncias de uma tela: só as que mudaram de objeto são re-instanciadas. */
-  private syncInstances(group: Konva.Group, screen: Screen, force: boolean): void {
-    const seen = new Set<string>();
-    renderOrder(screen).forEach((instance, index) => {
-      seen.add(instance.id);
-      const current = this.mounted.get(instance.id);
-      // O artboard é o índice 0 do grupo.
-      const z = index + 1;
-      if (current && current.instance === instance && !force) {
-        current.wrapper.zIndex(z);
-        return;
-      }
-      if (current) {
-        this.renderInto(current.wrapper, instance);
-        current.instance = instance;
-        current.wrapper.zIndex(z);
-      } else {
-        const wrapper = this.createWrapper(instance, screen.id);
-        group.add(wrapper);
-        this.renderInto(wrapper, instance);
-        this.mounted.set(instance.id, { instance, wrapper, screenId: screen.id });
-        wrapper.zIndex(z);
-      }
+  /** Liga o arrasto (mover a instância, realçar o container de destino) ao grupo criado pelo renderer. */
+  private attachDrag(node: Konva.Group, id: string, screenId: string): void {
+    node.draggable(!this.fixed);
+    node.on('dragstart', (e) => {
+      if (!isTarget(e, node)) return;
+      this.select(id);
     });
-    for (const [id, m] of this.mounted) {
-      if (m.screenId !== screen.id || seen.has(id)) continue;
-      m.wrapper.destroy();
-      this.mounted.delete(id);
-      this.warnings.delete(id);
-      if (this.selectedId === id) this.select(undefined);
-    }
-  }
-
-  private createWrapper(instance: Instance, screenId: string): Konva.Group {
-    const wrapper = new Konva.Group({ draggable: !this.fixed });
-    wrapper.setAttr('instanceId', instance.id);
-    wrapper.on('dragstart', (e) => {
-      if (!isTarget(e, wrapper)) return;
-      this.select(instance.id);
-    });
-    wrapper.on('dragmove', (e) => {
-      if (!isTarget(e, wrapper)) return;
-      const group = this.screens.get(screenId)?.group;
+    node.on('dragmove', (e) => {
+      if (!isTarget(e, node)) return;
+      const mountedScreen = this.screens.get(screenId);
       const screen = this.screenById(screenId);
-      const box = { ...this.boxOfWrapper(wrapper), x: wrapper.x(), y: wrapper.y() };
+      const box = { ...this.boxOfWrapper(node), x: node.x(), y: node.y() };
       const target = screen
         ? this.containerAt(
             screen,
             { x: box.x + box.width / 2, y: box.y + box.height / 2 },
-            instance.id,
+            id,
           )
         : undefined;
-      const targetBox = target ? this.mounted.get(target)?.instance.box : undefined;
-      if (targetBox && group)
+      const targetBox = target
+        ? mountedScreen?.renderer.instanceOf(target)?.box
+        : undefined;
+      if (targetBox && mountedScreen)
         this.dropTarget.setAttrs({
           ...targetBox,
-          x: group.x() + targetBox.x,
-          y: group.y() + targetBox.y,
+          x: mountedScreen.group.x() + targetBox.x,
+          y: mountedScreen.group.y() + targetBox.y,
           visible: true,
         });
       else this.dropTarget.visible(false);
       this.draw();
     });
-    wrapper.on('dragend', (e) => {
-      if (!isTarget(e, wrapper)) return;
+    node.on('dragend', (e) => {
+      if (!isTarget(e, node)) return;
       this.dropTarget.visible(false);
-      const box = { ...this.boxOfWrapper(wrapper), x: wrapper.x(), y: wrapper.y() };
+      const box = { ...this.boxOfWrapper(node), x: node.x(), y: node.y() };
       const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
       const screen = this.screenById(screenId);
-      const target = screen ? this.containerAt(screen, center, instance.id) : undefined;
-      this.callbacks.onDrop?.(instance.id, box, target, center);
+      const target = screen ? this.containerAt(screen, center, id) : undefined;
+      this.callbacks.onDrop?.(id, box, target, center);
     });
-    return wrapper;
+  }
+
+  /** A tela (e o renderer dela) que desenha a instância. */
+  private findInstance(
+    id: string,
+  ): { screenId: string; renderer: ScreenRenderer } | undefined {
+    for (const [screenId, { renderer }] of this.screens)
+      if (renderer.nodeOf(id)) return { screenId, renderer };
+    return undefined;
+  }
+
+  /** Avisos de todas as telas, por instância (só as que têm aviso). */
+  private allWarnings(): ReadonlyMap<string, readonly string[]> {
+    const all = new Map<string, readonly string[]>();
+    for (const { renderer } of this.screens.values())
+      for (const [id, list] of renderer.warnings()) all.set(id, list);
+    return all;
   }
 
   private screenById(id: string): Screen | undefined {
@@ -512,67 +477,6 @@ export class ScreenEditor {
     return this.library?.types.find((t) => t.id === instance.typeId);
   }
 
-  private renderInto(wrapper: Konva.Group, instance: Instance): void {
-    wrapper.destroyChildren();
-    wrapper.position({ x: instance.box.x, y: instance.box.y });
-    wrapper.scale({ x: 1, y: 1 });
-    wrapper.setAttr('boxSize', {
-      width: instance.box.width,
-      height: instance.box.height,
-    });
-    const type = this.typeOf(instance);
-    const local = { x: 0, y: 0, width: instance.box.width, height: instance.box.height };
-    if (!type?.component) {
-      // Tipo sem componente (ou biblioteca sem o tipo): a caixa tracejada com o nome.
-      wrapper.add(
-        new Konva.Rect({
-          ...local,
-          stroke: MISSING_COLOR,
-          strokeWidth: 1,
-          dash: [6, 4],
-          strokeScaleEnabled: false,
-          fill: 'rgba(216, 27, 96, 0.06)',
-        }),
-        new Konva.Text({
-          ...local,
-          text: type
-            ? `${type.name}\n(sem componente)`
-            : `${instance.typeId}\n(tipo desconhecido)`,
-          fontSize: 12,
-          fontFamily: 'system-ui, sans-serif',
-          fill: MISSING_COLOR,
-          align: 'center',
-          verticalAlign: 'middle',
-          listening: false,
-        }),
-      );
-      this.warnings.set(instance.id, [
-        type
-          ? 'tipo sem componente na especialização'
-          : 'tipo não existe na especialização',
-      ]);
-      return;
-    }
-    const result = instantiate(type.component, instance.values as FieldValues, local, {
-      measure: konvaMeasurer,
-      idPrefix: instance.id,
-    });
-    const rendered = renderScene({
-      root: result.root,
-      warnings: [],
-    });
-    rendered.root.listening(true);
-    wrapper.add(rendered.root);
-    // Área de clique inteira (mesmo com fundo transparente).
-    wrapper.add(
-      new Konva.Rect({ ...local, fill: 'rgba(0,0,0,0)', name: 'hit', listening: true }),
-    );
-    const all = [...result.warnings, ...rendered.warnings];
-    if (all.length > 0) this.warnings.set(instance.id, all);
-    else this.warnings.delete(instance.id);
-    wrapper.setAttr('label', instanceLabel(type, instance.values));
-  }
-
   private boxOfWrapper(wrapper: Konva.Group): Box {
     const size = wrapper.getAttr('boxSize') as
       { width: number; height: number } | undefined;
@@ -585,33 +489,36 @@ export class ScreenEditor {
   }
 
   private minSizeOfSelected(): { width: number; height: number } {
-    const mounted = this.selectedId ? this.mounted.get(this.selectedId) : undefined;
-    const type = mounted ? this.typeOf(mounted.instance) : undefined;
+    const id = this.selectedId;
+    const instance = id ? this.findInstance(id)?.renderer.instanceOf(id) : undefined;
+    const type = instance ? this.typeOf(instance) : undefined;
     return type?.component?.minSize ?? { width: 8, height: 8 };
   }
 
   /** Durante o redimensionar: converte a escala do Transformer em caixa nova e re-instancia. */
   private onTransform(): void {
-    const mounted = this.selectedId ? this.mounted.get(this.selectedId) : undefined;
-    if (!mounted) return;
-    const { wrapper } = mounted;
-    const size = this.boxOfWrapper(wrapper);
+    const id = this.selectedId;
+    const found = id ? this.findInstance(id) : undefined;
+    const instance = id ? found?.renderer.instanceOf(id) : undefined;
+    const node = id ? found?.renderer.nodeOf(id) : undefined;
+    if (!found || !instance || !node) return;
+    const size = this.boxOfWrapper(node);
     const box: Box = {
-      x: wrapper.x(),
-      y: wrapper.y(),
-      width: Math.max(1, size.width * wrapper.scaleX()),
-      height: Math.max(1, size.height * wrapper.scaleY()),
+      x: node.x(),
+      y: node.y(),
+      width: Math.max(1, size.width * node.scaleX()),
+      height: Math.max(1, size.height * node.scaleY()),
     };
-    mounted.instance = { ...mounted.instance, box };
-    this.renderInto(wrapper, mounted.instance);
+    // Instância temporária: o próximo `setBoard` com a tela original desfaz.
+    found.renderer.render({ ...instance, box });
     this.transformer.forceUpdate();
     this.draw();
   }
 
   private commitBox(): void {
-    const mounted = this.selectedId ? this.mounted.get(this.selectedId) : undefined;
-    if (!mounted) return;
-    this.callbacks.onBoxChange?.(mounted.instance.id, mounted.instance.box);
+    const id = this.selectedId;
+    const box = id ? this.findInstance(id)?.renderer.instanceOf(id)?.box : undefined;
+    if (id && box) this.callbacks.onBoxChange?.(id, box);
   }
 
   /**
@@ -648,14 +555,12 @@ export class ScreenEditor {
     return found;
   }
 
+  /** A instância sob um nó do palco (procurada no renderer da tela dona). */
   private instanceIdOf(target: Konva.Node | null): string | undefined {
-    let node: Konva.Node | null = target;
-    while (node) {
-      const id: unknown = node.getAttr('instanceId');
-      if (typeof id === 'string') return id;
-      node = node.getParent();
-    }
-    return undefined;
+    const screenId = this.screenIdOf(target);
+    return screenId
+      ? this.screens.get(screenId)?.renderer.instanceIdOf(target)
+      : undefined;
   }
 
   private screenIdOf(target: Konva.Node | null): string | undefined {
@@ -704,19 +609,16 @@ export class ScreenEditor {
         visible: true,
       });
     }
-    const hover =
-      this.hoverId && this.hoverId !== this.selectedId
-        ? this.mounted.get(this.hoverId)
-        : undefined;
+    const hoverId = this.hoverId !== this.selectedId ? this.hoverId : undefined;
+    const hover = hoverId ? this.findInstance(hoverId) : undefined;
+    const hoverInstance = hoverId ? hover?.renderer.instanceOf(hoverId) : undefined;
     const origin = hover ? this.screens.get(hover.screenId)?.group : undefined;
-    if (hover && origin) {
-      const box = hover.instance.box;
+    if (hoverId && hover && hoverInstance && origin) {
+      const box = hoverInstance.box;
       const x = origin.x() + box.x;
       const y = origin.y() + box.y;
       this.hoverRect.setAttrs({ ...box, x, y, visible: true });
-      this.labelText.text(
-        String(hover.wrapper.getAttr('label') ?? hover.instance.typeId),
-      );
+      this.labelText.text(hover.renderer.labelOf(hoverId) ?? hoverInstance.typeId);
       this.label.setAttrs({
         x,
         y,
