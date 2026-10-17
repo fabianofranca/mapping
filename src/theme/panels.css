@@ -501,7 +501,7 @@ button.tree-toggle:hover {
 
 .list-cell-marking {
   width: 25%;
-  min-width: 12em;
+  min-width: 8em;
 }
 
 .list-cell-layer {
@@ -510,9 +510,12 @@ button.tree-toggle:hover {
 }
 
 .list-layer-name {
+  /* inline-block para o max-width valer e o nome longo ganhar reticências */
+  display: inline-block;
   max-width: 16ch;
   overflow: hidden;
   text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 .list-cell-content {
@@ -526,6 +529,7 @@ button.tree-toggle:hover {
   font: inherit;
   font-weight: 600;
   text-align: left;
+  overflow-wrap: anywhere;
   color: var(--color-text);
   background: none;
   border: none;

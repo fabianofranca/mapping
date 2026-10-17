@@ -196,6 +196,7 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
    * dos níveis (`ReviewRow`) e as contagens da lista de propostas (`ProposalRow`). As
    * colunas de ação são derivadas do tamanho dos controles.
    */
+  'size-review-col-name-min': '208px',
   'size-review-col-summary': '232px',
   'size-proposal-col-counts': '236px',
   /** Largura mínima da app (só desktop): abaixo dela, o aviso "Abra numa janela maior". */

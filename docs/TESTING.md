@@ -101,18 +101,18 @@ Os nomes em negrito são os textos exatos da interface em português. Vários co
 
 **Barra principal** (topo do editor), da esquerda para a direita:
 
-| Controle                                        | Como aparece                                  | Atalho                    |
-| ----------------------------------------------- | --------------------------------------------- | ------------------------- |
-| **Ações do projeto** (Exportar, Fechar projeto) | botão com o nome do projeto e uma seta        |                           |
-| **Navegar** / **Desenhar**                      | ícone de mão / ícone de lápis                 |                           |
-| **Adicionar imagens**                           | ícone com texto                               |                           |
-| **Nova tela em branco**                         | ícone com texto, ao lado de Adicionar imagens |                           |
-| **Desfazer** / **Refazer**                      | setas circulares para trás / para a frente    | `Ctrl+Z` / `Ctrl+Shift+Z` |
-| Camada ativa (dica "Camadas (ativa: …)")        | bolinha de cor com o nome da camada           |                           |
-| **Especializações**                             | ícone com texto                               |                           |
-| **Exportar**                                    | ícone com texto                               | `Ctrl+E`                  |
-| **Ajuda**                                       | ícone de interrogação                         | `F1`                      |
-| **Configurações**                               | engrenagem                                    | `Ctrl+,`                  |
+| Controle                                        | Como aparece                                                                                                  | Atalho                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| **Ações do projeto** (Exportar, Fechar projeto) | botão com o nome do projeto e uma seta                                                                        |                           |
+| **Navegar** / **Desenhar**                      | ícone de mão / ícone de lápis                                                                                 |                           |
+| **Adicionar imagens**                           | ícone com texto                                                                                               |                           |
+| **Nova tela em branco**                         | ícone com texto, ao lado de Adicionar imagens (em janelas estreitas só o ícone, com a dica ao passar o mouse) |                           |
+| **Desfazer** / **Refazer**                      | setas circulares para trás / para a frente                                                                    | `Ctrl+Z` / `Ctrl+Shift+Z` |
+| Camada ativa (dica "Camadas (ativa: …)")        | bolinha de cor com o nome da camada                                                                           |                           |
+| **Especializações**                             | ícone com texto                                                                                               |                           |
+| **Exportar**                                    | ícone com texto                                                                                               | `Ctrl+E`                  |
+| **Ajuda**                                       | ícone de interrogação                                                                                         | `F1`                      |
+| **Configurações**                               | engrenagem                                                                                                    | `Ctrl+,`                  |
 
 **Janela Camadas:** o ícone **+** no topo é **Nova camada**; o ícone de olho é **Mostrar todas** (liga a visibilidade de todas as camadas); em cada linha, a bolinha de cor (dica "Cor da camada …"), o **nome**, que é um campo de texto (clique nele para renomear; Enter confirma), a caixa de visibilidade, o ícone ✓ **Tornar ativa** (na camada ativa, a dica é "Ativa") e o ⋮ **Mais ações da camada**. No rodapé, a lista **Marcações sem anotação**, com as opções **Mostrar todas**, **Esmaecer sem anotação** e **Ocultar sem anotação**.
 
