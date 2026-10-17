@@ -17,10 +17,12 @@
   },
   "include": [
     "src",
+    "lab",
     "tests",
     "pwa",
     "mcp/image/wasm.d.ts",
     "vite.config.ts",
+    "vite.lab.config.ts",
     "eslint.config.js"
   ]
 }

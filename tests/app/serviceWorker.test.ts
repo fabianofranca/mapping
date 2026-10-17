@@ -112,14 +112,47 @@ describe('sw.js', () => {
   it('a versão principal responde por caminhos que só começam com "preview"', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');
-    const [response] = await worker.dispatch('fetch', {
+    const responses = await worker.dispatch('fetch', {
       request: {
         method: 'GET',
-        mode: 'navigate',
-        url: 'https://example.com/app/previews',
+        mode: 'no-cors',
+        url: 'https://example.com/app/previews/icon.png',
       },
     });
-    expect(response).toBe('cached');
+    // Não é do preview: a versão principal assume a requisição (cache, depois rede).
+    expect(responses).toHaveLength(1);
+  });
+
+  it('navegação para outra página do site (ex.: lab/) vai à rede, não ao index.html', async () => {
+    for (const channel of ['main', 'preview'] as const) {
+      const worker = loadWorker([], channel);
+      await worker.dispatch('install');
+      for (const path of ['lab/components/', 'lab/components/index.html', 'outra.html']) {
+        const responses = await worker.dispatch('fetch', {
+          request: {
+            method: 'GET',
+            mode: 'navigate',
+            url: `https://example.com/app/${path}`,
+          },
+        });
+        expect(responses, `${channel} ${path}`).toEqual([]);
+      }
+    }
+  });
+
+  it('navegação para a própria página serve o index.html do cache', async () => {
+    const worker = loadWorker();
+    await worker.dispatch('install');
+    for (const path of ['', 'index.html', 'index.html?x=1']) {
+      const [response] = await worker.dispatch('fetch', {
+        request: {
+          method: 'GET',
+          mode: 'navigate',
+          url: `https://example.com/app/${path}`,
+        },
+      });
+      expect(response, path).toBe('cached');
+    }
   });
 
   it('navegação serve o index.html do cache, mesmo com query', async () => {

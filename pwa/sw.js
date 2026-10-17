@@ -25,6 +25,12 @@ const PRECACHE = [
 ];
 
 const url = (path) => new URL(path, self.registration.scope).href;
+// A página da app é só a raiz do escopo (e o próprio index.html): outras páginas do site
+// (ex.: `lab/…`, experimentos publicados ao lado) vão à rede, sem cair no index.html.
+const isAppPage = (pathname) => {
+  const scope = new URL(self.registration.scope).pathname;
+  return pathname === scope || pathname === `${scope}index.html`;
+};
 const isPreviewPath = (pathname) => {
   const preview = new URL('./preview', self.registration.scope).pathname;
   return pathname === preview || pathname.startsWith(`${preview}/`);
@@ -62,6 +68,7 @@ self.addEventListener('fetch', (event) => {
   // versão principal o contém, mas não pode responder por ele (nem por `/preview`
   // sem a barra, que o GitHub Pages redireciona para `/preview/`).
   if (!PREVIEW && isPreviewPath(requested.pathname)) return;
+  if (request.mode === 'navigate' && !isAppPage(requested.pathname)) return;
 
   event.respondWith(
     (async () => {

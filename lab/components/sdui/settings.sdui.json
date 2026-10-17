@@ -1,0 +1,190 @@
+{
+  "version": "1.0",
+  "screen": {
+    "id": "settings",
+    "title": "Settings",
+    "background": "surface",
+    "device": { "width": 412, "height": 917 }
+  },
+  "content": {
+    "type": "Column",
+    "props": { "spacing": 0 },
+    "children": [
+      {
+        "type": "TopAppBar",
+        "props": {
+          "title": "Settings",
+          "navigationIcon": "back",
+          "actionIcon": "search",
+          "titleAlign": "start"
+        },
+        "actions": {
+          "onNavigationClick": { "type": "navigateBack" },
+          "onActionClick": { "type": "navigate", "route": "/settings/search" }
+        }
+      },
+      {
+        "type": "Column",
+        "props": { "padding": 16, "spacing": 16 },
+        "children": [
+          {
+            "type": "TextField",
+            "id": "search",
+            "props": {
+              "label": "Search settings",
+              "placeholder": "Wi-Fi, notifications…",
+              "trailingIcon": "search",
+              "state": "enabled"
+            },
+            "binding": { "value": "$state.searchQuery" }
+          },
+          {
+            "type": "Row",
+            "props": { "spacing": 8 },
+            "children": [
+              { "type": "Chip", "props": { "text": "All", "selected": true } },
+              {
+                "type": "Chip",
+                "props": { "text": "Network", "selected": false, "icon": "settings" }
+              },
+              { "type": "Chip", "props": { "text": "Privacy", "icon": "notifications" } }
+            ]
+          },
+          {
+            "type": "Card",
+            "props": {
+              "headline": "Storage almost full",
+              "subhead": "92% used · 118 GB of 128 GB",
+              "body": "Free up space by removing unused apps and old downloads.",
+              "style": "filled"
+            },
+            "children": [
+              {
+                "type": "Button",
+                "props": { "text": "Clean up", "style": "text" },
+                "actions": {
+                  "onClick": { "type": "navigate", "route": "/storage/cleanup" }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ListItem",
+        "props": {
+          "headline": "Network & internet",
+          "supportingText": "Wi-Fi, mobile, hotspot",
+          "leadingIcon": "home",
+          "trailingIcon": "chevron"
+        },
+        "actions": { "onClick": { "type": "navigate", "route": "/settings/network" } }
+      },
+      {
+        "type": "ListItem",
+        "props": {
+          "headline": "Notifications",
+          "supportingText": "Notification history, conversations",
+          "leadingIcon": "notifications",
+          "trailingIcon": "chevron"
+        },
+        "actions": {
+          "onClick": { "type": "navigate", "route": "/settings/notifications" }
+        }
+      },
+      {
+        "type": "ListItem",
+        "props": {
+          "headline": "Maria Souza",
+          "supportingText": "Google account, backup",
+          "avatar": { "initials": "MS" },
+          "trailingIcon": "chevron"
+        },
+        "binding": {
+          "headline": "$user.displayName",
+          "avatar.initials": "$user.initials"
+        },
+        "actions": { "onClick": { "type": "navigate", "route": "/settings/account" } }
+      },
+      {
+        "type": "Column",
+        "props": { "padding": 16, "spacing": 16 },
+        "children": [
+          {
+            "type": "Switch",
+            "id": "darkTheme",
+            "props": { "label": "Dark theme", "checked": true, "showIcon": true },
+            "binding": { "checked": "$prefs.darkTheme" }
+          },
+          {
+            "type": "Switch",
+            "id": "batterySaver",
+            "props": { "label": "Battery saver", "checked": false, "showIcon": false },
+            "binding": { "checked": "$prefs.batterySaver" }
+          },
+          {
+            "type": "Checkbox",
+            "id": "diagnostics",
+            "props": {
+              "label": "Send usage & diagnostics",
+              "checked": true,
+              "error": false
+            },
+            "binding": { "checked": "$prefs.diagnostics" }
+          },
+          {
+            "type": "Row",
+            "props": { "spacing": 12 },
+            "children": [
+              {
+                "type": "Button",
+                "props": { "text": "Reset options", "style": "outlined" },
+                "actions": {
+                  "onClick": { "type": "dispatch", "event": "settings.reset" }
+                }
+              },
+              {
+                "type": "Button",
+                "props": { "text": "Save", "style": "filled", "icon": "check" },
+                "actions": { "onClick": { "type": "dispatch", "event": "settings.save" } }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "floating": [
+    {
+      "type": "FAB",
+      "anchor": "bottom-end",
+      "margin": 16,
+      "props": { "icon": "edit", "color": "primary" },
+      "actions": { "onClick": { "type": "navigate", "route": "/settings/edit" } }
+    }
+  ],
+  "bottomBar": {
+    "type": "NavigationBar",
+    "props": {
+      "selectedIndex": 2,
+      "items": [
+        { "label": "Home", "icon": "home", "route": "/home" },
+        { "label": "Search", "icon": "search", "route": "/search" },
+        { "label": "Profile", "icon": "person", "route": "/profile" }
+      ]
+    }
+  },
+  "modal": {
+    "type": "BottomSheet",
+    "props": {
+      "title": "Sort by",
+      "dragHandle": true,
+      "items": [
+        { "label": "Name", "icon": "person", "value": "name" },
+        { "label": "Date modified", "icon": "edit", "value": "modified" },
+        { "label": "Size", "icon": "settings", "value": "size" }
+      ]
+    },
+    "binding": { "open": "$state.sortSheetOpen" }
+  }
+}

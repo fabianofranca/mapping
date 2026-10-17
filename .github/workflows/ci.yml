@@ -106,6 +106,9 @@ jobs:
             exit 1
           fi
       - run: npm run build:mcp
+      # `--if-present`: o deploy roda este ci.yml (o do branch) também contra a `main`
+      # (`checks-main`), que pode ainda não ter o script do visualizador (fase L1).
+      - run: npm run build:viewer --if-present
 
   # Ponta a ponta no `dist/index.html` final, no desktop (a app é só desktop desde a fase 5.8).
   # Só roda aqui: o ambiente de desenvolvimento pode não conseguir baixar o navegador.
