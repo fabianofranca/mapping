@@ -16,6 +16,7 @@ import {
 import { IncompleteView } from '../ui/IncompleteView';
 import { ListView } from '../ui/ListView';
 import { LayersWindow } from '../ui/LayersWindow';
+import { LibraryWindow } from '../ui/LibraryWindow';
 import { ToolStrip } from '../ui/ToolStrip';
 import { ToolWindow } from '../ui/ToolWindow';
 import { TreeWindow } from '../ui/TreeWindow';
@@ -57,6 +58,8 @@ function Window({
       return <TreeWindow onSelect={onSelect} />;
     case 'layers':
       return <LayersWindow stacked={stacked} />;
+    case 'library':
+      return <LibraryWindow onOpenSpecs={() => panel.dialogs.show({ kind: 'specs' })} />;
     case 'details':
       return (
         <ToolWindow id={id}>

@@ -82,6 +82,22 @@ describe('abrir e fechar janelas', () => {
     expect(toolWindowByNumber(2)).toBe('layers');
     expect(toolWindowByNumber(5)).toBe('incomplete');
     expect(toolWindowByNumber(6)).toBe('diagnostics');
+    expect(toolWindowByNumber(8)).toBe('library');
+    expect(toolWindowByNumber(9)).toBeNull();
+  });
+
+  it('a Biblioteca fica sozinha na coluna da esquerda', () => {
+    showToolWindow('tree');
+    showToolWindow('layers');
+    showToolWindow('library');
+    expect(isToolWindowOpen('library')).toBe(true);
+    expect(isToolWindowOpen('tree')).toBe(false);
+    expect(isToolWindowOpen('layers')).toBe(false);
+    // Abrir a Árvore devolve a coluna; a Biblioteca sai.
+    showToolWindow('tree');
+    expect(isToolWindowOpen('library')).toBe(false);
+    showToolWindow('layers');
+    expect(isToolWindowOpen('tree') && isToolWindowOpen('layers')).toBe(true);
   });
 
   it('a janela inferior mostra uma aba por vez', () => {

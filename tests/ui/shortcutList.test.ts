@@ -52,6 +52,24 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     ).toEqual({ kind: 'toggle-lock' });
   });
 
+  it('lista o Alt+Shift+A de arrumar, e ele dispara de verdade', () => {
+    const edit = groups.find((g) => g.id === 'edit');
+    const row = edit?.rows.find((r) =>
+      r.combos.some((c) => comboText(c) === 'Alt + Shift + A'),
+    );
+    expect(row?.label).toBe(t('shortcuts.arrange'));
+    expect(
+      shortcutFor({
+        key: 'A',
+        code: 'KeyA',
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: true,
+        altKey: true,
+      }),
+    ).toEqual({ kind: 'arrange' });
+  });
+
   it('os atalhos da revisão listados disparam de verdade', () => {
     const review = groups.find((g) => g.id === 'review');
     const keys = (c: readonly string[]) => {

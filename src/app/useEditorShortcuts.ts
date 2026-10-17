@@ -32,6 +32,7 @@ import {
 } from './shortcuts';
 import { useApplyAccepted, useDecide } from '../ui/review/useReview';
 import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
+import { arrangeMarking, canArrangeMarking } from '../ui/arrange';
 import {
   canCopyItems,
   canCopyCrop,
@@ -164,6 +165,18 @@ export function useEditorShortcuts(
         case 'copy-crop': {
           const target = copyTarget(shortcut);
           if (target) void copyCrop(editor, target.id);
+          return;
+        }
+        case 'arrange': {
+          // Container em linha ou coluna com filhas; fora disso (ou somente leitura) o atalho não age.
+          if (store.locked.peek()) return;
+          const current = resolveSelection(shown.peek(), ui.selection.peek());
+          if (
+            current?.kind === 'marking' &&
+            canArrangeMarking(editor, current.marking.id)
+          ) {
+            arrangeMarking(editor, current.marking.id);
+          }
           return;
         }
         case 'undo':

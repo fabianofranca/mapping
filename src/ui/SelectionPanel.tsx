@@ -1,8 +1,14 @@
-import { useId } from 'preact/hooks';
+import { useId, useState } from 'preact/hooks';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
-import { canDeleteImage, type Project, type ProjectImage } from '../model';
-import { imageLabel } from './labels';
+import {
+  canDeleteImage,
+  type BlankImageChanges,
+  type Project,
+  type ProjectImage,
+} from '../model';
+import { blankErrorMessage, imageLabel } from './labels';
+import { parseBlankColor, parseBlankSide } from './blankScreen';
 import type { DisplayImage } from '../store/displayImages';
 import { useEditor } from './EditorContext';
 import { Button, IconButton, TextField } from './controls';
@@ -43,6 +49,10 @@ export function SelectionPanel({
   const project = given === undefined ? shown : given;
   const ext = useDetailsExtension();
   const nameId = useId();
+  const widthId = useId();
+  const heightId = useId();
+  const backgroundId = useId();
+  const [blankError, setBlankError] = useState<string | null>(null);
   if (!image) {
     return (
       <div class="details-empty">
@@ -140,9 +150,19 @@ export function SelectionPanel({
               <code class="props-text">{image.file}</code>
             </Property>
           )}
-          <Property label={t('image.size')}>
-            <span class="props-text">{dimensions}</span>
-          </Property>
+          {image.file === null && image.background !== null ? (
+            <BlankFields
+              image={image}
+              ids={{ width: widthId, height: heightId, background: backgroundId }}
+              disabled={disabled}
+              error={blankError}
+              setError={setBlankError}
+            />
+          ) : (
+            <Property label={t('image.size')}>
+              <span class="props-text">{dimensions}</span>
+            </Property>
+          )}
         </PropertyGrid>
         <MarkingColorField
           image={image}
@@ -178,5 +198,73 @@ export function SelectionPanel({
         </Button>
       </div>
     </div>
+  );
+}
+
+interface BlankFieldsProps {
+  readonly image: ProjectImage;
+  readonly ids: {
+    readonly width: string;
+    readonly height: string;
+    readonly background: string;
+  };
+  readonly disabled: boolean;
+  readonly error: string | null;
+  readonly setError: (message: string | null) => void;
+}
+
+/** Largura, altura e cor de fundo da tela em branco (no lugar de Arquivo e Tamanho). */
+function BlankFields({ image, ids, disabled, error, setError }: BlankFieldsProps) {
+  const { actions } = useEditor();
+  const commit = (patch: BlankImageChanges): boolean => {
+    const result = actions.setBlankImage(image.id, patch);
+    setError(result.ok ? null : blankErrorMessage(result.error));
+    return result.ok;
+  };
+  const side = (key: 'width' | 'height', id: string) => (
+    <Property label={t(key === 'width' ? 'blank.width' : 'blank.height')} for={id}>
+      <TextField
+        id={id}
+        size="sm"
+        type="number"
+        inputMode="numeric"
+        min={1}
+        step={1}
+        value={String(image[key])}
+        disabled={disabled}
+        onCommit={(text) => {
+          const value = parseBlankSide(text);
+          if (value === image[key]) return false;
+          if (value === null) {
+            setError(blankErrorMessage('invalid-dimensions'));
+            return false;
+          }
+          return commit(key === 'width' ? { width: value } : { height: value });
+        }}
+      />
+    </Property>
+  );
+  return (
+    <>
+      {side('width', ids.width)}
+      {side('height', ids.height)}
+      <Property label={t('blank.background')} for={ids.background} error={error}>
+        <TextField
+          id={ids.background}
+          size="sm"
+          value={image.background ?? ''}
+          disabled={disabled}
+          onCommit={(text) => {
+            const color = parseBlankColor(text);
+            if (color === image.background) return false;
+            if (color === null) {
+              setError(blankErrorMessage('invalid-color'));
+              return false;
+            }
+            return commit({ background: color });
+          }}
+        />
+      </Property>
+    </>
   );
 }
