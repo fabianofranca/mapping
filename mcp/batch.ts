@@ -409,6 +409,15 @@ class Batch {
         errors: parsed.errors.slice(0, 20),
       });
     }
+    if (parsed.spec.formatVersion >= 4) {
+      // O pacote v4 (componentes, documentos, fontes) é uma PASTA copiada para `specs/<id>/`
+      // pela app; a proposta só leva o arquivo da especialização e a cópia ficaria incompleta.
+      throw new ToolError(
+        'package-spec-unsupported',
+        `a especialização "${parsed.spec.id}" é um pacote de biblioteca (formatVersion 4): aplique-a pela app (Especializações › pasta ou zip do pacote); propose_changes não copia o pacote. Valide com validate_library`,
+        { file, specId: parsed.spec.id, formatVersion: parsed.spec.formatVersion },
+      );
+    }
     return parsed.spec;
   }
 

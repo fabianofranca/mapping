@@ -139,13 +139,15 @@ describe('o servidor não abre arquivos de código (estático)', () => {
       .filter(({ text }) => FS_IMPORT.test(text))
       .map(({ file }) => file);
     // Quem entra aqui lê/grava `mapping.json`, `specs/`, imagens, `proposals/` ou arquivos de
-    // especialização (`validate_specialization`), nunca código. Um módulo novo
+    // especialização (`validate_specialization`) e de pacotes de biblioteca (`library.ts`: só `.json`
+    // e `.md` são lidos; o resto é listado), nunca código. Um módulo novo
     // que precise do disco entra nesta lista de propósito, depois de conferir que não toca em código.
     expect(importers).toEqual([
       'changes.ts',
       'codeFiles.ts',
       'createProject.ts',
       'imageTools.ts',
+      'library.ts',
       'paths.ts',
       'projects.ts',
       'proposalStore.ts',

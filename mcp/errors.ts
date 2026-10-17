@@ -45,6 +45,8 @@ export const MCP_ERROR_CODES = [
   'not-open',
   'nothing-to-change',
   'outside-roots',
+  'package-spec-unsupported',
+  'package-too-large',
   'path-not-found',
   'project-mismatch',
   'project-not-found',
