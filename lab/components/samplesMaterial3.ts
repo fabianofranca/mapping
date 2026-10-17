@@ -135,6 +135,7 @@ export const M3_BUTTON: ComponentFile = {
     'Common button: filled, tonal, outlined, text ou elevated; 40 dp, forma full.',
   size: { width: 120, height: 40 },
   minSize: { width: 48, height: 40 },
+  sizing: { width: 'hug', height: 40 },
   preview: { label: 'Label', variant: 'filled', icon: '', disabled: 'não' },
   template: {
     type: 'frame',
@@ -197,6 +198,7 @@ export const M3_FAB: ComponentFile = {
     'Floating action button: 56 dp, forma large (16), primary container; extended com rótulo.',
   size: { width: 56, height: 56 },
   minSize: { width: 40, height: 40 },
+  sizing: { width: 56, height: 56 },
   preview: { icon: 'add', label: '', color: 'primary' },
   template: {
     type: 'frame',
@@ -236,6 +238,7 @@ export const M3_TOP_APP_BAR: ComponentFile = {
     'Small top app bar: 64 dp, surface, ícone de navegação, título title-large e ação.',
   size: { width: 412, height: 64 },
   minSize: { width: 200, height: 48 },
+  sizing: { width: 'fill', height: 64 },
   preview: { title: 'Title', navigation: 'menu', action: 'more', align: 'start' },
   template: {
     type: 'frame',
@@ -310,6 +313,7 @@ export const M3_TEXT_FIELD: ComponentFile = {
     'Outlined text field: caixa de 56 dp, forma extra-small (4), rótulo flutuante e texto de apoio.',
   size: { width: 280, height: 80 },
   minSize: { width: 120, height: 56 },
+  sizing: { width: 'fill', height: 56 },
   preview: {
     label: 'Label',
     value: 'Input text',
@@ -404,6 +408,7 @@ export const M3_SWITCH: ComponentFile = {
     'Switch: trilho 52 × 32, alça 24 (ligado) ou 16 (desligado); rótulo opcional.',
   size: { width: 200, height: 32 },
   minSize: { width: 52, height: 32 },
+  sizing: { width: 'fill', height: 32 },
   preview: { label: 'Label', selected: 'sim', icon: 'não' },
   template: {
     type: 'frame',
@@ -483,6 +488,7 @@ export const M3_CHECKBOX: ComponentFile = {
   description: 'Checkbox de 18 dp (forma 2) com rótulo body-large.',
   size: { width: 200, height: 40 },
   minSize: { width: 40, height: 24 },
+  sizing: { width: 'fill', height: 40 },
   preview: { label: 'Label', checked: 'sim', error: 'não' },
   template: {
     type: 'frame',
@@ -539,6 +545,7 @@ export const M3_CHIP: ComponentFile = {
     'Assist/filter chip: 32 dp, forma small (8), outline; filtro selecionado em secondary container com check.',
   size: { width: 96, height: 32 },
   minSize: { width: 40, height: 32 },
+  sizing: { width: 'hug', height: 32 },
   preview: { label: 'Label', selected: 'não', icon: '' },
   template: {
     type: 'frame',
@@ -586,6 +593,7 @@ export const M3_CARD: ComponentFile = {
     'Card elevated, filled ou outlined; forma medium (12); headline, subhead, texto de apoio e espaço para ações.',
   size: { width: 360, height: 200 },
   minSize: { width: 160, height: 96 },
+  sizing: { width: 'fill', height: 'hug' },
   preview: {
     headline: 'Headline',
     subhead: 'Subhead',
@@ -636,7 +644,14 @@ export const M3_CARD: ComponentFile = {
         visible: { $has: 'body' },
         width: 'fill',
       }),
-      { type: 'slot', name: 'ações', width: 'fill', height: 'fill', label: 'ações' },
+      {
+        type: 'slot',
+        name: 'ações',
+        width: 'fill',
+        height: 'fill',
+        label: 'ações',
+        layout: { type: 'row', gap: 8, justify: 'end' },
+      },
     ],
   },
 };
@@ -649,6 +664,7 @@ export const M3_LIST_ITEM: ComponentFile = {
     'Item de lista de uma ou duas linhas: avatar ou ícone à esquerda, headline, texto de apoio e ícone à direita.',
   size: { width: 412, height: 72 },
   minSize: { width: 120, height: 48 },
+  sizing: { width: 'fill', height: 72 },
   preview: {
     headline: 'Headline',
     supporting: 'Supporting text',
@@ -757,6 +773,7 @@ export const M3_NAVIGATION_BAR: ComponentFile = {
     'Navigation bar de 80 dp com três destinos; indicador ativo 64 × 32 em secondary container.',
   size: { width: 412, height: 80 },
   minSize: { width: 240, height: 64 },
+  sizing: { width: 'fill', height: 80 },
   preview: {
     label1: 'Home',
     icon1: 'home',
@@ -805,6 +822,7 @@ export const M3_BOTTOM_SHEET: ComponentFile = {
     'Modal bottom sheet: surface-container-low, cantos superiores extra-large (28), alça de 32 × 4 a 22 dp do topo, título e itens de lista.',
   size: { width: 412, height: 320 },
   minSize: { width: 240, height: 96 },
+  sizing: { width: 'fill', height: 'hug' },
   preview: {
     title: 'Title',
     handle: 'sim',
@@ -869,6 +887,7 @@ export const M3_SCRIM: ComponentFile = {
     'Película que escurece a tela atrás de um modal: scrim (#000) a 32 %. Cobre a tela inteira, por baixo da folha.',
   size: { width: 412, height: 917 },
   minSize: { width: 16, height: 16 },
+  sizing: { width: 'fill', height: 'fill' },
   preview: {},
   template: {
     type: 'frame',
@@ -921,6 +940,7 @@ function container(
     description,
     size,
     minSize: { width: 24, height: 24 },
+    sizing: { width: 'fill', height: 'hug' },
     preview,
     template: {
       type: 'frame',
@@ -1001,33 +1021,93 @@ export const M3_COMPONENTS: readonly ComponentFile[] = [
   M3_COLUMN,
 ];
 
-const yesNo = (key: string, label: string, def: 'sim' | 'não') => ({
+/** Sistema da origem executável que a especialização declara (`origins`): o SDUI do backend. */
+const SDUI = 'sdui';
+
+/** `sources` de um campo: o caminho dentro de `props` do nó SDUI (e a tradução de valores). */
+const fromProp = (name: string, values?: Record<string, string>) => ({
+  sources: [{ system: SDUI, name, ...(values ? { values } : {}) }],
+});
+
+const yesNo = (key: string, label: string, def: 'sim' | 'não', prop?: string) => ({
   key,
   label,
   type: 'enum',
   options: ['sim', 'não'],
   default: def,
+  ...(prop ? fromProp(prop) : {}),
 });
-const iconField = (key: string, label: string, def = '') => ({
+const iconField = (key: string, label: string, def = '', prop?: string) => ({
   key,
   label,
   type: 'enum',
   options: ICON_NAMES,
   ...(def ? { default: def } : {}),
+  ...(prop ? fromProp(prop) : {}),
 });
-const str = (key: string, label: string, required = false) => ({
+const str = (key: string, label: string, required = false, prop?: string) => ({
   key,
   label,
   type: 'string',
   required,
+  ...(prop ? fromProp(prop) : {}),
 });
-const type = (id: string, name: string, labelField: string | null, fields: object[]) => ({
+const num = (key: string, label: string, def: number, prop: string) => ({
+  key,
+  label,
+  type: 'number',
+  default: def,
+  ...fromProp(prop),
+});
+const choice = (
+  key: string,
+  label: string,
+  options: string[],
+  def: string,
+  prop: string,
+) => ({ key, label, type: 'enum', options, default: def, ...fromProp(prop) });
+
+/** `external`: o tipo do nó SDUI a que o tipo corresponde (e o slot, e as props aceitas e não desenhadas). */
+const type = (
+  id: string,
+  name: string,
+  labelField: string | null,
+  fields: object[],
+  external?: { name: string; slot?: string; ignore?: string[] },
+) => ({
   id,
   name,
   labelField,
   component: `components/${id}.json`,
+  ...(external
+    ? {
+        sources: [
+          {
+            system: SDUI,
+            name: external.name,
+            ...(external.slot ? { slot: external.slot } : {}),
+            ...(external.ignore ? { ignore: external.ignore } : {}),
+          },
+        ],
+      }
+    : {}),
   fields,
 });
+
+const BACKGROUNDS = [
+  'none',
+  'surface',
+  'surface-container',
+  'primary-container',
+  'secondary-container',
+];
+const SHAPES = ['none', 'small', 'medium', 'large', 'extra-large'];
+
+/** Campos de fundo e forma dos containers (Box, Row, Column). */
+const containerStyle = () => [
+  choice('background', 'Background', BACKGROUNDS, 'none', 'background'),
+  choice('shape', 'Shape', SHAPES, 'none', 'shape'),
+];
 
 export const M3_SPEC = {
   format: 'mapping-spec',
@@ -1043,191 +1123,238 @@ export const M3_SPEC = {
     { family: 'Roboto', file: 'fonts/Roboto-Regular.ttf', weight: 400 },
     { family: 'Roboto', file: 'fonts/Roboto-Medium.ttf', weight: 500 },
   ],
+  // Origem executável: como ler o JSON do SDUI (`sdui/settings.sdui.json`) como tela. O
+  // mapeamento de cada tipo e de cada campo está nas `sources` abaixo (sistema `sdui`).
+  origins: [
+    {
+      system: SDUI,
+      name: 'SDUI do backend',
+      node: { type: 'type', props: 'props', children: 'children' },
+      screen: {
+        id: { path: 'screen.id' },
+        name: { path: 'screen.title', default: 'Tela' },
+        width: { path: 'screen.device.width' },
+        height: { path: 'screen.device.height' },
+        background: {
+          path: 'screen.background',
+          values: { surface: C.surface },
+          default: '#FFFFFF',
+        },
+        roots: [
+          { path: 'content' },
+          { path: 'bottomBar', anchor: 'bottom' },
+          {
+            path: 'floating[*]',
+            anchor: { path: 'anchor' },
+            margin: { path: 'margin' },
+          },
+          { path: 'modal', anchor: 'bottom', scrim: 'm3-scrim' },
+        ],
+      },
+      booleans: { true: 'sim', false: 'não' },
+    },
+  ],
   layers: [
     {
       id: 'componentes',
       name: 'Componentes',
       color: '#6750A4',
       annotationTypes: [
-        type('m3-top-app-bar', 'Top app bar', 'title', [
-          str('title', 'Title', true),
-          iconField('navigation', 'Navigation icon', 'menu'),
-          iconField('action', 'Action icon', 'more'),
-          {
-            key: 'align',
-            label: 'Title align',
-            type: 'enum',
-            options: ['start', 'center'],
-            default: 'start',
-          },
-        ]),
-        type('m3-button', 'Button', 'label', [
-          str('label', 'Label', true),
-          {
-            key: 'variant',
-            label: 'Variant',
-            type: 'enum',
-            options: ['filled', 'tonal', 'outlined', 'text', 'elevated'],
-            default: 'filled',
-          },
-          iconField('icon', 'Icon'),
-          yesNo('disabled', 'Disabled', 'não'),
-        ]),
-        type('m3-fab', 'FAB', 'label', [
-          iconField('icon', 'Icon', 'add'),
-          str('label', 'Label (extended)'),
-          {
-            key: 'color',
-            label: 'Color',
-            type: 'enum',
-            options: ['primary', 'secondary', 'surface'],
-            default: 'primary',
-          },
-        ]),
-        type('m3-text-field', 'Text field', 'label', [
-          str('label', 'Label', true),
-          str('value', 'Input text'),
-          str('placeholder', 'Placeholder'),
-          str('supporting', 'Supporting text'),
-          {
-            key: 'state',
-            label: 'State',
-            type: 'enum',
-            options: ['enabled', 'focused', 'error', 'disabled'],
-            default: 'enabled',
-          },
-          iconField('trailing', 'Trailing icon'),
-        ]),
-        type('m3-switch', 'Switch', 'label', [
-          str('label', 'Label'),
-          yesNo('selected', 'Selected', 'não'),
-          yesNo('icon', 'Icon', 'não'),
-        ]),
-        type('m3-checkbox', 'Checkbox', 'label', [
-          str('label', 'Label'),
-          yesNo('checked', 'Checked', 'não'),
-          yesNo('error', 'Error', 'não'),
-        ]),
-        type('m3-chip', 'Chip', 'label', [
-          str('label', 'Label', true),
-          yesNo('selected', 'Selected', 'não'),
-          iconField('icon', 'Icon'),
-        ]),
-        type('m3-card', 'Card', 'headline', [
-          str('headline', 'Headline', true),
-          str('subhead', 'Subhead'),
-          str('body', 'Supporting text'),
-          {
-            key: 'variant',
-            label: 'Variant',
-            type: 'enum',
-            options: ['elevated', 'filled', 'outlined'],
-            default: 'elevated',
-          },
-        ]),
-        type('m3-list-item', 'List item', 'headline', [
-          str('headline', 'Headline', true),
-          str('supporting', 'Supporting text'),
-          iconField('leading', 'Leading icon'),
-          str('initials', 'Avatar initials'),
-          iconField('trailing', 'Trailing icon'),
-        ]),
-        type('m3-navigation-bar', 'Navigation bar', null, [
-          str('label1', 'Label 1', true),
-          iconField('icon1', 'Icon 1', 'home'),
-          str('label2', 'Label 2', true),
-          iconField('icon2', 'Icon 2', 'search'),
-          str('label3', 'Label 3', true),
-          iconField('icon3', 'Icon 3', 'person'),
-          {
-            key: 'active',
-            label: 'Active',
-            type: 'enum',
-            options: ['1', '2', '3'],
-            default: '1',
-          },
-        ]),
-        type('m3-bottom-sheet', 'Bottom sheet', 'title', [
-          str('title', 'Title'),
-          yesNo('handle', 'Drag handle', 'sim'),
-          str('item1', 'Item 1'),
-          iconField('icon1', 'Icon 1'),
-          str('item2', 'Item 2'),
-          iconField('icon2', 'Icon 2'),
-          str('item3', 'Item 3'),
-          iconField('icon3', 'Icon 3'),
-        ]),
+        type(
+          'm3-top-app-bar',
+          'Top app bar',
+          'title',
+          [
+            str('title', 'Title', true, 'title'),
+            iconField('navigation', 'Navigation icon', 'menu', 'navigationIcon'),
+            iconField('action', 'Action icon', 'more', 'actionIcon'),
+            choice('align', 'Title align', ['start', 'center'], 'start', 'titleAlign'),
+          ],
+          { name: 'TopAppBar' },
+        ),
+        type(
+          'm3-button',
+          'Button',
+          'label',
+          [
+            str('label', 'Label', true, 'text'),
+            choice(
+              'variant',
+              'Variant',
+              ['filled', 'tonal', 'outlined', 'text', 'elevated'],
+              'filled',
+              'style',
+            ),
+            iconField('icon', 'Icon', '', 'icon'),
+            yesNo('disabled', 'Disabled', 'não', 'disabled'),
+          ],
+          { name: 'Button', ignore: ['contentDescription'] },
+        ),
+        type(
+          'm3-fab',
+          'FAB',
+          'label',
+          [
+            iconField('icon', 'Icon', 'add', 'icon'),
+            str('label', 'Label (extended)', false, 'label'),
+            choice(
+              'color',
+              'Color',
+              ['primary', 'secondary', 'surface'],
+              'primary',
+              'color',
+            ),
+          ],
+          { name: 'FAB' },
+        ),
+        type(
+          'm3-text-field',
+          'Text field',
+          'label',
+          [
+            str('label', 'Label', true, 'label'),
+            str('value', 'Input text', false, 'value'),
+            str('placeholder', 'Placeholder', false, 'placeholder'),
+            str('supporting', 'Supporting text', false, 'supportingText'),
+            choice(
+              'state',
+              'State',
+              ['enabled', 'focused', 'error', 'disabled'],
+              'enabled',
+              'state',
+            ),
+            iconField('trailing', 'Trailing icon', '', 'trailingIcon'),
+          ],
+          { name: 'TextField' },
+        ),
+        type(
+          'm3-switch',
+          'Switch',
+          'label',
+          [
+            str('label', 'Label', false, 'label'),
+            yesNo('selected', 'Selected', 'não', 'checked'),
+            yesNo('icon', 'Icon', 'não', 'showIcon'),
+          ],
+          { name: 'Switch' },
+        ),
+        type(
+          'm3-checkbox',
+          'Checkbox',
+          'label',
+          [
+            str('label', 'Label', false, 'label'),
+            yesNo('checked', 'Checked', 'não', 'checked'),
+            yesNo('error', 'Error', 'não', 'error'),
+          ],
+          { name: 'Checkbox' },
+        ),
+        type(
+          'm3-chip',
+          'Chip',
+          'label',
+          [
+            str('label', 'Label', true, 'text'),
+            yesNo('selected', 'Selected', 'não', 'selected'),
+            iconField('icon', 'Icon', '', 'icon'),
+          ],
+          { name: 'Chip' },
+        ),
+        type(
+          'm3-card',
+          'Card',
+          'headline',
+          [
+            str('headline', 'Headline', true, 'headline'),
+            str('subhead', 'Subhead', false, 'subhead'),
+            str('body', 'Supporting text', false, 'body'),
+            choice(
+              'variant',
+              'Variant',
+              ['elevated', 'filled', 'outlined'],
+              'elevated',
+              'style',
+            ),
+          ],
+          { name: 'Card', slot: 'ações' },
+        ),
+        type(
+          'm3-list-item',
+          'List item',
+          'headline',
+          [
+            str('headline', 'Headline', true, 'headline'),
+            str('supporting', 'Supporting text', false, 'supportingText'),
+            iconField('leading', 'Leading icon', '', 'leadingIcon'),
+            str('initials', 'Avatar initials', false, 'avatar.initials'),
+            iconField('trailing', 'Trailing icon', '', 'trailingIcon'),
+          ],
+          { name: 'ListItem' },
+        ),
+        type(
+          'm3-navigation-bar',
+          'Navigation bar',
+          null,
+          [
+            str('label1', 'Label 1', true, 'items[0].label'),
+            iconField('icon1', 'Icon 1', 'home', 'items[0].icon'),
+            str('label2', 'Label 2', true, 'items[1].label'),
+            iconField('icon2', 'Icon 2', 'search', 'items[1].icon'),
+            str('label3', 'Label 3', true, 'items[2].label'),
+            iconField('icon3', 'Icon 3', 'person', 'items[2].icon'),
+            {
+              key: 'active',
+              label: 'Active',
+              type: 'enum',
+              options: ['1', '2', '3'],
+              default: '1',
+              // O SDUI conta a partir de 0; o campo, a partir de 1.
+              ...fromProp('selectedIndex', { '0': '1', '1': '2', '2': '3' }),
+            },
+          ],
+          { name: 'NavigationBar' },
+        ),
+        type(
+          'm3-bottom-sheet',
+          'Bottom sheet',
+          'title',
+          [
+            str('title', 'Title', false, 'title'),
+            yesNo('handle', 'Drag handle', 'sim', 'dragHandle'),
+            str('item1', 'Item 1', false, 'items[0].label'),
+            iconField('icon1', 'Icon 1', '', 'items[0].icon'),
+            str('item2', 'Item 2', false, 'items[1].label'),
+            iconField('icon2', 'Icon 2', '', 'items[1].icon'),
+            str('item3', 'Item 3', false, 'items[2].label'),
+            iconField('icon3', 'Icon 3', '', 'items[2].icon'),
+          ],
+          { name: 'BottomSheet' },
+        ),
+        // Película do modal: desenhada pela origem (`scrim`), não corresponde a um nó do SDUI.
         type('m3-scrim', 'Scrim', null, []),
-        type('m3-box', 'Box', null, [
-          {
-            key: 'background',
-            label: 'Background',
-            type: 'enum',
-            options: [
-              'none',
-              'surface',
-              'surface-container',
-              'primary-container',
-              'secondary-container',
-            ],
-            default: 'none',
-          },
-          {
-            key: 'shape',
-            label: 'Shape',
-            type: 'enum',
-            options: ['none', 'small', 'medium', 'large', 'extra-large'],
-            default: 'none',
-          },
-        ]),
-        type('m3-row', 'Row', null, [
-          { key: 'spacing', label: 'Spacing (dp)', type: 'number', default: 8 },
-          { key: 'padding', label: 'Padding (dp)', type: 'number', default: 0 },
-          {
-            key: 'background',
-            label: 'Background',
-            type: 'enum',
-            options: [
-              'none',
-              'surface',
-              'surface-container',
-              'primary-container',
-              'secondary-container',
-            ],
-            default: 'none',
-          },
-          {
-            key: 'shape',
-            label: 'Shape',
-            type: 'enum',
-            options: ['none', 'small', 'medium', 'large', 'extra-large'],
-            default: 'none',
-          },
-        ]),
-        type('m3-column', 'Column', null, [
-          { key: 'spacing', label: 'Spacing (dp)', type: 'number', default: 8 },
-          { key: 'padding', label: 'Padding (dp)', type: 'number', default: 0 },
-          {
-            key: 'background',
-            label: 'Background',
-            type: 'enum',
-            options: [
-              'none',
-              'surface',
-              'surface-container',
-              'primary-container',
-              'secondary-container',
-            ],
-            default: 'none',
-          },
-          {
-            key: 'shape',
-            label: 'Shape',
-            type: 'enum',
-            options: ['none', 'small', 'medium', 'large', 'extra-large'],
-            default: 'none',
-          },
-        ]),
+        type('m3-box', 'Box', null, containerStyle(), { name: 'Box' }),
+        type(
+          'm3-row',
+          'Row',
+          null,
+          [
+            num('spacing', 'Spacing (dp)', 8, 'spacing'),
+            num('padding', 'Padding (dp)', 0, 'padding'),
+            ...containerStyle(),
+          ],
+          { name: 'Row' },
+        ),
+        type(
+          'm3-column',
+          'Column',
+          null,
+          [
+            num('spacing', 'Spacing (dp)', 8, 'spacing'),
+            num('padding', 'Padding (dp)', 0, 'padding'),
+            ...containerStyle(),
+          ],
+          { name: 'Column' },
+        ),
       ],
     },
   ],

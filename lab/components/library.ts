@@ -7,6 +7,16 @@
  * `showDirectoryPicker`) viram a mesma lista `{ path, text }` antes de chegar aqui.
  */
 import type { ComponentFile, FieldValue } from './componentFormat';
+import { findSlot } from './arrange';
+import {
+  type FieldSource,
+  type Origin,
+  type TypeSource,
+  parseFieldSources,
+  parseOrigins,
+  parsePath,
+  parseTypeSources,
+} from './origin';
 import { parseComponent } from './parseComponent';
 
 export interface TextFile {
@@ -47,6 +57,8 @@ export interface FieldDef {
   readonly options?: readonly string[];
   readonly default?: FieldValue;
   readonly description?: string;
+  /** Origens do campo (`sources`); numa origem executável o `name` é o caminho dentro de `props`. */
+  readonly sources: readonly FieldSource[];
 }
 
 export interface TypeDef {
@@ -63,6 +75,8 @@ export interface TypeDef {
   readonly componentPath?: string;
   /** O componente carregado (ausente quando o arquivo faltou ou era inválido). */
   readonly component?: ComponentFile;
+  /** Elementos de sistemas externos a que o tipo corresponde (`sources`). */
+  readonly sources: readonly TypeSource[];
 }
 
 export interface Library {
@@ -72,6 +86,8 @@ export interface Library {
   readonly types: readonly TypeDef[];
   /** Fontes declaradas pela especialização (`fonts`), com bytes quando o arquivo existe. */
   readonly fonts: readonly LoadedFont[];
+  /** Origens executáveis declaradas (`origins`): como ler um JSON externo como tela. */
+  readonly origins: readonly Origin[];
   /** O que não carregou: arquivo ausente, componente inválido, tipo sem componente. */
   readonly problems: readonly string[];
 }
@@ -103,24 +119,74 @@ export function resolvePath(from: string, ref: string): string {
   return parts.join('/');
 }
 
-function readField(raw: unknown, path: string, problems: string[]): FieldDef | undefined {
+function readField(
+  raw: unknown,
+  path: string,
+  problems: string[],
+  systems: ReadonlySet<string>,
+): FieldDef | undefined {
   if (!isRecord(raw) || typeof raw.key !== 'string' || typeof raw.type !== 'string') {
     problems.push(`${path}: campo sem key/type`);
     return undefined;
   }
   const type = raw.type as FieldType;
   const def = raw.default;
+  const options = Array.isArray(raw.options)
+    ? raw.options.filter((o): o is string => typeof o === 'string')
+    : undefined;
+  const sources = parseFieldSources(raw.sources, `${path}.sources`, problems);
+  sources.forEach((source, index) => {
+    const at = `${path}.sources[${index}]`;
+    if (source.values) {
+      if (type !== 'enum') {
+        problems.push(`${at}.values: só vale em campo enum`);
+      } else {
+        for (const [from, to] of Object.entries(source.values)) {
+          if (!options?.includes(to)) {
+            problems.push(`${at}.values.${from}: destino fora de options: ${to}`);
+          }
+        }
+      }
+    }
+    // Numa origem executável o `name` é um caminho dentro de `props` (sem `[*]`).
+    if (systems.has(source.system)) {
+      const parsed = parsePath(source.name);
+      if (!parsed.ok || parsed.segments.includes(null)) {
+        problems.push(`${at}.name: caminho inválido "${source.name}"`);
+      }
+    }
+  });
   return {
     key: raw.key,
     label: typeof raw.label === 'string' ? raw.label : raw.key,
     type,
     required: raw.required === true,
-    options: Array.isArray(raw.options)
-      ? raw.options.filter((o): o is string => typeof o === 'string')
-      : undefined,
+    options,
     default: typeof def === 'string' || typeof def === 'number' ? def : undefined,
     description: typeof raw.description === 'string' ? raw.description : undefined,
+    sources,
   };
+}
+
+/** Confere o `slot` das origens do tipo contra o slot do componente. */
+function checkTypeSources(
+  id: string,
+  sources: readonly TypeSource[],
+  component: ComponentFile | undefined,
+  problems: string[],
+): void {
+  if (!component) return;
+  const slot = findSlot(component);
+  sources.forEach((source, index) => {
+    if (source.slot === undefined) return;
+    const at = `${id}.sources[${index}].slot`;
+    if (!slot) problems.push(`${at}: o componente não tem slot`);
+    else if (slot.name !== source.slot) {
+      problems.push(
+        `${at}: o slot do componente é "${slot.name ?? ''}", não "${source.slot}"`,
+      );
+    }
+  });
 }
 
 /**
@@ -153,6 +219,10 @@ export function loadLibrary(files: readonly TextFile[]): Library {
   }
   const [specPath, specJson] = first;
   const spec = specJson as Record<string, unknown>;
+  const parsedOrigins = parseOrigins(spec.origins);
+  problems.push(...parsedOrigins.problems);
+  const origins = parsedOrigins.origins;
+  const systems = new Set(origins.map((o) => o.system));
   const types: TypeDef[] = [];
   const layers = Array.isArray(spec.layers) ? spec.layers : [];
   layers.forEach((layer, li) => {
@@ -170,7 +240,7 @@ export function loadLibrary(files: readonly TextFile[]): Library {
       }
       const fieldsRaw = Array.isArray(type.fields) ? type.fields : [];
       const fields = fieldsRaw
-        .map((f, fi) => readField(f, `${type.id}.fields[${fi}]`, problems))
+        .map((f, fi) => readField(f, `${type.id}.fields[${fi}]`, problems, systems))
         .filter((f): f is FieldDef => f !== undefined);
       const componentPath =
         typeof type.component === 'string' ? type.component : undefined;
@@ -190,6 +260,8 @@ export function loadLibrary(files: readonly TextFile[]): Library {
           }
         }
       }
+      const sources = parseTypeSources(type.sources, `${type.id}.sources`, problems);
+      checkTypeSources(type.id, sources, component, problems);
       types.push({
         id: type.id,
         name: typeof type.name === 'string' ? type.name : type.id,
@@ -203,7 +275,17 @@ export function loadLibrary(files: readonly TextFile[]): Library {
         fields,
         componentPath,
         component,
+        sources,
       });
+    });
+  });
+  origins.forEach((origin, oi) => {
+    origin.screen.roots.forEach((root, ri) => {
+      if (root.scrim !== undefined && !types.some((t) => t.id === root.scrim)) {
+        problems.push(
+          `origins[${oi}].screen.roots[${ri}].scrim: tipo inexistente: ${root.scrim}`,
+        );
+      }
     });
   });
   const fonts = readFonts(spec.fonts, specPath, files, problems);
@@ -213,6 +295,7 @@ export function loadLibrary(files: readonly TextFile[]): Library {
     specPath,
     types,
     fonts,
+    origins,
     problems,
   };
 }

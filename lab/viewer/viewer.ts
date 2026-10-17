@@ -14,6 +14,12 @@
  * e `setHover` continuam valendo (seleção e hover vindos do hospedeiro, ex.: uma árvore), assim
  * como `clientToScreen`, `instanceAt` e `boxOf`.
  *
+ * A tela vem de duas fontes: `screen` (já pronta) ou `source` (um JSON externo, traduzido pela
+ * origem declarada na especialização e arrumado por `screenFromSource` com o mesmo medidor do
+ * desenho). `source` definido vence `screen`. A tela é recalculada quando a biblioteca ou o
+ * `source` mudam (identidade) e no `redraw()`; `onSource` recebe cada resultado (avisos e
+ * `error`). Sem biblioteca, ou com `error`, nada é desenhado.
+ *
  * As fontes são do hospedeiro: depois que uma fonte carregar, chame `redraw()` para remedir os
  * textos. O módulo não faz requisição de rede nem registra fonte.
  */
@@ -21,6 +27,7 @@ import Konva from 'konva';
 import type { Library } from '../components/library';
 import type { TextMeasurer } from '../components/instantiate';
 import type { Box, Screen } from '../components/screen';
+import { type SourceResult, screenFromSource } from '../components/origin';
 import { capPixelRatio } from '../shared/pinch';
 import { konvaMeasurer } from './measure';
 import { type InstanceWarnings, ScreenRenderer } from './screenRenderer';
@@ -30,11 +37,20 @@ export type { InstanceWarnings } from './screenRenderer';
 export interface ViewerInput {
   readonly library: Library | undefined;
   readonly screen: Screen | undefined;
+  /** JSON externo já parseado; definido, a tela é a calculada a partir dele e `screen` é ignorado. */
+  readonly source: unknown;
+  /** Origem da especialização usada em `source` (ausente = a primeira). */
+  readonly sourceSystem: string | undefined;
 }
 
 export interface ViewerOptions {
   readonly library?: Library;
   readonly screen?: Screen;
+  /** JSON externo (ver `ViewerInput.source`); vence `screen`. */
+  readonly source?: unknown;
+  readonly sourceSystem?: string;
+  /** Resultado de cada cálculo da tela a partir de `source` (tela, avisos e `error`). */
+  readonly onSource?: (result: SourceResult) => void;
   /** O ponteiro entrou/saiu de uma instância (`undefined` = nenhuma). */
   readonly onHover?: (id: string | undefined) => void;
   /** Clique (botão principal) numa instância ou no fundo (`undefined`); x,y em px da tela. */
@@ -59,7 +75,7 @@ export interface ViewerOptions {
 export interface Viewer {
   /** Redesenha só o que mudou (identidade de biblioteca, tela e instâncias). Campos omitidos ficam. */
   update(input: Partial<ViewerInput>): void;
-  /** Re-instancia tudo (ex.: as fontes do hospedeiro carregaram). */
+  /** Re-instancia tudo e recalcula a tela de `source` (ex.: as fontes do hospedeiro carregaram). */
   redraw(): void;
   /** Realce de seleção (borda sólida); vazio = nenhuma. */
   setSelection(ids: readonly string[]): void;
@@ -79,6 +95,8 @@ export interface Viewer {
   /** Converte um ponto do DOM (`clientX/clientY`) em px da tela. */
   clientToScreen(client: { x: number; y: number }): { x: number; y: number };
   warnings(): InstanceWarnings;
+  /** A tela desenhada: a calculada de `source` ou a passada em `screen` (`undefined` = nenhuma). */
+  screen(): Screen | undefined;
   /** PNG da tela (sem os realces). */
   toDataURL(pixelRatio?: number): string;
   dispose(): void;
@@ -132,13 +150,16 @@ export function createViewer(
   overlay.add(hoverRect);
   stage.add(content, overlay);
 
-  const renderer = new ScreenRenderer(screenGroup, {
-    measure: options.measure ?? konvaMeasurer,
-  });
+  const measure = options.measure ?? konvaMeasurer;
+  const renderer = new ScreenRenderer(screenGroup, { measure });
   const selectionRects = new Map<string, Konva.Rect>();
 
   let library: Library | undefined = options.library;
-  let screen: Screen | undefined = options.screen;
+  let passedScreen: Screen | undefined = options.screen;
+  let source: unknown = options.source;
+  let sourceSystem: string | undefined = options.sourceSystem;
+  /** A tela efetiva: a calculada de `source` (se definido) ou `passedScreen`. */
+  let screen: Screen | undefined = passedScreen;
   let selection: readonly string[] = [];
   let hoverId: string | undefined;
   /** O que o ponteiro está sobre (para só avisar `onHover` quando muda). */
@@ -223,6 +244,21 @@ export function createViewer(
 
   const emitWarnings = (): void => options.onWarnings?.(renderer.warnings());
 
+  /** Recalcula a tela efetiva; com `source` e biblioteca, avisa `onSource`. */
+  const resolveScreen = (): void => {
+    if (source === undefined) {
+      screen = passedScreen;
+      return;
+    }
+    if (!library) {
+      screen = undefined;
+      return;
+    }
+    const result = screenFromSource(library, source, { system: sourceSystem, measure });
+    screen = result.screen;
+    options.onSource?.(result);
+  };
+
   const sync = (force: boolean): void => {
     const current = screen ?? EMPTY_SCREEN;
     artboard.setAttrs({
@@ -290,17 +326,35 @@ export function createViewer(
     observer.observe(container);
   }
 
+  resolveScreen();
   if (library !== undefined || screen !== undefined) sync(false);
 
   return {
     update(input) {
       if (disposed) return;
-      if ('library' in input) library = input.library;
-      if ('screen' in input) screen = input.screen;
+      let recompute = false;
+      if ('library' in input && input.library !== library) {
+        library = input.library;
+        recompute = true;
+      }
+      if ('source' in input && input.source !== source) {
+        source = input.source;
+        recompute = true;
+      }
+      if ('sourceSystem' in input && input.sourceSystem !== sourceSystem) {
+        sourceSystem = input.sourceSystem;
+        recompute = true;
+      }
+      if ('screen' in input && input.screen !== passedScreen) {
+        passedScreen = input.screen;
+        if (source === undefined) recompute = true; // com `source`, `screen` é ignorado
+      }
+      if (recompute) resolveScreen();
       sync(false);
     },
     redraw() {
       if (disposed) return;
+      resolveScreen();
       sync(true);
     },
     setSelection(ids) {
@@ -325,6 +379,7 @@ export function createViewer(
     instanceAt: (point) => (disposed ? undefined : renderer.instanceAt(point)),
     clientToScreen: (client) => clientToScreen(client),
     warnings: () => (disposed ? new Map() : renderer.warnings()),
+    screen: () => (disposed ? undefined : screen),
     toDataURL(pixelRatio = 2) {
       if (disposed || !screen) return '';
       const scale = stage.scaleX();

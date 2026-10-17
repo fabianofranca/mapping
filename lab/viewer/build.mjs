@@ -18,7 +18,7 @@ import { access, copyFile, writeFile } from 'node:fs/promises';
 import { build } from 'esbuild';
 
 // Versão do pacote: sobe junto com mudanças da API (exports, assinaturas, comportamento).
-const VIEWER_VERSION = '0.1.0';
+const VIEWER_VERSION = '0.2.0';
 
 const OUT = 'dist-viewer';
 

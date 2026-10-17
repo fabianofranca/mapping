@@ -6,6 +6,8 @@ import { installFakeCanvas } from '../../canvas/harness';
 import { approximateMeasurer } from '../../../lab/components/instantiate';
 import { loadLibrary } from '../../../lab/components/library';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
+import { type SourceResult, screenFromSource } from '../../../lab/components/origin';
+import settings from '../../../lab/components/sdui/settings.sdui.json';
 import { M3_FILES, M3_SCREEN } from '../../../lab/components/samplesMaterial3';
 import type { Screen } from '../../../lab/components/screen';
 import { type Viewer, type ViewerOptions, createViewer } from '../../../lab/viewer';
@@ -517,5 +519,88 @@ describe('createViewer', () => {
         `${perUpdate.toFixed(2)} ms; redraw() completo = ${perRedraw.toFixed(2)} ms`,
     );
     expect(Number.isFinite(perUpdate) && Number.isFinite(perRedraw)).toBe(true);
+  });
+});
+
+describe('createViewer com source (JSON externo)', () => {
+  const m3 = loadLibrary(M3_FILES);
+  const expected = screenFromSource(m3, settings, { measure: approximateMeasurer });
+
+  function instanceIds(stage: Konva.Stage): string[] {
+    return stage
+      .find((n: Konva.Node) => n.getAttr('instanceId') !== undefined)
+      .map((n: Konva.Node) => String(n.getAttr('instanceId')));
+  }
+
+  it('desenha a tela calculada e screen() a devolve; source vence screen', () => {
+    const el = container();
+    const viewer = make(el, { library: m3, source: settings, screen: M3_SCREEN });
+    const calculated = expected.screen!;
+    expect(viewer.screen()).toEqual(calculated);
+    expect(instanceIds(stageOf(el))).toHaveLength(calculated.instances.length);
+    const first = calculated.instances[0]!;
+    expect(viewer.boxOf(first.id)).toEqual(first.box);
+  });
+
+  it('screen() devolve a tela passada quando não há source', () => {
+    const viewer = make(container(), { library, screen: SAMPLE_SCREEN });
+    expect(viewer.screen()).toBe(SAMPLE_SCREEN);
+  });
+
+  it('sem biblioteca nada é desenhado e onSource não é chamado', () => {
+    const onSource = vi.fn();
+    const el = container();
+    const viewer = make(el, { source: settings, onSource });
+    expect(viewer.screen()).toBeUndefined();
+    expect(instanceIds(stageOf(el))).toHaveLength(0);
+    expect(onSource).not.toHaveBeenCalled();
+    viewer.update({ library: m3 });
+    expect(onSource).toHaveBeenCalledTimes(1);
+    expect(viewer.screen()?.instances.length).toBeGreaterThan(0);
+  });
+
+  it('onSource recebe os avisos (propriedade desconhecida)', () => {
+    const json = structuredClone(settings) as unknown as {
+      content: { children: { props: Record<string, unknown> }[] };
+    };
+    json.content.children[0]!.props.foo = 'x';
+    const results: SourceResult[] = [];
+    make(container(), { library: m3, source: json, onSource: (r) => results.push(r) });
+    expect(results).toHaveLength(1);
+    expect(results[0]?.error).toBeUndefined();
+    expect(results[0]?.warnings.join('\n')).toContain('foo');
+  });
+
+  it('redraw() recalcula; update com o mesmo objeto não, com objeto novo sim', () => {
+    const onSource = vi.fn();
+    const viewer = make(container(), { library: m3, source: settings, onSource });
+    expect(onSource).toHaveBeenCalledTimes(1);
+    viewer.update({ source: settings });
+    expect(onSource).toHaveBeenCalledTimes(1);
+    viewer.redraw();
+    expect(onSource).toHaveBeenCalledTimes(2);
+    viewer.update({ source: structuredClone(settings) });
+    expect(onSource).toHaveBeenCalledTimes(3);
+    viewer.update({ screen: SAMPLE_SCREEN });
+    expect(onSource).toHaveBeenCalledTimes(3);
+    expect(viewer.screen()?.id).toBe('settings');
+  });
+
+  it('source com error não desenha instâncias; limpar o source volta ao screen', () => {
+    const onSource = vi.fn();
+    const el = container();
+    const viewer = make(el, {
+      library: m3,
+      screen: M3_SCREEN,
+      source: { screen: {} },
+      onSource,
+    });
+    const result = onSource.mock.calls[0]?.[0] as SourceResult;
+    expect(result.error).toBeDefined();
+    expect(viewer.screen()).toBeUndefined();
+    expect(instanceIds(stageOf(el))).toHaveLength(0);
+    viewer.update({ source: undefined });
+    expect(viewer.screen()).toBe(M3_SCREEN);
+    expect(instanceIds(stageOf(el))).toHaveLength(M3_SCREEN.instances.length);
   });
 });

@@ -4,9 +4,12 @@
  * preact/compat) para o `<MappingViewer/>` embutível (fase L1). Experimento fora do produto:
  * textos em pt-BR direto no código, sem i18n e sem store.
  *
- * O JSON da tela à esquerda é a fonte de verdade da demonstração: cada edição válida vira a
- * `screen` do visualizador (atualização em tempo real); uma edição inválida mostra o erro e
- * mantém a última tela válida. O StrictMode é um toggle que recria o root.
+ * O JSON à esquerda é a fonte de verdade da demonstração: cada edição válida vira a `screen` do
+ * visualizador (atualização em tempo real); uma edição inválida mostra o erro e mantém a última
+ * tela válida. No conjunto "Material 3 (SDUI)" (fase L2) o JSON é o de um backend SDUI: ele vira
+ * o `source` do visualizador, a origem declarada na especialização o traduz e a tela calculada
+ * volta por `onSource` (alimenta a árvore e as propriedades); os avisos da origem ficam no
+ * painel de status, e um `error` do resultado volta ao último `source` que funcionou. O StrictMode é um toggle que recria o root.
  *
  * A seleção tem duas fontes: o clique no canvas (quando "Seleção pelo canvas" está ligada) e a
  * árvore das instâncias à direita, que também mostra as propriedades (só leitura) da selecionada.
@@ -26,12 +29,14 @@ import { createRoot } from 'react-dom/client';
 import './react.css';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../components/samples';
 import { M3_FILES, M3_SCREEN } from '../components/samplesMaterial3';
+import settingsSdui from '../components/sdui/settings.sdui.json';
 import {
   type FieldValue,
   type Instance,
   type InstanceWarnings,
   type Library,
   type Screen,
+  type SourceResult,
   type TreeNode,
   type TypeDef,
   MappingViewer,
@@ -42,12 +47,15 @@ import {
   serializeScreen,
 } from '../viewer/react';
 
-type Dataset = 'samples' | 'm3';
+type Dataset = 'samples' | 'm3' | 'sdui';
 
 const DATASETS: Record<Dataset, { library: Library; screen: Screen }> = {
   samples: { library: loadLibrary(SAMPLE_FILES), screen: SAMPLE_SCREEN },
   m3: { library: loadLibrary(M3_FILES), screen: M3_SCREEN },
+  // A tela do SDUI nasce do `source` (chega por `onSource`); o `screen` é só o ponto de partida.
+  sdui: { library: loadLibrary(M3_FILES), screen: M3_SCREEN },
 };
+const SDUI_TEXT = JSON.stringify(settingsSdui, null, 2);
 
 interface Click {
   readonly id: string | undefined;
@@ -156,6 +164,14 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   const [click, setClick] = useState<Click | undefined>();
   const [selection, setSelection] = useState<readonly string[]>([]);
   const [canvasSelect, setCanvasSelect] = useState(true);
+  /** O JSON do SDUI entregue ao visualizador (só vale no conjunto SDUI). */
+  const [source, setSource] = useState<unknown>(settingsSdui);
+  const [sourceWarnings, setSourceWarnings] = useState<readonly string[]>([]);
+  /** O `source` mais recente entregue, e o último cujo cálculo deu tela (para voltar em caso de erro). */
+  const shownSource = useRef<unknown>(settingsSdui);
+  const goodSource = useRef<unknown>(undefined);
+  /** Voltando ao último `source` bom: o resultado dessa volta não apaga o erro que a causou. */
+  const restoring = useRef(false);
   const [warnings, setWarnings] = useState<InstanceWarnings>(new Map());
   const [updateMs, setUpdateMs] = useState<number | undefined>();
   /** Instante em que a edição entrou (handler); lido depois do commit e do efeito do viewer. */
@@ -168,28 +184,44 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
     if (startedAt.current === undefined) return;
     setUpdateMs(performance.now() - startedAt.current);
     startedAt.current = undefined;
-  }, [screen, library]);
+  }, [screen, library, source]);
 
-  const edit = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
-    const started = performance.now();
-    const value = event.target.value;
-    setText(value);
-    try {
-      const parsed = parseScreen(JSON.parse(value));
-      startedAt.current = started;
-      setScreen(parsed);
-      setError(undefined);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  }, []);
+  const edit = useCallback(
+    (event: ChangeEvent<HTMLTextAreaElement>) => {
+      const started = performance.now();
+      const value = event.target.value;
+      setText(value);
+      try {
+        const json: unknown = JSON.parse(value);
+        startedAt.current = started;
+        if (dataset === 'sdui') {
+          // A validação do conteúdo é da origem: o resultado (ou o erro) volta por `onSource`.
+          shownSource.current = json;
+          setSource(json);
+          return;
+        }
+        setScreen(parseScreen(json));
+        setError(undefined);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    },
+    [dataset],
+  );
 
   const choose = (next: Dataset): void => {
     startedAt.current = performance.now();
     setDataset(next);
     setScreen(DATASETS[next].screen);
-    setText(serializeScreen(DATASETS[next].screen));
+    setText(next === 'sdui' ? SDUI_TEXT : serializeScreen(DATASETS[next].screen));
     setError(undefined);
+    if (next === 'sdui') {
+      goodSource.current = undefined;
+      restoring.current = false;
+      shownSource.current = settingsSdui;
+      setSource(settingsSdui);
+      setSourceWarnings([]);
+    }
     setSelection([]);
     setHover(undefined);
   };
@@ -198,6 +230,27 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   const onClick = (id: string | undefined, point: { x: number; y: number }): void => {
     setClick({ id, x: Math.round(point.x), y: Math.round(point.y) });
     setSelection((current) => (id === undefined ? [] : current.includes(id) ? [] : [id]));
+  };
+
+  /** A tela calculada do `source`: vira a tela da página; erro ou JSON sem tela volta ao último `source` bom. */
+  const onSource = (result: SourceResult): void => {
+    if (result.error !== undefined || !result.screen) {
+      setError(result.error ?? 'O SDUI não gerou tela.');
+      if (
+        goodSource.current !== undefined &&
+        goodSource.current !== shownSource.current
+      ) {
+        restoring.current = true;
+        shownSource.current = goodSource.current;
+        setSource(goodSource.current);
+      }
+      return;
+    }
+    goodSource.current = shownSource.current;
+    setScreen(result.screen);
+    setSourceWarnings(result.warnings);
+    if (restoring.current) restoring.current = false;
+    else setError(undefined);
   };
 
   const selectOne = (id: string): void =>
@@ -233,6 +286,13 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
           >
             Material 3
           </button>
+          <button
+            type="button"
+            aria-pressed={dataset === 'sdui'}
+            onClick={() => choose('sdui')}
+          >
+            Material 3 (SDUI)
+          </button>
           <button type="button" onClick={() => setMounted((m) => !m)}>
             {mounted ? 'Desmontar' : 'Montar'}
           </button>
@@ -254,7 +314,7 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
           </label>
         </div>
         <textarea
-          aria-label="Tela (JSON)"
+          aria-label={dataset === 'sdui' ? 'SDUI (JSON)' : 'Tela (JSON)'}
           spellCheck={false}
           value={text}
           onChange={edit}
@@ -271,6 +331,8 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
             <MappingViewer
               library={library}
               screen={screen}
+              source={dataset === 'sdui' ? source : undefined}
+              onSource={onSource}
               selection={selection}
               hover={hover}
               interactive={canvasSelect}
@@ -297,6 +359,12 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
               ? 'nenhum'
               : warned.map(([id, list]) => `${id}: ${list.join('; ')}`).join(' | ')}
           </div>
+          {dataset === 'sdui' ? (
+            <div>
+              Avisos da origem:{' '}
+              {sourceWarnings.length === 0 ? 'nenhum' : sourceWarnings.join(' | ')}
+            </div>
+          ) : null}
           <div>
             Última atualização:{' '}
             {updateMs === undefined ? '—' : `${updateMs.toFixed(1)} ms`}{' '}

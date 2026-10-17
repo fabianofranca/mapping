@@ -19,6 +19,11 @@
  * - Âncoras (pai `none`): `left`+`right` (ou `top`+`bottom`) esticam o filho entre elas,
  *   mesmo que ele tenha tamanho fixo (como as constraints do Figma).
  * - `lineHeight` entregue ao `TextMeasurer` já em px.
+ * - Nó `slot` com `options.slotContent` (tamanho dos filhos já arrumados mais o padding do
+ *   slot, vindo de `layout.ts`): `hug` vale o `slotContent` do eixo; `fill` (ou âncoras nos dois
+ *   lados) com o pai sendo medido (`hug`) também, sem o aviso de "fill dentro de hug". Com o pai
+ *   já medido, o `fill` divide o que sobra, que então é o próprio `slotContent`. Sem
+ *   `slotContent` nada muda (o slot vale 0 ao medir). `measureComponent` mede só o plano da raiz.
  */
 import type {
   Anchors,
@@ -80,6 +85,11 @@ export interface InstantiateOptions {
   readonly measure: TextMeasurer;
   /** Prefixo dos ids dos nós (ex.: id da instância). */
   readonly idPrefix?: string;
+  /**
+   * Tamanho do conteúdo do slot (filhos arrumados mais o padding do slot), para medir um
+   * componente cujo tamanho depende dos filhos (`hug`). Ver o comentário do topo do arquivo.
+   */
+  readonly slotContent?: { readonly width: number; readonly height: number };
 }
 
 export interface Instantiated {
@@ -214,12 +224,15 @@ function anchorsOf(
 // Instanciação
 // ---------------------------------------------------------------------------------------
 
-export function instantiate(
+/**
+ * Monta o "motor" de um componente com seus valores: avaliação, tamanhos e planos dos quadros.
+ * `instantiate` e `measureComponent` compartilham este fechamento (e o cache dos planos).
+ */
+function createEngine(
   component: ComponentFile,
   values: FieldValues,
-  box: Box,
   options: InstantiateOptions,
-): Instantiated {
+) {
   const warnings = new Set<string>();
   const warn = (message: string) => warnings.add(message);
   const prefix = options.idPrefix ?? 'c';
@@ -353,6 +366,16 @@ export function instantiate(
     )
       return Math.max(0, content - anchors.start - anchors.end);
     if (typeof spec === 'number') return Math.max(0, spec);
+    if (node.type === 'slot' && options.slotContent) {
+      const inner = options.slotContent[axis === 'w' ? 'width' : 'height'];
+      const anchored =
+        anchors !== undefined &&
+        !anchors.center &&
+        anchors.start !== undefined &&
+        anchors.end !== undefined;
+      if (spec === 'hug' || (content === null && (spec === 'fill' || anchored)))
+        return Math.max(0, inner);
+    }
     if (spec === 'hug') {
       if (
         !isMain &&
@@ -747,14 +770,34 @@ export function instantiate(
     }
   };
 
-  const root = buildFrame(
-    component.template,
-    'root',
-    box.x,
-    box.y,
-    box.width,
-    box.height,
-    true,
-  );
-  return { root, warnings: [...warnings] };
+  const buildRoot = (box: Box): FrameNode =>
+    buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true);
+
+  return { warnings, planFrame, buildRoot };
+}
+
+export function instantiate(
+  component: ComponentFile,
+  values: FieldValues,
+  box: Box,
+  options: InstantiateOptions,
+): Instantiated {
+  const engine = createEngine(component, values, options);
+  const root = engine.buildRoot(box);
+  return { root, warnings: [...engine.warnings] };
+}
+
+/**
+ * Mede o componente sem montar nós: o plano da raiz do template, com `null` = `hug` naquele
+ * eixo (o quadro abraça os filhos; com `slotContent`, o slot vale o tamanho dos filhos).
+ */
+export function measureComponent(
+  component: ComponentFile,
+  values: FieldValues,
+  size: { readonly width: number | null; readonly height: number | null },
+  options: InstantiateOptions,
+): { width: number; height: number; warnings: readonly string[] } {
+  const engine = createEngine(component, values, options);
+  const plan = engine.planFrame(component.template, size.width, size.height);
+  return { width: plan.w, height: plan.h, warnings: [...engine.warnings] };
 }
