@@ -1,6 +1,7 @@
 // Material Design 3 escrito no formato do laboratório: um design system público inteiro
 // (dez componentes) passa pela validação e instancia sem avisos, nos tamanhos e valores padrão.
 import { describe, expect, it } from 'vitest';
+import { findSlot, resolveSlotLayout } from '../../../lab/components/arrange';
 import { approximateMeasurer, instantiate } from '../../../lab/components/instantiate';
 import { initialValues, loadLibrary } from '../../../lab/components/library';
 import { parseComponent } from '../../../lab/components/parseComponent';
@@ -96,5 +97,48 @@ describe('Material 3 no formato de componente', () => {
     );
     const outline = [...walk(error.root)].find((n) => n.name === 'outline');
     expect(outline?.stroke?.paints).toEqual([{ type: 'solid', color: '#B3261E' }]);
+  });
+
+  it('cada componente declara o dimensionamento sem retângulo (sizing)', () => {
+    const sizing = Object.fromEntries(M3_COMPONENTS.map((c) => [c.id, c.sizing]));
+    expect(sizing).toEqual({
+      'm3-top-app-bar': { width: 'fill', height: 64 },
+      'm3-button': { width: 'hug', height: 40 },
+      'm3-fab': { width: 56, height: 56 },
+      'm3-text-field': { width: 'fill', height: 56 },
+      'm3-switch': { width: 'fill', height: 32 },
+      'm3-checkbox': { width: 'fill', height: 40 },
+      'm3-chip': { width: 'hug', height: 32 },
+      'm3-card': { width: 'fill', height: 'hug' },
+      'm3-list-item': { width: 'fill', height: 72 },
+      'm3-navigation-bar': { width: 'fill', height: 80 },
+      'm3-bottom-sheet': { width: 'fill', height: 'hug' },
+      'm3-scrim': { width: 'fill', height: 'fill' },
+      'm3-box': { width: 'fill', height: 'hug' },
+      'm3-row': { width: 'fill', height: 'hug' },
+      'm3-column': { width: 'fill', height: 'hug' },
+    });
+  });
+
+  it('o slot de ações do cartão enfileira os botões à direita, com 8 de espaço', () => {
+    const card = M3_COMPONENTS.find((c) => c.id === 'm3-card')!;
+    const slot = findSlot(card)!;
+    expect(slot.name).toBe('ações');
+    expect(resolveSlotLayout(slot, {})).toMatchObject({
+      type: 'row',
+      gap: 8,
+      justify: 'end',
+    });
+  });
+
+  it('a especialização declara a origem sdui e os tipos externos de cada componente', () => {
+    const lib = loadLibrary(M3_FILES);
+    expect(lib.origins).toHaveLength(1);
+    const card = lib.types.find((t) => t.id === 'm3-card')!;
+    expect(card.sources).toEqual([{ system: 'sdui', name: 'Card', slot: 'ações' }]);
+    // Só a película do modal não corresponde a um nó do SDUI.
+    expect(lib.types.filter((t) => t.sources.length === 0).map((t) => t.id)).toEqual([
+      'm3-scrim',
+    ]);
   });
 });
