@@ -81,7 +81,8 @@ O laboratório `lab/components/` (PR [#160](https://github.com/fabianofranca/map
 
 **Coordenador:** Sonnet. README, mesclar o épico e abrir o épico seguinte são mecânicos. **Esforço:** low; subagentes low.
 
-- [ ] README do laboratório com as conclusões, mesclar o épico `epic/lab` na `main` e abrir o épico "Biblioteca" (B1 a B5 em [`docs/ROADMAP.md`](docs/ROADMAP.md); detalhar aqui quando começar).
+- [x] README do laboratório com as conclusões.
+- [ ] Mesclar o épico `epic/lab` na `main` e abrir o épico "Biblioteca" (B1 a B5 em [`docs/ROADMAP.md`](docs/ROADMAP.md); detalhar aqui quando começar).
 
 ### Decisões registradas (2026-10-16)
 
