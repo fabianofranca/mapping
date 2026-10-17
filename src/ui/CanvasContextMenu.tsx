@@ -2,7 +2,9 @@ import { useLayoutEffect, useRef } from 'preact/hooks';
 import { captureFocusOrigin, restoreFocusAfterRender, type FocusOrigin } from './focus';
 import { t } from '../i18n';
 import { canCopyItems } from '../app/itemClipboard';
+import { arrangeMarking, canArrangeMarking } from './arrange';
 import { CopyMenuItems } from './CopyActions';
+import { Button } from './controls';
 import { useEditor } from './EditorContext';
 
 /** Folga mínima entre o menu e a borda da janela do navegador. */
@@ -75,7 +77,15 @@ export function CanvasContextMenu() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu]);
 
-  if (!menu || !canCopyItems(editor)) return null;
+  const copyable = canCopyItems(editor);
+  const target = menu?.target;
+  const arrangeId =
+    target?.kind === 'm' &&
+    !editor.store.locked.value &&
+    canArrangeMarking(editor, target.id)
+      ? target.id
+      : null;
+  if (!menu || !(copyable || arrangeId !== null)) return null;
   return (
     <div
       class="popover"
@@ -84,7 +94,20 @@ export function CanvasContextMenu() {
       ref={panel}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <CopyMenuItems target={menu.target} close={close} />
+      {copyable && <CopyMenuItems target={menu.target} close={close} />}
+      {arrangeId !== null && (
+        <div class="menu-items">
+          <Button
+            role="menuitem"
+            onClick={() => {
+              close();
+              arrangeMarking(editor, arrangeId);
+            }}
+          >
+            {t('arrange.action')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

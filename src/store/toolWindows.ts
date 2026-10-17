@@ -19,6 +19,7 @@ export const TOOL_WINDOWS = [
   'incomplete',
   'diagnostics',
   'proposals',
+  'library',
 ] as const;
 
 export type ToolWindowId = (typeof TOOL_WINDOWS)[number];
@@ -34,12 +35,14 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   incomplete: 'bottom',
   diagnostics: 'bottom',
   proposals: 'bottom',
+  library: 'left',
 };
 
 /**
  * Número do atalho de cada janela (Ctrl+Shift+N, e Alt+N onde o navegador deixa).
  * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
- * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7.
+ * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7; a Biblioteca
+ * de componentes (etapa Biblioteca, B3) é a 8.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
@@ -49,6 +52,7 @@ export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   incomplete: 5,
   diagnostics: 6,
   proposals: 7,
+  library: 8,
 };
 
 /** Janela do atalho Ctrl+Shift+N (`null` se o número não tem janela ainda). */
@@ -278,9 +282,14 @@ export function showToolWindow(id: ToolWindowId): void {
   const side = WINDOW_SIDE[id];
   if (side === 'bottom') bottomTab.value = id;
   const next = new Set(openIds.value);
-  // A esquerda empilha Árvore e Camadas; os outros lados mostram uma janela por vez.
+  // A esquerda empilha Árvore e Camadas; os outros lados mostram uma janela por vez. A
+  // Biblioteca ocupa a coluna da esquerda sozinha: abri-la esconde as duas e vice-versa.
   if (side !== 'left') {
     for (const other of next) if (WINDOW_SIDE[other] === side) next.delete(other);
+  } else if (id === 'library') {
+    for (const other of next) if (WINDOW_SIDE[other] === 'left') next.delete(other);
+  } else {
+    next.delete('library');
   }
   next.add(id);
   openIds.value = next;

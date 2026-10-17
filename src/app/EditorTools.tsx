@@ -45,6 +45,20 @@ export function AddImagesButton({
   );
 }
 
+/** Nova tela em branco: ao lado de "Adicionar imagens". */
+export function AddBlankScreenButton({ onAdd }: { readonly onAdd: () => void }) {
+  const { store } = useEditor();
+  return (
+    <IconButton
+      icon="blankScreen"
+      label={t('blank.new')}
+      text={t('blank.new')}
+      disabled={store.locked.value}
+      onClick={onAdd}
+    />
+  );
+}
+
 /** Desfazer e refazer. */
 export function HistoryButtons() {
   const { store } = useEditor();

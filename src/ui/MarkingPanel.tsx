@@ -5,6 +5,7 @@ import {
   canDeleteMarking,
   canEditMarkingGeometry,
   parentCandidates,
+  siblingPosition,
   type Marking,
   type Project,
   type ProjectImage,
@@ -19,6 +20,7 @@ import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
+import { arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
 import { imageLabel, markingErrorMessage, markingLabel, markingPath } from './labels';
 import { Property, PropertyGrid } from './PropertyGrid';
@@ -56,7 +58,8 @@ export function MarkingPanel({
   onSelectMarking,
   onGoToAnnotation,
 }: MarkingPanelProps) {
-  const { actions, ui, derived } = useEditor();
+  const editor = useEditor();
+  const { actions, ui, derived } = editor;
   const ext = useDetailsExtension();
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +114,8 @@ export function MarkingPanel({
 
   const candidates = parentCandidates(project, marking.id);
   const identity = ext?.identity(marking.id) ?? null;
+  const order = siblingPosition(project, marking.id);
+  const arrangeable = canArrangeMarking(editor, marking.id);
   // Posição e tamanho são uma mudança só (`rect`): com um marcador, as duas linhas viram
   // uma, com o rótulo de duas linhas e um colchete (HANDOFF-REVIEW-DETAILS 2.2).
   const rectMark = ext?.mark(marking.id, 'rect') ?? null;
@@ -229,6 +234,31 @@ export function MarkingPanel({
               ))}
             </Select>
           </Property>
+          <Property label={t('marking.order')} hint={t('marking.orderHint')}>
+            <div class="order-field">
+              <span class="props-text order-field-value">
+                {t('marking.orderValue', { index: order.index + 1, count: order.count })}
+              </span>
+              <IconButton
+                icon="arrowDown"
+                size="sm"
+                label={t('marking.orderBack')}
+                disabled={readOnly || order.index <= 0}
+                onClick={() =>
+                  report(actions.reorderMarking(marking.id, order.index - 1))
+                }
+              />
+              <IconButton
+                icon="arrowUp"
+                size="sm"
+                label={t('marking.orderFront')}
+                disabled={readOnly || order.index >= order.count - 1}
+                onClick={() =>
+                  report(actions.reorderMarking(marking.id, order.index + 1))
+                }
+              />
+            </div>
+          </Property>
           {rectMark ? (
             <Property
               label={
@@ -279,6 +309,17 @@ export function MarkingPanel({
       {ext?.others(marking.id)}
 
       <div class="row">
+        {arrangeable && (
+          <IconButton
+            icon="arrange"
+            label={t('arrange.action')}
+            text={t('arrange.action')}
+            tooltip={t('arrange.hint')}
+            shortcut={SHORTCUT_LABELS.arrange}
+            disabled={readOnly}
+            onClick={() => arrangeMarking(editor, marking.id)}
+          />
+        )}
         <Button
           variant="danger"
           disabled={readOnly || !deletable}
