@@ -4,6 +4,7 @@ import {
   type Change,
   type ChangeEntity,
 } from './proposal';
+import { siblingPosition } from './markings';
 import { projectIndex } from './projectIndex';
 import { isRecord, parseRefValue } from './refs';
 import type {
@@ -136,8 +137,14 @@ export function imageField(i: ProjectImage, field: string): JsonValue | undefine
   }
 }
 
-export function markingField(m: Marking, field: string): JsonValue | undefined {
+export function markingField(
+  p: Project,
+  m: Marking,
+  field: string,
+): JsonValue | undefined {
   switch (field) {
+    case 'position':
+      return siblingPosition(p, m.id).index;
     case 'name':
       return m.name;
     case 'rect':
@@ -237,7 +244,7 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
     case 'marking': {
       const m = index.markings.get(c.entityId);
       if (!m) return undefined;
-      return whole ? markingValue(m) : markingField(m, c.field ?? '');
+      return whole ? markingValue(m) : markingField(p, m, c.field ?? '');
     }
     case 'annotation': {
       const a = index.annotations.get(c.entityId);

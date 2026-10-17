@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 import {
+  approximateMeasurer,
+  createDrawingCache,
   isBlankImage,
   projectIndex,
   type Marking,
@@ -26,6 +28,7 @@ import {
   type PixelRect,
   type Raster,
 } from './image/raster';
+import { paintScene } from './image/sceneRaster';
 import type { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
 
@@ -64,8 +67,8 @@ interface LoadedImage {
 const MAX_BLANK_PIXELS = 4096 * 4096;
 
 /**
- * Tela em branco (sem arquivo): por enquanto um raster liso com a cor `background`, no
- * tamanho da imagem (reduzido se for enorme: `scaleX`/`scaleY` ≠ 1 já são tratados).
+ * Tela em branco (sem arquivo): um raster liso com a cor `background`, no tamanho da imagem
+ * (o desenho dos componentes é pintado por cima depois, só na região pedida) (reduzido se for enorme: `scaleX`/`scaleY` ≠ 1 já são tratados).
  */
 function blankImage(image: ProjectImage): LoadedImage {
   const shrink = Math.min(1, Math.sqrt(MAX_BLANK_PIXELS / (image.width * image.height)));
@@ -183,6 +186,24 @@ export async function markingImage(
     );
   }
 
+  // Tela em branco: pinta o desenho simplificado dos componentes (cena instanciada com o
+  // medidor aproximado; o servidor não tem fontes) na região que a saída mostra.
+  const blank = isBlankImage(image);
+  if (blank) {
+    const drawings = createDrawingCache()(
+      refs.project,
+      refs.loaded.catalog,
+      approximateMeasurer,
+      0,
+    );
+    paintScene(
+      loaded.raster,
+      [...drawings.values()].filter((d) => d.imageId === image.id),
+      approximateMeasurer,
+      { scaleX: loaded.scaleX, scaleY: loaded.scaleY, clip: region },
+    );
+  }
+
   const legend: { color: string; name: string; ref: string; rect: PixelRect }[] = [];
   const outlines: Outline[] = [];
   if (mode === 'context') outlines.push({ rect: own, color: MARKING_OUTLINE });
@@ -229,8 +250,15 @@ export async function markingImage(
       image: {
         ref: refs.ref('i', image.id),
         file: image.file,
-        ...(isBlankImage(image) ? { blank: true, background: image.background } : {}),
+        ...(blank ? { blank: true, background: image.background } : {}),
       },
+      ...(blank
+        ? {
+            drawing: 'simplified',
+            drawingNote:
+              'texto em barras; cores sólidas (sem gradiente, sombra nem fontes)',
+          }
+        : {}),
       format,
       width: composed.raster.width,
       height: composed.raster.height,

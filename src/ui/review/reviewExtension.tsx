@@ -189,7 +189,7 @@ function fieldValue(
   switch (e.entity) {
     case 'marking': {
       const m = index.markings.get(entityId);
-      return m ? markingField(m, field) : undefined;
+      return m ? markingField(project, m, field) : undefined;
     }
     case 'image': {
       const i = index.images.get(entityId);

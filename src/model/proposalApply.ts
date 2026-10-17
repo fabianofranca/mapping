@@ -184,6 +184,24 @@ function withField(
   }
 }
 
+/**
+ * Põe a marcação na posição `index` entre as irmãs (mesma imagem e mesmo pai), preso ao
+ * intervalo válido; as irmãs ocupam as mesmas casas do array (como `reorderMarking`).
+ */
+function placeAmongSiblings(markings: Marking[], id: string, index: number): void {
+  const marking = markings.find((m) => m.id === id);
+  if (!marking) return;
+  const siblings = markings.filter(
+    (m) => m.parentId === marking.parentId && m.imageId === marking.imageId,
+  );
+  const order = siblings.filter((m) => m.id !== id);
+  order.splice(Math.min(index, order.length), 0, marking);
+  const slots = siblings.map((m) => markings.indexOf(m));
+  slots.forEach((slot, i) => {
+    markings[slot] = order[i] as Marking;
+  });
+}
+
 export interface PatchResult {
   readonly project: Project;
   readonly problems: readonly PatchProblem[];
@@ -191,7 +209,7 @@ export interface PatchResult {
 
 /**
  * Aplica `changes` ao projeto, sem validar o resultado: criações entram no fim das
- * listas, remoções de entidade ausente não fazem nada, e as camadas reposicionadas vão
+ * listas, remoções de entidade ausente não fazem nada, e as camadas e as marcações reposicionadas vão
  * para o índice proposto (em ordem crescente). O que não pôde ser aplicado volta em
  * `problems` e fica de fora.
  */
@@ -206,6 +224,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   };
   const problems: PatchProblem[] = [];
   const positions: Change[] = [];
+  const markingPositions: Change[] = [];
   const phase = (c: Change) =>
     c.kind === 'remove' ? REMOVE_PHASE[c.entity] : UPSERT_PHASE[c.entity];
   const ordered = changes
@@ -220,9 +239,13 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       else map.set(c.entityId, decode(c.entity, c.to));
     } else if (c.kind === 'remove') {
       map.delete(c.entityId);
-    } else if (c.entity === 'layer' && c.field === 'position') {
-      if (map.has(c.entityId)) positions.push(c);
-      else problems.push({ code: 'entity-missing', changeId: c.id });
+    } else if (
+      (c.entity === 'layer' || c.entity === 'marking') &&
+      c.field === 'position'
+    ) {
+      if (!map.has(c.entityId)) problems.push({ code: 'entity-missing', changeId: c.id });
+      else if (c.entity === 'layer') positions.push(c);
+      else markingPositions.push(c);
     } else {
       const current = map.get(c.entityId);
       const next = current && withField(c.entity, current, c, maps.specialization);
@@ -239,6 +262,13 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     if (layer) layers.splice(Math.min(c.to as number, layers.length), 0, layer);
   }
 
+  const markings = [...maps.marking.values()] as Marking[];
+  for (const c of [...markingPositions].sort(
+    (a, b) => (a.to as number) - (b.to as number),
+  )) {
+    placeAmongSiblings(markings, c.entityId, c.to as number);
+  }
+
   return {
     project: {
       ...p,
@@ -249,7 +279,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       >,
       layers,
       images: [...maps.image.values()] as ProjectImage[],
-      markings: [...maps.marking.values()] as Marking[],
+      markings,
       annotations: [...maps.annotation.values()] as Annotation[],
     },
     problems,

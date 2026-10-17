@@ -68,6 +68,7 @@ export const IMAGE_FIELDS = [
   'locked',
   'source',
 ] as const;
+/** `position` de marcação: índice entre as irmãs (mesma imagem e mesmo pai), só quando a ordem relativa muda. */
 export const MARKING_FIELDS = [
   'name',
   'rect',
@@ -75,6 +76,7 @@ export const MARKING_FIELDS = [
   'imageId',
   'locked',
   'source',
+  'position',
 ] as const;
 /**
  * Campos fixos de uma anotação. Além deles: `values.<key>` (um campo da tipada) e
@@ -289,6 +291,7 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
   imageId: id,
   locked: z.boolean(),
   source: sourceSchema.nullable(),
+  position: z.number().int().min(0),
 };
 
 const annotationFieldSchemas: Record<(typeof ANNOTATION_FIELDS)[number], z.ZodType> = {
@@ -408,7 +411,7 @@ const changeSchema = z
         add(['field'], `"${c.field}" não é um campo de ${c.entity}`);
         return;
       }
-      // Camada criada nesta proposta e reposicionada: `from` é `null`.
+      // Camada ou marcação criada nesta proposta e reposicionada: `from` é `null`.
       const fromSchema = c.field === 'position' ? schema.nullable() : schema;
       checkValue(fromSchema, c.from, ctx, ['from']);
       checkValue(schema, c.to, ctx, ['to']);
