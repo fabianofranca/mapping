@@ -8,6 +8,7 @@ import {
   type RepairedLoad,
 } from '../model';
 import { reportError } from '../utils/report';
+import { loadLibraryIssues, type LibraryIssues } from './specPackage';
 import type { ProjectStorage } from './types';
 
 export type LoadProjectResult =
@@ -20,6 +21,11 @@ export type LoadProjectResult =
       readonly migratedFrom: number | null;
       /** O `mapping.json` como estava no armazenamento. */
       readonly text: string;
+      /**
+       * Problemas da biblioteca das especializações aplicadas em pasta (níveis 1 e 2), para o
+       * Diagnóstico. Nunca bloqueia a abertura.
+       */
+      readonly libraryIssues: LibraryIssues;
     }
   | {
       readonly ok: false;
@@ -69,5 +75,6 @@ export async function loadProject(storage: ProjectStorage): Promise<LoadProjectR
     readOnly: result.readOnly,
     migratedFrom: result.migratedFrom,
     text,
+    libraryIssues: await loadLibraryIssues(storage, result.project),
   };
 }

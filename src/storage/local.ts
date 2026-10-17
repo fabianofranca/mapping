@@ -5,6 +5,7 @@ import type { ProjectFiles } from './zip';
 import { PROPOSAL_ID_RE, proposalDir, proposalFilePath } from '../model';
 import {
   BACKUPS_DIR,
+  assertSpecPath,
   backupTimestamp,
   isProposalFilePath,
   proposalIdOfPath,
@@ -124,6 +125,10 @@ function createLibrary(db: Db): LocalLibrary {
       // Converte antes de abrir a transação: ela fecha se esperar outra coisa.
       const stored = await Promise.all([
         ...[...files.images].map(([path, blob]) => toStoredFile(id, path, blob)),
+        // Os arquivos do pacote primeiro: o mesmo caminho em `specs` (texto) prevalece.
+        ...[...(files.specAssets ?? [])].map(([path, blob]) =>
+          toStoredFile(id, path, blob),
+        ),
         ...[...files.specs, ...files.proposals].map(([path, text]) =>
           toStoredFile(id, path, new Blob([text], { type: SPEC_TYPE })),
         ),
@@ -179,15 +184,63 @@ function createLibrary(db: Db): LocalLibrary {
           await db.delete('files', [id, path]);
         },
         async readSpec(path) {
+          assertSpecPath(path, 'file');
           const file = await db.get('files', [id, path]);
           return file ? new Blob([file.data]).text() : null;
         },
         async writeSpec(path, text) {
+          assertSpecPath(path, 'file');
           const blob = new Blob([text], { type: SPEC_TYPE });
           await db.put('files', await toStoredFile(id, path, blob));
         },
         async removeSpec(path) {
+          assertSpecPath(path, 'file');
           await db.delete('files', [id, path]);
+        },
+        async listSpecDir(dir) {
+          assertSpecPath(dir, 'dir');
+          const prefix = `${dir}/`;
+          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+          return keys
+            .map(([, path]) => path)
+            .filter((path) => path.startsWith(prefix))
+            .sort();
+        },
+        async readSpecFile(path) {
+          assertSpecPath(path, 'package');
+          const file = await db.get('files', [id, path]);
+          return file ? new Blob([file.data], { type: file.type }) : null;
+        },
+        async writeSpecFile(path, data) {
+          assertSpecPath(path, 'package');
+          const blob =
+            typeof data === 'string' ? new Blob([data], { type: SPEC_TYPE }) : data;
+          const stored = await toStoredFile(id, path, blob);
+          const tx = db.transaction(['projects', 'files'], 'readwrite');
+          const meta = await tx.objectStore('projects').get(id);
+          if (!meta) throw new Error(`local project not found: ${id}`);
+          await Promise.all([
+            tx.objectStore('projects').put({ ...meta, unexported: true }),
+            tx.objectStore('files').put(stored),
+            tx.done,
+          ]);
+        },
+        async removeSpecDir(dir) {
+          assertSpecPath(dir, 'dir');
+          const prefix = `${dir}/`;
+          const tx = db.transaction(['projects', 'files'], 'readwrite');
+          const meta = await tx.objectStore('projects').get(id);
+          if (!meta) throw new Error(`local project not found: ${id}`);
+          const files = tx.objectStore('files');
+          const keys = await files.index('byProject').getAllKeys(id);
+          const doomed = keys.filter(([, path]) => path.startsWith(prefix));
+          await Promise.all([
+            ...(doomed.length > 0
+              ? [tx.objectStore('projects').put({ ...meta, unexported: true })]
+              : []),
+            ...doomed.map((key) => files.delete(key)),
+            tx.done,
+          ]);
         },
         async listProposals() {
           const keys = await db.getAllKeysFromIndex('files', 'byProject', id);

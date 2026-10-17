@@ -2,6 +2,9 @@ import { effect, signal, type ReadonlySignal } from '@preact/signals';
 import {
   canReplaceImage,
   isSameAspect,
+  isTextPackageFile,
+  packageDirOf,
+  packageSpecNameOf,
   readRevision,
   serialize,
   specFiles,
@@ -16,12 +19,17 @@ import {
 } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
+import { loadLibraryIssues, type LibraryIssues } from '../storage/specPackage';
 import type { LoadedProposals } from '../storage/loadProposals';
 import { backupFileName, imageMimeType, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
 import { reportError } from '../utils/report';
 import { createProjectStore, type ProjectStore } from './history';
-import { createProjectActions, type ProjectActions } from './project';
+import {
+  createProjectActions,
+  type ProjectActions,
+  type SpecPackageFiles,
+} from './project';
 import { createProposalActions, type ProposalActions } from './proposalActions';
 import { createProposalStore, type ProposalStore } from './proposals';
 
@@ -63,6 +71,8 @@ export interface SessionOptions {
   readonly loadedText?: string;
   /** As propostas de alteração lidas do armazenamento ao abrir (ver `loadProposals`). */
   readonly proposals?: LoadedProposals;
+  /** Problemas da biblioteca lidos ao abrir (ver `loadProject`); sem eles, nenhum. */
+  readonly libraryIssues?: LibraryIssues;
   /**
    * Arquivos de imagem trocados ou adicionados por fora (ao recarregar o projeto ou ao
    * conferir os arquivos): quem guarda os bitmaps os descarta para carregar de novo.
@@ -158,6 +168,12 @@ export interface ProjectSession {
   /** Decidir, anotar e aplicar as aceitas: as únicas ações que mudam uma proposta. */
   readonly proposalActions: ProposalActions;
   readonly saveStatus: ReadonlySignal<SaveStatus>;
+  /**
+   * Problemas (níveis 1 e 2 do validador) do pacote de cada especialização aplicada em pasta,
+   * por id. Estado da UI, não do projeto: lido na abertura, na recarga e depois que uma
+   * gravação mexe em `specs/<id>/`; nunca bloqueia a abertura nem muda `pendingSave`.
+   */
+  readonly libraryIssues: ReadonlySignal<LibraryIssues>;
   /** Versão de origem, depois que o backup do original pré-migração foi gravado. */
   readonly backupSaved: ReadonlySignal<number | null>;
   /** Alteração externa que impediu uma gravação; `null` quando não há decisão pendente. */
@@ -261,6 +277,16 @@ interface DiskState {
   readonly lastModified: number | null;
 }
 
+/** O que a sessão sabe de uma pasta `specs/<id>/` gravada: a versão e o arquivo da especialização. */
+interface WrittenPackage {
+  readonly key: string;
+  /** O arquivo da especialização, relativo à pasta (gravado pelo `specFiles`, não pelo pacote). */
+  readonly specRel: string;
+}
+
+const packageKey = (s: { readonly id: string; readonly version: number }): string =>
+  `${s.id}@${s.version}`;
+
 export function openSession(options: SessionOptions): ProjectSession {
   const { storage, prepareImage } = options;
   const store = createProjectStore({ now: options.now });
@@ -285,6 +311,61 @@ export function openSession(options: SessionOptions): ProjectSession {
   // Cópias de `specs/` gravadas (caminho → texto). O conteúdo vive no projeto, então
   // o desfazer de aplicar/remover especialização só precisa regravar ou apagar.
   const writtenSpecs = specFiles(options.project);
+  // Pacotes da biblioteca (`specs/<id>/`): a pasta gravada (pasta → versão) e, por
+  // `id@versão`, o conteúdo em memória (sem o arquivo da especialização, que vive no projeto),
+  // para o desfazer/refazer de aplicar, atualizar e remover regravar o que o `cleanUp` apagou.
+  // Só a sessão guarda bytes; o store base nunca.
+  const writtenPackages = new Map<string, WrittenPackage>();
+  const packageCache = new Map<string, Map<string, string | Blob>>();
+  const libraryIssues = signal<LibraryIssues>(options.libraryIssues ?? new Map());
+  let packagesTouched = false;
+  const trackPackages = (p: Project) => {
+    writtenPackages.clear();
+    for (const s of p.specializations) {
+      const dir = packageDirOf(s.file);
+      if (dir !== null && s.spec) {
+        writtenPackages.set(dir, {
+          key: packageKey(s),
+          specRel: s.file.slice(dir.length + 1),
+        });
+      }
+    }
+  };
+  trackPackages(options.project);
+  /** Guarda o pacote no cache sob `id@versão`, sem o arquivo da especialização. */
+  const cachePackage = (
+    spec: { readonly id: string; readonly version: number },
+    files: SpecPackageFiles,
+  ) => {
+    const specName = packageSpecNameOf(files, spec.id);
+    const copy = new Map<string, string | Blob>();
+    for (const [path, data] of files) if (path !== specName) copy.set(path, data);
+    packageCache.set(packageKey(spec), copy);
+  };
+  /** Lê a pasta do disco para o cache (uma vez por `id@versão`), antes de ela ser trocada ou apagada. */
+  const snapshotPackage = async (dir: string, written: WrittenPackage) => {
+    if (packageCache.has(written.key)) return;
+    const files = new Map<string, string | Blob>();
+    for (const path of await storage.listSpecDir(dir)) {
+      const rel = path.slice(dir.length + 1);
+      if (rel === written.specRel) continue;
+      const blob = await storage.readSpecFile(path);
+      if (!blob) continue;
+      // Cópia em memória: numa pasta, o `File` lido deixa de ser legível quando é removido.
+      files.set(
+        rel,
+        isTextPackageFile(rel)
+          ? await blob.text()
+          : new Blob([await blob.arrayBuffer()], { type: blob.type }),
+      );
+    }
+    packageCache.set(written.key, files);
+  };
+  const forgetSpecsUnder = (dir: string) => {
+    for (const file of [...writtenSpecs.keys()]) {
+      if (file.startsWith(`${dir}/`)) writtenSpecs.delete(file);
+    }
+  };
   // Original pré-migração ainda não guardado: o primeiro salvamento grava antes.
   let pendingBackup = options.migratedFrom ?? null;
   const backupSaved = signal<number | null>(null);
@@ -403,6 +484,27 @@ export function openSession(options: SessionOptions): ProjectSession {
       trash.delete(file);
       wrote = true;
     }
+    // Pacotes da biblioteca: a pasta nova (ou a versão que voltou pelo desfazer) entra antes
+    // do `mapping.json`; a pasta antiga é guardada em memória antes de ser trocada.
+    for (const s of p.specializations) {
+      const dir = packageDirOf(s.file);
+      if (dir === null || !s.spec) continue;
+      const key = packageKey(s);
+      const have = writtenPackages.get(dir);
+      if (have?.key === key) continue;
+      const files = packageCache.get(key);
+      if (!files) {
+        reportError('session.package', `pacote ${key} fora da memória: ${dir}`);
+        continue;
+      }
+      if (have) await snapshotPackage(dir, have);
+      await storage.removeSpecDir(dir);
+      forgetSpecsUnder(dir);
+      for (const [rel, data] of files) await storage.writeSpecFile(`${dir}/${rel}`, data);
+      writtenPackages.set(dir, { key, specRel: s.file.slice(dir.length + 1) });
+      packagesTouched = true;
+      wrote = true;
+    }
     const specs = specFiles(p);
     for (const [file, text] of specs) {
       if (writtenSpecs.get(file) === text) continue;
@@ -422,6 +524,10 @@ export function openSession(options: SessionOptions): ProjectSession {
     for (const file of referenced) pendingFiles.delete(file);
     if (p !== exported) options.onChanged?.();
     await cleanUp(referenced, specs).catch(reportCleanupFailure);
+    if (packagesTouched) {
+      packagesTouched = false;
+      libraryIssues.value = await loadLibraryIssues(storage, p);
+    }
   };
 
   /**
@@ -483,6 +589,17 @@ export function openSession(options: SessionOptions): ProjectSession {
     for (const file of [...trash.keys()]) {
       if (!stillInHistory.has(file)) trash.delete(file);
     }
+    // Pastas de pacote que o `mapping.json` gravado deixou de usar: guarda o conteúdo em memória
+    // (o desfazer pode trazê-la de volta) e remove a pasta inteira.
+    const usedDirs = new Set([...specs.keys()].map((file) => packageDirOf(file)));
+    for (const [dir, written] of [...writtenPackages]) {
+      if (usedDirs.has(dir)) continue;
+      await snapshotPackage(dir, written);
+      await storage.removeSpecDir(dir);
+      forgetSpecsUnder(dir);
+      writtenPackages.delete(dir);
+      packagesTouched = true;
+    }
     for (const file of [...writtenSpecs.keys()]) {
       if (specs.has(file)) continue;
       await storage.removeSpec(file);
@@ -503,9 +620,17 @@ export function openSession(options: SessionOptions): ProjectSession {
   const actions: ProjectActions = {
     ...baseActions,
     removeImage: (imageId) => saveNow(baseActions.removeImage(imageId)),
-    applySpecialization: (spec) => saveNow(baseActions.applySpecialization(spec)),
-    updateSpecialization: (spec, texts) =>
-      saveNow(baseActions.updateSpecialization(spec, texts)),
+    // O pacote entra no cache em memória antes da gravação (que começa no `saveNow`).
+    applySpecialization: (spec, packageFiles) => {
+      const result = baseActions.applySpecialization(spec, packageFiles);
+      if (result.ok && packageFiles) cachePackage(spec, packageFiles);
+      return saveNow(result);
+    },
+    updateSpecialization: (spec, texts, packageFiles) => {
+      const result = baseActions.updateSpecialization(spec, texts, packageFiles);
+      if (result.ok && packageFiles) cachePackage(spec, packageFiles);
+      return saveNow(result);
+    },
     removeSpecialization: (specId, mode, texts) =>
       saveNow(baseActions.removeSpecialization(specId, mode, texts)),
   };
@@ -565,6 +690,9 @@ export function openSession(options: SessionOptions): ProjectSession {
     trash.clear();
     writtenSpecs.clear();
     for (const [file, text] of specFiles(project)) writtenSpecs.set(file, text);
+    packageCache.clear();
+    trackPackages(project);
+    libraryIssues.value = loaded.libraryIssues;
     if (loaded.migratedFrom !== null) {
       pendingBackup = { version: loaded.migratedFrom, text: loaded.text };
     }
@@ -740,6 +868,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     actions,
     proposals,
     proposalActions,
+    libraryIssues,
     saveStatus: saver.status,
     backupSaved,
     conflict,
@@ -835,11 +964,23 @@ export function openSession(options: SessionOptions): ProjectSession {
         if (blob) images.set(image.file, blob);
         else missingImages.push(image.file);
       }
+      // Os demais arquivos dos pacotes da biblioteca (o da especialização vai em `specs`).
+      const specAssets = new Map<string, Blob>();
+      for (const s of p.specializations) {
+        const dir = packageDirOf(s.file);
+        if (dir === null) continue;
+        for (const path of await storage.listSpecDir(dir)) {
+          if (path === s.file) continue;
+          const blob = await storage.readSpecFile(path);
+          if (blob) specAssets.set(path, blob);
+        }
+      }
       const withProposals = await proposals.collect();
       return {
         mapping: serialize({ ...p, revision: disk.revision }),
         images,
         specs: specFiles(p),
+        ...(specAssets.size > 0 ? { specAssets } : {}),
         proposals: withProposals.proposals,
         proposalImages: withProposals.images,
         missingImages,
