@@ -12,9 +12,9 @@ import type { StoreErrorCode } from '../store/history';
 import type { ProposalActionError } from '../store/proposalActions';
 import type { ProposalNotice } from '../store/proposals';
 
-/** Nome da imagem; sem nome, o nome do arquivo. */
+/** Nome da imagem; sem nome, o nome do arquivo (tela em branco: "Tela em branco"). */
 export function imageLabel(image: Pick<ProjectImage, 'name' | 'file'>): string {
-  return image.name ?? image.file;
+  return image.name ?? image.file ?? t('image.blankUntitled');
 }
 
 export function markingLabel(marking: Pick<Marking, 'name'>): string {

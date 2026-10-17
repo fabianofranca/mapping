@@ -397,7 +397,11 @@ export class CanvasController {
     // Na revisão, também as imagens novas ou trocadas que esperam em `proposals/`.
     const drawn = this.drawnProject.value?.images ?? [];
     untracked(() => {
-      const files = new Set([...images, ...drawn].map((image) => image.file));
+      // Tela em branco (sem arquivo) não tem bitmap.
+      const files = new Set<string>();
+      for (const image of [...images, ...drawn]) {
+        if (image.file !== null) files.add(image.file);
+      }
       for (const file of files) this.display.ensure(file);
       // Arquivos que saíram do projeto (imagem excluída ou trocada) não ficam na memória.
       this.display.retain(files);
@@ -430,8 +434,9 @@ export class CanvasController {
     if (scaleChanged || !sameFrame(last, frame, IMAGE_KEYS)) {
       this.placements = this.images.render(frame);
       this.readyImages =
-        frame.project?.images.filter((i) => frame.bitmaps.get(i.file)?.status === 'ready')
-          .length ?? 0;
+        frame.project?.images.filter(
+          (i) => i.file === null || frame.bitmaps.get(i.file)?.status === 'ready',
+        ).length ?? 0;
     }
     this.markings.render(frame, this.placements);
     this.reviewLayer.render(frame, this.placements);

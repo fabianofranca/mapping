@@ -63,6 +63,7 @@ export function serialize(p: Project): string {
       markingColor: i.markingColor,
       locked: i.locked,
       source: i.source && { system: i.source.system, id: i.source.id, url: i.source.url },
+      background: i.background,
     })),
     markings: p.markings.map((m) => ({
       id: m.id,

@@ -126,6 +126,7 @@ export const enUS: Dictionary = {
   'marking.error.generic': 'Could not change the marking.',
 
   'image.name': 'Name',
+  'image.blankUntitled': 'Blank screen',
   'image.markingColor': 'Marking line color',
   'image.markingColorTheme': 'Theme color',
   'image.markingColorHint':
@@ -335,6 +336,7 @@ export const enUS: Dictionary = {
   'inconsistent.entity.spec': 'Specialization',
   'invariant.duplicate-id': 'duplicate id',
   'invariant.duplicate-file': 'duplicate file',
+  'invariant.blank-background': 'background color and file together (or neither)',
   'invariant.images-overlap': 'overlaps another image',
   'invariant.missing-image': 'image does not exist',
   'invariant.missing-parent': 'parent does not exist',

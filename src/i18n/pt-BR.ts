@@ -126,6 +126,7 @@ export const ptBR = {
   'marking.error.generic': 'Não foi possível alterar a marcação.',
 
   'image.name': 'Nome',
+  'image.blankUntitled': 'Tela em branco',
   'image.markingColor': 'Cor das linhas das marcações',
   'image.markingColorTheme': 'Cor do tema',
   'image.markingColorHint':
@@ -337,6 +338,7 @@ export const ptBR = {
   'inconsistent.entity.spec': 'Especialização',
   'invariant.duplicate-id': 'id repetido',
   'invariant.duplicate-file': 'arquivo repetido',
+  'invariant.blank-background': 'cor de fundo e arquivo juntos (ou nenhum dos dois)',
   'invariant.images-overlap': 'sobrepõe outra imagem',
   'invariant.missing-image': 'imagem inexistente',
   'invariant.missing-parent': 'pai inexistente',

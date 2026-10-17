@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v9)
+# Formato do `mapping.json` (schema v10)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -32,7 +32,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -50,7 +50,8 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "placement": { "x": 0, "y": 0, "scale": 0.4 },
       "markingColor": null,
       "locked": false,
-      "source": null
+      "source": null,
+      "background": null
     }
   ],
   "markings": [
@@ -91,7 +92,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                 |
 | ------------------ | ------- | ------------------------------------------------------------------------- |
-| `schemaVersion`    | `9`     | Versão do schema.                                                         |
+| `schemaVersion`    | `10`    | Versão do schema.                                                         |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                   |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).        |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
@@ -106,10 +107,10 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 **`layers[]`**: `id`; `name` (não vazio); `color`; `spec` (`null` ou `{ specId, layerId }`).
 
 **`images[]`**: `id`; `name` (`string` ou `null`); `file` (caminho relativo, ex: `images/home.webp`, único
-no projeto); `width` e `height` (pixels inteiros, com a orientação EXIF já aplicada);
+no projeto; `null` na tela em branco, v10: ver abaixo); `width` e `height` (pixels inteiros, com a orientação EXIF já aplicada);
 `placement` (`{ x, y, scale }` — posição e escala da imagem no canvas, só para a interface);
 `markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo); `source` (`null` ou origem, v8:
-ver abaixo).
+ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo da tela em branco).
 
 **`markings[]`**: `id`; `imageId`; `parentId` (marcação-pai ou `null`); `name` (`string` ou `null`);
 `rect` (`{ x, y, width, height }`, **inteiros em pixels da imagem original**, `x`/`y` ≥ 0);
@@ -126,7 +127,8 @@ Um arquivo só abre se passar nas regras abaixo (`validateProject` em `src/model
 lista os problemas e repara o que tem reparo mecânico (ver "Arquivos inconsistentes"), sem alterar o
 arquivo ao ler.
 
-- Ids únicos em cada coleção; `file` único entre as imagens; `file` das especializações único.
+- Ids únicos em cada coleção; `file` único entre as imagens que têm arquivo; `file` das especializações único.
+- Tela em branco (v10): `file` é `null` se, e somente se, `background` é uma cor (`blank-background`).
 - Toda marcação aponta para uma imagem existente; `parentId`, se houver, é uma marcação existente.
 - `rect`: inteiros, largura e altura **≥ 8 px**, e **inteiramente dentro** da imagem (`0 ≤ x`,
   `x + width ≤ width da imagem`; idem para `y`).
@@ -171,8 +173,8 @@ e abra de novo.
 
 Ler nunca grava. Ao reparar, o projeto abre reparado em memória; o original vai para
 `backups/mapping.v<versão>.<AAAAMMDD-HHMMSS>.json` e o reparado para o `mapping.json` só na **primeira
-gravação**, como na migração. O nome é o mesmo do backup de migração (um v9 reparado vira
-`mapping.v9.<data>.json`): para saber qual foi o motivo, compare a data com o Diagnóstico ou o conteúdo
+gravação**, como na migração. O nome é o mesmo do backup de migração (um v10 reparado vira
+`mapping.v10.<data>.json`): para saber qual foi o motivo, compare a data com o Diagnóstico ou o conteúdo
 com o `mapping.json` atual. O resumo do reparo fica no aviso do editor e no Diagnóstico. O servidor MCP
 continua recusando o arquivo (ler nunca grava), com a mesma lista de problemas na resposta.
 
@@ -476,6 +478,31 @@ referência ao código gerado.
   projeto (`field-mismatch`, ver [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)): aceita, bloqueia
   "Aplicar"; a visão Proposto a deixa de fora. O revisor a rejeita e o agente reenvia sem ela.
 
+## Campos da v10 (tela em branco)
+
+A v10 permite uma imagem **sem arquivo**, a "tela em branco": uma área com tamanho e cor de fundo onde se
+marcam e desenham componentes, sem foto por baixo. Em `images[]`:
+
+- `file: null` e `background: "#RRGGBB"` (cor em maiúsculas); `width` e `height` inteiros de 1 a 20000
+  (`MAX_BLANK_SIZE`). Não há arquivo em `images/`, nem no zip exportado, nem bitmap: a tela é desenhada
+  pela app. A imagem com arquivo tem `background: null`.
+- **Invariante `blank-background`**: `file === null` se, e somente se, `background !== null`. A checagem
+  de `file` repetido (`duplicate-file`) ignora a tela em branco.
+- Tudo o mais é igual ao de uma imagem: `placement` (mesma colocação ao adicionar, lado maior de 1000
+  unidades do canvas), marcações em pixels da tela, nome (`name`; sem nome a interface mostra "Tela em
+  branco"), `markingColor`, `locked`, `source`.
+- **Editar**: a cor muda livremente; o tamanho é geometria (imagem trancada recusa) e não pode deixar
+  marcação para fora (`rect-out-of-image`) nem fazer a imagem sobrepor outra. Mantém a escala do
+  `placement`.
+- **Não vale** para a tela em branco: trocar o arquivo (`replace_image`/"Trocar imagem"), "Copiar recorte"
+  e ler o arquivo pelo MCP (`get_image_file` devolve `blank-image`; `get_marking_image` devolve a região
+  na cor de fundo).
+- **Propostas**: a criação leva a imagem inteira com `file: null`; a alteração ganha os campos `background`
+  (cor) e `size` (`{ width, height }`), só quando a imagem é tela em branco (ver
+  [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)).
+- **Migração v9 → v10**: toda imagem recebe `background: null` (um valor já presente é preservado). Nada
+  mais muda.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -484,7 +511,7 @@ Arquivos v3 recebem `specializations: []`, `spec: null` em cada camada, `type: n
 `values: null` em cada anotação e um `id` novo em cada par. Arquivos v4 recebem `locked: false` em cada
 imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 recebem `platformRepos: {}`.
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
-campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Ao salvar, o
-arquivo passa a ser v9 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
+recebem `background: null` em cada imagem (ver "Campos da v10"). Ao salvar, o arquivo passa a ser v10 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

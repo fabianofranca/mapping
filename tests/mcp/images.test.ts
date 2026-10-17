@@ -7,6 +7,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connect, type Connection } from './workspace';
 import {
+  BLANK_BACKGROUND,
   BLOCKS,
   CHILD_A,
   CHILD_B,
@@ -30,7 +31,7 @@ import type { Raster } from '../../mcp/image/raster';
 interface MarkingImageData {
   ref: string;
   mode: 'crop' | 'context';
-  image: { ref: string; file: string };
+  image: { ref: string; file: string | null; blank?: boolean; background?: string };
   format: string;
   width: number;
   height: number;
@@ -408,6 +409,61 @@ describe('arquivos problemáticos', () => {
       await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.mismatch) }),
     );
     expect(file.data.warning).toBeDefined();
+  });
+});
+
+describe('tela em branco (sem arquivo)', () => {
+  it('get_image_file recusa com blank-image e manda usar get_marking_image', async () => {
+    const r = await call<{ error: { code: string; message: string } }>('get_image_file', {
+      ref: imageRef(IDS.blank),
+    });
+    expect(errorCode(r)).toBe('blank-image');
+    expect(r.data.error.message).toBe(
+      'A imagem é uma tela em branco (sem arquivo): use get_marking_image para ver o desenho.',
+    );
+  });
+
+  it('get_marking_image: recorte liso com a cor de fundo, no tamanho da marcação', async () => {
+    const r = ok(await crop(IDS.blank));
+    expect(r.data).toMatchObject({
+      mode: 'crop',
+      width: PARENT.width,
+      height: PARENT.height,
+      scale: 1,
+      region: PARENT,
+      image: { file: null, blank: true, background: BLANK_BACKGROUND },
+    });
+    expect(r.data.warning).toBeUndefined();
+    const [red, green, blue] = [0x10, 0x60, 0xa0];
+    expect(pixel(r.raster, 0, 0)).toEqual([red, green, blue, 255]);
+    expect(pixel(r.raster, PARENT.width - 1, PARENT.height - 1)).toEqual([
+      red,
+      green,
+      blue,
+      255,
+    ]);
+  });
+
+  it('get_marking_image no modo contexto: a imagem inteira com a marcação contornada', async () => {
+    const r = ok(await crop(IDS.blank, { mode: 'context' }));
+    expect(r.data).toMatchObject({ mode: 'context', width: 400, height: 300 });
+    expect(pixel(r.raster, 5, 5)).toEqual([0x10, 0x60, 0xa0, 255]);
+  });
+
+  it('get_image e get_project trazem file nulo, background e blank', async () => {
+    const image = await call<{
+      file: string | null;
+      blank: boolean;
+      background: string;
+      exists: boolean;
+    }>('get_image', { ref: imageRef(IDS.blank) });
+    expect(image.isError).toBe(false);
+    expect(image.data).toMatchObject({
+      file: null,
+      blank: true,
+      background: BLANK_BACKGROUND,
+      exists: true,
+    });
   });
 });
 

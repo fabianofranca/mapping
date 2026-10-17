@@ -1100,7 +1100,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backupPath())).toBe(v1Text);
     });
 
-    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v9', async () => {
+    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v10', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -1131,7 +1131,7 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(9);
+      expect(saved.schemaVersion).toBe(10);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({
         android: { urlTemplate: null, localPath: '../..' },
@@ -1139,7 +1139,7 @@ describe('sessão de projeto', () => {
       expect(session.backupSaved.value).toBe(6);
     });
 
-    it('projeto v8 com o campo de código removido: backup do original e grava v9 sem os valores', async () => {
+    it('projeto v8 com o campo de código removido: backup do original e grava v10 sem os valores', async () => {
       const root = new MemoryDirectory('p');
       const { text: v8Text, specs } = legacyCodeFiles();
       root.put('mapping.json', v8Text);
@@ -1166,7 +1166,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backup)).toBe(v8Text);
       const savedText = (await root.read('mapping.json')) ?? '';
       const saved = JSON.parse(savedText) as { schemaVersion: number; revision: number };
-      expect(saved.schemaVersion).toBe(9);
+      expect(saved.schemaVersion).toBe(10);
       expect(saved.revision).toBe(1);
       expect(savedText).not.toContain('implementacao');
       // A cópia antiga em specs/ continua como estava (a leitura ignora o campo).

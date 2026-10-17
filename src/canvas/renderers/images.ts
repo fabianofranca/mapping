@@ -58,7 +58,14 @@ export class ImageRenderer {
         preview?.imageId === image.id ? preview.placement : image.placement;
       placements.set(image.id, placement);
       const node = this.nodes.get(image.id) ?? this.createNode(image.id);
-      updateNode(node, image, placement, bitmaps.get(image.file), tokens, zoom);
+      updateNode(
+        node,
+        image,
+        placement,
+        image.file === null ? undefined : bitmaps.get(image.file),
+        tokens,
+        zoom,
+      );
       if (node.group.zIndex() !== index) node.group.zIndex(index);
     });
     for (const [id, node] of this.nodes) {
@@ -136,7 +143,7 @@ function updateNode(
   }
   node.label.setAttrs({
     visible: true,
-    text: `⚠ ${message}\n${image.file}`,
+    text: `⚠ ${message}\n${image.file ?? ''}`,
     x: padding,
     y: padding,
     width: Math.max(0, rect.width - 2 * padding),
@@ -166,7 +173,7 @@ function updateTitle(
   const { size, line, weight } = tokens.type.image;
   node.title.setAttrs({
     visible: true,
-    text: image.name ?? image.file,
+    text: image.name ?? image.file ?? t('image.blankUntitled'),
     x: 0,
     y: -(line + IMAGE_TITLE_GAP) / zoom,
     width,

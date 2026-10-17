@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ModelError, projectIndex } from '../src/model';
+import { ModelError, isBlankImage, projectIndex } from '../src/model';
 import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
@@ -426,7 +426,12 @@ export function registerTools(server: McpServer, roots: Roots): void {
         }
         if (item.kind === 'i') {
           const image = index.images.get(item.id)!;
-          return { ...base, name: image.name, file: image.file };
+          return {
+            ...base,
+            name: image.name,
+            file: image.file,
+            ...(isBlankImage(image) ? { blank: true, background: image.background } : {}),
+          };
         }
         const annotation = index.annotations.get(item.id)!;
         return {

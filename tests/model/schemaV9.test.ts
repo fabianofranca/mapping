@@ -41,17 +41,17 @@ describe('migração v8 → v9 (campo de código removido)', () => {
     expect(result.migratedFrom).toBe(8);
     expect(result.readOnly).toBe(false);
     expect(result.specWarnings).toEqual([]);
-    expect(result.project.schemaVersion).toBe(9);
+    expect(result.project.schemaVersion).toBe(10);
     expect(screenValues(result.project)).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
     // O mesmo projeto de antes do campo, com a cópia lida sem ele.
     expect(result.project).toEqual(codeProject());
     expect(getAnnotationIssues(result.project, 'AS')).toEqual([]);
   });
 
-  it('grava v9 sem os valores, e a releitura é estável (com a cópia antiga em specs/)', () => {
+  it('grava a versão atual sem os valores, e a releitura é estável (com a cópia antiga em specs/)', () => {
     const { text, specs } = legacyCodeFiles();
     const saved = serialize(load(text, specs).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(9);
+    expect(JSON.parse(saved).schemaVersion).toBe(10);
     expect(saved).not.toContain('implementacao');
     expect(saved).not.toContain('CadastroScreen');
     const again = load(saved, specs);
@@ -152,8 +152,8 @@ describe('migração v8 → v9 (campo de código removido)', () => {
   });
 
   it('o registro tem as migrações de cada versão até a v9', () => {
-    expect(SCHEMA_VERSION).toBe(9);
-    expect([...migrations.keys()]).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(9);
+    expect([...migrations.keys()].slice(0, 8)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(migrations.get(8)).toBe(migrateFrom8To9);
   });
 });

@@ -354,6 +354,7 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 | `code`                               | Significado                                                                      |
 | ------------------------------------ | -------------------------------------------------------------------------------- |
 | `image-file-missing`                 | O arquivo da imagem não existe (ou aponta para fora das raízes).                 |
+| `blank-image`                        | `get_image_file` numa tela em branco (sem arquivo): use `get_marking_image`.     |
 | `unsupported-image`, `invalid-image` | O arquivo não é PNG, JPEG nem WebP, ou está corrompido.                          |
 | `image-too-large`                    | Arquivo maior que 64 MB (16 MB em `base64`) ou imagem com mais de 40 megapixels. |
 | `encode-failed`                      | Falha ao codificar a imagem em WebP (a origem provavelmente está corrompida).    |

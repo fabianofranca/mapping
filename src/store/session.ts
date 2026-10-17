@@ -1,6 +1,7 @@
 import { effect, signal, type ReadonlySignal } from '@preact/signals';
 import {
   canReplaceImage,
+  imageFileNames,
   isSameAspect,
   isTextPackageFile,
   packageDirOf,
@@ -301,7 +302,7 @@ export function openSession(options: SessionOptions): ProjectSession {
   });
 
   // Arquivos de imagem que a sessão sabe estarem gravados e referenciados.
-  const stored = new Set(options.project.images.map((i) => i.file));
+  const stored = new Set(imageFileNames(options.project.images));
   // Arquivos de imagem que a sessão gravou e que nenhum `mapping.json` gravado cita ainda: se
   // o projeto for recarregado do disco antes de a gravação citá-los, são órfãos e saem.
   const pendingFiles = new Set<string>();
@@ -397,7 +398,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     for (const path of paths) imageStamps.set(path, await stampOf(path));
   };
   const initialStamps = watchable
-    ? stampImages(options.project.images.map((i) => i.file)).catch(reportCleanupFailure)
+    ? stampImages(imageFileNames(options.project.images)).catch(reportCleanupFailure)
     : Promise.resolve();
   const putImage = async (path: string, data: Blob) => {
     await storage.writeImage(path, data);
@@ -475,7 +476,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       backupSaved.value = pendingBackup.version;
       pendingBackup = null;
     }
-    const referenced = new Set(p.images.map((i) => i.file));
+    const referenced = new Set(imageFileNames(p.images));
     for (const file of referenced) {
       const blob = trash.get(file);
       if (stored.has(file) || !blob) continue;
@@ -682,7 +683,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     // O `load` zera o contador de revisão do store, o que agendaria uma gravação: descarta.
     lastRevision = store.revision.peek();
     saver.reset();
-    const referenced = new Set(project.images.map((i) => i.file));
+    const referenced = new Set(imageFileNames(project.images));
     const orphans = [...pendingFiles].filter((file) => !referenced.has(file));
     pendingFiles.clear();
     stored.clear();
@@ -719,12 +720,12 @@ export function openSession(options: SessionOptions): ProjectSession {
     await initialStamps;
     const changed: string[] = [];
     const current = new Set<string>();
-    for (const image of project.images) {
-      current.add(image.file);
-      const stamp = await stampOf(image.file);
-      const known = imageStamps.has(image.file);
-      if (known ? imageStamps.get(image.file) !== stamp : all) changed.push(image.file);
-      imageStamps.set(image.file, stamp);
+    for (const file of imageFileNames(project.images)) {
+      current.add(file);
+      const stamp = await stampOf(file);
+      const known = imageStamps.has(file);
+      if (known ? imageStamps.get(file) !== stamp : all) changed.push(file);
+      imageStamps.set(file, stamp);
     }
     for (const path of [...imageStamps.keys()]) {
       if (!current.has(path)) imageStamps.delete(path);
@@ -915,6 +916,10 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (store.readOnly.value || store.reviewing.value || !store.project.value) {
         return 'failed';
       }
+      // Tela em branco não tem arquivo para trocar.
+      if (currentProject(store).images.some((i) => i.id === imageId && i.file === null)) {
+        return 'failed';
+      }
       let path: string | null = null;
       try {
         const prepared = await prepareImage(file);
@@ -959,10 +964,10 @@ export function openSession(options: SessionOptions): ProjectSession {
       const p = committedProject(store);
       const images = new Map<string, Blob>();
       const missingImages: string[] = [];
-      for (const image of p.images) {
-        const blob = await storage.readImage(image.file);
-        if (blob) images.set(image.file, blob);
-        else missingImages.push(image.file);
+      for (const file of imageFileNames(p.images)) {
+        const blob = await storage.readImage(file);
+        if (blob) images.set(file, blob);
+        else missingImages.push(file);
       }
       // Os demais arquivos dos pacotes da biblioteca (o da especialização vai em `specs`).
       const specAssets = new Map<string, Blob>();

@@ -48,7 +48,7 @@ describe('migração v7 → v8 (origem externa)', () => {
     const result = load(v7Text(sampleProject()));
     expect(result.migratedFrom).toBe(7);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(9);
+    expect(result.project.schemaVersion).toBe(10);
     expect(result.project.images.every((i) => i.source === null)).toBe(true);
     expect(result.project.markings.every((m) => m.source === null)).toBe(true);
     expect(result.project).toEqual(sampleProject());
@@ -59,9 +59,9 @@ describe('migração v7 → v8 (origem externa)', () => {
     expect(load(v7Text(p), p).project).toEqual(p);
   });
 
-  it('o v7 migrado salva como v9 estável (round-trip)', () => {
+  it('o v7 migrado salva como v10 estável (round-trip)', () => {
     const saved = serialize(load(v7Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(9);
+    expect(JSON.parse(saved).schemaVersion).toBe(10);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -88,7 +88,8 @@ describe('schema v8: source', () => {
     p = setMarkingSource(p, 'M1', { system: 'figma', id: '12:35', url: null });
     const text = serialize(p);
     const data = JSON.parse(text);
-    expect(Object.keys(data.images[0]).at(-1)).toBe('source');
+    // `background` (v10) vem depois do `source`.
+    expect(Object.keys(data.images[0]).at(-2)).toBe('source');
     expect(Object.keys(data.images[0].source)).toEqual(['system', 'id', 'url']);
     expect(data.markings[0].source).toEqual({ system: 'figma', id: '12:35', url: null });
     expect(data.markings[1].source).toBeNull();

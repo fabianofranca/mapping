@@ -12,6 +12,8 @@ export type ModelErrorCode =
   | 'invalid-placement'
   | 'image-overlap'
   | 'duplicate-file'
+  | 'blank-image'
+  | 'not-blank'
   | 'aspect-change-not-confirmed'
   | 'image-too-small'
   | 'rect-not-integer'

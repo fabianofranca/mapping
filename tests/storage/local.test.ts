@@ -3,6 +3,7 @@ import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   deserialize,
+  imageFileNames,
   migrations,
   referencedSpecFiles,
   serialize,
@@ -317,9 +318,9 @@ describe('LocalLibrary (IndexedDB)', () => {
     const parsed = deserialize(loaded ?? '', migrations, readSpecs);
     if (!parsed.ok) throw new Error(parsed.error.code);
     const exported = new Map<string, Blob>();
-    for (const image of parsed.project.images) {
-      const blob = await storage.readImage(image.file);
-      if (blob) exported.set(image.file, blob);
+    for (const file of imageFileNames(parsed.project.images)) {
+      const blob = await storage.readImage(file);
+      if (blob) exported.set(file, blob);
     }
     const again = await readProjectZip(
       await writeProjectZip({
