@@ -3,10 +3,14 @@
 import Konva from 'konva';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../../canvas/harness';
-import { approximateMeasurer } from '../../../lab/components/instantiate';
-import { loadLibrary } from '../../../lab/components/library';
+import { approximateMeasurer } from '../../../src/model/components/instantiate';
+import { loadLibrary } from '../../../src/model/components/library';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
-import { type Instance, type Screen, renderOrder } from '../../../lab/components/screen';
+import {
+  type Instance,
+  type Screen,
+  renderOrder,
+} from '../../../src/model/components/screen';
 import { ScreenRenderer } from '../../../lab/viewer/screenRenderer';
 
 beforeAll(() => installFakeCanvas());

@@ -4,9 +4,9 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { installFakeCanvas } from '../../canvas/harness';
 import { newBoard } from '../../../lab/components/board';
 import { type EditorCallbacks, ScreenEditor } from '../../../lab/components/editor';
-import { loadLibrary } from '../../../lab/components/library';
+import { loadLibrary } from '../../../src/model/components/library';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
-import type { Screen } from '../../../lab/components/screen';
+import type { Screen } from '../../../src/model/components/screen';
 
 beforeAll(() => installFakeCanvas());
 

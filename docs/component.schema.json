@@ -1,0 +1,1873 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mapping.local/component.schema.json",
+  "title": "Mapping — componente (mapping-component, formatVersion 1)",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "formatVersion", "id", "name", "size", "template"],
+  "properties": {
+    "format": {
+      "const": "mapping-component"
+    },
+    "formatVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "size": {
+      "$ref": "#/$defs/dimensions"
+    },
+    "minSize": {
+      "$ref": "#/$defs/dimensions"
+    },
+    "sizing": {
+      "$ref": "#/$defs/sizing"
+    },
+    "preview": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "null"]
+      }
+    },
+    "template": {
+      "$ref": "#/$defs/node_frame"
+    }
+  },
+  "$defs": {
+    "fieldKey": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lit_number": {
+      "type": "number"
+    },
+    "lit_nonNegative": {
+      "type": "number",
+      "minimum": 0
+    },
+    "lit_unit": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "lit_weight": {
+      "type": "number",
+      "minimum": 100,
+      "maximum": 900
+    },
+    "lit_string": {
+      "type": "string"
+    },
+    "lit_textOrNumber": {
+      "type": ["string", "number"]
+    },
+    "lit_color": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lit_boolean": {
+      "type": "boolean"
+    },
+    "lit_fill": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "$ref": "#/$defs/gradient"
+        }
+      ]
+    },
+    "lit_cornerRadius": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      ]
+    },
+    "lit_padding": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      ]
+    },
+    "lit_layoutAlign": {
+      "enum": ["start", "center", "end", "stretch"]
+    },
+    "lit_justify": {
+      "enum": ["start", "center", "end", "space-between"]
+    },
+    "lit_fontAlign": {
+      "enum": ["left", "center", "right"]
+    },
+    "lit_verticalAlign": {
+      "enum": ["top", "middle", "bottom"]
+    },
+    "lit_decoration": {
+      "enum": ["none", "underline", "line-through"]
+    },
+    "expr_number": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_number"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_number"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_number"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_nonNegative": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_nonNegative"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_nonNegative"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_nonNegative"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_nonNegative"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_nonNegative"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_nonNegative"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_unit": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_unit"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_unit"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_unit"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_unit"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_unit"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_unit"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_weight": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_weight"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_weight"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_weight"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_weight"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_weight"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_weight"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_string": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_string"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_string"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_textOrNumber": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_textOrNumber"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_textOrNumber"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_textOrNumber"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_textOrNumber"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_textOrNumber"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_color": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_color"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_color"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_color"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_color"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_color"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_color"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_boolean": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_boolean"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_boolean"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_boolean"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/condition"
+        }
+      ]
+    },
+    "expr_fill": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_fill"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_fill"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_fill"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_fill"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_fill"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_fill"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_cornerRadius": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_cornerRadius"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_cornerRadius"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_cornerRadius"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_cornerRadius"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_cornerRadius"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_cornerRadius"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_padding": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_padding"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_padding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_padding"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_padding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_padding"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_padding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_layoutAlign": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_layoutAlign"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_layoutAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_layoutAlign"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_layoutAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_layoutAlign"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_layoutAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_justify": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_justify"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_justify"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_justify"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_justify"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_justify"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_justify"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_fontAlign": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_fontAlign"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_fontAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_fontAlign"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_fontAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_fontAlign"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_fontAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_verticalAlign": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_verticalAlign"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_verticalAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_verticalAlign"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_verticalAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_verticalAlign"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_verticalAlign"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_decoration": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_decoration"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_decoration"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_decoration"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_decoration"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_decoration"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_decoration"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "condition": {
+      "description": "Condição: exatamente um operador.",
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$has"],
+          "properties": {
+            "$has": {
+              "$ref": "#/$defs/fieldKey"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$eq"],
+          "properties": {
+            "$eq": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/fieldKey"
+                },
+                {
+                  "type": ["string", "number"]
+                }
+              ],
+              "items": false
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$not"],
+          "properties": {
+            "$not": {
+              "$ref": "#/$defs/condition"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$and"],
+          "properties": {
+            "$and": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$or"],
+          "properties": {
+            "$or": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "gradient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "angle", "stops"],
+      "properties": {
+        "type": {
+          "const": "linear"
+        },
+        "angle": {
+          "type": "number"
+        },
+        "stops": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["offset", "color"],
+            "properties": {
+              "offset": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "color": {
+                "$ref": "#/$defs/lit_color"
+              }
+            }
+          }
+        }
+      }
+    },
+    "size": {
+      "description": "Tamanho de nó: px, \"fill\", \"hug\" ou \"NN%\".",
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "enum": ["fill", "hug"]
+        },
+        {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?%$"
+        }
+      ]
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "sizing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "enum": ["fill", "hug"]
+            }
+          ]
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "enum": ["fill", "hug"]
+            }
+          ]
+        }
+      }
+    },
+    "anchors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "left": {
+          "type": "number"
+        },
+        "right": {
+          "type": "number"
+        },
+        "top": {
+          "type": "number"
+        },
+        "bottom": {
+          "type": "number"
+        },
+        "centerX": {
+          "type": "boolean"
+        },
+        "centerY": {
+          "type": "boolean"
+        }
+      }
+    },
+    "stroke": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["color"],
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/expr_color"
+        },
+        "width": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "align": {
+          "enum": ["inside", "center", "outside"]
+        },
+        "dash": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "shadow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["color"],
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/expr_color"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "blur": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "font": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "$ref": "#/$defs/expr_string"
+        },
+        "size": {
+          "$ref": "#/$defs/expr_number"
+        },
+        "weight": {
+          "$ref": "#/$defs/expr_weight"
+        },
+        "italic": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "lineHeight": {
+          "$ref": "#/$defs/expr_number"
+        },
+        "letterSpacing": {
+          "$ref": "#/$defs/expr_number"
+        },
+        "align": {
+          "$ref": "#/$defs/expr_fontAlign"
+        },
+        "verticalAlign": {
+          "$ref": "#/$defs/expr_verticalAlign"
+        },
+        "decoration": {
+          "$ref": "#/$defs/expr_decoration"
+        }
+      }
+    },
+    "layout": {
+      "description": "Distribuição dos filhos: none (âncoras), row ou column.",
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "const": "none"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "enum": ["row", "column"]
+            },
+            "gap": {
+              "$ref": "#/$defs/expr_nonNegative"
+            },
+            "padding": {
+              "$ref": "#/$defs/expr_padding"
+            },
+            "align": {
+              "$ref": "#/$defs/expr_layoutAlign"
+            },
+            "justify": {
+              "$ref": "#/$defs/expr_justify"
+            }
+          }
+        }
+      ]
+    },
+    "node_frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "const": "frame"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/size"
+        },
+        "height": {
+          "$ref": "#/$defs/size"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        },
+        "clip": {
+          "type": "boolean"
+        },
+        "layout": {
+          "$ref": "#/$defs/layout"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        }
+      }
+    },
+    "node_rect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "const": "rect"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/size"
+        },
+        "height": {
+          "$ref": "#/$defs/size"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        }
+      }
+    },
+    "node_ellipse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "const": "ellipse"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/size"
+        },
+        "height": {
+          "$ref": "#/$defs/size"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        }
+      }
+    },
+    "node_text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text"],
+      "properties": {
+        "type": {
+          "const": "text"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/size"
+        },
+        "height": {
+          "$ref": "#/$defs/size"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        },
+        "text": {
+          "$ref": "#/$defs/expr_textOrNumber"
+        },
+        "font": {
+          "$ref": "#/$defs/font"
+        },
+        "color": {
+          "$ref": "#/$defs/expr_color"
+        }
+      }
+    },
+    "node_path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "d", "viewBox"],
+      "properties": {
+        "type": {
+          "const": "path"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/size"
+        },
+        "height": {
+          "$ref": "#/$defs/size"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        },
+        "d": {
+          "$ref": "#/$defs/expr_string"
+        },
+        "viewBox": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "fillRule": {
+          "enum": ["nonzero", "evenodd"]
+        }
+      }
+    },
+    "node_slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "const": "slot"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/size"
+        },
+        "height": {
+          "$ref": "#/$defs/size"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        },
+        "label": {
+          "$ref": "#/$defs/expr_string"
+        },
+        "layout": {
+          "$ref": "#/$defs/layout"
+        }
+      }
+    },
+    "node": {
+      "description": "Nó do template, discriminado por type.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/node_frame"
+        },
+        {
+          "$ref": "#/$defs/node_rect"
+        },
+        {
+          "$ref": "#/$defs/node_ellipse"
+        },
+        {
+          "$ref": "#/$defs/node_text"
+        },
+        {
+          "$ref": "#/$defs/node_path"
+        },
+        {
+          "$ref": "#/$defs/node_slot"
+        }
+      ]
+    }
+  }
+}

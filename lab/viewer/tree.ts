@@ -6,9 +6,9 @@
  * A ordem é a de `renderOrder` (pai antes dos filhos, irmãos na ordem da lista) e o critério
  * de raiz também: um `parentId` que não existe na tela vale como nível da tela.
  */
-import type { Library } from '../components/library';
-import { instanceLabel } from '../components/library';
-import type { Instance, Screen } from '../components/screen';
+import type { Library } from '../../src/model/components/library';
+import { instanceLabel } from '../../src/model/components/library';
+import type { Instance, Screen } from '../../src/model/components/screen';
 
 export interface TreeNode {
   readonly id: string;

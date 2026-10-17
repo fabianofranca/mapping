@@ -1,7 +1,7 @@
 // Laboratório Componentes: fontes do design system vêm dos bytes dos arquivos da pasta.
 import { describe, expect, it, vi } from 'vitest';
 import { describeFont, registerFonts } from '../../../lab/components/fonts';
-import { loadLibrary } from '../../../lab/components/library';
+import { loadLibrary } from '../../../src/model/components/library';
 import { M3_FILES } from '../../../lab/components/samplesMaterial3';
 
 const bytes = new Uint8Array([0, 1, 0, 0]).buffer;

@@ -3,13 +3,16 @@
 import Konva from 'konva';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../../canvas/harness';
-import { approximateMeasurer } from '../../../lab/components/instantiate';
-import { loadLibrary } from '../../../lab/components/library';
+import { approximateMeasurer } from '../../../src/model/components/instantiate';
+import { loadLibrary } from '../../../src/model/components/library';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
-import { type SourceResult, screenFromSource } from '../../../lab/components/origin';
+import {
+  type SourceResult,
+  screenFromSource,
+} from '../../../src/model/components/origin';
 import settings from '../../../lab/components/sdui/settings.sdui.json';
 import { M3_FILES, M3_SCREEN } from '../../../lab/components/samplesMaterial3';
-import type { Screen } from '../../../lab/components/screen';
+import type { Screen } from '../../../src/model/components/screen';
 import { type Viewer, type ViewerOptions, createViewer } from '../../../lab/viewer';
 
 beforeAll(() => installFakeCanvas());

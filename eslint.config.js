@@ -19,6 +19,15 @@ const restrictedGlobals = [
   message: 'src/model/ não pode depender de APIs de navegador (veja CLAUDE.md).',
 }));
 
+// Grupos de import do src/model/ (o bloco do subdiretório muda só o alcance do relativo).
+const modelPackageGroup = {
+  group: ['konva', 'konva/*', 'idb', 'jszip', 'preact', 'preact/*', '@preact/*'],
+  message: 'src/model/ não pode importar UI, canvas nem storage.',
+};
+const modelRelativeGroup = (group) => ({
+  group: [group],
+  message: 'src/model/ só pode importar arquivos do próprio model.',
+});
 // mcp/ roda só no Node e não faz rede: ele lê e grava arquivos locais (veja PLAN.md, etapa 3a).
 const networkGlobals = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map(
   (name) => ({ name, message: 'mcp/ não faz requisições de rede.' }),
@@ -278,24 +287,20 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            {
-              group: [
-                'konva',
-                'konva/*',
-                'idb',
-                'jszip',
-                'preact',
-                'preact/*',
-                '@preact/*',
-              ],
-              message: 'src/model/ não pode importar UI, canvas nem storage.',
-            },
-            {
-              group: ['../*'],
-              message: 'src/model/ só pode importar arquivos do próprio model.',
-            },
-          ],
+          patterns: [modelPackageGroup, modelRelativeGroup('../*')],
+        },
+      ],
+    },
+  },
+  // src/model/components/ (motor dos componentes, fase B1): continua valendo tudo do bloco
+  // anterior; só o alcance do import relativo muda, porque daqui `../x` ainda é o model.
+  {
+    files: ['src/model/*/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [modelPackageGroup, modelRelativeGroup('../../*')],
         },
       ],
     },

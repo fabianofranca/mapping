@@ -83,6 +83,16 @@ export interface TypeSourceMatch {
   readonly source: SpecTypeSource;
   /** Casou pelo `id` (mais forte) ou só pelo `name`. */
   readonly by: 'id' | 'name';
+  /**
+   * O `system` está declarado em `origins` da especialização: as `sources` dos campos dela
+   * trazem `path` (o caminho do valor nas props do nó externo) em vez de só `name`.
+   */
+  readonly executable: boolean;
+}
+
+/** `true` se `system` é uma origem executável da especialização (está em `origins`). */
+export function isExecutableSystem(spec: Spec | null, system: string): boolean {
+  return spec?.origins?.some((o) => o.system === system) ?? false;
 }
 
 /**
@@ -90,7 +100,8 @@ export interface TypeSourceMatch {
  * mesmo `id` ou o mesmo `name` (comparações exatas). Os que casam pelo `id` vêm antes
  * dos que casam só pelo `name`; dentro de cada grupo, a ordem das especializações,
  * camadas e tipos. Um tipo aparece uma vez (com a melhor declaração). Sem `id` nem
- * `name` na busca, a lista é vazia.
+ * `name` na busca, a lista é vazia. Nunca casa por `path` (o caminho de um campo): só
+ * `executable` diz se os campos do tipo o trazem.
  */
 export function findTypesBySource(
   specs: readonly (Spec | null)[],
@@ -102,13 +113,21 @@ export function findTypesBySource(
   const byName: TypeSourceMatch[] = [];
   for (const spec of specs) {
     if (!spec) continue;
+    const executable = isExecutableSystem(spec, system);
     for (const layer of spec.layers) {
       for (const type of layer.annotationTypes) {
         const sources = (type.sources ?? []).filter((s) => s.system === system);
         const idMatch =
           query.id !== undefined ? sources.find((s) => s.id === query.id) : undefined;
         if (idMatch) {
-          byId.push({ specId: spec.id, layer, type, source: idMatch, by: 'id' });
+          byId.push({
+            specId: spec.id,
+            layer,
+            type,
+            source: idMatch,
+            by: 'id',
+            executable,
+          });
           continue;
         }
         const nameMatch =
@@ -116,7 +135,14 @@ export function findTypesBySource(
             ? sources.find((s) => s.name === query.name)
             : undefined;
         if (nameMatch) {
-          byName.push({ specId: spec.id, layer, type, source: nameMatch, by: 'name' });
+          byName.push({
+            specId: spec.id,
+            layer,
+            type,
+            source: nameMatch,
+            by: 'name',
+            executable,
+          });
         }
       }
     }

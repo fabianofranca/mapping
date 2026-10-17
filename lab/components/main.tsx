@@ -10,7 +10,13 @@ import { effect, signal } from '@preact/signals';
 import 'virtual:tokens.css';
 import './components.css';
 import { downloadBlob, downloadText } from '../shared/download';
-import { arrange, dropIndex, findSlot, isContainer, resolveSlotLayout } from './arrange';
+import {
+  arrange,
+  dropIndex,
+  findSlot,
+  isContainer,
+  resolveSlotLayout,
+} from '../../src/model/components/arrange';
 import {
   type Board,
   type PlacedScreen,
@@ -24,7 +30,7 @@ import {
   replaceScreen,
   screenOfInstance,
 } from './board';
-import type { FieldValue } from './componentFormat';
+import type { FieldValue } from '../../src/model/components/componentFormat';
 import { ScreenEditor } from './editor';
 import { konvaMeasurer } from '../viewer/measure';
 import { type FontStatus, describeFont, registerFonts } from './fonts';
@@ -36,9 +42,8 @@ import {
   initialValues,
   instanceLabel,
   loadLibrary,
-  pickDirectory,
-  readFileList,
-} from './library';
+} from '../../src/model/components/library';
+import { pickDirectory, readFileList } from './libraryFiles';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from './samples';
 import { M3_FILES, M3_SCREEN } from './samplesMaterial3';
 import {
@@ -58,7 +63,7 @@ import {
   setParent,
   setValue,
   updateBox,
-} from './screen';
+} from '../../src/model/components/screen';
 
 const library = signal<Library | undefined>(undefined);
 const board = signal<Board>(newBoard(newScreen('Tela', 390, 844)));

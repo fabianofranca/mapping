@@ -1,7 +1,8 @@
 import { fail } from './errors';
 import { countBrokenRefs, type LabelTexts } from './refs';
-import type { Spec, SpecLayer } from './spec';
+import type { Spec, SpecLayer, SpecMigrationStep } from './spec';
 import { getSpecialization } from './specLookup';
+import { diffSpecs, migrationChain, migrationFor, type SpecChange } from './specVersions';
 import { annotationsOfSpec, freeVersionOf } from './typed';
 import type { Annotation, Layer, Project, ProjectSpecialization } from './types';
 
@@ -209,6 +210,16 @@ export interface SpecUpdateImpact {
   readonly freedLayers: readonly Layer[];
   /** Referências que vão ficar quebradas. */
   readonly brokenRefs: number;
+  /** Diferenças da versão aplicada para a nova (vazio se a cópia não está disponível). */
+  readonly changes: readonly SpecChange[];
+  /** As diferenças que são quebra (subconjunto de `changes`). */
+  readonly breaking: readonly SpecChange[];
+  /** Quebras sem migração declarada: a atualização vai perder dados. */
+  readonly missingMigrations: readonly SpecChange[];
+  /** Os passos da cadeia declarada, na ordem (a execução é da fase B4; aqui só se informa). */
+  readonly migrations: readonly SpecMigrationStep[];
+  /** `false` quando a cópia aplicada não está disponível (`spec: null`): não dá para comparar. */
+  readonly comparable: boolean;
 }
 
 /** Efeito de atualizar para `spec` (que precisa ter `version` maior). */
@@ -218,11 +229,23 @@ export function specializationUpdateImpact(p: Project, spec: Spec): SpecUpdateIm
     p.layers.filter((l) => l.spec?.specId === spec.id).map((l) => l.spec?.layerId),
   );
   const next = new Set(spec.layers.map((l) => l.id));
+  const applied = getSpecialization(p, spec.id)?.spec ?? null;
+  const changes = applied ? diffSpecs(applied, spec) : [];
+  const breaking = changes.filter((c) => c.kind === 'breaking');
   return {
     addedLayers: spec.layers.filter((l) => !current.has(l.id)),
     freedLayers: p.layers.filter(
       (l) => l.spec?.specId === spec.id && !next.has(l.spec.layerId),
     ),
     brokenRefs: countBrokenRefs(p, after),
+    changes,
+    breaking,
+    missingMigrations: applied
+      ? breaking.filter((c) => migrationFor(spec, applied.version, c) === undefined)
+      : [],
+    migrations: applied
+      ? (migrationChain(spec, applied.version) ?? []).flatMap((m) => m.steps)
+      : [],
+    comparable: applied !== null,
   };
 }

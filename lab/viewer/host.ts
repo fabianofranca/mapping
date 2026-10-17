@@ -6,8 +6,8 @@
  */
 import { registerFonts } from '../components/fonts';
 import type { FontHost, FontStatus } from '../components/fonts';
-import { loadLibrary, resolvePath } from '../components/library';
-import type { Library, TextFile } from '../components/library';
+import { loadLibrary, resolvePath } from '../../src/model/components/library';
+import type { Library, TextFile } from '../../src/model/components/library';
 
 export type { FontHost, FontStatus } from '../components/fonts';
 

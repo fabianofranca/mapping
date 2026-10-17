@@ -17,16 +17,16 @@
 import Konva from 'konva';
 import { attachPinchZoom, capPixelRatio, freezeGroup, thawGroup } from '../shared/pinch';
 import { ScreenRenderer } from '../viewer/screenRenderer';
-import { isContainer } from './arrange';
+import { isContainer } from '../../src/model/components/arrange';
 import { type Board, boardBounds, findScreen } from './board';
-import type { Library, TypeDef } from './library';
+import type { Library, TypeDef } from '../../src/model/components/library';
 import {
   type Box,
   type Instance,
   type Screen,
   descendantsOf,
   renderOrder,
-} from './screen';
+} from '../../src/model/components/screen';
 
 export interface EditorCallbacks {
   readonly onSelect?: (id: string | undefined) => void;

@@ -1,0 +1,84 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 4,
+  "id": "biblioteca",
+  "name": "Biblioteca de exemplo",
+  "version": 2,
+  "description": "Pacote mínimo da formatVersion 4: componente, documento, exemplos, fonte, origem executável e migração.",
+  "fonts": [{ "family": "Roboto", "file": "fonts/Roboto-Regular.ttf", "weight": 400 }],
+  "origins": [
+    {
+      "system": "sdui",
+      "name": "SDUI",
+      "node": { "type": "type", "props": "props", "children": "children" },
+      "screen": {
+        "id": { "path": "id" },
+        "name": { "path": "title" },
+        "width": 360,
+        "height": 640,
+        "roots": [{ "path": "content" }]
+      },
+      "examples": [{ "name": "Configurações", "file": "examples/settings.sdui.json" }]
+    }
+  ],
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "labelField": "label",
+          "component": "components/button.json",
+          "doc": "docs/button.md",
+          "fields": [
+            { "key": "label", "type": "string", "required": true },
+            {
+              "key": "style",
+              "type": "enum",
+              "options": ["primary", "text"],
+              "default": "primary",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "variant",
+                  "name": "Variante",
+                  "values": { "filled": "primary", "plain": "text" }
+                }
+              ]
+            }
+          ],
+          "sources": [{ "system": "sdui", "name": "Button", "ignore": ["analytics"] }],
+          "examples": [
+            { "name": "Primário", "values": { "label": "Salvar", "style": "primary" } },
+            {
+              "name": "Texto",
+              "description": "Botão sem preenchimento.",
+              "values": { "label": "Cancelar", "style": "text" }
+            }
+          ]
+        },
+        {
+          "id": "badge",
+          "name": "Badge",
+          "labelField": "text",
+          "fields": [
+            { "key": "text", "type": "string" },
+            { "key": "count", "type": "number" }
+          ]
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [
+        { "op": "rename-field", "type": "button", "from": "texto", "to": "label" }
+      ]
+    }
+  ]
+}

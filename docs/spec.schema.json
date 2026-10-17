@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
-  "title": "Mapping — especialização (formatVersion 1, 2 e 3)",
-  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) só são verificadas pelo validador da app; veja SPEC-FORMAT.md.",
+  "title": "Mapping — especialização (formatVersion 1, 2, 3 e 4)",
+  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; veja SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -11,7 +11,7 @@
       "enum": ["mapping-spec", "mapeador-spec"]
     },
     "formatVersion": {
-      "enum": [1, 2, 3]
+      "enum": [1, 2, 3, 4]
     },
     "id": {
       "type": "string",
@@ -38,6 +38,24 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/layer"
+      }
+    },
+    "fonts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/font"
+      }
+    },
+    "origins": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/origin"
+      }
+    },
+    "migrations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/migration"
       }
     }
   },
@@ -126,6 +144,18 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/typeSource"
+          }
+        },
+        "component": {
+          "$ref": "#/$defs/jsonFile"
+        },
+        "doc": {
+          "$ref": "#/$defs/markdownFile"
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/example"
           }
         }
       }
@@ -497,6 +527,20 @@
             "name": {
               "type": "string",
               "minLength": 1
+            },
+            "slot": {
+              "type": "string",
+              "minLength": 1,
+              "description": "formatVersion 4, só em sistema declarado em origins."
+            },
+            "ignore": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "formatVersion 4, só em sistema declarado em origins."
             }
           }
         },
@@ -516,30 +560,473 @@
             "name": {
               "type": "string",
               "minLength": 1
+            },
+            "slot": {
+              "type": "string",
+              "minLength": 1,
+              "description": "formatVersion 4, só em sistema declarado em origins."
+            },
+            "ignore": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "formatVersion 4, só em sistema declarado em origins."
             }
           }
         }
       ]
     },
     "fieldSource": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["system", "name"],
+          "properties": {
+            "system": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "formatVersion 4: caminho do valor nas props do nó externo (a.b[0].c), só em sistema declarado em origins; obrigatório lá, e name passa a ser opcional."
+            },
+            "values": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["system", "path"],
+          "properties": {
+            "system": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "formatVersion 4: caminho do valor nas props do nó externo (a.b[0].c), só em sistema declarado em origins; obrigatório lá, e name passa a ser opcional."
+            },
+            "values": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "jsonFile": {
+      "type": "string",
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]*[^/\\\\]\\.json$",
+      "description": "Caminho de um arquivo .json do pacote, relativo ao arquivo da especialização (com /, sem . nem .., sem unidade de disco)."
+    },
+    "markdownFile": {
+      "type": "string",
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]*[^/\\\\]\\.md$",
+      "description": "Caminho de um arquivo .md do pacote, relativo ao arquivo da especialização."
+    },
+    "fontFile": {
+      "type": "string",
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(^|/)\\.{1,2}(/|$))(?!.*//)(?!.*/$)[^\\u0000-\\u001f\\u007f\\\\]*[^/\\\\]\\.(ttf|otf|woff|woff2)$",
+      "description": "Caminho de um arquivo de fonte (.ttf, .otf, .woff ou .woff2) do pacote, relativo ao arquivo da especialização."
+    },
+    "font": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["system", "name"],
+      "required": ["family", "file"],
+      "properties": {
+        "family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "file": {
+          "$ref": "#/$defs/fontFile"
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 1000
+            },
+            {
+              "type": "string",
+              "pattern": "^(100|[1-9][0-9]{2}|1000) (100|[1-9][0-9]{2}|1000)$",
+              "description": "Faixa \"100 900\": dois inteiros de 100 a 1000 separados por um espaço, o primeiro menor (a ordem só o validador confere)."
+            }
+          ]
+        },
+        "style": {
+          "enum": ["normal", "italic"]
+        }
+      }
+    },
+    "example": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/valuesExample"
+        },
+        {
+          "$ref": "#/$defs/fileExample"
+        }
+      ],
+      "description": "Exatamente um dos dois modos: valores do tipo (values) ou o JSON de um sistema externo (system + file)."
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "steps"],
+      "properties": {
+        "from": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "to": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/migrationStep"
+          }
+        }
+      }
+    },
+    "migrationStep": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "from", "to"],
+          "properties": {
+            "op": {
+              "const": "rename-type"
+            },
+            "from": {
+              "type": "string",
+              "minLength": 1
+            },
+            "to": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "type", "mode"],
+          "properties": {
+            "op": {
+              "const": "remove-type"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mode": {
+              "enum": ["convert", "delete"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "type", "from", "to"],
+          "properties": {
+            "op": {
+              "const": "rename-field"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "from": {
+              "type": "string",
+              "minLength": 1
+            },
+            "to": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "type", "field"],
+          "properties": {
+            "op": {
+              "const": "remove-field"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "field": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "type", "field", "values"],
+          "properties": {
+            "op": {
+              "const": "map-values"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "field": {
+              "type": "string",
+              "minLength": 1
+            },
+            "values": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "type", "field", "default"],
+          "properties": {
+            "op": {
+              "const": "fill-field"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "field": {
+              "type": "string",
+              "minLength": 1
+            },
+            "default": {
+              "type": ["string", "number"]
+            }
+          }
+        }
+      ]
+    },
+    "valueSource": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "values": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "default": {
+              "type": ["string", "number"]
+            }
+          }
+        }
+      ]
+    },
+    "originRoot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Caminho da raiz no documento; [*] faz de cada elemento da lista uma raiz."
+        },
+        "anchor": {
+          "$ref": "#/$defs/valueSource"
+        },
+        "margin": {
+          "$ref": "#/$defs/valueSource"
+        },
+        "scrim": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "originScreen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "roots"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/valueSource"
+        },
+        "name": {
+          "$ref": "#/$defs/valueSource"
+        },
+        "width": {
+          "$ref": "#/$defs/valueSource"
+        },
+        "height": {
+          "$ref": "#/$defs/valueSource"
+        },
+        "background": {
+          "$ref": "#/$defs/valueSource"
+        },
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/originRoot"
+          }
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "node", "screen"],
+      "description": "Declaração de origem executável. A estrutura é espelhada aqui; as regras finas (caminhos, âncoras, [*] só em roots[].path, system único) são do validador (parseOrigins).",
       "properties": {
         "system": {
           "type": "string",
           "minLength": 1
         },
         "name": {
+          "type": "string"
+        },
+        "node": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "props", "children"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "props": {
+              "type": "string",
+              "minLength": 1
+            },
+            "children": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "screen": {
+          "$ref": "#/$defs/originScreen"
+        },
+        "booleans": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["true", "false"],
+          "properties": {
+            "true": {
+              "type": "string"
+            },
+            "false": {
+              "type": "string"
+            }
+          }
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "file"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "file": {
+                "$ref": "#/$defs/jsonFile"
+              }
+            }
+          }
+        }
+      }
+    },
+    "valuesExample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "values"],
+      "properties": {
+        "name": {
           "type": "string",
           "minLength": 1
+        },
+        "description": {
+          "type": "string"
         },
         "values": {
           "type": "object",
           "additionalProperties": {
-            "type": "string",
-            "minLength": 1
+            "type": ["string", "number", "null"]
           }
+        }
+      }
+    },
+    "fileExample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "system", "file"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string",
+          "minLength": 1
+        },
+        "file": {
+          "$ref": "#/$defs/jsonFile"
         }
       }
     }
