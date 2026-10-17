@@ -23,7 +23,7 @@ import {
 } from './instantiate';
 import type { Library, TypeDef } from './library';
 import { type Instance, type Screen, childrenOf, renderOrder, updateBox } from './screen';
-import { absoluteBoxes, walk } from './scene';
+import { type FrameNode, absoluteBoxes, walk } from './scene';
 
 export interface ResolvedSlotLayout {
   readonly type: 'none' | 'row' | 'column';
@@ -109,6 +109,15 @@ export function slotBox(
   return undefined;
 }
 
+/** Caixa absoluta do slot numa cena já instanciada (a raiz leva o `translate` da caixa); nenhuma se o slot estiver invisível. */
+export function slotBoxOfScene(root: FrameNode): Box | undefined {
+  for (const node of walk(root)) {
+    if (node.type !== 'unknown' || node.sourceType !== 'slot') continue;
+    return absoluteBoxes(root).get(node.id);
+  }
+  return undefined;
+}
+
 /** Posição e tamanho no eixo cruzado. */
 function crossAxis(
   layout: ResolvedSlotLayout,
@@ -129,10 +138,10 @@ function crossAxis(
 }
 
 /** Retângulos novos (arredondados) dos filhos, na ordem de `children`. */
-function layoutChildren(
+export function layoutChildren(
   slot: Box,
   layout: ResolvedSlotLayout,
-  children: readonly Instance[],
+  children: readonly { readonly box: Box }[],
 ): Box[] {
   const row = layout.type === 'row';
   const { padding } = layout;

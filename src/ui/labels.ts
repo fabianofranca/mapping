@@ -35,6 +35,7 @@ const MARKING_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   'rect-outside-parent': 'marking.error.rect-outside-parent',
   'rect-excludes-children': 'marking.error.rect-excludes-children',
   'invalid-parent': 'marking.error.invalid-parent',
+  'not-arrangeable': 'marking.error.not-arrangeable',
   locked: 'marking.error.locked',
   reviewing: 'review.readOnly',
 };
