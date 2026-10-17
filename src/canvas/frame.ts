@@ -2,6 +2,7 @@
 // ponteiro escreve e os renderers leem. Sem Konva: só tipos e funções puras.
 import type { Signal } from '@preact/signals';
 import type {
+  ComponentDrawings,
   Layer,
   LayerDot,
   Marking,
@@ -46,6 +47,11 @@ export interface InteractionState {
   readonly draft: Signal<Draft | null>;
   /** Marcação (ou imagem) com a geometria travada sob o mouse; `null` se não há nenhum ou se ele é livre. */
   readonly hoverLock: Signal<HoverLock | null>;
+  /**
+   * Marcação desenhada (com componente visível) sob o mouse, para a borda aparecer; `null` se o
+   * mouse está fora delas. Só é escrito quando muda e só enquanto há marcações desenhadas.
+   */
+  readonly hoverMarking: Signal<string | null>;
 }
 
 /** Tudo o que um quadro desenha. Mudar qualquer item agenda um novo quadro. */
@@ -57,6 +63,8 @@ export interface Frame {
   readonly draft: Draft | null;
   readonly dropTarget: DropTarget;
   readonly hoverLock: HoverLock | null;
+  /** Marcação desenhada sob o mouse (a borda dela aparece); `null` se nenhuma. */
+  readonly hoverMarking: string | null;
   readonly tokens: CanvasTokens;
   readonly size: Size;
   readonly viewport: Viewport;
@@ -69,6 +77,13 @@ export interface Frame {
   readonly incomplete: ReadonlySet<string>;
   readonly visibility: ReadonlyMap<string, MarkingVisibility>;
   readonly card: (marking: Marking) => MarkingCard;
+  /**
+   * Desenhos dos componentes do projeto desenhado (com a prévia do gesto), por marcação. O
+   * canvas compara os objetos por identidade: só o que mudou é refeito.
+   */
+  readonly drawings: ComponentDrawings;
+  /** Marcações cujo desenho está visível (têm borda só em hover e seleção, e sem cartão de texto). */
+  readonly drawn: ReadonlySet<string>;
   /** Marcas da revisão de uma proposta (etapa 4); `null` fora da revisão. */
   readonly review: ReviewCanvas | null;
 }
@@ -84,6 +99,8 @@ export function sameFrame(
 
 /** O que muda o desenho das imagens (o deslocamento do viewport não muda). */
 export const IMAGE_KEYS = ['project', 'bitmaps', 'preview', 'tokens', 'locale'] as const;
+/** O que muda a camada de componentes (as posições das imagens também, comparadas à parte). */
+export const COMPONENT_KEYS = ['drawings', 'drawn', 'tokens'] as const;
 /** O que muda as sobreposições (seleção, alças, rascunho, alvo de soltar). */
 export const OVERLAY_KEYS = [
   'project',

@@ -5,7 +5,7 @@ Esqueleto de uma pasta que centraliza projetos Mapping e já vem pronta para qua
 ## Como usar
 
 1. Copie esta pasta para onde quiser (ex: `~/mapeamentos`) e inicie um repositório Git nela.
-2. Rode `./setup.sh` (precisa de Node ≥ 20 e `curl`). Ele baixa `tools/mapping-mcp.js` da última release `mcp-v*` do Mapping, confere o `sha256`, traz a skill `spec-author` para `.agents/skills/` e cria o link `.claude/skills/spec-author`. Para uma versão específica: `./setup.sh mcp-v0.4.0`. Para atualizar, rode de novo.
+2. Rode `./setup.sh` (precisa de Node ≥ 20 e `curl`). Ele baixa `tools/mapping-mcp.js` da última release `mcp-v*` do Mapping, confere o `sha256`, traz a skill `spec-author` para `.agents/skills/` e cria o link `.claude/skills/spec-author`. Para uma versão específica: `./setup.sh mcp-v0.5.0`; para testar uma release candidate ou o build de um PR: `./setup.sh mcp-v0.5.0-rc.2` ou `./setup.sh mcp-snapshot-pr172`. Para atualizar, rode de novo.
 3. Preencha a seção "Para que servem estes mapeamentos" do `AGENTS.md`: é o que o agente não descobre sozinho.
 4. Abra a pasta no agente e aprove o servidor `mapping`. Abra os projetos na app do Mapping como **pasta**, dentro de `projetos/`.
 5. Versione `tools/mapping-mcp.js` e `.sha256` junto: quem clonar tem o servidor funcionando sem instalar nada.

@@ -80,6 +80,8 @@ export function layerDotsByMarking(
  * sem texto nem indicadores (ancestral de uma marcação visível, no modo Ocultar).
  * `hidden`: não aparece nem recebe toque.
  */
+const NO_ALWAYS_SHOWN: ReadonlySet<string> = new Set();
+
 export type MarkingVisibility = 'full' | 'dim' | 'outline' | 'hidden';
 
 /**
@@ -87,16 +89,20 @@ export type MarkingVisibility = 'full' | 'dim' | 'outline' | 'hidden';
  * própria nem herdada na camada ativa: `dots` vem de `layerDotsByMarking` com
  * só a camada ativa (as demais camadas visíveis não contam). A selecionada
  * sempre aparece por inteiro. No modo Ocultar, o ancestral sem anotação de uma
- * marcação que aparece fica só com a borda, para manter o contexto.
+ * marcação que aparece fica só com a borda, para manter o contexto. `alwaysShown`: marcações
+ * que desenham um componente são conteúdo da tela, não "sem anotação": o filtro não as
+ * esmaece nem oculta (ficam `full`, como as selecionadas).
  */
 export function markingVisibility(
   p: Project,
   dots: ReadonlyMap<string, readonly LayerDot[]>,
   mode: MarkingDisplayMode,
   selectedMarkingId: string | null,
+  alwaysShown: ReadonlySet<string> = NO_ALWAYS_SHOWN,
 ): Map<string, MarkingVisibility> {
   const result = new Map<string, MarkingVisibility>();
-  const shown = (id: string) => dots.has(id) || id === selectedMarkingId;
+  const shown = (id: string) =>
+    dots.has(id) || id === selectedMarkingId || alwaysShown.has(id);
   const absent = mode === 'hide' ? 'hidden' : 'dim';
   for (const m of p.markings) {
     result.set(m.id, mode === 'all' || shown(m.id) ? 'full' : absent);

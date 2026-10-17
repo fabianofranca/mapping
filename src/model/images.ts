@@ -2,6 +2,7 @@ import { fail } from './errors';
 import {
   MIN_MARKING_SIZE,
   clamp,
+  containsRect,
   imageCanvasRect,
   imagePixelRect,
   rectsOverlap,
@@ -25,15 +26,48 @@ export const IMAGE_GAP = 50;
 /** Diferença máxima de proporção considerada "a mesma" na troca de imagem. */
 export const ASPECT_TOLERANCE = 0.01;
 
+/** Maior lado (largura ou altura) de uma tela em branco, em pixels. */
+export const MAX_BLANK_SIZE = 20000;
+
 export interface ImageFile {
   readonly file: string;
   readonly width: number;
   readonly height: number;
 }
 
-function checkDimensions({ width, height }: ImageFile): void {
+function checkDimensions({
+  width,
+  height,
+}: {
+  readonly width: number;
+  readonly height: number;
+}): void {
   const ok = (n: number) => Number.isInteger(n) && n > 0;
   if (!ok(width) || !ok(height)) fail('invalid-dimensions');
+}
+
+const COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+
+/** Cor de fundo válida (`#RRGGBB`), em maiúsculas. */
+function checkBackground(color: string): string {
+  if (!COLOR_RE.test(color)) fail('invalid-color');
+  return color.toUpperCase();
+}
+
+/** Dimensões de uma tela em branco: inteiros de 1 a `MAX_BLANK_SIZE`. */
+function checkBlankDimensions(size: {
+  readonly width: number;
+  readonly height: number;
+}): void {
+  checkDimensions(size);
+  if (size.width > MAX_BLANK_SIZE || size.height > MAX_BLANK_SIZE) {
+    fail('invalid-dimensions');
+  }
+}
+
+/** `true` se a imagem é uma tela em branco (sem arquivo, só com cor de fundo). */
+export function isBlankImage(image: Pick<ProjectImage, 'file'>): boolean {
+  return image.file === null;
 }
 
 function checkPlacement({ x, y, scale }: Placement): void {
@@ -104,6 +138,13 @@ export function canPlaceImage(
   );
 }
 
+/** Arquivos das imagens (a tela em branco não tem), na ordem das imagens. */
+export function imageFileNames(images: readonly Pick<ProjectImage, 'file'>[]): string[] {
+  const files: string[] = [];
+  for (const image of images) if (image.file !== null) files.push(image.file);
+  return files;
+}
+
 /** Arquivo do projeto na raiz da pasta/zip (app e servidor MCP). */
 export const MAPPING_FILE = 'mapping.json';
 /** Pasta das imagens, relativa à raiz do projeto (app e servidor MCP). */
@@ -118,7 +159,8 @@ export function uniqueImageFile(
   fileName: string,
   taken: ReadonlySet<string> = new Set(),
 ): string {
-  const used = new Set([...p.images.map((i) => i.file), ...taken]);
+  const used = new Set<string>(taken);
+  for (const i of p.images) if (i.file !== null) used.add(i.file);
   const dot = fileName.lastIndexOf('.');
   const base = dot > 0 ? fileName.slice(0, dot) : fileName;
   const ext = dot > 0 ? fileName.slice(dot) : '';
@@ -143,7 +185,9 @@ export function addImage(
 ): Project {
   if (p.images.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
   checkDimensions(args);
-  if (p.images.some((i) => i.file === args.file)) fail('duplicate-file');
+  if (p.images.some((i) => i.file !== null && i.file === args.file)) {
+    fail('duplicate-file');
+  }
   const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
   const image: ProjectImage = {
     id: args.id,
@@ -152,6 +196,7 @@ export function addImage(
     locked: false,
     source: null,
     file: args.file,
+    background: null,
     width: args.width,
     height: args.height,
     placement: args.center
@@ -159,6 +204,97 @@ export function addImage(
       : placementAtRight(p, scale),
   };
   return { ...p, images: [...p.images, image] };
+}
+
+/**
+ * Adiciona uma tela em branco (imagem sem arquivo, só com cor de fundo), com a mesma
+ * colocação de `addImage`: lado maior de `INITIAL_IMAGE_SIZE` unidades do canvas.
+ */
+export function addBlankImage(
+  p: Project,
+  args: {
+    readonly id: string;
+    readonly name?: string | null;
+    readonly width: number;
+    readonly height: number;
+    /** Cor de fundo (`#RRGGBB`). */
+    readonly background: string;
+    /** Onde o centro da imagem deve ficar (vai para o espaço livre mais próximo). */
+    readonly center?: { readonly x: number; readonly y: number };
+  },
+): Project {
+  if (p.images.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
+  checkBlankDimensions(args);
+  const background = checkBackground(args.background);
+  const name = normalizeOptionalName(args.name ?? null);
+  const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
+  const image: ProjectImage = {
+    id: args.id,
+    name,
+    markingColor: null,
+    locked: false,
+    source: null,
+    file: null,
+    background,
+    width: args.width,
+    height: args.height,
+    placement: args.center
+      ? placementNear(p, args, scale, args.center)
+      : placementAtRight(p, scale),
+  };
+  return { ...p, images: [...p.images, image] };
+}
+
+export interface BlankImageChanges {
+  readonly width?: number;
+  readonly height?: number;
+  readonly background?: string;
+}
+
+/**
+ * Edita a tela em branco: tamanho e/ou cor de fundo. Mudar o tamanho é geometria
+ * (imagem trancada recusa com `locked`), mantém a escala do `placement` e recusa se alguma
+ * marcação deixar de caber (`rect-out-of-image`) ou se a imagem passar a sobrepor outra
+ * (`image-overlap`). Só vale para tela em branco (`not-blank`).
+ */
+export function setBlankImage(
+  p: Project,
+  imageId: string,
+  changes: BlankImageChanges,
+): Project {
+  const image = findById(p.images, imageId);
+  if (!isBlankImage(image)) fail('not-blank');
+  const background =
+    changes.background === undefined
+      ? image.background
+      : checkBackground(changes.background);
+  const width = changes.width ?? image.width;
+  const height = changes.height ?? image.height;
+  const resized = width !== image.width || height !== image.height;
+  if (resized) {
+    checkBlankDimensions({ width, height });
+    requireUnlocked(canEditImagePlacement(p, imageId));
+    const bounds = imagePixelRect({ width, height });
+    for (const m of p.markings) {
+      if (m.imageId === imageId && !containsRect(bounds, m.rect)) {
+        fail('rect-out-of-image', m.id);
+      }
+    }
+    if (
+      !canPlaceImage(
+        { ...p, images: updateById(p.images, imageId, (i) => ({ ...i, width, height })) },
+        imageId,
+        image.placement,
+      )
+    ) {
+      fail('image-overlap');
+    }
+  }
+  if (!resized && background === image.background) return p;
+  return {
+    ...p,
+    images: updateById(p.images, imageId, (i) => ({ ...i, width, height, background })),
+  };
 }
 
 /** Nome de exibição da imagem; vazio vira `null` (a app mostra o nome do arquivo). */
@@ -345,8 +481,9 @@ export function replaceImage(
 ): Project {
   checkDimensions(next);
   const image = findById(p.images, imageId);
+  if (isBlankImage(image)) fail('blank-image');
   requireUnlocked(canReplaceImage(p, imageId, next));
-  if (p.images.some((i) => i.id !== imageId && i.file === next.file))
+  if (p.images.some((i) => i.id !== imageId && i.file !== null && i.file === next.file))
     fail('duplicate-file');
   const sameAspect = isSameAspect(image, next);
   if (!sameAspect && !options.confirmAspectChange) fail('aspect-change-not-confirmed');
@@ -377,6 +514,7 @@ export function replaceImage(
     locked: image.locked,
     source: image.source,
     file: next.file,
+    background: null,
     width: next.width,
     height: next.height,
     placement,

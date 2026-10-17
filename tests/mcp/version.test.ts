@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { SERVER_VERSION } from '../../mcp/version';
+import { BUILD_VERSION, SERVER_VERSION } from '../../mcp/version';
 
 // Versão do servidor × documentação (fase 8.5, M13): `SERVER_VERSION` (`mcp/version.ts`) é o
 // único lugar com a versão no código; os docs que a citam precisam citar a mesma. O
@@ -19,6 +19,10 @@ function section(text: string, heading: string): string {
 describe('versão do servidor nos docs', () => {
   it('é x.y.z', () => {
     expect(SERVER_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  it('sem o sufixo do build, a versão anunciada é a do código', () => {
+    expect(BUILD_VERSION).toBe(SERVER_VERSION);
   });
 
   it('docs/MCP.md cita a tag mcp-v<SERVER_VERSION> e nenhuma outra versão', () => {

@@ -94,6 +94,33 @@ describe('modos de exibição', () => {
   });
 });
 
+describe('marcações que desenham um componente', () => {
+  it('alwaysShown fica por inteiro em ocultar e esmaecer, e o pai não vira borda', () => {
+    const base = sampleProject();
+    // Camada ativa sem nenhuma anotação: sem `alwaysShown`, tudo some.
+    const none = new Map<string, readonly never[]>();
+    expect(markingVisibility(base, none, 'hide', null).get('M3')).toBe('hidden');
+    const always = new Set(['M2', 'M3']);
+    const hide = markingVisibility(base, none, 'hide', null, always);
+    expect(hide.get('M2')).toBe('full');
+    expect(hide.get('M3')).toBe('full');
+    // Quem não desenha segue a regra de hoje; o ancestral dele (M1) é só borda.
+    expect(hide.get('M4')).toBe('hidden');
+    expect(hide.get('M1')).toBe('outline');
+    const dim = markingVisibility(base, none, 'dim', null, always);
+    expect(dim.get('M3')).toBe('full');
+    expect(dim.get('M4')).toBe('dim');
+  });
+
+  it('sem alwaysShown nada muda', () => {
+    const base = sampleProject();
+    const none = new Map<string, readonly never[]>();
+    expect(markingVisibility(base, none, 'hide', null, new Set())).toEqual(
+      markingVisibility(base, none, 'hide', null),
+    );
+  });
+});
+
 describe('modos de exibição pela camada ativa', () => {
   it('só a camada ativa decide: anotação em outra camada visível não mantém a marcação', () => {
     const base = sampleProject();

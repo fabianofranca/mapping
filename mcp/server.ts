@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { DOC_RESOURCES } from './docs';
 import { Roots } from './paths';
 import { registerTools } from './tools';
-import { SERVER_NAME, SERVER_VERSION } from './version';
+import { BUILD_VERSION, SERVER_NAME } from './version';
 
 export interface ServerConfig {
   /** Raízes já resolvidas (caminhos absolutos). */
@@ -19,7 +19,7 @@ Coordenadas das marcações são sempre em pixels da imagem original. Leia o rec
 
 export function createServer(config: ServerConfig): McpServer {
   const server = new McpServer(
-    { name: SERVER_NAME, version: SERVER_VERSION },
+    { name: SERVER_NAME, version: BUILD_VERSION },
     { instructions: INSTRUCTIONS },
   );
   registerTools(server, new Roots(config.roots, config.workDir));

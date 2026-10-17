@@ -2,7 +2,7 @@
 // instância (identidade dos objetos).
 import Konva from 'konva';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { installFakeCanvas } from '../../canvas/harness';
+import { installFakeCanvas } from '../harness';
 import { approximateMeasurer } from '../../../src/model/components/instantiate';
 import { loadLibrary } from '../../../src/model/components/library';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
@@ -11,7 +11,7 @@ import {
   type Screen,
   renderOrder,
 } from '../../../src/model/components/screen';
-import { ScreenRenderer } from '../../../lab/viewer/screenRenderer';
+import { ScreenRenderer } from '../../../src/canvas/components/screenRenderer';
 
 beforeAll(() => installFakeCanvas());
 

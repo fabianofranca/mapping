@@ -1,8 +1,13 @@
 // Apoio aos testes do canvas: Konva em jsdom com um contexto 2D falso, um
 // projeto pequeno com posições conhecidas e o quadro montado do estado real.
+import { signal, type Signal } from '@preact/signals';
 import { vi } from 'vitest';
 import {
+  approximateMeasurer,
   addAnnotation,
+  addBlankImage,
+  addComponentMarking,
+  type ComponentCatalog,
   addImage,
   createMarking,
   createProject,
@@ -13,11 +18,13 @@ import type { Frame } from '../../src/canvas/frame';
 import { cardCache } from '../../src/canvas/renderers/cards';
 import type { CanvasTokens } from '../../src/canvas/theme';
 import { createCanvasViewState } from '../../src/canvas/viewState';
-import { createEditorDerived } from '../../src/store/derived';
+import { createEditorDerived, type ComponentSources } from '../../src/store/derived';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { locale } from '../../src/store/settings';
+import { textMeasurer } from '../../src/store/textMeasure';
 import { createEditorUi } from '../../src/store/ui';
+import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 
 /** Contexto 2D que aceita qualquer chamada; `measureText` estima pela quantidade de letras. */
 export function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -67,6 +74,11 @@ export const TOKENS: CanvasTokens = {
   nameTag: '#0057b9',
   nameTagText: '#010203',
   badge: '#0a0c10',
+  component: {
+    placeholderFill: 'rgba(120, 121, 122, 0.25)',
+    placeholderLine: 'rgba(120, 121, 122, 0.8)',
+    unknownLine: '#d81b61',
+  },
   surface: '#ffffff',
   card: 'rgba(250, 250, 250, 0.9)',
   border: '#cccccc',
@@ -134,12 +146,24 @@ export function canvasProject(): Project {
 }
 
 /** Store, actions, UI e estado derivado de um editor com `project` aberto. */
-export function editorFor(project: Project = canvasProject(), readOnly = false) {
+export function editorFor(
+  project: Project = canvasProject(),
+  readOnly = false,
+  components?: ComponentSources,
+) {
   const store = createProjectStore({ now: () => NOW });
   store.load(project, { readOnly });
-  const actions = createProjectActions(store);
+  const actions = createProjectActions(
+    store,
+    components
+      ? {
+          components: () => components.catalog.peek(),
+          measure: () => textMeasurer.peek(),
+        }
+      : {},
+  );
   const ui = createEditorUi();
-  const derived = createEditorDerived(store, ui);
+  const derived = createEditorDerived(store, ui, undefined, components);
   return { store, actions, ui, derived, view: createCanvasViewState() };
 }
 
@@ -156,6 +180,7 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     draft: null,
     dropTarget: null,
     hoverLock: null,
+    hoverMarking: null,
     tokens: TOKENS,
     size: { width: 380, height: 700 },
     viewport: { x: 0, y: 0, scale: 1 },
@@ -172,7 +197,55 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
       derived.visibleLayers.peek(),
       derived.annotationsByMarking.peek(),
     ),
+    drawings: derived.drawingsOf(store.project.peek()),
+    drawn: derived.drawnMarkings.peek(),
     review: null,
     ...overrides,
   };
+}
+
+/** Fontes de componentes de teste: catálogo (editável) e época das fontes. */
+export function componentSources(
+  catalog: ComponentCatalog = testCatalog(),
+): ComponentSources & { catalog: Signal<ComponentCatalog>; fontsEpoch: Signal<number> } {
+  return { catalog: signal(catalog), fontsEpoch: signal(0) };
+}
+
+/** Quadro 1000×800 (foto I1) e tela em branco B1 (400×600, fundo branco) com dois textos. */
+export function componentCanvasProject(): Project {
+  let p = componentProject();
+  p = addBlankImage(p, {
+    id: 'B1',
+    name: 'Tela',
+    width: 400,
+    height: 600,
+    background: '#FFFFFF',
+    center: { x: 1500, y: 300 },
+  });
+  const catalog = testCatalog();
+  const add = (id: string, imageId: string, x: number, y: number) =>
+    addComponentMarking(
+      p,
+      catalog,
+      {
+        markingId: id,
+        annotationId: `A_${id}`,
+        imageId,
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+        rect: { x, y, width: 100, height: 40 },
+      },
+      approximateMeasurer,
+    );
+  p = add('T1', 'B1', 20, 20);
+  p = add('T2', 'B1', 20, 100);
+  p = add('TP', 'I1', 100, 100);
+  return p;
+}
+
+/** Editor da tela de componentes (`componentCanvasProject`), com as fontes de teste. */
+export function componentEditor() {
+  const sources = componentSources();
+  return { ...editorFor(componentCanvasProject(), false, sources), sources };
 }

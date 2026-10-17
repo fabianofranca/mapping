@@ -1,5 +1,5 @@
 /**
- * Laboratório de componentes: desenha uma `Scene` com Konva.
+ * Desenha uma `Scene` (a instância de um componente) com Konva.
  *
  * Cada nó da cena vira um `Konva.Group` (o "contêiner" do nó, com a transformação, a
  * opacidade e a visibilidade) que guarda as formas do próprio nó (um shape por
@@ -7,7 +7,13 @@
  * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
  * a partir do alvo de um evento do Konva.
  */
-import Konva from 'konva';
+import Konva from 'konva/lib/Core';
+import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
+import { Image as KonvaImage } from 'konva/lib/shapes/Image';
+import { Line as KonvaLine } from 'konva/lib/shapes/Line';
+import { Path as KonvaPath } from 'konva/lib/shapes/Path';
+import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
+import { Text as KonvaText, type TextConfig } from 'konva/lib/shapes/Text';
 import {
   type CornerRadius,
   type Matrix,
@@ -17,11 +23,30 @@ import {
   type Shadow,
   type Stroke,
   hasChildren,
-} from '../../src/model/components/scene';
+} from '../../model/components/scene';
+
+/** Cores do reservado de imagem e da caixa de nó desconhecido. */
+export interface RenderPalette {
+  /** Preenchimento do reservado de imagem. */
+  readonly placeholderFill: string;
+  /** Contorno do reservado (X, traço de imagem, slot). */
+  readonly placeholderLine: string;
+  /** Contorno da caixa de nó que o desenho não conhece. */
+  readonly unknownLine: string;
+}
+
+/** Padrão do laboratório (sem tema próprio). O produto passa as cores dos tokens do tema. */
+export const DEFAULT_PALETTE: RenderPalette = {
+  placeholderFill: 'rgba(128, 128, 128, 0.25)',
+  placeholderLine: 'rgba(128, 128, 128, 0.8)',
+  unknownLine: '#d81b60',
+};
 
 export interface RenderOptions {
   /** Uma imagem embutida (`data:`) terminou de carregar: hora de redesenhar. */
   readonly onImageLoaded?: () => void;
+  /** Cores do reservado e do nó desconhecido (padrão: `DEFAULT_PALETTE`). */
+  readonly palette?: Partial<RenderPalette>;
 }
 
 export interface RenderResult {
@@ -31,11 +56,6 @@ export interface RenderResult {
   /** Aproximações feitas ao desenhar (além das do conversor). */
   readonly warnings: readonly string[];
 }
-
-/** Cores do reservado de imagem e da caixa de nó desconhecido (o laboratório não tem tema próprio). */
-const PLACEHOLDER_FILL = 'rgba(128, 128, 128, 0.25)';
-const PLACEHOLDER_LINE = 'rgba(128, 128, 128, 0.8)';
-const UNKNOWN_LINE = '#d81b60';
 
 export const SCENE_ID_ATTR = 'sceneId';
 
@@ -50,7 +70,11 @@ class Renderer {
   readonly byId = new Map<string, Konva.Group>();
   readonly warnings = new Set<string>();
 
-  constructor(private readonly options: RenderOptions) {}
+  private readonly palette: RenderPalette;
+
+  constructor(private readonly options: RenderOptions) {
+    this.palette = { ...DEFAULT_PALETTE, ...options.palette };
+  }
 
   render(node: SceneNode, pendingShadow?: Shadow): Konva.Group {
     const container = new Konva.Group({
@@ -116,7 +140,7 @@ class Renderer {
       case 'frame':
       case 'rect': {
         for (const paint of node.fills) {
-          const shape = new Konva.Rect({
+          const shape = new KonvaRect({
             width: node.width,
             height: node.height,
             cornerRadius: konvaRadius(node.cornerRadius),
@@ -129,7 +153,7 @@ class Renderer {
         if (node.fills.length === 0 && !node.stroke && node.type === 'frame') {
           // Quadro transparente: uma área clicável invisível, para o hover achar o quadro.
           shapes.push(
-            new Konva.Rect({
+            new KonvaRect({
               width: node.width,
               height: node.height,
               fill: 'transparent',
@@ -146,11 +170,11 @@ class Renderer {
           radiusY: node.height / 2,
         };
         for (const paint of node.fills) {
-          shapes.push(...this.fillShape(new Konva.Ellipse(geometry), paint, box));
+          shapes.push(...this.fillShape(new KonvaEllipse(geometry), paint, box));
         }
         if (node.stroke) {
           const inset = strokeInset(node.stroke);
-          const shape = new Konva.Ellipse({
+          const shape = new KonvaEllipse({
             ...geometry,
             radiusX: Math.max(0, geometry.radiusX - inset),
             radiusY: Math.max(0, geometry.radiusY - inset),
@@ -163,11 +187,11 @@ class Renderer {
       case 'line': {
         const points = node.points.flatMap((p) => [p.x, p.y]);
         for (const paint of node.fills) {
-          const shape = new Konva.Line({ points, closed: node.closed });
+          const shape = new KonvaLine({ points, closed: node.closed });
           shapes.push(...this.fillShape(shape, paint, box));
         }
         if (node.stroke) {
-          const shape = new Konva.Line({ points, closed: node.closed });
+          const shape = new KonvaLine({ points, closed: node.closed });
           this.applyStroke(shape, node.stroke, 'line');
           shapes.push(shape);
         }
@@ -175,11 +199,11 @@ class Renderer {
       }
       case 'path': {
         for (const paint of node.fills) {
-          const shape = new Konva.Path({ data: node.d, fillRule: node.fillRule });
+          const shape = new KonvaPath({ data: node.d, fillRule: node.fillRule });
           shapes.push(...this.fillShape(shape, paint, box));
         }
         if (node.stroke) {
-          const shape = new Konva.Path({ data: node.d });
+          const shape = new KonvaPath({ data: node.d });
           this.applyStroke(shape, node.stroke, 'path');
           shapes.push(shape);
         }
@@ -187,7 +211,7 @@ class Renderer {
       }
       case 'text': {
         const { style } = node;
-        const attrs: Konva.TextConfig = {
+        const attrs: TextConfig = {
           text: node.text,
           fontFamily: `"${style.fontFamily}", sans-serif`,
           fontSize: style.fontSize,
@@ -203,17 +227,17 @@ class Renderer {
         if (node.height > 0) attrs.height = node.height;
         // Texto do SVG sem largura: o x é a âncora (`text-anchor`), então o texto centrado
         // ou à direita cresce para a esquerda a partir dela.
-        const anchor = (shape: Konva.Text): Konva.Text => {
+        const anchor = (shape: KonvaText): KonvaText => {
           if (node.width > 0 || style.align === 'left' || style.align === 'justify')
             return shape;
           shape.offsetX(style.align === 'center' ? shape.width() / 2 : shape.width());
           return shape;
         };
         for (const paint of node.fills) {
-          shapes.push(...this.fillShape(anchor(new Konva.Text(attrs)), paint, box));
+          shapes.push(...this.fillShape(anchor(new KonvaText(attrs)), paint, box));
         }
         if (node.stroke) {
-          const shape = anchor(new Konva.Text(attrs));
+          const shape = anchor(new KonvaText(attrs));
           this.applyStroke(shape, node.stroke, 'path');
           shapes.push(shape);
         }
@@ -227,10 +251,10 @@ class Renderer {
         const slot = node.sourceType === 'slot';
         if (!slot) this.warnings.add(`nó não desenhado (${node.sourceType}): só a caixa`);
         shapes.push(
-          new Konva.Rect({
+          new KonvaRect({
             width: node.width,
             height: node.height,
-            stroke: slot ? PLACEHOLDER_LINE : UNKNOWN_LINE,
+            stroke: slot ? this.palette.placeholderLine : this.palette.unknownLine,
             strokeWidth: 1,
             dash: slot ? [3, 5] : [4, 4],
             opacity: slot ? 0.6 : 1,
@@ -242,7 +266,7 @@ class Renderer {
     }
   }
 
-  /** Aplica um preenchimento a uma forma; uma imagem vira a própria forma (`Konva.Image`). */
+  /** Aplica um preenchimento a uma forma; uma imagem vira a própria forma (`KonvaImage`). */
   private fillShape(shape: ShapeWithFill, paint: Paint, box: Box): Konva.Shape[] {
     shape.opacity(paint.opacity ?? 1);
     switch (paint.type) {
@@ -271,10 +295,10 @@ class Renderer {
   private imageFill(shape: ShapeWithFill, paint: Paint & { type: 'image' }, box: Box) {
     if (!paint.src) {
       this.warnings.add('imagem sem pixels desenhada como reservado');
-      return placeholder(shape, box);
+      return placeholder(shape, box, this.palette);
     }
-    if (shape instanceof Konva.Rect) {
-      const image = new Konva.Image({
+    if (shape instanceof KonvaRect) {
+      const image = new KonvaImage({
         image: undefined,
         width: box.width,
         height: box.height,
@@ -304,13 +328,13 @@ class Renderer {
       this.options.onImageLoaded?.();
     };
     element.src = paint.src;
-    shape.fill(PLACEHOLDER_FILL);
+    shape.fill(this.palette.placeholderFill);
     return [shape];
   }
 
   private rectStroke(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape {
     const inset = strokeInset(stroke);
-    const shape = new Konva.Rect({
+    const shape = new KonvaRect({
       x: inset,
       y: inset,
       width: Math.max(0, box.width - inset * 2),
@@ -350,23 +374,27 @@ class Renderer {
         return;
       case 'radial': {
         this.warnings.add('traço com gradiente radial desenhado com a primeira cor');
-        shape.stroke(paint.stops[0]?.color ?? PLACEHOLDER_LINE);
+        shape.stroke(paint.stops[0]?.color ?? this.palette.placeholderLine);
         return;
       }
       case 'image':
         this.warnings.add('traço com imagem desenhado em cinza');
-        shape.stroke(PLACEHOLDER_LINE);
+        shape.stroke(this.palette.placeholderLine);
         return;
     }
   }
 }
 
 /** Reservado de imagem: a forma em cinza, com um X. */
-function placeholder(shape: Konva.Shape, box: Box): Konva.Shape[] {
-  shape.fill(PLACEHOLDER_FILL);
-  const cross = new Konva.Line({
+function placeholder(
+  shape: Konva.Shape,
+  box: Box,
+  palette: RenderPalette,
+): Konva.Shape[] {
+  shape.fill(palette.placeholderFill);
+  const cross = new KonvaLine({
     points: [0, 0, box.width, box.height, box.width, 0, 0, box.height],
-    stroke: PLACEHOLDER_LINE,
+    stroke: palette.placeholderLine,
     strokeWidth: 1,
     strokeScaleEnabled: false,
     listening: false,

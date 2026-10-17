@@ -22,17 +22,17 @@ describe('migração v4 → v5 (trava)', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(4);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(9);
+    expect(result.project.schemaVersion).toBe(10);
     expect(result.project.images.every((i) => i.locked === false)).toBe(true);
     expect(result.project.markings.every((m) => m.locked === false)).toBe(true);
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('o v4 migrado salva como v9 estável (round-trip)', () => {
+  it('o v4 migrado salva como v10 estável (round-trip)', () => {
     const first = deserialize(v4Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(9);
+    expect(JSON.parse(saved).schemaVersion).toBe(10);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);
@@ -49,7 +49,11 @@ describe('migração v4 → v5 (trava)', () => {
 
   it('serializa locked na ordem fixa, no fim de cada imagem e marcação (antes do source da v8)', () => {
     const data = JSON.parse(serialize(sampleProject()));
-    expect(Object.keys(data.images[0]).slice(-2)).toEqual(['locked', 'source']);
+    expect(Object.keys(data.images[0]).slice(-3)).toEqual([
+      'locked',
+      'source',
+      'background',
+    ]);
     expect(Object.keys(data.markings[0]).slice(-2)).toEqual(['locked', 'source']);
   });
 

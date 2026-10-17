@@ -26,6 +26,12 @@ export interface CanvasTokens {
   readonly nameTagText: string;
   /** Fundo dos selos de revisão sobre a foto (`cv-badge`, revisão de propostas). */
   readonly badge: string;
+  /** Cores do desenho dos componentes: reservado de imagem, seu contorno e o nó desconhecido. */
+  readonly component: {
+    readonly placeholderFill: string;
+    readonly placeholderLine: string;
+    readonly unknownLine: string;
+  };
   // Superfícies do tema (cartão, espaço reservado das imagens, rótulos).
   readonly surface: string;
   readonly card: string;
@@ -87,6 +93,11 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     nameTag: read('--cv-name-tag'),
     nameTagText: read('--cv-name-tag-text'),
     badge: read('--cv-badge'),
+    component: {
+      placeholderFill: read('--cv-component-placeholder'),
+      placeholderLine: read('--cv-component-placeholder-line'),
+      unknownLine: read('--cv-component-unknown'),
+    },
     surface: read('--color-surface'),
     card: read('--color-card'),
     border: read('--color-border'),

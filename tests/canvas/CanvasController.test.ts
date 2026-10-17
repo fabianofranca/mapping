@@ -38,11 +38,11 @@ describe('CanvasController', () => {
     return { ...editor, container, controller, ensure };
   }
 
-  it('monta o stage com as três camadas e pede os bitmaps das imagens', () => {
+  it('monta o stage com as quatro camadas (imagens, componentes, marcações, sobreposições) e pede os bitmaps das imagens', () => {
     const { container, controller, ensure } = setup();
     flush();
     const canvases = container.querySelectorAll('canvas');
-    expect(canvases).toHaveLength(3);
+    expect(canvases).toHaveLength(4);
     expect(ensure.mock.calls.map(([file]) => file)).toEqual([
       'images/a.jpg',
       'images/b.jpg',

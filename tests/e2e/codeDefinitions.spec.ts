@@ -167,7 +167,7 @@ test('passo 1: atualizar a SDUI para a v2 mostra a camada Telas e as plataformas
   ).toBeVisible();
   const { mapping } = await exportMapping(page);
   expect(mapping.layers.map((l) => l.name)).toContain('Telas');
-  expect(mapping.schemaVersion).toBe(9);
+  expect(mapping.schemaVersion).toBe(10);
 });
 
 test('passo 2: repositórios por plataforma, com os erros da validação e o aviso pelo path', async ({
@@ -249,7 +249,7 @@ test('passo 3: "Definição" do Button ("Abrir no repositório" e "Copiar caminh
   await expect(page.getByText('implementação')).toHaveCount(0);
   const { mapping } = await exportMapping(page);
   expect(mapping).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     platformRepos: { android: { urlTemplate: ANDROID_URL, localPath: '../../..' } },
   });
   const screen = mapping.annotations.find((a) => a.type?.typeId === 'screen');

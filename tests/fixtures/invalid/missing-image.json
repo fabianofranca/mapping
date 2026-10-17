@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -94,7 +94,8 @@
       },
       "markingColor": null,
       "locked": false,
-      "source": null
+      "source": null,
+      "background": null
     }
   ],
   "markings": [

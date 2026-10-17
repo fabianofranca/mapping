@@ -44,6 +44,15 @@ const rawText = {
   },
 };
 
+// Sufixo do canal de publicação (snapshot de PR ou release candidate), posto pelo workflow
+// `mcp-prerelease.yml`; vazio na estável. Vira `BUILD_VERSION` em mcp/version.ts.
+const suffix = process.env.MCP_BUILD_SUFFIX ?? '';
+if (suffix !== '' && !/^-(snapshot\.pr\d+\+[0-9a-f]{7,}|rc\.\d+)$/.test(suffix)) {
+  throw new Error(
+    `MCP_BUILD_SUFFIX inválido: "${suffix}" (esperado vazio, "-rc.<n>" ou "-snapshot.pr<N>+<sha>").`,
+  );
+}
+
 await build({
   entryPoints: ['mcp/main.ts'],
   plugins: [rawText, wasmModules],
@@ -54,6 +63,7 @@ await build({
   target: 'node20',
   legalComments: 'none',
   banner: { js: '#!/usr/bin/env node' },
+  define: { __MCP_BUILD_SUFFIX__: JSON.stringify(suffix) },
   logLevel: 'info',
 });
 

@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import {
+  canCopyCrop,
   canCopyItems,
   copyCrop,
   copyReference,
@@ -26,14 +27,15 @@ export function CopyButtons({ target }: { readonly target: CopyTarget }) {
         shortcut={target.kind === 'a' ? undefined : SHORTCUT_LABELS.copyReference}
         onClick={() => void copyReference(editor, target)}
       />
-      {target.kind === 'm' && (
-        <IconButton
-          icon="crop"
-          label={t('copy.crop')}
-          shortcut={SHORTCUT_LABELS.copyCrop}
-          onClick={() => void copyCrop(editor, target.id)}
-        />
-      )}
+      {target.kind === 'm' &&
+        canCopyCrop(editor.review.derived.shownProject.value, target.id) && (
+          <IconButton
+            icon="crop"
+            label={t('copy.crop')}
+            shortcut={SHORTCUT_LABELS.copyCrop}
+            onClick={() => void copyCrop(editor, target.id)}
+          />
+        )}
     </>
   );
 }
@@ -58,17 +60,18 @@ export function CopyMenuItems({
       >
         {t('copy.reference')}
       </Button>
-      {target.kind === 'm' && (
-        <Button
-          role="menuitem"
-          onClick={() => {
-            close();
-            void copyCrop(editor, target.id);
-          }}
-        >
-          {t('copy.crop')}
-        </Button>
-      )}
+      {target.kind === 'm' &&
+        canCopyCrop(editor.review.derived.shownProject.value, target.id) && (
+          <Button
+            role="menuitem"
+            onClick={() => {
+              close();
+              void copyCrop(editor, target.id);
+            }}
+          >
+            {t('copy.crop')}
+          </Button>
+        )}
     </div>
   );
 }

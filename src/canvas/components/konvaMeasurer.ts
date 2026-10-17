@@ -1,14 +1,14 @@
 /**
- * Visualizador: o medidor de texto que usa o próprio Konva, para o layout bater com o desenho.
+ * O medidor de texto que usa o próprio Konva, para o layout bater com o desenho.
  * Depende do canvas do navegador (por isso fica fora do motor puro de `instantiate`); em testes
  * sem canvas use `approximateMeasurer`.
  */
-import Konva from 'konva';
-import type { TextMeasurer } from '../../src/model/components/instantiate';
+import { Text as KonvaText } from 'konva/lib/shapes/Text';
+import type { TextMeasurer } from '../../model/components/instantiate';
 
 /** Mede texto com o próprio Konva, para o layout bater com o desenho. */
 export const konvaMeasurer: TextMeasurer = (text, font, maxWidth) => {
-  const probe = new Konva.Text({
+  const probe = new KonvaText({
     text,
     fontFamily: `"${font.family}", sans-serif`,
     fontSize: font.size,

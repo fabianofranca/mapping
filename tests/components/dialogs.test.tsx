@@ -2,7 +2,12 @@ import { cleanup, render, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
-import { locale, theme } from '../../src/store/settings';
+import {
+  locale,
+  setShowComponentsOnPhotos,
+  showComponentsOnPhotos,
+  theme,
+} from '../../src/store/settings';
 import { useRef, useState } from 'preact/hooks';
 import { Dialog } from '../../src/ui/Dialog';
 import { HELP_PROPOSALS, HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
@@ -406,6 +411,24 @@ describe('SettingsDialog', () => {
       'en-US',
     );
     expect(locale.value).toBe('en-US');
+  });
+
+  // B3/P7: a opção por pessoa, ao lado do zoom semântico.
+  it('Mostrar componentes sobre fotos: liga, desliga e grava', async () => {
+    localStorage.clear();
+    setShowComponentsOnPhotos(false);
+    render(<SettingsDialog onClose={vi.fn()} onShowShortcuts={vi.fn()} />);
+    const box = within(dialogEl()).getByRole<HTMLInputElement>('checkbox', {
+      name: new RegExp(t('view.componentsOnPhotos')),
+      hidden: true,
+    });
+    expect(box.checked).toBe(false);
+    await userEvent.click(box);
+    expect(showComponentsOnPhotos.value).toBe(true);
+    expect(box.checked).toBe(true);
+    expect(localStorage.getItem('mapping.showComponentsOnPhotos')).toBe('on');
+    await userEvent.click(box);
+    expect(showComponentsOnPhotos.value).toBe(false);
   });
 
   it('link para os atalhos', async () => {

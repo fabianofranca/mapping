@@ -94,10 +94,16 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
 
   // ---- Arrastar e soltar arquivos ----
 
+  /** Imagem sob o ponto que um arquivo solto trocaria; a tela em branco não tem arquivo para trocar. */
+  const replaceableImageAt = (e: DragEvent): string | null => {
+    const imageId = canvas.current?.imageIdAt(e.clientX, e.clientY) ?? null;
+    const image = imageId && store.project.peek()?.images.find((i) => i.id === imageId);
+    return image && image.file !== null ? image.id : null;
+  };
+
   const dropTargetAt = (e: DragEvent) => {
     const single = (e.dataTransfer?.items.length ?? 0) === 1;
-    const imageId = canvas.current?.imageIdAt(e.clientX, e.clientY) ?? null;
-    return { imageId: single ? imageId : null };
+    return { imageId: single ? replaceableImageAt(e) : null };
   };
 
   const onDragOver = (e: DragEvent) => {
@@ -122,7 +128,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
     if (readOnly || busy) return;
     const { images, ignored } = splitImageFiles([...(e.dataTransfer?.files ?? [])]);
     const [only] = images;
-    const overImage = canvas.current?.imageIdAt(e.clientX, e.clientY) ?? null;
+    const overImage = replaceableImageAt(e);
     const warn = () => {
       if (ignored.length > 0)
         setMessage(t('editor.dropIgnored', { names: ignored.join(', ') }));

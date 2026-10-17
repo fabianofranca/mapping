@@ -138,6 +138,12 @@ export function EditorScreen() {
                   >
                     {t('editor.addImages')}
                   </Button>
+                  <Button
+                    disabled={store.locked.value}
+                    onClick={() => dialogs.show({ kind: 'blank' })}
+                  >
+                    {t('blank.new')}
+                  </Button>
                 </div>
               )}
             </main>

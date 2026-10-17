@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ModelError, createProject } from '../../src/model';
+import { EMPTY_CATALOG, ModelError, createProject } from '../../src/model';
 import { runBatch } from '../../mcp/batch';
 import { ToolError } from '../../mcp/errors';
 import { decodeImage } from '../../mcp/image/codecs';
@@ -80,6 +80,7 @@ describe('base64 das operações de imagem', () => {
         readOnly: false,
         migratedFrom: null,
         specWarnings: [],
+        catalog: EMPTY_CATALOG,
       },
       [{ op: 'add_image', base64: 'A'.repeat(MAX_BASE64_LENGTH + 4) }],
       {

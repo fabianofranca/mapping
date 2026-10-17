@@ -52,7 +52,7 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 
 ## 5. O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, R0 a R8, na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
+**Rodada completa (padrão).** Todos os roteiros, R0 a R9, na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
 
 **Rodada dirigida.** O dono aponta o alvo de um destes três jeitos:
 

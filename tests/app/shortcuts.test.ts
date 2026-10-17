@@ -37,6 +37,19 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('l'))).toBeNull();
   });
 
+  // B3/P7: Alt+Shift+A arruma o container selecionado.
+  it('Alt+Shift+A: arrumar (pela tecla física, por causa do Option no macOS)', () => {
+    expect(shortcutFor(key('a', { alt: true, shift: true }))).toEqual({
+      kind: 'arrange',
+    });
+    expect(shortcutFor(key('Å', { alt: true, shift: true }, 'KeyA'))).toEqual({
+      kind: 'arrange',
+    });
+    expect(shortcutFor(key('a', { alt: true }))).toBeNull();
+    expect(shortcutFor(key('a', { alt: true, shift: true, ctrl: true }))).toBeNull();
+    expect(worksInTextInput({ kind: 'arrange' })).toBe(false);
+  });
+
   it('Alt+L não vale com o foco num campo de texto (o campo é do usuário)', () => {
     expect(worksInTextInput({ kind: 'toggle-lock' })).toBe(false);
   });

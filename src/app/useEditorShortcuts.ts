@@ -32,8 +32,10 @@ import {
 } from './shortcuts';
 import { useApplyAccepted, useDecide } from '../ui/review/useReview';
 import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
+import { arrangeMarking, canArrangeMarking } from '../ui/arrange';
 import {
   canCopyItems,
+  canCopyCrop,
   copyCrop,
   copyReference,
   copyShortcutTarget,
@@ -144,7 +146,10 @@ export function useEditorShortcuts(
       if (!canCopyItems(editor)) return null;
       if (shortcut.kind === 'copy-crop') {
         const target = copyShortcutTarget(editor);
-        return target?.kind === 'm' ? target : null;
+        // Tela em branco não tem recorte: o atalho não assume a tecla.
+        return target?.kind === 'm' && canCopyCrop(shown.peek(), target.id)
+          ? target
+          : null;
       }
       if (globalThis.getSelection?.()?.toString()) return null;
       return copyShortcutTarget(editor);
@@ -160,6 +165,18 @@ export function useEditorShortcuts(
         case 'copy-crop': {
           const target = copyTarget(shortcut);
           if (target) void copyCrop(editor, target.id);
+          return;
+        }
+        case 'arrange': {
+          // Container em linha ou coluna com filhas; fora disso (ou somente leitura) o atalho não age.
+          if (store.locked.peek()) return;
+          const current = resolveSelection(shown.peek(), ui.selection.peek());
+          if (
+            current?.kind === 'marking' &&
+            canArrangeMarking(editor, current.marking.id)
+          ) {
+            arrangeMarking(editor, current.marking.id);
+          }
           return;
         }
         case 'undo':

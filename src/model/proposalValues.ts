@@ -4,6 +4,7 @@ import {
   type Change,
   type ChangeEntity,
 } from './proposal';
+import { siblingPosition } from './markings';
 import { projectIndex } from './projectIndex';
 import { isRecord, parseRefValue } from './refs';
 import type {
@@ -44,6 +45,7 @@ export function imageValue(i: ProjectImage): JsonValue {
     id: i.id,
     name: i.name,
     file: i.file,
+    background: i.background,
     width: i.width,
     height: i.height,
     placement: i.placement,
@@ -94,7 +96,16 @@ export function platformRepoValue(r: PlatformRepo): JsonValue {
 
 /** Campos que a revisão compara em cada entidade (os de `annotation` são os fixos). */
 export const COMPARED_FIELDS = {
-  image: ['name', 'file', 'placement', 'markingColor', 'locked', 'source'],
+  image: [
+    'name',
+    'file',
+    'background',
+    'size',
+    'placement',
+    'markingColor',
+    'locked',
+    'source',
+  ],
   marking: ['name', 'rect', 'parentId', 'imageId', 'locked', 'source'],
   annotation: ['name', 'inherit', 'parentAnnotationId', 'markingId', 'layerId'],
   layer: ['name', 'color', 'spec'],
@@ -105,7 +116,14 @@ export function imageField(i: ProjectImage, field: string): JsonValue | undefine
     case 'name':
       return i.name;
     case 'file':
-      return { file: i.file, width: i.width, height: i.height };
+      // Tela em branco não tem arquivo: o tamanho dela é o campo `size`.
+      return i.file === null
+        ? undefined
+        : { file: i.file, width: i.width, height: i.height };
+    case 'background':
+      return i.background ?? undefined;
+    case 'size':
+      return i.file === null ? { width: i.width, height: i.height } : undefined;
     case 'placement':
       return toJson(i.placement);
     case 'markingColor':
@@ -119,8 +137,14 @@ export function imageField(i: ProjectImage, field: string): JsonValue | undefine
   }
 }
 
-export function markingField(m: Marking, field: string): JsonValue | undefined {
+export function markingField(
+  p: Project,
+  m: Marking,
+  field: string,
+): JsonValue | undefined {
   switch (field) {
+    case 'position':
+      return siblingPosition(p, m.id).index;
     case 'name':
       return m.name;
     case 'rect':
@@ -220,7 +244,7 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
     case 'marking': {
       const m = index.markings.get(c.entityId);
       if (!m) return undefined;
-      return whole ? markingValue(m) : markingField(m, c.field ?? '');
+      return whole ? markingValue(m) : markingField(p, m, c.field ?? '');
     }
     case 'annotation': {
       const a = index.annotations.get(c.entityId);

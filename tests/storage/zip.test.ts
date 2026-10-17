@@ -47,7 +47,7 @@ describe('zip do projeto', () => {
     expect(read.files.specs).toEqual(specs);
   });
 
-  it('round-trip v9: SDUI v2 e Modelo de dados v1 juntos, com platformRepos', async () => {
+  it('round-trip v10: SDUI v2 e Modelo de dados v1 juntos, com platformRepos', async () => {
     const project = codeProject();
     const mapping = serialize(project);
     const images = new Map([
@@ -81,7 +81,7 @@ describe('zip do projeto', () => {
     expect(serialize(loaded.project)).toBe(mapping);
 
     const data = JSON.parse(read.files.mapping);
-    expect(data.schemaVersion).toBe(9);
+    expect(data.schemaVersion).toBe(10);
     expect(data.platformRepos).toEqual({
       android: {
         urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',

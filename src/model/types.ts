@@ -1,10 +1,10 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v9). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
+// Tipos do `mapping.json` (schema v10). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
 // seções 4, 12.1 e 13.3. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -65,7 +65,11 @@ export interface ProjectImage {
   readonly id: string;
   /** Rótulo editável; `null` = a app mostra o nome do arquivo. Não renomeia o arquivo. */
   readonly name: string | null;
-  readonly file: string;
+  /**
+   * Arquivo em `images/`; `null` = tela em branco (v10): sem arquivo, só `width`, `height` e
+   * `background`.
+   */
+  readonly file: string | null;
   readonly width: number;
   readonly height: number;
   readonly placement: Placement;
@@ -75,6 +79,8 @@ export interface ProjectImage {
   readonly locked: boolean;
   /** Identidade no sistema de origem (v8); `null` = sem origem. */
   readonly source: ExternalSource | null;
+  /** Cor de fundo (`#RRGGBB`) da tela em branco (v10); `null` na imagem com arquivo. */
+  readonly background: string | null;
 }
 
 export interface Marking {

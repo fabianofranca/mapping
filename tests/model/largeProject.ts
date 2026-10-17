@@ -47,6 +47,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
       locked: false,
       source: null,
       file: `images/foto-${i}.jpg`,
+      background: null,
       width: imageWidth,
       height: imageHeight,
       placement: { x: (i % cols) * cell, y: Math.floor(i / cols) * cell, scale },

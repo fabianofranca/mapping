@@ -20,6 +20,9 @@ import {
 } from './projects';
 import type { Roots } from './paths';
 
+/** Nome da tela em branco sem nome (o MCP não usa `t()`). */
+export const BLANK_IMAGE_LABEL = 'Tela em branco';
+
 export const KIND_NAMES: Record<ItemKind, string> = {
   m: 'marcação',
   i: 'imagem',
@@ -43,7 +46,7 @@ export class Refs {
   imageLabel(imageId: string): string {
     const image = projectIndex(this.project).images.get(imageId);
     if (!image) return imageId;
-    return refImageLabel(image);
+    return refImageLabel(image) ?? BLANK_IMAGE_LABEL;
   }
 
   /** Nome da marcação; sem nome, "Marcação <código>" (único no projeto). */

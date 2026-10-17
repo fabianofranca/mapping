@@ -1,13 +1,14 @@
-// Laboratório de componentes: a cena vira nós Konva com a estrutura, as transformações e os paints esperados.
+// A cena vira nós Konva com a estrutura, as transformações e os paints esperados.
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { installFakeCanvas } from '../../canvas/harness';
+import { installFakeCanvas } from '../harness';
 import {
+  DEFAULT_PALETTE,
   decompose,
   fontStyle,
   renderScene,
   sceneIdOf,
-} from '../../../lab/scene/renderScene';
+} from '../../../src/canvas/components/renderScene';
 import {
   type FrameNode,
   type Scene,
@@ -220,5 +221,32 @@ describe('renderScene', () => {
     expect(fontStyle(400, false)).toBe('normal');
     expect(fontStyle(700, false)).toBe('bold');
     expect(fontStyle(500, true)).toBe('italic 500');
+  });
+
+  it('as cores do reservado e do nó desconhecido vêm da paleta (padrão do laboratório)', () => {
+    const unknown: SceneNode = {
+      ...baseNode({ id: 'u', name: 'u', width: 20, height: 10 }),
+      type: 'unknown',
+      sourceType: 'BLOB',
+    };
+    const strokeOf = (options?: Parameters<typeof renderScene>[1]) =>
+      (
+        renderScene(scene(unknown), options).byId.get('u')?.getChildren()[0] as Konva.Rect
+      ).stroke();
+    expect(strokeOf()).toBe(DEFAULT_PALETTE.unknownLine);
+    expect(strokeOf({ palette: { unknownLine: '#123456' } })).toBe('#123456');
+
+    const noPixels: SceneNode = {
+      ...baseNode({ id: 'img', name: 'img', width: 20, height: 10 }),
+      type: 'rect',
+      cornerRadius: 0,
+      fills: [{ type: 'image' }],
+    };
+    const { byId } = renderScene(scene(noPixels), {
+      palette: { placeholderFill: '#aaaaaa', placeholderLine: '#bbbbbb' },
+    });
+    const [fill, cross] = byId.get('img')?.getChildren() ?? [];
+    expect((fill as Konva.Rect).fill()).toBe('#aaaaaa');
+    expect((cross as Konva.Line).stroke()).toBe('#bbbbbb');
   });
 });
