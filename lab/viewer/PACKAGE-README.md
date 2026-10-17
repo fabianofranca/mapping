@@ -8,13 +8,13 @@ Dentro de `dist-viewer/` (a pasta gerada por `npm run build:viewer` no repositó
 
 ```bash
 npm pack
-# gera mapping-viewer-0.1.0.tgz
+# gera mapping-viewer-0.2.0.tgz
 ```
 
 No projeto que vai usar:
 
 ```bash
-npm install ./mapping-viewer-0.1.0.tgz
+npm install ./mapping-viewer-0.2.0.tgz
 ```
 
 Também dá para copiar a pasta `dist-viewer/` inteira para o projeto e importar `mapping-viewer.js` por caminho.
@@ -56,6 +56,26 @@ import { MappingViewer } from 'mapping-viewer/react';
 
 `react` é peer dependency **opcional**: só quem importa `mapping-viewer/react` precisa dele (18 ou mais novo).
 
+## Tela a partir de um JSON externo
+
+Quando a tela vem de um backend (por exemplo, um JSON de server-driven UI), a especialização declara como lê-lo: `origins` (largura, altura, raízes e as chaves do nó) e `sources` nos tipos e campos (a que tipo externo cada tipo corresponde e de que caminho de `props` vem cada campo). Em vez de `screen`, passe o JSON já parseado em `source`:
+
+```ts
+const viewer = createViewer(el, {
+  library,
+  source: JSON.parse(json), // vence `screen`
+  sourceSystem: 'sdui', // opcional: sem ele, a primeira origem
+  onSource: ({ screen, warnings, error }) => mostrarAvisos(warnings, error),
+});
+
+viewer.update({ source: outroJson }); // objeto novo recalcula; o mesmo objeto não
+viewer.screen(); // a tela calculada e desenhada
+```
+
+No React: `<MappingViewer library={library} source={json} sourceSystem="sdui" onSource={...} />`. A tela é recalculada quando a biblioteca ou o `source` mudam e no `redraw()`. Com `error` (JSON sem largura/altura, por exemplo) nada é desenhado; os avisos (propriedade desconhecida, valor fora das opções, tipo sem tipo de anotação) chegam em `warnings`.
+
+Para obter a tela sem desenhar, use `screenFromSource(library, json, { system?, measure })` (devolve `{ screen?, warnings, error? }` e nunca lança). `translateSource` devolve só a árvore sem geometria (`LayoutScreen`) e `layoutScreen` a arruma por tamanhos.
+
 ## Carregar a biblioteca
 
 `loadLibrary(files)` recebe a lista de arquivos da pasta do design system: a especialização (`"format": "mapping-spec"`), um `.json` por componente e as fontes (`bytes`). Se os arquivos estão num servidor, use `loadLibraryFromUrl`:
@@ -89,8 +109,9 @@ Do núcleo (`mapping-viewer`) e também reexportados por `mapping-viewer/react`:
 - `createViewer`, `ScreenRenderer`, `konvaMeasurer`, `approximateMeasurer`;
 - biblioteca: `loadLibrary`, `loadLibraryFromUrl`, `registerLibraryFonts`, `resolvePath`, `instanceLabel`;
 - tela: `parseScreen`, `serializeScreen`, `renderOrder`, `childrenOf`;
+- origem externa: `screenFromSource`, `translateSource`, `layoutScreen`, `SCREEN_ANCHORS`;
 - árvore: `screenTree`, `flattenTree`;
-- tipos: `Viewer`, `ViewerInput`, `ViewerOptions`, `InstanceWarnings`, `ScreenRendererOptions`, `ScreenRendererUpdateOptions`, `Library`, `TypeDef`, `FieldDef`, `LoadedFont`, `TextFile`, `Screen`, `Instance`, `Box`, `ComponentFile`, `FieldValue`, `FieldValues`, `TextMeasurer`, `TreeNode`, `LoadFromUrlOptions`, `FontStatus`, `FontHost`.
+- tipos: `Viewer`, `ViewerInput`, `ViewerOptions`, `InstanceWarnings`, `ScreenRendererOptions`, `ScreenRendererUpdateOptions`, `Library`, `TypeDef`, `FieldDef`, `LoadedFont`, `TextFile`, `Screen`, `Instance`, `Box`, `ComponentFile`, `FieldValue`, `FieldValues`, `TextMeasurer`, `TreeNode`, `LoadFromUrlOptions`, `FontStatus`, `FontHost`, `SourceResult`, `SourceOptions`, `TranslateResult`, `LayoutScreen`, `LayoutNode`, `LayoutRoot`, `LayoutResult`, `ScreenAnchor`.
 
 Só em `mapping-viewer/react`: `MappingViewer` e `MappingViewerProps`.
 

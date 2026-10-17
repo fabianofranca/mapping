@@ -5,9 +5,10 @@
  *
  * - O viewer é criado e destruído por `useEffect([])`: em `<StrictMode>` o React monta,
  *   desmonta e monta de novo, e cada ciclo cria e descarta o seu viewer sem vazar.
- * - Os callbacks (`onHover`, `onClick`, `onWarnings`) são lidos por ref: passar uma função nova
+ * - Os callbacks (`onHover`, `onClick`, `onWarnings`, `onSource`) são lidos por ref: passar uma função nova
  *   a cada render NÃO recria o viewer.
- * - `library`/`screen` → `update`, `selection` → `setSelection`, `hover` → `setHover`,
+ * - `library`/`screen`/`source`/`sourceSystem` → `update` (`source`, o JSON externo, vence `screen`
+ *   e é traduzido pela origem da especialização; `onSource` recebe cada cálculo), `selection` → `setSelection`, `hover` → `setHover`,
  *   `fontsVersion` → `redraw`.
  * - `interactive` (padrão `true`) → `setInteractive`: com `false` o canvas não seleciona nem
  *   avisa `onHover`/`onClick`; `selection` e `hover` do hospedeiro continuam valendo.
@@ -24,6 +25,10 @@ export * from './index';
 export interface MappingViewerProps {
   readonly library: Library | undefined;
   readonly screen: Screen | undefined;
+  /** JSON externo já parseado; definido, vence `screen` (ver `ViewerInput.source`). */
+  readonly source?: unknown;
+  readonly sourceSystem?: string;
+  readonly onSource?: ViewerOptions['onSource'];
   readonly selection?: readonly string[];
   readonly hover?: string | undefined;
   readonly onHover?: ViewerOptions['onHover'];
@@ -46,7 +51,17 @@ const NO_SELECTION: readonly string[] = [];
 const FILL: CSSProperties = { width: '100%', height: '100%' };
 
 export function MappingViewer(props: MappingViewerProps): JSX.Element {
-  const { library, screen, selection, hover, fontsVersion, className, style } = props;
+  const {
+    library,
+    screen,
+    source,
+    sourceSystem,
+    selection,
+    hover,
+    fontsVersion,
+    className,
+    style,
+  } = props;
   const interactive = props.interactive ?? true;
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
@@ -64,12 +79,15 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
     const viewer = createViewer(container, {
       library: initial.library,
       screen: initial.screen,
+      source: initial.source,
+      sourceSystem: initial.sourceSystem,
       fit: initial.fit,
       padding: initial.padding,
       interactive: initial.interactive,
       onHover: (id) => latest.current.onHover?.(id),
       onClick: (id, point) => latest.current.onClick?.(id, point),
       onWarnings: (warnings) => latest.current.onWarnings?.(warnings),
+      onSource: (result) => latest.current.onSource?.(result),
     });
     viewerRef.current = viewer;
     return () => {
@@ -79,8 +97,8 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
   }, []);
 
   useEffect(() => {
-    viewerRef.current?.update({ library, screen });
-  }, [library, screen]);
+    viewerRef.current?.update({ library, screen, source, sourceSystem });
+  }, [library, screen, source, sourceSystem]);
 
   useEffect(() => {
     viewerRef.current?.setSelection(selection ?? NO_SELECTION);

@@ -10,10 +10,12 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../../canvas/harness';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
+import settings from '../../../lab/components/sdui/settings.sdui.json';
 import { M3_FILES, M3_SCREEN } from '../../../lab/components/samplesMaterial3';
 import {
   MappingViewer,
   type MappingViewerProps,
+  type SourceResult,
   loadLibrary,
 } from '../../../lab/viewer/react';
 
@@ -233,5 +235,32 @@ describe('<MappingViewer/>', () => {
     const after = contentIds(stage);
     expect(after.length).toBeGreaterThan(0);
     expect(after.some((id) => !before.includes(id))).toBe(true);
+  });
+
+  it('source desenha a tela calculada e onSource recebe o resultado; novo objeto recalcula', async () => {
+    const onSource = vi.fn();
+    await mount({ library: m3Library, screen: undefined, source: settings, onSource });
+    const stage = stageOf(viewerDiv());
+    const first = onSource.mock.calls.at(-1)?.[0] as SourceResult;
+    expect(first.error).toBeUndefined();
+    expect(first.screen).toBeDefined();
+    expect(instanceCount(stage)).toBe(first.screen?.instances.length);
+    const calls = onSource.mock.calls.length;
+
+    // Re-render com o mesmo source: nada a recalcular.
+    await render({ library: m3Library, screen: undefined, source: settings, onSource });
+    expect(onSource.mock.calls.length).toBe(calls);
+
+    const next = structuredClone(settings);
+    await render({ library: m3Library, screen: undefined, source: next, onSource });
+    expect(onSource.mock.calls.length).toBeGreaterThan(calls);
+    expect(stageOf(viewerDiv())).toBe(stage);
+  });
+
+  it('source com erro não desenha e o erro chega em onSource', async () => {
+    const onSource = vi.fn();
+    await mount({ library: m3Library, screen: M3_SCREEN, source: {}, onSource });
+    expect((onSource.mock.calls.at(-1)?.[0] as SourceResult).error).toBeDefined();
+    expect(instanceCount(stageOf(viewerDiv()))).toBe(0);
   });
 });
