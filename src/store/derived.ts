@@ -1,11 +1,16 @@
 import { computed, signal, untracked, type ReadonlySignal } from '@preact/signals';
 import {
+  EMPTY_CATALOG,
+  NO_DRAWINGS,
   acceptedPending,
   buildIncompleteList,
   buildListing,
   changeStatus,
   changeType,
   compareProposals,
+  componentMinSize,
+  componentTypes,
+  createDrawingCache,
   filterChanges,
   layerDotsByMarking,
   leftBehind,
@@ -29,6 +34,9 @@ import {
   type ChangeComparison,
   type ChangeStatus,
   type ChangeType,
+  type ComponentCatalog,
+  type ComponentDrawings,
+  type ComponentType,
   type IncompleteImage,
   type Layer,
   type LayerDot,
@@ -48,7 +56,8 @@ import {
   type ReviewTree,
 } from '../model';
 import type { ProjectStore } from './history';
-import { markingDisplay } from './settings';
+import { markingDisplay, showComponentsOnPhotos } from './settings';
+import { textMeasurer } from './textMeasure';
 import { resolveActiveLayerId, visibleLayers, type EditorUi } from './ui';
 
 // Estado derivado do editor (docs/history/PLAN-etapa-2-1.md 14.3): calculado uma vez a partir do projeto
@@ -88,6 +97,42 @@ export interface EditorDerived {
    * sem repositório configurado (aviso, não pendência).
    */
   readonly platformRepoWarnings: ReadonlySignal<readonly PlatformRepoWarning[]>;
+  /** Componentes das especializações aplicadas ao projeto (vazio enquanto não carregam). */
+  readonly catalog: ReadonlySignal<ComponentCatalog>;
+  /**
+   * Desenhos dos componentes do projeto à vista, por marcação, em ordem de desenho. Uma edição
+   * reinstancia só a marcação mudada; as demais mantêm o mesmo objeto (o canvas compara por
+   * identidade). Segue o desfazer, a recarga externa e a visão Proposto da revisão.
+   */
+  readonly componentScenes: ReadonlySignal<ComponentDrawings>;
+  /**
+   * Desenhos de `p` (o canvas desenha o projeto com a prévia do gesto). O projeto à vista
+   * devolve `componentScenes`; outro projeto usa o mesmo cache, e só a marcação que mudou
+   * é reinstanciada. Lê os mesmos sinais: pode ser chamada dentro de um `computed`.
+   */
+  drawingsOf(p: Project | null): ComponentDrawings;
+  /**
+   * Marcações cujo desenho está visível: têm desenho, a imagem é uma tela em branco ou a pessoa
+   * ligou "desenhar sobre fotos", e a visibilidade delas não é `hidden`.
+   */
+  readonly drawnMarkings: ReadonlySignal<ReadonlySet<string>>;
+  /** Tamanho mínimo (`minSize`) do componente de cada marcação que tem desenho e mínimo. */
+  readonly componentMinSizes: ReadonlySignal<
+    ReadonlyMap<string, { readonly width: number; readonly height: number }>
+  >;
+  /** Tipos com componente das especializações aplicadas, para a paleta. */
+  readonly componentTypes: ReadonlySignal<readonly ComponentType[]>;
+  /** Avisos do desenho de cada marcação que tem algum (Diagnóstico). */
+  readonly componentWarnings: ReadonlySignal<
+    readonly { readonly markingId: string; readonly warnings: readonly string[] }[]
+  >;
+}
+
+/** O que a sessão entrega ao derivado sobre os componentes (`session.components`). */
+export interface ComponentSources {
+  readonly catalog: ReadonlySignal<ComponentCatalog>;
+  /** Sobe a cada registro de fontes: os desenhos remedem. */
+  readonly fontsEpoch: ReadonlySignal<number>;
 }
 
 const NO_ISSUES: ReadonlyMap<string, readonly AnnotationIssue[]> = new Map();
@@ -97,6 +142,66 @@ const NO_VISIBILITY: ReadonlyMap<string, MarkingVisibility> = new Map();
 const NO_MARKINGS: ReadonlySet<string> = new Set();
 const NO_LOCKS: ReadonlyMap<string, MarkingLockState> = new Map();
 const NO_WARNINGS: readonly PlatformRepoWarning[] = [];
+const NO_DRAWN: ReadonlySet<string> = new Set();
+const NO_MIN_SIZES: ReadonlyMap<
+  string,
+  { readonly width: number; readonly height: number }
+> = new Map();
+const NO_COMPONENT_TYPES: readonly ComponentType[] = [];
+const NO_COMPONENT_WARNINGS: readonly {
+  readonly markingId: string;
+  readonly warnings: readonly string[];
+}[] = [];
+const NO_COMPONENTS: ComponentSources = {
+  catalog: signal<ComponentCatalog>(EMPTY_CATALOG),
+  fontsEpoch: signal(0),
+};
+
+function sameIssueList(
+  a: readonly AnnotationIssue[],
+  b: readonly AnnotationIssue[],
+): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (x, i) =>
+        x.code === b[i]?.code &&
+        x.key === b[i]?.key &&
+        x.rowId === b[i]?.rowId &&
+        x.column === b[i]?.column,
+    )
+  );
+}
+
+function sameIssues(
+  a: ReadonlyMap<string, readonly AnnotationIssue[]>,
+  b: ReadonlyMap<string, readonly AnnotationIssue[]>,
+): boolean {
+  if (a.size !== b.size) return false;
+  for (const [id, list] of a) {
+    const other = b.get(id);
+    if (other === undefined || !sameIssueList(list, other)) return false;
+  }
+  return true;
+}
+
+function sameComponentTypes(
+  a: readonly ComponentType[],
+  b: readonly ComponentType[],
+): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (x, i) =>
+        x.specId === b[i]?.specId &&
+        x.typeId === b[i]?.typeId &&
+        x.name === b[i]?.name &&
+        x.layerId === b[i]?.layerId &&
+        x.container === b[i]?.container &&
+        x.component === b[i]?.component,
+    )
+  );
+}
 
 /** Mesmos itens na mesma ordem. */
 function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
@@ -107,12 +212,15 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
  * `shown`: o projeto à vista (`review.derived.shownProject`): na visão Proposto da revisão,
  * o "como ficaria"; senão, o confirmado. Sem ele (testes do editor sem revisão), o
  * confirmado. Nunca o projeto com a prévia do gesto: nada daqui depende de geometria,
- * então arrastar/redimensionar não recalcula nada.
+ * então arrastar/redimensionar não recalcula nada (`drawingsOf` é a exceção: o canvas pede os
+ * desenhos do projeto com a prévia do gesto). `components`: catálogo e época das fontes da
+ * sessão; sem ele, o catálogo é vazio e nenhuma marcação tem desenho.
  */
 export function createEditorDerived(
   store: ProjectStore,
   ui: EditorUi,
   shown: ReadonlySignal<Project | null> = store.committed,
+  components: ComponentSources = NO_COMPONENTS,
 ): EditorDerived {
   const project = shown;
 
@@ -133,9 +241,37 @@ export function createEditorDerived(
     return lastVisible;
   });
 
+  // Um só cache para os desenhos do projeto à vista e os do projeto com a prévia do gesto:
+  // a marcação arrastada é a única reinstanciada, e as demais mantêm o mesmo objeto.
+  const drawingCache = createDrawingCache();
+  const drawings = (p: Project | null): ComponentDrawings => {
+    const catalog = components.catalog.value;
+    // Sem componentes (a maioria dos projetos) não há o que percorrer a cada edição.
+    if (catalog.size === 0) return NO_DRAWINGS;
+    return drawingCache(p, catalog, textMeasurer.value, components.fontsEpoch.value);
+  };
+  const scenes = computed((): ComponentDrawings => drawings(project.value));
+  const drawingsOf = (p: Project | null): ComponentDrawings =>
+    p === project.value ? scenes.value : drawings(p);
+
+  // Pendências do modelo mais "o componente não cabe" (só o desenho sabe). Sem desenho que
+  // transborde, é o mapa do modelo; com ele, o mapa anterior se nada mudou.
+  let lastIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
   const issues = computed(() => {
     const p = project.value;
-    return p ? projectIssues(p) : NO_ISSUES;
+    const base = p ? projectIssues(p) : NO_ISSUES;
+    const overflowing = [...scenes.value.values()].filter((d) => d.overflow);
+    if (overflowing.length === 0) return base;
+    const merged = new Map(base);
+    for (const d of overflowing) {
+      merged.set(d.annotationId, [
+        ...(merged.get(d.annotationId) ?? []),
+        { code: 'component-overflow' } satisfies AnnotationIssue,
+      ]);
+    }
+    if (sameIssues(merged, lastIssues)) return lastIssues;
+    lastIssues = merged;
+    return merged;
   });
 
   const annotationsByMarking = computed(() => {
@@ -219,6 +355,81 @@ export function createEditorDerived(
     return p ? platformRepoWarnings(p) : NO_WARNINGS;
   });
 
+  const drawn = computed((): ReadonlySet<string> => {
+    const all = scenes.value;
+    const p = project.value;
+    if (!p || all.size === 0) return NO_DRAWN;
+    const { images } = projectIndex(p);
+    const onPhotos = showComponentsOnPhotos.value;
+    const marks = visibility.value;
+    const result = new Set<string>();
+    for (const [id, drawing] of all) {
+      const image = images.get(drawing.imageId);
+      if (!image || (image.file !== null && !onPhotos)) continue;
+      if (marks.get(id) === 'hidden') continue;
+      result.add(id);
+    }
+    return result;
+  });
+  let lastDrawn: ReadonlySet<string> = NO_DRAWN;
+  const drawnMarkings = computed(() => {
+    const next = drawn.value;
+    if (next.size === lastDrawn.size && [...next].every((id) => lastDrawn.has(id))) {
+      return lastDrawn;
+    }
+    lastDrawn = next;
+    return next;
+  });
+
+  let lastMinSizes = NO_MIN_SIZES;
+  const componentMinSizes = computed(() => {
+    const p = project.value;
+    const all = scenes.value;
+    if (!p || all.size === 0) return NO_MIN_SIZES;
+    const next = new Map<string, { readonly width: number; readonly height: number }>();
+    for (const id of all.keys()) {
+      const min = componentMinSize(p, components.catalog.value, id);
+      if (min !== null) next.set(id, min);
+    }
+    const same =
+      next.size === lastMinSizes.size &&
+      [...next].every(([id, min]) => {
+        const before = lastMinSizes.get(id);
+        return before?.width === min.width && before.height === min.height;
+      });
+    if (same) return lastMinSizes;
+    lastMinSizes = next.size === 0 ? NO_MIN_SIZES : next;
+    return lastMinSizes;
+  });
+
+  let lastTypes = NO_COMPONENT_TYPES;
+  const types = computed(() => {
+    const p = project.value;
+    const next = p ? componentTypes(p, components.catalog.value) : NO_COMPONENT_TYPES;
+    if (sameComponentTypes(next, lastTypes)) return lastTypes;
+    lastTypes = next.length === 0 ? NO_COMPONENT_TYPES : next;
+    return lastTypes;
+  });
+
+  let lastComponentWarnings = NO_COMPONENT_WARNINGS;
+  const componentWarnings = computed(() => {
+    const next: { markingId: string; warnings: readonly string[] }[] = [];
+    for (const [markingId, drawing] of scenes.value) {
+      if (drawing.warnings.length > 0)
+        next.push({ markingId, warnings: drawing.warnings });
+    }
+    const same =
+      next.length === lastComponentWarnings.length &&
+      next.every(
+        (item, i) =>
+          item.markingId === lastComponentWarnings[i]?.markingId &&
+          item.warnings === lastComponentWarnings[i]?.warnings,
+      );
+    if (same) return lastComponentWarnings;
+    lastComponentWarnings = next.length === 0 ? NO_COMPONENT_WARNINGS : next;
+    return lastComponentWarnings;
+  });
+
   return {
     activeLayerId,
     activeLayer,
@@ -234,6 +445,13 @@ export function createEditorDerived(
     incompleteList,
     incompleteCount,
     platformRepoWarnings: repoWarnings,
+    catalog: components.catalog,
+    componentScenes: scenes,
+    drawingsOf,
+    drawnMarkings,
+    componentMinSizes,
+    componentTypes: types,
+    componentWarnings,
   };
 }
 

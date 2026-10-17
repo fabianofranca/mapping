@@ -8,7 +8,9 @@ import {
   semanticText,
   setLocale,
   setSemanticText,
+  setShowComponentsOnPhotos,
   setTheme,
+  showComponentsOnPhotos,
   theme,
 } from '../src/store/settings';
 import { bindDocumentSettings } from '../src/theme/apply';
@@ -74,5 +76,18 @@ describe('texto no canvas (zoom semântico)', () => {
     expect(localStorage.getItem('mapping.semanticText')).toBe('off');
     setSemanticText(true);
     expect(localStorage.getItem('mapping.semanticText')).toBe('on');
+  });
+});
+
+describe('componentes sobre fotos', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('vem desligado e a preferência é gravada', () => {
+    expect(showComponentsOnPhotos.value).toBe(false);
+    setShowComponentsOnPhotos(true);
+    expect(showComponentsOnPhotos.value).toBe(true);
+    expect(localStorage.getItem('mapping.showComponentsOnPhotos')).toBe('on');
+    setShowComponentsOnPhotos(false);
+    expect(localStorage.getItem('mapping.showComponentsOnPhotos')).toBe('off');
   });
 });

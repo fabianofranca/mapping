@@ -25,6 +25,7 @@ const LOCALE_KEY = 'mapping.locale';
 const THEME_KEY = 'mapping.theme';
 const SEMANTIC_TEXT_KEY = 'mapping.semanticText';
 const MARKING_DISPLAY_KEY = 'mapping.markingDisplay';
+const COMPONENTS_ON_PHOTOS_KEY = 'mapping.showComponentsOnPhotos';
 
 const storedLocale = readSetting(LOCALE_KEY);
 const storedTheme = readSetting(THEME_KEY);
@@ -66,4 +67,17 @@ export function setTheme(value: ThemePreference): void {
 export function setSemanticText(value: boolean): void {
   semanticText.value = value;
   writeSetting(SEMANTIC_TEXT_KEY, value ? 'on' : 'off');
+}
+
+/**
+ * Desenhar os componentes por cima de uma foto (padrão desligado: na foto só a borda). Na tela
+ * em branco o desenho aparece sempre. Por dispositivo, não vai para o projeto.
+ */
+export const showComponentsOnPhotos = signal<boolean>(
+  readSetting(COMPONENTS_ON_PHOTOS_KEY) === 'on',
+);
+
+export function setShowComponentsOnPhotos(value: boolean): void {
+  showComponentsOnPhotos.value = value;
+  writeSetting(COMPONENTS_ON_PHOTOS_KEY, value ? 'on' : 'off');
 }
