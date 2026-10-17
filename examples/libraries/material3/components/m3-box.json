@@ -18,8 +18,7 @@
   },
   "preview": {
     "background": "none",
-    "shape": "none",
-    "padding": 0
+    "shape": "none"
   },
   "template": {
     "type": "frame",

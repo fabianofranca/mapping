@@ -5,6 +5,7 @@ import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import process from 'node:process';
 
 const OUT_DIR = 'examples/libraries/material3';
 const BUNDLE = 'node_modules/.cache/library-examples/libraryExamples.mjs';
@@ -39,13 +40,13 @@ async function existing(dir) {
 for (const path of await existing(OUT_DIR)) {
   if (!wanted.has(path) && !path.startsWith('fonts/')) {
     await rm(join(OUT_DIR, path));
-    console.log(`removido  ${path}`);
+    process.stdout.write(`removido  ${path}` + '\n');
   }
 }
 for (const file of files) {
   const target = join(OUT_DIR, file.path);
   await mkdir(dirname(target), { recursive: true });
   await writeFile(target, file.text);
-  console.log(`escrito   ${OUT_DIR}/${file.path}`);
+  process.stdout.write(`escrito   ${OUT_DIR}/${file.path}` + '\n');
 }
-console.log(`${files.length} arquivos em ${OUT_DIR}`);
+process.stdout.write(`${files.length} arquivos em ${OUT_DIR}` + '\n');

@@ -967,7 +967,8 @@ export const M3_BOX = container(
   'Box',
   'Container livre do Compose: os filhos ficam onde o retângulo deles diz.',
   { type: 'none' },
-  { background: 'none', shape: 'none', padding: 0 },
+  // Sem `padding`: com `layout: none` o slot não tem padding, e o tipo não declara o campo.
+  { background: 'none', shape: 'none' },
   { width: 200, height: 120 },
 );
 
@@ -976,14 +977,9 @@ export const M3_ROW = container(
   'Row',
   'Container horizontal do Compose: os filhos se enfileiram pela ordem, com spacing e padding.',
   { type: 'row' },
-  {
-    background: 'none',
-    shape: 'none',
-    spacing: 8,
-    padding: 0,
-    alignment: 'top',
-    arrangement: 'start',
-  },
+  // Sem `alignment`/`arrangement`: o template fixa `align`/`justify` em `start` e os tipos não
+  // declaram esses campos (campo ligado ao alinhamento fica para quando o template o ler).
+  { background: 'none', shape: 'none', spacing: 8, padding: 0 },
   { width: 380, height: 48 },
 );
 
@@ -992,14 +988,8 @@ export const M3_COLUMN = container(
   'Column',
   'Container vertical do Compose: os filhos se empilham pela ordem, com spacing e padding.',
   { type: 'column' },
-  {
-    background: 'none',
-    shape: 'none',
-    spacing: 8,
-    padding: 0,
-    alignment: 'start',
-    arrangement: 'start',
-  },
+  // Idem ao Row: sem `alignment`/`arrangement` enquanto o template não os lê.
+  { background: 'none', shape: 'none', spacing: 8, padding: 0 },
   { width: 380, height: 200 },
 );
 

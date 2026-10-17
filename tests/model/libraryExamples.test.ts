@@ -5,7 +5,8 @@ import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { libraryExampleFiles } from '../../scripts/libraryExamples';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
-import { loadLibrary } from '../../src/model/components/library';
+import { isFontPath, loadLibrary } from '../../src/model/components/library';
+import { validateLibrary } from '../../src/model/library';
 import { parseComponent } from '../../src/model/components/parseComponent';
 import { screenFromSource } from '../../src/model/components/origin';
 import { parseSpec } from '../../src/model/spec';
@@ -97,6 +98,56 @@ describe('pacote material3 é válido', () => {
         expect(n, type.id).toBeLessThanOrEqual(3);
       }
     }
+  });
+});
+
+// O pacote do repositório é o fixture das três portas (B2), do canvas (B3) e do Catálogo (B5):
+// ele precisa passar pelos três níveis do validador sem nenhum erro. Os avisos que sobram são
+// fixados aqui, para o número não andar sozinho: duas fontes ausentes (o `.ttf` da Roboto não é
+// versionado) e o resto da prova de desenho, que avisa conteúdo maior que a caixa — quase sempre
+// no tamanho mínimo, onde o conteúdo real não cabe mesmo. A medida do Node é **aproximada** (no
+// navegador é a do Konva, a real), e a decisão da etapa é avisar, sem recortar nem recusar.
+describe('o pacote do repositório passa pelo validador da biblioteca', () => {
+  const report = validateLibrary({
+    files: listDisk(ROOT).map((path) => {
+      const full = join(ROOT, path);
+      return isFontPath(path)
+        ? { path, binary: true }
+        : { path, text: readFileSync(full, 'utf8') };
+    }),
+    specPath: 'material3.spec.json',
+  });
+
+  it('nenhum erro, nos três níveis', () => {
+    expect(report.errors.map((i) => `${i.file}:${i.path}: ${i.message}`)).toEqual([]);
+    expect(report.ok).toBe(true);
+    expect(report.summary).toMatchObject({
+      level: 3,
+      types: 15,
+      components: 15,
+      docs: 15,
+    });
+  });
+
+  it('os avisos são só as fontes ausentes e a prova de desenho aproximada', () => {
+    const fonts = report.warnings.filter((w) => w.path.startsWith('fonts['));
+    expect(fonts).toHaveLength(2);
+    const approximate = report.warnings.filter((w) => w.message.endsWith('(aproximado)'));
+    expect(
+      approximate.every((w) => w.message.includes('conteúdo maior que a caixa')),
+    ).toBe(true);
+    // No tamanho mínimo quase todo componente avisa; no inicial, só o chip "Selecionado".
+    const atInitialSize = approximate.filter((w) =>
+      w.message.includes('tamanho inicial'),
+    );
+    expect(atInitialSize.map((w) => w.path)).toEqual([
+      'layers[0].annotationTypes[6].examples[1]',
+    ]);
+    expect(approximate).toHaveLength(40);
+    const others = report.warnings.filter(
+      (w) => !w.path.startsWith('fonts[') && !w.message.endsWith('(aproximado)'),
+    );
+    expect(others.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 });
 

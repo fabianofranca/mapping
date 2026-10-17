@@ -932,17 +932,12 @@ describe('validateLibrary: Material 3', () => {
       components: 15,
       fonts: 2,
     });
-    // O preview dos containers cita campos que o tipo não tem (alignment, arrangement, padding).
+    // Nenhum preview cita campo que o tipo não tem: o validador acusou isso nos containers
+    // (padding no Box, alignment e arrangement no Row e no Column) e o Material 3 foi corrigido.
     const previews = report.warnings
       .filter((w) => w.path.startsWith('preview.'))
       .map((w) => `${w.file}:${w.path}`);
-    expect(previews).toEqual([
-      'components/m3-box.json:preview.padding',
-      'components/m3-row.json:preview.alignment',
-      'components/m3-row.json:preview.arrangement',
-      'components/m3-column.json:preview.alignment',
-      'components/m3-column.json:preview.arrangement',
-    ]);
+    expect(previews).toEqual([]);
     const drawing = report.warnings.filter((w) => w.message.endsWith('(aproximado)'));
     expect(drawing.map((w) => w.file)).toEqual(MIN_SIZE_WARNINGS);
     expect(drawing.every((w) => w.message.includes('tamanho mínimo'))).toBe(true);
