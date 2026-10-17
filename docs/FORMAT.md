@@ -11,7 +11,10 @@ meu-projeto/
 ├── images/
 ├── specs/            # cópias das especializações aplicadas (ver SPEC-FORMAT.md)
 │   ├── sdui.json
-│   └── modelo-dados.json
+│   ├── modelo-dados.json
+│   └── material3/    # pacote de biblioteca (formatVersion 4): a pasta da especialização
+│       ├── material3.spec.json
+│       ├── components/ docs/ examples/ fonts/
 ├── proposals/        # propostas de alteração (ver PROPOSAL-FORMAT.md)
 │   └── 8c1f…/
 │       ├── proposal.json
@@ -197,7 +200,19 @@ Uma **especialização** é um arquivo JSON que define camadas e tipos de anota�
 o projeto fica autocontido e quem lê entende o significado das camadas e chaves.
 
 - `specializations[]`: `{ "id", "version", "file" }` de cada especialização aplicada. `file` é o
-  caminho da cópia (`specs/sdui.json`).
+  caminho da cópia (`specs/sdui.json`) ou, num pacote de biblioteca, o do arquivo da
+  especialização **dentro da pasta** (`specs/material3/material3.spec.json`).
+- **Pasta `specs/<id>/` (pacote da biblioteca, `formatVersion` 4).** Aplicar a especialização a
+  partir de uma pasta (ou zip) **copia a pasta inteira** para `specs/<id>/` (`<id>` limpo para nome
+  de pasta, com sufixo `-2`… se colidir): o arquivo da especialização, `components/`, `docs/`,
+  `examples/` e `fonts/`, com os caminhos relativos que a especialização cita. Os bytes são
+  preservados (as fontes são binárias); no zip exportado a pasta vai igual. Só o arquivo da
+  especialização é lido para o projeto em memória (o `file` acima); os demais arquivos não
+  fazem parte do estado nem do desfazer: a app os lê quando precisa (validar ao abrir, desenhar).
+  Atualizar a versão regrava a pasta inteira (o que a versão nova não tem sai); remover a
+  especialização apaga a pasta; desfazer um e outro devolve os arquivos. Pacote incompleto
+  (arquivo citado que falta) não impede abrir o projeto: aparece como problema da biblioteca no
+  Diagnóstico. O schema do `mapping.json` não muda: a v1 a v3 continuam `specs/<id>.json`.
 - `layers[].spec`: `null` (camada livre) ou `{ "specId", "layerId" }`, a camada de origem na
   especialização. Camadas da especialização só têm anotações **tipadas** dela.
 - `annotations[].type`: `null` (anotação **livre**) ou `{ "specId", "typeId" }` (anotação **tipada**).

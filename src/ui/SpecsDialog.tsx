@@ -1,6 +1,8 @@
 import { useRef, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import {
+  MAX_PACKAGE_BYTES,
+  MAX_PACKAGE_FILES,
   REMOVED_FIELD_TYPE,
   checkSpecApply,
   parseSpecText,
@@ -12,9 +14,21 @@ import {
   type Spec,
   type SpecRemovalMode,
 } from '../model';
+import type { LibraryReport } from '../model/library';
+import type { SpecPackageFiles } from '../store/project';
 import { Button, Choice } from './controls';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
+import { LibraryIssueList } from './LibraryIssueList';
+import {
+  canPickDirectory,
+  pickPackageDirectory,
+  readPackageFromDirectory,
+  readPackageFromZip,
+  readPackageSpec,
+  validatePackage,
+  type PackageReadResult,
+} from './specPackageImport';
 import { labelTexts } from './typedText';
 import { reportError } from '../utils/report';
 
@@ -39,7 +53,30 @@ type Step =
       readonly spec: Spec;
       readonly ignored: readonly IgnoredSpecField[];
     }
-  | { readonly kind: 'remove'; readonly entry: ProjectSpecialization };
+  | { readonly kind: 'remove'; readonly entry: ProjectSpecialization }
+  | {
+      readonly kind: 'package';
+      /** `null`: o pacote não tem especialização legível (só erros). */
+      readonly spec: Spec | null;
+      readonly decision: 'apply' | 'update';
+      readonly report: LibraryReport;
+      readonly files: SpecPackageFiles;
+    };
+
+const MB = 1024 * 1024;
+
+/** Deixa o navegador pintar o estado "validando" antes do trabalho síncrono do nível 3. */
+const nextFrame = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+/** Mensagem de um pacote que não pôde ser lido. */
+function readFailure(result: Extract<PackageReadResult, { ok: false }>): string {
+  return result.reason === 'too-big'
+    ? t('spec.packageTooBig', {
+        files: MAX_PACKAGE_FILES,
+        mb: Math.round(MAX_PACKAGE_BYTES / MB),
+      })
+    : t('spec.packageEmpty');
+}
 
 /** Sucesso com o texto dado; erro com o código da action. */
 function feedback(
@@ -70,15 +107,103 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   const [message, setMessage] = useState<Feedback | null>(null);
   /** Campos ignorados da última especialização aplicada ou atualizada. */
   const [ignored, setIgnored] = useState<string | null>(null);
+  /** Conferindo um pacote (o nível 3 prova o desenho e pode levar um tempo). */
+  const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const zipInput = useRef<HTMLInputElement>(null);
   /** Especialização esperada ao escolher o arquivo (`null`: qualquer uma). */
   const expected = useRef<string | null>(null);
+  const folders = canPickDirectory();
 
-  const pick = (specId: string | null) => {
+  const start = (specId: string | null) => {
     expected.current = specId;
     setMessage(null);
     setIgnored(null);
+  };
+  const pick = (specId: string | null) => {
+    start(specId);
     input.current?.click();
+  };
+  const pickZip = (specId: string | null) => {
+    start(specId);
+    zipInput.current?.click();
+  };
+
+  /** Lê, valida (três níveis) e abre a revisão do pacote; nada muda no projeto ainda. */
+  const reviewPackage = async (read: () => Promise<PackageReadResult>) => {
+    setBusy(true);
+    try {
+      await nextFrame();
+      let result: PackageReadResult;
+      try {
+        result = await read();
+      } catch (e) {
+        reportError('spec.readPackage', e);
+        setMessage({ tone: 'error', text: t('spec.packageReadFailed') });
+        return;
+      }
+      if (!result.ok) {
+        setMessage({ tone: 'error', text: readFailure(result) });
+        return;
+      }
+      const files = result.files;
+      const spec = readPackageSpec(files);
+      if (!spec) {
+        setStep({
+          kind: 'package',
+          spec: null,
+          decision: 'apply',
+          report: validatePackage(files),
+          files,
+        });
+        return;
+      }
+      if (expected.current !== null && spec.id !== expected.current) {
+        info(t('spec.invalidTitle'), [
+          t('spec.otherId', { found: spec.id, expected: expected.current }),
+        ]);
+        return;
+      }
+      const decision = checkSpecApply(project, spec);
+      if (decision === 'not-newer') {
+        const current = project.specializations.find((s) => s.id === spec.id);
+        info(t('spec.notNewerTitle'), [
+          t('spec.notNewer', {
+            name: spec.name,
+            current: current?.version ?? 0,
+            next: spec.version,
+          }),
+        ]);
+        return;
+      }
+      const previous =
+        decision === 'update'
+          ? (project.specializations.find((s) => s.id === spec.id)?.spec ?? undefined)
+          : undefined;
+      await nextFrame();
+      setStep({
+        kind: 'package',
+        spec,
+        decision,
+        report: validatePackage(files, previous),
+        files,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pickFolder = async (specId: string | null) => {
+    start(specId);
+    let handle;
+    try {
+      handle = await pickPackageDirectory();
+    } catch (e) {
+      reportError('spec.pickFolder', e);
+      setMessage({ tone: 'error', text: t('spec.packageReadFailed') });
+      return;
+    }
+    if (handle) await reviewPackage(() => readPackageFromDirectory(handle));
   };
 
   const info = (title: string, lines: string[]) =>
@@ -110,6 +235,10 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
       info(t('spec.invalidTitle'), [
         t('spec.otherId', { found: spec.id, expected: expected.current }),
       ]);
+      return;
+    }
+    if (spec.formatVersion >= 4) {
+      info(t('spec.invalidTitle'), [t('spec.v4NeedsPackage', { name: spec.name })]);
       return;
     }
     const decision = checkSpecApply(project, spec);
@@ -148,6 +277,25 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     );
   };
 
+  const confirmPackage = (step: Extract<Step, { kind: 'package' }>) => {
+    setStep(null);
+    const { spec, decision, files } = step;
+    if (!spec) return;
+    setIgnored(null);
+    const result =
+      decision === 'update'
+        ? actions.updateSpecialization(spec, labelTexts(), files)
+        : actions.applySpecialization(spec, files);
+    setMessage(
+      feedback(
+        result,
+        decision === 'update'
+          ? t('spec.updatedMessage', { name: spec.name, version: spec.version })
+          : t('spec.appliedMessage', { name: spec.name, layers: spec.layers.length }),
+      ),
+    );
+  };
+
   const confirmRemove = (entry: ProjectSpecialization, mode: SpecRemovalMode) => {
     setStep(null);
     const result = actions.removeSpecialization(entry.id, mode, labelTexts());
@@ -165,6 +313,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
         actions={<Button onClick={onClose}>{t('common.close')}</Button>}
       >
         <p class="muted">{t('spec.hint')}</p>
+        <p class="muted">{t('spec.packageHint')}</p>
         {message && (
           <p
             class={
@@ -191,9 +340,39 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
             if (file) void onFile(file);
           }}
         />
-        <Button variant="primary" disabled={readOnly} onClick={() => pick(null)}>
-          {t('spec.apply')}
-        </Button>
+        <input
+          ref={zipInput}
+          type="file"
+          accept=".zip,application/zip"
+          hidden
+          onChange={(e) => {
+            const file = e.currentTarget.files?.[0];
+            e.currentTarget.value = '';
+            if (file) void reviewPackage(() => readPackageFromZip(file));
+          }}
+        />
+        {busy && (
+          <p class="muted" role="status">
+            {t('spec.packageValidating')}
+          </p>
+        )}
+        <div class="row">
+          <Button
+            variant="primary"
+            disabled={readOnly || busy}
+            onClick={() => pick(null)}
+          >
+            {t('spec.apply')}
+          </Button>
+          {folders && (
+            <Button disabled={readOnly || busy} onClick={() => void pickFolder(null)}>
+              {t('spec.applyFolder')}
+            </Button>
+          )}
+          <Button disabled={readOnly || busy} onClick={() => pickZip(null)}>
+            {t('spec.applyZip')}
+          </Button>
+        </div>
 
         {project.specializations.length === 0 ? (
           <p class="muted">{t('spec.none')}</p>
@@ -232,8 +411,19 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
                   </div>
                 )}
                 <div class="row">
-                  <Button disabled={readOnly} onClick={() => pick(entry.id)}>
+                  <Button disabled={readOnly || busy} onClick={() => pick(entry.id)}>
                     {t('spec.update')}
+                  </Button>
+                  {folders && (
+                    <Button
+                      disabled={readOnly || busy}
+                      onClick={() => void pickFolder(entry.id)}
+                    >
+                      {t('spec.updateFolder')}
+                    </Button>
+                  )}
+                  <Button disabled={readOnly || busy} onClick={() => pickZip(entry.id)}>
+                    {t('spec.updateZip')}
                   </Button>
                   <Button
                     variant="danger"
@@ -272,6 +462,15 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
         />
       )}
 
+      {step?.kind === 'package' && (
+        <PackageReview
+          project={project}
+          step={step}
+          onCancel={() => setStep(null)}
+          onConfirm={() => confirmPackage(step)}
+        />
+      )}
+
       {step?.kind === 'remove' && (
         <RemoveDialog
           project={project}
@@ -295,8 +494,6 @@ function UpdateConfirm({
   readonly onCancel: () => void;
   readonly onConfirm: () => void;
 }) {
-  const impact = specializationUpdateImpact(project, spec);
-  const current = project.specializations.find((s) => s.id === spec.id);
   return (
     <Dialog
       title={t('spec.updateTitle', { name: spec.name })}
@@ -310,6 +507,22 @@ function UpdateConfirm({
         </>
       }
     >
+      <UpdateImpact project={project} spec={spec} />
+    </Dialog>
+  );
+}
+
+function UpdateImpact({
+  project,
+  spec,
+}: {
+  readonly project: Project;
+  readonly spec: Spec;
+}) {
+  const impact = specializationUpdateImpact(project, spec);
+  const current = project.specializations.find((s) => s.id === spec.id);
+  return (
+    <>
       <p>
         {t('spec.updateMessage', { current: current?.version ?? 0, next: spec.version })}
       </p>
@@ -336,6 +549,79 @@ function UpdateConfirm({
           {t('spec.updateBroken', { count: impact.brokenRefs })}
         </p>
       )}
+    </>
+  );
+}
+
+/**
+ * Revisão de um pacote lido: resumo, erros (bloqueiam) e avisos (deixam aplicar). Numa
+ * atualização, mostra também o efeito nas camadas, como a confirmação do arquivo único.
+ */
+function PackageReview({
+  project,
+  step,
+  onCancel,
+  onConfirm,
+}: {
+  readonly project: Project;
+  readonly step: Extract<Step, { kind: 'package' }>;
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+}) {
+  const { spec, report, decision } = step;
+  const blocked = spec === null || report.errors.length > 0;
+  const { summary } = report;
+  return (
+    <Dialog
+      title={
+        spec ? t('spec.packageTitle', { name: spec.name }) : t('spec.packageInvalidTitle')
+      }
+      size="md"
+      onCancel={onCancel}
+      actions={
+        <>
+          <Button onClick={onCancel}>{t('common.cancel')}</Button>
+          <Button variant="primary" disabled={blocked} onClick={onConfirm}>
+            {decision === 'update'
+              ? t('spec.updateConfirm')
+              : t('spec.packageApplyConfirm')}
+          </Button>
+        </>
+      }
+    >
+      {spec ? (
+        <>
+          <p>
+            {t('spec.packageSummary', {
+              version: spec.version,
+              types: summary.types,
+              components: summary.components,
+              docs: summary.docs,
+              fonts: summary.fonts,
+            })}
+          </p>
+          {decision === 'update' && <UpdateImpact project={project} spec={spec} />}
+        </>
+      ) : (
+        <p class="notice notice-error" role="alert">
+          {t('spec.packageNoSpec')}
+        </p>
+      )}
+      <p
+        class={report.errors.length > 0 ? 'notice notice-error' : 'muted'}
+        role={report.errors.length > 0 ? 'alert' : 'status'}
+      >
+        {t('spec.packageCounts', {
+          errors: report.errors.length,
+          warnings: report.warnings.length,
+        })}{' '}
+        {report.errors.length > 0
+          ? t('spec.packageBlocked')
+          : report.warnings.length > 0
+            ? t('spec.packageWarningsOk')
+            : ''}
+      </p>
+      <LibraryIssueList issues={report.issues} />
     </Dialog>
   );
 }

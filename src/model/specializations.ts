@@ -1,6 +1,7 @@
 import { fail } from './errors';
 import { countBrokenRefs, type LabelTexts } from './refs';
 import type { Spec, SpecLayer, SpecMigrationStep } from './spec';
+import { isPackageFile } from './libraryPackage';
 import { getSpecialization } from './specLookup';
 import { diffSpecs, migrationChain, migrationFor, type SpecChange } from './specVersions';
 import { annotationsOfSpec, freeVersionOf } from './typed';
@@ -18,14 +19,33 @@ export interface SpecOpOptions {
   readonly newId?: () => string;
   /** Textos usados ao converter referências em texto. */
   readonly texts?: LabelTexts;
+  /**
+   * Nome do arquivo da especialização dentro do pacote (`material3.spec.json`): a cópia é a
+   * pasta `specs/<id>/` e o `file` aponta para ele. Sem ele, a cópia é `specs/<id>.json`.
+   */
+  readonly packageSpecName?: string;
 }
 
-/** `specs/<id>.json`, com o id limpo para nome de arquivo e sem colidir com outro. */
-export function specFileFor(p: Project, specId: string): string {
+/**
+ * `specs/<id>.json` (v1 a v3), com o id limpo para nome de arquivo e sem colidir com outro.
+ * Com `packageSpecName` (pacote da biblioteca): `specs/<id>/<packageSpecName>`, a pasta também
+ * sem colidir com a de outra especialização.
+ */
+export function specFileFor(
+  p: Project,
+  specId: string,
+  packageSpecName?: string,
+): string {
   const base = specId.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^\.+/, '') || 'spec';
-  const taken = new Set(
-    p.specializations.filter((s) => s.id !== specId).map((s) => s.file),
-  );
+  const others = p.specializations.filter((s) => s.id !== specId).map((s) => s.file);
+  if (packageSpecName !== undefined) {
+    const name = packageSpecName.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^\.+/, '');
+    const takenDirs = new Set(others.map((f) => /^specs\/([^/]+)\//.exec(f)?.[1]));
+    let dir = base;
+    for (let n = 2; takenDirs.has(dir); n++) dir = `${base}-${n}`;
+    return `${SPECS_DIR}/${dir}/${name || 'spec.json'}`;
+  }
+  const taken = new Set(others);
   let file = `${SPECS_DIR}/${base}.json`;
   for (let n = 2; taken.has(file); n++) file = `${SPECS_DIR}/${base}-${n}.json`;
   return file;
@@ -61,7 +81,7 @@ export function applySpecialization(
   const entry: ProjectSpecialization = {
     id: spec.id,
     version: spec.version,
-    file: specFileFor(p, spec.id),
+    file: specFileFor(p, spec.id, options.packageSpecName),
     spec,
   };
   return {
@@ -120,10 +140,16 @@ export function updateSpecialization(
     .filter((l) => !existing.has(l.id))
     .map((l) => newLayer(spec.id, l, newId()));
 
+  // O layout acompanha o que chega: pacote → pasta; sem pacote → arquivo único.
+  const packaged = options.packageSpecName !== undefined;
+  const file =
+    packaged === isPackageFile(current.file)
+      ? current.file
+      : specFileFor(p, spec.id, options.packageSpecName);
   return {
     ...p,
     specializations: p.specializations.map((s) =>
-      s.id === spec.id ? { ...s, version: spec.version, spec } : s,
+      s.id === spec.id ? { ...s, version: spec.version, spec, file } : s,
     ),
     layers: [...layers, ...added],
     annotations,

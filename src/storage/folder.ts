@@ -11,6 +11,7 @@ import {
   BACKUPS_DIR,
   IMAGES_DIR,
   MAPPING_FILE,
+  assertSpecPath,
   isImageFileName,
   type ProjectStorage,
 } from './types';
@@ -228,6 +229,22 @@ async function removeDirectory(root: DirectoryHandleLike, path: string): Promise
   }
 }
 
+/** Caminhos de todos os arquivos sob `dir` (recursivo), relativos à raiz, em ordem alfabética. */
+async function listFiles(root: DirectoryHandleLike, dir: string): Promise<string[]> {
+  const { dirs, name } = splitPath(dir);
+  const start = await resolveDir(root, [...dirs, name], false);
+  if (!start) return [];
+  const found: string[] = [];
+  const walk = async (handle: DirectoryHandleLike, prefix: string): Promise<void> => {
+    for await (const entry of handle.values()) {
+      if (entry.kind === 'file') found.push(`${prefix}${entry.name}`);
+      else await walk(entry, `${prefix}${entry.name}/`);
+    }
+  };
+  await walk(start, `${[...dirs, name].join('/')}/`);
+  return found.sort();
+}
+
 async function removeProposalDir(root: DirectoryHandleLike, id: string): Promise<void> {
   // Um id fora do padrão apontaria para outra pasta (ou para `proposals/` inteira).
   if (!PROPOSAL_ID_RE.test(id)) throw new Error(`invalid proposal id: ${id}`);
@@ -272,11 +289,34 @@ export function createFolderStorage(
     writeImage: (path, data) => writeFile(root, path, data),
     removeImage: (path) => removeFile(root, path),
     async readSpec(path) {
+      assertSpecPath(path, 'file');
       const blob = await readFile(root, path);
       return blob ? blob.text() : null;
     },
-    writeSpec: (path, text) => writeFile(root, path, text),
-    removeSpec: (path) => removeFile(root, path),
+    async writeSpec(path, text) {
+      assertSpecPath(path, 'file');
+      await writeFile(root, path, text);
+    },
+    async removeSpec(path) {
+      assertSpecPath(path, 'file');
+      await removeFile(root, path);
+    },
+    async listSpecDir(dir) {
+      assertSpecPath(dir, 'dir');
+      return listFiles(root, dir);
+    },
+    async readSpecFile(path) {
+      assertSpecPath(path, 'package');
+      return readFile(root, path);
+    },
+    async writeSpecFile(path, data) {
+      assertSpecPath(path, 'package');
+      await writeFile(root, path, data);
+    },
+    async removeSpecDir(dir) {
+      assertSpecPath(dir, 'dir');
+      await removeDirectory(root, dir);
+    },
     async listProposals() {
       const dir = await resolveDir(root, [PROPOSALS_DIR], false);
       if (!dir) return [];

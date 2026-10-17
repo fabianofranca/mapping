@@ -19,6 +19,16 @@ export interface ActionDeps {
 }
 
 /**
+ * Arquivos do pacote de uma biblioteca: caminho relativo à pasta do pacote
+ * (`components/button.json`) → texto (`.json`, `.md`) ou bytes (fontes).
+ */
+export type SpecPackageFiles = ReadonlyMap<string, string | Blob>;
+
+function packageSpecNameIn(spec: Spec, files?: SpecPackageFiles): string | undefined {
+  return files === undefined ? undefined : model.packageSpecNameOf(files, spec.id);
+}
+
+/**
  * Actions do projeto: toda mutação passa por aqui. Cada action aplica uma
  * operação pura do modelo e gera uma entrada no histórico. As que criam itens
  * devolvem o id gerado.
@@ -162,10 +172,27 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.moveEntry(p, annotationId, entryId, to)),
 
     // Especializações (docs/history/PLAN-etapas-1-2.md 13.4): cada operação é uma entrada no histórico.
-    applySpecialization: (spec: Spec) =>
-      store.apply((p) => model.applySpecialization(p, spec, { newId })),
-    updateSpecialization: (spec: Spec, texts?: LabelTexts) =>
-      store.apply((p) => model.updateSpecialization(p, spec, { newId, texts })),
+    // `packageFiles`: o pacote da biblioteca. O store só usa o NOME do arquivo da
+    // especialização dentro dele; os bytes são da sessão (grava em `specs/<id>/`), nunca do store.
+    applySpecialization: (spec: Spec, packageFiles?: SpecPackageFiles) =>
+      store.apply((p) =>
+        model.applySpecialization(p, spec, {
+          newId,
+          packageSpecName: packageSpecNameIn(spec, packageFiles),
+        }),
+      ),
+    updateSpecialization: (
+      spec: Spec,
+      texts?: LabelTexts,
+      packageFiles?: SpecPackageFiles,
+    ) =>
+      store.apply((p) =>
+        model.updateSpecialization(p, spec, {
+          newId,
+          texts,
+          packageSpecName: packageSpecNameIn(spec, packageFiles),
+        }),
+      ),
     removeSpecialization: (specId: string, mode: SpecRemovalMode, texts?: LabelTexts) =>
       store.apply((p) => model.removeSpecialization(p, specId, mode, { newId, texts })),
 

@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import JSZip from 'jszip';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,6 +12,7 @@ import {
 } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { SpecsDialog } from '../../src/ui/SpecsDialog';
+import { MemoryDirectory } from '../storage/memoryFs';
 import { emptyProject } from '../model/fixtures';
 import { legacySduiText } from '../model/specFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
@@ -69,8 +71,8 @@ function setup(project: Project = freeProject(), readOnly = false) {
 }
 
 /** Diálogo de confirmação com o título dado (fica por cima do menu e aparece após ler o arquivo). */
-async function dialogTitled(title: string): Promise<HTMLElement> {
-  const heading = await screen.findByRole('heading', { name: title });
+async function dialogTitled(title: string, timeout = 1000): Promise<HTMLElement> {
+  const heading = await screen.findByRole('heading', { name: title }, { timeout });
   const dialog = heading.closest('dialog');
   if (!dialog) throw new Error(`"${title}" não está num diálogo`);
   return dialog;
@@ -258,4 +260,224 @@ describe('SpecsDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Fechar' }));
     expect(onClose).toHaveBeenCalledOnce();
   });
+});
+
+// Pacote de biblioteca (v4): pasta ou zip, os três níveis e o contrato de versão (B2).
+const PACKAGE_DIR = join(process.cwd(), 'examples', 'libraries', 'material3');
+
+/** Caminho relativo ao pacote → texto (`.json`, `.md`) ou bytes, do Material 3 do repositório. */
+function material3(): Map<string, string> {
+  const files = new Map<string, string>();
+  const walk = (dir: string, prefix: string) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) walk(join(dir, e.name), `${prefix}${e.name}/`);
+      else files.set(`${prefix}${e.name}`, readFileSync(join(dir, e.name), 'utf8'));
+    }
+  };
+  walk(PACKAGE_DIR, '');
+  return files;
+}
+
+/** A pasta em memória que o seletor falso devolve. */
+async function memoryDir(files: ReadonlyMap<string, string>): Promise<MemoryDirectory> {
+  const root = new MemoryDirectory('material3');
+  for (const [path, text] of files) {
+    const parts = path.split('/');
+    let dir = root;
+    for (const part of parts.slice(0, -1)) {
+      dir = (await dir.getDirectoryHandle(part, { create: true })) as MemoryDirectory;
+    }
+    dir.files.set(parts.at(-1) ?? '', new Blob([text]));
+  }
+  return root;
+}
+
+async function zipOf(files: ReadonlyMap<string, string>, root = ''): Promise<File> {
+  const zip = new JSZip();
+  for (const [path, text] of files) zip.file(`${root}${path}`, text);
+  return new File([await zip.generateAsync({ type: 'blob' })], 'pacote.zip');
+}
+
+/** Material 3 com a versão e um ajuste no JSON da especialização. */
+function material3With(
+  edit: (spec: {
+    version: number;
+    layers: { annotationTypes: { id: string }[] }[];
+  }) => void,
+): Map<string, string> {
+  const files = material3();
+  const spec = JSON.parse(files.get('material3.spec.json') ?? '{}');
+  edit(spec);
+  files.set('material3.spec.json', JSON.stringify(spec));
+  return files;
+}
+
+function fakePicker(dir: MemoryDirectory | null) {
+  Object.defineProperty(globalThis, 'showDirectoryPicker', {
+    value: vi.fn(async () => {
+      if (!dir) throw new DOMException('cancelado', 'AbortError');
+      return dir;
+    }),
+    configurable: true,
+    writable: true,
+  });
+}
+
+afterEach(() => {
+  Reflect.deleteProperty(globalThis, 'showDirectoryPicker');
+});
+
+describe('SpecsDialog: pacote da biblioteca', () => {
+  const zipInput = () => {
+    const input = document.querySelector<HTMLInputElement>('input[accept^=".zip"]');
+    if (!input) throw new Error('sem input de zip');
+    return input;
+  };
+  const chooseZip = (file: File) =>
+    fireEvent.change(zipInput(), { target: { files: [file] } });
+  const chooseDirectory = async (
+    user: ReturnType<typeof userEvent.setup>,
+    name = 'Aplicar pasta…',
+  ) => {
+    await user.click(screen.getByRole('button', { name }));
+  };
+
+  it('sem showDirectoryPicker só o zip aparece', () => {
+    setup();
+    expect(screen.queryByRole('button', { name: 'Aplicar pasta…' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Aplicar zip…' })).toBeTruthy();
+  });
+
+  it('pasta: valida (0 erros, 42 avisos), lista os avisos e aplica copiando o pacote', async () => {
+    fakePicker(await memoryDir(material3()));
+    const { harness, user } = setup();
+    await chooseDirectory(user);
+    const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
+    expect(within(dialog).getByText(/0 erro\(s\) e 42 aviso\(s\)\./)).toBeTruthy();
+    expect(within(dialog).getByText(/Os avisos não impedem aplicar/)).toBeTruthy();
+    // Os avisos vêm agrupados por arquivo e a lista rola sozinha.
+    expect(
+      within(dialog).getByRole('group', { name: 'Problemas do pacote' }),
+    ).toBeTruthy();
+    expect(within(dialog).getAllByText('aviso').length).toBe(42);
+    await user.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
+    await screen.findByText(/"Material Design 3 \(baseline\)" aplicada/);
+    const entry = harness.project().specializations[0];
+    expect(entry?.id).toBe('material3');
+    expect(entry?.file).toBe('specs/material3/material3.spec.json');
+  }, 60_000);
+
+  it('seletor cancelado: nada acontece', async () => {
+    fakePicker(null);
+    const { harness, user } = setup();
+    await chooseDirectory(user);
+    expect(screen.queryByRole('heading', { name: /Pacote/ })).toBeNull();
+    expect(harness.project().specializations).toHaveLength(0);
+  });
+
+  it('zip com pasta-raiz única e zip sem raiz dão o mesmo resultado', async () => {
+    for (const root of ['material3/', '']) {
+      const { harness, view } = setup();
+      chooseZip(await zipOf(material3(), root));
+      const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
+      expect(within(dialog).getByText(/0 erro\(s\) e 42 aviso\(s\)\./)).toBeTruthy();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
+      await screen.findByText(/aplicada/);
+      expect(harness.project().specializations[0]?.file).toBe(
+        'specs/material3/material3.spec.json',
+      );
+      view.unmount();
+      cleanup();
+    }
+  }, 90_000);
+
+  it('erro bloqueia: componente ausente desabilita Aplicar e o projeto não muda', async () => {
+    const files = material3();
+    files.delete('components/m3-button.json');
+    const { harness, user } = setup();
+    chooseZip(await zipOf(files));
+    const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
+    expect(within(dialog).getByText(/Corrija os erros/)).toBeTruthy();
+    expect(within(dialog).getAllByText('erro').length).toBeGreaterThan(0);
+    expect(within(dialog).getByText(/components\/m3-button\.json/)).toBeTruthy();
+    const apply = within(dialog).getByRole('button', { name: 'Aplicar' });
+    expect(apply).toHaveProperty('disabled', true);
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(harness.project().specializations).toHaveLength(0);
+  }, 60_000);
+
+  it('pacote sem especialização legível: erro claro e nada a aplicar', async () => {
+    const { harness } = setup();
+    chooseZip(await zipOf(new Map([['docs/leia-me.md', '# oi']])));
+    const dialog = await dialogTitled('Pacote de especialização inválido');
+    expect(within(dialog).getByText(/não tem uma especialização legível/)).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Aplicar' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    expect(harness.project().specializations).toHaveLength(0);
+  });
+
+  it('zip vazio: mensagem de erro', async () => {
+    setup();
+    chooseZip(await zipOf(new Map()));
+    await screen.findByText('A pasta ou o zip não tem arquivos.');
+  });
+
+  it('arquivo .json v4 isolado é recusado: v4 pede o pacote', async () => {
+    const { harness, choose } = setup();
+    choose(material3().get('material3.spec.json') ?? '');
+    const dialog = await dialogTitled('Arquivo de especialização inválido');
+    expect(within(dialog).getByText(/precisa da pasta inteira/)).toBeTruthy();
+    expect(harness.project().specializations).toHaveLength(0);
+  });
+
+  it('atualizar com pacote: versão maior com contrato respeitado atualiza (passa `previous`)', async () => {
+    const { harness, user } = setup();
+    chooseZip(await zipOf(material3()));
+    const first = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
+    await user.click(within(first).getByRole('button', { name: 'Aplicar' }));
+    await screen.findByText(/aplicada/);
+
+    // Mesma versão: nada a fazer.
+    chooseZip(await zipOf(material3()));
+    const nothing = await dialogTitled('Nada a fazer', 30_000);
+    await user.click(within(nothing).getByRole('button', { name: 'Fechar' }));
+
+    // Versão 2 só aditiva: atualiza.
+    const next = material3With((spec) => {
+      spec.version = 2;
+    });
+    expect(next.size).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    chooseZip(await zipOf(next));
+    const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
+    expect(within(dialog).getByText('Da versão 1 para a 2.')).toBeTruthy();
+    await user.click(within(dialog).getByRole('button', { name: 'Atualizar' }));
+    await screen.findByText(/atualizada para a versão 2/);
+    expect(harness.project().specializations[0]?.version).toBe(2);
+  }, 120_000);
+
+  it('atualizar com pacote: quebra sem migração é erro e bloqueia', async () => {
+    const { harness, user } = setup();
+    chooseZip(await zipOf(material3()));
+    const first = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
+    await user.click(within(first).getByRole('button', { name: 'Aplicar' }));
+    await screen.findByText(/aplicada/);
+
+    const broken = material3With((spec) => {
+      spec.version = 2;
+      const layer = spec.layers[0];
+      if (layer)
+        layer.annotationTypes = layer.annotationTypes.filter((t) => t.id !== 'm3-chip');
+    });
+    chooseZip(await zipOf(broken));
+    const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
+    expect(within(dialog).getByText(/m3-chip/, { selector: 'li' })).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Atualizar' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    expect(harness.project().specializations[0]?.version).toBe(1);
+  }, 120_000);
 });

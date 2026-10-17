@@ -47,6 +47,47 @@ describe('FolderStorage', () => {
     await storage.removeSpec('specs/sdui.json');
   });
 
+  it('lista, lê, grava e remove os arquivos de uma pasta de pacote', async () => {
+    const root = new MemoryDirectory('projeto');
+    const storage = createFolderStorage(root);
+    expect(await storage.listSpecDir('specs/m3')).toEqual([]);
+    expect(await storage.readSpecFile('specs/m3/fonts/R.ttf')).toBeNull();
+    const bytes = new Uint8Array([0, 255, 128, 7]);
+    await storage.writeSpecFile('specs/m3/fonts/R.ttf', new Blob([bytes]));
+    await storage.writeSpecFile('specs/m3/components/b.json', '{"b":1}');
+    await storage.writeSpec('specs/m3/m3.spec.json', '{"id":"m3"}\n');
+    await storage.writeSpec('specs/outra.json', '{}');
+    expect(await storage.listSpecDir('specs/m3')).toEqual([
+      'specs/m3/components/b.json',
+      'specs/m3/fonts/R.ttf',
+      'specs/m3/m3.spec.json',
+    ]);
+    const read = await storage.readSpecFile('specs/m3/fonts/R.ttf');
+    expect([
+      ...new Uint8Array((await read?.arrayBuffer()) ?? new ArrayBuffer(0)),
+    ]).toEqual([...bytes]);
+    expect(await storage.readSpec('specs/m3/m3.spec.json')).toBe('{"id":"m3"}\n');
+    await storage.removeSpecDir('specs/m3');
+    expect(await storage.listSpecDir('specs/m3')).toEqual([]);
+    expect(await storage.readSpec('specs/outra.json')).toBe('{}');
+    // Remover de novo, ou uma pasta que nunca existiu, não falha.
+    await storage.removeSpecDir('specs/m3');
+    await storage.removeSpecDir('specs/nunca/existiu');
+  });
+
+  it('recusa caminhos fora de specs/ ou com ..', async () => {
+    const storage = createFolderStorage(new MemoryDirectory('projeto'));
+    await expect(storage.writeSpecFile('specs/../mapping.json', 'x')).rejects.toThrow();
+    await expect(storage.writeSpecFile('/specs/m3/a.json', 'x')).rejects.toThrow();
+    await expect(storage.writeSpecFile('images/a.png', 'x')).rejects.toThrow();
+    await expect(storage.writeSpecFile('specs/a.bin', 'x')).rejects.toThrow();
+    await expect(storage.readSpecFile('specs/m3/../../mapping.json')).rejects.toThrow();
+    await expect(storage.listSpecDir('images')).rejects.toThrow();
+    await expect(storage.removeSpecDir('specs')).rejects.toThrow();
+    await expect(storage.removeSpecDir('specs/../images')).rejects.toThrow();
+    await expect(storage.writeSpec('specs/m3/../x.json', '{}')).rejects.toThrow();
+  });
+
   it('guarda backups do mapping em backups/ sem tocar no mapping.json', async () => {
     const root = new MemoryDirectory('projeto');
     const storage = createFolderStorage(root);

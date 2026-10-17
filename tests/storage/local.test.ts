@@ -192,6 +192,101 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(await storage.readSpec('specs/sdui.json')).toBeNull();
   });
 
+  it('lista, lê, grava e remove os arquivos de uma pasta de pacote (e marca não exportado)', async () => {
+    await library.create(
+      'p',
+      {
+        mapping: serialize(emptyProject()),
+        images: noImages,
+        specs: noSpecs,
+        proposals: noSpecs,
+        proposalImages: noImages,
+      },
+      { unexported: false },
+    );
+    const storage = library.open('p');
+    expect(await storage.listSpecDir('specs/m3')).toEqual([]);
+    expect(await storage.readSpecFile('specs/m3/fonts/R.ttf')).toBeNull();
+    await storage.removeSpecDir('specs/m3');
+    expect((await library.get('p'))?.unexported).toBe(false);
+
+    const bytes = new Uint8Array([0, 255, 128, 7]);
+    await storage.writeSpecFile('specs/m3/fonts/R.ttf', new Blob([bytes]));
+    expect((await library.get('p'))?.unexported).toBe(true);
+    await library.setUnexported('p', false);
+    await storage.writeSpecFile('specs/m3/components/b.json', '{"b":1}');
+    await storage.writeSpec('specs/m3/m3.spec.json', '{"id":"m3"}\n');
+    await storage.writeSpec('specs/outra.json', '{}');
+    // Outro projeto com o mesmo caminho não aparece.
+    await library.create('q', {
+      mapping: serialize(emptyProject()),
+      images: noImages,
+      specs: new Map([['specs/m3/intruso.json', '{}']]),
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
+    expect(await storage.listSpecDir('specs/m3')).toEqual([
+      'specs/m3/components/b.json',
+      'specs/m3/fonts/R.ttf',
+      'specs/m3/m3.spec.json',
+    ]);
+    const read = await storage.readSpecFile('specs/m3/fonts/R.ttf');
+    expect([
+      ...new Uint8Array((await read?.arrayBuffer()) ?? new ArrayBuffer(0)),
+    ]).toEqual([...bytes]);
+    expect(await storage.readSpec('specs/m3/m3.spec.json')).toBe('{"id":"m3"}\n');
+
+    await library.setUnexported('p', false);
+    await storage.removeSpecDir('specs/m3');
+    expect((await library.get('p'))?.unexported).toBe(true);
+    expect(await storage.listSpecDir('specs/m3')).toEqual([]);
+    expect(await storage.readSpec('specs/outra.json')).toBe('{}');
+    expect(await library.open('q').listSpecDir('specs/m3')).toEqual([
+      'specs/m3/intruso.json',
+    ]);
+  });
+
+  it('recusa caminhos fora de specs/ ou com ..', async () => {
+    await library.create('p', {
+      mapping: serialize(emptyProject()),
+      images: noImages,
+      specs: noSpecs,
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
+    const storage = library.open('p');
+    await expect(storage.writeSpecFile('specs/../mapping.json', 'x')).rejects.toThrow();
+    await expect(storage.writeSpecFile('images/a.png', 'x')).rejects.toThrow();
+    await expect(storage.readSpecFile('/specs/m3/a.json')).rejects.toThrow();
+    await expect(storage.listSpecDir('images')).rejects.toThrow();
+    await expect(storage.removeSpecDir('specs')).rejects.toThrow();
+  });
+
+  it('o pacote importado do zip (specAssets) fica no projeto local e volta no zip', async () => {
+    const font = new Uint8Array([9, 8, 7, 255]);
+    await library.create('p', {
+      mapping: serialize(emptyProject()),
+      images: noImages,
+      specs: new Map([['specs/m3/m3.spec.json', '{"id":"m3"}\n']]),
+      specAssets: new Map([
+        ['specs/m3/components/a.json', new Blob(['{"a":1}'])],
+        ['specs/m3/fonts/R.ttf', new Blob([font])],
+      ]),
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
+    const storage = library.open('p');
+    expect(await storage.listSpecDir('specs/m3')).toEqual([
+      'specs/m3/components/a.json',
+      'specs/m3/fonts/R.ttf',
+      'specs/m3/m3.spec.json',
+    ]);
+    const ttf = await storage.readSpecFile('specs/m3/fonts/R.ttf');
+    expect([...new Uint8Array((await ttf?.arrayBuffer()) ?? new ArrayBuffer(0))]).toEqual(
+      [...font],
+    );
+  });
+
   it('round-trip: zip → IndexedDB → zip com o mesmo conteúdo, inclusive specs/', async () => {
     const project = cadastroProject();
     const mapping = serialize(project);
