@@ -16,7 +16,7 @@
  */
 import Konva from 'konva';
 import { attachPinchZoom, capPixelRatio, freezeGroup, thawGroup } from '../shared/pinch';
-import { ScreenRenderer } from '../viewer/screenRenderer';
+import { ScreenRenderer } from '../../src/canvas/components/screenRenderer';
 import { isContainer } from '../../src/model/components/arrange';
 import { type Board, boardBounds, findScreen } from './board';
 import type { Library, TypeDef } from '../../src/model/components/library';

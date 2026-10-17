@@ -32,8 +32,12 @@ import {
 } from './board';
 import type { FieldValue } from '../../src/model/components/componentFormat';
 import { ScreenEditor } from './editor';
-import { konvaMeasurer } from '../viewer/measure';
-import { type FontStatus, describeFont, registerFonts } from './fonts';
+import { konvaMeasurer } from '../../src/canvas/components/konvaMeasurer';
+import {
+  type FontStatus,
+  createFontRegistry,
+  describeFont,
+} from '../../src/storage/fonts';
 import {
   type FieldDef,
   type Library,
@@ -76,6 +80,8 @@ const zoom = signal(1);
 /** Modo "posições fixas": só as propriedades mudam; nada se arrasta nem redimensiona. */
 const fixed = signal(false);
 const fontStatus = signal<readonly FontStatus[]>([]);
+/** Registro de fontes da página: troca as faces da biblioteca anterior. */
+const fontRegistry = createFontRegistry();
 const error = signal<string | undefined>(undefined);
 const notice = signal<string | undefined>(undefined);
 const historyPast: Board[] = [];
@@ -164,7 +170,7 @@ function fail(e: unknown): void {
 
 /** Depois de as fontes carregarem, os textos medem diferente: redesenha e re-arranja. */
 async function applyFonts(loaded: Library): Promise<void> {
-  fontStatus.value = await registerFonts(loaded.fonts);
+  fontStatus.value = await fontRegistry.register(loaded.fonts);
   if (library.value !== loaded) return;
   editor?.setLibrary(loaded);
   commit(board.value, false);

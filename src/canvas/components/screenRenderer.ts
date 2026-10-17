@@ -1,5 +1,5 @@
 /**
- * Visualizador: desenha UMA tela dentro de um `Konva.Group` fornecido pelo chamador (o
+ * Desenha UMA tela dentro de um `Konva.Group` fornecido pelo chamador (o
  * visualizador usa um por Stage; o editor do laboratório, um por tela do quadro). Cada instância
  * vira um `Konva.Group` filho, na posição do retângulo (coordenadas da tela), com o atributo
  * `instanceId`, o componente instanciado (`instantiate` → `renderScene`) e um retângulo "hit"
@@ -11,21 +11,19 @@
  * são destruídas. O renderer não conhece "quadro", "artboard" nem "tela ativa": só o grupo que
  * recebe. Não tem eventos de arrasto (o editor liga os dele em `onInstanceCreated`).
  */
-import Konva from 'konva';
-import { renderScene } from '../scene/renderScene';
-import type { FieldValues } from '../../src/model/components/componentFormat';
-import { type TextMeasurer, instantiate } from '../../src/model/components/instantiate';
+import Konva from 'konva/lib/Core';
+import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
+import { Text as KonvaText } from 'konva/lib/shapes/Text';
+import { renderScene } from './renderScene';
+import type { FieldValues } from '../../model/components/componentFormat';
+import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
   type Library,
   type TypeDef,
   instanceLabel,
-} from '../../src/model/components/library';
-import {
-  type Instance,
-  type Screen,
-  renderOrder,
-} from '../../src/model/components/screen';
-import { konvaMeasurer } from './measure';
+} from '../../model/components/library';
+import { type Instance, type Screen, renderOrder } from '../../model/components/screen';
+import { konvaMeasurer } from './konvaMeasurer';
 
 const MISSING_COLOR = '#D81B60';
 const MISSING_FILL = 'rgba(216, 27, 96, 0.06)';
@@ -213,7 +211,7 @@ export class ScreenRenderer {
     if (!type?.component) {
       // Tipo sem componente (ou biblioteca sem o tipo): a caixa tracejada com o nome.
       node.add(
-        new Konva.Rect({
+        new KonvaRect({
           ...local,
           stroke: MISSING_COLOR,
           strokeWidth: 1,
@@ -221,7 +219,7 @@ export class ScreenRenderer {
           strokeScaleEnabled: false,
           fill: MISSING_FILL,
         }),
-        new Konva.Text({
+        new KonvaText({
           ...local,
           text: type
             ? `${type.name}\n(sem componente)`
@@ -252,7 +250,7 @@ export class ScreenRenderer {
     node.add(rendered.root);
     // Área de clique inteira (mesmo com fundo transparente).
     node.add(
-      new Konva.Rect({ ...local, fill: 'rgba(0,0,0,0)', name: 'hit', listening: true }),
+      new KonvaRect({ ...local, fill: 'rgba(0,0,0,0)', name: 'hit', listening: true }),
     );
     const all = [...result.warnings, ...rendered.warnings];
     if (all.length > 0) this.warningsById.set(instance.id, all);

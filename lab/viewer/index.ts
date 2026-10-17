@@ -9,13 +9,13 @@
  */
 export { createViewer } from './viewer';
 export type { Viewer, ViewerInput, ViewerOptions } from './viewer';
-export { ScreenRenderer } from './screenRenderer';
+export { ScreenRenderer } from '../../src/canvas/components/screenRenderer';
 export type {
   InstanceWarnings,
   ScreenRendererOptions,
   ScreenRendererUpdateOptions,
-} from './screenRenderer';
-export { konvaMeasurer } from './measure';
+} from '../../src/canvas/components/screenRenderer';
+export { konvaMeasurer } from '../../src/canvas/components/konvaMeasurer';
 export {
   instanceLabel,
   loadLibrary,

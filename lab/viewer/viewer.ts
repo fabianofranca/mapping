@@ -29,10 +29,13 @@ import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { Box, Screen } from '../../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../../src/model/components/origin';
 import { capPixelRatio } from '../shared/pinch';
-import { konvaMeasurer } from './measure';
-import { type InstanceWarnings, ScreenRenderer } from './screenRenderer';
+import { konvaMeasurer } from '../../src/canvas/components/konvaMeasurer';
+import {
+  type InstanceWarnings,
+  ScreenRenderer,
+} from '../../src/canvas/components/screenRenderer';
 
-export type { InstanceWarnings } from './screenRenderer';
+export type { InstanceWarnings } from '../../src/canvas/components/screenRenderer';
 
 export interface ViewerInput {
   readonly library: Library | undefined;

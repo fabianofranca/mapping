@@ -1,12 +1,28 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import Konva from 'konva';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
+import {
+  ComponentLayerRenderer,
+  type LayerDrawing,
+} from '../../src/canvas/components/componentLayer';
+import { renderScene } from '../../src/canvas/components/renderScene';
 import { createCanvasViewState } from '../../src/canvas/viewState';
+import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
+import {
+  type Library,
+  initialValues,
+  loadLibrary,
+} from '../../src/model/components/library';
+import type { Instance } from '../../src/model/components/screen';
 import { projectIndex, projectIssues } from '../../src/model';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { createEditorUi } from '../../src/store/ui';
+import { M3_SCREEN } from '../../lab/components/samplesMaterial3';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { installFakeCanvas } from './harness';
 
@@ -122,4 +138,142 @@ describe('renderização do canvas com o projeto grande', () => {
     expect(frames).toHaveLength(1);
     controller.destroy();
   });
+});
+
+// Orçamento do desenho de componentes (B3): instanciar (motor puro, medidor aproximado) e
+// desenhar (`renderScene`, Konva em jsdom com contexto falso) o Material 3 do pacote de exemplo.
+// Medido (jsdom, máquina de desenvolvimento): uma instância 0,03 a 0,9 ms (média dos 15
+// componentes ~0,25 ms); a tela de configurações (21 instâncias) 3,5 a 7 ms, com picos de
+// ~15 ms do coletor de lixo no começo. O orçamento da instância é ~1 ms (folga de 4x sobre a
+// média); o da tela é o do quadro, com a mediana de várias repetições.
+const INSTANCE_BUDGET_MS = 1;
+const MATERIAL3_DIR = join(__dirname, '../../examples/libraries/material3');
+
+function loadMaterial3(): Library {
+  const components = join(MATERIAL3_DIR, 'components');
+  const files = [
+    {
+      path: 'material3.spec.json',
+      text: readFileSync(join(MATERIAL3_DIR, 'material3.spec.json'), 'utf8'),
+    },
+    ...readdirSync(components)
+      .filter((name) => name.endsWith('.json'))
+      .map((name) => ({
+        path: `components/${name}`,
+        text: readFileSync(join(components, name), 'utf8'),
+      })),
+  ];
+  return loadLibrary(files);
+}
+
+describe('desenho de componentes (Material 3)', () => {
+  const library = loadMaterial3();
+  const typeOf = new Map(library.types.map((type) => [type.id, type]));
+
+  /** Instancia a tela de configurações inteira: um desenho por instância, na ordem do array. */
+  function instantiateScreen(): Map<string, LayerDrawing> {
+    const drawings = new Map<string, LayerDrawing>();
+    for (const instance of M3_SCREEN.instances) {
+      const component = typeOf.get(instance.typeId)?.component;
+      if (!component) throw new Error(`fixture: sem componente ${instance.typeId}`);
+      const { root } = instantiate(component, instance.values, instance.box, {
+        measure: approximateMeasurer,
+        idPrefix: instance.id,
+      });
+      drawings.set(instance.id, { markingId: instance.id, imageId: 'screen', root });
+    }
+    return drawings;
+  }
+
+  beforeAll(() => installFakeCanvas());
+  afterAll(() => vi.restoreAllMocks());
+
+  it('a biblioteca de exemplo carrega com os 15 componentes e a tela tem 21 instâncias', () => {
+    expect(library.problems).toEqual([]);
+    expect(library.types.filter((type) => type.component)).toHaveLength(15);
+    expect(M3_SCREEN.instances).toHaveLength(21);
+  });
+
+  budgetIt(
+    `instanciar e desenhar uma instância leva ~${INSTANCE_BUDGET_MS} ms em média`,
+    BUDGET_OPTIONS,
+    () => {
+      const perComponent: number[] = [];
+      for (const type of library.types) {
+        const component = type.component;
+        if (!component) continue;
+        const values = initialValues(type);
+        const box = { x: 0, y: 0, ...component.size };
+        const once = () =>
+          renderScene({
+            root: instantiate(component, values, box, { measure: approximateMeasurer })
+              .root,
+            warnings: [],
+          });
+        for (let i = 0; i < 20; i++) once(); // Aquecimento (JIT e primeiro uso do Konva).
+        const runs = 60;
+        const start = performance.now();
+        for (let i = 0; i < runs; i++) once();
+        perComponent.push((performance.now() - start) / runs);
+      }
+      const mean = perComponent.reduce((sum, ms) => sum + ms, 0) / perComponent.length;
+      expect(mean).toBeLessThan(INSTANCE_BUDGET_MS);
+      // Nenhum componente sozinho passa de quatro vezes o orçamento (o maior mede ~0,9 ms).
+      expect(Math.max(...perComponent)).toBeLessThan(INSTANCE_BUDGET_MS * 4);
+    },
+  );
+
+  budgetIt(
+    `uma tela de 21 instâncias (instanciar e desenhar) cabe em ${RENDER_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const placements = new Map([['screen', { x: 0, y: 0, scale: 1 }]]);
+      const once = (): number => {
+        const start = performance.now();
+        const layer = new ComponentLayerRenderer(new Konva.Group());
+        layer.render(instantiateScreen(), () => true, placements);
+        const elapsed = performance.now() - start;
+        layer.destroy();
+        return elapsed;
+      };
+      for (let i = 0; i < 5; i++) once(); // Aquecimento.
+      const times = Array.from({ length: 15 }, once);
+      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
+      expect(median).toBeLessThan(RENDER_BUDGET_MS);
+    },
+  );
+
+  budgetIt(
+    'trocar o valor de uma instância refaz só o desenho dela, bem abaixo do quadro',
+    BUDGET_OPTIONS,
+    () => {
+      const parent = new Konva.Group();
+      const layer = new ComponentLayerRenderer(parent);
+      const placements = new Map([['screen', { x: 0, y: 0, scale: 1 }]]);
+      let drawings = instantiateScreen();
+      layer.render(drawings, () => true, placements);
+
+      const target: Instance | undefined = M3_SCREEN.instances[1];
+      const component = target && typeOf.get(target.typeId)?.component;
+      if (!target || !component) throw new Error('fixture');
+      const times: number[] = [];
+      for (let i = 0; i < 20; i++) {
+        const next = new Map(drawings);
+        const { root } = instantiate(
+          component,
+          { ...target.values, title: `Título ${i}` },
+          target.box,
+          { measure: approximateMeasurer, idPrefix: target.id },
+        );
+        next.set(target.id, { markingId: target.id, imageId: 'screen', root });
+        const start = performance.now();
+        expect(layer.render(next, () => true, placements)).toBe(true);
+        times.push(performance.now() - start);
+        drawings = next;
+      }
+      const median = [...times.slice(5)].sort((a, b) => a - b)[7] ?? Number.NaN;
+      expect(median).toBeLessThan(RENDER_BUDGET_MS / 4);
+      layer.destroy();
+    },
+  );
 });
