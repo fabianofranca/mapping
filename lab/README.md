@@ -156,6 +156,7 @@ Caminhos são `a.b[0].c`; `[*]` em `roots[].path` faz cada elemento virar uma ra
 
 - O JSON real do backend ainda não foi testado (o dono não o tem por enquanto); se for irregular demais para uma declaração, a saída é o backend ou a ferramenta administrativa normalizarem antes.
 - Listas que viram campos numerados (`items[0].label` vira `label1`) são frágeis: é o argumento para a barra de navegação e o bottom sheet aceitarem campo de tabela no produto.
+- A declaração reaproveita as `sources` da `formatVersion` 3, com o caminho do campo (`a.b[0].c`) no `name`; convive com as origens do Figma porque cada entrada tem o seu `system`, mas um nome do Figma com `.` ou `[` seria mal lido se o Figma virasse origem executável. Decisão para a B1: chave `path` própria para o caminho e `name` só como nome; `slot` e `ignore` entram no schema do produto (o validador `src/model/spec.ts` é estrito e hoje os recusa), só em sistemas executáveis.
 - Props no próprio nó (sem `props`) e vários slots por componente ficam para depois.
 - O cartão sem ações fica com o gap de 8 a mais embaixo, e conteúdo maior que o slot só avisa.
 - Na demonstração por desenho (botão **Material 3**), o FAB e a barra de navegação ficam sob a folha do modal; no SDUI, sem o `modal` aparecem.
