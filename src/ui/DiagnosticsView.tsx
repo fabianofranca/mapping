@@ -13,6 +13,7 @@ import {
 } from '../utils/report';
 import { Button } from './controls';
 import { EditorContext, type EditorContextValue } from './EditorContext';
+import { LibraryIssueList } from './LibraryIssueList';
 
 function formatTime(iso: string): string {
   try {
@@ -151,6 +152,38 @@ export function DiagnosticsTable() {
 }
 
 /**
+ * Problemas da biblioteca aplicada (níveis 1 e 2 sobre a cópia, lidos ao abrir o projeto),
+ * por especialização. Sem problemas, ou fora do editor, não mostra nada.
+ */
+export function DiagnosticsLibrary() {
+  const editor = useContext(EditorContext);
+  const issues = editor?.session.libraryIssues.value;
+  const project = editor?.store.project.value;
+  const rows = [...(issues ?? [])].filter(([, list]) => list.length > 0);
+  if (rows.length === 0) return null;
+  return (
+    <section class="diagnostics-library" aria-label={t('diagnostics.library')}>
+      <h3>{t('diagnostics.library')}</h3>
+      <p class="muted">{t('diagnostics.libraryHint')}</p>
+      {rows.map(([specId, list]) => (
+        <div key={specId}>
+          <p>
+            {t('diagnostics.libraryItem', {
+              name:
+                project?.specializations.find((s) => s.id === specId)?.spec?.name ??
+                specId,
+              errors: list.filter((i) => i.severity === 'error').length,
+              warnings: list.filter((i) => i.severity === 'warning').length,
+            })}
+          </p>
+          <LibraryIssueList issues={list} />
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/**
  * Conteúdo da janela Diagnóstico (B4). Enquanto está à vista, os erros novos contam
  * como vistos: o ponto de alerta da faixa só acende com a janela fechada.
  */
@@ -159,6 +192,7 @@ export function DiagnosticsView() {
   useEffect(markDiagnosticsSeen, [last]);
   return (
     <div class="diagnostics-view">
+      <DiagnosticsLibrary />
       <DiagnosticsTable />
     </div>
   );

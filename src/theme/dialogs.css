@@ -106,7 +106,7 @@
 }
 
 .file-card-name {
-  font: var(--t-body-strong);
+  font: var(--t-text-heading);
   overflow-wrap: anywhere;
 }
 
@@ -289,4 +289,36 @@
   margin: 0;
   padding-left: var(--space-4);
   overflow-wrap: anywhere;
+}
+
+/* Problemas de uma biblioteca (erros e avisos): lista compacta que rola sozinha */
+.library-issues {
+  max-height: 40vh;
+  overflow: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.library-issues-group + .library-issues-group {
+  margin-top: var(--space-2);
+}
+
+.library-issues-file {
+  margin: 0 0 var(--space-1);
+  font: var(--t-text-heading);
+}
+
+.library-issues ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library-issue-error {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }

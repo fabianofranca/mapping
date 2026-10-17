@@ -146,3 +146,71 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining(`build: ${BUILD_ID}`));
   });
 });
+
+describe('Diagnóstico: biblioteca', () => {
+  const issues = new Map([
+    [
+      'sdui',
+      [
+        {
+          file: 'components/button.json',
+          path: 'root.children[0]',
+          message: 'conteúdo maior que a caixa',
+          severity: 'warning' as const,
+        },
+        {
+          file: 'sdui.spec.json',
+          path: 'layers[0].annotationTypes[1].component',
+          message: 'arquivo não encontrado: components/fab.json',
+          severity: 'error' as const,
+        },
+      ],
+    ],
+  ]);
+
+  it('lista erros e avisos por especialização, com arquivo, caminho e mensagem', () => {
+    const harness = createHarness(sampleProject(), false, { libraryIssues: issues });
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    expect(screen.getByRole('heading', { name: t('diagnostics.library') })).toBeTruthy();
+    expect(screen.getByText('components/button.json')).toBeTruthy();
+    expect(screen.getByText('layers[0].annotationTypes[1].component')).toBeTruthy();
+    expect(screen.getByText('conteúdo maior que a caixa')).toBeTruthy();
+    expect(screen.getByText(t('library.error'))).toBeTruthy();
+    expect(screen.getByText(t('library.warning'))).toBeTruthy();
+    // O registro de erros continua no estado vazio.
+    expect(screen.getByText(t('diagnostics.empty'))).toBeTruthy();
+  });
+
+  it('sem problemas na biblioteca, a seção não aparece', () => {
+    const harness = createHarness(sampleProject());
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    expect(screen.queryByRole('heading', { name: t('diagnostics.library') })).toBeNull();
+  });
+
+  it('o Copiar não leva os problemas da biblioteca nem muda o cabeçalho', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+    const harness = createHarness(sampleProject(), false, { libraryIssues: issues });
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    await user.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
+    const text = writeText.mock.calls[0]?.[0] ?? '';
+    expect(text).toContain('pendingSave: no');
+    expect(text).not.toContain('conteúdo maior que a caixa');
+  });
+});

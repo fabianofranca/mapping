@@ -717,3 +717,18 @@ button.tree-toggle:hover {
   color: var(--color-warning);
   font-weight: 600;
 }
+
+/* Problemas da biblioteca aplicada (acima da tabela de erros) */
+.diagnostics-library {
+  flex: none;
+  padding: var(--space-3);
+}
+
+.diagnostics-library h3 {
+  margin: 0;
+  font: var(--t-text-heading);
+}
+
+.diagnostics-library p {
+  margin: var(--space-1) 0;
+}
