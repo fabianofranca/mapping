@@ -428,6 +428,7 @@ describe('arrangeMarking: Material 3', () => {
           markingColor: null,
           locked: false,
           source: null,
+          background: null,
         },
       ],
     };
