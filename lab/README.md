@@ -42,7 +42,7 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 
 - **Núcleo sem framework** (`lab/viewer/index.ts`, `viewer.ts`, `screenRenderer.ts`, `measure.ts`): `createViewer(contêiner, opções)` desenha uma tela com Konva, só leitura. O `ScreenRenderer` desenha **uma** tela num `Konva.Group` fornecido por quem chama e não conhece quadro nem "tela ativa"; o `createViewer` usa um por `Stage` e o editor do laboratório usa um por tela do quadro. `update` faz o diff por identidade (`===`): só as instâncias novas ou com objeto novo são re-instanciadas, as que sumiram são destruídas. O desenho do Konva roda no `requestAnimationFrame`, no máximo uma vez por quadro.
 - **Invólucro React fino** (`lab/viewer/react.tsx`): `<MappingViewer/>` é um `<div>` que hospeda um `createViewer`.
-- **Build de biblioteca e pacote npm** (`lab/viewer/build.mjs`, `npm run build:viewer`): o `tsc` roda primeiro (e verifica os tipos), depois o esbuild gera, **minificados e com mapas externos** (`.js.map`), `dist-viewer/mapping-viewer.js` (cerca de 227 kB, mapa de 1,2 MB; eram 487 kB sem minificar) e `dist-viewer/mapping-viewer-react.js` (cerca de 228 kB, mapa de 1,2 MB; eram 489 kB). O script também escreve o pacote instalável: `dist-viewer/package.json` (`name: "mapping-viewer"`, versão **`0.1.0`**, lida da constante `VIEWER_VERSION` do `build.mjs`, que sobe junto com mudanças da API; `type: "module"`; `exports` `.` e `./react`, cada um com `types` e `import`; `peerDependencies` com `react >=18` opcional, para quem usa só o núcleo; sem `license`, porque o repositório ainda não tem `LICENSE`), `dist-viewer/types/` (`.d.ts`) e `dist-viewer/README.md` (copiado de `lab/viewer/PACKAGE-README.md`: instalação, uso do núcleo e do React, biblioteca, fontes, árvore e exports). No fim, o build confere que todo arquivo apontado por `exports` existe e falha com a lista dos que faltam. Para instalar: `npm pack` dentro de `dist-viewer/` gera `mapping-viewer-0.1.0.tgz` (`npm install ./mapping-viewer-0.1.0.tgz` no projeto hospedeiro) ou a pasta é copiada. Cada `.js` é ESM e autocontido, com o Konva e o motor embutidos; o do React deixa `react`, `react/jsx-runtime` e `react-dom` de fora (o hospedeiro fornece o dele). O hospedeiro usa um **ou** outro.
+- **Build de biblioteca e pacote npm** (`lab/viewer/build.mjs`, `npm run build:viewer`): o `tsc` roda primeiro (e verifica os tipos), depois o esbuild gera, **minificados e com mapas externos** (`.js.map`), `dist-viewer/mapping-viewer.js` (cerca de 254 kB; eram 487 kB sem minificar) e `dist-viewer/mapping-viewer-react.js` (cerca de 255 kB; eram 489 kB). O script também escreve o pacote instalável: `dist-viewer/package.json` (`name: "mapping-viewer"`, versão **`0.2.0`**, lida da constante `VIEWER_VERSION` do `build.mjs`, que sobe junto com mudanças da API; `type: "module"`; `exports` `.` e `./react`, cada um com `types` e `import`; `peerDependencies` com `react >=18` opcional, para quem usa só o núcleo; sem `license`, porque o repositório ainda não tem `LICENSE`), `dist-viewer/types/` (`.d.ts`) e `dist-viewer/README.md` (copiado de `lab/viewer/PACKAGE-README.md`: instalação, uso do núcleo e do React, biblioteca, fontes, árvore e exports). No fim, o build confere que todo arquivo apontado por `exports` existe e falha com a lista dos que faltam. Para instalar: `npm pack` dentro de `dist-viewer/` gera `mapping-viewer-0.2.0.tgz` (`npm install ./mapping-viewer-0.1.0.tgz` no projeto hospedeiro) ou a pasta é copiada. Cada `.js` é ESM e autocontido, com o Konva e o motor embutidos; o do React deixa `react`, `react/jsx-runtime` e `react-dom` de fora (o hospedeiro fornece o dele). O hospedeiro usa um **ou** outro.
 
 **Entrada:** a biblioteca (`Library`, montada por `loadLibrary(files)`) e a tela (`Screen`, de `parseScreen(json)` ou um objeto): a descrição neutra que o laboratório já tinha (tamanho, fundo, instâncias com retângulo, tipo, valores e pai). O hospedeiro ou a app traduzem o que têm para isso.
 
@@ -63,12 +63,12 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 - **Custo das atualizações frequentes.** O teste `tests/lab/viewer/viewer.test.ts` mede, em jsdom com canvas falso e medidor aproximado, a tela do Material 3 com 21 instâncias: atualizar **uma** instância leva cerca de **1 ms** e um `redraw()` completo cerca de **7,5 ms**. O diff por identidade deixa a atualização frequente proporcional ao que mudou. O desenho do Konva fica fora dessa medição (é no `requestAnimationFrame`, no máximo uma vez por quadro). Os números são de ordem de grandeza (canvas falso); a página de demonstração mostra o tempo aproximado de cada edição do JSON no navegador.
 - **A API basta para o hospedeiro construir a edição para leigos por cima (conclusão da fase).** Basta para o que uma ferramenta administrativa precisa: selecionar pelo clique, realçar pelo hover vindo da lista (`setHover`), editar os campos num formulário do hospedeiro e ver o redesenho na hora (`update` com a tela nova). `boxOf`, `scale` e `clientToScreen` deixam o hospedeiro desenhar as próprias alças ou rótulos em DOM por cima do contêiner, se quiser. A seleção pela árvore e o modo sem interação no canvas (`interactive: false`) são o caminho para a ferramenta administrativa: o canvas vira pré-visualização e a edição acontece na árvore e no formulário do hospedeiro. O que o núcleo **não** dá, de propósito, é arrastar e redimensionar: isso é edição (no laboratório fica no editor; no produto, no canvas da app). Se a ferramenta precisar de arrastar, a saída é a do editor: ligar o arrasto nos grupos via `ScreenRenderer` (exportado), em vez do `createViewer`.
 - **Pontos em aberto.** (1) `toDataURL` captura só o que cabe no `Stage`: com `fit` numérico maior que o contêiner, a tela sai cortada. (2) Os dois bundles duplicam o Konva: quem usar os dois no mesmo site carrega duas cópias; se incomodar, a saída é um bundle só com o invólucro dentro.
-- **Tamanho.** Página `dist/lab/react/index.html`: 491 kB (sem nenhuma ocorrência de "preact"); `dist/lab/components/index.html`: 418 kB.
+- **Tamanho.** Página `dist/lab/react/index.html`: 518 kB (491 kB antes da L2; sem nenhuma ocorrência de "preact"); `dist/lab/components/index.html`: 418 kB.
 
 **Estrutura:**
 
 - `lab/viewer/index.ts`: entrada pública do núcleo.
-- `lab/viewer/viewer.ts`: `createViewer`, `Viewer`, `ViewerOptions`.
+- `lab/viewer/viewer.ts`: `createViewer`, `Viewer`, `ViewerOptions` (inclui `source`, `onSource` e `screen()`, fase L2).
 - `lab/viewer/screenRenderer.ts`: `ScreenRenderer`, o desenho de uma tela num grupo.
 - `lab/viewer/measure.ts`: `konvaMeasurer`.
 - `lab/viewer/react.tsx`: `<MappingViewer/>`.
@@ -77,23 +77,100 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 - `lab/viewer/PACKAGE-README.md`: o README do pacote (copiado para `dist-viewer/README.md`).
 - `lab/viewer/build.mjs` e `lab/viewer/tsconfig.json`: build de biblioteca, pacote npm e declarações de tipo.
 - `lab/react/` (`index.html`, `main.tsx`, `react.css`): a página de demonstração, com CSS próprio (`--demo-*`, sem os tokens da app); `vite.lab.config.ts` com `--mode react` (sem o plugin `preact()` nem `tokensCss()`).
+- `lab/components/layout.ts` e `lab/components/origin.ts`: arrumação por tamanhos e declaração de origem (fase L2, ver abaixo); `tests/lab/components/layout.test.ts`, `origin.test.ts` e `sourceScreen.test.ts` os cobrem.
 - `tests/lab/viewer/`: núcleo, `ScreenRenderer`, árvore, funções do hospedeiro, invólucro e página React.
 
 React 19 é dependência de desenvolvimento **só do laboratório**: a app continua em Preact e nada de React entra no `dist/index.html`.
 
-## Próxima fase (L2)
+## Tela a partir de um JSON sem geometria (fase L2)
+
+**Pergunta:** dá para desenhar uma tela a partir do JSON de um backend de SDUI, que é uma árvore **sem retângulos**, sem o núcleo saber o que é SDUI? Isso pede duas coisas: cada componente se dimensionar sozinho (arrumação por tamanhos) e a especialização declarar, em dados, como traduzir o JSON externo para a biblioteca.
+
+**Onde ver:** `https://fabianofranca.github.io/mapping/preview/lab/react/`, terceiro botão **Material 3 (SDUI)** (ao lado de **Exemplos** e **Material 3**): a caixa de texto traz `lab/components/sdui/settings.sdui.json` e cada edição válida redesenha a tela.
+
+**Fluxo:** JSON externo → declaração de origem (`origin.ts`) → `LayoutScreen` (árvore sem geometria) → arrumação por tamanhos (`layout.ts`) → `Screen` (a descrição neutra que o visualizador já desenhava). Nada no núcleo conhece "SDUI": só a declaração da especialização, e o núcleo executa dados, nunca código vindo dela.
+
+**Dimensionamento (`sizing`):** o componente ganha `sizing?: { width?, height? }` (px, `"fill"` ou `"hug"`; eixo ausente = px de `size`), validado em `parseComponent.ts`. Só vale para instâncias sem retângulo; `formatVersion` do componente continua 1 (aditivo). No Material 3: top app bar fill × 64, text field fill × 56, chip hug × 32, card fill × hug, button hug × 40, list item fill × 72, switch fill × 32, checkbox fill × 40, row, column e box fill × hug, FAB 56 × 56, navigation bar fill × 80, bottom sheet fill × hug, scrim fill × fill. O cartão ganhou um slot de ações de verdade (`layout: row`, `gap: 8`, `justify: end`).
+
+**Arrumação por tamanhos (`layoutScreen(input, library, measure)`):** calcula tamanhos além de posições. A tela é o container raiz em **coluna**, sem padding nem gap: as raízes sem âncora entram no fluxo; as com âncora são posicionadas pela âncora e pela margem. Um componente é medido por `measureComponent` (`instantiate.ts`), e `InstantiateOptions.slotContent` informa o tamanho do conteúdo do slot (filhos arrumados mais o padding), de modo que a altura de um container `hug` acompanha o que há dentro. As regras:
+
+- `hug` é arredondado para cima (o texto não quebra por arredondamento) e todo tamanho final é limitado por `minSize`; o resto fica exato.
+- `fill` no eixo principal dentro de pai `hug` cai em `hug`, com aviso (dentro de templates continua virando 0). No eixo cruzado de uma row `hug`, os `fill` recebem a maior altura dos outros filhos.
+- `stretch` só afeta filhos `hug`; filho `hug` em column é limitado à largura do conteúdo.
+- Slot invisível ignora os filhos, com aviso. Slot vazio conta só o padding (o cartão sem ações fica com o gap de 8 a mais embaixo: ponto conhecido).
+- Conteúdo maior que a tela: o laboratório **avisa** (`tela: conteúdo maior que a altura da tela`) e não recorta nem recusa; a regra do produto continua "a decidir" no `PLAN.md`.
+- Caso de prova (`tests/lab/components/layout.test.ts`): com um texto de apoio mais longo, o cartão, a coluna que o contém e o irmão seguinte crescem os mesmos 80 px.
+
+O editor (`arrange.ts`) **não mudou**: lá o retângulo continua sendo a fonte de verdade e o layout do slot só posiciona; a arrumação por tamanhos vale para telas sem geometria. No produto, a ação "Arrumar" pode usar o `layoutScreen`.
+
+**Declaração de origem:** reaproveita as `sources` da `formatVersion` 3 e acrescenta `origins` na raiz da especialização (`formatVersion` 4 experimental do laboratório). `origins` é a parte executável do documento: chaves do nó, raízes da tela com âncoras, margem e película (`scrim`), valores da tela e `booleans`.
+
+```json
+"origins": [{
+  "system": "sdui",
+  "node": { "type": "type", "props": "props", "children": "children" },
+  "screen": {
+    "id": { "path": "screen.id" },
+    "width": { "path": "screen.device.width" },
+    "height": { "path": "screen.device.height" },
+    "background": { "path": "screen.background", "values": { "surface": "#FEF7FF" }, "default": "#FFFFFF" },
+    "roots": [
+      { "path": "content" },
+      { "path": "bottomBar", "anchor": "bottom" },
+      { "path": "floating[*]", "anchor": { "path": "anchor" }, "margin": { "path": "margin" } },
+      { "path": "modal", "anchor": "bottom", "scrim": "m3-scrim" }
+    ]
+  },
+  "booleans": { "true": "sim", "false": "não" }
+}]
+```
+
+Caminhos são `a.b[0].c`; `[*]` em `roots[].path` faz cada elemento virar uma raiz, e raiz cujo caminho não existe é ignorada sem aviso (tela sem FAB). Os `path` de `anchor` e `margin` são relativos ao nó da raiz. `props` e `children` são obrigatórios nesta versão (backend com props no próprio nó fica para depois). Largura ou altura ausente no documento é erro (sem tela). O mapeamento fica nos tipos e campos, no formato das `sources` da v3: no tipo, `name` é o tipo externo, mais `slot` (conferido: há um slot por componente e os filhos vão sempre para ele) e `ignore` (props aceitas e não desenhadas); no campo, `name` é o caminho dentro de `props` e `values` só vale em `enum`.
+
+```json
+{
+  "id": "m3-card",
+  "sources": [{ "system": "sdui", "name": "Card", "slot": "ações" }],
+  "fields": [
+    {
+      "key": "active",
+      "type": "enum",
+      "options": ["1", "2", "3"],
+      "sources": [{ "system": "sdui", "name": "selectedIndex", "values": { "0": "1" } }]
+    }
+  ]
+}
+```
+
+`parseOrigins` é estrito (chave desconhecida é problema, com caminho) e o `loadLibrary` valida o resto e põe em `library.problems`: `slot` que não existe no componente, `values` fora das regras, `scrim` que não é tipo, caminho inválido em campo, origem repetida. `translateSource(library, json, { system? })` traduz e `screenFromSource(library, json, { system?, measure })` traduz e arruma; nenhum lança (devolvem `error` ou `warnings`). O esboço `origem-material3.sketch.json` foi apagado: a declaração real está no `M3_SPEC` (`lab/components/samplesMaterial3.ts`) e vai para o `material3.spec.json` do zip.
+
+**Avisos:** tipo externo sem tipo de anotação (o nó e a subárvore ficam de fora), propriedade desconhecida (primeira chave de `props` que não é caminho de campo nem está em `ignore`; subchaves de objetos e listas conhecidos não são conferidas), valor fora das opções de um `enum`, objeto onde se esperava valor simples, âncora inválida (usa `top-start`), tipo sem componente e filhos de componente sem slot. Os avisos levam o caminho do nó (`content.children[1].props.foo`). Chaves ignoradas pelo desenho (`actions`, `binding`, `id`, `route`) não geram aviso.
+
+**Visualizador:** `createViewer` aceita `source` (o JSON já parseado, `unknown`), `sourceSystem` (também no `update`) e `onSource(result)`; `source` vence `screen`. A tela é recalculada quando a biblioteca ou o `source` mudam (identidade) e no `redraw()`, com o mesmo medidor do desenho, e `viewer.screen()` devolve a tela desenhada. `<MappingViewer source sourceSystem onSource />` faz o mesmo. Também exportados: `screenFromSource`, `translateSource`, `layoutScreen` e os tipos (`SourceResult`, `LayoutScreen`, `LayoutNode`, `LayoutRoot`, `ScreenAnchor`). `VIEWER_VERSION` foi a 0.2.0.
+
+**Página React:** o botão **Material 3 (SDUI)** põe a biblioteca do Material 3 e o `settings.sdui.json` na caixa de texto; a tela calculada chega por `onSource` e alimenta a árvore e as propriedades, e os avisos da origem aparecem no painel de status. Com JSON inválido ou `error` do resultado, a página mantém a última tela válida e mostra o erro. A página de componentes (editor) não importa JSON externo nesta fase. O Material 3 ganhou `Box`, `Row` e `Column` na declaração (spacing, padding, background, shape).
+
+**Teste de contrato:** `settings.sdui.json` passa pela declaração do Material 3 com **zero avisos** (`tests/lab/components/origin.test.ts` e `sourceScreen.test.ts`). É o modelo para o produto: os exemplos de cada componente serão o próprio JSON do SDUI e a biblioteca vira teste de contrato do backend.
+
+**Pontos em aberto:**
+
+- O JSON real do backend ainda não foi testado (o dono não o tem por enquanto); se for irregular demais para uma declaração, a saída é o backend ou a ferramenta administrativa normalizarem antes.
+- Listas que viram campos numerados (`items[0].label` vira `label1`) são frágeis: é o argumento para a barra de navegação e o bottom sheet aceitarem campo de tabela no produto.
+- Props no próprio nó (sem `props`) e vários slots por componente ficam para depois.
+- O cartão sem ações fica com o gap de 8 a mais embaixo, e conteúdo maior que o slot só avisa.
+- Na demonstração por desenho (botão **Material 3**), o FAB e a barra de navegação ficam sob a folha do modal; no SDUI, sem o `modal` aparecem.
+
+## Próxima fase
 
 Detalhes e checkboxes no [`PLAN.md`](../PLAN.md), seção "Etapa em andamento".
 
 - **L1, visualizador embutível: concluída.** Ver a seção `viewer/` acima.
-- **L2, tela a partir de um JSON sem geometria:** dimensionamento por componente, arrumação por tamanhos, declaração de origem executável e a página colando um JSON do SDUI.
+- **L2, tela a partir de um JSON sem geometria: concluída**, falta só o teste com o JSON real do backend, quando o dono tiver (até lá, o exemplo passa sem avisos). Ver a seção acima.
+- **Próximo: Fechamento** (README com as conclusões, mesclar o épico `epic/lab` na `main` e abrir o épico "Biblioteca").
 
 ## `components/sdui/` — Exemplo de JSON do SDUI
 
-Dois arquivos, entrada da fase L2:
-
-- `settings.sdui.json`: a tela de configurações do Material 3 escrita como um backend de SDUI escreveria. É uma árvore com `type`, `props`, `children`, `actions`, `binding`, `floating`, `bottomBar` e `modal`, **sem retângulos**.
-- `origem-material3.sketch.json`: **esboço** da declaração de origem que traduz esse JSON para a biblioteca. As chaves ainda não existem no formato; a L2 define a declaração.
+Um arquivo, entrada da fase L2: `settings.sdui.json`, a tela de configurações do Material 3 escrita como um backend de SDUI escreveria. É uma árvore com `type`, `props`, `children`, `actions`, `binding`, `floating`, `bottomBar` e `modal`, **sem retângulos**. A declaração que o traduz (o esboço `origem-material3.sketch.json` saiu) está no `M3_SPEC`, em `lab/components/samplesMaterial3.ts`.
 
 O que o exemplo exercita, de propósito:
 
@@ -105,4 +182,4 @@ O que o exemplo exercita, de propósito:
 - elementos fora do fluxo: o FAB em `floating` com âncora, a `bottomBar` e o `modal` com scrim implícito;
 - chaves ignoradas pelo desenho (`actions`, `binding`, `id`, `route`); `binding` é a relação com o modelo e viraria campo de referência na importação.
 
-Antecipa duas necessidades: o cartão precisa de um slot de ações (o do laboratório não tem) e o texto de apoio do cartão com altura `hug` dentro de coluna `hug` é o caso que prova a arrumação por tamanhos. O dono não consegue testar com o JSON real do backend por enquanto.
+Caso de prova da arrumação por tamanhos: o texto de apoio do cartão, com altura `hug` dentro de coluna `hug`. O cartão ganhou o slot de ações na L2. O dono não consegue testar com o JSON real do backend por enquanto.

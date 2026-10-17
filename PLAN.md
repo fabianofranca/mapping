@@ -70,12 +70,12 @@ O laboratório `lab/components/` (PR [#160](https://github.com/fabianofranca/map
 
 **Coordenador:** Opus. Define formato (declaração de origem executável, dimensionamento) e a arrumação por tamanhos; decisões que o produto herda. **Esforço:** high; subagentes medium, e high nos briefings de formato e de arrumação.
 
-- [ ] Dimensionamento por componente (largura e altura: `fill`, `hug` ou px) e arrumação que calcula tamanhos além de posições, com a tela como container raiz em coluna; caso de prova: texto de apoio do cartão com altura `hug` dentro de coluna `hug`.
-- [ ] Declaração de origem executável no formato experimental do laboratório: chaves do nó (tipo, props, filhos), raízes da tela com âncoras e overlays, tipo externo para tipo de anotação, caminho de cada campo (aninhado, com índice), tradução de valores e slot dos filhos. O núcleo executa a declaração e nunca código vindo da especialização.
-- [ ] Visualizador aceitando a biblioteca mais um JSON externo; a página do laboratório deixa colar um JSON do SDUI, com `lab/components/sdui/settings.sdui.json` como exemplo embutido ao lado da tela do Material 3.
-- [ ] Avisos para props desconhecidas; chaves ignoradas pelo desenho não geram erro.
-- [ ] Cartão com slot de ações (o do laboratório não tem).
-- [ ] Teste com o JSON real do backend, quando o dono tiver (até lá, o exemplo). Risco real: se o JSON real tiver estruturas irregulares demais para uma declaração, a saída é o backend ou a ferramenta administrativa normalizarem antes.
+- [x] Dimensionamento por componente (largura e altura: `fill`, `hug` ou px) e arrumação que calcula tamanhos além de posições, com a tela como container raiz em coluna; caso de prova: texto de apoio do cartão com altura `hug` dentro de coluna `hug`.
+- [x] Declaração de origem executável no formato experimental do laboratório: chaves do nó (tipo, props, filhos), raízes da tela com âncoras e overlays, tipo externo para tipo de anotação, caminho de cada campo (aninhado, com índice), tradução de valores e slot dos filhos. O núcleo executa a declaração e nunca código vindo da especialização.
+- [x] Visualizador aceitando a biblioteca mais um JSON externo; a página do laboratório deixa colar um JSON do SDUI, com `lab/components/sdui/settings.sdui.json` como exemplo embutido ao lado da tela do Material 3.
+- [x] Avisos para props desconhecidas; chaves ignoradas pelo desenho não geram erro.
+- [x] Cartão com slot de ações (o do laboratório não tem).
+- [ ] Teste com o JSON real do backend, quando o dono tiver (até lá, o exemplo, que passa sem avisos; o teste com o real espera o dono). Risco real: se o JSON real tiver estruturas irregulares demais para uma declaração, a saída é o backend ou a ferramenta administrativa normalizarem antes.
 
 ### Fechamento
 
@@ -98,6 +98,7 @@ O laboratório `lab/components/` (PR [#160](https://github.com/fabianofranca/map
 - **A decidir:** regra para conteúdo maior que o slot (a invariante exige filho dentro do pai): recortar ou recusar e avisar.
 - Editar um campo no painel redesenha o componente na hora (uma ação do store, uma versão do projeto, um quadro; só a marcação mudada é re-instanciada). Vale para desfazer/refazer, alteração externa (recarga) e revisão de proposta (a visão Proposto desenha com os valores propostos).
 - Pacote = pasta da especialização (especialização, componentes um por arquivo, fontes, documentos markdown por componente, exemplos nomeados); tudo o que a especialização referencia fica dentro da pasta. Nomes: **Biblioteca** (o pacote) e **Catálogo** (a tela de documentação). Aplicar a um projeto copia a pasta.
+- Conteúdo maior que a tela ou o slot, no laboratório: o desenho **avisa** (`tela: conteúdo maior que a altura da tela`) e não recorta nem recusa; o produto ainda decide (item "A decidir" acima).
 - **A decidir:** peso das fontes por projeto. Começar copiando; se incomodar, referenciar o pacote da pasta central só para as fontes.
 - Porta aberta, não agora: um pacote de desenhos servindo a várias especializações, por caminho relativo.
 - A app é só leitura da biblioteca: pacotes e pedidos de alteração são escritos por agentes. "Editor de especializações dentro da app" sai do roadmap.
@@ -108,5 +109,5 @@ O laboratório `lab/components/` (PR [#160](https://github.com/fabianofranca/map
 - JSON do SDUI como entrada do visualizador, sem quebrar o núcleo genérico: a especialização declara uma **origem executável** (como já declara origens do Figma) e o núcleo executa a declaração sem saber o que é SDUI. Nenhum nome de plataforma ou de sistema externo no código do núcleo.
 - O JSON do SDUI é uma árvore sem geometria: cada componente declara como se dimensiona sem retângulo e a arrumação calcula tamanhos. Os exemplos nos documentos de cada componente passam a ser o próprio JSON do SDUI, e a validação confere que cada exemplo passa pela declaração sem propriedade desconhecida (a biblioteca vira teste de contrato do backend).
 - Mais tarde, sem data: a mesma declaração pode dar a saída tela para sistema externo, de forma determinística, e a importação de telas do SDUI para projetos (começo da migração de telas antigas).
-- `lab/components/sdui/settings.sdui.json` (tela de configurações do Material 3 escrita como um backend de SDUI escreveria) e `lab/components/sdui/origem-material3.sketch.json` (esboço da declaração de origem; as chaves ainda não existem no formato) já existem; a L2 define a declaração. O dono não consegue testar com o JSON real do backend por enquanto.
+- `lab/components/sdui/settings.sdui.json` (tela de configurações do Material 3 escrita como um backend de SDUI escreveria) é o exemplo da L2; a declaração de origem real está no `M3_SPEC` (o esboço foi apagado). O dono não consegue testar com o JSON real do backend por enquanto.
 - Cada fase tem um **modelo coordenador** definido (L1 e Fechamento: Sonnet; L2: Opus; B1 a B5 no [`docs/ROADMAP.md`](docs/ROADMAP.md)). Cada fase define também o esforço do coordenador e dos subagentes: o do coordenador é definido pelo dono ao abrir a sessão (a sessão não o confere, então a recusa é só por modelo); o dos subagentes vai explícito em cada briefing, lido daqui; sem esforço definido, `medium`. Antes de começar, a sessão confere o modelo em que roda: se for superior ao definido, não executa a fase e pede ao dono para trocar de modelo; se for inferior, avisa e só continua com a confirmação do dono. Regra completa na seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md).
