@@ -8,6 +8,7 @@ import type {
 import {
   approximateMeasurer,
   instantiate,
+  measureComponent,
   normalizePadding,
   type Box,
 } from '../../../lab/components/instantiate';
@@ -645,5 +646,120 @@ describe('approximateMeasurer', () => {
     const wrapped = approximateMeasurer('aaaa bbbb cccc', font, 4 * 14 * 0.55 + 1);
     expect(wrapped.height).toBeCloseTo(3 * 16.8, 5);
     expect(approximateMeasurer('a\nb', font).height).toBeCloseTo(2 * 16.8, 5);
+  });
+});
+
+// --- slotContent e measureComponent (arrumação por tamanhos, fase L2) -------------------------
+
+describe('instantiate: slotContent e measureComponent', () => {
+  const TEXT_FONT = { size: 10, lineHeight: 12 };
+  const textHeight = 12;
+  const textWidth = approximateMeasurer('AAAA', { ...FONT, size: 10, weight: 400 }).width;
+
+  const columnWithSlot = component({
+    type: 'frame',
+    layout: { type: 'column' },
+    children: [
+      { type: 'text', text: 'AAAA', font: TEXT_FONT },
+      { type: 'slot', name: 'content' },
+    ],
+  });
+
+  const measure = (
+    c: ComponentFile,
+    size: { width: number | null; height: number | null },
+    slotContent?: { width: number; height: number },
+  ) =>
+    measureComponent(c, {}, size, {
+      measure: approximateMeasurer,
+      ...(slotContent ? { slotContent } : {}),
+    });
+
+  it('sem slotContent o slot vale 0 ao medir e o fill dentro de hug avisa', () => {
+    const result = measure(columnWithSlot, { width: null, height: null });
+    expect(result.height).toBeCloseTo(textHeight);
+    expect(result.width).toBeCloseTo(textWidth);
+    expect(result.warnings).toContain('fill dentro de hug vira 0');
+  });
+
+  it('com slotContent o slot fill vale o conteúdo dos filhos, sem aviso', () => {
+    const result = measure(
+      columnWithSlot,
+      { width: null, height: null },
+      { width: 90, height: 20 },
+    );
+    expect(result.height).toBeCloseTo(textHeight + 20);
+    expect(result.width).toBeCloseTo(90);
+    expect(result.warnings).not.toContain('fill dentro de hug vira 0');
+  });
+
+  it('slot hug vale o slotContent do eixo (e 0 sem ele)', () => {
+    const hugSlot = component({
+      type: 'frame',
+      layout: { type: 'column' },
+      children: [{ type: 'slot', width: 'hug', height: 'hug' }],
+    });
+    expect(
+      measure(hugSlot, { width: null, height: null }, { width: 30, height: 20 }),
+    ).toMatchObject({ width: 30, height: 20 });
+    expect(measure(hugSlot, { width: null, height: null })).toMatchObject({
+      width: 0,
+      height: 0,
+    });
+  });
+
+  it('slot ancorado nos dois lados vale o slotContent mais as âncoras', () => {
+    const inset = component({
+      type: 'frame',
+      layout: { type: 'none' },
+      children: [{ type: 'slot', anchors: { left: 5, right: 5, top: 2, bottom: 2 } }],
+    });
+    expect(
+      measure(inset, { width: null, height: null }, { width: 30, height: 20 }),
+    ).toMatchObject({ width: 40, height: 24 });
+  });
+
+  it('com tamanho conhecido num eixo, mede só o outro', () => {
+    const result = measure(
+      columnWithSlot,
+      { width: 100, height: null },
+      { width: 90, height: 20 },
+    );
+    expect(result.width).toBe(100);
+    expect(result.height).toBeCloseTo(textHeight + 20);
+  });
+
+  it('com o pai medido, o slot fill divide o que sobra (o próprio slotContent)', () => {
+    const { root } = instantiate(
+      columnWithSlot,
+      {},
+      { x: 0, y: 0, width: 100, height: 32 },
+      {
+        measure: approximateMeasurer,
+        slotContent: { width: 90, height: 20 },
+      },
+    );
+    const slot = child(root, 1);
+    expect(slot.height).toBeCloseTo(20);
+    expect(slot.width).toBe(100);
+  });
+
+  it('measureComponent mede o plano da raiz (hug nos dois eixos)', () => {
+    const values = { label: 'Salvar', variant: 'primary', icon: 'não' };
+    const measured = measureComponent(
+      component(button),
+      values,
+      { width: null, height: null },
+      { measure: approximateMeasurer },
+    );
+    expect(measured.width).toBeCloseTo(16 * 2 + labelWidth);
+    expect(measured.height).toBeCloseTo(labelHeight);
+    const { root } = run(button, values, {
+      x: 0,
+      y: 0,
+      width: measured.width,
+      height: measured.height,
+    });
+    expect(tx(child(root, 0))).toBeCloseTo(16);
   });
 });
