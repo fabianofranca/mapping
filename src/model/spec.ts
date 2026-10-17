@@ -688,7 +688,9 @@ const fontShape = z
   })
   .strict();
 
-const migrationVersion = z.number({ error: 'deve ser um número' }).int('deve ser inteiro');
+const migrationVersion = z
+  .number({ error: 'deve ser um número' })
+  .int('deve ser inteiro');
 
 const migrationStepShape = z.discriminatedUnion(
   'op',
@@ -702,7 +704,12 @@ const migrationStepShape = z.discriminatedUnion(
       })
       .strict(),
     z
-      .object({ op: z.literal('rename-field'), type: nonEmpty, from: nonEmpty, to: nonEmpty })
+      .object({
+        op: z.literal('rename-field'),
+        type: nonEmpty,
+        from: nonEmpty,
+        to: nonEmpty,
+      })
       .strict(),
     z.object({ op: z.literal('remove-field'), type: nonEmpty, field: nonEmpty }).strict(),
     z
@@ -777,7 +784,11 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 /** Chaves da `formatVersion` 4 nos tipos (`component`, `doc`, `examples`) em versão anterior. */
 function checkNoLibraryKeys(
   layers: readonly {
-    annotationTypes: readonly { component?: unknown; doc?: unknown; examples?: unknown }[];
+    annotationTypes: readonly {
+      component?: unknown;
+      doc?: unknown;
+      examples?: unknown;
+    }[];
   }[],
   ctx: z.RefinementCtx,
 ): void {
@@ -827,7 +838,8 @@ function checkFieldSources(
     const isExecutable = version >= 4 && executable.has(source.system);
     if (source.path !== undefined) {
       if (version < 4) add('path', 'só é permitido com formatVersion 4');
-      else if (!isExecutable) add('path', 'só é permitido em sistema declarado em origins');
+      else if (!isExecutable)
+        add('path', 'só é permitido em sistema declarado em origins');
       else {
         const problem = fieldPathProblem(source.path);
         if (problem !== undefined) add('path', problem);
@@ -881,9 +893,9 @@ function checkTypeSources(
   });
 }
 
-/** Aplica `checkFieldSources`/`checkTypeSources`/o `system` dos exemplos a todos os tipos. */
+/** Aplica `checkTypeSources` e `checkFieldSources` (campos e colunas) a todos os tipos. */
 function checkSources(
-  layers: RawLayers & readonly { annotationTypes: readonly { examples?: unknown }[] }[],
+  layers: RawLayers,
   version: number,
   executable: ReadonlySet<string>,
   ctx: z.RefinementCtx,
@@ -980,7 +992,9 @@ function checkMigrations(
     for (const type of layer.annotationTypes) {
       types.set(
         type.id,
-        new Map(type.fields.filter((f) => f.type !== REMOVED_FIELD_TYPE).map((f) => [f.key, f])),
+        new Map(
+          type.fields.filter((f) => f.type !== REMOVED_FIELD_TYPE).map((f) => [f.key, f]),
+        ),
       );
     }
   }
@@ -1039,7 +1053,8 @@ function checkMigrations(
 
       switch (step.op) {
         case 'rename-type':
-          if (!types.has(step.to)) stepAdd('to', `tipo "${step.to}" não existe nesta versão`);
+          if (!types.has(step.to))
+            stepAdd('to', `tipo "${step.to}" não existe nesta versão`);
           typeGone(step.from, 'from');
           break;
         case 'remove-type':
@@ -1351,7 +1366,11 @@ function dropRemovedFields(parsed: ParsedSpec): {
       };
     }),
   }));
-  return { spec: { ...parsed, layers } as Spec, ignored };
+  // `origins` foi validado por `parseOrigins` no schema; a forma lida é a dele.
+  const { origins: rawOrigins, ...rest } = parsed;
+  const origins =
+    rawOrigins === undefined ? {} : { origins: parseOrigins(rawOrigins).origins };
+  return { spec: { ...rest, ...origins, layers } as Spec, ignored };
 }
 
 /**
