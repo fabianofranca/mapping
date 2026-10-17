@@ -31,13 +31,13 @@ Comece por `list_projects`. O servidor descreve seu uso nas próprias instruçõ
 ## Regras
 
 - **Nunca edite `mapping.json`, `specs/` ou `proposals/` à mão.** Toda alteração vai por `plan_changes` (prévia) e `propose_changes` (grava uma proposta); a pessoa revisa e aplica na app. Depois de propor, avise e espere a revisão (`get_proposal`, `get_proposal_review`).
-- **Especializações nascem em `especializacoes/`**, com a skill `spec-author` (abaixo), são validadas com `validate_specialization` e aplicadas a um projeto só por proposta (`apply_specialization` dentro de `propose_changes`). Para mudar uma aplicada, edite a fonte, suba a `version` e envie `update_specialization`.
+- **Especializações nascem em `especializacoes/`**, com a skill `spec-author` (abaixo), são validadas com `validate_specialization` e aplicadas a um projeto só por proposta (`apply_specialization` dentro de `propose_changes`). Para mudar uma aplicada, edite a fonte, suba a `version` e envie `update_specialization`. **Bibliotecas** (`formatVersion` 4) são **pastas** `especializacoes/<id>/`: valide com `validate_library({ path })` (não só o arquivo) e entregue a pasta à pessoa, que a aplica na app (Especializações); `propose_changes` recusa pacote v4. Para ler os componentes, use `list_components` e `get_component`.
 - **Coordenadas** de marcação são sempre em pixels da imagem original.
 - **Código**: o servidor só confere se arquivos de código existem, e só dentro do diretório onde o cliente foi aberto. Para ligar marcações a código (`get_code_hints`, `find_by_code`), abra o agente no repositório do código, com esta pasta como raiz do servidor por caminho absoluto.
 
 ## Skill `spec-author`
 
-Para escrever, revisar ou atualizar uma especialização, use a skill `spec-author` (`.agents/skills/spec-author/SKILL.md`): ela traz o método, a leitura obrigatória do formato e a validação; o pedido só precisa dizer `id`, origem, `formatVersion`, plataformas e o que fica fora (modelo no fim da skill). Grave a fonte em `especializacoes/<id>.json`.
+Para escrever, revisar ou atualizar uma especialização, use a skill `spec-author` (`.agents/skills/spec-author/SKILL.md`): ela traz o método, a leitura obrigatória do formato e a validação; o pedido só precisa dizer `id`, origem, `formatVersion`, plataformas e o que fica fora e, para uma biblioteca, a pasta de saída e a origem dos componentes (modelo no fim da skill). Grave a fonte em `especializacoes/<id>.json` (biblioteca: na pasta `especializacoes/<id>/`).
 
 ## Fluxo típico
 
