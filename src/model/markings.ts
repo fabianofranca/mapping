@@ -14,13 +14,25 @@ import {
 import { childrenOf, depthOf, descendantIds, descendantsOf } from './hierarchy';
 import { canDeleteMarking, canEditMarkingGeometry, requireUnlocked } from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
+import { projectIndex } from './projectIndex';
 import { countBrokenRefs } from './refs';
 import type { Marking, Project, Rect } from './types';
 
-function checkRectShape(rect: Rect): void {
+/**
+ * Opções das operações que mudam o retângulo. `minSize` é o tamanho mínimo do componente que
+ * desenha a marcação (etapa Biblioteca): quem chama o lê do catálogo e o passa aqui; o modelo
+ * não conhece componentes. Sem a opção nada muda.
+ */
+export interface RectOptions {
+  readonly minSize?: { readonly width: number; readonly height: number };
+}
+
+function checkRectShape(rect: Rect, options?: RectOptions): void {
   if (!isIntegerRect(rect)) fail('rect-not-integer');
   if (rect.width < MIN_MARKING_SIZE || rect.height < MIN_MARKING_SIZE)
     fail('rect-too-small');
+  const min = options?.minSize;
+  if (min && (rect.width < min.width || rect.height < min.height)) fail('rect-too-small');
 }
 
 /** Área onde a marcação pode ficar: o `rect` do pai ou a imagem inteira. */
@@ -77,10 +89,14 @@ export interface NewMarkingArgs {
 }
 
 /** Cria uma marcação. Se o retângulo estiver dentro de outras, a mais interna vira o pai. */
-export function createMarking(p: Project, args: NewMarkingArgs): Project {
+export function createMarking(
+  p: Project,
+  args: NewMarkingArgs,
+  options?: RectOptions,
+): Project {
   if (p.markings.some((m) => m.id === args.id)) fail('duplicate-id', args.id);
   const image = findById(p.images, args.imageId);
-  checkRectShape(args.rect);
+  checkRectShape(args.rect, options);
   if (!containsRect(imagePixelRect(image), args.rect)) fail('rect-out-of-image');
   const parent = innermostContaining(p, image.id, args.rect);
   const marking: Marking = {
@@ -123,10 +139,15 @@ function sameRect(a: Rect, b: Rect): boolean {
  * O retângulo atual não é mudança: devolve `p` como está, sem conferir a trava
  * (a reexportação completa de um item trancado passa).
  */
-export function setMarkingRect(p: Project, markingId: string, rect: Rect): Project {
+export function setMarkingRect(
+  p: Project,
+  markingId: string,
+  rect: Rect,
+  options?: RectOptions,
+): Project {
   const marking = findById(p.markings, markingId);
   if (sameRect(marking.rect, rect)) return p;
-  checkRectShape(rect);
+  checkRectShape(rect, options);
   requireUnlocked(canEditMarkingGeometry(p, markingId));
   const { outer, inner } = markingRectLimits(p, markingId);
   if (!containsRect(outer, rect)) {
@@ -189,13 +210,15 @@ export function moveMarking(
  * Ajuste fino de um campo do retângulo (painel de detalhes), com o valor
  * limitado às regras em vez de rejeitado: `x`/`y` movem a marcação com os
  * descendentes (como arrastar); `width`/`height` redimensionam mantendo o canto
- * superior esquerdo, entre o tamanho mínimo (ou a caixa das filhas) e o pai.
+ * superior esquerdo, entre o tamanho mínimo (ou a caixa das filhas) e o pai. Com
+ * `options.minSize` (componente), o mínimo do componente também limita por baixo.
  */
 export function adjustMarkingRect(
   p: Project,
   markingId: string,
   field: keyof Rect,
   value: number,
+  options?: RectOptions,
 ): Project {
   if (!Number.isInteger(value)) fail('rect-not-integer');
   const { rect } = findById(p.markings, markingId);
@@ -213,16 +236,24 @@ export function adjustMarkingRect(
     field === 'width'
       ? clamp(
           value,
-          Math.max(MIN_MARKING_SIZE, inner ? right(inner) - rect.x : 0),
+          Math.max(
+            MIN_MARKING_SIZE,
+            options?.minSize?.width ?? 0,
+            inner ? right(inner) - rect.x : 0,
+          ),
           right(outer) - rect.x,
         )
       : clamp(
           value,
-          Math.max(MIN_MARKING_SIZE, inner ? bottom(inner) - rect.y : 0),
+          Math.max(
+            MIN_MARKING_SIZE,
+            options?.minSize?.height ?? 0,
+            inner ? bottom(inner) - rect.y : 0,
+          ),
           bottom(outer) - rect.y,
         );
   if (size === rect[field]) return p;
-  return setMarkingRect(p, markingId, { ...rect, [field]: size });
+  return setMarkingRect(p, markingId, { ...rect, [field]: size }, options);
 }
 
 /** Pais válidos: mesma imagem, contém o retângulo, não é a própria nem descendente. */
@@ -302,5 +333,53 @@ function cascadeRemove(p: Project, markingId: string): Project {
     ...p,
     markings: p.markings.filter((m) => !ids.has(m.id)),
     annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Ordem entre irmãs
+
+/** Irmãs da marcação (mesma imagem e mesmo pai, ela inclusive), na ordem do array. */
+function siblingsOf(p: Project, marking: Marking): readonly Marking[] {
+  const group = projectIndex(p).children.get(marking.parentId) ?? [];
+  return marking.parentId === null
+    ? group.filter((m) => m.imageId === marking.imageId)
+    : group;
+}
+
+/**
+ * Posição da marcação entre as irmãs (0 = a primeira, desenhada por baixo) e quantas irmãs
+ * existem, ela inclusive. A ordem é a do array `markings`.
+ */
+export function siblingPosition(
+  p: Project,
+  markingId: string,
+): { index: number; count: number } {
+  const marking = findById(p.markings, markingId);
+  const siblings = siblingsOf(p, marking);
+  return { index: siblings.findIndex((m) => m.id === markingId), count: siblings.length };
+}
+
+/**
+ * Move a marcação para a posição `index` entre as irmãs (0 = por baixo, a última = por
+ * cima). As irmãs ocupam as mesmas casas do array; as outras marcações não mudam de lugar.
+ * Não é geometria: a trava não impede. Mesma posição devolve `p` como está; fora de
+ * `[0, count - 1]` falha com `invalid-index`.
+ */
+export function reorderMarking(p: Project, markingId: string, index: number): Project {
+  const marking = findById(p.markings, markingId);
+  const siblings = siblingsOf(p, marking);
+  if (!Number.isInteger(index) || index < 0 || index >= siblings.length) {
+    fail('invalid-index');
+  }
+  const from = siblings.findIndex((m) => m.id === markingId);
+  if (from === index) return p;
+  const order = siblings.filter((m) => m.id !== markingId);
+  order.splice(index, 0, marking);
+  const slots = new Set(siblings.map((m) => m.id));
+  let next = 0;
+  return {
+    ...p,
+    markings: p.markings.map((m) => (slots.has(m.id) ? (order[next++] as Marking) : m)),
   };
 }

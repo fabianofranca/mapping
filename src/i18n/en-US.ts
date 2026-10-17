@@ -123,6 +123,8 @@ export const enUS: Dictionary = {
   'marking.error.rect-outside-parent': 'The marking must stay inside its parent marking.',
   'marking.error.rect-excludes-children': 'The marking must contain its inner markings.',
   'marking.error.invalid-parent': 'That marking cannot be the parent.',
+  'marking.error.not-arrangeable':
+    'Only a row or column container that has markings inside can be arranged.',
   'marking.error.generic': 'Could not change the marking.',
 
   'image.name': 'Name',
@@ -595,6 +597,7 @@ export const enUS: Dictionary = {
   'issue.owner-not-allowed': 'owner type not allowed',
   'issue.broken-ref': 'broken reference',
   'issue.ref-not-accepted': 'target not accepted (lost the tag or is no longer free)',
+  'issue.component-overflow': 'The component does not fit',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
   // Detalhes (R5)

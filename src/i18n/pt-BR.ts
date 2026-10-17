@@ -123,6 +123,8 @@ export const ptBR = {
   'marking.error.rect-excludes-children':
     'A marcação precisa envolver as marcações internas.',
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
+  'marking.error.not-arrangeable':
+    'Só é possível arrumar um container em linha ou coluna que tenha marcações dentro.',
   'marking.error.generic': 'Não foi possível alterar a marcação.',
 
   'image.name': 'Nome',
@@ -598,6 +600,7 @@ export const ptBR = {
   'issue.owner-not-allowed': 'dono de tipo não permitido',
   'issue.broken-ref': 'referência quebrada',
   'issue.ref-not-accepted': 'alvo não aceito (perdeu a etiqueta ou deixou de ser livre)',
+  'issue.component-overflow': 'O componente não cabe',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
   // Detalhes (R5)

@@ -28,7 +28,12 @@ export type AnnotationIssueCode =
   /** O alvo da referência não existe mais. */
   | 'broken-ref'
   /** O alvo existe, mas não é aceito pelo campo (perdeu a etiqueta, deixou de ser livre). */
-  | 'ref-not-accepted';
+  | 'ref-not-accepted'
+  /**
+   * O componente que desenha a marcação não cabe na caixa (etapa Biblioteca). O modelo não o
+   * produz: quem tem o desenho (`src/store/derived.ts`) o junta às pendências.
+   */
+  | 'component-overflow';
 
 export interface AnnotationIssue {
   readonly code: AnnotationIssueCode;

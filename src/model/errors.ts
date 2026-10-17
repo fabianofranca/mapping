@@ -46,7 +46,9 @@ export type ModelErrorCode =
   | 'invalid-url-template'
   | 'invalid-local-path'
   // Propostas de alteração (etapa 4)
-  | 'invalid-source';
+  | 'invalid-source'
+  // Componentes (etapa Biblioteca)
+  | 'not-arrangeable';
 
 export class ModelError extends Error {
   constructor(
