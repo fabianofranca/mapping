@@ -654,7 +654,7 @@ Para um agente com controle do computador (Cowork) que executa os roteiros. O pr
 
 **Estado prévio do navegador.** Se o perfil já foi usado em outra rodada, registre antes do R4.1 os projetos da tela inicial e o valor de `localStorage.getItem('mapping.reviewResume')` no console da aba da app (na versão de prévia, `'preview:mapping.reviewResume'`; o `file://` e o GitHub Pages têm valores separados). Não apague nada: excluir projetos ou limpar os dados do site fica com a pessoa.
 
-**Forçar a versão nova.** Se o build id não for o esperado, use só a faixa **Nova versão disponível.** › **Atualizar** (seção 3, item 1). Se ela não aparecer, peça ao dono para resolver. Nunca abra janela anônima ou perfil de convidado (a extensão não roda neles; rodada 1) nem limpe os dados do site (apaga projetos do dono).
+**Forçar a versão nova.** Se o build id não for o esperado, use só a faixa **Nova versão disponível.** › **Atualizar** (seção 3, item 1). Se ela não aparecer, peça ao dono para resolver (no Cowork, se o preview não tiver o build a testar, o testador dispara o Deploy sozinho para o branch: `docs/TESTING-COWORK.md`, seção 2). Nunca abra janela anônima ou perfil de convidado (a extensão não roda neles; rodada 1) nem limpe os dados do site (apaga projetos do dono).
 
 **Página oculta e foco.** Peça à pessoa, uma vez, para deixar o computador desbloqueado e a janela do Chrome à vista, em foco e sem uso em paralelo durante a rodada, inclusive quando ela não estiver no teclado (rodadas 1 e 2): com a página oculta, a conferência de mudanças externas e a varredura de propostas param, e os diálogos nativos não abrem.
 

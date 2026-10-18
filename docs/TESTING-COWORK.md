@@ -18,7 +18,7 @@
 >
 > Antes, o dono prepara **uma vez**:
 >
-> - a URL publicada da app (GitHub Pages; para testar um branch, o preview publicado por `workflow_dispatch`) ou o `index.html` avulso baixado do artefato do deploy;
+> - a URL publicada da app (GitHub Pages; para testar um branch, o preview, que o dono publica por `workflow_dispatch` ou, se não publicou, o testador publica sozinho, seção 2) ou o `index.html` avulso baixado do artefato do deploy;
 > - o workspace do MCP, com `./setup.sh <tag>` (a Release mais recente, ou a pre-release a testar; seção 6 do `docs/TESTING.md`, inclusive o que fazer se a Release ainda não existir) e o `mapping-mcp.js` em `tools/`;
 > - o **dialog-pilot** instalado e registrado no Claude Desktop, que foi reiniciado pela bandeja, e o modo **automático** ligado (apêndice A do guia, "Diálogos nativos com o dialog-pilot");
 > - se quiser o teste do MCP com o Claude Code, ele instalado; sem ele, o testador faz os pedidos pelo cliente por stdio.
@@ -54,6 +54,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 6. Peça ao dono, **uma vez**, no começo da rodada, para deixar o computador **desbloqueado** e a janela do Chrome **à vista e em foco** e sem uso em paralelo durante toda ela, inclusive quando ele não estiver no teclado (apêndice A, "Página oculta e foco"). Com o dialog-pilot, é a única coisa que os seletores e as permissões exigem dele.
 7. **Estado prévio do navegador:** registre o que a tela inicial já mostra e, se souber ler, a chave `mapping.reviewResume` (apêndice A); não apague nada.
 8. Anote o **build id** (seção 3 do guia) e confira se é o esperado, o do item (g). Se não for, use só a faixa **Atualizar**; se ela não aparecer, peça ao dono. Nunca use janela anônima ou de convidado nem limpe os dados do site (apêndice A, "Forçar a versão nova"). Se a app não mostrar um build id, esse já é o primeiro achado.
+9. **Preview sem o build a testar.** Se o preview (`https://fabianofranca.github.io/mapping/preview/`) mostrar outro build id e a faixa **Atualizar** não trouxer o esperado, o testador **dispara ele mesmo** o workflow **Deploy** para o branch em teste, **sem pedir autorização** (decisão do dono). Pela shell: `gh workflow run deploy.yml --repo fabianofranca/mapping -f branch=<branch>` (se o `gh` estiver autenticado); senão, pela página do GitHub na aba controlada pela extensão: Actions › **Deploy** › **Run workflow**, preenchendo o campo `branch`. Espere a execução terminar (o Deploy roda o CI inteiro antes de publicar, alguns minutos), recarregue o preview, use a faixa **Atualizar** se aparecer e confira o build id de novo. Registre no relato, no cabeçalho "Forma de abrir": "preview publicado pelo testador, execução `<id>`". Limites: só o workflow **Deploy**, só para o branch em teste e **nunca sem o campo `branch`** (sem ele, publica a `main`). Se o Deploy falhar, não insista: registre o motivo, pare a rodada e avise o dono.
 
 ## 3. Passos [pessoa]
 
@@ -121,7 +122,7 @@ No cabeçalho, em **Ferramenta**, registre a versão do dialog-pilot e se os ped
 - Não envie arquivos do dono para fora do computador (a app não faz rede; você também não precisa).
 - Não use pastas fora de `~/mapping-testes/`.
 - Não mude permissões ou arquivos do sistema além da permissão de escrita da `loja` no R6.8b a R6.11 (apêndice B), e devolva-a.
-- Não abra PR nem edite o repositório.
+- Não abra PR nem edite o repositório. A única exceção é disparar o workflow **Deploy** do preview para o branch em teste, como na seção 2 (item 9).
 - Não apague projetos nem dados do site no navegador do dono.
 - Não dê como testado o que não observou: se um passo não puder ser executado, marque "não executado" e o motivo.
 
