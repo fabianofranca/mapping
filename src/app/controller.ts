@@ -32,7 +32,14 @@ import { requestPersistentStorage } from '../storage/local';
 import type { ProjectStorage, StorageKind } from '../storage/types';
 import { readProjectZip, writeProjectZip, zipFileName } from '../storage/zip';
 import { createDisplayImages, type DisplayImages } from '../store/displayImages';
+import { openLibraryPreview, type LibraryPreview } from '../store/libraryPreview';
 import { openSession, type ProjectSession } from '../store/session';
+import {
+  pickPackageDirectory,
+  readPackageFromDirectory,
+  readPackageFromZip,
+  type PackageReadResult,
+} from '../ui/specPackageImport';
 import { reportError } from '../utils/report';
 import { err, guarded, inconsistentResult, ok, type AppResult } from './appResult';
 import { bindPageLifecycle } from './pageLifecycle';
@@ -446,4 +453,57 @@ export async function closeProject(): Promise<void> {
     }
     await Promise.all([recents.refreshLocalProjects(), recents.refreshRecentFolders()]);
   }
+}
+
+// ---- Catálogo de uma biblioteca, sem projeto (etapa Biblioteca, B5) ----
+
+/** A biblioteca aberta na tela do Catálogo; `null` quando não há. Nada dela é gravado. */
+export const openLibrary = signal<LibraryPreview | null>(null);
+
+export type LibrarySource =
+  { readonly kind: 'folder' } | { readonly kind: 'zip'; readonly file: Blob };
+
+export type LibraryOpenResult =
+  | { readonly kind: 'opened' }
+  /** O usuário cancelou o seletor de pasta. */
+  | { readonly kind: 'cancelled' }
+  | { readonly kind: 'failed'; readonly reason: 'too-big' | 'empty' | 'unreadable' };
+
+/**
+ * Lê o pacote (pasta ou zip) para a memória e abre o Catálogo. Um pacote com erros de
+ * validação abre mesmo assim (os problemas aparecem no topo da tela); só o que não se
+ * consegue ler (grande demais, vazio, zip inválido) falha.
+ */
+export async function openLibraryPackage(
+  source: LibrarySource,
+): Promise<LibraryOpenResult> {
+  let read: PackageReadResult;
+  try {
+    if (source.kind === 'folder') {
+      const handle = await pickPackageDirectory();
+      if (!handle) return { kind: 'cancelled' };
+      read = await readPackageFromDirectory(handle);
+    } else {
+      read = await readPackageFromZip(source.file);
+    }
+  } catch (e) {
+    reportError('library.read', e);
+    return { kind: 'failed', reason: 'unreadable' };
+  }
+  if (!read.ok) return { kind: 'failed', reason: read.reason };
+  try {
+    const preview = openLibraryPreview(read.files);
+    openLibrary.value?.dispose();
+    openLibrary.value = preview;
+    return { kind: 'opened' };
+  } catch (e) {
+    reportError('library.open', e);
+    return { kind: 'failed', reason: 'unreadable' };
+  }
+}
+
+/** Fecha o Catálogo da biblioteca e tira as fontes do pacote do documento. */
+export function closeLibrary(): void {
+  openLibrary.value?.dispose();
+  openLibrary.value = null;
 }

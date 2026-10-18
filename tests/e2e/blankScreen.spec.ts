@@ -52,8 +52,9 @@ test('tela em branco com um componente da Biblioteca, sem desenho gravado', asyn
     .getByRole('button', { name: 'Fechar', exact: true })
     .click();
 
-  // Janela Biblioteca (Ctrl+Shift+8) e Adicionar de um botão.
-  await page.keyboard.press('Control+Shift+8');
+  // Janela Catálogo, aba Paleta (Ctrl+Shift+9) e Adicionar de um botão.
+  await page.keyboard.press('Control+Shift+9');
+  await page.getByRole('tab', { name: 'Paleta' }).click();
   await page.getByRole('button', { name: 'Adicionar Button' }).click();
   await expect(host).toHaveAttribute('data-components', /^[1-9]/);
 

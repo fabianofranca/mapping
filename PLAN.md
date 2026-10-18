@@ -157,12 +157,12 @@ A especialização passa a entregar uma **Biblioteca**: um pacote (a pasta da es
 
 **Toca em:** `src/model/markdown.ts` (novo, puro), `src/ui/markdown/` (novo, Preact), `src/ui/catalog/` (novo: lista, página do componente, tabela de propriedades, código, origem, galeria, playground), `src/ui/TypedForm.tsx` (novo, extraído de `TypedFields.tsx`, `FieldEditors.tsx`, `TableField.tsx`, `RefField`), `src/app/Home.tsx` (Abrir biblioteca), `src/app/EditorWindows.tsx` e `src/store/toolWindows.ts` (janela Catálogo; a paleta da B3 vira uma aba dela), `src/i18n/*`, `src/theme/tokens.ts` (só se faltar papel), `docs/ARCHITECTURE.md`, `docs/TESTING.md` (R10 — Catálogo), `tests/model/markdown.test.ts`, `tests/components/catalog/`, `tests/e2e/`.
 
-- [ ] Parser puro do subconjunto do markdown (títulos, parágrafos, negrito, itálico, código em linha, blocos de código, listas, tabelas simples, links `mapping://` e âncoras) com testes por construção e de entrada hostil (HTML é texto); renderizador Preact sem `innerHTML`
-- [ ] Tela inicial: **Abrir biblioteca** (pasta ou zip do pacote, sem projeto) abre o Catálogo com a validação dos três níveis no topo (erros e avisos)
-- [ ] Página do componente: documento, tabela de propriedades gerada dos campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), `code` por plataforma (símbolo e `path`, com os links dos repositórios quando houver projeto), `sources` por sistema, galeria dos exemplos como imagens estáticas geradas pelo motor (uma vez, em cache por versão)
-- [ ] Playground vivo: `TypedForm` com os campos do tipo e o desenho ao lado, redesenhando a cada mudança; tamanho ajustável entre `minSize` e o dobro de `size`
-- [ ] Janela de ferramenta Catálogo dentro do projeto (atalho na sequência das janelas de `src/store/toolWindows.ts`), com a paleta da B3 como aba: Adicionar à tela à vista a partir da página do componente
-- [ ] Sem código no MCP (os documentos e exemplos já são servidos desde a B2); `docs/TESTING.md`: roteiro **R10 — Catálogo**
+- [x] Parser puro do subconjunto do markdown (títulos, parágrafos, negrito, itálico, código em linha, blocos de código, listas, tabelas simples, links `mapping://` e âncoras) com testes por construção e de entrada hostil (HTML é texto); renderizador Preact sem `innerHTML`
+- [x] Tela inicial: **Abrir biblioteca** (pasta ou zip do pacote, sem projeto) abre o Catálogo com a validação dos três níveis no topo (erros e avisos)
+- [x] Página do componente: documento, tabela de propriedades gerada dos campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), `code` por plataforma (símbolo e `path`, com os links dos repositórios quando houver projeto), `sources` por sistema, galeria dos exemplos como imagens estáticas geradas pelo motor (uma vez, em cache por versão)
+- [x] Playground vivo: `TypedForm` com os campos do tipo e o desenho ao lado, redesenhando a cada mudança; tamanho ajustável entre `minSize` e o dobro de `size`
+- [x] Janela de ferramenta Catálogo dentro do projeto (atalho na sequência das janelas de `src/store/toolWindows.ts`), com a paleta da B3 como aba: Adicionar à tela à vista a partir da página do componente
+- [x] Sem código no MCP (os documentos e exemplos já são servidos desde a B2); `docs/TESTING.md`: roteiro **R10 — Catálogo**
 
 **Aceite:** no R10, a pessoa abre a pasta do Material 3 pela tela inicial, navega pelos componentes, muda os campos no playground e vê o desenho acompanhar; dentro de um projeto, adiciona um componente à tela pela janela Catálogo.
 

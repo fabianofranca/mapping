@@ -1,7 +1,9 @@
+import { catalogPtBR } from './catalog';
 import { reviewPtBR } from './review';
 
 export const ptBR = {
   ...reviewPtBR,
+  ...catalogPtBR,
   'app.title': 'Mapping',
   'app.loading': 'Carregando…',
   'narrow.title': 'Abra numa janela maior',
@@ -662,6 +664,7 @@ export const ptBR = {
   'issue.headingOne': 'Incompleta: 1 pendência',
   'issue.headingMany': 'Incompleta: {count} pendências',
   'issue.item': '{annotation} · {reason}',
+  'typedForm.refUnavailable': 'Escolher referência só funciona dentro de um projeto.',
   'ref.choosePlaceholder': 'Escolher…',
   'ref.fieldButton': '{field}: {value}',
   'ref.goToShortcut': 'Ctrl+clique',
@@ -794,7 +797,20 @@ export const ptBR = {
   'help.code.repos':
     'Repositórios: em Configurações (engrenagem), na seção "Repositórios de código", informe para cada plataforma o endereço do arquivo, com {path}, e o caminho local da raiz do repositório, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repositório, gera um aviso.',
   // Biblioteca de componentes na app (etapa Biblioteca, B3)
-  'library.window.title': 'Biblioteca',
+  // Catálogo: janela do editor e tela da biblioteca sem projeto (etapa Biblioteca, B5)
+  'catalog.window.title': 'Catálogo',
+  'catalog.window.components': 'Componentes',
+  'catalog.window.palette': 'Paleta',
+  'catalog.window.tabs': 'Seções do Catálogo',
+  'catalog.window.loading': 'Lendo as bibliotecas…',
+  'catalog.window.spec': 'Biblioteca',
+  'catalog.home.open': 'Abrir biblioteca',
+  'catalog.home.openHint':
+    'Veja o catálogo de uma biblioteca (pasta ou zip do pacote) sem abrir um projeto',
+  'catalog.home.back': 'Voltar à tela inicial',
+  'catalog.home.screen': 'Catálogo da biblioteca',
+  'catalog.home.untitled': 'Biblioteca sem nome',
+  'catalog.home.version': 'versão {version}',
   'library.empty': 'Nenhuma biblioteca com componentes aplicada.',
   'library.openSpecs': 'Abrir Especializações',
   'library.container': 'Container',

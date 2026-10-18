@@ -14,11 +14,13 @@ const NOTE = 'O nome antigo do cabeçalho estava certo.';
 
 async function importFixture(page: Page): Promise<void> {
   await page.goto('/');
-  await page.locator('input[type=file][accept^=".zip"]').setInputFiles({
-    name: 'loja.zip',
-    mimeType: 'application/zip',
-    buffer: await fixtureZip(),
-  });
+  await page
+    .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+    .setInputFiles({
+      name: 'loja.zip',
+      mimeType: 'application/zip',
+      buffer: await fixtureZip(),
+    });
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
 }
 

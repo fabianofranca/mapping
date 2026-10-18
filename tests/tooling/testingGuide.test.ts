@@ -249,7 +249,7 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
     expect(guide).not.toMatch(/mcp-v0\.\d/);
   });
 
-  it('nenhum passo dos roteiros principais fica sem substituto, fora das exceções (R0 a R9)', () => {
+  it('nenhum passo dos roteiros principais fica sem substituto, fora das exceções (R0 a R10)', () => {
     expect(stepsWithoutSubstitute(guide, NO_SUBSTITUTE_EXCEPTIONS)).toEqual([]);
   });
 

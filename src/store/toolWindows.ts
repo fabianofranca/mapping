@@ -19,7 +19,7 @@ export const TOOL_WINDOWS = [
   'incomplete',
   'diagnostics',
   'proposals',
-  'library',
+  'catalog',
 ] as const;
 
 export type ToolWindowId = (typeof TOOL_WINDOWS)[number];
@@ -35,14 +35,15 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   incomplete: 'bottom',
   diagnostics: 'bottom',
   proposals: 'bottom',
-  library: 'left',
+  catalog: 'left',
 };
 
 /**
  * Número do atalho de cada janela (Ctrl+Shift+N, e Alt+N onde o navegador deixa).
  * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
- * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7; a Biblioteca
- * de componentes (etapa Biblioteca, B3) é a 8.
+ * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7; o Catálogo
+ * (etapa Biblioteca, B5, que guarda a paleta da B3 como aba) é o 9. O 8, da Biblioteca da
+ * B3, ficou vago.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
@@ -52,7 +53,7 @@ export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   incomplete: 5,
   diagnostics: 6,
   proposals: 7,
-  library: 8,
+  catalog: 9,
 };
 
 /** Janela do atalho Ctrl+Shift+N (`null` se o número não tem janela ainda). */
@@ -139,6 +140,9 @@ interface StoredLayout {
 
 const KEY = 'mapping.toolWindows';
 
+/** Ids que já existiram e hoje são outra janela (a paleta da B3 virou aba do Catálogo). */
+const RENAMED: Readonly<Record<string, ToolWindowId>> = { library: 'catalog' };
+
 function isToolWindow(value: unknown): value is ToolWindowId {
   return TOOL_WINDOWS.some((id) => id === value);
 }
@@ -169,7 +173,9 @@ const stored = readStored();
 const hadStored = readSetting(KEY) !== null;
 
 const openIds = signal<ReadonlySet<ToolWindowId>>(
-  new Set(stored.open?.filter(isToolWindow) ?? DEFAULT_OPEN),
+  new Set(
+    stored.open?.map((id) => RENAMED[id] ?? id).filter(isToolWindow) ?? DEFAULT_OPEN,
+  ),
 );
 
 /** Altura inicial da janela inferior em modo revisão (`--size-tw-bottom-review`). */
@@ -283,13 +289,13 @@ export function showToolWindow(id: ToolWindowId): void {
   if (side === 'bottom') bottomTab.value = id;
   const next = new Set(openIds.value);
   // A esquerda empilha Árvore e Camadas; os outros lados mostram uma janela por vez. A
-  // Biblioteca ocupa a coluna da esquerda sozinha: abri-la esconde as duas e vice-versa.
+  // coluna da esquerda do Catálogo é só dele: abri-lo esconde as duas e vice-versa.
   if (side !== 'left') {
     for (const other of next) if (WINDOW_SIDE[other] === side) next.delete(other);
-  } else if (id === 'library') {
+  } else if (id === 'catalog') {
     for (const other of next) if (WINDOW_SIDE[other] === 'left') next.delete(other);
   } else {
-    next.delete('library');
+    next.delete('catalog');
   }
   next.add(id);
   openIds.value = next;
