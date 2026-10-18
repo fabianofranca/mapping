@@ -47,6 +47,8 @@ export interface RenderOptions {
   readonly onImageLoaded?: () => void;
   /** Cores do reservado e do nó desconhecido (padrão: `DEFAULT_PALETTE`). */
   readonly palette?: Partial<RenderPalette>;
+  /** Desenha o contorno do reservado de um `slot` (padrão `true`; a camada do produto usa `false`). */
+  readonly showSlots?: boolean;
 }
 
 export interface RenderResult {
@@ -249,6 +251,7 @@ class Renderer {
         // Um `slot` (laboratório de componentes) é um espaço reservado, não uma falha:
         // contorno discreto e sem aviso.
         const slot = node.sourceType === 'slot';
+        if (slot && this.options.showSlots === false) return shapes;
         if (!slot) this.warnings.add(`nó não desenhado (${node.sourceType}): só a caixa`);
         shapes.push(
           new KonvaRect({

@@ -7,7 +7,12 @@ import {
   ComponentLayerRenderer,
 } from '../../../src/canvas/components/componentLayer';
 import type { Placement } from '../../../src/model';
-import { type FrameNode, baseNode, translate } from '../../../src/model/components/scene';
+import {
+  type FrameNode,
+  type SceneNode,
+  baseNode,
+  translate,
+} from '../../../src/model/components/scene';
 
 beforeAll(() => installFakeCanvas());
 
@@ -59,6 +64,26 @@ function setup() {
 }
 
 describe('ComponentLayerRenderer', () => {
+  it('não desenha contorno tracejado para o slot de um container', () => {
+    const { layer, nodes } = setup();
+    const base = drawing('row');
+    const slot: SceneNode = {
+      ...baseNode({
+        id: 'slot',
+        name: 'slot',
+        width: 80,
+        height: 20,
+        transform: translate(0, 0),
+      }),
+      type: 'unknown',
+      sourceType: 'slot',
+    };
+    const root: FrameNode = { ...(base.root as FrameNode), fills: [], children: [slot] };
+    layer.render(toMap({ ...base, root }), all, PLACEMENTS);
+    const rects = (nodes('img-1')[0] as Konva.Group).find('Rect') as Konva.Rect[];
+    expect(rects.some((r) => (r.dash() ?? []).length > 0)).toBe(false);
+  });
+
   it('cria um grupo por imagem posicionado pelo placement, sem eventos', () => {
     const { parent, layer, nodes } = setup();
     const changed = layer.render(

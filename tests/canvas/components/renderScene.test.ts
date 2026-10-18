@@ -250,3 +250,28 @@ describe('renderScene', () => {
     expect((cross as Konva.Line).stroke()).toBe('#bbbbbb');
   });
 });
+
+describe('slot (reservado do container)', () => {
+  const slot: SceneNode = {
+    ...baseNode({
+      id: 's',
+      name: 'slot',
+      width: 50,
+      height: 20,
+      transform: translate(0, 0),
+    }),
+    type: 'unknown',
+    sourceType: 'slot',
+  };
+
+  it('desenha o contorno tracejado por padrão', () => {
+    const rect = renderScene(scene(slot)).byId.get('s')?.getChildren()[0] as Konva.Rect;
+    expect(rect.dash()).toEqual([3, 5]);
+  });
+
+  it('com showSlots: false não gera forma, mas o contêiner existe', () => {
+    const result = renderScene(scene(slot), { showSlots: false });
+    expect(result.byId.get('s')?.getChildren()).toHaveLength(0);
+    expect(result.warnings).toEqual([]);
+  });
+});

@@ -132,6 +132,7 @@ export class ComponentLayerRenderer {
       { root: drawing.root, warnings: [] },
       {
         palette: this.options.placeholder,
+        showSlots: false,
         onImageLoaded: this.options.onImageLoaded,
       },
     );
