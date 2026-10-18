@@ -1,6 +1,10 @@
 import { isContainerComponent } from './componentCatalog';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
-import { type TextMeasurer, instantiate } from './components/instantiate';
+import {
+  type TextMeasurer,
+  instantiate,
+  measureComponent,
+} from './components/instantiate';
 import { type Library, loadLibrary, resolvePath } from './components/library';
 import { screenFromSource } from './components/origin';
 import { parseComponentText } from './components/parseComponent';
@@ -336,6 +340,54 @@ export function clampPlaygroundSize(component: ComponentFile, size: Size): Size 
   };
 }
 
+export interface Axes {
+  readonly width: boolean;
+  readonly height: boolean;
+}
+
+/** Eixos em que o componente declara `sizing: 'hug'` (o tamanho acompanha o conteúdo). */
+export function hugAxes(component: ComponentFile): Axes {
+  return {
+    width: component.sizing?.width === 'hug',
+    height: component.sizing?.height === 'hug',
+  };
+}
+
+/**
+ * Tamanho do desenho que respeita o `sizing`: nos eixos `auto` (padrão: os `hug` do
+ * componente) o tamanho é o do conteúdo, medido com `values`; nos demais fica o `base`
+ * (padrão: o `size`). Tudo limitado ao intervalo do playground. Sem componente: 1×1.
+ */
+export function fittedSize(
+  entry: CatalogEntry,
+  values: FieldValues,
+  measure: TextMeasurer,
+  options: { readonly base?: Size; readonly auto?: Partial<Axes> } = {},
+): Size {
+  const component = entry.component;
+  if (component === null) return { width: 1, height: 1 };
+  const base = options.base ?? component.size;
+  const hug = hugAxes(component);
+  const autoW = options.auto?.width ?? hug.width;
+  const autoH = options.auto?.height ?? hug.height;
+  if (!autoW && !autoH) return clampPlaygroundSize(component, base);
+  try {
+    const measured = measureComponent(
+      component,
+      { ...defaultValues(entry.type), ...values },
+      { width: autoW ? null : base.width, height: autoH ? null : base.height },
+      { measure },
+    );
+    const fit = (v: number): number => Math.ceil(v - 1e-6);
+    return clampPlaygroundSize(component, {
+      width: autoW ? fit(measured.width) : base.width,
+      height: autoH ? fit(measured.height) : base.height,
+    });
+  } catch {
+    return clampPlaygroundSize(component, base);
+  }
+}
+
 /** Desenha o componente da entrada com `values` no tamanho dado (padrão: o `size` do componente). `null` sem componente. */
 export function drawEntry(
   entry: CatalogEntry,
@@ -365,10 +417,22 @@ export function exampleDrawing(
 ): CatalogDrawing | null {
   try {
     if (example === undefined) {
-      return drawEntry(entry, entry.previewValues ?? {}, measure, size);
+      const values = entry.previewValues ?? {};
+      return drawEntry(
+        entry,
+        values,
+        measure,
+        size ?? fittedSize(entry, values, measure),
+      );
     }
     if (example.mode === 'values') {
-      return drawEntry(entry, example.values ?? {}, measure, size);
+      const values = example.values ?? {};
+      return drawEntry(
+        entry,
+        values,
+        measure,
+        size ?? fittedSize(entry, values, measure),
+      );
     }
     return systemDrawing(catalog, example, measure);
   } catch {

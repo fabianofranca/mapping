@@ -7,6 +7,8 @@ import {
   type JsonValue,
   clampPlaygroundSize,
   drawEntry,
+  fittedSize,
+  hugAxes,
   playgroundSizeRange,
 } from '../../model';
 import { Button, TextField } from '../controls';
@@ -33,8 +35,26 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
   const component = entry.component;
   const initial = entry.previewValues ?? {};
   const [values, setValues] = useState<Readonly<Record<string, unknown>>>(initial);
-  const [size, setSize] = useState(() =>
-    component === null ? { width: 1, height: 1 } : { ...component.size },
+  // Eixos que o usuário fixou digitando; os `hug` fora daqui acompanham o conteúdo.
+  const [manual, setManual] = useState<{ width?: number; height?: number }>({});
+  const hug = useMemo(
+    () => (component === null ? { width: false, height: false } : hugAxes(component)),
+    [component],
+  );
+  const autoWidth = hug.width && manual.width === undefined;
+  const autoHeight = hug.height && manual.height === undefined;
+  const size = useMemo(
+    () =>
+      fittedSize(entry, values as FieldValues, renderer.measure, {
+        base: {
+          width: manual.width ?? component?.size.width ?? 1,
+          height: manual.height ?? component?.size.height ?? 1,
+        },
+        auto: { width: autoWidth, height: autoHeight },
+      }),
+    // `fontsEpoch`: as fontes carregadas mudam a medida do texto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entry, component, values, manual, autoWidth, autoHeight, renderer, fontsEpoch],
   );
   const [drawn, setDrawn] = useState<Drawn>({ url: null, warnings: [] });
 
@@ -70,12 +90,13 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
   const setDimension = (dimension: 'width' | 'height') => (text: string) => {
     const n = Number(text);
     if (text.trim() === '' || !Number.isFinite(n)) return false;
-    setSize((current) => clampPlaygroundSize(component, { ...current, [dimension]: n }));
+    const fixed = clampPlaygroundSize(component, { ...size, [dimension]: n })[dimension];
+    setManual((current) => ({ ...current, [dimension]: fixed }));
     return true;
   };
   const reset = () => {
     setValues(entry.previewValues ?? {});
-    setSize({ ...component.size });
+    setManual({});
   };
 
   return (
@@ -106,6 +127,16 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
             onCommit={setDimension('height')}
           />
         </div>
+        {(autoWidth || autoHeight) && (
+          <p class="muted catalog-playground-auto">
+            {[
+              autoWidth ? t('catalog.playground.autoWidth') : null,
+              autoHeight ? t('catalog.playground.autoHeight') : null,
+            ]
+              .filter((text) => text !== null)
+              .join(' · ')}
+          </p>
+        )}
         <p class="muted catalog-playground-range">
           {t('catalog.playground.range', {
             minWidth: range.min.width,

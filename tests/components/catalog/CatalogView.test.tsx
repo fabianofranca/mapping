@@ -14,6 +14,7 @@ import {
   type CatalogEntry,
   approximateMeasurer,
   buildCatalog,
+  fittedSize,
   type Project,
 } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
@@ -291,35 +292,120 @@ describe('playground', () => {
     );
   });
 
-  it('limita o tamanho entre o mínimo e o dobro', async () => {
-    const { user } = view({ initialTypeId: 'm3-button' });
-    const width = within(stage()).getByLabelText<HTMLInputElement>(
-      t('catalog.playground.width'),
+  const buttonEntry = () => {
+    const entry = base.layers
+      .flatMap((l) => l.entries)
+      .find((e) => e.type.id === 'm3-button');
+    if (entry === undefined) throw new Error('sem botão');
+    return entry;
+  };
+  const widthField = () =>
+    within(stage()).getByLabelText<HTMLInputElement>(t('catalog.playground.width'));
+  const heightField = () =>
+    within(stage()).getByLabelText<HTMLInputElement>(t('catalog.playground.height'));
+  const autoWidthOf = (label: string) =>
+    String(
+      fittedSize(
+        buttonEntry(),
+        { ...buttonEntry().previewValues, label },
+        approximateMeasurer,
+      ).width,
     );
-    expect(width.value).toBe('120');
-    await user.clear(width);
-    await user.type(width, '9999{Enter}');
-    await waitFor(() => expect(width.value).toBe('240'));
-    await user.clear(width);
-    await user.type(width, '1{Enter}');
-    await waitFor(() => expect(Number(width.value)).toBeGreaterThanOrEqual(1));
-    const min = base.layers[0]?.entries.find((e) => e.type.id === 'm3-button')?.component
-      ?.minSize?.width;
-    expect(Number(width.value)).toBe(min ?? 1);
+
+  it('a largura começa automática e acompanha o texto', async () => {
+    const { user } = view({ initialTypeId: 'm3-button' });
+    expect(widthField().value).toBe(autoWidthOf('Label'));
+    expect(heightField().value).toBe('40');
+    expect(within(stage()).getByText(t('catalog.playground.autoWidth'))).toBeTruthy();
+    const label = within(stage()).getByRole<HTMLInputElement>('textbox', {
+      name: /label/i,
+    });
+    await user.clear(label);
+    await user.type(label, 'Confirmar compra{Enter}');
+    await waitFor(() => expect(widthField().value).toBe(autoWidthOf('Confirmar compra')));
+    expect(Number(widthField().value)).toBeGreaterThan(120);
+    expect(heightField().value).toBe('40');
+    await waitFor(() =>
+      expect(within(stage()).queryByText(/conteúdo maior que a caixa/)).toBeNull(),
+    );
   });
 
-  it('Restaurar valores volta ao inicial', async () => {
+  it('digitar uma largura a torna manual e limitada', async () => {
     const { user } = view({ initialTypeId: 'm3-button' });
-    const width = within(stage()).getByLabelText<HTMLInputElement>(
-      t('catalog.playground.width'),
+    await user.clear(widthField());
+    await user.type(widthField(), '9999{Enter}');
+    await waitFor(() => expect(widthField().value).toBe('240'));
+    expect(within(stage()).queryByText(t('catalog.playground.autoWidth'))).toBeNull();
+    await user.clear(widthField());
+    await user.type(widthField(), '1{Enter}');
+    await waitFor(() =>
+      expect(widthField().value).toBe(String(buttonEntry().component?.minSize?.width)),
     );
-    await user.clear(width);
-    await user.type(width, '200{Enter}');
-    await waitFor(() => expect(width.value).toBe('200'));
+    await user.clear(widthField());
+    await user.type(widthField(), '200{Enter}');
+    await waitFor(() => expect(widthField().value).toBe('200'));
+    const label = within(stage()).getByRole<HTMLInputElement>('textbox', {
+      name: /label/i,
+    });
+    await user.clear(label);
+    await user.type(label, 'Confirmar compra{Enter}');
+    await waitFor(() => expect(label.value).toBe('Confirmar compra'));
+    expect(widthField().value).toBe('200');
+  });
+
+  it('Restaurar valores volta ao inicial e ao automático', async () => {
+    const { user } = view({ initialTypeId: 'm3-button' });
+    const label = within(stage()).getByRole<HTMLInputElement>('textbox', {
+      name: /label/i,
+    });
+    await user.clear(label);
+    await user.type(label, 'Confirmar compra{Enter}');
+    await user.clear(widthField());
+    await user.type(widthField(), '200{Enter}');
+    await waitFor(() => expect(widthField().value).toBe('200'));
     await user.click(
       within(stage()).getByRole('button', { name: t('catalog.playground.reset') }),
     );
-    await waitFor(() => expect(width.value).toBe('120'));
+    await waitFor(() => expect(widthField().value).toBe(autoWidthOf('Label')));
+    expect(label.value).toBe('Label');
+    expect(within(stage()).getByText(t('catalog.playground.autoWidth'))).toBeTruthy();
+  });
+});
+
+describe('navegação', () => {
+  it('abrir outro componente leva a rolagem ao topo (tela cheia)', async () => {
+    const { user, container } = view({ initialTypeId: 'm3-button' });
+    const detail = container.querySelector<HTMLElement>('.catalog-detail');
+    if (detail === null) throw new Error('sem detalhe');
+    detail.scrollTop = 500;
+    await user.click(entryButton('Chip'));
+    await waitFor(() => expect(detail.scrollTop).toBe(0));
+  });
+
+  it('abrir outro componente leva a rolagem ao topo (diálogo)', async () => {
+    const catalog = patched(base, 'm3-card', {
+      docText: '[ir](mapping://material3/m3-chip)',
+    });
+    const { user } = view({ layout: 'list' }, catalog);
+    await user.click(entryButton('Card'));
+    const dialog = await screen.findByRole('dialog');
+    const body = dialog.querySelector<HTMLElement>('.dialog-body');
+    if (body === null) throw new Error('sem corpo');
+    body.scrollTop = 500;
+    await user.click(within(dialog).getByRole('link', { name: 'ir' }));
+    await waitFor(() => expect(body.scrollTop).toBe(0));
+    expect(within(dialog).getByRole('article', { name: 'Chip' })).toBeTruthy();
+  });
+
+  it('destino desconhecido avisa em região de status dentro da área que rola', async () => {
+    const markdown = '[quebrado](mapping://material3/nao-existe)';
+    const catalog = patched(base, 'm3-button', { docText: markdown });
+    const { user, container } = view({ initialTypeId: 'm3-button' }, catalog);
+    await user.click(screen.getByRole('link', { name: 'quebrado' }));
+    const notice = await screen.findByRole('status');
+    expect(notice.textContent).toContain('mapping://material3/nao-existe');
+    expect(notice.classList.contains('catalog-notice')).toBe(true);
+    expect(container.querySelector('.catalog-detail')?.contains(notice)).toBe(true);
   });
 });
 

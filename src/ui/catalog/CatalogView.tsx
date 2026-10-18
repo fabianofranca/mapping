@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
 import { type Catalog, type CatalogEntry, type Project, findEntry } from '../../model';
 import { Button, TextField } from '../controls';
@@ -83,6 +83,9 @@ export function CatalogView({
   const [notice, setNotice] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+  const [navigation, setNavigation] = useState(0);
 
   const needle = query.trim().toLowerCase();
   const layers = useMemo(
@@ -107,11 +110,26 @@ export function CatalogView({
   const select = (typeId: string) => {
     setNotice(null);
     setSelectedId(typeId);
+    setNavigation((n) => n + 1);
     if (layout === 'list') {
       openerRef.current = document.activeElement as HTMLElement | null;
       setDialogOpen(true);
     }
   };
+
+  // Navegar para um componente abre a página no topo (tela cheia e diálogo).
+  useEffect(() => {
+    if (navigation === 0) return;
+    if (detailRef.current !== null) detailRef.current.scrollTop = 0;
+    // No diálogo, quem rola é um ancestral do conteúdo: zera todos até o próprio diálogo.
+    for (
+      let el = dialogContentRef.current?.parentElement;
+      el && el.getAttribute('role') !== 'dialog';
+      el = el.parentElement
+    ) {
+      el.scrollTop = 0;
+    }
+  }, [navigation]);
 
   const onLink = (href: string) => {
     const typeId = resolveCatalogLink(catalog, specId, href);
@@ -240,7 +258,7 @@ export function CatalogView({
         </nav>
 
         {layout === 'split' && (
-          <div class="catalog-detail">
+          <div class="catalog-detail" ref={detailRef}>
             {notice !== null && (
               <p class="catalog-notice muted" role="status">
                 {notice}
@@ -263,12 +281,14 @@ export function CatalogView({
             </Button>
           }
         >
-          {notice !== null && (
-            <p class="catalog-notice muted" role="status">
-              {notice}
-            </p>
-          )}
-          {page}
+          <div class="catalog-dialog-content" ref={dialogContentRef}>
+            {notice !== null && (
+              <p class="catalog-notice muted" role="status">
+                {notice}
+              </p>
+            )}
+            {page}
+          </div>
         </Dialog>
       )}
     </div>

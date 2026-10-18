@@ -8,6 +8,8 @@ import {
   drawEntry,
   exampleDrawing,
   findEntry,
+  fittedSize,
+  hugAxes,
   playgroundSizeRange,
 } from '../../src/model/catalog';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
@@ -108,6 +110,65 @@ describe('catálogo do Material 3', () => {
       height: min.height,
     });
     expect(clampPlaygroundSize(button, button.size)).toEqual(button.size);
+  });
+
+  describe('tamanho que respeita o sizing', () => {
+    const button = () => {
+      const entry = findEntry(catalog, 'm3-button');
+      if (entry === undefined) throw new Error('sem botão');
+      return entry;
+    };
+    const overflow = /conteúdo maior que a caixa/;
+
+    it('hugAxes lê o sizing do componente', () => {
+      expect(hugAxes(button().component!)).toEqual({ width: true, height: false });
+    });
+
+    it('label longo: a largura cresce e o desenho não corta', () => {
+      const entry = button();
+      const values = { ...entry.previewValues, label: 'Confirmar compra' };
+      const size = fittedSize(entry, values, approximateMeasurer);
+      expect(size.width).toBeGreaterThan(120);
+      expect(size.height).toBe(40);
+      const drawing = drawEntry(entry, values, approximateMeasurer, size);
+      expect(drawing?.warnings.join('|')).not.toMatch(overflow);
+    });
+
+    it('label curto: respeita o mínimo; eixo não-hug fica no size', () => {
+      const entry = button();
+      const size = fittedSize(
+        entry,
+        { ...entry.previewValues, label: 'A' },
+        approximateMeasurer,
+      );
+      expect(size.width).toBeGreaterThanOrEqual(48);
+      expect(size.height).toBe(40);
+    });
+
+    it('label enorme: limita ao dobro do size', () => {
+      const entry = button();
+      const values = { ...entry.previewValues, label: 'x'.repeat(200) };
+      const size = fittedSize(entry, values, approximateMeasurer);
+      expect(size.width).toBe(240);
+      const drawing = drawEntry(entry, values, approximateMeasurer, size);
+      expect(drawing).not.toBeNull();
+    });
+
+    it('eixo desligado em auto usa o base', () => {
+      const entry = button();
+      const values = { ...entry.previewValues, label: 'Confirmar compra' };
+      expect(
+        fittedSize(entry, values, approximateMeasurer, {
+          base: { width: 150, height: 40 },
+          auto: { width: false },
+        }),
+      ).toEqual({ width: 150, height: 40 });
+    });
+
+    it('sem componente devolve 1x1', () => {
+      const entry = { ...button(), component: null };
+      expect(fittedSize(entry, {}, approximateMeasurer)).toEqual({ width: 1, height: 1 });
+    });
   });
 
   it('expõe o código por plataforma e as fontes agrupadas', () => {

@@ -58,6 +58,8 @@ export const catalogPtBR = {
   'catalog.playground.noComponent': 'Este tipo não tem componente para desenhar.',
   'catalog.playground.width': 'Largura',
   'catalog.playground.height': 'Altura',
+  'catalog.playground.autoWidth': 'Largura acompanha o conteúdo',
+  'catalog.playground.autoHeight': 'Altura acompanha o conteúdo',
   'catalog.playground.range':
     'Tamanho de {minWidth} × {minHeight} a {maxWidth} × {maxHeight}.',
   'catalog.playground.reset': 'Restaurar valores',
@@ -121,6 +123,8 @@ export const catalogEnUS: Record<keyof typeof catalogPtBR, string> = {
   'catalog.playground.noComponent': 'This type has no component to draw.',
   'catalog.playground.width': 'Width',
   'catalog.playground.height': 'Height',
+  'catalog.playground.autoWidth': 'Width follows the content',
+  'catalog.playground.autoHeight': 'Height follows the content',
   'catalog.playground.range':
     'Size from {minWidth} × {minHeight} to {maxWidth} × {maxHeight}.',
   'catalog.playground.reset': 'Restore values',

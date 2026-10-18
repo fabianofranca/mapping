@@ -108,8 +108,20 @@
   width: auto;
 }
 
+.catalog-dialog-content {
+  min-width: 0;
+}
+
+/* Sempre à vista no topo da área que rola, sem tirar o leitor do lugar. */
 .catalog-notice {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-canvas-overlay);
   margin: 0 0 var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 
 .catalog-page {
@@ -144,10 +156,29 @@
   font: var(--t-text-heading);
 }
 
-.catalog-table-wrap {
+.catalog-table-wrap,
+.catalog-page .markdown-table {
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+}
+
+.catalog-table,
+.catalog-page .markdown table {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* Cabeçalhos e colunas curtas (chave, tipo, obrigatório) numa linha só; só a descrição quebra. */
+.catalog-table th,
+.catalog-table td:nth-child(-n + 4),
+.catalog-page .markdown th {
+  white-space: nowrap;
+}
+
+.catalog-table td:last-child {
+  min-width: calc(var(--space-4) * 10);
+  white-space: normal;
 }
 
 .catalog-table {
