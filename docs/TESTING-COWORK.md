@@ -9,7 +9,10 @@
 > - **Rodada dirigida por lista de passos:** "… no modo dirigido: R0, R4.1 a R4.5 e R6.8a a R6.11."
 > - **Rodada dirigida pelas fases de um plano:** "… no modo dirigido: as fases 7.1 e 7.2 de `docs/history/PLAN-etapa-7.md`."
 > - **Rodada dirigida da etapa 9 (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da etapa 9 (seção 9 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
-> - **Rodada sem interação (o dono só deixa a janela do Chrome na frente):** "Leia `docs/TESTING-COWORK.md` e execute **sem interação**: rodada completa. Build id esperado: `abc1234 · AAAA-MM-DD`." (vale também no modo dirigido, com o alvo)
+> - **Sessão sob demanda (roteiro manual):** "Leia `docs/TESTING-COWORK.md` e execute a **sessão sob demanda: RP**. Build id esperado: `abc1234 · AAAA-MM-DD`." (seção 5; só quando o dono pedir, citando o roteiro)
+
+- **Rodada sem interação (o dono só deixa a janela do Chrome na frente):** "Leia `docs/TESTING-COWORK.md` e execute **sem interação**: rodada completa. Build id esperado: `abc1234 · AAAA-MM-DD`." (vale também no modo dirigido, com o alvo)
+
 > - Nos modos dirigidos, acrescente do mesmo jeito o **build id esperado**.
 > - Em qualquer modo, acrescente se quiser a lista da **passada visual**: "passada visual: Detalhes, Propostas". Sem lista, vale a padrão (seção 5 abaixo).
 >
@@ -20,7 +23,7 @@
 > - o **dialog-pilot** instalado e registrado no Claude Desktop, que foi reiniciado pela bandeja, e o modo **automático** ligado (apêndice A do guia, "Diálogos nativos com o dialog-pilot");
 > - se quiser o teste do MCP com o Claude Code, ele instalado; sem ele, o testador faz os pedidos pelo cliente por stdio.
 >
-> **Modo sem interação.** Com isso pronto, a rodada roda do começo ao fim **sem o dono**: ele só deixa o computador desbloqueado e a janela do Chrome na frente, sem usá-la. Tudo o que o testador consegue fazer sozinho (diálogos nativos pelo dialog-pilot, pedidos ao MCP por stdio) deixa de ser pedido a ele; os poucos passos que só o dono faz são marcados "não executado (precisa do dono)" (seção 3). Se o dono estiver por perto e quiser acompanhar, vale o modo comum, com as perguntas das seções 2 e 3.
+> **Modo sem interação.** Com isso pronto, a rodada roda do começo ao fim **sem o dono**: ele só deixa o computador desbloqueado e a janela do Chrome na frente, sem usá-la. Tudo o que o testador consegue fazer sozinho (diálogos nativos pelo dialog-pilot, pedidos ao MCP por stdio) deixa de ser pedido a ele; os poucos passos que só o dono faz (nos roteiros principais, nenhum: o R0.5 e o R6.2 são tentados por você) são marcados "não executado (precisa do dono)" (seção 3). Se o dono estiver por perto e quiser acompanhar, vale o modo comum, com as perguntas das seções 2 e 3.
 >
 > O que este teste **não** cobre, de propósito: julgamento de usabilidade (se um painel é descobrível, se um texto é claro para quem não leu a documentação). Isso fica com pessoas. A app é só desktop; não há o que testar em celular.
 
@@ -56,7 +59,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 
 **Com o dialog-pilot, o bloco [pessoa] de cada roteiro se reduz ao que não é diálogo nativo.** O seletor de pasta, a permissão, o "Salvar como" e o cancelar você mesmo opera (`select_folder`, `accept_permission_prompt`, `save_file`, `cancel_dialog`; o seletor de arquivo, `open_file` ou a injeção no campo); os pedidos ao Claude Code você faz pelo cliente por stdio. Cada passo do guia traz "ou `ferramenta`" ao lado da marca [pessoa]. Sobram para o dono:
 
-- o passo em que a aba fecha no meio (R6.2); o app instalado (PWA) não entra aqui: é o roteiro RP, de sessão exclusiva (seção 5);
+- a confirmação de instalar o app e o arrastar do gerenciador de arquivos, que só aparecem nos roteiros sob demanda (seção 5), nunca nos principais;
 - a confirmação de instalar o app, o "Sair da página?" e o arrastar do gerenciador de arquivos;
 - a janela do Chrome na frente (uma vez, no começo).
 
@@ -67,7 +70,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 - **Um bloco por roteiro.** Antes de começar cada roteiro, mande ao dono **uma** mensagem com todos os passos **[pessoa]** daquele roteiro, na ordem, e para cada um o que ele vai ver e exatamente o que escolher (ex.: "R1.1: seletor de pasta, escolha `principal` e **Permitir em todas as visitas**; R1.3: seletor de arquivo, `sdui.json` e depois `modelo-de-dados.json`; R1.22: 'Salvar como', pasta de trabalho, **Salvar**"). Peça que ele fique por perto durante aquele roteiro.
 - **Em cada [pessoa], pergunte e diga que está esperando.** Ao chegar num passo [pessoa], mande uma mensagem com uma **pergunta explícita** (o que fazer, onde clicar, o que escolher e o que responder) e termine com: **"Estou esperando você fazer isto; me avise quando terminar."** Não faça nada até a resposta. Uma mensagem curta demais, ou nenhuma, faz o dono achar que você travou.
 - **Avise toda espera de mais de 30 s.** Se for esperar mais de 30 s por qualquer outro motivo (captura que demora, recarga, varredura de propostas, conferência do disco), avise em uma linha antes ("Esperando a captura; volto em seguida.").
-- **Passos inteiros do dono** (R6.2 e, quando a extensão não abre `file://`, R0.5): peça de volta o build id daquela janela e a confirmação de cada ação do passo, uma por uma (apêndice A). O que fazer antes de cada seletor também está no apêndice A.
+- **Roteiros sob demanda** (só na sessão pedida pelo dono): peça de volta o build id daquela janela e a confirmação de cada ação do passo, uma por uma (apêndice A). Os roteiros principais não têm passo inteiro do dono: o R0.5 e o R6.2 são seus (seção 5). O que fazer antes de cada seletor também está no apêndice A.
 
 ## 4. Como agir
 
@@ -75,7 +78,7 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 
 ## 5. O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, R0 a R9 (**sem o RP**), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
+**Rodada completa (padrão).** Todos os roteiros, R0 a R9 (**sem o RP**), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
 
 **Rodada dirigida.** O dono aponta o alvo de um destes três jeitos:
 
@@ -85,7 +88,11 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 
 Nos três casos: **monte a lista, mostre ao dono com o bloco [pessoa] e peça confirmação antes de começar**. No modo sem interação, **não peça confirmação**: ponha a lista montada no começo do relato (e na conversa) e siga. Execute **R0 inteiro** primeiro. Siga a ordem do guia; se um passo depende de outro (ex.: R6.10 de R6.8a a R6.9; R4.9 de R4.1 a R4.8), execute também os anteriores necessários e marque-os com o mesmo achado de origem.
 
-**Sessão exclusiva do app instalado (RP).** O roteiro **RP — App instalado (PWA)** (`docs/TESTING.md`, fim da seção 8) **nunca** entra na rodada completa nem na dirigida, e no modo sem interação ele não aparece nem como "não executado": simplesmente não faz parte da rodada. O app instalado abre numa janela que a extensão não controla e instalar leva a aba para lá; por isso só roda quando a mensagem do dono pedir essa sessão, com outro meio de controle (controle do computador) ou com o próprio dono. Mensagem de exemplo: "Leia `docs/TESTING-COWORK.md` e execute a **sessão exclusiva do app instalado (RP)**. Build id esperado: `abc1234 · AAAA-MM-DD`." O dono prepara: o endereço `https:` (versão principal ou preview), o Chrome ou Edge desbloqueado e a permissão do controle do computador para a sessão. O relato usa o mesmo template, só com os passos RP.1 a RP.5.
+**Sessão sob demanda (roteiros manuais).** Os **roteiros sob demanda (manuais)** (`docs/TESTING.md`, fim da seção 8; hoje só o **RP — App instalado (PWA)**) **nunca** entram na rodada completa nem na dirigida, e no modo sem interação eles não aparecem nem como "não executado": simplesmente não fazem parte da rodada. Só rodam quando a mensagem do dono pedir a sessão **e citar o roteiro**. O RP, por exemplo: o app instalado abre numa janela que a extensão não controla e instalar leva a aba para lá; por isso pede outro meio de controle (controle do computador) ou o próprio dono. Mensagem de exemplo: "Leia `docs/TESTING-COWORK.md` e execute a **sessão sob demanda: RP**. Build id esperado: `abc1234 · AAAA-MM-DD`." O dono prepara: o endereço `https:` (versão principal ou preview), o Chrome ou Edge desbloqueado e a permissão do controle do computador para a sessão. O relato usa o mesmo template, só com os passos do roteiro pedido (RP.1 a RP.5, no exemplo).
+
+**Regra para o que não dá para automatizar.** Se um passo dos roteiros principais exigir interação do dono e **não for muito relevante**, proponha no relato movê-lo para os roteiros sob demanda. Se for **muito relevante** (perda de dados, integridade do `mapping.json`, segurança), não decida: avise o dono no relato e na conversa; o passo fica onde está, "pendente de decisão".
+
+**Validação da automação (próxima rodada).** O R0.5 (`index.html` baixado do GitHub Pages pela shell e aberto por `file://`) e o R6.2 (fechar a aba pela ferramenta da extensão e escolher ficar no "Sair da página?" com o `click_button` do dialog-pilot) acabaram de ser automatizados e nunca rodaram assim. Execute o **R0.5 logo depois do R0.4b** e o **R6.2 primeiro dentro do R6**, antes dos outros passos, e registre no relato, em cada um, se funcionou **sozinho**. Se não funcionou, diga o que falhou e proponha mover o passo para os roteiros sob demanda; no caso do R6.2, avise que é um teste relevante (nada se perde ao fechar a aba) e que a decisão é do dono. Confira no R6.2 os textos e botões que o Chrome usou no "Sair da página?" e registre-os.
 
 **Passada visual** (no fim da dirigida e, se o dono pedir, da completa): nas janelas e nos diálogos que o dono listar; sem lista, nas sete janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico** e **Propostas**) e nos diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**. Procure texto cortado ou sobreposto, barra de rolagem horizontal, dica cobrindo menu e foco perdido ao fechar um diálogo: feche cada diálogo uma vez pelo teclado (Esc) e uma pelo mouse (**Cancelar** ou o X) e confira que o foco volta ao controle que o abriu, nunca ao `body`. Registre cada janela ou diálogo como uma linha da tabela ("Visual: Camadas").
 
