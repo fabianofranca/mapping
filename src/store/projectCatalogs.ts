@@ -1,4 +1,4 @@
-import { signal, type ReadonlySignal } from '@preact/signals';
+import { computed, signal, type ReadonlySignal } from '@preact/signals';
 import {
   buildCatalog,
   packageDirOf,
@@ -24,6 +24,8 @@ export interface ProjectCatalog {
 export interface ProjectCatalogs {
   /** Catálogos prontos; `null` até a primeira leitura pedida terminar. */
   readonly entries: ReadonlySignal<readonly ProjectCatalog[] | null>;
+  /** `id@versão` das especializações com pacote, juntas; vazio se nenhuma tem. */
+  readonly key: ReadonlySignal<string>;
   /** Sobe a cada `invalidate`: quem mostra os catálogos pede de novo. */
   readonly stamp: ReadonlySignal<number>;
   /** Lê e monta o que falta (a mesma versão não é montada duas vezes). Sem custo se nada mudou. */
@@ -41,6 +43,9 @@ export interface ProjectCatalogsDeps {
   /** Arquivos do pacote (caminhos relativos à pasta dele); `null` se não há o que ler. */
   readonly read: (owner: ProjectSpecialization) => Promise<readonly LibraryFile[] | null>;
 }
+
+const keyOf = (owners: readonly ProjectSpecialization[]): string =>
+  owners.map((s) => `${s.id}@${s.version}`).join('|');
 
 export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalogs {
   const entries = signal<readonly ProjectCatalog[] | null>(null);
@@ -76,16 +81,22 @@ export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalog
     entries.value = out;
   }
 
+  const key = computed(() => {
+    const p = deps.project.value;
+    return p ? keyOf(withPackage(p)) : '';
+  });
+
   return {
     entries,
+    key,
     stamp,
     request() {
       const p = deps.project.peek();
       if (!p || disposed) return;
       const owners = withPackage(p);
-      const key = owners.map((s) => `${s.id}@${s.version}`).join('|');
-      if (key === doneKey) return;
-      doneKey = key;
+      const current = keyOf(owners);
+      if (current === doneKey) return;
+      doneKey = current;
       run += 1;
       const task = load(owners, run);
       pending.add(task);

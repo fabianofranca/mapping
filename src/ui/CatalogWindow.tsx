@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
-import { packageDirOf } from '../model';
 import { CatalogView } from './catalog/CatalogView';
 import { Button, Select, Tabs, type TabItem } from './controls';
 import { useEditor } from './EditorContext';
@@ -50,11 +49,8 @@ function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
   const { session, review } = useEditor();
   const { add, disabledReason, error } = useAddComponent();
   const [specId, setSpecId] = useState<string | null>(null);
-  const committed = session.store.committed.value;
   // A chave muda com as versões aplicadas; o carimbo, quando os arquivos podem ter mudado.
-  const key = (committed?.specializations ?? [])
-    .map((s) => `${s.id}@${s.version}`)
-    .join('|');
+  const key = session.catalogs.key.value;
   const stamp = session.catalogs.stamp.value;
   useEffect(() => {
     session.catalogs.request();
@@ -62,10 +58,7 @@ function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
 
   const entries = session.catalogs.entries.value;
   const project = review.derived.shownProject.value;
-  const hasPackage = (committed?.specializations ?? []).some(
-    (s) => s.spec !== null && packageDirOf(s.file) !== null,
-  );
-  if (!hasPackage || (entries !== null && entries.length === 0)) {
+  if (key === '' || (entries !== null && entries.length === 0)) {
     return (
       <div class="library-empty">
         <p class="muted">{t('library.empty')}</p>
