@@ -7,13 +7,17 @@ import { Dialog } from './Dialog';
 import { downloadHelpAsset, HELP_ASSETS } from './helpAssets';
 import { matchesSearch } from '../utils/search';
 import { blockText } from './helpText';
-import { Button, TextField } from './controls';
+import { Button, LinkButton, TextField } from './controls';
+import { Icon } from './icons';
+import { guideUrl } from '../utils/guideLink';
 import { comboText, shortcutGroups, type KeyCombo } from './shortcutList';
 
 /** Id da seção Atalhos, para abrir a Ajuda direto nela (Configurações → atalhos). */
 export const HELP_SHORTCUTS = 'shortcuts';
 /** Id da seção das propostas de alteração ("Como o agente envia propostas"). */
 export const HELP_PROPOSALS = 'proposals';
+/** Id da seção do guia interativo (página `guia/`, aberta em outra aba). */
+export const HELP_GUIDE = 'guide';
 
 function Block({ block }: { readonly block: HelpBlock }) {
   switch (block.kind) {
@@ -87,6 +91,27 @@ function Shortcuts() {
           </tbody>
         </table>
       ))}
+    </>
+  );
+}
+
+/** Guia interativo: o link (em outra aba) e como ver o mesmo projeto na app. */
+function GuideUsage() {
+  const url = guideUrl();
+  return (
+    <>
+      <p>{t('help.guide.intro')}</p>
+      {url !== null ? (
+        <p>
+          <LinkButton href={url}>
+            <Icon name="info" />
+            {t('help.guide.open')}
+          </LinkButton>
+        </p>
+      ) : (
+        <p class="muted">{t('help.guide.fileProtocol')}</p>
+      )}
+      <p class="muted">{t('help.guide.example')}</p>
     </>
   );
 }
@@ -180,6 +205,14 @@ function topics(): readonly Topic[] {
     g.rows.map((r) => `${r.label} ${r.combos.map(comboText).join(' ')}`),
   );
   return [
+    {
+      id: HELP_GUIDE,
+      title: t('help.guide.title'),
+      text: [t('help.guide.intro'), t('help.guide.example'), t('help.guide.open')].join(
+        ' ',
+      ),
+      body: <GuideUsage />,
+    },
     ...specs,
     {
       id: 'code-usage',

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -174,6 +175,29 @@ describe('Home', () => {
     await userEvent.upload(input, file);
     await waitFor(() => expect(controller.importZip).toHaveBeenCalledWith(file));
   });
+
+  it('Abrir projeto de exemplo entrega o zip embutido ao mesmo importZip', async () => {
+    controller.importZip.mockReturnValue(ok());
+    render(<Home />);
+    await userEvent.click(screen.getByRole('button', { name: t('home.openExample') }));
+    await waitFor(() => expect(controller.importZip).toHaveBeenCalledTimes(1));
+    const blob = controller.importZip.mock.calls[0]?.[0] as Blob;
+    const bytes = Buffer.from(await blob.arrayBuffer());
+    expect(bytes.equals(readFileSync('examples/exemplo-completo.zip'))).toBe(true);
+  });
+
+  it('sem armazenamento local não oferece o projeto de exemplo (ele cria um projeto local)', () => {
+    features.value = { folder: true, local: false, fileProtocol: false };
+    render(<Home />);
+    expect(screen.queryByRole('button', { name: t('home.openExample') })).toBeNull();
+  });
+
+  it('erro ao abrir o exemplo aparece como no Abrir zip', async () => {
+    controller.importZip.mockReturnValue(fail('invalid-zip'));
+    render(<Home />);
+    await userEvent.click(screen.getByRole('button', { name: t('home.openExample') }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+  });
 });
 
 describe('Home (B10)', () => {
@@ -191,6 +215,15 @@ describe('Home (B10)', () => {
     expect(
       screen.getByRole('button', { name: t('settings.shortcuts'), hidden: true }),
     ).toBeTruthy();
+  });
+
+  it('coluna lateral tem o link Guia interativo, em outra aba e sem referrer', () => {
+    render(<Home />);
+    const side = screen.getByRole('complementary', { name: t('home.sideLabel') });
+    const link = within(side).getByRole('link', { name: t('home.guide') });
+    expect(link.getAttribute('href')).toBe('guia/index.html');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
   });
 
   it('Configurações → atalhos abre a Ajuda na seção Atalhos', async () => {

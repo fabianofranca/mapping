@@ -58,7 +58,13 @@ async function serveSite(
         /^\/+/,
         '',
       );
-      const file = normalize(join(dir, relative === '' ? 'index.html' : relative));
+      // Como o GitHub Pages: um diretório (`guia/`) serve o `index.html` dele.
+      const file = normalize(
+        join(
+          dir,
+          relative === '' || relative.endsWith('/') ? `${relative}index.html` : relative,
+        ),
+      );
       if (!file.startsWith(dir) || !existsSync(file) || !statSync(file).isFile()) {
         response.writeHead(404).end('não encontrado');
         return;
@@ -169,6 +175,10 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers�
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
+  // O guia interativo (guia/) também vem do cache, sem rede.
+  await page.goto(`${origin}/guia/`);
+  await expect(page).toHaveTitle('Guia do Mapping');
+  await expect(page.locator('#steps button')).toHaveCount(12);
   await context.setOffline(false);
 
   // Preview em /preview/: outro build, outro service worker, mesma política.
@@ -193,6 +203,13 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers�
     .locator('meta[http-equiv="Content-Security-Policy"]')
     .getAttribute('content');
   expect(policy).toContain("connect-src 'none'");
+
+  // O guia do preview é o do build do preview, também do cache.
+  await context.setOffline(true);
+  await page.goto(`${origin}/preview/guia/`);
+  await expect(page).toHaveTitle('Guia do Mapping');
+  await expect(page.locator('#steps button')).toHaveCount(12);
+  await context.setOffline(false);
 
   expect(violations()).toEqual([]);
 });

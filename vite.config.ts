@@ -73,9 +73,11 @@ function serviceWorker(): Plugin {
         const html = bundle['index.html'];
         if (html?.type !== 'asset')
           throw new Error('index.html não encontrado no bundle');
+        // O guia (public/guia/, gerado antes do build) também está no cache: mudou, o sw.js muda.
+        const guide = readFileSync('public/guia/index.html', 'utf8');
         const sw = stampServiceWorker(
           readFileSync('pwa/sw.js', 'utf8'),
-          hash(String(html.source)),
+          hash(String(html.source) + guide),
           channel,
         );
         this.emitFile({ type: 'asset', fileName: 'sw.js', source: sw });
@@ -123,6 +125,8 @@ const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {
   base: './',
+  // O zip do projeto de exemplo entra no bundle como data URI (`?inline`, src/app/exampleProject.ts).
+  assetsInclude: ['**/*.zip'],
   define: { __BUILD_ID__: JSON.stringify(buildId) },
   plugins: [
     tokensCss(),
