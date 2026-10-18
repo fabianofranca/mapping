@@ -162,7 +162,7 @@ A especialização passa a entregar uma **Biblioteca**: um pacote (a pasta da es
 - [x] Página do componente: documento, tabela de propriedades gerada dos campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), `code` por plataforma (símbolo e `path`, com os links dos repositórios quando houver projeto), `sources` por sistema, galeria dos exemplos como imagens estáticas geradas pelo motor (uma vez, em cache por versão)
 - [x] Playground vivo: `TypedForm` com os campos do tipo e o desenho ao lado, redesenhando a cada mudança; tamanho ajustável entre `minSize` e o dobro de `size`
 - [x] Janela de ferramenta Catálogo dentro do projeto (atalho na sequência das janelas de `src/store/toolWindows.ts`), com a paleta da B3 como aba: Adicionar à tela à vista a partir da página do componente
-- [ ] Sem código no MCP (os documentos e exemplos já são servidos desde a B2); `docs/TESTING.md`: roteiro **R10 — Catálogo**
+- [x] Sem código no MCP (os documentos e exemplos já são servidos desde a B2); `docs/TESTING.md`: roteiro **R10 — Catálogo**
 
 **Aceite:** no R10, a pessoa abre a pasta do Material 3 pela tela inicial, navega pelos componentes, muda os campos no playground e vê o desenho acompanhar; dentro de um projeto, adiciona um componente à tela pela janela Catálogo.
 
