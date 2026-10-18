@@ -1,8 +1,10 @@
 import type { Dictionary } from './pt-BR';
+import { catalogEnUS } from './catalog';
 import { reviewEnUS } from './review';
 
 export const enUS: Dictionary = {
   ...reviewEnUS,
+  ...catalogEnUS,
   'app.title': 'Mapping',
   'app.loading': 'Loading…',
   'narrow.title': 'Open in a larger window',
@@ -789,7 +791,20 @@ export const enUS: Dictionary = {
   'help.code.repos':
     'Repositories: in Settings (gear), in the "Code repositories" section, give each platform the file address, with {path}, and the local path of the repository root, relative to the project folder. A platform where some type points to a file, without a repository, raises a warning.',
   // Component library in the app (Library stage, B3)
-  'library.window.title': 'Library',
+  // Catalog: editor window and the project-less library screen (Library stage, B5)
+  'catalog.window.title': 'Catalog',
+  'catalog.window.components': 'Components',
+  'catalog.window.palette': 'Palette',
+  'catalog.window.tabs': 'Catalog sections',
+  'catalog.window.loading': 'Reading the libraries…',
+  'catalog.window.spec': 'Library',
+  'catalog.home.open': 'Open library',
+  'catalog.home.openHint':
+    "Browse a library's catalog (package folder or zip) without opening a project",
+  'catalog.home.back': 'Back to the home screen',
+  'catalog.home.screen': 'Library catalog',
+  'catalog.home.untitled': 'Untitled library',
+  'catalog.home.version': 'version {version}',
   'library.empty': 'No library with components applied.',
   'library.openSpecs': 'Open Specializations',
   'library.container': 'Container',

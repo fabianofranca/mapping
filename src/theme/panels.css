@@ -751,9 +751,15 @@ button.tree-toggle:hover {
   margin: var(--space-1) 0;
 }
 
-/* Janela Biblioteca (etapa Biblioteca, B3): tipos com componente, por especialização e camada. */
-.tool-window[data-window='library'] .tool-window-body {
-  padding: var(--space-2);
+/* Janela Catálogo (etapa Biblioteca, B5) e a paleta da B3: tipos por especialização e camada. */
+.catalog-window {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.catalog-window .tabs {
+  margin-bottom: 0;
 }
 
 .library-empty {

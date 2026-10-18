@@ -7,6 +7,7 @@ import {
   type ComponentCatalog,
   type Project,
   type ProjectSpecialization,
+  type Spec,
   type SpecComponents,
 } from '../model';
 import { resolvePath, type LoadedFont } from '../model/components/library';
@@ -62,6 +63,25 @@ function hasPackage(s: ProjectSpecialization): boolean {
   return s.spec !== null && packageDirOf(s.file) !== null;
 }
 
+/** Fonte declarada pela especialização (`spec.fonts`) como o registro de fontes a recebe (sem bytes). */
+export function fontDeclaration(
+  specFile: string,
+  font: NonNullable<Spec['fonts']>[number],
+): LoadedFont {
+  const weight =
+    typeof font.weight === 'number'
+      ? String(font.weight)
+      : typeof font.weight === 'string' && font.weight.trim() !== ''
+        ? font.weight.trim()
+        : '400';
+  return {
+    family: font.family,
+    weight,
+    style: font.style === 'italic' ? 'italic' : 'normal',
+    path: resolvePath(specFile, font.file),
+  };
+}
+
 interface DeclaredFont {
   readonly owner: ProjectSpecialization;
   readonly font: LoadedFont;
@@ -74,21 +94,7 @@ function declaredFonts(p: Project | null): DeclaredFont[] {
   for (const owner of p.specializations) {
     if (!hasPackage(owner)) continue;
     for (const font of owner.spec?.fonts ?? []) {
-      const weight =
-        typeof font.weight === 'number'
-          ? String(font.weight)
-          : typeof font.weight === 'string' && font.weight.trim() !== ''
-            ? font.weight.trim()
-            : '400';
-      out.push({
-        owner,
-        font: {
-          family: font.family,
-          weight,
-          style: font.style === 'italic' ? 'italic' : 'normal',
-          path: resolvePath(owner.file, font.file),
-        },
-      });
+      out.push({ owner, font: fontDeclaration(owner.file, font) });
     }
   }
   return out;

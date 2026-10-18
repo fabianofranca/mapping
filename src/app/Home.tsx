@@ -12,6 +12,8 @@ import { InstallHint } from '../ui/InstallHint';
 import { PreviewBadge } from '../ui/PreviewBanner';
 import { SettingsDialog } from '../ui/SettingsDialog';
 import { matchesSearch } from '../utils/search';
+import { MAX_PACKAGE_BYTES, MAX_PACKAGE_FILES } from '../model';
+import { canPickDirectory } from '../ui/specPackageImport';
 import {
   createFolderProject,
   createLocalProject,
@@ -20,12 +22,14 @@ import {
   forgetFolder,
   importZip,
   openFolder,
+  openLibraryPackage,
   openLocalProject,
   openRecentFolder,
   recentProjects,
   relocateFolder,
   type AppResult,
   type InconsistentProject,
+  type LibraryOpenResult,
   type RecentProject,
 } from './controller';
 import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
@@ -78,6 +82,7 @@ export function Home() {
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const zipInput = useRef<HTMLInputElement>(null);
+  const libraryZipInput = useRef<HTMLInputElement>(null);
   const listSection = useRef<HTMLElement>(null);
   // Linha que sai da lista (Remover da lista, Excluir): a posição dela, para o foco ir à
   // linha que ficou no lugar, e não ao `body` (etapa 7, G4). Um dono por fechamento (etapa
@@ -189,6 +194,37 @@ export function Home() {
     if (file) await run(() => importZip(file));
   };
 
+  /** Mensagem de um pacote que não pôde ser lido; o cancelamento do seletor não diz nada. */
+  const showLibraryResult = (result: LibraryOpenResult) => {
+    if (result.kind !== 'failed') return;
+    setMessage(
+      result.reason === 'too-big'
+        ? t('spec.packageTooBig', {
+            files: MAX_PACKAGE_FILES,
+            mb: Math.round(MAX_PACKAGE_BYTES / (1024 * 1024)),
+          })
+        : result.reason === 'empty'
+          ? t('spec.packageEmpty')
+          : t('spec.packageReadFailed'),
+    );
+  };
+
+  const onOpenLibrary = async (source: Parameters<typeof openLibraryPackage>[0]) => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      showLibraryResult(await openLibraryPackage(source));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onLibraryZipChosen = async (input: HTMLInputElement) => {
+    const file = input.files?.[0];
+    input.value = '';
+    if (file) await onOpenLibrary({ kind: 'zip', file });
+  };
+
   const closeDialog = () => dialogs.close();
   // "Reparar e abrir" do projeto inconsistente (`null`: há problema sem reparo).
   const repair = dialog?.kind === 'inconsistent' ? dialog.inconsistent.repair : null;
@@ -201,6 +237,11 @@ export function Home() {
     },
     onOpenFolder: () => void onOpenFolder(),
     onOpenZip: () => zipInput.current?.click(),
+    // Pasta onde o navegador deixa escolher uma; senão, o zip do pacote.
+    onOpenLibrary: () =>
+      canPickDirectory()
+        ? void onOpenLibrary({ kind: 'folder' })
+        : libraryZipInput.current?.click(),
   };
   const recents = recentProjects.value;
   const projects = recents.filter(
@@ -261,13 +302,23 @@ export function Home() {
     </>
   );
   const zipField = (
-    <input
-      ref={zipInput}
-      type="file"
-      accept=".zip,application/zip,application/x-zip-compressed"
-      hidden
-      onChange={(e) => void onZipChosen(e.currentTarget)}
-    />
+    <>
+      <input
+        ref={zipInput}
+        type="file"
+        accept=".zip,application/zip,application/x-zip-compressed"
+        hidden
+        onChange={(e) => void onZipChosen(e.currentTarget)}
+      />
+      <input
+        ref={libraryZipInput}
+        type="file"
+        accept=".zip,application/zip,application/x-zip-compressed"
+        hidden
+        data-library-zip
+        onChange={(e) => void onLibraryZipChosen(e.currentTarget)}
+      />
+    </>
   );
 
   return (
@@ -540,10 +591,18 @@ interface HomeActions {
   readonly onNew: () => void;
   readonly onOpenFolder: () => void;
   readonly onOpenZip: () => void;
+  readonly onOpenLibrary: () => void;
 }
 
 /** Os três pontos de entrada como botões do cabeçalho. */
-function HomeButtons({ busy, available, onNew, onOpenFolder, onOpenZip }: HomeActions) {
+function HomeButtons({
+  busy,
+  available,
+  onNew,
+  onOpenFolder,
+  onOpenZip,
+  onOpenLibrary,
+}: HomeActions) {
   return (
     <div class="home-buttons">
       {available.local && (
@@ -562,6 +621,10 @@ function HomeButtons({ busy, available, onNew, onOpenFolder, onOpenZip }: HomeAc
           {t('home.openZip')}
         </Button>
       )}
+      <Button disabled={busy} title={t('catalog.home.openHint')} onClick={onOpenLibrary}>
+        <Icon name="library" />
+        {t('catalog.home.open')}
+      </Button>
     </div>
   );
 }

@@ -3,16 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
-import {
-  hideToolWindow,
-  isToolWindowOpen,
-  showToolWindow,
-} from '../../src/store/toolWindows';
 import { EditorContext } from '../../src/ui/EditorContext';
-import { LibraryWindow } from '../../src/ui/LibraryWindow';
+import { LibraryPalette } from '../../src/ui/LibraryPalette';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
 
-// B3/P7: a janela Biblioteca (paleta de componentes).
+// B3/P7: a paleta da Biblioteca (paleta de componentes).
 
 beforeEach(() => {
   locale.value = 'pt-BR';
@@ -22,7 +17,7 @@ afterEach(cleanup);
 function renderLibrary(harness: LibraryHarness, onOpenSpecs = vi.fn()) {
   render(
     <EditorContext.Provider value={harness.context}>
-      <LibraryWindow onOpenSpecs={onOpenSpecs} />
+      <LibraryPalette onOpenSpecs={onOpenSpecs} />
     </EditorContext.Provider>,
   );
   return { user: userEvent.setup(), onOpenSpecs };
@@ -33,7 +28,7 @@ const addButton = (name: string) =>
     name: t('library.addType', { name }),
   });
 
-describe('janela Biblioteca', () => {
+describe('paleta da Biblioteca', () => {
   it('lista os tipos por especialização e camada, com selo de container e tamanho', async () => {
     const harness = await libraryHarness();
     renderLibrary(harness);
@@ -141,20 +136,5 @@ describe('janela Biblioteca', () => {
     expect(screen.getByText(t('library.empty'))).toBeTruthy();
     await user.click(screen.getByRole('button', { name: t('library.openSpecs') }));
     expect(onOpenSpecs).toHaveBeenCalledOnce();
-  });
-});
-
-describe('janela Biblioteca: lugar na coluna da esquerda', () => {
-  it('abrir a Biblioteca esconde a Árvore e as Camadas, e vice-versa', () => {
-    showToolWindow('tree');
-    showToolWindow('layers');
-    showToolWindow('library');
-    expect(isToolWindowOpen('library')).toBe(true);
-    expect(isToolWindowOpen('tree')).toBe(false);
-    expect(isToolWindowOpen('layers')).toBe(false);
-    showToolWindow('tree');
-    expect(isToolWindowOpen('library')).toBe(false);
-    expect(isToolWindowOpen('tree')).toBe(true);
-    hideToolWindow('library');
   });
 });

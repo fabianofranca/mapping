@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   RESIZE_STEP,
   WINDOW_LIMITS,
@@ -82,20 +82,22 @@ describe('abrir e fechar janelas', () => {
     expect(toolWindowByNumber(2)).toBe('layers');
     expect(toolWindowByNumber(5)).toBe('incomplete');
     expect(toolWindowByNumber(6)).toBe('diagnostics');
-    expect(toolWindowByNumber(8)).toBe('library');
-    expect(toolWindowByNumber(9)).toBeNull();
+    // O 8 ficou vago quando a paleta da B3 virou aba do Catálogo (B5).
+    expect(toolWindowByNumber(8)).toBeNull();
+    expect(toolWindowByNumber(9)).toBe('catalog');
+    expect(toolWindowByNumber(10)).toBeNull();
   });
 
-  it('a Biblioteca fica sozinha na coluna da esquerda', () => {
+  it('o Catálogo fica sozinho na coluna da esquerda', () => {
     showToolWindow('tree');
     showToolWindow('layers');
-    showToolWindow('library');
-    expect(isToolWindowOpen('library')).toBe(true);
+    showToolWindow('catalog');
+    expect(isToolWindowOpen('catalog')).toBe(true);
     expect(isToolWindowOpen('tree')).toBe(false);
     expect(isToolWindowOpen('layers')).toBe(false);
     // Abrir a Árvore devolve a coluna; a Biblioteca sai.
     showToolWindow('tree');
-    expect(isToolWindowOpen('library')).toBe(false);
+    expect(isToolWindowOpen('catalog')).toBe(false);
     showToolWindow('layers');
     expect(isToolWindowOpen('tree') && isToolWindowOpen('layers')).toBe(true);
   });
@@ -189,5 +191,24 @@ describe('janela inferior em modo revisão (size-tw-bottom-review)', () => {
     resetToolWindowSize('bottom', SPACE);
     expect(toolWindowSizes.value.bottom).toBe(REVIEW_BOTTOM_DEFAULT);
     setReviewLayout(false);
+  });
+});
+
+describe('layout guardado com o id antigo da Biblioteca', () => {
+  it('library vira catalog ao ler o localStorage', async () => {
+    localStorage.setItem(
+      'mapping.toolWindows',
+      JSON.stringify({ open: ['library', 'details', 'inexistente'] }),
+    );
+    vi.resetModules();
+    try {
+      const fresh = await import('../../src/store/toolWindows');
+      expect(fresh.isToolWindowOpen('catalog')).toBe(true);
+      expect(fresh.isToolWindowOpen('details')).toBe(true);
+      expect(fresh.isToolWindowOpen('tree')).toBe(false);
+    } finally {
+      localStorage.removeItem('mapping.toolWindows');
+      vi.resetModules();
+    }
   });
 });

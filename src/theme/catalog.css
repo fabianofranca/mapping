@@ -1,0 +1,303 @@
+/* Catálogo da biblioteca (etapa Biblioteca, B5): validação, lista, página do componente. */
+.catalog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.catalog-validation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.catalog-validation p {
+  margin: 0;
+}
+
+.catalog-validation-bad {
+  color: var(--color-danger);
+}
+
+.catalog-body {
+  display: flex;
+  flex: 1;
+  gap: var(--space-4);
+  min-width: 0;
+  min-height: 0;
+}
+
+.catalog-list {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  width: var(--size-tw-right);
+}
+
+.catalog-list-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.catalog-layer-name {
+  margin: var(--space-2) 0 var(--space-1);
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+}
+
+.catalog-entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--row-height);
+  padding: 0 var(--space-2);
+  color: var(--color-text);
+  font: var(--t-text);
+  text-align: start;
+  background: transparent;
+  border: 0;
+  border-radius: var(--control-radius);
+  cursor: pointer;
+}
+
+.catalog-entry:hover {
+  background: var(--color-hover);
+}
+
+.catalog-entry[aria-current='true'] {
+  background: var(--color-selection);
+}
+
+.catalog-entry:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.catalog-entry-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.catalog-detail {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Janela estreita: só a lista ocupa o espaço; a página abre num diálogo. */
+.catalog-list-layout .catalog-list {
+  flex: 1;
+  width: auto;
+}
+
+.catalog-notice {
+  margin: 0 0 var(--space-2);
+}
+
+.catalog-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.catalog-page-header p {
+  margin: var(--space-1) 0 0;
+}
+
+.catalog-page-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.catalog-page-name {
+  margin: 0;
+  font: var(--t-text-title);
+}
+
+.catalog-page-title .button {
+  margin-inline-start: auto;
+}
+
+.catalog-section h3 {
+  margin: 0 0 var(--space-2);
+  font: var(--t-text-heading);
+}
+
+.catalog-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.catalog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--t-text-small);
+}
+
+.catalog-table th,
+.catalog-table td {
+  padding: var(--space-1) var(--space-2);
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.catalog-table thead th {
+  color: var(--color-text-muted);
+  font: var(--t-micro);
+}
+
+.catalog-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.catalog-prop-key {
+  font-weight: inherit;
+  white-space: nowrap;
+}
+
+.catalog-code-list,
+.catalog-sources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-sources ul {
+  margin: 0;
+  padding-inline-start: var(--space-4);
+}
+
+.catalog-code p {
+  margin: var(--space-0-5) 0;
+  overflow-wrap: anywhere;
+}
+
+.catalog-code-platform {
+  margin: 0;
+  font: var(--t-text-heading);
+}
+
+.catalog-kv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  margin: var(--space-1) 0;
+  font: var(--t-text-small);
+}
+
+.catalog-kv > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.catalog-kv dt,
+.catalog-kv dd {
+  margin: 0;
+}
+
+.catalog-value-pair {
+  margin-inline-end: var(--space-2);
+}
+
+.catalog-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--size-tw-left), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-gallery-item p {
+  margin: var(--space-1) 0 0;
+}
+
+.catalog-gallery-name {
+  font: var(--t-text-small);
+}
+
+.catalog-image-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--size-toolbar);
+  padding: var(--space-2);
+  overflow: auto;
+  background: var(--color-canvas-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* A imagem é gerada em 2x; mostra o tamanho natural. */
+.catalog-image {
+  display: block;
+  max-width: none;
+  zoom: 0.5;
+}
+
+.catalog-warnings {
+  margin: var(--space-1) 0 0;
+  padding-inline-start: var(--space-4);
+  color: var(--color-warning);
+  font: var(--t-text-small);
+}
+
+.catalog-playground {
+  display: flex;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.catalog-playground-form {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: var(--size-tw-right);
+}
+
+.catalog-playground-size {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.catalog-playground-size > * {
+  flex: 1;
+}
+
+.catalog-playground-range {
+  margin: 0;
+  font: var(--t-text-small);
+}
+
+.catalog-playground-stage {
+  flex: 1;
+  min-width: 0;
+}

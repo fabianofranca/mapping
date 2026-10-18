@@ -1,14 +1,10 @@
-import { useComputed } from '@preact/signals';
-import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { ComponentType, Project } from '../model';
 import { useEditor } from './EditorContext';
-import { componentTarget } from './componentTarget';
 import { Button } from './controls';
-import { libraryErrorMessage } from './labels';
-import { ToolWindow } from './ToolWindow';
+import { useAddComponent } from './useAddComponent';
 
-// Janela Biblioteca (etapa Biblioteca, B3), à esquerda: os componentes das especializações
+// Paleta (etapa Biblioteca, B3; aba Paleta da janela Catálogo, B5): os componentes das especializações
 // aplicadas, por especialização e camada, cada um com o botão Adicionar. O componente
 // novo vai para o container selecionado ou para a tela à vista (`componentTarget`).
 
@@ -52,48 +48,20 @@ function groupTypes(
   return groups;
 }
 
-interface LibraryWindowProps {
+interface LibraryPaletteProps {
   /** Abre o diálogo de Especializações (atalho do estado vazio). */
   readonly onOpenSpecs: () => void;
 }
 
-export function LibraryWindow({ onOpenSpecs }: LibraryWindowProps) {
-  const editor = useEditor();
-  const { actions, derived, review, store, ui } = editor;
-  const [error, setError] = useState<string | null>(null);
+export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
+  const { derived, review } = useEditor();
+  const { add, disabledReason, error } = useAddComponent();
   const project = review.derived.shownProject.value;
   const types = derived.componentTypes.value;
-  const readOnly = store.locked.value;
-  // Só o "há uma tela possível" importa para a janela: ela não renderiza a cada pan.
-  const hasTarget = useComputed(() => componentTarget(editor) !== null).value;
   if (!project) return null;
 
-  const add = (type: ComponentType) => {
-    const target = componentTarget(editor);
-    if (!target) return;
-    const result = actions.addComponent({
-      imageId: target.imageId,
-      parentId: target.parentId,
-      specId: type.specId,
-      typeId: type.typeId,
-      ...(target.center ? { center: target.center } : {}),
-    });
-    if (!result.ok) {
-      setError(libraryErrorMessage(result.error));
-      return;
-    }
-    setError(null);
-    ui.selection.value = { kind: 'marking', id: result.value };
-  };
-
-  const disabledHint = readOnly
-    ? t('library.readOnly')
-    : hasTarget
-      ? undefined
-      : t('library.noScreen');
-
   return (
-    <ToolWindow id="library">
+    <>
       {types.length === 0 ? (
         <div class="library-empty">
           <p class="muted">{t('library.empty')}</p>
@@ -127,9 +95,9 @@ export function LibraryWindow({ onOpenSpecs }: LibraryWindowProps) {
                         <Button
                           size="sm"
                           aria-label={t('library.addType', { name: type.name })}
-                          disabled={readOnly || !hasTarget}
-                          title={disabledHint}
-                          onClick={() => add(type)}
+                          disabled={disabledReason !== undefined}
+                          title={disabledReason}
+                          onClick={() => add(type.specId, type.typeId)}
                         >
                           {t('library.add')}
                         </Button>
@@ -142,6 +110,6 @@ export function LibraryWindow({ onOpenSpecs }: LibraryWindowProps) {
           ))}
         </div>
       )}
-    </ToolWindow>
+    </>
   );
 }

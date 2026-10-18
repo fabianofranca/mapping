@@ -9,6 +9,7 @@ import {
   readRevision,
   serialize,
   specFiles,
+  toLibraryFiles,
   uniqueImageFile,
   type Project,
 } from '../model';
@@ -20,12 +21,18 @@ import {
 } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
-import { loadLibraryIssues, type LibraryIssues } from '../storage/specPackage';
+import {
+  loadLibraryIssues,
+  readSpecPackage,
+  type LibraryIssues,
+} from '../storage/specPackage';
 import type { LoadedProposals } from '../storage/loadProposals';
 import { backupFileName, imageMimeType, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
 import { reportError } from '../utils/report';
 import { createComponentLibrary, type ComponentLibrary } from './componentLibrary';
+import { libraryInputFiles } from './packageValidation';
+import { createProjectCatalogs, type ProjectCatalogs } from './projectCatalogs';
 import { createProjectStore, type ProjectStore } from './history';
 import {
   createProjectActions,
@@ -181,6 +188,11 @@ export interface ProjectSession {
    * da sessão, nunca do projeto. Lê `specs/<id>/` e as cópias de pacote ainda não gravadas.
    */
   readonly components: ComponentLibrary;
+  /**
+   * Catálogos (páginas dos componentes) dos pacotes aplicados, montados sob demanda pela janela
+   * Catálogo (etapa Biblioteca, B5). Estado em memória, nunca do projeto.
+   */
+  readonly catalogs: ProjectCatalogs;
   /** Versão de origem, depois que o backup do original pré-migração foi gravado. */
   readonly backupSaved: ReadonlySignal<number | null>;
   /** Alteração externa que impediu uma gravação; `null` quando não há decisão pendente. */
@@ -335,6 +347,25 @@ export function openSession(options: SessionOptions): ProjectSession {
     readText: async (path) => (await storage.readSpecFile(path))?.text() ?? null,
     readBytes: async (path) => (await storage.readSpecFile(path))?.arrayBuffer() ?? null,
     cached: (id, version) => packageCache.get(packageKey({ id, version })),
+  });
+  const catalogs = createProjectCatalogs({
+    project: store.committed,
+    // A cópia em memória da sessão (aplicar ou atualizar ainda não gravado) vale antes do disco.
+    read: async (owner) => {
+      const dir = packageDirOf(owner.file);
+      if (dir === null) return null;
+      const cached = packageCache.get(packageKey(owner));
+      if (cached) {
+        const files = new Map(cached);
+        const specText = specFiles(store.committed.peek() ?? options.project).get(
+          owner.file,
+        );
+        if (specText !== undefined) files.set(owner.file.slice(dir.length + 1), specText);
+        return libraryInputFiles(files);
+      }
+      const pkg = await readSpecPackage(storage, dir);
+      return pkg === null ? null : toLibraryFiles(dir, pkg.entries);
+    },
   });
   let packagesTouched = false;
   // Pastas de pacote regravadas por cima de uma versão antiga: podem ter arquivos que só a
@@ -751,6 +782,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     trackPackages(project);
     // Os arquivos do pacote podem ter mudado por fora sem mudar a versão: lê de novo.
     components.invalidate();
+    catalogs.invalidate();
     libraryIssues.value = loaded.libraryIssues;
     if (loaded.migratedFrom !== null) {
       pendingBackup = { version: loaded.migratedFrom, text: loaded.text };
@@ -929,6 +961,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     proposalActions,
     libraryIssues,
     components,
+    catalogs,
     saveStatus: saver.status,
     backupSaved,
     conflict,
@@ -1065,6 +1098,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       await saver.flush();
       saver.dispose();
       components.dispose();
+      catalogs.dispose();
       store.close();
     },
   };
