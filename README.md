@@ -58,7 +58,7 @@ Os workflows em `.github/workflows/`:
 - **`mcp-prerelease.yml`**: pre-releases do servidor MCP para testar antes da estável: um snapshot por PR com base em `epic/**` (`mcp-snapshot-pr<N>`, apagado quando o PR fecha) e uma release candidate no merge do PR da última fase do épico, o que leva o rótulo `mcp-rc` (`mcp-v<versão>-rc.<n>`, apagadas quando a estável sai); ver [`docs/MCP.md`](docs/MCP.md).
 - **`mcp-release.yml`**: ao criar uma tag `mcp-v<versão>` (a versão precisa ser a de `mcp/version.ts`), gera `mapping-mcp.js` e o anexa à Release do GitHub, criada antes pela tela ou não; também pode ser rodado à mão (Run workflow) para uma tag que já existe (ver [`docs/MCP.md`](docs/MCP.md)).
 - **`preview-on-pr.yml`**: em todo PR aberto ou atualizado (do próprio repositório), dispara o `deploy.yml` para o branch do PR, que passa a ocupar o `/preview/`.
-- **`deploy.yml`**: um push na `main` publica a versão principal no GitHub Pages (em `/`). Antes, chama o `ci.yml` inteiro (`workflow_call`) para a `main` e, no preview, também para o branch: se qualquer validação falhar, nada é publicado.
+- **`deploy.yml`**: um push na `main` publica a versão principal no GitHub Pages (em `/`). Antes, chama o `ci.yml` inteiro (`workflow_call`) para a `main` e, no preview, também para o branch. Todo deploy grava `deploy.json` na raiz do site com o commit da `main` publicado. Sem preview, a falha da `main` bloqueia tudo; com preview, o branch precisa passar, mas a falha da `main` (que só é checada se ela mudou desde o `deploy.json`) não bloqueia: a produção é republicada do commit já publicado, com aviso no resumo.
 - **`dependabot.yml`**: atualizações semanais de npm e GitHub Actions, com minor e patch agrupados num PR por ecossistema.
 
 O `index.html` avulso também sai como artefato do workflow, para abrir por `file://`.
@@ -67,7 +67,7 @@ O `index.html` avulso também sai como artefato do workflow, para abrir por `fil
 
 Todo PR aberto ou atualizado publica o branch dele em `/preview/` sozinho (`preview-on-pr.yml` dispara o Deploy); há um preview só, o do último PR atualizado. Para publicar outro branch à mão: em **Actions → Deploy → Run workflow**, escolha o branch em "Use workflow from" (ou digite o nome no campo `branch`). O workflow publica:
 
-- a `main`, intacta, em `/`;
+- a `main`, intacta, em `/` (o último commit validado: se os checks da `main` falharem, fica o já publicado);
 - o branch em **`/preview/`**, construído com `VITE_CHANNEL=preview`.
 
 O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service worker próprios): ele não enxerga nem migra os projetos locais da versão principal. Uma faixa no topo avisa que é uma versão de teste (dá para dispensá-la na sessão; o selo PREVIEW na barra e o canal na barra de status ficam sempre), e o manifest tem outro nome, para instalar os dois lado a lado.
