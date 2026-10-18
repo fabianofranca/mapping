@@ -322,6 +322,8 @@ export default tseslint.config(
   { files: ['*.config.{js,ts}'], languageOptions: { globals: globals.node } },
   // Fase 8.5: o gancho de disco dos testes do MCP (`tests/mcp/fsHooks.mjs`) roda no Node.
   { files: ['tests/mcp/**/*.mjs'], languageOptions: { globals: globals.node } },
+  // Cliente MCP por stdio do agente testador (docs/TESTING.md, apêndice A): roda no Node.
+  { files: ['scripts/testing/**/*.mjs'], languageOptions: { globals: globals.node } },
   // Fase 8.5: os três módulos do servidor que gravam, e o script de build (`build.mjs`, que gera
   // o `dist-mcp/` e não entra no bundle). No flat config, este bloco substitui a regra do bloco
   // "Servidor MCP" nesses arquivos: repete as restrições antigas (`mcpImportPatterns`) e só

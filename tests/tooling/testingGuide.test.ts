@@ -69,8 +69,8 @@ function longBullets(md: string, max = 600): string[] {
     .filter((line) => /^\s*(?:[-*]|\d+\.)\s/.test(line) && line.trim().length > max);
 }
 
-/** Códigos de passo cuja linha da tabela (células sem o código) passa de `max` caracteres. */
-function longSteps(md: string, max = 1200): string[] {
+/** Códigos de passo cuja linha da tabela (células sem o código) passa de `max` caracteres (o limite subiu de 1.200 para 1.300 com as anotações "ou `ferramenta`" nos passos [pessoa]). */
+function longSteps(md: string, max = 1300): string[] {
   const out: string[] = [];
   for (const line of stripFences(md).split('\n')) {
     const m = /^\|\s*(?:\*\*)?((?:R\d+\.\d+|A\d+)[a-z]?)(?:\*\*)?[^|]*\|(.*)$/.exec(line);
@@ -183,7 +183,7 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
     expect(agentLeaks(body)).toEqual([]);
   });
 
-  it('sem bullet acima de 600 caracteres nem passo acima de 1.200 (G2, G7)', () => {
+  it('sem bullet acima de 600 caracteres nem passo acima de 1.300 (G2, G7)', () => {
     expect(longBullets(guide)).toEqual([]);
     expect(longSteps(guide)).toEqual([]);
   });
@@ -282,6 +282,19 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
   it('pede o build id esperado na pergunta única e na mensagem da rodada completa (M6)', () => {
     expect(prompt).toMatch(/^\s*- \(g\)[^\n]*build id esperado/m);
     expect(prompt).toMatch(/\*\*Rodada completa:\*\*[^\n]*Build id esperado/);
+  });
+
+  it('rodada sem interação: dialog-pilot, cliente por stdio e passos que só o dono faz', () => {
+    const guide = read('docs/TESTING.md');
+    expect(existsSync('scripts/testing/mcp-stdio-client.mjs')).toBe(true);
+    for (const text of [prompt, guide]) {
+      expect(text).toContain('dialog-pilot');
+      expect(text).toContain('scripts/testing/mcp-stdio-client.mjs');
+    }
+    expect(prompt).toContain('sem interação');
+    expect(prompt).toContain('não executado (precisa do dono)');
+    expect(guide).toContain('Diálogos nativos com o dialog-pilot');
+    expect(guide).toMatch(/^- Ferramenta:[^\n]*dialog-pilot[^\n]*stdio/m);
   });
 
   it('README.md e CLAUDE.md apontam para ele, não para o prompt em history/ (G16)', () => {
