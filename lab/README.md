@@ -180,6 +180,28 @@ Detalhes e checkboxes das fases em [`docs/history/PLAN-etapa-lab.md`](../docs/hi
 
 **Fechamento:** o épico `epic/lab` foi mesclado na `main` em 2026-10-17 (PR #160); a etapa seguinte, a **Biblioteca**, está detalhada no [`PLAN.md`](../PLAN.md) (B1 a B5, em épico próprio).
 
+## O que foi para o produto e o que fica no laboratório (Fechamento da Biblioteca)
+
+Registro feito no Fechamento da etapa Biblioteca ([`docs/history/PLAN-etapa-biblioteca.md`](../docs/history/PLAN-etapa-biblioteca.md)). O motor mora em `src/` e o laboratório **importa dele**, sem cópia duplicada.
+
+**Foi para o produto** (e as páginas do laboratório apontam para ele):
+
+| Peça                                                                                                                                                                                   | Onde mora hoje                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Formato, parser, expressões, instanciação, cena, arrumação (`arrange`), arrumação por tamanhos (`layout`), origem (`origin`), tela (`screen`) e a parte pura da biblioteca (`library`) | `src/model/components/` (testes em `tests/model/components/`) |
+| `ScreenRenderer`, `renderScene`, `konvaMeasurer`                                                                                                                                       | `src/canvas/components/`                                      |
+| Fontes do design system (`FontFace` por bytes)                                                                                                                                         | `src/storage/fonts.ts`                                        |
+| Pacote da biblioteca, validação nas três portas, telas com componentes, atualização com migrações e Catálogo                                                                           | app, MCP 0.5.0 e skill `spec-author` (ver `docs/`)            |
+
+**Fica no laboratório** (fora do produto e fora das regras do núcleo):
+
+- `lab/components/`: a página do editor de componentes (`editor.ts`, `board.ts`, `main.tsx`), os exemplos (`samples.ts`, `samplesMaterial3.ts`), `libraryFiles.ts` (a parte de navegador do carregamento) e `sdui/settings.sdui.json`. O canvas da app substitui o editor; a página continua publicada em `dist/lab/components/`.
+- `lab/viewer/`: o pacote `mapping-viewer` (núcleo sem framework, invólucro React, `tree.ts`, `host.ts` e o build `npm run build:viewer`). Não é consumido pela app; é a base para um site hospedeiro embutir o desenho.
+- `lab/react/`: a página de demonstração do visualizador (React 19, CSS próprio).
+- `lab/shared/`: utilitários só das páginas (`download.ts`, `pinch.ts`).
+
+**Pendências herdadas:** o teste com o JSON real do backend (depende do dono), campos de tabela no lugar de listas numeradas, props no próprio nó e vários slots por componente.
+
 ## `components/sdui/` — Exemplo de JSON do SDUI
 
 Um arquivo, entrada da fase L2: `settings.sdui.json`, a tela de configurações do Material 3 escrita como um backend de SDUI escreveria. É uma árvore com `type`, `props`, `children`, `actions`, `binding`, `floating`, `bottomBar` e `modal`, **sem retângulos**. A declaração que o traduz (o esboço `origem-material3.sketch.json` saiu) está no `M3_SPEC`, em `lab/components/samplesMaterial3.ts`.
