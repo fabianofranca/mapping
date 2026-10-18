@@ -6,7 +6,7 @@ Só projetos **em pasta** ficam ao alcance do MCP; projetos guardados no navegad
 
 ## Instalação
 
-1. Baixe `mapping-mcp.js` da [última Release `mcp-v*`](../../../releases) (há também um `mapping-mcp.js.sha256` para conferir: `sha256sum -c mapping-mcp.js.sha256`). Para testar algo ainda não publicado, baixe de uma pre-release: `mcp-snapshot-pr<N>` (o build de um PR de fase, antes de entrar no épico) ou `mcp-v0.5.0-rc.<n>` (a release candidate mais recente do épico). Elas anunciam a versão com sufixo em `--version` (`0.5.0-snapshot.pr172+abc1234`, `0.5.0-rc.2`).
+1. Baixe `mapping-mcp.js` da [última Release `mcp-v*`](../../../releases) (há também um `mapping-mcp.js.sha256` para conferir: `sha256sum -c mapping-mcp.js.sha256`). Para testar algo ainda não publicado, baixe de uma pre-release: `mcp-snapshot-pr<N>` (o build de um PR de fase, antes de entrar no épico) ou `mcp-v0.5.0-rc.<n>` (a release candidate do épico, gerada no merge da última fase). Elas anunciam a versão com sufixo em `--version` (`0.5.0-snapshot.pr172+abc1234`, `0.5.0-rc.1`).
 2. Copie o arquivo para `tools/` no repositório do app. Ele é autocontido (dependências, WebAssembly de imagem e documentação embutidos): não precisa de `npm install`.
 3. Registre o servidor num `.mcp.json` na raiz do repositório:
 
@@ -189,7 +189,7 @@ A tabela abaixo cobre o que costuma aparecer na instalação e no uso; a lista c
 A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts` (hoje `0.5.0`, a da etapa Biblioteca) é o único `x.y.z` do código, e os canais abaixo só acrescentam um sufixo ao build (`MCP_BUILD_SUFFIX`, que o `mcp/build.mjs` valida). O workflow `.github/workflows/mcp-prerelease.yml` cuida dos dois primeiros; o `mcp-release.yml`, do terceiro.
 
 - **Snapshot por PR (automático).** Todo PR com base num `epic/**` gera um build de teste na pre-release fixa `mcp-snapshot-pr<N>` (versão `0.5.0-snapshot.pr<N>+<sha>`), sobrescrita a cada push e **apagada (release e tag) quando o PR fecha**, mesclado ou não. Instalação: `./setup.sh mcp-snapshot-pr<N>` (ver `examples/workspace/`) ou baixe os arquivos da Release.
-- **Release candidate por merge no épico (automático).** Cada push num `epic/**` que mexe no servidor (o merge de um PR de fase) gera a pre-release `mcp-v0.5.0-rc.<n>` (`n` = maior rc existente da versão + 1), depois de lint, typecheck e testes. Elas são **apagadas (release e tag) quando a estável é publicada**.
+- **Release candidate pelo rótulo `mcp-rc` (automático).** O merge, num `epic/**`, de um PR com o rótulo `mcp-rc` (o da última fase do épico; o agente dessa fase põe o rótulo ao abrir o PR) gera a pre-release `mcp-v0.5.0-rc.<n>` (`n` = maior rc existente da versão + 1) a partir do commit do merge, depois de lint, typecheck e testes. Sem o rótulo, o merge não gera rc. Se esquecerem, rode o workflow "MCP pre-release" à mão (`workflow_dispatch`) no branch do épico. Elas são **apagadas (release e tag) quando a estável é publicada**.
 - **Estável (o dono).** Depois do merge do épico na `main`:
 
 1. Confirme que `SERVER_VERSION` em `mcp/version.ts` (`0.5.0`) e as versões desta seção batem (o teste `tests/mcp/version.test.ts` confere) e que isso já está na `main`.

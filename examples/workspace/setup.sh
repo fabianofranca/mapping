@@ -3,7 +3,7 @@
 # o sha256, traz a skill spec-author e cria o link que o Claude Code lê.
 # Uso: ./setup.sh                      (última release estável)
 #      ./setup.sh mcp-v0.5.0           (uma release específica)
-#      ./setup.sh mcp-v0.5.0-rc.2      (release candidate do épico)
+#      ./setup.sh mcp-v0.5.0-rc.1      (release candidate do épico)
 #      ./setup.sh mcp-snapshot-pr172   (build de teste de um PR; some quando o PR fecha)
 # Aceita qualquer tag. A "última release" (releases/latest) é sempre a estável: o GitHub nunca
 # escolhe uma pre-release (rc ou snapshot) como latest, então elas só entram por tag explícita.

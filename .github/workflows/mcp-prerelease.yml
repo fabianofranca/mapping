@@ -7,27 +7,18 @@ name: MCP pre-release
 # - snapshot: todo PR com base num `epic/**` gera `mcp-snapshot-pr<N>` (pre-release fixa,
 #   sobrescrita a cada push; versão `<versão>-snapshot.pr<N>+<sha curto>`). Quando o PR fecha
 #   (mesclado ou não), a release e a tag são apagadas.
-# - rc: cada push num `epic/**` que mexe no que entra no bundle (o merge de um PR de fase)
-#   gera `mcp-v<versão>-rc.<n>` (n = maior rc existente daquela versão + 1). As rc são apagadas
-#   pelo `mcp-release.yml` quando a estável da mesma versão é publicada.
+# - rc: só sai no merge de um PR com o rótulo `mcp-rc` num `epic/**`: o PR da última fase do
+#   épico (o agente dessa fase põe o rótulo ao abrir o PR). Gera `mcp-v<versão>-rc.<n>`
+#   (n = maior rc existente daquela versão + 1) a partir do commit do merge. Sem o rótulo, o
+#   merge não gera rc. Se alguém esquecer o rótulo, rode este workflow à mão (`workflow_dispatch`)
+#   no branch `epic/**`. As rc são apagadas pelo `mcp-release.yml` quando a estável da mesma
+#   versão é publicada.
 # Os testes do PR rodam no `ci.yml`; o snapshot não os repete. A rc os roda, como a estável.
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches: ['epic/**']
-  push:
-    branches: ['epic/**']
-    # O que entra no `dist-mcp/mapping-mcp.js`: o servidor, o modelo, os documentos embutidos
-    # com `?raw` (ver `mcp/docs.ts`) e as dependências.
-    paths:
-      - 'mcp/**'
-      - 'src/model/**'
-      - 'docs/AGENT-GUIDE.md'
-      - 'docs/COMPONENT-FORMAT.md'
-      - 'docs/FORMAT.md'
-      - 'docs/SPEC-FORMAT.md'
-      - 'package.json'
-      - 'package-lock.json'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -113,16 +104,27 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || echo "Sem snapshot para apagar."
 
   rc:
-    if: github.event_name == 'push'
+    if: >-
+      (github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'mcp-rc') &&
+      github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' &&
+      startsWith(github.ref, 'refs/heads/epic/'))
     runs-on: ubuntu-latest
-    # Por branch e sem cancelar: um push na fila não pode perder o seu número de rc.
+    # Por épico e sem cancelar: uma rc na fila não pode perder o seu número.
     concurrency:
-      group: mcp-rc-${{ github.ref }}
+      group: mcp-rc-${{ github.event.pull_request.base.ref || github.ref }}
       cancel-in-progress: false
     env:
       GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+      EPIC: ${{ github.event.pull_request.base.ref || github.ref_name }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -168,6 +170,6 @@ jobs:
         run: |
           gh release create "$RC_TAG" \
             dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
-            --prerelease --target "$GITHUB_SHA" \
+            --prerelease --target "$TARGET_SHA" \
             --title "$RC_TAG" \
-            --notes "Release candidate do épico \`${GITHUB_REF_NAME}\`, commit ${GITHUB_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`."
+            --notes "Release candidate do épico \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`."
