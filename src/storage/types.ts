@@ -69,6 +69,11 @@ export interface ProjectStorage {
   /** Grava um arquivo do pacote, criando as pastas. No projeto local marca "não exportado". */
   writeSpecFile(path: string, data: Blob | string): Promise<void>;
   /**
+   * Remove um arquivo do pacote (`specs/material3/docs/antigo.md`; qualquer extensão). Não falha
+   * se ele já não existir. No projeto local marca "não exportado".
+   */
+  removeSpecFile(path: string): Promise<void>;
+  /**
    * Remove a pasta do pacote inteira (recursivo). Não falha se ela não existir. No projeto
    * local marca "não exportado".
    */

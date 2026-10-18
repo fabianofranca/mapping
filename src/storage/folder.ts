@@ -313,6 +313,10 @@ export function createFolderStorage(
       assertSpecPath(path, 'package');
       await writeFile(root, path, data);
     },
+    async removeSpecFile(path) {
+      assertSpecPath(path, 'package');
+      await removeFile(root, path);
+    },
     async removeSpecDir(dir) {
       assertSpecPath(dir, 'dir');
       await removeDirectory(root, dir);

@@ -67,6 +67,10 @@ describe('FolderStorage', () => {
       ...new Uint8Array((await read?.arrayBuffer()) ?? new ArrayBuffer(0)),
     ]).toEqual([...bytes]);
     expect(await storage.readSpec('specs/m3/m3.spec.json')).toBe('{"id":"m3"}\n');
+    await storage.removeSpecFile('specs/m3/fonts/R.ttf');
+    expect(await storage.readSpecFile('specs/m3/fonts/R.ttf')).toBeNull();
+    expect(await storage.readSpec('specs/m3/m3.spec.json')).toBe('{"id":"m3"}\n');
+    await storage.removeSpecFile('specs/m3/fonts/R.ttf'); // de novo: não falha
     await storage.removeSpecDir('specs/m3');
     expect(await storage.listSpecDir('specs/m3')).toEqual([]);
     expect(await storage.readSpec('specs/outra.json')).toBe('{}');

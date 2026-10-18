@@ -337,6 +337,10 @@ export function openSession(options: SessionOptions): ProjectSession {
     cached: (id, version) => packageCache.get(packageKey({ id, version })),
   });
   let packagesTouched = false;
+  // Pastas de pacote regravadas por cima de uma versão antiga: podem ter arquivos que só a
+  // versão antiga tinha. Saem depois do `mapping.json` gravado (`sweepPackages`); a pasta fica
+  // aqui até a varredura dar certo, e cada varredura recalcula o que sobra pela listagem.
+  const staleDirs = new Set<string>();
   const trackPackages = (p: Project) => {
     writtenPackages.clear();
     for (const s of p.specializations) {
@@ -360,7 +364,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     for (const [path, data] of files) if (path !== specName) copy.set(path, data);
     packageCache.set(packageKey(spec), copy);
   };
-  /** Lê a pasta do disco para o cache (uma vez por `id@versão`), antes de ela ser trocada ou apagada. */
+  /** Lê a pasta do disco para o cache (uma vez por `id@versão`), antes de ela ser regravada ou apagada. */
   const snapshotPackage = async (dir: string, written: WrittenPackage) => {
     if (packageCache.has(written.key)) return;
     const files = new Map<string, string | Blob>();
@@ -474,9 +478,11 @@ export function openSession(options: SessionOptions): ProjectSession {
   /**
    * Grava o projeto: restaura imagens que voltaram (undo) e grava as cópias de
    * `specs/` novas ou alteradas, grava o `mapping.json` e só então remove as
-   * imagens e cópias que deixaram de ser usadas. Assim o `mapping.json` em disco
-   * nunca aponta para um arquivo já apagado. Grava o projeto confirmado: um gesto em
-   * andamento só chega ao disco quando confirmado (`commitGesture` sobe a revisão e agenda).
+   * imagens, cópias e arquivos de pacote que deixaram de ser usados. Assim o `mapping.json`
+   * em disco nunca aponta para um arquivo já apagado: nada é apagado antes do `mapping.json`
+   * novo (a pasta de um pacote cuja versão muda é regravada por cima, não apagada). Grava o
+   * projeto confirmado: um gesto em andamento só chega ao disco quando confirmado
+   * (`commitGesture` sobe a revisão e agenda).
    * Gravado o `mapping.json`, a gravação conta como feita: uma falha na limpeza vai para o
    * Diagnóstico (`session.cleanup`) e a próxima gravação tenta de novo.
    */
@@ -502,8 +508,12 @@ export function openSession(options: SessionOptions): ProjectSession {
       trash.delete(file);
       wrote = true;
     }
-    // Pacotes da biblioteca: a pasta nova (ou a versão que voltou pelo desfazer) entra antes
-    // do `mapping.json`; a pasta antiga é guardada em memória antes de ser trocada.
+    // Pacotes da biblioteca: a versão nova (ou a que voltou pelo desfazer) entra antes do
+    // `mapping.json`, regravada POR CIMA da pasta: a versão antiga é só guardada em memória
+    // (para o desfazer) e nada é apagado agora, nem o arquivo da especialização, que o laço de
+    // `specFiles` abaixo regrava. Os arquivos que só a versão antiga tinha ficam até o
+    // `mapping.json` gravado (`sweepPackages`). Janela que sobra: durante a regravação a pasta
+    // pode ter arquivos da versão nova enquanto o `mapping.json` ainda cita a antiga; nada some.
     for (const s of p.specializations) {
       const dir = packageDirOf(s.file);
       if (dir === null || !s.spec) continue;
@@ -516,8 +526,9 @@ export function openSession(options: SessionOptions): ProjectSession {
         continue;
       }
       if (have) await snapshotPackage(dir, have);
-      await storage.removeSpecDir(dir);
+      // O arquivo da especialização precisa ser regravado com a versão nova.
       forgetSpecsUnder(dir);
+      staleDirs.add(dir);
       for (const [rel, data] of files) await storage.writeSpecFile(`${dir}/${rel}`, data);
       writtenPackages.set(dir, { key, specRel: s.file.slice(dir.length + 1) });
       packagesTouched = true;
@@ -616,12 +627,38 @@ export function openSession(options: SessionOptions): ProjectSession {
       await storage.removeSpecDir(dir);
       forgetSpecsUnder(dir);
       writtenPackages.delete(dir);
+      staleDirs.delete(dir);
       packagesTouched = true;
     }
     for (const file of [...writtenSpecs.keys()]) {
       if (specs.has(file)) continue;
       await storage.removeSpec(file);
       writtenSpecs.delete(file);
+    }
+    await sweepPackages();
+  };
+
+  /**
+   * Remove das pastas de pacote regravadas os arquivos que a versão gravada não tem (os da versão
+   * antiga) e que não são o arquivo da especialização. Recalcula pela listagem da pasta, então uma
+   * falha no meio (ou na listagem) não perde nada: a pasta continua em `staleDirs` e a próxima
+   * gravação tenta de novo.
+   */
+  const sweepPackages = async () => {
+    for (const dir of [...staleDirs]) {
+      const have = writtenPackages.get(dir);
+      const files = have ? packageCache.get(have.key) : undefined;
+      if (!have || !files) {
+        // Pasta que saiu do projeto (o `cleanUp` já a removeu) ou versão sem conteúdo conhecido.
+        staleDirs.delete(dir);
+        continue;
+      }
+      for (const path of await storage.listSpecDir(dir)) {
+        const rel = path.slice(dir.length + 1);
+        if (rel === have.specRel || files.has(rel)) continue;
+        await storage.removeSpecFile(path);
+      }
+      staleDirs.delete(dir);
     }
   };
 
@@ -710,6 +747,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     writtenSpecs.clear();
     for (const [file, text] of specFiles(project)) writtenSpecs.set(file, text);
     packageCache.clear();
+    staleDirs.clear();
     trackPackages(project);
     // Os arquivos do pacote podem ter mudado por fora sem mudar a versão: lê de novo.
     components.invalidate();
