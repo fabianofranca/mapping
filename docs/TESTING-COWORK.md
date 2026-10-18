@@ -56,7 +56,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 
 **Com o dialog-pilot, o bloco [pessoa] de cada roteiro se reduz ao que não é diálogo nativo.** O seletor de pasta, a permissão, o "Salvar como" e o cancelar você mesmo opera (`select_folder`, `accept_permission_prompt`, `save_file`, `cancel_dialog`; o seletor de arquivo, `open_file` ou a injeção no campo); os pedidos ao Claude Code você faz pelo cliente por stdio. Cada passo do guia traz "ou `ferramenta`" ao lado da marca [pessoa]. Sobram para o dono:
 
-- o app instalado (R0.6, o PWA, que abre numa janela que a extensão não controla) e o passo em que a aba fecha no meio (R6.2);
+- o passo em que a aba fecha no meio (R6.2); o app instalado (PWA) não entra aqui: é o roteiro RP, de sessão exclusiva (seção 5);
 - a confirmação de instalar o app, o "Sair da página?" e o arrastar do gerenciador de arquivos;
 - a janela do Chrome na frente (uma vez, no começo).
 
@@ -67,7 +67,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 - **Um bloco por roteiro.** Antes de começar cada roteiro, mande ao dono **uma** mensagem com todos os passos **[pessoa]** daquele roteiro, na ordem, e para cada um o que ele vai ver e exatamente o que escolher (ex.: "R1.1: seletor de pasta, escolha `principal` e **Permitir em todas as visitas**; R1.3: seletor de arquivo, `sdui.json` e depois `modelo-de-dados.json`; R1.22: 'Salvar como', pasta de trabalho, **Salvar**"). Peça que ele fique por perto durante aquele roteiro.
 - **Em cada [pessoa], pergunte e diga que está esperando.** Ao chegar num passo [pessoa], mande uma mensagem com uma **pergunta explícita** (o que fazer, onde clicar, o que escolher e o que responder) e termine com: **"Estou esperando você fazer isto; me avise quando terminar."** Não faça nada até a resposta. Uma mensagem curta demais, ou nenhuma, faz o dono achar que você travou.
 - **Avise toda espera de mais de 30 s.** Se for esperar mais de 30 s por qualquer outro motivo (captura que demora, recarga, varredura de propostas, conferência do disco), avise em uma linha antes ("Esperando a captura; volto em seguida.").
-- **Passos inteiros do dono** (R0.6, R6.2 e, quando a extensão não abre `file://`, R0.5): peça de volta o build id daquela janela e a confirmação de cada ação do passo, uma por uma (apêndice A). O que fazer antes de cada seletor também está no apêndice A.
+- **Passos inteiros do dono** (R6.2 e, quando a extensão não abre `file://`, R0.5): peça de volta o build id daquela janela e a confirmação de cada ação do passo, uma por uma (apêndice A). O que fazer antes de cada seletor também está no apêndice A.
 
 ## 4. Como agir
 
@@ -75,7 +75,7 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 
 ## 5. O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, R0 a R9, na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
+**Rodada completa (padrão).** Todos os roteiros, R0 a R9 (**sem o RP**), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
 
 **Rodada dirigida.** O dono aponta o alvo de um destes três jeitos:
 
@@ -84,6 +84,8 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 3. **fases de um plano** (`docs/history/PLAN-etapa-*.md` ou o `PLAN.md`): os passos do guia citados no "Aceite" e nos itens de cada fase, mais os que testam o que ela mudou.
 
 Nos três casos: **monte a lista, mostre ao dono com o bloco [pessoa] e peça confirmação antes de começar**. No modo sem interação, **não peça confirmação**: ponha a lista montada no começo do relato (e na conversa) e siga. Execute **R0 inteiro** primeiro. Siga a ordem do guia; se um passo depende de outro (ex.: R6.10 de R6.8a a R6.9; R4.9 de R4.1 a R4.8), execute também os anteriores necessários e marque-os com o mesmo achado de origem.
+
+**Sessão exclusiva do app instalado (RP).** O roteiro **RP — App instalado (PWA)** (`docs/TESTING.md`, fim da seção 8) **nunca** entra na rodada completa nem na dirigida, e no modo sem interação ele não aparece nem como "não executado": simplesmente não faz parte da rodada. O app instalado abre numa janela que a extensão não controla e instalar leva a aba para lá; por isso só roda quando a mensagem do dono pedir essa sessão, com outro meio de controle (controle do computador) ou com o próprio dono. Mensagem de exemplo: "Leia `docs/TESTING-COWORK.md` e execute a **sessão exclusiva do app instalado (RP)**. Build id esperado: `abc1234 · AAAA-MM-DD`." O dono prepara: o endereço `https:` (versão principal ou preview), o Chrome ou Edge desbloqueado e a permissão do controle do computador para a sessão. O relato usa o mesmo template, só com os passos RP.1 a RP.5.
 
 **Passada visual** (no fim da dirigida e, se o dono pedir, da completa): nas janelas e nos diálogos que o dono listar; sem lista, nas sete janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico** e **Propostas**) e nos diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**. Procure texto cortado ou sobreposto, barra de rolagem horizontal, dica cobrindo menu e foco perdido ao fechar um diálogo: feche cada diálogo uma vez pelo teclado (Esc) e uma pelo mouse (**Cancelar** ou o X) e confira que o foco volta ao controle que o abriu, nunca ao `body`. Registre cada janela ou diálogo como uma linha da tabela ("Visual: Camadas").
 
