@@ -35,6 +35,10 @@ export const ptBR = {
   'home.newProject': 'Novo projeto',
   'home.openFolder': 'Abrir pasta',
   'home.openZip': 'Abrir zip',
+  'home.openExample': 'Abrir projeto de exemplo',
+  'home.openExampleHint':
+    'Abre uma cópia do projeto de exemplo neste dispositivo, pelo mesmo caminho do Abrir zip. Cada clique cria uma cópia nova.',
+  'home.guide': 'Guia interativo',
   'home.recentProjects': 'Projetos recentes',
   'home.noRecentProjects':
     'Nenhum projeto ainda. Os projetos deste dispositivo e as pastas abertas aparecem aqui.',
@@ -502,6 +506,14 @@ export const ptBR = {
   'dialog.close': 'Fechar diálogo',
   'help.title': 'Ajuda',
   'help.search': 'Buscar na ajuda',
+  'help.guide.title': 'Guia interativo',
+  'help.guide.intro':
+    'Um passeio de 12 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, telas em branco com Material 3 e a revisão de uma proposta. Funciona sem internet e abre numa aba nova.',
+  'help.guide.example':
+    'Para ver o mesmo projeto na app, use Abrir projeto de exemplo na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).',
+  'help.guide.fileProtocol':
+    'Aberto como arquivo avulso, a app não acha o guia: ele fica em guia/index.html, ao lado do index.html, na pasta dist/ do build e na versão publicada.',
+  'help.guide.open': 'Abrir o guia interativo',
   'help.noResults': 'Nada encontrado para "{query}".',
   'help.shortcuts.title': 'Atalhos de teclado',
   'help.shortcuts.intro':

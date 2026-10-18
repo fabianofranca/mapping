@@ -1,0 +1,1130 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guia do Mapping</title>
+    <link rel="icon" type="image/svg+xml" href="../icons/icon.svg" />
+    <script>
+      // Segue o tema escolhido na app (mesma origem, mesma chave de Configurações).
+      try {
+        const theme = localStorage.getItem('mapping.theme');
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+      } catch {
+        // Armazenamento bloqueado: vale o tema do sistema.
+      }
+    </script>
+    <style>
+      /*__TOKENS_CSS__*/
+
+      /* Guia: roteiro à esquerda, tela anotada no centro, inspetor à direita.
+       Só tokens da app (cores, espaços, raios, fontes, durações); os desenhos dos
+       componentes Material 3 ficam no JS (representam o componente, não a interface). */
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font: var(--t-body);
+        padding-block: var(--space-4);
+        padding-inline: max(var(--space-4), env(safe-area-inset-left, 0px))
+          max(var(--space-4), env(safe-area-inset-right, 0px));
+      }
+      a {
+        color: var(--color-accent);
+      }
+      .wrap {
+        max-width: 1360px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+      header h1 {
+        font: var(--t-display);
+        margin: 0 0 var(--space-1-5);
+        text-wrap: balance;
+      }
+      header p {
+        margin: 0;
+        color: var(--color-text-muted);
+        max-width: 80ch;
+      }
+      .open {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2) var(--space-4);
+        margin-top: var(--space-3);
+        color: var(--color-text-muted);
+      }
+      code {
+        font: var(--t-code);
+        background: var(--color-selection);
+        padding: 1px var(--space-1-5);
+        border-radius: var(--radius-sm);
+      }
+      kbd {
+        font: var(--t-code);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border-control);
+        padding: 1px var(--space-1-5);
+        border-radius: var(--radius-sm);
+        white-space: nowrap;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(250px, 310px) minmax(0, 1fr) minmax(260px, 330px);
+        gap: var(--space-4);
+        align-items: start;
+      }
+      @media (max-width: 1020px) {
+        .grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      .panel {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3);
+        min-width: 0;
+      }
+      h2 {
+        font: var(--t-title);
+        margin: 0 0 var(--space-2);
+      }
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-0-5);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .steps button {
+        all: unset;
+        box-sizing: border-box;
+        cursor: pointer;
+        display: flex;
+        gap: var(--space-2);
+        width: 100%;
+        padding: var(--space-1-5) var(--space-2);
+        border-radius: var(--radius-md);
+        color: var(--color-text-muted);
+      }
+      .steps button:hover {
+        background: var(--color-hover);
+      }
+      .steps .n {
+        font: var(--t-code);
+        min-width: 2em;
+      }
+      .steps .on {
+        background: var(--color-selection);
+        color: var(--color-text);
+        font-weight: 600;
+      }
+      .steps button:focus-visible,
+      .tab:focus-visible,
+      .chip:focus-visible,
+      .btn:focus-visible,
+      .link:focus-visible,
+      .crumbs button:focus-visible,
+      .mk:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+      }
+      .lesson {
+        border-top: 1px solid var(--color-border);
+        margin-top: var(--space-3);
+        padding-top: var(--space-3);
+      }
+      .lesson h3 {
+        font: var(--t-title);
+        margin: 0 0 var(--space-1-5);
+      }
+      .lesson p {
+        margin: 0 0 var(--space-2);
+      }
+      .lesson .try {
+        background: var(--color-selection);
+        border-radius: var(--radius-md);
+        padding: var(--space-2) var(--space-3);
+      }
+      .nav {
+        display: flex;
+        gap: var(--space-2);
+        margin-top: var(--space-3);
+      }
+      .btn {
+        all: unset;
+        box-sizing: border-box;
+        cursor: pointer;
+        height: var(--control-height);
+        display: inline-flex;
+        align-items: center;
+        padding: 0 var(--space-3);
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--control-radius);
+        font: var(--t-text);
+      }
+      .btn:hover {
+        background: var(--color-hover);
+      }
+      .btn.primary {
+        background: var(--color-accent);
+        color: var(--color-accent-text);
+        border-color: var(--color-accent);
+      }
+      .btn.primary:hover {
+        background: var(--color-accent-hover);
+      }
+      .btn[disabled] {
+        opacity: var(--opacity-disabled);
+        cursor: default;
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1-5);
+        margin-bottom: var(--space-3);
+      }
+      .tab {
+        all: unset;
+        box-sizing: border-box;
+        cursor: pointer;
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-full);
+        border: 1px solid var(--color-border-control);
+      }
+      .tab:hover {
+        background: var(--color-hover);
+      }
+      .tab[aria-selected='true'] {
+        background: var(--color-accent);
+        color: var(--color-accent-text);
+        border-color: var(--color-accent);
+      }
+      .stage {
+        background: var(--color-canvas-bg);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3);
+        display: flex;
+        justify-content: center;
+        max-height: 74vh;
+        overflow: auto;
+      }
+      .stage svg {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        max-height: 70vh;
+        width: auto;
+      }
+      svg text {
+        font-family: var(--font-sans);
+      }
+      .layers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1-5);
+        margin-top: var(--space-3);
+      }
+      .chip {
+        all: unset;
+        box-sizing: border-box;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1-5);
+        padding: var(--space-0-5) var(--space-3) var(--space-0-5) var(--space-2);
+        border: 1px solid var(--color-border-control);
+        border-radius: var(--radius-full);
+        font: var(--t-small);
+      }
+      .chip i {
+        width: var(--space-2);
+        height: var(--space-2);
+        border-radius: var(--radius-full);
+        display: inline-block;
+      }
+      .chip[aria-pressed='false'] {
+        opacity: var(--opacity-disabled);
+        text-decoration: line-through;
+      }
+      .hint {
+        color: var(--color-text-muted);
+        font: var(--t-small);
+        margin-top: var(--space-2);
+      }
+      .crumbs {
+        font: var(--t-small);
+        color: var(--color-text-muted);
+        margin-bottom: var(--space-1-5);
+        overflow-wrap: anywhere;
+      }
+      .crumbs button,
+      .link {
+        all: unset;
+        cursor: pointer;
+        color: var(--color-accent);
+        text-decoration: underline;
+      }
+      .insp h2 {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1-5);
+        align-items: center;
+      }
+      .flag {
+        font: var(--t-micro);
+        padding: 1px var(--space-2);
+        border-radius: var(--radius-full);
+        border: 1px solid currentColor;
+      }
+      .flag.lock {
+        color: var(--color-text-muted);
+      }
+      .flag.rev {
+        color: var(--color-warning);
+      }
+      .geometry {
+        font: var(--t-code);
+        color: var(--color-text-muted);
+      }
+      .ann {
+        border-left: 4px solid var(--c, var(--color-border));
+        padding: var(--space-1) 0 var(--space-1) var(--space-3);
+        margin: var(--space-3) 0;
+      }
+      .ann .t {
+        font: var(--t-body-strong);
+      }
+      .ann .l {
+        font: var(--t-micro);
+        color: var(--color-text-muted);
+      }
+      dl {
+        margin: var(--space-1-5) 0 0;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: var(--space-0-5) var(--space-3);
+      }
+      dt {
+        color: var(--color-text-muted);
+        font: var(--t-code);
+        padding-top: 1px;
+      }
+      dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+      .empty {
+        color: var(--color-text-muted);
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--space-4);
+      }
+      .cols p {
+        margin: 0 0 var(--space-2);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      td,
+      th {
+        text-align: left;
+        padding: var(--space-1-5) var(--space-2);
+        border-bottom: 1px solid var(--color-border);
+        vertical-align: top;
+      }
+      .scroll {
+        overflow-x: auto;
+      }
+      .diff {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-2);
+      }
+      .diff > div {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-2);
+      }
+      .diff b {
+        display: block;
+        font: var(--t-micro);
+        color: var(--color-text-muted);
+        margin-bottom: var(--space-1);
+      }
+      @media (max-width: 560px) {
+        .diff {
+          grid-template-columns: 1fr;
+        }
+      }
+      /* Marcações: o contorno e o preenchimento usam a cor da camada (currentColor). */
+      .mk {
+        cursor: pointer;
+        color: var(--color-text-muted);
+      }
+      .mk .box {
+        fill: currentColor;
+        fill-opacity: 0.07;
+        stroke: currentColor;
+        stroke-width: 1.5;
+      }
+      .mk.sel .box {
+        fill-opacity: 0.28;
+        stroke-width: 3;
+      }
+      .mk.review .box {
+        stroke-dasharray: 5 3;
+      }
+      .mk .hit {
+        fill: transparent;
+      }
+      .lock-tag {
+        fill: currentColor;
+        font: var(--t-small);
+        text-anchor: end;
+        pointer-events: none;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .mk .box {
+          transition:
+            stroke-width var(--duration-fast) var(--easing-standard),
+            fill-opacity var(--duration-fast) var(--easing-standard);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>Este guia precisa de JavaScript.</noscript>
+    <div class="wrap">
+      <header>
+        <h1>Guia do Mapping</h1>
+        <p>
+          Um projeto de exemplo completo, desenhado aqui como a app o mostra: telas,
+          marcações, camadas e anotações. Clique nas marcações para ver o que cada uma
+          guarda e siga o roteiro à esquerda.
+        </p>
+        <div class="open">
+          <span
+            >Na app: <code>Abrir projeto de exemplo</code>, na tela inicial, para ver o
+            mesmo projeto lado a lado.</span
+          >
+          <span>Catálogo: <kbd>Ctrl+Shift+9</kbd></span>
+          <a href="../index.html">Abrir o Mapping</a>
+        </div>
+      </header>
+
+      <div class="grid">
+        <aside class="panel" aria-label="Roteiro">
+          <h2>Roteiro</h2>
+          <ol class="steps" id="steps"></ol>
+          <div class="lesson" id="lesson" aria-live="polite"></div>
+          <div class="nav">
+            <button class="btn" id="prev">Anterior</button>
+            <button class="btn primary" id="next">Próximo</button>
+          </div>
+        </aside>
+
+        <main class="panel" aria-label="Tela anotada">
+          <div class="tabs" role="tablist" id="tabs"></div>
+          <div class="stage">
+            <svg id="svg" role="img" aria-label="Tela com marcações"></svg>
+          </div>
+          <div class="layers" id="layers" aria-label="Camadas"></div>
+          <div class="hint">
+            Cada contorno é uma marcação, na cor da camada da sua anotação. Clique na
+            camada para ocultar ou mostrar.
+          </div>
+        </main>
+
+        <aside class="panel insp" aria-label="Detalhes" id="insp"></aside>
+      </div>
+
+      <section class="cols">
+        <div class="panel">
+          <h2>A proposta de exemplo</h2>
+          <p>
+            Na janela <b>Propostas</b> (<kbd>Ctrl+Shift+7</kbd>) há uma proposta pronta,
+            escrita por um agente: <b>Tela de Perfil e ajuste no Cadastro</b>. Clique em
+            <b>Revisar</b>, compare <b>Atual</b> × <b>Proposto</b> e aceite ou rejeite
+            cada mudança; no fim, <b>Aplicar aceitas</b>.
+          </p>
+          <div class="diff">
+            <div>
+              <b>ATUAL</b>Botão do Cadastro: “Cadastrar”<br />Telas: Cadastro, Login,
+              Configurações, Detalhes do pedido
+            </div>
+            <div>
+              <b>PROPOSTO</b>Botão renomeado: “Botão cadastrar”<br />Nova tela
+              <i>Perfil</i> 360 × 800 com Top app bar, 2 List items e Button “Sair”
+            </div>
+          </div>
+        </div>
+        <div class="panel scroll">
+          <h2>Atalhos</h2>
+          <table>
+            <tbody>
+              <tr>
+                <td><kbd>Ctrl+Shift+1</kbd></td>
+                <td>Árvore</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl+Shift+2</kbd></td>
+                <td>Camadas</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl+Shift+3</kbd></td>
+                <td>Detalhes</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl+Shift+5</kbd></td>
+                <td>Incompletas</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl+Shift+6</kbd></td>
+                <td>Diagnóstico</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl+Shift+7</kbd></td>
+                <td>Propostas</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl+Shift+9</kbd></td>
+                <td>Catálogo (Componentes e Paleta)</td>
+              </tr>
+              <tr>
+                <td><kbd>Alt+Shift+A</kbd></td>
+                <td>Arrumar o container selecionado</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <h2>Para agentes (MCP)</h2>
+          <p>
+            Um agente lê o projeto com <code>get_project</code> e sugere mudanças com
+            <code>propose_changes</code>. Quando o tipo é ambíguo (como “Button”), informe
+            <code>specId/typeId</code>, por exemplo <code>material3/m3-button</code>. As
+            sugestões chegam na janela Propostas, nunca direto no projeto.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const D = /*__DATA__*/ null;
+      const L = Object.fromEntries(D.layers.map((l) => [l.id, l]));
+      const M = Object.fromEntries(D.markings.map((m) => [m.id, m]));
+      const A = Object.fromEntries(D.annotations.map((a) => [a.id, a]));
+      const IM = Object.fromEntries(D.images.map((i) => [i.id, i]));
+      const byName = (img, name) =>
+        D.markings.find((m) => IM[m.imageId].name === img && m.name === name);
+      const state = { img: D.images[0].id, sel: null, hidden: new Set(), step: 0 };
+      const $ = (id) => document.getElementById(id);
+      const NS = 'http://www.w3.org/2000/svg';
+      function el(tag, attrs, kids) {
+        const e = document.createElementNS(NS, tag);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        (kids || []).forEach((c) => e.appendChild(c));
+        return e;
+      }
+      function anns(mid) {
+        return D.annotations.filter((a) => a.markingId === mid);
+      }
+      function kind(a) {
+        return a.type ? a.type.typeId : a.name || 'nota';
+      }
+      function depth(m) {
+        let d = 0;
+        while (m.parentId) {
+          m = M[m.parentId];
+          d++;
+        }
+        return d;
+      }
+      function path(m) {
+        const p = [];
+        while (m) {
+          p.unshift(m);
+          m = m.parentId ? M[m.parentId] : null;
+        }
+        return p;
+      }
+      function visible(m) {
+        const as = anns(m.id);
+        return !as.length || as.some((a) => !state.hidden.has(a.layerId));
+      }
+      function colorOf(m) {
+        const as = anns(m.id).filter((a) => !state.hidden.has(a.layerId));
+        return as.length ? L[as[0].layerId].color : null;
+      }
+
+      /* Desenho simples dos componentes Material 3 nas telas em branco. As cores são as do
+       tema Material 3 (o que o componente desenha), não as da interface do Mapping. */
+      const M3 = {
+        primary: '#6750A4',
+        container: '#E8DEF8',
+        outline: '#CAC4D0',
+        outlineStrong: '#79747E',
+        text: '#1D1B20',
+        textSoft: '#49454F',
+        surface: '#FFFBFE',
+        bar: '#F3EDF7',
+        track: '#E6E0E9',
+        onPrimary: '#FFFFFF',
+      };
+      /* Os textos saem dos valores da própria anotação: o desenho nunca diverge do exemplo. */
+      function wrap(text, max) {
+        const lines = [];
+        let line = '';
+        for (const word of String(text).split(' ')) {
+          if (line && (line + ' ' + word).length > max) {
+            lines.push(line);
+            line = word;
+          } else {
+            line = line ? line + ' ' + word : word;
+          }
+        }
+        if (line) lines.push(line);
+        return lines;
+      }
+      function m3(m) {
+        const r = m.rect,
+          a = anns(m.id).find((x) => x.type && x.type.specId === 'material3'),
+          t = a ? a.type.typeId : '',
+          v = (a && a.values) || {},
+          g = [];
+        const add = (tag, at) => g.push(el(tag, at));
+        const txt = (x, y, s, sz, fill, anchor, weight) => {
+          const e = el('text', {
+            x,
+            y,
+            'font-size': sz,
+            fill: fill || M3.text,
+            'text-anchor': anchor || 'start',
+          });
+          if (weight) e.setAttribute('font-weight', weight);
+          e.textContent = s;
+          g.push(e);
+        };
+        const on = (value) => value === 'sim';
+        const X = r.x,
+          Y = r.y,
+          W = r.width,
+          H = r.height;
+        if (t === 'm3-top-app-bar') {
+          add('rect', { x: X, y: Y, width: W, height: H, fill: M3.bar });
+          txt(X + 16, Y + 40, v.title || '', 20);
+        } else if (t === 'm3-chip') {
+          const sel = on(v.selected);
+          add('rect', {
+            x: X,
+            y: Y,
+            width: W,
+            height: H,
+            rx: 8,
+            fill: sel ? M3.container : 'none',
+            stroke: sel ? M3.container : M3.outline,
+          });
+          txt(X + W / 2, Y + H / 2 + 5, v.label || '', 13, M3.text, 'middle');
+        } else if (t === 'm3-text-field') {
+          add('rect', {
+            x: X,
+            y: Y + 8,
+            width: W,
+            height: H - 28,
+            rx: 4,
+            fill: 'none',
+            stroke: M3.outlineStrong,
+          });
+          txt(X + 14, Y + 22, v.label || '', 11, M3.primary);
+          txt(X + 16, Y + 40, v.value || v.placeholder || '', 16);
+          if (v.supporting) txt(X + 16, Y + H - 4, v.supporting, 12, M3.textSoft);
+        } else if (t === 'm3-switch') {
+          txt(X, Y + 21, v.label || '', 16);
+          const sel = on(v.selected);
+          add('rect', {
+            x: X + W - 52,
+            y: Y + 4,
+            width: 52,
+            height: 32,
+            rx: 16,
+            fill: sel ? M3.primary : M3.track,
+            stroke: sel ? M3.primary : M3.outlineStrong,
+          });
+          add('circle', {
+            cx: sel ? X + W - 16 : X + W - 36,
+            cy: Y + 20,
+            r: sel ? 12 : 8,
+            fill: sel ? M3.onPrimary : M3.outlineStrong,
+          });
+        } else if (t === 'm3-checkbox') {
+          const checked = on(v.checked);
+          add('rect', {
+            x: X,
+            y: Y + 8,
+            width: 20,
+            height: 20,
+            rx: 3,
+            fill: checked ? M3.primary : 'none',
+            stroke: checked ? M3.primary : M3.outlineStrong,
+            'stroke-width': 2,
+          });
+          txt(X + 30, Y + 25, v.label || '', 16);
+        } else if (t === 'm3-card') {
+          const outlined = v.variant === 'outlined';
+          add('rect', {
+            x: X,
+            y: Y,
+            width: W,
+            height: H,
+            rx: 12,
+            fill: outlined ? 'none' : M3.bar,
+            stroke: outlined ? M3.outline : 'none',
+            'stroke-width': 1.5,
+          });
+          txt(X + 16, Y + 32, v.headline || '', 18);
+          if (v.subhead) txt(X + 16, Y + 54, v.subhead, 13, M3.textSoft);
+          wrap(v.body || '', Math.floor((W - 32) / 7)).forEach((line, i) =>
+            txt(X + 16, Y + 82 + i * 18, line, 13),
+          );
+        } else if (t === 'm3-button') {
+          const tonal = v.variant === 'tonal';
+          add('rect', {
+            x: X,
+            y: Y,
+            width: W,
+            height: H,
+            rx: H / 2,
+            fill: tonal ? M3.container : M3.primary,
+          });
+          txt(
+            X + W / 2,
+            Y + H / 2 + 5,
+            v.label || '',
+            14,
+            tonal ? M3.primary : M3.onPrimary,
+            'middle',
+          );
+        } else if (t === 'm3-navigation-bar') {
+          add('rect', { x: X, y: Y, width: W, height: H, fill: M3.bar });
+          [v.label1, v.label2, v.label3].forEach((s, i) => {
+            const cx = X + W / 6 + (i * W) / 3;
+            add('rect', {
+              x: cx - 32,
+              y: Y + 12,
+              width: 64,
+              height: 30,
+              rx: 15,
+              fill: String(i + 1) === v.active ? M3.container : 'none',
+            });
+            txt(cx, Y + 62, s || '', 12, M3.text, 'middle');
+          });
+        } else if (t === 'm3-list-item') {
+          add('line', {
+            x1: X + 16,
+            x2: X + W - 16,
+            y1: Y + H,
+            y2: Y + H,
+            stroke: M3.outline,
+          });
+          add('circle', { cx: X + 40, cy: Y + H / 2, r: 20, fill: M3.container });
+          txt(X + 40, Y + H / 2 + 6, v.initials || '', 16, M3.primary, 'middle');
+          txt(X + 76, Y + H / 2 - 2, v.headline || '', 16);
+          txt(X + 76, Y + H / 2 + 18, v.supporting || '', 13, M3.textSoft);
+        } else if (t === 'm3-fab') {
+          add('rect', { x: X, y: Y, width: W, height: H, rx: 16, fill: M3.container });
+          txt(
+            X + W / 2,
+            Y + H / 2 + 8,
+            v.icon === 'add' ? '+' : '?',
+            24,
+            M3.primary,
+            'middle',
+          );
+        }
+        // Row, Column e demais containers não têm desenho próprio.
+        return g;
+      }
+
+      function render() {
+        const img = IM[state.img],
+          svg = $('svg');
+        svg.replaceChildren();
+        svg.setAttribute('viewBox', '0 0 ' + img.width + ' ' + img.height);
+        svg.style.aspectRatio = img.width + '/' + img.height;
+        svg.style.width = Math.min(img.width * (img.file ? 1.4 : 1), 720) + 'px';
+        if (img.file) {
+          svg.appendChild(
+            el('image', {
+              href: D.files[img.file],
+              x: 0,
+              y: 0,
+              width: img.width,
+              height: img.height,
+            }),
+          );
+        } else {
+          svg.appendChild(
+            el('rect', {
+              x: 0,
+              y: 0,
+              width: img.width,
+              height: img.height,
+              fill: img.background || M3.surface,
+            }),
+          );
+          D.markings
+            .filter((m) => m.imageId === img.id)
+            .forEach((m) => m3(m).forEach((n) => svg.appendChild(n)));
+        }
+        const ms = D.markings
+          .filter((m) => m.imageId === img.id && visible(m))
+          .sort((a, b) => depth(a) - depth(b));
+        ms.forEach((m) => {
+          const c = colorOf(m),
+            r = m.rect;
+          const g = el('g', {
+            class:
+              'mk' +
+              (state.sel === m.id ? ' sel' : '') +
+              (m.needsReview ? ' review' : ''),
+            tabindex: 0,
+            role: 'button',
+            'aria-label': m.name,
+          });
+          if (c) g.style.color = c;
+          g.appendChild(
+            el('rect', {
+              class: 'box',
+              x: r.x,
+              y: r.y,
+              width: r.width,
+              height: r.height,
+            }),
+          );
+          g.addEventListener('click', (e) => {
+            e.stopPropagation();
+            select(m.id);
+          });
+          g.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              select(m.id);
+            }
+          });
+          svg.appendChild(g);
+          if (m.locked) {
+            const k = el('text', {
+              class: 'lock-tag',
+              x: r.x + r.width - 4,
+              y: r.y + 14,
+            });
+            if (c) k.style.color = c;
+            k.textContent = 'trancada';
+            svg.appendChild(k);
+          }
+        });
+        svg.onclick = () => select(null);
+        // abas
+        $('tabs').replaceChildren(
+          ...D.images.map((i) => {
+            const b = document.createElement('button');
+            b.className = 'tab';
+            b.setAttribute('role', 'tab');
+            b.setAttribute('aria-selected', i.id === state.img);
+            b.textContent = i.name + (i.file ? '' : ' (tela em branco)');
+            b.onclick = () => {
+              state.img = i.id;
+              state.sel = null;
+              render();
+              inspect();
+            };
+            return b;
+          }),
+        );
+        // camadas
+        const used = new Set(
+          D.annotations
+            .filter((a) => M[a.markingId].imageId === state.img)
+            .map((a) => a.layerId),
+        );
+        $('layers').replaceChildren(
+          ...D.layers
+            .filter((l) => used.has(l.id))
+            .map((l) => {
+              const b = document.createElement('button');
+              b.className = 'chip';
+              b.setAttribute('aria-pressed', !state.hidden.has(l.id));
+              const dot = document.createElement('i');
+              dot.style.background = l.color;
+              b.append(dot, l.name + (l.spec ? ' · ' + l.spec.specId : ' · livre'));
+              b.onclick = () => {
+                state.hidden.has(l.id)
+                  ? state.hidden.delete(l.id)
+                  : state.hidden.add(l.id);
+                render();
+                inspect();
+              };
+              return b;
+            }),
+        );
+      }
+      function select(id) {
+        if (id && M[id].imageId !== state.img) {
+          state.img = M[id].imageId;
+        }
+        state.sel = id;
+        render();
+        inspect();
+      }
+      function fmt(v) {
+        if (v === null || v === undefined) return null;
+        if (Array.isArray(v)) return v.length ? v.map(fmt).join(' | ') : null;
+        if (typeof v === 'object') {
+          if (v.annotationId) {
+            const a = A[v.annotationId];
+            if (!a) return '?';
+            const m = M[a.markingId];
+            const e = (a.entries || []).find((x) => x.id === v.entryId);
+            return (
+              '<button class="link" data-go="' +
+              m.id +
+              '">' +
+              esc(m.name) +
+              ' › ' +
+              esc(a.name || kind(a)) +
+              (e ? '.' + esc(e.key) : '') +
+              '</button>'
+            );
+          }
+          return Object.entries(v)
+            .filter(([k, x]) => k !== '_id' && x !== null)
+            .map(([k, x]) => esc(k) + ': ' + fmt(x))
+            .join(', ');
+        }
+        return esc(String(v));
+      }
+      function esc(s) {
+        return s.replace(
+          /[&<>"]/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c],
+        );
+      }
+      function inspect() {
+        const box = $('insp');
+        if (!state.sel) {
+          const n = D.markings.filter((m) => m.imageId === state.img).length;
+          box.innerHTML =
+            '<h2>Detalhes</h2><p class="empty">Clique numa marcação da tela para ver as anotações dela. Esta tela tem ' +
+            n +
+            ' marcações.</p>';
+          return;
+        }
+        const m = M[state.sel],
+          as = anns(m.id);
+        let h =
+          '<div class="crumbs">' +
+          path(m)
+            .map((p) => '<button data-go="' + p.id + '">' + esc(p.name) + '</button>')
+            .join(' › ') +
+          '</div>';
+        h +=
+          '<h2>' +
+          esc(m.name) +
+          (m.locked ? '<span class="flag lock">trancada</span>' : '') +
+          (m.needsReview ? '<span class="flag rev">posição a revisar</span>' : '') +
+          '</h2>';
+        h +=
+          '<div class="geometry">x ' +
+          m.rect.x +
+          ' · y ' +
+          m.rect.y +
+          ' · ' +
+          m.rect.width +
+          ' × ' +
+          m.rect.height +
+          '</div>';
+        if (!as.length) h += '<p class="empty">Sem anotações.</p>';
+        as.forEach((a) => {
+          const l = L[a.layerId];
+          h +=
+            '<div class="ann" data-color="' +
+            l.color +
+            '"><div class="t">' +
+            esc(a.name || (a.type ? kind(a) : 'Nota')) +
+            '</div><div class="l">' +
+            esc(l.name) +
+            (a.type ? ' · ' + a.type.specId + '/' + a.type.typeId : ' · camada livre') +
+            '</div>';
+          const rows = [];
+          if (a.values)
+            Object.entries(a.values).forEach(([k, v]) => {
+              const f = fmt(v);
+              if (f !== null) rows.push([k, f]);
+            });
+          (a.entries || []).forEach((e) => rows.push([e.key, esc(e.value)]));
+          if (rows.length)
+            h +=
+              '<dl>' +
+              rows
+                .map((r) => '<dt>' + esc(r[0]) + '</dt><dd>' + r[1] + '</dd>')
+                .join('') +
+              '</dl>';
+          h += '</div>';
+        });
+        box.innerHTML = h;
+        // A CSP não aceita style="" no HTML: a cor da camada entra pelo CSSOM.
+        box.querySelectorAll('[data-color]').forEach((e) => {
+          e.style.setProperty('--c', e.dataset.color);
+        });
+        box
+          .querySelectorAll('[data-go]')
+          .forEach((b) => (b.onclick = () => select(b.dataset.go)));
+      }
+
+      /* Roteiro */
+      const S = [
+        {
+          t: 'Telas e marcações',
+          img: 'Cadastro',
+          sel: null,
+          p: 'Um projeto é uma pasta: <code>mapping.json</code>, as imagens e as especializações. Cada tela vira um canvas, e cada contorno é uma <b>marcação</b>. Esta é a tela de Cadastro, uma foto com 6 marcações.',
+          try: 'Passe pela tela e clique em qualquer contorno.',
+        },
+        {
+          t: 'Marcações dentro de marcações',
+          img: 'Cadastro',
+          sel: ['Cadastro', 'Nome'],
+          p: '“Nome” está dentro de “Formulário”. Essa hierarquia é a <b>Árvore</b> (<kbd>Ctrl+Shift+1</kbd>). Quem está dentro acompanha o pai quando ele muda.',
+          try: 'No painel à direita, clique em “Formulário” no caminho no topo.',
+        },
+        {
+          t: 'Camadas',
+          img: 'Cadastro',
+          sel: ['Cadastro', 'Cadastrar'],
+          p: 'Uma marcação pode ter várias anotações, cada uma em uma <b>camada</b> (janela <b>Camadas</b>, <kbd>Ctrl+Shift+2</kbd>). O botão Cadastrar tem componente, dois eventos e uma nota. Camadas ligadas a uma especialização (SDUI, Modelo de dados, Material 3) trazem campos prontos; as livres (Notas, Model) aceitam o que você quiser.',
+          try: 'Oculte a camada “Eventos” e veja o contorno mudar de cor.',
+        },
+        {
+          t: 'Especialização SDUI',
+          img: 'Cadastro',
+          sel: ['Cadastro', 'Nome'],
+          p: 'O tipo <code>input</code> da especialização <b>SDUI v2</b> define os campos: id, tipo, placeholder, obrigatório, maxLength e dado. A app confere os valores pelo tipo do campo e lista as anotações com problema, com o motivo, em <b>Incompletas</b> (<kbd>Ctrl+Shift+5</kbd>).',
+          try: 'Compare com “Idade”, que tem o contorno tracejado.',
+        },
+        {
+          t: 'Ligação com os dados',
+          img: 'Cadastro',
+          sel: ['Cadastro', 'E-mail'],
+          p: 'O campo <code>dado</code> aponta para uma entrada do Model “Usuário”. Se o dado mudar de nome, o vínculo acompanha. Assim a tela e o contrato da API ficam amarrados.',
+          try: 'Clique no link do campo dado para ir ao Formulário.',
+        },
+        {
+          t: 'Eventos',
+          img: 'Cadastro',
+          sel: ['Cadastro', 'Cadastrar'],
+          p: '<b>onClick</b> e <b>onHold</b> descrevem o que o botão faz. Elas ficam na camada Eventos, separadas do visual do componente.',
+          try: 'Leia as ações de cada evento no painel.',
+        },
+        {
+          t: 'Trancada e posição a revisar',
+          img: 'Cadastro',
+          sel: ['Cadastro', 'Idade'],
+          p: '“Idade” está com <b>Posição a revisar</b> (contorno tracejado): o aviso de que o retângulo pode estar fora do lugar, por exemplo depois de trocar a imagem por outra de tamanho diferente. O “Título” está <b>trancado</b>: não se move, não se redimensiona e não se exclui por engano (<kbd>Alt+L</kbd> tranca e destranca). Os dois estados aparecem nos Detalhes.',
+          try: 'Selecione “Título” e veja o selo.',
+        },
+        {
+          t: 'Notas livres',
+          img: 'Cadastro',
+          sel: ['Cadastro', 'Cadastrar'],
+          p: 'A camada <b>Notas</b> não tem especialização. Aqui serve para dúvidas e decisões, com os campos que você criar. O Cadastrar tem uma nota “Dúvida”.',
+          try: 'Ache a nota no painel de Cadastrar.',
+        },
+        {
+          t: 'Uma segunda tela',
+          img: 'Login',
+          sel: ['Login', 'Formulário de login'],
+          p: 'O Login repete o padrão com um Model próprio, “Credenciais”, e um endpoint <code>POST /v1/sessoes</code> na camada Endpoints do Modelo de dados.',
+          try: 'Veja que “Entrar” e “E-mail” apontam para o mesmo Model.',
+        },
+        {
+          t: 'Tela em branco com Material 3',
+          img: 'Configurações',
+          sel: ['Configurações', 'Filtros'],
+          p: 'Sem foto, a tela é um canvas branco e os componentes <b>Material 3</b> são desenhados na hora. O <b>Row</b> “Filtros” é um container: use <b>Arrumar</b> (<kbd>Alt+Shift+A</kbd>) para distribuir os chips.',
+          try: 'Selecione um chip e veja que o pai é o Row.',
+        },
+        {
+          t: 'Container com filho',
+          img: 'Configurações',
+          sel: ['Configurações', 'Gerenciar plano'],
+          p: 'O botão “Gerenciar plano” está dentro do Card “Sua conta”. Cards, Boxes, Rows e Columns são containers e levam os filhos junto.',
+          try: 'Clique em “Sua conta” e depois no botão.',
+        },
+        {
+          t: 'Mais uma tela',
+          img: 'Detalhes do pedido',
+          sel: ['Detalhes do pedido', 'Ajuda'],
+          p: 'Detalhes do pedido usa Top app bar, Card, List items, Button e FAB. Tudo vem do catálogo do Material 3, aba <b>Paleta</b> (<kbd>Ctrl+Shift+9</kbd>).',
+          try: 'Abra o Catálogo na app e adicione um componente aqui.',
+        },
+      ];
+      function stepRender() {
+        $('steps').replaceChildren(
+          ...S.map((s, i) => {
+            const li = document.createElement('li'),
+              b = document.createElement('button');
+            b.className = i === state.step ? 'on' : '';
+            b.innerHTML =
+              '<span class="n">' +
+              String(i + 1).padStart(2, '0') +
+              '</span><span>' +
+              s.t +
+              '</span>';
+            b.onclick = () => go(i);
+            li.appendChild(b);
+            return li;
+          }),
+        );
+        const s = S[state.step];
+        $('lesson').innerHTML =
+          '<h3>' +
+          s.t +
+          '</h3><p>' +
+          s.p +
+          '</p><div class="try">Experimente: ' +
+          s.try +
+          '</div>';
+        $('prev').disabled = state.step === 0;
+        $('next').disabled = state.step === S.length - 1;
+      }
+      function go(i) {
+        state.step = i;
+        const s = S[i];
+        const im = D.images.find((x) => x.name === s.img);
+        state.img = im.id;
+        state.hidden.clear();
+        state.sel = s.sel ? byName(s.sel[0], s.sel[1]).id : null;
+        stepRender();
+        render();
+        inspect();
+      }
+      $('prev').onclick = () => go(Math.max(0, state.step - 1));
+      $('next').onclick = () => go(Math.min(S.length - 1, state.step + 1));
+      go(0);
+    </script>
+  </body>
+</html>

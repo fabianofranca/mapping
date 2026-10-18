@@ -8,6 +8,7 @@ Aplicação web para marcar **áreas retangulares** em imagens, organizá-las em
 - Tema claro/escuro, português (pt-BR) e inglês (en-US), instalável como PWA (só em `https:`).
 - **Servidor MCP** para agentes de IA lerem projetos em pasta e **proporem alterações** a eles, com o Ctrl+C da app copiando a referência do item selecionado. O agente nunca grava o `mapping.json` (não há `apply_changes`). Instalação e uso em [`docs/MCP.md`](docs/MCP.md).
 - **Propostas de alteração com revisão** (etapa 4): toda alteração feita por um agente chega como uma _proposta_, uma espécie de pull request dentro da ferramenta, gravada em `proposals/` na pasta do projeto (versionada junto com o resto; o zip exportado a inclui). Na janela **Propostas** (Ctrl+Shift+7) o usuário abre a proposta no **modo revisão**: o projeto fica somente leitura, o canvas mostra o projeto **como ficaria** (alternância Atual / Proposto), e ele **aceita ou rejeita** em qualquer nível (proposta, imagem, item ou mudança), deixa **notas** no que rejeitou e usa **Aplicar aceitas** (uma entrada de desfazer). A revisão pode ser interrompida e retomada, inclusive depois de fechar a app. O agente lê a revisão (`get_proposal_review`) e manda uma nova proposta (`supersedes`) só com as correções. Imagens e marcações têm uma identidade externa genérica (`source`), e as especializações `formatVersion` 3 declaram a que elementos de um sistema externo cada tipo e campo correspondem (`sources`); o núcleo não interpreta o sistema. Para experimentar sem um agente, abra `examples/proposta-exemplo.zip` na app. Formato em [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md).
+- **Guia interativo e projeto de exemplo**: um passeio de 12 passos (a página `guia/`, que funciona sem internet, aberta pela tela inicial e pela **Ajuda**) e o botão **Abrir projeto de exemplo**, que abre uma cópia de `examples/exemplo-completo.zip` pelo mesmo caminho do **Abrir zip**. Ver [Guia interativo e exemplo](#guia-interativo-e-projeto-de-exemplo).
 - **Código das especializações**: uma especialização pode declarar _plataformas_ e dizer como cada tipo vira código nelas (`code`: o componente e o arquivo que o define) e o projeto guarda o repositório de cada plataforma (`platformRepos`); nos Detalhes, a linha "Definição" tem "Abrir no repositório" e "Copiar caminho". O mapeamento guarda só o que ajuda a gerar o código, não onde ele foi gerado. O agente recebe a planta de código de uma marcação (`get_code_hints`) e acha, a partir de um arquivo, os tipos que o usam e as marcações deles (`find_by_code`). O núcleo continua genérico: nenhum nome de plataforma no código da app nem do servidor MCP. Formato em [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md) e [`docs/FORMAT.md`](docs/FORMAT.md).
 - **Biblioteca de componentes** (etapa Biblioteca, concluída): a especialização pode entregar um _pacote_ (pasta com componentes, fontes, documentos e exemplos) que a app valida, aplica e atualiza com migrações; telas sem imagem montadas com componentes direto no canvas, e um **Catálogo** para navegar pelos componentes e experimentar os campos. Formato em [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md) e [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md).
 
@@ -33,7 +34,20 @@ npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a 
 npm run dev:lab    # laboratório de componentes (lab/README.md), à parte da app
 npm run dev:lab:react # demonstração do visualizador embutível em React (lab/README.md)
 npm run build:viewer # gera dist-viewer/ (visualizador embutível: núcleo, invólucro React e tipos)
+npm run build:guia   # regera public/guia/index.html (o npm run build já faz)
+npm run build:example # regera examples/exemplo-completo.zip a partir da pasta
 ```
+
+## Guia interativo e projeto de exemplo
+
+Na tela inicial, **Abrir projeto de exemplo** abre uma cópia do projeto `examples/exemplo-completo/` (4 telas, 31 marcações, 41 anotações, 8 camadas, 3 especializações e uma proposta de alteração para revisar), e **Guia interativo** (na lateral, e na **Ajuda**) abre numa aba nova o passeio de 12 passos sobre esse mesmo projeto, para seguir lado a lado com a app. O guia é uma página estática (`public/guia/index.html`, publicada em `guia/` ao lado do `index.html`), gerada do projeto de exemplo, no tema da app, e fica no cache do service worker.
+
+```bash
+npm run build:example   # examples/exemplo-completo.zip, da pasta examples/exemplo-completo/
+npm run build:guia      # public/guia/index.html, do template e do exemplo
+```
+
+Como é gerado, o que abrir o exemplo grava e como mudar o exemplo: [`docs/GUIDE.md`](docs/GUIDE.md). Roteiro de teste manual: R11 do [`docs/TESTING.md`](docs/TESTING.md).
 
 ## Como testar
 
@@ -90,6 +104,7 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 - [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, mapa da interface, instalação do MCP, roteiros de teste manual, teste manual avançado e os templates do relato e do registro de uso real; apêndices para o agente testador e para operações de disco).
 - [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md): prompt do testador do Cowork (agente com controle do computador).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
+- [`docs/GUIDE.md`](docs/GUIDE.md): guia interativo e projeto de exemplo (como são gerados, o que abrir o exemplo grava, como mudá-los).
 - [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v10).
 - [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md): formato da proposta de alteração e regras da revisão.
 - [`docs/MCP.md`](docs/MCP.md): servidor MCP (instalação, `.mcp.json`, raízes, tools, referências e solução de problemas); [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md) é o guia do agente.

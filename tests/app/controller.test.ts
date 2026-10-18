@@ -16,6 +16,7 @@ import { writeProjectZip } from '../../src/storage/zip';
 import { clearReportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
 import { emptyProject, sampleProject } from '../model/fixtures';
+import { exampleProjectBlob } from '../../src/app/exampleProject';
 import { readInvalidFixture } from '../model/invalidFixtures';
 import {
   keepDirectoriesInClone,
@@ -387,6 +388,21 @@ describe('importar zip', () => {
     const library = await local.openLocalLibrary();
     expect(await library?.listBackups(localId ?? '')).toHaveLength(1);
     library?.close();
+  });
+
+  it('o projeto de exemplo embutido abre pelo mesmo importZip, só como projeto local', async () => {
+    expect((await app.importZip(exampleProjectBlob())).ok).toBe(true);
+    const current = await openedOf(app);
+    expect(current.kind).toBe('local');
+    expect(current.unexported.value).toBe(false);
+    const project = current.session.store.project.value;
+    expect(project?.images).toHaveLength(4);
+    expect(project?.markings).toHaveLength(31);
+    expect(project?.annotations).toHaveLength(41);
+    expect(current.session.proposals.list.value).toHaveLength(1);
+    // Nenhum rastro além do que o "Abrir zip" deixa: um projeto local, nenhuma pasta lembrada.
+    await app.closeProject();
+    expect(app.recentProjects.value.map((r) => r.kind)).toEqual(['local']);
   });
 });
 

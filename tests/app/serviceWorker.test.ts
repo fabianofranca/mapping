@@ -83,6 +83,47 @@ describe('sw.js', () => {
     expect(cache?.has('https://example.com/app/manifest.webmanifest')).toBe(true);
   });
 
+  it('o guia interativo entra no cache da instalação e funciona offline', async () => {
+    const worker = loadWorker();
+    await worker.dispatch('install');
+    const [cache] = [...worker.stored.values()];
+    expect(cache?.has('https://example.com/app/guia/index.html')).toBe(true);
+    // Navegação para o guia (com ou sem o index.html, com query) vem do cache, não da rede.
+    for (const path of ['guia/', 'guia/index.html', 'guia/index.html?x=1']) {
+      const [response] = await worker.dispatch('fetch', {
+        request: {
+          method: 'GET',
+          mode: 'navigate',
+          url: `https://example.com/app/${path}`,
+        },
+      });
+      expect(response, path).toBe('cached');
+    }
+  });
+
+  it('o guia do preview é o do preview: a versão principal não responde por ele', async () => {
+    const main = loadWorker();
+    await main.dispatch('install');
+    const responses = await main.dispatch('fetch', {
+      request: {
+        method: 'GET',
+        mode: 'navigate',
+        url: 'https://example.com/app/preview/guia/index.html',
+      },
+    });
+    expect(responses).toEqual([]);
+    const preview = loadWorker([], 'preview');
+    await preview.dispatch('install');
+    const [response] = await preview.dispatch('fetch', {
+      request: {
+        method: 'GET',
+        mode: 'navigate',
+        url: 'https://example.com/app/guia/',
+      },
+    });
+    expect(response).toBe('cached');
+  });
+
   it('o precache ignora o cache HTTP do navegador (cache: reload)', async () => {
     const worker = loadWorker();
     await worker.dispatch('install');

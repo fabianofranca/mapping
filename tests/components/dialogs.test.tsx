@@ -292,6 +292,21 @@ describe('HelpDialog', () => {
 
   const toc = () => within(dialogEl()).getByRole('navigation', { hidden: true });
 
+  it('o guia interativo é a primeira seção, com o link em outra aba', () => {
+    render(<HelpDialog onClose={vi.fn()} />);
+    const links = within(toc()).getAllByRole('link', { hidden: true });
+    expect(links[0]?.textContent).toBe(t('help.guide.title'));
+    const section = document.getElementById('help-guide') as HTMLElement;
+    const open = within(section).getByRole('link', {
+      name: t('help.guide.open'),
+      hidden: true,
+    });
+    expect(open.getAttribute('href')).toBe('guia/index.html');
+    expect(open.getAttribute('target')).toBe('_blank');
+    expect(open.getAttribute('rel')).toContain('noopener');
+    expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
+  });
+
   it('índice lateral com as seções, os downloads e os atalhos', () => {
     render(<HelpDialog onClose={vi.fn()} />);
     const links = within(toc())
