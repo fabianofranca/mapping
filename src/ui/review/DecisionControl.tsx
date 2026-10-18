@@ -30,6 +30,8 @@ interface DecisionControlProps {
   /** Nome do alvo, para o nome acessível ("Aceitar Botão Pagar"). */
   readonly name: string;
   readonly onDecide: (next: DecisionValue) => void;
+  /** Rejeitou com o mouse (versão de ícone): quem usa sugere a nota para o agente. */
+  readonly onRejectedByMouse?: () => void;
   readonly disabled?: boolean;
   /** Conflito: os rótulos dizem o efeito (sobrescreve / mantém o valor atual). */
   readonly conflict?: boolean;
@@ -47,6 +49,7 @@ export function DecisionControl({
   value,
   name,
   onDecide,
+  onRejectedByMouse,
   disabled,
   conflict = false,
   variant = 'icon',
@@ -128,7 +131,11 @@ export function DecisionControl({
         pressed={value === 'rejected'}
         disabled={disabled}
         aria-describedby={reason}
-        onClick={() => toggle('rejected')}
+        onClick={(e) => {
+          toggle('rejected');
+          // Mouse (detail > 0) sugere a nota; o teclado não move o foco.
+          if (value !== 'rejected' && e.detail > 0) onRejectedByMouse?.();
+        }}
       />
     </span>
   );

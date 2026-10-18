@@ -73,20 +73,30 @@ export function useReviewSync(): void {
     [review, ui],
   );
 
-  // Canvas (ou Árvore) → revisão.
-  useEffect(
-    () =>
-      effect(() => {
-        const selection = ui.selection.value;
-        if (review.proposalId.peek() === null) return;
-        const current = review.selected.peek();
-        // A seleção do canvas já é a do nível escolhido (ex.: uma mudança do item).
-        if (sameSelection(canvasSelectionOf(review, current), selection)) return;
-        const target = reviewTargetOf(review.derived.tree.peek(), selection);
-        if (target) review.select(target);
-      }),
-    [review, ui],
-  );
+  // Canvas (ou Árvore) → revisão. Limpar a seleção (clicar no fundo) tira a revisão do item
+  // ou da mudança dele: os Detalhes seguem a seleção e, sem ela, mostram a proposta (a barra
+  // de status diz "Nada selecionado"). Só a transição conta, não a seleção vazia de quando a
+  // revisão abre num ponto salvo.
+  useEffect(() => {
+    let before = ui.selection.peek();
+    return effect(() => {
+      const selection = ui.selection.value;
+      const cleared = before !== null && selection === null;
+      before = selection;
+      if (review.proposalId.peek() === null) return;
+      const current = review.selected.peek();
+      if (selection === null) {
+        if (cleared && canvasSelectionOf(review, current) !== undefined) {
+          review.select({ level: 'proposal', id: null });
+        }
+        return;
+      }
+      // A seleção do canvas já é a do nível escolhido (ex.: uma mudança do item).
+      if (sameSelection(canvasSelectionOf(review, current), selection)) return;
+      const target = reviewTargetOf(review.derived.tree.peek(), selection);
+      if (target) review.select(target);
+    });
+  }, [review, ui]);
 
   // Ao sair da revisão, um item que só existia no "como ficaria" deixa de estar selecionado
   // (fora da revisão o projeto à vista é o confirmado).

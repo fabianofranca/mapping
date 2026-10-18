@@ -1,4 +1,4 @@
-import { useId, useState } from 'preact/hooks';
+import { useContext, useId, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../../i18n';
 import {
   changeLayerId,
@@ -23,6 +23,7 @@ import {
   targetName,
   type ReviewNames,
 } from './changeText';
+import { OpenMarkContext } from './ChangeMark';
 import { DecisionControl, type DecisionValue } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
 import { Flag } from './Flag';
@@ -453,6 +454,7 @@ export function IdentityFlags({
 /** ✓ ✕ da criação ou remoção de uma entidade inteira (uma anotação), no cabeçalho dela. */
 export function WholeDecision({ change }: { readonly change: Change }) {
   const { review } = useEditor();
+  const openMark = useContext(OpenMarkContext);
   const names = useReviewNames();
   const decide = useDecide();
   if (!names) return null;
@@ -465,6 +467,12 @@ export function WholeDecision({ change }: { readonly change: Change }) {
       disabled={p.status !== 'open' || applied}
       disabledReason={applied ? t('review.appliedReason') : t('review.closedReason')}
       onDecide={(state) => decide({ level: 'change', id: change.id }, state)}
+      onRejectedByMouse={() => {
+        // A nota sugerida mora no popover da mudança: o pedido vai ao store e o popover
+        // abre (o cartão pode ser trocado pela rejeição; o novo cumpre o pedido ao montar).
+        review.requestNote(change.id);
+        if (openMark) openMark.value = `${change.id}|`;
+      }}
     />
   );
 }

@@ -179,6 +179,38 @@ describe('decisão no popover do campo', () => {
     expect(document.activeElement).not.toBe(document.body);
   });
 
+  it('rejeitar com o mouse pelo ✕ do cartão da anotação criada abre a nota com o foco; pelo teclado não', async () => {
+    const { base, proposal } = firstImport();
+    const h = await showReviewPanel(
+      { project: base, proposals: [proposal] },
+      { level: 'item', id: 'M1' },
+    );
+    const created = changeOf(proposal, 'annotation', 'A1');
+    const card = () => document.querySelector('[data-annotation="A1"]') as HTMLElement;
+    const user = userEvent.setup();
+    // Pelo teclado (Enter no ✕): a rejeição não move o foco nem abre a nota.
+    const reject = () =>
+      within(card()).getByRole('button', { name: /^Rejeitar Anotação onClick criada$/ });
+    act(() => reject().focus());
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
+    expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
+    await user.click(
+      within(card()).getByRole('button', { name: /^Aceitar Anotação onClick criada$/ }),
+    );
+    await waitFor(() => expect(stateOf(h, created.id)).toBe('accepted'));
+    // Com o mouse: o cartão vira "Criação rejeitada" e a nota vazia recebe o foco.
+    await user.click(reject());
+    await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
+    expect(within(card()).getByText('Criação rejeitada')).toBeTruthy();
+    const box = await screen.findByRole('textbox', { name: 'Nota para o agente' });
+    await waitFor(() => expect(document.activeElement).toBe(box));
+    // Vazia, ao sair ela some e o foco não cai no body.
+    await user.tab();
+    expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
   it('rejeitar com o mouse um campo alterado leva o foco à nota e, vazia, de volta ao marcador', async () => {
     const { proposal, ids } = richScenario();
     const h = await showReviewPanel(
