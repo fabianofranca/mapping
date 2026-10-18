@@ -38,6 +38,7 @@ export * from './spec';
 export * from './specLookup';
 export * from './specializations';
 export * from './libraryPackage';
+export * from './catalog';
 export * from './specVersions';
 export * from './libraryMigrations';
 export * from './typed';
@@ -60,3 +61,5 @@ export * from './proposalView';
 // Valor de um campo na forma de `from`/`to` (os marcadores dos Detalhes na revisão).
 export { annotationField, imageField, markingField } from './proposalValues';
 export * from './specWarnings';
+// Subconjunto de markdown dos documentos da biblioteca (Catálogo).
+export * from './markdown';

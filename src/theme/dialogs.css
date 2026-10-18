@@ -322,3 +322,108 @@
   color: var(--color-danger);
   background: var(--color-danger-bg);
 }
+
+/* Documento em markdown (Catálogo): blocos largos rolam dentro de si */
+.markdown {
+  min-width: 0;
+  color: var(--color-text);
+  font: var(--t-body);
+  overflow-wrap: anywhere;
+}
+
+.markdown > * + * {
+  margin-top: var(--space-3);
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  margin: 0;
+  font: var(--t-heading);
+}
+
+.markdown h1 {
+  font: var(--t-display);
+}
+
+.markdown h2 {
+  font: var(--t-title);
+}
+
+.markdown :is(h1, h2, h3, h4, h5, h6):not(:first-child) {
+  margin-top: var(--space-4);
+}
+
+.markdown :is(h1, h2, h3, h4, h5, h6):focus {
+  outline: none;
+}
+
+.markdown p {
+  margin: 0;
+}
+
+.markdown ul,
+.markdown ol {
+  margin: 0;
+  padding-left: var(--space-6);
+}
+
+.markdown li > :is(ul, ol) {
+  margin-top: var(--space-1);
+}
+
+.markdown a {
+  color: var(--color-accent);
+}
+
+.markdown a:hover {
+  color: var(--color-accent-hover);
+}
+
+.markdown code {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-hover);
+  font: var(--t-code);
+}
+
+.markdown pre {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+}
+
+.markdown pre code {
+  padding: 0;
+  background: none;
+  overflow-wrap: normal;
+  white-space: pre;
+}
+
+.markdown-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.markdown table {
+  border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown th {
+  background: var(--color-bg);
+  font: var(--t-body-strong);
+}

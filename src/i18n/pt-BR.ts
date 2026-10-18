@@ -662,6 +662,7 @@ export const ptBR = {
   'issue.headingOne': 'Incompleta: 1 pendência',
   'issue.headingMany': 'Incompleta: {count} pendências',
   'issue.item': '{annotation} · {reason}',
+  'typedForm.refUnavailable': 'Escolher referência só funciona dentro de um projeto.',
   'ref.choosePlaceholder': 'Escolher…',
   'ref.fieldButton': '{field}: {value}',
   'ref.goToShortcut': 'Ctrl+clique',

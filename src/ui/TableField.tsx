@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useRef, useState } from 'preact/hooks';
 import { ariaKeys, SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
@@ -7,6 +8,7 @@ import {
   refsBrokenBy,
   removeTableRow,
   tableRows,
+  type JsonValue,
   type SpecField,
   type TableRow,
 } from '../model';
@@ -20,6 +22,7 @@ import { gripAt, isGrip, isNewRowKey } from './KeyValueGrid';
 import { useFocusRequest } from './focus';
 import { moveKeyDelta, useRowDrag } from './rowDrag';
 import { BacklinkList, SimpleEditor, type FieldContext } from './FieldEditors';
+import type { ActionResult } from '../store/history';
 import { issueMessage, issuesOf } from './typedText';
 
 // DataGrid do DS 2.0 para campos `table`: coluna # numerada, alça de arraste (P6),
@@ -27,16 +30,97 @@ import { issueMessage, issuesOf } from './typedText';
 
 type TableFieldDef = Extract<SpecField, { type: 'table' }>;
 
+/** Campo `table` dos Detalhes: liga o editor às actions do projeto. */
 export function TableField({
   field,
   ...ctx
 }: FieldContext & { readonly field: TableFieldDef }) {
   const { actions } = useEditor();
-  const ext = useDetailsExtension();
   const { project, annotation, readOnly } = ctx;
-  const grid = useRef<HTMLDivElement>(null);
   const rows = tableRows(annotation.values?.[field.key]);
-  const extra = ext?.tableRows(annotation.id, field.key) ?? null;
+  const backlinks = getBacklinks(project, annotation.id);
+  const issues = issuesOf(project, annotation.id).filter(
+    (i) => i.key === field.key && i.rowId !== undefined,
+  );
+
+  return (
+    <TableEditor
+      field={field}
+      rows={rows}
+      readOnly={readOnly}
+      onAddRow={() => actions.addTableRow(annotation.id, field.key).ok}
+      onSetCell={(rowId, column, value) =>
+        actions.setTableCell(annotation.id, field.key, rowId, column, value)
+      }
+      onMoveRow={(rowId, to) => actions.moveTableRow(annotation.id, field.key, rowId, to)}
+      onRemoveRow={(rowId) => actions.removeTableRow(annotation.id, field.key, rowId)}
+      brokenByRemoving={(row) =>
+        refsBrokenBy(project, (p) => removeTableRow(p, annotation.id, field.key, row._id))
+      }
+      cellIssue={(row, column) => {
+        const issue = issues.find((i) => i.rowId === row._id && i.column === column);
+        return issue ? issueMessage(project, annotation, issue) : undefined;
+      }}
+      rowNote={(row) => {
+        const received = backlinks.filter(
+          (b) => 'rowId' in b.ref && b.ref.key === field.key && b.ref.rowId === row._id,
+        );
+        return (
+          received.length > 0 && (
+            <BacklinkList
+              project={project}
+              backlinks={received}
+              onGoToAnnotation={ctx.onGoToAnnotation}
+            />
+          )
+        );
+      }}
+      annotationId={annotation.id}
+    />
+  );
+}
+
+export interface TableEditorProps {
+  readonly field: TableFieldDef;
+  readonly rows: readonly TableRow[];
+  readonly readOnly: boolean;
+  /** Acrescenta uma linha vazia; `false` se não coube. */
+  readonly onAddRow: () => boolean;
+  readonly onSetCell: (rowId: string, column: string, value: JsonValue) => ActionResult;
+  readonly onMoveRow: (rowId: string, toIndex: number) => unknown;
+  readonly onRemoveRow: (rowId: string) => unknown;
+  /** Quantas referências quebram ao remover a linha (> 0 pede confirmação). */
+  readonly brokenByRemoving?: (row: TableRow) => number;
+  /** Motivo da pendência de uma célula (a célula fica inválida). */
+  readonly cellIssue?: (row: TableRow, column: string) => string | undefined;
+  /** Nota embaixo da linha (referências recebidas). */
+  readonly rowNote?: (row: TableRow) => ComponentChildren;
+  /** Anotação dos Detalhes: liga o ponto de extensão da revisão (ausente fora deles). */
+  readonly annotationId?: string;
+}
+
+/**
+ * Editor de campos `table`, independente do projeto: recebe as linhas e devolve as
+ * edições por callbacks. Usado pelos Detalhes (`TableField`) e pelo `TypedForm`.
+ */
+export function TableEditor({
+  field,
+  rows,
+  readOnly,
+  onAddRow,
+  onSetCell,
+  onMoveRow,
+  onRemoveRow,
+  brokenByRemoving,
+  cellIssue,
+  rowNote,
+  annotationId,
+}: TableEditorProps) {
+  const inherited = useDetailsExtension();
+  const ext = annotationId !== undefined ? inherited : null;
+  const grid = useRef<HTMLDivElement>(null);
+  const extra =
+    ext && annotationId !== undefined ? ext.tableRows(annotationId, field.key) : null;
   // As linhas da última renderização e os botões de ações e "+ Linha": o retorno do foco
   // do "Referências vão quebrar" é lido ao fechar, já com a tabela nova.
   const rowsNow = useRef(rows);
@@ -45,10 +129,6 @@ export function TableField({
   const addButton = useRef<HTMLButtonElement>(null);
   const requestFocus = useFocusRequest();
   const [confirm, setConfirm] = useState<{ row: TableRow; count: number } | null>(null);
-  const backlinks = getBacklinks(project, annotation.id);
-  const issues = issuesOf(project, annotation.id).filter(
-    (i) => i.key === field.key && i.rowId !== undefined,
-  );
   const label = fieldLabel(field);
   const rowName = (row: TableRow, index: number) => {
     const name = field.rowLabel ? row[field.rowLabel] : null;
@@ -71,25 +151,22 @@ export function TableField({
   };
 
   const remove = (row: TableRow) => {
-    const count = refsBrokenBy(project, (p) =>
-      removeTableRow(p, annotation.id, field.key, row._id),
-    );
+    const count = brokenByRemoving?.(row) ?? 0;
     if (count > 0) setConfirm({ row, count });
-    else actions.removeTableRow(annotation.id, field.key, row._id);
+    else onRemoveRow(row._id);
   };
 
   const move = (from: number, to: number, focus: boolean) => {
     const row = rows[from];
     if (!row || from === to) return;
-    actions.moveTableRow(annotation.id, field.key, row._id, to);
+    onMoveRow(row._id, to);
     if (focus) requestFocus(() => gripAt(grid.current, to));
   };
   const drag = useRowDrag(grid, (from, to) => move(from, to, false));
 
   const addRow = () => {
     if (readOnly) return;
-    const result = actions.addTableRow(annotation.id, field.key);
-    if (!result.ok) return;
+    if (!onAddRow()) return;
     // A linha nova recebe o foco na primeira célula, no commit que a desenha.
     requestFocus(() => {
       const all = grid.current?.querySelectorAll<HTMLElement>('[data-drag-row]');
@@ -124,7 +201,9 @@ export function TableField({
             </span>
           )}
         </span>
-        {ext?.mark(annotation.id, `values.${field.key}`)}
+        {ext &&
+          annotationId !== undefined &&
+          ext.mark(annotationId, `values.${field.key}`)}
         <span class="table-field-count">
           {rows.length === 1
             ? t('typed.rowsOne')
@@ -143,7 +222,9 @@ export function TableField({
         </Button>
       </div>
       {field.description && <small class="muted props-note">{field.description}</small>}
-      {ext?.below(annotation.id, `values.${field.key}`)}
+      {ext &&
+        annotationId !== undefined &&
+        ext.below(annotationId, `values.${field.key}`)}
       {rows.length === 0 ? (
         <p class="muted">{t('typed.noRows')}</p>
       ) : (
@@ -175,10 +256,7 @@ export function TableField({
           </div>
           {rows.map((row, index) => {
             const name = rowName(row, index);
-            const received = backlinks.filter(
-              (b) =>
-                'rowId' in b.ref && b.ref.key === field.key && b.ref.rowId === row._id,
-            );
+            const note = rowNote?.(row);
             const added = extra?.added.has(row._id) === true;
             return (
               <div
@@ -233,9 +311,7 @@ export function TableField({
                   <strong class="grid-row-title">{name}</strong>
                 </span>
                 {field.columns.map((column) => {
-                  const cellIssue = issues.find(
-                    (i) => i.rowId === row._id && i.column === column.key,
-                  );
+                  const issue = cellIssue?.(row, column.key);
                   return (
                     <span
                       key={column.key}
@@ -253,21 +329,9 @@ export function TableField({
                         value={row[column.key]}
                         label={`${fieldLabel(column)} (${name})`}
                         readOnly={readOnly}
-                        invalid={cellIssue !== undefined}
-                        title={
-                          cellIssue
-                            ? issueMessage(project, annotation, cellIssue)
-                            : undefined
-                        }
-                        onSet={(next) =>
-                          actions.setTableCell(
-                            annotation.id,
-                            field.key,
-                            row._id,
-                            column.key,
-                            next,
-                          )
-                        }
+                        invalid={issue !== undefined}
+                        title={issue}
+                        onSet={(next) => onSetCell(row._id, column.key, next)}
                       />
                     </span>
                   );
@@ -302,15 +366,7 @@ export function TableField({
                     />
                   )}
                 </span>
-                {received.length > 0 && (
-                  <div class="grid-row-note">
-                    <BacklinkList
-                      project={project}
-                      backlinks={received}
-                      onGoToAnnotation={ctx.onGoToAnnotation}
-                    />
-                  </div>
-                )}
+                {note && <div class="grid-row-note">{note}</div>}
               </div>
             );
           })}
@@ -332,7 +388,7 @@ export function TableField({
               <Button
                 variant="danger"
                 onClick={() => {
-                  actions.removeTableRow(annotation.id, field.key, confirm.row._id);
+                  onRemoveRow(confirm.row._id);
                   setConfirm(null);
                 }}
               >

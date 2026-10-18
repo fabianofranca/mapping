@@ -1,7 +1,7 @@
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import { type Box, approximateMeasurer, instantiate } from './components/instantiate';
 import { type Library, type TextFile, loadLibrary } from './components/library';
-import { screenFromSource } from './components/origin';
+import { type Origin, screenFromSource } from './components/origin';
 import type { LibraryIssue } from './library';
 import type { Spec, SpecAnnotationType } from './spec';
 
@@ -44,7 +44,7 @@ const messageOf = (error: unknown): string =>
 /** `"campo não informado: x"` do motor para um campo que o tipo nem declara: o nível 2 já deu o erro. */
 const NOT_INFORMED = /^campo não informado: (.+)$/;
 
-function defaultValues(type: SpecAnnotationType): Record<string, string | number | null> {
+export function defaultValues(type: SpecAnnotationType): Record<string, string | number | null> {
   const values: Record<string, string | number | null> = {};
   for (const field of type.fields) {
     values[field.key] =
@@ -143,8 +143,24 @@ function buildLibrary(ctx: DrawingContext): { library?: Library; reason?: string
   }
 }
 
+/**
+ * Biblioteca com a origem trocada por uma sintética que lê o JSON `{ node }` como a única raiz
+ * de um quadro grande: só o desenho do nó importa, não a tela (`screen`) da origem declarada.
+ */
+export function nodeProbeLibrary(lib: Library, origin: Origin): Library {
+  return {
+    ...lib,
+    origins: [
+      {
+        ...origin,
+        screen: { width: NODE_SCREEN, height: NODE_SCREEN, roots: [{ path: 'node' }] },
+      },
+    ],
+  };
+}
+
 /** Tira o `node.` que o quadro sintético põe na frente do caminho de um aviso da origem. */
-const withoutNodePrefix = (message: string): string => message.replace(/^node\.?/, '');
+export const withoutNodePrefix = (message: string): string => message.replace(/^node\.?/, '');
 
 export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
   const { spec, specPath } = ctx;
@@ -188,19 +204,7 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
         if (lib === undefined || origin === undefined) return;
         // O nó do exemplo vai para uma origem sintética que o lê como a única raiz de um quadro
         // grande: só o desenho do nó importa, não a tela (`screen`) da origem declarada.
-        const probe: Library = {
-          ...lib,
-          origins: [
-            {
-              ...origin,
-              screen: {
-                width: NODE_SCREEN,
-                height: NODE_SCREEN,
-                roots: [{ path: 'node' }],
-              },
-            },
-          ],
-        };
+        const probe = nodeProbeLibrary(lib, origin);
         const result = screenFromSource(
           probe,
           { node: json },

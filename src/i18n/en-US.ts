@@ -659,6 +659,7 @@ export const enUS: Dictionary = {
   'issue.headingOne': 'Incomplete: 1 issue',
   'issue.headingMany': 'Incomplete: {count} issues',
   'issue.item': '{annotation} · {reason}',
+  'typedForm.refUnavailable': 'Picking a reference only works inside a project.',
   'ref.choosePlaceholder': 'Choose…',
   'ref.fieldButton': '{field}: {value}',
   'ref.goToShortcut': 'Ctrl+click',
