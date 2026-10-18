@@ -85,6 +85,7 @@ describe('base64 das operações de imagem', () => {
       [{ op: 'add_image', base64: 'A'.repeat(MAX_BASE64_LENGTH + 4) }],
       {
         readSource: () => Promise.reject(new Error('sem arquivos')),
+        readSpecInput: () => Promise.reject(new Error('sem arquivos')),
         takenImageFiles: new Set(),
         now: () => new Date(NOW),
       },

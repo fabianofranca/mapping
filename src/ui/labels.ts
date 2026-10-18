@@ -101,6 +101,8 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   stale: 'proposal.error.stale',
   'image-missing': 'proposal.error.imageMissing',
   'image-exists': 'proposal.error.imageExists',
+  'package-missing': 'proposal.error.packageMissing',
+  'package-invalid': 'proposal.error.packageInvalid',
   'save-failed': 'proposal.error.saveFailed',
   failed: 'proposal.error.generic',
   reviewing: 'proposal.error.reviewing',
@@ -108,7 +110,7 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   'remove-failed': 'proposal.error.removeFailed',
 };
 
-/** Mensagem de uma ação recusada na revisão (`path`: a imagem de `image-missing` e `image-exists`). */
+/** Mensagem de uma ação recusada na revisão (`path`: o arquivo ou a pasta de `image-missing`, `image-exists`, `package-missing` e `package-invalid`). */
 export function proposalErrorMessage(code: ProposalActionError, path = ''): string {
   return t(PROPOSAL_ERRORS[code], { path });
 }

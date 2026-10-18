@@ -53,6 +53,8 @@ describe('dicionários', () => {
       'marking.x',
       'marking.y',
       'layer.deleteCount',
+      'spec.impact.lossTarget',
+      'spec.impact.lossMore',
       'annotation.ownerOption',
       'help.specs.downloads',
       'zoom.value',

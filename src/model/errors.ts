@@ -43,6 +43,7 @@ export type ModelErrorCode =
   | 'ref-not-accepted'
   | 'spec-already-applied'
   | 'spec-not-newer'
+  | 'spec-missing-migrations'
   // Repositórios por plataforma (etapa 3b)
   | 'unknown-platform'
   | 'invalid-url-template'

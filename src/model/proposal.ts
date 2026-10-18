@@ -192,6 +192,14 @@ export function proposalImagePath(proposalId: string, file: string): string {
   return `${proposalDir(proposalId)}/${file}`;
 }
 
+/**
+ * Onde os arquivos do pacote de biblioteca esperam a aceitação: `proposals/<id>/` mais a
+ * pasta definitiva (`specs/material3` → `proposals/<id>/specs/material3`).
+ */
+export function proposalPackageDir(proposalId: string, dir: string): string {
+  return `${proposalDir(proposalId)}/${dir}`;
+}
+
 // ---------------------------------------------------------------------------
 // Validação (zod)
 

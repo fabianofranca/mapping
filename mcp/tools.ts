@@ -17,6 +17,7 @@ import { Proposals } from './proposals';
 import { findBySourceResult, findTypesBySourceResult } from './sourceTools';
 import { getComponent, listComponents } from './componentTools';
 import { listPackageFiles, validateLibraryTool } from './library';
+import { planLibraryUpdate } from './libraryUpdate';
 import { summary as specSummary, validateSpecialization } from './specValidation';
 import type { Roots } from './paths';
 import { discoverProjects, findProject, loadProject } from './projects';
@@ -721,7 +722,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'validate_library',
     {
       description:
-        'Valida o PACOTE de uma biblioteca (especialização formatVersion 4 com `components/`, `docs/`, `examples/` e `fonts/`) com os mesmos três níveis da app e da skill: (1) cada arquivo, (2) a coerência entre eles (componente, slot, campos, exemplos, fontes, origens e, com `previous`, o contrato de versão) e (3) a prova de desenho (instancia cada componente e passa os exemplos de sistema externo pela declaração). `path` é a pasta do pacote ou o arquivo da especialização dentro dela, dentro das raízes. Devolve `valid`, `errors` e `warnings` (cada um com `file`, `path`, `message`, `severity`): erro impede usar, aviso deixa usar. Somente leitura: não aplica nada a projeto algum (um pacote v4 é aplicado pela app). É o ciclo gerar, validar, corrigir.',
+        'Valida o PACOTE de uma biblioteca (especialização formatVersion 4 com `components/`, `docs/`, `examples/` e `fonts/`) com os mesmos três níveis da app e da skill: (1) cada arquivo, (2) a coerência entre eles (componente, slot, campos, exemplos, fontes, origens e, com `previous`, o contrato de versão) e (3) a prova de desenho (instancia cada componente e passa os exemplos de sistema externo pela declaração). `path` é a pasta do pacote ou o arquivo da especialização dentro dela, dentro das raízes. Devolve `valid`, `errors` e `warnings` (cada um com `file`, `path`, `message`, `severity`): erro impede usar, aviso deixa usar. Somente leitura: não aplica nada a projeto algum (para aplicar ou atualizar, use apply_specialization/update_specialization em propose_changes; antes, plan_library_update mostra o impacto). É o ciclo gerar, validar, corrigir.',
       inputSchema: {
         path: z
           .string()
@@ -742,6 +743,24 @@ export function registerTools(server: McpServer, roots: Roots): void {
       annotations: READ_ONLY,
     },
     (args) => respond(() => validateLibraryTool(roots, args, specSummary)),
+  );
+
+  server.registerTool(
+    'plan_library_update',
+    {
+      description:
+        'Prévia, SEM gravar nada, de levar uma biblioteca a um projeto: devolve o que `apply_specialization` ou `update_specialization` fariam. `path` é a pasta do pacote novo (ou o arquivo da especialização dentro dela; também aceita um arquivo v1 a v3), dentro das raízes; `project` é o projeto. Devolve `specId`, `from` (versão aplicada, `null` se não está aplicada) e `to`, `decision` (`apply`: ainda não aplicada; `update`: versão maior que a aplicada; `not-newer`), `validation` (`valid`, `errors`, `warnings`: os mesmos níveis de validate_library, com a cópia aplicada como `previous`) e, em `update`: `additive` (só acrescenta: aplica direto), `refused` (quebra sem migração: `update_specialization` falharia com `spec-missing-migrations`) com `missingMigrations`, `changes` (as diferenças entre as versões), `steps` (cada passo de `migrations` com as contagens do que faz neste projeto e as perdas dele), `losses` (valores que a migração apaga ou sobrescreve, com a anotação e a marcação), `pending` (pendências novas que a migração deixa), `brokenRefs`, `addedLayers`, `freedLayers` e uma `hint` do próximo passo. Listas grandes vêm cortadas em 100, com o total em `…Total`. Rode antes de propor `update_specialization`; se há perdas, confirme com a pessoa.',
+      inputSchema: {
+        project: projectArg,
+        path: z
+          .string()
+          .describe(
+            'Pasta do pacote novo ou arquivo da especialização dentro dela, relativo a uma raiz ou absoluto dentro delas.',
+          ),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => planLibraryUpdate(roots, args)),
   );
 
   const packageArgs = {

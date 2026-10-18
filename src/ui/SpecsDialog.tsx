@@ -18,8 +18,10 @@ import type { LibraryReport } from '../model/library';
 import type { SpecPackageFiles } from '../store/project';
 import { Button, Choice } from './controls';
 import { Dialog } from './Dialog';
+import { showToolWindow } from '../store/toolWindows';
 import { useEditor } from './EditorContext';
 import { LibraryIssueList } from './LibraryIssueList';
+import { UpdateImpact } from './UpdateImpact';
 import {
   canPickDirectory,
   pickPackageDirectory,
@@ -83,9 +85,18 @@ function feedback(
   result: { readonly ok: true } | { readonly ok: false; readonly error: string },
   success: string,
 ): Feedback {
-  return result.ok
-    ? { tone: 'success', text: success }
-    : { tone: 'error', text: t('spec.failed', { code: result.error }) };
+  return result.ok ? { tone: 'success', text: success } : failureFeedback(result.error);
+}
+
+/** Erro da action: o código conhecido ganha texto próprio; os demais mostram o código. */
+function failureFeedback(code: string): Feedback {
+  return {
+    tone: 'error',
+    text:
+      code === 'spec-missing-migrations'
+        ? t('spec.impact.failedMissing')
+        : t('spec.failed', { code }),
+  };
 }
 
 /**
@@ -265,16 +276,37 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     }
   };
 
+  /** Resultado de uma atualização: com pendências novas, abre Incompletas e conta quantas. */
+  const updateFeedback = (
+    result: ReturnType<typeof actions.updateSpecialization>,
+    spec: Spec,
+    pending: number,
+  ): Feedback => {
+    if (result.ok && pending > 0) showToolWindow('incomplete');
+    if (!result.ok) return failureFeedback(result.error);
+    return {
+      tone: 'success',
+      text:
+        pending > 0
+          ? t('spec.updatedPending', {
+              name: spec.name,
+              version: spec.version,
+              count: pending,
+            })
+          : t('spec.updatedMessage', { name: spec.name, version: spec.version }),
+    };
+  };
+
   const confirmUpdate = (spec: Spec, ignoredFields: readonly IgnoredSpecField[]) => {
     setStep(null);
+    const impact = specializationUpdateImpact(project, spec);
+    if (impact.refused) {
+      setMessage(failureFeedback('spec-missing-migrations'));
+      return;
+    }
     const result = actions.updateSpecialization(spec, labelTexts());
     if (result.ok) setIgnored(ignoredText(ignoredFields));
-    setMessage(
-      feedback(
-        result,
-        t('spec.updatedMessage', { name: spec.name, version: spec.version }),
-      ),
-    );
+    setMessage(updateFeedback(result, spec, impact.pending.length));
   };
 
   const confirmPackage = (step: Extract<Step, { kind: 'package' }>) => {
@@ -282,16 +314,21 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     const { spec, decision, files } = step;
     if (!spec) return;
     setIgnored(null);
-    const result =
-      decision === 'update'
-        ? actions.updateSpecialization(spec, labelTexts(), files)
-        : actions.applySpecialization(spec, files);
+    if (decision === 'update') {
+      const impact = specializationUpdateImpact(project, spec);
+      if (impact.refused) {
+        setMessage(failureFeedback('spec-missing-migrations'));
+        return;
+      }
+      const result = actions.updateSpecialization(spec, labelTexts(), files);
+      setMessage(updateFeedback(result, spec, impact.pending.length));
+      return;
+    }
+    const result = actions.applySpecialization(spec, files);
     setMessage(
       feedback(
         result,
-        decision === 'update'
-          ? t('spec.updatedMessage', { name: spec.name, version: spec.version })
-          : t('spec.appliedMessage', { name: spec.name, layers: spec.layers.length }),
+        t('spec.appliedMessage', { name: spec.name, layers: spec.layers.length }),
       ),
     );
   };
@@ -494,62 +531,29 @@ function UpdateConfirm({
   readonly onCancel: () => void;
   readonly onConfirm: () => void;
 }) {
+  const impact = specializationUpdateImpact(project, spec);
+  const current = project.specializations.find((s) => s.id === spec.id)?.version ?? 0;
   return (
     <Dialog
       title={t('spec.updateTitle', { name: spec.name })}
+      size="md"
       onCancel={onCancel}
       actions={
         <>
           <Button onClick={onCancel}>{t('common.cancel')}</Button>
-          <Button variant="primary" onClick={onConfirm}>
+          <Button variant="primary" disabled={impact.refused} onClick={onConfirm}>
             {t('spec.updateConfirm')}
           </Button>
         </>
       }
     >
-      <UpdateImpact project={project} spec={spec} />
+      <UpdateImpact
+        project={project}
+        impact={impact}
+        current={current}
+        next={spec.version}
+      />
     </Dialog>
-  );
-}
-
-function UpdateImpact({
-  project,
-  spec,
-}: {
-  readonly project: Project;
-  readonly spec: Spec;
-}) {
-  const impact = specializationUpdateImpact(project, spec);
-  const current = project.specializations.find((s) => s.id === spec.id);
-  return (
-    <>
-      <p>
-        {t('spec.updateMessage', { current: current?.version ?? 0, next: spec.version })}
-      </p>
-      {impact.addedLayers.length > 0 && (
-        <p>
-          {t('spec.updateAdded', {
-            names: impact.addedLayers.map((l) => l.name).join(', '),
-          })}
-        </p>
-      )}
-      {impact.freedLayers.length > 0 && (
-        <p>
-          {t('spec.updateFreed', {
-            names: impact.freedLayers.map((l) => l.name).join(', '),
-          })}
-        </p>
-      )}
-      {impact.addedLayers.length === 0 && impact.freedLayers.length === 0 && (
-        <p>{t('spec.updateNoLayerChange')}</p>
-      )}
-      <p class="muted">{t('spec.updateKeep')}</p>
-      {impact.brokenRefs > 0 && (
-        <p class="notice notice-error">
-          {t('spec.updateBroken', { count: impact.brokenRefs })}
-        </p>
-      )}
-    </>
   );
 }
 
@@ -569,7 +573,10 @@ function PackageReview({
   readonly onConfirm: () => void;
 }) {
   const { spec, report, decision } = step;
-  const blocked = spec === null || report.errors.length > 0;
+  const impact =
+    spec && decision === 'update' ? specializationUpdateImpact(project, spec) : null;
+  const current = project.specializations.find((s) => s.id === spec?.id)?.version ?? 0;
+  const blocked = spec === null || report.errors.length > 0 || impact?.refused === true;
   const { summary } = report;
   return (
     <Dialog
@@ -600,7 +607,14 @@ function PackageReview({
               fonts: summary.fonts,
             })}
           </p>
-          {decision === 'update' && <UpdateImpact project={project} spec={spec} />}
+          {impact && (
+            <UpdateImpact
+              project={project}
+              impact={impact}
+              current={current}
+              next={spec.version}
+            />
+          )}
         </>
       ) : (
         <p class="notice notice-error" role="alert">

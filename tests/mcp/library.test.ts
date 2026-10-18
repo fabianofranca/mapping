@@ -370,11 +370,12 @@ describe('get_specialization com a v4', () => {
 });
 
 describe('apply_specialization com pacote v4', () => {
-  it('é recusado: o pacote é aplicado pela app', async () => {
+  it('é aceito: a pasta vai pela proposta (detalhes em libraryUpdate.test.ts)', async () => {
     const result = ok(
       await mcp.call<{
         valid: boolean;
         errors?: { op: string; code: string; message: string }[];
+        summary: string[];
       }>('plan_changes', {
         project: 'telas',
         operations: [
@@ -382,8 +383,8 @@ describe('apply_specialization com pacote v4', () => {
         ],
       }),
     );
+    // A biblioteca já está aplicada nesse projeto: o erro é o de sempre, não uma recusa do pacote.
     expect(result.valid).toBe(false);
-    expect(result.errors?.[0]?.code).toBe('package-spec-unsupported');
-    expect(result.errors?.[0]?.message).toMatch(/pela app/);
+    expect(result.errors?.[0]?.code).toBe('spec-already-applied');
   });
 });

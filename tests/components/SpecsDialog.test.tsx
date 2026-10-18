@@ -1,7 +1,14 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import JSZip from 'jszip';
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/preact';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -12,7 +19,17 @@ import {
 } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { SpecsDialog } from '../../src/ui/SpecsDialog';
+import { isToolWindowOpen, hideToolWindow } from '../../src/store/toolWindows';
+import { specializationUpdateImpact, type Spec } from '../../src/model';
+import { UpdateImpact } from '../../src/ui/UpdateImpact';
 import { MemoryDirectory } from '../storage/memoryFs';
+import {
+  badgeType,
+  buttonType,
+  chipType,
+  libProject,
+  libSpec,
+} from '../model/libraryMigrationFixtures';
 import { emptyProject } from '../model/fixtures';
 import { legacySduiText } from '../model/specFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
@@ -473,11 +490,206 @@ describe('SpecsDialog: pacote da biblioteca', () => {
     });
     chooseZip(await zipOf(broken));
     const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-    expect(within(dialog).getByText(/m3-chip/, { selector: 'li' })).toBeTruthy();
+    expect(
+      within(dialog).getAllByText(/m3-chip/, { selector: 'li' }).length,
+    ).toBeGreaterThan(0);
     expect(within(dialog).getByRole('button', { name: 'Atualizar' })).toHaveProperty(
       'disabled',
       true,
     );
     expect(harness.project().specializations[0]?.version).toBe(1);
   }, 120_000);
+});
+
+// Impacto da atualização da biblioteca com migrações (B4): aditiva, passos, perdas e recusa.
+function libNext(
+  steps: Spec['migrations'] extends infer M ? NonNullable<M> : never,
+  edit: (types: ReturnType<typeof buttonType>[]) => void = () => {},
+): Spec {
+  const button = buttonType();
+  const types = [button];
+  edit(types);
+  return libSpec(
+    2,
+    { c: [...types, badgeType()], e: [chipType()] },
+    { migrations: steps },
+  );
+}
+
+const renameLabel = (spec: Spec): Spec => ({
+  ...spec,
+  layers: spec.layers.map((l) => ({
+    ...l,
+    annotationTypes: l.annotationTypes.map((t) =>
+      t.id === 'button'
+        ? {
+            ...t,
+            fields: t.fields.map((f) => (f.key === 'label' ? { ...f, key: 'title' } : f)),
+          }
+        : t,
+    ),
+  })),
+});
+
+function renderImpact(project: Project, spec: Spec) {
+  const impact = specializationUpdateImpact(project, spec);
+  return render(<UpdateImpact project={project} impact={impact} current={1} next={2} />);
+}
+
+describe('UpdateImpact: biblioteca com migrações', () => {
+  const base = () =>
+    libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'OK', size: 3 } },
+      { id: 'B2', type: 'button', values: { label: 'Cancelar' } },
+      { id: 'G1', type: 'badge', values: { text: 'novo' } },
+    ]);
+
+  it('aditiva: uma linha, sem lista de passos', () => {
+    renderImpact(base(), libNext([]));
+    expect(
+      screen.getByText('Atualização aditiva: os dados ficam como estão.'),
+    ).toBeTruthy();
+    expect(screen.queryByText('Passos da migração')).toBeNull();
+  });
+
+  it('com passos: rótulo por operação e contagens', () => {
+    const next = renameLabel(
+      libNext([
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'rename-field', type: 'button', from: 'label', to: 'title' }],
+        },
+      ]),
+    );
+    renderImpact(base(), next);
+    expect(screen.getByText('Passos da migração')).toBeTruthy();
+    expect(screen.getByText('Renomear o campo label → title em button')).toBeTruthy();
+    expect(screen.getByText('2 anotação(ões), 2 valor(es)')).toBeTruthy();
+    expect(screen.queryByText(/Atualização aditiva/)).toBeNull();
+    expect(screen.queryByText(/Esta atualização apaga/)).toBeNull();
+  });
+
+  it('passo sem efeito neste projeto', () => {
+    const next = libNext([
+      {
+        from: 1,
+        to: 2,
+        steps: [{ op: 'fill-field', type: 'chip', field: 'a', default: 'x' }],
+      },
+    ]);
+    renderImpact(base(), next);
+    expect(screen.getByText('Preencher a em chip com x')).toBeTruthy();
+    expect(screen.getByText('nada a mudar neste projeto')).toBeTruthy();
+  });
+
+  it('perdas em destaque, total e por passo', () => {
+    const next = libNext(
+      [
+        {
+          from: 1,
+          to: 2,
+          steps: [
+            { op: 'remove-field', type: 'button', field: 'size' },
+            { op: 'remove-type', type: 'badge', mode: 'delete' },
+          ],
+        },
+      ],
+      (types) => {
+        const [button] = types;
+        if (button) button.fields = button.fields.filter((f) => f.key !== 'size');
+      },
+    );
+    const spec: Spec = {
+      ...next,
+      layers: next.layers.map((l) => ({
+        ...l,
+        annotationTypes: l.annotationTypes.filter((t) => t.id !== 'badge'),
+      })),
+    };
+    const { container } = renderImpact(base(), spec);
+    const alert = container.querySelector('p.notice.notice-error');
+    expect(alert?.textContent).toBe(
+      'Esta atualização apaga 1 valor(es) e 1 anotação(ões).',
+    );
+    expect(screen.getByText(/campo size removido \(valor "3"\)/)).toBeTruthy();
+    expect(screen.getByText(/anotação apagada/)).toBeTruthy();
+    expect(screen.getByText('Remover o tipo badge (apagar as anotações)')).toBeTruthy();
+  });
+
+  it('recusada: lista o que falta e some a lista de passos', () => {
+    const next = renameLabel(libNext([]));
+    const { container } = renderImpact(base(), next);
+    const alert = container.querySelector('div.notice.notice-error');
+    expect(alert?.textContent).toContain('faltam migrações');
+    expect(alert?.querySelectorAll('li').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Passos da migração')).toBeNull();
+  });
+});
+
+describe('SpecsDialog: atualizar biblioteca v4', () => {
+  const chooseZip = (file: File) => {
+    const input = document.querySelector<HTMLInputElement>('input[accept^=".zip"]');
+    if (!input) throw new Error('sem input de zip');
+    fireEvent.change(input, { target: { files: [file] } });
+  };
+  const pkg = (spec: Spec) =>
+    new Map([
+      [
+        'lib.spec.json',
+        JSON.stringify({
+          ...spec,
+          layers: spec.layers.map((l) => ({
+            ...l,
+            annotationTypes: l.annotationTypes.map((t) => ({
+              ...t,
+              fields: t.fields.map((f) =>
+                f.type === 'table' ? { ...f, rowLabel: 'col' } : f,
+              ),
+            })),
+          })),
+        }),
+      ],
+    ]);
+  const base = () =>
+    libProject(libSpec(1), [{ id: 'G1', type: 'badge', values: { text: 'novo' } }]);
+
+  beforeEach(() => hideToolWindow('incomplete'));
+
+  it('com pendências: mostra a contagem, atualiza e abre Incompletas', async () => {
+    const { harness, user } = setup(base());
+    const next = libNext([
+      { from: 1, to: 2, steps: [{ op: 'remove-type', type: 'badge', mode: 'convert' }] },
+    ]);
+    const spec: Spec = {
+      ...next,
+      layers: next.layers.map((l) => ({
+        ...l,
+        annotationTypes: l.annotationTypes.filter((t) => t.id !== 'badge'),
+      })),
+    };
+    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    chooseZip(await zipOf(pkg(spec)));
+    const dialog = await dialogTitled('Pacote "Lib"', 30_000);
+    expect(within(dialog).getByText(/1 pendência\(s\) ficam/)).toBeTruthy();
+    expect(isToolWindowOpen('incomplete')).toBe(false);
+    await user.click(within(dialog).getByRole('button', { name: 'Atualizar' }));
+    await screen.findByText(/1 pendência\(s\) em Incompletas/);
+    expect(harness.project().specializations[0]?.version).toBe(2);
+    expect(isToolWindowOpen('incomplete')).toBe(true);
+  }, 60_000);
+
+  it('recusada: o Atualizar fica desabilitado e a versão não muda', async () => {
+    const { harness, user } = setup(base());
+    const spec = renameLabel(libNext([]));
+    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    chooseZip(await zipOf(pkg(spec)));
+    const dialog = await dialogTitled('Pacote "Lib"', 30_000);
+    expect(within(dialog).getByRole('button', { name: 'Atualizar' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    expect(within(dialog).getByText(/faltam migrações/)).toBeTruthy();
+    expect(harness.project().specializations[0]?.version).toBe(1);
+  }, 60_000);
 });

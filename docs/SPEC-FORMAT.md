@@ -454,7 +454,156 @@ Toda quebra precisa de uma entrada em `migrations` na raiz da versão nova. Cada
 - A **cadeia** liga as entradas por `from → to`, a partir da versão que o projeto aplicou até a `version` nova (`migrationChain`). Uma cadeia rompida (falta a entrada de uma versão) deixa **toda** quebra sem cobertura. `missingMigrations(anterior, nova)` devolve as quebras que nenhum passo da cadeia cobre; lista vazia é contrato cumprido, e `migrationFor` diz que passo cobre uma quebra.
 - O validador da biblioteca (nível 2) usa o contrato quando recebe a versão anterior: cada quebra sem passo vira um **erro**, e uma `version` que não cresceu também.
 
-**Hoje** o contrato **classifica, valida e informa**: `specializationUpdateImpact` (em `src/model/specializations.ts`) devolve, além do que já devolvia, `changes` (as diferenças), `breaking` (as quebras), `missingMigrations` (as quebras sem passo: a atualização vai perder dados), `migrations` (os passos da cadeia, na ordem) e `comparable` (`false` quando a cópia aplicada não está disponível, e então nada é comparado). A **execução** dos passos sobre um projeto é a fase B4 da etapa Biblioteca; até lá, nenhuma migração é aplicada.
+### Execução da migração
+
+Ao **atualizar** uma biblioteca aplicada (`updateSpecialization`, na app e no MCP), a app roda a cadeia `from → to` sobre as anotações do projeto (`runLibraryMigrations`, em `src/model/libraryMigrations.ts`, puro e sem APIs de navegador) e só então troca a cópia aplicada, as camadas e a versão. Tudo é uma só operação: na app, **Desfazer** devolve a pasta `specs/<id>/` e os dados juntos.
+
+- **Encadeamento.** A cadeia parte da versão que o projeto aplicou e segue as entradas por `from → to` até a `version` nova; os passos rodam na ordem, e cada um opera sobre o resultado do anterior (o tipo é o que a anotação tem **naquele ponto**, depois dos renomes anteriores). Só as anotações da própria especialização são tocadas. Cadeia rompida (falta uma entrada) ou sem `migrations`: nada roda. Um passo que não acha nada é um no-op.
+- **Perda × pendência.** **Perda** é valor **não vazio** que o passo apagou ou sobrescreveu: aparece em destaque no diálogo antes de atualizar. **Pendência** é dado que a migração não consegue consertar e deixa como está: depois de atualizar ele aparece em **Incompletas**, sem apagar nada.
+
+| Passo          | O que faz nos dados                                                                                                                                                                                                                                                                                | Perda                                                          | Pendência                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `rename-type`  | Troca o `typeId` das anotações do tipo. A camada **não** muda.                                                                                                                                                                                                                                     | não                                                            | `layer-mismatch` se a camada do tipo novo é outra                            |
+| `remove-type`  | `convert`: a anotação vira **livre** (os valores viram pares chave-valor, o vínculo e o `inherit` ficam). `delete`: apaga a anotação **e as vinculadas a ela** (também de outros tipos e livres).                                                                                                  | só no `delete`: cada anotação apagada                          | `layer-mismatch` no `convert` (ela fica na camada)                           |
+| `rename-field` | Move o valor de `from` para `to`; em campo de nível superior reescreve também as referências (`ref`) do projeto inteiro que apontam para o campo ou para uma linha da tabela dele. Entre formas diferentes (campo × coluna, ou tabelas diferentes) não há como mover: o valor de `from` é apagado. | `to` já tinha valor (sobrescrito) ou a forma não permite mover | não                                                                          |
+| `remove-field` | Apaga a chave de `values` (ou a coluna, em cada linha). Valor vazio não conta como perda.                                                                                                                                                                                                          | valor não vazio                                                | não                                                                          |
+| `map-values`   | Troca o valor antigo da `enum` pelo destino de `values`.                                                                                                                                                                                                                                           | não                                                            | `unknown-option` para o valor que não está em `values` nem nas opções atuais |
+| `fill-field`   | Valor **vazio ou ausente** recebe o `default`. Valor que não vale **nada** no tipo do campo (`invalid-value`, como o texto num campo que virou número) é trocado pelo `default`.                                                                                                                   | só o valor trocado por `invalid-value`                         | `unknown-option` (valor fora das opções) fica como está                      |
+
+A chave de campo de um passo é a `key` ou `tabela.coluna`; numa coluna o passo vale para cada linha da tabela.
+
+**O que é recusado.** Com especialização v4 e a cópia aplicada disponível, `updateSpecialization` **recusa** uma versão com quebra sem passo que a cubra (`spec-missing-migrations`, e na app o botão **Atualizar** fica desabilitado): nada é alterado. As versões 1 a 3 não têm `migrations` e **não são recusadas**: a atualização segue como era (os valores que deixam de valer viram pendência). Sem a cópia aplicada, nada é comparado.
+
+**O que o impacto informa.** `specializationUpdateImpact` (em `src/model/specializations.ts`) devolve `changes`, `breaking`, `missingMigrations`, `migrations` e `comparable` e, com a execução simulada sobre o projeto, `additive` (nenhuma quebra: os dados ficam como estão), `refused` (quebra sem migração), `steps` (o relatório por passo: anotações, valores, convertidas, apagadas e referências), `losses` (cada valor ou anotação que a atualização apaga) e `pending` (o que vira pendência). O diálogo de atualização mostra isso: "Atualização aditiva: os dados ficam como estão.", ou **Passos da migração** com as contagens, as perdas em destaque ("Esta atualização apaga N valor(es) e M anotação(ões).") e as pendências ("N pendência(s) ficam"). Depois de atualizar com pendências, a janela **Incompletas** abre sozinha.
+
+### Exemplos
+
+Os trechos são o que muda no arquivo da especialização (`version` e `migrations`); o resto do arquivo (camadas, tipos, componentes) segue a v4 normal.
+
+**(a) Evolução aditiva, v1 → v2.** Um componente novo e um campo opcional novo: nenhuma quebra, então **nenhum** `migrations`. Os dados do projeto ficam como estão.
+
+```json
+{
+  "formatVersion": 4,
+  "id": "loja",
+  "version": 2,
+  "layers": [
+    {
+      "id": "telas",
+      "annotationTypes": [
+        {
+          "id": "botao",
+          "component": "components/botao.json",
+          "fields": [
+            { "key": "texto", "type": "string", "required": true },
+            { "key": "nota", "type": "string", "required": false }
+          ]
+        },
+        { "id": "cartao", "component": "components/cartao.json", "fields": [] }
+      ]
+    }
+  ]
+}
+```
+
+(`nota` e o tipo `cartao` são novos na v2; `texto` já existia.)
+
+**(b) Renomear um campo, v2 → v3.** O campo `texto` do `botao` passa a se chamar `rotulo`. Sem o passo, a v3 seria uma quebra recusada.
+
+```json
+{
+  "version": 3,
+  "migrations": [
+    {
+      "from": 2,
+      "to": 3,
+      "steps": [
+        { "op": "rename-field", "type": "botao", "from": "texto", "to": "rotulo" }
+      ]
+    }
+  ]
+}
+```
+
+Numa anotação do `botao`, o `values` muda assim (as outras chaves ficam; uma `ref` que apontava para `texto` passa a apontar para `rotulo`):
+
+```json
+{
+  "antes": { "texto": "Cadastrar", "nota": "primário" },
+  "depois": { "rotulo": "Cadastrar", "nota": "primário" }
+}
+```
+
+**(c) Cadeia de duas entradas, aplicada a um projeto na v1.** A v3 traz as duas entradas (a v1 → v2 e a v2 → v3) e a atualização roda as duas em ordem:
+
+```json
+{
+  "version": 3,
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [{ "op": "rename-type", "from": "chip", "to": "etiqueta" }]
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "steps": [
+        { "op": "fill-field", "type": "etiqueta", "field": "tamanho", "default": "md" },
+        {
+          "op": "map-values",
+          "type": "etiqueta",
+          "field": "estilo",
+          "values": { "primary": "filled" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+Antes (projeto na v1) e depois (v3), para uma anotação de `chip`:
+
+```json
+{
+  "antes": { "typeId": "chip", "values": { "estilo": "primary" } },
+  "depois": { "typeId": "etiqueta", "values": { "estilo": "filled", "tamanho": "md" } }
+}
+```
+
+Uma anotação com `"estilo": "outline"` (que não está em `values` nem nas opções da v3) fica com o valor e vira a pendência `unknown-option`, que abre em **Incompletas**. Se o projeto já estivesse na v2, só a segunda entrada rodaria; se faltasse a v1 → v2, nada rodaria e a atualização seria recusada.
+
+**(d) Remover um tipo: `convert` e `delete`.** O tipo `selo` sai da v2. As duas formas cobrem a quebra; a diferença é o destino das anotações.
+
+```json
+{
+  "version": 2,
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [{ "op": "remove-type", "type": "selo", "mode": "convert" }]
+    }
+  ]
+}
+```
+
+Com `convert`, a anotação de `selo` vira **livre**: `{ "texto": "Novo" }` passa a ser o par `texto` = `Novo`. Nada se perde (o diálogo mostra "1 convertida(s)"); a anotação fica na camada em que estava, e se a camada é da especialização ela entra em **Incompletas** (`layer-mismatch`).
+
+```json
+{
+  "version": 2,
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [{ "op": "remove-type", "type": "selo", "mode": "delete" }]
+    }
+  ]
+}
+```
+
+Com `delete`, a anotação de `selo` é **apagada, e as vinculadas a ela também**. Isso é perda: antes de atualizar o diálogo avisa em destaque "Esta atualização apaga 0 valor(es) e 2 anotação(ões)." (uma por anotação apagada, com a lista de qual marcação e qual nome), e **Desfazer** traz tudo de volta.
 
 ## Validação da biblioteca
 

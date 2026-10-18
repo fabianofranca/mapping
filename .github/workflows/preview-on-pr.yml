@@ -4,7 +4,8 @@ name: Preview do PR
 # `workflow_dispatch` manual. Este workflow só dispara o Deploy
 # (`gh workflow run deploy.yml --ref main -f branch=<branch do PR>`); quem
 # publica é o `deploy.yml`, que roda na `main` (o ambiente `github-pages` costuma
-# aceitar deploy só a partir dela) e passa pelo ci.yml inteiro antes.
+# aceitar deploy só a partir dela) e passa pelo ci.yml inteiro antes (o do branch sempre; o da
+# `main` só se ela mudou desde o último deploy, e a falha dele não bloqueia o preview).
 #
 # O `GITHUB_TOKEN` pode disparar `workflow_dispatch` (exceção documentada do GitHub).
 # PR de fork fica de fora: o token dele não tem escrita.

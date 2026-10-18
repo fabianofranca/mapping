@@ -39,6 +39,7 @@ export * from './specLookup';
 export * from './specializations';
 export * from './libraryPackage';
 export * from './specVersions';
+export * from './libraryMigrations';
 export * from './typed';
 export * from './refs';
 export * from './itemRef';

@@ -69,6 +69,11 @@ export interface ProjectStorage {
   /** Grava um arquivo do pacote, criando as pastas. No projeto local marca "não exportado". */
   writeSpecFile(path: string, data: Blob | string): Promise<void>;
   /**
+   * Remove um arquivo do pacote (`specs/material3/docs/antigo.md`; qualquer extensão). Não falha
+   * se ele já não existir. No projeto local marca "não exportado".
+   */
+  removeSpecFile(path: string): Promise<void>;
+  /**
    * Remove a pasta do pacote inteira (recursivo). Não falha se ela não existir. No projeto
    * local marca "não exportado".
    */
@@ -88,6 +93,13 @@ export interface ProjectStorage {
    * marca "não exportado", como `writeProposal`.
    */
   removeProposal(id: string): Promise<void>;
+  /**
+   * Caminhos (relativos à raiz do projeto) de todos os arquivos sob `proposals/<id>/`
+   * (o `proposal.json`, as imagens e os pacotes de biblioteca em `specs/<pasta>/…`),
+   * recursivo, em ordem alfabética. `[]` se a proposta não existir. O conteúdo de cada
+   * um se lê com `readImage(path)`, que aceita qualquer caminho do projeto.
+   */
+  listProposalFiles(id: string): Promise<string[]>;
   /**
    * Carimbo (tamanho e `lastModified`) do `proposal.json`, ou `null` se ele não existir.
    * Só a pasta implementa, como `statMapping`: é como a app percebe propostas novas ou
@@ -172,6 +184,17 @@ export function isProposalImagePath(path: string): boolean {
   return (
     isImageFileName(rest) && !rest.split('/').some((part) => part === '..' || part === '')
   );
+}
+
+/**
+ * `true` para um arquivo de pacote de biblioteca que espera numa proposta
+ * (`proposals/<id>/specs/<pasta>/…`, qualquer extensão): pelo menos pasta e arquivo, sem
+ * `..`, `.`, segmentos vazios nem `\`.
+ */
+export function isProposalPackagePath(path: string): boolean {
+  const match = PROPOSAL_PATH_RE.exec(path);
+  if (!match || !PROPOSAL_ID_RE.test(match[1] ?? '')) return false;
+  return isSpecPackagePath(match[2] ?? '');
 }
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'];

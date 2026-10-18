@@ -225,6 +225,23 @@ function createLibrary(db: Db): LocalLibrary {
             tx.done,
           ]);
         },
+        async removeSpecFile(path) {
+          assertSpecPath(path, 'package');
+          const tx = db.transaction(['projects', 'files'], 'readwrite');
+          const meta = await tx.objectStore('projects').get(id);
+          if (!meta) throw new Error(`local project not found: ${id}`);
+          const files = tx.objectStore('files');
+          const exists = (await files.getKey([id, path])) !== undefined;
+          await Promise.all([
+            ...(exists
+              ? [
+                  tx.objectStore('projects').put({ ...meta, unexported: true }),
+                  files.delete([id, path]),
+                ]
+              : []),
+            tx.done,
+          ]);
+        },
         async removeSpecDir(dir) {
           assertSpecPath(dir, 'dir');
           const prefix = `${dir}/`;
@@ -286,6 +303,17 @@ function createLibrary(db: Db): LocalLibrary {
               .map((key) => files.delete(key)),
             tx.done,
           ]);
+        },
+        async listProposalFiles(proposalId) {
+          if (!PROPOSAL_ID_RE.test(proposalId)) {
+            throw new Error(`invalid proposal id: ${proposalId}`);
+          }
+          const prefix = `${proposalDir(proposalId)}/`;
+          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+          return keys
+            .map(([, path]) => path)
+            .filter((path) => path.startsWith(prefix))
+            .sort();
         },
         async writeBackup(name, text) {
           const blob = new Blob([text], { type: SPEC_TYPE });

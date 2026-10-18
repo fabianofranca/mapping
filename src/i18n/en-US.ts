@@ -398,6 +398,37 @@ export const enUS: Dictionary = {
     'Existing layers keep their color and annotations. Annotations that become invalid show up as incomplete.',
   'spec.updateBroken': '{count} reference(s) will break.',
   'spec.updateConfirm': 'Update',
+  'spec.updatedPending':
+    '"{name}" updated to version {version}. {count} pending item(s) in Incomplete.',
+  'spec.impact.additive': 'Additive update: the data stays as it is.',
+  'spec.impact.stepsTitle': 'Migration steps',
+  'spec.impact.op.renameType': 'Rename type {from} → {to}',
+  'spec.impact.op.removeTypeConvert': 'Remove type {type} (convert to free annotations)',
+  'spec.impact.op.removeTypeDelete': 'Remove type {type} (delete the annotations)',
+  'spec.impact.op.renameField': 'Rename field {from} → {to} in {type}',
+  'spec.impact.op.removeField': 'Remove field {field} in {type}',
+  'spec.impact.op.mapValues': 'Map values of {field} in {type}: {pairs}',
+  'spec.impact.op.fillField': 'Fill {field} in {type} with {value}',
+  'spec.impact.annotations': '{count} annotation(s)',
+  'spec.impact.values': '{count} value(s)',
+  'spec.impact.converted': '{count} converted',
+  'spec.impact.deleted': '{count} deleted',
+  'spec.impact.refs': '{count} reference(s) updated',
+  'spec.impact.nothing': 'nothing to change in this project',
+  'spec.impact.lossTotal':
+    'This update deletes {values} value(s) and {annotations} annotation(s).',
+  'spec.impact.lossTarget': '{marking} › {name}',
+  'spec.impact.lossDeleted': '{target}: annotation deleted',
+  'spec.impact.lossRemovedField': '{target}: field {field} removed (value "{value}")',
+  'spec.impact.lossReplaced': '{target}: value of {field} replaced (was "{value}")',
+  'spec.impact.lossOverwritten': '{target}: value of {field} overwritten (was "{value}")',
+  'spec.impact.lossMore': '+{count}',
+  'spec.impact.pending':
+    '{count} pending item(s) remain (they open in Incomplete after updating).',
+  'spec.impact.refused':
+    'This update cannot be applied: declared migrations are missing for these breaking changes.',
+  'spec.impact.failedMissing':
+    'Update refused: the new version has breaking changes without a declared migration. Nothing was changed.',
   'spec.applyFolder': 'Apply folder…',
   'spec.applyZip': 'Apply zip…',
   'spec.updateFolder': 'Update from folder…',
@@ -682,6 +713,10 @@ export const enUS: Dictionary = {
   'proposal.error.stale': 'The project or the proposal changed since the last action.',
   'proposal.error.imageMissing': 'The proposal image was not found: {path}',
   'proposal.error.imageExists': 'The project already has an image with this file: {path}',
+  'proposal.error.packageMissing':
+    'The library package files were not found in the proposal: {path}',
+  'proposal.error.packageInvalid':
+    'The proposal library package does not pass validation: {path}',
   'proposal.error.readOnly': 'The project is read-only and cannot take changes.',
   'proposal.error.reviewing': 'Exit the review to delete a proposal.',
   'proposal.error.notRemovable':

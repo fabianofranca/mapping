@@ -71,6 +71,7 @@ afterAll(() => {
 
 const io = {
   readSource: () => Promise.reject(new Error('sem arquivos')),
+  readSpecInput: () => Promise.reject(new Error('sem arquivos')),
   takenImageFiles: new Set<string>(),
   now: () => new Date(NOW),
 };

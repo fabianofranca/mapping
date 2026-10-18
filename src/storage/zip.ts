@@ -8,6 +8,7 @@ import {
   isImageFileName,
   isProposalFilePath,
   isProposalImagePath,
+  isProposalPackagePath,
   isSpecPackagePath,
   isSpecPath,
 } from './types';
@@ -29,7 +30,10 @@ export interface ProjectFiles {
   readonly specAssets?: ReadonlyMap<string, Blob>;
   /** Propostas de alteração: `proposals/<id>/proposal.json` → texto (como está, sem validar). */
   readonly proposals: ReadonlyMap<string, string>;
-  /** Imagens aguardando a aceitação de uma proposta: `proposals/<id>/images/…` → conteúdo. */
+  /**
+   * Arquivos que esperam a aceitação de uma proposta: imagens (`proposals/<id>/images/…`) e
+   * pacotes de biblioteca (`proposals/<id>/specs/<pasta>/…`) → conteúdo.
+   */
   readonly proposalImages: ReadonlyMap<string, Blob>;
 }
 
@@ -93,6 +97,8 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
     } else if (isProposalImagePath(relative)) {
       const bytes = await entry.async('arraybuffer');
       proposalImages.set(relative, new Blob([bytes], { type: imageMimeType(relative) }));
+    } else if (isProposalPackagePath(relative)) {
+      proposalImages.set(relative, new Blob([await entry.async('arraybuffer')]));
     }
   }
   return {

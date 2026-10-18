@@ -238,6 +238,12 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(await storage.readSpec('specs/m3/m3.spec.json')).toBe('{"id":"m3"}\n');
 
     await library.setUnexported('p', false);
+    await storage.removeSpecFile('specs/m3/fonts/R.ttf');
+    expect((await library.get('p'))?.unexported).toBe(true);
+    expect(await storage.readSpecFile('specs/m3/fonts/R.ttf')).toBeNull();
+    await library.setUnexported('p', false);
+    await storage.removeSpecFile('specs/m3/fonts/R.ttf'); // já não existe: nada muda
+    expect((await library.get('p'))?.unexported).toBe(false);
     await storage.removeSpecDir('specs/m3');
     expect((await library.get('p'))?.unexported).toBe(true);
     expect(await storage.listSpecDir('specs/m3')).toEqual([]);
