@@ -309,7 +309,7 @@ button.tree-toggle:hover {
   border-color: var(--color-border-control);
 }
 
-.layer-row .layer-badge {
+.layer-row > .tooltip-anchor:has(> .layer-badge) {
   grid-column: 3 / -1;
   justify-self: start;
   margin: 0 0 var(--space-1);

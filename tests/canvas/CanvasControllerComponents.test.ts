@@ -181,6 +181,26 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
+  it('reordenar irmãs pela action troca quem fica por cima no canvas (e desfazer devolve)', () => {
+    const { controller, drawing, componentLayer, actions, store } = setup();
+    const order = () =>
+      (componentLayer()?.getChildren()[0] as Konva.Group)
+        .getChildren()
+        .map((n: Konva.Node) => n.getAttr('markingId') as string);
+    expect(order()).toEqual(['T1', 'T2']);
+    const [t1, t2] = [drawing('T1'), drawing('T2')];
+    expect(actions.reorderMarking('T1', 1).ok).toBe(true);
+    flush();
+    expect(order()).toEqual(['T2', 'T1']);
+    // Só a ordem muda: os nós são os mesmos.
+    expect(drawing('T1')).toBe(t1);
+    expect(drawing('T2')).toBe(t2);
+    store.undo();
+    flush();
+    expect(order()).toEqual(['T1', 'T2']);
+    controller.destroy();
+  });
+
   it('pan e zoom não refazem a camada de componentes', () => {
     const { controller } = setup();
     const render = vi.spyOn(ComponentLayerRenderer.prototype, 'render');

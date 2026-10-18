@@ -4,6 +4,7 @@
 // o resultado, se o aviso está mesmo na tela, os eventos da janela e como o aviso fechou, e
 // só grava quando o caminho passou pelo pedido e não abriu o projeto, ou quando o resultado
 // não virou nem o aviso visível nem o projeto aberto (`docs/ARCHITECTURE.md`, recentes).
+// O projeto inconsistente (diálogo de reparo) é o caminho normal: só grava se houve pedido.
 // Textos técnicos, como os outros contextos do Diagnóstico.
 import type { RefObject } from 'preact';
 import { useLayoutEffect, useRef } from 'preact/hooks';
@@ -115,10 +116,8 @@ export class ReopenTrace implements ReopenSteps {
     if (!mounted) return this.conclude('unmounted', true);
     if (!value) {
       const failed = result.ok ? null : result;
-      return this.conclude(
-        failed?.inconsistent ? 'inconsistent' : `message:${failed?.error ?? '?'}`,
-        true,
-      );
+      if (failed?.inconsistent) return this.conclude('inconsistent', false);
+      return this.conclude(`message:${failed?.error ?? '?'}`, true);
     }
     this.step(`home=dialog:${value.reason}`);
     this.phase = 'awaiting-dialog';

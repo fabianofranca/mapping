@@ -262,3 +262,25 @@ Sem correção nesta etapa:
 - **Pontos "Em aberto" da B3 que ainda valem** (seção #172): especialização aplicada no mesmo lote MCP não enxerga componentes; hover só com a roda; `click_button` do dialog-pilot acerta botões de outras abas; observações de layout a 1098 px; `move_marking` para o índice atual é silencioso. (O `csp.spec.ts` instável foi corrigido no Fechamento; "preview com build antigo" não foi reproduzido.)
 - **A visão Proposto não desenha componentes novos** (limitação conhecida da B4).
 - Do roadmap: "Depois, sem data" em [`../ROADMAP.md`](../ROADMAP.md).
+
+---
+
+## Rodada completa do Cowork (2026-10-18, build 62b9c54) e correções
+
+**Rodada:** R0 a R10 e passada visual, sem interação do dono. 129 passos: **125 ✅**, 3 ❌/⚠️ (R4.6, R9.7 e Visual: Diagnóstico) e 1 não executado (R6.1, arraste com Esc). Achados: 1 médio e 4 baixos. Nenhum perde dados. MCP 0.5.0 sem mudança.
+
+**Achados e correções**
+
+1. **R9.7 — médio, não é defeito.** A ordem entre irmãs chega certa ao Konva (conferido no modelo, no `CanvasController` e no navegador). O Text field do Material 3 não tem fundo e, nas coordenadas do guia, o Button cobria só ~2 px do texto. Correção: guia ajustado (Button em X 80, Y 230) e teste de regressão em `tests/canvas/CanvasControllerComponents.test.ts`.
+2. **Diagnóstico — baixo.** As ações não cobriam as abas: a faixa de abas rola e a aba ficava cortada na borda. Correção: o `Tabs` mantém a aba escolhida à vista; e2e em `tests/e2e/narrowLayout.spec.ts`.
+3. **R4.6 — baixo, não é regressão.** O build da rodada 7 já mostrava o nome proposto. O título de Detalhes, a trilha e a barra seguem a visão, como a Árvore (o painel usa o projeto à vista). Correção: só o guia.
+4. **R7.2 — baixo.** O rastro `folders.reopen` não grava mais quando o resultado é o projeto inconsistente (diálogo de reparo, caminho normal), salvo se houve pedido de permissão.
+5. **R5.3 — baixo.** Rejeitar a anotação criada pelo ✕ do cartão com o mouse abre a nota sugerida com o foco, como o popover. A remoção de anotação, que usa o mesmo controle, também.
+6. **R5.4a — observação tratada como defeito.** Limpar a seleção na revisão leva os Detalhes ao nível da proposta, em vez de manter o último item com "Nada selecionado".
+
+Também nesta rodada:
+
+- **Camadas:** o selo truncado da especialização ganha o `Tooltip` com o nome inteiro.
+- **Cliente stdio** (`scripts/testing/mcp-stdio-client.mjs`): sem argumentos, lê as raízes do `.mcp.json` da pasta WS.
+- **Guia (`docs/TESTING.md`):** schema 10 (R7.1/R7.3); backups `mapping.v10` (R6.5); três rejeitadas (R5.4a); nome do arquivo da imagem (R5.1); chips lado a lado (R9.5); tela2 sem o R6.2 (R6.7); alternativas ao arraste (R9.9, R10.7); larguras que variam com a fonte (R10.4); linha de validação (R10.1); atalhos com foco num campo; raízes do cliente stdio.
+- **R6.1 pendente de decisão do dono:** arraste com Esc durante a gravação mexe com a integridade do `mapping.json`, e o agente não consegue segurar o botão e apertar Esc. O passo fica marcado como pendente de decisão, para o dono escolher entre manter como passo [pessoa], mover para roteiro sob demanda ou cobrir por e2e.

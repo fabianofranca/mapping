@@ -81,6 +81,25 @@ test('abas da janela inferior não passam sob as ações', async ({ page }) => {
   }
 });
 
+test('aba escolhida da janela inferior fica visível na faixa que rola', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 900, height: 607 });
+  await open(page);
+  await page.keyboard.press('Control+Shift+6');
+  const win = page.locator('[data-window="diagnostics"]');
+  await expect(win).toBeVisible();
+  const tablist = win.getByRole('tablist');
+  // Faixa estreita de propósito: nem todas as abas cabem.
+  expect(await tablist.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
+  const strip = (await boxes(tablist))[0]!;
+  const tab = (await boxes(win.getByRole('tab', { selected: true })))[0]!;
+  expect(tab.x).toBeGreaterThanOrEqual(strip.x - 0.5);
+  expect(tab.x + tab.width).toBeLessThanOrEqual(strip.x + strip.width + 0.5);
+  for (const a of await boxes(win.locator('.tool-window-head > :not(.tool-window-tabs)')))
+    expect(overlaps(a, tab)).toBe(false);
+});
+
 test('janela Propostas e lista da revisão sem textos sobrepostos', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Control+Shift+7');
