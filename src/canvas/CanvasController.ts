@@ -16,8 +16,10 @@ import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
 import { locale, semanticText } from '../store/settings';
+import { textMeasurer } from '../store/textMeasure';
 import { resolveSelection, type EditorUi } from '../store/ui';
 import {
+  COMPONENT_KEYS,
   IMAGE_KEYS,
   OVERLAY_KEYS,
   cancelFrame,
@@ -30,6 +32,8 @@ import {
   type ImagePreview,
   type InteractionState,
 } from './frame';
+import { ComponentLayerRenderer } from './components/componentLayer';
+import { konvaMeasurer } from './components/konvaMeasurer';
 import { imageAt, imagesBounds } from './imageGeometry';
 import { watchSpaceKey } from './input/keyboard';
 import { PointerInput } from './input/pointer';
@@ -47,6 +51,16 @@ import { ViewportController } from './viewportController';
 import { sameCursor, type CanvasViewState } from './viewState';
 
 export type { DropTarget } from './frame';
+
+/** Mesmas imagens com as mesmas posições (por referência): zoom e pan não mudam isso. */
+function samePlacements(
+  a: ReadonlyMap<string, Placement>,
+  b: ReadonlyMap<string, Placement>,
+): boolean {
+  if (a.size !== b.size) return false;
+  for (const [id, placement] of a) if (b.get(id) !== placement) return false;
+  return true;
+}
 
 export interface CanvasControllerOptions {
   readonly container: HTMLDivElement;
@@ -82,6 +96,7 @@ export class CanvasController {
     preview: signal<ImagePreview | null>(null),
     draft: signal<Draft | null>(null),
     hoverLock: signal<HoverLock | null>(null),
+    hoverMarking: signal<string | null>(null),
   };
   private readonly dropTarget = signal<DropTarget>(null);
   private readonly tokens = signal<CanvasTokens>(readCanvasTokens());
@@ -90,6 +105,11 @@ export class CanvasController {
   private readonly view: ViewportController;
   private readonly pointer: PointerInput;
   private readonly images: ImageRenderer;
+  /** Camada dos desenhos de componentes, entre as imagens e as marcações. */
+  private readonly componentGroup: Konva.Layer;
+  private componentLayer: ComponentLayerRenderer;
+  /** Cores com que `componentLayer` foi criado: mudou o tema, ele é refeito. */
+  private componentPalette: CanvasTokens['component'];
   private readonly markings: MarkingRenderer;
   private readonly overlay: OverlayRenderer;
   private readonly reviewLayer: ReviewRenderer;
@@ -144,6 +164,15 @@ export class CanvasController {
       this.derived.annotationsByMarking.value,
     );
   });
+  /**
+   * Desenhos dos componentes do projeto desenhado: na prévia de um gesto só a marcação
+   * arrastada é reinstanciada, e na visão Proposto são os valores propostos. O cache é o do
+   * derivado (as demais marcações mantêm o mesmo objeto).
+   */
+  private readonly drawings = computed(() =>
+    this.derived.drawingsOf(this.drawnProject.value),
+  );
+
   /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
   private readonly frame = computed((): Frame => ({
     project: this.drawnProject.value,
@@ -153,6 +182,7 @@ export class CanvasController {
     draft: this.state.draft.value,
     dropTarget: this.dropTarget.value,
     hoverLock: this.state.hoverLock.value,
+    hoverMarking: this.state.hoverMarking.value,
     tokens: this.tokens.value,
     size: this.view.size.value,
     viewport: this.view.viewport.value,
@@ -165,6 +195,8 @@ export class CanvasController {
     incomplete: this.derived.incompleteMarkings.value,
     visibility: this.derived.markingVisibility.value,
     card: this.cards.value,
+    drawings: this.drawings.value,
+    drawn: this.derived.drawnMarkings.value,
     review: this.reviewCanvas.value,
   }));
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
@@ -172,8 +204,10 @@ export class CanvasController {
   /** Placements do último quadro (com a prévia do gesto aplicada). */
   private placements: ReadonlyMap<string, Placement> = new Map();
   private frameRequest: number | null = null;
+  private destroyed = false;
   /** Imagens com bitmap pronto no último quadro e o que já foi publicado no container. */
   private readyImages = 0;
+  private drawnComponents = 0;
   private published = '';
   private readonly cleanups: (() => void)[] = [];
 
@@ -186,12 +220,19 @@ export class CanvasController {
     this.viewState = options.view;
     this.review = options.review ?? null;
 
+    // Os desenhos medem texto com o Konva (o layout bate com o que é pintado) e se redesenham
+    // quando o medidor muda; o modelo e o store nunca importam o Konva.
+    if (textMeasurer.peek() !== konvaMeasurer) textMeasurer.value = konvaMeasurer;
+
     this.stage = new Konva.Stage({ container, width: 1, height: 1 });
     const imageLayer = new Konva.Layer({ listening: false });
+    this.componentGroup = new Konva.Layer({ listening: false });
     const markingLayer = new Konva.Layer({ listening: false });
     const overlayLayer = new Konva.Layer({ listening: false });
-    this.stage.add(imageLayer, markingLayer, overlayLayer);
+    this.stage.add(imageLayer, this.componentGroup, markingLayer, overlayLayer);
     this.images = new ImageRenderer(imageLayer);
+    this.componentPalette = this.tokens.peek().component;
+    this.componentLayer = this.newComponentLayer(this.componentPalette);
     this.markings = new MarkingRenderer(markingLayer);
     this.overlay = new OverlayRenderer(overlayLayer, container);
     // As marcas da revisão ficam por baixo das sobreposições (seleção, alças).
@@ -313,9 +354,21 @@ export class CanvasController {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.pointer.destroy();
     for (const cleanup of this.cleanups.splice(0)) cleanup();
+    this.componentLayer.destroy();
     this.stage.destroy();
+  }
+
+  private newComponentLayer(palette: CanvasTokens['component']): ComponentLayerRenderer {
+    return new ComponentLayerRenderer(this.componentGroup, {
+      placeholder: palette,
+      // Uma imagem embutida terminou de carregar: pede um quadro (o nó já está atualizado).
+      onImageLoaded: () => {
+        if (!this.destroyed) this.requestRender();
+      },
+    });
   }
 
   /**
@@ -360,6 +413,7 @@ export class CanvasController {
         this.viewState.cursor.value = next;
       }
       this.updateHoverLock(image ? image.id : null, pixel);
+      this.updateHoverMarking(image ? image.id : null, pixel);
     });
   }
 
@@ -392,12 +446,36 @@ export class CanvasController {
     }
   }
 
+  /**
+   * Marcação desenhada sob o mouse (a borda dela aparece): a mais interna sob o ponto entre as
+   * selecionáveis, se for uma das desenhadas. Nada é calculado sem marcações desenhadas, e o
+   * signal só é escrito quando o resultado muda.
+   */
+  private updateHoverMarking(imageId: string | null, pixel: Point | null): void {
+    const project = this.drawnProject.peek();
+    const drawn = this.derived.drawnMarkings.peek();
+    let next: string | null = null;
+    if (project && imageId !== null && pixel && drawn.size > 0) {
+      const top = markingChainAt(
+        selectableMarkings(project, this.derived.markingVisibility.peek()),
+        imageId,
+        pixel,
+      )[0];
+      if (top && drawn.has(top.id)) next = top.id;
+    }
+    if (this.state.hoverMarking.peek() !== next) this.state.hoverMarking.value = next;
+  }
+
   private loadBitmaps(): void {
     const images = this.store.project.value?.images ?? [];
     // Na revisão, também as imagens novas ou trocadas que esperam em `proposals/`.
     const drawn = this.drawnProject.value?.images ?? [];
     untracked(() => {
-      const files = new Set([...images, ...drawn].map((image) => image.file));
+      // Tela em branco (sem arquivo) não tem bitmap.
+      const files = new Set<string>();
+      for (const image of [...images, ...drawn]) {
+        if (image.file !== null) files.add(image.file);
+      }
       for (const file of files) this.display.ensure(file);
       // Arquivos que saíram do projeto (imagem excluída ou trocada) não ficam na memória.
       this.display.retain(files);
@@ -427,11 +505,20 @@ export class CanvasController {
     this.stage.position({ x: v.x, y: v.y });
     this.stage.scale({ x: v.scale, y: v.scale });
 
+    let placementsChanged = last === null;
     if (scaleChanged || !sameFrame(last, frame, IMAGE_KEYS)) {
-      this.placements = this.images.render(frame);
+      const next = this.images.render(frame);
+      placementsChanged ||= !samePlacements(this.placements, next);
+      this.placements = next;
       this.readyImages =
-        frame.project?.images.filter((i) => frame.bitmaps.get(i.file)?.status === 'ready')
-          .length ?? 0;
+        frame.project?.images.filter(
+          (i) => i.file === null || frame.bitmaps.get(i.file)?.status === 'ready',
+        ).length ?? 0;
+    }
+    // Os desenhos dos componentes só se refazem quando eles, o conjunto visível, as posições
+    // das imagens ou o tema mudam: pan e zoom não passam por aqui.
+    if (placementsChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
+      this.renderComponents(frame);
     }
     this.markings.render(frame, this.placements);
     this.reviewLayer.render(frame, this.placements);
@@ -449,12 +536,29 @@ export class CanvasController {
     this.stage.batchDraw();
     // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
     // imagens com bitmap já desenhados (o DOM só é tocado quando eles mudam).
-    const drawn = `${this.view.fits}:${this.readyImages}`;
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
       host.dataset.fits = String(this.view.fits);
       host.dataset.images = String(this.readyImages);
+      host.dataset.components = String(this.drawnComponents);
     }
+  }
+
+  /** Desenha os componentes das marcações à vista (um nó por marcação; só o mudado é refeito). */
+  private renderComponents(frame: Frame): void {
+    if (frame.tokens.component !== this.componentPalette) {
+      // As cores do reservado são fixadas ao montar o desenho: tema novo, desenhos novos.
+      this.componentLayer.destroy();
+      this.componentPalette = frame.tokens.component;
+      this.componentLayer = this.newComponentLayer(this.componentPalette);
+    }
+    this.componentLayer.render(
+      frame.drawings,
+      (drawing) => frame.drawn.has(drawing.markingId),
+      this.placements,
+    );
+    this.drawnComponents = this.componentLayer.size;
   }
 }

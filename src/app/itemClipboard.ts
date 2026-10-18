@@ -5,6 +5,7 @@ import { t } from '../i18n';
 import {
   ITEM_CLIPBOARD_MIME,
   formatRef,
+  isBlankImage,
   itemClipboardData,
   refImageLabel,
   shortCode,
@@ -40,6 +41,18 @@ export function focusedAnnotationTarget(): CopyTarget | null {
   return id ? { kind: 'a', id } : null;
 }
 
+/** Nome da imagem na referência: o dado ou o do arquivo; tela em branco sem nome, o texto da interface. */
+function imageRefLabel(image: Parameters<typeof refImageLabel>[0]): string {
+  return refImageLabel(image) ?? t('image.blankUntitled');
+}
+
+/** "Copiar recorte" só existe para marcação de imagem com arquivo (não de tela em branco). */
+export function canCopyCrop(project: Project | null, markingId: string): boolean {
+  const marking = project?.markings.find((m) => m.id === markingId);
+  const image = marking && project?.images.find((i) => i.id === marking.imageId);
+  return image !== undefined && !isBlankImage(image);
+}
+
 /** Caminho legível da referência: `Imagem › Marcação › Anotação`. */
 function readablePath(project: Project, target: CopyTarget): string | null {
   const separator = t('marking.pathSeparator');
@@ -47,20 +60,20 @@ function readablePath(project: Project, target: CopyTarget): string | null {
   const markingOf = (id: string) => project.markings.find((m) => m.id === id);
   if (target.kind === 'i') {
     const image = imageOf(target.id);
-    return image ? refImageLabel(image) : null;
+    return image ? imageRefLabel(image) : null;
   }
   if (target.kind === 'm') {
     const marking = markingOf(target.id);
     const image = marking && imageOf(marking.imageId);
     if (!marking || !image) return null;
-    return [refImageLabel(image), markingPath(project, marking)].join(separator);
+    return [imageRefLabel(image), markingPath(project, marking)].join(separator);
   }
   const annotation = project.annotations.find((a) => a.id === target.id);
   const owner = annotation && markingOf(annotation.markingId);
   const image = owner && imageOf(owner.imageId);
   if (!annotation || !owner || !image) return null;
   return [
-    refImageLabel(image),
+    imageRefLabel(image),
     markingPath(project, owner),
     annotationLabel(annotation),
   ].join(separator);
@@ -116,10 +129,12 @@ export async function copyCrop(
   const project = store.committed.peek();
   const marking = project?.markings.find((m) => m.id === markingId);
   const image = marking && project?.images.find((i) => i.id === marking.imageId);
-  if (!marking || !image) return false;
+  // Tela em branco não tem arquivo para recortar.
+  if (!marking || !image || image.file === null) return false;
+  const file = image.file;
   const png = (async () => {
-    const data = await session.readImage(image.file);
-    if (!data) throw new Error(`image file missing: ${image.file}`);
+    const data = await session.readImage(file);
+    if (!data) throw new Error(`image file missing: ${file}`);
     return cropToPng(data, marking.rect);
   })();
   // O erro é tratado abaixo; sem isto uma recusa do `write` deixaria a promessa solta.

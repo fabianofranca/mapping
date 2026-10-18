@@ -1,6 +1,8 @@
 import {
   ModelError,
   addAnnotation,
+  addBlankImage,
+  addComponentMarking,
   addImage,
   addLayer,
   addTableRow,
@@ -9,8 +11,16 @@ import {
   annotationShortLabel,
   applySpecialization,
   checkSpecApply,
+  componentMinSize,
+  componentPlacement,
+  componentTypes,
+  approximateMeasurer,
   confirmMarkingReview,
   createMarking,
+  innermostContaining,
+  reorderMarking,
+  setBlankImage,
+  siblingPosition,
   extensionForMime,
   fieldOf,
   imageDeletionImpact,
@@ -220,11 +230,18 @@ class Batch {
   async run(operations: readonly Operation[]): Promise<BatchResult> {
     for (const [index, op] of operations.entries()) {
       const alias = 'as' in op ? op.as : undefined;
+      // Apelido da segunda criação da operação (a anotação de create_marking).
+      const secondAlias = op.op === 'create_marking' ? op.annotationAs : undefined;
       try {
-        if (
-          alias !== undefined &&
-          (this.aliases.has(alias) || this.failedAliases.has(alias))
-        ) {
+        for (const name of [alias, secondAlias]) {
+          if (
+            name !== undefined &&
+            (this.aliases.has(name) || this.failedAliases.has(name))
+          ) {
+            throw new ToolError('duplicate-alias', `apelido repetido no lote: ${name}`);
+          }
+        }
+        if (alias !== undefined && alias === secondAlias) {
           throw new ToolError('duplicate-alias', `apelido repetido no lote: ${alias}`);
         }
         const step = await this.apply(op);
@@ -234,14 +251,17 @@ class Batch {
         for (const [name, target] of step.rowAliases ?? [])
           this.aliases.set(name, target);
         for (const [n, item] of (step.created ?? []).entries()) {
-          // O apelido da operação vale para o item principal (o primeiro criado).
-          const named = n === 0 ? alias : undefined;
+          // O apelido da operação vale para o item principal (o primeiro criado); o segundo,
+          // quando a operação cria dois (marcação e anotação), tem o dele.
+          const named = n === 0 ? alias : n === 1 ? secondAlias : undefined;
           if (named !== undefined) this.aliases.set(named, item);
           this.created.push({ index, ...item, ...(named ? { alias: named } : {}) });
         }
       } catch (error) {
-        if (alias !== undefined && !this.aliases.has(alias)) {
-          this.failedAliases.set(alias, index);
+        for (const name of [alias, secondAlias]) {
+          if (name !== undefined && !this.aliases.has(name)) {
+            this.failedAliases.set(name, index);
+          }
         }
         this.errors.push(this.describeError(index, op.op, error));
       }
@@ -841,6 +861,27 @@ class Batch {
           imageFiles: [[image.file, image.data]],
         };
       }
+      case 'add_blank_image': {
+        const id = crypto.randomUUID();
+        let project = addBlankImage(p, {
+          id,
+          ...(op.name !== undefined ? { name: op.name } : {}),
+          width: op.width,
+          height: op.height,
+          background: op.background,
+          ...(op.center ? { center: op.center } : {}),
+        });
+        if (op.source !== undefined) {
+          project = setImageSource(project, id, toSource(op.source));
+        }
+        return {
+          project,
+          description: `Adicionar a tela em branco "${this.refs(project).imageLabel(id)}" (${op.width}×${op.height} px, fundo ${op.background.toUpperCase()}${
+            op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
+          })`,
+          created: [{ kind: 'i', id }],
+        };
+      }
       case 'update_image': {
         const id = this.item(op.image, 'i');
         let project = p;
@@ -879,6 +920,22 @@ class Batch {
               : 'destrancar todas as marcações',
           );
         }
+        if (
+          op.background !== undefined ||
+          op.width !== undefined ||
+          op.height !== undefined
+        ) {
+          // Só a tela em branco: numa foto o modelo recusa com `not-blank`.
+          project = setBlankImage(project, id, {
+            ...(op.background !== undefined ? { background: op.background } : {}),
+            ...(op.width !== undefined ? { width: op.width } : {}),
+            ...(op.height !== undefined ? { height: op.height } : {}),
+          });
+          const image = projectIndex(project).images.get(id)!;
+          changes.push(
+            `tela em branco ${image.width}×${image.height} px, fundo ${image.background}`,
+          );
+        }
         if (op.locked === true) {
           project = setImageLocked(project, id, true);
           changes.push('trancar');
@@ -915,31 +972,14 @@ class Batch {
           description: `Excluir a imagem "${this.refs(p).imageLabel(id)}" (${impact.markings} marcação(ões), ${impact.annotations} anotação(ões))`,
         };
       }
-      case 'create_marking': {
-        const imageId = this.item(op.image, 'i');
-        const id = crypto.randomUUID();
-        let project = createMarking(p, {
-          id,
-          imageId,
-          rect: op.rect,
-          name: op.name ?? null,
-        });
-        if (op.parent !== undefined) {
-          const parentId = op.parent === null ? null : this.item(op.parent, 'm');
-          if (projectIndex(project).markings.get(id)!.parentId !== parentId) {
-            project = setMarkingParent(project, id, parentId);
-          }
-        }
-        if (op.source !== undefined) {
-          project = setMarkingSource(project, id, toSource(op.source));
-        }
-        const { rect } = op;
+      case 'create_marking':
+        return this.createMarkingOp(op);
+      case 'move_marking': {
+        const id = this.item(op.marking, 'm');
+        const before = siblingPosition(p, id);
         return {
-          project,
-          description: `Criar a marcação "${this.markingLabel(project, id)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
-            op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
-          })`,
-          created: [{ kind: 'm', id }],
+          project: reorderMarking(p, id, op.index),
+          description: `Mover a marcação "${this.markingLabel(p, id)}" para a posição ${op.index} entre as ${before.count} irmãs (0 = por baixo)`,
         };
       }
       case 'update_marking': {
@@ -973,7 +1013,11 @@ class Batch {
           changes.push(`mover (${op.move.dx}, ${op.move.dy}) com as filhas`);
         }
         if (op.rect !== undefined) {
-          project = setMarkingRect(project, id, op.rect);
+          const { rect } = op;
+          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          project = this.checkMinSize(minSize, `"${label}"`, () =>
+            setMarkingRect(project, id, rect, minSize ? { minSize } : undefined),
+          );
           const r = op.rect;
           changes.push(`retângulo x ${r.x}, y ${r.y}, ${r.width}×${r.height}`);
         }
@@ -1019,6 +1063,197 @@ class Batch {
     }
   }
 
+  /** Executa `run` e, se o retângulo ficou abaixo do mínimo do componente, diz qual é o mínimo. */
+  private checkMinSize<T>(
+    minSize: { width: number; height: number } | null,
+    what: string,
+    run: () => T,
+  ): T {
+    try {
+      return run();
+    } catch (error) {
+      if (error instanceof ModelError && error.code === 'rect-too-small' && minSize) {
+        throw new ToolError(
+          error.code,
+          `retângulo menor que o tamanho mínimo do componente de ${what}: ${minSize.width}×${minSize.height} px`,
+          { minSize: { width: minSize.width, height: minSize.height } },
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * `create_marking`: a marcação e, se pedido, a anotação tipada. Quando o tipo tem componente
+   * (no catálogo lido ao carregar o projeto), o `rect` pode faltar (tamanho inicial do
+   * componente) e vale o `minSize`; a anotação nasce como na paleta da app (`preview`), com os
+   * `values` por cima. O servidor nunca arruma: os retângulos são os que o agente informou.
+   */
+  private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
+    const p = this.p;
+    const catalog = this.loaded.catalog;
+    const annotation = op.annotation;
+    if (annotation === undefined && op.annotationAs !== undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`annotationAs` só vale com `annotation` na mesma operação',
+      );
+    }
+    const imageId = this.item(op.image, 'i');
+    const markingId = crypto.randomUUID();
+    const parentGiven = op.parent !== undefined;
+    const parentId =
+      op.parent === undefined || op.parent === null ? null : this.item(op.parent, 'm');
+
+    const typeRef = annotation ? this.type(annotation.type) : null;
+    const component =
+      typeRef === null
+        ? null
+        : (componentTypes(p, catalog).find(
+            (t) => t.specId === typeRef.specId && t.typeId === typeRef.typeId,
+          ) ?? null);
+    if (op.rect === undefined && component === null) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`rect` é obrigatório (só um tipo de anotação com componente dispensa o retângulo: veja list_components)',
+      );
+    }
+    const minSize = component?.component.minSize ?? null;
+    const rowAliases: [string, AliasTarget][] = [];
+    let project: Project;
+    let annotationId: string | null = null;
+
+    if (annotation && typeRef !== null && component !== null) {
+      const newAnnotationId = crypto.randomUUID();
+      annotationId = newAnnotationId;
+      // Sem `rect` e sem `parent`: primeiro nível, no centro da imagem; com `rect`, a mais
+      // interna que o contém (como na app).
+      const effectiveParent = parentGiven
+        ? parentId
+        : op.rect === undefined
+          ? null
+          : (innermostContaining(p, imageId, op.rect)?.id ?? null);
+      const rect =
+        op.rect ??
+        componentPlacement(
+          p,
+          catalog,
+          { imageId, parentId: effectiveParent, ...typeRef },
+          approximateMeasurer,
+        );
+      if (annotation.layer !== undefined) {
+        const layer = this.layer(annotation.layer);
+        if (
+          layer.spec?.specId !== typeRef.specId ||
+          layer.spec.layerId !== component.layerId
+        ) {
+          throw new ModelError('type-not-in-layer');
+        }
+      }
+      project = this.checkMinSize(minSize, `"${typeRef.specId}/${typeRef.typeId}"`, () =>
+        addComponentMarking(
+          p,
+          catalog,
+          {
+            markingId,
+            annotationId: newAnnotationId,
+            imageId,
+            parentId: effectiveParent,
+            ...typeRef,
+            rect,
+            name: op.name ?? null,
+          },
+          approximateMeasurer,
+        ),
+      );
+      if (annotation.name !== undefined) {
+        project = renameAnnotation(project, newAnnotationId, annotation.name);
+      }
+      if (annotation.values !== undefined) {
+        project = this.setValues(project, newAnnotationId, annotation.values, rowAliases);
+      }
+    } else {
+      project = createMarking(p, {
+        id: markingId,
+        imageId,
+        rect: op.rect!,
+        name: op.name ?? null,
+      });
+      if (
+        parentGiven &&
+        projectIndex(project).markings.get(markingId)!.parentId !== parentId
+      ) {
+        project = setMarkingParent(project, markingId, parentId);
+      }
+      if (annotation && typeRef !== null) {
+        annotationId = crypto.randomUUID();
+        project = this.typedAnnotation(project, annotationId, markingId, {
+          type: typeRef,
+          layer: annotation.layer,
+          name: annotation.name,
+          values: annotation.values,
+          ownerId: null,
+          rowAliases,
+        });
+      }
+    }
+    if (op.source !== undefined) {
+      project = setMarkingSource(project, markingId, toSource(op.source));
+    }
+    const { rect } = projectIndex(project).markings.get(markingId)!;
+    return {
+      project,
+      description: `Criar a marcação "${this.markingLabel(project, markingId)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
+        op.rect === undefined ? ', tamanho inicial do componente' : ''
+      }${op.source ? `, ${sourceLabel(toSource(op.source))}` : ''})${
+        typeRef ? ` com a anotação ${typeRef.specId}/${typeRef.typeId}` : ''
+      }`,
+      created: [
+        { kind: 'm', id: markingId },
+        ...(annotationId ? [{ kind: 'a' as const, id: annotationId }] : []),
+      ],
+      rowAliases,
+    };
+  }
+
+  /** Anotação tipada nova: camada do tipo (ou a informada), dona e valores campo a campo. */
+  private typedAnnotation(
+    p: Project,
+    id: string,
+    markingId: string,
+    args: {
+      readonly type: AnnotationTypeRef;
+      readonly layer: string | undefined;
+      readonly name: string | null | undefined;
+      readonly values: Record<string, JsonValue> | undefined;
+      readonly ownerId: string | null;
+      readonly rowAliases: [string, AliasTarget][];
+    },
+  ): Project {
+    const { type } = args;
+    const typeLayer = projectIndex(p).types.get(typeKey(type.specId, type.typeId))!.layer;
+    const layer =
+      args.layer !== undefined
+        ? this.layer(args.layer)
+        : (projectLayerFor(p, type.specId, typeLayer.id) ??
+          fail(
+            'not-found',
+            `a camada "${typeLayer.name}" da especialização não está no projeto`,
+          ));
+    let project = addTypedAnnotation(p, {
+      id,
+      markingId,
+      layerId: layer.id,
+      type,
+      name: args.name ?? null,
+      parentAnnotationId: args.ownerId,
+    });
+    if (args.values !== undefined) {
+      project = this.setValues(project, id, args.values, args.rowAliases);
+    }
+    return project;
+  }
+
   private createAnnotation(op: Extract<Operation, { op: 'create_annotation' }>): Step {
     const p = this.p;
     const markingId = this.item(op.marking, 'm');
@@ -1031,28 +1266,14 @@ class Batch {
       if (op.entries !== undefined) {
         throw new ModelError('typed-annotation');
       }
-      const type = this.type(op.type);
-      const typeLayer = projectIndex(p).types.get(
-        typeKey(type.specId, type.typeId),
-      )!.layer;
-      const layer =
-        op.layer !== undefined
-          ? this.layer(op.layer)
-          : (projectLayerFor(p, type.specId, typeLayer.id) ??
-            fail(
-              'not-found',
-              `a camada "${typeLayer.name}" da especialização não está no projeto`,
-            ));
-      project = addTypedAnnotation(p, {
-        id,
-        markingId,
-        layerId: layer.id,
-        type,
-        name: op.name ?? null,
-        parentAnnotationId: ownerId,
+      project = this.typedAnnotation(p, id, markingId, {
+        type: this.type(op.type),
+        layer: op.layer,
+        name: op.name,
+        values: op.values,
+        ownerId,
+        rowAliases,
       });
-      if (op.values !== undefined)
-        project = this.setValues(project, id, op.values, rowAliases);
     } else {
       if (op.layer === undefined) {
         throw new ToolError(

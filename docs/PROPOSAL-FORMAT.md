@@ -18,6 +18,7 @@ meu-projeto/
 ```
 
 - Uma pasta por proposta, `proposals/<id>/`, com o `proposal.json`. O id só usa `[A-Za-z0-9._-]` e não começa com ponto (vira nome de pasta).
+- Tela em branco (schema v10): a criação traz a imagem inteira com `file: null` e `background`, sem arquivo para mover; `background` e `size` só existem como campos de `update` quando a imagem é tela em branco nos dois lados (na foto, o tamanho vem da troca de arquivo, campo `file`).
 - Imagem nova ou trocada: a mudança traz o caminho definitivo (`images/checkout.webp`) e o arquivo espera em `proposals/<id>/` mais esse caminho (`proposals/<id>/images/checkout.webp`). Ao aplicar, ele é movido para o lugar definitivo.
 - As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado.
 
@@ -115,8 +116,8 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 
 | Entidade         | Campos (`field`)                                                                                                                                                                         |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `placement`, `markingColor`, `locked`, `source`                                                                                     |
-| `marking`        | `name`, `rect`, `parentId`, `imageId`, `locked`, `source`                                                                                                                                |
+| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `background` (cor `#RRGGBB`) e `size` (`{ width, height }`) só na tela em branco, `placement`, `markingColor`, `locked`, `source`   |
+| `marking`        | `name`, `rect`, `parentId`, `imageId`, `locked`, `source`, `position` (índice entre as irmãs)                                                                                            |
 | `annotation`     | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type` |
 | `layer`          | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                    |
 | `specialization` | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                               |
@@ -125,7 +126,8 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 - `values.<key>` ausente vale `null`. Uma tabela (`table`) muda inteira, numa mudança só.
 - `type` é a **troca de tipo** de uma anotação (ex: tipada convertida em livre ao remover uma especialização): `{ type, values, entries }` mudam juntos, numa mudança só, sem `values.*` nem `entries.*` separados.
 - `position` só aparece nas camadas que mudam de **ordem relativa** (criar ou remover outra camada não gera `position`). Numa camada criada pela própria proposta, `from` é `null`.
-- Não viram mudança: a ordem dos pares e das marcações dentro da lista, `needsReview` (a revisão é a própria conferência; a criação leva o valor proposto) e `project.updatedAt`.
+- `position` da marcação é o índice entre as **irmãs** (mesma imagem e mesmo `parentId`; 0 = a primeira, desenhada por baixo) e também só aparece quando a ordem relativa das irmãs muda: criar ou remover outra marcação não gera `position`, e a marcação criada que já nasce na ordem do projeto proposto (no fim, como a aplicação acrescenta) também não. Se a criada precisa ficar antes de alguma irmã, ela leva `position` com `from` `null`. Aplicar reordena como a ação de reordenar da app (índice preso ao intervalo válido) e há conflito se o `from` não bate com a posição atual.
+- Não viram mudança: a ordem dos pares dentro da lista, `needsReview` (a revisão é a própria conferência; a criação leva o valor proposto) e `project.updatedAt`.
 - Ordem das mudanças: grupo Projeto (especializações, repositórios, camadas), imagens, marcações e anotações; em cada coleção, a ordem do projeto proposto e, no fim, as removidas. Aplicar tudo acrescenta as entidades criadas na mesma ordem do projeto proposto.
 
 ## Revisão

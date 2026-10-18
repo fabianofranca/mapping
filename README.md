@@ -52,10 +52,12 @@ O E2E roda no CI. Localmente, rode `npm run build` e informe o Chrome com `PLAYW
 
 ## Como publicar
 
-Três workflows em `.github/workflows/`:
+Os workflows em `.github/workflows/`:
 
 - **`ci.yml`**: em todo PR e em push de branches (menos a `main`): o job `epic` confere a origem (PR para a `main` só a partir de `epic/*` ou do Dependabot; check obrigatório no ruleset da `main`), e depois lint, typecheck, testes com cobertura, orçamentos de desempenho, build (app e servidor MCP), orçamento de tamanho do `dist/index.html` (1,5 MB, valor em `INDEX_HTML_MAX_BYTES`; o tamanho aparece no resumo do job) e E2E (jobs `check` e `e2e`). O Playwright repete uma vez no CI, com trace só na repetição.
+- **`mcp-prerelease.yml`**: pre-releases do servidor MCP para testar antes da estável: um snapshot por PR com base em `epic/**` (`mcp-snapshot-pr<N>`, apagado quando o PR fecha) e uma release candidate no merge do PR da última fase do épico, o que leva o rótulo `mcp-rc` (`mcp-v<versão>-rc.<n>`, apagadas quando a estável sai); ver [`docs/MCP.md`](docs/MCP.md).
 - **`mcp-release.yml`**: ao criar uma tag `mcp-v<versão>` (a versão precisa ser a de `mcp/version.ts`), gera `mapping-mcp.js` e o anexa à Release do GitHub, criada antes pela tela ou não; também pode ser rodado à mão (Run workflow) para uma tag que já existe (ver [`docs/MCP.md`](docs/MCP.md)).
+- **`preview-on-pr.yml`**: em todo PR aberto ou atualizado (do próprio repositório), dispara o `deploy.yml` para o branch do PR, que passa a ocupar o `/preview/`.
 - **`deploy.yml`**: um push na `main` publica a versão principal no GitHub Pages (em `/`). Antes, chama o `ci.yml` inteiro (`workflow_call`) para a `main` e, no preview, também para o branch: se qualquer validação falhar, nada é publicado.
 - **`dependabot.yml`**: atualizações semanais de npm e GitHub Actions, com minor e patch agrupados num PR por ecossistema.
 
@@ -63,7 +65,7 @@ O `index.html` avulso também sai como artefato do workflow, para abrir por `fil
 
 ## Como usar o preview de um branch
 
-Para ver um branch publicado antes do merge: em **Actions → Deploy → Run workflow**, escolha o branch em "Use workflow from" (ou digite o nome no campo `branch`). O workflow publica:
+Todo PR aberto ou atualizado publica o branch dele em `/preview/` sozinho (`preview-on-pr.yml` dispara o Deploy); há um preview só, o do último PR atualizado. Para publicar outro branch à mão: em **Actions → Deploy → Run workflow**, escolha o branch em "Use workflow from" (ou digite o nome no campo `branch`). O workflow publica:
 
 - a `main`, intacta, em `/`;
 - o branch em **`/preview/`**, construído com `VITE_CHANNEL=preview`.

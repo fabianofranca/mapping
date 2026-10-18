@@ -4,7 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { USAGE, UsageError, parseArgs } from './args';
 import { MAX_MESSAGE_BYTES } from './image/formats';
 import { createServer } from './server';
-import { SERVER_VERSION } from './version';
+import { BUILD_VERSION } from './version';
 
 /** Erro sem tratamento: uma linha com o prefixo do servidor no stderr e, abaixo, a pilha. */
 function report(error: unknown): void {
@@ -35,7 +35,7 @@ async function main(): Promise<void> {
     return;
   }
   if (options.version) {
-    process.stdout.write(`${SERVER_VERSION}\n`);
+    process.stdout.write(`${BUILD_VERSION}\n`);
     return;
   }
   keepStdoutForProtocol();

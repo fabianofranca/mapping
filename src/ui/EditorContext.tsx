@@ -45,7 +45,12 @@ export function createEditorContextValue(
     actions,
     display,
     ui,
-    derived: createEditorDerived(store, ui, review.derived.shownProject),
+    derived: createEditorDerived(
+      store,
+      ui,
+      review.derived.shownProject,
+      session.components,
+    ),
     review,
     canvas: { current: null },
     view: createCanvasViewState(),

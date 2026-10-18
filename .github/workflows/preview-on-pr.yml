@@ -1,0 +1,46 @@
+name: Preview do PR
+
+# Todo PR aberto ou atualizado publica o branch dele em `/preview/`, sem
+# `workflow_dispatch` manual. Este workflow só dispara o Deploy
+# (`gh workflow run deploy.yml --ref main -f branch=<branch do PR>`); quem
+# publica é o `deploy.yml`, que roda na `main` (o ambiente `github-pages` costuma
+# aceitar deploy só a partir dela) e passa pelo ci.yml inteiro antes.
+#
+# O `GITHUB_TOKEN` pode disparar `workflow_dispatch` (exceção documentada do GitHub).
+# PR de fork fica de fora: o token dele não tem escrita.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  actions: write
+
+concurrency:
+  group: preview-on-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dispatch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispara o Deploy do branch do PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main -f branch="$HEAD_REF"
+
+      - name: Links no resumo
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          repo="${GITHUB_REPOSITORY#*/}"
+          {
+            echo "Deploy disparado para o branch \`$HEAD_REF\`."
+            echo
+            echo "- Preview: https://${OWNER}.github.io/${repo}/preview/"
+            echo "- Execuções do Deploy: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/deploy.yml"
+            echo
+            echo "Há um preview só: o último PR atualizado ganha o \`/preview/\`."
+          } >> "$GITHUB_STEP_SUMMARY"

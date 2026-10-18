@@ -27,6 +27,7 @@ const META: Readonly<Record<ToolWindowId, ToolWindowMeta>> = {
   incomplete: { icon: 'checklist', title: () => t('incomplete.title') },
   diagnostics: { icon: 'diagnostics', title: () => t('diagnostics.title') },
   proposals: { icon: 'proposal', title: () => t('proposals.title') },
+  library: { icon: 'library', title: () => t('library.window.title') },
 };
 
 export function toolWindowMeta(id: ToolWindowId): ToolWindowMeta {

@@ -315,9 +315,14 @@
 }
 
 .tool-window-tabs .tabs {
+  flex: 1;
+  min-width: 0;
   gap: var(--space-0-5);
   margin: 0;
   border-bottom: none;
+  /* Janela estreita: só as abas rolam, nunca passam sob as ações do cabeçalho. */
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .tool-window-tabs .tab {

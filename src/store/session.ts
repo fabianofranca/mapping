@@ -1,6 +1,7 @@
 import { effect, signal, type ReadonlySignal } from '@preact/signals';
 import {
   canReplaceImage,
+  imageFileNames,
   isSameAspect,
   isTextPackageFile,
   packageDirOf,
@@ -24,6 +25,7 @@ import type { LoadedProposals } from '../storage/loadProposals';
 import { backupFileName, imageMimeType, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
 import { reportError } from '../utils/report';
+import { createComponentLibrary, type ComponentLibrary } from './componentLibrary';
 import { createProjectStore, type ProjectStore } from './history';
 import {
   createProjectActions,
@@ -174,6 +176,11 @@ export interface ProjectSession {
    * gravação mexe em `specs/<id>/`; nunca bloqueia a abertura nem muda `pendingSave`.
    */
   readonly libraryIssues: ReadonlySignal<LibraryIssues>;
+  /**
+   * Componentes e fontes das especializações aplicadas (etapa Biblioteca, B3): estado em memória
+   * da sessão, nunca do projeto. Lê `specs/<id>/` e as cópias de pacote ainda não gravadas.
+   */
+  readonly components: ComponentLibrary;
   /** Versão de origem, depois que o backup do original pré-migração foi gravado. */
   readonly backupSaved: ReadonlySignal<number | null>;
   /** Alteração externa que impediu uma gravação; `null` quando não há decisão pendente. */
@@ -290,7 +297,12 @@ const packageKey = (s: { readonly id: string; readonly version: number }): strin
 export function openSession(options: SessionOptions): ProjectSession {
   const { storage, prepareImage } = options;
   const store = createProjectStore({ now: options.now });
-  const baseActions = createProjectActions(store, { newId: options.newId });
+  // Os componentes são lidos mais abaixo (precisam do cache de pacotes); as actions só pedem
+  // o catálogo na hora de usar.
+  const baseActions = createProjectActions(store, {
+    newId: options.newId,
+    components: () => components.catalog.peek(),
+  });
   store.load(options.project, { readOnly: options.readOnly });
   const now = options.now ?? (() => new Date().toISOString());
   const proposals = createProposalStore({
@@ -301,7 +313,7 @@ export function openSession(options: SessionOptions): ProjectSession {
   });
 
   // Arquivos de imagem que a sessão sabe estarem gravados e referenciados.
-  const stored = new Set(options.project.images.map((i) => i.file));
+  const stored = new Set(imageFileNames(options.project.images));
   // Arquivos de imagem que a sessão gravou e que nenhum `mapping.json` gravado cita ainda: se
   // o projeto for recarregado do disco antes de a gravação citá-los, são órfãos e saem.
   const pendingFiles = new Set<string>();
@@ -318,6 +330,12 @@ export function openSession(options: SessionOptions): ProjectSession {
   const writtenPackages = new Map<string, WrittenPackage>();
   const packageCache = new Map<string, Map<string, string | Blob>>();
   const libraryIssues = signal<LibraryIssues>(options.libraryIssues ?? new Map());
+  const components = createComponentLibrary({
+    project: store.committed,
+    readText: async (path) => (await storage.readSpecFile(path))?.text() ?? null,
+    readBytes: async (path) => (await storage.readSpecFile(path))?.arrayBuffer() ?? null,
+    cached: (id, version) => packageCache.get(packageKey({ id, version })),
+  });
   let packagesTouched = false;
   const trackPackages = (p: Project) => {
     writtenPackages.clear();
@@ -397,7 +415,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     for (const path of paths) imageStamps.set(path, await stampOf(path));
   };
   const initialStamps = watchable
-    ? stampImages(options.project.images.map((i) => i.file)).catch(reportCleanupFailure)
+    ? stampImages(imageFileNames(options.project.images)).catch(reportCleanupFailure)
     : Promise.resolve();
   const putImage = async (path: string, data: Blob) => {
     await storage.writeImage(path, data);
@@ -475,7 +493,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       backupSaved.value = pendingBackup.version;
       pendingBackup = null;
     }
-    const referenced = new Set(p.images.map((i) => i.file));
+    const referenced = new Set(imageFileNames(p.images));
     for (const file of referenced) {
       const blob = trash.get(file);
       if (stored.has(file) || !blob) continue;
@@ -682,7 +700,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     // O `load` zera o contador de revisão do store, o que agendaria uma gravação: descarta.
     lastRevision = store.revision.peek();
     saver.reset();
-    const referenced = new Set(project.images.map((i) => i.file));
+    const referenced = new Set(imageFileNames(project.images));
     const orphans = [...pendingFiles].filter((file) => !referenced.has(file));
     pendingFiles.clear();
     stored.clear();
@@ -692,6 +710,8 @@ export function openSession(options: SessionOptions): ProjectSession {
     for (const [file, text] of specFiles(project)) writtenSpecs.set(file, text);
     packageCache.clear();
     trackPackages(project);
+    // Os arquivos do pacote podem ter mudado por fora sem mudar a versão: lê de novo.
+    components.invalidate();
     libraryIssues.value = loaded.libraryIssues;
     if (loaded.migratedFrom !== null) {
       pendingBackup = { version: loaded.migratedFrom, text: loaded.text };
@@ -719,12 +739,12 @@ export function openSession(options: SessionOptions): ProjectSession {
     await initialStamps;
     const changed: string[] = [];
     const current = new Set<string>();
-    for (const image of project.images) {
-      current.add(image.file);
-      const stamp = await stampOf(image.file);
-      const known = imageStamps.has(image.file);
-      if (known ? imageStamps.get(image.file) !== stamp : all) changed.push(image.file);
-      imageStamps.set(image.file, stamp);
+    for (const file of imageFileNames(project.images)) {
+      current.add(file);
+      const stamp = await stampOf(file);
+      const known = imageStamps.has(file);
+      if (known ? imageStamps.get(file) !== stamp : all) changed.push(file);
+      imageStamps.set(file, stamp);
     }
     for (const path of [...imageStamps.keys()]) {
       if (!current.has(path)) imageStamps.delete(path);
@@ -869,6 +889,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     proposals,
     proposalActions,
     libraryIssues,
+    components,
     saveStatus: saver.status,
     backupSaved,
     conflict,
@@ -915,6 +936,10 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (store.readOnly.value || store.reviewing.value || !store.project.value) {
         return 'failed';
       }
+      // Tela em branco não tem arquivo para trocar.
+      if (currentProject(store).images.some((i) => i.id === imageId && i.file === null)) {
+        return 'failed';
+      }
       let path: string | null = null;
       try {
         const prepared = await prepareImage(file);
@@ -959,10 +984,10 @@ export function openSession(options: SessionOptions): ProjectSession {
       const p = committedProject(store);
       const images = new Map<string, Blob>();
       const missingImages: string[] = [];
-      for (const image of p.images) {
-        const blob = await storage.readImage(image.file);
-        if (blob) images.set(image.file, blob);
-        else missingImages.push(image.file);
+      for (const file of imageFileNames(p.images)) {
+        const blob = await storage.readImage(file);
+        if (blob) images.set(file, blob);
+        else missingImages.push(file);
       }
       // Os demais arquivos dos pacotes da biblioteca (o da especialização vai em `specs`).
       const specAssets = new Map<string, Blob>();
@@ -1000,6 +1025,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       // Na fila: espera a conferência ou a recarga em curso e grava o pendente.
       await saver.flush();
       saver.dispose();
+      components.dispose();
       store.close();
     },
   };

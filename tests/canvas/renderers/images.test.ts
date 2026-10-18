@@ -2,7 +2,7 @@ import Konva from 'konva/lib/Core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ImageRenderer } from '../../../src/canvas/renderers/images';
 import { t } from '../../../src/i18n';
-import { removeImage, renameImage } from '../../../src/model';
+import { addBlankImage, removeImage, renameImage } from '../../../src/model';
 import { canvasProject, editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
 
 beforeAll(installFakeCanvas);
@@ -130,5 +130,39 @@ describe('ImageRenderer', () => {
     expect(renderer.node('I2')).toBeUndefined();
     expect(layer.getChildren()).toHaveLength(1);
     expect(node?.group.getParent()).toBeFalsy();
+  });
+
+  it('tela em branco: retângulo cheio na cor de fundo, nunca o reservado de carregando', () => {
+    const { renderer, editor } = setup();
+    const project = addBlankImage(canvasProject(), {
+      id: 'B1',
+      width: 400,
+      height: 600,
+      background: '#FFEEDD',
+      center: { x: 3000, y: 300 },
+    });
+    // Sem nenhum bitmap no mapa: continua pronta.
+    const placements = renderer.render(frameOf(editor, { project }));
+    expect(placements.has('B1')).toBe(true);
+    const node = renderer.node('B1');
+    expect(node?.bitmap.visible()).toBe(false);
+    expect(node?.bitmap.image()).toBeUndefined();
+    expect(node?.label.visible()).toBe(false);
+    const scale = placements.get('B1')?.scale ?? Number.NaN;
+    expect(node?.placeholder.getAttrs()).toMatchObject({
+      visible: true,
+      width: 400 * scale,
+      height: 600 * scale,
+      fill: '#FFEEDD',
+      stroke: TOKENS.border,
+      dash: [],
+    });
+    // Sem nome: o rótulo é o de tela sem nome, esmaecido.
+    expect(node?.title.text()).toBe(t('image.blankUntitled'));
+    expect(node?.title.fill()).toBe(TOKENS.textMuted);
+
+    // A espessura da borda segue o zoom.
+    renderer.render(frameOf(editor, { project, viewport: { x: 0, y: 0, scale: 4 } }));
+    expect(node?.placeholder.strokeWidth()).toBe(0.25);
   });
 });

@@ -1,9 +1,13 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, sep } from 'node:path';
 import {
+  EMPTY_CATALOG,
   MAPPING_FILE,
+  componentPaths,
   deserialize,
+  loadSpecComponents,
   referencedSpecFiles,
+  type ComponentCatalog,
   type DeserializeError,
   type Project,
   type SpecFileWarning,
@@ -36,6 +40,12 @@ export interface LoadedProject {
   readonly readOnly: boolean;
   readonly migratedFrom: number | null;
   readonly specWarnings: readonly SpecFileWarning[];
+  /**
+   * Componentes das especializações em pasta (`specs/<id>/`, formatVersion 4), lidos uma vez
+   * ao carregar. O servidor só os usa para medir e conferir (`minSize`, `get_marking_image`):
+   * nunca arruma nem grava desenho.
+   */
+  readonly catalog: ComponentCatalog;
 }
 
 async function isProjectDir(dir: string): Promise<boolean> {
@@ -172,6 +182,33 @@ async function readText(roots: Roots, dir: string, file: string): Promise<string
   return readFile(real, 'utf8');
 }
 
+/** Lê os arquivos de componente de cada especialização em pasta e monta o catálogo. */
+async function loadCatalog(
+  roots: Roots,
+  dir: string,
+  project: Project,
+): Promise<ComponentCatalog> {
+  const catalog = new Map<string, ReturnType<typeof loadSpecComponents>>();
+  for (const applied of project.specializations) {
+    const { spec } = applied;
+    if (!spec || spec.formatVersion < 4) continue;
+    const texts = new Map<string, string>();
+    for (const path of componentPaths(spec, applied.file)) {
+      try {
+        const text = await readText(roots, dir, path);
+        if (text !== null) texts.set(path, text);
+      } catch {
+        // Arquivo ilegível ou grande demais: o tipo fica sem componente (problema no catálogo).
+      }
+    }
+    catalog.set(
+      applied.id,
+      loadSpecComponents(spec, applied.file, applied.version, (path) => texts.get(path)),
+    );
+  }
+  return catalog.size === 0 ? EMPTY_CATALOG : catalog;
+}
+
 /** Lê o projeto da pasta: `mapping.json` e as cópias de `specs/`, validados pelo `src/model/`. */
 export async function loadProject(
   roots: Roots,
@@ -203,5 +240,6 @@ export async function loadProject(
     readOnly: result.readOnly,
     migratedFrom: result.migratedFrom,
     specWarnings: result.specWarnings,
+    catalog: await loadCatalog(roots, location.dir, result.project),
   };
 }

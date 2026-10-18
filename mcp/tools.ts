@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ModelError, projectIndex } from '../src/model';
+import { ModelError, isBlankImage, projectIndex } from '../src/model';
 import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
@@ -426,7 +426,12 @@ export function registerTools(server: McpServer, roots: Roots): void {
         }
         if (item.kind === 'i') {
           const image = index.images.get(item.id)!;
-          return { ...base, name: image.name, file: image.file };
+          return {
+            ...base,
+            name: image.name,
+            file: image.file,
+            ...(isBlankImage(image) ? { blank: true, background: image.background } : {}),
+          };
         }
         const annotation = index.annotations.get(item.id)!;
         return {
@@ -464,7 +469,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels da imagem original) ou a imagem inteira com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida.',
+        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels da imagem original) ou a imagem inteira com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Numa tela em branco, o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,

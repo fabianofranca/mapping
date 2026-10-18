@@ -194,7 +194,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       const collect = (p: Project | null) => {
         if (!p || seen.has(p.images)) return;
         seen.add(p.images);
-        for (const image of p.images) files.add(image.file);
+        for (const image of p.images) if (image.file !== null) files.add(image.file);
       };
       collect(project.peek());
       collect(gestureBase.peek());

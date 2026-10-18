@@ -5,6 +5,11 @@ name: Deploy
 # e o branch em `/preview/`, com `VITE_CHANNEL=preview` (armazenamento separado,
 # faixa de aviso e manifest próprio). A produção nunca é substituída.
 #
+# O `preview-on-pr.yml` dispara esse `workflow_dispatch` a cada PR aberto ou atualizado.
+# Existe **um preview só**: o último PR atualizado ganha o `/preview/`. A produção é
+# republicada a partir da `main` em toda execução, então cancelar uma execução em curso
+# (`concurrency: pages`) não deixa a `main` desatualizada.
+#
 # Antes de publicar, a `main` e o preview passam pelo ci.yml inteiro (lint, typecheck,
 # testes, desempenho, build, build:mcp, orçamento de tamanho e e2e). Se qualquer um
 # falhar, nada é publicado.

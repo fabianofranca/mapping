@@ -105,13 +105,15 @@ export function matchShortCode(
 /**
  * Nome da imagem no caminho legível da referência: o nome dado ou, sem nome, o nome do
  * arquivo sem a pasta (`images/cadastro.webp` → `cadastro.webp`). O mesmo na app (que
- * copia) e no MCP (que devolve no `resolve`).
+ * copia) e no MCP (que devolve no `resolve`). Tela em branco sem nome: `null` (quem chama
+ * decide o texto, a app pela tradução e o MCP em português).
  */
 export function refImageLabel(image: {
   readonly name: string | null;
-  readonly file: string;
-}): string {
-  return image.name ?? image.file.slice(image.file.lastIndexOf('/') + 1);
+  readonly file: string | null;
+}): string | null {
+  if (image.name !== null) return image.name;
+  return image.file === null ? null : image.file.slice(image.file.lastIndexOf('/') + 1);
 }
 
 export interface FormatRefArgs {

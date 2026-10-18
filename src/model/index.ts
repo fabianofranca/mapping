@@ -20,6 +20,15 @@ export * from './images';
 export * from './imageOptimization';
 export * from './exif';
 export * from './markings';
+// Motor dos componentes: só o que quem desenha ou mede precisa pelo índice do modelo.
+export { approximateMeasurer, type TextMeasurer } from './components/instantiate';
+export type { ComponentFile, FieldValues } from './components/componentFormat';
+export type { FrameNode } from './components/scene';
+export * from './componentCatalog';
+export * from './componentValues';
+export * from './componentDrawings';
+export * from './componentMarkings';
+export * from './componentArrange';
 export * from './locks';
 export * from './annotations';
 export * from './links';

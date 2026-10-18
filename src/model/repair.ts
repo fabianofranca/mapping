@@ -79,7 +79,11 @@ function record(
   action: RepairAction,
   code: InvariantCode,
   entity: InvariantEntity,
-  item: { readonly id: string; readonly name: string | null; readonly file?: string },
+  item: {
+    readonly id: string;
+    readonly name: string | null;
+    readonly file?: string | null;
+  },
 ): void {
   const name = item.name ?? item.file ?? null;
   out.push({ action, code, entity, id: item.id, ...(name === null ? {} : { name }) });

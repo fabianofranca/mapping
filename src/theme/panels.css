@@ -451,6 +451,24 @@ button.tree-toggle:hover {
   font: var(--t-text);
 }
 
+/* Lista e Incompletas: larguras vêm do cabeçalho, então a tabela nunca passa da janela,
+   qualquer que seja a fonte. A última coluna (conteúdo/motivos) fica com o resto. */
+.list-table-fixed {
+  table-layout: fixed;
+}
+
+.list-col-marking {
+  width: 24%;
+}
+
+.list-col-layer {
+  width: 26%;
+}
+
+.list-col-annotation {
+  width: 20%;
+}
+
 .list-table thead th {
   position: sticky;
   top: 0;
@@ -499,24 +517,22 @@ button.tree-toggle:hover {
   overflow-wrap: anywhere;
 }
 
-.list-cell-marking {
-  width: 25%;
-  min-width: 12em;
-}
-
 .list-cell-layer {
-  width: 1%;
   white-space: nowrap;
 }
 
 .list-layer-name {
-  max-width: 16ch;
+  /* inline-block para o max-width valer e o nome longo ganhar reticências */
+  display: inline-block;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 .list-cell-content {
-  width: 40%;
+  overflow-wrap: anywhere;
 }
 
 .list-marking {
@@ -526,6 +542,7 @@ button.tree-toggle:hover {
   font: inherit;
   font-weight: 600;
   text-align: left;
+  overflow-wrap: anywhere;
   color: var(--color-text);
   background: none;
   border: none;
@@ -535,6 +552,7 @@ button.tree-toggle:hover {
 .list-layer-tag {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   gap: var(--space-1-5);
 }
 
@@ -731,4 +749,104 @@ button.tree-toggle:hover {
 
 .diagnostics-library p {
   margin: var(--space-1) 0;
+}
+
+/* Janela Biblioteca (etapa Biblioteca, B3): tipos com componente, por especialização e camada. */
+.tool-window[data-window='library'] .tool-window-body {
+  padding: var(--space-2);
+}
+
+.library-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.library-empty p {
+  margin: 0;
+}
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.library-spec {
+  margin: 0 0 var(--space-1);
+  font: var(--t-text-heading);
+}
+
+.library-layer-name {
+  margin: var(--space-2) 0 var(--space-1);
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+}
+
+.library-types {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library-type {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--row-height);
+}
+
+.library-type-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.library-type-name {
+  overflow-wrap: anywhere;
+}
+
+/* Ordem entre irmãs (Detalhes da marcação): "N de M" e os dois botões. */
+.order-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.order-field-value {
+  flex: 1;
+}
+
+/* Diagnóstico › Componentes */
+.diagnostics-components ul {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
+  overflow-wrap: anywhere;
+}
+
+/* Diálogo da tela em branco: largura e altura lado a lado. */
+.blank-size {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.blank-size > * {
+  flex: 1;
+}
+
+.blank-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.blank-form p {
+  margin: 0;
 }

@@ -3,7 +3,14 @@ import {
   IMAGES_DIR,
   IMAGE_GAP,
   MAPPING_FILE,
+  addBlankImage,
   addImage,
+  MAX_BLANK_SIZE,
+  createMarking,
+  isBlankImage,
+  setBlankImage,
+  setImageLocked,
+  setMarkingLocked,
   canPlaceImage,
   imageDeletionImpact,
   isSameAspect,
@@ -129,6 +136,7 @@ describe('imagens: trocar', () => {
       locked: false,
       source: null,
       file: 'images/nova.jpg',
+      background: null,
       width: 2000,
       height: 1500,
       placement: { x: 0, y: 0, scale: 0.5 },
@@ -202,5 +210,152 @@ describe('arquivos da pasta do projeto', () => {
     expect(MAPPING_FILE).toBe('mapping.json');
     expect(IMAGES_DIR).toBe('images');
     expect(uniqueImageFile(emptyProject(), 'a.png')).toBe(`${IMAGES_DIR}/a.png`);
+  });
+});
+
+describe('tela em branco (imagem sem arquivo)', () => {
+  const blank = (p = sampleProject()) =>
+    addBlankImage(p, {
+      id: 'B1',
+      width: 390,
+      height: 844,
+      background: '#ffffff',
+      name: '  Login  ',
+    });
+
+  it('addBlankImage: cor em maiúsculas, nome normalizado, lado maior = 1000', () => {
+    const p = blank();
+    const b = image(p, 'B1');
+    expect(isBlankImage(b)).toBe(true);
+    expect(isBlankImage(image(p, 'I1'))).toBe(false);
+    expect(b).toMatchObject({
+      file: null,
+      background: '#FFFFFF',
+      name: 'Login',
+      width: 390,
+      height: 844,
+      locked: false,
+      markingColor: null,
+      source: null,
+    });
+    expect(b.placement.scale).toBeCloseTo(1000 / 844);
+    // À direita da imagem mais à direita (I2 ocupa x 1050..2050).
+    expect(b.placement.x).toBe(2050 + IMAGE_GAP);
+    expectValid(p);
+  });
+
+  it('addBlankImage: perto de `center`, sem sobrepor', () => {
+    const p = addBlankImage(sampleProject(), {
+      id: 'B1',
+      width: 100,
+      height: 100,
+      background: '#000000',
+      center: { x: 5000, y: 5000 },
+    });
+    expect(image(p, 'B1').placement).toEqual({ x: 4500, y: 4500, scale: 10 });
+    expectValid(p);
+  });
+
+  it('addBlankImage: valida id, cor e dimensões (1 a MAX_BLANK_SIZE)', () => {
+    const p = sampleProject();
+    const args = { id: 'B1', width: 10, height: 10, background: '#000000' };
+    expect(() => addBlankImage(p, { ...args, id: 'I1' })).toThrow('duplicate-id');
+    expect(() => addBlankImage(p, { ...args, background: 'preto' })).toThrow(
+      'invalid-color',
+    );
+    expect(() => addBlankImage(p, { ...args, width: 0 })).toThrow('invalid-dimensions');
+    expect(() => addBlankImage(p, { ...args, height: 1.5 })).toThrow(
+      'invalid-dimensions',
+    );
+    expect(() => addBlankImage(p, { ...args, width: MAX_BLANK_SIZE + 1 })).toThrow(
+      'invalid-dimensions',
+    );
+    expectValid(addBlankImage(p, { ...args, width: MAX_BLANK_SIZE }));
+  });
+
+  it('as imagens sem arquivo não ocupam nomes de arquivo', () => {
+    const p = blank();
+    expect(uniqueImageFile(p, 'frente.jpg')).toBe('images/frente-2.jpg');
+    expect(uniqueImageFile(p, 'nova.jpg')).toBe('images/nova.jpg');
+    const q = addImage(p, { id: 'I3', file: 'images/nova.jpg', width: 10, height: 10 });
+    expectValid(q);
+    expect(() =>
+      addImage(q, { id: 'I4', file: 'images/nova.jpg', width: 10, height: 10 }),
+    ).toThrow('duplicate-file');
+  });
+
+  it('replaceImage recusa a tela em branco', () => {
+    expect(() =>
+      replaceImage(blank(), 'B1', { file: 'images/x.png', width: 390, height: 844 }),
+    ).toThrow('blank-image');
+  });
+
+  describe('setBlankImage', () => {
+    it('muda a cor sem mexer na geometria (nem com a imagem trancada)', () => {
+      const p = setImageLocked(blank(), 'B1', true);
+      const q = setBlankImage(p, 'B1', { background: '#abcdef' });
+      expect(image(q, 'B1')).toMatchObject({
+        background: '#ABCDEF',
+        width: 390,
+        height: 844,
+      });
+      expect(setBlankImage(q, 'B1', { background: '#ABCDEF' })).toBe(q);
+      expect(() => setBlankImage(p, 'B1', { background: 'x' })).toThrow('invalid-color');
+    });
+
+    it('muda o tamanho mantendo a escala do placement', () => {
+      const p = blank();
+      const scale = image(p, 'B1').placement.scale;
+      const q = setBlankImage(p, 'B1', { width: 200, height: 300 });
+      expect(image(q, 'B1')).toMatchObject({ width: 200, height: 300, file: null });
+      expect(image(q, 'B1').placement).toEqual(image(p, 'B1').placement);
+      expect(image(q, 'B1').placement.scale).toBe(scale);
+      expectValid(q);
+    });
+
+    it('recusa dimensões inválidas, imagem com arquivo e tamanho em imagem trancada', () => {
+      const p = blank();
+      expect(() => setBlankImage(p, 'B1', { width: 0 })).toThrow('invalid-dimensions');
+      expect(() => setBlankImage(p, 'B1', { height: MAX_BLANK_SIZE + 1 })).toThrow(
+        'invalid-dimensions',
+      );
+      expect(() => setBlankImage(p, 'I1', { background: '#000000' })).toThrow(
+        'not-blank',
+      );
+      expect(() =>
+        setBlankImage(setImageLocked(p, 'B1', true), 'B1', { width: 200 }),
+      ).toThrow('locked');
+    });
+
+    it('recusa o tamanho que deixaria uma marcação de fora', () => {
+      let p = blank();
+      p = createMarking(p, {
+        id: 'MB',
+        imageId: 'B1',
+        rect: { x: 100, y: 600, width: 200, height: 200 },
+      });
+      expect(() => setBlankImage(p, 'B1', { height: 700 })).toThrow('rect-out-of-image');
+      // Marcação trancada não muda nada: a regra é a mesma.
+      const locked = setMarkingLocked(p, 'MB', true);
+      expect(() => setBlankImage(locked, 'B1', { width: 250 })).toThrow(
+        'rect-out-of-image',
+      );
+      const grown = setBlankImage(p, 'B1', { width: 500, height: 900 });
+      expect(image(grown, 'B1')).toMatchObject({ width: 500, height: 900 });
+      expectValid(grown);
+    });
+
+    it('recusa o tamanho que faria a imagem sobrepor outra', () => {
+      const p = blank();
+      const next = addBlankImage(p, {
+        id: 'B2',
+        width: 100,
+        height: 100,
+        background: '#000000',
+      });
+      // B1 e B2 lado a lado: aumentar B1 (mesma escala) invade B2.
+      expect(() => setBlankImage(next, 'B1', { width: 2000 })).toThrow('image-overlap');
+      expectValid(setBlankImage(next, 'B1', { width: 400 }));
+    });
   });
 });

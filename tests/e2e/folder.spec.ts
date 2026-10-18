@@ -244,6 +244,40 @@ test('Ajuda → Atalhos lista os dois atalhos de copiar', async ({ page }) => {
   await expect(help.getByText('Copiar o recorte da marcação selecionada')).toBeVisible();
 });
 
+// Antes R6.2 do guia (fechar a aba no meio da gravação): a extensão do navegador não fecha
+// a aba da app, então a cobertura de perda de dados vem daqui.
+test('fechar a página logo depois de editar não perde a marcação (R6.2)', async ({
+  page,
+  context,
+}) => {
+  await openFolderProject(page);
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page));
+
+  // Fecha sem esperar o debounce. Se a app avisar ("Sair da página?"), escolhe ficar, espera
+  // o Salvo e fecha de novo; se a gravação do `pagehide` bastar, a página fecha de uma vez.
+  let warned = false;
+  page.on('dialog', (dialog) => {
+    if (dialog.type() === 'beforeunload') warned = true;
+    void dialog.dismiss();
+  });
+  await page.close({ runBeforeUnload: true });
+  if (warned && !page.isClosed()) {
+    await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+    await page.close({ runBeforeUnload: true });
+  }
+
+  // Outra aba do mesmo contexto (mesmo OPFS e mesmos recentes) reabre a pasta.
+  const reopened = await context.newPage();
+  await stubFolderPicker(reopened);
+  await reopened.goto('/');
+  await reopened.getByRole('button', { name: /Abrir pasta/ }).click();
+  await expect(reopened.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect.poll(async () => (await readMapping(reopened)).markings.length).toBe(1);
+  const mapping = await readMapping(reopened);
+  expect(mapping.markings[0]?.imageId).toBe(mapping.images[0]?.id);
+});
+
 test.describe('mudanças externas no mapping.json', () => {
   test('cada gravação sobe a revisão', async ({ page }) => {
     await withMarking(page);

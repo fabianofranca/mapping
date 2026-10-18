@@ -38,7 +38,15 @@ const isPreviewPath = (pathname) => {
 
 self.addEventListener('install', (event) => {
   // Sem skipWaiting: a versão nova espera o usuário aceitar o aviso.
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE.map(url))));
+  // `cache: 'reload'` pula o cache HTTP do navegador: o GitHub Pages serve com max-age=600 e,
+  // logo depois de um deploy, o `addAll` comum guardaria o index.html antigo no cache novo.
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) =>
+        cache.addAll(PRECACHE.map((p) => new Request(url(p), { cache: 'reload' }))),
+      ),
+  );
 });
 
 self.addEventListener('activate', (event) => {

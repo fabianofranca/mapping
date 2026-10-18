@@ -6,7 +6,12 @@ import { MenuPopover } from '../ui/MenuPopover';
 import { PreviewBadge } from '../ui/PreviewBanner';
 import { showAndFocusToolWindow } from '../ui/toolWindowLayout';
 import { Button, IconButton } from '../ui/controls';
-import { AddImagesButton, HistoryButtons, ModeButtons } from './EditorTools';
+import {
+  AddBlankScreenButton,
+  AddImagesButton,
+  HistoryButtons,
+  ModeButtons,
+} from './EditorTools';
 import { SHORTCUT_LABELS } from './shortcuts';
 import { Flag } from '../ui/review/Flag';
 import type { EditorDialogs } from './useEditorDialogs';
@@ -56,6 +61,7 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
       <div class="toolbar">
         <ModeButtons />
         <AddImagesButton busy={busy} onAdd={onAdd} />
+        <AddBlankScreenButton onAdd={() => dialogs.show({ kind: 'blank' })} />
         <HistoryButtons />
       </div>
 

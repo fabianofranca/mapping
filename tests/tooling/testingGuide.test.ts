@@ -69,8 +69,8 @@ function longBullets(md: string, max = 600): string[] {
     .filter((line) => /^\s*(?:[-*]|\d+\.)\s/.test(line) && line.trim().length > max);
 }
 
-/** Códigos de passo cuja linha da tabela (células sem o código) passa de `max` caracteres. */
-function longSteps(md: string, max = 1200): string[] {
+/** Códigos de passo cuja linha da tabela (células sem o código) passa de `max` caracteres (o limite subiu de 1.200 para 1.300 com as anotações "ou `ferramenta`" nos passos [pessoa]). */
+function longSteps(md: string, max = 1300): string[] {
   const out: string[] = [];
   for (const line of stripFences(md).split('\n')) {
     const m = /^\|\s*(?:\*\*)?((?:R\d+\.\d+|A\d+)[a-z]?)(?:\*\*)?[^|]*\|(.*)$/.exec(line);
@@ -108,6 +108,26 @@ function claudeCodeWithoutPerson(md: string): string[] {
     })
     .map(([code]) => code);
 }
+
+/**
+ * Passos dos roteiros principais (códigos R<n>.<m>; o RP e os roteiros sob demanda não entram)
+ * cuja linha da tabela diz "sem substituto" (a marca de passo que o agente não faz sozinho).
+ */
+function stepsWithoutSubstitute(md: string, allowed: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const line of stripFences(md).split('\n')) {
+    const m = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?\s*\|/.exec(line);
+    if (m && /sem substituto/i.test(line) && !allowed.includes(m[1]!)) out.push(m[1]!);
+  }
+  return out;
+}
+
+/**
+ * Exceções aceitas pelo dono: passos dos roteiros principais que continuam sem substituto para
+ * o agente. Vazia: o R0.5 e o R6.2 saíram dos roteiros principais (RF e RA, sob demanda).
+ * Para acrescentar um, escreva aqui o porquê e leve a decisão ao dono (CLAUDE.md, Fluxo de trabalho).
+ */
+const NO_SUBSTITUTE_EXCEPTIONS: readonly string[] = [];
 
 /** Texto de uma seção "## <prefixo>…" até o próximo "## ". */
 function section(md: string, prefix: string): string {
@@ -164,6 +184,17 @@ describe('regras do guia: as funções pegam o padrão antigo e deixam passar a 
     expect(claudeCodeWithoutPerson(md)).toEqual(['R5.2', 'R5.4a']);
   });
 
+  it('pega "sem substituto" num passo principal e deixa passar a exceção listada e o roteiro sob demanda', () => {
+    const md = [
+      '| R0.5 | Baixe (**[pessoa]**, sem substituto). | ok |',
+      '| R6.2 | **[pessoa]**, o passo inteiro, sem substituto. | ok |',
+      '| R1.1 | Abra a pasta (**[pessoa]** ou `select_folder`). | ok |',
+      '| RP.1 | Instale (sem substituto). | ok |',
+    ].join('\n');
+    expect(stepsWithoutSubstitute(md, [])).toEqual(['R0.5', 'R6.2']);
+    expect(stepsWithoutSubstitute(md, ['R6.2'])).toEqual(['R0.5']);
+  });
+
   it('pega o bullet gigante do [pessoa] e o passo R5.4 de 2.200 caracteres', () => {
     expect(longBullets(`- **[pessoa]**: ${'x'.repeat(1400)}`)).toHaveLength(1);
     expect(longBullets(`- curto\n1. também curto`)).toEqual([]);
@@ -183,7 +214,7 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
     expect(agentLeaks(body)).toEqual([]);
   });
 
-  it('sem bullet acima de 600 caracteres nem passo acima de 1.200 (G2, G7)', () => {
+  it('sem bullet acima de 600 caracteres nem passo acima de 1.300 (G2, G7)', () => {
     expect(longBullets(guide)).toEqual([]);
     expect(longSteps(guide)).toEqual([]);
   });
@@ -216,6 +247,22 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
     expect(guide).toContain('sha256');
     expect(guide).toContain('**Verificar a pasta agora**');
     expect(guide).not.toMatch(/mcp-v0\.\d/);
+  });
+
+  it('nenhum passo dos roteiros principais fica sem substituto, fora das exceções (R0 a R9)', () => {
+    expect(stepsWithoutSubstitute(guide, NO_SUBSTITUTE_EXCEPTIONS)).toEqual([]);
+  });
+
+  it('o RP está nos roteiros sob demanda, com critério de entrada, e o R0.5 e o R6.2 migraram para o RF e o RA', () => {
+    const onDemand = guide.indexOf('### Roteiros sob demanda (manuais)');
+    expect(onDemand).toBeGreaterThan(guide.indexOf('### R9 '));
+    expect(guide.indexOf('#### RP — App instalado (PWA)')).toBeGreaterThan(onDemand);
+    expect(guide).toContain('Critério de entrada');
+    const actions = stepActions(guide);
+    expect(actions.has('R0.5')).toBe(false);
+    expect(actions.has('R6.2')).toBe(false);
+    expect(guide.indexOf('#### RF — ')).toBeGreaterThan(onDemand);
+    expect(guide.indexOf('#### RA — ')).toBeGreaterThan(onDemand);
   });
 
   it('todo passo que pede algo ao Claude Code tem [pessoa] na Ação (M4)', () => {
@@ -282,6 +329,25 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
   it('pede o build id esperado na pergunta única e na mensagem da rodada completa (M6)', () => {
     expect(prompt).toMatch(/^\s*- \(g\)[^\n]*build id esperado/m);
     expect(prompt).toMatch(/\*\*Rodada completa:\*\*[^\n]*Build id esperado/);
+  });
+
+  it('rodada sem interação: dialog-pilot, cliente por stdio e passos que só o dono faz', () => {
+    const guide = read('docs/TESTING.md');
+    expect(existsSync('scripts/testing/mcp-stdio-client.mjs')).toBe(true);
+    for (const text of [prompt, guide]) {
+      expect(text).toContain('dialog-pilot');
+      expect(text).toContain('scripts/testing/mcp-stdio-client.mjs');
+    }
+    expect(prompt).toContain('sem interação');
+    expect(prompt).toContain('não executado (precisa do dono)');
+    expect(guide).toContain('Diálogos nativos com o dialog-pilot');
+    expect(guide).toMatch(/^- Ferramenta:[^\n]*dialog-pilot[^\n]*stdio/m);
+  });
+
+  it('tem a sessão sob demanda e o resultado da validação da automação do R0.5 e do R6.2', () => {
+    expect(prompt).toContain('Sessão sob demanda');
+    expect(prompt).toContain('Validação da automação (resultado da rodada');
+    expect(read('CLAUDE.md')).toContain('pendente de decisão');
   });
 
   it('README.md e CLAUDE.md apontam para ele, não para o prompt em history/ (G16)', () => {

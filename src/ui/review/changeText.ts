@@ -63,13 +63,20 @@ export function markingName(names: ReviewNames, id: string): string {
   return t('marking.unnamed');
 }
 
+/** Tela em branco criada pela proposta (imagem sem arquivo): o nome padrão dela. */
+function blankName(record: Record<string, JsonValue> | null | undefined): string | null {
+  return record && record.file === null && typeof record.background === 'string'
+    ? t('image.blankUntitled')
+    : null;
+}
+
 export function imageName(names: ReviewNames, id: string): string {
   const found = lookup(names, (p) => projectIndex(p).images.get(id));
   if (found) return imageLabel(found);
   for (const c of names.proposal.changes) {
     if (c.entity === 'image' && c.entityId === id && c.field === null) {
       const record = entityRecord(c);
-      const name = text(record?.name) ?? text(record?.file);
+      const name = text(record?.name) ?? text(record?.file) ?? blankName(record);
       if (name) return name;
     }
   }
@@ -166,8 +173,11 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'marking.imageId': 'review.field.image',
   'marking.locked': 'review.field.locked',
   'marking.source': 'review.field.source',
+  'marking.position': 'review.field.position',
   'image.name': 'review.field.name',
   'image.file': 'review.field.file',
+  'image.background': 'review.field.background',
+  'image.size': 'review.field.size',
   'image.placement': 'review.field.placement',
   'image.markingColor': 'review.field.markingColor',
   'image.locked': 'review.field.locked',
@@ -229,7 +239,8 @@ export function entityName(names: ReviewNames, id: string): string | null {
       if (name) return name;
     } else if (c.entity !== 'platformRepo') {
       const name =
-        text(record?.name) ?? (c.entity === 'image' ? text(record?.file) : null);
+        text(record?.name) ??
+        (c.entity === 'image' ? (text(record?.file) ?? blankName(record)) : null);
       if (name) return name;
     }
   }
@@ -354,7 +365,7 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
       return rect ? `${name} · ${rect.map((p) => p.text).join('')}` : name;
     }
     case 'image': {
-      const name = text(value.name) ?? text(value.file) ?? '';
+      const name = text(value.name) ?? text(value.file) ?? blankName(value) ?? '';
       const size =
         typeof value.width === 'number' && typeof value.height === 'number'
           ? t('image.dimensions', { width: value.width, height: value.height })
@@ -410,6 +421,13 @@ export function valueParts(
   }
   if (field === 'parentAnnotationId' && typeof value === 'string') {
     return [{ text: annotationName(names, value) }];
+  }
+  if (field === 'size' && isRecord(value)) {
+    if (typeof value.width === 'number' && typeof value.height === 'number') {
+      return [
+        { text: t('image.dimensions', { width: value.width, height: value.height }) },
+      ];
+    }
   }
   if (field === 'file' && isRecord(value)) {
     const size =

@@ -4,7 +4,12 @@ import { Image as KonvaImage } from 'konva/lib/shapes/Image';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../../i18n';
-import { imageCanvasRect, type Placement, type ProjectImage } from '../../model';
+import {
+  imageCanvasRect,
+  isBlankImage,
+  type Placement,
+  type ProjectImage,
+} from '../../model';
 import type { DisplayImage } from '../../store/displayImages';
 import type { Frame } from '../frame';
 import type { CanvasTokens } from '../theme';
@@ -58,7 +63,14 @@ export class ImageRenderer {
         preview?.imageId === image.id ? preview.placement : image.placement;
       placements.set(image.id, placement);
       const node = this.nodes.get(image.id) ?? this.createNode(image.id);
-      updateNode(node, image, placement, bitmaps.get(image.file), tokens, zoom);
+      updateNode(
+        node,
+        image,
+        placement,
+        image.file === null ? undefined : bitmaps.get(image.file),
+        tokens,
+        zoom,
+      );
       if (node.group.zIndex() !== index) node.group.zIndex(index);
     });
     for (const [id, node] of this.nodes) {
@@ -104,6 +116,23 @@ function updateNode(
   node.group.position({ x: rect.x, y: rect.y });
   const box = { width: rect.width, height: rect.height };
 
+  // Tela em branco (sem arquivo): um retângulo cheio com a cor de fundo, sempre pronto. Nunca o
+  // reservado de "carregando": não há bitmap para esperar.
+  if (isBlankImage(image)) {
+    node.bitmap.setAttrs({ ...box, visible: false, image: undefined });
+    node.placeholder.setAttrs({
+      ...box,
+      visible: true,
+      fill: image.background ?? tokens.surface,
+      stroke: tokens.border,
+      strokeWidth: 1 / zoom,
+      dash: [],
+    });
+    node.label.visible(false);
+    updateTitle(node, image, rect.width, tokens, zoom);
+    return;
+  }
+
   const ready = state?.status === 'ready' && !isClosed(state.bitmap);
   node.bitmap.setAttrs({
     ...box,
@@ -136,7 +165,7 @@ function updateNode(
   }
   node.label.setAttrs({
     visible: true,
-    text: `⚠ ${message}\n${image.file}`,
+    text: `⚠ ${message}\n${image.file ?? ''}`,
     x: padding,
     y: padding,
     width: Math.max(0, rect.width - 2 * padding),
@@ -166,7 +195,7 @@ function updateTitle(
   const { size, line, weight } = tokens.type.image;
   node.title.setAttrs({
     visible: true,
-    text: image.name ?? image.file,
+    text: image.name ?? image.file ?? t('image.blankUntitled'),
     x: 0,
     y: -(line + IMAGE_TITLE_GAP) / zoom,
     width,

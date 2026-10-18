@@ -10,7 +10,7 @@ import {
   type ProjectImage,
 } from '../src/model';
 import { ToolError } from './errors';
-import type { Refs } from './items';
+import { BLANK_IMAGE_LABEL, type Refs } from './items';
 import { markingRow } from './views';
 
 export interface MarkingFilters {
@@ -71,8 +71,8 @@ function findImage(p: Project, query: string): ProjectImage {
   const byName = p.images.filter(
     (i) =>
       (i.name !== null && fold(i.name) === folded) ||
-      fold(i.file) === folded ||
-      fold(i.file.split('/').pop() ?? '') === folded,
+      (i.file !== null &&
+        (fold(i.file) === folded || fold(i.file.split('/').pop() ?? '') === folded)),
   );
   if (byName.length === 1) return byName[0]!;
   const coded = matchShortCode(p, 'i', query.replace(/^i\//, ''));
@@ -80,7 +80,7 @@ function findImage(p: Project, query: string): ProjectImage {
   throw new ToolError(
     byName.length > 1 || coded.length > 1 ? 'ambiguous-image' : 'not-found',
     `imagem não encontrada ou ambígua: ${query}`,
-    { images: p.images.map((i) => i.name ?? i.file) },
+    { images: p.images.map((i) => i.name ?? i.file ?? BLANK_IMAGE_LABEL) },
   );
 }
 
