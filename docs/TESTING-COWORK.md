@@ -1,5 +1,24 @@
 # Prompt do testador — Cowork no computador do dono
 
+Se a mensagem do dono for só um link de PR do Mapping ("Teste <link>"), trate como rodada dirigida pelos roteiros que o PR toca: leia este arquivo inteiro antes de qualquer outra coisa, monte a lista e siga o modo comum. Diga logo no começo se o preview é necessário (para código de app, é).
+
+**Navegador.** Use sempre o Chrome pela extensão Claude in Chrome (`mcp__claude-in-chrome__*`), mesmo que a sessão diga que o navegador preferido é o do app. O painel do app Claude não é o processo `chrome` que o `dialog-pilot` enxerga e falha quando está oculto.
+
+**Primeiros 10 minutos.** Cada item tem uma conferência; só passe ao próximo se ela bater.
+
+1. Leia `docs/TESTING-COWORK.md` inteiro e o apêndice A do `docs/TESTING.md`. **Confira:** você sabe o modo da rodada e o build id esperado.
+2. `get_device_info`. **Confira:** `mapping-testes` está em `connectedFolders`; se não, peça o acesso com o motivo do item 0 da seção 2 ("Disco primeiro").
+3. Monte a pasta da rodada e traga o branch pela VM (item 0 da seção 2). **Confira:** `find material3 -type f | wc -l` dá 33 (os arquivos de `examples/libraries/material3/`) e o `git log -1` mostra o commit do build id.
+4. `list_windows` do `dialog-pilot`. **Confira:** aparece uma janela `chrome` (sem ela, pare e avise o dono).
+5. `tabs_context_mcp` com `createIfEmpty: true`; transforme a aba em aba de apoio (`example.com` e o título "NÃO FECHAR"). **Confira:** o grupo tem uma aba só.
+6. Injete o link fixo no canto e rode o `elementFromPoint` (apêndice A do guia, "Aba em foco sem o dono"). **Confira:** devolve o próprio `<a>`.
+7. Clique no centro do link. **Confira:** o `tabs_context_mcp` lista a aba "Mapping" no grupo **e** o `list_windows` mostra "Mapping - Google Chrome". Se falhar, volte ao item 6; não peça ajuda ao dono.
+8. Na aba do app, chame `read_console_messages` uma vez para ligar o rastreio.
+9. Configurações › Sobre. **Confira:** build id igual ao esperado; se não, a faixa **Atualizar**; se ainda não, o Deploy (seção 2, item 9).
+10. Só então comece o primeiro roteiro. Antes de cada `select_folder`, o clique na app vem primeiro e a ferramenta depois, sempre com o caminho do Windows do item 2.
+
+**Quando algo não acontece, meça antes de repetir.** Dois cliques iguais sem efeito pedem um `elementFromPoint` ou um ouvinte de eventos, não um terceiro clique nem uma pergunta ao dono.
+
 > Prompt inicial de uma sessão do **Cowork** (Claude com controle do computador) que executa os testes reais da app no computador do dono, com os roteiros de [`docs/TESTING.md`](TESTING.md). É o prompt vivo: vale para todas as rodadas até ser trocado aqui. As versões usadas em rodadas passadas ficam em `docs/history/` (ex.: [`etapa-6-testes-cowork.md`](history/etapa-6-testes-cowork.md)), junto com os relatos (`docs/history/relato-*.md`).
 >
 > Para iniciar, numa sessão do Cowork com acesso a este repositório clonado, mande uma destas mensagens:
@@ -35,6 +54,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 
 ## 2. Antes de começar
 
+0. **Disco primeiro.** Chame `get_device_info`. Se `connectedFolders` não tiver `mapping-testes`, chame `device_request_folder_access` com `["~/mapping-testes"]` e o motivo "criar a pasta da rodada com o pacote e as cópias que os roteiros pedem". Guarde o caminho concedido: ele já vem no formato do Windows (`C:\Users\<usuário>\mapping-testes`) e é a base de todo `select_folder` e `open_file`. Na shell (`device_bash`, em `$HOME/mnt/mapping-testes`), crie `<AAAA-MM-DD>-<alvo>/` e traga o repositório do branch em teste: `git init repo && cd repo && git fetch --depth 1 https://github.com/fabianofranca/mapping pull/<n>/head && git checkout FETCH_HEAD` (a VM tem rede para o GitHub). Copie para a pasta da rodada só o que os roteiros pedem (`examples/libraries/material3`, `examples/specs/*.json`, `examples/proposta-exemplo.zip`). Nunca peça ao dono o caminho de um arquivo do repositório.
 1. Leia `docs/TESTING.md` inteiro, **com o apêndice A** (como agir sendo um agente) e o apêndice B (operações de disco). É a fonte da verdade dos passos, dos resultados esperados, dos nomes da interface e do template do relato. Este prompt não repete o guia.
 2. Veja na mensagem do dono o **modo** (completo, que é o padrão, ou dirigido, com o alvo), se é **sem interação** e a lista da passada visual, se houver. Se tiver dúvida, pergunte.
 3. **Confira sozinho o que dá para conferir**, antes de perguntar qualquer coisa:
@@ -50,7 +70,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
    - (e) que extensões que injetam quadros nos campos (gerenciadores de senha) estão desativadas no endereço da app;
    - (f) se o dialog-pilot está instalado e o modo automático ligado, e que os passos que só o dono faz (seção 3 abaixo) precisam dele ou ficam "não executado (precisa do dono)";
    - (g) o build id esperado, se não veio na mensagem dele (o commit e a data, `abc1234 · AAAA-MM-DD`).
-5. Crie a pasta de trabalho `~/mapping-testes/<AAAA-MM-DD>/`, fora de qualquer repositório do dono. Tudo o que você criar fica nela. **Não abra, mova nem apague nada fora dela.**
+5. A pasta de trabalho `~/mapping-testes/<AAAA-MM-DD>/` (a do item 0, com o sufixo do alvo se quiser) fica fora de qualquer repositório do dono. Tudo o que você criar fica nela. **Não abra, mova nem apague nada fora dela.**
 6. Peça ao dono, **uma vez**, no começo da rodada, para deixar o computador **desbloqueado** e o Chrome **à vista** e sem uso em paralelo durante toda ela, inclusive quando ele não estiver no teclado (apêndice A, "Página oculta e foco"). O foco da **aba** da app você resolve sozinho, pelo item 6a; com o dialog-pilot, é só isso que os seletores e as permissões exigem dele.
    6a. **Aba da app em foco, sem o dono.** No início de cada rodada, crie a aba de apoio e abra o app pelo **link clicado** (apêndice A, "Aba em foco sem o dono (link clicado)") antes de usar `select_folder` ou `open_file`. Se vier "Nenhum diálogo apareceu", repita o truque em vez de pedir ajuda ao dono. Faça-o antes dos passos de desfazer: aba nova perde o histórico.
 7. **Estado prévio do navegador:** registre o que a tela inicial já mostra e, se souber ler, a chave `mapping.reviewResume` (apêndice A); não apague nada.
