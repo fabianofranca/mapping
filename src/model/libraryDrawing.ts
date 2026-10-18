@@ -44,7 +44,9 @@ const messageOf = (error: unknown): string =>
 /** `"campo não informado: x"` do motor para um campo que o tipo nem declara: o nível 2 já deu o erro. */
 const NOT_INFORMED = /^campo não informado: (.+)$/;
 
-export function defaultValues(type: SpecAnnotationType): Record<string, string | number | null> {
+export function defaultValues(
+  type: SpecAnnotationType,
+): Record<string, string | number | null> {
   const values: Record<string, string | number | null> = {};
   for (const field of type.fields) {
     values[field.key] =
@@ -160,7 +162,8 @@ export function nodeProbeLibrary(lib: Library, origin: Origin): Library {
 }
 
 /** Tira o `node.` que o quadro sintético põe na frente do caminho de um aviso da origem. */
-export const withoutNodePrefix = (message: string): string => message.replace(/^node\.?/, '');
+export const withoutNodePrefix = (message: string): string =>
+  message.replace(/^node\.?/, '');
 
 export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
   const { spec, specPath } = ctx;

@@ -124,6 +124,38 @@ describe('catálogo do Material 3', () => {
   });
 });
 
+describe('exemplo de sistema externo', () => {
+  it('passa o nó pela origem declarada e desenha a árvore', () => {
+    const withExample = files.map((f) => {
+      if (f.path === 'material3.spec.json' && f.text !== undefined) {
+        const spec = JSON.parse(f.text);
+        const type = spec.layers[0].annotationTypes.find(
+          (t: { id: string }) => t.id === 'm3-top-app-bar',
+        );
+        type.examples.push({
+          name: 'Nó SDUI',
+          system: 'sdui',
+          file: 'examples/bar.sdui.json',
+        });
+        return { ...f, text: JSON.stringify(spec) };
+      }
+      return f;
+    });
+    withExample.push({
+      path: 'examples/bar.sdui.json',
+      text: JSON.stringify({ type: 'TopAppBar', props: { title: 'Olá' } }),
+    });
+    const withSystem = buildCatalog(withExample);
+    const entry = findEntry(withSystem, 'm3-top-app-bar');
+    const example = entry?.examples.find((e) => e.name === 'Nó SDUI');
+    expect(example?.mode).toBe('system');
+    expect(example?.json).toEqual({ type: 'TopAppBar', props: { title: 'Olá' } });
+    const drawing = exampleDrawing(withSystem, entry!, example, approximateMeasurer);
+    expect(drawing).not.toBeNull();
+    expect(drawing?.root.children.length).toBeGreaterThan(0);
+  });
+});
+
 describe('pacote quebrado de propósito', () => {
   it('componente ausente: não lança, mantém o relatório e a entrada sem componente', () => {
     const broken = buildCatalog(

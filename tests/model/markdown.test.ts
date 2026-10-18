@@ -55,7 +55,7 @@ describe('markdown: construção', () => {
     const ids = parseMarkdown('# Seção\n# Seção\n# Seção\n# Seção-1')
       .map((b) => (b.type === 'heading' ? b.id : ''))
       .join(',');
-    expect(ids).toBe('secao,secao-1,secao-2,secao-3');
+    expect(ids).toBe('secao,secao-1,secao-2,secao-1-1');
   });
 
   it('parágrafos, negrito, itálico, código em linha', () => {

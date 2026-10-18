@@ -1,5 +1,5 @@
 import type { ComponentChild, VNode } from 'preact';
-import { useId, useMemo } from 'preact/hooks';
+import { useId, useMemo, useRef } from 'preact/hooks';
 import {
   parseMarkdown,
   type MarkdownBlock,
@@ -15,6 +15,7 @@ export interface MarkdownProps {
 
 interface Ctx {
   readonly prefix: string;
+  readonly root: { readonly current: HTMLElement | null };
   readonly ids: ReadonlySet<string>;
   readonly onLink?: (href: string) => void;
 }
@@ -25,8 +26,11 @@ function collectIds(blocks: readonly MarkdownBlock[]): Set<string> {
   return ids;
 }
 
-function goToAnchor(prefix: string, id: string): void {
-  const el = document.getElementById(prefix + id);
+function goToAnchor(root: HTMLElement | null, prefix: string, id: string): void {
+  const wanted = prefix + id;
+  const el = [...(root?.querySelectorAll<HTMLElement>('[id]') ?? [])].find(
+    (e) => e.id === wanted,
+  );
   if (!el) return;
   el.focus({ preventScroll: true });
   if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start' });
@@ -69,7 +73,7 @@ function renderInlines(nodes: readonly MarkdownInline[], ctx: Ctx): ComponentChi
             href={`#${ctx.prefix}${id}`}
             onClick={(e) => {
               e.preventDefault();
-              goToAnchor(ctx.prefix, id);
+              goToAnchor(ctx.root.current, ctx.prefix, id);
             }}
           >
             {children}
@@ -146,6 +150,11 @@ export function Markdown({ text, onLink }: MarkdownProps): VNode {
   const uid = useId();
   const blocks = useMemo(() => parseMarkdown(text), [text]);
   const ids = useMemo(() => collectIds(blocks), [blocks]);
-  const ctx: Ctx = { prefix: `md-${uid}-`, ids, onLink };
-  return <div class="markdown">{blocks.map((b, i) => renderBlock(b, i, ctx))}</div>;
+  const root = useRef<HTMLDivElement>(null);
+  const ctx: Ctx = { prefix: `md-${uid}-`, root, ids, onLink };
+  return (
+    <div class="markdown" ref={root}>
+      {blocks.map((b, i) => renderBlock(b, i, ctx))}
+    </div>
+  );
 }

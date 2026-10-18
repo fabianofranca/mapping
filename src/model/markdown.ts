@@ -51,10 +51,16 @@ const MAX_INLINE_CHUNK = 20000;
 /** Janela de busca do fechamento de colchetes, parênteses e ênfase. */
 const SEARCH_WINDOW = 2000;
 
+function hasControl(text: string): boolean {
+  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) < 32) return true;
+  return false;
+}
+
 /** Classifica o destino de um link: só `mapping://…` e `#âncora` são vivos. */
 export function linkKind(href: string): 'mapping' | 'anchor' | null {
-  if (/^mapping:\/\/[^\s\u0000-\u001f<>"'`\\]+$/.test(href)) return 'mapping';
-  if (/^#[^\s\u0000-\u001f<>"'`\\]+$/.test(href)) return 'anchor';
+  if (hasControl(href)) return null;
+  if (/^mapping:\/\/[^\s<>"'`\\]+$/.test(href)) return 'mapping';
+  if (/^#[^\s<>"'`\\]+$/.test(href)) return 'anchor';
   return null;
 }
 
@@ -109,20 +115,20 @@ function pushAll(out: MarkdownInline[], nodes: readonly MarkdownInline[]): void 
   }
 }
 
-/** Índice do `]` que fecha o `[` em `open`, ou -1. */
-function findClosingBracket(s: string, open: number): number {
-  let level = 0;
-  const end = Math.min(s.length, open + SEARCH_WINDOW);
-  for (let i = open; i < end; i++) {
+/** Pareamento de colchetes do trecho, calculado uma vez (linear): abre -> fecha. */
+function matchBrackets(s: string): Map<number, number> {
+  const pairs = new Map<number, number>();
+  const stack: number[] = [];
+  for (let i = 0; i < s.length; i++) {
     const c = s[i];
     if (c === '\\') i++;
-    else if (c === '[') level++;
+    else if (c === '[') stack.push(i);
     else if (c === ']') {
-      level--;
-      if (level === 0) return i;
+      const open = stack.pop();
+      if (open !== undefined) pairs.set(open, i);
     }
   }
-  return -1;
+  return pairs;
 }
 
 /** Lê `(destino "título")` em `open` (um `(`); devolve o destino e o índice depois do `)`. */
@@ -151,12 +157,20 @@ function readDestination(s: string, open: number): { href: string; end: number }
 }
 
 /** Fecha ênfase: índice do delimitador de fechamento ou -1. */
-function findEmphasisClose(s: string, from: number, delim: string): number {
-  const limit = Math.min(s.length, from + SEARCH_WINDOW);
+function findEmphasisClose(
+  s: string,
+  from: number,
+  delim: string,
+  failedFrom: Map<string, number>,
+): number {
+  // Se uma busca a partir de `p` não achou fechamento até o fim do trecho, nenhuma
+  // busca posterior acha (o fechamento só depende do próprio ponto).
+  const failed = failedFrom.get(delim);
+  if (failed !== undefined && from >= failed) return -1;
   let j = from;
-  while (j < limit) {
+  while (j < s.length) {
     j = s.indexOf(delim, j);
-    if (j < 0 || j >= limit) return -1;
+    if (j < 0) break;
     if (s[j - 1] === '\\') {
       j++;
       continue;
@@ -171,10 +185,13 @@ function findEmphasisClose(s: string, from: number, delim: string): number {
     if (okClose) return j;
     j += delim.length;
   }
+  failedFrom.set(delim, from);
   return -1;
 }
 
 function parseInlineChunk(s: string, depth: number): MarkdownInline[] {
+  let brackets: Map<number, number> | null = null;
+  const failedEmphasis = new Map<string, number>();
   const out: MarkdownInline[] = [];
   let buf = '';
   const flush = (): void => {
@@ -211,7 +228,8 @@ function parseInlineChunk(s: string, depth: number): MarkdownInline[] {
     const isImage = c === '!' && s[i + 1] === '[';
     if ((c === '[' || isImage) && depth < MAX_INLINE_DEPTH) {
       const open = isImage ? i + 1 : i;
-      const close = findClosingBracket(s, open);
+      brackets ??= matchBrackets(s);
+      const close = brackets.get(open) ?? -1;
       if (close > 0 && s[close + 1] === '(') {
         const dest = readDestination(s, close + 1);
         if (dest) {
@@ -240,7 +258,7 @@ function parseInlineChunk(s: string, depth: number): MarkdownInline[] {
       const before = s[i - 1];
       const canOpen = !isWs(after) && (c === '*' || !isAlnum(before));
       if (canOpen) {
-        const close = findEmphasisClose(s, i + delim.length, delim);
+        const close = findEmphasisClose(s, i + delim.length, delim, failedEmphasis);
         if (close > 0) {
           flush();
           const children = parseInlineChunk(s.slice(i + delim.length, close), depth + 1);
@@ -387,6 +405,17 @@ function parseList(lines: readonly string[], start: number): [MarkdownBlock[], n
       target = newList(ordered);
       stack.push({ indent, list: target });
       parent.children.push(target);
+    } else if (top.list.ordered !== ordered) {
+      // Troca de tipo de marcador no mesmo nível: nova lista irmã.
+      target = newList(ordered);
+      stack.pop();
+      const parentTop = stack[stack.length - 1];
+      if (parentTop) {
+        (
+          parentTop.list.items[parentTop.list.items.length - 1] as ItemBuilder
+        ).children.push(target);
+      } else roots.push(target);
+      stack.push({ indent, list: target });
     } else {
       target = top.list;
     }

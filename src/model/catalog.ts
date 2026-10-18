@@ -211,16 +211,17 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
   for (const file of files) if (file.text !== undefined) texts.set(file.path, file.text);
   const resolve = (ref: string): string => resolvePath(specPath, ref);
 
-  let library: Library | null = null;
-  try {
-    const textFiles = [...texts]
-      .filter(([path]) => path.toLowerCase().endsWith('.json'))
-      .sort(([a], [b]) => Number(b === specPath) - Number(a === specPath))
-      .map(([path, text]) => ({ path, text }));
-    library = loadLibrary(textFiles);
-  } catch {
-    library = null;
-  }
+  const library = ((): Library | null => {
+    try {
+      const textFiles = [...texts]
+        .filter(([path]) => path.toLowerCase().endsWith('.json'))
+        .sort(([a], [b]) => Number(b === specPath) - Number(a === specPath))
+        .map(([path, text]) => ({ path, text }));
+      return loadLibrary(textFiles);
+    } catch {
+      return null;
+    }
+  })();
 
   const layers: CatalogLayer[] = spec.layers.map((layer) => ({
     id: layer.id,
@@ -348,9 +349,6 @@ export function drawEntry(
     measure,
   });
 }
-
-const messageOf = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 /**
  * Desenha um exemplo da entrada (`example` ausente = o `preview` do componente). Modo
