@@ -28,6 +28,7 @@ import {
 import { createDisplayBitmap, prepareImage, readImageSize } from '../storage/imageImport';
 import { loadProject, type InconsistentLoad } from '../storage/loadProject';
 import { loadProposals } from '../storage/loadProposals';
+import { loadLibraryIssues, type LibraryIssues } from '../storage/specPackage';
 import { requestPersistentStorage } from '../storage/local';
 import type { ProjectStorage, StorageKind } from '../storage/types';
 import { readProjectZip, writeProjectZip, zipFileName } from '../storage/zip';
@@ -151,6 +152,8 @@ async function openLoaded(
     readonly text: string;
     readonly migratedFrom: number | null;
     readonly repaired?: readonly RepairRecord[];
+    /** Problemas do pacote da biblioteca (Diagnóstico); sem o campo, a sessão começa sem. */
+    readonly libraryIssues?: LibraryIssues;
   },
 ): Promise<AppResult> {
   const { localId } = target;
@@ -167,6 +170,9 @@ async function openLoaded(
     ...(loaded.migratedFrom === null
       ? {}
       : { migratedFrom: { version: loaded.migratedFrom, text: loaded.text } }),
+    ...(loaded.libraryIssues === undefined
+      ? {}
+      : { libraryIssues: loaded.libraryIssues }),
     proposals: await loadProposals(storage),
     prepareImage,
     // Gravou o `mapping.json` (com conteúdo que ainda não saiu num zip) ou um `proposal.json`:
@@ -217,7 +223,7 @@ function describeRepairs(records: readonly RepairRecord[]): string {
  * Abre o projeto reparado. Nada é gravado agora: a sessão guarda o original em `backups/`
  * (mesmo mecanismo da migração) e grava o reparado na primeira gravação.
  */
-function openRepaired(target: OpenTarget, { repair, text }: InconsistentLoad) {
+async function openRepaired(target: OpenTarget, { repair, text }: InconsistentLoad) {
   reportError(
     'open.repair',
     `${repair.repaired.length} reparo(s): ${describeRepairs(repair.repaired)}`,
@@ -227,6 +233,7 @@ function openRepaired(target: OpenTarget, { repair, text }: InconsistentLoad) {
     text,
     migratedFrom: repair.migratedFrom ?? SCHEMA_VERSION,
     repaired: repair.repaired,
+    libraryIssues: await loadLibraryIssues(target.storage, repair.project),
   });
 }
 

@@ -9,7 +9,9 @@ import {
   serializeProposal,
   specFiles,
 } from '../../src/model';
-import type { DirectoryHandleLike } from '../../src/storage/folder';
+import { createFolderStorage, type DirectoryHandleLike } from '../../src/storage/folder';
+import { openSession } from '../../src/store/session';
+import { material3Package, material3Spec } from '../storage/packageFixture';
 import { writeProjectZip } from '../../src/storage/zip';
 import { clearReportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
@@ -149,6 +151,28 @@ describe('projeto local', () => {
       error: 'not-found',
     });
     expect(app.openProject.value).toBeNull();
+  });
+
+  it('reabrir uma pasta com pacote de biblioteca: o Diagnóstico recebe os problemas do pacote (R3.11)', async () => {
+    // Monta a pasta como a app a grava: aplica o pacote do Material 3 numa sessão e fecha.
+    const root = new MemoryDirectory('pasta');
+    const writer = openSession({
+      storage: createFolderStorage(root),
+      project: sampleProject(),
+      prepareImage: () => Promise.reject(new Error('sem imagens')),
+    });
+    expect(
+      writer.actions.applySpecialization(material3Spec(), material3Package()).ok,
+    ).toBe(true);
+    await writer.flush();
+    await writer.close();
+
+    pickDirectory.mockResolvedValue(root);
+    expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
+    const { session } = await openedOf(app);
+    const issues = session.libraryIssues.value.get('material3');
+    expect(issues).toBeDefined();
+    expect(issues?.some((i) => i.severity === 'warning')).toBe(true);
   });
 
   it('projeto v1: grava o backup antes do primeiro salvamento', async () => {
