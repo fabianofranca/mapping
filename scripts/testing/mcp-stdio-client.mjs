@@ -11,8 +11,11 @@
 //   WS                pasta do workspace onde o servidor roda (padrão: a pasta atual)
 //   MAPPING_MCP_ARGS  argumentos do servidor, em JSON (ex.: ["tools/mapping-mcp.js","--root","x"])
 //   IMGDIR            pasta onde gravar as imagens devolvidas (padrão: a pasta atual)
-// Sem argumentos do servidor, vale o padrão de examples/workspace/ (o mesmo do .mcp.json):
-//   tools/mapping-mcp.js --root projetos --root especializacoes
+// Ordem dos argumentos do servidor (a fonte usada vai para o stderr):
+//   1. depois do `--` na linha de comando; 2. MAPPING_MCP_ARGS;
+//   3. `<WS>/.mcp.json`, se existir e for válido (`mcpServers.mapping.command` = `node`,
+//      `mcpServers.mapping.args`), o mesmo arquivo que o cliente MCP do workspace lê;
+//   4. o padrão de examples/workspace/: tools/mapping-mcp.js --root projetos --root especializacoes
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,17 +38,51 @@ if (!callsFile || callsFile === '--') {
   );
   process.exit(2);
 }
-const serverArgs =
-  sep >= 0 && argv.length > sep + 1
-    ? argv.slice(sep + 1)
-    : process.env.MAPPING_MCP_ARGS
-      ? JSON.parse(process.env.MAPPING_MCP_ARGS)
-      : DEFAULT_SERVER_ARGS;
+const workspace = process.env.WS || process.cwd();
+
+/** Argumentos de `mcpServers.mapping` do `.mcp.json` do workspace, ou null (ausente/inválido). */
+function argsFromMcpJson() {
+  const file = path.join(workspace, '.mcp.json');
+  if (!fs.existsSync(file)) return null;
+  try {
+    const entry = JSON.parse(fs.readFileSync(file, 'utf8'))?.mcpServers?.mapping;
+    if (
+      entry?.command === 'node' &&
+      Array.isArray(entry.args) &&
+      entry.args.every((a) => typeof a === 'string')
+    )
+      return entry.args;
+    console.error(
+      `[mcp-stdio-client] ${file} ignorado: mcpServers.mapping precisa de command "node" e args (lista de textos).`,
+    );
+  } catch (error) {
+    console.error(`[mcp-stdio-client] ${file} ignorado: ${error.message}`);
+  }
+  return null;
+}
+
+let serverArgs;
+let source;
+if (sep >= 0 && argv.length > sep + 1) {
+  serverArgs = argv.slice(sep + 1);
+  source = 'linha de comando';
+} else if (process.env.MAPPING_MCP_ARGS) {
+  serverArgs = JSON.parse(process.env.MAPPING_MCP_ARGS);
+  source = 'MAPPING_MCP_ARGS';
+} else if ((serverArgs = argsFromMcpJson())) {
+  source = path.join(workspace, '.mcp.json');
+} else {
+  serverArgs = DEFAULT_SERVER_ARGS;
+  source = 'padrão de examples/workspace';
+}
+console.error(
+  `[mcp-stdio-client] argumentos do servidor: ${source}: ${serverArgs.join(' ')}`,
+);
 const imgDir = process.env.IMGDIR || '.';
 const calls = JSON.parse(fs.readFileSync(callsFile, 'utf8'));
 
 const server = spawn('node', serverArgs, {
-  cwd: process.env.WS || process.cwd(),
+  cwd: workspace,
   stdio: ['pipe', 'pipe', 'inherit'],
 });
 

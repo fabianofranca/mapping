@@ -23,7 +23,7 @@ import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { Popover } from './Popover';
-import { Button, IconButton, Select } from './controls';
+import { Button, IconButton, Select, Tooltip } from './controls';
 
 // Conteúdo das camadas: a lista (visibilidade, camada ativa, nome, cor, ordem e
 // exclusão) e o modo de exibição das marcações sem anotação. É o miolo da janela
@@ -232,12 +232,9 @@ function LayerRow({
       </Popover>
 
       {layer.spec && (
-        <span
-          class="layer-badge"
-          title={t('layer.specBadge', { name: specName(project, layer) })}
-        >
-          {specName(project, layer)}
-        </span>
+        <Tooltip label={t('layer.specBadge', { name: specName(project, layer) })}>
+          <span class="layer-badge">{specName(project, layer)}</span>
+        </Tooltip>
       )}
     </li>
   );

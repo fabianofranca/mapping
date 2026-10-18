@@ -100,16 +100,22 @@ describe('ReopenTrace', () => {
     expect(lines()[0]).toContain('home=message:storage-failed');
   });
 
-  it('projeto inconsistente: grava', () => {
+  const inconsistent = {
+    ok: false,
+    error: 'invariant-violation',
+    inconsistent: { issues: [], repaired: [], unrepaired: [], repair: null },
+  } as const;
+
+  it('projeto inconsistente sem pedido: caminho normal, não grava', () => {
     const trace = new ReopenTrace(now);
-    trace.settle(
-      {
-        ok: false,
-        error: 'invariant-violation',
-        inconsistent: { issues: [], repaired: [], unrepaired: [], repair: null },
-      },
-      true,
-    );
+    trace.settle(inconsistent, true);
+    expect(lines()).toHaveLength(0);
+  });
+
+  it('projeto inconsistente depois do pedido de permissão: grava', () => {
+    const trace = new ReopenTrace(now);
+    trace.step('request=granted');
+    trace.settle(inconsistent, true);
     expect(lines()[0]).toContain('home=inconsistent');
   });
 

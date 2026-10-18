@@ -86,6 +86,18 @@ describe('LayersPanel', () => {
     }
   });
 
+  it('o selo da especialização leva a dica com o nome inteiro', () => {
+    const { harness } = setup();
+    const owned = harness.project().layers.filter((l) => l.spec !== null);
+    expect(owned.length).toBeGreaterThan(0);
+    const badges = document.querySelectorAll<HTMLElement>('.layer-badge');
+    expect(badges).toHaveLength(owned.length);
+    for (const badge of badges) {
+      const tip = badge.parentElement?.querySelector('[data-tooltip]');
+      expect(tip?.textContent).toBe(`Especialização ${badge.textContent}`);
+    }
+  });
+
   it('muda a cor pela paleta, que abre em popover e fecha ao escolher', async () => {
     const { harness, user } = setup();
     const layer = harness.project().layers[0];
