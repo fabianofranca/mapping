@@ -135,6 +135,33 @@ describe('janela Propostas: lista', () => {
     ).not.toContain('button-primary');
   });
 
+  it('aplicada com uma só mudança diz "1 mudança aplicada" (singular)', async () => {
+    const { base, proposal } = richScenario();
+    const accepted = decided(proposal, base, { level: 'proposal', id: null }, 'accepted');
+    const [first, ...rest] = accepted.changes;
+    if (!first || rest.length === 0)
+      throw new Error('cenário precisa de várias mudanças');
+    const one: Proposal = {
+      ...accepted,
+      status: 'applied',
+      applied: { [first.id]: { at: AT } },
+    };
+    const h = await openReviewHarness({ proposals: [one] });
+    renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
+    expect(screen.getByText('1 mudança aplicada')).toBeTruthy();
+    cleanup();
+    const many: Proposal = {
+      ...accepted,
+      status: 'applied',
+      applied: Object.fromEntries(accepted.changes.map((c) => [c.id, { at: AT }])),
+    };
+    const h2 = await openReviewHarness({ proposals: [many] });
+    renderInEditor(h2, <ProposalList onHelp={noop} onScan={noop} />);
+    expect(
+      screen.getByText(`${accepted.changes.length} mudanças aplicadas`),
+    ).toBeTruthy();
+  });
+
   // Achado 13 (parte da app): a proposta já revisada e aplicada não muda de status ao ser
   // substituída; a linha mostra quem a substituiu e leva à nova.
   it('aplicada e substituída: "Aplicada · substituída por …" e Abrir a nova, sem mudar o arquivo', async () => {

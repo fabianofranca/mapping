@@ -124,7 +124,7 @@ function stepsWithoutSubstitute(md: string, allowed: readonly string[]): string[
 
 /**
  * Exceções aceitas pelo dono: passos dos roteiros principais que continuam sem substituto para
- * o agente. Vazia: o R0.5 e o R6.2 são tentados pelo agente (shell, extensão e dialog-pilot).
+ * o agente. Vazia: o R0.5 e o R6.2 saíram dos roteiros principais (RF e RA, sob demanda).
  * Para acrescentar um, escreva aqui o porquê e leve a decisão ao dono (CLAUDE.md, Fluxo de trabalho).
  */
 const NO_SUBSTITUTE_EXCEPTIONS: readonly string[] = [];
@@ -253,14 +253,16 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
     expect(stepsWithoutSubstitute(guide, NO_SUBSTITUTE_EXCEPTIONS)).toEqual([]);
   });
 
-  it('o RP está nos roteiros sob demanda, com critério de entrada, e o R0.5 e o R6.2 são automatizados', () => {
+  it('o RP está nos roteiros sob demanda, com critério de entrada, e o R0.5 e o R6.2 migraram para o RF e o RA', () => {
     const onDemand = guide.indexOf('### Roteiros sob demanda (manuais)');
     expect(onDemand).toBeGreaterThan(guide.indexOf('### R9 '));
     expect(guide.indexOf('#### RP — App instalado (PWA)')).toBeGreaterThan(onDemand);
     expect(guide).toContain('Critério de entrada');
     const actions = stepActions(guide);
-    expect(actions.get('R0.5')).toContain('fabianofranca.github.io/mapping/index.html');
-    expect(actions.get('R6.2')).toContain('click_button');
+    expect(actions.has('R0.5')).toBe(false);
+    expect(actions.has('R6.2')).toBe(false);
+    expect(guide.indexOf('#### RF — ')).toBeGreaterThan(onDemand);
+    expect(guide.indexOf('#### RA — ')).toBeGreaterThan(onDemand);
   });
 
   it('todo passo que pede algo ao Claude Code tem [pessoa] na Ação (M4)', () => {
@@ -342,9 +344,9 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
     expect(guide).toMatch(/^- Ferramenta:[^\n]*dialog-pilot[^\n]*stdio/m);
   });
 
-  it('tem a sessão sob demanda e a validação da automação do R0.5 e do R6.2', () => {
+  it('tem a sessão sob demanda e o resultado da validação da automação do R0.5 e do R6.2', () => {
     expect(prompt).toContain('Sessão sob demanda');
-    expect(prompt).toContain('Validação da automação (próxima rodada)');
+    expect(prompt).toContain('Validação da automação (resultado da rodada');
     expect(read('CLAUDE.md')).toContain('pendente de decisão');
   });
 

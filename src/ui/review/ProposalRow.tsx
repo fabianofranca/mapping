@@ -196,7 +196,9 @@ export function ProposalRow({
         )}
         {p.status === 'applied' && (
           <span class="muted">
-            {t('proposals.appliedCount', { count: progress.applied })}
+            {progress.applied === 1
+              ? t('proposals.appliedCountOne')
+              : t('proposals.appliedCount', { count: progress.applied })}
           </span>
         )}
         {p.status === 'withdrawn' && (
