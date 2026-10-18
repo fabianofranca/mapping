@@ -19,7 +19,7 @@ export function App() {
   const library = openLibrary.value;
   if (library) {
     return (
-      <div class="app" data-focus-root>
+      <div class="app app-catalog" data-focus-root>
         <PreviewBanner />
         <UpdateBanner />
         <CatalogScreen library={library} />

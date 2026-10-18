@@ -9,13 +9,23 @@ import { createProject, projectAction } from './helpers';
 const PACKAGE_DIR = 'examples/libraries/material3';
 
 /** Zip do pacote do Material 3, gerado na hora a partir da pasta do repositório. */
-async function packageZip(): Promise<Buffer> {
+async function packageZip(extraDoc?: {
+  readonly path: string;
+  readonly append: string;
+}): Promise<Buffer> {
   const zip = new JSZip();
   const walk = (dir: string): void => {
     for (const name of readdirSync(dir)) {
       const path = join(dir, name);
       if (statSync(path).isDirectory()) walk(path);
-      else zip.file(relative(PACKAGE_DIR, path), readFileSync(path));
+      else {
+        const rel = relative(PACKAGE_DIR, path);
+        const bytes = readFileSync(path);
+        zip.file(
+          rel,
+          extraDoc?.path === rel ? `${bytes.toString('utf8')}${extraDoc.append}` : bytes,
+        );
+      }
     }
   };
   walk(PACKAGE_DIR);
@@ -91,6 +101,56 @@ test('Abrir biblioteca: lista, página do Button e playground que redesenha', as
   await screen.getByRole('button', { name: 'Voltar à tela inicial' }).click();
   await expect(screen).toBeHidden();
   await expect(page.getByRole('button', { name: 'Abrir biblioteca' })).toBeVisible();
+});
+
+test('Abrir biblioteca: só a lista e a página rolam; link volta ao topo e o aviso fica à vista', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.locator('input[data-library-zip]').setInputFiles({
+    name: 'material3.zip',
+    mimeType: 'application/zip',
+    buffer: await packageZip({
+      path: 'docs/m3-button.md',
+      append:
+        '\n\n[Ver o Chip](mapping://material3/m3-chip)\n\n[Destino que não existe](mapping://material3/nao-existe)\n',
+    }),
+  });
+  const screen = page.getByRole('main', { name: 'Catálogo da biblioteca' });
+  await screen
+    .getByRole('navigation', { name: 'Componentes' })
+    .locator('button[data-type-id="m3-button"]')
+    .click();
+  const article = screen.getByRole('article', { name: 'Button' });
+  await expect(article).toBeVisible();
+
+  const detail = page.locator('.catalog-detail');
+  const scrollDetail = () =>
+    detail.evaluate((el) => {
+      el.scrollTop = 400;
+      return el.scrollTop;
+    });
+  expect(await scrollDetail()).toBeGreaterThan(0);
+  // A janela não rola: quem rola é a página do componente.
+  expect(
+    await page.evaluate(
+      () => (document.scrollingElement?.scrollHeight ?? 0) <= window.innerHeight,
+    ),
+  ).toBe(true);
+
+  await article.getByRole('link', { name: 'Ver o Chip' }).click();
+  await expect(screen.getByRole('article', { name: 'Chip' })).toBeVisible();
+  await expect.poll(() => detail.evaluate((el) => el.scrollTop)).toBe(0);
+
+  // Link para destino inexistente: o aviso fica dentro da área visível.
+  await screen
+    .getByRole('navigation', { name: 'Componentes' })
+    .locator('button[data-type-id="m3-button"]')
+    .click();
+  await expect(article).toBeVisible();
+  expect(await scrollDetail()).toBeGreaterThan(0);
+  await article.getByRole('link', { name: 'Destino que não existe' }).click();
+  await expect(page.locator('.catalog-notice')).toBeInViewport();
 });
 
 test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um componente', async ({
