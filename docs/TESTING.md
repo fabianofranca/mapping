@@ -547,7 +547,7 @@ Para quem mantém o projeto, depois de uma rodada completa sem achados altos ou 
 
 ### Relato de uma rodada de teste
 
-Um template só, para a rodada completa, a dirigida e o teste avançado. Na dirigida, use a coluna **Achado de origem** e a seção **Regressões fora do alvo**; nas outras, apague-as.
+Um template só, para a rodada completa, a dirigida e o teste avançado. Quem testa por um agente entrega o relato como `relato.md` gravado no disco, anexado à conversa (ver o apêndice A). Na dirigida, use a coluna **Achado de origem** e a seção **Regressões fora do alvo**; nas outras, apague-as.
 
 ```markdown
 # Relato de teste — Mapping
@@ -707,6 +707,7 @@ Para um agente com controle do computador (Cowork) que executa os roteiros. O pr
 - **Build id do preview:** para diagnosticar "a faixa não apareceu", compare o `VERSION` de `…/preview/sw.js` (não o `…/sw.js` da raiz, que é da versão principal); o Pages guarda os arquivos por até 10 minutos.
 - **Exportação:** o diálogo "Exportar projeto" da app continua aberto depois do download; feche-o (**Cancelar**) antes do passo seguinte, ou a app parece travada.
 - **Console:** leia o console da aba pela extensão durante toda a rodada.
+- **Relato:** grave o `relato.md` no disco ao fim de cada roteiro e, no fechamento, **anexe-o à conversa** com a ferramenta de envio de arquivos da sessão (sem ela, diga isso) e cole o conteúdo; diga o caminho completo. Vale mesmo se a rodada parar no meio.
 
 **MCP.**
 
@@ -720,7 +721,27 @@ Para um agente com controle do computador (Cowork) que executa os roteiros. O pr
 
 **Forçar a versão nova.** Se o build id não for o esperado, use só a faixa **Nova versão disponível.** › **Atualizar** (seção 3, item 1). Se ela não aparecer, peça ao dono para resolver (no Cowork, se o preview não tiver o build a testar, o testador dispara o Deploy sozinho para o branch: `docs/TESTING-COWORK.md`, seção 2). Nunca abra janela anônima ou perfil de convidado (a extensão não roda neles; rodada 1) nem limpe os dados do site (apaga projetos do dono).
 
-**Página oculta e foco.** Peça à pessoa, uma vez, para deixar o computador desbloqueado e a janela do Chrome à vista, em foco e sem uso em paralelo durante a rodada, inclusive quando ela não estiver no teclado (rodadas 1 e 2): com a página oculta, a conferência de mudanças externas e a varredura de propostas param, e os diálogos nativos não abrem.
+**Página oculta e foco.** Peça à pessoa, uma vez, para deixar o computador desbloqueado e a janela do Chrome à vista, em foco e sem uso em paralelo durante a rodada, inclusive quando ela não estiver no teclado (rodadas 1 e 2): com a página oculta, a conferência de mudanças externas e a varredura de propostas param, e os diálogos nativos não abrem. O foco da **aba** (a aba da app em primeiro plano dentro da janela) o testador resolve sozinho, pelo link clicado (parágrafo abaixo).
+
+**Aba em foco sem o dono (link clicado).** O Chrome abre com uma aba vazia do dono em foco, e a aba do agente fica num grupo em segundo plano: o `select_folder` responde "Nenhum diálogo apareceu" (rodada do PR #174). **Não funcionam:** `click_button` no título da aba (não muda a aba ativa), `ctrl+Tab` pela extensão (a tecla vai para a página) e pedir ao dono (a rodada é sem interação). **Funciona:**
+
+1. Mantenha uma **aba de apoio** no grupo do agente: uma página simples (ex.: `https://example.com`) com o título trocado para "NÃO FECHAR — aba de apoio do agente (Claude)".
+2. Nela, com `javascript_tool`, injete um link para o app:
+
+   ```javascript
+   const a = document.createElement('a');
+   a.href = 'https://fabianofranca.github.io/mapping/preview/';
+   a.target = '_blank';
+   a.rel = 'opener';
+   a.textContent = 'abrir app';
+   document.body.prepend(a);
+   ```
+
+3. Ache o link (`find` ou `read_page`) e clique com `computer left_click`: o clique da extensão conta como gesto do usuário, e o Chrome abre a aba nova **já em foco** e, com `rel="opener"`, **no mesmo grupo**.
+4. `tabs_context_mcp` para pegar o id da aba nova.
+5. Agora o `select_folder` (caminho completo) vê o diálogo (a resposta traz `permissionButton: "Permitir"` ou `null`) e o `open_file` também funciona.
+
+Armadilhas: o grupo some se a aba de apoio fechar ou navegar (recrie com `tabs_context_mcp` e `createIfEmpty: true`; nunca reaproveite ids de abas de sessões anteriores); reabrir o projeto numa aba nova **perde o histórico de desfazer**, então faça o truque **antes** dos passos de desfazer (no R3.15 foi preciso restaurar à mão o estado da v2 no disco); as coordenadas de clique valem para o quadro da última captura; no fim, feche as abas que não são do teste (o guia manda manter uma aba só da app).
 
 ## Apêndice B — Operações de disco por sistema
 
