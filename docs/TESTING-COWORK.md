@@ -65,7 +65,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 - a confirmação de instalar o app, o "Sair da página?" e o arrastar do gerenciador de arquivos;
 - a janela do Chrome na frente (uma vez, no começo).
 
-**No modo sem interação**, marque esses passos "não executado (precisa do dono)" e siga, em vez de parar a rodada; o fechamento diz quais ficaram, para o dono fazer depois, se quiser. Se uma ferramenta do dialog-pilot falhar (inclusive o `open_file`, ainda não validado), tente uma vez de novo com `list_windows()` antes; persistindo, registre em "O que atrapalhou" e trate o passo como [pessoa].
+**No modo sem interação**, marque esses passos "não executado (precisa do dono)" e siga, em vez de parar a rodada; o fechamento diz quais ficaram, para o dono fazer depois, se quiser. Se uma ferramenta do dialog-pilot falhar (inclusive o `open_file`, que funcionou na rodada do PR #174, em 2026-10-18), tente uma vez de novo com `list_windows()` antes; persistindo, registre em "O que atrapalhou" e trate o passo como [pessoa].
 
 **No modo comum** (o dono por perto), vale o que segue.
 

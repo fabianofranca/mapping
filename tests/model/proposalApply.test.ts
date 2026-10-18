@@ -9,6 +9,7 @@ import {
   changeStatus,
   createMarking,
   deserialize,
+  getAnnotationIssues,
   moveImage,
   moveLayer,
   moveMarking,
@@ -48,9 +49,19 @@ import {
   withdrawProposal,
   type Project,
   type Proposal,
+  type SpecMigrationStep,
 } from '../../src/model';
 import { emptyProject, sampleProject } from './fixtures';
 import { AT, LATER, changeOf, decided, propose } from './proposalFixtures';
+import {
+  annotationOf,
+  badgeType,
+  buttonType,
+  chipType,
+  libProject,
+  libSpec,
+  valuesOf,
+} from './libraryMigrationFixtures';
 import { cadastroProject, codeProject, idGen, loadExample } from './specFixtures';
 
 const FIGMA = { system: 'figma', id: '1:2', url: 'https://figma.com/x' };
@@ -609,5 +620,126 @@ describe('pacote de biblioteca na proposta (fase B4)', () => {
     const removed = removeSpecialization(withPackage(base, 1), 'sdui', 'convert');
     const p = acceptAll(propose(withPackage(base, 1), removed), withPackage(base, 1));
     expect(apply(withPackage(base, 1), p).packages).toEqual([]);
+  });
+});
+
+describe('migração que tira o campo na mesma proposta (remove-field e rename-field)', () => {
+  /** A especialização v1 aplicada, com a anotação `B1` (Button) com o campo `label` preenchido. */
+  function before(): Project {
+    return libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'teste', size: 3 } },
+    ]);
+  }
+
+  /** A v2 sem o campo `label` (e `title` no lugar, no rename), com a migração dada. */
+  function nextSpec(step: SpecMigrationStep, renamed?: string) {
+    const fields = buttonType().fields.filter((f) => f.key !== 'label');
+    if (renamed) fields.unshift({ key: renamed, type: 'string', tags: ['x'] });
+    return libSpec(
+      2,
+      { c: [buttonType({ fields }), badgeType()], e: [chipType()] },
+      {
+        migrations: [{ from: 1, to: 2, steps: [step] }],
+      },
+    );
+  }
+
+  function proposeUpdate(step: SpecMigrationStep, renamed?: string) {
+    const base = before();
+    const after = updateSpecialization(base, nextSpec(step, renamed));
+    return { base, after, p: propose(base, after) };
+  }
+
+  const REMOVE: SpecMigrationStep = {
+    op: 'remove-field',
+    type: 'button',
+    field: 'label',
+  };
+  const RENAME: SpecMigrationStep = {
+    op: 'rename-field',
+    type: 'button',
+    from: 'label',
+    to: 'title',
+  };
+
+  it('remove-field: a proposta traz o valor indo a null e aceitar tudo aplica, sem a chave', () => {
+    const { base, after, p } = proposeUpdate(REMOVE);
+    const clear = changeOf(p, 'annotation', 'B1', 'values.label');
+    expect(clear.to).toBeNull();
+    changeOf(p, 'specialization', 'lib');
+    const accepted = acceptAll(p, base);
+    const validation = validateAccepted(base, accepted);
+    expect(validation.issues).toEqual([]);
+    expect(validation.ok).toBe(true);
+    const result = apply(base, accepted);
+    expect(valuesOf(result.project, 'B1')).not.toHaveProperty('label');
+    expect(valuesOf(result.project, 'B1').size).toBe(3);
+    expect(getAnnotationIssues(result.project, 'B1')).toEqual([]);
+    expect(validateProject(result.project)).toEqual([]);
+    expect(result.project.specializations[0]?.version).toBe(2);
+    expect(valuesOf(after, 'B1')).not.toHaveProperty('label');
+  });
+
+  it('rename-field: aceitar tudo deixa o valor no campo novo, sem a chave antiga', () => {
+    const { base, p } = proposeUpdate(RENAME, 'title');
+    expect(changeOf(p, 'annotation', 'B1', 'values.label').to).toBeNull();
+    const result = apply(base, acceptAll(p, base));
+    expect(valuesOf(result.project, 'B1').title).toBe('teste');
+    expect(valuesOf(result.project, 'B1')).not.toHaveProperty('label');
+    expect(getAnnotationIssues(result.project, 'B1')).toEqual([]);
+  });
+
+  it('só o valor aceito (sem a especialização): a chave ainda é do tipo antigo e vai a null', () => {
+    const { base, p } = proposeUpdate(REMOVE);
+    const clear = changeOf(p, 'annotation', 'B1', 'values.label');
+    const only = decided(p, base, { level: 'change', id: clear.id }, 'accepted');
+    const result = apply(base, only);
+    expect(valuesOf(result.project, 'B1').label).toBeNull();
+    expect(result.proposal.status).toBe('open');
+  });
+
+  it('rejeitar o valor e aceitar a especialização continua aplicando (valor órfão como pendência)', () => {
+    const { base, p } = proposeUpdate(REMOVE);
+    const clear = changeOf(p, 'annotation', 'B1', 'values.label');
+    const decisions = decided(
+      acceptAll(p, base),
+      base,
+      { level: 'change', id: clear.id },
+      'rejected',
+    );
+    const result = apply(base, decisions);
+    expect(valuesOf(result.project, 'B1').label).toBe('teste');
+    expect(getAnnotationIssues(result.project, 'B1')).toEqual([
+      { code: 'unknown-field', key: 'label' },
+    ]);
+  });
+
+  it('visão Proposto: limpar a chave fora do tipo não vira problema', () => {
+    const { base, p } = proposeUpdate(REMOVE);
+    const preview = previewProject(base, p);
+    expect(preview.problems).toEqual([]);
+    expect(valuesOf(preview.project, 'B1')).not.toHaveProperty('label');
+  });
+
+  it('regressão: valor novo numa chave fora do tipo continua field-mismatch', () => {
+    const { base, p } = proposeUpdate(REMOVE);
+    const clear = changeOf(p, 'annotation', 'B1', 'values.label');
+    const stale: Proposal = {
+      ...p,
+      changes: p.changes.map((c) =>
+        c.id === clear.id ? { ...c, from: 'teste', to: 'novo' } : c,
+      ),
+    };
+    const accepted = acceptAll(stale, base);
+    const validation = validateAccepted(base, accepted);
+    expect(validation.ok).toBe(false);
+    expect(validation.issues).toEqual([
+      expect.objectContaining({
+        code: 'field-mismatch',
+        id: 'B1',
+        changeIds: [clear.id],
+      }),
+    ]);
+    expect(annotationOf(base, 'B1').values).toMatchObject({ label: 'teste' });
   });
 });
