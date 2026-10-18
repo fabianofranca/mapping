@@ -2,8 +2,12 @@ import { signal, type ReadonlySignal } from '@preact/signals';
 import {
   canRemoveProposal,
   changeImageFile,
+  isRecord,
+  packageDirOf,
   proposalImagePath,
+  proposalPackageDir,
   serializeProposal,
+  type Change,
   type Proposal,
 } from '../model';
 import {
@@ -140,7 +144,10 @@ export interface ProposalStore {
    * revisão tira o `added` dela: o "Nova proposta · Revisar" não volta depois de revisada.
    */
   dismissNotice(id: string, kind?: ProposalNoticeKind): void;
-  /** Arquivos para exportar: as propostas como estão no disco e as imagens que aguardam aceitação. */
+  /**
+   * Arquivos para exportar: as propostas como estão no disco e os arquivos que aguardam
+   * aceitação (imagens e pacotes de biblioteca de `proposals/<id>/specs/`).
+   */
   collect(): Promise<{
     readonly proposals: Map<string, string>;
     readonly images: Map<string, Blob>;
@@ -161,6 +168,13 @@ export interface ProposalStoreOptions {
 
 function newestFirst(a: Proposal, b: Proposal): number {
   return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
+}
+
+/** `specs/<pasta>` da especialização que a mudança cria ou atualiza, se for um pacote. */
+function specPackageDir(change: Change): string | null {
+  if (change.entity !== 'specialization' || change.kind === 'remove') return null;
+  const file = isRecord(change.to) ? change.to.file : undefined;
+  return typeof file === 'string' ? packageDirOf(file) : null;
 }
 
 export function createProposalStore(options: ProposalStoreOptions): ProposalStore {
@@ -414,15 +428,24 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
           proposals.set(`proposals/${id}/proposal.json`, entry.text);
           for (const change of entry.proposal.changes) {
             if (Object.hasOwn(entry.proposal.applied, change.id)) continue;
+            const read = async (path: string) => {
+              if (images.has(path)) return;
+              const blob = await storage.readImage(path).catch((e: unknown) => {
+                reportError('proposals.readImage', e);
+                return null;
+              });
+              if (blob) images.set(path, blob);
+            };
             const file = changeImageFile(change);
-            if (file === null) continue;
-            const path = proposalImagePath(id, file);
-            if (images.has(path)) continue;
-            const blob = await storage.readImage(path).catch((e: unknown) => {
-              reportError('proposals.readImage', e);
-              return null;
+            if (file !== null) await read(proposalImagePath(id, file));
+            const dir = specPackageDir(change);
+            if (dir === null) continue;
+            const from = `${proposalPackageDir(id, dir)}/`;
+            const listed = await storage.listProposalFiles(id).catch((e: unknown) => {
+              reportError('proposals.listFiles', e);
+              return [];
             });
-            if (blob) images.set(path, blob);
+            for (const path of listed) if (path.startsWith(from)) await read(path);
           }
         }
         for (const [id, item] of problemMap) {

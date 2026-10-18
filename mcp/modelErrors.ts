@@ -50,6 +50,7 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'ref-not-accepted': 'o campo não aceita esse alvo de referência',
   'spec-already-applied': 'a especialização já está aplicada',
   'spec-not-newer': 'a versão não é maior que a aplicada',
+  'spec-missing-migrations': 'a versão nova tem quebras sem migração declarada',
   'unknown-platform': 'plataforma não declarada pelas especializações aplicadas',
   'invalid-url-template':
     'urlTemplate inválido: precisa começar com http:// ou https:// e conter {path} ({line} é opcional)',

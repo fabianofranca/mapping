@@ -287,6 +287,17 @@ function createLibrary(db: Db): LocalLibrary {
             tx.done,
           ]);
         },
+        async listProposalFiles(proposalId) {
+          if (!PROPOSAL_ID_RE.test(proposalId)) {
+            throw new Error(`invalid proposal id: ${proposalId}`);
+          }
+          const prefix = `${proposalDir(proposalId)}/`;
+          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+          return keys
+            .map(([, path]) => path)
+            .filter((path) => path.startsWith(prefix))
+            .sort();
+        },
         async writeBackup(name, text) {
           const blob = new Blob([text], { type: SPEC_TYPE });
           const stored = await toStoredFile(id, `${BACKUP_PREFIX}${name}`, blob);

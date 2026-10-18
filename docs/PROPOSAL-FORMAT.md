@@ -13,14 +13,20 @@ meu-projeto/
 └── proposals/
     └── 8c1f…/                # id da proposta
         ├── proposal.json
-        └── images/           # imagens novas ou trocadas, até serem aceitas
-            └── checkout.webp
+        ├── images/           # imagens novas ou trocadas, até serem aceitas
+        │   └── checkout.webp
+        └── specs/            # pacote de biblioteca novo ou atualizado (etapa Biblioteca)
+            └── material3/
+                ├── material3.spec.json
+                ├── components/
+                └── …
 ```
 
 - Uma pasta por proposta, `proposals/<id>/`, com o `proposal.json`. O id só usa `[A-Za-z0-9._-]` e não começa com ponto (vira nome de pasta).
 - Tela em branco (schema v10): a criação traz a imagem inteira com `file: null` e `background`, sem arquivo para mover; `background` e `size` só existem como campos de `update` quando a imagem é tela em branco nos dois lados (na foto, o tamanho vem da troca de arquivo, campo `file`).
 - Imagem nova ou trocada: a mudança traz o caminho definitivo (`images/checkout.webp`) e o arquivo espera em `proposals/<id>/` mais esse caminho (`proposals/<id>/images/checkout.webp`). Ao aplicar, ele é movido para o lugar definitivo.
-- As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado.
+- Pacote de biblioteca (especialização `formatVersion` 4, uma pasta com `components/`, `docs/`, `examples/` e `fonts/`): a mudança é a da especialização de sempre (`entity: "specialization"`, `to = { id, version, file, spec }`), com `to.file` dentro de uma pasta (`specs/material3/material3.spec.json`). Os arquivos do pacote esperam em `proposals/<id>/` mais o caminho definitivo (`proposals/<id>/specs/material3/components/botao.json`). A fonte da verdade da especialização é o `to.spec`: o arquivo dela na pasta da proposta pode faltar e, se vier, é ignorado. Ao aplicar, os arquivos são **copiados** (não movidos) para `specs/<pasta>/`, que a sessão regrava inteira junto com o `mapping.json`; ficam na proposta até ela ser apagada, então desfazer e refazer não mexem neles.
+- As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado, com os arquivos que esperam a aceitação (imagens em `proposals/<id>/images/` e pacotes em `proposals/<id>/specs/<pasta>/`, binários inclusive; os de mudanças já aplicadas não vão). Ao ler o zip, só entram caminhos desses dois tipos, com id válido e sem `..`.
 
 ## Quem grava o quê
 
@@ -167,7 +173,7 @@ Mudanças de geometria (`rect` da marcação; `placement` e troca de arquivo de 
 
 ### Aplicar aceitas
 
-`applyAccepted(projeto, proposta, data)` efetiva só as aceitas ainda não aplicadas, numa única alteração do projeto (uma entrada de desfazer para quem chama), e devolve o projeto novo, a proposta com `applied` atualizado, as mudanças aplicadas e as imagens a mover de `proposals/<id>/` para o lugar definitivo. O que está sem decisão continua pendente na mesma proposta; uma nova aplicação depois efetiva o que for aceito em seguida. A aplicação não passa pelas operações do modelo (a trava não impede), mas o resultado passa pelas invariantes.
+`applyAccepted(projeto, proposta, data)` efetiva só as aceitas ainda não aplicadas, numa única alteração do projeto (uma entrada de desfazer para quem chama), e devolve o projeto novo, a proposta com `applied` atualizado, as mudanças aplicadas, as imagens a mover de `proposals/<id>/` para o lugar definitivo (`files`) e os pacotes de biblioteca a copiar de `proposals/<id>/specs/<pasta>/` para `specs/<pasta>/` (`packages`: `specId`, `version`, `dir`, `from`, `file` e `spec`). Antes de entregar o pacote à sessão, a app o lê, monta o arquivo da especialização a partir de `to.spec` e o valida pelos três níveis da biblioteca, com a versão aplicada como anterior (contrato de versão): sem arquivo nenhum a aplicação falha com `package-missing`, e pacote inválido com `package-invalid`; nos dois casos nada muda. O que está sem decisão continua pendente na mesma proposta; uma nova aplicação depois efetiva o que for aceito em seguida. A aplicação não passa pelas operações do modelo (a trava não impede), mas o resultado passa pelas invariantes.
 
 ### Estados
 

@@ -21,6 +21,7 @@ import {
 import {
   isProposalFilePath,
   isProposalImagePath,
+  isProposalPackagePath,
   proposalIdOfPath,
 } from '../../src/storage/types';
 import {
@@ -104,6 +105,40 @@ describe('pasta: proposals/', () => {
     await storage.removeImage(path);
     expect(await storage.readImage(path)).toBeNull();
     expect(await (await storage.readImage('images/nova.webp'))?.text()).toBe('FINAL');
+  });
+});
+
+describe('pasta: listProposalFiles (fase B4)', () => {
+  it('lista tudo sob proposals/<id>/, recursivo e em ordem, só dessa proposta', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    expect(await storage.listProposalFiles('A')).toEqual([]);
+    root.put(proposalFilePath('A'), 'a');
+    root.put('proposals/A/images/nova.webp', 'WEBP');
+    root.put('proposals/A/specs/lib/m.spec.json', '{}');
+    root.put('proposals/A/specs/lib/components/botao.json', '{}');
+    root.put('proposals/A/specs/lib/fonts/f.ttf', 'F');
+    root.put(proposalFilePath('A1'), 'a1');
+    root.put('proposals/A1/specs/lib/outro.json', '{}');
+    root.put('specs/lib/m.spec.json', '{}');
+
+    expect(await storage.listProposalFiles('A')).toEqual([
+      'proposals/A/images/nova.webp',
+      'proposals/A/proposal.json',
+      'proposals/A/specs/lib/components/botao.json',
+      'proposals/A/specs/lib/fonts/f.ttf',
+      'proposals/A/specs/lib/m.spec.json',
+    ]);
+    expect(await storage.listProposalFiles('B')).toEqual([]);
+    const blob = await storage.readImage('proposals/A/specs/lib/fonts/f.ttf');
+    expect(await blob?.text()).toBe('F');
+  });
+
+  it('recusa um id que apontaria para fora da pasta da proposta', async () => {
+    const storage = createFolderStorage(new MemoryDirectory('p'));
+    for (const bad of ['', '..', '.git', 'a/b']) {
+      await expect(storage.listProposalFiles(bad)).rejects.toThrow('invalid proposal id');
+    }
   });
 });
 
@@ -287,6 +322,41 @@ describe('projeto local (IndexedDB)', () => {
     await expect(storage.removeProposal('../x')).rejects.toThrow('invalid proposal id');
   });
 
+  it('listProposalFiles lista tudo sob proposals/<id>/ em ordem, sem confundir P1 e P10', async () => {
+    await library.create(
+      'a',
+      files({
+        proposals: new Map([
+          [proposalFilePath('P1'), 'um'],
+          [proposalFilePath('P10'), 'dez'],
+        ]),
+        proposalImages: new Map([
+          ['proposals/P1/specs/lib/fonts/f.ttf', new Blob(['F'])],
+          ['proposals/P1/specs/lib/m.spec.json', new Blob(['{}'])],
+          ['proposals/P10/specs/lib/outro.json', new Blob(['{}'])],
+          ['proposals/P1/images/nova.webp', new Blob(['W'], { type: 'image/webp' })],
+        ]),
+        images: new Map([['images/final.jpg', new Blob(['F'], { type: 'image/jpeg' })]]),
+      }),
+    );
+    const storage = library.open('a');
+    expect(await storage.listProposalFiles('P1')).toEqual([
+      'proposals/P1/images/nova.webp',
+      'proposals/P1/proposal.json',
+      'proposals/P1/specs/lib/fonts/f.ttf',
+      'proposals/P1/specs/lib/m.spec.json',
+    ]);
+    expect(await storage.listProposalFiles('nada')).toEqual([]);
+    expect(
+      await (await storage.readImage('proposals/P1/specs/lib/fonts/f.ttf'))?.text(),
+    ).toBe('F');
+    await expect(storage.listProposalFiles('../x')).rejects.toThrow(
+      'invalid proposal id',
+    );
+    await library.open('a').removeProposal('P1');
+    expect(await storage.listProposalFiles('P1')).toEqual([]);
+  });
+
   it('as propostas de um projeto não aparecem em outro', async () => {
     await library.create('a', files());
     await library.create('b', files());
@@ -390,6 +460,68 @@ describe('zip com propostas', () => {
     if (!read.ok) throw new Error(read.error);
     expect([...read.files.proposals.keys()]).toEqual([proposalFilePath('P2')]);
     expect(read.files.proposalImages.size).toBe(0);
+  });
+
+  it('round-trip dos arquivos de pacote de biblioteca em proposals/<id>/specs/ (inclusive binário)', async () => {
+    const font = new Uint8Array([0, 1, 2, 254, 255]);
+    const files = new Map([
+      ['proposals/P1/images/nova.webp', new Blob(['W'], { type: 'image/webp' })],
+      ['proposals/P1/specs/lib/m.spec.json', new Blob(['{"a":1}'])],
+      ['proposals/P1/specs/lib/components/botao.json', new Blob(['{}'])],
+      ['proposals/P1/specs/lib/fonts/f.ttf', new Blob([font])],
+    ]);
+    const proposals = new Map([[proposalFilePath('P1'), 'texto']]);
+    const read = await readProjectZip(await zipWith(proposals, files));
+    if (!read.ok) throw new Error(read.error);
+    expect([...read.files.proposalImages.keys()].sort()).toEqual(
+      [...files.keys()].sort(),
+    );
+    const ttf = read.files.proposalImages.get('proposals/P1/specs/lib/fonts/f.ttf');
+    expect([...new Uint8Array((await ttf?.arrayBuffer()) ?? new ArrayBuffer(0))]).toEqual(
+      [...font],
+    );
+    expect(
+      await read.files.proposalImages.get('proposals/P1/specs/lib/m.spec.json')?.text(),
+    ).toBe('{"a":1}');
+    // Os arquivos da proposta não vazam para os pacotes do projeto.
+    expect(read.files.specAssets).toBeUndefined();
+    expect(read.files.specs.size).toBe(0);
+
+    const again = await readProjectZip(await writeProjectZip({ ...read.files }));
+    if (!again.ok) throw new Error(again.error);
+    expect([...again.files.proposalImages.keys()].sort()).toEqual(
+      [...files.keys()].sort(),
+    );
+  });
+
+  it('só lê arquivos de pacote de proposta com id e caminho válidos', async () => {
+    const zip = new JSZip();
+    zip.file('mapping.json', serialize(sampleProject()));
+    zip.file('proposals/P1/specs/lib/ok.json', '{}');
+    zip.file('proposals/P1/specs/solto.json', '{}');
+    zip.file('proposals/P1/specs/lib/../fora.json', '{}');
+    zip.file('proposals/.git/specs/lib/x.json', '{}');
+    zip.file('proposals/P1/outra/lib/x.json', '{}');
+    const read = await readProjectZip(
+      new Blob([await zip.generateAsync({ type: 'arraybuffer' })]),
+    );
+    if (!read.ok) throw new Error(read.error);
+    expect([...read.files.proposalImages.keys()]).toEqual([
+      'proposals/P1/specs/lib/ok.json',
+    ]);
+    expect(isProposalPackagePath('proposals/P1/specs/lib/fonts/f.ttf')).toBe(true);
+    expect(isProposalPackagePath('proposals/P1/specs/lib')).toBe(false);
+    // O JSZip já normaliza `.`, `//` e `..` ao montar o zip; o filtro cobre quem os traga.
+    for (const bad of [
+      'proposals/P1/specs/lib/../x.json',
+      'proposals/P1/specs/./lib/x.json',
+      'proposals/P1/specs//lib/x.json',
+      'proposals/P1/specs/lib\\x.json',
+      'proposals/../specs/lib/x.json',
+    ]) {
+      expect(isProposalPackagePath(bad)).toBe(false);
+    }
+    expect(isProposalPackagePath('specs/lib/a.json')).toBe(false);
   });
 
   it('um zip sem propostas continua abrindo', async () => {

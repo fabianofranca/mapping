@@ -572,7 +572,7 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'Hoje o contrato classifica, valida e informa o impacto da atualização (diferenças, quebras e as quebras sem passo). Executar os passos num projeto virá em uma fase seguinte da etapa Biblioteca.',
+        text: 'Ao atualizar, a app executa os passos da cadeia sobre as anotações do projeto e mostra antes o impacto: os passos com suas contagens, as perdas em destaque (valores ou anotações apagados) e as pendências que abrem em Incompletas. Uma quebra sem passo recusa a atualização, e Desfazer devolve a biblioteca e os dados juntos.',
       },
     ],
   },
@@ -1023,7 +1023,7 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'Today the contract classifies, validates and reports the update impact (differences, breaking changes and the ones without a step). Running the steps on a project comes in a later phase of the Library stage.',
+        text: 'When updating, the app runs the chain steps on the project’s annotations and shows the impact first: the steps with their counts, the losses highlighted (deleted values or annotations) and the pending items that open in Incomplete. A breaking change without a step refuses the update, and Undo restores the library and the data together.',
       },
     ],
   },

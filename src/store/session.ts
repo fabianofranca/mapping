@@ -669,6 +669,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       pendingFiles.delete(path);
       imageStamps.delete(path);
     },
+    stagePackage: cachePackage,
     flush: () => saver.flush(),
   });
   let lastRevision = store.revision.peek();

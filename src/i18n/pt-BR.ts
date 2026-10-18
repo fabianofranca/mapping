@@ -400,6 +400,37 @@ export const ptBR = {
     'Camadas existentes mantêm cor e anotações. Anotações que ficarem inválidas aparecem como incompletas.',
   'spec.updateBroken': '{count} referência(s) vão ficar quebradas.',
   'spec.updateConfirm': 'Atualizar',
+  'spec.updatedPending':
+    '"{name}" atualizada para a versão {version}. {count} pendência(s) em Incompletas.',
+  'spec.impact.additive': 'Atualização aditiva: os dados ficam como estão.',
+  'spec.impact.stepsTitle': 'Passos da migração',
+  'spec.impact.op.renameType': 'Renomear o tipo {from} → {to}',
+  'spec.impact.op.removeTypeConvert': 'Remover o tipo {type} (converter em livres)',
+  'spec.impact.op.removeTypeDelete': 'Remover o tipo {type} (apagar as anotações)',
+  'spec.impact.op.renameField': 'Renomear o campo {from} → {to} em {type}',
+  'spec.impact.op.removeField': 'Remover o campo {field} em {type}',
+  'spec.impact.op.mapValues': 'Mapear valores de {field} em {type}: {pairs}',
+  'spec.impact.op.fillField': 'Preencher {field} em {type} com {value}',
+  'spec.impact.annotations': '{count} anotação(ões)',
+  'spec.impact.values': '{count} valor(es)',
+  'spec.impact.converted': '{count} convertida(s)',
+  'spec.impact.deleted': '{count} apagada(s)',
+  'spec.impact.refs': '{count} referência(s) atualizada(s)',
+  'spec.impact.nothing': 'nada a mudar neste projeto',
+  'spec.impact.lossTotal':
+    'Esta atualização apaga {values} valor(es) e {annotations} anotação(ões).',
+  'spec.impact.lossTarget': '{marking} › {name}',
+  'spec.impact.lossDeleted': '{target}: anotação apagada',
+  'spec.impact.lossRemovedField': '{target}: campo {field} removido (valor "{value}")',
+  'spec.impact.lossReplaced': '{target}: valor de {field} trocado (era "{value}")',
+  'spec.impact.lossOverwritten': '{target}: valor de {field} sobrescrito (era "{value}")',
+  'spec.impact.lossMore': '+{count}',
+  'spec.impact.pending':
+    '{count} pendência(s) ficam (abrem em Incompletas depois de atualizar).',
+  'spec.impact.refused':
+    'Esta atualização não pode ser aplicada: faltam migrações declaradas para estas quebras.',
+  'spec.impact.failedMissing':
+    'Atualização recusada: a nova versão tem quebras sem migração declarada. Nada foi alterado.',
   'spec.applyFolder': 'Aplicar pasta…',
   'spec.applyZip': 'Aplicar zip…',
   'spec.updateFolder': 'Atualizar de pasta…',
@@ -688,6 +719,10 @@ export const ptBR = {
   'proposal.error.imageMissing': 'A imagem da proposta não foi encontrada: {path}',
   'proposal.error.imageExists':
     'Já existe uma imagem do projeto com este arquivo: {path}',
+  'proposal.error.packageMissing':
+    'Os arquivos do pacote da biblioteca não foram encontrados na proposta: {path}',
+  'proposal.error.packageInvalid':
+    'O pacote da biblioteca da proposta não passa na validação: {path}',
   'proposal.error.readOnly': 'O projeto está somente leitura e não recebe mudanças.',
   'proposal.error.reviewing': 'Saia da revisão para apagar uma proposta.',
   'proposal.error.notRemovable':

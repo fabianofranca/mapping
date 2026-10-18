@@ -19,12 +19,13 @@ import {
   proposalFilePath,
   proposalImagePath,
   changeImageFile,
+  packageDirOf,
   serializeProposal,
   type Proposal,
   type ProposalStatus,
 } from '../src/model';
 import { ToolError } from './errors';
-import { Roots, resolveProjectFile, writeFileAtomic } from './paths';
+import { Roots, hasParentSegment, resolveProjectFile, writeFileAtomic } from './paths';
 import type { ProjectLocation } from './projects';
 
 // Propostas em disco (etapa 4.2): `proposals/<id>/proposal.json` e `proposals/<id>/images/…`.
@@ -206,16 +207,36 @@ async function writeNewFile(path: string, data: Uint8Array | string): Promise<vo
 }
 
 /**
+ * Caminho do arquivo de um pacote de biblioteca na pasta da proposta: o caminho definitivo
+ * (`specs/<pasta>/<relativo>`) sob `proposals/<id>/`. Recusa o que não é de uma pasta de pacote
+ * ou tenta sair dela.
+ */
+function packageFilePath(proposalId: string, file: string): string {
+  if (
+    packageDirOf(file) === null ||
+    file.includes('\0') ||
+    file.includes('\\') ||
+    hasParentSegment(file)
+  ) {
+    throw new Error(`arquivo de pacote com caminho inválido: ${file}`);
+  }
+  return `${proposalDir(proposalId)}/${file}`;
+}
+
+/**
  * Grava uma proposta nova: a pasta `proposals/<id>/`, as imagens novas ou trocadas em
- * `proposals/<id>/images/` e, por último, o `proposal.json` (uma pasta sem ele nunca parece
- * uma proposta pronta). Se algo falha, a pasta criada é removida.
+ * `proposals/<id>/images/`, os arquivos dos pacotes de biblioteca em
+ * `proposals/<id>/specs/<pasta>/…` (a mesma regra das imagens: o caminho definitivo sob a
+ * pasta da proposta) e, por último, o `proposal.json` (uma pasta sem ele nunca parece uma
+ * proposta pronta). Nenhum arquivo é sobrescrito. Se algo falha, a pasta criada é removida.
  */
 export async function writeNewProposal(
   roots: Roots,
   location: ProjectLocation,
   proposal: Proposal,
   images: ReadonlyMap<string, Uint8Array>,
-): Promise<{ written: string[] }> {
+  packageFiles: ReadonlyMap<string, Uint8Array> = new Map(),
+): Promise<{ written: string[]; writtenPackage: string[] }> {
   const parent = join(location.dir, PROPOSALS_DIR);
   await mkdir(parent, { recursive: true });
   await roots.assertInside(await realpath(parent), PROPOSALS_DIR);
@@ -223,27 +244,33 @@ export async function writeNewProposal(
   // Sem `recursive`: falha se a pasta já existe (o id é novo).
   await mkdir(dir);
   const written: string[] = [];
+  const writtenPackage: string[] = [];
+  const put = async (relative: string, data: Uint8Array, into: string[]) => {
+    await mkdir(dirname(join(location.dir, relative)), { recursive: true });
+    try {
+      await writeNewFile(join(location.dir, relative), data);
+    } catch (error) {
+      if (errnoCode(error) !== 'EEXIST') throw error;
+      throw new ToolError('image-exists', `já existe um arquivo em ${relative}`, {
+        file: relative,
+      });
+    }
+    into.push(relative);
+  };
   try {
     await roots.assertInside(await realpath(dir), proposalDir(proposal.id));
     for (const [file, data] of images) {
-      const relative = proposalImagePath(proposal.id, file);
-      await mkdir(dirname(join(location.dir, relative)), { recursive: true });
-      try {
-        await writeNewFile(join(location.dir, relative), data);
-      } catch (error) {
-        if (errnoCode(error) !== 'EEXIST') throw error;
-        throw new ToolError('image-exists', `já existe um arquivo em ${relative}`, {
-          file: relative,
-        });
-      }
-      written.push(relative);
+      await put(proposalImagePath(proposal.id, file), data, written);
+    }
+    for (const [file, data] of packageFiles) {
+      await put(packageFilePath(proposal.id, file), data, writtenPackage);
     }
     await writeNewFile(join(dir, PROPOSAL_FILE), serializeProposal(proposal));
   } catch (error) {
     await rm(dir, { recursive: true, force: true });
     throw error;
   }
-  return { written };
+  return { written, writtenPackage };
 }
 
 /**

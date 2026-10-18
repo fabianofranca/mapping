@@ -1,8 +1,10 @@
 import { validateProject, type InvariantCode } from './invariants';
+import { packageDirOf } from './libraryPackage';
 import {
   ENTRIES_FIELD_PREFIX,
   VALUES_FIELD_PREFIX,
   proposalImagePath,
+  proposalPackageDir,
   type Change,
   type ChangeEntity,
   type Proposal,
@@ -432,6 +434,23 @@ export interface ProposalFileMove {
   readonly to: string;
 }
 
+/**
+ * Pacote de biblioteca de uma especialização aplicada agora: a pasta de `specs/` que a
+ * mudança traz (`dir`), onde os arquivos esperam na proposta (`from`, copiados e não
+ * movidos) e a especialização (`to.spec`, a fonte da verdade do arquivo dela).
+ */
+export interface ProposalPackage {
+  readonly specId: string;
+  readonly version: number;
+  /** `specs/<pasta>`. */
+  readonly dir: string;
+  /** `proposals/<id>/specs/<pasta>`. */
+  readonly from: string;
+  readonly spec: Spec | null;
+  /** Caminho do arquivo da especialização (`to.file`). */
+  readonly file: string;
+}
+
 export type ApplyAcceptedResult =
   | {
       readonly ok: true;
@@ -442,6 +461,8 @@ export type ApplyAcceptedResult =
       readonly applied: readonly Change[];
       /** Imagens novas ou trocadas a mover para `images/`. */
       readonly files: readonly ProposalFileMove[];
+      /** Pacotes de biblioteca das especializações criadas ou atualizadas, a copiar para `specs/`. */
+      readonly packages: readonly ProposalPackage[];
     }
   | { readonly ok: false; readonly issues: readonly ProposalIssue[] };
 
@@ -477,6 +498,22 @@ export function applyAccepted(
         files.push({ from: proposalImagePath(p.id, file), to: file });
     }
   }
+  const packages: ProposalPackage[] = [];
+  for (const c of applied) {
+    if (c.entity !== 'specialization' || c.kind === 'remove' || !isRecord(c.to)) continue;
+    const { file, version, id: specId } = c.to;
+    if (typeof file !== 'string' || typeof version !== 'number') continue;
+    const dir = packageDirOf(file);
+    if (dir === null || typeof specId !== 'string') continue;
+    packages.push({
+      specId,
+      version,
+      dir,
+      from: proposalPackageDir(p.id, dir),
+      spec: (c.to.spec ?? null) as unknown as Spec | null,
+      file,
+    });
+  }
   return {
     ok: true,
     project: validation.project,
@@ -487,6 +524,7 @@ export function applyAccepted(
     },
     applied,
     files,
+    packages,
   };
 }
 

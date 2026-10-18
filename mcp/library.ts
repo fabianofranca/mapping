@@ -7,6 +7,10 @@ import {
   type LibraryFile,
   type LibraryIssue,
 } from '../src/model/library';
+import {
+  MAX_PACKAGE_BYTES,
+  MAX_PACKAGE_FILES as MODEL_PACKAGE_FILES,
+} from '../src/model/libraryPackage';
 import { ToolError } from './errors';
 import { hasParentSegment, isWithin, type Roots } from './paths';
 
@@ -74,11 +78,28 @@ export interface ReadPackage {
   readonly files: readonly LibraryFile[];
   /** Arquivo da especialização, quando o pedido o indicou (relativo à pasta). */
   readonly specPath?: string;
+  /** Com `raw`: o conteúdo cru de TODOS os arquivos (binários inclusive), por caminho relativo. */
+  readonly bytes?: ReadonlyMap<string, Uint8Array>;
+}
+
+export interface ReadPackageOptions {
+  /**
+   * Lê também o conteúdo dos binários (para levar o pacote numa proposta). Acrescenta os
+   * limites do pacote da app (`MAX_PACKAGE_FILES` e `MAX_PACKAGE_BYTES` do modelo): acima
+   * deles a app recusaria a pasta.
+   */
+  readonly raw?: boolean;
+  /** Caminho real já resolvido (relativo ao projeto, por exemplo); sem ele, resolve `path` nas raízes. */
+  readonly real?: string;
 }
 
 /** Lê a pasta do pacote: `path` é a pasta ou o arquivo da especialização dentro dela. */
-export async function readPackage(roots: Roots, path: string): Promise<ReadPackage> {
-  const { real } = await roots.resolveExisting(path);
+export async function readPackage(
+  roots: Roots,
+  path: string,
+  options: ReadPackageOptions = {},
+): Promise<ReadPackage> {
+  const real = options.real ?? (await roots.resolveExisting(path)).real;
   const info = await stat(real);
   let dir = real;
   let specPath: string | undefined;
@@ -92,10 +113,22 @@ export async function readPackage(roots: Roots, path: string): Promise<ReadPacka
   }
   await roots.assertInside(dir, path);
   const walked = await walkFiles(dir);
+  if (options.raw) {
+    const bytes = walked.reduce((sum, file) => sum + file.size, 0);
+    if (walked.length > MODEL_PACKAGE_FILES || bytes > MAX_PACKAGE_BYTES) {
+      throw new ToolError(
+        'package-too-large',
+        `o pacote tem ${walked.length} arquivo(s) e ${bytes} bytes: a app aceita até ${MODEL_PACKAGE_FILES} arquivos e ${MAX_PACKAGE_BYTES} bytes`,
+        { limit: MODEL_PACKAGE_FILES, limitBytes: MAX_PACKAGE_BYTES },
+      );
+    }
+  }
+  const raw = new Map<string, Uint8Array>();
   let total = 0;
   const files: LibraryFile[] = [];
   for (const file of walked) {
     if (!isTextPath(file.path)) {
+      if (options.raw) raw.set(file.path, new Uint8Array(await readFile(file.real)));
       files.push({ path: file.path, binary: true });
       continue;
     }
@@ -113,9 +146,16 @@ export async function readPackage(roots: Roots, path: string): Promise<ReadPacka
         { limit: MAX_PACKAGE_TEXT_BYTES },
       );
     }
-    files.push({ path: file.path, text: await readFile(file.real, 'utf8') });
+    const content = await readFile(file.real);
+    if (options.raw) raw.set(file.path, new Uint8Array(content));
+    files.push({ path: file.path, text: content.toString('utf8') });
   }
-  return { dir, files, ...(specPath === undefined ? {} : { specPath }) };
+  return {
+    dir,
+    files,
+    ...(specPath === undefined ? {} : { specPath }),
+    ...(options.raw ? { bytes: raw } : {}),
+  };
 }
 
 /** Lê e valida o arquivo de uma versão anterior da especialização (liga o contrato de versão). */
@@ -153,7 +193,7 @@ export function libraryCounts(spec: Spec): Json {
   };
 }
 
-function issueView(issue: LibraryIssue): Json {
+export function issueView(issue: LibraryIssue): Json {
   return {
     file: issue.file,
     path: issue.path,
@@ -188,7 +228,7 @@ export async function validateLibraryTool(
   const hint = report.ok
     ? warnings.length > 0
       ? 'a biblioteca é válida; os avisos deixam usar, mas costumam apontar descuidos (fonte ausente, conteúdo maior que a caixa, arquivo sem uso)'
-      : 'a biblioteca é válida e pode ser aplicada pela app (Especializações › pasta ou zip do pacote); o servidor não aplica pacote'
+      : 'a biblioteca é válida: aplique-a por proposta (`apply_specialization` ou, numa biblioteca já aplicada, `update_specialization`, com `file` da pasta; antes, `plan_library_update` mostra o impacto) ou pela app (Especializações › pasta ou zip do pacote)'
     : 'corrija os erros (`file` e `path` apontam o trecho) e valide de novo; erro impede usar, aviso deixa usar';
   return {
     valid: report.ok,
@@ -346,5 +386,54 @@ export function packageOfProject(
     specPath: base,
     read: (file) => readPackageFile(roots, dir, file),
     resolve: (ref) => resolvePath(base, ref),
+  };
+}
+
+/**
+ * O que um pedido de `apply_specialization`/`update_specialization`/`plan_library_update` aponta:
+ * um arquivo de especialização v1 a v3 (só o arquivo vai para `specs/<id>.json`) ou um pacote
+ * v4 (a pasta inteira, com o conteúdo cru dos arquivos).
+ */
+export type SpecInput =
+  | { readonly kind: 'file'; readonly spec: Spec }
+  | { readonly kind: 'package'; readonly pkg: ReadPackage };
+
+/**
+ * Lê o que `path` aponta (pasta do pacote, ou arquivo da especialização, de qualquer
+ * `formatVersion`). Um arquivo v4 leva a pasta dele junto; um arquivo v1 a v3, só ele.
+ * `real` é o caminho já resolvido (o lote procura antes na pasta do projeto).
+ */
+export async function readSpecInput(
+  roots: Roots,
+  path: string,
+  real?: string,
+): Promise<SpecInput> {
+  const resolved = real ?? (await roots.resolveExisting(path)).real;
+  const info = await stat(resolved);
+  if (info.isDirectory()) {
+    return {
+      kind: 'package',
+      pkg: await readPackage(roots, path, { raw: true, real: resolved }),
+    };
+  }
+  if (!info.isFile()) {
+    throw new ToolError('not-a-file', `não é uma pasta nem um arquivo: ${path}`, {
+      path,
+    });
+  }
+  if (info.size > MAX_TEXT_FILE_BYTES) {
+    throw new ToolError('file-too-large', `arquivo grande demais: ${path}`, { path });
+  }
+  const parsed = parseSpecText(await readFile(resolved, 'utf8'));
+  if (!parsed.ok) {
+    throw new ToolError('invalid-spec', `especialização inválida: ${path}`, {
+      errors: parsed.errors.slice(0, 20),
+      hint: 'um pacote v4 com problema: use validate_library na pasta para ver os erros de cada arquivo',
+    });
+  }
+  if (parsed.spec.formatVersion < 4) return { kind: 'file', spec: parsed.spec };
+  return {
+    kind: 'package',
+    pkg: await readPackage(roots, path, { raw: true, real: resolved }),
   };
 }

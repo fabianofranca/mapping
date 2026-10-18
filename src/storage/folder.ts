@@ -338,6 +338,10 @@ export function createFolderStorage(
     },
     writeProposal: (id, text) => writeFile(root, proposalFilePath(id), text),
     removeProposal: (id) => removeProposalDir(root, id),
+    async listProposalFiles(id) {
+      if (!PROPOSAL_ID_RE.test(id)) throw new Error(`invalid proposal id: ${id}`);
+      return listFiles(root, proposalDir(id));
+    },
     async statProposal(id) {
       const file = await readFile(root, proposalFilePath(id));
       return file ? `${file.size}:${file.lastModified ?? 0}` : null;

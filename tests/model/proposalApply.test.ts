@@ -535,3 +535,79 @@ describe('proposta antiga com mudança no campo de código removido (etapa 9)', 
     expect(previewProject(missing, p).problems).toEqual([]);
   });
 });
+
+describe('pacote de biblioteca na proposta (fase B4)', () => {
+  const PKG_SPEC = { ...loadExample('sdui'), formatVersion: 4 } as ReturnType<
+    typeof loadExample
+  >;
+
+  function withPackage(p: Project, version: number): Project {
+    const spec = { ...PKG_SPEC, version };
+    return updateOrApply(p, spec);
+  }
+
+  /** Aplica (ou sobe) a especialização com o arquivo dentro da pasta `specs/sdui/`. */
+  function updateOrApply(p: Project, spec: typeof PKG_SPEC): Project {
+    const existing = p.specializations.some((s) => s.id === spec.id);
+    return existing
+      ? {
+          ...p,
+          specializations: p.specializations.map((s) =>
+            s.id === spec.id ? { ...s, version: spec.version, spec } : s,
+          ),
+        }
+      : applySpecialization(p, spec, {
+          newId: idGen('LP'),
+          packageSpecName: 'sdui.spec.json',
+        });
+  }
+
+  it('criar: devolve a pasta, onde os arquivos esperam e a especialização', () => {
+    const base = sampleProject();
+    const after = withPackage(base, 1);
+    const result = apply(base, acceptAll(propose(base, after), base));
+    expect(result.packages).toEqual([
+      {
+        specId: 'sdui',
+        version: 1,
+        dir: 'specs/sdui',
+        from: 'proposals/P1/specs/sdui',
+        file: 'specs/sdui/sdui.spec.json',
+        spec: { ...PKG_SPEC, version: 1 },
+      },
+    ]);
+  });
+
+  it('atualizar: devolve o pacote da versão nova', () => {
+    const base = withPackage(sampleProject(), 1);
+    const after = withPackage(base, 2);
+    const p = acceptAll(propose(base, after), base);
+    expect(changeOf(p, 'specialization', 'sdui').kind).toBe('update');
+    const result = apply(base, p);
+    expect(result.packages.map((x) => [x.specId, x.version, x.dir])).toEqual([
+      ['sdui', 2, 'specs/sdui'],
+    ]);
+  });
+
+  it('só as aceitas, e uma só vez: o que não foi aplicado agora não entra', () => {
+    const base = sampleProject();
+    const p = propose(base, withPackage(base, 1));
+    expect(apply(base, p).packages).toEqual([]);
+    const accepted = acceptAll(p, base);
+    const first = apply(base, accepted);
+    expect(first.packages).toHaveLength(1);
+    // Já aplicada: o resto da proposta não repete o pacote.
+    expect(apply(first.project, first.proposal).packages).toEqual([]);
+  });
+
+  it('especialização de arquivo único (specs/<id>.json) e remoção não trazem pacote', () => {
+    const base = sampleProject();
+    const single = applySpecialization(base, loadExample('sdui'), {
+      newId: idGen('LS'),
+    });
+    expect(apply(base, acceptAll(propose(base, single), base)).packages).toEqual([]);
+    const removed = removeSpecialization(withPackage(base, 1), 'sdui', 'convert');
+    const p = acceptAll(propose(withPackage(base, 1), removed), withPackage(base, 1));
+    expect(apply(withPackage(base, 1), p).packages).toEqual([]);
+  });
+});
