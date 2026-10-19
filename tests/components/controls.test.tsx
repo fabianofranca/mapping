@@ -257,6 +257,55 @@ describe('Tabs', () => {
     expect(a.getAttribute('aria-selected')).toBe('true');
   });
 
+  it('reage ao redimensionamento da lista e desconecta no cleanup', () => {
+    let notify: () => void = () => undefined;
+    const disconnect = vi.fn();
+    class FakeObserver {
+      constructor(cb: () => void) {
+        notify = cb;
+      }
+      observe = vi.fn();
+      disconnect = disconnect;
+    }
+    vi.stubGlobal('ResizeObserver', FakeObserver);
+    const geometry: Array<[string, number]> = [
+      ['offsetLeft', 300],
+      ['offsetWidth', 80],
+    ];
+    const restore = geometry.map(([key]) =>
+      Object.getOwnPropertyDescriptor(HTMLElement.prototype, key),
+    );
+    for (const [key, value] of geometry)
+      Object.defineProperty(HTMLElement.prototype, key, {
+        configurable: true,
+        get(this: HTMLElement) {
+          // Só as abas têm geometria; a lista fica em 0.
+          return this.getAttribute('role') === 'tab' ? value : 0;
+        },
+      });
+    try {
+      const { unmount } = render(<Harness />);
+      const list = screen.getByRole('tablist');
+      // Faixa larga: a aba escolhida (300 a 380) já cabe, nada rola.
+      Object.defineProperty(list, 'clientWidth', { configurable: true, value: 500 });
+      list.scrollLeft = 0;
+      notify();
+      expect(list.scrollLeft).toBe(0);
+      // Janela estreitada depois: a faixa passa a 200 e a aba escolhida volta à vista.
+      Object.defineProperty(list, 'clientWidth', { configurable: true, value: 200 });
+      notify();
+      expect(list.scrollLeft).toBe(180);
+      unmount();
+      expect(disconnect).toHaveBeenCalled();
+    } finally {
+      geometry.forEach(([key], i) => {
+        const d = restore[i];
+        if (d) Object.defineProperty(HTMLElement.prototype, key, d);
+      });
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('clique troca a aba', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);

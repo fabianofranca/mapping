@@ -284,3 +284,11 @@ Também nesta rodada:
 - **Cliente stdio** (`scripts/testing/mcp-stdio-client.mjs`): sem argumentos, lê as raízes do `.mcp.json` da pasta WS.
 - **Guia (`docs/TESTING.md`):** schema 10 (R7.1/R7.3); backups `mapping.v10` (R6.5); três rejeitadas (R5.4a); nome do arquivo da imagem (R5.1); chips lado a lado (R9.5); tela2 sem o R6.2 (R6.7); alternativas ao arraste (R9.9, R10.7); larguras que variam com a fonte (R10.4); linha de validação (R10.1); atalhos com foco num campo; raízes do cliente stdio.
 - **R6.1 pendente de decisão do dono:** arraste com Esc durante a gravação mexe com a integridade do `mapping.json`, e o agente não consegue segurar o botão e apertar Esc. O passo fica marcado como pendente de decisão, para o dono escolher entre manter como passo [pessoa], mover para roteiro sob demanda ou cobrir por e2e.
+
+## Rodada dirigida de 2026-10-19 (conferência do PR #177) e correções
+
+Relato: [`relato-2026-10-19-dirigida.md`](relato-2026-10-19-dirigida.md) (build `6e66293`): 16 passos, 14 ✅, 1 ❌ (R5.3, média) e 1 achado baixo (paleta).
+
+- **R5.3 (média), terceira rodada com o mesmo sintoma:** a nota sugerida não abria no Chrome real ao rejeitar a anotação criada (✕ do cartão ou Rejeitar do popover). Duas causas, vistas no Playwright: o Chrome dispara `blur` ao remover o campo focado quando o cartão remonta, e esse `blur` apagava o pedido da nota (o jsdom não dispara, por isso os testes de componente passavam); e o critério `e.detail > 0` tratava como teclado o clique sintético da extensão. Correção: o `NoteArea` ignora o `blur` da remoção para o pedido (o texto ainda grava) e `clickSource.ts` só conta como teclado Enter/Espaço no próprio botão. E2e com clique real e sintético nos dois caminhos.
+- **Paleta (baixa):** sem mudança. "A tela sob o centro da vista vale antes da seleção" é a regra registrada (`src/ui/componentTarget.ts`, `docs/ARCHITECTURE.md`, R10.7); o R9.7 do guia passou a dizer em que tela adicionar e que ela fica no centro. Trocar a regra (seleção primeiro) fica para o dono decidir.
+- **Tabs (observação):** a aba ativa também volta à vista quando a faixa é estreitada depois (`ResizeObserver`); teste de componente e e2e.

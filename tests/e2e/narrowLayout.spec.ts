@@ -100,6 +100,38 @@ test('aba escolhida da janela inferior fica visível na faixa que rola', async (
     expect(overlaps(a, tab)).toBe(false);
 });
 
+test('aba escolhida continua visível quando a lista de abas é estreitada depois', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1400, height: 800 });
+  await open(page);
+  await page.keyboard.press('Control+Shift+6');
+  // As abas pertencem à mesma janela inferior: a lista é a que tem a aba Diagnóstico.
+  const tablist = page
+    .getByRole('tablist')
+    .filter({ has: page.getByRole('tab', { name: 'Diagnóstico' }) });
+  await expect(tablist).toBeVisible();
+  // Largo: todas as abas cabem e a Diagnóstico está escolhida.
+  expect(await tablist.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(false);
+  // Estreita a faixa depois (o que uma janela menor faz); a CSP proíbe <style> inline,
+  // a CSSOM (folha adotada) é permitida.
+  await page.evaluate(() => {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync('.tool-window-tabs { flex: none; width: 150px }');
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+  });
+  await expect
+    .poll(async () => tablist.evaluate((e) => e.scrollWidth > e.clientWidth))
+    .toBe(true);
+  await expect
+    .poll(async () => {
+      const strip = (await boxes(tablist))[0]!;
+      const tab = (await boxes(tablist.getByRole('tab', { selected: true })))[0]!;
+      return tab.x >= strip.x - 0.5 && tab.x + tab.width <= strip.x + strip.width + 0.5;
+    })
+    .toBe(true);
+});
+
 test('janela Propostas e lista da revisão sem textos sobrepostos', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Control+Shift+7');
