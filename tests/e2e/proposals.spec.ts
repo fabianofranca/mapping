@@ -192,3 +192,81 @@ test('rejeitar a criação pelo marcador leva a anotação junto; Desfazer e ace
   await card.getByRole('button', { name: 'Aceitar Anotação Input criada' }).click();
   await expect(header.getByText('2 aceitas, 0 rejeitadas, 0 sem decisão')).toBeVisible();
 });
+
+// Nota sugerida ao rejeitar a criação (R5.3, HANDOFF-REVIEW-DETAILS 5.5). Rejeitar a
+// anotação criada troca o cartão dela (vira "Criação rejeitada") e remonta o popover com o
+// campo de nota dentro; o Chrome dispara `blur` no campo ao tirá-lo do DOM (o jsdom não),
+// e esse `blur` apagava o pedido da nota. Falhou em três rodadas manuais com os testes de
+// componente verdes. `click()` tem `detail` 1; `dispatchEvent('click')`, `detail` 0, como
+// o clique de uma extensão do navegador.
+async function openCreatedAnnotation(page: Page) {
+  await importFixture(page);
+  await openProposals(page);
+  await page
+    .getByRole('button', { name: /^Revisar/ })
+    .first()
+    .click();
+  await row(page, 'Campo Cupom').click();
+  return page.locator('[data-annotation]').first();
+}
+
+const noteBox = (page: Page) =>
+  page.getByRole('textbox', { name: 'Nota para o agente', exact: true });
+
+for (const mode of ['clique real', 'clique sintético'] as const) {
+  const press = (button: ReturnType<Page['locator']>) =>
+    mode === 'clique real' ? button.click() : button.dispatchEvent('click');
+
+  test(`rejeitar a anotação criada pelo ✕ do cartão abre a nota vazia com o foco (${mode})`, async ({
+    page,
+  }) => {
+    const card = await openCreatedAnnotation(page);
+    await press(card.getByRole('button', { name: 'Rejeitar Anotação Input criada' }));
+    await expect(card.getByText('Criação rejeitada')).toBeVisible();
+    await expect(noteBox(page)).toBeFocused();
+    await expect(noteBox(page)).toHaveValue('');
+    // Vazia, ao sair ela some e o foco não cai no body.
+    await page.keyboard.press('Tab');
+    await expect(noteBox(page)).toHaveCount(0);
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(
+      false,
+    );
+  });
+
+  test(`rejeitar a anotação criada pelo Rejeitar do popover abre a nota vazia com o foco (${mode})`, async ({
+    page,
+  }) => {
+    const card = await openCreatedAnnotation(page);
+    await card.getByRole('button', { name: /^Anotação Input criada: novo/ }).click();
+    const popover = page.getByRole('dialog', { name: /^Anotação Input criada/ });
+    await press(popover.getByRole('button', { name: /^Rejeitar/ }));
+    await expect(card.getByText('Criação rejeitada')).toBeVisible();
+    await expect(noteBox(page)).toBeFocused();
+    await expect(noteBox(page)).toHaveValue('');
+    // O que se escreve grava ao sair do campo (o marcador passa a dizer "com nota").
+    await noteBox(page).fill('O Input vira um Text.');
+    await page.keyboard.press('Tab');
+    await expect(
+      card.getByRole('button', { name: /^Anotação Input criada: .*com nota/ }),
+    ).toBeVisible();
+  });
+}
+
+test('rejeitar a anotação criada pelo teclado não abre a nota nem move o foco para ela', async ({
+  page,
+}) => {
+  const card = await openCreatedAnnotation(page);
+  const reject = card.getByRole('button', { name: 'Rejeitar Anotação Input criada' });
+  await reject.focus();
+  await page.keyboard.press('Enter');
+  await expect(card.getByText('Criação rejeitada')).toBeVisible();
+  await expect(noteBox(page)).toHaveCount(0);
+  // O mesmo no popover: Enter no Rejeitar dele.
+  await card.getByRole('button', { name: 'Aceitar Anotação Input criada' }).click();
+  await card.getByRole('button', { name: /^Anotação Input criada: novo/ }).click();
+  const popover = page.getByRole('dialog', { name: /^Anotação Input criada/ });
+  await popover.getByRole('button', { name: /^Rejeitar/ }).focus();
+  await page.keyboard.press('Enter');
+  await expect(card.getByText('Criação rejeitada')).toBeVisible();
+  await expect(noteBox(page)).toHaveCount(0);
+});

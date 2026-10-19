@@ -7,7 +7,7 @@ import {
   within,
 } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renameMarking, type DecisionState } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { sampleProject } from '../../model/fixtures';
@@ -23,10 +23,32 @@ beforeEach(() => {
   locale.value = 'pt-BR';
   localStorage.clear();
 });
-afterEach(cleanup);
+afterEach(() => {
+  vi.restoreAllMocks();
+  cleanup();
+});
 
 const stateOf = (h: ReviewHarness, changeId: string): DecisionState | null =>
   h.review.derived.proposal.value?.decisions[changeId]?.state ?? null;
+
+/**
+ * O Chrome dispara `blur` no elemento focado quando ele sai do DOM; o jsdom não. Rejeitar a
+ * criação troca o cartão da anotação (com o popover e o campo de nota dentro), então a
+ * nota sugerida precisa sobreviver a esse `blur` (defeito das rodadas manuais do R5.3).
+ */
+function blurOnRemoval(): void {
+  const original = Node.prototype.removeChild;
+  vi.spyOn(Node.prototype, 'removeChild').mockImplementation(function <T extends Node>(
+    this: Node,
+    child: T,
+  ): T {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && child.contains(active)) {
+      active.dispatchEvent(new FocusEvent('blur'));
+    }
+    return original.call(this, child) as T;
+  });
+}
 
 const nameMark = () => screen.getByRole('button', { name: /^Nome: alterado/ });
 
@@ -153,6 +175,7 @@ describe('decisão no popover do campo', () => {
   });
 
   it('rejeitar com o mouse a anotação criada (o cartão vira "Criação rejeitada") abre a nota com o foco', async () => {
+    blurOnRemoval();
     const { base, proposal } = firstImport();
     const h = await showReviewPanel(
       { project: base, proposals: [proposal] },
@@ -180,6 +203,7 @@ describe('decisão no popover do campo', () => {
   });
 
   it('rejeitar com o mouse pelo ✕ do cartão da anotação criada abre a nota com o foco; pelo teclado não', async () => {
+    blurOnRemoval();
     const { base, proposal } = firstImport();
     const h = await showReviewPanel(
       { project: base, proposals: [proposal] },
@@ -209,6 +233,72 @@ describe('decisão no popover do campo', () => {
     await user.tab();
     expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
     expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it('um clique sem `detail` (extensão do navegador, element.click()) conta como mouse: abre a nota nos dois caminhos', async () => {
+    blurOnRemoval();
+    const { base, proposal } = firstImport();
+    const h = await showReviewPanel(
+      { project: base, proposals: [proposal] },
+      { level: 'item', id: 'M1' },
+    );
+    const created = changeOf(proposal, 'annotation', 'A1');
+    const card = () => document.querySelector('[data-annotation="A1"]') as HTMLElement;
+    const box = () => screen.queryByRole('textbox', { name: 'Nota para o agente' });
+    // Pelo ✕ do cartão: `fireEvent.click` vem com `detail === 0`, como o clique sintético.
+    fireEvent.click(
+      within(card()).getByRole('button', { name: /^Rejeitar Anotação onClick criada$/ }),
+    );
+    await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
+    await waitFor(() => expect(document.activeElement).toBe(box()));
+    expect(box()).not.toBeNull();
+    // Vazia, ao sair ela some; desfaz a decisão e repete pelo Rejeitar do popover.
+    act(() => (document.activeElement as HTMLElement).blur());
+    await waitFor(() => expect(box()).toBeNull());
+    fireEvent.click(
+      within(card().querySelector('.decision-control') as HTMLElement).getByRole(
+        'button',
+        { name: 'Aceitar Anotação onClick criada' },
+      ),
+    );
+    await waitFor(() => expect(stateOf(h, created.id)).toBe('accepted'));
+    fireEvent.click(
+      within(card()).getByRole('button', { name: /^Anotação onClick criada: novo/ }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Rejeitar Anotação onClick criada',
+      }),
+    );
+    await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
+    await waitFor(() => expect(document.activeElement).toBe(box()));
+    expect(box()).not.toBeNull();
+  });
+
+  it('Enter e Espaço no Rejeitar do popover são teclado: não abrem a nota', async () => {
+    const { proposal, ids } = richScenario();
+    const h = await showReviewPanel(
+      { proposals: [proposal] },
+      { level: 'item', id: 'M1' },
+    );
+    const user = userEvent.setup();
+    act(() => nameMark().focus());
+    await user.tab();
+    await user.tab();
+    const reject = within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Rejeitar Nome',
+    });
+    expect(document.activeElement).toBe(reject);
+    await user.keyboard(' ');
+    await waitFor(() => expect(stateOf(h, ids.name)).toBe('rejected'));
+    expect(document.activeElement).toBe(reject);
+    expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
+    // Um clique de mouse depois do teclado volta a contar como mouse (a marca vale um clique).
+    await user.keyboard(' ');
+    await waitFor(() => expect(stateOf(h, ids.name)).toBeNull());
+    await user.click(reject);
+    await waitFor(() => expect(stateOf(h, ids.name)).toBe('rejected'));
+    expect(screen.getByRole('textbox', { name: 'Nota para o agente' })).toBeTruthy();
   });
 
   it('rejeitar com o mouse um campo alterado leva o foco à nota e, vazia, de volta ao marcador', async () => {

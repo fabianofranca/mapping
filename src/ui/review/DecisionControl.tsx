@@ -2,6 +2,7 @@ import { t } from '../../i18n';
 import { ariaKeys } from '../../app/shortcuts';
 import { Button, IconButton } from '../controls';
 import { Icon } from '../icons';
+import { useClickSource } from './clickSource';
 
 // Par ✓ ✕ que decide um nível (HANDOFF-PROPOSALS 2.1): nenhum marcado é "sem decisão";
 // apertar o marcado limpa a decisão. Decidir grava na hora, sem confirmação (é
@@ -59,6 +60,7 @@ export function DecisionControl({
   describedBy,
 }: DecisionControlProps) {
   const reason = disabled ? describedBy : undefined;
+  const rejectClick = useClickSource();
   const toggle = (state: 'accepted' | 'rejected') =>
     onDecide(value === state ? null : state);
   const acceptLabel = conflict
@@ -131,10 +133,13 @@ export function DecisionControl({
         pressed={value === 'rejected'}
         disabled={disabled}
         aria-describedby={reason}
-        onClick={(e) => {
+        {...rejectClick.handlers}
+        onClick={() => {
           toggle('rejected');
-          // Mouse (detail > 0) sugere a nota; o teclado não move o foco.
-          if (value !== 'rejected' && e.detail > 0) onRejectedByMouse?.();
+          // Tudo que não veio do teclado conta como mouse e sugere a nota; o teclado
+          // não move o foco.
+          const byKeyboard = rejectClick.takeKeyboard();
+          if (value !== 'rejected' && !byKeyboard) onRejectedByMouse?.();
         }}
       />
     </span>

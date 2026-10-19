@@ -132,9 +132,13 @@ describe('cabeçalho do item', () => {
     ).toBeTruthy();
     // A marcação não foi decidida junto: a anotação só depende dela, não o contrário.
     expect(stateOf(h, changeOf(proposal, 'marking', 'M1').id)).toBeNull();
-    // E a decisão volta a ser dela.
+    // E a decisão volta a ser dela (o ✓ do cabeçalho; o clique sem `detail` abriu a nota
+    // sugerida no popover, que também tem um Aceitar).
     fireEvent.click(
-      within(card()).getByRole('button', { name: /^Aceitar Anotação onClick criada$/ }),
+      within(card().querySelector('.decision-control') as HTMLElement).getByRole(
+        'button',
+        { name: /^Aceitar Anotação onClick criada$/ },
+      ),
     );
     await waitFor(() => expect(stateOf(h, annotation.id)).toBe('accepted'));
     expect(within(card()).queryByText('Criação rejeitada')).toBeNull();

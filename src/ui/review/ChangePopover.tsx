@@ -17,6 +17,7 @@ import { useEditor } from '../EditorContext';
 import { Icon, type IconName } from '../icons';
 import { ChangeKind } from './ChangeKind';
 import { changeTitle, valueParts, type ReviewNames, type ValuePart } from './changeText';
+import { useClickSource } from './clickSource';
 import { REVIEW_KEYS, type DecisionValue } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
 import { DiffValue, type DiffRow } from './DiffValue';
@@ -298,6 +299,7 @@ function PopoverDecision({
 }) {
   const decide = useDecide();
   const accept = useRef<HTMLButtonElement>(null);
+  const rejectClick = useClickSource();
   const c = subject.change;
   const field = markFieldLabel(names, subject);
   const conflict = situation?.conflict === true;
@@ -354,11 +356,14 @@ function PopoverDecision({
         aria-describedby={describedBy}
         title={`${t('review.reject')}  ${REVIEW_KEYS.reject}`}
         disabled={disabled}
-        onClick={(e) => {
+        {...rejectClick.handlers}
+        onClick={() => {
           const next = decision === 'rejected' ? null : 'rejected';
           apply(next);
-          // Mouse (detail > 0) sugere a nota; o teclado não move o foco (a nota abre com Enter).
-          if (next === 'rejected' && e.detail > 0) onRejectedByMouse();
+          // Tudo que não veio do teclado conta como mouse e sugere a nota; o teclado não
+          // move o foco (a nota abre pelo botão de nota).
+          const byKeyboard = rejectClick.takeKeyboard();
+          if (next === 'rejected' && !byKeyboard) onRejectedByMouse();
         }}
       >
         <Icon name="close" />
