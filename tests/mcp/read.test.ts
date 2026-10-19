@@ -9,7 +9,7 @@ import {
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deserialize } from '../../src/model';
-import { loadExample } from '../model/specFixtures';
+import { loadLegacySdui } from '../model/specFixtures';
 import {
   codeOf,
   connect,
@@ -161,7 +161,7 @@ describe('list_projects e descoberta', () => {
       revision: 0,
       counts: { images: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
-        { id: 'sdui', version: loadExample('sdui').version },
+        { id: 'sdui', version: loadLegacySdui().version },
         { id: 'modelo-dados', version: 1 },
       ],
     });
@@ -719,10 +719,10 @@ describe('get_specialization', () => {
     );
     expect(data).toMatchObject({
       id: 'sdui',
-      version: loadExample('sdui').version,
+      version: loadLegacySdui().version,
       file: 'specs/sdui.json',
     });
-    expect(data.spec).toEqual(loadExample('sdui'));
+    expect(data.spec).toEqual(loadLegacySdui());
     expect((data.projectLayers as { name: string }[]).map((l) => l.name)).toEqual([
       'Componentes',
       'Eventos',

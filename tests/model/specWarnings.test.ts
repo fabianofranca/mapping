@@ -25,13 +25,14 @@ function load(path: string, edit?: (spec: Record<string, any>) => void): Spec {
   return parse(path, edit).spec;
 }
 
+/** A SDUI de antes do `repo` (formatVersion 2): plataformas com `path` e sem `repo`. */
+const LEGACY_SDUI = 'tests/fixtures/sdui-v2.json';
+
 describe('specWarnings', () => {
   it('os exemplos do repositório só têm o aviso do tipo sem code (screen)', () => {
     expect(specWarnings(load('examples/specs/modelo-de-dados.json'))).toEqual([]);
-    // O `path-without-repo` (plataformas com `path` e sem `repo`) é testado adiante.
-    const sdui = specWarnings(load('examples/specs/sdui.json')).filter(
-      (w) => w.code !== 'path-without-repo',
-    );
+    // O SDUI declara o `repo` das três plataformas: nenhum `path-without-repo`.
+    const sdui = specWarnings(load('examples/specs/sdui.json'));
     expect(sdui).toEqual([
       expect.objectContaining({
         code: 'type-without-code',
@@ -52,7 +53,7 @@ describe('specWarnings', () => {
     const repo = { url: 'https://github.com/acme/android' };
     /** sdui com os `path` de android (e de ios) e a versão 5, com `repo` só onde pedido. */
     const v5 = (repos: Record<string, unknown>) =>
-      load('examples/specs/sdui.json', (raw) => {
+      load(LEGACY_SDUI, (raw) => {
         raw.formatVersion = 5;
         for (const p of raw.platforms)
           if (repos[p.id] !== undefined) p.repo = repos[p.id];
@@ -78,13 +79,13 @@ describe('specWarnings', () => {
     });
 
     it('vale também numa v2 (a mensagem orienta a subir para a 5)', () => {
-      const spec = load('examples/specs/sdui.json');
+      const spec = load(LEGACY_SDUI);
       expect(spec.formatVersion).toBe(2);
       expect(only(spec).length).toBeGreaterThan(0);
     });
 
     it('vem depois dos avisos de tipo e de unused-platform', () => {
-      const spec = load('examples/specs/sdui.json', (raw) => {
+      const spec = load(LEGACY_SDUI, (raw) => {
         raw.platforms.push({ id: 'web', name: 'Web' });
       });
       expect(specWarnings(spec).map((w) => w.code)).toEqual([
@@ -97,7 +98,7 @@ describe('specWarnings', () => {
   });
 
   it('plataforma declarada e não usada em code', () => {
-    const spec = load('examples/specs/sdui.json', (raw) => {
+    const spec = load(LEGACY_SDUI, (raw) => {
       raw.platforms.push({ id: 'web', name: 'Web' });
     });
     const unused = specWarnings(spec).filter((w) => w.code === 'unused-platform');
@@ -105,7 +106,7 @@ describe('specWarnings', () => {
   });
 
   it('campo do tipo removido (codeRef): aviso com o caminho, logo depois do formato antigo', () => {
-    const parsed = parse('examples/specs/sdui.json', (raw) => {
+    const parsed = parse(LEGACY_SDUI, (raw) => {
       raw.format = 'mapeador-spec';
       raw.platforms.push({ id: 'web', name: 'Web' });
       raw.layers[2].annotationTypes[0].fields.push({

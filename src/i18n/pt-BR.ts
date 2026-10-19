@@ -780,7 +780,7 @@ export const ptBR = {
   'repos.intro':
     'O endereço do repositório de cada plataforma vem da especialização e aparece aqui só para consulta. Informe apenas onde está o clone local do código no seu computador.',
   'repos.noneDeclared': 'A especialização não declara o repositório desta plataforma.',
-  'repos.ref': 'ref {ref}',
+  'repos.ref': 'referência {ref}',
   'repos.platform': '{name} ({id})',
   'repos.localPath': 'Caminho local da raiz',
   'repos.localPathHint':

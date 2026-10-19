@@ -53,12 +53,13 @@ beforeAll(async () => {
   ws = createWorkspace();
   const sources = join(ws.root, 'fontes');
   mkdirSync(sources, { recursive: true });
-  for (const name of ['sdui', 'modelo-de-dados']) {
-    copyFileSync(
-      join('examples', 'specs', `${name}.json`),
-      join(sources, `${name}.json`),
-    );
-  }
+  // O roteiro 13.9 usa a SDUI de antes do `repo` (`tests/fixtures/sdui-v2.json`, igual ao
+  // `cadastroProject`); o modelo de dados é o exemplo.
+  copyFileSync(join('tests', 'fixtures', 'sdui-v2.json'), join(sources, 'sdui.json'));
+  copyFileSync(
+    join('examples', 'specs', 'modelo-de-dados.json'),
+    join(sources, 'modelo-de-dados.json'),
+  );
   writeFileSync(join(sources, 'cadastro.png'), await encodePng(quadrants(1000, 2000)));
   mcp = await connect([ws.root]);
 });

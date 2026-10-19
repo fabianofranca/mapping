@@ -773,7 +773,8 @@ export const enUS: Dictionary = {
   'repos.title': 'Code repositories',
   'repos.intro':
     'The repository address of each platform comes from the specialization and is shown here for reference only. Just say where the local clone of the code is on your computer.',
-  'repos.noneDeclared': 'The specialization does not declare the repository of this platform.',
+  'repos.noneDeclared':
+    'The specialization does not declare the repository of this platform.',
   'repos.ref': 'ref {ref}',
   'repos.platform': '{name} ({id})',
   'repos.localPath': 'Local path of the root',

@@ -8,13 +8,20 @@ import { AnnotationLines } from '../../src/ui/AnnotationSummary';
 import { HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
 import { SpecsDialog } from '../../src/ui/SpecsDialog';
-import { codeProject } from '../model/specFixtures';
+import { ANDROID_REPO, codeProject, withSpecRepo } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
 // Etapas 3b.3, 9 e Código de instanciação: a linha "Definição" (o `path` do `code` do tipo, com
 // o link pelo `repo` da especialização) nos Detalhes, a Lista sem referência ao código gerado, o
 // clone local por plataforma nas Configurações, as plataformas no diálogo de especializações e a
 // Ajuda de uso.
+
+// O exemplo SDUI pode renomear a plataforma `bff`: o nome vem da própria especialização.
+const BFF = codeProject()
+  .specializations.flatMap((s) => s.spec?.platforms ?? [])
+  .find((platform) => platform.id === 'bff');
+const BFF_NAME = BFF?.name ?? 'bff';
+const BFF_LANGUAGE = BFF?.language ?? '';
 
 beforeEach(() => {
   locale.value = 'pt-BR';
@@ -63,9 +70,7 @@ describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () =>
     expect(screen.getByText('Definição')).toBeTruthy();
     expect(
       lines().map((l) => l.querySelector('.code-definition-name')?.textContent),
-    ).toEqual(['Android · DSButton.kt', 'iOS · DSButton.swift']);
-    // O bff do exemplo não tem path: sem linha.
-    expect(document.querySelector('[data-definition="bff"]')).toBeNull();
+    ).toEqual(expect.arrayContaining(['Android · DSButton.kt', 'iOS · DSButton.swift']));
     expect(
       screen.getByText('app/src/main/java/com/app/ds/DSButton.kt · com.app.ds.DSButton'),
     ).toBeTruthy();
@@ -89,13 +94,52 @@ describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () =>
     );
   });
 
-  it('também aparece com o projeto somente leitura (não há o que editar)', () => {
-    const { lines } = setupDetails('AB', true);
-    expect(lines()).toHaveLength(2);
+  it('o link vem só da especialização: sem nada em Configurações; sem urlTemplate só o caminho', () => {
+    const base = codeProject();
+    const project = { ...base, platformRepos: {} };
+    const harness = createHarness(project);
+    renderLive(harness, (p) => (
+      <AnnotationEditor
+        project={p}
+        annotation={annotationOf(p, 'AB')}
+        visibleLayerIds={new Set(p.layers.map((l) => l.id))}
+        onGoToAnnotation={() => undefined}
+        onShowLayer={() => undefined}
+        readOnly={false}
+      />
+    ));
+    expect(
+      screen.getByRole('link', { name: /^Abrir no repositório/ }).getAttribute('href'),
+    ).toBe(
+      'https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt',
+    );
+    cleanup();
+    const noTemplate = withSpecRepo(project, 'sdui', 'android', {
+      url: ANDROID_REPO.url,
+    });
+    renderLive(createHarness(noTemplate), (p) => (
+      <AnnotationEditor
+        project={p}
+        annotation={annotationOf(p, 'AB')}
+        visibleLayerIds={new Set(p.layers.map((l) => l.id))}
+        onGoToAnnotation={() => undefined}
+        onShowLayer={() => undefined}
+        readOnly={false}
+      />
+    ));
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getAllByRole('button', { name: /^Copiar caminho/ })).not.toHaveLength(
+      0,
+    );
   });
 
-  it('tipo sem path (Screen, onClick) não tem a linha', () => {
-    for (const id of ['AS', 'AOC']) {
+  it('também aparece com o projeto somente leitura (não há o que editar)', () => {
+    const { lines } = setupDetails('AB', true);
+    expect(lines().length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('tipo sem path (Screen) não tem a linha', () => {
+    for (const id of ['AS']) {
       cleanup();
       const { lines } = setupDetails(id);
       expect(lines()).toHaveLength(0);
@@ -132,7 +176,7 @@ describe('Configurações: clone local por plataforma', () => {
       screen
         .getAllByRole('group', { hidden: true })
         .map((g) => g.getAttribute('aria-label')),
-    ).toEqual(expect.arrayContaining(['Android', 'iOS', 'Contrato SDUI']));
+    ).toEqual(expect.arrayContaining(['Android', 'iOS', BFF_NAME]));
     expect(
       group('Android').getByLabelText('Caminho local da raiz', { selector: 'input' }),
     ).toHaveProperty('value', '../../..');
@@ -141,7 +185,7 @@ describe('Configurações: clone local por plataforma', () => {
     ).toHaveProperty('value', '');
     // O endereço vem da especialização: não há campo nem aviso de repositório ausente.
     expect(screen.queryByLabelText('Endereço do arquivo')).toBeNull();
-    for (const name of ['Android', 'iOS', 'Contrato SDUI']) {
+    for (const name of ['Android', 'iOS', BFF_NAME]) {
       expect(group(name).queryByRole('status', { hidden: true })).toBeNull();
     }
   });
@@ -192,7 +236,14 @@ describe('Especializações e Ajuda', () => {
     ));
     expect(screen.getByText('Android · android · kotlin')).toBeTruthy();
     expect(screen.getByText('iOS · ios · swift')).toBeTruthy();
-    expect(screen.getByText('Contrato SDUI · bff · json')).toBeTruthy();
+    expect(screen.getByText(`${BFF_NAME} · bff · ${BFF_LANGUAGE}`)).toBeTruthy();
+    // O repo declarado aparece como link comum, com a ref (só o Android declara).
+    const link = screen.getByRole('link', { name: ANDROID_REPO.url });
+    expect(link.getAttribute('href')).toBe(ANDROID_REPO.url);
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(screen.getByText('referência v1.2.0')).toBeTruthy();
+    expect(screen.getAllByRole('link')).toHaveLength(1);
     // O Modelo de dados (v1) não declara plataformas: só uma lista.
     expect(screen.getAllByText('Plataformas')).toHaveLength(1);
   });

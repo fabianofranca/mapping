@@ -144,7 +144,7 @@ describe('usesPackageFiles', () => {
     patch: (raw: Record<string, unknown>) => void = () => {},
   ): Spec => {
     const raw = JSON.parse(
-      readFileSync(join(process.cwd(), 'examples', 'specs', 'sdui.json'), 'utf8'),
+      readFileSync(join(process.cwd(), 'tests', 'fixtures', 'sdui-v2.json'), 'utf8'),
     ) as Record<string, unknown>;
     raw.formatVersion = formatVersion;
     patch(raw);

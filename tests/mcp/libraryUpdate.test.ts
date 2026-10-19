@@ -285,10 +285,10 @@ beforeAll(async () => {
   makeRemoval(copyPackage('v2-remove'));
   // Uma especialização de arquivo único (formatVersion 3), para o caminho sem pacote.
   mkdirSync(join(root, 'legado'), { recursive: true });
-  cpSync('examples/specs/sdui.json', join(root, 'legado', 'sdui.json'));
+  cpSync('tests/fixtures/sdui-v2.json', join(root, 'legado', 'sdui.json'));
   // O mesmo, como v4 (e v5) que não cita arquivo do pacote: vale como arquivo isolado.
   for (const v of [4, 5]) {
-    const raw = JSON.parse(readFileSync('examples/specs/sdui.json', 'utf8')) as object;
+    const raw = JSON.parse(readFileSync('tests/fixtures/sdui-v2.json', 'utf8')) as object;
     writeFileSync(
       join(root, 'legado', `sdui-v${v}.json`),
       JSON.stringify({ ...raw, formatVersion: v }),

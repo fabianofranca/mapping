@@ -443,8 +443,16 @@ describe('SpecsDialog: pacote da biblioteca', () => {
 
   it('arquivo .json v4 sem arquivo do pacote vale isolado: aplica e grava specs/<id>.json', async () => {
     const { harness, choose } = setup();
-    const raw = JSON.parse(exampleText('sdui')) as object;
-    choose(JSON.stringify({ ...raw, formatVersion: 4 }));
+    const raw = JSON.parse(exampleText('sdui')) as {
+      platforms: { repo?: unknown }[];
+    };
+    // O `repo` das plataformas é da formatVersion 5.
+    const platforms = raw.platforms.map((platform) => {
+      const copy = { ...platform };
+      delete copy.repo;
+      return copy;
+    });
+    choose(JSON.stringify({ ...raw, formatVersion: 4, platforms }));
     await screen.findByText(/"SDUI" aplicada/);
     const entry = harness.project().specializations[0];
     expect(entry?.file).toBe('specs/sdui.json');

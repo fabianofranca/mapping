@@ -50,7 +50,7 @@ const projectImages = () =>
 
 /** O SDUI de exemplo em v3, com origens no Button (tipo, campo de texto e campo enum). */
 function sduiV3(): string {
-  const spec = JSON.parse(readFileSync('examples/specs/sdui.json', 'utf8')) as {
+  const spec = JSON.parse(readFileSync('tests/fixtures/sdui-v2.json', 'utf8')) as {
     formatVersion: number;
     layers: {
       annotationTypes: {

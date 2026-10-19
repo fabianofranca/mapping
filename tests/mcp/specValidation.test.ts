@@ -54,6 +54,8 @@ const sdui = (): Json =>
 function v3(): Json {
   const spec = sdui();
   spec.formatVersion = 3;
+  // A v3 não tem `repo` (só a v5).
+  for (const platform of spec.platforms) delete platform.repo;
   const button = spec.layers[0].annotationTypes[0];
   button.sources = [{ system: 'figma', id: '3f2a9c', name: 'DS/Button' }];
   button.fields[1].sources = [{ system: 'figma', name: 'Label' }];

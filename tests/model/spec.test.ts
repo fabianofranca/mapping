@@ -11,6 +11,8 @@ import {
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const sdui = read('examples/specs/sdui.json');
+// A SDUI de antes do `repo` (formatVersion 2): base dos casos de plataformas e de code.
+const sduiV2 = read('tests/fixtures/sdui-v2.json');
 const modelo = read('examples/specs/modelo-de-dados.json');
 const biblioteca = read('examples/specs/biblioteca.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
@@ -20,7 +22,7 @@ type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
 
 /** Cópia do SDUI para o teste alterar. */
 function base(): Json {
-  return JSON.parse(sdui) as Json;
+  return JSON.parse(sduiV2) as Json;
 }
 
 function errorsOf(result: SpecParseResult): string[] {
@@ -39,17 +41,23 @@ describe('exemplos de especialização', () => {
     expect(jsonValidator.safeParse(JSON.parse(text)).success).toBe(true);
   });
 
-  it('lê os campos esperados do SDUI (formatVersion 2)', () => {
+  it('lê os campos esperados do SDUI (formatVersion 5, com o repo de cada plataforma)', () => {
     const result = parseSpecText(sdui);
     if (!result.ok) throw new Error('falhou');
     const { spec } = result;
-    expect(spec.formatVersion).toBe(2);
+    expect(spec.formatVersion).toBe(5);
+    expect(spec.version).toBe(3);
     expect(spec.layers.map((l) => l.id)).toEqual(['componentes', 'eventos', 'telas']);
     expect(spec.layers[1]?.annotationTypes[0]?.requiresOwner).toBe(true);
+    const repo = (name: string) => ({
+      url: `https://github.com/org/${name}`,
+      urlTemplate: `https://github.com/org/${name}/blob/v3/{path}`,
+      ref: 'v3',
+    });
     expect(spec.platforms).toEqual([
-      { id: 'android', name: 'Android', language: 'kotlin' },
-      { id: 'ios', name: 'iOS', language: 'swift' },
-      { id: 'bff', name: 'Contrato SDUI', language: 'json' },
+      { id: 'android', name: 'Android', language: 'kotlin', repo: repo('app-android') },
+      { id: 'ios', name: 'iOS', language: 'swift', repo: repo('app-ios') },
+      { id: 'bff', name: 'BFF', language: 'kotlin', repo: repo('bff') },
     ]);
   });
 
@@ -76,6 +84,17 @@ describe('exemplos de especialização', () => {
     expect(button?.path).toBe('app/src/main/java/com/app/ds/DSButton.kt');
     expect(button?.params).toMatchObject({ texto: 'text', estilo: 'style' });
     expect(button?.values?.estilo?.primary).toBe('ButtonStyle.Primary');
+    // A bff aponta para a função Kotlin que gera o nó do componente, não para o nó.
+    const bff = types[0]?.code?.bff;
+    expect(bff?.symbol).toBe('com.app.bff.sdui.button');
+    expect(bff?.path).toBe('src/main/kotlin/com/app/bff/sdui/Components.kt');
+    for (const type of types) {
+      const entry = type.code?.bff;
+      expect(entry?.symbol, type.id).toBe(`com.app.bff.sdui.${type.id}`);
+      expect(entry?.path, type.id).toMatch(
+        /^src\/main\/kotlin\/com\/app\/bff\/sdui\/\w+\.kt$/,
+      );
+    }
   });
 
   it('a camada Telas tem o Screen, só com nome e rota', () => {
