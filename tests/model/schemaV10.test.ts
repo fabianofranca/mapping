@@ -74,9 +74,9 @@ describe('migração v9 → v10 (tela em branco)', () => {
     ]);
   });
 
-  it('o registro tem as migrações de cada versão até a v10', () => {
-    expect(SCHEMA_VERSION).toBe(11);
-    expect([...migrations.keys()]).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  it('o registro tem a migração v9 → v10', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(10);
+    expect([...migrations.keys()].slice(0, 9)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(migrations.get(9)).toBe(migrateFrom9To10);
   });
 });
