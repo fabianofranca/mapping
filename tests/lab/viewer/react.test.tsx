@@ -9,9 +9,9 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../../canvas/harness';
-import { approximateMeasurer } from '../../../lab/components/instantiate';
-import { loadLibrary } from '../../../lab/components/library';
-import { screenFromSource } from '../../../lab/components/origin';
+import { approximateMeasurer } from '../../../src/model/components/instantiate';
+import { loadLibrary } from '../../../src/model/components/library';
+import { screenFromSource } from '../../../src/model/components/origin';
 import { M3_FILES } from '../../../lab/components/samplesMaterial3';
 import settings from '../../../lab/components/sdui/settings.sdui.json';
 

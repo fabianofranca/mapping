@@ -1,13 +1,16 @@
 import type { ComponentChildren } from 'preact';
+import { useEffect, useRef } from 'preact/hooks';
 import {
   openWindowOf,
   openWindowsOf,
+  setPaneWidth,
   showToolWindow,
-  toolWindowSizes,
+  sideWidth,
   type ToolWindowId,
 } from '../store/toolWindows';
 import type { Selection } from '../store/ui';
 import { Breadcrumbs } from '../ui/Breadcrumbs';
+import { CatalogWindow } from '../ui/CatalogWindow';
 import {
   DiagnosticsActions,
   DiagnosticsView,
@@ -57,6 +60,8 @@ function Window({
       return <TreeWindow onSelect={onSelect} />;
     case 'layers':
       return <LayersWindow stacked={stacked} />;
+    case 'catalog':
+      return <CatalogWindow onOpenSpecs={() => panel.dialogs.show({ kind: 'specs' })} />;
     case 'details':
       return (
         <ToolWindow id={id}>
@@ -111,16 +116,29 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
     <Window key={id} id={id} stacked={stacked} panel={panel} onSelect={onSelect} />
   );
 
+  // Mede a área das janelas: as laterais encolhem para o canvas não passar do mínimo.
+  const panes = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = panes.current;
+    if (!el) return;
+    const measure = () => setPaneWidth(el.getBoundingClientRect().width);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div class="editor-body">
       <ToolStrip side="left" />
-      <div class={PANES_CLASS} data-panes>
+      <div class={PANES_CLASS} data-panes ref={panes}>
         {left.length > 0 && (
           // A largura é da coluna: Árvore e Camadas empilhadas dividem a mesma.
           <div
             class="tool-column"
             data-tool-column
-            style={{ width: `${toolWindowSizes.value.left}px` }}
+            style={{ width: `${sideWidth('left')}px` }}
           >
             {left.map((id, i) => window(id, i > 0))}
           </div>

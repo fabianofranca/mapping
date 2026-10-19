@@ -1,6 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { parseSpecText, specWarnings, type Spec } from '../src/model';
 import { ToolError } from './errors';
+import { libraryCounts } from './library';
 import type { Roots } from './paths';
 
 // `validate_specialization` (etapa 4.2): o ciclo "gerar, validar, corrigir" de um agente que
@@ -16,7 +17,7 @@ const MAX_SPEC_BYTES = 16 * 1024 * 1024;
 /** Erros devolvidos de uma vez; a importação da app também mostra só os primeiros. */
 const MAX_ERRORS = 100;
 
-async function readSpecFile(roots: Roots, path: string): Promise<string> {
+export async function readSpecFile(roots: Roots, path: string): Promise<string> {
   const { real } = await roots.resolveExisting(path);
   const info = await stat(real);
   if (!info.isFile()) {
@@ -28,7 +29,7 @@ async function readSpecFile(roots: Roots, path: string): Promise<string> {
   return readFile(real, 'utf8');
 }
 
-function summary(spec: Spec): Json {
+export function summary(spec: Spec): Json {
   const types = spec.layers.flatMap((layer) => layer.annotationTypes);
   const fieldsWithSources = types.reduce(
     (sum, type) => sum + type.fields.filter((f) => (f.sources ?? []).length > 0).length,
@@ -44,6 +45,7 @@ function summary(spec: Spec): Json {
     types: types.length,
     typesWithSources: types.filter((t) => (t.sources ?? []).length > 0).length,
     fieldsWithSources,
+    ...(spec.formatVersion >= 4 ? libraryCounts(spec) : {}),
   };
 }
 
@@ -82,8 +84,10 @@ export async function validateSpecialization(
     errors: [],
     warnings,
     hint:
-      warnings.length > 0
-        ? 'a especialização é válida; os avisos não impedem a importação, mas costumam apontar descuidos'
-        : 'a especialização é válida e pode ser aplicada (apply_specialization em propose_changes)',
+      parsed.spec.formatVersion >= 4
+        ? 'só o ARQUIVO da especialização foi validado: para conferir os componentes, documentos, exemplos e fontes do pacote use validate_library na pasta; para aplicar um pacote v4 use apply_specialization (ou update_specialization) em propose_changes com `file` da pasta, ou a app (Especializações)'
+        : warnings.length > 0
+          ? 'a especialização é válida; os avisos não impedem a importação, mas costumam apontar descuidos'
+          : 'a especialização é válida e pode ser aplicada (apply_specialization em propose_changes)',
   };
 }

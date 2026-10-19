@@ -20,6 +20,7 @@ import { ToolError } from './errors';
 import { Refs } from './items';
 import type { Operation } from './operations';
 import { Roots, resolveProjectFile } from './paths';
+import { readSpecInput } from './library';
 import { loadProject, type LoadedProject, type ProjectLocation } from './projects';
 
 // Operações em lote sobre uma cópia do projeto (etapa 3a.5), agora só para ler: o
@@ -54,6 +55,17 @@ async function readSource(
     throw new ToolError('file-too-large', `arquivo grande demais: ${path}`, { path });
   }
   return { bytes: new Uint8Array(await readFile(real)), name: basename(real) };
+}
+
+/**
+ * O que uma operação de especialização aponta (arquivo ou pasta do pacote): relativo à pasta
+ * do projeto, a uma raiz, ou absoluto, como as demais fontes do lote.
+ */
+async function readSpec(roots: Roots, projectDir: string, path: string) {
+  let real: string | null = null;
+  if (!isAbsolute(path)) real = await resolveProjectFile(roots, projectDir, path);
+  if (real === null) real = (await roots.resolveExisting(path)).real;
+  return readSpecInput(roots, path, real);
 }
 
 async function takenImageFiles(dir: string): Promise<Set<string>> {
@@ -135,6 +147,7 @@ export async function prepareBatch(
   for (const file of options.reservedImages ?? []) taken.add(file);
   const io: BatchIo = {
     readSource: (path) => readSource(roots, location.dir, path),
+    readSpecInput: (path) => readSpec(roots, location.dir, path),
     takenImageFiles: taken,
     now: () => new Date(options.now()),
   };
@@ -150,12 +163,37 @@ export async function prepareBatch(
   };
 }
 
+/** Avisos da validação dos pacotes de biblioteca (`apply_specialization`/`update_specialization`). */
+const MAX_LIBRARY_WARNINGS = 20;
+
+function libraryWarningViews(result: BatchResult): Record<string, unknown>[] {
+  const views = result.libraryWarnings.slice(0, MAX_LIBRARY_WARNINGS).map((w) => ({
+    code: 'library-warning',
+    op: w.index,
+    specId: w.specId,
+    file: w.file,
+    path: w.path,
+    message: w.message,
+  }));
+  const more = result.libraryWarnings.length - views.length;
+  return more > 0
+    ? [
+        ...views,
+        {
+          code: 'library-warning',
+          message: `mais ${more} aviso(s) da validação da biblioteca (rode validate_library para a lista completa)`,
+        },
+      ]
+    : views;
+}
+
 /** Parte comum das respostas de `plan_changes` e `propose_changes`: o resultado do lote. */
 export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const { result, location, loaded, refs } = prepared;
   // Avisos (não impedem nada): plataforma em que algum tipo tem `code.<plataforma>.path`, sem
   // repositório configurado.
   const repoWarnings = platformRepoWarnings(result.project);
+  const warnings: unknown[] = [...repoWarnings, ...libraryWarningViews(result)];
   return {
     valid: prepared.valid,
     project: { name: location.name, path: location.path },
@@ -168,7 +206,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
     summary: result.steps.map((s) => `${s.index}. ${s.description}`),
     changes: changeCounts(result.before, result.project),
     issues: issueChanges(refs, result.before),
-    ...(repoWarnings.length > 0 ? { warnings: repoWarnings } : {}),
+    ...(warnings.length > 0 ? { warnings } : {}),
     created: createdRefs(refs, result),
   };
 }

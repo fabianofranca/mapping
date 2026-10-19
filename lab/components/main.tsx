@@ -10,7 +10,13 @@ import { effect, signal } from '@preact/signals';
 import 'virtual:tokens.css';
 import './components.css';
 import { downloadBlob, downloadText } from '../shared/download';
-import { arrange, dropIndex, findSlot, isContainer, resolveSlotLayout } from './arrange';
+import {
+  arrange,
+  dropIndex,
+  findSlot,
+  isContainer,
+  resolveSlotLayout,
+} from '../../src/model/components/arrange';
 import {
   type Board,
   type PlacedScreen,
@@ -24,10 +30,14 @@ import {
   replaceScreen,
   screenOfInstance,
 } from './board';
-import type { FieldValue } from './componentFormat';
+import type { FieldValue } from '../../src/model/components/componentFormat';
 import { ScreenEditor } from './editor';
-import { konvaMeasurer } from '../viewer/measure';
-import { type FontStatus, describeFont, registerFonts } from './fonts';
+import { konvaMeasurer } from '../../src/canvas/components/konvaMeasurer';
+import {
+  type FontStatus,
+  createFontRegistry,
+  describeFont,
+} from '../../src/storage/fonts';
 import {
   type FieldDef,
   type Library,
@@ -36,9 +46,8 @@ import {
   initialValues,
   instanceLabel,
   loadLibrary,
-  pickDirectory,
-  readFileList,
-} from './library';
+} from '../../src/model/components/library';
+import { pickDirectory, readFileList } from './libraryFiles';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from './samples';
 import { M3_FILES, M3_SCREEN } from './samplesMaterial3';
 import {
@@ -58,7 +67,7 @@ import {
   setParent,
   setValue,
   updateBox,
-} from './screen';
+} from '../../src/model/components/screen';
 
 const library = signal<Library | undefined>(undefined);
 const board = signal<Board>(newBoard(newScreen('Tela', 390, 844)));
@@ -71,6 +80,8 @@ const zoom = signal(1);
 /** Modo "posições fixas": só as propriedades mudam; nada se arrasta nem redimensiona. */
 const fixed = signal(false);
 const fontStatus = signal<readonly FontStatus[]>([]);
+/** Registro de fontes da página: troca as faces da biblioteca anterior. */
+const fontRegistry = createFontRegistry();
 const error = signal<string | undefined>(undefined);
 const notice = signal<string | undefined>(undefined);
 const historyPast: Board[] = [];
@@ -159,7 +170,7 @@ function fail(e: unknown): void {
 
 /** Depois de as fontes carregarem, os textos medem diferente: redesenha e re-arranja. */
 async function applyFonts(loaded: Library): Promise<void> {
-  fontStatus.value = await registerFonts(loaded.fonts);
+  fontStatus.value = await fontRegistry.register(loaded.fonts);
   if (library.value !== loaded) return;
   editor?.setLibrary(loaded);
   commit(board.value, false);

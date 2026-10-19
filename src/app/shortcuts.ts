@@ -28,7 +28,9 @@ export type Shortcut =
   /** Ctrl/Cmd+C: copia a referência do item (fora de campos de texto e sem texto selecionado). */
   | { readonly kind: 'copy-reference' }
   /** Ctrl+Alt+C: copia como PNG o recorte da marcação selecionada. */
-  | { readonly kind: 'copy-crop' };
+  | { readonly kind: 'copy-crop' }
+  /** Alt+Shift+A: arruma as filhas do container selecionado (etapa Biblioteca, B3). */
+  | { readonly kind: 'arrange' };
 
 /**
  * Texto dos atalhos nas dicas dos botões. Nas janelas e no redimensionar é sempre
@@ -47,6 +49,7 @@ export const SHORTCUT_LABELS = {
   pickRef: 'Ctrl+B',
   copyReference: 'Ctrl+C',
   copyCrop: 'Ctrl+Alt+C',
+  arrange: 'Alt+Shift+A',
 } as const;
 
 const ARIA_MODIFIERS: Readonly<Record<string, string>> = {
@@ -162,6 +165,7 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
         : null;
     }
     // Com Alt (Option no macOS) o `key` vira outro caractere: a tecla física manda.
+    if (e.shiftKey && (e.code === 'KeyA' || key === 'a')) return { kind: 'arrange' };
     if (!e.shiftKey && (e.code === 'KeyN' || key === 'n'))
       return { kind: 'new-annotation' };
     if (!e.shiftKey && (e.code === 'KeyL' || key === 'l')) return { kind: 'toggle-lock' };

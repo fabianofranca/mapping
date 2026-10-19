@@ -2,7 +2,12 @@ import { cleanup, render, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
-import { locale, theme } from '../../src/store/settings';
+import {
+  locale,
+  setShowComponentsOnPhotos,
+  showComponentsOnPhotos,
+  theme,
+} from '../../src/store/settings';
 import { useRef, useState } from 'preact/hooks';
 import { Dialog } from '../../src/ui/Dialog';
 import { HELP_PROPOSALS, HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
@@ -287,6 +292,36 @@ describe('HelpDialog', () => {
 
   const toc = () => within(dialogEl()).getByRole('navigation', { hidden: true });
 
+  it('o guia interativo é a primeira seção, com o link em outra aba', () => {
+    render(<HelpDialog onClose={vi.fn()} />);
+    const links = within(toc()).getAllByRole('link', { hidden: true });
+    expect(links[0]?.textContent).toBe(t('help.guide.title'));
+    const section = document.getElementById('help-guide') as HTMLElement;
+    const open = within(section).getByRole('link', {
+      name: t('help.guide.open'),
+      hidden: true,
+    });
+    expect(open.getAttribute('href')).toBe('guia/index.html');
+    expect(open.getAttribute('target')).toBe('_blank');
+    expect(open.getAttribute('rel')).toContain('noopener');
+    expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
+  });
+
+  it('em file:// a seção do guia mostra o aviso no lugar do link', () => {
+    vi.stubGlobal('location', { ...window.location, protocol: 'file:' });
+    try {
+      render(<HelpDialog onClose={vi.fn()} />);
+      const section = document.getElementById('help-guide') as HTMLElement;
+      expect(within(section).getByText(t('help.guide.fileProtocol'))).toBeTruthy();
+      expect(
+        within(section).queryByRole('link', { name: t('help.guide.open'), hidden: true }),
+      ).toBeNull();
+      expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('índice lateral com as seções, os downloads e os atalhos', () => {
     render(<HelpDialog onClose={vi.fn()} />);
     const links = within(toc())
@@ -406,6 +441,24 @@ describe('SettingsDialog', () => {
       'en-US',
     );
     expect(locale.value).toBe('en-US');
+  });
+
+  // B3/P7: a opção por pessoa, ao lado do zoom semântico.
+  it('Mostrar componentes sobre fotos: liga, desliga e grava', async () => {
+    localStorage.clear();
+    setShowComponentsOnPhotos(false);
+    render(<SettingsDialog onClose={vi.fn()} onShowShortcuts={vi.fn()} />);
+    const box = within(dialogEl()).getByRole<HTMLInputElement>('checkbox', {
+      name: new RegExp(t('view.componentsOnPhotos')),
+      hidden: true,
+    });
+    expect(box.checked).toBe(false);
+    await userEvent.click(box);
+    expect(showComponentsOnPhotos.value).toBe(true);
+    expect(box.checked).toBe(true);
+    expect(localStorage.getItem('mapping.showComponentsOnPhotos')).toBe('on');
+    await userEvent.click(box);
+    expect(showComponentsOnPhotos.value).toBe(false);
   });
 
   it('link para os atalhos', async () => {

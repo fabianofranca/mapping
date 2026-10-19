@@ -12,6 +12,7 @@ import type { Entry, Project } from './types';
 export type InvariantCode =
   | 'duplicate-id'
   | 'duplicate-file'
+  | 'blank-background'
   | 'images-overlap'
   | 'missing-image'
   | 'missing-parent'
@@ -51,7 +52,7 @@ export interface InvariantIssue {
 interface Named {
   readonly id: string;
   readonly name?: string | null;
-  readonly file?: string;
+  readonly file?: string | null;
 }
 
 /** Nome para a lista de problemas: o da imagem sem rótulo é o arquivo; especialização não tem. */
@@ -141,8 +142,14 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const files = new Set<string>();
   p.images.forEach((image, i) => {
-    if (files.has(image.file)) imageIssue('duplicate-file', image);
-    files.add(image.file);
+    // Tela em branco (sem arquivo) não disputa nome; cor e arquivo são mutuamente exclusivos.
+    if (image.file !== null) {
+      if (files.has(image.file)) imageIssue('duplicate-file', image);
+      files.add(image.file);
+    }
+    if ((image.file === null) !== (image.background !== null)) {
+      imageIssue('blank-background', image);
+    }
     const rect = imageCanvasRect(image, image.placement);
     for (const other of p.images.slice(i + 1)) {
       if (rectsOverlap(rect, imageCanvasRect(other, other.placement))) {

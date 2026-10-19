@@ -1,6 +1,7 @@
 import { PreviewBanner } from '../ui/PreviewBanner';
 import { UpdateBanner } from '../ui/UpdateBanner';
-import { openProject } from './controller';
+import { openLibrary, openProject } from './controller';
+import { CatalogScreen } from './CatalogScreen';
 import { Editor } from './Editor';
 import { Home } from './Home';
 
@@ -12,6 +13,16 @@ export function App() {
         <PreviewBanner />
         <UpdateBanner />
         <Editor open={open} />
+      </div>
+    );
+  }
+  const library = openLibrary.value;
+  if (library) {
+    return (
+      <div class="app app-catalog" data-focus-root>
+        <PreviewBanner />
+        <UpdateBanner />
+        <CatalogScreen library={library} />
       </div>
     );
   }

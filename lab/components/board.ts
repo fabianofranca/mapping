@@ -3,7 +3,7 @@
  * quadro fica aqui, fora da `Screen`: o formato da tela (`*.screen.json`) não muda.
  * Funções puras e imutáveis, sem DOM.
  */
-import type { Box, Instance, Screen } from './screen';
+import type { Box, Instance, Screen } from '../../src/model/components/screen';
 
 export interface PlacedScreen {
   readonly screen: Screen;

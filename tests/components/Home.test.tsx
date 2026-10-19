@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,6 +12,7 @@ const controller = vi.hoisted(() => ({
   forgetFolder: vi.fn(),
   importZip: vi.fn(),
   openFolder: vi.fn(),
+  openLibraryPackage: vi.fn(),
   openLocalProject: vi.fn(),
   openRecentFolder: vi.fn(),
   relocateFolder: vi.fn(),
@@ -173,6 +175,29 @@ describe('Home', () => {
     await userEvent.upload(input, file);
     await waitFor(() => expect(controller.importZip).toHaveBeenCalledWith(file));
   });
+
+  it('Abrir projeto de exemplo entrega o zip embutido ao mesmo importZip', async () => {
+    controller.importZip.mockReturnValue(ok());
+    render(<Home />);
+    await userEvent.click(screen.getByRole('button', { name: t('home.openExample') }));
+    await waitFor(() => expect(controller.importZip).toHaveBeenCalledTimes(1));
+    const blob = controller.importZip.mock.calls[0]?.[0] as Blob;
+    const bytes = Buffer.from(await blob.arrayBuffer());
+    expect(bytes.equals(readFileSync('examples/exemplo-completo.zip'))).toBe(true);
+  });
+
+  it('sem armazenamento local não oferece o projeto de exemplo (ele cria um projeto local)', () => {
+    features.value = { folder: true, local: false, fileProtocol: false };
+    render(<Home />);
+    expect(screen.queryByRole('button', { name: t('home.openExample') })).toBeNull();
+  });
+
+  it('erro ao abrir o exemplo aparece como no Abrir zip', async () => {
+    controller.importZip.mockReturnValue(fail('invalid-zip'));
+    render(<Home />);
+    await userEvent.click(screen.getByRole('button', { name: t('home.openExample') }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+  });
 });
 
 describe('Home (B10)', () => {
@@ -190,6 +215,15 @@ describe('Home (B10)', () => {
     expect(
       screen.getByRole('button', { name: t('settings.shortcuts'), hidden: true }),
     ).toBeTruthy();
+  });
+
+  it('coluna lateral tem o link Guia interativo, em outra aba e sem referrer', () => {
+    render(<Home />);
+    const side = screen.getByRole('complementary', { name: t('home.sideLabel') });
+    const link = within(side).getByRole('link', { name: t('home.guide') });
+    expect(link.getAttribute('href')).toBe('guia/index.html');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
   });
 
   it('Configurações → atalhos abre a Ajuda na seção Atalhos', async () => {
@@ -678,5 +712,77 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     await screen.findByText(t('error.storage-failed'));
     expect(lines()).toHaveLength(1);
     expect(lines()[0]).toContain('home=message:storage-failed');
+  });
+});
+
+describe('Home: Abrir biblioteca (B5)', () => {
+  const openButton = () => screen.getByRole('button', { name: t('catalog.home.open') });
+  const zipField = () => {
+    const input = document.querySelector<HTMLInputElement>('input[data-library-zip]');
+    if (!input) throw new Error('sem input de zip da biblioteca');
+    return input;
+  };
+
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, 'showDirectoryPicker');
+  });
+
+  it('com showDirectoryPicker abre a pasta, sem projeto', async () => {
+    Object.defineProperty(globalThis, 'showDirectoryPicker', {
+      value: vi.fn(),
+      configurable: true,
+      writable: true,
+    });
+    controller.openLibraryPackage.mockResolvedValue({ kind: 'opened' });
+    render(<Home />);
+    await userEvent.click(openButton());
+    await waitFor(() =>
+      expect(controller.openLibraryPackage).toHaveBeenCalledWith({ kind: 'folder' }),
+    );
+    expect(controller.openFolder).not.toHaveBeenCalled();
+  });
+
+  it('sem showDirectoryPicker escolhe o zip do pacote', async () => {
+    controller.openLibraryPackage.mockResolvedValue({ kind: 'opened' });
+    render(<Home />);
+    const click = vi.spyOn(zipField(), 'click');
+    await userEvent.click(openButton());
+    expect(click).toHaveBeenCalledOnce();
+    expect(controller.openLibraryPackage).not.toHaveBeenCalled();
+
+    const file = new File(['x'], 'pacote.zip', { type: 'application/zip' });
+    await userEvent.upload(zipField(), file);
+    await waitFor(() =>
+      expect(controller.openLibraryPackage).toHaveBeenCalledWith({ kind: 'zip', file }),
+    );
+  });
+
+  it('cancelar o seletor não mostra mensagem', async () => {
+    Object.defineProperty(globalThis, 'showDirectoryPicker', {
+      value: vi.fn(),
+      configurable: true,
+      writable: true,
+    });
+    controller.openLibraryPackage.mockResolvedValue({ kind: 'cancelled' });
+    render(<Home />);
+    await userEvent.click(openButton());
+    await waitFor(() => expect(controller.openLibraryPackage).toHaveBeenCalled());
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it.each([
+    ['too-big', t('spec.packageTooBig', { files: 500, mb: 64 })],
+    ['empty', t('spec.packageEmpty')],
+    ['unreadable', t('spec.packageReadFailed')],
+  ] as const)('pacote que não pôde ser lido (%s) avisa na tela', async (reason, text) => {
+    Object.defineProperty(globalThis, 'showDirectoryPicker', {
+      value: vi.fn(),
+      configurable: true,
+      writable: true,
+    });
+    controller.openLibraryPackage.mockResolvedValue({ kind: 'failed', reason });
+    render(<Home />);
+    await userEvent.click(openButton());
+    expect((await screen.findByRole('alert')).textContent).toBe(text);
   });
 });

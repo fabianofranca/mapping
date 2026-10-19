@@ -3,12 +3,16 @@ import {
   applyAccepted,
   decide,
   editNote as editProposalNote,
+  isTextPackageFile,
+  packageWithinLimits,
   proposalIndex,
   removeNote as removeProposalNote,
   reviewKey,
   reviewTree,
+  serializeSpec,
   type Project,
   type Proposal,
+  type ProposalPackage,
   type ProposalDecisions,
   type ProposalIssue,
   type ProposalStatus,
@@ -18,6 +22,8 @@ import type { FlushResult } from '../storage/autosave';
 import { imageMimeType, type ProjectStorage } from '../storage/types';
 import { reportError } from '../utils/report';
 import type { HistoryLink, ProjectStore } from './history';
+import { validatePackage } from './packageValidation';
+import type { SpecPackageFiles } from './project';
 import type { ProposalErrorCode, ProposalStore, RemoveProposalError } from './proposals';
 
 // Ações da revisão sobre as propostas (etapa 4): decidir, anotar e aplicar as aceitas.
@@ -64,6 +70,10 @@ export type ApplyError =
   | 'image-missing'
   /** O arquivo de destino já é de outra imagem do projeto (`path`). */
   | 'image-exists'
+  /** Nenhum arquivo do pacote de biblioteca em `proposals/<id>/specs/<pasta>/` (`path`). */
+  | 'package-missing'
+  /** O pacote da proposta não passa na validação da biblioteca (ou passa dos limites) (`path`). */
+  | 'package-invalid'
   /**
    * O `mapping.json` não gravou (alteração externa, quota, permissão): as mudanças foram
    * desfeitas e a proposta continua como estava (alteração externa abre o diálogo de conflito).
@@ -137,8 +147,9 @@ export interface ProposalActions {
   removeNote(proposalId: string, noteId: string): Promise<NoteResult>;
   /**
    * "Aplicar aceitas": efetiva as aceitas ainda não aplicadas numa única entrada de
-   * desfazer do projeto, move as imagens de `proposals/<id>/` para `images/` e grava
-   * `applied` (e `status`, se tudo foi decidido) na proposta. Desfazer e refazer essa
+   * desfazer do projeto, move as imagens de `proposals/<id>/` para `images/`, copia os
+   * pacotes de biblioteca de `proposals/<id>/specs/` para `specs/` (pela sessão; os arquivos
+   * ficam na proposta) e grava `applied` (e `status`, se tudo foi decidido) na proposta. Desfazer e refazer essa
    * entrada também desfazem e refazem o `applied` e a posição das imagens.
    */
   applyAccepted(proposalId: string): Promise<ApplyResult>;
@@ -162,6 +173,14 @@ export interface ProposalActionsDeps {
   readonly putProjectImage: (path: string, data: Blob) => Promise<void>;
   /** Desfaz `putProjectImage` (a aplicação falhou no meio). */
   readonly dropProjectImage: (path: string) => Promise<void>;
+  /**
+   * Entrega à sessão o pacote da especialização (já validado) que a aplicação vai pôr no
+   * projeto: a gravação de `specs/<pasta>/` e o desfazer/refazer saem do cache dela.
+   */
+  readonly stagePackage: (
+    spec: { readonly id: string; readonly version: number },
+    files: SpecPackageFiles,
+  ) => void;
   /** Grava agora o que o projeto tem pendente (o `mapping.json` antes da proposta) e diz se gravou. */
   readonly flush: () => Promise<FlushResult>;
 }
@@ -180,6 +199,49 @@ interface MovedImage {
   readonly from: string;
   readonly to: string;
   readonly blob: Blob;
+}
+
+/** Por que o pacote de uma proposta não pôde ser lido. */
+type PackageReadError = 'package-missing' | 'package-invalid';
+
+/**
+ * Lê para a memória o pacote que espera em `proposals/<id>/specs/<pasta>/` (texto dos `.json`
+ * e `.md`, `Blob` copiado dos demais, como o `snapshotPackage` da sessão) e o valida pelos
+ * três níveis, com a versão aplicada como anterior (contrato de versão). O arquivo da
+ * especialização vem de `to.spec`, a fonte da verdade: se a pasta tem o dele, é substituído.
+ */
+async function readProposalPackage(
+  storage: ProjectStorage,
+  pkg: ProposalPackage,
+  base: Project,
+  proposalId: string,
+): Promise<SpecPackageFiles | PackageReadError> {
+  const prefix = `${pkg.from}/`;
+  const paths = (await storage.listProposalFiles(proposalId)).filter((path) =>
+    path.startsWith(prefix),
+  );
+  if (paths.length === 0) return 'package-missing';
+  const files = new Map<string, string | Blob>();
+  let bytes = 0;
+  for (const path of paths) {
+    const blob = await storage.readImage(path);
+    if (!blob) return 'package-missing';
+    bytes += blob.size;
+    const rel = path.slice(prefix.length);
+    files.set(
+      rel,
+      isTextPackageFile(rel)
+        ? await blob.text()
+        : new Blob([await blob.arrayBuffer()], { type: blob.type }),
+    );
+  }
+  if (!packageWithinLimits(files.size, bytes) || pkg.spec === null) {
+    return 'package-invalid';
+  }
+  files.set(pkg.file.slice(pkg.dir.length + 1), serializeSpec(pkg.spec));
+  const previous = base.specializations.find((s) => s.id === pkg.specId)?.spec;
+  const report = validatePackage(files, previous ?? undefined);
+  return report.ok ? files : 'package-invalid';
 }
 
 export function createProposalActions(deps: ProposalActionsDeps): ProposalActions {
@@ -357,6 +419,16 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         proposal: unchanged ? p : applying.proposal,
         value: { applied: applying.applied.length, files: applying.files.length },
         before: async () => {
+          // 0. Os pacotes de biblioteca são lidos, validados e entregues à sessão, que os
+          // grava em `specs/<pasta>/` junto com o projeto (copiados: ficam na proposta).
+          for (const pkg of applying.packages) {
+            const read = await readProposalPackage(storage, pkg, base, id);
+            if (typeof read === 'string') {
+              failedPath = pkg.from;
+              return read;
+            }
+            deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
+          }
           // 1. As imagens vão para o lugar definitivo (copiadas; a origem só sai no fim).
           for (const move of applying.files) {
             if (base.images.some((image) => image.file === move.to)) {

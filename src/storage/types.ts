@@ -51,11 +51,33 @@ export interface ProjectStorage {
   statImage?(path: string): Promise<string | null>;
   /** Remove a imagem. Não falha se ela já não existir. */
   removeImage(path: string): Promise<void>;
-  /** Texto da cópia de uma especialização (`specs/sdui.json`), ou `null` se não existir. */
+  /**
+   * Texto da cópia de uma especialização (`specs/sdui.json`, ou o arquivo dela dentro da pasta
+   * do pacote, `specs/material3/material3.spec.json`), ou `null` se não existir.
+   */
   readSpec(path: string): Promise<string | null>;
   writeSpec(path: string, text: string): Promise<void>;
   /** Remove a cópia da especialização. Não falha se ela já não existir. */
   removeSpec(path: string): Promise<void>;
+  /**
+   * Caminhos (relativos à raiz do projeto) de todos os arquivos de `dir` (`specs/material3`),
+   * recursivo, em ordem alfabética. `[]` se a pasta não existir.
+   */
+  listSpecDir(dir: string): Promise<string[]>;
+  /** Conteúdo de um arquivo do pacote (`specs/material3/fonts/Roboto.ttf`), ou `null`. */
+  readSpecFile(path: string): Promise<Blob | null>;
+  /** Grava um arquivo do pacote, criando as pastas. No projeto local marca "não exportado". */
+  writeSpecFile(path: string, data: Blob | string): Promise<void>;
+  /**
+   * Remove um arquivo do pacote (`specs/material3/docs/antigo.md`; qualquer extensão). Não falha
+   * se ele já não existir. No projeto local marca "não exportado".
+   */
+  removeSpecFile(path: string): Promise<void>;
+  /**
+   * Remove a pasta do pacote inteira (recursivo). Não falha se ela não existir. No projeto
+   * local marca "não exportado".
+   */
+  removeSpecDir(dir: string): Promise<void>;
   /**
    * Ids das propostas (`proposals/<id>/proposal.json`, etapa 4), em ordem alfabética.
    * O conteúdo das imagens de uma proposta usa `readImage`/`writeImage`/`removeImage`
@@ -72,6 +94,13 @@ export interface ProjectStorage {
    */
   removeProposal(id: string): Promise<void>;
   /**
+   * Caminhos (relativos à raiz do projeto) de todos os arquivos sob `proposals/<id>/`
+   * (o `proposal.json`, as imagens e os pacotes de biblioteca em `specs/<pasta>/…`),
+   * recursivo, em ordem alfabética. `[]` se a proposta não existir. O conteúdo de cada
+   * um se lê com `readImage(path)`, que aceita qualquer caminho do projeto.
+   */
+  listProposalFiles(id: string): Promise<string[]>;
+  /**
    * Carimbo (tamanho e `lastModified`) do `proposal.json`, ou `null` se ele não existir.
    * Só a pasta implementa, como `statMapping`: é como a app percebe propostas novas ou
    * alteradas por fora.
@@ -84,9 +113,48 @@ export interface ProjectStorage {
   writeBackup(name: string, text: string): Promise<void>;
 }
 
-/** `true` para `specs/<nome>.json` (sem subpastas). */
+function cleanSegments(path: string): string[] | null {
+  const parts = path.split('/');
+  return parts.some((p) => p === '' || p === '.' || p === '..' || p.includes('\\'))
+    ? null
+    : parts;
+}
+
+/**
+ * `true` para `specs/<nome>.json` (cópia única, v1 a v3) ou `specs/<pasta>/…/<nome>.json`
+ * (o arquivo da especialização dentro do pacote), sem `..`, `.` nem segmentos vazios.
+ */
 export function isSpecPath(path: string): boolean {
-  return /^specs\/[^/]+\.json$/.test(path);
+  const parts = cleanSegments(path);
+  return (
+    parts !== null &&
+    parts.length >= 2 &&
+    parts[0] === SPECS_DIR &&
+    path.toLowerCase().endsWith('.json')
+  );
+}
+
+/** `true` para um arquivo de pacote: `specs/<pasta>/…` (qualquer extensão), sem `..`. */
+export function isSpecPackagePath(path: string): boolean {
+  const parts = cleanSegments(path);
+  return parts !== null && parts.length >= 3 && parts[0] === SPECS_DIR;
+}
+
+/** `true` para a pasta de um pacote: `specs/<pasta>` ou mais fundo, sem `..`. */
+export function isSpecDirPath(path: string): boolean {
+  const parts = cleanSegments(path);
+  return parts !== null && parts.length >= 2 && parts[0] === SPECS_DIR;
+}
+
+/** Recusa (lança) o caminho que não seja de `specs/`; usado por todas as implementações. */
+export function assertSpecPath(path: string, kind: 'file' | 'dir' | 'package'): void {
+  const ok =
+    kind === 'dir'
+      ? isSpecDirPath(path)
+      : kind === 'package'
+        ? isSpecPackagePath(path)
+        : isSpecPath(path);
+  if (!ok) throw new Error(`invalid specs path: ${path}`);
 }
 
 const PROPOSAL_PATH_RE = new RegExp(`^${PROPOSALS_DIR}/([^/]+)/(.+)$`);
@@ -116,6 +184,17 @@ export function isProposalImagePath(path: string): boolean {
   return (
     isImageFileName(rest) && !rest.split('/').some((part) => part === '..' || part === '')
   );
+}
+
+/**
+ * `true` para um arquivo de pacote de biblioteca que espera numa proposta
+ * (`proposals/<id>/specs/<pasta>/…`, qualquer extensão): pelo menos pasta e arquivo, sem
+ * `..`, `.`, segmentos vazios nem `\`.
+ */
+export function isProposalPackagePath(path: string): boolean {
+  const match = PROPOSAL_PATH_RE.exec(path);
+  if (!match || !PROPOSAL_ID_RE.test(match[1] ?? '')) return false;
+  return isSpecPackagePath(match[2] ?? '');
 }
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'];

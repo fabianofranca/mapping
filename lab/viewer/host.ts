@@ -4,12 +4,12 @@
  * do laboratório NÃO as usam: a CSP delas bloqueia requisição de rede (`connect-src 'none'`).
  * Existem para o site que instala o pacote, onde a pasta da biblioteca é servida por URL.
  */
-import { registerFonts } from '../components/fonts';
-import type { FontHost, FontStatus } from '../components/fonts';
-import { loadLibrary, resolvePath } from '../components/library';
-import type { Library, TextFile } from '../components/library';
+import { createFontRegistry } from '../../src/storage/fonts';
+import type { FontHost, FontRegistry, FontStatus } from '../../src/storage/fonts';
+import { loadLibrary, resolvePath } from '../../src/model/components/library';
+import type { Library, TextFile } from '../../src/model/components/library';
 
-export type { FontHost, FontStatus } from '../components/fonts';
+export type { FontHost, FontStatus } from '../../src/storage/fonts';
 
 export interface LoadFromUrlOptions {
   /** Padrão: o `fetch` global. Passe um quando o ambiente não tem (ou para autenticar). */
@@ -123,6 +123,23 @@ export async function loadLibraryFromUrl(
 }
 
 /**
+ * Registro do visualizador por `host`: cada chamada de `registerLibraryFonts` troca as faces da
+ * chamada anterior (o registro do `src/storage/fonts.ts` não tem estado de módulo).
+ */
+let defaultRegistry: FontRegistry | undefined;
+const hostRegistries = new WeakMap<FontHost, FontRegistry>();
+
+function registryFor(host: FontHost | undefined): FontRegistry {
+  if (!host) return (defaultRegistry ??= createFontRegistry());
+  let registry = hostRegistries.get(host);
+  if (!registry) {
+    registry = createFontRegistry(host);
+    hostRegistries.set(host, registry);
+  }
+  return registry;
+}
+
+/**
  * Registra as fontes da biblioteca (as que vieram com bytes) no documento do hospedeiro e
  * devolve o status de cada uma. Depois, `viewer.redraw()` (ou mudar `fontsVersion` no
  * invólucro React) para remedir os textos. `host` existe para os testes e para ambientes sem
@@ -132,5 +149,5 @@ export async function registerLibraryFonts(
   library: Library,
   host?: FontHost,
 ): Promise<FontStatus[]> {
-  return registerFonts(library.fonts, host);
+  return registryFor(host).register(library.fonts);
 }

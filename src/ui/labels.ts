@@ -1,6 +1,7 @@
 // Textos derivados do projeto (nomes de marcações, caminhos, erros), sempre via `t()`.
 import { t, type TranslationKey } from '../i18n';
 import {
+  MAX_BLANK_SIZE,
   MIN_MARKING_SIZE,
   ancestorsOf,
   type Annotation,
@@ -12,9 +13,9 @@ import type { StoreErrorCode } from '../store/history';
 import type { ProposalActionError } from '../store/proposalActions';
 import type { ProposalNotice } from '../store/proposals';
 
-/** Nome da imagem; sem nome, o nome do arquivo. */
+/** Nome da imagem; sem nome, o nome do arquivo (tela em branco: "Tela em branco"). */
 export function imageLabel(image: Pick<ProjectImage, 'name' | 'file'>): string {
-  return image.name ?? image.file;
+  return image.name ?? image.file ?? t('image.blankUntitled');
 }
 
 export function markingLabel(marking: Pick<Marking, 'name'>): string {
@@ -35,9 +36,35 @@ const MARKING_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   'rect-outside-parent': 'marking.error.rect-outside-parent',
   'rect-excludes-children': 'marking.error.rect-excludes-children',
   'invalid-parent': 'marking.error.invalid-parent',
+  'not-arrangeable': 'marking.error.not-arrangeable',
   locked: 'marking.error.locked',
   reviewing: 'review.readOnly',
 };
+
+const LIBRARY_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
+  'rect-out-of-image': 'library.error.rect-out-of-image',
+  'rect-outside-parent': 'library.error.rect-out-of-image',
+  locked: 'library.error.locked',
+  reviewing: 'review.readOnly',
+};
+
+/** Erro de "Adicionar" na Biblioteca. */
+export function libraryErrorMessage(code: StoreErrorCode): string {
+  return t(LIBRARY_ERRORS[code] ?? 'library.error.generic');
+}
+
+const BLANK_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
+  'invalid-dimensions': 'blank.error.size',
+  'invalid-color': 'blank.error.color',
+  'rect-out-of-image': 'blank.error.rect-out-of-image',
+  locked: 'blank.error.locked',
+  reviewing: 'review.readOnly',
+};
+
+/** Erro de editar a tela em branco (tamanho e cor de fundo). */
+export function blankErrorMessage(code: StoreErrorCode): string {
+  return t(BLANK_ERRORS[code] ?? 'blank.error.generic', { max: MAX_BLANK_SIZE });
+}
 
 export function markingErrorMessage(code: StoreErrorCode): string {
   return t(MARKING_ERRORS[code] ?? 'marking.error.generic', { min: MIN_MARKING_SIZE });
@@ -74,6 +101,8 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   stale: 'proposal.error.stale',
   'image-missing': 'proposal.error.imageMissing',
   'image-exists': 'proposal.error.imageExists',
+  'package-missing': 'proposal.error.packageMissing',
+  'package-invalid': 'proposal.error.packageInvalid',
   'save-failed': 'proposal.error.saveFailed',
   failed: 'proposal.error.generic',
   reviewing: 'proposal.error.reviewing',
@@ -81,7 +110,7 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   'remove-failed': 'proposal.error.removeFailed',
 };
 
-/** Mensagem de uma ação recusada na revisão (`path`: a imagem de `image-missing` e `image-exists`). */
+/** Mensagem de uma ação recusada na revisão (`path`: o arquivo ou a pasta de `image-missing`, `image-exists`, `package-missing` e `package-invalid`). */
 export function proposalErrorMessage(code: ProposalActionError, path = ''): string {
   return t(PROPOSAL_ERRORS[code], { path });
 }

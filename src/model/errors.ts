@@ -12,6 +12,8 @@ export type ModelErrorCode =
   | 'invalid-placement'
   | 'image-overlap'
   | 'duplicate-file'
+  | 'blank-image'
+  | 'not-blank'
   | 'aspect-change-not-confirmed'
   | 'image-too-small'
   | 'rect-not-integer'
@@ -41,12 +43,15 @@ export type ModelErrorCode =
   | 'ref-not-accepted'
   | 'spec-already-applied'
   | 'spec-not-newer'
+  | 'spec-missing-migrations'
   // Repositórios por plataforma (etapa 3b)
   | 'unknown-platform'
   | 'invalid-url-template'
   | 'invalid-local-path'
   // Propostas de alteração (etapa 4)
-  | 'invalid-source';
+  | 'invalid-source'
+  // Componentes (etapa Biblioteca)
+  | 'not-arrangeable';
 
 export class ModelError extends Error {
   constructor(

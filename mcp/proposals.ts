@@ -7,6 +7,7 @@ import {
   reviewTree,
   supersedeProposal,
   withdrawProposal,
+  packageDirOf,
   type Change,
   type JsonValue,
   type Proposal,
@@ -157,7 +158,28 @@ export class Proposals {
         { baseRevision: loaded.project.revision },
       );
     }
-    const { written } = await writeNewProposal(this.roots, location, proposal, images);
+    // Os pacotes de biblioteca das mudanças de especialização (só as que ficaram na proposta).
+    const packageFiles = new Map<string, Uint8Array>();
+    const packaged = new Set(
+      proposal.changes
+        .filter((c) => c.entity === 'specialization')
+        .flatMap((c) => {
+          const to = c.to as { file?: unknown } | null;
+          const dir = typeof to?.file === 'string' ? packageDirOf(to.file) : null;
+          return dir === null ? [] : [dir];
+        }),
+    );
+    for (const [file, data] of result.packageFiles) {
+      const dir = packageDirOf(file);
+      if (dir !== null && packaged.has(dir)) packageFiles.set(file, data);
+    }
+    const { written, writtenPackage } = await writeNewProposal(
+      this.roots,
+      location,
+      proposal,
+      images,
+      packageFiles,
+    );
 
     const warnings: Json[] = [];
     let superseded: Json | undefined;
@@ -191,6 +213,9 @@ export class Proposals {
       files: {
         proposal: `proposals/${proposal.id}/proposal.json`,
         images: written.slice(),
+        ...(writtenPackage.length > 0
+          ? { packages: packageFolders(proposal.id, writtenPackage) }
+          : {}),
       },
       ...(superseded ? { superseded } : {}),
       ...(Array.isArray(repoWarnings) || warnings.length > 0
@@ -533,6 +558,20 @@ export class Proposals {
       hint: 'a proposta foi retirada: nada mais dela será aplicado (o que já foi aplicado continua no projeto). Os arquivos em proposals/ ficam para o histórico.',
     };
   }
+}
+
+/** Pastas de pacote gravadas na proposta, com a contagem de arquivos de cada uma. */
+function packageFolders(
+  proposalId: string,
+  written: readonly string[],
+): { dir: string; files: number }[] {
+  const prefix = `proposals/${proposalId}/`;
+  const counts = new Map<string, number>();
+  for (const path of written) {
+    const dir = packageDirOf(path.slice(prefix.length));
+    if (dir !== null) counts.set(dir, (counts.get(dir) ?? 0) + 1);
+  }
+  return [...counts].map(([dir, files]) => ({ dir: `${prefix}${dir}`, files }));
 }
 
 /** Referência de uma proposta citada por outra (a pasta pode já não existir). */

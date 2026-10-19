@@ -11,7 +11,11 @@ import { InconsistentProjectDialog } from '../ui/InconsistentProjectDialog';
 import { InstallHint } from '../ui/InstallHint';
 import { PreviewBadge } from '../ui/PreviewBanner';
 import { SettingsDialog } from '../ui/SettingsDialog';
+import { guideUrl } from '../utils/guideLink';
 import { matchesSearch } from '../utils/search';
+import { MAX_PACKAGE_BYTES, MAX_PACKAGE_FILES } from '../model';
+import { canPickDirectory } from '../ui/specPackageImport';
+import { exampleProjectBlob } from './exampleProject';
 import {
   createFolderProject,
   createLocalProject,
@@ -20,12 +24,14 @@ import {
   forgetFolder,
   importZip,
   openFolder,
+  openLibraryPackage,
   openLocalProject,
   openRecentFolder,
   recentProjects,
   relocateFolder,
   type AppResult,
   type InconsistentProject,
+  type LibraryOpenResult,
   type RecentProject,
 } from './controller';
 import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
@@ -78,6 +84,7 @@ export function Home() {
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const zipInput = useRef<HTMLInputElement>(null);
+  const libraryZipInput = useRef<HTMLInputElement>(null);
   const listSection = useRef<HTMLElement>(null);
   // Linha que sai da lista (Remover da lista, Excluir): a posição dela, para o foco ir à
   // linha que ficou no lugar, e não ao `body` (etapa 7, G4). Um dono por fechamento (etapa
@@ -183,10 +190,44 @@ export function Home() {
   /** Alvo do foco quando o diálogo fecha sem a linha que o abriu. */
   const rowLeft = () => recentRowTarget(listSection.current, removedAt.current);
 
+  /** O mesmo importador do "Abrir zip", com o zip do exemplo embutido no build. */
+  const onOpenExample = () => void run(() => importZip(exampleProjectBlob()));
+
   const onZipChosen = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = '';
     if (file) await run(() => importZip(file));
+  };
+
+  /** Mensagem de um pacote que não pôde ser lido; o cancelamento do seletor não diz nada. */
+  const showLibraryResult = (result: LibraryOpenResult) => {
+    if (result.kind !== 'failed') return;
+    setMessage(
+      result.reason === 'too-big'
+        ? t('spec.packageTooBig', {
+            files: MAX_PACKAGE_FILES,
+            mb: Math.round(MAX_PACKAGE_BYTES / (1024 * 1024)),
+          })
+        : result.reason === 'empty'
+          ? t('spec.packageEmpty')
+          : t('spec.packageReadFailed'),
+    );
+  };
+
+  const onOpenLibrary = async (source: Parameters<typeof openLibraryPackage>[0]) => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      showLibraryResult(await openLibraryPackage(source));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onLibraryZipChosen = async (input: HTMLInputElement) => {
+    const file = input.files?.[0];
+    input.value = '';
+    if (file) await onOpenLibrary({ kind: 'zip', file });
   };
 
   const closeDialog = () => dialogs.close();
@@ -201,7 +242,14 @@ export function Home() {
     },
     onOpenFolder: () => void onOpenFolder(),
     onOpenZip: () => zipInput.current?.click(),
+    onOpenExample,
+    // Pasta onde o navegador deixa escolher uma; senão, o zip do pacote.
+    onOpenLibrary: () =>
+      canPickDirectory()
+        ? void onOpenLibrary({ kind: 'folder' })
+        : libraryZipInput.current?.click(),
   };
+  const guide = guideUrl();
   const recents = recentProjects.value;
   const projects = recents.filter(
     (p) =>
@@ -261,13 +309,23 @@ export function Home() {
     </>
   );
   const zipField = (
-    <input
-      ref={zipInput}
-      type="file"
-      accept=".zip,application/zip,application/x-zip-compressed"
-      hidden
-      onChange={(e) => void onZipChosen(e.currentTarget)}
-    />
+    <>
+      <input
+        ref={zipInput}
+        type="file"
+        accept=".zip,application/zip,application/x-zip-compressed"
+        hidden
+        onChange={(e) => void onZipChosen(e.currentTarget)}
+      />
+      <input
+        ref={libraryZipInput}
+        type="file"
+        accept=".zip,application/zip,application/x-zip-compressed"
+        hidden
+        data-library-zip
+        onChange={(e) => void onLibraryZipChosen(e.currentTarget)}
+      />
+    </>
   );
 
   return (
@@ -294,6 +352,17 @@ export function Home() {
               <Icon name="help" />
               {t('help.open')}
             </button>
+            {guide !== null && (
+              <a
+                class="home-nav-item"
+                href={guide}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon name="info" />
+                {t('home.guide')}
+              </a>
+            )}
             <button
               type="button"
               class="home-nav-item"
@@ -540,10 +609,20 @@ interface HomeActions {
   readonly onNew: () => void;
   readonly onOpenFolder: () => void;
   readonly onOpenZip: () => void;
+  readonly onOpenExample: () => void;
+  readonly onOpenLibrary: () => void;
 }
 
 /** Os três pontos de entrada como botões do cabeçalho. */
-function HomeButtons({ busy, available, onNew, onOpenFolder, onOpenZip }: HomeActions) {
+function HomeButtons({
+  busy,
+  available,
+  onNew,
+  onOpenFolder,
+  onOpenZip,
+  onOpenExample,
+  onOpenLibrary,
+}: HomeActions) {
   return (
     <div class="home-buttons">
       {available.local && (
@@ -562,6 +641,16 @@ function HomeButtons({ busy, available, onNew, onOpenFolder, onOpenZip }: HomeAc
           {t('home.openZip')}
         </Button>
       )}
+      {available.local && (
+        <Button disabled={busy} title={t('home.openExampleHint')} onClick={onOpenExample}>
+          <Icon name="file" />
+          {t('home.openExample')}
+        </Button>
+      )}
+      <Button disabled={busy} title={t('catalog.home.openHint')} onClick={onOpenLibrary}>
+        <Icon name="library" />
+        {t('catalog.home.open')}
+      </Button>
     </div>
   );
 }

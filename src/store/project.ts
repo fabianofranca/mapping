@@ -1,6 +1,7 @@
 import * as model from '../model';
 import type {
   AnnotationTypeRef,
+  ComponentCatalog,
   EntryInput,
   JsonValue,
   LabelTexts,
@@ -11,11 +12,62 @@ import type {
   Rect,
   Spec,
   SpecRemovalMode,
+  TextMeasurer,
 } from '../model';
 import type { ActionResult, ProjectStore } from './history';
+import { textMeasurer } from './textMeasure';
+
+/** Ponto em pixels (da imagem ou do canvas, conforme a action). */
+export interface Point {
+  readonly x: number;
+  readonly y: number;
+}
 
 export interface ActionDeps {
   readonly newId?: () => string;
+  /** Catálogo de componentes de agora (padrão: vazio). Dele vêm o tamanho mínimo e o desenho das instâncias. */
+  readonly components?: () => ComponentCatalog;
+  /** Medidor de texto de agora (padrão: o de `textMeasurer`, que o canvas troca pelo real). */
+  readonly measure?: () => TextMeasurer;
+}
+
+/**
+ * Prende o retângulo pedido ao tamanho mínimo do componente, em vez de recusar: o gesto de
+ * redimensionar não trava no meio. A borda que o gesto não mexe (a oposta à alça) fica onde
+ * estava no início do gesto (`base`); se nenhuma borda ficou, ancora em x e y.
+ */
+export function clampToMinSize(
+  rect: Rect,
+  base: Rect,
+  min: { readonly width: number; readonly height: number },
+): Rect {
+  const fit = (
+    start: number,
+    size: number,
+    minimum: number,
+    baseStart: number,
+    baseSize: number,
+  ): [number, number] => {
+    // Um eixo que o gesto não mexeu fica como está, mesmo abaixo do mínimo (marcação antiga).
+    if (size >= minimum || (start === baseStart && size === baseSize))
+      return [start, size];
+    // Só a borda de baixo/direita ficou onde estava: a alça é a de cima/esquerda.
+    const anchorFar = start + size === baseStart + baseSize && start !== baseStart;
+    return [anchorFar ? start + size - minimum : start, minimum];
+  };
+  const [x, width] = fit(rect.x, rect.width, min.width, base.x, base.width);
+  const [y, height] = fit(rect.y, rect.height, min.height, base.y, base.height);
+  return { x, y, width, height };
+}
+
+/**
+ * Arquivos do pacote de uma biblioteca: caminho relativo à pasta do pacote
+ * (`components/button.json`) → texto (`.json`, `.md`) ou bytes (fontes).
+ */
+export type SpecPackageFiles = ReadonlyMap<string, string | Blob>;
+
+function packageSpecNameIn(spec: Spec, files?: SpecPackageFiles): string | undefined {
+  return files === undefined ? undefined : model.packageSpecNameOf(files, spec.id);
 }
 
 /**
@@ -28,6 +80,13 @@ export interface ActionDeps {
  */
 export function createProjectActions(store: ProjectStore, deps: ActionDeps = {}) {
   const newId = deps.newId ?? (() => crypto.randomUUID());
+  const catalog = deps.components ?? (() => model.EMPTY_CATALOG);
+  const measure = deps.measure ?? (() => textMeasurer.peek());
+  /** Tamanho mínimo do componente que desenha a marcação (nada para uma marcação comum). */
+  const rectOptions = (p: Project, markingId: string): model.RectOptions | undefined => {
+    const minSize = model.componentMinSize(p, catalog(), markingId);
+    return minSize === null ? undefined : { minSize };
+  };
 
   const create = (op: (id: string) => (p: Project) => Project): ActionResult<string> => {
     const id = newId();
@@ -79,6 +138,16 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       options?: model.ReplaceImageOptions,
     ) => store.apply((p) => model.replaceImage(p, imageId, file, options)),
     removeImage: (imageId: string) => store.apply((p) => model.removeImage(p, imageId)),
+    /** Tela em branco: imagem sem arquivo, com tamanho e cor de fundo. */
+    addBlankImage: (args: {
+      readonly name: string | null;
+      readonly width: number;
+      readonly height: number;
+      readonly background: string;
+      readonly center?: Point;
+    }) => create((id) => (p) => model.addBlankImage(p, { ...args, id })),
+    setBlankImage: (imageId: string, patch: model.BlankImageChanges) =>
+      store.apply((p) => model.setBlankImage(p, imageId, patch)),
 
     // Gestos: prévias sem histórico e uma única entrada no fim (ver `ProjectStore`).
     beginGesture: () => store.beginGesture(),
@@ -93,20 +162,32 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       }),
     /** Prévia de redimensionar a marcação. */
     previewMarkingRect: (markingId: string, rect: Rect) =>
-      store.updateGesture((p) => model.setMarkingRect(p, markingId, rect)),
+      store.updateGesture((p) => {
+        const min = model.componentMinSize(p, catalog(), markingId);
+        const base = p.markings.find((m) => m.id === markingId);
+        const wanted = min && base ? clampToMinSize(rect, base.rect, min) : rect;
+        return model.setMarkingRect(p, markingId, wanted, rectOptions(p, markingId));
+      }),
     commitGesture: () => store.commitGesture(),
     cancelGesture: () => store.cancelGesture(),
 
     // Marcações
     createMarking: (imageId: string, rect: Rect, name?: string | null) =>
-      create((id) => (p) => model.createMarking(p, { id, imageId, rect, name })),
+      create(
+        (id) => (p) =>
+          model.createMarking(p, { id, imageId, rect, name }, rectOptions(p, id)),
+      ),
     renameMarking: (markingId: string, name: string | null) =>
       store.apply((p) => model.renameMarking(p, markingId, name)),
     setMarkingRect: (markingId: string, rect: Rect) =>
-      store.apply((p) => model.setMarkingRect(p, markingId, rect)),
+      store.apply((p) =>
+        model.setMarkingRect(p, markingId, rect, rectOptions(p, markingId)),
+      ),
     /** Ajuste fino pelo painel: o valor é limitado às regras (ver `adjustMarkingRect`). */
     adjustMarkingRect: (markingId: string, field: keyof Rect, value: number) =>
-      store.apply((p) => model.adjustMarkingRect(p, markingId, field, value)),
+      store.apply((p) =>
+        model.adjustMarkingRect(p, markingId, field, value, rectOptions(p, markingId)),
+      ),
     moveMarking: (markingId: string, dx: number, dy: number) =>
       store.apply((p) => model.moveMarking(p, markingId, dx, dy)),
     setMarkingParent: (markingId: string, parentId: string | null) =>
@@ -115,6 +196,41 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.confirmMarkingReview(p, markingId)),
     removeMarking: (markingId: string) =>
       store.apply((p) => model.removeMarking(p, markingId)),
+    /** Posição entre as irmãs (0 = por baixo). Não é geometria: a trava não impede. */
+    reorderMarking: (markingId: string, index: number) =>
+      store.apply((p) => model.reorderMarking(p, markingId, index)),
+
+    // Componentes (etapa Biblioteca, B3): cada action é uma entrada de desfazer.
+    /** Cria a marcação e a anotação tipada que a desenha; devolve o id da marcação. */
+    addComponent: (args: {
+      readonly imageId: string;
+      readonly parentId: string | null;
+      readonly specId: string;
+      readonly typeId: string;
+      readonly center?: Point;
+    }): ActionResult<string> => {
+      const markingId = newId();
+      const annotationId = newId();
+      const result = store.apply((p) =>
+        model.addComponentMarking(
+          p,
+          catalog(),
+          { ...args, markingId, annotationId },
+          measure(),
+        ),
+      );
+      return result.ok ? { ok: true, value: markingId } : result;
+    },
+    /** Arruma as filhas do container pelo layout do slot; devolve os avisos. Sem mudança, não há entrada. */
+    arrange: (markingId: string): ActionResult<readonly string[]> => {
+      let warnings: readonly string[] = [];
+      const result = store.apply((p) => {
+        const arranged = model.arrangeMarking(p, catalog(), markingId, measure());
+        warnings = arranged.warnings;
+        return arranged.project;
+      });
+      return result.ok ? { ok: true, value: warnings } : result;
+    },
 
     // Anotações e pares
     addAnnotation: (
@@ -162,10 +278,27 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.moveEntry(p, annotationId, entryId, to)),
 
     // Especializações (docs/history/PLAN-etapas-1-2.md 13.4): cada operação é uma entrada no histórico.
-    applySpecialization: (spec: Spec) =>
-      store.apply((p) => model.applySpecialization(p, spec, { newId })),
-    updateSpecialization: (spec: Spec, texts?: LabelTexts) =>
-      store.apply((p) => model.updateSpecialization(p, spec, { newId, texts })),
+    // `packageFiles`: o pacote da biblioteca. O store só usa o NOME do arquivo da
+    // especialização dentro dele; os bytes são da sessão (grava em `specs/<id>/`), nunca do store.
+    applySpecialization: (spec: Spec, packageFiles?: SpecPackageFiles) =>
+      store.apply((p) =>
+        model.applySpecialization(p, spec, {
+          newId,
+          packageSpecName: packageSpecNameIn(spec, packageFiles),
+        }),
+      ),
+    updateSpecialization: (
+      spec: Spec,
+      texts?: LabelTexts,
+      packageFiles?: SpecPackageFiles,
+    ) =>
+      store.apply((p) =>
+        model.updateSpecialization(p, spec, {
+          newId,
+          texts,
+          packageSpecName: packageSpecNameIn(spec, packageFiles),
+        }),
+      ),
     removeSpecialization: (specId: string, mode: SpecRemovalMode, texts?: LabelTexts) =>
       store.apply((p) => model.removeSpecialization(p, specId, mode, { newId, texts })),
 

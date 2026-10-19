@@ -9,6 +9,7 @@ import {
   changeStatus,
   createMarking,
   deserialize,
+  getAnnotationIssues,
   moveImage,
   moveLayer,
   moveMarking,
@@ -48,9 +49,19 @@ import {
   withdrawProposal,
   type Project,
   type Proposal,
+  type SpecMigrationStep,
 } from '../../src/model';
 import { emptyProject, sampleProject } from './fixtures';
 import { AT, LATER, changeOf, decided, propose } from './proposalFixtures';
+import {
+  annotationOf,
+  badgeType,
+  buttonType,
+  chipType,
+  libProject,
+  libSpec,
+  valuesOf,
+} from './libraryMigrationFixtures';
 import { cadastroProject, codeProject, idGen, loadExample } from './specFixtures';
 
 const FIGMA = { system: 'figma', id: '1:2', url: 'https://figma.com/x' };
@@ -533,5 +544,202 @@ describe('proposta antiga com mudança no campo de código removido (etapa 9)', 
       ),
     };
     expect(previewProject(missing, p).problems).toEqual([]);
+  });
+});
+
+describe('pacote de biblioteca na proposta (fase B4)', () => {
+  const PKG_SPEC = { ...loadExample('sdui'), formatVersion: 4 } as ReturnType<
+    typeof loadExample
+  >;
+
+  function withPackage(p: Project, version: number): Project {
+    const spec = { ...PKG_SPEC, version };
+    return updateOrApply(p, spec);
+  }
+
+  /** Aplica (ou sobe) a especialização com o arquivo dentro da pasta `specs/sdui/`. */
+  function updateOrApply(p: Project, spec: typeof PKG_SPEC): Project {
+    const existing = p.specializations.some((s) => s.id === spec.id);
+    return existing
+      ? {
+          ...p,
+          specializations: p.specializations.map((s) =>
+            s.id === spec.id ? { ...s, version: spec.version, spec } : s,
+          ),
+        }
+      : applySpecialization(p, spec, {
+          newId: idGen('LP'),
+          packageSpecName: 'sdui.spec.json',
+        });
+  }
+
+  it('criar: devolve a pasta, onde os arquivos esperam e a especialização', () => {
+    const base = sampleProject();
+    const after = withPackage(base, 1);
+    const result = apply(base, acceptAll(propose(base, after), base));
+    expect(result.packages).toEqual([
+      {
+        specId: 'sdui',
+        version: 1,
+        dir: 'specs/sdui',
+        from: 'proposals/P1/specs/sdui',
+        file: 'specs/sdui/sdui.spec.json',
+        spec: { ...PKG_SPEC, version: 1 },
+      },
+    ]);
+  });
+
+  it('atualizar: devolve o pacote da versão nova', () => {
+    const base = withPackage(sampleProject(), 1);
+    const after = withPackage(base, 2);
+    const p = acceptAll(propose(base, after), base);
+    expect(changeOf(p, 'specialization', 'sdui').kind).toBe('update');
+    const result = apply(base, p);
+    expect(result.packages.map((x) => [x.specId, x.version, x.dir])).toEqual([
+      ['sdui', 2, 'specs/sdui'],
+    ]);
+  });
+
+  it('só as aceitas, e uma só vez: o que não foi aplicado agora não entra', () => {
+    const base = sampleProject();
+    const p = propose(base, withPackage(base, 1));
+    expect(apply(base, p).packages).toEqual([]);
+    const accepted = acceptAll(p, base);
+    const first = apply(base, accepted);
+    expect(first.packages).toHaveLength(1);
+    // Já aplicada: o resto da proposta não repete o pacote.
+    expect(apply(first.project, first.proposal).packages).toEqual([]);
+  });
+
+  it('especialização de arquivo único (specs/<id>.json) e remoção não trazem pacote', () => {
+    const base = sampleProject();
+    const single = applySpecialization(base, loadExample('sdui'), {
+      newId: idGen('LS'),
+    });
+    expect(apply(base, acceptAll(propose(base, single), base)).packages).toEqual([]);
+    const removed = removeSpecialization(withPackage(base, 1), 'sdui', 'convert');
+    const p = acceptAll(propose(withPackage(base, 1), removed), withPackage(base, 1));
+    expect(apply(withPackage(base, 1), p).packages).toEqual([]);
+  });
+});
+
+describe('migração que tira o campo na mesma proposta (remove-field e rename-field)', () => {
+  /** A especialização v1 aplicada, com a anotação `B1` (Button) com o campo `label` preenchido. */
+  function before(): Project {
+    return libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'teste', size: 3 } },
+    ]);
+  }
+
+  /** A v2 sem o campo `label` (e `title` no lugar, no rename), com a migração dada. */
+  function nextSpec(step: SpecMigrationStep, renamed?: string) {
+    const fields = buttonType().fields.filter((f) => f.key !== 'label');
+    if (renamed) fields.unshift({ key: renamed, type: 'string', tags: ['x'] });
+    return libSpec(
+      2,
+      { c: [buttonType({ fields }), badgeType()], e: [chipType()] },
+      {
+        migrations: [{ from: 1, to: 2, steps: [step] }],
+      },
+    );
+  }
+
+  function proposeUpdate(step: SpecMigrationStep, renamed?: string) {
+    const base = before();
+    const after = updateSpecialization(base, nextSpec(step, renamed));
+    return { base, after, p: propose(base, after) };
+  }
+
+  const REMOVE: SpecMigrationStep = {
+    op: 'remove-field',
+    type: 'button',
+    field: 'label',
+  };
+  const RENAME: SpecMigrationStep = {
+    op: 'rename-field',
+    type: 'button',
+    from: 'label',
+    to: 'title',
+  };
+
+  it('remove-field: a proposta traz o valor indo a null e aceitar tudo aplica, sem a chave', () => {
+    const { base, after, p } = proposeUpdate(REMOVE);
+    const clear = changeOf(p, 'annotation', 'B1', 'values.label');
+    expect(clear.to).toBeNull();
+    changeOf(p, 'specialization', 'lib');
+    const accepted = acceptAll(p, base);
+    const validation = validateAccepted(base, accepted);
+    expect(validation.issues).toEqual([]);
+    expect(validation.ok).toBe(true);
+    const result = apply(base, accepted);
+    expect(valuesOf(result.project, 'B1')).not.toHaveProperty('label');
+    expect(valuesOf(result.project, 'B1').size).toBe(3);
+    expect(getAnnotationIssues(result.project, 'B1')).toEqual([]);
+    expect(validateProject(result.project)).toEqual([]);
+    expect(result.project.specializations[0]?.version).toBe(2);
+    expect(valuesOf(after, 'B1')).not.toHaveProperty('label');
+  });
+
+  it('rename-field: aceitar tudo deixa o valor no campo novo, sem a chave antiga', () => {
+    const { base, p } = proposeUpdate(RENAME, 'title');
+    expect(changeOf(p, 'annotation', 'B1', 'values.label').to).toBeNull();
+    const result = apply(base, acceptAll(p, base));
+    expect(valuesOf(result.project, 'B1').title).toBe('teste');
+    expect(valuesOf(result.project, 'B1')).not.toHaveProperty('label');
+    expect(getAnnotationIssues(result.project, 'B1')).toEqual([]);
+  });
+
+  it('só o valor aceito (sem a especialização): a chave ainda é do tipo antigo e vai a null', () => {
+    const { base, p } = proposeUpdate(REMOVE);
+    const clear = changeOf(p, 'annotation', 'B1', 'values.label');
+    const only = decided(p, base, { level: 'change', id: clear.id }, 'accepted');
+    const result = apply(base, only);
+    expect(valuesOf(result.project, 'B1').label).toBeNull();
+    expect(result.proposal.status).toBe('open');
+  });
+
+  it('rejeitar o valor e aceitar a especialização continua aplicando (valor órfão como pendência)', () => {
+    const { base, p } = proposeUpdate(REMOVE);
+    const clear = changeOf(p, 'annotation', 'B1', 'values.label');
+    const decisions = decided(
+      acceptAll(p, base),
+      base,
+      { level: 'change', id: clear.id },
+      'rejected',
+    );
+    const result = apply(base, decisions);
+    expect(valuesOf(result.project, 'B1').label).toBe('teste');
+    expect(getAnnotationIssues(result.project, 'B1')).toEqual([
+      { code: 'unknown-field', key: 'label' },
+    ]);
+  });
+
+  it('visão Proposto: limpar a chave fora do tipo não vira problema', () => {
+    const { base, p } = proposeUpdate(REMOVE);
+    const preview = previewProject(base, p);
+    expect(preview.problems).toEqual([]);
+    expect(valuesOf(preview.project, 'B1')).not.toHaveProperty('label');
+  });
+
+  it('regressão: valor novo numa chave fora do tipo continua field-mismatch', () => {
+    const { base, p } = proposeUpdate(REMOVE);
+    const clear = changeOf(p, 'annotation', 'B1', 'values.label');
+    const stale: Proposal = {
+      ...p,
+      changes: p.changes.map((c) =>
+        c.id === clear.id ? { ...c, from: 'teste', to: 'novo' } : c,
+      ),
+    };
+    const accepted = acceptAll(stale, base);
+    const validation = validateAccepted(base, accepted);
+    expect(validation.ok).toBe(false);
+    expect(validation.issues).toEqual([
+      expect.objectContaining({
+        code: 'field-mismatch',
+        id: 'B1',
+        changeIds: [clear.id],
+      }),
+    ]);
+    expect(annotationOf(base, 'B1').values).toMatchObject({ label: 'teste' });
   });
 });

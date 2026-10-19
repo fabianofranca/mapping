@@ -13,6 +13,8 @@ import {
 } from '../utils/report';
 import { Button } from './controls';
 import { EditorContext, type EditorContextValue } from './EditorContext';
+import { LibraryIssueList } from './LibraryIssueList';
+import { markingLabel } from './labels';
 
 function formatTime(iso: string): string {
   try {
@@ -151,6 +153,135 @@ export function DiagnosticsTable() {
 }
 
 /**
+ * Problemas da biblioteca aplicada (níveis 1 e 2 sobre a cópia, lidos ao abrir o projeto),
+ * por especialização. Sem problemas, ou fora do editor, não mostra nada.
+ */
+export function DiagnosticsLibrary() {
+  const editor = useContext(EditorContext);
+  const issues = editor?.session.libraryIssues.value;
+  const project = editor?.store.project.value;
+  const rows = [...(issues ?? [])].filter(([, list]) => list.length > 0);
+  if (rows.length === 0) return null;
+  return (
+    <section class="diagnostics-library" aria-label={t('diagnostics.library')}>
+      <h3>{t('diagnostics.library')}</h3>
+      <p class="muted">{t('diagnostics.libraryHint')}</p>
+      {rows.map(([specId, list]) => (
+        <div key={specId}>
+          <p>
+            {t('diagnostics.libraryItem', {
+              name:
+                project?.specializations.find((s) => s.id === specId)?.spec?.name ??
+                specId,
+              errors: list.filter((i) => i.severity === 'error').length,
+              warnings: list.filter((i) => i.severity === 'warning').length,
+            })}
+          </p>
+          <LibraryIssueList issues={list} />
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/**
+ * Componentes (etapa Biblioteca, B3): fontes que faltam ou não carregaram, componentes das
+ * especializações que não carregaram e os avisos do desenho por marcação (com um botão para
+ * selecioná-la), contando os "não cabe". Só aparece com algo a mostrar.
+ */
+export function DiagnosticsComponents() {
+  const editor = useContext(EditorContext);
+  if (!editor) return null;
+  const { session, derived, ui, canvas } = editor;
+  const fonts = session.components.fonts.value.filter((f) => f.status !== 'loaded');
+  const problems = [...derived.catalog.value.values()].flatMap((c) =>
+    c.problems.map((problem) => ({ specId: c.specId, problem })),
+  );
+  const warnings = derived.componentWarnings.value;
+  if (fonts.length === 0 && problems.length === 0 && warnings.length === 0) return null;
+
+  // Os nomes e a contagem vêm do projeto à vista (lido pelo derivado de pendências).
+  const shown = editor.review.derived.shownProject.value;
+  const nameOf = (markingId: string) => {
+    const marking = shown?.markings.find((m) => m.id === markingId);
+    return marking ? markingLabel(marking) : markingId;
+  };
+  const overflow = [...derived.componentScenes.value.values()].filter(
+    (d) => d.overflow,
+  ).length;
+  const select = (markingId: string) => {
+    ui.selection.value = { kind: 'marking', id: markingId };
+    canvas.current?.centerSelection();
+  };
+
+  return (
+    <section class="diagnostics-components" aria-label={t('diagnostics.components')}>
+      <h3>{t('diagnostics.components')}</h3>
+      <p class="muted">{t('diagnostics.componentsHint')}</p>
+      {fonts.length > 0 && (
+        <>
+          <h4>{t('diagnostics.fonts')}</h4>
+          <ul>
+            {fonts.map(({ font, status, detail }) => (
+              <li key={`${font.family}|${font.weight}|${font.style}|${font.path}`}>
+                {t('diagnostics.fontItem', {
+                  family: font.family,
+                  weight: font.weight,
+                  style: t(
+                    font.style === 'italic'
+                      ? 'diagnostics.fontStyle.italic'
+                      : 'diagnostics.fontStyle.normal',
+                  ),
+                })}
+                {': '}
+                {status === 'missing'
+                  ? t('diagnostics.fontMissing')
+                  : t('diagnostics.fontFailed', { detail: detail ?? '' })}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {problems.length > 0 && (
+        <>
+          <h4>{t('diagnostics.catalogProblems')}</h4>
+          <ul>
+            {problems.map(({ specId, problem }) => (
+              <li key={`${specId}|${problem}`}>
+                <code>{specId}</code> {problem}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {warnings.length > 0 && (
+        <>
+          <h4>{t('diagnostics.drawWarnings')}</h4>
+          {overflow > 0 && (
+            <p class="muted">{t('diagnostics.overflowCount', { count: overflow })}</p>
+          )}
+          <ul>
+            {warnings.map(({ markingId, warnings: list }) => (
+              <li key={markingId}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={t('diagnostics.selectMarking', { name: nameOf(markingId) })}
+                  onClick={() => select(markingId)}
+                >
+                  {nameOf(markingId)}
+                </Button>{' '}
+                {list.join('; ')}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+/**
  * Conteúdo da janela Diagnóstico (B4). Enquanto está à vista, os erros novos contam
  * como vistos: o ponto de alerta da faixa só acende com a janela fechada.
  */
@@ -159,6 +290,8 @@ export function DiagnosticsView() {
   useEffect(markDiagnosticsSeen, [last]);
   return (
     <div class="diagnostics-view">
+      <DiagnosticsLibrary />
+      <DiagnosticsComponents />
       <DiagnosticsTable />
     </div>
   );

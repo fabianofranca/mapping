@@ -3,11 +3,20 @@ name: Deploy
 # Push na `main`: publica só a `main` em `/`.
 # `workflow_dispatch` com um branch diferente da `main`: publica a `main` em `/`
 # e o branch em `/preview/`, com `VITE_CHANNEL=preview` (armazenamento separado,
-# faixa de aviso e manifest próprio). A produção nunca é substituída.
+# faixa de aviso e manifest próprio). A produção nunca é substituída por algo não validado.
 #
-# Antes de publicar, a `main` e o preview passam pelo ci.yml inteiro (lint, typecheck,
-# testes, desempenho, build, build:mcp, orçamento de tamanho e e2e). Se qualquer um
-# falhar, nada é publicado.
+# O `preview-on-pr.yml` dispara esse `workflow_dispatch` a cada PR aberto ou atualizado.
+# Existe **um preview só**: o último PR atualizado ganha o `/preview/`. O Pages publica um
+# artefato só (produção e preview juntos), então toda execução republica a produção.
+#
+# Todo deploy grava `deploy.json` na raiz do site com o commit da `main` publicado: o que está
+# publicado já passou pelo ci.yml inteiro (lint, typecheck, testes, desempenho, build,
+# build:mcp, orçamento de tamanho e e2e) quando foi publicado.
+# - Sem preview (push na `main`): a `main` precisa passar nos checks, senão nada é publicado.
+# - Com preview: o branch precisa passar. Os checks da `main` só rodam se ela mudou desde o
+#   `deploy.json` publicado; se falharem (instabilidade, por exemplo), a produção é
+#   republicada do commit já publicado e o preview sai mesmo assim. Sem `deploy.json`
+#   acessível (primeiro deploy), a falha da `main` continua bloqueando.
 on:
   push:
     branches: [main]
@@ -32,6 +41,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       preview: ${{ steps.preview.outputs.ref }}
+      main_head: ${{ steps.main.outputs.main_head }}
+      published: ${{ steps.main.outputs.published }}
+      check_main: ${{ steps.main.outputs.check_main }}
     steps:
       - name: Decide se há preview
         id: preview
@@ -43,12 +55,40 @@ jobs:
             echo "ref=$ref" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Decide o que validar na main
+        id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW: ${{ steps.preview.outputs.ref }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          main_head="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          repo="${GITHUB_REPOSITORY#*/}"
+          published="$(curl -fsSL "https://${OWNER}.github.io/${repo}/deploy.json" | jq -r '.main // empty' 2>/dev/null || true)"
+          check_main=true
+          if [ -n "$PREVIEW" ] && [ -n "$published" ] && [ "$published" = "$main_head" ]; then
+            check_main=false
+          fi
+          {
+            echo "main_head=$main_head"
+            echo "published=$published"
+            echo "check_main=$check_main"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "- main atual: \`$main_head\`"
+            echo "- main publicada (deploy.json): \`${published:-desconhecida}\`"
+            echo "- preview: \`${PREVIEW:-nenhum}\`"
+            echo "- checks da main: $check_main"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   checks-main:
+    needs: plan
+    if: needs.plan.outputs.check_main == 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/ci.yml
     with:
-      ref: main
+      ref: ${{ needs.plan.outputs.main_head }}
       label: main
 
   checks-preview:
@@ -63,20 +103,23 @@ jobs:
 
   build:
     needs: [plan, checks-main, checks-preview]
+    # Produção resolvida: checks-main em sucesso ou (há preview e há commit já publicado).
     # O preview é opcional (pulado quando não há), mas, se houver, precisa passar.
     if: >-
       !cancelled() &&
       needs.plan.result == 'success' &&
-      needs.checks-main.result == 'success' &&
+      (needs.checks-main.result == 'success' ||
+       (needs.plan.outputs.preview != '' && needs.plan.outputs.published != '')) &&
       (needs.checks-preview.result == 'success' ||
        (needs.checks-preview.result == 'skipped' && needs.plan.outputs.preview == ''))
     runs-on: ubuntu-latest
     env:
       PREVIEW: ${{ needs.plan.outputs.preview }}
+      MAIN_REF: ${{ needs.checks-main.result == 'success' && needs.plan.outputs.main_head || needs.plan.outputs.published }}
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ env.MAIN_REF }}
           path: main
       - uses: actions/setup-node@v7
         with:
@@ -115,6 +158,27 @@ jobs:
             mkdir site/preview
             cp -R preview/dist/. site/preview/
           fi
+          # Commit da `main` publicado: o plan lê isto no próximo deploy.
+          preview_sha=""
+          if [ -d preview/dist ]; then preview_sha="$(git -C preview rev-parse HEAD)"; fi
+          jq -n \
+            --arg main "$(git -C main rev-parse HEAD)" \
+            --arg preview "$PREVIEW" \
+            --arg previewSha "$preview_sha" \
+            '{main: $main, preview: (if $preview == "" then null else $preview end), previewSha: (if $previewSha == "" then null else $previewSha end)}' \
+            > site/deploy.json
+          cat site/deploy.json
+
+      - name: Avisa se a produção veio do commit já publicado
+        # Pulado (main inalterada desde o publicado) não é falha: só avisa quando rodou e não passou.
+        if: needs.checks-main.result != 'success' && needs.checks-main.result != 'skipped'
+        env:
+          MAIN_HEAD: ${{ needs.plan.outputs.main_head }}
+          PUBLISHED: ${{ needs.plan.outputs.published }}
+        run: |
+          msg="Checks da main falharam em $MAIN_HEAD; a produção foi republicada do commit já publicado $PUBLISHED."
+          echo "::warning::$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
 
       # O index.html avulso, para abrir por file:// (o do preview usa os dados do preview).
       - uses: actions/upload-artifact@v7

@@ -8,6 +8,8 @@ import {
   isImageFileName,
   isProposalFilePath,
   isProposalImagePath,
+  isProposalPackagePath,
+  isSpecPackagePath,
   isSpecPath,
 } from './types';
 import { reportError } from '../utils/report';
@@ -19,9 +21,19 @@ export interface ProjectFiles {
   readonly images: ReadonlyMap<string, Blob>;
   /** Cópias das especializações: caminho relativo (`specs/sdui.json`) → texto. */
   readonly specs: ReadonlyMap<string, string>;
+  /**
+   * Os demais arquivos dos pacotes da biblioteca (`specs/<id>/components/a.json`,
+   * `specs/<id>/fonts/Roboto.ttf`…): caminho relativo → bytes, preservados. O arquivo da
+   * especialização do pacote (e qualquer `.json` de `specs/`) vai também em `specs` (texto), e
+   * ao gravar `specs` prevalece. Ausente = nenhum.
+   */
+  readonly specAssets?: ReadonlyMap<string, Blob>;
   /** Propostas de alteração: `proposals/<id>/proposal.json` → texto (como está, sem validar). */
   readonly proposals: ReadonlyMap<string, string>;
-  /** Imagens aguardando a aceitação de uma proposta: `proposals/<id>/images/…` → conteúdo. */
+  /**
+   * Arquivos que esperam a aceitação de uma proposta: imagens (`proposals/<id>/images/…`) e
+   * pacotes de biblioteca (`proposals/<id>/specs/<pasta>/…`) → conteúdo.
+   */
   readonly proposalImages: ReadonlyMap<string, Blob>;
 }
 
@@ -61,11 +73,18 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
     images.set(relative, new Blob([bytes], { type: imageMimeType(relative) }));
   }
   const specs = new Map<string, string>();
+  const specAssets = new Map<string, Blob>();
   const specsPrefix = `${root}${SPECS_DIR}/`;
   for (const [path, entry] of Object.entries(zip.files)) {
     if (entry.dir || !path.startsWith(specsPrefix)) continue;
     const relative = path.slice(root.length);
+    // Todo `.json` de `specs/` entra em `specs` (a leitura do projeto precisa do texto das
+    // especializações, inclusive a de dentro do pacote); o que está em pasta de pacote entra
+    // também em `specAssets`, com os bytes.
     if (isSpecPath(relative)) specs.set(relative, await entry.async('string'));
+    if (isSpecPackagePath(relative)) {
+      specAssets.set(relative, new Blob([await entry.async('arraybuffer')]));
+    }
   }
   const proposals = new Map<string, string>();
   const proposalImages = new Map<string, Blob>();
@@ -78,6 +97,8 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
     } else if (isProposalImagePath(relative)) {
       const bytes = await entry.async('arraybuffer');
       proposalImages.set(relative, new Blob([bytes], { type: imageMimeType(relative) }));
+    } else if (isProposalPackagePath(relative)) {
+      proposalImages.set(relative, new Blob([await entry.async('arraybuffer')]));
     }
   }
   return {
@@ -86,6 +107,7 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
       mapping: await mappingEntry.async('string'),
       images,
       specs,
+      ...(specAssets.size > 0 ? { specAssets } : {}),
       proposals,
       proposalImages,
     },
@@ -96,6 +118,9 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
 export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   const zip = new JSZip();
   zip.file(MAPPING_FILE, files.mapping);
+  for (const [path, blob] of files.specAssets ?? []) {
+    zip.file(path, await blob.arrayBuffer());
+  }
   for (const [path, text] of files.specs) zip.file(path, text);
   for (const [path, text] of files.proposals) zip.file(path, text);
   for (const [path, blob] of [...files.images, ...files.proposalImages]) {

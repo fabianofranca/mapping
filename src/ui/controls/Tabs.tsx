@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import { Icon, type IconName } from '../icons';
 
 export interface TabItem<T extends string> {
@@ -35,6 +36,30 @@ export function Tabs<T extends string>({
   onChange,
   label,
 }: TabsProps<T>): JSX.Element {
+  const listRef = useRef<HTMLDivElement>(null);
+  // Lista que rola (janela estreita): a aba escolhida nunca fica fora da faixa visível,
+  // ao trocar de aba e também quando a própria lista é redimensionada.
+  const reveal = (): void => {
+    const list = listRef.current;
+    const tab = list?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+    if (!list || !tab) return;
+    const left = tab.offsetLeft - list.offsetLeft;
+    const right = left + tab.offsetWidth;
+    if (left < list.scrollLeft) list.scrollLeft = left;
+    else if (right > list.scrollLeft + list.clientWidth)
+      list.scrollLeft = right - list.clientWidth;
+  };
+  const revealRef = useRef(reveal);
+  revealRef.current = reveal;
+  useLayoutEffect(reveal, [value, tabs.length]);
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => revealRef.current());
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, []);
+
   const move = (e: KeyboardEvent, from: number) => {
     const enabled = tabs.map((tab, i) => (tab.disabled ? -1 : i)).filter((i) => i >= 0);
     const at = enabled.indexOf(from);
@@ -53,7 +78,7 @@ export function Tabs<T extends string>({
   };
 
   return (
-    <div class="tabs" role="tablist" aria-label={label}>
+    <div ref={listRef} class="tabs" role="tablist" aria-label={label}>
       {tabs.map(
         ({ id, label: text, icon, title, disabled, badge, badgeTone, alert }, i) => (
           <button

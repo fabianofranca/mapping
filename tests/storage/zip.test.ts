@@ -47,7 +47,7 @@ describe('zip do projeto', () => {
     expect(read.files.specs).toEqual(specs);
   });
 
-  it('round-trip v9: SDUI v2 e Modelo de dados v1 juntos, com platformRepos', async () => {
+  it('round-trip v10: SDUI v2 e Modelo de dados v1 juntos, com platformRepos', async () => {
     const project = codeProject();
     const mapping = serialize(project);
     const images = new Map([
@@ -81,7 +81,7 @@ describe('zip do projeto', () => {
     expect(serialize(loaded.project)).toBe(mapping);
 
     const data = JSON.parse(read.files.mapping);
-    expect(data.schemaVersion).toBe(9);
+    expect(data.schemaVersion).toBe(10);
     expect(data.platformRepos).toEqual({
       android: {
         urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
@@ -110,7 +110,7 @@ describe('zip do projeto', () => {
     zip.file('meu-projeto/images/a.png', 'PNG');
     zip.file('meu-projeto/images/notas.txt', 'ignorar');
     zip.file('meu-projeto/specs/sdui.json', '{}');
-    zip.file('meu-projeto/specs/sub/outra.json', 'ignorar');
+    zip.file('meu-projeto/specs/sub/outra.json', '{}');
     zip.file('meu-projeto/specs/notas.txt', 'ignorar');
     zip.file('__MACOSX/meu-projeto/mapping.json', 'lixo');
     const blob = new Blob([await zip.generateAsync({ type: 'arraybuffer' })]);
@@ -120,7 +120,12 @@ describe('zip do projeto', () => {
     expect(read.files.mapping).toBe('{"x":1}');
     expect([...read.files.images.keys()]).toEqual(['images/a.png']);
     expect(read.files.images.get('images/a.png')?.type).toBe('image/png');
-    expect([...read.files.specs.keys()]).toEqual(['specs/sdui.json']);
+    // `specs/sub/outra.json` é de uma pasta de pacote: texto em `specs` e bytes em `specAssets`.
+    expect([...read.files.specs.keys()].sort()).toEqual([
+      'specs/sdui.json',
+      'specs/sub/outra.json',
+    ]);
+    expect([...(read.files.specAssets?.keys() ?? [])]).toEqual(['specs/sub/outra.json']);
   });
 
   it('erros: arquivo que não é zip e zip sem mapping.json', async () => {
@@ -138,5 +143,44 @@ describe('zip do projeto', () => {
     expect(zipFileName('Vistoria Carro A')).toBe('Vistoria Carro A.zip');
     expect(zipFileName('a/b:c*?')).toBe('a-b-c--.zip');
     expect(zipFileName('   ')).toBe('projeto.zip');
+  });
+
+  it('round-trip do pacote da biblioteca: arquivos e bytes preservados', async () => {
+    const font = new Uint8Array([0, 1, 2, 250, 251, 255]);
+    const specAssets = new Map([
+      ['specs/m3/components/a.json', new Blob(['{"a":1}'])],
+      ['specs/m3/fonts/Roboto.ttf', new Blob([font])],
+    ]);
+    const zip = await writeProjectZip({
+      mapping: '{"x":1}',
+      images: new Map(),
+      specs: new Map([['specs/m3/m3.spec.json', '{"id":"m3"}\n']]),
+      specAssets,
+      proposals: new Map(),
+      proposalImages: new Map(),
+    });
+    const read = await readProjectZip(zip);
+    if (!read.ok) throw new Error(read.error);
+    expect([...read.files.specAssets!.keys()].sort()).toEqual([
+      'specs/m3/components/a.json',
+      'specs/m3/fonts/Roboto.ttf',
+      'specs/m3/m3.spec.json',
+    ]);
+    const bytes = new Uint8Array(
+      await read.files.specAssets!.get('specs/m3/fonts/Roboto.ttf')!.arrayBuffer(),
+    );
+    expect([...bytes]).toEqual([...font]);
+    expect(read.files.specs.get('specs/m3/m3.spec.json')).toBe('{"id":"m3"}\n');
+  });
+
+  it('ignora caminhos de pacote com ..', async () => {
+    const zip = new JSZip();
+    zip.file('mapping.json', '{}');
+    zip.file('specs/m3/../fora.bin', 'x');
+    const read = await readProjectZip(
+      new Blob([await zip.generateAsync({ type: 'arraybuffer' })]),
+    );
+    if (!read.ok) throw new Error(read.error);
+    expect(read.files.specAssets).toBeUndefined();
   });
 });

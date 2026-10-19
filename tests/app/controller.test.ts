@@ -9,11 +9,14 @@ import {
   serializeProposal,
   specFiles,
 } from '../../src/model';
-import type { DirectoryHandleLike } from '../../src/storage/folder';
+import { createFolderStorage, type DirectoryHandleLike } from '../../src/storage/folder';
+import { openSession } from '../../src/store/session';
+import { material3Package, material3Spec } from '../storage/packageFixture';
 import { writeProjectZip } from '../../src/storage/zip';
 import { clearReportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
 import { emptyProject, sampleProject } from '../model/fixtures';
+import { exampleProjectBlob } from '../../src/app/exampleProject';
 import { readInvalidFixture } from '../model/invalidFixtures';
 import {
   keepDirectoriesInClone,
@@ -149,6 +152,28 @@ describe('projeto local', () => {
       error: 'not-found',
     });
     expect(app.openProject.value).toBeNull();
+  });
+
+  it('reabrir uma pasta com pacote de biblioteca: o Diagnóstico recebe os problemas do pacote (R3.11)', async () => {
+    // Monta a pasta como a app a grava: aplica o pacote do Material 3 numa sessão e fecha.
+    const root = new MemoryDirectory('pasta');
+    const writer = openSession({
+      storage: createFolderStorage(root),
+      project: sampleProject(),
+      prepareImage: () => Promise.reject(new Error('sem imagens')),
+    });
+    expect(
+      writer.actions.applySpecialization(material3Spec(), material3Package()).ok,
+    ).toBe(true);
+    await writer.flush();
+    await writer.close();
+
+    pickDirectory.mockResolvedValue(root);
+    expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
+    const { session } = await openedOf(app);
+    const issues = session.libraryIssues.value.get('material3');
+    expect(issues).toBeDefined();
+    expect(issues?.some((i) => i.severity === 'warning')).toBe(true);
   });
 
   it('projeto v1: grava o backup antes do primeiro salvamento', async () => {
@@ -363,6 +388,21 @@ describe('importar zip', () => {
     const library = await local.openLocalLibrary();
     expect(await library?.listBackups(localId ?? '')).toHaveLength(1);
     library?.close();
+  });
+
+  it('o projeto de exemplo embutido abre pelo mesmo importZip, só como projeto local', async () => {
+    expect((await app.importZip(exampleProjectBlob())).ok).toBe(true);
+    const current = await openedOf(app);
+    expect(current.kind).toBe('local');
+    expect(current.unexported.value).toBe(false);
+    const project = current.session.store.project.value;
+    expect(project?.images).toHaveLength(4);
+    expect(project?.markings).toHaveLength(31);
+    expect(project?.annotations).toHaveLength(41);
+    expect(current.session.proposals.list.value).toHaveLength(1);
+    // Nenhum rastro além do que o "Abrir zip" deixa: um projeto local, nenhuma pasta lembrada.
+    await app.closeProject();
+    expect(app.recentProjects.value.map((r) => r.kind)).toEqual(['local']);
   });
 });
 
@@ -697,7 +737,7 @@ describe('projeto com dados inconsistentes', () => {
 
     const [backup, ...rest] = await backupsOf(root);
     expect(rest).toEqual([]);
-    expect(backup).toMatch(/^mapping\.v9\.\d{8}-\d{6}\.json$/);
+    expect(backup).toMatch(/^mapping\.v10\.\d{8}-\d{6}\.json$/);
     expect(
       await root.dirs
         .get('backups')

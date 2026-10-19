@@ -1,6 +1,8 @@
 import {
   ModelError,
   addAnnotation,
+  addBlankImage,
+  addComponentMarking,
   addImage,
   addLayer,
   addTableRow,
@@ -9,10 +11,20 @@ import {
   annotationShortLabel,
   applySpecialization,
   checkSpecApply,
+  componentMinSize,
+  componentPlacement,
+  componentTypes,
+  approximateMeasurer,
   confirmMarkingReview,
   createMarking,
+  innermostContaining,
+  reorderMarking,
+  setBlankImage,
+  siblingPosition,
   extensionForMime,
   fieldOf,
+  getSpecialization,
+  packageDirOf,
   imageDeletionImpact,
   layerDeletionImpact,
   markingDeletionImpact,
@@ -22,7 +34,6 @@ import {
   moveTableRow,
   nextLayerColor,
   parseRef,
-  parseSpecText,
   pastedFileName,
   projectIndex,
   projectIssues,
@@ -73,8 +84,19 @@ import {
   type RefValue,
   type Spec,
   type SpecField,
+  type SpecUpdateImpact,
 } from '../src/model';
+import type { LibraryIssue } from '../src/model/library';
 import { ToolError } from './errors';
+import {
+  checkUpdate,
+  packageFileEntries,
+  parsePackage,
+  requireValid,
+  updateSummary,
+  validatePackage,
+} from './libraryUpdate';
+import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
 import { KIND_NAMES, Refs } from './items';
@@ -91,6 +113,11 @@ export interface BatchIo {
   readSource(
     path: string,
   ): Promise<{ readonly bytes: Uint8Array; readonly name: string }>;
+  /**
+   * Lê o que uma operação de especialização aponta: o arquivo de uma especialização v1 a v3,
+   * ou a pasta de um pacote v4 (também a partir do arquivo da especialização dentro dela).
+   */
+  readSpecInput(path: string): Promise<SpecInput>;
   /** Arquivos que já existem em `images/` no disco (`images/…`), para não sobrescrever. */
   readonly takenImageFiles: ReadonlySet<string>;
   now(): Date;
@@ -132,12 +159,44 @@ export interface BatchResult {
   readonly aliases: ReadonlyMap<string, AliasTarget>;
   /** Conteúdo das imagens novas, por arquivo (`images/…`). */
   readonly imageFiles: ReadonlyMap<string, Uint8Array>;
+  /**
+   * Arquivos dos pacotes de biblioteca aplicados ou atualizados, pelo caminho definitivo no
+   * projeto (`specs/<pasta>/<relativo>`): a proposta os guarda em `proposals/<id>/…`.
+   */
+  readonly packageFiles: ReadonlyMap<string, Uint8Array>;
+  /** Avisos da validação dos pacotes (não impedem nada). */
+  readonly libraryWarnings: readonly LibraryWarning[];
   /** Regras entre coleções violadas pelo resultado (não deveria acontecer). */
   readonly invariantIssues: readonly string[];
 }
 
+/** Aviso do validador da biblioteca, com a operação e a especialização de origem. */
+export interface LibraryWarning {
+  readonly index: number;
+  readonly specId: string;
+  readonly file: string;
+  readonly path: string;
+  readonly message: string;
+}
+
+/** A especialização lida de uma operação e, se for pacote v4, o pacote já validado. */
+interface LoadedSpec {
+  readonly spec: Spec;
+  /** Só na atualização: o impacto (o contrato já conferido). */
+  readonly impact?: SpecUpdateImpact;
+  readonly package?: {
+    readonly pkg: ReadPackage;
+    readonly specName: string;
+    readonly warnings: readonly LibraryIssue[];
+  };
+}
+
 interface Step {
   readonly project: Project;
+  /** Pacote da biblioteca levado pela operação: pasta definitiva e arquivos dela. */
+  readonly packageFiles?: readonly [string, Uint8Array][];
+  readonly warnings?: readonly LibraryIssue[];
+  readonly specId?: string;
   readonly description: string;
   readonly created?: readonly { kind: CreatedKind; id: string }[];
   readonly rowAliases?: readonly [string, AliasTarget][];
@@ -202,6 +261,8 @@ class Batch {
   /** Apelidos de operações que falharam: as que dependem delas dizem o porquê. */
   private readonly failedAliases = new Map<string, number>();
   private readonly imageFiles = new Map<string, Uint8Array>();
+  private readonly packageFiles = new Map<string, Uint8Array>();
+  private readonly libraryWarnings: LibraryWarning[] = [];
   private readonly errors: OperationError[] = [];
   private readonly steps: { index: number; description: string }[] = [];
   private readonly created: CreatedItem[] = [];
@@ -220,28 +281,39 @@ class Batch {
   async run(operations: readonly Operation[]): Promise<BatchResult> {
     for (const [index, op] of operations.entries()) {
       const alias = 'as' in op ? op.as : undefined;
+      // Apelido da segunda criação da operação (a anotação de create_marking).
+      const secondAlias = op.op === 'create_marking' ? op.annotationAs : undefined;
       try {
-        if (
-          alias !== undefined &&
-          (this.aliases.has(alias) || this.failedAliases.has(alias))
-        ) {
+        for (const name of [alias, secondAlias]) {
+          if (
+            name !== undefined &&
+            (this.aliases.has(name) || this.failedAliases.has(name))
+          ) {
+            throw new ToolError('duplicate-alias', `apelido repetido no lote: ${name}`);
+          }
+        }
+        if (alias !== undefined && alias === secondAlias) {
           throw new ToolError('duplicate-alias', `apelido repetido no lote: ${alias}`);
         }
         const step = await this.apply(op);
         this.p = step.project;
         this.steps.push({ index, description: step.description });
         for (const [file, data] of step.imageFiles ?? []) this.imageFiles.set(file, data);
+        this.takePackage(index, step);
         for (const [name, target] of step.rowAliases ?? [])
           this.aliases.set(name, target);
         for (const [n, item] of (step.created ?? []).entries()) {
-          // O apelido da operação vale para o item principal (o primeiro criado).
-          const named = n === 0 ? alias : undefined;
+          // O apelido da operação vale para o item principal (o primeiro criado); o segundo,
+          // quando a operação cria dois (marcação e anotação), tem o dele.
+          const named = n === 0 ? alias : n === 1 ? secondAlias : undefined;
           if (named !== undefined) this.aliases.set(named, item);
           this.created.push({ index, ...item, ...(named ? { alias: named } : {}) });
         }
       } catch (error) {
-        if (alias !== undefined && !this.aliases.has(alias)) {
-          this.failedAliases.set(alias, index);
+        for (const name of [alias, secondAlias]) {
+          if (name !== undefined && !this.aliases.has(name)) {
+            this.failedAliases.set(name, index);
+          }
         }
         this.errors.push(this.describeError(index, op.op, error));
       }
@@ -257,8 +329,35 @@ class Batch {
       created: this.created,
       aliases: this.aliases,
       imageFiles: this.imageFiles,
+      packageFiles: this.packageFiles,
+      libraryWarnings: this.libraryWarnings,
       invariantIssues,
     };
+  }
+
+  /**
+   * Guarda os arquivos do pacote da operação. Uma operação seguinte sobre a mesma pasta
+   * (aplicar e depois atualizar no mesmo lote) substitui a anterior inteira, sem sobras.
+   */
+  private takePackage(index: number, step: Step): void {
+    const files = step.packageFiles ?? [];
+    const first = files[0];
+    if (first !== undefined) {
+      const dir = packageDirOf(first[0]);
+      for (const key of [...this.packageFiles.keys()]) {
+        if (dir !== null && packageDirOf(key) === dir) this.packageFiles.delete(key);
+      }
+    }
+    for (const [path, data] of files) this.packageFiles.set(path, data);
+    for (const issue of step.warnings ?? []) {
+      this.libraryWarnings.push({
+        index,
+        specId: step.specId ?? '',
+        file: issue.file,
+        path: issue.path,
+        message: issue.message,
+      });
+    }
   }
 
   private describeError(index: number, op: string, error: unknown): OperationError {
@@ -401,15 +500,56 @@ class Batch {
     );
   }
 
-  private async spec(file: string): Promise<Spec> {
-    const { bytes } = await this.io.readSource(file);
-    const parsed = parseSpecText(Buffer.from(bytes).toString('utf8'));
-    if (!parsed.ok) {
-      throw new ToolError('invalid-spec', `especialização inválida: ${file}`, {
-        errors: parsed.errors.slice(0, 20),
-      });
+  /**
+   * Lê o que `file` aponta: um arquivo de especialização v1 a v3, ou o pacote v4 (a pasta, ou o
+   * arquivo da especialização dentro dela). O pacote é validado com os mesmos níveis de
+   * `validate_library`: erro impede (`invalid-library`), aviso segue e volta no resultado.
+   * Numa atualização, a cópia aplicada liga o contrato de versão (`previous`).
+   */
+  private async loadSpec(
+    file: string,
+    mode: 'apply' | 'update',
+    p: Project,
+  ): Promise<LoadedSpec> {
+    const input = await this.io.readSpecInput(file);
+    if (input.kind === 'file') {
+      const impact = mode === 'update' ? checkUpdate(p, input.spec) : undefined;
+      return { spec: input.spec, ...(impact ? { impact } : {}) };
     }
-    return parsed.spec;
+    const { spec, specName } = parsePackage(input.pkg);
+    const impact = mode === 'update' ? checkUpdate(p, spec) : undefined;
+    const previous =
+      mode === 'update' ? (getSpecialization(p, spec.id)?.spec ?? undefined) : undefined;
+    const warnings = requireValid(validatePackage(input.pkg, previous));
+    return {
+      spec,
+      ...(impact ? { impact } : {}),
+      package: { pkg: input.pkg, specName, warnings },
+    };
+  }
+
+  /** Arquivos do pacote com o caminho definitivo, depois de o modelo escolher o `file`. */
+  private packageStep(
+    loaded: LoadedSpec,
+    project: Project,
+  ): Pick<Step, 'packageFiles' | 'warnings' | 'specId'> {
+    if (!loaded.package) return {};
+    const entry = getSpecialization(project, loaded.spec.id);
+    if (!entry) return {};
+    return {
+      specId: loaded.spec.id,
+      packageFiles: packageFileEntries(
+        loaded.package.pkg,
+        loaded.package.specName,
+        entry.file,
+      ),
+      warnings: loaded.package.warnings,
+    };
+  }
+
+  /** Opções do modelo: o pacote v4 guarda a cópia numa pasta, com o arquivo da especialização dentro. */
+  private specOptions(loaded: LoadedSpec): { packageSpecName?: string } {
+    return loaded.package ? { packageSpecName: loaded.package.specName } : {};
   }
 
   /** Lê e otimiza a imagem informada e escolhe o nome livre em `images/`. */
@@ -760,7 +900,8 @@ class Batch {
         };
       }
       case 'apply_specialization': {
-        const spec = await this.spec(op.file);
+        const loaded = await this.loadSpec(op.file, 'apply', p);
+        const { spec } = loaded;
         const check = checkSpecApply(p, spec);
         if (check === 'update') {
           throw new ToolError(
@@ -768,29 +909,39 @@ class Batch {
             `a especialização "${spec.id}" já está aplicada numa versão menor: use update_specialization`,
           );
         }
-        const project = applySpecialization(p, spec);
+        const project = applySpecialization(p, spec, this.specOptions(loaded));
         const layers = project.layers.slice(p.layers.length);
+        const warnings = loaded.package?.warnings.length ?? 0;
         return {
           project,
           description: `Aplicar a especialização "${spec.name}" (${spec.id} v${spec.version}): camadas ${layers
             .map((l) => `"${l.name}"`)
-            .join(', ')}`,
+            .join(', ')}${
+            loaded.package
+              ? ` (pacote da biblioteca${warnings > 0 ? `, ${warnings} aviso(s) da validação` : ''})`
+              : ''
+          }`,
           created: layers.map((l) => ({ kind: 'layer' as const, id: l.id })),
+          ...this.packageStep(loaded, project),
         };
       }
       case 'update_specialization': {
-        const spec = await this.spec(op.file);
-        const project = updateSpecialization(p, spec);
+        const loaded = await this.loadSpec(op.file, 'update', p);
+        const { spec } = loaded;
+        const impact = loaded.impact!;
+        const project = updateSpecialization(p, spec, this.specOptions(loaded));
         const before = new Set(p.layers.map((l) => l.id));
         const added = project.layers.filter((l) => !before.has(l.id));
+        const parts = updateSummary(impact);
+        const warnings = loaded.package?.warnings.length ?? 0;
+        if (warnings > 0) parts.push(`${warnings} aviso(s) da validação da biblioteca`);
         return {
           project,
           description: `Atualizar a especialização "${spec.id}" para a v${spec.version}${
-            added.length > 0
-              ? ` (camadas novas: ${added.map((l) => `"${l.name}"`).join(', ')})`
-              : ''
+            parts.length > 0 ? ` (${parts.join('; ')})` : ''
           }`,
           created: added.map((l) => ({ kind: 'layer' as const, id: l.id })),
+          ...this.packageStep(loaded, project),
         };
       }
       case 'remove_specialization': {
@@ -832,6 +983,27 @@ class Batch {
           imageFiles: [[image.file, image.data]],
         };
       }
+      case 'add_blank_image': {
+        const id = crypto.randomUUID();
+        let project = addBlankImage(p, {
+          id,
+          ...(op.name !== undefined ? { name: op.name } : {}),
+          width: op.width,
+          height: op.height,
+          background: op.background,
+          ...(op.center ? { center: op.center } : {}),
+        });
+        if (op.source !== undefined) {
+          project = setImageSource(project, id, toSource(op.source));
+        }
+        return {
+          project,
+          description: `Adicionar a tela em branco "${this.refs(project).imageLabel(id)}" (${op.width}×${op.height} px, fundo ${op.background.toUpperCase()}${
+            op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
+          })`,
+          created: [{ kind: 'i', id }],
+        };
+      }
       case 'update_image': {
         const id = this.item(op.image, 'i');
         let project = p;
@@ -870,6 +1042,22 @@ class Batch {
               : 'destrancar todas as marcações',
           );
         }
+        if (
+          op.background !== undefined ||
+          op.width !== undefined ||
+          op.height !== undefined
+        ) {
+          // Só a tela em branco: numa foto o modelo recusa com `not-blank`.
+          project = setBlankImage(project, id, {
+            ...(op.background !== undefined ? { background: op.background } : {}),
+            ...(op.width !== undefined ? { width: op.width } : {}),
+            ...(op.height !== undefined ? { height: op.height } : {}),
+          });
+          const image = projectIndex(project).images.get(id)!;
+          changes.push(
+            `tela em branco ${image.width}×${image.height} px, fundo ${image.background}`,
+          );
+        }
         if (op.locked === true) {
           project = setImageLocked(project, id, true);
           changes.push('trancar');
@@ -906,31 +1094,14 @@ class Batch {
           description: `Excluir a imagem "${this.refs(p).imageLabel(id)}" (${impact.markings} marcação(ões), ${impact.annotations} anotação(ões))`,
         };
       }
-      case 'create_marking': {
-        const imageId = this.item(op.image, 'i');
-        const id = crypto.randomUUID();
-        let project = createMarking(p, {
-          id,
-          imageId,
-          rect: op.rect,
-          name: op.name ?? null,
-        });
-        if (op.parent !== undefined) {
-          const parentId = op.parent === null ? null : this.item(op.parent, 'm');
-          if (projectIndex(project).markings.get(id)!.parentId !== parentId) {
-            project = setMarkingParent(project, id, parentId);
-          }
-        }
-        if (op.source !== undefined) {
-          project = setMarkingSource(project, id, toSource(op.source));
-        }
-        const { rect } = op;
+      case 'create_marking':
+        return this.createMarkingOp(op);
+      case 'move_marking': {
+        const id = this.item(op.marking, 'm');
+        const before = siblingPosition(p, id);
         return {
-          project,
-          description: `Criar a marcação "${this.markingLabel(project, id)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
-            op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
-          })`,
-          created: [{ kind: 'm', id }],
+          project: reorderMarking(p, id, op.index),
+          description: `Mover a marcação "${this.markingLabel(p, id)}" para a posição ${op.index} entre as ${before.count} irmãs (0 = por baixo)`,
         };
       }
       case 'update_marking': {
@@ -964,7 +1135,11 @@ class Batch {
           changes.push(`mover (${op.move.dx}, ${op.move.dy}) com as filhas`);
         }
         if (op.rect !== undefined) {
-          project = setMarkingRect(project, id, op.rect);
+          const { rect } = op;
+          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          project = this.checkMinSize(minSize, `"${label}"`, () =>
+            setMarkingRect(project, id, rect, minSize ? { minSize } : undefined),
+          );
           const r = op.rect;
           changes.push(`retângulo x ${r.x}, y ${r.y}, ${r.width}×${r.height}`);
         }
@@ -1010,6 +1185,197 @@ class Batch {
     }
   }
 
+  /** Executa `run` e, se o retângulo ficou abaixo do mínimo do componente, diz qual é o mínimo. */
+  private checkMinSize<T>(
+    minSize: { width: number; height: number } | null,
+    what: string,
+    run: () => T,
+  ): T {
+    try {
+      return run();
+    } catch (error) {
+      if (error instanceof ModelError && error.code === 'rect-too-small' && minSize) {
+        throw new ToolError(
+          error.code,
+          `retângulo menor que o tamanho mínimo do componente de ${what}: ${minSize.width}×${minSize.height} px`,
+          { minSize: { width: minSize.width, height: minSize.height } },
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * `create_marking`: a marcação e, se pedido, a anotação tipada. Quando o tipo tem componente
+   * (no catálogo lido ao carregar o projeto), o `rect` pode faltar (tamanho inicial do
+   * componente) e vale o `minSize`; a anotação nasce como na paleta da app (`preview`), com os
+   * `values` por cima. O servidor nunca arruma: os retângulos são os que o agente informou.
+   */
+  private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
+    const p = this.p;
+    const catalog = this.loaded.catalog;
+    const annotation = op.annotation;
+    if (annotation === undefined && op.annotationAs !== undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`annotationAs` só vale com `annotation` na mesma operação',
+      );
+    }
+    const imageId = this.item(op.image, 'i');
+    const markingId = crypto.randomUUID();
+    const parentGiven = op.parent !== undefined;
+    const parentId =
+      op.parent === undefined || op.parent === null ? null : this.item(op.parent, 'm');
+
+    const typeRef = annotation ? this.type(annotation.type) : null;
+    const component =
+      typeRef === null
+        ? null
+        : (componentTypes(p, catalog).find(
+            (t) => t.specId === typeRef.specId && t.typeId === typeRef.typeId,
+          ) ?? null);
+    if (op.rect === undefined && component === null) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`rect` é obrigatório (só um tipo de anotação com componente dispensa o retângulo: veja list_components)',
+      );
+    }
+    const minSize = component?.component.minSize ?? null;
+    const rowAliases: [string, AliasTarget][] = [];
+    let project: Project;
+    let annotationId: string | null = null;
+
+    if (annotation && typeRef !== null && component !== null) {
+      const newAnnotationId = crypto.randomUUID();
+      annotationId = newAnnotationId;
+      // Sem `rect` e sem `parent`: primeiro nível, no centro da imagem; com `rect`, a mais
+      // interna que o contém (como na app).
+      const effectiveParent = parentGiven
+        ? parentId
+        : op.rect === undefined
+          ? null
+          : (innermostContaining(p, imageId, op.rect)?.id ?? null);
+      const rect =
+        op.rect ??
+        componentPlacement(
+          p,
+          catalog,
+          { imageId, parentId: effectiveParent, ...typeRef },
+          approximateMeasurer,
+        );
+      if (annotation.layer !== undefined) {
+        const layer = this.layer(annotation.layer);
+        if (
+          layer.spec?.specId !== typeRef.specId ||
+          layer.spec.layerId !== component.layerId
+        ) {
+          throw new ModelError('type-not-in-layer');
+        }
+      }
+      project = this.checkMinSize(minSize, `"${typeRef.specId}/${typeRef.typeId}"`, () =>
+        addComponentMarking(
+          p,
+          catalog,
+          {
+            markingId,
+            annotationId: newAnnotationId,
+            imageId,
+            parentId: effectiveParent,
+            ...typeRef,
+            rect,
+            name: op.name ?? null,
+          },
+          approximateMeasurer,
+        ),
+      );
+      if (annotation.name !== undefined) {
+        project = renameAnnotation(project, newAnnotationId, annotation.name);
+      }
+      if (annotation.values !== undefined) {
+        project = this.setValues(project, newAnnotationId, annotation.values, rowAliases);
+      }
+    } else {
+      project = createMarking(p, {
+        id: markingId,
+        imageId,
+        rect: op.rect!,
+        name: op.name ?? null,
+      });
+      if (
+        parentGiven &&
+        projectIndex(project).markings.get(markingId)!.parentId !== parentId
+      ) {
+        project = setMarkingParent(project, markingId, parentId);
+      }
+      if (annotation && typeRef !== null) {
+        annotationId = crypto.randomUUID();
+        project = this.typedAnnotation(project, annotationId, markingId, {
+          type: typeRef,
+          layer: annotation.layer,
+          name: annotation.name,
+          values: annotation.values,
+          ownerId: null,
+          rowAliases,
+        });
+      }
+    }
+    if (op.source !== undefined) {
+      project = setMarkingSource(project, markingId, toSource(op.source));
+    }
+    const { rect } = projectIndex(project).markings.get(markingId)!;
+    return {
+      project,
+      description: `Criar a marcação "${this.markingLabel(project, markingId)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
+        op.rect === undefined ? ', tamanho inicial do componente' : ''
+      }${op.source ? `, ${sourceLabel(toSource(op.source))}` : ''})${
+        typeRef ? ` com a anotação ${typeRef.specId}/${typeRef.typeId}` : ''
+      }`,
+      created: [
+        { kind: 'm', id: markingId },
+        ...(annotationId ? [{ kind: 'a' as const, id: annotationId }] : []),
+      ],
+      rowAliases,
+    };
+  }
+
+  /** Anotação tipada nova: camada do tipo (ou a informada), dona e valores campo a campo. */
+  private typedAnnotation(
+    p: Project,
+    id: string,
+    markingId: string,
+    args: {
+      readonly type: AnnotationTypeRef;
+      readonly layer: string | undefined;
+      readonly name: string | null | undefined;
+      readonly values: Record<string, JsonValue> | undefined;
+      readonly ownerId: string | null;
+      readonly rowAliases: [string, AliasTarget][];
+    },
+  ): Project {
+    const { type } = args;
+    const typeLayer = projectIndex(p).types.get(typeKey(type.specId, type.typeId))!.layer;
+    const layer =
+      args.layer !== undefined
+        ? this.layer(args.layer)
+        : (projectLayerFor(p, type.specId, typeLayer.id) ??
+          fail(
+            'not-found',
+            `a camada "${typeLayer.name}" da especialização não está no projeto`,
+          ));
+    let project = addTypedAnnotation(p, {
+      id,
+      markingId,
+      layerId: layer.id,
+      type,
+      name: args.name ?? null,
+      parentAnnotationId: args.ownerId,
+    });
+    if (args.values !== undefined) {
+      project = this.setValues(project, id, args.values, args.rowAliases);
+    }
+    return project;
+  }
+
   private createAnnotation(op: Extract<Operation, { op: 'create_annotation' }>): Step {
     const p = this.p;
     const markingId = this.item(op.marking, 'm');
@@ -1022,28 +1388,14 @@ class Batch {
       if (op.entries !== undefined) {
         throw new ModelError('typed-annotation');
       }
-      const type = this.type(op.type);
-      const typeLayer = projectIndex(p).types.get(
-        typeKey(type.specId, type.typeId),
-      )!.layer;
-      const layer =
-        op.layer !== undefined
-          ? this.layer(op.layer)
-          : (projectLayerFor(p, type.specId, typeLayer.id) ??
-            fail(
-              'not-found',
-              `a camada "${typeLayer.name}" da especialização não está no projeto`,
-            ));
-      project = addTypedAnnotation(p, {
-        id,
-        markingId,
-        layerId: layer.id,
-        type,
-        name: op.name ?? null,
-        parentAnnotationId: ownerId,
+      project = this.typedAnnotation(p, id, markingId, {
+        type: this.type(op.type),
+        layer: op.layer,
+        name: op.name,
+        values: op.values,
+        ownerId,
+        rowAliases,
       });
-      if (op.values !== undefined)
-        project = this.setValues(project, id, op.values, rowAliases);
     } else {
       if (op.layer === undefined) {
         throw new ToolError(

@@ -192,6 +192,30 @@ export const operationSchema = z.discriminatedUnion('op', [
       ),
   }),
   z.object({
+    op: z.literal('add_blank_image'),
+    as: alias,
+    name: z
+      .string()
+      .optional()
+      .describe('Nome da tela (padrão: sem nome; a app mostra "Tela em branco").'),
+    width: int
+      .min(1)
+      .max(20000)
+      .describe('Largura da tela em pixels (1 a 20000; ex: 390 num celular).'),
+    height: int
+      .min(1)
+      .max(20000)
+      .describe('Altura da tela em pixels (1 a 20000; ex: 844 num celular).'),
+    background: z.string().describe('Cor de fundo `#RRGGBB`.'),
+    source: externalSource.optional(),
+    center: z
+      .object({ x: z.number(), y: z.number() })
+      .optional()
+      .describe(
+        'Ponto do canvas perto do qual a tela fica (padrão: à direita das outras imagens).',
+      ),
+  }),
+  z.object({
     op: z.literal('update_image'),
     image: item('Imagem'),
     name: name.optional(),
@@ -212,6 +236,26 @@ export const operationSchema = z.discriminatedUnion('op', [
       .boolean()
       .optional()
       .describe('Trancar (ou destrancar) todas as marcações da imagem.'),
+    background: z
+      .string()
+      .optional()
+      .describe(
+        'Só em tela em branco: nova cor de fundo `#RRGGBB`. Numa foto falha com `not-blank`.',
+      ),
+    width: int
+      .min(1)
+      .max(20000)
+      .optional()
+      .describe(
+        'Só em tela em branco: nova largura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
+      ),
+    height: int
+      .min(1)
+      .max(20000)
+      .optional()
+      .describe(
+        'Só em tela em branco: nova altura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
+      ),
   }),
   z.object({
     op: z.literal('replace_image'),
@@ -232,15 +276,50 @@ export const operationSchema = z.discriminatedUnion('op', [
   z.object({
     op: z.literal('create_marking'),
     as: alias,
+    annotationAs: alias.describe(
+      'Apelido temporário (ex: "$botao") para citar a anotação criada por `annotation` nas operações seguintes.',
+    ),
     image: item('Imagem'),
-    rect,
+    rect: rect
+      .optional()
+      .describe(
+        'Retângulo em pixels da imagem. Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (dentro do slot do `parent`, se dado; senão no centro da imagem). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
+      ),
     name: name.optional(),
     source: externalSource.optional(),
     parent: item('Marcação pai')
       .nullable()
       .optional()
       .describe(
-        'Pai: referência, id ou apelido; `null` = primeiro nível. Omitido: a marcação mais interna que contém o retângulo, como na app.',
+        'Pai: referência, id ou apelido; `null` = primeiro nível. Omitido: a marcação mais interna que contém o retângulo, como na app (sem `rect`, o primeiro nível).',
+      ),
+    annotation: z
+      .object({
+        type: z
+          .string()
+          .describe(
+            'Tipo da anotação tipada: `specId/typeId`, `typeId` ou o nome do tipo.',
+          ),
+        layer: layer
+          .optional()
+          .describe(
+            'Camada (precisa ser a do tipo; padrão: a camada do tipo na especialização).',
+          ),
+        name: name.optional(),
+        values: values.optional(),
+      })
+      .optional()
+      .describe(
+        'Cria, junto da marcação, uma anotação tipada (uma instância do tipo). Quando o tipo tem componente, sem `values` os campos começam com o `preview` do componente (como a paleta da app); `values` sobrescreve só os campos informados.',
+      ),
+  }),
+  z.object({
+    op: z.literal('move_marking'),
+    marking: item('Marcação'),
+    index: int
+      .min(0)
+      .describe(
+        'Nova posição entre as irmãs (mesma imagem e mesmo pai): 0 = a primeira, desenhada por baixo; a última fica por cima.',
       ),
   }),
   z.object({
@@ -250,7 +329,9 @@ export const operationSchema = z.discriminatedUnion('op', [
     source: externalSource.optional(),
     rect: rect
       .optional()
-      .describe('Novo retângulo (as filhas não se movem e precisam continuar dentro).'),
+      .describe(
+        'Novo retângulo (as filhas não se movem e precisam continuar dentro; numa marcação que desenha um componente, respeita o `minSize` dele).',
+      ),
     move: z
       .object({ dx: int, dy: int })
       .optional()

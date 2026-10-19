@@ -249,11 +249,13 @@ test.describe('CSP do index.html', () => {
       },
       { a: png(300, 300), b: png(200, 400), point: await canvasPoint(page, 0.9) },
     );
-    await expect
-      .poll(async () => (await exportMapping(page)).mapping.images.length, {
-        timeout: 15_000,
-      })
-      .toBe(4);
+    // Espera a importação terminar (uma linha por imagem na Árvore) antes de exportar:
+    // exportar no meio dela disputa o progresso e a mensagem do editor com a importação e o
+    // diálogo pode não abrir.
+    await expect(page.getByRole('button', { name: /^Trancar images\// })).toHaveCount(4, {
+      timeout: 15_000,
+    });
+    expect((await exportMapping(page)).mapping.images).toHaveLength(4);
 
     expect(violations()).toEqual([]);
     expect(consoleErrors).toEqual([]);

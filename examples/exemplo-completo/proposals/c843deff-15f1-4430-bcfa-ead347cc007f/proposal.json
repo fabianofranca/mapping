@@ -1,0 +1,369 @@
+{
+  "format": "mapping-proposal",
+  "formatVersion": 1,
+  "id": "c843deff-15f1-4430-bcfa-ead347cc007f",
+  "title": "Tela de Perfil e ajuste no Cadastro",
+  "description": "Exemplo para praticar a revisão: cria a tela Perfil (Material 3) e renomeia o botão do Cadastro. Aceite uma mudança, rejeite outra com nota e aplique.",
+  "origin": "Exemplo: agente via MCP",
+  "author": "Claude Code (stdio)",
+  "createdAt": "2026-10-18T23:03:57.772Z",
+  "baseRevision": 1,
+  "supersedes": null,
+  "status": "open",
+  "revision": 0,
+  "operations": [
+    {
+      "op": "update_marking",
+      "marking": "m/8f9464",
+      "name": "Botão cadastrar"
+    },
+    {
+      "op": "add_blank_image",
+      "as": "$perfil",
+      "name": "Perfil",
+      "width": 360,
+      "height": 800,
+      "background": "#FFFFFF"
+    },
+    {
+      "op": "create_marking",
+      "as": "$b",
+      "image": "$perfil",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 360,
+        "height": 64
+      },
+      "name": "Barra",
+      "annotation": {
+        "type": "Top app bar",
+        "values": {
+          "title": "Perfil",
+          "navigation": "back"
+        }
+      }
+    },
+    {
+      "op": "create_marking",
+      "as": "$i1",
+      "image": "$perfil",
+      "rect": {
+        "x": 0,
+        "y": 88,
+        "width": 360,
+        "height": 72
+      },
+      "name": "Dados da conta",
+      "annotation": {
+        "type": "List item",
+        "values": {
+          "headline": "Marina",
+          "supporting": "marina@exemplo.com",
+          "initials": "F",
+          "trailing": "chevron"
+        }
+      }
+    },
+    {
+      "op": "create_marking",
+      "as": "$i2",
+      "image": "$perfil",
+      "rect": {
+        "x": 0,
+        "y": 160,
+        "width": 360,
+        "height": 72
+      },
+      "name": "Endereços",
+      "annotation": {
+        "type": "List item",
+        "values": {
+          "headline": "Endereços",
+          "supporting": "2 salvos",
+          "leading": "home",
+          "trailing": "chevron"
+        }
+      }
+    },
+    {
+      "op": "create_marking",
+      "as": "$sair",
+      "image": "$perfil",
+      "rect": {
+        "x": 120,
+        "y": 300,
+        "width": 120,
+        "height": 40
+      },
+      "name": "Sair",
+      "annotation": {
+        "type": "material3/m3-button",
+        "values": {
+          "label": "Sair",
+          "variant": "outlined"
+        }
+      }
+    }
+  ],
+  "changes": [
+    {
+      "id": "c1",
+      "kind": "create",
+      "entity": "image",
+      "entityId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": null,
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "016609d7-c04a-460c-8d68-3b629afd2f49",
+        "name": "Perfil",
+        "file": null,
+        "background": "#FFFFFF",
+        "width": 360,
+        "height": 800,
+        "placement": {
+          "x": 3050,
+          "y": 0,
+          "scale": 1.25
+        },
+        "markingColor": null,
+        "locked": false,
+        "source": null
+      }
+    },
+    {
+      "id": "c2",
+      "kind": "update",
+      "entity": "marking",
+      "entityId": "8f9464dd-8756-4027-83df-02a9038a4d47",
+      "imageId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
+      "markingId": "8f9464dd-8756-4027-83df-02a9038a4d47",
+      "field": "name",
+      "from": "Cadastrar",
+      "to": "Botão cadastrar"
+    },
+    {
+      "id": "c3",
+      "kind": "create",
+      "entity": "marking",
+      "entityId": "67dbf95b-3ac0-40f6-8b06-f27d670b6c98",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": "67dbf95b-3ac0-40f6-8b06-f27d670b6c98",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "67dbf95b-3ac0-40f6-8b06-f27d670b6c98",
+        "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+        "parentId": null,
+        "name": "Barra",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 360,
+          "height": 64
+        },
+        "needsReview": false,
+        "locked": false,
+        "source": null
+      }
+    },
+    {
+      "id": "c4",
+      "kind": "create",
+      "entity": "marking",
+      "entityId": "99b50852-55a9-4d26-a409-7ab000b62e51",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": "99b50852-55a9-4d26-a409-7ab000b62e51",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "99b50852-55a9-4d26-a409-7ab000b62e51",
+        "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+        "parentId": null,
+        "name": "Dados da conta",
+        "rect": {
+          "x": 0,
+          "y": 88,
+          "width": 360,
+          "height": 72
+        },
+        "needsReview": false,
+        "locked": false,
+        "source": null
+      }
+    },
+    {
+      "id": "c5",
+      "kind": "create",
+      "entity": "marking",
+      "entityId": "394827fd-557d-49ea-a2a7-3f91270b39b4",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": "394827fd-557d-49ea-a2a7-3f91270b39b4",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "394827fd-557d-49ea-a2a7-3f91270b39b4",
+        "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+        "parentId": null,
+        "name": "Endereços",
+        "rect": {
+          "x": 0,
+          "y": 160,
+          "width": 360,
+          "height": 72
+        },
+        "needsReview": false,
+        "locked": false,
+        "source": null
+      }
+    },
+    {
+      "id": "c6",
+      "kind": "create",
+      "entity": "marking",
+      "entityId": "a34c81b9-49a7-4319-a80f-9021bfdd46da",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": "a34c81b9-49a7-4319-a80f-9021bfdd46da",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "a34c81b9-49a7-4319-a80f-9021bfdd46da",
+        "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+        "parentId": null,
+        "name": "Sair",
+        "rect": {
+          "x": 120,
+          "y": 300,
+          "width": 120,
+          "height": 40
+        },
+        "needsReview": false,
+        "locked": false,
+        "source": null
+      }
+    },
+    {
+      "id": "c7",
+      "kind": "create",
+      "entity": "annotation",
+      "entityId": "b102121c-9240-46c3-b5a1-4569620bef65",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": "67dbf95b-3ac0-40f6-8b06-f27d670b6c98",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "b102121c-9240-46c3-b5a1-4569620bef65",
+        "markingId": "67dbf95b-3ac0-40f6-8b06-f27d670b6c98",
+        "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
+        "name": null,
+        "inherit": false,
+        "parentAnnotationId": null,
+        "type": {
+          "specId": "material3",
+          "typeId": "m3-top-app-bar"
+        },
+        "values": {
+          "title": "Perfil",
+          "navigation": "back",
+          "action": "more",
+          "align": "start"
+        },
+        "entries": []
+      }
+    },
+    {
+      "id": "c8",
+      "kind": "create",
+      "entity": "annotation",
+      "entityId": "8ef22016-9043-49e8-a663-63c5d7d4ea81",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": "99b50852-55a9-4d26-a409-7ab000b62e51",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "8ef22016-9043-49e8-a663-63c5d7d4ea81",
+        "markingId": "99b50852-55a9-4d26-a409-7ab000b62e51",
+        "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
+        "name": null,
+        "inherit": false,
+        "parentAnnotationId": null,
+        "type": {
+          "specId": "material3",
+          "typeId": "m3-list-item"
+        },
+        "values": {
+          "headline": "Marina",
+          "supporting": "marina@exemplo.com",
+          "leading": "person",
+          "initials": "F",
+          "trailing": "chevron"
+        },
+        "entries": []
+      }
+    },
+    {
+      "id": "c9",
+      "kind": "create",
+      "entity": "annotation",
+      "entityId": "43c88ab3-6f24-4470-8bcc-ce3d58b79066",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": "394827fd-557d-49ea-a2a7-3f91270b39b4",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "43c88ab3-6f24-4470-8bcc-ce3d58b79066",
+        "markingId": "394827fd-557d-49ea-a2a7-3f91270b39b4",
+        "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
+        "name": null,
+        "inherit": false,
+        "parentAnnotationId": null,
+        "type": {
+          "specId": "material3",
+          "typeId": "m3-list-item"
+        },
+        "values": {
+          "headline": "Endereços",
+          "supporting": "2 salvos",
+          "leading": "home",
+          "initials": null,
+          "trailing": "chevron"
+        },
+        "entries": []
+      }
+    },
+    {
+      "id": "c10",
+      "kind": "create",
+      "entity": "annotation",
+      "entityId": "1c91b04d-f581-49ef-9b60-603a484f4761",
+      "imageId": "016609d7-c04a-460c-8d68-3b629afd2f49",
+      "markingId": "a34c81b9-49a7-4319-a80f-9021bfdd46da",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "1c91b04d-f581-49ef-9b60-603a484f4761",
+        "markingId": "a34c81b9-49a7-4319-a80f-9021bfdd46da",
+        "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
+        "name": null,
+        "inherit": false,
+        "parentAnnotationId": null,
+        "type": {
+          "specId": "material3",
+          "typeId": "m3-button"
+        },
+        "values": {
+          "label": "Sair",
+          "variant": "outlined",
+          "icon": null,
+          "disabled": "não"
+        },
+        "entries": []
+      }
+    }
+  ],
+  "decisions": {},
+  "notes": [],
+  "applied": {}
+}

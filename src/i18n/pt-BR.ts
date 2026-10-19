@@ -1,7 +1,9 @@
+import { catalogPtBR } from './catalog';
 import { reviewPtBR } from './review';
 
 export const ptBR = {
   ...reviewPtBR,
+  ...catalogPtBR,
   'app.title': 'Mapping',
   'app.loading': 'Carregando…',
   'narrow.title': 'Abra numa janela maior',
@@ -33,6 +35,10 @@ export const ptBR = {
   'home.newProject': 'Novo projeto',
   'home.openFolder': 'Abrir pasta',
   'home.openZip': 'Abrir zip',
+  'home.openExample': 'Abrir projeto de exemplo',
+  'home.openExampleHint':
+    'Abre uma cópia do projeto de exemplo neste dispositivo, pelo mesmo caminho do Abrir zip. Cada clique cria uma cópia nova.',
+  'home.guide': 'Guia interativo',
   'home.recentProjects': 'Projetos recentes',
   'home.noRecentProjects':
     'Nenhum projeto ainda. Os projetos deste dispositivo e as pastas abertas aparecem aqui.',
@@ -123,9 +129,12 @@ export const ptBR = {
   'marking.error.rect-excludes-children':
     'A marcação precisa envolver as marcações internas.',
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
+  'marking.error.not-arrangeable':
+    'Só é possível arrumar um container em linha ou coluna que tenha marcações dentro.',
   'marking.error.generic': 'Não foi possível alterar a marcação.',
 
   'image.name': 'Nome',
+  'image.blankUntitled': 'Tela em branco',
   'image.markingColor': 'Cor das linhas das marcações',
   'image.markingColorTheme': 'Cor do tema',
   'image.markingColorHint':
@@ -337,6 +346,7 @@ export const ptBR = {
   'inconsistent.entity.spec': 'Especialização',
   'invariant.duplicate-id': 'id repetido',
   'invariant.duplicate-file': 'arquivo repetido',
+  'invariant.blank-background': 'cor de fundo e arquivo juntos (ou nenhum dos dois)',
   'invariant.images-overlap': 'sobrepõe outra imagem',
   'invariant.missing-image': 'imagem inexistente',
   'invariant.missing-parent': 'pai inexistente',
@@ -396,6 +406,64 @@ export const ptBR = {
     'Camadas existentes mantêm cor e anotações. Anotações que ficarem inválidas aparecem como incompletas.',
   'spec.updateBroken': '{count} referência(s) vão ficar quebradas.',
   'spec.updateConfirm': 'Atualizar',
+  'spec.updatedPending':
+    '"{name}" atualizada para a versão {version}. {count} pendência(s) em Incompletas.',
+  'spec.impact.additive': 'Atualização aditiva: os dados ficam como estão.',
+  'spec.impact.stepsTitle': 'Passos da migração',
+  'spec.impact.op.renameType': 'Renomear o tipo {from} → {to}',
+  'spec.impact.op.removeTypeConvert': 'Remover o tipo {type} (converter em livres)',
+  'spec.impact.op.removeTypeDelete': 'Remover o tipo {type} (apagar as anotações)',
+  'spec.impact.op.renameField': 'Renomear o campo {from} → {to} em {type}',
+  'spec.impact.op.removeField': 'Remover o campo {field} em {type}',
+  'spec.impact.op.mapValues': 'Mapear valores de {field} em {type}: {pairs}',
+  'spec.impact.op.fillField': 'Preencher {field} em {type} com {value}',
+  'spec.impact.annotations': '{count} anotação(ões)',
+  'spec.impact.values': '{count} valor(es)',
+  'spec.impact.converted': '{count} convertida(s)',
+  'spec.impact.deleted': '{count} apagada(s)',
+  'spec.impact.refs': '{count} referência(s) atualizada(s)',
+  'spec.impact.nothing': 'nada a mudar neste projeto',
+  'spec.impact.lossTotal':
+    'Esta atualização apaga {values} valor(es) e {annotations} anotação(ões).',
+  'spec.impact.lossTarget': '{marking} › {name}',
+  'spec.impact.lossDeleted': '{target}: anotação apagada',
+  'spec.impact.lossRemovedField': '{target}: campo {field} removido (valor "{value}")',
+  'spec.impact.lossReplaced': '{target}: valor de {field} trocado (era "{value}")',
+  'spec.impact.lossOverwritten': '{target}: valor de {field} sobrescrito (era "{value}")',
+  'spec.impact.lossMore': '+{count}',
+  'spec.impact.pending':
+    '{count} pendência(s) ficam (abrem em Incompletas depois de atualizar).',
+  'spec.impact.refused':
+    'Esta atualização não pode ser aplicada: faltam migrações declaradas para estas quebras.',
+  'spec.impact.failedMissing':
+    'Atualização recusada: a nova versão tem quebras sem migração declarada. Nada foi alterado.',
+  'spec.applyFolder': 'Aplicar pasta…',
+  'spec.applyZip': 'Aplicar zip…',
+  'spec.updateFolder': 'Atualizar de pasta…',
+  'spec.updateZip': 'Atualizar de zip…',
+  'spec.packageHint':
+    'Uma biblioteca (versão 4) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes.',
+  'spec.v4NeedsPackage':
+    '"{name}" é uma biblioteca (versão 4) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
+  'spec.packageValidating': 'Conferindo o pacote…',
+  'spec.packageReadFailed': 'Não foi possível ler o pacote.',
+  'spec.packageTooBig': 'O pacote passa do limite ({files} arquivos ou {mb} MB).',
+  'spec.packageEmpty': 'A pasta ou o zip não tem arquivos.',
+  'spec.packageNoSpec':
+    'O pacote não tem uma especialização legível: falta um .json com "format": "mapping-spec" na raiz.',
+  'spec.packageTitle': 'Pacote "{name}"',
+  'spec.packageInvalidTitle': 'Pacote de especialização inválido',
+  'spec.packageSummary':
+    'v{version} · {types} tipo(s) · {components} componente(s) · {docs} documento(s) · {fonts} fonte(s)',
+  'spec.packageCounts': '{errors} erro(s) e {warnings} aviso(s).',
+  'spec.packageBlocked':
+    'Corrija os erros e tente de novo: um pacote com erros não é aplicado.',
+  'spec.packageWarningsOk': 'Os avisos não impedem aplicar.',
+  'spec.packageApplyConfirm': 'Aplicar',
+  'library.error': 'erro',
+  'library.warning': 'aviso',
+  'library.package': 'Pacote',
+  'library.issues': 'Problemas do pacote',
   'spec.removeTitle': 'Remover "{name}"?',
   'spec.removeChoose': 'O que fazer com as camadas e anotações da especialização?',
   'spec.removeDelete': 'Apagar dados',
@@ -430,10 +498,22 @@ export const ptBR = {
   'diagnostics.col.message': 'Mensagem',
   'diagnostics.unseen': 'há erros novos',
   'diagnostics.repeated': '({count} vezes)',
+  'diagnostics.library': 'Biblioteca',
+  'diagnostics.libraryHint':
+    'Problemas da cópia da biblioteca aplicada ao abrir o projeto.',
+  'diagnostics.libraryItem': '{name}: {errors} erro(s) e {warnings} aviso(s)',
   'help.open': 'Ajuda',
   'dialog.close': 'Fechar diálogo',
   'help.title': 'Ajuda',
   'help.search': 'Buscar na ajuda',
+  'help.guide.title': 'Guia interativo',
+  'help.guide.intro':
+    'Um passeio de 12 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, telas em branco com Material 3 e a revisão de uma proposta. Funciona sem internet e abre numa aba nova.',
+  'help.guide.example':
+    'Para ver o mesmo projeto na app, use Abrir projeto de exemplo na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).',
+  'help.guide.fileProtocol':
+    'Aberto como arquivo avulso, a app não acha o guia: ele fica em guia/index.html, ao lado do index.html, na pasta dist/ do build e na versão publicada.',
+  'help.guide.open': 'Abrir o guia interativo',
   'help.noResults': 'Nada encontrado para "{query}".',
   'help.shortcuts.title': 'Atalhos de teclado',
   'help.shortcuts.intro':
@@ -567,6 +647,7 @@ export const ptBR = {
   'issue.owner-not-allowed': 'dono de tipo não permitido',
   'issue.broken-ref': 'referência quebrada',
   'issue.ref-not-accepted': 'alvo não aceito (perdeu a etiqueta ou deixou de ser livre)',
+  'issue.component-overflow': 'O componente não cabe',
   'list.incomplete': 'Só incompletas',
   'list.emptyIncomplete': 'Nenhuma anotação incompleta nas camadas visíveis.',
   // Detalhes (R5)
@@ -595,6 +676,7 @@ export const ptBR = {
   'issue.headingOne': 'Incompleta: 1 pendência',
   'issue.headingMany': 'Incompleta: {count} pendências',
   'issue.item': '{annotation} · {reason}',
+  'typedForm.refUnavailable': 'Escolher referência só funciona dentro de um projeto.',
   'ref.choosePlaceholder': 'Escolher…',
   'ref.fieldButton': '{field}: {value}',
   'ref.goToShortcut': 'Ctrl+clique',
@@ -652,6 +734,10 @@ export const ptBR = {
   'proposal.error.imageMissing': 'A imagem da proposta não foi encontrada: {path}',
   'proposal.error.imageExists':
     'Já existe uma imagem do projeto com este arquivo: {path}',
+  'proposal.error.packageMissing':
+    'Os arquivos do pacote da biblioteca não foram encontrados na proposta: {path}',
+  'proposal.error.packageInvalid':
+    'O pacote da biblioteca da proposta não passa na validação: {path}',
   'proposal.error.readOnly': 'O projeto está somente leitura e não recebe mudanças.',
   'proposal.error.reviewing': 'Saia da revisão para apagar uma proposta.',
   'proposal.error.notRemovable':
@@ -722,6 +808,81 @@ export const ptBR = {
     'Definição: nos Detalhes de uma anotação tipada, uma linha por plataforma com path, como "Plataforma · Arquivo.ext", com o caminho completo e o símbolo na dica. Vem da especialização e não se edita na app.',
   'help.code.repos':
     'Repositórios: em Configurações (engrenagem), na seção "Repositórios de código", informe para cada plataforma o endereço do arquivo, com {path}, e o caminho local da raiz do repositório, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repositório, gera um aviso.',
+  // Biblioteca de componentes na app (etapa Biblioteca, B3)
+  // Catálogo: janela do editor e tela da biblioteca sem projeto (etapa Biblioteca, B5)
+  'catalog.window.title': 'Catálogo',
+  'catalog.window.components': 'Componentes',
+  'catalog.window.palette': 'Paleta',
+  'catalog.window.tabs': 'Seções do Catálogo',
+  'catalog.window.loading': 'Lendo as bibliotecas…',
+  'catalog.window.spec': 'Biblioteca',
+  'catalog.home.open': 'Abrir biblioteca',
+  'catalog.home.openHint':
+    'Veja o catálogo de uma biblioteca (pasta ou zip do pacote) sem abrir um projeto',
+  'catalog.home.back': 'Voltar à tela inicial',
+  'catalog.home.screen': 'Catálogo da biblioteca',
+  'catalog.home.untitled': 'Biblioteca sem nome',
+  'catalog.home.version': 'versão {version}',
+  'library.empty': 'Nenhuma biblioteca com componentes aplicada.',
+  'library.openSpecs': 'Abrir Especializações',
+  'library.container': 'Container',
+  'library.typeSize': '{width} × {height}',
+  'library.add': 'Adicionar',
+  'library.addType': 'Adicionar {name}',
+  'library.noScreen': 'Selecione ou centralize uma tela',
+  'library.readOnly': 'O projeto está somente leitura.',
+  'library.error.generic': 'Não foi possível adicionar o componente.',
+  'library.error.rect-out-of-image': 'O componente não cabe nessa tela.',
+  'library.error.locked': 'A tela ou o container está trancado.',
+  'blank.new': 'Nova tela em branco',
+  'blank.name': 'Nome',
+  'blank.width': 'Largura',
+  'blank.height': 'Altura',
+  'blank.background': 'Cor de fundo',
+  'blank.backgroundHint': 'No formato #RRGGBB.',
+  'blank.preset': 'Tamanho predefinido',
+  'blank.preset.custom': 'Personalizado',
+  'blank.preset.phone': 'Celular',
+  'blank.preset.phoneLarge': 'Celular grande',
+  'blank.preset.tablet': 'Tablet',
+  'blank.preset.desktop': 'Desktop',
+  'blank.create': 'Criar tela',
+  'blank.intro':
+    'Uma tela sem foto: serve para montar telas com os componentes da biblioteca. Largura e altura em pixels.',
+  'blank.error.name': 'Dê um nome à tela.',
+  'blank.error.size': 'Largura e altura são números inteiros de 1 a {max}.',
+  'blank.error.color': 'Use uma cor no formato #RRGGBB.',
+  'blank.error.generic': 'Não foi possível alterar a tela.',
+  'blank.error.locked': 'A tela está trancada.',
+  'blank.error.rect-out-of-image': 'Alguma marcação deixaria de caber na tela.',
+  'marking.order': 'Ordem',
+  'marking.orderValue': '{index} de {count}',
+  'marking.orderHint':
+    'Posição entre as marcações irmãs: a última é desenhada por cima das outras.',
+  'marking.orderBack': 'Mover para trás',
+  'marking.orderFront': 'Mover para a frente',
+  'arrange.action': 'Arrumar',
+  'arrange.hint': 'Arruma as marcações de dentro pelo layout do container.',
+  'arrange.done': 'Arrumado',
+  'arrange.doneWarnings': 'Arrumado com {count} aviso(s): {first}',
+  'arrange.nothing': 'Nada a arrumar',
+  'shortcuts.arrange': 'Arrumar o container selecionado',
+  'view.componentsOnPhotos': 'Mostrar componentes sobre fotos',
+  'view.componentsOnPhotosHint':
+    'Desenha o componente por cima da foto. Nas telas em branco ele sempre aparece.',
+  'diagnostics.components': 'Componentes',
+  'diagnostics.componentsHint':
+    'Fontes que não carregaram, componentes que não puderam ser lidos e avisos do desenho.',
+  'diagnostics.fonts': 'Fontes',
+  'diagnostics.fontItem': '{family} · peso {weight} · {style}',
+  'diagnostics.fontStyle.normal': 'normal',
+  'diagnostics.fontStyle.italic': 'itálico',
+  'diagnostics.fontMissing': 'ausente: usando a fonte do sistema',
+  'diagnostics.fontFailed': 'não carregou: {detail}',
+  'diagnostics.catalogProblems': 'Componentes que não carregaram',
+  'diagnostics.drawWarnings': 'Avisos do desenho',
+  'diagnostics.overflowCount': '{count} marcação(ões) com componente que não cabe',
+  'diagnostics.selectMarking': 'Selecionar {name}',
 } as const;
 
 export type Dictionary = Record<keyof typeof ptBR, string>;

@@ -13,13 +13,20 @@ meu-projeto/
 └── proposals/
     └── 8c1f…/                # id da proposta
         ├── proposal.json
-        └── images/           # imagens novas ou trocadas, até serem aceitas
-            └── checkout.webp
+        ├── images/           # imagens novas ou trocadas, até serem aceitas
+        │   └── checkout.webp
+        └── specs/            # pacote de biblioteca novo ou atualizado (etapa Biblioteca)
+            └── material3/
+                ├── material3.spec.json
+                ├── components/
+                └── …
 ```
 
 - Uma pasta por proposta, `proposals/<id>/`, com o `proposal.json`. O id só usa `[A-Za-z0-9._-]` e não começa com ponto (vira nome de pasta).
+- Tela em branco (schema v10): a criação traz a imagem inteira com `file: null` e `background`, sem arquivo para mover; `background` e `size` só existem como campos de `update` quando a imagem é tela em branco nos dois lados (na foto, o tamanho vem da troca de arquivo, campo `file`).
 - Imagem nova ou trocada: a mudança traz o caminho definitivo (`images/checkout.webp`) e o arquivo espera em `proposals/<id>/` mais esse caminho (`proposals/<id>/images/checkout.webp`). Ao aplicar, ele é movido para o lugar definitivo.
-- As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado.
+- Pacote de biblioteca (especialização `formatVersion` 4, uma pasta com `components/`, `docs/`, `examples/` e `fonts/`): a mudança é a da especialização de sempre (`entity: "specialization"`, `to = { id, version, file, spec }`), com `to.file` dentro de uma pasta (`specs/material3/material3.spec.json`). Os arquivos do pacote esperam em `proposals/<id>/` mais o caminho definitivo (`proposals/<id>/specs/material3/components/botao.json`). A fonte da verdade da especialização é o `to.spec`: o arquivo dela na pasta da proposta pode faltar e, se vier, é ignorado. Ao aplicar, os arquivos são **copiados** (não movidos) para `specs/<pasta>/`, que a sessão regrava inteira junto com o `mapping.json`; ficam na proposta até ela ser apagada, então desfazer e refazer não mexem neles.
+- As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado, com os arquivos que esperam a aceitação (imagens em `proposals/<id>/images/` e pacotes em `proposals/<id>/specs/<pasta>/`, binários inclusive; os de mudanças já aplicadas não vão). Ao ler o zip, só entram caminhos desses dois tipos, com id válido e sem `..`.
 
 ## Quem grava o quê
 
@@ -115,8 +122,8 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 
 | Entidade         | Campos (`field`)                                                                                                                                                                         |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `placement`, `markingColor`, `locked`, `source`                                                                                     |
-| `marking`        | `name`, `rect`, `parentId`, `imageId`, `locked`, `source`                                                                                                                                |
+| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `background` (cor `#RRGGBB`) e `size` (`{ width, height }`) só na tela em branco, `placement`, `markingColor`, `locked`, `source`   |
+| `marking`        | `name`, `rect`, `parentId`, `imageId`, `locked`, `source`, `position` (índice entre as irmãs)                                                                                            |
 | `annotation`     | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type` |
 | `layer`          | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                    |
 | `specialization` | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                               |
@@ -125,7 +132,8 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 - `values.<key>` ausente vale `null`. Uma tabela (`table`) muda inteira, numa mudança só.
 - `type` é a **troca de tipo** de uma anotação (ex: tipada convertida em livre ao remover uma especialização): `{ type, values, entries }` mudam juntos, numa mudança só, sem `values.*` nem `entries.*` separados.
 - `position` só aparece nas camadas que mudam de **ordem relativa** (criar ou remover outra camada não gera `position`). Numa camada criada pela própria proposta, `from` é `null`.
-- Não viram mudança: a ordem dos pares e das marcações dentro da lista, `needsReview` (a revisão é a própria conferência; a criação leva o valor proposto) e `project.updatedAt`.
+- `position` da marcação é o índice entre as **irmãs** (mesma imagem e mesmo `parentId`; 0 = a primeira, desenhada por baixo) e também só aparece quando a ordem relativa das irmãs muda: criar ou remover outra marcação não gera `position`, e a marcação criada que já nasce na ordem do projeto proposto (no fim, como a aplicação acrescenta) também não. Se a criada precisa ficar antes de alguma irmã, ela leva `position` com `from` `null`. Aplicar reordena como a ação de reordenar da app (índice preso ao intervalo válido) e há conflito se o `from` não bate com a posição atual.
+- Não viram mudança: a ordem dos pares dentro da lista, `needsReview` (a revisão é a própria conferência; a criação leva o valor proposto) e `project.updatedAt`.
 - Ordem das mudanças: grupo Projeto (especializações, repositórios, camadas), imagens, marcações e anotações; em cada coleção, a ordem do projeto proposto e, no fim, as removidas. Aplicar tudo acrescenta as entidades criadas na mesma ordem do projeto proposto.
 
 ## Revisão
@@ -161,11 +169,11 @@ Mudanças de geometria (`rect` da marcação; `placement` e troca de arquivo de 
 
 ### Validação do conjunto aceito
 
-"Aplicar aceitas" aplica as mudanças aceitas e ainda não aplicadas a uma cópia do projeto e valida o resultado (`validateAccepted`): as invariantes do modelo (`validateProject`), especializações citadas que não ficariam aplicadas (`missing-specialization`) e mudanças que não cabem no projeto atual (`entity-missing`: alteração de algo que sumiu; `entity-exists`: criação de um id que já existe; `field-mismatch`: ex. `values.*` numa anotação que virou livre, ou `values.<key>` de uma chave que não é campo do tipo, como o campo `codeRef` que saiu do formato na v9 numa proposta antiga). Só contam os problemas novos. Cada problema traz as mudanças aceitas envolvidas (`changeIds`: rejeitar uma delas resolve) e as sem decisão nas mesmas entidades (`related`: aceitar uma delas pode resolver, ex. a posição do pai que falta). Com algum problema, aplicar fica bloqueado.
+"Aplicar aceitas" aplica as mudanças aceitas e ainda não aplicadas a uma cópia do projeto e valida o resultado (`validateAccepted`): as invariantes do modelo (`validateProject`), especializações citadas que não ficariam aplicadas (`missing-specialization`) e mudanças que não cabem no projeto atual (`entity-missing`: alteração de algo que sumiu; `entity-exists`: criação de um id que já existe; `field-mismatch`: ex. `values.*` numa anotação que virou livre, ou `values.<key>` com valor novo numa chave que não é campo do tipo, como o campo `codeRef` que saiu do formato na v9 numa proposta antiga; limpar uma chave fora do tipo, `to: null`, não é conflito: a chave sai de `values`, como no `remove-field` e no `rename-field` de uma migração da mesma proposta). Só contam os problemas novos. Cada problema traz as mudanças aceitas envolvidas (`changeIds`: rejeitar uma delas resolve) e as sem decisão nas mesmas entidades (`related`: aceitar uma delas pode resolver, ex. a posição do pai que falta). Com algum problema, aplicar fica bloqueado.
 
 ### Aplicar aceitas
 
-`applyAccepted(projeto, proposta, data)` efetiva só as aceitas ainda não aplicadas, numa única alteração do projeto (uma entrada de desfazer para quem chama), e devolve o projeto novo, a proposta com `applied` atualizado, as mudanças aplicadas e as imagens a mover de `proposals/<id>/` para o lugar definitivo. O que está sem decisão continua pendente na mesma proposta; uma nova aplicação depois efetiva o que for aceito em seguida. A aplicação não passa pelas operações do modelo (a trava não impede), mas o resultado passa pelas invariantes.
+`applyAccepted(projeto, proposta, data)` efetiva só as aceitas ainda não aplicadas, numa única alteração do projeto (uma entrada de desfazer para quem chama), e devolve o projeto novo, a proposta com `applied` atualizado, as mudanças aplicadas, as imagens a mover de `proposals/<id>/` para o lugar definitivo (`files`) e os pacotes de biblioteca a copiar de `proposals/<id>/specs/<pasta>/` para `specs/<pasta>/` (`packages`: `specId`, `version`, `dir`, `from`, `file` e `spec`). Antes de entregar o pacote à sessão, a app o lê, monta o arquivo da especialização a partir de `to.spec` e o valida pelos três níveis da biblioteca, com a versão aplicada como anterior (contrato de versão): sem arquivo nenhum a aplicação falha com `package-missing`, e pacote inválido com `package-invalid`; nos dois casos nada muda. O que está sem decisão continua pendente na mesma proposta; uma nova aplicação depois efetiva o que for aceito em seguida. A aplicação não passa pelas operações do modelo (a trava não impede), mas o resultado passa pelas invariantes.
 
 ### Estados
 

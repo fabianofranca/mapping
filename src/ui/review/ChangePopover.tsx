@@ -17,6 +17,7 @@ import { useEditor } from '../EditorContext';
 import { Icon, type IconName } from '../icons';
 import { ChangeKind } from './ChangeKind';
 import { changeTitle, valueParts, type ReviewNames, type ValuePart } from './changeText';
+import { useClickSource } from './clickSource';
 import { REVIEW_KEYS, type DecisionValue } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
 import { DiffValue, type DiffRow } from './DiffValue';
@@ -297,7 +298,22 @@ function PopoverDecision({
   readonly onRejectedByMouse: () => void;
 }) {
   const decide = useDecide();
+  const { review } = useEditor();
   const accept = useRef<HTMLButtonElement>(null);
+  const reject = useRef<HTMLButtonElement>(null);
+  const acceptClick = useClickSource();
+  const rejectClick = useClickSource();
+  // Decidir pelo teclado pode remontar o popover (o cartão da anotação criada é trocado) e
+  // tirar o botão focado do DOM: o par novo recupera o foco no equivalente, ao montar.
+  useLayoutEffect(() => {
+    const which = review.takeControlFocus(subject.change.id, 'popover');
+    if (!which) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected) return;
+    (which === 'accept' ? accept : reject).current?.focus();
+    // Só ao montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const c = subject.change;
   const field = markFieldLabel(names, subject);
   const conflict = situation?.conflict === true;
@@ -340,7 +356,13 @@ function PopoverDecision({
         aria-describedby={describedBy}
         title={`${t('review.accept')}  ${REVIEW_KEYS.accept}`}
         disabled={disabled}
-        onClick={() => apply(decision === 'accepted' ? null : 'accepted')}
+        {...acceptClick.handlers}
+        onClick={() => {
+          if (acceptClick.takeKeyboard()) {
+            review.requestControlFocus(c.id, 'popover', 'accept');
+          }
+          apply(decision === 'accepted' ? null : 'accepted');
+        }}
       >
         <Icon name="check" />
         {conflict ? t('review.pop.overwrite') : t('review.accept')}
@@ -348,17 +370,22 @@ function PopoverDecision({
       <Button
         size="sm"
         variant="reject"
+        buttonRef={reject}
         aria-pressed={decision === 'rejected'}
         aria-label={rejectLabel}
         aria-keyshortcuts={ariaKeys(REVIEW_KEYS.reject)}
         aria-describedby={describedBy}
         title={`${t('review.reject')}  ${REVIEW_KEYS.reject}`}
         disabled={disabled}
-        onClick={(e) => {
+        {...rejectClick.handlers}
+        onClick={() => {
           const next = decision === 'rejected' ? null : 'rejected';
+          // Tudo que não veio do teclado conta como mouse e sugere a nota; o teclado não
+          // abre a nota (o botão de nota abre) e mantém o foco no Rejeitar.
+          const byKeyboard = rejectClick.takeKeyboard();
+          if (byKeyboard) review.requestControlFocus(c.id, 'popover', 'reject');
           apply(next);
-          // Mouse (detail > 0) sugere a nota; o teclado não move o foco (a nota abre com Enter).
-          if (next === 'rejected' && e.detail > 0) onRejectedByMouse();
+          if (next === 'rejected' && !byKeyboard) onRejectedByMouse();
         }}
       >
         <Icon name="close" />

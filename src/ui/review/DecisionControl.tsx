@@ -1,7 +1,9 @@
+import { useLayoutEffect, useRef } from 'preact/hooks';
 import { t } from '../../i18n';
 import { ariaKeys } from '../../app/shortcuts';
 import { Button, IconButton } from '../controls';
 import { Icon } from '../icons';
+import { useClickSource } from './clickSource';
 
 // Par ✓ ✕ que decide um nível (HANDOFF-PROPOSALS 2.1): nenhum marcado é "sem decisão";
 // apertar o marcado limpa a decisão. Decidir grava na hora, sem confirmação (é
@@ -30,6 +32,15 @@ interface DecisionControlProps {
   /** Nome do alvo, para o nome acessível ("Aceitar Botão Pagar"). */
   readonly name: string;
   readonly onDecide: (next: DecisionValue) => void;
+  /** Rejeitou com o mouse (versão de ícone): quem usa sugere a nota para o agente. */
+  readonly onRejectedByMouse?: () => void;
+  /**
+   * Decidiu pelo teclado (versão de ícone): o par pode ser trocado pela decisão e o botão
+   * focado sai do DOM; quem usa guarda qual era para o par novo pegar o foco.
+   */
+  readonly onDecidedByKeyboard?: (control: 'accept' | 'reject') => void;
+  /** Chamada ao montar: o controle que deve receber o foco (o par anterior perdeu o dele). */
+  readonly takeFocus?: () => 'accept' | 'reject' | null;
   readonly disabled?: boolean;
   /** Conflito: os rótulos dizem o efeito (sobrescreve / mantém o valor atual). */
   readonly conflict?: boolean;
@@ -47,6 +58,9 @@ export function DecisionControl({
   value,
   name,
   onDecide,
+  onRejectedByMouse,
+  onDecidedByKeyboard,
+  takeFocus,
   disabled,
   conflict = false,
   variant = 'icon',
@@ -56,6 +70,21 @@ export function DecisionControl({
   describedBy,
 }: DecisionControlProps) {
   const reason = disabled ? describedBy : undefined;
+  const rejectClick = useClickSource();
+  const acceptClick = useClickSource();
+  const acceptRef = useRef<HTMLButtonElement>(null);
+  const rejectRef = useRef<HTMLButtonElement>(null);
+  // O par montou porque o anterior saiu do DOM com o foco (decisão pelo teclado): o foco
+  // volta ao controle equivalente, no commit que o desenha, nunca ao `body`.
+  useLayoutEffect(() => {
+    const which = takeFocus?.();
+    if (!which) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected) return;
+    (which === 'accept' ? acceptRef : rejectRef).current?.focus();
+    // Só ao montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const toggle = (state: 'accepted' | 'rejected') =>
     onDecide(value === state ? null : state);
   const acceptLabel = conflict
@@ -116,7 +145,12 @@ export function DecisionControl({
         pressed={value === 'accepted'}
         disabled={disabled}
         aria-describedby={reason}
-        onClick={() => toggle('accepted')}
+        buttonRef={acceptRef}
+        {...acceptClick.handlers}
+        onClick={() => {
+          if (acceptClick.takeKeyboard()) onDecidedByKeyboard?.('accept');
+          toggle('accepted');
+        }}
       />
       <IconButton
         icon="close"
@@ -128,7 +162,16 @@ export function DecisionControl({
         pressed={value === 'rejected'}
         disabled={disabled}
         aria-describedby={reason}
-        onClick={() => toggle('rejected')}
+        buttonRef={rejectRef}
+        {...rejectClick.handlers}
+        onClick={() => {
+          // Tudo que não veio do teclado conta como mouse e sugere a nota; o teclado
+          // não abre a nota e mantém o foco no controle (mesmo que o par seja remontado).
+          const byKeyboard = rejectClick.takeKeyboard();
+          if (byKeyboard) onDecidedByKeyboard?.('reject');
+          toggle('rejected');
+          if (value !== 'rejected' && !byKeyboard) onRejectedByMouse?.();
+        }}
       />
     </span>
   );

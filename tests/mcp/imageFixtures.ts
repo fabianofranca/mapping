@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  addBlankImage,
   addImage,
   createMarking,
   createProject,
@@ -96,6 +97,8 @@ export const IDS = {
   text: imageId('7'),
   bomb: imageId('8'),
   escape: imageId('9'),
+  // Tela em branco (sem arquivo): não está em IMAGE_FILES.
+  blank: imageId('d'),
   // As marcações de cada imagem trocam o primeiro caractere do id da imagem (códigos distintos).
   parent: (image: string) => `a${image.slice(1)}`,
   childA: (image: string) => `b${image.slice(1)}`,
@@ -103,6 +106,9 @@ export const IDS = {
 } as const;
 
 /** O código das referências (8 primeiros caracteres hexadecimais do id). */
+/** Cor de fundo da tela em branco da fixture. */
+export const BLANK_BACKGROUND = '#1060A0';
+
 export const codeOf = (id: string) => id.replaceAll('-', '').slice(0, 8);
 
 export const IMAGE_FILES = {
@@ -138,6 +144,12 @@ function imageProject(): Project {
   for (const key of Object.keys(IMAGE_FILES) as (keyof typeof IMAGE_FILES)[]) {
     p = addImage(p, { id: IDS[key], file: IMAGE_FILES[key], ...sizes[key] });
   }
+  p = addBlankImage(p, {
+    id: IDS.blank,
+    width: IMAGE_SIZE.width,
+    height: IMAGE_SIZE.height,
+    background: BLANK_BACKGROUND,
+  });
   const named = (id: string, imageId: string, rect: PixelRect, name: string) => ({
     id,
     imageId,
@@ -152,6 +164,7 @@ function imageProject(): Project {
     'missing',
     'text',
     'bomb',
+    'blank',
   ] as const) {
     const image = IDS[key];
     p = createMarking(p, named(IDS.parent(image), image, PARENT, 'Formulário'));

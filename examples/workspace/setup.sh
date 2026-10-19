@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # Prepara a pasta de mapeamentos: baixa o servidor MCP do Mapping da release (mcp-v*), confere
 # o sha256, traz a skill spec-author e cria o link que o Claude Code lê.
-# Uso: ./setup.sh            (última release)
-#      ./setup.sh mcp-v0.4.0 (uma release específica)
+# Uso: ./setup.sh                      (última release estável)
+#      ./setup.sh mcp-v0.5.0           (uma release específica)
+#      ./setup.sh mcp-v0.5.0-rc.1      (release candidate do épico)
+#      ./setup.sh mcp-snapshot-pr172   (build de teste de um PR; some quando o PR fecha)
+# Aceita qualquer tag. A "última release" (releases/latest) é sempre a estável: o GitHub nunca
+# escolhe uma pre-release (rc ou snapshot) como latest, então elas só entram por tag explícita.
 set -euo pipefail
 cd "$(dirname "$0")"
 

@@ -157,7 +157,7 @@ describe('list_projects e descoberta', () => {
     expect(cadastro).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
-      schemaVersion: 9,
+      schemaVersion: 10,
       revision: 0,
       counts: { images: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
@@ -247,7 +247,7 @@ describe('get_project', () => {
       }),
     ]);
     const legado = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legado).toMatchObject({ schemaVersion: 9, revision: 0, migratedFrom: 5 });
+    expect(legado).toMatchObject({ schemaVersion: 10, revision: 0, migratedFrom: 5 });
   });
 
   it('ler nunca regrava o mapping.json (nem o de schema antigo)', () => {
@@ -799,7 +799,7 @@ describe('create_project', () => {
       name: 'loja',
       path: 'novos/loja',
       projectName: 'Loja',
-      schemaVersion: 9,
+      schemaVersion: 10,
       revision: 0,
       counts: { images: 0, markings: 0, annotations: 0, layers: 1 },
     });
@@ -953,10 +953,16 @@ describe('recursos e instruções', () => {
     const { resources } = await mcp.client.listResources();
     expect(resources.map((r) => r.uri).sort()).toEqual([
       'mapping-docs://AGENT-GUIDE.md',
+      'mapping-docs://COMPONENT-FORMAT.md',
       'mapping-docs://FORMAT.md',
       'mapping-docs://SPEC-FORMAT.md',
     ]);
-    for (const file of ['AGENT-GUIDE.md', 'FORMAT.md', 'SPEC-FORMAT.md']) {
+    for (const file of [
+      'AGENT-GUIDE.md',
+      'COMPONENT-FORMAT.md',
+      'FORMAT.md',
+      'SPEC-FORMAT.md',
+    ]) {
       const read = await mcp.client.readResource({ uri: `mapping-docs://${file}` });
       expect(read.contents[0]).toMatchObject({
         mimeType: 'text/markdown',
@@ -974,6 +980,7 @@ describe('recursos e instruções', () => {
       'find_types_by_source',
       'get_annotation',
       'get_code_hints',
+      'get_component',
       'get_image',
       'get_image_file',
       'get_marking',
@@ -982,12 +989,15 @@ describe('recursos e instruções', () => {
       'get_proposal',
       'get_proposal_review',
       'get_specialization',
+      'list_components',
       'list_markings',
       'list_projects',
       'list_proposals',
       'plan_changes',
+      'plan_library_update',
       'propose_changes',
       'resolve',
+      'validate_library',
       'validate_specialization',
       'withdraw_proposal',
     ]);
@@ -1010,6 +1020,10 @@ describe('recursos e instruções', () => {
         'find_by_source',
         'find_types_by_source',
         'validate_specialization',
+        'validate_library',
+        'plan_library_update',
+        'list_components',
+        'get_component',
         'list_proposals',
         'get_proposal',
         'get_proposal_review',

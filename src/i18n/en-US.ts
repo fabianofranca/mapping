@@ -1,8 +1,10 @@
 import type { Dictionary } from './pt-BR';
+import { catalogEnUS } from './catalog';
 import { reviewEnUS } from './review';
 
 export const enUS: Dictionary = {
   ...reviewEnUS,
+  ...catalogEnUS,
   'app.title': 'Mapping',
   'app.loading': 'Loading…',
   'narrow.title': 'Open in a larger window',
@@ -34,6 +36,10 @@ export const enUS: Dictionary = {
   'home.newProject': 'New project',
   'home.openFolder': 'Open folder',
   'home.openZip': 'Open zip',
+  'home.openExample': 'Open example project',
+  'home.openExampleHint':
+    'Opens a copy of the example project on this device, the same way Open zip does. Each click creates a new copy.',
+  'home.guide': 'Interactive guide (in Portuguese)',
   'home.recentProjects': 'Recent projects',
   'home.noRecentProjects':
     'No projects yet. Projects on this device and the folders you open show up here.',
@@ -123,9 +129,12 @@ export const enUS: Dictionary = {
   'marking.error.rect-outside-parent': 'The marking must stay inside its parent marking.',
   'marking.error.rect-excludes-children': 'The marking must contain its inner markings.',
   'marking.error.invalid-parent': 'That marking cannot be the parent.',
+  'marking.error.not-arrangeable':
+    'Only a row or column container that has markings inside can be arranged.',
   'marking.error.generic': 'Could not change the marking.',
 
   'image.name': 'Name',
+  'image.blankUntitled': 'Blank screen',
   'image.markingColor': 'Marking line color',
   'image.markingColorTheme': 'Theme color',
   'image.markingColorHint':
@@ -335,6 +344,7 @@ export const enUS: Dictionary = {
   'inconsistent.entity.spec': 'Specialization',
   'invariant.duplicate-id': 'duplicate id',
   'invariant.duplicate-file': 'duplicate file',
+  'invariant.blank-background': 'background color and file together (or neither)',
   'invariant.images-overlap': 'overlaps another image',
   'invariant.missing-image': 'image does not exist',
   'invariant.missing-parent': 'parent does not exist',
@@ -394,6 +404,64 @@ export const enUS: Dictionary = {
     'Existing layers keep their color and annotations. Annotations that become invalid show up as incomplete.',
   'spec.updateBroken': '{count} reference(s) will break.',
   'spec.updateConfirm': 'Update',
+  'spec.updatedPending':
+    '"{name}" updated to version {version}. {count} pending item(s) in Incomplete.',
+  'spec.impact.additive': 'Additive update: the data stays as it is.',
+  'spec.impact.stepsTitle': 'Migration steps',
+  'spec.impact.op.renameType': 'Rename type {from} → {to}',
+  'spec.impact.op.removeTypeConvert': 'Remove type {type} (convert to free annotations)',
+  'spec.impact.op.removeTypeDelete': 'Remove type {type} (delete the annotations)',
+  'spec.impact.op.renameField': 'Rename field {from} → {to} in {type}',
+  'spec.impact.op.removeField': 'Remove field {field} in {type}',
+  'spec.impact.op.mapValues': 'Map values of {field} in {type}: {pairs}',
+  'spec.impact.op.fillField': 'Fill {field} in {type} with {value}',
+  'spec.impact.annotations': '{count} annotation(s)',
+  'spec.impact.values': '{count} value(s)',
+  'spec.impact.converted': '{count} converted',
+  'spec.impact.deleted': '{count} deleted',
+  'spec.impact.refs': '{count} reference(s) updated',
+  'spec.impact.nothing': 'nothing to change in this project',
+  'spec.impact.lossTotal':
+    'This update deletes {values} value(s) and {annotations} annotation(s).',
+  'spec.impact.lossTarget': '{marking} › {name}',
+  'spec.impact.lossDeleted': '{target}: annotation deleted',
+  'spec.impact.lossRemovedField': '{target}: field {field} removed (value "{value}")',
+  'spec.impact.lossReplaced': '{target}: value of {field} replaced (was "{value}")',
+  'spec.impact.lossOverwritten': '{target}: value of {field} overwritten (was "{value}")',
+  'spec.impact.lossMore': '+{count}',
+  'spec.impact.pending':
+    '{count} pending item(s) remain (they open in Incomplete after updating).',
+  'spec.impact.refused':
+    'This update cannot be applied: declared migrations are missing for these breaking changes.',
+  'spec.impact.failedMissing':
+    'Update refused: the new version has breaking changes without a declared migration. Nothing was changed.',
+  'spec.applyFolder': 'Apply folder…',
+  'spec.applyZip': 'Apply zip…',
+  'spec.updateFolder': 'Update from folder…',
+  'spec.updateZip': 'Update from zip…',
+  'spec.packageHint':
+    'A library (version 4) comes in a folder or a zip: the specialization, components, documents and fonts.',
+  'spec.v4NeedsPackage':
+    '"{name}" is a library (version 4) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
+  'spec.packageValidating': 'Checking the package…',
+  'spec.packageReadFailed': 'Could not read the package.',
+  'spec.packageTooBig': 'The package is over the limit ({files} files or {mb} MB).',
+  'spec.packageEmpty': 'The folder or zip has no files.',
+  'spec.packageNoSpec':
+    'The package has no readable specialization: a .json with "format": "mapping-spec" is missing at the root.',
+  'spec.packageTitle': 'Package "{name}"',
+  'spec.packageInvalidTitle': 'Invalid specialization package',
+  'spec.packageSummary':
+    'v{version} · {types} type(s) · {components} component(s) · {docs} document(s) · {fonts} font(s)',
+  'spec.packageCounts': '{errors} error(s) and {warnings} warning(s).',
+  'spec.packageBlocked':
+    'Fix the errors and try again: a package with errors is not applied.',
+  'spec.packageWarningsOk': 'Warnings do not prevent applying.',
+  'spec.packageApplyConfirm': 'Apply',
+  'library.error': 'error',
+  'library.warning': 'warning',
+  'library.package': 'Package',
+  'library.issues': 'Package issues',
   'spec.removeTitle': 'Remove "{name}"?',
   'spec.removeChoose': 'What to do with the specialization layers and annotations?',
   'spec.removeDelete': 'Delete data',
@@ -428,10 +496,22 @@ export const enUS: Dictionary = {
   'diagnostics.col.message': 'Message',
   'diagnostics.unseen': 'new errors',
   'diagnostics.repeated': '({count} times)',
+  'diagnostics.library': 'Library',
+  'diagnostics.libraryHint':
+    'Issues in the copy of the applied library, checked when the project opens.',
+  'diagnostics.libraryItem': '{name}: {errors} error(s) and {warnings} warning(s)',
   'help.open': 'Help',
   'dialog.close': 'Close dialog',
   'help.title': 'Help',
   'help.search': 'Search help',
+  'help.guide.title': 'Interactive guide',
+  'help.guide.intro':
+    'A 12-step tour of the example project: screens, markings, layers, typed annotations, blank screens with Material 3 and reviewing a proposal. It works offline and opens in a new tab. The guide is in Portuguese only.',
+  'help.guide.example':
+    'To see the same project in the app, use Open example project on the home screen (it creates a copy on this device and does not touch any folder).',
+  'help.guide.fileProtocol':
+    "Opened as a standalone file, the app cannot find the guide: it lives in guia/index.html, next to index.html, in the build's dist/ folder and in the published version.",
+  'help.guide.open': 'Open the interactive guide',
   'help.noResults': 'Nothing found for "{query}".',
   'help.shortcuts.title': 'Keyboard shortcuts',
   'help.shortcuts.intro':
@@ -564,6 +644,7 @@ export const enUS: Dictionary = {
   'issue.owner-not-allowed': 'owner type not allowed',
   'issue.broken-ref': 'broken reference',
   'issue.ref-not-accepted': 'target not accepted (lost the tag or is no longer free)',
+  'issue.component-overflow': 'The component does not fit',
   'list.incomplete': 'Incomplete only',
   'list.emptyIncomplete': 'No incomplete annotations in the visible layers.',
   // Detalhes (R5)
@@ -592,6 +673,7 @@ export const enUS: Dictionary = {
   'issue.headingOne': 'Incomplete: 1 issue',
   'issue.headingMany': 'Incomplete: {count} issues',
   'issue.item': '{annotation} · {reason}',
+  'typedForm.refUnavailable': 'Picking a reference only works inside a project.',
   'ref.choosePlaceholder': 'Choose…',
   'ref.fieldButton': '{field}: {value}',
   'ref.goToShortcut': 'Ctrl+click',
@@ -646,6 +728,10 @@ export const enUS: Dictionary = {
   'proposal.error.stale': 'The project or the proposal changed since the last action.',
   'proposal.error.imageMissing': 'The proposal image was not found: {path}',
   'proposal.error.imageExists': 'The project already has an image with this file: {path}',
+  'proposal.error.packageMissing':
+    'The library package files were not found in the proposal: {path}',
+  'proposal.error.packageInvalid':
+    'The proposal library package does not pass validation: {path}',
   'proposal.error.readOnly': 'The project is read-only and cannot take changes.',
   'proposal.error.reviewing': 'Exit the review to delete a proposal.',
   'proposal.error.notRemovable':
@@ -716,4 +802,79 @@ export const enUS: Dictionary = {
     'Definition: in the Details of a typed annotation, one line per platform with a path, like "Platform · File.ext", with the full path and the symbol in the tooltip. It comes from the specialization and is not edited in the app.',
   'help.code.repos':
     'Repositories: in Settings (gear), in the "Code repositories" section, give each platform the file address, with {path}, and the local path of the repository root, relative to the project folder. A platform where some type points to a file, without a repository, raises a warning.',
+  // Component library in the app (Library stage, B3)
+  // Catalog: editor window and the project-less library screen (Library stage, B5)
+  'catalog.window.title': 'Catalog',
+  'catalog.window.components': 'Components',
+  'catalog.window.palette': 'Palette',
+  'catalog.window.tabs': 'Catalog sections',
+  'catalog.window.loading': 'Reading the libraries…',
+  'catalog.window.spec': 'Library',
+  'catalog.home.open': 'Open library',
+  'catalog.home.openHint':
+    "Browse a library's catalog (package folder or zip) without opening a project",
+  'catalog.home.back': 'Back to the home screen',
+  'catalog.home.screen': 'Library catalog',
+  'catalog.home.untitled': 'Untitled library',
+  'catalog.home.version': 'version {version}',
+  'library.empty': 'No library with components applied.',
+  'library.openSpecs': 'Open Specializations',
+  'library.container': 'Container',
+  'library.typeSize': '{width} × {height}',
+  'library.add': 'Add',
+  'library.addType': 'Add {name}',
+  'library.noScreen': 'Select or center a screen',
+  'library.readOnly': 'The project is read-only.',
+  'library.error.generic': 'Could not add the component.',
+  'library.error.rect-out-of-image': 'The component does not fit on this screen.',
+  'library.error.locked': 'The screen or the container is locked.',
+  'blank.new': 'New blank screen',
+  'blank.name': 'Name',
+  'blank.width': 'Width',
+  'blank.height': 'Height',
+  'blank.background': 'Background color',
+  'blank.backgroundHint': 'In the #RRGGBB format.',
+  'blank.preset': 'Preset size',
+  'blank.preset.custom': 'Custom',
+  'blank.preset.phone': 'Phone',
+  'blank.preset.phoneLarge': 'Large phone',
+  'blank.preset.tablet': 'Tablet',
+  'blank.preset.desktop': 'Desktop',
+  'blank.create': 'Create screen',
+  'blank.intro':
+    'A screen without a photo: use it to compose screens with the library components. Width and height in pixels.',
+  'blank.error.name': 'Give the screen a name.',
+  'blank.error.size': 'Width and height are whole numbers from 1 to {max}.',
+  'blank.error.color': 'Use a color in the #RRGGBB format.',
+  'blank.error.generic': 'Could not change the screen.',
+  'blank.error.locked': 'The screen is locked.',
+  'blank.error.rect-out-of-image': 'Some marking would no longer fit on the screen.',
+  'marking.order': 'Order',
+  'marking.orderValue': '{index} of {count}',
+  'marking.orderHint':
+    'Position among sibling markings: the last one is drawn on top of the others.',
+  'marking.orderBack': 'Move backward',
+  'marking.orderFront': 'Move forward',
+  'arrange.action': 'Arrange',
+  'arrange.hint': "Arranges the inner markings by the container's layout.",
+  'arrange.done': 'Arranged',
+  'arrange.doneWarnings': 'Arranged with {count} warning(s): {first}',
+  'arrange.nothing': 'Nothing to arrange',
+  'shortcuts.arrange': 'Arrange the selected container',
+  'view.componentsOnPhotos': 'Show components over photos',
+  'view.componentsOnPhotosHint':
+    'Draws the component over the photo. On blank screens it always shows.',
+  'diagnostics.components': 'Components',
+  'diagnostics.componentsHint':
+    'Fonts that did not load, components that could not be read and drawing warnings.',
+  'diagnostics.fonts': 'Fonts',
+  'diagnostics.fontItem': '{family} · weight {weight} · {style}',
+  'diagnostics.fontStyle.normal': 'normal',
+  'diagnostics.fontStyle.italic': 'italic',
+  'diagnostics.fontMissing': 'missing: using the system font',
+  'diagnostics.fontFailed': 'failed to load: {detail}',
+  'diagnostics.catalogProblems': 'Components that did not load',
+  'diagnostics.drawWarnings': 'Drawing warnings',
+  'diagnostics.overflowCount': '{count} marking(s) with a component that does not fit',
+  'diagnostics.selectMarking': 'Select {name}',
 };

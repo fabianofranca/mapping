@@ -1,0 +1,79 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "m3-column",
+  "name": "Column",
+  "description": "Container vertical do Compose: os filhos se empilham pela ordem, com spacing e padding.",
+  "size": {
+    "width": 380,
+    "height": 200
+  },
+  "minSize": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "background": "none",
+    "shape": "none",
+    "spacing": 8,
+    "padding": 0
+  },
+  "template": {
+    "type": "frame",
+    "name": "m3-column",
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$switch": "background",
+      "cases": {
+        "surface": "#FEF7FF",
+        "surface-container": "#F3EDF7",
+        "primary-container": "#EADDFF",
+        "secondary-container": "#E8DEF8"
+      },
+      "default": "rgba(0, 0, 0, 0)"
+    },
+    "cornerRadius": {
+      "$switch": "shape",
+      "cases": {
+        "small": 8,
+        "medium": 12,
+        "large": 16,
+        "extra-large": 28
+      },
+      "default": 0
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "label": "Column",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "column",
+          "gap": {
+            "$field": "spacing",
+            "default": 8
+          },
+          "padding": {
+            "$field": "padding",
+            "default": 0
+          },
+          "align": "start",
+          "justify": "start"
+        }
+      }
+    ]
+  }
+}

@@ -25,6 +25,17 @@ function NoteArea({ target, note, readOnly, focusSeq, onSettled }: NoteAreaProps
   const { report } = useReviewCommands();
   const [text, setText] = useState(note?.text ?? '');
   const area = useRef<HTMLTextAreaElement>(null);
+  // O campo sai do DOM com o foco dentro (a decisão troca o cartão e remonta o popover): o
+  // navegador dispara o `blur` na remoção, e esse não é "a pessoa saiu do campo". Gravar o
+  // texto vale; esconder o campo e apagar o pedido da nota sugerida não, senão o campo novo
+  // (que cumpre o pedido ao montar) nasce sem pedido. O cleanup roda antes de o DOM sair.
+  const leaving = useRef(false);
+  useLayoutEffect(
+    () => () => {
+      leaving.current = true;
+    },
+    [],
+  );
   // O foco vai ao campo no commit que o desenha, nunca depois (modelo de foco da etapa 8).
   useLayoutEffect(() => {
     if (focusSeq > 0) area.current?.focus();
@@ -43,7 +54,7 @@ function NoteArea({ target, note, readOnly, focusSeq, onSettled }: NoteAreaProps
     } else if (!empty) {
       void review.addNote(target, value).then(check);
     }
-    onSettled(empty);
+    if (!leaving.current) onSettled(empty);
   };
   return (
     <TextArea

@@ -54,15 +54,21 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'annotation',
 ];
 
-/** Campos alterados de uma imagem (`file` é a troca: `{ file, width, height }`). */
+/**
+ * Campos alterados de uma imagem (`file` é a troca: `{ file, width, height }`). `background` e
+ * `size` (`{ width, height }`) só existem na tela em branco (v10).
+ */
 export const IMAGE_FIELDS = [
   'name',
   'file',
+  'background',
+  'size',
   'placement',
   'markingColor',
   'locked',
   'source',
 ] as const;
+/** `position` de marcação: índice entre as irmãs (mesma imagem e mesmo pai), só quando a ordem relativa muda. */
 export const MARKING_FIELDS = [
   'name',
   'rect',
@@ -70,6 +76,7 @@ export const MARKING_FIELDS = [
   'imageId',
   'locked',
   'source',
+  'position',
 ] as const;
 /**
  * Campos fixos de uma anotação. Além deles: `values.<key>` (um campo da tipada) e
@@ -185,6 +192,14 @@ export function proposalImagePath(proposalId: string, file: string): string {
   return `${proposalDir(proposalId)}/${file}`;
 }
 
+/**
+ * Onde os arquivos do pacote de biblioteca esperam a aceitação: `proposals/<id>/` mais a
+ * pasta definitiva (`specs/material3` → `proposals/<id>/specs/material3`).
+ */
+export function proposalPackageDir(proposalId: string, dir: string): string {
+  return `${proposalDir(proposalId)}/${dir}`;
+}
+
 // ---------------------------------------------------------------------------
 // Validação (zod)
 
@@ -203,6 +218,11 @@ const optionalText = z.string().nullable();
 
 const imageFileValue = z.object({
   file: z.string().min(1),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+
+const imageSizeValue = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
 });
@@ -264,6 +284,8 @@ const entitySchemas: Record<ChangeEntity, z.ZodType> = {
 const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   name: z.string().nullable(),
   file: imageFileValue,
+  background: hexColor,
+  size: imageSizeValue,
   placement: placementSchema,
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
@@ -277,6 +299,7 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
   imageId: id,
   locked: z.boolean(),
   source: sourceSchema.nullable(),
+  position: z.number().int().min(0),
 };
 
 const annotationFieldSchemas: Record<(typeof ANNOTATION_FIELDS)[number], z.ZodType> = {
@@ -396,7 +419,7 @@ const changeSchema = z
         add(['field'], `"${c.field}" não é um campo de ${c.entity}`);
         return;
       }
-      // Camada criada nesta proposta e reposicionada: `from` é `null`.
+      // Camada ou marcação criada nesta proposta e reposicionada: `from` é `null`.
       const fromSchema = c.field === 'position' ? schema.nullable() : schema;
       checkValue(fromSchema, c.from, ctx, ['from']);
       checkValue(schema, c.to, ctx, ['to']);

@@ -22,7 +22,8 @@ import {
   specializationValue,
   toJson,
 } from './proposalValues';
-import type { Annotation, JsonValue, Project } from './types';
+import { siblingPosition } from './markings';
+import type { Annotation, JsonValue, Marking, Project } from './types';
 
 // Cálculo das mudanças (etapa 4): quem envia a proposta aplica as operações a uma cópia
 // do projeto com as operações puras do modelo (o lote do MCP, `mcp/batch.ts`) e entrega
@@ -60,6 +61,43 @@ function longestIncreasing(seq: readonly number[]): Set<number> {
     k = prev[k] as number;
   }
   return keep;
+}
+
+/**
+ * Ordem entre irmãs (mesma imagem e mesmo pai): quem sai da maior subsequência crescente da
+ * ordem do array muda de posição. O array aplicado é o de antes, com as criadas no fim (na
+ * ordem de depois); reparentar não mexe no array. `from` é o índice entre as irmãs de antes
+ * (`null` na criada); `to`, o índice entre as irmãs de depois.
+ */
+function markingPositions(diff: Diff, base: Project, after: Project): void {
+  const baseIds = new Set(base.markings.map((m) => m.id));
+  const rank = new Map<string, number>(base.markings.map((m, i) => [m.id, i]));
+  after.markings
+    .filter((m) => !baseIds.has(m.id))
+    .forEach((m, i) => rank.set(m.id, base.markings.length + i));
+  const groups = new Map<string, Marking[]>();
+  for (const m of after.markings) {
+    const key = `${m.imageId}|${m.parentId ?? ''}`;
+    const group = groups.get(key);
+    if (group) group.push(m);
+    else groups.set(key, [m]);
+  }
+  for (const group of groups.values()) {
+    const keep = longestIncreasing(group.map((m) => rank.get(m.id) ?? 0));
+    group.forEach((m, i) => {
+      if (keep.has(i)) return;
+      diff.push({
+        entity: 'marking',
+        entityId: m.id,
+        imageId: m.imageId,
+        markingId: m.id,
+        kind: 'update',
+        field: 'position',
+        from: baseIds.has(m.id) ? siblingPosition(base, m.id).index : null,
+        to: i,
+      });
+    });
+  }
 }
 
 class Diff {
@@ -146,8 +184,8 @@ function annotationChanges(
  * marcações e anotações; em cada coleção, a ordem de depois e, no fim, as removidas. A
  * revisão agrupa por imagem e item (`reviewTree`), então essa ordem só garante que
  * aplicar tudo acrescenta as entidades criadas na mesma ordem do projeto proposto.
- * A ordem dos pares e das marcações dentro da lista não vira mudança; a das camadas vira
- * (`position`, só para as que mudam de ordem relativa). `needsReview` não vira mudança:
+ * A ordem dos pares dentro da lista não vira mudança; a das camadas e a das marcações irmãs
+ * vira (`position`, só para as que mudam de ordem relativa). `needsReview` não vira mudança:
  * a revisão é a própria conferência (a criação leva o valor de depois).
  */
 export function computeChanges(base: Project, after: Project): Change[] {
@@ -308,9 +346,10 @@ export function computeChanges(base: Project, after: Project): Change[] {
       afterMarkings.get(m.id),
       markingValue,
       COMPARED_FIELDS.marking,
-      markingField,
+      (marking, f) => markingField(after, marking, f),
     );
   }
+  markingPositions(diff, base, after);
   for (const a of union(after.annotations, base.annotations, afterAnnotations)) {
     const marking = afterMarkings.get(a.markingId) ?? baseMarkings.get(a.markingId);
     annotationChanges(

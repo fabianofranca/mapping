@@ -19,6 +19,15 @@ const restrictedGlobals = [
   message: 'src/model/ não pode depender de APIs de navegador (veja CLAUDE.md).',
 }));
 
+// Grupos de import do src/model/ (o bloco do subdiretório muda só o alcance do relativo).
+const modelPackageGroup = {
+  group: ['konva', 'konva/*', 'idb', 'jszip', 'preact', 'preact/*', '@preact/*'],
+  message: 'src/model/ não pode importar UI, canvas nem storage.',
+};
+const modelRelativeGroup = (group) => ({
+  group: [group],
+  message: 'src/model/ só pode importar arquivos do próprio model.',
+});
 // mcp/ roda só no Node e não faz rede: ele lê e grava arquivos locais (veja PLAN.md, etapa 3a).
 const networkGlobals = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map(
   (name) => ({ name, message: 'mcp/ não faz requisições de rede.' }),
@@ -278,24 +287,20 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            {
-              group: [
-                'konva',
-                'konva/*',
-                'idb',
-                'jszip',
-                'preact',
-                'preact/*',
-                '@preact/*',
-              ],
-              message: 'src/model/ não pode importar UI, canvas nem storage.',
-            },
-            {
-              group: ['../*'],
-              message: 'src/model/ só pode importar arquivos do próprio model.',
-            },
-          ],
+          patterns: [modelPackageGroup, modelRelativeGroup('../*')],
+        },
+      ],
+    },
+  },
+  // src/model/components/ (motor dos componentes, fase B1): continua valendo tudo do bloco
+  // anterior; só o alcance do import relativo muda, porque daqui `../x` ainda é o model.
+  {
+    files: ['src/model/*/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [modelPackageGroup, modelRelativeGroup('../../*')],
         },
       ],
     },
@@ -317,6 +322,8 @@ export default tseslint.config(
   { files: ['*.config.{js,ts}'], languageOptions: { globals: globals.node } },
   // Fase 8.5: o gancho de disco dos testes do MCP (`tests/mcp/fsHooks.mjs`) roda no Node.
   { files: ['tests/mcp/**/*.mjs'], languageOptions: { globals: globals.node } },
+  // Cliente MCP por stdio do agente testador (docs/TESTING.md, apêndice A): roda no Node.
+  { files: ['scripts/testing/**/*.mjs'], languageOptions: { globals: globals.node } },
   // Fase 8.5: os três módulos do servidor que gravam, e o script de build (`build.mjs`, que gera
   // o `dist-mcp/` e não entra no bundle). No flat config, este bloco substitui a regra do bloco
   // "Servidor MCP" nesses arquivos: repete as restrições antigas (`mcpImportPatterns`) e só

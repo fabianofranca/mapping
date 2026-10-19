@@ -139,6 +139,78 @@ const SOURCES_EXCERPT = `{
   ]
 }`;
 
+/** Trecho da declaração de origem executável (`origins`, v4). */
+const ORIGINS_EXCERPT = `{
+  "origins": [
+    {
+      "system": "sdui",
+      "node": { "type": "type", "props": "props", "children": "children" },
+      "screen": {
+        "id": { "path": "screen.id" },
+        "width": { "path": "screen.device.width" },
+        "height": { "path": "screen.device.height" },
+        "background": {
+          "path": "screen.background",
+          "values": { "surface": "#FEF7FF" },
+          "default": "#FFFFFF"
+        },
+        "roots": [
+          { "path": "content" },
+          { "path": "bottomBar", "anchor": "bottom" },
+          {
+            "path": "floating[*]",
+            "anchor": { "path": "anchor" },
+            "margin": { "path": "margin" }
+          },
+          { "path": "modal", "anchor": "bottom", "scrim": "m3-scrim" }
+        ]
+      },
+      "booleans": { "true": "sim", "false": "não" },
+      "examples": [{ "name": "Configurações", "file": "examples/settings.sdui.json" }]
+    }
+  ]
+}`;
+
+/** A árvore de um pacote de biblioteca (a pasta da especialização, v4). */
+const PACKAGE_TREE = `material3/
+  material3.spec.json          a especialização (formatVersion 4)
+  components/m3-button.json    um arquivo por componente (mapping-component)
+  docs/m3-button.md            o documento markdown do tipo
+  examples/settings.sdui.json  uma tela de exemplo de um sistema externo
+  fonts/Roboto-Regular.ttf     as fontes do desenho
+  fonts/LEIA-ME.txt`;
+
+/** Trecho do contrato de versão (`migrations`, v4). */
+const MIGRATIONS_EXCERPT = `{
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [
+        { "op": "rename-field", "type": "button", "from": "texto", "to": "label" },
+        {
+          "op": "map-values",
+          "type": "button",
+          "field": "variant",
+          "values": { "primary": "filled" }
+        },
+        { "op": "fill-field", "type": "button", "field": "size", "default": "md" },
+        { "op": "rename-type", "from": "chip", "to": "tag" },
+        { "op": "remove-field", "type": "tag", "field": "legacy" },
+        { "op": "remove-type", "type": "badge", "mode": "convert" }
+      ]
+    }
+  ]
+}`;
+
+/** Um problema do validador da biblioteca. */
+const ISSUE_EXCERPT = `{
+  "file": "material3.spec.json",
+  "path": "layers[0].annotationTypes[2].component",
+  "message": "arquivo não encontrado: components/m3-fab.json",
+  "severity": "error"
+}`;
+
 const ptBR: readonly HelpSection[] = [
   {
     id: 'concept',
@@ -155,6 +227,7 @@ const ptBR: readonly HelpSection[] = [
           'Uma especialização não cita outra pelo nome. A ligação entre elas é feita por referências fortes (tipo ref), que escolhem os alvos por etiquetas.',
           'Camadas da especialização só aceitam anotações tipadas, sem chaves extras. Camadas criadas por você continuam livres.',
           'A especialização aplicada é copiada para specs/<id>.json dentro do projeto, que fica autocontido.',
+          'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
         ],
       },
     ],
@@ -165,7 +238,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1, 2 ou 3), id, name e version (inteiro ≥ 1) são obrigatórios; description e platforms são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 4), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms e, na versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -190,6 +263,18 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'code',
             text: 'Opcional (formatVersion 2). Como o tipo vira código em cada plataforma declarada.',
+          },
+          {
+            term: 'component',
+            text: 'Opcional (formatVersion 4). Caminho do arquivo .json do componente que desenha o tipo.',
+          },
+          {
+            term: 'doc',
+            text: 'Opcional (formatVersion 4). Caminho do documento .md do tipo.',
+          },
+          {
+            term: 'examples',
+            text: 'Opcional (formatVersion 4). Exemplos nomeados: valores dos campos do tipo ou o JSON de um sistema externo.',
           },
         ],
       },
@@ -359,7 +444,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'A formatVersion 3 diz a que elementos de um sistema externo (uma ferramenta de design, outro catálogo de componentes…) cada tipo corresponde e de que propriedade de origem vem cada campo. É o que um agente de importação usa para saber que componente vira que tipo, sem deduzir pelo nome; as propostas que ele cria usam essa correspondência. O app não interpreta system nem os nomes: só valida a estrutura.',
+        text: 'A formatVersion 3 diz a que elementos de um sistema externo (uma ferramenta de design, outro catálogo de componentes…) cada tipo corresponde e de que propriedade de origem vem cada campo. É o que um agente de importação usa para saber que componente vira que tipo, sem deduzir pelo nome; as propostas que ele cria usam essa correspondência. O app não interpreta system nem os nomes: só valida a estrutura. Na formatVersion 4, um sistema declarado em origins é executável: a especialização diz como ler o JSON dele e montar uma tela de componentes.',
       },
       { kind: 'code', code: SOURCES_EXCERPT },
       {
@@ -381,7 +466,149 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'sources só existe na formatVersion 3: uma versão anterior do app recusa o arquivo com a mensagem de versão, em vez de ignorar as origens.',
+        text: 'sources só existe a partir da formatVersion 3: nas versões 1 e 2 o arquivo é recusado com a mensagem de versão, em vez de ignorar as origens.',
+      },
+      {
+        kind: 'p',
+        text: 'Num sistema executável (declarado em origins, formatVersion 4):',
+      },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'path',
+            text: 'Na origem de um campo ou coluna: o caminho do valor dentro das props do nó externo (a.b[0].c, sem [*]). Obrigatório num sistema declarado em origins e proibido nos demais; name passa a ser só o nome de exibição.',
+          },
+          {
+            term: 'slot',
+            text: 'Na origem de um tipo: o nome do slot do componente que recebe os filhos do nó externo.',
+          },
+          {
+            term: 'ignore',
+            text: 'Na origem de um tipo: props que o nó externo traz e o desenho não usa (sem aviso de propriedade desconhecida).',
+          },
+          {
+            term: 'origins',
+            text: 'Na raiz: a declaração executável de cada sistema, com node (chaves do nó), screen (largura, altura, fundo e raízes com âncora e película), booleans e examples (telas de exemplo). O app executa a declaração, nunca código da especialização.',
+          },
+        ],
+      },
+      { kind: 'code', code: ORIGINS_EXCERPT },
+    ],
+  },
+  {
+    id: 'package',
+    title: 'Biblioteca: o pacote',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'Com a formatVersion 4, uma especialização é uma biblioteca: um pacote, que é a pasta da especialização com tudo o que ela cita. Todo caminho citado é relativo ao arquivo da especialização, com /, sem .. nem letra de unidade, e termina na extensão esperada.',
+      },
+      { kind: 'code', code: PACKAGE_TREE },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'component',
+            text: 'Em cada tipo: o arquivo .json do componente que o desenha (formato em docs/COMPONENT-FORMAT.md). Opcional: um tipo sem componente continua valendo, só não tem desenho.',
+          },
+          { term: 'doc', text: 'Em cada tipo: o documento markdown (.md) do tipo.' },
+          {
+            term: 'examples',
+            text: 'Em cada tipo: exemplos com name único e um só modo, values (valores dos campos do tipo; table e ref não entram) ou system com file (o JSON de um nó de um sistema de origins).',
+          },
+          {
+            term: 'fonts',
+            text: 'Na raiz: lista de { family, file, weight?, style? } com arquivo .ttf, .otf, .woff ou .woff2. Fonte ausente avisa e o desenho usa a fonte do sistema.',
+          },
+          {
+            term: 'origins',
+            text: 'Na raiz: a declaração de origem executável (seção anterior), com telas de exemplo em examples.',
+          },
+          {
+            term: 'migrations',
+            text: 'Na raiz: o contrato de versão (próxima seção).',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'No app, Especializações › Aplicar pasta… (Chrome e Edge) ou Aplicar zip… confere o pacote pelos três níveis: erros bloqueiam, avisos deixam aplicar. Aplicar copia a pasta inteira para specs/<id>/ no projeto; Atualizar de pasta… ou de zip… regrava a cópia e Remover a apaga. Um arquivo .json v4 isolado é recusado: a biblioteca precisa da pasta inteira. O repositório traz um pacote completo, o Material 3, em examples/libraries/material3/, gerado por npm run build:examples.',
+      },
+    ],
+  },
+  {
+    id: 'contract',
+    title: 'Contrato de versão',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'version é a versão do pacote. Ao subir a versão, cada diferença é aditiva (só acrescenta: tipo, campo opcional, opção de enum, componente, documento, exemplo, fonte, ou um desenho novo sem mudar os campos) ou quebra (remove ou renomeia tipo, campo ou opção de enum, torna um campo obrigatório ou muda o type de um campo). Camadas, labelField, allowedChildren, requiresOwner, description, tags, code, platforms e sources ficam fora do contrato.',
+      },
+      {
+        kind: 'p',
+        text: 'Toda quebra precisa de um passo em migrations, que liga duas versões do pacote (from e to) e lista passos declarativos. Um campo pode ser citado por key ou por tabela.coluna.',
+      },
+      { kind: 'code', code: MIGRATIONS_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          { term: 'rename-type', text: 'Tipo renomeado (from → to).' },
+          {
+            term: 'remove-type',
+            text: 'Tipo removido; mode (convert ou delete) diz o destino das anotações.',
+          },
+          { term: 'rename-field', text: 'Campo renomeado (from → to).' },
+          { term: 'remove-field', text: 'Campo removido.' },
+          {
+            term: 'map-values',
+            text: 'Opção de enum removida: cada valor antigo aponta para uma option atual.',
+          },
+          {
+            term: 'fill-field',
+            text: 'Campo que passou a obrigatório, campo novo obrigatório ou type trocado: o default entra no lugar.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'Ao atualizar, a app executa os passos da cadeia sobre as anotações do projeto e mostra antes o impacto: os passos com suas contagens, as perdas em destaque (valores ou anotações apagados) e as pendências que abrem em Incompletas. Uma quebra sem passo recusa a atualização, e Desfazer devolve a biblioteca e os dados juntos.',
+      },
+    ],
+  },
+  {
+    id: 'librarycheck',
+    title: 'Validação da biblioteca',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'Um pacote é validado em três níveis, na ordem. Erro impede usar; aviso deixa usar.',
+      },
+      {
+        kind: 'list',
+        items: [
+          'Nível 1, cada arquivo isolado e estrito: a especialização, cada componente citado e cada documento. Arquivo citado e ausente é erro; arquivo do pacote que ninguém cita é aviso.',
+          'Nível 2, coerência entre arquivos: o slot declarado existe no componente, os campos que o desenho usa existem no tipo (erro), os arquivos dos exemplos existem, o scrim é um tipo, a fonte tem arquivo (aviso) e, com a versão anterior, o contrato de versão.',
+          'Nível 3, prova de desenho: cada componente é desenhado com o preview e com cada exemplo, no tamanho inicial e no mínimo, e cada exemplo de sistema externo passa pela declaração. Os avisos do motor levam (aproximado), porque fora do navegador o texto é medido de forma aproximada.',
+        ],
+      },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'error',
+            text: 'Impede usar o pacote (arquivo ausente ou inválido, campo inexistente no desenho, quebra de versão sem passo).',
+          },
+          {
+            term: 'warning',
+            text: 'Deixa usar: fonte ausente, arquivo sem uso, campo que o desenho não usa, conteúdo maior que a caixa.',
+          },
+        ],
+      },
+      { kind: 'code', code: ISSUE_EXCERPT },
+      {
+        kind: 'p',
+        text: 'O pacote Material 3 do repositório passa com zero erros e 42 avisos (duas fontes ausentes e 40 de conteúdo maior que a caixa na prova de desenho). O app, o servidor MCP e a skill vão chamar a mesma validação; isso chega em uma fase seguinte da etapa Biblioteca.',
       },
     ],
   },
@@ -396,7 +623,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1, 2 ou 3), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 4), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
@@ -404,9 +631,10 @@ const ptBR: readonly HelpSection[] = [
           'columns só com tipos simples; rowLabel obrigatório em table com tags e apontando para uma coluna string;',
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
-          'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) só na formatVersion 3;',
+          'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
           'code só em especializações com platforms; os ids de code precisam existir em platforms;',
           'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório e path, se houver, relativo à raiz do repositório;',
+          'formatVersion 4: fonts, origins, migrations, component, doc e examples só na versão 4, com caminhos do pacote relativos e a extensão certa; fonts sem par family + weight + style repetido; examples com name único e um só modo; path só em sistema declarado em origins (e obrigatório nele), slot e ignore só nele; migrations com from e to coerentes e passos que citam tipos e campos que existem;',
           'color no formato #RRGGBB; propriedades desconhecidas são rejeitadas.',
         ],
       },
@@ -447,6 +675,7 @@ const enUS: readonly HelpSection[] = [
           'A specialization never names another one. They are linked through strong references (ref type), which pick their targets by tags.',
           'Specialization layers only accept typed annotations, with no extra keys. Layers you create yourself stay free-form.',
           'The applied specialization is copied to specs/<id>.json inside the project, which stays self-contained.',
+          'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
         ],
       },
     ],
@@ -457,7 +686,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1, 2 or 3), id, name and version (integer ≥ 1) are required; description and platforms are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 4), id, name and version (integer ≥ 1) are required; description, platforms and, in version 4, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -485,6 +714,18 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'code',
             text: 'Optional (formatVersion 2). How the type becomes code on each declared platform.',
+          },
+          {
+            term: 'component',
+            text: 'Optional (formatVersion 4). Path of the .json component file that draws the type.',
+          },
+          {
+            term: 'doc',
+            text: 'Optional (formatVersion 4). Path of the type’s .md document.',
+          },
+          {
+            term: 'examples',
+            text: 'Optional (formatVersion 4). Named examples: values of the type’s fields or the JSON of an external system.',
           },
         ],
       },
@@ -654,7 +895,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'formatVersion 3 states which elements of an external system (a design tool, another component catalog…) each type corresponds to, and which source property each field comes from. An import agent uses it to know which component becomes which type without guessing from the name; the proposals it creates rely on this mapping. The app does not interpret system or the names: it only validates the structure.',
+        text: 'formatVersion 3 states which elements of an external system (a design tool, another component catalog…) each type corresponds to, and which source property each field comes from. An import agent uses it to know which component becomes which type without guessing from the name; the proposals it creates rely on this mapping. The app does not interpret system or the names: it only validates the structure. In formatVersion 4, a system declared in origins is executable: the specialization says how to read its JSON and build a screen of components.',
       },
       { kind: 'code', code: SOURCES_EXCERPT },
       {
@@ -676,7 +917,149 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'sources only exists in formatVersion 3: an older version of the app rejects the file with the version message instead of ignoring the sources.',
+        text: 'sources only exists from formatVersion 3 on: in versions 1 and 2 the file is rejected with the version message instead of ignoring the sources.',
+      },
+      {
+        kind: 'p',
+        text: 'In an executable system (declared in origins, formatVersion 4):',
+      },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'path',
+            text: 'In a field or column source: the path of the value inside the external node’s props (a.b[0].c, no [*]). Required in a system declared in origins and forbidden in the others; name becomes just the display name.',
+          },
+          {
+            term: 'slot',
+            text: 'In a type source: the name of the component slot that receives the external node’s children.',
+          },
+          {
+            term: 'ignore',
+            text: 'In a type source: props the external node carries and the drawing does not use (no unknown-property warning).',
+          },
+          {
+            term: 'origins',
+            text: 'At the root: the executable declaration of each system, with node (node keys), screen (width, height, background and roots with anchor and scrim), booleans and examples (example screens). The app runs the declaration, never code from the specialization.',
+          },
+        ],
+      },
+      { kind: 'code', code: ORIGINS_EXCERPT },
+    ],
+  },
+  {
+    id: 'package',
+    title: 'Library: the package',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'With formatVersion 4, a specialization is a library: a package, which is the specialization folder with everything it cites. Every cited path is relative to the specialization file, with /, no .. or drive letter, and ends in the expected extension.',
+      },
+      { kind: 'code', code: PACKAGE_TREE },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'component',
+            text: 'On each type: the .json component file that draws it (format in docs/COMPONENT-FORMAT.md). Optional: a type without a component is still valid, it just has no drawing.',
+          },
+          { term: 'doc', text: 'On each type: the type’s markdown (.md) document.' },
+          {
+            term: 'examples',
+            text: 'On each type: examples with a unique name and a single mode, values (values of the type’s fields; table and ref are not accepted) or system with file (the JSON of a node of an origins system).',
+          },
+          {
+            term: 'fonts',
+            text: 'At the root: list of { family, file, weight?, style? } with a .ttf, .otf, .woff or .woff2 file. A missing font warns and the drawing uses the system font.',
+          },
+          {
+            term: 'origins',
+            text: 'At the root: the executable origin declaration (previous section), with example screens in examples.',
+          },
+          {
+            term: 'migrations',
+            text: 'At the root: the version contract (next section).',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'In the app, Specializations › Apply folder… (Chrome and Edge) or Apply zip… checks the package through the three levels: errors block, warnings let you apply. Applying copies the whole folder to specs/<id>/ in the project; Update from folder… or from zip… rewrites the copy and Remove deletes it. A lone v4 .json file is refused: the library needs the whole folder. The repository ships a complete package, Material 3, in examples/libraries/material3/, generated by npm run build:examples.',
+      },
+    ],
+  },
+  {
+    id: 'contract',
+    title: 'Version contract',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'version is the package version. When it goes up, each difference is additive (it only adds: a type, an optional field, an enum option, a component, a document, an example, a font, or a new drawing without changing the fields) or breaking (it removes or renames a type, a field or an enum option, makes a field required or changes a field’s type). Layers, labelField, allowedChildren, requiresOwner, description, tags, code, platforms and sources are outside the contract.',
+      },
+      {
+        kind: 'p',
+        text: 'Every breaking change needs a step in migrations, which links two package versions (from and to) and lists declarative steps. A field can be cited by key or by table.column.',
+      },
+      { kind: 'code', code: MIGRATIONS_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          { term: 'rename-type', text: 'Type renamed (from → to).' },
+          {
+            term: 'remove-type',
+            text: 'Type removed; mode (convert or delete) says where its annotations go.',
+          },
+          { term: 'rename-field', text: 'Field renamed (from → to).' },
+          { term: 'remove-field', text: 'Field removed.' },
+          {
+            term: 'map-values',
+            text: 'Enum option removed: each old value points to a current option.',
+          },
+          {
+            term: 'fill-field',
+            text: 'Field that became required, new required field or changed type: the default takes its place.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'When updating, the app runs the chain steps on the project’s annotations and shows the impact first: the steps with their counts, the losses highlighted (deleted values or annotations) and the pending items that open in Incomplete. A breaking change without a step refuses the update, and Undo restores the library and the data together.',
+      },
+    ],
+  },
+  {
+    id: 'librarycheck',
+    title: 'Library validation',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A package is validated on three levels, in order. An error prevents use; a warning allows it.',
+      },
+      {
+        kind: 'list',
+        items: [
+          'Level 1, each file alone and strict: the specialization, each cited component and each document. A cited file that is missing is an error; a package file nobody cites is a warning.',
+          'Level 2, consistency between files: the declared slot exists in the component, the fields the drawing uses exist in the type (error), the example files exist, the scrim is a type, the font has a file (warning) and, with the previous version, the version contract.',
+          'Level 3, drawing proof: each component is drawn with the preview and with each example, at the initial and the minimum size, and each external-system example goes through the declaration. Engine warnings carry (aproximado), because outside the browser the text is measured approximately.',
+        ],
+      },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'error',
+            text: 'Prevents using the package (missing or invalid file, a field the drawing uses that does not exist, a version break without a step).',
+          },
+          {
+            term: 'warning',
+            text: 'Allows use: missing font, unused file, a field the drawing does not use, content larger than the box.',
+          },
+        ],
+      },
+      { kind: 'code', code: ISSUE_EXCERPT },
+      {
+        kind: 'p',
+        text: 'The repository’s Material 3 package passes with zero errors and 42 warnings (two missing fonts and 40 of content larger than the box in the drawing proof). The app, the MCP server and the skill will call the same validation; that arrives in a later phase of the Library stage.',
       },
     ],
   },
@@ -691,7 +1074,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1, 2 or 3), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 4), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
@@ -699,9 +1082,10 @@ const enUS: readonly HelpSection[] = [
           'columns with simple types only; rowLabel required on a table with tags and pointing to a string column;',
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
-          'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) only in formatVersion 3;',
+          'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
           'code only in specializations with platforms; the ids in code must exist in platforms;',
           'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required and path, if present, relative to the repository root;',
+          'formatVersion 4: fonts, origins, migrations, component, doc and examples only in version 4, with relative package paths and the right extension; fonts without a repeated family + weight + style; examples with a unique name and a single mode; path only in a system declared in origins (and required there), slot and ignore only there; migrations with coherent from and to and steps that cite types and fields that exist;',
           'color in the #RRGGBB format; unknown properties are rejected.',
         ],
       },

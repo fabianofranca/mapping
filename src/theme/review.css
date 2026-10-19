@@ -291,10 +291,12 @@
 }
 
 .proposal-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--size-proposal-col-counts) auto;
+  /* Em janela estreita as contagens e a ação descem para a linha de baixo, em vez de
+     espremer o título. */
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  column-gap: var(--space-3);
+  gap: var(--space-1-5) var(--space-3);
   padding: var(--space-1-5) var(--space-3);
   border-bottom: 1px solid var(--color-border);
 }
@@ -304,6 +306,7 @@
 }
 
 .proposal-row-main {
+  flex: 1 1 var(--size-proposal-col-counts);
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
@@ -344,6 +347,7 @@
 }
 
 .proposal-row-counts {
+  flex: 0 1 var(--size-proposal-col-counts);
   display: flex;
   flex-direction: column;
   gap: var(--space-0-5);
@@ -371,6 +375,8 @@
 }
 
 .proposal-row-action {
+  flex: none;
+  margin-left: auto;
   display: flex;
   gap: var(--space-2);
   justify-content: flex-end;
@@ -641,8 +647,9 @@
 .review-levels-head,
 .review-row {
   display: grid;
+  /* O resumo encolhe (com reticências) antes de o nome ser cortado: nada passa por cima. */
   grid-template-columns:
-    minmax(0, 1fr) var(--size-review-col-summary)
+    minmax(var(--size-review-col-name-min), 1fr) minmax(0, var(--size-review-col-summary))
     calc(2 * var(--control-height-sm) + var(--space-3));
   align-items: center;
   column-gap: var(--space-2);
@@ -700,6 +707,7 @@
 }
 
 .review-row-name {
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: var(--space-1-5);

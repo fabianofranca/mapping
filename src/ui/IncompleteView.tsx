@@ -40,12 +40,18 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
         </p>
       ) : (
         <div class="list-scroll">
-          <table class="list-table" aria-label={t('incomplete.title')}>
+          <table class="list-table list-table-fixed" aria-label={t('incomplete.title')}>
             <thead>
               <tr>
-                <th scope="col">{t('list.col.marking')}</th>
-                <th scope="col">{t('list.col.layer')}</th>
-                <th scope="col">{t('list.col.annotation')}</th>
+                <th scope="col" class="list-col-marking">
+                  {t('list.col.marking')}
+                </th>
+                <th scope="col" class="list-col-layer">
+                  {t('list.col.layer')}
+                </th>
+                <th scope="col" class="list-col-annotation">
+                  {t('list.col.annotation')}
+                </th>
                 <th scope="col">{t('incomplete.col.reasons')}</th>
               </tr>
             </thead>

@@ -6,6 +6,7 @@ import { createFolderStorage } from '../../src/storage/folder';
 import { createDisplayImages } from '../../src/store/displayImages';
 import type { ProjectStore } from '../../src/store/history';
 import type { ProjectActions } from '../../src/store/project';
+import type { LibraryIssues } from '../../src/storage/specPackage';
 import { openSession } from '../../src/store/session';
 import type { EditorUi } from '../../src/store/ui';
 import { EditorContext, createEditorContextValue } from '../../src/ui/EditorContext';
@@ -25,12 +26,17 @@ export interface Harness {
  * Sessão, store, actions e UI reais (pasta em memória), com o projeto carregado: os
  * componentes mexem no modelo de verdade, lendo tudo do `EditorContext`.
  */
-export function createHarness(project: Project, readOnly = false): Harness {
+export function createHarness(
+  project: Project,
+  readOnly = false,
+  extra: { readonly libraryIssues?: LibraryIssues } = {},
+): Harness {
   const session = openSession({
     // `copyId`: toda sessão recebe a cópia (8.4); sem ela a revisão registra no Diagnóstico.
     storage: createFolderStorage(new MemoryDirectory('projeto'), { copyId: 'harness' }),
     project,
     readOnly,
+    ...extra,
     prepareImage: () => Promise.reject(new Error('imagens não são usadas aqui')),
     now: () => '2026-10-02T12:00:00.000Z',
   });

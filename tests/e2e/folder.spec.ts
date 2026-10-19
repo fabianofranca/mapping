@@ -244,6 +244,93 @@ test('Ajuda → Atalhos lista os dois atalhos de copiar', async ({ page }) => {
   await expect(help.getByText('Copiar o recorte da marcação selecionada')).toBeVisible();
 });
 
+// Antes R6.2 do guia (fechar a aba no meio da gravação): a extensão do navegador não fecha
+// a aba da app, então a cobertura de perda de dados vem daqui.
+test('fechar a página logo depois de editar não perde a marcação (R6.2)', async ({
+  page,
+  context,
+}) => {
+  await openFolderProject(page);
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page));
+
+  // Fecha sem esperar o debounce. Se a app avisar ("Sair da página?"), escolhe ficar, espera
+  // o Salvo e fecha de novo; se a gravação do `pagehide` bastar, a página fecha de uma vez.
+  let warned = false;
+  page.on('dialog', (dialog) => {
+    if (dialog.type() === 'beforeunload') warned = true;
+    void dialog.dismiss();
+  });
+  await page.close({ runBeforeUnload: true });
+  if (warned && !page.isClosed()) {
+    await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+    await page.close({ runBeforeUnload: true });
+  }
+
+  // Outra aba do mesmo contexto (mesmo OPFS e mesmos recentes) reabre a pasta.
+  const reopened = await context.newPage();
+  await stubFolderPicker(reopened);
+  await reopened.goto('/');
+  await reopened.getByRole('button', { name: /Abrir pasta/ }).click();
+  await expect(reopened.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+  await expect.poll(async () => (await readMapping(reopened)).markings.length).toBe(1);
+  const mapping = await readMapping(reopened);
+  expect(mapping.markings[0]?.imageId).toBe(mapping.images[0]?.id);
+});
+
+// R6.1 do guia: renomear (Enter) e, logo em seguida, começar a arrastar e apertar Esc sem
+// soltar. A gravação do nome sai ~250 ms depois do Enter (debounce da sessão); o arraste
+// cancelado não pode chegar ao disco nem à tela. `lateEsc` espera a gravação antes do arraste.
+for (const lateEsc of [false, true]) {
+  test(`renomear e cancelar o arraste com Esc deixa o nome novo e o rect antigo (R6.1, Esc ${
+    lateEsc ? 'depois' : 'antes'
+  } da gravação)`, async ({ page }) => {
+    const marking = await withMarking(page);
+    const center = await canvasPoint(page);
+    const before = await selectedRect(page);
+    expect(marking.rect).toEqual(before);
+    const base = (await readMapping(page)).revision;
+
+    const name = page.getByLabel('Nome', { exact: true });
+    await name.fill('Título R6');
+    await name.press('Enter');
+    if (lateEsc) {
+      await expect
+        .poll(async () => (await readMapping(page)).markings[0]?.name)
+        .toBe('Título R6');
+      await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+    }
+
+    // Botão no meio da marcação (longe das alças), desloca bem mais que o limiar e aperta
+    // Esc sem soltar.
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    await page.mouse.move(center.x + 60, center.y + 40, { steps: 6 });
+    await page.mouse.move(center.x + 120, center.y + 80, { steps: 6 });
+    await page.keyboard.press('Escape');
+    await page.mouse.move(center.x + 140, center.y + 90, { steps: 3 });
+    await page.mouse.up();
+
+    // Tela: a marcação voltou ao lugar e o nome novo ficou.
+    await expect(name).toHaveValue('Título R6');
+    expect(await selectedRect(page)).toEqual(before);
+
+    // Disco: depois de Salvo, nome novo com o rect antigo e uma só gravação de conteúdo novo.
+    await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+    await expect
+      .poll(async () => (await readMapping(page)).markings[0]?.name)
+      .toBe('Título R6');
+    const saved = await readMapping(page);
+    expect(saved.markings[0]?.rect).toEqual(marking.rect);
+    expect(saved.revision).toBe(base + 1);
+    // Nada mais é gravado depois (a posição do arraste não aparece).
+    await page.waitForTimeout(800);
+    const later = await readMapping(page);
+    expect(later.markings[0]?.rect).toEqual(marking.rect);
+    expect(later.revision).toBe(base + 1);
+  });
+}
+
 test.describe('mudanças externas no mapping.json', () => {
   test('cada gravação sobe a revisão', async ({ page }) => {
     await withMarking(page);

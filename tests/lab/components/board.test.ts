@@ -12,7 +12,7 @@ import {
   replaceScreen,
   screenOfInstance,
 } from '../../../lab/components/board';
-import { addInstance, newScreen, setParent } from '../../../lab/components/screen';
+import { addInstance, newScreen, setParent } from '../../../src/model/components/screen';
 
 function withInstances() {
   let s = newScreen('Entrar', 390, 844);

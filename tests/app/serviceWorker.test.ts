@@ -5,6 +5,7 @@ type Listener = (event: Record<string, unknown>) => void;
 
 /** Executa o sw.js com um `self`/`caches` falsos e devolve o que ele registrou. */
 function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'main') {
+  const fetched: { url: string; cache: string }[] = [];
   const listeners = new Map<string, Listener>();
   const skipWaiting = vi.fn();
   const claim = vi.fn();
@@ -15,11 +16,31 @@ function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'ma
     if (!cache) stored.set(name, (cache = new Map()));
     return cache;
   };
+  class FakeRequest {
+    readonly url: string;
+    readonly cache: string;
+    constructor(url: string, init: { cache?: string } = {}) {
+      this.url = url;
+      this.cache = init.cache ?? 'default';
+    }
+  }
+  const fetchMock = vi.fn(async (request: FakeRequest) => {
+    fetched.push({ url: request.url, cache: request.cache });
+    return { ok: true, url: request.url };
+  });
   const caches = {
     keys: async () => cacheNames,
     delete: async (name: string) => void deleted.push(name),
     open: async (name: string) => ({
-      addAll: async (urls: string[]) => urls.forEach((u) => store(name).set(u, 'cached')),
+      addAll: async (requests: (string | FakeRequest)[]) => {
+        for (const r of requests) {
+          const request = typeof r === 'string' ? new FakeRequest(r) : r;
+          await fetchMock(request);
+          store(name).set(request.url, 'cached');
+        }
+      },
+      put: async (request: { url: string }) =>
+        void store(name).set(request.url, 'cached'),
       match: async (key: string | { url: string }) =>
         store(name).get(typeof key === 'string' ? key : key.url),
     }),
@@ -32,7 +53,12 @@ function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'ma
     addEventListener: (type: string, listener: Listener) => listeners.set(type, listener),
   };
   const stamped = source.replaceAll('__CHANNEL__', channel);
-  new Function('self', 'caches', 'fetch', stamped)(self, caches, vi.fn());
+  new Function('self', 'caches', 'fetch', 'Request', stamped)(
+    self,
+    caches,
+    fetchMock,
+    FakeRequest,
+  );
   const dispatch = async (type: string, event: Record<string, unknown> = {}) => {
     const waits: Promise<unknown>[] = [];
     const responses: Promise<unknown>[] = [];
@@ -44,7 +70,7 @@ function loadWorker(cacheNames: string[] = [], channel: 'main' | 'preview' = 'ma
     await Promise.all(waits);
     return Promise.all(responses);
   };
-  return { dispatch, skipWaiting, claim, stored, deleted };
+  return { dispatch, skipWaiting, claim, stored, deleted, fetched };
 }
 
 describe('sw.js', () => {
@@ -55,6 +81,57 @@ describe('sw.js', () => {
     const [cache] = [...worker.stored.values()];
     expect(cache?.has('https://example.com/app/index.html')).toBe(true);
     expect(cache?.has('https://example.com/app/manifest.webmanifest')).toBe(true);
+  });
+
+  it('o guia interativo entra no cache da instalação e funciona offline', async () => {
+    const worker = loadWorker();
+    await worker.dispatch('install');
+    const [cache] = [...worker.stored.values()];
+    expect(cache?.has('https://example.com/app/guia/index.html')).toBe(true);
+    // Navegação para o guia (com ou sem o index.html, com query) vem do cache, não da rede.
+    for (const path of ['guia/', 'guia/index.html', 'guia/index.html?x=1']) {
+      const [response] = await worker.dispatch('fetch', {
+        request: {
+          method: 'GET',
+          mode: 'navigate',
+          url: `https://example.com/app/${path}`,
+        },
+      });
+      expect(response, path).toBe('cached');
+    }
+  });
+
+  it('o guia do preview é o do preview: a versão principal não responde por ele', async () => {
+    const main = loadWorker();
+    await main.dispatch('install');
+    const responses = await main.dispatch('fetch', {
+      request: {
+        method: 'GET',
+        mode: 'navigate',
+        url: 'https://example.com/app/preview/guia/index.html',
+      },
+    });
+    expect(responses).toEqual([]);
+    const preview = loadWorker([], 'preview');
+    await preview.dispatch('install');
+    const [response] = await preview.dispatch('fetch', {
+      request: {
+        method: 'GET',
+        mode: 'navigate',
+        url: 'https://example.com/app/guia/',
+      },
+    });
+    expect(response).toBe('cached');
+  });
+
+  it('o precache ignora o cache HTTP do navegador (cache: reload)', async () => {
+    const worker = loadWorker();
+    await worker.dispatch('install');
+    expect(worker.fetched.length).toBeGreaterThan(0);
+    expect(worker.fetched.every((r) => r.cache === 'reload')).toBe(true);
+    expect(worker.fetched.map((r) => r.url)).toContain(
+      'https://example.com/app/index.html',
+    );
   });
 
   it('ativa quando o app manda SKIP_WAITING', async () => {

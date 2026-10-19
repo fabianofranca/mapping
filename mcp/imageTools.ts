@@ -1,6 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
-import { projectIndex, type Marking, type ProjectImage } from '../src/model';
+import {
+  approximateMeasurer,
+  createDrawingCache,
+  isBlankImage,
+  projectIndex,
+  type Marking,
+  type ProjectImage,
+} from '../src/model';
 import { ToolError } from './errors';
 import { decodeImage, encodeImage } from './image/codecs';
 import {
@@ -9,10 +16,19 @@ import {
   MARKING_OUTLINE,
   MAX_OUTLINED_CHILDREN,
   compose,
+  hexToRgb,
   type Outline,
 } from './image/compose';
 import { MIME, type ImageFormat } from './image/formats';
-import { clampRect, fitSize, resize, type PixelRect, type Raster } from './image/raster';
+import {
+  clampRect,
+  createRaster,
+  fitSize,
+  resize,
+  type PixelRect,
+  type Raster,
+} from './image/raster';
+import { paintScene } from './image/sceneRaster';
 import type { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
 
@@ -41,10 +57,40 @@ interface LoadedImage {
   readonly raster: Raster;
   readonly bytes: Uint8Array;
   readonly format: ImageFormat;
-  readonly file: string;
+  readonly file: string | null;
   /** Razão arquivo / projeto: ≠ 1 se o arquivo não tem as dimensões gravadas no `mapping.json`. */
   readonly scaleX: number;
   readonly scaleY: number;
+}
+
+/** Mais pixels que isso, a tela em branco é rasterizada reduzida (é uma cor só). */
+const MAX_BLANK_PIXELS = 4096 * 4096;
+
+/**
+ * Tela em branco (sem arquivo): um raster liso com a cor `background`, no tamanho da imagem
+ * (o desenho dos componentes é pintado por cima depois, só na região pedida) (reduzido se for enorme: `scaleX`/`scaleY` ≠ 1 já são tratados).
+ */
+function blankImage(image: ProjectImage): LoadedImage {
+  const shrink = Math.min(1, Math.sqrt(MAX_BLANK_PIXELS / (image.width * image.height)));
+  const raster = createRaster(
+    Math.max(1, Math.round(image.width * shrink)),
+    Math.max(1, Math.round(image.height * shrink)),
+  );
+  const [r, g, b] = hexToRgb(image.background ?? '#FFFFFF');
+  for (let i = 0; i < raster.data.length; i += 4) {
+    raster.data[i] = r;
+    raster.data[i + 1] = g;
+    raster.data[i + 2] = b;
+    raster.data[i + 3] = 255;
+  }
+  return {
+    raster,
+    bytes: new Uint8Array(),
+    format: 'png',
+    file: null,
+    scaleX: raster.width / image.width,
+    scaleY: raster.height / image.height,
+  };
 }
 
 async function loadImage(
@@ -52,6 +98,7 @@ async function loadImage(
   refs: Refs,
   image: ProjectImage,
 ): Promise<LoadedImage> {
+  if (image.file === null) return blankImage(image);
   const absolute = await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
   if (absolute === null) {
     throw new ToolError(
@@ -87,7 +134,7 @@ function scaleRect(rect: PixelRect, loaded: LoadedImage): PixelRect {
 }
 
 const sizeWarning = (loaded: LoadedImage, image: ProjectImage) =>
-  loaded.scaleX === 1 && loaded.scaleY === 1
+  (loaded.scaleX === 1 && loaded.scaleY === 1) || loaded.file === null
     ? {}
     : {
         warning: `o arquivo tem ${loaded.raster.width}×${loaded.raster.height}, mas o projeto registra ${image.width}×${image.height}: as coordenadas foram proporcionalmente ajustadas`,
@@ -139,6 +186,24 @@ export async function markingImage(
     );
   }
 
+  // Tela em branco: pinta o desenho simplificado dos componentes (cena instanciada com o
+  // medidor aproximado; o servidor não tem fontes) na região que a saída mostra.
+  const blank = isBlankImage(image);
+  if (blank) {
+    const drawings = createDrawingCache()(
+      refs.project,
+      refs.loaded.catalog,
+      approximateMeasurer,
+      0,
+    );
+    paintScene(
+      loaded.raster,
+      [...drawings.values()].filter((d) => d.imageId === image.id),
+      approximateMeasurer,
+      { scaleX: loaded.scaleX, scaleY: loaded.scaleY, clip: region },
+    );
+  }
+
   const legend: { color: string; name: string; ref: string; rect: PixelRect }[] = [];
   const outlines: Outline[] = [];
   if (mode === 'context') outlines.push({ rect: own, color: MARKING_OUTLINE });
@@ -182,7 +247,18 @@ export async function markingImage(
     json: {
       ref: refs.ref('m', marking.id),
       mode,
-      image: { ref: refs.ref('i', image.id), file: image.file },
+      image: {
+        ref: refs.ref('i', image.id),
+        file: image.file,
+        ...(blank ? { blank: true, background: image.background } : {}),
+      },
+      ...(blank
+        ? {
+            drawing: 'simplified',
+            drawingNote:
+              'texto em barras; cores sólidas (sem gradiente, sombra nem fontes)',
+          }
+        : {}),
       format,
       width: composed.raster.width,
       height: composed.raster.height,
@@ -219,6 +295,13 @@ export async function imageFile(
   image: ProjectImage,
   options: ImageFileOptions,
 ): Promise<ImageResult> {
+  if (isBlankImage(image)) {
+    throw new ToolError(
+      'blank-image',
+      'A imagem é uma tela em branco (sem arquivo): use get_marking_image para ver o desenho.',
+      { image: refs.ref('i', image.id) },
+    );
+  }
   const maxSize = options.maxSize ?? DEFAULT_MAX_SIZE;
   const loaded = await loadImage(roots, refs, image);
   const { raster } = loaded;

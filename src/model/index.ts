@@ -20,6 +20,15 @@ export * from './images';
 export * from './imageOptimization';
 export * from './exif';
 export * from './markings';
+// Motor dos componentes: só o que quem desenha ou mede precisa pelo índice do modelo.
+export { approximateMeasurer, type TextMeasurer } from './components/instantiate';
+export type { ComponentFile, FieldValues } from './components/componentFormat';
+export type { FrameNode } from './components/scene';
+export * from './componentCatalog';
+export * from './componentValues';
+export * from './componentDrawings';
+export * from './componentMarkings';
+export * from './componentArrange';
 export * from './locks';
 export * from './annotations';
 export * from './links';
@@ -28,6 +37,10 @@ export * from './display';
 export * from './spec';
 export * from './specLookup';
 export * from './specializations';
+export * from './libraryPackage';
+export * from './catalog';
+export * from './specVersions';
+export * from './libraryMigrations';
 export * from './typed';
 export * from './refs';
 export * from './itemRef';
@@ -48,3 +61,5 @@ export * from './proposalView';
 // Valor de um campo na forma de `from`/`to` (os marcadores dos Detalhes na revisão).
 export { annotationField, imageField, markingField } from './proposalValues';
 export * from './specWarnings';
+// Subconjunto de markdown dos documentos da biblioteca (Catálogo).
+export * from './markdown';

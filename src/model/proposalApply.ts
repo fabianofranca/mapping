@@ -1,8 +1,10 @@
 import { validateProject, type InvariantCode } from './invariants';
+import { packageDirOf } from './libraryPackage';
 import {
   ENTRIES_FIELD_PREFIX,
   VALUES_FIELD_PREFIX,
   proposalImagePath,
+  proposalPackageDir,
   type Change,
   type ChangeEntity,
   type Proposal,
@@ -40,8 +42,9 @@ export type PatchProblemCode = 'entity-missing' | 'entity-exists' | 'field-misma
  * Mudança que não pôde ser aplicada: alteração de entidade que não existe mais
  * (`entity-missing`), criação de um id que já existe (`entity-exists`) ou campo que não
  * cabe na entidade atual (`field-mismatch`, ex: `values.*` numa anotação que virou livre,
- * ou `values.<key>` de uma chave que não é campo do tipo, como o campo de código removido
- * na etapa 9 numa proposta antiga).
+ * ou `values.<key>` com valor novo numa chave que não é campo do tipo, como o campo de
+ * código removido na etapa 9 numa proposta antiga). Limpar (`to: null`) uma chave fora do
+ * tipo não é conflito: a chave sai de `values`.
  */
 export interface PatchProblem {
   readonly code: PatchProblemCode;
@@ -110,6 +113,13 @@ function withField(
   switch (entity) {
     case 'image': {
       const i = current as ProjectImage;
+      // Tela em branco não troca de arquivo; cor e tamanho só existem nela.
+      const blank = i.file === null;
+      if (blank && field === 'file') return null;
+      if (!blank && (field === 'background' || field === 'size')) return null;
+      if (field === 'size' && isRecord(to)) {
+        return { ...i, width: to.width as number, height: to.height as number };
+      }
       if (field === 'file' && isRecord(to)) {
         return {
           ...i,
@@ -148,7 +158,16 @@ function withField(
       if (field.startsWith(VALUES_FIELD_PREFIX)) {
         if (a.values === null) return null;
         const key = field.slice(VALUES_FIELD_PREFIX.length);
-        if (!typeHasField(specializations, a.type, key)) return null;
+        if (!typeHasField(specializations, a.type, key)) {
+          // Limpar (`to: null`) uma chave que o tipo já não tem só tira o valor órfão (ex: o
+          // campo saiu numa migração `remove-field`/`rename-field` da mesma proposta): a chave
+          // sai de `values`. Com valor novo, a chave fora do tipo não cabe.
+          if (to !== null) return null;
+          const rest = Object.fromEntries(
+            Object.entries(a.values).filter(([k]) => k !== key),
+          ) as TypedValues;
+          return { ...a, values: rest };
+        }
         return { ...a, values: { ...a.values, [key]: to } };
       }
       if (field.startsWith(ENTRIES_FIELD_PREFIX)) {
@@ -177,6 +196,24 @@ function withField(
   }
 }
 
+/**
+ * Põe a marcação na posição `index` entre as irmãs (mesma imagem e mesmo pai), preso ao
+ * intervalo válido; as irmãs ocupam as mesmas casas do array (como `reorderMarking`).
+ */
+function placeAmongSiblings(markings: Marking[], id: string, index: number): void {
+  const marking = markings.find((m) => m.id === id);
+  if (!marking) return;
+  const siblings = markings.filter(
+    (m) => m.parentId === marking.parentId && m.imageId === marking.imageId,
+  );
+  const order = siblings.filter((m) => m.id !== id);
+  order.splice(Math.min(index, order.length), 0, marking);
+  const slots = siblings.map((m) => markings.indexOf(m));
+  slots.forEach((slot, i) => {
+    markings[slot] = order[i] as Marking;
+  });
+}
+
 export interface PatchResult {
   readonly project: Project;
   readonly problems: readonly PatchProblem[];
@@ -184,7 +221,7 @@ export interface PatchResult {
 
 /**
  * Aplica `changes` ao projeto, sem validar o resultado: criações entram no fim das
- * listas, remoções de entidade ausente não fazem nada, e as camadas reposicionadas vão
+ * listas, remoções de entidade ausente não fazem nada, e as camadas e as marcações reposicionadas vão
  * para o índice proposto (em ordem crescente). O que não pôde ser aplicado volta em
  * `problems` e fica de fora.
  */
@@ -199,6 +236,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   };
   const problems: PatchProblem[] = [];
   const positions: Change[] = [];
+  const markingPositions: Change[] = [];
   const phase = (c: Change) =>
     c.kind === 'remove' ? REMOVE_PHASE[c.entity] : UPSERT_PHASE[c.entity];
   const ordered = changes
@@ -213,9 +251,13 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       else map.set(c.entityId, decode(c.entity, c.to));
     } else if (c.kind === 'remove') {
       map.delete(c.entityId);
-    } else if (c.entity === 'layer' && c.field === 'position') {
-      if (map.has(c.entityId)) positions.push(c);
-      else problems.push({ code: 'entity-missing', changeId: c.id });
+    } else if (
+      (c.entity === 'layer' || c.entity === 'marking') &&
+      c.field === 'position'
+    ) {
+      if (!map.has(c.entityId)) problems.push({ code: 'entity-missing', changeId: c.id });
+      else if (c.entity === 'layer') positions.push(c);
+      else markingPositions.push(c);
     } else {
       const current = map.get(c.entityId);
       const next = current && withField(c.entity, current, c, maps.specialization);
@@ -232,6 +274,13 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     if (layer) layers.splice(Math.min(c.to as number, layers.length), 0, layer);
   }
 
+  const markings = [...maps.marking.values()] as Marking[];
+  for (const c of [...markingPositions].sort(
+    (a, b) => (a.to as number) - (b.to as number),
+  )) {
+    placeAmongSiblings(markings, c.entityId, c.to as number);
+  }
+
   return {
     project: {
       ...p,
@@ -242,7 +291,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       >,
       layers,
       images: [...maps.image.values()] as ProjectImage[],
-      markings: [...maps.marking.values()] as Marking[],
+      markings,
       annotations: [...maps.annotation.values()] as Annotation[],
     },
     problems,
@@ -395,6 +444,23 @@ export interface ProposalFileMove {
   readonly to: string;
 }
 
+/**
+ * Pacote de biblioteca de uma especialização aplicada agora: a pasta de `specs/` que a
+ * mudança traz (`dir`), onde os arquivos esperam na proposta (`from`, copiados e não
+ * movidos) e a especialização (`to.spec`, a fonte da verdade do arquivo dela).
+ */
+export interface ProposalPackage {
+  readonly specId: string;
+  readonly version: number;
+  /** `specs/<pasta>`. */
+  readonly dir: string;
+  /** `proposals/<id>/specs/<pasta>`. */
+  readonly from: string;
+  readonly spec: Spec | null;
+  /** Caminho do arquivo da especialização (`to.file`). */
+  readonly file: string;
+}
+
 export type ApplyAcceptedResult =
   | {
       readonly ok: true;
@@ -405,6 +471,8 @@ export type ApplyAcceptedResult =
       readonly applied: readonly Change[];
       /** Imagens novas ou trocadas a mover para `images/`. */
       readonly files: readonly ProposalFileMove[];
+      /** Pacotes de biblioteca das especializações criadas ou atualizadas, a copiar para `specs/`. */
+      readonly packages: readonly ProposalPackage[];
     }
   | { readonly ok: false; readonly issues: readonly ProposalIssue[] };
 
@@ -440,6 +508,22 @@ export function applyAccepted(
         files.push({ from: proposalImagePath(p.id, file), to: file });
     }
   }
+  const packages: ProposalPackage[] = [];
+  for (const c of applied) {
+    if (c.entity !== 'specialization' || c.kind === 'remove' || !isRecord(c.to)) continue;
+    const { file, version, id: specId } = c.to;
+    if (typeof file !== 'string' || typeof version !== 'number') continue;
+    const dir = packageDirOf(file);
+    if (dir === null || typeof specId !== 'string') continue;
+    packages.push({
+      specId,
+      version,
+      dir,
+      from: proposalPackageDir(p.id, dir),
+      spec: (c.to.spec ?? null) as unknown as Spec | null,
+      file,
+    });
+  }
   return {
     ok: true,
     project: validation.project,
@@ -450,6 +534,7 @@ export function applyAccepted(
     },
     applied,
     files,
+    packages,
   };
 }
 

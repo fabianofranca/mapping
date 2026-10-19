@@ -19,6 +19,7 @@ export const TOOL_WINDOWS = [
   'incomplete',
   'diagnostics',
   'proposals',
+  'catalog',
 ] as const;
 
 export type ToolWindowId = (typeof TOOL_WINDOWS)[number];
@@ -34,12 +35,15 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   incomplete: 'bottom',
   diagnostics: 'bottom',
   proposals: 'bottom',
+  catalog: 'left',
 };
 
 /**
  * Número do atalho de cada janela (Ctrl+Shift+N, e Alt+N onde o navegador deixa).
  * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
- * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7.
+ * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7; o Catálogo
+ * (etapa Biblioteca, B5, que guarda a paleta da B3 como aba) é o 9. O 8, da Biblioteca da
+ * B3, ficou vago.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
@@ -49,6 +53,7 @@ export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   incomplete: 5,
   diagnostics: 6,
   proposals: 7,
+  catalog: 9,
 };
 
 /** Janela do atalho Ctrl+Shift+N (`null` se o número não tem janela ainda). */
@@ -135,6 +140,9 @@ interface StoredLayout {
 
 const KEY = 'mapping.toolWindows';
 
+/** Ids que já existiram e hoje são outra janela (a paleta da B3 virou aba do Catálogo). */
+const RENAMED: Readonly<Record<string, ToolWindowId>> = { library: 'catalog' };
+
 function isToolWindow(value: unknown): value is ToolWindowId {
   return TOOL_WINDOWS.some((id) => id === value);
 }
@@ -165,7 +173,9 @@ const stored = readStored();
 const hadStored = readSetting(KEY) !== null;
 
 const openIds = signal<ReadonlySet<ToolWindowId>>(
-  new Set(stored.open?.filter(isToolWindow) ?? DEFAULT_OPEN),
+  new Set(
+    stored.open?.map((id) => RENAMED[id] ?? id).filter(isToolWindow) ?? DEFAULT_OPEN,
+  ),
 );
 
 /** Altura inicial da janela inferior em modo revisão (`--size-tw-bottom-review`). */
@@ -237,9 +247,47 @@ export function isToolWindowOpen(id: ToolWindowId): boolean {
   return openWindowsOf(WINDOW_SIDE[id]).includes(id);
 }
 
-/** Largura que cada lateral ocupa agora (0 quando recolhida). */
+/** Largura da área das janelas (corpo do editor sem as faixas); 0 = ainda não medida. */
+const paneWidth = signal(0);
+
+export function setPaneWidth(width: number): void {
+  if (width !== paneWidth.value) paneWidth.value = width;
+}
+
+/**
+ * Larguras que as laterais ocupam de fato: as guardadas, encolhidas (primeiro a direita,
+ * depois a esquerda, até o mínimo de cada uma) para o canvas manter `--size-canvas-min`
+ * numa janela mais estreita que a do layout guardado. Com 900px ou mais os mínimos
+ * sempre cabem (200 + 280 + 320 < 820), então nada fica fora da tela. `avail` 0
+ * (não medido) mantém as guardadas; lado recolhido passa 0. Função pura.
+ */
+export function fitSideWidths(
+  left: number,
+  right: number,
+  avail: number,
+): { readonly left: number; readonly right: number } {
+  if (avail <= 0) return { left, right };
+  const excess = left + right + CANVAS_MIN - avail;
+  if (excess <= 0) return { left, right };
+  // Lado recolhido (0) não encolhe; o aberto só desce até o mínimo.
+  const cutRight =
+    right === 0 ? 0 : clamp(excess, 0, Math.max(0, right - WINDOW_LIMITS.right.min));
+  const cutLeft =
+    left === 0
+      ? 0
+      : clamp(excess - cutRight, 0, Math.max(0, left - WINDOW_LIMITS.left.min));
+  return { left: left - cutLeft, right: right - cutRight };
+}
+
+/** Largura que cada lateral ocupa agora (0 quando recolhida), já ajustada à janela. */
 export function sideWidth(side: 'left' | 'right'): number {
-  return openWindowOf(side) ? toolWindowSizes.value[side] : 0;
+  const sizes = toolWindowSizes.value;
+  const fit = fitSideWidths(
+    openWindowOf('left') ? sizes.left : 0,
+    openWindowOf('right') ? sizes.right : 0,
+    paneWidth.value,
+  );
+  return fit[side];
 }
 
 function persist(): void {
@@ -278,9 +326,14 @@ export function showToolWindow(id: ToolWindowId): void {
   const side = WINDOW_SIDE[id];
   if (side === 'bottom') bottomTab.value = id;
   const next = new Set(openIds.value);
-  // A esquerda empilha Árvore e Camadas; os outros lados mostram uma janela por vez.
+  // A esquerda empilha Árvore e Camadas; os outros lados mostram uma janela por vez. A
+  // coluna da esquerda do Catálogo é só dele: abri-lo esconde as duas e vice-versa.
   if (side !== 'left') {
     for (const other of next) if (WINDOW_SIDE[other] === side) next.delete(other);
+  } else if (id === 'catalog') {
+    for (const other of next) if (WINDOW_SIDE[other] === 'left') next.delete(other);
+  } else {
+    next.delete('catalog');
   }
   next.add(id);
   openIds.value = next;

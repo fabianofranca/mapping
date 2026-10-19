@@ -66,7 +66,7 @@ export function EditorPanel({
           image={selectedImage}
           project={project}
           display={
-            selectedImage ? display.images.value.get(selectedImage.file) : undefined
+            selectedImage?.file ? display.images.value.get(selectedImage.file) : undefined
           }
           readOnly={readOnly}
           busy={busy}

@@ -1,0 +1,175 @@
+name: MCP pre-release
+
+# Canais de teste do servidor MCP, antes da estável (`mcp-release.yml`, tag `mcp-v<versão>`).
+# A versão do código (`SERVER_VERSION` em `mcp/version.ts`) é uma por épico; estes canais só
+# acrescentam um sufixo ao build (`MCP_BUILD_SUFFIX`, validado em `mcp/build.mjs`).
+#
+# - snapshot: todo PR com base num `epic/**` gera `mcp-snapshot-pr<N>` (pre-release fixa,
+#   sobrescrita a cada push; versão `<versão>-snapshot.pr<N>+<sha curto>`). Quando o PR fecha
+#   (mesclado ou não), a release e a tag são apagadas.
+# - rc: só sai no merge de um PR com o rótulo `mcp-rc` num `epic/**`: o PR da última fase do
+#   épico (o agente dessa fase põe o rótulo ao abrir o PR). Gera `mcp-v<versão>-rc.<n>`
+#   (n = maior rc existente daquela versão + 1) a partir do commit do merge. Sem o rótulo, o
+#   merge não gera rc. Se alguém esquecer o rótulo, rode este workflow à mão (`workflow_dispatch`)
+#   no branch `epic/**`. As rc são apagadas pelo `mcp-release.yml` quando a estável da mesma
+#   versão é publicada.
+# Os testes do PR rodam no `ci.yml`; o snapshot não os repete. A rc os roda, como a estável.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches: ['epic/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    # PRs de fork não recebem token de escrita; só PRs do próprio repositório.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    concurrency:
+      group: mcp-snapshot-pr${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    env:
+      PR: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Calcular a versão do snapshot
+        run: |
+          code_version="$(sed -n "s/.*SERVER_VERSION = '\(.*\)';/\1/p" mcp/version.ts)"
+          suffix="-snapshot.pr${PR}+${HEAD_SHA:0:7}"
+          echo "SERVER_VERSION=$code_version" >> "$GITHUB_ENV"
+          echo "MCP_BUILD_SUFFIX=$suffix" >> "$GITHUB_ENV"
+          echo "EXPECTED=${code_version}${suffix}" >> "$GITHUB_ENV"
+
+      - run: npm run build:mcp
+
+      - name: Testar o arquivo gerado fora do repositório
+        run: |
+          mkdir -p "$RUNNER_TEMP/smoke"
+          cp dist-mcp/mapping-mcp.js "$RUNNER_TEMP/smoke/"
+          cd "$RUNNER_TEMP/smoke"
+          got="$(node mapping-mcp.js --version)"
+          if [ "$got" != "$EXPECTED" ]; then
+            echo "--version imprimiu '$got', esperado '$EXPECTED'." >&2
+            exit 1
+          fi
+
+      - name: Checksum
+        working-directory: dist-mcp
+        run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+
+      - name: Publicar no snapshot do PR
+        run: |
+          tag="mcp-snapshot-pr${PR}"
+          title="$tag"
+          notes="Build provisório do PR #${PR}, para testar antes de entrar no épico. Commit ${HEAD_SHA:0:7}. Sobrescrito a cada push e apagado quando o PR fecha. Instalação: \`./setup.sh ${tag}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`."
+          if gh release view "$tag" > /dev/null 2>&1; then
+            # Já existe: move a tag para o commit novo e troca os arquivos.
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" \
+              -f sha="$HEAD_SHA" -F force=true
+            gh release upload "$tag" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 --clobber
+            gh release edit "$tag" --title "$title" --notes "$notes" --prerelease
+          else
+            gh release create "$tag" \
+              dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
+              --prerelease --target "$HEAD_SHA" \
+              --title "$title" --notes "$notes"
+          fi
+
+  cleanup:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Apagar o snapshot do PR
+        run: |
+          # Sem checkout: `--repo` basta. Não falha se o snapshot não existe.
+          gh release delete "mcp-snapshot-pr${{ github.event.pull_request.number }}" \
+            --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || echo "Sem snapshot para apagar."
+
+  rc:
+    if: >-
+      (github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'mcp-rc') &&
+      github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' &&
+      startsWith(github.ref, 'refs/heads/epic/'))
+    runs-on: ubuntu-latest
+    # Por épico e sem cancelar: uma rc na fila não pode perder o seu número.
+    concurrency:
+      group: mcp-rc-${{ github.event.pull_request.base.ref || github.ref }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+      EPIC: ${{ github.event.pull_request.base.ref || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run typecheck
+      # Sem os orçamentos de desempenho: oscilam conforme o runner (o CI os mede à parte).
+      - run: PERF_BUDGETS=off npm test
+
+      - name: Calcular o número da rc
+        run: |
+          version="$(sed -n "s/.*SERVER_VERSION = '\(.*\)';/\1/p" mcp/version.ts)"
+          # Maior rc existente (tags no servidor) + 1.
+          last="$(git ls-remote --tags origin "refs/tags/mcp-v${version}-rc.*" |
+            sed -n "s#.*refs/tags/mcp-v${version}-rc\.\([0-9][0-9]*\)\$#\1#p" |
+            sort -n | tail -1)"
+          n=$(( ${last:-0} + 1 ))
+          echo "SERVER_VERSION=$version" >> "$GITHUB_ENV"
+          echo "RC_TAG=mcp-v${version}-rc.${n}" >> "$GITHUB_ENV"
+          echo "MCP_BUILD_SUFFIX=-rc.${n}" >> "$GITHUB_ENV"
+          echo "EXPECTED=${version}-rc.${n}" >> "$GITHUB_ENV"
+
+      - run: npm run build:mcp
+
+      - name: Testar o arquivo gerado fora do repositório
+        run: |
+          mkdir -p "$RUNNER_TEMP/smoke"
+          cp dist-mcp/mapping-mcp.js "$RUNNER_TEMP/smoke/"
+          cd "$RUNNER_TEMP/smoke"
+          got="$(node mapping-mcp.js --version)"
+          if [ "$got" != "$EXPECTED" ]; then
+            echo "--version imprimiu '$got', esperado '$EXPECTED'." >&2
+            exit 1
+          fi
+
+      - name: Checksum
+        working-directory: dist-mcp
+        run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
+
+      - name: Publicar a release candidate
+        run: |
+          gh release create "$RC_TAG" \
+            dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
+            --prerelease --target "$TARGET_SHA" \
+            --title "$RC_TAG" \
+            --notes "Release candidate do épico \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`."

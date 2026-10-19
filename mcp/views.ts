@@ -1,4 +1,7 @@
 import {
+  isBlankImage,
+  markingComponent,
+  siblingPosition,
   annotationShortLabel,
   getBacklinks,
   getLinkedAnnotations,
@@ -58,6 +61,20 @@ function layerView(project: Project, layer: Layer): Json {
   };
 }
 
+/**
+ * Quando a marcação desenha um componente (primeira anotação tipada própria com componente
+ * no catálogo): `component` (`specId/typeId`) e `minSize`, o tamanho mínimo do retângulo.
+ */
+function componentInfo(refs: Refs, marking: Marking): Json {
+  const drawn = markingComponent(refs.project, refs.loaded.catalog, marking.id);
+  if (drawn === null) return {};
+  const { minSize } = drawn.component;
+  return {
+    component: `${drawn.specId}/${drawn.typeId}`,
+    ...(minSize ? { minSize: { width: minSize.width, height: minSize.height } } : {}),
+  };
+}
+
 /** Marcação numa linha compacta (listas e filhas). */
 export function markingRow(refs: Refs, marking: Marking): Json {
   const index = projectIndex(refs.project);
@@ -70,6 +87,9 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     image: refs.imageLabel(marking.imageId),
     parent: marking.parentId === null ? null : refs.bare('m', marking.parentId),
     rect: rectOf(marking),
+    // Posição entre as irmãs (0 = primeira, desenhada por baixo).
+    order: siblingPosition(refs.project, marking.id).index,
+    ...componentInfo(refs, marking),
     locked: marking.locked,
     needsReview: marking.needsReview,
     annotations: own.length,
@@ -260,6 +280,9 @@ export async function markingView(
     ].filter((segment) => segment !== null),
     image: image ? imageSummary(refs, image) : null,
     rect: rectOf(marking),
+    // Ordem entre as irmãs (mesma imagem e mesmo pai): 0 = primeira, desenhada por baixo.
+    order: siblingPosition(p, marking.id),
+    ...componentInfo(refs, marking),
     lock: {
       locked: marking.locked,
       geometryLocked: isMarkingGeometryLocked(p, marking.id),
@@ -285,6 +308,7 @@ function imageSummary(refs: Refs, image: ProjectImage): Json {
     ref: refs.ref('i', image.id),
     name: image.name,
     file: image.file,
+    ...(isBlankImage(image) ? { blank: true, background: image.background } : {}),
     width: image.width,
     height: image.height,
     locked: image.locked,
@@ -299,11 +323,15 @@ export async function imageView(
 ): Promise<Json> {
   const p = refs.project;
   const index = projectIndex(p);
-  const absolute = await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
+  const absolute =
+    image.file === null
+      ? null
+      : await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
   const topLevel = (index.children.get(null) ?? []).filter((m) => m.imageId === image.id);
   return {
     ...imageSummary(refs, image),
-    exists: absolute !== null,
+    // Tela em branco não tem arquivo: nada a conferir.
+    exists: image.file === null ? true : absolute !== null,
     path: absolute,
     placement: image.placement,
     markingColor: image.markingColor,

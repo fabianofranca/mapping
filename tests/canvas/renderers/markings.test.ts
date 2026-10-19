@@ -149,6 +149,58 @@ describe('MarkingRenderer', () => {
     expect(m1.border.dash()).toEqual([6, 4]);
   });
 
+  describe('marcação com o desenho à vista', () => {
+    const drawn = new Set(['M1']);
+
+    it('sem hover nem seleção: sem borda nem halo, mas com as bolinhas das camadas', () => {
+      const { renderer, render } = setup();
+      render({ drawn });
+      const m1 = node(renderer, 'M1');
+      expect(m1.border.visible()).toBe(false);
+      expect(m1.halo.visible()).toBe(false);
+      expect(m1.indicators.visible()).toBe(true);
+      // As outras marcações não mudam.
+      expect(node(renderer, 'M2').border.visible()).toBe(true);
+      expect(node(renderer, 'M2').halo.visible()).toBe(true);
+    });
+
+    it('a pendência de anotação continua visível sem a borda', () => {
+      const { renderer, render } = setup();
+      render({ drawn, incomplete: new Set(['M1']) });
+      const m1 = node(renderer, 'M1');
+      expect(m1.border.visible()).toBe(false);
+      expect(m1.alert.visible()).toBe(true);
+    });
+
+    it('sob o mouse ou selecionada: a borda e o halo aparecem', () => {
+      const { renderer, render } = setup();
+      render({ drawn });
+      render({ drawn, hoverMarking: 'M1' });
+      expect(node(renderer, 'M1').border.visible()).toBe(true);
+      expect(node(renderer, 'M1').halo.visible()).toBe(true);
+      render({ drawn, hoverMarking: null });
+      expect(node(renderer, 'M1').border.visible()).toBe(false);
+      render({ drawn, selection: { kind: 'marking', id: 'M1' } });
+      expect(node(renderer, 'M1').border.visible()).toBe(true);
+      expect(node(renderer, 'M1').border.getAttrs()).toMatchObject({
+        stroke: TOKENS.select,
+        strokeWidth: 2,
+      });
+    });
+
+    it('zoom semântico: sem cartão nem nome; as outras marcações mantêm o rótulo', () => {
+      const { renderer, render } = setup();
+      render();
+      expect(node(renderer, 'M1').text.group.visible()).toBe(true);
+      render({ drawn });
+      expect(node(renderer, 'M1').text.group.visible()).toBe(false);
+      // M3 (sem nome, em I2) e as demais seguem o caminho de sempre.
+      render({ drawn: new Set(['M2']) });
+      expect(node(renderer, 'M1').text.group.visible()).toBe(true);
+      expect(node(renderer, 'M1').text.header.text()).toBe('Porta');
+    });
+  });
+
   it('pan sem mudar a marcação não refaz a borda; zoom refaz', () => {
     const { renderer, render } = setup();
     render();

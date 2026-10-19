@@ -14,9 +14,12 @@ const ownsCache = (name) =>
   PREVIEW
     ? name.startsWith(PREVIEW_PREFIX)
     : name.startsWith('mapeador-') && !name.startsWith(PREVIEW_PREFIX);
+const GUIDE = './guia/index.html';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
+  // O guia interativo (public/guia/): uma página só, autocontida; funciona sem internet.
+  GUIDE,
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -31,6 +34,11 @@ const isAppPage = (pathname) => {
   const scope = new URL(self.registration.scope).pathname;
   return pathname === scope || pathname === `${scope}index.html`;
 };
+// O guia fica em `guia/`: a navegação para ele (com ou sem `index.html`) é servida do cache.
+const isGuidePage = (pathname) => {
+  const guide = new URL('./guia/', self.registration.scope).pathname;
+  return pathname === guide || pathname === `${guide}index.html`;
+};
 const isPreviewPath = (pathname) => {
   const preview = new URL('./preview', self.registration.scope).pathname;
   return pathname === preview || pathname.startsWith(`${preview}/`);
@@ -38,7 +46,15 @@ const isPreviewPath = (pathname) => {
 
 self.addEventListener('install', (event) => {
   // Sem skipWaiting: a versão nova espera o usuário aceitar o aviso.
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE.map(url))));
+  // `cache: 'reload'` pula o cache HTTP do navegador: o GitHub Pages serve com max-age=600 e,
+  // logo depois de um deploy, o `addAll` comum guardaria o index.html antigo no cache novo.
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) =>
+        cache.addAll(PRECACHE.map((p) => new Request(url(p), { cache: 'reload' }))),
+      ),
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -68,13 +84,16 @@ self.addEventListener('fetch', (event) => {
   // versão principal o contém, mas não pode responder por ele (nem por `/preview`
   // sem a barra, que o GitHub Pages redireciona para `/preview/`).
   if (!PREVIEW && isPreviewPath(requested.pathname)) return;
-  if (request.mode === 'navigate' && !isAppPage(requested.pathname)) return;
+  const guide = isGuidePage(requested.pathname);
+  if (request.mode === 'navigate' && !isAppPage(requested.pathname) && !guide) return;
 
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
-      // Navegação (inclusive com ?query) sempre serve o index.html do cache.
-      const key = request.mode === 'navigate' ? url('./index.html') : request;
+      // Navegação (inclusive com ?query) sempre serve a página do cache: o index.html da app
+      // ou o guia.
+      const key =
+        request.mode === 'navigate' ? url(guide ? GUIDE : './index.html') : request;
       const cached = await cache.match(key);
       if (cached) return cached;
       return fetch(request);

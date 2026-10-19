@@ -57,7 +57,11 @@ export interface Proposed {
     project?: { state: string; changes: number };
     images: { image: string; change: string; items: number; changes: number }[];
   };
-  files: { proposal: string; images: string[] };
+  files: {
+    proposal: string;
+    images: string[];
+    packages?: { dir: string; files: number }[];
+  };
   superseded?: { ref: string; status: string };
   warnings?: { code: string; [key: string]: unknown }[];
   hint: string;
