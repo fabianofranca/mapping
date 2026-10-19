@@ -545,7 +545,7 @@ export type ProposalParseResult =
 function withoutLegacyUrlTemplate(proposal: Proposal): Proposal {
   const strip = (value: JsonValue): JsonValue =>
     typeof value === 'object' && value !== null && !Array.isArray(value)
-      ? { localPath: value.localPath ?? null }
+      ? { localPath: (value as { readonly localPath?: JsonValue }).localPath ?? null }
       : value;
   if (!proposal.changes.some((c) => c.entity === 'platformRepo')) return proposal;
   return {

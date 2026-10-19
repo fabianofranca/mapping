@@ -130,30 +130,63 @@ Etiqueta recomendada (reutilize em novas especializações): **`data-field`** �
 
 ## Plataformas e code
 
-A `formatVersion` 2 liga a especialização ao código: ela declara as **plataformas** (um app, um contrato de API…) e como cada tipo de anotação vira código em cada uma. A `formatVersion` 1 continua válida: é a 2 sem plataformas e sem `code`. O núcleo da app é genérico; plataformas, linguagens e componentes de código entram só por estas propriedades.
+O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define, `params` e `values` dizem como passar os campos, `notes` orienta. O agente lê o arquivo para saber a assinatura e escreve a chamada na solução. O mapeamento não guarda nada sobre a solução: ele não sabe onde ela está nem o que foi escrito nela, e o `code` não é o código gerado para uma anotação.
 
-| Propriedade | Onde                            | Descrição                                                                                                                                                                                |
-| ----------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `platforms` | raiz (opcional)                 | Lista de `{ id, name, language }`. `id` no formato `[a-z0-9-]+` e único na especialização; `name` é exibido; `language` é informativo (ajuda o agente).                                  |
-| `code`      | tipo de anotação (opcional)     | Objeto por **id de plataforma declarada**; cada entrada tem as propriedades abaixo.                                                                                                      |
-| `symbol`    | entrada de `code` (obrigatória) | Componente ou tipo que implementa o tipo de anotação naquela plataforma.                                                                                                                 |
-| `path`      | entrada de `code` (opcional)    | Arquivo que define o `symbol`, **relativo à raiz do repositório da plataforma** (`/` como separador, sem `.`, `..`, `/` no começo nem letra de unidade). Sem linha: o `symbol` localiza. |
-| `params`    | entrada de `code` (opcional)    | Chave de um campo do tipo → nome do parâmetro no código. Campos fora de `params` não são passados.                                                                                       |
-| `values`    | entrada de `code` (opcional)    | Chave de um campo `enum` → (valor no mapping → valor no código). Valor sem tradução é passado como está.                                                                                 |
-| `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente.                                                                                                                                                          |
+Uma **plataforma** é um alvo de código em que o agente escreve a solução: o app Android, o app iOS, o BFF que gera o JSON de uma tela de SDUI. A `formatVersion` 2 declara as plataformas e o `code` dos tipos; a 5 acrescenta o `repo`, o repositório da biblioteca naquela plataforma. A `formatVersion` 1 continua válida: é a 2 sem plataformas e sem `code`. O núcleo da app é genérico; plataformas, linguagens e código de instanciação entram só por estas propriedades.
 
-O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link pelo `urlTemplate` e caminho local pelo `localPath` do repositório da plataforma, configurados no projeto (`platformRepos`, ver o [`FORMAT.md`](FORMAT.md)): a app mostra a linha "Definição" nos Detalhes da anotação tipada e o MCP devolve o endereço e o arquivo local (ver o [`AGENT-GUIDE.md`](AGENT-GUIDE.md)).
+| Propriedade | Onde                            | Descrição                                                                                                                                                                                                                                                         |
+| ----------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `platforms` | raiz (opcional)                 | Lista de `{ id, name, language, repo? }`: os alvos de código em que o agente escreve a solução. `id` no formato `[a-z0-9-]+` e único na especialização; `name` é exibido; `language` é informativo (diz ao agente em que linguagem escrever a chamada).            |
+| `repo`      | entrada de `platforms` (v5)     | Opcional, só na `formatVersion` 5. O repositório da biblioteca naquela plataforma, onde estão os arquivos citados nos `path`: `{ url, urlTemplate?, ref? }` (abaixo). Sem ele, o agente só chega ao arquivo pelo clone local que o projeto informar.             |
+| `code`      | tipo de anotação (opcional)     | Objeto por **id de plataforma declarada**: como se cria uma instância do tipo em cada uma. Cada entrada tem as propriedades abaixo.                                                                                                                               |
+| `symbol`    | entrada de `code` (obrigatória) | O que se chama para criar uma instância do tipo naquela plataforma: um composable, uma view, uma classe, a função do BFF que gera o JSON do componente. O agente escreve a chamada a esse símbolo.                                                                |
+| `path`      | entrada de `code` (opcional)    | O arquivo que define o `symbol`, **relativo à raiz do `repo` da plataforma** (`/` como separador, sem `.`, `..`, `/` no começo nem letra de unidade, sem linha). O agente o lê para saber a assinatura antes de escrever a chamada; sem `path`, o `symbol` localiza. |
+| `params`    | entrada de `code` (opcional)    | Com que nome cada campo do tipo é passado na chamada: chave de um campo do tipo → nome do parâmetro. Campos fora de `params` não são passados.                                                                                                                    |
+| `values`    | entrada de `code` (opcional)    | Como cada valor de `enum` é escrito no código: chave de um campo `enum` → (valor no mapping → texto no código). Valor sem tradução é passado como está.                                                                                                           |
+| `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente que escreve a chamada: o que passar além dos campos, ordem, cuidados.                                                                                                                                                              |
 
-`code` só vale em especializações que declaram `platforms`. Os ids citados em `code` precisam existir em `platforms`, e as chaves de `params` e `values` precisam ser campos do tipo.
+O `repo` de uma plataforma tem três propriedades:
+
+| Propriedade   | Obrigatória | Descrição                                                                                                                                                                                                                                                                                |
+| ------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`         | sim         | Endereço do repositório da biblioteca naquela plataforma (`http://` ou `https://`, sem espaços).                                                                                                                                                                                         |
+| `urlTemplate` | não         | Modelo do endereço de **um arquivo**, com `{path}` (ex: `https://github.com/org/app-android/blob/v3/{path}`). Serve a GitHub, GitLab, Bitbucket ou um servidor interno. Um `{line}` é aceito e sai do link, porque o `path` não tem linha. Sem ele, a app e o servidor MCP não montam link. |
+| `ref`         | não         | A revisão (tag, branch ou commit) da biblioteca a que o `code` corresponde. Informativa: a app e o servidor MCP a mostram, mas não a usam para montar o link (quem a quer no link a escreve no `urlTemplate`). Texto não vazio.                                                          |
+
+- **Como o agente chega ao arquivo.** Pelo endereço: o `urlTemplate` do `repo` da plataforma, na especialização dona do tipo, com `{path}` trocado pelo `path` (cada segmento codificado, as `/` mantidas). A app mostra a linha "Definição" nos Detalhes da anotação tipada com esse link logo depois de aplicar a especialização, e o servidor MCP devolve o endereço. Ou pelo clone local: o projeto pode guardar onde a biblioteca está clonada (`platformRepos[<plataforma>].localPath`, uma sobreposição local; ver o [`FORMAT.md`](FORMAT.md), "Campos da v11"), e o caminho local do arquivo é o `localPath` mais o `path`.
+- Plataformas com o **mesmo `id`** em especializações diferentes são o mesmo alvo de código (o projeto guarda um só clone local para elas). Cada especialização declara o `repo` da própria biblioteca, e eles podem diferir: o link de um tipo usa o `repo` da especialização dele.
+- `code` só vale em especializações que declaram `platforms`. Os ids citados em `code` precisam existir em `platforms`, e as chaves de `params` e `values` precisam ser campos do tipo.
+- Plataforma em que algum tipo tem `path` e que não declara `repo` gera um **aviso** da especialização (`path-without-repo`), não um erro: o arquivo é citado, mas o agente não sabe em que repositório procurá-lo. O uso de `code` pelo servidor MCP (`get_code_hints`, `find_by_code`) está no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
 ```json
 {
   "format": "mapping-spec",
-  "formatVersion": 2,
+  "formatVersion": 5,
   "id": "sdui",
   "name": "SDUI",
-  "version": 2,
-  "platforms": [{ "id": "app", "name": "App", "language": "typescript" }],
+  "version": 3,
+  "platforms": [
+    {
+      "id": "android",
+      "name": "Android",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/app-android",
+        "urlTemplate": "https://github.com/org/app-android/blob/v3/{path}",
+        "ref": "v3"
+      }
+    },
+    {
+      "id": "bff",
+      "name": "BFF",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/bff",
+        "urlTemplate": "https://github.com/org/bff/blob/v3/{path}",
+        "ref": "v3"
+      }
+    }
+  ],
   "layers": [
     {
       "id": "componentes",
@@ -164,26 +197,45 @@ O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link p
           "id": "button",
           "name": "Button",
           "fields": [
-            { "key": "texto", "type": "string", "required": true },
+            {
+              "key": "id",
+              "type": "string",
+              "required": true
+            },
             {
               "key": "estilo",
               "type": "enum",
-              "options": ["primary", "secondary"],
+              "options": [
+                "primary",
+                "secondary"
+              ],
               "default": "primary"
             }
           ],
           "code": {
-            "app": {
-              "symbol": "DSButton",
+            "android": {
+              "symbol": "com.app.ds.DSButton",
               "path": "app/src/main/java/com/app/ds/DSButton.kt",
-              "params": { "texto": "text", "estilo": "style" },
+              "params": {
+                "id": "testId",
+                "estilo": "style"
+              },
               "values": {
                 "estilo": {
                   "primary": "ButtonStyle.Primary",
                   "secondary": "ButtonStyle.Secondary"
                 }
               },
-              "notes": "Passe o id como testId."
+              "notes": "Chame o composable DSButton; o id vai em testId."
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.button",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
+              "params": {
+                "id": "id",
+                "estilo": "variant"
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         }
@@ -193,8 +245,10 @@ O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link p
 }
 ```
 
-- Plataformas com o **mesmo id** em especializações diferentes são a mesma plataforma (a configuração do repositório fica no projeto, não na especialização).
-- O repositório de cada plataforma (`platformRepos`, no projeto) está em [`FORMAT.md`](FORMAT.md), "Campos da v7". Plataforma em que algum tipo tem `path`, sem repositório configurado no projeto, gera um aviso (não é pendência). O uso de `code` pelo servidor MCP (`get_code_hints`, `find_by_code`) está no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
+- `android.symbol` é o composable que se chama para criar um Button; `android.path` é o arquivo que o define, e o agente o lê para ver a assinatura antes de escrever a chamada.
+- `bff` é uma plataforma como as outras: o `symbol` é a **função Kotlin que gera o nó JSON** do Button (`com.app.bff.sdui.button`), com o arquivo dela em `path`, e não o nome do nó (`"button"`) que sai no JSON.
+- `params` diz o nome do parâmetro que recebe cada campo (`estilo` vai em `style` no Android e em `variant` no BFF); `values` diz como o valor `primary` é escrito no Android (`ButtonStyle.Primary`).
+- Cada plataforma declara o `repo` da biblioteca dela; os arquivos de `path` são relativos à raiz desse repositório.
 
 ## Origens (sources)
 

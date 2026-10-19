@@ -774,25 +774,18 @@ export const ptBR = {
   'code.copyPathNamed': 'Copiar caminho: {path}',
   'code.pathCopied': 'Caminho copiado',
   'code.copyFailed': 'Não foi possível copiar o caminho.',
+  'migration.v11.discardedUrlTemplate':
+    'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com `repo` (formatVersion 5) e atualize-a no projeto.',
   'repos.title': 'Repositórios de código',
   'repos.intro':
-    'Para cada plataforma, diga onde fica o código. O endereço permite abrir os arquivos no repositório; o caminho local ajuda o agente a encontrá-los.',
+    'Para cada plataforma, diga onde está o clone local do código. O caminho local ajuda o agente a encontrar os arquivos; o endereço do repositório vem da especialização.',
   'repos.platform': '{name} ({id})',
-  'repos.urlTemplate': 'Endereço do arquivo',
-  'repos.urlTemplateHint':
-    'Use {path} para o caminho do arquivo. Ex.: https://github.com/org/app/blob/main/{path}',
   'repos.localPath': 'Caminho local da raiz',
   'repos.localPathHint': 'Da pasta deste projeto até a raiz do repositório. Ex.: ../..',
   'repos.clear': 'Limpar repositório de {name}',
-  'repos.invalidUrlTemplate':
-    'O endereço precisa começar com http:// ou https://, não ter espaços e conter {path}.',
   'repos.invalidLocalPath':
     'Use um caminho relativo à pasta do projeto (".." vale), sem começar por "/" nem por letra de unidade.',
   'repos.invalidValue': 'Não foi possível gravar o repositório.',
-  'repos.missingOne':
-    '{name} sem repositório: 1 tipo aponta um arquivo nesta plataforma.',
-  'repos.missingMany':
-    '{name} sem repositório: {count} tipos apontam arquivos nesta plataforma.',
   'spec.ignoredFields':
     'Campos ignorados: {fields}. O tipo de campo "{type}" saiu do formato; a especialização foi aplicada sem eles. Remova-os do arquivo.',
   'spec.platforms': 'Plataformas',

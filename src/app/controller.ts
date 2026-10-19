@@ -11,6 +11,7 @@ import {
   migrations,
   serialize,
   SCHEMA_VERSION,
+  type DiscardedUrlTemplate,
   type Project,
   type RepairRecord,
 } from '../model';
