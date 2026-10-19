@@ -307,6 +307,21 @@ describe('HelpDialog', () => {
     expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
   });
 
+  it('em file:// a seção do guia mostra o aviso no lugar do link', () => {
+    vi.stubGlobal('location', { ...window.location, protocol: 'file:' });
+    try {
+      render(<HelpDialog onClose={vi.fn()} />);
+      const section = document.getElementById('help-guide') as HTMLElement;
+      expect(within(section).getByText(t('help.guide.fileProtocol'))).toBeTruthy();
+      expect(
+        within(section).queryByRole('link', { name: t('help.guide.open'), hidden: true }),
+      ).toBeNull();
+      expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('índice lateral com as seções, os downloads e os atalhos', () => {
     render(<HelpDialog onClose={vi.fn()} />);
     const links = within(toc())

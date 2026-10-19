@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   deserialize,
@@ -136,5 +137,75 @@ describe('proposta de exemplo', () => {
       proposal.changes.map((c) => [c.id, { state: 'accepted' as const, at: 'x' }]),
     );
     expect(validateAccepted(project, { ...proposal, decisions: all }).ok).toBe(true);
+  });
+});
+
+describe('cópias do exemplo × fontes', () => {
+  const SYNC_HINT =
+    'o exemplo está desatualizado: copie a fonte para examples/exemplo-completo/specs/ ' +
+    '(pacote de examples/libraries/material3, specs de examples/specs) e rode ' +
+    '`npm run build:example` e `npm run build:guia`.';
+
+  function listFiles(root: string, dir = ''): string[] {
+    const out: string[] = [];
+    for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+      const rel = dir === '' ? entry.name : `${dir}/${entry.name}`;
+      if (entry.isDirectory()) out.push(...listFiles(root, rel));
+      else out.push(rel);
+    }
+    return out.sort();
+  }
+
+  function sameFile(copy: string, source: string, label: string) {
+    if (copy.endsWith('.json')) {
+      const a: unknown = JSON.parse(readFileSync(copy, 'utf8'));
+      const b: unknown = JSON.parse(readFileSync(source, 'utf8'));
+      expect(a, `${label} difere da fonte. ${SYNC_HINT}`).toEqual(b);
+    } else {
+      const same = readFileSync(copy).equals(readFileSync(source));
+      expect(same, `${label} difere da fonte. ${SYNC_HINT}`).toBe(true);
+    }
+  }
+
+  it('specs/material3/ tem os mesmos arquivos e o mesmo conteúdo de examples/libraries/material3/', () => {
+    const copy = join(EXAMPLE_DIR, 'specs/material3');
+    const source = 'examples/libraries/material3';
+    expect(listFiles(copy), `lista de arquivos diferente. ${SYNC_HINT}`).toEqual(
+      listFiles(source),
+    );
+    for (const rel of listFiles(source))
+      sameFile(join(copy, rel), join(source, rel), rel);
+  });
+
+  it.each([
+    ['sdui.json', 'examples/specs/sdui.json'],
+    ['modelo-dados.json', 'examples/specs/modelo-de-dados.json'],
+  ])('specs/%s tem o conteúdo de %s', (name, source) => {
+    sameFile(join(EXAMPLE_DIR, 'specs', name), source, name);
+  });
+
+  it('a version de cada especialização do mapping.json é a da fonte', () => {
+    const mapping = JSON.parse(
+      readFileSync(join(EXAMPLE_DIR, 'mapping.json'), 'utf8'),
+    ) as {
+      specializations: { id: string; version: number; file: string }[];
+    };
+    const sources: Record<string, string> = {
+      sdui: 'examples/specs/sdui.json',
+      'modelo-dados': 'examples/specs/modelo-de-dados.json',
+      material3: 'examples/libraries/material3/material3.spec.json',
+    };
+    expect(mapping.specializations.map((s) => s.id).sort()).toEqual(
+      Object.keys(sources).sort(),
+    );
+    for (const s of mapping.specializations) {
+      const src = JSON.parse(readFileSync(sources[s.id] as string, 'utf8')) as {
+        id: string;
+        version: number;
+      };
+      expect(s.version, `versão de ${s.id} difere da fonte. ${SYNC_HINT}`).toBe(
+        src.version,
+      );
+    }
   });
 });

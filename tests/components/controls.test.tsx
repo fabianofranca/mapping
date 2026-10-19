@@ -2,10 +2,12 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'preact/hooks';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Icon } from '../../src/ui/icons';
 import {
   Button,
   Choice,
   IconButton,
+  LinkButton,
   Segmented,
   Select,
   Tabs,
@@ -380,5 +382,23 @@ describe('variantes da revisão', () => {
     fireEvent.input(area, { target: { value: 'linha 1\nlinha 2' } });
     fireEvent.blur(area);
     expect(onCommit).toHaveBeenCalledWith('linha 1\nlinha 2');
+  });
+});
+
+describe('LinkButton', () => {
+  it('é um <a> com a aparência do botão, abre em outra aba e leva o ícone', () => {
+    render(
+      <LinkButton href="guia/index.html" class="extra">
+        <Icon name="info" />
+        Abrir guia
+      </LinkButton>,
+    );
+    const link = screen.getByRole('link', { name: 'Abrir guia' });
+    expect(link.tagName).toBe('A');
+    expect(link.className).toBe('button extra');
+    expect(link.getAttribute('href')).toBe('guia/index.html');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(link.querySelector('svg.icon')).not.toBeNull();
   });
 });

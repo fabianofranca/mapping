@@ -56,7 +56,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      # Orçamento do dist/index.html (autocontido; ~1,0 MB em 2026-10). Só aqui.
+      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui.
       INDEX_HTML_MAX_BYTES: 1572864
     steps:
       - uses: actions/checkout@v7
