@@ -19,10 +19,32 @@ export interface HelpSection {
 /** Trecho do exemplo SDUI (igual nos dois idiomas: é o formato do arquivo). */
 const SDUI_EXCERPT = `{
   "format": "mapping-spec",
-  "formatVersion": 1,
+  "formatVersion": 5,
   "id": "sdui",
   "name": "SDUI",
-  "version": 1,
+  "version": 3,
+  "platforms": [
+    {
+      "id": "android",
+      "name": "Android",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/app-android",
+        "urlTemplate": "https://github.com/org/app-android/blob/v3/{path}",
+        "ref": "v3"
+      }
+    },
+    {
+      "id": "bff",
+      "name": "BFF",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/bff",
+        "urlTemplate": "https://github.com/org/bff/blob/v3/{path}",
+        "ref": "v3"
+      }
+    }
+  ],
   "layers": [
     {
       "id": "componentes",
@@ -32,21 +54,88 @@ const SDUI_EXCERPT = `{
         {
           "id": "button",
           "name": "Button",
-          "allowedChildren": ["onClick"],
+          "allowedChildren": [
+            "onClick"
+          ],
           "fields": [
-            { "key": "id", "type": "string", "required": true },
-            { "key": "estilo", "type": "enum",
-              "options": ["primary", "secondary"], "default": "primary" }
-          ]
+            {
+              "key": "id",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "estilo",
+              "type": "enum",
+              "options": [
+                "primary",
+                "secondary"
+              ],
+              "default": "primary"
+            }
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.DSButton",
+              "path": "app/src/main/java/com/app/ds/DSButton.kt",
+              "params": {
+                "id": "testId",
+                "estilo": "style"
+              },
+              "values": {
+                "estilo": {
+                  "primary": "ButtonStyle.Primary",
+                  "secondary": "ButtonStyle.Secondary"
+                }
+              }
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.button",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
+              "params": {
+                "id": "id",
+                "estilo": "variant"
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
+            }
+          }
         },
         {
           "id": "input",
           "name": "Input",
           "fields": [
-            { "key": "id", "type": "string", "required": true },
-            { "key": "dado", "type": "ref",
-              "accepts": { "tags": ["data-field"], "free": true } }
-          ]
+            {
+              "key": "id",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "dado",
+              "type": "ref",
+              "accepts": {
+                "tags": [
+                  "data-field"
+                ],
+                "free": true
+              }
+            }
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.DSTextField",
+              "path": "app/src/main/java/com/app/ds/DSTextField.kt",
+              "params": {
+                "id": "testId"
+              }
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.input",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
+              "params": {
+                "id": "id"
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
+            }
+          }
         }
       ]
     },
@@ -60,24 +149,67 @@ const SDUI_EXCERPT = `{
           "name": "onClick",
           "requiresOwner": true,
           "fields": [
-            { "key": "acao", "type": "enum",
-              "options": ["navigate", "submit"], "required": true }
-          ]
+            {
+              "key": "acao",
+              "type": "enum",
+              "options": [
+                "navigate",
+                "submit"
+              ],
+              "required": true
+            }
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.OnClick",
+              "path": "app/src/main/java/com/app/ds/OnClick.kt",
+              "params": {
+                "acao": "action"
+              }
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.onClick",
+              "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
+              "params": {
+                "acao": "action"
+              },
+              "notes": "A função devolve o nó do evento no JSON da tela."
+            }
+          }
         }
       ]
     }
   ]
 }`;
 
-/** Trecho de uma especialização v2: plataforma e o `code` de um tipo. */
+/** Trecho de uma especialização v5: as plataformas com `repo` e o `code` de um tipo. */
 const CODE_EXCERPT = `{
   "format": "mapping-spec",
-  "formatVersion": 2,
+  "formatVersion": 5,
   "id": "sdui",
   "name": "SDUI",
-  "version": 2,
+  "version": 3,
   "platforms": [
-    { "id": "app", "name": "App", "language": "typescript" }
+    {
+      "id": "android",
+      "name": "Android",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/app-android",
+        "urlTemplate": "https://github.com/org/app-android/blob/v3/{path}",
+        "ref": "v3"
+      }
+    },
+    {
+      "id": "bff",
+      "name": "BFF",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/bff",
+        "urlTemplate": "https://github.com/org/bff/blob/v3/{path}",
+        "ref": "v3"
+      }
+    }
   ],
   "layers": [
     {
@@ -89,22 +221,45 @@ const CODE_EXCERPT = `{
           "id": "button",
           "name": "Button",
           "fields": [
-            { "key": "texto", "type": "string", "required": true },
-            { "key": "estilo", "type": "enum",
-              "options": ["primary", "secondary"], "default": "primary" }
+            {
+              "key": "id",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "estilo",
+              "type": "enum",
+              "options": [
+                "primary",
+                "secondary"
+              ],
+              "default": "primary"
+            }
           ],
           "code": {
-            "app": {
-              "symbol": "DSButton",
+            "android": {
+              "symbol": "com.app.ds.DSButton",
               "path": "app/src/main/java/com/app/ds/DSButton.kt",
-              "params": { "texto": "text", "estilo": "style" },
+              "params": {
+                "id": "testId",
+                "estilo": "style"
+              },
               "values": {
                 "estilo": {
                   "primary": "ButtonStyle.Primary",
                   "secondary": "ButtonStyle.Secondary"
                 }
               },
-              "notes": "Passe o id como testId."
+              "notes": "Chame o composable DSButton; o id vai em testId."
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.button",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
+              "params": {
+                "id": "id",
+                "estilo": "variant"
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         }
@@ -228,6 +383,7 @@ const ptBR: readonly HelpSection[] = [
           'Camadas da especialização só aceitam anotações tipadas, sem chaves extras. Camadas criadas por você continuam livres.',
           'A especialização aplicada é copiada para specs/<id>.json dentro do projeto, que fica autocontido.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
+          'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
         ],
       },
     ],
@@ -238,7 +394,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 4), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms e, na versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 5), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -262,7 +418,7 @@ const ptBR: readonly HelpSection[] = [
           { term: 'fields', text: 'Obrigatório. Lista de campos (pode ser vazia).' },
           {
             term: 'code',
-            text: 'Opcional (formatVersion 2). Como o tipo vira código em cada plataforma declarada.',
+            text: 'Opcional (formatVersion 2). Como se cria uma instância do tipo em cada plataforma declarada.',
           },
           {
             term: 'component',
@@ -399,43 +555,85 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'A formatVersion 2 liga a especialização ao código: ela declara as plataformas (um app, um contrato de API…) e como cada tipo vira código em cada uma. A formatVersion 1 continua válida (é a 2 sem plataformas e sem code).',
+        text: 'O code de um tipo diz como se cria uma instância dele em cada plataforma: symbol é o que se chama, path é o arquivo que o define, params e values dizem como passar os campos, notes orienta. O agente lê o arquivo para saber a assinatura e escreve a chamada na solução. O mapeamento não guarda nada sobre a solução: ele não sabe onde ela está nem o que foi escrito nela, e o code não é o código gerado para uma anotação.',
+      },
+      {
+        kind: 'p',
+        text: 'Uma plataforma é um alvo de código em que o agente escreve a solução: o app Android, o app iOS, o BFF que gera o JSON de uma tela de SDUI. A formatVersion 2 declara as plataformas e o code dos tipos; a 5 acrescenta o repo, o repositório da biblioteca naquela plataforma. A formatVersion 1 continua válida (é a 2 sem plataformas e sem code).',
       },
       {
         kind: 'terms',
         items: [
           {
             term: 'platforms',
-            text: 'Na raiz, opcional. Lista de { id, name, language }: id no formato [a-z0-9-]+ e único; name é exibido; language é informativo (ajuda o agente).',
+            text: 'Na raiz, opcional. Lista de { id, name, language, repo? }: os alvos de código em que o agente escreve a solução. id no formato [a-z0-9-]+ e único; name é exibido; language é informativo (diz ao agente em que linguagem escrever a chamada).',
+          },
+          {
+            term: 'repo',
+            text: 'Em cada plataforma, opcional, só na formatVersion 5: { url, urlTemplate?, ref? }, o repositório da biblioteca naquela plataforma, onde estão os arquivos citados nos path. Sem ele, o agente só chega ao arquivo pelo clone local que o projeto informar.',
           },
           {
             term: 'code',
-            text: 'Em cada tipo de anotação, opcional, por id de plataforma declarada, com as propriedades abaixo.',
+            text: 'Em cada tipo de anotação, opcional, por id de plataforma declarada: como se cria uma instância do tipo em cada uma, com as propriedades abaixo.',
           },
           {
             term: 'symbol',
-            text: 'Obrigatório em cada entrada de code: componente ou tipo que implementa o tipo naquela plataforma.',
+            text: 'Obrigatório em cada entrada de code: o que se chama para criar uma instância do tipo naquela plataforma (um composable, uma view, uma classe, a função do BFF que gera o JSON do componente). O agente escreve a chamada a esse símbolo.',
           },
           {
             term: 'path',
-            text: 'Opcional em cada entrada de code: o arquivo que define o symbol, relativo à raiz do repositório da plataforma (com /, sem ., .. nem letra de unidade) e sem linha. Vira link pelo repositório da plataforma e a app mostra a linha "Definição" nos Detalhes.',
+            text: 'Opcional em cada entrada de code: o arquivo que define o symbol, relativo à raiz do repo da plataforma (com /, sem ., .. nem letra de unidade) e sem linha. O agente o lê para saber a assinatura antes de escrever a chamada, e a app mostra a linha "Definição" nos Detalhes.',
           },
           {
             term: 'params',
-            text: 'Chave do campo do tipo → nome do parâmetro no código. Campos fora de params não são passados.',
+            text: 'Com que nome cada campo do tipo é passado na chamada: chave do campo → nome do parâmetro. Campos fora de params não são passados.',
           },
           {
             term: 'values',
-            text: 'Só para campos enum: valor no mapping → valor no código. Valor sem tradução é passado como está.',
+            text: 'Como cada valor de enum é escrito no código: campo enum → (valor no mapping → texto no código). Valor sem tradução é passado como está.',
           },
-          { term: 'notes', text: 'Orientação livre para o agente.' },
+          {
+            term: 'notes',
+            text: 'Orientação livre para o agente que escreve a chamada: o que passar além dos campos, ordem, cuidados.',
+          },
+        ],
+      },
+      { kind: 'p', text: 'O repo de uma plataforma tem três propriedades:' },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'url',
+            text: 'Obrigatória. Endereço do repositório da biblioteca naquela plataforma (http:// ou https://, sem espaços).',
+          },
+          {
+            term: 'urlTemplate',
+            text: 'Opcional. Modelo do endereço de um arquivo, com {path} (ex: https://github.com/org/app-android/blob/v3/{path}). Serve a GitHub, GitLab, Bitbucket ou um servidor interno. Sem ele, a app e o servidor MCP não montam link.',
+          },
+          {
+            term: 'ref',
+            text: 'Opcional, texto não vazio. A revisão (tag, branch ou commit) da biblioteca a que o code corresponde. É informativa: aparece na app e no servidor MCP, mas não entra no link.',
+          },
         ],
       },
       {
-        kind: 'p',
-        text: 'code só vale em especializações que declaram platforms; os ids citados precisam estar em platforms, e as chaves de params e values precisam ser campos do tipo.',
+        kind: 'list',
+        items: [
+          'Como o agente chega ao arquivo: pelo urlTemplate do repo da plataforma, na especialização dona do tipo, com {path} trocado pelo path (a app mostra esse link na linha "Definição" logo depois de aplicar a especialização); ou pelo clone local, que o projeto pode informar em Configurações › Repositórios de código (platformRepos[plataforma].localPath, uma sobreposição local: o caminho local do arquivo é o localPath mais o path).',
+          'Plataformas com o mesmo id em especializações diferentes são o mesmo alvo de código. Cada especialização declara o repo da própria biblioteca, e eles podem diferir: o link de um tipo usa o repo da especialização dele.',
+          'code só vale em especializações que declaram platforms; os ids citados precisam estar em platforms, e as chaves de params e values precisam ser campos do tipo.',
+          'Plataforma em que algum tipo tem path e que não declara repo gera um aviso da especialização (path-without-repo), não um erro: o arquivo é citado, mas o agente não sabe em que repositório procurá-lo.',
+        ],
       },
       { kind: 'code', code: CODE_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'android.symbol é o composable que se chama para criar um Button; android.path é o arquivo que o define, e o agente o lê para ver a assinatura antes de escrever a chamada.',
+          'bff é uma plataforma como as outras: o symbol é a função Kotlin que gera o nó JSON do Button (com.app.bff.sdui.button), com o arquivo dela em path, e não o nome do nó ("button") que sai no JSON.',
+          'params diz o nome do parâmetro que recebe cada campo (estilo vai em style no Android e em variant no BFF); values diz como o valor primary é escrito no Android (ButtonStyle.Primary).',
+        ],
+      },
     ],
   },
   {
@@ -533,7 +731,7 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'No app, Especializações › Aplicar pasta… (Chrome e Edge) ou Aplicar zip… confere o pacote pelos três níveis: erros bloqueiam, avisos deixam aplicar. Aplicar copia a pasta inteira para specs/<id>/ no projeto; Atualizar de pasta… ou de zip… regrava a cópia e Remover a apaga. Um arquivo .json v4 isolado é recusado: a biblioteca precisa da pasta inteira. O repositório traz um pacote completo, o Material 3, em examples/libraries/material3/, gerado por npm run build:examples.',
+        text: 'No app, Especializações › Aplicar pasta… (Chrome e Edge) ou Aplicar zip… confere o pacote pelos três níveis: erros bloqueiam, avisos deixam aplicar. Aplicar copia a pasta inteira para specs/<id>/ no projeto; Atualizar de pasta… ou de zip… regrava a cópia e Remover a apaga. Uma especialização v4 ou v5 que não cita nenhum arquivo do pacote (sem component, doc, examples, fonts nem origins) vale como arquivo .json isolado; a que cita é recusada em .json: a biblioteca precisa da pasta inteira. O repositório traz um pacote completo, o Material 3, em examples/libraries/material3/, gerado por npm run build:examples.',
       },
     ],
   },
@@ -623,7 +821,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 4), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 5), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
@@ -632,9 +830,10 @@ const ptBR: readonly HelpSection[] = [
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
+          'formatVersion 5, repo: só na versão 5, dentro de uma entrada de platforms (antes dela o erro é só é permitido com formatVersion 5); url obrigatória, começando com http:// ou https://; urlTemplate opcional, http(s):// e com {path}; ref opcional, texto não vazio; qualquer outra propriedade é recusada. Plataforma com path em algum tipo e sem repo é só aviso (path-without-repo);',
           'code só em especializações com platforms; os ids de code precisam existir em platforms;',
-          'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório e path, se houver, relativo à raiz do repositório;',
-          'formatVersion 4: fonts, origins, migrations, component, doc e examples só na versão 4, com caminhos do pacote relativos e a extensão certa; fonts sem par family + weight + style repetido; examples com name único e um só modo; path só em sistema declarado em origins (e obrigatório nele), slot e ignore só nele; migrations com from e to coerentes e passos que citam tipos e campos que existem;',
+          'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório e path, se houver, relativo à raiz do repo da plataforma;',
+          'formatVersion 4: fonts, origins, migrations, component, doc e examples só a partir da versão 4, com caminhos do pacote relativos e a extensão certa; fonts sem par family + weight + style repetido; examples com name único e um só modo; path só em sistema declarado em origins (e obrigatório nele), slot e ignore só nele; migrations com from e to coerentes e passos que citam tipos e campos que existem;',
           'color no formato #RRGGBB; propriedades desconhecidas são rejeitadas.',
         ],
       },
@@ -652,6 +851,9 @@ const ptBR: readonly HelpSection[] = [
           'Button: id é obrigatório (sem ele a anotação fica incompleta) e estilo já vem como primary (default).',
           'Button lista onClick em allowedChildren, e onClick tem requiresOwner: um onClick só existe ligado a um Button.',
           'Input.dado é um ref: aceita atributos com a etiqueta data-field (ex: as linhas de atributos da Classe, do Modelo de dados) e também tuplas de anotações livres.',
+          'platforms declara os dois alvos de código em que o agente escreve a solução, o android e o bff, cada um com o repo da sua biblioteca (url, o urlTemplate do link de um arquivo e a ref a que o code corresponde).',
+          'code diz como se cria uma instância de cada tipo: no android, o symbol é o composable a chamar (com.app.ds.DSButton) e o path é o arquivo que o define, relativo à raiz do repo; no bff, o symbol é a função Kotlin que gera o nó JSON (com.app.bff.sdui.button), e não o nome do nó. O agente lê o arquivo para ver a assinatura e escreve a chamada.',
+          'params diz com que nome o campo é passado (estilo vai em style no Android e em variant no BFF) e values como o valor do enum é escrito no código (primary vira ButtonStyle.Primary); notes orienta (a função do BFF devolve o nó do componente no JSON da tela).',
           'O exemplo completo (com table, number, labelField e outros) pode ser baixado abaixo.',
         ],
       },
@@ -676,6 +878,7 @@ const enUS: readonly HelpSection[] = [
           'Specialization layers only accept typed annotations, with no extra keys. Layers you create yourself stay free-form.',
           'The applied specialization is copied to specs/<id>.json inside the project, which stays self-contained.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
+          'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
         ],
       },
     ],
@@ -686,7 +889,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 4), id, name and version (integer ≥ 1) are required; description, platforms and, in version 4, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 5), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -713,7 +916,7 @@ const enUS: readonly HelpSection[] = [
           { term: 'fields', text: 'Required. List of fields (may be empty).' },
           {
             term: 'code',
-            text: 'Optional (formatVersion 2). How the type becomes code on each declared platform.',
+            text: 'Optional (formatVersion 2). How to create an instance of the type on each declared platform.',
           },
           {
             term: 'component',
@@ -850,43 +1053,85 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'formatVersion 2 links the specialization to code: it declares the platforms (an app, an API contract…) and how each type becomes code on each one. formatVersion 1 is still valid (it is version 2 without platforms and without code).',
+        text: 'The code of a type says how to create an instance of it on each platform: symbol is what you call, path is the file that defines it, params and values say how to pass the fields, notes guides. The agent reads the file to learn the signature and writes the call in the solution. The mapping stores nothing about the solution: it does not know where it is or what was written in it, and code is not the code generated for an annotation.',
+      },
+      {
+        kind: 'p',
+        text: 'A platform is a code target where the agent writes the solution: the Android app, the iOS app, the BFF that generates the JSON of an SDUI screen. formatVersion 2 declares the platforms and the code of the types; 5 adds repo, the library repository on that platform. formatVersion 1 is still valid (it is version 2 without platforms and without code).',
       },
       {
         kind: 'terms',
         items: [
           {
             term: 'platforms',
-            text: 'At the root, optional. List of { id, name, language }: id in the [a-z0-9-]+ format and unique; name is displayed; language is informational (it helps the agent).',
+            text: 'At the root, optional. List of { id, name, language, repo? }: the code targets where the agent writes the solution. id in the [a-z0-9-]+ format and unique; name is displayed; language is informational (it tells the agent which language to write the call in).',
+          },
+          {
+            term: 'repo',
+            text: 'On each platform, optional, formatVersion 5 only: { url, urlTemplate?, ref? }, the library repository on that platform, where the files cited in path live. Without it, the agent only reaches the file through the local clone the project reports.',
           },
           {
             term: 'code',
-            text: 'On each annotation type, optional, by declared platform id, with the properties below.',
+            text: 'On each annotation type, optional, by declared platform id: how to create an instance of the type on each one, with the properties below.',
           },
           {
             term: 'symbol',
-            text: 'Required in each code entry: the component or type that implements the type on that platform.',
+            text: 'Required in each code entry: what you call to create an instance of the type on that platform (a composable, a view, a class, the BFF function that generates the component JSON). The agent writes the call to that symbol.',
           },
           {
             term: 'path',
-            text: 'Optional in each code entry: the file that defines the symbol, relative to the platform repository root (with /, no ., .. or drive letter) and without a line. It becomes a link through the platform repository, and the app shows a "Definition" line in the Details.',
+            text: 'Optional in each code entry: the file that defines the symbol, relative to the platform repo root (with /, no ., .. or drive letter) and without a line. The agent reads it to learn the signature before writing the call, and the app shows a "Definition" line in the Details.',
           },
           {
             term: 'params',
-            text: 'Key of a type field → parameter name in the code. Fields outside params are not passed.',
+            text: 'The name each type field is passed with in the call: field key → parameter name. Fields outside params are not passed.',
           },
           {
             term: 'values',
-            text: 'Only for enum fields: value in the mapping → value in the code. A value without a translation is passed as is.',
+            text: 'How each enum value is written in the code: enum field → (value in the mapping → text in the code). A value without a translation is passed as is.',
           },
-          { term: 'notes', text: 'Free-form guidance for the agent.' },
+          {
+            term: 'notes',
+            text: 'Free-form guidance for the agent writing the call: what to pass besides the fields, order, caveats.',
+          },
+        ],
+      },
+      { kind: 'p', text: 'The repo of a platform has three properties:' },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'url',
+            text: 'Required. Address of the library repository on that platform (http:// or https://, no spaces).',
+          },
+          {
+            term: 'urlTemplate',
+            text: 'Optional. Template of the address of a file, with {path} (e.g. https://github.com/org/app-android/blob/v3/{path}). It works with GitHub, GitLab, Bitbucket or an internal server. Without it, the app and the MCP server do not build a link.',
+          },
+          {
+            term: 'ref',
+            text: 'Optional, non-empty text. The revision (tag, branch or commit) of the library that the code corresponds to. It is informational: it shows in the app and in the MCP server, but is not part of the link.',
+          },
         ],
       },
       {
-        kind: 'p',
-        text: 'code only works in specializations that declare platforms; the ids it cites must exist in platforms, and the keys of params and values must be fields of the type.',
+        kind: 'list',
+        items: [
+          'How the agent reaches the file: through the urlTemplate of the platform repo, in the specialization that owns the type, with {path} replaced by the path (the app shows this link in the "Definition" line right after the specialization is applied); or through the local clone, which the project can report in Settings › Code repositories (platformRepos[platform].localPath, a local overlay: the local path of the file is the localPath plus the path).',
+          'Platforms with the same id in different specializations are the same code target. Each specialization declares the repo of its own library, and they may differ: the link of a type uses the repo of its specialization.',
+          'code only works in specializations that declare platforms; the ids it cites must exist in platforms, and the keys of params and values must be fields of the type.',
+          'A platform where some type has a path and that does not declare repo produces a specialization warning (path-without-repo), not an error: the file is cited, but the agent does not know which repository to look in.',
+        ],
       },
       { kind: 'code', code: CODE_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'android.symbol is the composable you call to create a Button; android.path is the file that defines it, and the agent reads it to see the signature before writing the call.',
+          'bff is a platform like the others: its symbol is the Kotlin function that generates the Button JSON node (com.app.bff.sdui.button), with its file in path, not the node name ("button") that appears in the JSON.',
+          'params gives the parameter name that receives each field (estilo goes in style on Android and in variant on the BFF); values says how the primary value is written on Android (ButtonStyle.Primary).',
+        ],
+      },
     ],
   },
   {
@@ -984,7 +1229,7 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'In the app, Specializations › Apply folder… (Chrome and Edge) or Apply zip… checks the package through the three levels: errors block, warnings let you apply. Applying copies the whole folder to specs/<id>/ in the project; Update from folder… or from zip… rewrites the copy and Remove deletes it. A lone v4 .json file is refused: the library needs the whole folder. The repository ships a complete package, Material 3, in examples/libraries/material3/, generated by npm run build:examples.',
+        text: 'In the app, Specializations › Apply folder… (Chrome and Edge) or Apply zip… checks the package through the three levels: errors block, warnings let you apply. Applying copies the whole folder to specs/<id>/ in the project; Update from folder… or from zip… rewrites the copy and Remove deletes it. A v4 or v5 specialization that cites no package file (no component, doc, examples, fonts or origins) works as a lone .json file; one that does is refused as a .json: the library needs the whole folder. The repository ships a complete package, Material 3, in examples/libraries/material3/, generated by npm run build:examples.',
       },
     ],
   },
@@ -1074,7 +1319,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 4), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 5), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
@@ -1083,9 +1328,10 @@ const enUS: readonly HelpSection[] = [
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
+          'formatVersion 5, repo: version 5 only, inside a platforms entry (before it the error is only allowed with formatVersion 5); url required, starting with http:// or https://; urlTemplate optional, http(s):// and containing {path}; ref optional, non-empty text; any other property is rejected. A platform with a path on some type and no repo is only a warning (path-without-repo);',
           'code only in specializations with platforms; the ids in code must exist in platforms;',
-          'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required and path, if present, relative to the repository root;',
-          'formatVersion 4: fonts, origins, migrations, component, doc and examples only in version 4, with relative package paths and the right extension; fonts without a repeated family + weight + style; examples with a unique name and a single mode; path only in a system declared in origins (and required there), slot and ignore only there; migrations with coherent from and to and steps that cite types and fields that exist;',
+          'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required and path, if present, relative to the platform repo root;',
+          'formatVersion 4: fonts, origins, migrations, component, doc and examples only from version 4 on, with relative package paths and the right extension; fonts without a repeated family + weight + style; examples with a unique name and a single mode; path only in a system declared in origins (and required there), slot and ignore only there; migrations with coherent from and to and steps that cite types and fields that exist;',
           'color in the #RRGGBB format; unknown properties are rejected.',
         ],
       },
@@ -1103,6 +1349,9 @@ const enUS: readonly HelpSection[] = [
           'Button: id is required (without it the annotation is incomplete) and estilo starts as primary (default).',
           'Button lists onClick in allowedChildren, and onClick has requiresOwner: an onClick only exists attached to a Button.',
           'Input.dado is a ref: it accepts attributes with the data-field tag (e.g. the attribute rows of the Data model’s Class) and also tuples of free-form annotations.',
+          'platforms declares the two code targets where the agent writes the solution, android and bff, each with the repo of its library (url, the urlTemplate of a file link and the ref the code corresponds to).',
+          'code says how to create an instance of each type: on android, symbol is the composable to call (com.app.ds.DSButton) and path is the file that defines it, relative to the repo root; on bff, symbol is the Kotlin function that generates the JSON node (com.app.bff.sdui.button), not the node name. The agent reads the file to see the signature and writes the call.',
+          'params gives the name each field is passed with (estilo goes in style on Android and in variant on the BFF) and values how the enum value is written in the code (primary becomes ButtonStyle.Primary); notes guides (the BFF function returns the component node in the screen JSON).',
           'The full example (with table, number, labelField and more) can be downloaded below.',
         ],
       },

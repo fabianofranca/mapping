@@ -213,19 +213,51 @@ export function cadastroProject(): Project {
   return p;
 }
 
+/** `repo` que a especialização SDUI declara para `android` nos testes de código. */
+export const ANDROID_REPO = {
+  url: 'https://github.com/org/app-android',
+  urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
+  ref: 'v1.2.0',
+} as const;
+
+/** O projeto com o `repo` dado na plataforma da especialização aplicada (vira `formatVersion` 5). */
+export function withSpecRepo(
+  p: Project,
+  specId: string,
+  platformId: string,
+  repo: { url: string; urlTemplate?: string; ref?: string },
+): Project {
+  return {
+    ...p,
+    specializations: p.specializations.map((s) =>
+      s.id === specId && s.spec
+        ? {
+            ...s,
+            spec: {
+              ...s.spec,
+              formatVersion: 5,
+              platforms: (s.spec.platforms ?? []).map((platform) =>
+                platform.id === platformId ? { ...platform, repo } : platform,
+              ),
+            },
+          }
+        : s,
+    ),
+  };
+}
+
 /**
  * `cadastroProject` com o roteiro R3: o Screen `AS` (`Cadastro`, `rota: /cadastro`) no
- * Formulário e o repositório configurado só para `android`.
+ * Formulário; a especialização SDUI declara o `repo` de `android` (`ANDROID_REPO`) e o projeto
+ * sobrepõe só o clone local (`../../..`).
  */
 export function codeProject(): Project {
   let p = typed(cadastroProject(), 'AS', 'MF', 'sdui', 'screen', {
     nome: 'Cadastro',
     rota: '/cadastro',
   });
-  p = setPlatformRepo(p, 'android', {
-    urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
-    localPath: '../../..',
-  });
+  p = withSpecRepo(p, 'sdui', 'android', ANDROID_REPO);
+  p = setPlatformRepo(p, 'android', { localPath: '../../..' });
   return p;
 }
 

@@ -145,8 +145,8 @@ describe('nome do produto (app)', () => {
 
 describe('migrações', () => {
   it('registro atual não tem migrações pendentes', () => {
-    expect(SCHEMA_VERSION).toBe(10);
-    expect(migrate({ a: 1 }, 10)).toEqual({ ok: true, data: { a: 1 } });
+    expect(SCHEMA_VERSION).toBe(11);
+    expect(migrate({ a: 1 }, 11)).toEqual({ ok: true, data: { a: 1 } });
   });
 
   it('aplica as migrações registradas em sequência', () => {
