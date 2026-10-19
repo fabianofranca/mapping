@@ -152,7 +152,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 
 ## Etapa — Biblioteca (concluída, épico `epic/biblioteca`)
 
-- **Concluída em 2026-10-18** (fases B1 a B5 e Fechamento, PRs #169 a #176, testada pelo Cowork); histórico em [`history/PLAN-etapa-biblioteca.md`](history/PLAN-etapa-biblioteca.md). O merge do épico na `main` e a tag estável `mcp-v0.5.0` são decisão do dono.
+- **Concluída em 2026-10-18** (fases B1 a B5 e Fechamento, PRs #169 a #176, testada pelo Cowork); histórico em [`history/PLAN-etapa-biblioteca.md`](history/PLAN-etapa-biblioteca.md). Épico mesclado na `main` pelo PR #180, com a tag estável `mcp-v0.5.0`.
 
 - **Objetivo:** a especialização passa a entregar uma **Biblioteca** (o pacote: componentes, fontes, documentos e exemplos numa pasta) que a app e os agentes validam, aplicam e usam para montar telas com componentes. O ganho esperado é no desenvolvimento: agentes e pessoas montam e conferem telas a partir do design system.
 - **Fases:** B1 a B5 e Fechamento (histórico em [`history/PLAN-etapa-biblioteca.md`](history/PLAN-etapa-biblioteca.md)).
@@ -165,6 +165,12 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - **B5, Catálogo:** abrir biblioteca pela tela inicial; documentos, tabela de propriedades gerada dos campos, código por plataforma e origem; galeria de exemplos como imagens estáticas; playground vivo (o mesmo formulário de anotação tipada dos Detalhes); janela de ferramenta dentro do projeto (também a paleta); renderizador próprio de um subconjunto do markdown, sem dependência nova e sem injetar HTML (CSP); o MCP serve documentos e exemplos. Coordenador: Sonnet (interface e renderizador bem especificados, sem decisão de formato). Esforço: medium; subagentes medium (mecânicos: low).
 - **Depois, sem data:** revisão visual de versão nova lado a lado; exportar o catálogo como site estático; visualizador distribuído pelo build do produto; saída tela para sistema externo pela mesma declaração de origem; importação de telas do sistema externo para projetos; **pasta por versão do pacote** (`specs/<id>@<versão>/`, gravada inteira antes de o `mapping.json` passar a apontar para ela e a antiga removida depois; fecha a janela em que a pasta tem a versão nova enquanto o `mapping.json` ainda cita a antiga; pede migração do layout de `specs/` e ajuste no MCP, `packageOfProject` e a leitura da cópia; origem: observação do teste do PR #174, 2026-10-18); **o que a Biblioteca deixou** ([`history/PLAN-etapa-biblioteca.md`](history/PLAN-etapa-biblioteca.md), "O que ficou para depois"): teste com o JSON real do backend (depende do dono), campos de tabela no lugar de listas numeradas, props no próprio nó, vários slots por componente, a visão Proposto desenhar componentes novos, exportar durante uma importação, "Adicionar à tela" repetido empilhar marcações, camadas "Componentes" extras depois de "Converter em camadas livres", mensagem de cabeçalho do diálogo do pacote e `.tmp` do MCP em `proposals/`.
 - **Depende de:** laboratório de componentes concluído.
+
+## Etapa — Código de instanciação (em andamento, épico `epic/instanciacao`)
+
+- **Objetivo:** corrigir o conceito do `code` das especializações em tudo que o agente lê: o `code` diz com que código se cria uma instância do tipo na solução; o mapeamento não sabe nada sobre a solução.
+- **Entra:** vocabulário e definições em `SPEC-FORMAT.md`, `FORMAT.md`, Ajuda da app, skill `spec-author` e exemplo SDUI com a plataforma `bff` apontando para as funções que geram o JSON; MCP 0.6.0 com uma forma única de entrada de `code` com `definition` e `get_code_hints` separando `types` de `args`; aceite por uma pergunta de conceito ao agente na rodada do Cowork; sem schema nem `formatVersion` novos. Fases C1 a C3 (detalhe no [`PLAN.md`](../PLAN.md)).
+- **Depende de:** etapa Biblioteca (concluída e mesclada).
 
 ## Evoluções
 
