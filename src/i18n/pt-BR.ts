@@ -767,7 +767,7 @@ export const ptBR = {
   'shortcuts.copyCrop': 'Copiar o recorte da marcação selecionada',
   'code.definition': 'Definição',
   'code.definitionHint':
-    'Arquivo que define o símbolo do tipo em cada plataforma, vindo da especialização.',
+    'Arquivo que define o que se chama para criar uma instância do tipo em cada plataforma, vindo da especialização.',
   'code.open': 'Abrir no repositório',
   'code.openNamed': 'Abrir no repositório: {file}',
   'code.copyPath': 'Copiar caminho',
@@ -796,14 +796,14 @@ export const ptBR = {
   'spec.platformItemLanguage': '{name} · {id} · {language}',
   'help.code.title': 'Plataformas e código',
   'help.code.intro':
-    'Quando a especialização declara plataformas, o code de cada tipo diz qual componente o implementa em cada uma e, com o path, o arquivo que o define.',
+    'O code de um tipo diz como se cria uma instância dele em cada plataforma: symbol é o que se chama, path é o arquivo que o define, params e values dizem como passar os campos e notes orienta. O agente lê o arquivo para saber a assinatura e escreve a chamada na solução; o mapeamento não guarda nada sobre a solução.',
   'help.code.open':
     'Abrir no repositório: aparece quando a plataforma tem endereço configurado e abre o arquivo em outra aba. A app não faz nenhuma requisição: quem navega é o navegador, ao clicar.',
   'help.code.copy': 'Copiar caminho: copia o caminho do arquivo no repositório.',
   'help.code.definition':
     'Definição: nos Detalhes de uma anotação tipada, uma linha por plataforma com path, como "Plataforma · Arquivo.ext", com o caminho completo e o símbolo na dica. Vem da especialização e não se edita na app.',
   'help.code.repos':
-    'Repositórios: em Configurações (engrenagem), na seção "Repositórios de código", informe para cada plataforma o endereço do arquivo, com {path}, e o caminho local da raiz do repositório, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repositório, gera um aviso.',
+    'Repositórios: o endereço do repositório de cada plataforma (repo) vem da especialização. Em Configurações (engrenagem), na seção "Repositórios de código", informe só o caminho local da raiz do clone, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repo, gera um aviso na importação da especialização.',
   // Biblioteca de componentes na app (etapa Biblioteca, B3)
   // Catálogo: janela do editor e tela da biblioteca sem projeto (etapa Biblioteca, B5)
   'catalog.window.title': 'Catálogo',

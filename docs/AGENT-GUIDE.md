@@ -15,7 +15,7 @@ O Mapping marca **áreas retangulares** em imagens, organiza as informações em
 - **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), na mesma marcação e em outra camada (ex: um evento `onClick` vinculado ao `Button`). `linked` lista as vinculadas e `linkTree` mostra a árvore.
 - **Referências fortes.** Campos do tipo `ref` apontam para uma tupla, uma linha de tabela ou um campo de outra anotação. Em `refs` você vê para onde cada campo aponta; em `backlinks`, quem aponta para a anotação.
 - **Pendências.** Anotação incompleta (`issues`): campo obrigatório vazio, valor inválido, referência quebrada, tipo inexistente etc. São calculadas na leitura, não gravadas.
-- **Plataformas e código.** Uma especialização pode declarar **plataformas** e dizer como cada tipo vira código nelas (`code`: componente, arquivo que o define, parâmetros, orientações); `platformRepos` (no projeto) diz onde fica o repositório de cada plataforma. O mapeamento guarda só o que ajuda a **gerar** código, não onde ele foi gerado. Veja "Do mapeamento ao código".
+- **Plataformas e código.** Uma especialização pode declarar **plataformas** e dizer com que código se cria uma instância de cada tipo nelas (`code`: o que se chama, o arquivo que o define, parâmetros, orientações), com o repositório da biblioteca em `repo`; `platformRepos` (no projeto) diz só onde fica o clone local. O agente lê o arquivo para saber a assinatura e escreve a chamada na solução; o mapeamento não guarda nada sobre a solução. Veja "Do mapeamento ao código".
 - **Tela em branco.** Uma imagem pode não ter arquivo: `blank: true`, `file: null` e `background` (cor `#RRGGBB`); é onde se monta uma tela com componentes. `get_image_file` nela falha com `blank-image`; use `get_marking_image`. Uma foto não tem `background` nem tamanho editável (`not-blank`).
 - **Ordem entre irmãs.** As irmãs (mesma imagem e mesmo `parent`) são desenhadas na ordem da lista: `order` 0 fica por baixo. `move_marking` muda a posição.
 - **Trava.** `lock.locked` indica marcação trancada; `lock.geometryLocked`, geometria travada (por ela ou por um ancestral trancado). Item trancado não pode ser movido, redimensionado nem excluído.
@@ -251,7 +251,7 @@ Quando o projeto aplica uma especialização com **plataformas** (veja `platform
 ### Fluxo: implementar uma tela
 
 1. **Receba a referência** `mapping://…/m/…` (o dev a cola do app) e chame **`get_marking(ref, { platform })`** e **`get_marking_image(ref)`**: o primeiro dá as anotações e o `code` de cada tipo; o segundo, o que a tela parece.
-2. **`get_code_hints(ref, platform)`** devolve a **planta de código**: uma árvore que espelha a marcação e as descendentes. Em cada marcação, as anotações tipadas com:
+2. **`get_code_hints(ref, platform)`** devolve as **chamadas a escrever**: uma árvore que espelha a marcação e as descendentes. Em cada marcação, as anotações tipadas com:
    - `symbol`: o componente ou tipo da plataforma (`null` = o tipo **não tem mapeamento** nessa plataforma; a resposta lista esses tipos em `unmappedTypes`);
    - `path`, `url`, `localFile`, `exists` (quando a especialização informa o arquivo): **em que arquivo o `symbol` está** (relativo à raiz do repositório da plataforma), o endereço no repositório e o arquivo local (ver abaixo); leia esse arquivo para ver a assinatura do componente antes de usá-lo;
    - `params`: `{ field, name, value }` — o parâmetro no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary` do código). Campo que não está em `params` não é passado;

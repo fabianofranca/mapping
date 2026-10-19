@@ -761,7 +761,7 @@ export const enUS: Dictionary = {
   'shortcuts.copyCrop': 'Copy the crop of the selected marking',
   'code.definition': 'Definition',
   'code.definitionHint':
-    "File that defines the type's symbol on each platform, from the specialization.",
+    'File that defines what is called to create an instance of the type on each platform, from the specialization.',
   'code.open': 'Open in repository',
   'code.openNamed': 'Open in repository: {file}',
   'code.copyPath': 'Copy path',
@@ -791,14 +791,14 @@ export const enUS: Dictionary = {
   'spec.platformItemLanguage': '{name} · {id} · {language}',
   'help.code.title': 'Platforms and code',
   'help.code.intro':
-    'When the specialization declares platforms, the code of each type says which component implements it on each one and, with path, the file that defines it.',
+    'The code of a type says how to create an instance of it on each platform: symbol is what you call, path is the file that defines it, params and values say how to pass the fields, and notes guide. The agent reads the file to learn the signature and writes the call in the solution; the mapping stores nothing about the solution.',
   'help.code.open':
     'Open in repository: shown when the platform has an address configured; it opens the file in another tab. The app makes no request: the browser navigates when you click.',
   'help.code.copy': 'Copy path: copies the file path in the repository.',
   'help.code.definition':
     'Definition: in the Details of a typed annotation, one line per platform with a path, like "Platform · File.ext", with the full path and the symbol in the tooltip. It comes from the specialization and is not edited in the app.',
   'help.code.repos':
-    'Repositories: in Settings (gear), in the "Code repositories" section, give each platform the file address, with {path}, and the local path of the repository root, relative to the project folder. A platform where some type points to a file, without a repository, raises a warning.',
+    'Repositories: the repository address of each platform (repo) comes from the specialization. In Settings (gear), in the "Code repositories" section, give only the local path of the clone root, relative to the project folder. A platform where some type points to a file, without a repo, raises a warning when the specialization is imported.',
   // Component library in the app (Library stage, B3)
   // Catalog: editor window and the project-less library screen (Library stage, B5)
   'catalog.window.title': 'Catalog',

@@ -12,10 +12,12 @@ import { typeOfAnnotation, type ResolvedType } from './specLookup';
 import { isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Marking, Project, Rect } from './types';
 
-// Planta de código (`codeBlueprint`, etapa 3b): o que um agente precisa para
-// implementar uma marcação numa plataforma, a partir das especializações aplicadas.
-// Espelha a hierarquia da marcação e das descendentes; em cada marcação, as anotações
-// tipadas com o `code` da plataforma (ou `symbol: null` quando falta o mapeamento),
+// `codeBlueprint` (etapa 3b): as chamadas que um agente precisa escrever, numa plataforma,
+// para instanciar uma marcação, a partir das especializações aplicadas. O `code` de um tipo
+// diz com que código se cria uma instância dele (`symbol` é o que se chama, `path` o arquivo
+// que o define); aqui entram também os valores de cada instância. Espelha a hierarquia da
+// marcação e das descendentes; em cada marcação, as anotações tipadas com o `code` da
+// plataforma (ou `symbol: null` quando falta o mapeamento),
 // com as vinculadas sob a dona. Função pura: a app e o MCP (`get_code_hints`) usam a mesma.
 
 /** Parâmetro do componente na plataforma (`code.<plataforma>.params`). */

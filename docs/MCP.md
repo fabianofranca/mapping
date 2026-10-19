@@ -86,7 +86,7 @@ As operações de `plan_changes` e `propose_changes` (camadas, especializações
 
 ### Código das especializações (etapas 3b e 9)
 
-As especializações podem declarar **plataformas** e dizer como cada tipo de anotação vira código nelas (`code`: o componente, o arquivo que o define, os parâmetros e as orientações), e o projeto guarda o repositório de cada plataforma (`platformRepos`: `urlTemplate` e `localPath`). O mapeamento guarda só o que ajuda a **gerar** código; desde a 0.4.0 (schema v9) não há mais o campo `codeRef` (onde a instância foi implementada). Detalhes do formato em [`FORMAT.md`](FORMAT.md) e [`SPEC-FORMAT.md`](SPEC-FORMAT.md). O fluxo do agente está em [`AGENT-GUIDE.md`](AGENT-GUIDE.md): referência `mapping://` → `get_marking` e `get_marking_image` → `get_code_hints` → implementar.
+As especializações podem declarar **plataformas** e dizer com que código se cria uma instância de cada tipo de anotação nelas (`code`: o que se chama, o arquivo que o define, os parâmetros e as orientações), com o repositório da biblioteca em `repo` na especialização; o projeto guarda só o clone local (`platformRepos`: `localPath`). O mapeamento não guarda nada sobre a solução; desde a 0.4.0 (schema v9) não há mais o campo `codeRef` (onde a instância foi implementada). Detalhes do formato em [`FORMAT.md`](FORMAT.md) e [`SPEC-FORMAT.md`](SPEC-FORMAT.md). O fluxo do agente está em [`AGENT-GUIDE.md`](AGENT-GUIDE.md): referência `mapping://` → `get_marking` e `get_marking_image` → `get_code_hints` → escrever a solução.
 
 O `path` do `code` de um tipo (o arquivo que define o `symbol`) volta no `code` de `get_marking` e `get_annotation`, na anotação de `get_code_hints` e no `code` de `find_by_code`, com o endereço e o arquivo local ao lado:
 
