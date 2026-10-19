@@ -300,3 +300,5 @@ Relato: [`relato-2026-10-19-dirigida-pr179.md`](relato-2026-10-19-dirigida-pr179
 - **R5.3d (média):** decidir pelo teclado remontava o cartão (ou o popover) e o foco caía no `body`. O store da revisão guarda qual controle tinha o foco (`requestControlFocus`) e o par ✓ ✕ novo o recupera ao montar, só se o foco se perdeu; e2e com teclado real nos dois caminhos.
 - **Detalhes fora da tela a ~900 px (média):** as larguras guardadas das laterais não olhavam a largura real da janela (a regra antiga só recolhia o Detalhes na primeira visita). `fitSideWidths` encolhe a direita e depois a esquerda até o mínimo de cada uma para o canvas manter `--size-canvas-min`, sem mudar os tamanhos guardados; e2e com layout guardado a 1100, 902 e 900 px.
 - **Guia (R9.7):** como centrar a tela (fechar a janela de baixo, **Enquadrar tudo**, arrastar o fundo do canvas).
+
+Conferência curta do PR #179 ([`relato-2026-10-19-dirigida-pr179-curta.md`](relato-2026-10-19-dirigida-pr179-curta.md), build `7dcee05`): 6 de 6 ✅, sem achados. Fica como observação o foco no `body` depois de **Limpar** com o mouse no popover (o popover continua aberto).
