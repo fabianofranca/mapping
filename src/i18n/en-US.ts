@@ -440,7 +440,7 @@ export const enUS: Dictionary = {
   'spec.updateFolder': 'Update from folder…',
   'spec.updateZip': 'Update from zip…',
   'spec.packageHint':
-    'A library (version 4) comes in a folder or a zip: the specialization, components, documents and fonts.',
+    'A library (version 4 or 5) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
   'spec.v4NeedsPackage':
     '"{name}" refers to package files (components, documents, examples or fonts) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
   'spec.packageValidating': 'Checking the package…',
@@ -772,10 +772,13 @@ export const enUS: Dictionary = {
     'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with `repo` (formatVersion 5) and update it in the project.',
   'repos.title': 'Code repositories',
   'repos.intro':
-    'For each platform, say where the local clone of the code is. The local path helps the agent find the files; the repository address comes from the specialization.',
+    'The repository address of each platform comes from the specialization and is shown here for reference only. Just say where the local clone of the code is on your computer.',
+  'repos.noneDeclared': 'The specialization does not declare the repository of this platform.',
+  'repos.ref': 'ref {ref}',
   'repos.platform': '{name} ({id})',
   'repos.localPath': 'Local path of the root',
-  'repos.localPathHint': "From this project's folder to the repository root. E.g. ../..",
+  'repos.localPathHint':
+    "Root of the clone, relative to this project's folder (e.g. ../..). It lets the agent open the file locally; the address comes from the specialization.",
   'repos.clear': 'Clear the repository of {name}',
   'repos.invalidLocalPath':
     'Use a path relative to the project folder (".." is fine), not starting with "/" or a drive letter.',

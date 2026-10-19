@@ -443,6 +443,20 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
                                 name: platform.name,
                                 id: platform.id,
                               })}
+                          {platform.repo && (
+                            <span class="spec-platform-repo muted">
+                              <a
+                                href={platform.repo.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {platform.repo.url}
+                              </a>
+                              {platform.repo.ref && (
+                                <span>{t('repos.ref', { ref: platform.repo.ref })}</span>
+                              )}
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>

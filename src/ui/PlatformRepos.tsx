@@ -9,10 +9,10 @@ import {
 import { IconButton, TextField } from './controls';
 import { useEditor } from './EditorContext';
 
-// Clone local por plataforma (etapa 3b.3; schema v11), nas Configurações do editor: uma linha
-// por plataforma declarada pelas especializações aplicadas, com o caminho local da raiz do
-// clone (`localPath`). O endereço do repositório é da especialização. As actions validam e
-// devolvem o motivo do erro.
+// Repositórios por plataforma (etapa 3b.3; schema v11), nas Configurações do editor: uma linha
+// por plataforma declarada pelas especializações aplicadas. O `repo` (endereço e `ref`) é da
+// especialização e aparece só em leitura; o único campo editável é o caminho local da raiz do
+// clone (`localPath`), gravado no projeto. As actions validam e devolvem o motivo do erro.
 
 type Property = 'localPath';
 
@@ -44,6 +44,10 @@ export function PlatformRepos({ project, readOnly }: PlatformReposProps) {
       ))}
     </section>
   );
+}
+
+function specName(project: Project, specId: string): string {
+  return project.specializations.find((s) => s.id === specId)?.spec?.name ?? specId;
 }
 
 function RepoRow({
@@ -84,6 +88,28 @@ function RepoRow({
             actions.removePlatformRepo(platform.id);
           }}
         />
+      </div>
+      <div class="repo-declared">
+        {platform.repos.length === 0 ? (
+          <small class="muted">{t('repos.noneDeclared')}</small>
+        ) : (
+          platform.repos.map(({ specId, repo: declared }) => (
+            <div key={specId} class="repo-declared-item" data-spec={specId}>
+              <small class="muted">{specName(project, specId)}</small>
+              <a
+                href={declared.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="repo-declared-link"
+              >
+                {declared.url}
+              </a>
+              {declared.ref && (
+                <small class="muted">{t('repos.ref', { ref: declared.ref })}</small>
+              )}
+            </div>
+          ))
+        )}
       </div>
       <TextField
         label={t('repos.localPath')}

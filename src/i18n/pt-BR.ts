@@ -442,7 +442,7 @@ export const ptBR = {
   'spec.updateFolder': 'Atualizar de pasta…',
   'spec.updateZip': 'Atualizar de zip…',
   'spec.packageHint':
-    'Uma biblioteca (versão 4) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes.',
+    'Uma biblioteca (versão 4 ou 5) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
   'spec.v4NeedsPackage':
     '"{name}" cita arquivos do pacote (componentes, documentos, exemplos ou fontes) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
   'spec.packageValidating': 'Conferindo o pacote…',
@@ -778,10 +778,13 @@ export const ptBR = {
     'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com `repo` (formatVersion 5) e atualize-a no projeto.',
   'repos.title': 'Repositórios de código',
   'repos.intro':
-    'Para cada plataforma, diga onde está o clone local do código. O caminho local ajuda o agente a encontrar os arquivos; o endereço do repositório vem da especialização.',
+    'O endereço do repositório de cada plataforma vem da especialização e aparece aqui só para consulta. Informe apenas onde está o clone local do código no seu computador.',
+  'repos.noneDeclared': 'A especialização não declara o repositório desta plataforma.',
+  'repos.ref': 'ref {ref}',
   'repos.platform': '{name} ({id})',
   'repos.localPath': 'Caminho local da raiz',
-  'repos.localPathHint': 'Da pasta deste projeto até a raiz do repositório. Ex.: ../..',
+  'repos.localPathHint':
+    'Raiz do clone, relativa à pasta deste projeto (ex.: ../..). Serve para o agente abrir o arquivo localmente; o endereço vem da especialização.',
   'repos.clear': 'Limpar repositório de {name}',
   'repos.invalidLocalPath':
     'Use um caminho relativo à pasta do projeto (".." vale), sem começar por "/" nem por letra de unidade.',
