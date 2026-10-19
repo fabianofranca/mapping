@@ -91,7 +91,7 @@ export function specializationValue(s: ProjectSpecialization): JsonValue {
 }
 
 export function platformRepoValue(r: PlatformRepo): JsonValue {
-  return toJson({ urlTemplate: r.urlTemplate, localPath: r.localPath });
+  return toJson({ localPath: r.localPath });
 }
 
 /** Campos que a revisão compara em cada entidade (os de `annotation` são os fixos). */

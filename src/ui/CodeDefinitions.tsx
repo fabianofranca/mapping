@@ -65,7 +65,7 @@ export function CopyPathButton({ path }: { readonly path: string }) {
 
 interface CodeDefinitionActionsProps {
   readonly project: Project;
-  readonly definition: Pick<CodeDefinition, 'platform' | 'path' | 'fileName'>;
+  readonly definition: Pick<CodeDefinition, 'specId' | 'platform' | 'path' | 'fileName'>;
 }
 
 /**
@@ -95,16 +95,19 @@ export function CodeDefinitionActions({
 /**
  * Linha "Definição" de uma anotação tipada: uma entrada por plataforma cujo `code` do tipo
  * tem `path` ("<plataforma> · <arquivo>"), com as ações. Só leitura (vem da especialização);
- * sem repositório, mostra o caminho sem o link.
+ * sem `urlTemplate` no `repo` dela, mostra o caminho sem o link.
  */
 export function CodeDefinitions({
   project,
+  specId,
   type,
 }: {
   readonly project: Project;
+  /** Especialização dona do tipo: o `repo` dela dá o link. */
+  readonly specId: string;
   readonly type: SpecAnnotationType;
 }) {
-  const definitions = typeCodeDefinitions(project, type);
+  const definitions = typeCodeDefinitions(project, specId, type);
   if (definitions.length === 0) return null;
   return (
     <Property label={t('code.definition')} hint={t('code.definitionHint')}>

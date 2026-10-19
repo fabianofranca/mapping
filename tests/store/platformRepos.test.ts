@@ -20,12 +20,12 @@ const current = (store: ReturnType<typeof createProjectStore>): Project => {
   return p;
 };
 
-describe('store: repositórios por plataforma', () => {
+describe('store: clone local por plataforma', () => {
   it('erros do modelo voltam como ActionResult, sem mexer no histórico', () => {
     const { store, actions } = setup();
-    expect(actions.setPlatformRepo('android', { urlTemplate: 'https://x/' })).toEqual({
+    expect(actions.setPlatformRepo('android', { localPath: '/abs' })).toEqual({
       ok: false,
-      error: 'invalid-url-template',
+      error: 'invalid-local-path',
     });
     expect(actions.setPlatformRepo('web', { localPath: '.' })).toEqual({
       ok: false,
@@ -40,44 +40,21 @@ describe('store: repositórios por plataforma', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('configurar e remover entram no desfazer e atualizam o aviso derivado (pelo path do code)', () => {
+  it('informar e remover entram no desfazer; o aviso de repositório ausente saiu', () => {
     const { store, actions, derived } = setup();
-    // Só o Button tem `path` no iOS; no Android, Button e Input.
-    expect(derived.platformRepoWarnings.value).toEqual([
-      { code: 'missing-repo', platform: 'ios', types: 1 },
-    ]);
-    expect(
-      actions.setPlatformRepo('ios', {
-        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}',
-      }).ok,
-    ).toBe(true);
-    expect(derived.platformRepoWarnings.value).toEqual([]);
+    expect('platformRepoWarnings' in derived).toBe(false);
+    expect(actions.setPlatformRepo('ios', { localPath: '../ios' }).ok).toBe(true);
     expect(actions.removePlatformRepo('android').ok).toBe(true);
-    expect(derived.platformRepoWarnings.value).toEqual([
-      { code: 'missing-repo', platform: 'android', types: 2 },
-    ]);
     expect(store.revision.value).toBe(2);
 
-    // Repetir a configuração atual não cria entrada.
-    expect(
-      actions.setPlatformRepo('ios', {
-        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}',
-      }).ok,
-    ).toBe(true);
+    // Repetir o valor atual não cria entrada.
+    expect(actions.setPlatformRepo('ios', { localPath: '../ios' }).ok).toBe(true);
     expect(store.revision.value).toBe(2);
 
     expect(store.undo()).toBe(true);
     expect(Object.keys(current(store).platformRepos)).toEqual(['android', 'ios']);
     expect(store.undo()).toBe(true);
     expect(Object.keys(current(store).platformRepos)).toEqual(['android']);
-    expect(derived.platformRepoWarnings.value).toEqual([
-      { code: 'missing-repo', platform: 'ios', types: 1 },
-    ]);
-  });
-
-  it('o aviso acompanha as especializações aplicadas: sem o SDUI, nenhum', () => {
-    const { actions, derived } = setup();
-    expect(actions.removeSpecialization('sdui', 'convert').ok).toBe(true);
-    expect(derived.platformRepoWarnings.value).toEqual([]);
+    expect(current(store).platformRepos.android).toEqual({ localPath: '../../..' });
   });
 });

@@ -413,6 +413,23 @@ a.home-nav-item {
   align-items: stretch;
 }
 
+.repo-declared {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.repo-declared-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.repo-declared-link {
+  overflow-wrap: anywhere;
+}
+
 .repo-row small {
   overflow-wrap: anywhere;
 }

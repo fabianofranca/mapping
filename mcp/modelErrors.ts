@@ -52,8 +52,6 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'spec-not-newer': 'a versão não é maior que a aplicada',
   'spec-missing-migrations': 'a versão nova tem quebras sem migração declarada',
   'unknown-platform': 'plataforma não declarada pelas especializações aplicadas',
-  'invalid-url-template':
-    'urlTemplate inválido: precisa começar com http:// ou https:// e conter {path} ({line} é opcional)',
   'invalid-local-path':
     'localPath inválido: caminho relativo à pasta do projeto (ex: ../..), não absoluto',
   'invalid-source': 'source inválido: informe system e id não vazios (url é opcional)',

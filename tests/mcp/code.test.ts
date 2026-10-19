@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { deserialize, platformRepoWarnings } from '../../src/model';
+import { deserialize } from '../../src/model';
 import {
   DS_BUTTON_KT,
   DS_BUTTON_SWIFT,
@@ -59,7 +59,7 @@ interface HintNode {
 interface Hints {
   marking: string;
   platform: { id: string; name: string; language: string | null };
-  repo: { urlTemplate: string | null; localPath: string | null } | null;
+  repo: { url: string | null; ref: string | null; localPath: string | null } | null;
   unmappedTypes?: string[];
   tree: HintNode;
 }
@@ -151,7 +151,8 @@ describe('get_code_hints', () => {
       language: 'kotlin',
     });
     expect(hints.repo).toEqual({
-      urlTemplate: `${REPO_URL}/{path}#L{line}`,
+      url: 'https://github.com/org/app-android',
+      ref: 'v1.2.0',
       localPath: '../../..',
     });
     expect(hints.tree.name).toBe('Formulário');
@@ -441,24 +442,22 @@ describe('get_marking, get_annotation e get_project', () => {
     });
   });
 
-  it('get_project traz as plataformas, os platformRepos e o aviso de repositório ausente', async () => {
+  it('get_project traz as plataformas e o clone local; plataforma sem caminho local não gera aviso', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
-    expect(data.schemaVersion).toBe(10);
+    expect(data.schemaVersion).toBe(11);
     expect(data.platforms).toEqual([
       { id: 'android', name: 'Android', language: 'kotlin', specs: ['sdui'] },
       { id: 'ios', name: 'iOS', language: 'swift', specs: ['sdui'] },
       { id: 'bff', name: 'Contrato SDUI', language: 'json', specs: ['sdui'] },
     ]);
-    expect(data.platformRepos).toEqual({
-      android: { urlTemplate: `${REPO_URL}/{path}#L{line}`, localPath: '../../..' },
-    });
-    // Só o Button tem `path` no iOS, que não tem repositório; o Android tem.
-    expect(data.warnings).toEqual([{ code: 'missing-repo', platform: 'ios', types: 1 }]);
+    // O projeto só guarda o clone local; o iOS não tem e isso não é problema.
+    expect(data.platformRepos).toEqual({ android: { localPath: '../../..' } });
+    expect(data.warnings).toBeUndefined();
   });
 
   it('um projeto v8 com o campo de código removido abre migrado, sem os valores dele', async () => {
     const data = ok(await mcp.call('get_project', { project: 'antigo' }));
-    expect(data.schemaVersion).toBe(10);
+    expect(data.schemaVersion).toBe(11);
     expect(data.migratedFrom).toBe(8);
     const screen = ok(
       await mcp.call<Annotation>('get_annotation', { ref: refOf('antigo', 'a', 'AS') }),
@@ -600,9 +599,10 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
   it('valida as operações e explica os erros pelo padrão do modelo', async () => {
     const result = ok(
       await plan([
-        { op: 'set_platform_repo', platform: 'web', urlTemplate: 'https://x.dev/{path}' },
+        { op: 'set_platform_repo', platform: 'web', localPath: '..' },
         { op: 'set_platform_repo', platform: 'ios' },
-        { op: 'set_platform_repo', platform: 'ios', urlTemplate: 'ftp://x/{path}' },
+        // O endereço do repositório saiu do projeto: o `urlTemplate` é ignorado.
+        { op: 'set_platform_repo', platform: 'ios', urlTemplate: 'https://x.dev/{path}' },
         { op: 'set_platform_repo', platform: 'ios', localPath: '/abs/olute' },
         { op: 'remove_platform_repo', platform: 'ios' },
         // O campo de código removido na etapa 9 não existe mais no tipo.
@@ -618,7 +618,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(result.errors!.map((e) => [e.index, e.code])).toEqual([
       [0, 'unknown-platform'],
       [1, 'nothing-to-change'],
-      [2, 'invalid-url-template'],
+      [2, 'nothing-to-change'],
       [3, 'invalid-local-path'],
       [4, 'not-found'],
       [5, 'unknown-field'],
@@ -627,30 +627,25 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(result.errors![5]!.message).toContain('campo inexistente no tipo');
   });
 
-  it('remover o repositório de uma plataforma usada vira aviso, e a prévia não grava nada', async () => {
+  it('remover o clone local de uma plataforma não gera aviso, e a prévia não grava nada', async () => {
     const before = readFileSync(join(ws.projectDir('escrita'), 'mapping.json'), 'utf8');
     const result = ok(await plan([{ op: 'remove_platform_repo', platform: 'android' }]));
     expect(result.valid).toBe(true);
-    expect(result.summary).toEqual(['0. Remover o repositório da plataforma "android"']);
+    expect(result.summary).toEqual(['0. Remover o clone local da plataforma "android"']);
     expect(result.changes.platformRepos).toEqual({ created: 0, updated: 0, deleted: 1 });
-    // `warnings` descreve o projeto depois do lote: o ios (sem repositório desde o começo) também
-    // aparece. No Android, Button e Input têm `path`; no iOS, só o Button.
-    expect(result.warnings).toEqual([
-      { code: 'missing-repo', platform: 'android', types: 2 },
-      { code: 'missing-repo', platform: 'ios', types: 1 },
-    ]);
+    // Plataforma sem caminho local não é problema: o agente usa a URL da especialização.
+    expect(result.warnings).toBeUndefined();
     expect(readFileSync(join(ws.projectDir('escrita'), 'mapping.json'), 'utf8')).toBe(
       before,
     );
   });
 
-  it('o lote do roteiro (repositório do ios) é aplicado e grava v10 com revision + 1', async () => {
+  it('o lote do roteiro (clone local do ios) é aplicado e grava v11 com revision + 1', async () => {
     const dir = ws.projectDir('escrita');
     const operations = [
       {
         op: 'set_platform_repo',
         platform: 'ios',
-        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}',
         localPath: '../../..',
       },
     ];
@@ -658,7 +653,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
     expect(result.revision).toBe(0);
-    expect(result.summary[0]).toContain('Configurar o repositório da plataforma "ios"');
+    expect(result.summary[0]).toContain('Informar o clone local da plataforma "ios"');
     expect(result.changes.platformRepos).toEqual({ created: 1, updated: 0, deleted: 0 });
     expect(result.warnings).toBeUndefined();
 
@@ -682,18 +677,15 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     const saved = parsed.project;
-    expect(saved.schemaVersion).toBe(10);
+    expect(saved.schemaVersion).toBe(11);
     expect(saved.revision).toBe(1);
     expect(saved.platformRepos).toEqual({
-      android: { urlTemplate: `${REPO_URL}/{path}#L{line}`, localPath: '../../..' },
-      ios: {
-        urlTemplate: 'https://github.com/org/app-ios/blob/main/{path}',
-        localPath: '../../..',
-      },
+      android: { localPath: '../../..' },
+      ios: { localPath: '../../..' },
     });
-    expect(platformRepoWarnings(saved)).toEqual([]);
 
-    // Quem lê depois (a app aberta recarrega pelo mecanismo de alteração externa) já vê o ios configurado.
+    // Quem lê depois (a app aberta recarrega pelo mecanismo de alteração externa) já vê o clone do ios.
+    // O endereço continua vindo da especialização, que não declara `repo` para o iOS.
     const marking = ok(
       await mcp.call<MarkingData>('get_marking', {
         ref: refOf('escrita', 'm', 'MC'),
@@ -705,7 +697,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
       .find((a) => a.type?.typeId === 'button')!;
     expect(button.code!.ios).toMatchObject({
       path: DS_BUTTON_SWIFT,
-      url: `https://github.com/org/app-ios/blob/main/${DS_BUTTON_SWIFT}`,
+      url: null,
       localFile: DS_BUTTON_SWIFT,
       exists: false,
     });

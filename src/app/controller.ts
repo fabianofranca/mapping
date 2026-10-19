@@ -11,6 +11,7 @@ import {
   migrations,
   serialize,
   SCHEMA_VERSION,
+  type DiscardedUrlTemplate,
   type Project,
   type RepairRecord,
 } from '../model';
@@ -151,12 +152,15 @@ async function openLoaded(
     readonly readOnly: boolean;
     readonly text: string;
     readonly migratedFrom: number | null;
+    /** `urlTemplate` que a migração para o schema 11 descartou; vão para o Diagnóstico. */
+    readonly discardedUrlTemplates?: readonly DiscardedUrlTemplate[];
     readonly repaired?: readonly RepairRecord[];
     /** Problemas do pacote da biblioteca (Diagnóstico); sem o campo, a sessão começa sem. */
     readonly libraryIssues?: LibraryIssues;
   },
 ): Promise<AppResult> {
   const { localId } = target;
+  reportDiscardedUrlTemplates(loaded.discardedUrlTemplates ?? []);
   const meta = localId ? await localLibrary()?.get(localId) : undefined;
   const { storage, folderId } = target.bind
     ? await target.bind(project)
@@ -209,6 +213,22 @@ async function openLoaded(
   return ok(undefined);
 }
 
+/**
+ * Registra no Diagnóstico o que a migração para o schema 11 descartou: o endereço dos
+ * arquivos saiu do projeto e passou a ser da especialização (`platforms[].repo`). Uma
+ * entrada só, com as plataformas e os modelos descartados.
+ */
+function reportDiscardedUrlTemplates(discarded: readonly DiscardedUrlTemplate[]): void {
+  if (discarded.length === 0) return;
+  reportError(
+    'open.migration',
+    t('migration.v11.discardedUrlTemplate', {
+      platforms: discarded.map((d) => d.platform).join(', '),
+      templates: discarded.map((d) => d.urlTemplate).join(', '),
+    }),
+  );
+}
+
 /** Uma linha por reparo, para o Diagnóstico (ex.: `made-root marking MN "Nome" (missing-parent)`). */
 function describeRepairs(records: readonly RepairRecord[]): string {
   return records
@@ -232,6 +252,7 @@ async function openRepaired(target: OpenTarget, { repair, text }: InconsistentLo
     readOnly: repair.readOnly,
     text,
     migratedFrom: repair.migratedFrom ?? SCHEMA_VERSION,
+    discardedUrlTemplates: repair.discardedUrlTemplates,
     repaired: repair.repaired,
     libraryIssues: await loadLibraryIssues(target.storage, repair.project),
   });

@@ -1,17 +1,18 @@
 import { z } from 'zod';
-import { isValidCodePath } from './codeLocations';
+import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
 import { parseOrigins, parsePath, type Origin } from './components/origin';
 import { isPackagePath, packagePathProblem } from './packagePaths';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 4), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
+// Formato da especialização (`formatVersion` 1 a 5), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
 // etapas 3b e 4 e etapa Biblioteca do plano. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
 // tipos, `fonts`, `origins` (origens executáveis, com `slot`, `ignore` e `path` nas `sources`)
-// e `migrations` (o contrato de versão).
+// e `migrations` (o contrato de versão); a versão 5 é a 4 mais `repo` em `platforms[]` (o
+// repositório da biblioteca na plataforma, onde estão os arquivos citados nos `path` do `code`).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -24,9 +25,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 4;
+export const SPEC_FORMAT_VERSION = 5;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -43,12 +44,27 @@ export interface IgnoredSpecField {
   readonly key: string;
 }
 
-/** Plataforma declarada pela especialização (ex: um app, um contrato de API). */
+/**
+ * Repositório da biblioteca numa plataforma (só `formatVersion` 5): onde estão os arquivos
+ * citados nos `path` do `code`.
+ */
+export interface SpecRepo {
+  /** Endereço do repositório (`http(s)://`). */
+  url: string;
+  /** Modelo do endereço de um arquivo, com `{path}` (e `{line}` opcional); sem ele, sem link. */
+  urlTemplate?: string;
+  /** Revisão (tag, branch ou commit) a que o `code` corresponde; informativa. */
+  ref?: string;
+}
+
+/** Plataforma declarada pela especialização: um alvo de código (um app, o BFF). */
 export interface SpecPlatform {
   id: string;
   name: string;
   /** Informativo: ajuda o agente a saber em que linguagem o código está. */
   language?: string;
+  /** Repositório da biblioteca nessa plataforma (só `formatVersion` 5). */
+  repo?: SpecRepo;
 }
 
 /** Como um tipo de anotação vira código em uma plataforma. */
@@ -652,11 +668,34 @@ const layerShape = z
   })
   .strict();
 
+const repoShape = z
+  .object({
+    url: z
+      .string({
+        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+      })
+      .regex(/^https?:\/\/\S+$/i, 'deve começar com http:// ou https://, sem espaços'),
+    urlTemplate: z
+      .string({ error: () => 'deve ser texto' })
+      .refine(
+        (t) => /^https?:\/\/\S+$/i.test(t),
+        'deve começar com http:// ou https://, sem espaços',
+      )
+      .refine(
+        (t) => !/^https?:\/\/\S+$/i.test(t) || isValidUrlTemplate(t),
+        'deve conter {path}',
+      )
+      .optional(),
+    ref: nonEmpty.optional(),
+  })
+  .strict();
+
 const platformShape = z
   .object({
     id: platformId,
     name: nonEmpty,
     language: nonEmpty.optional(),
+    repo: repoShape.optional(),
   })
   .strict();
 
@@ -1231,9 +1270,12 @@ export const specSchema = z
     format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
       error: `deve ser "${SPEC_FORMAT}"`,
     }),
-    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)], {
-      error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
-    }),
+    formatVersion: z.union(
+      [z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)],
+      {
+        error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
+      },
+    ),
     id: nonEmpty,
     name: nonEmpty,
     version: z.number().int('deve ser inteiro').min(1, 'deve ser >= 1'),
@@ -1265,6 +1307,17 @@ export const specSchema = z
       }
       platformIds.add(platform.id);
     });
+    // v5: `repo` nas plataformas. Antes dela, é erro no caminho exato.
+    if (spec.formatVersion < 5) {
+      (spec.platforms ?? []).forEach((platform, pi) => {
+        if (platform.repo === undefined) return;
+        ctx.addIssue({
+          code: 'custom',
+          path: ['platforms', pi, 'repo'],
+          message: 'só é permitido com formatVersion 5',
+        });
+      });
+    }
     const hasPlatforms = platformIds.size > 0;
     if (spec.formatVersion < 3) checkNoSources(spec.layers, ctx);
 

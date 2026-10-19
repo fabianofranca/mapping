@@ -43,7 +43,7 @@ describe('migração v1 → v2', () => {
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(10);
+    expect(p.schemaVersion).toBe(11);
     expect(p.images.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => !a.inherit && a.parentAnnotationId === null)).toBe(
       true,
@@ -70,7 +70,7 @@ describe('migração v1 → v2', () => {
 
   it('salvar o v1 migrado gera v10 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(10);
+    expect(JSON.parse(saved).schemaVersion).toBe(11);
     expect(serialize(load(saved))).toBe(saved);
   });
 

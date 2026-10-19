@@ -10,6 +10,7 @@ import {
 import {
   MAX_PACKAGE_BYTES,
   MAX_PACKAGE_FILES as MODEL_PACKAGE_FILES,
+  usesPackageFiles,
 } from '../src/model/libraryPackage';
 import { ToolError } from './errors';
 import { hasParentSegment, isWithin, type Roots } from './paths';
@@ -391,7 +392,8 @@ export function packageOfProject(
 
 /**
  * O que um pedido de `apply_specialization`/`update_specialization`/`plan_library_update` aponta:
- * um arquivo de especialização v1 a v3 (só o arquivo vai para `specs/<id>.json`) ou um pacote
+ * um arquivo de especialização que não cita arquivos do pacote (v1 a v3, ou v4 e v5 sem
+ * `component`, `doc`, `examples`, `fonts` nem `origins`: só o arquivo vai para `specs/<id>.json`) ou um pacote
  * v4 (a pasta inteira, com o conteúdo cru dos arquivos).
  */
 export type SpecInput =
@@ -431,7 +433,7 @@ export async function readSpecInput(
       hint: 'um pacote v4 com problema: use validate_library na pasta para ver os erros de cada arquivo',
     });
   }
-  if (parsed.spec.formatVersion < 4) return { kind: 'file', spec: parsed.spec };
+  if (!usesPackageFiles(parsed.spec)) return { kind: 'file', spec: parsed.spec };
   return {
     kind: 'package',
     pkg: await readPackage(roots, path, { raw: true, real: resolved }),

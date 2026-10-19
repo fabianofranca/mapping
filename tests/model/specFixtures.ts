@@ -32,6 +32,21 @@ export function loadExample(name: 'sdui' | 'modelo-de-dados'): Spec {
   return parsed.spec;
 }
 
+/**
+ * A SDUI como era antes do `repo` (formatVersion 2, versão 2; `tests/fixtures/sdui-v2.json`): a
+ * base dos projetos de teste anteriores ao código de instanciação e das atualizações para a
+ * versão atual. O exemplo de verdade é `loadExample('sdui')`.
+ */
+export function loadLegacySdui(): Spec {
+  const text = readFileSync(
+    join(process.cwd(), 'tests', 'fixtures', 'sdui-v2.json'),
+    'utf8',
+  );
+  const parsed = parseSpecText(text);
+  if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+  return parsed.spec;
+}
+
 /** Gerador de ids previsíveis: `prefix1`, `prefix2`… */
 export function idGen(prefix: string): () => string {
   let n = 0;
@@ -49,7 +64,7 @@ export function layerOf(p: Project, specId: string, specLayerId: string): string
 export function specProject(): Project {
   let p = emptyProject();
   p = addLayer(p, { id: 'LM', name: 'Model', color: '#757575' });
-  p = applySpecialization(p, loadExample('sdui'), { newId: idGen('LS') });
+  p = applySpecialization(p, loadLegacySdui(), { newId: idGen('LS') });
   p = applySpecialization(p, loadExample('modelo-de-dados'), { newId: idGen('LD') });
   return p;
 }
@@ -213,19 +228,73 @@ export function cadastroProject(): Project {
   return p;
 }
 
+/** `repo` que a especialização SDUI declara para `android` nos testes de código. */
+export const ANDROID_REPO = {
+  url: 'https://github.com/org/app-android',
+  urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
+  ref: 'v1.2.0',
+} as const;
+
+/** O projeto com o `repo` dado na plataforma da especialização aplicada (vira `formatVersion` 5). */
+export function withSpecRepo(
+  p: Project,
+  specId: string,
+  platformId: string,
+  repo: { url: string; urlTemplate?: string; ref?: string },
+): Project {
+  return {
+    ...p,
+    specializations: p.specializations.map((s) =>
+      s.id === specId && s.spec
+        ? {
+            ...s,
+            spec: {
+              ...s.spec,
+              formatVersion: 5,
+              platforms: (s.spec.platforms ?? []).map((platform) =>
+                platform.id === platformId ? { ...platform, repo } : platform,
+              ),
+            },
+          }
+        : s,
+    ),
+  };
+}
+
+/** O projeto sem nenhum `repo` nas plataformas das especializações (o exemplo pode declarar). */
+export function withoutSpecRepos(p: Project): Project {
+  return {
+    ...p,
+    specializations: p.specializations.map((s) =>
+      s.spec?.platforms
+        ? {
+            ...s,
+            spec: {
+              ...s.spec,
+              platforms: s.spec.platforms.map((platform) => {
+                const copy = { ...platform };
+                delete copy.repo;
+                return copy;
+              }),
+            },
+          }
+        : s,
+    ),
+  };
+}
+
 /**
  * `cadastroProject` com o roteiro R3: o Screen `AS` (`Cadastro`, `rota: /cadastro`) no
- * Formulário e o repositório configurado só para `android`.
+ * Formulário; a especialização SDUI declara o `repo` de `android` (`ANDROID_REPO`) e o projeto
+ * sobrepõe só o clone local (`../../..`).
  */
 export function codeProject(): Project {
   let p = typed(cadastroProject(), 'AS', 'MF', 'sdui', 'screen', {
     nome: 'Cadastro',
     rota: '/cadastro',
   });
-  p = setPlatformRepo(p, 'android', {
-    urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
-    localPath: '../../..',
-  });
+  p = withSpecRepo(withoutSpecRepos(p), 'sdui', 'android', ANDROID_REPO);
+  p = setPlatformRepo(p, 'android', { localPath: '../../..' });
   return p;
 }
 
@@ -254,16 +323,27 @@ export const LEGACY_CODE_VALUE = [
   },
 ];
 
-/** A cópia do SDUI (texto de `specs/sdui.json`) com o campo removido de volta no Screen. */
+/**
+ * A cópia do SDUI (texto de `specs/sdui.json`) com o campo removido de volta no Screen e o
+ * `repo` de `android` do `codeProject`.
+ */
 export function legacySduiText(): string {
   const spec = JSON.parse(
-    readFileSync(join(process.cwd(), 'examples', 'specs', 'sdui.json'), 'utf8'),
-  ) as { layers: { annotationTypes: { id: string; fields: unknown[] }[] }[] };
+    readFileSync(join(process.cwd(), 'tests', 'fixtures', 'sdui-v2.json'), 'utf8'),
+  ) as {
+    formatVersion: number;
+    platforms: { id: string; repo?: unknown }[];
+    layers: { annotationTypes: { id: string; fields: unknown[] }[] }[];
+  };
   const screen = spec.layers
     .flatMap((l) => l.annotationTypes)
     .find((t) => t.id === 'screen');
   if (!screen) throw new Error('Screen não encontrado no exemplo SDUI');
   screen.fields.push(LEGACY_CODE_FIELD);
+  spec.formatVersion = 5;
+  const android = spec.platforms.find((platform) => platform.id === 'android');
+  if (!android) throw new Error('android não encontrado no exemplo SDUI');
+  android.repo = ANDROID_REPO;
   return `${JSON.stringify(spec, null, 2)}\n`;
 }
 

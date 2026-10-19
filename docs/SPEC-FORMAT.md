@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 4)
+# Formato da especialização (`formatVersion` 1 a 5)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -10,15 +10,16 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 2 liga a especialização ao código (plataformas e `code`). A importação aceita as versões 1 a 4; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 5; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
+- A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
 
 Arquivos de apoio:
 
 - `docs/spec.schema.json`: JSON Schema (draft 2020-12). Valida só a **estrutura**; as regras entre elementos (ids únicos, `allowedChildren`, `requiresOwner`, `labelField`, `rowLabel`, `default` compatível, plataformas declaradas, chaves de `params` e `values`, `sources` só a partir da versão 3, `values` das origens só em `enum` e com destinos nas `options`, `path`/`slot`/`ignore` só em sistema declarado em `origins`, `examples` em um modo só, os passos de `migrations` coerentes com os tipos e campos) só são verificadas pelo validador da app (`src/model/spec.ts`, que é a fonte da verdade).
 - `docs/component.schema.json`: JSON Schema do arquivo de componente (`docs/COMPONENT-FORMAT.md`).
-- `examples/specs/sdui.json` (`formatVersion` 2) e `examples/specs/modelo-de-dados.json` (`formatVersion` 1): exemplos completos.
+- `examples/specs/sdui.json` (`formatVersion` 5) e `examples/specs/modelo-de-dados.json` (`formatVersion` 1): exemplos completos.
 - `examples/specs/biblioteca.json` (`formatVersion` 4): exemplo pequeno com `component`, `doc`, `examples`, `fonts`, `origins`, `path`/`ignore` nas `sources` e `migrations`. É só o arquivo da especialização: os arquivos que ele cita (`components/`, `docs/`, `examples/`, `fonts/`) não vêm junto.
 - `examples/libraries/material3/`: um pacote de biblioteca **completo** (especialização v4, quinze componentes, documentos, exemplos e uma tela de exemplo de um sistema externo), gerado por `npm run build:examples` (ver "Biblioteca: o pacote").
 
@@ -65,24 +66,24 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1`, `2`, `3` ou `4`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2) e, só na versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `5`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
-| Propriedade       | Obrigatória | Descrição                                                                                                       |
-| ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| `id`              | sim         | Único **na especialização inteira**.                                                                            |
-| `name`            | sim         | Nome exibido (ex: "Button").                                                                                    |
-| `description`     | não         | Texto de ajuda.                                                                                                 |
-| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.       |
-| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                     |
-| `allowedChildren` | não         | Ids dos tipos que podem ser **vinculados** a este.                                                              |
-| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                               |
-| `code`            | não         | A partir da `formatVersion` 2. Como o tipo vira código, por plataforma declarada (ver "Plataformas e code").    |
-| `sources`         | não         | A partir da `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").          |
-| `component`       | não         | Só `formatVersion` 4. Caminho do arquivo `.json` do componente que desenha o tipo (ver "Biblioteca: o pacote"). |
-| `doc`             | não         | Só `formatVersion` 4. Caminho do documento `.md` do tipo (ver "Biblioteca: o pacote").                          |
-| `examples`        | não         | Só `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.            |
+| Propriedade       | Obrigatória | Descrição                                                                                                                |
+| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `id`              | sim         | Único **na especialização inteira**.                                                                                     |
+| `name`            | sim         | Nome exibido (ex: "Button").                                                                                             |
+| `description`     | não         | Texto de ajuda.                                                                                                          |
+| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.                |
+| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                              |
+| `allowedChildren` | não         | Ids dos tipos que podem ser **vinculados** a este.                                                                       |
+| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                                        |
+| `code`            | não         | A partir da `formatVersion` 2. Como se cria uma instância do tipo, por plataforma declarada (ver "Plataformas e code").  |
+| `sources`         | não         | A partir da `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").                   |
+| `component`       | não         | A partir da `formatVersion` 4. Caminho do arquivo `.json` do componente que desenha o tipo (ver "Biblioteca: o pacote"). |
+| `doc`             | não         | A partir da `formatVersion` 4. Caminho do documento `.md` do tipo (ver "Biblioteca: o pacote").                          |
+| `examples`        | não         | A partir da `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.            |
 
 ### Campo
 
@@ -110,7 +111,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1`, `2`, `3` ou `
 - `table`: lista de linhas; cada linha é um objeto com as chaves das `columns` (mais o id interno `_id`).
 - `ref`: **referência forte** a uma tupla de outra anotação. O valor do campo é a referência.
 
-**Tipo de campo removido: `codeRef`.** Até a etapa 9 existia o tipo `codeRef` (onde a instância foi implementada, por plataforma). Ele saiu do formato: a especialização guarda só o que ajuda a **gerar** código (o `code` dos tipos, com `symbol` e `path`), não referência ao código gerado. Um arquivo antigo com um campo `"type": "codeRef"` continua válido: a importação da app e o `validate_specialization` **leem e ignoram** o campo (ele sai do tipo, junto com as chaves de `params` do `code` que o citam) e dão um aviso com o caminho (`ignored-field`). Nenhuma `formatVersion` nova; as cópias em `specs/` dos projetos existentes continuam abrindo. O JSON Schema ([`spec.schema.json`](spec.schema.json)) descreve só o formato atual e recusa o campo. Ao encontrar um, remova-o do arquivo.
+**Tipo de campo removido: `codeRef`.** Até a etapa 9 existia o tipo `codeRef` (o lugar da solução em que a instância foi escrita, por plataforma). Ele saiu do formato: a especialização guarda só o que ajuda a **instanciar** o tipo (o `code` dos tipos, com `symbol` e `path`), nunca onde a instância ficou. Um arquivo antigo com um campo `"type": "codeRef"` continua válido: a importação da app e o `validate_specialization` **leem e ignoram** o campo (ele sai do tipo, junto com as chaves de `params` do `code` que o citam) e dão um aviso com o caminho (`ignored-field`). Nenhuma `formatVersion` nova; as cópias em `specs/` dos projetos existentes continuam abrindo. O JSON Schema ([`spec.schema.json`](spec.schema.json)) descreve só o formato atual e recusa o campo. Ao encontrar um, remova-o do arquivo.
 
 ## Relações entre anotações
 
@@ -130,30 +131,63 @@ Etiqueta recomendada (reutilize em novas especializações): **`data-field`** �
 
 ## Plataformas e code
 
-A `formatVersion` 2 liga a especialização ao código: ela declara as **plataformas** (um app, um contrato de API…) e como cada tipo de anotação vira código em cada uma. A `formatVersion` 1 continua válida: é a 2 sem plataformas e sem `code`. O núcleo da app é genérico; plataformas, linguagens e componentes de código entram só por estas propriedades.
+O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define, `params` e `values` dizem como passar os campos, `notes` orienta. O agente lê o arquivo para saber a assinatura e escreve a chamada na solução. O mapeamento não guarda nada sobre a solução: ele não sabe onde ela está nem o que foi escrito nela, e o `code` não é o código gerado para uma anotação.
 
-| Propriedade | Onde                            | Descrição                                                                                                                                                                                |
-| ----------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `platforms` | raiz (opcional)                 | Lista de `{ id, name, language }`. `id` no formato `[a-z0-9-]+` e único na especialização; `name` é exibido; `language` é informativo (ajuda o agente).                                  |
-| `code`      | tipo de anotação (opcional)     | Objeto por **id de plataforma declarada**; cada entrada tem as propriedades abaixo.                                                                                                      |
-| `symbol`    | entrada de `code` (obrigatória) | Componente ou tipo que implementa o tipo de anotação naquela plataforma.                                                                                                                 |
-| `path`      | entrada de `code` (opcional)    | Arquivo que define o `symbol`, **relativo à raiz do repositório da plataforma** (`/` como separador, sem `.`, `..`, `/` no começo nem letra de unidade). Sem linha: o `symbol` localiza. |
-| `params`    | entrada de `code` (opcional)    | Chave de um campo do tipo → nome do parâmetro no código. Campos fora de `params` não são passados.                                                                                       |
-| `values`    | entrada de `code` (opcional)    | Chave de um campo `enum` → (valor no mapping → valor no código). Valor sem tradução é passado como está.                                                                                 |
-| `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente.                                                                                                                                                          |
+Uma **plataforma** é um alvo de código em que o agente escreve a solução: o app Android, o app iOS, o BFF que gera o JSON de uma tela de SDUI. A `formatVersion` 2 declara as plataformas e o `code` dos tipos; a 5 acrescenta o `repo`, o repositório da biblioteca naquela plataforma. A `formatVersion` 1 continua válida: é a 2 sem plataformas e sem `code`. O núcleo da app é genérico; plataformas, linguagens e código de instanciação entram só por estas propriedades.
 
-O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link pelo `urlTemplate` e caminho local pelo `localPath` do repositório da plataforma, configurados no projeto (`platformRepos`, ver o [`FORMAT.md`](FORMAT.md)): a app mostra a linha "Definição" nos Detalhes da anotação tipada e o MCP devolve o endereço e o arquivo local (ver o [`AGENT-GUIDE.md`](AGENT-GUIDE.md)).
+| Propriedade | Onde                            | Descrição                                                                                                                                                                                                                                                            |
+| ----------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `platforms` | raiz (opcional)                 | Lista de `{ id, name, language, repo? }`: os alvos de código em que o agente escreve a solução. `id` no formato `[a-z0-9-]+` e único na especialização; `name` é exibido; `language` é informativo (diz ao agente em que linguagem escrever a chamada).              |
+| `repo`      | entrada de `platforms` (v5)     | Opcional, só na `formatVersion` 5. O repositório da biblioteca naquela plataforma, onde estão os arquivos citados nos `path`: `{ url, urlTemplate?, ref? }` (abaixo). Sem ele, o agente só chega ao arquivo pelo clone local que o projeto informar.                 |
+| `code`      | tipo de anotação (opcional)     | Objeto por **id de plataforma declarada**: como se cria uma instância do tipo em cada uma. Cada entrada tem as propriedades abaixo.                                                                                                                                  |
+| `symbol`    | entrada de `code` (obrigatória) | O que se chama para criar uma instância do tipo naquela plataforma: um composable, uma view, uma classe, a função do BFF que gera o JSON do componente. O agente escreve a chamada a esse símbolo.                                                                   |
+| `path`      | entrada de `code` (opcional)    | O arquivo que define o `symbol`, **relativo à raiz do `repo` da plataforma** (`/` como separador, sem `.`, `..`, `/` no começo nem letra de unidade, sem linha). O agente o lê para saber a assinatura antes de escrever a chamada; sem `path`, o `symbol` localiza. |
+| `params`    | entrada de `code` (opcional)    | Com que nome cada campo do tipo é passado na chamada: chave de um campo do tipo → nome do parâmetro. Campos fora de `params` não são passados.                                                                                                                       |
+| `values`    | entrada de `code` (opcional)    | Como cada valor de `enum` é escrito no código: chave de um campo `enum` → (valor no mapping → texto no código). Valor sem tradução é passado como está.                                                                                                              |
+| `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente que escreve a chamada: o que passar além dos campos, ordem, cuidados.                                                                                                                                                                 |
 
-`code` só vale em especializações que declaram `platforms`. Os ids citados em `code` precisam existir em `platforms`, e as chaves de `params` e `values` precisam ser campos do tipo.
+O `repo` de uma plataforma tem três propriedades:
+
+| Propriedade   | Obrigatória | Descrição                                                                                                                                                                                                                                                                                   |
+| ------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`         | sim         | Endereço do repositório da biblioteca naquela plataforma (`http://` ou `https://`, sem espaços).                                                                                                                                                                                            |
+| `urlTemplate` | não         | Modelo do endereço de **um arquivo**, com `{path}` (ex: `https://github.com/org/app-android/blob/v3/{path}`). Serve a GitHub, GitLab, Bitbucket ou um servidor interno. Um `{line}` é aceito e sai do link, porque o `path` não tem linha. Sem ele, a app e o servidor MCP não montam link. |
+| `ref`         | não         | A revisão (tag, branch ou commit) da biblioteca a que o `code` corresponde. Informativa: a app e o servidor MCP a mostram, mas não a usam para montar o link (quem a quer no link a escreve no `urlTemplate`). Texto não vazio.                                                             |
+
+- **Como o agente chega ao arquivo.** Pelo endereço: o `urlTemplate` do `repo` da plataforma, na especialização dona do tipo, com `{path}` trocado pelo `path` (cada segmento codificado, as `/` mantidas). A app mostra a linha "Definição" nos Detalhes da anotação tipada com esse link logo depois de aplicar a especialização, e o servidor MCP devolve o endereço. Ou pelo clone local: o projeto pode guardar onde a biblioteca está clonada (`platformRepos[<plataforma>].localPath`, uma sobreposição local; ver o [`FORMAT.md`](FORMAT.md), "Campos da v11"), e o caminho local do arquivo é o `localPath` mais o `path`.
+- Plataformas com o **mesmo `id`** em especializações diferentes são o mesmo alvo de código (o projeto guarda um só clone local para elas). Cada especialização declara o `repo` da própria biblioteca, e eles podem diferir: o link de um tipo usa o `repo` da especialização dele.
+- `code` só vale em especializações que declaram `platforms`. Os ids citados em `code` precisam existir em `platforms`, e as chaves de `params` e `values` precisam ser campos do tipo.
+- Plataforma em que algum tipo tem `path` e que não declara `repo` gera um **aviso** da especialização (`path-without-repo`), não um erro: o arquivo é citado, mas o agente não sabe em que repositório procurá-lo. O uso de `code` pelo servidor MCP (`get_code_hints`, `find_by_code`) está no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
 ```json
 {
   "format": "mapping-spec",
-  "formatVersion": 2,
+  "formatVersion": 5,
   "id": "sdui",
   "name": "SDUI",
-  "version": 2,
-  "platforms": [{ "id": "app", "name": "App", "language": "typescript" }],
+  "version": 3,
+  "platforms": [
+    {
+      "id": "android",
+      "name": "Android",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/app-android",
+        "urlTemplate": "https://github.com/org/app-android/blob/v3/{path}",
+        "ref": "v3"
+      }
+    },
+    {
+      "id": "bff",
+      "name": "BFF",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/bff",
+        "urlTemplate": "https://github.com/org/bff/blob/v3/{path}",
+        "ref": "v3"
+      }
+    }
+  ],
   "layers": [
     {
       "id": "componentes",
@@ -164,7 +198,11 @@ O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link p
           "id": "button",
           "name": "Button",
           "fields": [
-            { "key": "texto", "type": "string", "required": true },
+            {
+              "key": "id",
+              "type": "string",
+              "required": true
+            },
             {
               "key": "estilo",
               "type": "enum",
@@ -173,17 +211,29 @@ O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link p
             }
           ],
           "code": {
-            "app": {
-              "symbol": "DSButton",
+            "android": {
+              "symbol": "com.app.ds.DSButton",
               "path": "app/src/main/java/com/app/ds/DSButton.kt",
-              "params": { "texto": "text", "estilo": "style" },
+              "params": {
+                "id": "testId",
+                "estilo": "style"
+              },
               "values": {
                 "estilo": {
                   "primary": "ButtonStyle.Primary",
                   "secondary": "ButtonStyle.Secondary"
                 }
               },
-              "notes": "Passe o id como testId."
+              "notes": "Chame o composable DSButton; o id vai em testId."
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.button",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
+              "params": {
+                "id": "id",
+                "estilo": "variant"
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         }
@@ -193,8 +243,10 @@ O `path` vale nas `formatVersion` 2 e 3 (não há versão nova). Ele vira link p
 }
 ```
 
-- Plataformas com o **mesmo id** em especializações diferentes são a mesma plataforma (a configuração do repositório fica no projeto, não na especialização).
-- O repositório de cada plataforma (`platformRepos`, no projeto) está em [`FORMAT.md`](FORMAT.md), "Campos da v7". Plataforma em que algum tipo tem `path`, sem repositório configurado no projeto, gera um aviso (não é pendência). O uso de `code` pelo servidor MCP (`get_code_hints`, `find_by_code`) está no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
+- `android.symbol` é o composable que se chama para criar um Button; `android.path` é o arquivo que o define, e o agente o lê para ver a assinatura antes de escrever a chamada.
+- `bff` é uma plataforma como as outras: o `symbol` é a **função Kotlin que gera o nó JSON** do Button (`com.app.bff.sdui.button`), com o arquivo dela em `path`, e não o nome do nó (`"button"`) que sai no JSON.
+- `params` diz o nome do parâmetro que recebe cada campo (`estilo` vai em `style` no Android e em `variant` no BFF); `values` diz como o valor `primary` é escrito no Android (`ButtonStyle.Primary`).
+- Cada plataforma declara o `repo` da biblioteca dela; os arquivos de `path` são relativos à raiz desse repositório.
 
 ## Origens (sources)
 
@@ -392,7 +444,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Fontes.** O arquivo de uma fonte declarada pode não estar no pacote (as fontes têm licença e peso; o pacote de exemplo não leva os `.ttf`). A fonte ausente **avisa** e o desenho cai na fonte do sistema; o pacote continua válido.
 
-**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Um arquivo `.json` v4 isolado é **recusado** na app: a v4 pede o pacote. Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
+**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` ou `examples`, e sem `fonts` nem `origins` na raiz; `migrations` não conta) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
 
 **Pacote de exemplo.** `examples/libraries/material3/` é o Material Design 3 (baseline, tema claro) inteiro no formato: a especialização v4 com quinze tipos, cada um com `component`, `doc` e de um a três exemplos, os quinze componentes, a tela de configurações `examples/settings.sdui.json` (uma tela de SDUI sem retângulos, traduzida pela `origins`) e `fonts/LEIA-ME.txt`, que diz quais arquivos da Roboto baixar (os `.ttf` não são versionados). É **gerado** por `npm run build:examples` (`scripts/buildLibraryExamples.mjs`, a partir do Material 3 do laboratório) e um teste (`tests/model/libraryExamples.test.ts`) confere que o repositório está em dia com o gerador: não edite os arquivos à mão, regere.
 
@@ -472,7 +524,7 @@ Ao **atualizar** uma biblioteca aplicada (`updateSpecialization`, na app e no MC
 
 A chave de campo de um passo é a `key` ou `tabela.coluna`; numa coluna o passo vale para cada linha da tabela.
 
-**O que é recusado.** Com especialização v4 e a cópia aplicada disponível, `updateSpecialization` **recusa** uma versão com quebra sem passo que a cubra (`spec-missing-migrations`, e na app o botão **Atualizar** fica desabilitado): nada é alterado. As versões 1 a 3 não têm `migrations` e **não são recusadas**: a atualização segue como era (os valores que deixam de valer viram pendência). Sem a cópia aplicada, nada é comparado.
+**O que é recusado.** Com especialização v4 ou v5 e a cópia aplicada disponível, `updateSpecialization` **recusa** uma versão com quebra sem passo que a cubra (`spec-missing-migrations`, e na app o botão **Atualizar** fica desabilitado): nada é alterado. As versões 1 a 3 não têm `migrations` e **não são recusadas**: a atualização segue como era (os valores que deixam de valer viram pendência). Sem a cópia aplicada, nada é comparado.
 
 **O que o impacto informa.** `specializationUpdateImpact` (em `src/model/specializations.ts`) devolve `changes`, `breaking`, `missingMigrations`, `migrations` e `comparable` e, com a execução simulada sobre o projeto, `additive` (nenhuma quebra: os dados ficam como estão), `refused` (quebra sem migração), `steps` (o relatório por passo: anotações, valores, convertidas, apagadas e referências), `losses` (cada valor ou anotação que a atualização apaga) e `pending` (o que vira pendência). O diálogo de atualização mostra isso: "Atualização aditiva: os dados ficam como estão.", ou **Passos da migração** com as contagens, as perdas em destaque ("Esta atualização apaga N valor(es) e M anotação(ões).") e as pendências ("N pendência(s) ficam"). Depois de atualizar com pendências, a janela **Incompletas** abre sozinha.
 
@@ -634,7 +686,7 @@ O pacote Material 3 do repositório (`examples/libraries/material3/`) passa pelo
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 4), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 5), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo;
@@ -642,9 +694,10 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `columns` só com tipos simples; `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
 - `labelField` aponta para um campo `string` do tipo;
 - `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
-- `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` opcional; `platforms` e `code` a partir da `formatVersion` 2;
+- `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
+- **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
 - `sources` a partir da `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name` (ou `path`, na v4, em sistema de `origins`); `values` só em campos `enum` e com destinos que existam em `options`;
-- **v4, chaves novas:** `fonts`, `origins`, `migrations` (raiz), `component`, `doc` e `examples` (tipo) só na `formatVersion` 4: numa versão anterior o erro é `só é permitido com formatVersion 4`, no caminho da chave;
+- **v4, chaves novas:** `fonts`, `origins`, `migrations` (raiz), `component`, `doc` e `examples` (tipo) só a partir da `formatVersion` 4: numa versão anterior o erro é `só é permitido com formatVersion 4`, no caminho da chave;
 - **v4, caminhos do pacote:** `component` e `examples[].file` com extensão `.json`, `doc` com `.md`, `fonts[].file` com `.ttf`, `.otf`, `.woff` ou `.woff2`, e `origins[].examples[].file` com `.json`; todos relativos, normalizados, com `/`, sem `.`, `..`, `/` no começo nem unidade;
 - **v4, `fonts`:** `family` não vazio; `weight` inteiro de 100 a 1000 ou faixa `"100 900"` (o primeiro número menor); `style` `normal` ou `italic`; o par `family` + `weight` + `style` não se repete;
 - **v4, `examples`:** `name` não vazio e único no tipo; ou `values` ou `system` com `file`, nunca os dois modos nem nenhum; as chaves de `values` são campos do tipo, com valor `null` ou compatível com o tipo (`table` e `ref` não aceitam); `system` precisa estar em `origins`;
@@ -652,22 +705,44 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - **v4, `origins`:** conferido por `parseOrigins`, estrito: `system` único, `node` com `type`, `props` e `children`, `screen` com `width`, `height` e ao menos uma raiz, caminhos e âncoras válidos, `booleans` com `true` e `false`, `examples` com `name` único e `file` `.json`;
 - **v4, `migrations`:** `from` inteiro ≥ 1 e único, `to` maior que `from` e no máximo `version`, `steps` não vazia, `op` conhecido e chaves estritas por passo; o lado novo de cada passo existe nesta versão e o lado antigo não existe mais (ver "Contrato de versão");
 - `code` só em especializações que declaram `platforms`; os ids de `code` precisam existir em `platforms`;
-- `symbol` obrigatório em cada entrada de `code`; `path`, se houver, não vazio e relativo à raiz do repositório (normalizado, com `/`, sem `.`, `..`, `/` no começo nem unidade); chaves de `params` e `values` precisam ser campos do tipo; `values` só para campos `enum`, com chaves que existam em `options`;
+- `symbol` obrigatório em cada entrada de `code`; `path`, se houver, não vazio e relativo à raiz do `repo` da plataforma (normalizado, com `/`, sem `.`, `..`, `/` no começo nem unidade); chaves de `params` e `values` precisam ser campos do tipo; `values` só para campos `enum`, com chaves que existam em `options`;
 - `color` no formato `#RRGGBB`;
 - propriedades desconhecidas são rejeitadas (o `platforms` de um campo só existia no tipo removido `codeRef`);
 - um campo do tipo removido `codeRef` (fora de `columns`) não é erro: é lido, ignorado e vira aviso (ver "Tipos de valor").
 
-**Validar antes de importar.** A importação da app e o servidor MCP usam a mesma validação (`parseSpecText`, em `src/model/`). A tool `validate_specialization` do servidor (um `path` dentro das raízes ou o `text` JSON) devolve exatamente esses erros, com o caminho, sem aplicar a nenhum projeto, e ainda avisa o que não impede a importação mas costuma ser descuido: plataforma declarada e não usada, tipo sem `code` numa especialização com plataformas, o `format` antigo (`mapeador-spec`) e o campo do tipo removido `codeRef`, ignorado (`ignored-field`). A importação da app mostra o aviso dos campos ignorados.
+**Validar antes de importar.** A importação da app e o servidor MCP usam a mesma validação (`parseSpecText`, em `src/model/`). A tool `validate_specialization` do servidor (um `path` dentro das raízes ou o `text` JSON) devolve exatamente esses erros, com o caminho, sem aplicar a nenhum projeto, e ainda avisa o que não impede a importação mas costuma ser descuido: plataforma declarada e não usada (`unused-platform`), tipo sem `code` numa especialização com plataformas (`type-without-code`: nenhuma plataforma diz como criar uma instância dele), plataforma em que algum tipo tem `path` e que não declara `repo` (`path-without-repo`), o `format` antigo (`mapeador-spec`) e o campo do tipo removido `codeRef`, ignorado (`ignored-field`). A importação da app mostra o aviso dos campos ignorados.
 
 ## Exemplo comentado: SDUI
 
 ```json
 {
   "format": "mapping-spec",
-  "formatVersion": 1,
+  "formatVersion": 5,
   "id": "sdui",
   "name": "SDUI",
-  "version": 1,
+  "version": 3,
+  "platforms": [
+    {
+      "id": "android",
+      "name": "Android",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/app-android",
+        "urlTemplate": "https://github.com/org/app-android/blob/v3/{path}",
+        "ref": "v3"
+      }
+    },
+    {
+      "id": "bff",
+      "name": "BFF",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/bff",
+        "urlTemplate": "https://github.com/org/bff/blob/v3/{path}",
+        "ref": "v3"
+      }
+    }
+  ],
   "layers": [
     {
       "id": "componentes",
@@ -679,26 +754,79 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
           "name": "Button",
           "allowedChildren": ["onClick"],
           "fields": [
-            { "key": "id", "type": "string", "required": true },
+            {
+              "key": "id",
+              "type": "string",
+              "required": true
+            },
             {
               "key": "estilo",
               "type": "enum",
               "options": ["primary", "secondary"],
               "default": "primary"
             }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.DSButton",
+              "path": "app/src/main/java/com/app/ds/DSButton.kt",
+              "params": {
+                "id": "testId",
+                "estilo": "style"
+              },
+              "values": {
+                "estilo": {
+                  "primary": "ButtonStyle.Primary",
+                  "secondary": "ButtonStyle.Secondary"
+                }
+              }
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.button",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
+              "params": {
+                "id": "id",
+                "estilo": "variant"
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
+            }
+          }
         },
         {
           "id": "input",
           "name": "Input",
           "fields": [
-            { "key": "id", "type": "string", "required": true },
+            {
+              "key": "id",
+              "type": "string",
+              "required": true
+            },
             {
               "key": "dado",
               "type": "ref",
-              "accepts": { "tags": ["data-field"], "free": true }
+              "accepts": {
+                "tags": ["data-field"],
+                "free": true
+              }
             }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.DSTextField",
+              "path": "app/src/main/java/com/app/ds/DSTextField.kt",
+              "params": {
+                "id": "testId"
+              }
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.input",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
+              "params": {
+                "id": "id"
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
+            }
+          }
         }
       ]
     },
@@ -718,7 +846,24 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
               "options": ["navigate", "submit"],
               "required": true
             }
-          ]
+          ],
+          "code": {
+            "android": {
+              "symbol": "com.app.ds.OnClick",
+              "path": "app/src/main/java/com/app/ds/OnClick.kt",
+              "params": {
+                "acao": "action"
+              }
+            },
+            "bff": {
+              "symbol": "com.app.bff.sdui.onClick",
+              "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
+              "params": {
+                "acao": "action"
+              },
+              "notes": "A função devolve o nó do evento no JSON da tela."
+            }
+          }
         }
       ]
     }
@@ -730,8 +875,11 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `Button`: `id` é obrigatório (sem ele a anotação fica incompleta) e `estilo` já vem como `primary` (`default`).
 - `Button` lista `onClick` em `allowedChildren`, e `onClick` tem `requiresOwner`: um `onClick` só existe ligado a um `Button`.
 - `Input.dado` é um `ref`: aceita atributos com a etiqueta `data-field` (ex: as linhas de atributos da Classe, do Modelo de dados) e também tuplas de anotações livres.
+- `platforms` declara os dois alvos de código em que o agente escreve a solução, o `android` e o `bff`, cada um com o `repo` da sua biblioteca (`url`, o `urlTemplate` do link de um arquivo e a `ref` a que o `code` corresponde).
+- `code` diz como se cria uma instância de cada tipo: no `android`, o `symbol` é o composable a chamar (`com.app.ds.DSButton`) e o `path` é o arquivo que o define, relativo à raiz do `repo`; no `bff`, o `symbol` é a função Kotlin que gera o nó JSON (`com.app.bff.sdui.button`), e não o nome do nó. O agente lê o arquivo para ver a assinatura e escreve a chamada.
+- `params` diz com que nome o campo é passado (`estilo` vai em `style` no Android e em `variant` no BFF) e `values` como o valor do `enum` é escrito no código (`primary` vira `ButtonStyle.Primary`); `notes` orienta (a função do BFF devolve o nó do componente no JSON da tela).
 
 ## Exemplos completos
 
-- [`examples/specs/sdui.json`](../examples/specs/sdui.json) (`formatVersion` 2): `string`, `number`, `enum`, `table` e `ref`; `required`, `default`, `label`, `description`; `allowedChildren` e `requiresOwner`; referência por etiqueta (`dado`) que também aceita tuplas livres; plataformas `android`, `ios` e `bff`, `code` em todos os tipos de componentes e eventos e a camada Telas com o `Screen` (sem `code`).
+- [`examples/specs/sdui.json`](../examples/specs/sdui.json) (`formatVersion` 5): `string`, `number`, `enum`, `table` e `ref`; `required`, `default`, `label`, `description`; `allowedChildren` e `requiresOwner`; referência por etiqueta (`dado`) que também aceita tuplas livres; plataformas `android`, `ios` e `bff` (a função Kotlin que gera o JSON), cada uma com o `repo` da sua biblioteca, `code` em todos os tipos de componentes e eventos e a camada Telas com o `Screen` (sem `code`).
 - [`examples/specs/modelo-de-dados.json`](../examples/specs/modelo-de-dados.json) (`formatVersion` 1, sem plataformas): `date`, `labelField`, `table` com etiqueta `data-field` e `rowLabel` (cada atributo vira um alvo de referência).

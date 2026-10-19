@@ -8,31 +8,34 @@ import {
   findByCode,
   findPlatform,
   getAnnotationIssues,
-  hasPlatformRepo,
+  hasLocalPath,
   isValidCodePath,
   normalizeCodePath,
-  platformRepoWarnings,
   projectPlatforms,
   projectTypeCode,
   removePlatformRepo,
   removeSpecialization,
   setPlatformRepo,
+  specPlatformRepo,
   typeCodeDefinitions,
   typeOfAnnotation,
   type Project,
   type Spec,
 } from '../../src/model';
 import {
+  ANDROID_REPO,
   cadastroProject,
   codeProject,
   idGen,
   loadExample,
   specProject,
+  withSpecRepo,
 } from './specFixtures';
 
-// Código das especializações (etapa 3b; etapa 9): plataformas, repositórios por plataforma,
-// link e caminho local do `path` de um tipo, a "Definição", a busca de tipos por arquivo ou
-// símbolo (`findByCode`) e o aviso de plataforma sem repositório pelo `code.<plataforma>.path`.
+// Código de instanciação das especializações (etapa 3b; schema v11): plataformas com o `repo`
+// de cada especialização, o clone local do projeto, link (pela especialização dona do tipo) e
+// caminho local do `path` de um tipo, a "Definição" e a busca de tipos por arquivo ou símbolo
+// (`findByCode`).
 
 function codeOf(fn: () => unknown): string | null {
   try {
@@ -48,16 +51,27 @@ const DS_BUTTON = 'app/src/main/java/com/app/ds/DSButton.kt';
 const DS_TEXT_FIELD = 'app/src/main/java/com/app/ds/DSTextField.kt';
 const DS_BUTTON_SWIFT = 'App/DesignSystem/DSButton.swift';
 
-/** Outra especialização v2 que também declara `android` (com outro nome) e `web`. */
-function otherSpec(): Spec {
+/** O `repo` de `android` da outra especialização: outra biblioteca, outro repositório. */
+const OTHER_ANDROID_REPO = {
+  url: 'https://gitlab.com/org/outra-android',
+  urlTemplate: 'https://gitlab.com/org/outra-android/-/blob/main/{path}',
+} as const;
+
+/** Outra especialização que também declara `android` (com outro nome) e `web`. */
+function otherSpec(withRepo = false): Spec {
   return {
     format: 'mapping-spec',
-    formatVersion: 2,
+    formatVersion: withRepo ? 5 : 2,
     id: 'outra',
     name: 'Outra',
     version: 1,
     platforms: [
-      { id: 'android', name: 'Android (outro nome)', language: 'java' },
+      {
+        id: 'android',
+        name: 'Android (outro nome)',
+        language: 'java',
+        ...(withRepo ? { repo: OTHER_ANDROID_REPO } : {}),
+      },
       { id: 'web', name: 'Web' },
     ],
     layers: [
@@ -84,9 +98,21 @@ function otherSpec(): Spec {
 describe('plataformas do projeto', () => {
   it('consolida as plataformas das especializações aplicadas, na ordem de aplicação', () => {
     expect(projectPlatforms(specProject())).toEqual([
-      { id: 'android', name: 'Android', language: 'kotlin', specIds: ['sdui'] },
-      { id: 'ios', name: 'iOS', language: 'swift', specIds: ['sdui'] },
-      { id: 'bff', name: 'Contrato SDUI', language: 'json', specIds: ['sdui'] },
+      {
+        id: 'android',
+        name: 'Android',
+        language: 'kotlin',
+        specIds: ['sdui'],
+        repos: [],
+      },
+      { id: 'ios', name: 'iOS', language: 'swift', specIds: ['sdui'], repos: [] },
+      {
+        id: 'bff',
+        name: 'Contrato SDUI',
+        language: 'json',
+        specIds: ['sdui'],
+        repos: [],
+      },
     ]);
     // Especialização v1 (Modelo de dados) não declara plataformas.
     expect(projectPlatforms(cadastroProject()).map((p) => p.id)).toEqual([
@@ -99,10 +125,22 @@ describe('plataformas do projeto', () => {
   it('mesmo id em duas especializações é a mesma plataforma: vale a da primeira aplicada', () => {
     const p = applySpecialization(specProject(), otherSpec(), { newId: idGen('LO') });
     expect(projectPlatforms(p)).toEqual([
-      { id: 'android', name: 'Android', language: 'kotlin', specIds: ['sdui', 'outra'] },
-      { id: 'ios', name: 'iOS', language: 'swift', specIds: ['sdui'] },
-      { id: 'bff', name: 'Contrato SDUI', language: 'json', specIds: ['sdui'] },
-      { id: 'web', name: 'Web', language: null, specIds: ['outra'] },
+      {
+        id: 'android',
+        name: 'Android',
+        language: 'kotlin',
+        specIds: ['sdui', 'outra'],
+        repos: [],
+      },
+      { id: 'ios', name: 'iOS', language: 'swift', specIds: ['sdui'], repos: [] },
+      {
+        id: 'bff',
+        name: 'Contrato SDUI',
+        language: 'json',
+        specIds: ['sdui'],
+        repos: [],
+      },
+      { id: 'web', name: 'Web', language: null, specIds: ['outra'], repos: [] },
     ]);
     expect(findPlatform(p, 'web')?.name).toBe('Web');
     expect(findPlatform(p, 'desktop')).toBeNull();
@@ -113,65 +151,84 @@ describe('plataformas do projeto', () => {
       name: 'Android (outro nome)',
       language: 'java',
       specIds: ['outra'],
+      repos: [],
     });
+  });
+
+  it('leva o repo de cada especialização que declara a plataforma, na ordem de aplicação', () => {
+    let p = withSpecRepo(specProject(), 'sdui', 'android', ANDROID_REPO);
+    p = applySpecialization(p, otherSpec(true), { newId: idGen('LO') });
+    expect(findPlatform(p, 'android')?.repos).toEqual([
+      { specId: 'sdui', repo: ANDROID_REPO },
+      { specId: 'outra', repo: OTHER_ANDROID_REPO },
+    ]);
+    expect(findPlatform(p, 'ios')?.repos).toEqual([]);
+    expect(findPlatform(p, 'web')?.repos).toEqual([]);
   });
 });
 
-describe('repositórios por plataforma', () => {
-  const template = 'https://github.com/org/app-android/blob/main/{path}#L{line}';
-
-  it('configura, altera em parte e remove', () => {
-    let p = setPlatformRepo(specProject(), 'android', {
-      urlTemplate: `  ${template} `,
-      localPath: '..\\..\\',
+describe('specPlatformRepo', () => {
+  it('é o repo da especialização na plataforma; null sem repo, sem a plataforma ou sem cópia', () => {
+    const p = applySpecialization(codeProject(), otherSpec(true), {
+      newId: idGen('LO'),
     });
-    expect(p.platformRepos).toEqual({
-      android: { urlTemplate: template, localPath: '../..' },
-    });
-    expect(hasPlatformRepo(p, 'android')).toBe(true);
-    expect(hasPlatformRepo(p, 'ios')).toBe(false);
+    expect(specPlatformRepo(p, 'sdui', 'android')).toEqual(ANDROID_REPO);
+    expect(specPlatformRepo(p, 'outra', 'android')).toEqual(OTHER_ANDROID_REPO);
+    expect(specPlatformRepo(p, 'sdui', 'ios')).toBeNull();
+    expect(specPlatformRepo(p, 'outra', 'ios')).toBeNull();
+    expect(specPlatformRepo(p, 'outra', 'web')).toBeNull();
+    expect(specPlatformRepo(p, 'nao-aplicada', 'android')).toBeNull();
+    expect(specPlatformRepo(p, 'sdui', 'constructor')).toBeNull();
+    const missing: Project = {
+      ...p,
+      specializations: p.specializations.map((s) =>
+        s.id === 'sdui' ? { ...s, spec: null } : s,
+      ),
+    };
+    expect(specPlatformRepo(missing, 'sdui', 'android')).toBeNull();
+    expect(specPlatformRepo(missing, 'outra', 'android')).toEqual(OTHER_ANDROID_REPO);
+  });
+});
 
-    // Propriedade ausente fica como está; texto vazio vira null.
-    p = setPlatformRepo(p, 'android', { localPath: '' });
-    expect(p.platformRepos.android).toEqual({ urlTemplate: template, localPath: null });
+describe('clone local por plataforma', () => {
+  it('informa, altera e remove', () => {
+    let p = setPlatformRepo(specProject(), 'android', { localPath: '..\\..\\' });
+    expect(p.platformRepos).toEqual({ android: { localPath: '../..' } });
+    expect(hasLocalPath(p, 'android')).toBe(true);
+    expect(hasLocalPath(p, 'ios')).toBe(false);
+
     p = setPlatformRepo(p, 'ios', { localPath: '.' });
     expect(Object.keys(p.platformRepos)).toEqual(['android', 'ios']);
-    expect(p.platformRepos.ios).toEqual({ urlTemplate: null, localPath: '.' });
+    expect(p.platformRepos.ios).toEqual({ localPath: '.' });
 
-    // Sem urlTemplate nem localPath, a configuração sai do arquivo.
+    // Texto vazio ou null remove a entrada: o arquivo não guarda configuração vazia.
     p = setPlatformRepo(p, 'ios', { localPath: null });
     expect(Object.keys(p.platformRepos)).toEqual(['android']);
+    p = setPlatformRepo(p, 'android', { localPath: '  ' });
+    expect(p.platformRepos).toEqual({});
+    p = setPlatformRepo(p, 'android', { localPath: '..' });
     p = removePlatformRepo(p, 'android');
     expect(p.platformRepos).toEqual({});
   });
 
-  it('repetir o valor atual devolve o mesmo projeto (sem entrada no desfazer)', () => {
-    const p = setPlatformRepo(specProject(), 'android', { urlTemplate: template });
-    expect(setPlatformRepo(p, 'android', { urlTemplate: template })).toBe(p);
-    expect(setPlatformRepo(p, 'android', {})).toBe(p);
-    const empty = specProject();
-    expect(setPlatformRepo(empty, 'ios', { urlTemplate: '', localPath: null })).toBe(
-      empty,
-    );
+  it('só guarda o localPath, sem endereço', () => {
+    const p = setPlatformRepo(specProject(), 'android', { localPath: '../..' });
+    expect(Object.keys(p.platformRepos.android ?? {})).toEqual(['localPath']);
   });
 
-  it('valida a plataforma, o urlTemplate e o localPath', () => {
+  it('repetir o valor atual devolve o mesmo projeto (sem entrada no desfazer)', () => {
+    const p = setPlatformRepo(specProject(), 'android', { localPath: '../..' });
+    expect(setPlatformRepo(p, 'android', { localPath: '../..' })).toBe(p);
+    const empty = specProject();
+    expect(setPlatformRepo(empty, 'ios', { localPath: null })).toBe(empty);
+    expect(setPlatformRepo(empty, 'ios', { localPath: '' })).toBe(empty);
+  });
+
+  it('valida a plataforma e o localPath', () => {
     const p = specProject();
     expect(codeOf(() => setPlatformRepo(p, 'web', { localPath: '.' }))).toBe(
       'unknown-platform',
     );
-    for (const bad of [
-      'https://github.com/org/repo/blob/main/',
-      'javascript:alert(1)//{path}',
-      'ftp://servidor/{path}',
-      'https://servidor/com espaço/{path}',
-      'github.com/org/repo/{path}',
-    ]) {
-      expect(
-        codeOf(() => setPlatformRepo(p, 'android', { urlTemplate: bad })),
-        bad,
-      ).toBe('invalid-url-template');
-    }
     for (const bad of ['/home/dev/app', 'C:/dev/app', 'C:\\dev\\app']) {
       expect(
         codeOf(() => setPlatformRepo(p, 'android', { localPath: bad })),
@@ -179,21 +236,8 @@ describe('repositórios por plataforma', () => {
       ).toBe('invalid-local-path');
     }
     expect(codeOf(() => removePlatformRepo(p, 'android'))).toBe('not-found');
-    // Um valor antigo inválido (editado à mão) não impede de alterar o outro.
-    const handEdited: Project = {
-      ...p,
-      platformRepos: {
-        android: { urlTemplate: 'javascript:x//{path}', localPath: null },
-      },
-    };
-    expect(
-      setPlatformRepo(handEdited, 'android', { localPath: '..' }).platformRepos,
-    ).toEqual({ android: { urlTemplate: 'javascript:x//{path}', localPath: '..' } });
     // Configuração de plataforma não declarada (editada à mão) pode ser removida.
-    const orphan = {
-      ...p,
-      platformRepos: { web: { urlTemplate: null, localPath: '.' } },
-    };
+    const orphan = { ...p, platformRepos: { web: { localPath: '.' } } };
     expect(removePlatformRepo(orphan, 'web').platformRepos).toEqual({});
   });
 });
@@ -221,11 +265,17 @@ describe('caminhos de código', () => {
 });
 
 describe('codeLink', () => {
-  const at = (path: string | null, platform = 'android') => ({ platform, path });
-  const withTemplate = (urlTemplate: string | null, localPath: string | null = null) => ({
-    ...codeProject(),
-    platformRepos: { android: { urlTemplate, localPath } },
+  const at = (path: string | null, platform = 'android', specId = 'sdui') => ({
+    specId,
+    platform,
+    path,
   });
+  /** Projeto cuja especialização `sdui` declara `android` com esse `urlTemplate` (ou sem `repo`). */
+  const withTemplate = (urlTemplate: string | undefined) =>
+    withSpecRepo(codeProject(), 'sdui', 'android', {
+      url: 'https://git.interno/org/app',
+      ...(urlTemplate === undefined ? {} : { urlTemplate }),
+    });
 
   it('substitui {path} e remove o trecho a partir do último # que contém {line}', () => {
     expect(codeLink(codeProject(), at(DS_BUTTON))).toBe(
@@ -255,11 +305,13 @@ describe('codeLink', () => {
     );
   });
 
-  it('null sem repositório, sem urlTemplate, com template inválido ou caminho inválido', () => {
+  it('null sem repo, sem urlTemplate, com template inválido ou caminho inválido', () => {
     const p = codeProject();
     expect(codeLink(p, at(DS_BUTTON_SWIFT, 'ios'))).toBeNull();
     expect(codeLink(p, at(DS_BUTTON, 'constructor'))).toBeNull();
-    expect(codeLink(withTemplate(null, '..'), at(DS_BUTTON))).toBeNull();
+    expect(codeLink(p, at(DS_BUTTON, 'android', 'nao-aplicada'))).toBeNull();
+    // `repo` só com `url`: sem `urlTemplate`, sem link.
+    expect(codeLink(withTemplate(undefined), at(DS_BUTTON))).toBeNull();
     expect(codeLink(withTemplate('  '), at(DS_BUTTON))).toBeNull();
     expect(
       codeLink(withTemplate('javascript:alert(1)//{path}'), at(DS_BUTTON)),
@@ -268,16 +320,41 @@ describe('codeLink', () => {
     expect(codeLink(p, at('/abs/a.kt'))).toBeNull();
     expect(codeLink(p, at('../x.kt'))).toBeNull();
   });
+
+  it('o link vem da especialização dona do tipo, não do projeto', () => {
+    // O projeto sobrepõe só o clone local: nada dele entra no link.
+    expect(codeLink(codeProject(), at('a/B.kt'))).toBe(
+      'https://github.com/org/app-android/blob/main/a/B.kt',
+    );
+    // Duas especializações com a mesma plataforma e repo diferentes: cada uma tem o seu.
+    const p = applySpecialization(codeProject(), otherSpec(true), {
+      newId: idGen('LO'),
+    });
+    expect(codeLink(p, at('a/B.kt', 'android', 'sdui'))).toBe(
+      'https://github.com/org/app-android/blob/main/a/B.kt',
+    );
+    expect(codeLink(p, at('a/B.kt', 'android', 'outra'))).toBe(
+      'https://gitlab.com/org/outra-android/-/blob/main/a/B.kt',
+    );
+    // A outra não declara `repo` para a plataforma `web`.
+    expect(codeLink(p, at('src/Pagina.tsx', 'web', 'outra'))).toBeNull();
+    // Uma especialização sem `repo` não herda o da outra, mesmo na mesma plataforma.
+    const semRepo = applySpecialization(codeProject(), otherSpec(false), {
+      newId: idGen('LO'),
+    });
+    expect(codeLink(semRepo, at('a/B.kt', 'android', 'outra'))).toBeNull();
+    expect(codeLink(semRepo, at('a/B.kt', 'android', 'sdui'))).not.toBeNull();
+  });
 });
 
 describe('codeLocalPath', () => {
   it('junta o localPath e o caminho, relativo à pasta do projeto', () => {
     const p = codeProject();
-    const location = { platform: 'android', path: DS_BUTTON };
+    const location = { specId: 'sdui', platform: 'android', path: DS_BUTTON };
     expect(codeLocalPath(p, location)).toBe(`../../../${DS_BUTTON}`);
     const at = (localPath: string) => ({
       ...p,
-      platformRepos: { android: { urlTemplate: null, localPath } },
+      platformRepos: { android: { localPath } },
     });
     expect(codeLocalPath(at('.'), location)).toBe(DS_BUTTON);
     expect(codeLocalPath(at('repo/../outro'), { ...location, path: 'a.kt' })).toBe(
@@ -286,6 +363,16 @@ describe('codeLocalPath', () => {
     expect(codeLocalPath(at('/abs'), location)).toBeNull();
     expect(codeLocalPath(p, { ...location, platform: 'ios' })).toBeNull();
     expect(codeLocalPath(p, { ...location, path: null })).toBeNull();
+  });
+
+  it('a sobreposição é da plataforma: vale para qualquer especialização', () => {
+    const p = applySpecialization(codeProject(), otherSpec(true), {
+      newId: idGen('LO'),
+    });
+    const at = (specId: string) =>
+      codeLocalPath(p, { specId, platform: 'android', path: 'a/B.kt' });
+    expect(at('sdui')).toBe('../../../a/B.kt');
+    expect(at('outra')).toBe('../../../a/B.kt');
   });
 });
 
@@ -298,8 +385,9 @@ describe('Definição (path do code de um tipo)', () => {
 
   it('typeCodeDefinitions: uma entrada por plataforma com path, na ordem do code', () => {
     const p = codeProject();
-    expect(typeCodeDefinitions(p, typeOf(p, 'AB'))).toEqual([
+    expect(typeCodeDefinitions(p, 'sdui', typeOf(p, 'AB'))).toEqual([
       {
+        specId: 'sdui',
         platform: 'android',
         platformName: 'Android',
         path: DS_BUTTON,
@@ -307,6 +395,7 @@ describe('Definição (path do code de um tipo)', () => {
         symbol: 'com.app.ds.DSButton',
       },
       {
+        specId: 'sdui',
         platform: 'ios',
         platformName: 'iOS',
         path: DS_BUTTON_SWIFT,
@@ -318,8 +407,8 @@ describe('Definição (path do code de um tipo)', () => {
 
   it('tipo sem path (ou sem code) não tem definição', () => {
     const p = codeProject();
-    expect(typeCodeDefinitions(p, typeOf(p, 'AOC'))).toEqual([]);
-    expect(typeCodeDefinitions(p, { code: undefined })).toEqual([]);
+    expect(typeCodeDefinitions(p, 'sdui', typeOf(p, 'AOC'))).toEqual([]);
+    expect(typeCodeDefinitions(p, 'sdui', { code: undefined })).toEqual([]);
   });
 
   it('projectTypeCode: as entradas do code de todos os tipos aplicados, uma vez por versão', () => {
@@ -424,38 +513,17 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
   });
 });
 
-describe('aviso de plataforma sem repositório (pelo path do code)', () => {
-  it('plataforma em que algum tipo tem path, sem repositório: aviso, não pendência', () => {
+describe('plataforma sem caminho local', () => {
+  it('não é problema: sem aviso e sem pendência', () => {
     const p = codeProject();
-    // No Android, Button e Input têm path (com repositório); no iOS, só o Button (sem).
-    expect(platformRepoWarnings(p)).toEqual([
-      { code: 'missing-repo', platform: 'ios', types: 1 },
-    ]);
+    expect(hasLocalPath(p, 'ios')).toBe(false);
     expect(getAnnotationIssues(p, 'AB')).toEqual([]);
-    const configured = setPlatformRepo(p, 'ios', { localPath: '../ios' });
-    expect(platformRepoWarnings(configured)).toEqual([]);
-    const withoutAndroid = removePlatformRepo(configured, 'android');
-    expect(platformRepoWarnings(withoutAndroid)).toEqual([
-      { code: 'missing-repo', platform: 'android', types: 2 },
-    ]);
-  });
-
-  it('plataforma sem path em nenhum tipo (bff) e projeto sem especialização não geram aviso', () => {
-    const p = setPlatformRepo(specProject(), 'ios', { localPath: '.' });
-    const warned = platformRepoWarnings(p).map((w) => w.platform);
-    expect(warned).toEqual(['android']);
-    expect(warned).not.toContain('bff');
-    const plain = removeSpecialization(
-      removeSpecialization(specProject(), 'sdui', 'convert'),
-      'modelo-dados',
-      'convert',
-    );
-    expect(platformRepoWarnings(plain)).toEqual([]);
-  });
-
-  it('calculado uma vez por versão do projeto', () => {
-    const p = codeProject();
-    expect(platformRepoWarnings(p)).toBe(platformRepoWarnings(p));
+    const withoutAndroid = removePlatformRepo(p, 'android');
+    expect(hasLocalPath(withoutAndroid, 'android')).toBe(false);
+    // O link continua vindo da especialização.
+    expect(
+      codeLink(withoutAndroid, { specId: 'sdui', platform: 'android', path: 'a/B.kt' }),
+    ).toBe('https://github.com/org/app-android/blob/main/a/B.kt');
   });
 });
 

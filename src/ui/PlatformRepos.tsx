@@ -3,23 +3,20 @@ import { t, type TranslationKey } from '../i18n';
 import {
   platformRepoOf,
   projectPlatforms,
-  type PlatformRepoWarning,
   type ProjectPlatform,
   type Project,
 } from '../model';
 import { IconButton, TextField } from './controls';
 import { useEditor } from './EditorContext';
 
-// Repositórios por plataforma (etapa 3b.3), nas Configurações do editor: uma linha por
-// plataforma declarada pelas especializações aplicadas, com o endereço do arquivo
-// (`urlTemplate`), o caminho local da raiz (`localPath`) e o aviso de plataforma em que algum
-// tipo das especializações aplicadas aponta um arquivo (`code.<plataforma>.path`) sem
-// repositório. As actions validam e devolvem o motivo do erro.
+// Repositórios por plataforma (etapa 3b.3; schema v11), nas Configurações do editor: uma linha
+// por plataforma declarada pelas especializações aplicadas. O `repo` (endereço e `ref`) é da
+// especialização e aparece só em leitura; o único campo editável é o caminho local da raiz do
+// clone (`localPath`), gravado no projeto. As actions validam e devolvem o motivo do erro.
 
-type Property = 'urlTemplate' | 'localPath';
+type Property = 'localPath';
 
 const ERROR_TEXT: Readonly<Record<string, TranslationKey>> = {
-  'invalid-url-template': 'repos.invalidUrlTemplate',
   'invalid-local-path': 'repos.invalidLocalPath',
 };
 
@@ -29,10 +26,8 @@ interface PlatformReposProps {
 }
 
 export function PlatformRepos({ project, readOnly }: PlatformReposProps) {
-  const { derived } = useEditor();
   const platforms = projectPlatforms(project);
   if (platforms.length === 0) return null;
-  const warnings = derived.platformRepoWarnings.value;
   return (
     <section class="repos" aria-labelledby="repos-title">
       <h3 id="repos-title" class="repos-title">
@@ -44,7 +39,6 @@ export function PlatformRepos({ project, readOnly }: PlatformReposProps) {
           key={platform.id}
           project={project}
           platform={platform}
-          warning={warnings.find((w) => w.platform === platform.id)}
           readOnly={readOnly}
         />
       ))}
@@ -52,15 +46,17 @@ export function PlatformRepos({ project, readOnly }: PlatformReposProps) {
   );
 }
 
+function specName(project: Project, specId: string): string {
+  return project.specializations.find((s) => s.id === specId)?.spec?.name ?? specId;
+}
+
 function RepoRow({
   project,
   platform,
-  warning,
   readOnly,
 }: {
   readonly project: Project;
   readonly platform: ProjectPlatform;
-  readonly warning: PlatformRepoWarning | undefined;
   readonly readOnly: boolean;
 }) {
   const { actions } = useEditor();
@@ -93,24 +89,28 @@ function RepoRow({
           }}
         />
       </div>
-      {warning && (
-        <p class="notice repo-warning" role="status">
-          {warning.types === 1
-            ? t('repos.missingOne', { name })
-            : t('repos.missingMany', { name, count: warning.types })}
-        </p>
-      )}
-      <TextField
-        label={t('repos.urlTemplate')}
-        aria-describedby={`repo-url-hint-${platform.id}`}
-        invalid={error?.property === 'urlTemplate'}
-        disabled={readOnly}
-        value={repo?.urlTemplate ?? ''}
-        onCommit={(text) => save('urlTemplate', text)}
-      />
-      <small id={`repo-url-hint-${platform.id}`} class="muted">
-        {t('repos.urlTemplateHint')}
-      </small>
+      <div class="repo-declared">
+        {platform.repos.length === 0 ? (
+          <small class="muted">{t('repos.noneDeclared')}</small>
+        ) : (
+          platform.repos.map(({ specId, repo: declared }) => (
+            <div key={specId} class="repo-declared-item" data-spec={specId}>
+              <small class="muted">{specName(project, specId)}</small>
+              <a
+                href={declared.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="repo-declared-link"
+              >
+                {declared.url}
+              </a>
+              {declared.ref && (
+                <small class="muted">{t('repos.ref', { ref: declared.ref })}</small>
+              )}
+            </div>
+          ))
+        )}
+      </div>
       <TextField
         label={t('repos.localPath')}
         aria-describedby={`repo-local-hint-${platform.id}`}

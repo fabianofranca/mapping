@@ -127,9 +127,8 @@ const specializationSchema = z.object({
   file: z.string().min(1),
 });
 
-/** Repositório de uma plataforma (v7). Texto vazio vale como `null` na leitura. */
+/** Sobreposição local de uma plataforma (v11); chave desconhecida é descartada na leitura. */
 export const platformRepoSchema = z.object({
-  urlTemplate: z.string().nullable(),
   localPath: z.string().nullable(),
 });
 

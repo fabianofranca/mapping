@@ -152,6 +152,48 @@ export const migrateFrom9To10: Migration = (data) => ({
   images: mapItems(data.images, (i) => ({ background: null, ...i })),
 });
 
+/** O que a migração para o schema 11 descarta de uma entrada de `platformRepos`. */
+export interface DiscardedUrlTemplate {
+  readonly platform: string;
+  readonly urlTemplate: string;
+}
+
+/**
+ * Os `urlTemplate` não vazios de `platformRepos` de um JSON v10 ou anterior, na ordem do
+ * objeto: o que a migração v10 → v11 descarta (o endereço dos arquivos passou a ser da
+ * especialização). Lê o JSON cru, sem validar; sem `platformRepos` válido, lista vazia.
+ */
+export function discardedOnMigrationTo11(
+  data: Record<string, unknown>,
+): readonly DiscardedUrlTemplate[] {
+  const repos = data.platformRepos;
+  if (!isObject(repos)) return [];
+  return Object.entries(repos).flatMap(([platform, repo]) => {
+    const raw = isObject(repo) ? repo.urlTemplate : undefined;
+    const urlTemplate = typeof raw === 'string' ? raw.trim() : '';
+    return urlTemplate === '' ? [] : [{ platform, urlTemplate }];
+  });
+}
+
+/**
+ * v10 → v11 (código de instanciação): o repositório passa para a especialização
+ * (`platforms[].repo`) e `platformRepos[x]` fica só com `localPath`. O `urlTemplate` é
+ * descartado; a entrada que fica sem `localPath` (só tinha `urlTemplate`, ou `localPath`
+ * nulo ou vazio) é removida. Sem `platformRepos` (ou algo que não seja objeto), nada muda.
+ */
+export const migrateFrom10To11: Migration = (data) => {
+  const repos = data.platformRepos;
+  if (!isObject(repos)) return data;
+  const kept: Record<string, unknown> = {};
+  for (const [platform, repo] of Object.entries(repos)) {
+    const localPath = isObject(repo) ? repo.localPath : undefined;
+    if (typeof localPath === 'string' && localPath.trim() !== '') {
+      kept[platform] = { localPath };
+    }
+  }
+  return { ...data, platformRepos: kept };
+};
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -163,6 +205,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [7, migrateFrom7To8],
   [8, migrateFrom8To9],
   [9, migrateFrom9To10],
+  [10, migrateFrom10To11],
 ]);
 
 export type MigrationResult =

@@ -8,7 +8,6 @@ import {
   getSpec,
   isMarkingGeometryLocked,
   markingLockStates,
-  platformRepoWarnings,
   projectIndex,
   projectIssues,
   projectPlatforms,
@@ -415,7 +414,6 @@ export function projectDetail(refs: Refs): Json {
     markingsByImage.set(m.imageId, (markingsByImage.get(m.imageId) ?? 0) + 1);
   }
   const warnings = new Map(loaded.specWarnings.map((w) => [w.specId, w]));
-  const repoWarnings = platformRepoWarnings(p);
 
   return {
     ...projectSummary(loaded),
@@ -448,7 +446,6 @@ export function projectDetail(refs: Refs): Json {
       specs: platform.specIds,
     })),
     platformRepos: p.platformRepos,
-    ...(repoWarnings.length > 0 ? { warnings: repoWarnings } : {}),
     lockedMarkings: p.markings.filter((m) => m.locked).length,
     needsReview: p.markings.filter((m) => m.needsReview).length,
     issues: {

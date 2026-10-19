@@ -1,4 +1,5 @@
 import type { LibraryFile } from './library';
+import type { Spec } from './spec';
 
 // O pacote da biblioteca no projeto: a pasta da especialização copiada para
 // `specs/<id>/` (docs/SPEC-FORMAT.md, "Biblioteca: o pacote"). Funções puras sobre caminhos;
@@ -26,6 +27,26 @@ export function packageDirOf(file: string): string | null {
 /** O `file` da especialização aponta para dentro de uma pasta de pacote? */
 export function isPackageFile(file: string): boolean {
   return packageDirOf(file) !== null;
+}
+
+/**
+ * A especialização cita arquivos do pacote? Só então ela precisa da pasta inteira. Cita quando
+ * é `formatVersion` 4 ou mais e tem algum tipo com `component`, `doc` ou `examples`, ou `fonts`
+ * ou `origins` na raiz. `migrations` não conta (é só o contrato de versão). As v1 a v3 nunca
+ * citam. Quem não cita vale como arquivo isolado (`specs/<id>.json`), como a v1 a v3.
+ */
+export function usesPackageFiles(spec: Spec): boolean {
+  if (spec.formatVersion < 4) return false;
+  if (spec.fonts !== undefined && spec.fonts.length > 0) return true;
+  if (spec.origins !== undefined && spec.origins.length > 0) return true;
+  return spec.layers.some((layer) =>
+    layer.annotationTypes.some(
+      (type) =>
+        type.component !== undefined ||
+        type.doc !== undefined ||
+        (type.examples !== undefined && type.examples.length > 0),
+    ),
+  );
 }
 
 /** `.json` e `.md` são texto (lidos pelo validador); o resto (fontes) é binário. */

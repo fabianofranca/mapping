@@ -50,14 +50,14 @@ describe('migração v9 → v10 (tela em branco)', () => {
     const result = load(v9Text(p));
     expect(result.migratedFrom).toBe(9);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(10);
+    expect(result.project.schemaVersion).toBe(11);
     expect(result.project.images.every((i) => i.background === null)).toBe(true);
     expect(result.project).toEqual(p);
   });
 
   it('grava v10 e a releitura é estável', () => {
     const saved = serialize(load(v9Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(10);
+    expect(JSON.parse(saved).schemaVersion).toBe(11);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -74,9 +74,9 @@ describe('migração v9 → v10 (tela em branco)', () => {
     ]);
   });
 
-  it('o registro tem as migrações de cada versão até a v10', () => {
-    expect(SCHEMA_VERSION).toBe(10);
-    expect([...migrations.keys()]).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  it('o registro tem a migração v9 → v10', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(10);
+    expect([...migrations.keys()].slice(0, 9)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(migrations.get(9)).toBe(migrateFrom9To10);
   });
 });
@@ -100,7 +100,7 @@ describe('schema v10', () => {
   });
 
   it('o projeto novo e a imagem com arquivo têm `background: null`', () => {
-    expect(emptyProject().schemaVersion).toBe(10);
+    expect(emptyProject().schemaVersion).toBe(11);
     expect(sampleProject().images.every((i) => i.background === null)).toBe(true);
   });
 

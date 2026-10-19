@@ -95,9 +95,11 @@ function PropertiesTable({ fields }: { readonly fields: readonly CatalogField[] 
 
 function CodeSection({
   entry,
+  specId,
   project,
 }: {
   readonly entry: CatalogEntry;
+  readonly specId: string;
   readonly project: Project | null;
 }) {
   if (entry.code.length === 0) return <p class="muted">{t('catalog.page.noCode')}</p>;
@@ -106,7 +108,11 @@ function CodeSection({
       {entry.code.map((code) => {
         const href =
           project !== null && code.path !== undefined
-            ? codeLink(project, { platform: code.platform.id, path: code.path })
+            ? codeLink(project, {
+                specId,
+                platform: code.platform.id,
+                path: code.path,
+              })
             : null;
         return (
           <li key={code.platform.id} class="catalog-code">
@@ -355,7 +361,7 @@ export function CatalogPage({
 
       <section aria-labelledby={section('code')} class="catalog-section">
         <h3 id={section('code')}>{t('catalog.page.code')}</h3>
-        <CodeSection entry={entry} project={project} />
+        <CodeSection entry={entry} specId={specId} project={project} />
       </section>
 
       <section aria-labelledby={section('sources')} class="catalog-section">

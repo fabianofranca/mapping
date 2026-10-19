@@ -10,14 +10,7 @@ import { instanceLabel, parseRefValue, refLabel, resolveRef, tableRows } from '.
 import type { SpecCode, SpecField } from './spec';
 import { typeOfAnnotation, type ResolvedType } from './specLookup';
 import { isEmptyValue } from './typed';
-import type {
-  Annotation,
-  JsonValue,
-  Marking,
-  PlatformRepo,
-  Project,
-  Rect,
-} from './types';
+import type { Annotation, JsonValue, Marking, Project, Rect } from './types';
 
 // Planta de código (`codeBlueprint`, etapa 3b): o que um agente precisa para
 // implementar uma marcação numa plataforma, a partir das especializações aplicadas.
@@ -53,7 +46,10 @@ export interface BlueprintAnnotation {
   readonly symbol: string | null;
   /** `code.<plataforma>.path`: arquivo que define o símbolo, relativo à raiz do repositório; `null` sem ele. */
   readonly path: string | null;
-  /** `codeLink` do `path` (`null` sem `path` ou sem `urlTemplate`). */
+  /**
+   * `codeLink` do `path`, pelo `repo` da especialização dona do tipo (`null` sem `path` ou
+   * sem `urlTemplate` no `repo` da especialização).
+   */
   readonly pathUrl: string | null;
   /** Parâmetros na ordem dos campos do tipo; vazio sem `code`. */
   readonly params: readonly BlueprintParam[];
@@ -80,8 +76,16 @@ export interface BlueprintNode {
 
 export interface CodeBlueprint {
   readonly platform: ProjectPlatform;
-  /** Repositório configurado para a plataforma (`null` se não houver). */
-  readonly repo: PlatformRepo | null;
+  /**
+   * Repositório da plataforma: `url` e `ref` vêm do `repo` da primeira especialização
+   * aplicada que o declara (cada tipo traz o próprio link em `pathUrl`, pela especialização
+   * dona dele) e `localPath` da sobreposição do projeto. `null` sem `repo` nem `localPath`.
+   */
+  readonly repo: {
+    readonly url: string | null;
+    readonly ref: string | null;
+    readonly localPath: string | null;
+  } | null;
   readonly root: BlueprintNode;
 }
 
@@ -181,7 +185,13 @@ export function codeBlueprint(
       layer: index.layers.get(a.layerId)?.name ?? null,
       symbol: code?.symbol ?? null,
       path: code?.path ?? null,
-      pathUrl: code?.path ? codeLink(p, { platform: platformId, path: code.path }) : null,
+      pathUrl: code?.path
+        ? codeLink(p, {
+            specId: resolved.spec.id,
+            platform: platformId,
+            path: code.path,
+          })
+        : null,
       params,
       notes: code?.notes ?? null,
       values: mapped,
@@ -218,9 +228,14 @@ export function codeBlueprint(
     };
   };
 
+  const specRepo = platform.repos[0]?.repo;
+  const localPath = platformRepoOf(p, platformId)?.localPath ?? null;
   return {
     platform,
-    repo: platformRepoOf(p, platformId),
+    repo:
+      specRepo === undefined && localPath === null
+        ? null
+        : { url: specRepo?.url ?? null, ref: specRepo?.ref ?? null, localPath },
     root: nodeOf(rootMarking),
   };
 }

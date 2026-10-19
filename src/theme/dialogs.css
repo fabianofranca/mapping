@@ -291,6 +291,14 @@
   overflow-wrap: anywhere;
 }
 
+.spec-platforms .spec-platform-repo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
 /* Problemas de uma biblioteca (erros e avisos): lista compacta que rola sozinha */
 .library-issues {
   max-height: 40vh;

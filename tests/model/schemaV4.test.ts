@@ -48,11 +48,12 @@ import {
   idGen,
   layerOf,
   loadExample,
+  loadLegacySdui,
   specProject,
 } from './specFixtures';
 
 /** Versão do conteúdo do exemplo SDUI (os testes de atualização usam a seguinte). */
-const SDUI_VERSION = loadExample('sdui').version;
+const SDUI_VERSION = loadLegacySdui().version;
 
 function annotation(p: Project, id: string): Annotation {
   const a = p.annotations.find((x) => x.id === id);
@@ -103,7 +104,7 @@ describe('migração v3 → v4', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(3);
     const p = result.project;
-    expect(p.schemaVersion).toBe(10);
+    expect(p.schemaVersion).toBe(11);
     expect(p.specializations).toEqual([]);
     expect(p.layers.every((l) => l.spec === null)).toBe(true);
     expect(p.annotations.every((a) => a.type === null && a.values === null)).toBe(true);
@@ -122,7 +123,7 @@ describe('migração v3 → v4', () => {
     const first = deserialize(v3Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(10);
+    expect(JSON.parse(saved).schemaVersion).toBe(11);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);
@@ -158,7 +159,7 @@ describe('aplicar especialização', () => {
 
   it('mesma especialização: maior versão atualiza; igual ou menor não faz nada', () => {
     const p = specProject();
-    const sdui = loadExample('sdui');
+    const sdui = loadLegacySdui();
     expect(checkSpecApply(sampleProject(), sdui)).toBe('apply');
     expect(checkSpecApply(p, sdui)).toBe('not-newer');
     expect(checkSpecApply(p, { ...sdui, version: SDUI_VERSION + 1 })).toBe('update');
@@ -173,7 +174,7 @@ describe('aplicar especialização', () => {
   });
 
   it('id com caracteres estranhos vira um nome de arquivo seguro', () => {
-    const spec = { ...loadExample('sdui'), id: 'a/b c' };
+    const spec = { ...loadLegacySdui(), id: 'a/b c' };
     const p = applySpecialization(sampleProject(), spec, { newId: idGen('X') });
     expect(p.specializations[0]?.file).toBe('specs/a-b-c.json');
   });
@@ -453,7 +454,7 @@ describe('referências', () => {
   });
 
   it('accepts só com etiqueta não lista tuplas livres; accepts só free não lista linhas', () => {
-    const sdui = withChanges(loadExample('sdui'), (s) => {
+    const sdui = withChanges(loadLegacySdui(), (s) => {
       const input = s.layers[0]?.annotationTypes[1];
       const dado = input?.fields.find((f) => f.key === 'dado');
       if (dado?.type === 'ref') dado.accepts = { tags: ['data-field'] };
@@ -645,7 +646,7 @@ describe('remover especialização', () => {
 describe('atualizar especialização', () => {
   /** SDUI v2: camada "Estados" nova, "Eventos" removida, "Componentes" renomeada. */
   function sduiV2(): Spec {
-    return withChanges(loadExample('sdui'), (s) => {
+    return withChanges(loadLegacySdui(), (s) => {
       s.version = SDUI_VERSION + 1;
       const componentes = s.layers[0];
       if (!componentes) throw new Error('sem camada');
@@ -693,7 +694,7 @@ describe('atualizar especialização', () => {
   });
 
   it('anotações que ficaram inválidas não mudam: viram pendências', () => {
-    const v2 = withChanges(loadExample('sdui'), (s) => {
+    const v2 = withChanges(loadLegacySdui(), (s) => {
       s.version = SDUI_VERSION + 1;
       const [button, input, , image] = s.layers[0]?.annotationTypes ?? [];
       if (!button || !input || !image) throw new Error('tipos');

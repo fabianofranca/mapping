@@ -9,7 +9,7 @@ import {
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deserialize } from '../../src/model';
-import { loadExample } from '../model/specFixtures';
+import { loadLegacySdui } from '../model/specFixtures';
 import {
   codeOf,
   connect,
@@ -157,11 +157,11 @@ describe('list_projects e descoberta', () => {
     expect(cadastro).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
-      schemaVersion: 10,
+      schemaVersion: 11,
       revision: 0,
       counts: { images: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
-        { id: 'sdui', version: loadExample('sdui').version },
+        { id: 'sdui', version: loadLegacySdui().version },
         { id: 'modelo-dados', version: 1 },
       ],
     });
@@ -247,7 +247,7 @@ describe('get_project', () => {
       }),
     ]);
     const legado = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legado).toMatchObject({ schemaVersion: 10, revision: 0, migratedFrom: 5 });
+    expect(legado).toMatchObject({ schemaVersion: 11, revision: 0, migratedFrom: 5 });
   });
 
   it('ler nunca regrava o mapping.json (nem o de schema antigo)', () => {
@@ -719,10 +719,10 @@ describe('get_specialization', () => {
     );
     expect(data).toMatchObject({
       id: 'sdui',
-      version: loadExample('sdui').version,
+      version: loadLegacySdui().version,
       file: 'specs/sdui.json',
     });
-    expect(data.spec).toEqual(loadExample('sdui'));
+    expect(data.spec).toEqual(loadLegacySdui());
     expect((data.projectLayers as { name: string }[]).map((l) => l.name)).toEqual([
       'Componentes',
       'Eventos',
@@ -799,7 +799,7 @@ describe('create_project', () => {
       name: 'loja',
       path: 'novos/loja',
       projectName: 'Loja',
-      schemaVersion: 10,
+      schemaVersion: 11,
       revision: 0,
       counts: { images: 0, markings: 0, annotations: 0, layers: 1 },
     });

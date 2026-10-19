@@ -440,9 +440,9 @@ export const enUS: Dictionary = {
   'spec.updateFolder': 'Update from folder…',
   'spec.updateZip': 'Update from zip…',
   'spec.packageHint':
-    'A library (version 4) comes in a folder or a zip: the specialization, components, documents and fonts.',
+    'A library (version 4 or 5) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
   'spec.v4NeedsPackage':
-    '"{name}" is a library (version 4) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
+    '"{name}" refers to package files (components, documents, examples or fonts) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
   'spec.packageValidating': 'Checking the package…',
   'spec.packageReadFailed': 'Could not read the package.',
   'spec.packageTooBig': 'The package is over the limit ({files} files or {mb} MB).',
@@ -768,25 +768,22 @@ export const enUS: Dictionary = {
   'code.copyPathNamed': 'Copy path: {path}',
   'code.pathCopied': 'Path copied',
   'code.copyFailed': 'Could not copy the path.',
+  'migration.v11.discardedUrlTemplate':
+    'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with `repo` (formatVersion 5) and update it in the project.',
   'repos.title': 'Code repositories',
   'repos.intro':
-    'For each platform, say where the code lives. The address lets you open files in the repository; the local path helps the agent find them.',
+    'The repository address of each platform comes from the specialization and is shown here for reference only. Just say where the local clone of the code is on your computer.',
+  'repos.noneDeclared':
+    'The specialization does not declare the repository of this platform.',
+  'repos.ref': 'ref {ref}',
   'repos.platform': '{name} ({id})',
-  'repos.urlTemplate': 'File address',
-  'repos.urlTemplateHint':
-    'Use {path} for the file path. E.g. https://github.com/org/app/blob/main/{path}',
   'repos.localPath': 'Local path of the root',
-  'repos.localPathHint': "From this project's folder to the repository root. E.g. ../..",
+  'repos.localPathHint':
+    "Root of the clone, relative to this project's folder (e.g. ../..). It lets the agent open the file locally; the address comes from the specialization.",
   'repos.clear': 'Clear the repository of {name}',
-  'repos.invalidUrlTemplate':
-    'The address must start with http:// or https://, have no spaces and contain {path}.',
   'repos.invalidLocalPath':
     'Use a path relative to the project folder (".." is fine), not starting with "/" or a drive letter.',
   'repos.invalidValue': 'Could not save the repository.',
-  'repos.missingOne':
-    '{name} has no repository: 1 type points to a file on this platform.',
-  'repos.missingMany':
-    '{name} has no repository: {count} types point to files on this platform.',
   'spec.ignoredFields':
     'Ignored fields: {fields}. The "{type}" field type was removed from the format; the specialization was applied without them. Remove them from the file.',
   'spec.platforms': 'Platforms',

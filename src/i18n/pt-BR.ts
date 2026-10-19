@@ -442,9 +442,9 @@ export const ptBR = {
   'spec.updateFolder': 'Atualizar de pasta…',
   'spec.updateZip': 'Atualizar de zip…',
   'spec.packageHint':
-    'Uma biblioteca (versão 4) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes.',
+    'Uma biblioteca (versão 4 ou 5) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
   'spec.v4NeedsPackage':
-    '"{name}" é uma biblioteca (versão 4) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
+    '"{name}" cita arquivos do pacote (componentes, documentos, exemplos ou fontes) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
   'spec.packageValidating': 'Conferindo o pacote…',
   'spec.packageReadFailed': 'Não foi possível ler o pacote.',
   'spec.packageTooBig': 'O pacote passa do limite ({files} arquivos ou {mb} MB).',
@@ -774,25 +774,21 @@ export const ptBR = {
   'code.copyPathNamed': 'Copiar caminho: {path}',
   'code.pathCopied': 'Caminho copiado',
   'code.copyFailed': 'Não foi possível copiar o caminho.',
+  'migration.v11.discardedUrlTemplate':
+    'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com `repo` (formatVersion 5) e atualize-a no projeto.',
   'repos.title': 'Repositórios de código',
   'repos.intro':
-    'Para cada plataforma, diga onde fica o código. O endereço permite abrir os arquivos no repositório; o caminho local ajuda o agente a encontrá-los.',
+    'O endereço do repositório de cada plataforma vem da especialização e aparece aqui só para consulta. Informe apenas onde está o clone local do código no seu computador.',
+  'repos.noneDeclared': 'A especialização não declara o repositório desta plataforma.',
+  'repos.ref': 'referência {ref}',
   'repos.platform': '{name} ({id})',
-  'repos.urlTemplate': 'Endereço do arquivo',
-  'repos.urlTemplateHint':
-    'Use {path} para o caminho do arquivo. Ex.: https://github.com/org/app/blob/main/{path}',
   'repos.localPath': 'Caminho local da raiz',
-  'repos.localPathHint': 'Da pasta deste projeto até a raiz do repositório. Ex.: ../..',
+  'repos.localPathHint':
+    'Raiz do clone, relativa à pasta deste projeto (ex.: ../..). Serve para o agente abrir o arquivo localmente; o endereço vem da especialização.',
   'repos.clear': 'Limpar repositório de {name}',
-  'repos.invalidUrlTemplate':
-    'O endereço precisa começar com http:// ou https://, não ter espaços e conter {path}.',
   'repos.invalidLocalPath':
     'Use um caminho relativo à pasta do projeto (".." vale), sem começar por "/" nem por letra de unidade.',
   'repos.invalidValue': 'Não foi possível gravar o repositório.',
-  'repos.missingOne':
-    '{name} sem repositório: 1 tipo aponta um arquivo nesta plataforma.',
-  'repos.missingMany':
-    '{name} sem repositório: {count} tipos apontam arquivos nesta plataforma.',
   'spec.ignoredFields':
     'Campos ignorados: {fields}. O tipo de campo "{type}" saiu do formato; a especialização foi aplicada sem eles. Remova-os do arquivo.',
   'spec.platforms': 'Plataformas',

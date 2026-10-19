@@ -8,6 +8,7 @@ import {
   type Annotation,
   type BlueprintAnnotation,
   type BlueprintNode,
+  type CodeLocation,
   type SpecCode,
 } from '../src/model';
 import type { LocalFileChecker } from './codeFiles';
@@ -41,7 +42,7 @@ export function assertPlatform(refs: Refs, platformId: string): void {
 /** Onde um caminho de código está: a URL no repositório, o arquivo local e se ele existe. */
 async function resolveCodeFile(
   ctx: CodeContext,
-  location: { readonly platform: string; readonly path: string | null },
+  location: CodeLocation,
   url: string | null,
 ): Promise<Json> {
   const local = await ctx.files.check(
@@ -59,12 +60,15 @@ async function resolveCodeFile(
 /** O `path` do `code` de um tipo, resolvido: `path` com `url`, `localFile` e `exists` ao lado. Vazio sem `path`. */
 async function resolveDefinition(
   ctx: CodeContext,
+  specId: string,
   platform: string,
   path: string | null | undefined,
-  url: string | null = path ? codeLink(ctx.refs.project, { platform, path }) : null,
+  url: string | null = path
+    ? codeLink(ctx.refs.project, { specId, platform, path })
+    : null,
 ): Promise<Json> {
   if (path === null || path === undefined) return {};
-  return { path, ...(await resolveCodeFile(ctx, { platform, path }, url)) };
+  return { path, ...(await resolveCodeFile(ctx, { specId, platform, path }, url)) };
 }
 
 /**
@@ -77,9 +81,10 @@ export async function annotationCode(
   annotation: Annotation,
   platform?: string,
 ): Promise<Json | null> {
-  const code = typeOfAnnotation(ctx.refs.project, annotation)?.type.code;
-  if (!code) return null;
-  return typeCodeView(ctx, code, platform);
+  const resolved = typeOfAnnotation(ctx.refs.project, annotation);
+  const code = resolved?.type.code;
+  if (!resolved || !code) return null;
+  return typeCodeView(ctx, resolved.spec.id, code, platform);
 }
 
 /**
@@ -88,6 +93,7 @@ export async function annotationCode(
  */
 export async function typeCodeView(
   ctx: CodeContext,
+  specId: string,
   code: Readonly<Record<string, SpecCode>>,
   only?: string | ReadonlySet<string>,
 ): Promise<Json | null> {
@@ -98,7 +104,10 @@ export async function typeCodeView(
       .filter(([id]) => wanted(id))
       .map(async ([id, entry]): Promise<[string, Json]> => {
         const { symbol, path, ...rest } = entry;
-        return [id, { symbol, ...(await resolveDefinition(ctx, id, path)), ...rest }];
+        return [
+          id,
+          { symbol, ...(await resolveDefinition(ctx, specId, id, path)), ...rest },
+        ];
       }),
   );
   return entries.length > 0 ? Object.fromEntries(entries) : null;
@@ -115,6 +124,7 @@ async function hintAnnotation(
   const { refs } = ctx;
   const definition = await resolveDefinition(
     ctx,
+    annotation.specId,
     platform,
     annotation.path,
     annotation.pathUrl,

@@ -1,25 +1,40 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 2,
+  "formatVersion": 5,
   "id": "sdui",
   "name": "SDUI",
-  "version": 2,
+  "version": 3,
   "description": "Componentes de tela e seus eventos para Server-Driven UI.",
   "platforms": [
     {
       "id": "android",
       "name": "Android",
-      "language": "kotlin"
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/app-android",
+        "urlTemplate": "https://github.com/org/app-android/blob/v3/{path}",
+        "ref": "v3"
+      }
     },
     {
       "id": "ios",
       "name": "iOS",
-      "language": "swift"
+      "language": "swift",
+      "repo": {
+        "url": "https://github.com/org/app-ios",
+        "urlTemplate": "https://github.com/org/app-ios/blob/v3/{path}",
+        "ref": "v3"
+      }
     },
     {
       "id": "bff",
-      "name": "Contrato SDUI",
-      "language": "json"
+      "name": "BFF",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/org/bff",
+        "urlTemplate": "https://github.com/org/bff/blob/v3/{path}",
+        "ref": "v3"
+      }
     }
   ],
   "layers": [
@@ -49,21 +64,21 @@
             {
               "key": "estilo",
               "type": "enum",
-              "default": "primary",
               "options": [
                 "primary",
                 "secondary",
                 "text"
-              ]
+              ],
+              "default": "primary"
             },
             {
               "key": "habilitado",
               "type": "enum",
-              "default": "sim",
               "options": [
                 "sim",
                 "não"
-              ]
+              ],
+              "default": "sim"
             }
           ],
           "code": {
@@ -109,13 +124,15 @@
               }
             },
             "bff": {
-              "symbol": "button",
+              "symbol": "com.app.bff.sdui.button",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
               "params": {
                 "id": "id",
                 "texto": "label",
                 "estilo": "variant",
                 "habilitado": "enabled"
-              }
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         },
@@ -134,15 +151,15 @@
             {
               "key": "tipo",
               "type": "enum",
-              "required": true,
-              "default": "text",
               "options": [
                 "text",
                 "email",
                 "password",
                 "number",
                 "phone"
-              ]
+              ],
+              "default": "text",
+              "required": true
             },
             {
               "key": "placeholder",
@@ -152,11 +169,11 @@
               "key": "obrigatorio",
               "label": "obrigatório",
               "type": "enum",
-              "default": "não",
               "options": [
                 "sim",
                 "não"
-              ]
+              ],
+              "default": "não"
             },
             {
               "key": "maxLength",
@@ -222,14 +239,16 @@
               }
             },
             "bff": {
-              "symbol": "input",
+              "symbol": "com.app.bff.sdui.input",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
               "params": {
                 "id": "id",
                 "tipo": "type",
                 "placeholder": "placeholder",
                 "obrigatorio": "required",
                 "maxLength": "maxLength"
-              }
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         },
@@ -251,12 +270,12 @@
             {
               "key": "estilo",
               "type": "enum",
-              "default": "corpo",
               "options": [
                 "titulo",
                 "corpo",
                 "legenda"
-              ]
+              ],
+              "default": "corpo"
             },
             {
               "key": "dado",
@@ -300,12 +319,14 @@
               }
             },
             "bff": {
-              "symbol": "text",
+              "symbol": "com.app.bff.sdui.text",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
               "params": {
                 "id": "id",
                 "conteudo": "content",
                 "estilo": "variant"
-              }
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         },
@@ -348,12 +369,14 @@
               }
             },
             "bff": {
-              "symbol": "image",
+              "symbol": "com.app.bff.sdui.image",
+              "path": "src/main/kotlin/com/app/bff/sdui/Components.kt",
               "params": {
                 "id": "id",
                 "descricao": "accessibilityLabel",
                 "url": "url"
-              }
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         }
@@ -373,14 +396,14 @@
               "key": "acao",
               "label": "ação",
               "type": "enum",
-              "required": true,
               "options": [
                 "navigate",
                 "submit",
                 "openUrl",
                 "showDialog",
                 "track"
-              ]
+              ],
+              "required": true
             },
             {
               "key": "destino",
@@ -422,12 +445,14 @@
               }
             },
             "bff": {
-              "symbol": "onClick",
+              "symbol": "com.app.bff.sdui.onClick",
+              "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
                 "acao": "action",
                 "destino": "target",
                 "parametros": "parameters"
-              }
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         },
@@ -440,12 +465,12 @@
               "key": "acao",
               "label": "ação",
               "type": "enum",
-              "required": true,
               "options": [
                 "showTooltip",
                 "showMenu",
                 "track"
-              ]
+              ],
+              "required": true
             },
             {
               "key": "duracaoMs",
@@ -470,11 +495,13 @@
               }
             },
             "bff": {
-              "symbol": "onHold",
+              "symbol": "com.app.bff.sdui.onHold",
+              "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
                 "acao": "action",
                 "duracaoMs": "durationMs"
-              }
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         },
@@ -487,12 +514,12 @@
               "key": "acao",
               "label": "ação",
               "type": "enum",
-              "required": true,
               "options": [
                 "validate",
                 "mask",
                 "track"
-              ]
+              ],
+              "required": true
             },
             {
               "key": "regra",
@@ -516,11 +543,13 @@
               }
             },
             "bff": {
-              "symbol": "onChange",
+              "symbol": "com.app.bff.sdui.onChange",
+              "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
                 "acao": "action",
                 "regra": "rule"
-              }
+              },
+              "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
         }

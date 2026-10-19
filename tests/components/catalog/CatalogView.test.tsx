@@ -21,7 +21,7 @@ import { locale } from '../../../src/store/settings';
 import { CatalogView, resolveCatalogLink } from '../../../src/ui/catalog/CatalogView';
 import { createCatalogRenderer } from '../../../src/ui/catalog/renderer';
 import { emptyProject } from '../../model/fixtures';
-import { material3Package } from '../../storage/packageFixture';
+import { material3Package, material3Spec } from '../../storage/packageFixture';
 
 // B5: apresentação do Catálogo (lista, página, galeria, playground) sobre o Material 3.
 
@@ -222,19 +222,42 @@ describe('código', () => {
     expect(within(section).getByText('onClick')).toBeTruthy();
   });
 
-  it('com projeto e urlTemplate o path vira link', () => {
-    const project: Project = {
-      ...emptyProject(),
-      platformRepos: {
-        android: { urlTemplate: 'https://git.example/repo/{path}', localPath: '' },
-      },
+  /** Projeto com a especialização `material3` declarando `android` com esse `repo`. */
+  function projectWithRepo(repo: { url: string; urlTemplate?: string }): Project {
+    const spec = {
+      ...material3Spec(),
+      formatVersion: 5 as const,
+      platforms: [{ id: 'android', name: 'Android', repo }],
     };
+    return {
+      ...emptyProject(),
+      specializations: [
+        { id: 'material3', version: 1, file: 'specs/material3.json', spec },
+      ],
+    };
+  }
+
+  it('com projeto cuja especialização declara o urlTemplate no repo, o path vira link', () => {
+    const project = projectWithRepo({
+      url: 'https://git.example/repo',
+      urlTemplate: 'https://git.example/repo/{path}',
+    });
     view({ initialTypeId: 'm3-button', project }, patched(base, 'm3-button', { code }));
     const section = screen.getByRole('region', { name: t('catalog.page.code') });
     const link = within(section).getByText('app/ui/MyButton.kt').closest('a');
     expect(link?.getAttribute('href')).toBe(
       'https://git.example/repo/app/ui/MyButton.kt',
     );
+  });
+
+  it('repo sem urlTemplate (ou só o clone local no projeto) não faz link', () => {
+    const project = {
+      ...projectWithRepo({ url: 'https://git.example/repo' }),
+      platformRepos: { android: { localPath: '../..' } },
+    };
+    view({ initialTypeId: 'm3-button', project }, patched(base, 'm3-button', { code }));
+    const section = screen.getByRole('region', { name: t('catalog.page.code') });
+    expect(within(section).getByText('app/ui/MyButton.kt').closest('a')).toBeNull();
   });
 });
 

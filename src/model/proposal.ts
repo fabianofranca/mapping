@@ -536,10 +536,32 @@ export type ProposalParseResult =
   | { readonly ok: true; readonly proposal: Proposal }
   | { readonly ok: false; readonly issues: SpecIssue[]; readonly errors: string[] };
 
+/**
+ * Proposta escrita antes do schema 11: o valor de `platformRepo` tinha `urlTemplate` além de
+ * `localPath`. O `urlTemplate` é ignorado (o endereço dos arquivos é da especialização): cada
+ * lado fica só com `localPath`. Uma mudança que só alterava o `urlTemplate` vira uma
+ * atualização com `from` igual a `to`, sem efeito no projeto.
+ */
+function withoutLegacyUrlTemplate(proposal: Proposal): Proposal {
+  const strip = (value: JsonValue): JsonValue =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+      ? { localPath: (value as { readonly localPath?: JsonValue }).localPath ?? null }
+      : value;
+  if (!proposal.changes.some((c) => c.entity === 'platformRepo')) return proposal;
+  return {
+    ...proposal,
+    changes: proposal.changes.map((c) =>
+      c.entity === 'platformRepo' ? { ...c, from: strip(c.from), to: strip(c.to) } : c,
+    ),
+  };
+}
+
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseProposal(data: unknown): ProposalParseResult {
   const result = proposalSchema.safeParse(data);
-  if (result.success) return { ok: true, proposal: result.data as Proposal };
+  if (result.success) {
+    return { ok: true, proposal: withoutLegacyUrlTemplate(result.data as Proposal) };
+  }
   const issues = result.error.issues.map((i) => ({
     path: formatSpecPath(i.path),
     message: i.message,
