@@ -6,7 +6,7 @@ import { componentTarget } from './componentTarget';
 import { libraryErrorMessage } from './labels';
 
 // "Adicionar à tela" de um componente da biblioteca, comum à paleta e ao Catálogo: o alvo é
-// o de `componentTarget` (container selecionado ou tela à vista), a criação é a action
+// o de `componentTarget` (seleção primeiro, senão a tela à vista), a criação é a action
 // `addComponent` e a marcação criada fica selecionada.
 
 export interface AddComponent {
@@ -41,6 +41,8 @@ export function useAddComponent(): AddComponent {
     }
     setError(null);
     ui.selection.value = { kind: 'marking', id: result.value };
+    // Marcação nova fora da área visível: pan mínimo até ela (já à vista, a vista não se mexe).
+    editor.canvas.current?.revealSelection();
     return true;
   };
 

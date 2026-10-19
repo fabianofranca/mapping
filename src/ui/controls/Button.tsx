@@ -1,4 +1,4 @@
-import type { JSX, Ref } from 'preact';
+import type { ComponentChildren, JSX, Ref } from 'preact';
 import { classes } from './classes';
 
 /**
@@ -42,5 +42,29 @@ export function Button({
         extra,
       )}
     />
+  );
+}
+
+interface LinkButtonProps {
+  /** Endereço do link: sempre abre em outra aba, sem enviar o endereço da app. */
+  readonly href: string;
+  readonly children: ComponentChildren;
+  readonly class?: string;
+}
+
+/**
+ * Link com a aparência do `Button`: um `<a>` comum que abre em outra aba (`noopener`), sem
+ * nenhuma requisição feita pela app (quem navega é o navegador, ao clicar).
+ */
+export function LinkButton({ href, children, class: extra }: LinkButtonProps) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      class={classes('button', extra)}
+    >
+      {children}
+    </a>
   );
 }

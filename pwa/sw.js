@@ -14,9 +14,12 @@ const ownsCache = (name) =>
   PREVIEW
     ? name.startsWith(PREVIEW_PREFIX)
     : name.startsWith('mapeador-') && !name.startsWith(PREVIEW_PREFIX);
+const GUIDE = './guia/index.html';
 const PRECACHE = [
   './index.html',
   './manifest.webmanifest',
+  // O guia interativo (public/guia/): uma página só, autocontida; funciona sem internet.
+  GUIDE,
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -30,6 +33,11 @@ const url = (path) => new URL(path, self.registration.scope).href;
 const isAppPage = (pathname) => {
   const scope = new URL(self.registration.scope).pathname;
   return pathname === scope || pathname === `${scope}index.html`;
+};
+// O guia fica em `guia/`: a navegação para ele (com ou sem `index.html`) é servida do cache.
+const isGuidePage = (pathname) => {
+  const guide = new URL('./guia/', self.registration.scope).pathname;
+  return pathname === guide || pathname === `${guide}index.html`;
 };
 const isPreviewPath = (pathname) => {
   const preview = new URL('./preview', self.registration.scope).pathname;
@@ -76,13 +84,16 @@ self.addEventListener('fetch', (event) => {
   // versão principal o contém, mas não pode responder por ele (nem por `/preview`
   // sem a barra, que o GitHub Pages redireciona para `/preview/`).
   if (!PREVIEW && isPreviewPath(requested.pathname)) return;
-  if (request.mode === 'navigate' && !isAppPage(requested.pathname)) return;
+  const guide = isGuidePage(requested.pathname);
+  if (request.mode === 'navigate' && !isAppPage(requested.pathname) && !guide) return;
 
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
-      // Navegação (inclusive com ?query) sempre serve o index.html do cache.
-      const key = request.mode === 'navigate' ? url('./index.html') : request;
+      // Navegação (inclusive com ?query) sempre serve a página do cache: o index.html da app
+      // ou o guia.
+      const key =
+        request.mode === 'navigate' ? url(guide ? GUIDE : './index.html') : request;
       const cached = await cache.match(key);
       if (cached) return cached;
       return fetch(request);

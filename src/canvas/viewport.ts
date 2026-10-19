@@ -97,6 +97,33 @@ export function wheelZoomFactor(
 }
 
 /**
+ * Pan mínimo para `rect` (canvas) ficar inteiro à vista, sem mudar o zoom. Se `rect` já está
+ * à vista, devolve `v` (mesma referência). Se não cabe num eixo, alinha pelo início dele.
+ */
+export function revealRect(
+  v: Viewport,
+  rect: Rect,
+  size: Size,
+  margin = FIT_PADDING,
+): Viewport {
+  const shift = (
+    start: number,
+    length: number,
+    extent: number,
+    offset: number,
+  ): number => {
+    const from = start * v.scale + offset;
+    const to = from + length * v.scale;
+    if (from >= margin && to <= extent - margin) return offset;
+    if (to - from > extent - 2 * margin || from < margin) return offset + margin - from;
+    return offset + (extent - margin - to);
+  };
+  const x = shift(rect.x, rect.width, size.width, v.x);
+  const y = shift(rect.y, rect.height, size.height, v.y);
+  return x === v.x && y === v.y ? v : { ...v, x, y };
+}
+
+/**
  * Centraliza `rect` (canvas) na tela. Mantém o zoom se o retângulo ocupar
  * entre `minFraction` e `maxFraction` da tela; senão, ajusta para metade dela.
  */

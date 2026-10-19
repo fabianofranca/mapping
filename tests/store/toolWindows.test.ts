@@ -5,6 +5,7 @@ import {
   bottomToolWindow,
   clampLayersHeight,
   clampWindowSize,
+  fitSideWidths,
   hideToolWindow,
   isToolWindowOpen,
   layersWindowHeight,
@@ -210,5 +211,31 @@ describe('layout guardado com o id antigo da Biblioteca', () => {
       localStorage.removeItem('mapping.toolWindows');
       vi.resetModules();
     }
+  });
+});
+
+describe('fitSideWidths', () => {
+  it('mantém as larguras quando cabem ou quando a área não foi medida', () => {
+    expect(fitSideWidths(264, 360, 1400)).toEqual({ left: 264, right: 360 });
+    expect(fitSideWidths(264, 360, 0)).toEqual({ left: 264, right: 360 });
+  });
+
+  it('encolhe a direita primeiro e depois a esquerda, até o mínimo de cada uma', () => {
+    expect(fitSideWidths(264, 560, 1000)).toEqual({ left: 264, right: 416 });
+    expect(fitSideWidths(480, 560, 900)).toEqual({ left: 300, right: 280 });
+  });
+
+  it('a partir de 900px o canvas mantém o mínimo e as laterais nunca o invadem', () => {
+    for (const avail of [820, 900, 1000]) {
+      const { left, right } = fitSideWidths(480, 560, avail);
+      expect(left + right + 320).toBeLessThanOrEqual(Math.max(avail, 200 + 280 + 320));
+      expect(left).toBeGreaterThanOrEqual(200);
+      expect(right).toBeGreaterThanOrEqual(280);
+    }
+  });
+
+  it('lado recolhido (0) não ocupa nem recebe corte', () => {
+    expect(fitSideWidths(0, 560, 700)).toEqual({ left: 0, right: 380 });
+    expect(fitSideWidths(480, 0, 600)).toEqual({ left: 280, right: 0 });
   });
 });

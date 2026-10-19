@@ -284,3 +284,31 @@ Também nesta rodada:
 - **Cliente stdio** (`scripts/testing/mcp-stdio-client.mjs`): sem argumentos, lê as raízes do `.mcp.json` da pasta WS.
 - **Guia (`docs/TESTING.md`):** schema 10 (R7.1/R7.3); backups `mapping.v10` (R6.5); três rejeitadas (R5.4a); nome do arquivo da imagem (R5.1); chips lado a lado (R9.5); tela2 sem o R6.2 (R6.7); alternativas ao arraste (R9.9, R10.7); larguras que variam com a fonte (R10.4); linha de validação (R10.1); atalhos com foco num campo; raízes do cliente stdio.
 - **R6.1 pendente de decisão do dono:** arraste com Esc durante a gravação mexe com a integridade do `mapping.json`, e o agente não consegue segurar o botão e apertar Esc. O passo fica marcado como pendente de decisão, para o dono escolher entre manter como passo [pessoa], mover para roteiro sob demanda ou cobrir por e2e.
+
+## Rodada dirigida de 2026-10-19 (conferência do PR #177) e correções
+
+Relato: [`relato-2026-10-19-dirigida.md`](relato-2026-10-19-dirigida.md) (build `6e66293`): 16 passos, 14 ✅, 1 ❌ (R5.3, média) e 1 achado baixo (paleta).
+
+- **R5.3 (média), terceira rodada com o mesmo sintoma:** a nota sugerida não abria no Chrome real ao rejeitar a anotação criada (✕ do cartão ou Rejeitar do popover). Duas causas, vistas no Playwright: o Chrome dispara `blur` ao remover o campo focado quando o cartão remonta, e esse `blur` apagava o pedido da nota (o jsdom não dispara, por isso os testes de componente passavam); e o critério `e.detail > 0` tratava como teclado o clique sintético da extensão. Correção: o `NoteArea` ignora o `blur` da remoção para o pedido (o texto ainda grava) e `clickSource.ts` só conta como teclado Enter/Espaço no próprio botão. E2e com clique real e sintético nos dois caminhos.
+- **Paleta (baixa):** sem mudança. "A tela sob o centro da vista vale antes da seleção" é a regra registrada (`src/ui/componentTarget.ts`, `docs/ARCHITECTURE.md`, R10.7); o R9.7 do guia passou a dizer em que tela adicionar e que ela fica no centro. Trocar a regra (seleção primeiro) fica para o dono decidir.
+- **Tabs (observação):** a aba ativa também volta à vista quando a faixa é estreitada depois (`ResizeObserver`); teste de componente e e2e.
+
+## Rodada dirigida de conferência do PR #179 e correções
+
+Relato: [`relato-2026-10-19-dirigida-pr179.md`](relato-2026-10-19-dirigida-pr179.md) (build `bcfbaf1`): 10 passos, 8 ✅, 1 ❌, 1 ⚠️. A nota sugerida (R5.3a a R5.3c) passou no Chrome real.
+
+- **R5.3d (média):** decidir pelo teclado remontava o cartão (ou o popover) e o foco caía no `body`. O store da revisão guarda qual controle tinha o foco (`requestControlFocus`) e o par ✓ ✕ novo o recupera ao montar, só se o foco se perdeu; e2e com teclado real nos dois caminhos.
+- **Detalhes fora da tela a ~900 px (média):** as larguras guardadas das laterais não olhavam a largura real da janela (a regra antiga só recolhia o Detalhes na primeira visita). `fitSideWidths` encolhe a direita e depois a esquerda até o mínimo de cada uma para o canvas manter `--size-canvas-min`, sem mudar os tamanhos guardados; e2e com layout guardado a 1100, 902 e 900 px.
+- **Guia (R9.7):** como centrar a tela (fechar a janela de baixo, **Enquadrar tudo**, arrastar o fundo do canvas).
+
+Conferência curta do PR #179 ([`relato-2026-10-19-dirigida-pr179-curta.md`](relato-2026-10-19-dirigida-pr179-curta.md), build `7dcee05`): 6 de 6 ✅, sem achados. Fica como observação o foco no `body` depois de **Limpar** com o mouse no popover (o popover continua aberto).
+
+**Decisão do dono (2026-10-19): o Adicionar do Catálogo segue a seleção primeiro.** Container selecionado → dentro dele; seleção numa tela (ou numa marcação dela) → essa tela, centrado no centro da vista se ele cai nela, senão no centro da tela; sem seleção → a tela sob o centro da vista. Se a marcação nova fica fora da área visível, a vista faz um pan mínimo até ela, sem mudar o zoom (`revealRect` em `src/canvas/viewport.ts`). O arraste do Catálogo para o canvas entrou nas Evoluções do `docs/ROADMAP.md`.
+
+**Decisão do dono (2026-10-19): o R6.1 passa a ser coberto por e2e.** `tests/e2e/folder.spec.ts` ("renomear e cancelar o arraste com Esc deixa o nome novo e o rect antigo", com Esc antes e depois da gravação): nome novo e `rect` antigo no `mapping.json`, uma gravação só; o teste falha se o Esc deixar de cancelar o gesto. O passo saiu do R6 e virou o roteiro sob demanda **RB**.
+
+Conferência da regra "seleção primeiro" ([`relato-2026-10-19-dirigida-pr179-selecao.md`](relato-2026-10-19-dirigida-pr179-selecao.md), build `47f3ce5`): 6 ✅ e 1 ⚠️ só de números do guia, sem achados; R9.7 e R10.7 do guia ajustados. Fica como observação: o pan mínimo pode deixar a marcação nova sob o minimapa.
+
+**Guia interativo e projeto de exemplo (decisão do dono, 2026-10-19):** entraram no épico da Biblioteca, no PR #179 (commits 6503df1 e 83dabae, de outra sessão), em vez de um épico próprio. Revisão: restrições de execução respeitadas (exemplo embutido em base64, decodificado só no clique; guia com CSP própria por hashes, sem rede, tokens da app, offline pelo service worker); `index.html` em 1,38 MB (limite 1,5 MB). Ajustes: teste de sincronia das cópias do exemplo com as fontes, testes da Ajuda em `file://` e do `LinkButton`, comentário do orçamento no CI. Roteiro R11 do guia de testes.
+
+Rodada do guia e do exemplo ([`relato-2026-10-19-dirigida-pr179-guia.md`](relato-2026-10-19-dirigida-pr179-guia.md), build `8145368`): 10 ✅, 1 achado baixo e o offline não executado (coberto pelo e2e `cspServiceWorker.spec.ts`). O achado (no preview, o guia não seguia o tema da app) foi corrigido: o guia é o mesmo arquivo nos dois canais e passou a escolher a chave do tema pelo caminho (`/preview/guia/` → `preview:mapping.theme`), com teste nos dois canais. R11.1, R11.6 e R11.7 do guia de testes ajustados.

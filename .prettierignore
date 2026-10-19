@@ -11,3 +11,9 @@ test-results
 # Worktrees locais do Claude Code: cópias do repositório. Só a pasta deles (o resto de .claude/,
 # como .claude/skills/, é do repositório e continua conferido).
 .claude/worktrees
+
+# Gerado por scripts/buildGuia.mjs (conferido por tests/examples/guia.test.ts)
+public/guia
+
+# Projeto de exemplo: arquivos como a app os grava (serialização canônica), não reformatar
+examples/exemplo-completo

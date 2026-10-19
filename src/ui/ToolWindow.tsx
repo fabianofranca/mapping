@@ -8,6 +8,7 @@ import {
   resetToolWindowSize,
   resizeLayersWindow,
   resizeToolWindow,
+  sideWidth,
   toolWindowSizes,
   type ToolWindowId,
   type ToolWindowSide,
@@ -42,7 +43,7 @@ function windowStyle(side: ToolWindowSide, size: number, stacked: boolean) {
 export function ToolWindow({ id, actions, stacked = false, children }: ToolWindowProps) {
   const side = WINDOW_SIDE[id];
   const title = toolWindowMeta(id).title();
-  const size = toolWindowSizes.value[side];
+  const size = side === 'bottom' ? toolWindowSizes.value.bottom : sideWidth(side);
   return (
     <section
       class={`tool-window tool-window-${side}${stacked ? ' tool-window-stacked' : ''}`}
@@ -100,7 +101,7 @@ function ToolResizer({
     if (e.button !== 0) return;
     const handle = e.currentTarget as HTMLElement;
     const space = spaceFor(handle, side);
-    const from = toolWindowSizes.peek()[side];
+    const from = side === 'bottom' ? toolWindowSizes.peek().bottom : sideWidth(side);
     const origin = side === 'bottom' ? e.clientY : e.clientX;
     e.preventDefault();
     try {

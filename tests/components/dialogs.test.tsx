@@ -292,6 +292,36 @@ describe('HelpDialog', () => {
 
   const toc = () => within(dialogEl()).getByRole('navigation', { hidden: true });
 
+  it('o guia interativo é a primeira seção, com o link em outra aba', () => {
+    render(<HelpDialog onClose={vi.fn()} />);
+    const links = within(toc()).getAllByRole('link', { hidden: true });
+    expect(links[0]?.textContent).toBe(t('help.guide.title'));
+    const section = document.getElementById('help-guide') as HTMLElement;
+    const open = within(section).getByRole('link', {
+      name: t('help.guide.open'),
+      hidden: true,
+    });
+    expect(open.getAttribute('href')).toBe('guia/index.html');
+    expect(open.getAttribute('target')).toBe('_blank');
+    expect(open.getAttribute('rel')).toContain('noopener');
+    expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
+  });
+
+  it('em file:// a seção do guia mostra o aviso no lugar do link', () => {
+    vi.stubGlobal('location', { ...window.location, protocol: 'file:' });
+    try {
+      render(<HelpDialog onClose={vi.fn()} />);
+      const section = document.getElementById('help-guide') as HTMLElement;
+      expect(within(section).getByText(t('help.guide.fileProtocol'))).toBeTruthy();
+      expect(
+        within(section).queryByRole('link', { name: t('help.guide.open'), hidden: true }),
+      ).toBeNull();
+      expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('índice lateral com as seções, os downloads e os atalhos', () => {
     render(<HelpDialog onClose={vi.fn()} />);
     const links = within(toc())

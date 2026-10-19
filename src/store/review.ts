@@ -73,6 +73,11 @@ export interface MarkRequest {
   readonly seq: number;
 }
 
+/** Qual controle do par ✓ ✕ recebe o foco depois de uma decisão pelo teclado. */
+export type DecisionControlKind = 'accept' | 'reject';
+/** Onde está o par: o cartão da anotação (Detalhes) ou o rodapé do popover do marcador. */
+export type DecisionSurface = 'card' | 'popover';
+
 export type OpenReviewResult =
   | {
       readonly ok: true;
@@ -128,6 +133,21 @@ export interface ReviewState {
   requestNote(changeId: string): void;
   /** A nota foi fechada vazia, ou o popover foi fechado: o pedido deixa de valer. */
   clearNoteRequest(): void;
+  /**
+   * Decidir pelo teclado pode trocar o cartão (ou remontar o popover) e tirar do DOM o botão
+   * focado; o navegador manda o foco ao `body`. Quem decidiu registra aqui o controle que
+   * tinha o foco, e o par ✓ ✕ novo o recupera ao montar (`takeControlFocus`).
+   */
+  requestControlFocus(
+    changeId: string,
+    surface: DecisionSurface,
+    control: DecisionControlKind,
+  ): void;
+  /** Entrega (uma vez) o controle que deve receber o foco neste par; `null` sem pedido. */
+  takeControlFocus(
+    changeId: string,
+    surface: DecisionSurface,
+  ): DecisionControlKind | null;
   setView(view: ReviewView): void;
   setFilters(patch: Partial<ReviewFilters>): void;
   clearFilters(): void;
@@ -314,6 +334,11 @@ export function createReviewState(session: ProjectSession): ReviewState {
   const markRequest = signal<MarkRequest | null>(null);
   let markSeq = 0;
   const noteRequest = signal<MarkRequest | null>(null);
+  let controlFocus: {
+    changeId: string;
+    surface: DecisionSurface;
+    control: DecisionControlKind;
+  } | null = null;
   // Os conflitos que a pessoa conhecia ao abrir: o que estiver fora deles é "novo". E os
   // que estavam à vista na abertura (anunciados pelo aviso), que ao fechar ficam conhecidos.
   const knownAtOpen = signal<ReadonlySet<string>>(NO_CONFLICTS);
@@ -420,6 +445,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       undoable.value = null;
       markRequest.value = null;
       noteRequest.value = null;
+      controlFocus = null;
       view.value = START_VIEW;
       filters.value = NO_FILTERS;
       store.setReviewing(false);
@@ -556,6 +582,17 @@ export function createReviewState(session: ProjectSession): ReviewState {
 
     clearNoteRequest() {
       noteRequest.value = null;
+    },
+
+    requestControlFocus(changeId, surface, control) {
+      controlFocus = { changeId, surface, control };
+    },
+
+    takeControlFocus(changeId, surface) {
+      const ask = controlFocus;
+      if (!ask || ask.changeId !== changeId || ask.surface !== surface) return null;
+      controlFocus = null;
+      return ask.control;
     },
 
     setView(next) {

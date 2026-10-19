@@ -1,11 +1,11 @@
-import { imageAt } from '../canvas/imageGeometry';
+import { imageAt, pointInRect } from '../canvas/imageGeometry';
 import { canvasToImagePixel } from '../canvas/markingGeometry';
-import { isContainerComponent, markingComponent } from '../model';
+import { imageCanvasRect, isContainerComponent, markingComponent } from '../model';
 import { resolveSelection } from '../store/ui';
 import type { EditorContextValue } from './EditorContext';
 
-// Onde a Biblioteca coloca o componente novo: dentro do container selecionado, ou na tela
-// à vista. Função de leitura: lê os sinais com `.value`, então dentro de um `computed` ela
+// Onde a Biblioteca coloca o componente novo: seleção primeiro (container selecionado, ou a
+// tela da seleção); sem seleção, a tela à vista. Função de leitura: lê os sinais com `.value`, então dentro de um `computed` ela
 // segue a seleção, o projeto e o viewport; chamada num clique, só lê.
 
 /** Para onde vai o componente: imagem, container pai (ou `null`) e centro em pixels da imagem. */
@@ -19,8 +19,9 @@ export interface ComponentTarget {
  * Alvo do "Adicionar" da paleta, ou `null` sem tela possível.
  *
  * 1. A seleção é uma marcação que desenha um componente container: entra nela.
- * 2. A tela à vista: a imagem sob o centro do viewport, com o componente centrado nesse ponto.
- * 3. Senão, a imagem selecionada (ou a da marcação selecionada), sem centro.
+ * 2. Há seleção: a imagem selecionada (ou a da marcação selecionada). Se o centro do viewport
+ *    cai nela, o componente nasce centrado nesse ponto; senão, no centro da própria imagem.
+ * 3. Sem seleção: a imagem sob o centro do viewport, centrado nesse ponto; sem imagem, `null`.
  */
 export function componentTarget(editor: EditorContextValue): ComponentTarget | null {
   const { review, ui, derived, canvas, view } = editor;
@@ -38,6 +39,22 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
   // Ler o viewport faz o alvo acompanhar o pan e o zoom.
   void view.viewport.value;
   const point = canvas.current?.viewportCenter();
+
+  // 2. Com seleção, a imagem dela; sem o centro da vista nela, `center` falta e o componente
+  // nasce no centro da própria imagem (padrão de `addComponent`).
+  if (selected) {
+    const { image } = selected;
+    if (point && pointInRect(point, imageCanvasRect(image, image.placement))) {
+      return {
+        imageId: image.id,
+        parentId: null,
+        center: canvasToImagePixel(image.placement, point),
+      };
+    }
+    return { imageId: image.id, parentId: null };
+  }
+
+  // 3. Sem seleção, a tela sob o centro da vista.
   if (point) {
     const image = imageAt(project.images, point);
     if (image) {
@@ -48,7 +65,5 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
       };
     }
   }
-
-  if (selected) return { imageId: selected.image.id, parentId: null };
   return null;
 }

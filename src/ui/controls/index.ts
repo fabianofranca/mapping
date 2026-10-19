@@ -1,6 +1,6 @@
 // Controles base da interface (docs/redesign/HANDOFF.md, fase R2). O CSS está em
 // `src/theme/controls.css`; os estados vêm dos tokens, não do componente.
-export { Button, type ButtonVariant } from './Button';
+export { Button, LinkButton, type ButtonVariant } from './Button';
 export { Chip } from './Chip';
 export { Choice } from './Choice';
 export { IconButton, IconLink } from './IconButton';

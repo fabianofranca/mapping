@@ -89,6 +89,47 @@ describe('paleta da Biblioteca', () => {
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: button?.id });
   });
 
+  it('com seleção numa imagem que não é a do centro, vai para a selecionada, centrada nela', async () => {
+    const harness = await libraryHarness();
+    harness.ui.selection.value = { kind: 'image', id: 'I2' };
+    const { user } = renderLibrary(harness);
+    await user.click(addButton('Button'));
+    const created = harness.project().markings.at(-1);
+    const image = harness.project().images.find((i) => i.id === 'I2');
+    expect(created?.imageId).toBe('I2');
+    expect((created?.rect.x ?? 0) + (created?.rect.width ?? 0) / 2).toBeCloseTo(
+      (image?.width ?? 0) / 2,
+      -1,
+    );
+    expect((created?.rect.y ?? 0) + (created?.rect.height ?? 0) / 2).toBeCloseTo(
+      (image?.height ?? 0) / 2,
+      -1,
+    );
+    expect(harness.canvas.revealSelection).toHaveBeenCalledTimes(1);
+  });
+
+  it('com seleção na imagem do centro, o componente nasce no centro da vista', async () => {
+    const harness = await libraryHarness();
+    harness.ui.selection.value = { kind: 'image', id: 'I1' };
+    const { user } = renderLibrary(harness);
+    await user.click(addButton('Button'));
+    const created = harness.project().markings.at(-1);
+    const scale = harness.project().images[0]?.placement.scale ?? 1;
+    expect(created?.imageId).toBe('I1');
+    expect((created?.rect.x ?? 0) + (created?.rect.width ?? 0) / 2).toBeCloseTo(
+      200 / scale,
+      -1,
+    );
+  });
+
+  it('sem seleção, usa a imagem do centro da vista', async () => {
+    const harness = await libraryHarness();
+    harness.ui.selection.value = null;
+    const { user } = renderLibrary(harness);
+    await user.click(addButton('Button'));
+    expect(harness.project().markings.at(-1)?.imageId).toBe('I1');
+  });
+
   it('sem tela sob o centro nem seleção, o botão fica desabilitado com a dica', async () => {
     const harness = await libraryHarness();
     harness.canvas.viewportCenter.mockReturnValue({ x: -5000, y: -5000 });
@@ -98,7 +139,7 @@ describe('paleta da Biblioteca', () => {
     expect(button.title).toBe(t('library.noScreen'));
   });
 
-  it('sem tela sob o centro, a imagem selecionada serve (sem centro)', async () => {
+  it('com a tela do centro fora de vista, a imagem selecionada serve (sem centro)', async () => {
     const harness = await libraryHarness();
     harness.canvas.viewportCenter.mockReturnValue({ x: -5000, y: -5000 });
     harness.ui.selection.value = { kind: 'image', id: 'I2' };

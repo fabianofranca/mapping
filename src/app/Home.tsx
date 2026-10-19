@@ -11,9 +11,11 @@ import { InconsistentProjectDialog } from '../ui/InconsistentProjectDialog';
 import { InstallHint } from '../ui/InstallHint';
 import { PreviewBadge } from '../ui/PreviewBanner';
 import { SettingsDialog } from '../ui/SettingsDialog';
+import { guideUrl } from '../utils/guideLink';
 import { matchesSearch } from '../utils/search';
 import { MAX_PACKAGE_BYTES, MAX_PACKAGE_FILES } from '../model';
 import { canPickDirectory } from '../ui/specPackageImport';
+import { exampleProjectBlob } from './exampleProject';
 import {
   createFolderProject,
   createLocalProject,
@@ -188,6 +190,9 @@ export function Home() {
   /** Alvo do foco quando o diálogo fecha sem a linha que o abriu. */
   const rowLeft = () => recentRowTarget(listSection.current, removedAt.current);
 
+  /** O mesmo importador do "Abrir zip", com o zip do exemplo embutido no build. */
+  const onOpenExample = () => void run(() => importZip(exampleProjectBlob()));
+
   const onZipChosen = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = '';
@@ -237,12 +242,14 @@ export function Home() {
     },
     onOpenFolder: () => void onOpenFolder(),
     onOpenZip: () => zipInput.current?.click(),
+    onOpenExample,
     // Pasta onde o navegador deixa escolher uma; senão, o zip do pacote.
     onOpenLibrary: () =>
       canPickDirectory()
         ? void onOpenLibrary({ kind: 'folder' })
         : libraryZipInput.current?.click(),
   };
+  const guide = guideUrl();
   const recents = recentProjects.value;
   const projects = recents.filter(
     (p) =>
@@ -345,6 +352,17 @@ export function Home() {
               <Icon name="help" />
               {t('help.open')}
             </button>
+            {guide !== null && (
+              <a
+                class="home-nav-item"
+                href={guide}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon name="info" />
+                {t('home.guide')}
+              </a>
+            )}
             <button
               type="button"
               class="home-nav-item"
@@ -591,6 +609,7 @@ interface HomeActions {
   readonly onNew: () => void;
   readonly onOpenFolder: () => void;
   readonly onOpenZip: () => void;
+  readonly onOpenExample: () => void;
   readonly onOpenLibrary: () => void;
 }
 
@@ -601,6 +620,7 @@ function HomeButtons({
   onNew,
   onOpenFolder,
   onOpenZip,
+  onOpenExample,
   onOpenLibrary,
 }: HomeActions) {
   return (
@@ -619,6 +639,12 @@ function HomeButtons({
         <Button disabled={busy} onClick={onOpenZip}>
           <Icon name="upload" />
           {t('home.openZip')}
+        </Button>
+      )}
+      {available.local && (
+        <Button disabled={busy} title={t('home.openExampleHint')} onClick={onOpenExample}>
+          <Icon name="file" />
+          {t('home.openExample')}
         </Button>
       )}
       <Button disabled={busy} title={t('catalog.home.openHint')} onClick={onOpenLibrary}>

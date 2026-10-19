@@ -9,6 +9,7 @@ import {
   fitRect,
   panBy,
   pinch,
+  revealRect,
   screenToCanvas,
   zoomAt,
   type Point,
@@ -81,6 +82,13 @@ export class ViewportController {
     const size = this.size.peek();
     if (size.width === 0) return;
     this.viewport.value = centerOn(this.viewport.peek(), rect, size);
+  }
+
+  /** Pan mínimo até `rect` (canvas) ficar à vista; sem mudar o zoom nem se já está à vista. */
+  reveal(rect: Rect): void {
+    const size = this.size.peek();
+    if (size.width === 0) return;
+    this.viewport.value = revealRect(this.viewport.peek(), rect, size);
   }
 
   /** Centraliza a vista em `point` (canvas), mantendo o zoom (clique no minimapa). */

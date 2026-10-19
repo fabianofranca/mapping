@@ -54,8 +54,9 @@
   padding: 0 var(--space-3);
 }
 
-/* Link com a aparência do botão de ícone */
-a.icon-button {
+/* Link com a aparência do botão de ícone e do botão com texto */
+a.icon-button,
+a.button {
   color: var(--color-text);
   text-decoration: none;
 }

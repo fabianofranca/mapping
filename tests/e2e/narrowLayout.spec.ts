@@ -100,6 +100,38 @@ test('aba escolhida da janela inferior fica visível na faixa que rola', async (
     expect(overlaps(a, tab)).toBe(false);
 });
 
+test('aba escolhida continua visível quando a lista de abas é estreitada depois', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1400, height: 800 });
+  await open(page);
+  await page.keyboard.press('Control+Shift+6');
+  // As abas pertencem à mesma janela inferior: a lista é a que tem a aba Diagnóstico.
+  const tablist = page
+    .getByRole('tablist')
+    .filter({ has: page.getByRole('tab', { name: 'Diagnóstico' }) });
+  await expect(tablist).toBeVisible();
+  // Largo: todas as abas cabem e a Diagnóstico está escolhida.
+  expect(await tablist.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(false);
+  // Estreita a faixa depois (o que uma janela menor faz); a CSP proíbe <style> inline,
+  // a CSSOM (folha adotada) é permitida.
+  await page.evaluate(() => {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync('.tool-window-tabs { flex: none; width: 150px }');
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+  });
+  await expect
+    .poll(async () => tablist.evaluate((e) => e.scrollWidth > e.clientWidth))
+    .toBe(true);
+  await expect
+    .poll(async () => {
+      const strip = (await boxes(tablist))[0]!;
+      const tab = (await boxes(tablist.getByRole('tab', { selected: true })))[0]!;
+      return tab.x >= strip.x - 0.5 && tab.x + tab.width <= strip.x + strip.width + 0.5;
+    })
+    .toBe(true);
+});
+
 test('janela Propostas e lista da revisão sem textos sobrepostos', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Control+Shift+7');
@@ -166,4 +198,43 @@ test('Lista sem rolagem horizontal', async ({ page }) => {
     .locator('.tool-window-body, .list-scroll')
     .evaluateAll((els) => els.map((e) => e.scrollWidth - e.clientWidth));
   for (const d of over) expect(d).toBeLessThanOrEqual(0);
+});
+
+test('janelas abertas largo e estreitando a janela: nada fica fora da tela', async ({
+  page,
+}) => {
+  // Layout guardado de uma janela larga (Detalhes no máximo); com layout guardado o
+  // desktop compacto não recolhe o Detalhes, então só o ajuste das larguras acomoda.
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'mapping.toolWindows',
+      JSON.stringify({ open: ['tree', 'layers', 'details'], left: 271, right: 560 }),
+    );
+  });
+  await page.setViewportSize({ width: 1540, height: 800 });
+  await open(page);
+  await page.keyboard.press('Control+Shift+6');
+  await expect(page.locator('[data-window="diagnostics"]')).toBeVisible();
+  expect((await page.locator('[data-window="details"]').boundingBox())!.width).toBe(560);
+  for (const width of [1100, 902, 900]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(page.locator('[data-window="details"]')).toBeVisible();
+    await expect
+      .poll(async () => {
+        const out: number[] = [];
+        for (const id of ['tree', 'details', 'diagnostics']) {
+          const b = (await page.locator(`[data-window="${id}"]`).boundingBox())!;
+          out.push(b.x + b.width);
+        }
+        return Math.max(...out) <= width + 0.5;
+      })
+      .toBe(true);
+    const canvas = (await page
+      .getByRole('main', { name: 'Canvas do projeto' })
+      .boundingBox())!;
+    expect(canvas.width).toBeGreaterThanOrEqual(319.5);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+  }
 });

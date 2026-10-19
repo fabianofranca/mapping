@@ -10,7 +10,7 @@
     "dev": "vite",
     "dev:lab": "vite --config vite.lab.config.ts --mode components",
     "dev:lab:react": "vite --config vite.lab.config.ts --mode react",
-    "build": "tsc --noEmit && vite build && npm run build:lab",
+    "build": "npm run build:guia && tsc --noEmit && vite build && npm run build:lab",
     "build:lab": "vite build --config vite.lab.config.ts --mode components && vite build --config vite.lab.config.ts --mode react",
     "preview": "vite preview",
     "test": "vitest run",
@@ -22,6 +22,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p mcp/tsconfig.json",
     "build:mcp": "tsc --noEmit -p mcp/tsconfig.json && node mcp/build.mjs",
     "build:examples": "node scripts/buildLibraryExamples.mjs",
+    "build:example": "node scripts/exampleProject.mjs",
+    "build:guia": "node scripts/buildGuia.mjs",
     "build:viewer": "node lab/viewer/build.mjs"
   },
   "dependencies": {

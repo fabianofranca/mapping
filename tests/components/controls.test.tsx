@@ -2,10 +2,12 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'preact/hooks';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Icon } from '../../src/ui/icons';
 import {
   Button,
   Choice,
   IconButton,
+  LinkButton,
   Segmented,
   Select,
   Tabs,
@@ -257,6 +259,55 @@ describe('Tabs', () => {
     expect(a.getAttribute('aria-selected')).toBe('true');
   });
 
+  it('reage ao redimensionamento da lista e desconecta no cleanup', () => {
+    let notify: () => void = () => undefined;
+    const disconnect = vi.fn();
+    class FakeObserver {
+      constructor(cb: () => void) {
+        notify = cb;
+      }
+      observe = vi.fn();
+      disconnect = disconnect;
+    }
+    vi.stubGlobal('ResizeObserver', FakeObserver);
+    const geometry: Array<[string, number]> = [
+      ['offsetLeft', 300],
+      ['offsetWidth', 80],
+    ];
+    const restore = geometry.map(([key]) =>
+      Object.getOwnPropertyDescriptor(HTMLElement.prototype, key),
+    );
+    for (const [key, value] of geometry)
+      Object.defineProperty(HTMLElement.prototype, key, {
+        configurable: true,
+        get(this: HTMLElement) {
+          // Só as abas têm geometria; a lista fica em 0.
+          return this.getAttribute('role') === 'tab' ? value : 0;
+        },
+      });
+    try {
+      const { unmount } = render(<Harness />);
+      const list = screen.getByRole('tablist');
+      // Faixa larga: a aba escolhida (300 a 380) já cabe, nada rola.
+      Object.defineProperty(list, 'clientWidth', { configurable: true, value: 500 });
+      list.scrollLeft = 0;
+      notify();
+      expect(list.scrollLeft).toBe(0);
+      // Janela estreitada depois: a faixa passa a 200 e a aba escolhida volta à vista.
+      Object.defineProperty(list, 'clientWidth', { configurable: true, value: 200 });
+      notify();
+      expect(list.scrollLeft).toBe(180);
+      unmount();
+      expect(disconnect).toHaveBeenCalled();
+    } finally {
+      geometry.forEach(([key], i) => {
+        const d = restore[i];
+        if (d) Object.defineProperty(HTMLElement.prototype, key, d);
+      });
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('clique troca a aba', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
@@ -331,5 +382,23 @@ describe('variantes da revisão', () => {
     fireEvent.input(area, { target: { value: 'linha 1\nlinha 2' } });
     fireEvent.blur(area);
     expect(onCommit).toHaveBeenCalledWith('linha 1\nlinha 2');
+  });
+});
+
+describe('LinkButton', () => {
+  it('é um <a> com a aparência do botão, abre em outra aba e leva o ícone', () => {
+    render(
+      <LinkButton href="guia/index.html" class="extra">
+        <Icon name="info" />
+        Abrir guia
+      </LinkButton>,
+    );
+    const link = screen.getByRole('link', { name: 'Abrir guia' });
+    expect(link.tagName).toBe('A');
+    expect(link.className).toBe('button extra');
+    expect(link.getAttribute('href')).toBe('guia/index.html');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(link.querySelector('svg.icon')).not.toBeNull();
   });
 });

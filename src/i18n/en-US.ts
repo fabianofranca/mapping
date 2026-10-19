@@ -36,6 +36,10 @@ export const enUS: Dictionary = {
   'home.newProject': 'New project',
   'home.openFolder': 'Open folder',
   'home.openZip': 'Open zip',
+  'home.openExample': 'Open example project',
+  'home.openExampleHint':
+    'Opens a copy of the example project on this device, the same way Open zip does. Each click creates a new copy.',
+  'home.guide': 'Interactive guide (in Portuguese)',
   'home.recentProjects': 'Recent projects',
   'home.noRecentProjects':
     'No projects yet. Projects on this device and the folders you open show up here.',
@@ -500,6 +504,14 @@ export const enUS: Dictionary = {
   'dialog.close': 'Close dialog',
   'help.title': 'Help',
   'help.search': 'Search help',
+  'help.guide.title': 'Interactive guide',
+  'help.guide.intro':
+    'A 12-step tour of the example project: screens, markings, layers, typed annotations, blank screens with Material 3 and reviewing a proposal. It works offline and opens in a new tab. The guide is in Portuguese only.',
+  'help.guide.example':
+    'To see the same project in the app, use Open example project on the home screen (it creates a copy on this device and does not touch any folder).',
+  'help.guide.fileProtocol':
+    "Opened as a standalone file, the app cannot find the guide: it lives in guia/index.html, next to index.html, in the build's dist/ folder and in the published version.",
+  'help.guide.open': 'Open the interactive guide',
   'help.noResults': 'Nothing found for "{query}".',
   'help.shortcuts.title': 'Keyboard shortcuts',
   'help.shortcuts.intro':
