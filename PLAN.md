@@ -102,9 +102,9 @@ A etapa muda a definição em cada documento, os textos da app, o exemplo, a ski
 
 **Toca em:** `.claude/skills/spec-author/SKILL.md` (seção 6 com a frase canônica, `repo` por plataforma com a instrução "preencha `url` e `ref` do repositório que você leu"; na lista de erros: "symbol com o nome do nó de saída em vez da função que o gera" e "plataforma com `path` sem `repo`"; a `formatVersion` 5 na regra da versão mínima; o prompt-modelo pede, por plataforma, o que se chama e o repositório), `examples/workspace/AGENTS.md` (o comentário de exemplo do propósito e a regra "Código"), `examples/workspace/README.md` (seção "Ligar marcações a código" renomeada), `README.md` (a linha "Código das especializações"), `docs/ARCHITECTURE.md` (os parágrafos de `codeBlueprint.ts` e de `CodeDefinitions.tsx`), `src/model/codeBlueprint.ts` (o comentário de cabeçalho), `src/i18n/pt-BR.ts` e `en-US.ts` (`help.code.*`, `code.definitionHint`, o que a C1 não tocou), `docs/TESTING.md` (R3.1 a R3.5 relidos com o vocabulário).
 
-- [ ] Skill `spec-author`: seção 6, lista de erros, regra da `formatVersion` mínima e prompt-modelo com o conceito e o `repo`; a revisão final pergunta "cada `symbol` é o que se chama para criar a instância, e cada plataforma com `path` tem `repo`?"
-- [ ] `README.md`, `ARCHITECTURE.md`, workspace, Ajuda da app e o comentário do `codeBlueprint.ts` sem o vocabulário que sai; `grep -rn "vira código\|implementa o tipo\|ligar marcações a código\|planta de código" docs/*.md README.md src .claude examples/workspace` só encontra `docs/history/`
-- [ ] Nenhum texto explica o `code` só pela negação
+- [x] Skill `spec-author`: seção 6, lista de erros, regra da `formatVersion` mínima e prompt-modelo com o conceito e o `repo`; a revisão final pergunta "cada `symbol` é o que se chama para criar a instância, e cada plataforma com `path` tem `repo`?"
+- [x] `README.md`, `ARCHITECTURE.md`, workspace, Ajuda da app e o comentário do `codeBlueprint.ts` sem o vocabulário que sai; `grep -rn "vira código\|implementa o tipo\|ligar marcações a código\|planta de código" docs/*.md README.md src .claude examples/workspace` só encontra `docs/history/`
+- [x] Nenhum texto explica o `code` só pela negação
 
 **Aceite:** a skill, rodada sobre o `sdui.json` do exemplo como origem, produz uma especialização v5 com `repo` e `symbol` de função na `bff` (conferência pelo coordenador, sem rodada do Cowork); gates verdes.
 

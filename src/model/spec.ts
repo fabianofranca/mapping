@@ -67,9 +67,9 @@ export interface SpecPlatform {
   repo?: SpecRepo;
 }
 
-/** Como um tipo de anotação vira código em uma plataforma. */
+/** Com que código se cria uma instância do tipo de anotação em uma plataforma. */
 export interface SpecCode {
-  /** Componente ou tipo que implementa o tipo de anotação na plataforma. */
+  /** O que se chama para criar a instância: composable, view, classe ou a função que gera o nó. */
   symbol: string;
   /**
    * Arquivo que define o símbolo, relativo à raiz do repositório da plataforma (sem
