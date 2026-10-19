@@ -225,7 +225,7 @@ const scenarios: [string, () => [Project, Project]][] = [
     'repositórios por plataforma',
     () => {
       const base = codeProject();
-      let after = setPlatformRepo(base, 'ios', { urlTemplate: 'https://x.dev/{path}' });
+      let after = setPlatformRepo(base, 'ios', { localPath: '../ios' });
       after = setPlatformRepo(after, 'bff', { localPath: '..' });
       after = removePlatformRepo(after, 'android');
       return [base, after];

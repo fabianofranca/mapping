@@ -286,16 +286,27 @@ export const LEGACY_CODE_VALUE = [
   },
 ];
 
-/** A cópia do SDUI (texto de `specs/sdui.json`) com o campo removido de volta no Screen. */
+/**
+ * A cópia do SDUI (texto de `specs/sdui.json`) com o campo removido de volta no Screen e o
+ * `repo` de `android` do `codeProject`.
+ */
 export function legacySduiText(): string {
   const spec = JSON.parse(
     readFileSync(join(process.cwd(), 'examples', 'specs', 'sdui.json'), 'utf8'),
-  ) as { layers: { annotationTypes: { id: string; fields: unknown[] }[] }[] };
+  ) as {
+    formatVersion: number;
+    platforms: { id: string; repo?: unknown }[];
+    layers: { annotationTypes: { id: string; fields: unknown[] }[] }[];
+  };
   const screen = spec.layers
     .flatMap((l) => l.annotationTypes)
     .find((t) => t.id === 'screen');
   if (!screen) throw new Error('Screen não encontrado no exemplo SDUI');
   screen.fields.push(LEGACY_CODE_FIELD);
+  spec.formatVersion = 5;
+  const android = spec.platforms.find((platform) => platform.id === 'android');
+  if (!android) throw new Error('android não encontrado no exemplo SDUI');
+  android.repo = ANDROID_REPO;
   return `${JSON.stringify(spec, null, 2)}\n`;
 }
 

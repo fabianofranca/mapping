@@ -218,9 +218,7 @@ async function openLoaded(
  * arquivos saiu do projeto e passou a ser da especialização (`platforms[].repo`). Uma
  * entrada só, com as plataformas e os modelos descartados.
  */
-function reportDiscardedUrlTemplates(
-  discarded: readonly DiscardedUrlTemplate[],
-): void {
+function reportDiscardedUrlTemplates(discarded: readonly DiscardedUrlTemplate[]): void {
   if (discarded.length === 0) return;
   reportError(
     'open.migration',

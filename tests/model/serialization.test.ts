@@ -27,7 +27,7 @@ describe('serialização', () => {
   it('usa 2 espaços, ordem fixa de chaves e quebra de linha final', () => {
     const text = serialize(emptyProject());
     expect(text.endsWith('}\n')).toBe(true);
-    expect(text.split('\n')[1]).toBe('  "schemaVersion": 10,');
+    expect(text.split('\n')[1]).toBe('  "schemaVersion": 11,');
     expect(Object.keys(JSON.parse(text))).toEqual([
       'schemaVersion',
       'revision',

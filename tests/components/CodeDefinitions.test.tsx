@@ -11,17 +11,16 @@ import { SpecsDialog } from '../../src/ui/SpecsDialog';
 import { codeProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
-// Etapas 3b.3 e 9: a linha "Definição" (o `path` do `code` do tipo) nos Detalhes, a Lista sem
-// referência ao código gerado, os repositórios por plataforma nas Configurações (com o aviso
-// pelo `path`), as plataformas no diálogo de especializações e a Ajuda de uso.
+// Etapas 3b.3, 9 e Código de instanciação: a linha "Definição" (o `path` do `code` do tipo, com
+// o link pelo `repo` da especialização) nos Detalhes, a Lista sem referência ao código gerado, o
+// clone local por plataforma nas Configurações, as plataformas no diálogo de especializações e a
+// Ajuda de uso.
 
 beforeEach(() => {
   locale.value = 'pt-BR';
   Element.prototype.scrollIntoView = () => undefined;
 });
 afterEach(cleanup);
-
-const ANDROID_URL = 'https://github.com/org/app-android/blob/main/{path}#L{line}';
 
 describe('Lista e herdadas (AnnotationLines)', () => {
   it('o Screen mostra só os campos do tipo, sem entradas de código nem ações', () => {
@@ -111,7 +110,7 @@ describe('Detalhes: linha "Definição" do tipo (code.<plataforma>.path)', () =>
   });
 });
 
-describe('Configurações: repositórios por plataforma', () => {
+describe('Configurações: clone local por plataforma', () => {
   function setupSettings(project: Project = codeProject(), readOnly = false) {
     const harness = createHarness(project, readOnly);
     renderLive(harness, (p) => (
@@ -127,7 +126,7 @@ describe('Configurações: repositórios por plataforma', () => {
   const group = (name: string) =>
     within(screen.getByRole('group', { name, hidden: true }));
 
-  it('uma linha por plataforma declarada, com o aviso só de quem tem arquivo de tipo sem repositório', () => {
+  it('uma linha por plataforma declarada, só com o caminho local e sem aviso', () => {
     setupSettings();
     expect(
       screen
@@ -135,55 +134,41 @@ describe('Configurações: repositórios por plataforma', () => {
         .map((g) => g.getAttribute('aria-label')),
     ).toEqual(expect.arrayContaining(['Android', 'iOS', 'Contrato SDUI']));
     expect(
-      group('Android').getByLabelText('Endereço do arquivo', { selector: 'input' }),
-    ).toHaveProperty('value', ANDROID_URL);
-    expect(group('iOS').getByRole('status', { hidden: true }).textContent).toBe(
-      'iOS sem repositório: 1 tipo aponta um arquivo nesta plataforma.',
-    );
-    expect(group('Android').queryByRole('status', { hidden: true })).toBeNull();
-    expect(group('Contrato SDUI').queryByRole('status', { hidden: true })).toBeNull();
+      group('Android').getByLabelText('Caminho local da raiz', { selector: 'input' }),
+    ).toHaveProperty('value', '../../..');
+    expect(
+      group('iOS').getByLabelText('Caminho local da raiz', { selector: 'input' }),
+    ).toHaveProperty('value', '');
+    // O endereço vem da especialização: não há campo nem aviso de repositório ausente.
+    expect(screen.queryByLabelText('Endereço do arquivo')).toBeNull();
+    for (const name of ['Android', 'iOS', 'Contrato SDUI']) {
+      expect(group(name).queryByRole('status', { hidden: true })).toBeNull();
+    }
   });
 
   it('grava pelas actions, com os erros traduzidos, e limpa a configuração', async () => {
     const { harness, user } = setupSettings();
     const ios = group('iOS');
-    const url = ios.getByLabelText('Endereço do arquivo', { selector: 'input' });
-    await user.type(url, 'ftp://x/{{path}{Enter}');
-    expect(ios.getByRole('alert', { hidden: true }).textContent).toMatch(
-      /http:\/\/ ou https:\/\//,
-    );
-    expect(harness.project().platformRepos.ios).toBeUndefined();
-
-    await user.type(url, 'https://git.exemplo/{{path}{Enter}');
-    expect(harness.project().platformRepos.ios).toEqual({
-      urlTemplate: 'https://git.exemplo/{path}',
-      localPath: null,
-    });
-    // Agora o aviso some.
-    await waitFor(() => expect(ios.queryByRole('status', { hidden: true })).toBeNull());
-
     const local = ios.getByLabelText('Caminho local da raiz', { selector: 'input' });
     await user.type(local, '/absoluto{Enter}');
     expect(ios.getByRole('alert', { hidden: true }).textContent).toMatch(
       /relativo à pasta do projeto/,
     );
+    expect(harness.project().platformRepos.ios).toBeUndefined();
+
+    await user.clear(local);
+    await user.type(local, '../ios{Enter}');
+    expect(harness.project().platformRepos.ios).toEqual({ localPath: '../ios' });
+    expect(ios.queryByRole('alert', { hidden: true })).toBeNull();
 
     await user.click(
       ios.getByRole('button', { name: 'Limpar repositório de iOS', hidden: true }),
     );
     expect(harness.project().platformRepos.ios).toBeUndefined();
-    expect(
-      (
-        ios.getByLabelText('Endereço do arquivo', {
-          selector: 'input',
-        }) as HTMLInputElement
-      ).value,
-    ).toBe('');
+    expect((local as HTMLInputElement).value).toBe('');
     // Um passo de desfazer por ação.
     harness.store.undo();
-    expect(harness.project().platformRepos.ios?.urlTemplate).toBe(
-      'https://git.exemplo/{path}',
-    );
+    expect(harness.project().platformRepos.ios?.localPath).toBe('../ios');
   });
 
   it('sem plataformas (ou fora do editor) a seção não aparece', () => {

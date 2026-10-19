@@ -193,6 +193,45 @@ describe('formato da proposta', () => {
     expect(errors.some((e) => e.startsWith('changes[4].to.localPath:'))).toBe(true);
   });
 
+  it('proposta anterior ao schema 11: o urlTemplate de platformRepo é ignorado na leitura', () => {
+    const json = sample();
+    const change = (id: string, kind: string, from: unknown, to: unknown) => ({
+      id,
+      kind,
+      entity: 'platformRepo',
+      entityId: id === 'c5' ? 'ios' : id === 'c6' ? 'android' : 'bff',
+      imageId: null,
+      markingId: null,
+      field: null,
+      from,
+      to,
+    });
+    json.changes.push(
+      change('c5', 'create', null, {
+        urlTemplate: 'https://git.example.com/ios/{path}',
+        localPath: '../ios',
+      }),
+      // A mudança era só do endereço: fica uma atualização sem efeito (from igual a to).
+      change(
+        'c6',
+        'update',
+        { urlTemplate: 'https://a/{path}', localPath: null },
+        { urlTemplate: 'https://b/{path}', localPath: null },
+      ),
+      change('c7', 'remove', { urlTemplate: 'https://c/{path}', localPath: '..' }, null),
+    );
+    const result = parseProposal(json);
+    if (!result.ok) throw new Error(result.errors.join('\n'));
+    const repos = result.proposal.changes.filter((c) => c.entity === 'platformRepo');
+    expect(repos.map((c) => [c.id, c.from, c.to])).toEqual([
+      ['c5', null, { localPath: '../ios' }],
+      ['c6', { localPath: null }, { localPath: null }],
+      ['c7', { localPath: '..' }, null],
+    ]);
+    // Gravada de novo, a proposta já sai no formato novo.
+    expect(serializeProposal(result.proposal)).not.toContain('urlTemplate');
+  });
+
   it('JSON malformado vira um erro legível', () => {
     const result = parseProposalText('{ "format": ');
     expect(result.ok).toBe(false);

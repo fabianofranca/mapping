@@ -343,7 +343,7 @@ describe('cálculo das mudanças: grupo Projeto', () => {
 
   it('repositório por plataforma: criar, alterar e remover, uma mudança cada', () => {
     const base = codeProject();
-    const repo = { urlTemplate: 'https://git.example.com/ios/{path}', localPath: null };
+    const repo = { localPath: '../ios' };
     const created = propose(base, setPlatformRepo(base, 'ios', repo));
     expect(created.changes).toEqual([
       expect.objectContaining({

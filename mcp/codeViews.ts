@@ -104,7 +104,10 @@ export async function typeCodeView(
       .filter(([id]) => wanted(id))
       .map(async ([id, entry]): Promise<[string, Json]> => {
         const { symbol, path, ...rest } = entry;
-        return [id, { symbol, ...(await resolveDefinition(ctx, specId, id, path)), ...rest }];
+        return [
+          id,
+          { symbol, ...(await resolveDefinition(ctx, specId, id, path)), ...rest },
+        ];
       }),
   );
   return entries.length > 0 ? Object.fromEntries(entries) : null;
