@@ -169,7 +169,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 ## Etapa — Código de instanciação (em andamento, épico `epic/instanciacao`)
 
 - **Objetivo:** corrigir o conceito do `code` das especializações em tudo que o agente lê: o `code` diz com que código se cria uma instância do tipo na solução; o mapeamento não sabe nada sobre a solução.
-- **Entra:** vocabulário e definições em `SPEC-FORMAT.md`, `FORMAT.md`, Ajuda da app, skill `spec-author` e exemplo SDUI com a plataforma `bff` apontando para as funções que geram o JSON; MCP 0.6.0 com uma forma única de entrada de `code` com `definition` e `get_code_hints` separando `types` de `args`; aceite por uma pergunta de conceito ao agente na rodada do Cowork; sem schema nem `formatVersion` novos. Fases C1 a C3 (detalhe no [`PLAN.md`](../PLAN.md)).
+- **Entra:** vocabulário e definições em `SPEC-FORMAT.md`, `FORMAT.md`, Ajuda da app, skill `spec-author` e exemplo SDUI com a plataforma `bff` apontando para as funções que geram o JSON; MCP 0.6.0 com uma forma única de entrada de `code` com `definition` e `get_code_hints` separando `types` de `args`; aceite por uma pergunta de conceito ao agente na rodada do Cowork; o repositório de cada plataforma passa para a especialização (`platforms[].repo`: `url`, `urlTemplate`, `ref`; `formatVersion` 5) e o projeto guarda só o clone local (`platformRepos[x].localPath`; schema v11, migração v10 → v11); `set_platform_repo` só com `localPath`. Fases C1 a C4 (detalhe no [`PLAN.md`](../PLAN.md)).
 - **Depende de:** etapa Biblioteca (concluída e mesclada).
 
 ## Evoluções
