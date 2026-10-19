@@ -238,12 +238,18 @@ function withoutLine(template: string): string {
  *   fragmento assim, vira vazio.
  */
 export function codeLink(p: Project, location: CodeLocation): string | null {
-  const template = optionalText(
-    specPlatformRepo(p, location.specId, location.platform)?.urlTemplate,
-  );
+  return repoLink(specPlatformRepo(p, location.specId, location.platform), location.path);
+}
+
+/** O mesmo link de `codeLink`, a partir de um `repo` de especialização (ex: de um pacote lido fora do projeto). */
+export function repoLink(
+  repo: SpecRepo | null | undefined,
+  filePath: string | null,
+): string | null {
+  const template = optionalText(repo?.urlTemplate);
   if (template === null || !isValidUrlTemplate(template)) return null;
-  if (location.path === null || !isValidCodePath(location.path)) return null;
-  const path = location.path.split('/').map(encodeURIComponent).join('/');
+  if (filePath === null || !isValidCodePath(filePath)) return null;
+  const path = filePath.split('/').map(encodeURIComponent).join('/');
   return withoutLine(template).replaceAll('{path}', path);
 }
 

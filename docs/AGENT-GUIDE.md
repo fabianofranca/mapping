@@ -4,7 +4,7 @@ Este guia é para o agente de IA (Claude Code, Claude Desktop ou outro cliente M
 
 O Mapping marca **áreas retangulares** em imagens, organiza as informações em **camadas** e as descreve com **anotações** (pares chave-valor livres ou anotações **tipadas** de uma especialização). O servidor lê projetos guardados **em pasta** dentro das raízes configuradas (`--root`). Projetos guardados só no navegador não são alcançáveis.
 
-> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`), **liga o mapeamento ao código** (`get_code_hints`, `find_by_code`), **propõe alterações** para o usuário revisar (`propose_changes`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`), **casa elementos de uma origem externa** (`source`, `find_by_source`, `find_types_by_source`) **valida especializações** (`validate_specialization`) e **bibliotecas de componentes** (`validate_library`) e **lê os componentes** (`list_components`, `get_component`). **Você nunca grava o projeto**: o `apply_changes` não existe mais.
+> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`), **dá o código de instanciação** de cada tipo mapeado (`get_code_hints`, `find_by_code`), **propõe alterações** para o usuário revisar (`propose_changes`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`), **casa elementos de uma origem externa** (`source`, `find_by_source`, `find_types_by_source`) **valida especializações** (`validate_specialization`) e **bibliotecas de componentes** (`validate_library`) e **lê os componentes** (`list_components`, `get_component`). **Você nunca grava o projeto**: o `apply_changes` não existe mais.
 
 ## Conceitos que importam
 
@@ -15,7 +15,7 @@ O Mapping marca **áreas retangulares** em imagens, organiza as informações em
 - **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), na mesma marcação e em outra camada (ex: um evento `onClick` vinculado ao `Button`). `linked` lista as vinculadas e `linkTree` mostra a árvore.
 - **Referências fortes.** Campos do tipo `ref` apontam para uma tupla, uma linha de tabela ou um campo de outra anotação. Em `refs` você vê para onde cada campo aponta; em `backlinks`, quem aponta para a anotação.
 - **Pendências.** Anotação incompleta (`issues`): campo obrigatório vazio, valor inválido, referência quebrada, tipo inexistente etc. São calculadas na leitura, não gravadas.
-- **Plataformas e código.** Uma especialização pode declarar **plataformas** e dizer com que código se cria uma instância de cada tipo nelas (`code`: o que se chama, o arquivo que o define, parâmetros, orientações), com o repositório da biblioteca em `repo`; `platformRepos` (no projeto) diz só onde fica o clone local. O agente lê o arquivo para saber a assinatura e escreve a chamada na solução; o mapeamento não guarda nada sobre a solução. Veja "Do mapeamento ao código".
+- **Plataformas e código de instanciação.** O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define (relativo à raiz do `repo` da plataforma), `params` e `values` dizem como passar os campos, `notes` orienta. O repositório (`repo`) é da biblioteca, logo da **especialização**; o projeto só sobrepõe o clone local (`platformRepos[x].localPath`). Você lê o arquivo para saber a assinatura e escreve a chamada na solução; o mapeamento não guarda nada sobre a solução. Veja "Do mapeamento ao código de instanciação".
 - **Tela em branco.** Uma imagem pode não ter arquivo: `blank: true`, `file: null` e `background` (cor `#RRGGBB`); é onde se monta uma tela com componentes. `get_image_file` nela falha com `blank-image`; use `get_marking_image`. Uma foto não tem `background` nem tamanho editável (`not-blank`).
 - **Ordem entre irmãs.** As irmãs (mesma imagem e mesmo `parent`) são desenhadas na ordem da lista: `order` 0 fica por baixo. `move_marking` muda a posição.
 - **Trava.** `lock.locked` indica marcação trancada; `lock.geometryLocked`, geometria travada (por ela ou por um ancestral trancado). Item trancado não pode ser movido, redimensionado nem excluído.
@@ -44,7 +44,7 @@ Toda tool que recebe um item (`ref`) aceita: a referência completa (a que o dev
 6. **`get_annotation(ref)`** / **`get_image(ref)`** — o detalhe de uma anotação ou de uma imagem (o `path` absoluto do arquivo, se existir).
 7. **`resolve(ref)`** — quando só há uma referência e não se sabe o que ela é.
 8. **`get_marking_image(ref, …)`** — **veja** a marcação (ver "Vendo as imagens").
-9. **`get_code_hints(ref, platform)`** / **`find_by_code(…)`** — do mapeamento para o código e de volta (ver "Do mapeamento ao código").
+9. **`get_code_hints(ref, platform)`** / **`find_by_code(…)`** — as chamadas a escrever a partir do mapeamento e, de um arquivo ou símbolo, os tipos que ele instancia (ver "Do mapeamento ao código de instanciação").
 10. **`plan_changes`** → **`propose_changes`** → **`get_proposal`** → **`get_proposal_review`** — para alterar o projeto: você propõe, o usuário revisa, você corrige com `supersedes` (ver "Alterando um projeto: propostas para revisão").
 11. **`find_by_source`** / **`find_types_by_source`** / **`validate_specialization`** / **`validate_library`** — reexportações (casar por origem externa) e criação de especializações e de bibliotecas.
 12. **`list_components`** / **`get_component`** — numa especialização `formatVersion` 4, os componentes (documento, campos, exemplos, `code`, `sources`, JSON do componente) sem abrir os arquivos do pacote.
@@ -78,7 +78,7 @@ No texto: `region` é a parte da imagem original que aparece (em pixels da image
    - `summary`: uma linha legível por operação válida;
    - `changes`: quantos itens serão criados, alterados e excluídos por coleção, e `reviewChanges`: quantas mudanças o usuário terá de revisar;
    - `issues`: pendências antes e depois, e as anotações que ficam incompletas (`new`);
-   - `warnings` (só se houver): avisos do projeto resultante, como plataforma em que algum tipo aponta um arquivo (`code.<plataforma>.path`) sem repositório configurado (`missing-repo`);
+   - `warnings` (só se houver): avisos das operações, como os do validador de um pacote de biblioteca (`library-warning`);
    - `created`: as referências `mapping://` dos itens que serão criados (as definitivas), com o apelido de cada um.
 3. **`propose_changes(project, title, operations[], { description?, origin?, author?, supersedes? })`** faz a mesma validação e **grava a proposta** em `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). Um lote com qualquer erro não grava nada: corrija e mande o lote inteiro de novo. A resposta traz:
    - `proposal.ref`: a referência `mapping://<projeto>/p/<código>`; guarde-a;
@@ -185,8 +185,8 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 
 | `op`                    | Campos                                                                                                                               | Observações                                                                                                                                                                                                                                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `set_platform_repo`     | `platform`, `urlTemplate?`, `localPath?`                                                                                             | Repositório da plataforma (ver "Do mapeamento ao código"). Campo omitido mantém; `null` remove.                                                                                                                                                                                                                         |
-| `remove_platform_repo`  | `platform`                                                                                                                           | Remove a configuração do repositório da plataforma.                                                                                                                                                                                                                                                                     |
+| `set_platform_repo`     | `platform`, `localPath`                                                                                                              | Clone local da plataforma (ver "Repositórios por plataforma"); `null` ou vazio remove. `urlTemplate` falha com `unknown-field`.                                                                                                                                                                                         |
+| `remove_platform_repo`  | `platform`                                                                                                                           | Remove o clone local da plataforma.                                                                                                                                                                                                                                                                                     |
 | `create_layer`          | `name`, `color?`, `as?`                                                                                                              | Camada livre; cor padrão: a próxima da paleta.                                                                                                                                                                                                                                                                          |
 | `update_layer`          | `layer`, `name?`, `color?`                                                                                                           | Camada de especialização não é renomeada.                                                                                                                                                                                                                                                                               |
 | `move_layer`            | `layer`, `index`                                                                                                                     | Reordena (0 = primeira).                                                                                                                                                                                                                                                                                                |
@@ -244,47 +244,125 @@ Regras:
 - Anotação **tipada**: `type` (`specId`, `typeId`, `name`) e `values`, com os valores nativos de JSON (números como número, datas em ISO, tabelas como lista de linhas com `_id`). Os campos `ref` aparecem em `values` como objetos com o id do alvo; o campo `refs` da resposta os resolve em texto (`to: "User.name"`) e na referência da anotação alvo.
 - `title` é o rótulo que a app mostra (ex: `Classe · Contato`, `Input · input_nome`).
 
-## Do mapeamento ao código
+## Do mapeamento ao código de instanciação
 
-Quando o projeto aplica uma especialização com **plataformas** (veja `platforms` em `get_project`), dá para implementar o que foi mapeado. O mapeamento e a especialização guardam só o que ajuda a **gerar** o código (o componente de cada tipo, o arquivo que o define, os parâmetros e as orientações), não onde o código gerado ficou.
+Quando o projeto aplica uma especialização com **plataformas** (veja `platforms` em `get_project`), cada tipo pode dizer **com que código se cria uma instância dele** em cada uma: é o `code` do tipo. O `symbol` é o que se chama (um composable, uma view, uma classe, a função do BFF que gera o JSON da tela); o `path` é o arquivo que define o `symbol`, para você ler a assinatura antes de chamá-lo; `params` e `values` dizem como passar cada campo; `notes` orienta. A tela marcada é a **especificação**; a solução é o que você escreve no repositório da plataforma, com as suas ferramentas. O mapeamento não sabe onde a solução está nem o que você escreveu.
 
-### Fluxo: implementar uma tela
+### Fluxo: escrever a solução a partir de uma tela
 
 1. **Receba a referência** `mapping://…/m/…` (o dev a cola do app) e chame **`get_marking(ref, { platform })`** e **`get_marking_image(ref)`**: o primeiro dá as anotações e o `code` de cada tipo; o segundo, o que a tela parece.
-2. **`get_code_hints(ref, platform)`** devolve as **chamadas a escrever**: uma árvore que espelha a marcação e as descendentes. Em cada marcação, as anotações tipadas com:
-   - `symbol`: o componente ou tipo da plataforma (`null` = o tipo **não tem mapeamento** nessa plataforma; a resposta lista esses tipos em `unmappedTypes`);
-   - `path`, `url`, `localFile`, `exists` (quando a especialização informa o arquivo): **em que arquivo o `symbol` está** (relativo à raiz do repositório da plataforma), o endereço no repositório e o arquivo local (ver abaixo); leia esse arquivo para ver a assinatura do componente antes de usá-lo;
-   - `params`: `{ field, name, value }` — o parâmetro no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary` do código). Campo que não está em `params` não é passado;
-   - `notes`: a orientação da especialização (leia: ela costuma dizer detalhes como "use o valor do campo id");
-   - `values`: os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex: `dado: "User.name"`);
-   - `linked`: as anotações vinculadas, sob a dona (o `onClick` sob o `Button`).
-3. **Implemente** no repositório com as suas ferramentas. O servidor **não lê nem grava código**: use os `localFile` para achar os arquivos dos componentes.
-4. Se faltar o repositório de uma plataforma (o `url` e o `localFile` vêm `null`), proponha um `set_platform_repo` com `propose_changes` (ver abaixo). Não há o que registrar sobre o código gerado.
+2. **`get_code_hints(ref, platform)`** devolve as **chamadas a escrever**, em três partes:
+   - `types`: o código de instanciação de cada tipo usado na árvore, **uma vez só**, por `specId/typeId`: `name`, `symbol`, `definition`, `params`, `values` e `notes`. `symbol: null` não aparece aqui: o tipo **não tem `code`** nessa plataforma e vai para `unmappedTypes`;
+   - `repos`: por plataforma, o `url` e a `ref` do repositório (da especialização) e o `localPath` do clone local (do projeto); vazio se não houver nenhum dos dois;
+   - `tree`: a árvore que espelha a marcação e as descendentes. Cada anotação traz `type` (a chave de `types`), `label`, `layer`, `args`, `values` e `linked`.
+3. **Abra a `definition` de cada tipo** que você vai usar. Se `exists` é `true`, leia o arquivo em `localFile` (relativo ao diretório de trabalho do cliente); senão, abra a `url` (o arquivo no repositório da especialização, na `ref` dela). Leia a assinatura do `symbol` antes de chamá-lo.
+4. **Escreva as chamadas** na solução, uma por anotação da árvore: `args` é `{ field, name, value }`, com o **nome do parâmetro** no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary`). Campo que não está em `args` não é passado. Respeite as `notes` do tipo (elas costumam dizer detalhes como "use o valor do campo id") e o `linked`: as anotações vinculadas ficam sob a dona (o `onClick` sob o `Button`) e entram na chamada dela do jeito que as `notes` mandarem. `values` são os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex.: `dado: "User.name"`).
+5. O servidor **não lê nem grava código**. Se você tem o clone do repositório da plataforma fora do caminho esperado, proponha um `set_platform_repo` com `localPath` (ver "Repositórios por plataforma"); sem clone, a `url` basta.
 
-### O `code` de um tipo: o arquivo do componente
+Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("mapping://cadastro/m/2f7c4a1d", "android")`):
 
-Em `get_marking` e `get_annotation`, cada anotação tipada traz o `code` do tipo por plataforma (`symbol`, `path`, `params`, `values`, `notes`), como na especialização; `get_marking(ref, { platform })` mostra só a plataforma pedida. Quando há `path`, o arquivo vem resolvido ao lado dele (como em `get_code_hints`):
+```json
+{
+  "marking": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+  "platform": { "id": "android", "name": "Android", "language": "kotlin" },
+  "repos": {
+    "android": {
+      "url": "https://github.com/org/app-android",
+      "ref": "v3",
+      "localPath": "../../.."
+    }
+  },
+  "types": {
+    "sdui/button": {
+      "name": "Button",
+      "symbol": "com.app.ds.DSButton",
+      "definition": {
+        "path": "app/src/main/java/com/app/ds/DSButton.kt",
+        "url": "https://github.com/org/app-android/blob/v3/app/src/main/java/com/app/ds/DSButton.kt",
+        "ref": "v3",
+        "localFile": "app/src/main/java/com/app/ds/DSButton.kt",
+        "exists": true
+      },
+      "params": { "texto": "text", "estilo": "style", "habilitado": "enabled" },
+      "values": { "estilo": { "primary": "ButtonStyle.Primary" } },
+      "notes": "Use o modifier de testTag com o valor do campo id."
+    },
+    "sdui/onClick": {
+      "name": "onClick",
+      "symbol": "com.app.ds.OnClick",
+      "definition": null,
+      "params": { "acao": "action" },
+      "notes": "Associe o evento ao componente dono por meio do parâmetro onClick."
+    }
+  },
+  "tree": {
+    "ref": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+    "name": "Cadastrar",
+    "rect": { "x": 40, "y": 900, "width": 300, "height": 80 },
+    "annotations": [
+      {
+        "ref": "a/5b2e91c0",
+        "type": "sdui/button",
+        "label": "Button btn_cadastrar",
+        "layer": "SDUI",
+        "args": [
+          { "field": "texto", "name": "text", "value": "Cadastrar" },
+          { "field": "estilo", "name": "style", "value": "ButtonStyle.Primary" },
+          { "field": "habilitado", "name": "enabled", "value": "true" }
+        ],
+        "values": {
+          "id": "btn_cadastrar",
+          "texto": "Cadastrar",
+          "estilo": "primary",
+          "habilitado": "sim"
+        },
+        "linked": [
+          {
+            "ref": "a/7d41c2e8",
+            "type": "sdui/onClick",
+            "label": "onClick submit",
+            "layer": "Eventos",
+            "args": [{ "field": "acao", "name": "action", "value": "submit" }],
+            "values": { "acao": "submit" }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+A chamada a escrever sai de `types` (o `symbol` e como passar cada campo) e de `args` (os valores desta instância): `DSButton(text = "Cadastrar", style = ButtonStyle.Primary, enabled = true, onClick = OnClick(action = "submit"))`, com o `testTag` do `id` que as `notes` pedem. O que o exemplo mostra para o `onClick` vale para todo tipo sem `path`: `definition` é `null`, e o `symbol` é tudo o que o `code` diz (aqui, você acha a assinatura no repositório pelo nome). Na plataforma `bff`, o mesmo formulário dá as funções que **geram o JSON da tela** (`com.app.bff.sdui.button`, com o `path` do arquivo que a define), e a chamada a escrever é a dessas funções.
+
+### O `code` de um tipo: o `symbol` e o arquivo que o define
+
+Em `get_marking`, `get_annotation`, `find_by_code` e `get_component`, o `code` do tipo vem por plataforma (`code.<plataforma>`) na **mesma forma** de `types`, sem `name`: `{ symbol, definition, params?, values?, notes? }`. `get_marking(ref, { platform })` mostra só a plataforma pedida.
 
 ```json
 {
   "android": {
     "symbol": "com.app.ds.DSButton",
-    "path": "app/src/main/java/com/app/ds/DSButton.kt",
-    "url": "https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt",
-    "localFile": "app/src/main/java/com/app/ds/DSButton.kt",
-    "exists": true,
+    "definition": {
+      "path": "app/src/main/java/com/app/ds/DSButton.kt",
+      "url": "https://github.com/org/app-android/blob/v3/app/src/main/java/com/app/ds/DSButton.kt",
+      "ref": "v3",
+      "localFile": "app/src/main/java/com/app/ds/DSButton.kt",
+      "exists": true
+    },
     "params": { "texto": "text", "estilo": "style" }
   }
 }
 ```
 
-- `path` é relativo à **raiz do repositório da plataforma**, com `/`.
-- `url` vem do `urlTemplate` da plataforma (`null` sem ele); o caminho não tem linha, então o trecho `#…{line}` do template sai.
-- `localFile` é o caminho **relativo ao diretório de trabalho do cliente** (o repositório, no Claude Code), calculado com o `localPath` da plataforma; `exists` diz se o arquivo está lá (o servidor só confere, não o lê). Sem `localPath`, os dois são `null`. Se o `localPath` leva para fora do diretório de trabalho, vêm `null` e `localFileProblem: "outside-workdir"`: por segurança, o servidor não confere (nem revela) o que está fora.
+- `definition` é o **arquivo que define o `symbol`**, ou `null` quando o `code` não informa `path`.
+- `path` é relativo à **raiz do repositório da plataforma**, com `/`. O repositório é da biblioteca: está na especialização (`platforms[].repo`, que `get_specialization` e `get_project` mostram).
+- `url` e `ref` vêm do `repo` da especialização: `url` é montada pelo `urlTemplate` dele (`null` sem ele; o caminho não tem linha, então o trecho `#…{line}` do template sai) e `ref` é a revisão da biblioteca a que o `code` corresponde (`null` se não informada).
+- `localFile` e `exists` vêm da sobreposição local do projeto. `localFile` é o caminho **relativo ao diretório de trabalho do cliente** (o repositório, no Claude Code), calculado com o `localPath` da plataforma; `exists` diz se o arquivo está lá (o servidor só confere, não o lê). Sem `localPath`, os dois são `null`. Se o `localPath` leva para fora do diretório de trabalho, vêm `null` e `localFileProblem: "outside-workdir"`: por segurança, o servidor não confere (nem revela) o que está fora.
+- Num `get_component` por `path` (pacote sem projeto), `localFile` e `exists` são sempre `null`: não há projeto para dizer onde fica o clone.
 
-### `find_by_code`: do código para o mapeamento
+### `find_by_code`: de um arquivo ou símbolo para o mapeamento
 
-`find_by_code({ project?, path?, symbol? })` acha os **tipos** das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) ou símbolo (`code.<plataforma>.symbol`), e as **anotações desses tipos**: "estou neste arquivo: que tipos o usam e em que marcações". `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`DSButton.kt` acha `app/…/DSButton.kt`; `Button.kt` não); `symbol`, por igualdade; informando os dois, a **mesma plataforma** precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Sem `path` nem `symbol` falha com `missing-query`.
+`find_by_code({ project?, path?, symbol? })` responde: **que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados**. Acha os **tipos** das especializações aplicadas cujo `code` tem esse `path` (`code.<plataforma>.path`) ou `symbol` (`code.<plataforma>.symbol`) e as **anotações desses tipos**. Serve para quem está num arquivo da biblioteca e quer saber o que dele aparece nas telas. `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`DSButton.kt` acha `app/…/DSButton.kt`; `Button.kt` não); `symbol`, por igualdade; informando os dois, a **mesma plataforma** precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Sem `path` nem `symbol` falha com `missing-query`.
 
 ```json
 {
@@ -300,10 +378,13 @@ Em `get_marking` e `get_annotation`, cada anotação tipada traz o `code` do tip
       "code": {
         "android": {
           "symbol": "com.app.ds.DSButton",
-          "path": "app/src/main/java/com/app/ds/DSButton.kt",
-          "url": "…",
-          "localFile": "…",
-          "exists": true
+          "definition": {
+            "path": "app/src/main/java/com/app/ds/DSButton.kt",
+            "url": "https://github.com/org/app-android/blob/v3/app/src/main/java/com/app/ds/DSButton.kt",
+            "ref": "v3",
+            "localFile": "app/src/main/java/com/app/ds/DSButton.kt",
+            "exists": true
+          }
         }
       },
       "annotationCount": 1,
@@ -326,24 +407,26 @@ Em `get_marking` e `get_annotation`, cada anotação tipada traz o `code` do tip
 
 ### Repositórios por plataforma
 
-- `set_platform_repo { platform, urlTemplate?, localPath? }` configura o repositório da plataforma (campo omitido mantém; `null` remove; sem nenhum dos dois, a configuração sai). `remove_platform_repo { platform }` a remove. `urlTemplate` precisa ser `http(s)://…` com `{path}` (`{line}` é aceito e sai, porque o caminho não tem linha); `localPath` é relativo à pasta do projeto (ex: `../../..`).
+O **repositório é da biblioteca**: cada especialização declara o da própria biblioteca em `platforms[].repo` (`url`, `urlTemplate?`, `ref?`), e é dele que vêm a `url` e a `ref` de toda `definition`. O **projeto só sobrepõe o lugar local**: `platformRepos[<plataforma>].localPath`, a raiz do clone, relativa à pasta do projeto. `get_project` mostra, em cada plataforma, os `repos` das especializações (`specId`, `url`, `urlTemplate?`, `ref?`) e o `localPath` (ou `null`).
+
+- `set_platform_repo { platform, localPath }` informa o clone local (`null` ou vazio remove); `remove_platform_repo { platform }` o remove. `localPath` é relativo à pasta do projeto (ex.: `../../..`). Com `localPath` informado, `definition.localFile` e `exists` passam a aparecer.
+- `urlTemplate` no lote **falha com `unknown-field`**: o endereço vem da especialização. Para mudar o repositório de uma biblioteca, atualize a especialização (`platforms[].repo`).
+- Plataforma sem clone local **não é problema**: abra a `definition.url`. Não há aviso nem pendência por isso.
 
 ```json
-[
-  {
-    "op": "set_platform_repo",
-    "platform": "ios",
-    "urlTemplate": "https://github.com/org/app-ios/blob/main/{path}",
-    "localPath": "../../.."
-  }
-]
+[{ "op": "set_platform_repo", "platform": "ios", "localPath": "../../.." }]
 ```
-
-- Plataforma em que algum tipo das especializações aplicadas tem `path`, sem repositório configurado, é só um **aviso** (`warnings`, em `get_project`, `plan_changes` e `propose_changes`, com `types`: quantos tipos apontam arquivos nela).
 
 ### O que o servidor nunca faz
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
+
+### Mudança na versão 0.6.0
+
+- **O `code` ganhou uma forma só.** Em `get_marking`, `get_annotation`, `find_by_code` e `get_component`, cada plataforma traz `{ symbol, definition, params?, values?, notes? }`; o arquivo que define o `symbol` (`path`, `url`, `ref`, `localFile`, `exists`) está dentro de `definition`, que é `null` sem `path`. Antes, esses campos ficavam soltos na entrada.
+- **`get_code_hints` separa o tipo da instância.** A resposta é `{ marking, platform, repos, types, unmappedTypes?, hint?, tree }`: o código de instanciação de cada tipo vem uma vez em `types`, e a árvore traz por anotação só o que é da instância: `type`, `args` (antes `params`), `values` e `linked`, sem arquivo.
+- **O repositório passou para a especialização** (`platforms[].repo`); `get_project` o mostra em `repos` e `get_specialization` devolve o JSON inteiro. `set_platform_repo` só aceita `localPath` e `platformRepos` guarda só ele. O aviso `missing-repo` não existe mais.
+- Use a 0.6.0 com a app da mesma época (schema v11); um projeto v10 é migrado na leitura, em memória.
 
 ### Mudança na versão 0.4.0
 
@@ -414,7 +497,8 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 | `invalid-library`                    | `apply_specialization`/`update_specialization` com um pacote v4 que tem erro na validação (os mesmos níveis de `validate_library`); `errors` traz os primeiros, com `file` e `path`, e `moreErrors` o resto. Aviso não impede. |
 | `spec-missing-migrations`            | `update_specialization` de uma biblioteca v4 cuja versão nova quebra sem `migrations` (regra do modelo): `missingMigrations` lista cada quebra (`message` e `path`). Declare os passos e confira com `plan_library_update`.    |
 | `spec-already-applied`               | A especialização já está aplicada (numa versão menor, use `update_specialization`). Também é regra do modelo.                                                                                                                  |
-| `nothing-to-change`                  | `set_platform_repo` sem `urlTemplate` nem `localPath`.                                                                                                                                                                         |
+| `nothing-to-change`                  | `set_platform_repo` sem `localPath`.                                                                                                                                                                                           |
+| `unknown-field`                      | Chave que não é campo do tipo (`values`), ou campo que não existe mais no formato: `codeRef` (0.4.0) e `urlTemplate` em `set_platform_repo` (0.6.0: o endereço do repositório vem da especialização).                          |
 
 **Propostas**
 
@@ -434,7 +518,6 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 
 | `code`                  | Significado                                                                                                                                                                        |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `missing-repo`          | Plataforma em que algum tipo das especializações aplicadas tem `code.<plataforma>.path`, sem repositório configurado (`types`: quantos tipos).                                     |
 | `library-warning`       | `apply_specialization`/`update_specialization` de pacote v4: aviso do validador (`file`, `path`, `message`; no máximo 20 por resposta); não impede nada, mas costuma ser descuido. |
 | `superseded-incomplete` | `propose_changes` com `supersedes`: a anterior ainda tinha mudanças sem decisão ou aceitas sem aplicar.                                                                            |
 | `supersede-failed`      | `propose_changes` com `supersedes`: a nova proposta foi gravada, mas a anterior não pôde ser marcada como substituída. **Não reenvie**: avise o usuário.                           |
