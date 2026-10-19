@@ -819,36 +819,25 @@ class Batch {
     const p = this.p;
     switch (op.op) {
       case 'set_platform_repo': {
-        if (op.urlTemplate === undefined && op.localPath === undefined) {
+        if (op.localPath === undefined) {
           throw new ToolError(
             'nothing-to-change',
-            'informe `urlTemplate` e/ou `localPath` (ou use remove_platform_repo)',
+            'informe `localPath` (ou use remove_platform_repo)',
           );
         }
-        const project = setPlatformRepo(p, op.platform, {
-          ...(op.urlTemplate !== undefined ? { urlTemplate: op.urlTemplate } : {}),
-          ...(op.localPath !== undefined ? { localPath: op.localPath } : {}),
-        });
+        const project = setPlatformRepo(p, op.platform, { localPath: op.localPath });
         const repo = project.platformRepos[op.platform];
-        const changes = [
-          op.urlTemplate !== undefined
-            ? `urlTemplate ${repo?.urlTemplate ? `"${repo.urlTemplate}"` : 'removido'}`
-            : null,
-          op.localPath !== undefined
-            ? `localPath ${repo?.localPath ? `"${repo.localPath}"` : 'removido'}`
-            : null,
-        ].filter((change) => change !== null);
         return {
           project,
-          description: `Configurar o repositório da plataforma "${op.platform}": ${changes.join(', ')}${
-            repo ? '' : ' (sem urlTemplate nem localPath: configuração removida)'
-          }`,
+          description: repo?.localPath
+            ? `Informar o clone local da plataforma "${op.platform}": localPath "${repo.localPath}"`
+            : `Informar o clone local da plataforma "${op.platform}": localPath removido`,
         };
       }
       case 'remove_platform_repo':
         return {
           project: removePlatformRepo(p, op.platform),
-          description: `Remover o repositório da plataforma "${op.platform}"`,
+          description: `Remover o clone local da plataforma "${op.platform}"`,
         };
       case 'create_layer': {
         const id = crypto.randomUUID();

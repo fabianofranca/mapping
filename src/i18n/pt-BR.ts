@@ -444,7 +444,7 @@ export const ptBR = {
   'spec.packageHint':
     'Uma biblioteca (versão 4) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes.',
   'spec.v4NeedsPackage':
-    '"{name}" é uma biblioteca (versão 4) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
+    '"{name}" cita arquivos do pacote (componentes, documentos, exemplos ou fontes) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
   'spec.packageValidating': 'Conferindo o pacote…',
   'spec.packageReadFailed': 'Não foi possível ler o pacote.',
   'spec.packageTooBig': 'O pacote passa do limite ({files} arquivos ou {mb} MB).',

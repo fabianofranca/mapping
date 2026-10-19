@@ -1,5 +1,11 @@
 import { validateProject, type InvariantIssue } from './invariants';
-import { migrate, migrations as defaultMigrations, type Migration } from './migrations';
+import {
+  discardedOnMigrationTo11,
+  migrate,
+  migrations as defaultMigrations,
+  type DiscardedUrlTemplate,
+  type Migration,
+} from './migrations';
 import { repairProject, type RepairResult } from './repair';
 import { projectSchema } from './schema';
 import { parseSpecText, type Spec } from './spec';
@@ -44,7 +50,7 @@ export function serialize(p: Project): string {
     platformRepos: Object.fromEntries(
       Object.entries(p.platformRepos).map(([platform, repo]) => [
         platform,
-        { urlTemplate: repo.urlTemplate, localPath: repo.localPath },
+        { localPath: repo.localPath },
       ]),
     ),
     layers: p.layers.map((l) => ({
@@ -153,6 +159,11 @@ export type DeserializeResult =
        * anotações delas aparecem como pendências ("tipo inexistente").
        */
       readonly specWarnings: readonly SpecFileWarning[];
+      /**
+       * `urlTemplate` de `platformRepos` que a migração para o schema 11 descartou (o endereço
+       * dos arquivos passou a ser da especialização); vazio quando não houve.
+       */
+      readonly discardedUrlTemplates: readonly DiscardedUrlTemplate[];
     }
   | {
       readonly ok: false;
@@ -170,6 +181,7 @@ export interface RepairedLoad extends RepairResult {
   readonly readOnly: boolean;
   readonly migratedFrom: number | null;
   readonly specWarnings: readonly SpecFileWarning[];
+  readonly discardedUrlTemplates: readonly DiscardedUrlTemplate[];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -242,6 +254,7 @@ export function deserialize(
 
   let data: Record<string, unknown> = raw;
   let migratedFrom: number | null = null;
+  let discardedUrlTemplates: readonly DiscardedUrlTemplate[] = [];
   const readOnly = version > SCHEMA_VERSION;
   if (readOnly) {
     data = { ...raw, schemaVersion: SCHEMA_VERSION };
@@ -255,6 +268,7 @@ export function deserialize(
     }
     data = migrated.data;
     migratedFrom = version;
+    discardedUrlTemplates = discardedOnMigrationTo11(raw);
   }
 
   const parsed = projectSchema.safeParse(data);
@@ -276,8 +290,16 @@ export function deserialize(
         readOnly,
         migratedFrom,
         specWarnings: warnings,
+        discardedUrlTemplates,
       },
     };
   }
-  return { ok: true, project, readOnly, migratedFrom, specWarnings: warnings };
+  return {
+    ok: true,
+    project,
+    readOnly,
+    migratedFrom,
+    specWarnings: warnings,
+    discardedUrlTemplates,
+  };
 }

@@ -17,7 +17,6 @@ import {
   levelType,
   markingLockStates,
   markingVisibility,
-  platformRepoWarnings,
   previewProject,
   projectIndex,
   projectIssues,
@@ -46,7 +45,6 @@ import {
   type MarkingLockState,
   type MarkingVisibility,
   type PatchResult,
-  type PlatformRepoWarning,
   type Project,
   type Proposal,
   type ProposalApplied,
@@ -92,11 +90,6 @@ export interface EditorDerived {
   readonly incompleteList: ReadonlySignal<readonly IncompleteImage[]>;
   /** Quantas anotações estão incompletas no projeto (todas as camadas). */
   readonly incompleteCount: ReadonlySignal<number>;
-  /**
-   * Plataformas em que algum tipo das especializações aplicadas tem `code.<plataforma>.path`,
-   * sem repositório configurado (aviso, não pendência).
-   */
-  readonly platformRepoWarnings: ReadonlySignal<readonly PlatformRepoWarning[]>;
   /** Componentes das especializações aplicadas ao projeto (vazio enquanto não carregam). */
   readonly catalog: ReadonlySignal<ComponentCatalog>;
   /**
@@ -141,7 +134,6 @@ const NO_DOTS: ReadonlyMap<string, readonly LayerDot[]> = new Map();
 const NO_VISIBILITY: ReadonlyMap<string, MarkingVisibility> = new Map();
 const NO_MARKINGS: ReadonlySet<string> = new Set();
 const NO_LOCKS: ReadonlyMap<string, MarkingLockState> = new Map();
-const NO_WARNINGS: readonly PlatformRepoWarning[] = [];
 const NO_DRAWN: ReadonlySet<string> = new Set();
 const NO_MIN_SIZES: ReadonlyMap<
   string,
@@ -378,11 +370,6 @@ export function createEditorDerived(
 
   const incompleteCount = computed(() => issues.value.size);
 
-  const repoWarnings = computed(() => {
-    const p = project.value;
-    return p ? platformRepoWarnings(p) : NO_WARNINGS;
-  });
-
   let lastMinSizes = NO_MIN_SIZES;
   const componentMinSizes = computed(() => {
     const p = project.value;
@@ -446,7 +433,6 @@ export function createEditorDerived(
     listing,
     incompleteList,
     incompleteCount,
-    platformRepoWarnings: repoWarnings,
     catalog: components.catalog,
     componentScenes: scenes,
     drawingsOf,

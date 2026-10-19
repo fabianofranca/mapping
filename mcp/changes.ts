@@ -5,7 +5,6 @@ import {
   IMAGES_DIR,
   MAPPING_FILE,
   computeChanges,
-  platformRepoWarnings,
   projectIndex,
   type ItemKind,
 } from '../src/model';
@@ -190,10 +189,8 @@ function libraryWarningViews(result: BatchResult): Record<string, unknown>[] {
 /** Parte comum das respostas de `plan_changes` e `propose_changes`: o resultado do lote. */
 export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const { result, location, loaded, refs } = prepared;
-  // Avisos (não impedem nada): plataforma em que algum tipo tem `code.<plataforma>.path`, sem
-  // repositório configurado.
-  const repoWarnings = platformRepoWarnings(result.project);
-  const warnings: unknown[] = [...repoWarnings, ...libraryWarningViews(result)];
+  // Avisos (não impedem nada): os da biblioteca.
+  const warnings: unknown[] = [...libraryWarningViews(result)];
   return {
     valid: prepared.valid,
     project: { name: location.name, path: location.path },

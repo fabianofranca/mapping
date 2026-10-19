@@ -441,7 +441,16 @@ describe('SpecsDialog: pacote da biblioteca', () => {
     await screen.findByText('A pasta ou o zip não tem arquivos.');
   });
 
-  it('arquivo .json v4 isolado é recusado: v4 pede o pacote', async () => {
+  it('arquivo .json v4 sem arquivo do pacote vale isolado: aplica e grava specs/<id>.json', async () => {
+    const { harness, choose } = setup();
+    const raw = JSON.parse(exampleText('sdui')) as object;
+    choose(JSON.stringify({ ...raw, formatVersion: 4 }));
+    await screen.findByText(/"SDUI" aplicada/);
+    const entry = harness.project().specializations[0];
+    expect(entry?.file).toBe('specs/sdui.json');
+  });
+
+  it('arquivo .json v4 que cita arquivos do pacote é recusado', async () => {
     const { harness, choose } = setup();
     choose(material3().get('material3.spec.json') ?? '');
     const dialog = await dialogTitled('Arquivo de especialização inválido');

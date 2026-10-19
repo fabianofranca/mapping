@@ -442,7 +442,7 @@ export const enUS: Dictionary = {
   'spec.packageHint':
     'A library (version 4) comes in a folder or a zip: the specialization, components, documents and fonts.',
   'spec.v4NeedsPackage':
-    '"{name}" is a library (version 4) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
+    '"{name}" refers to package files (components, documents, examples or fonts) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
   'spec.packageValidating': 'Checking the package…',
   'spec.packageReadFailed': 'Could not read the package.',
   'spec.packageTooBig': 'The package is over the limit ({files} files or {mb} MB).',

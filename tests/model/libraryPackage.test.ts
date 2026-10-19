@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   MAX_PACKAGE_BYTES,
@@ -12,6 +14,9 @@ import {
   specFileFor,
   toLibraryFiles,
   updateSpecialization,
+  parseSpecText,
+  usesPackageFiles,
+  type Spec,
 } from '../../src/model';
 import { validateLibrary } from '../../src/model/library';
 import { emptyProject } from './fixtures';
@@ -130,5 +135,58 @@ describe('validateLibrary sobre os arquivos lidos do pacote', () => {
       level: 2,
     });
     expect(report.errors.map((e) => e.message)).toEqual([]);
+  });
+});
+
+describe('usesPackageFiles', () => {
+  const sduiAs = (
+    formatVersion: number,
+    patch: (raw: Record<string, unknown>) => void = () => {},
+  ): Spec => {
+    const raw = JSON.parse(
+      readFileSync(join(process.cwd(), 'examples', 'specs', 'sdui.json'), 'utf8'),
+    ) as Record<string, unknown>;
+    raw.formatVersion = formatVersion;
+    patch(raw);
+    const parsed = parseSpecText(JSON.stringify(raw));
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    return parsed.spec;
+  };
+  const firstType = (raw: Record<string, unknown>) =>
+    (
+      (raw.layers as { annotationTypes: Record<string, unknown>[] }[])[0] ?? {
+        annotationTypes: [],
+      }
+    ).annotationTypes[0] as Record<string, unknown>;
+
+  it('v1 a v3 e v4 sem nenhum arquivo do pacote valem isoladas', () => {
+    expect(usesPackageFiles(sduiAs(2))).toBe(false);
+    expect(usesPackageFiles(sduiAs(4))).toBe(false);
+  });
+
+  it('migrations não conta', () => {
+    expect(usesPackageFiles(sduiAs(4, (raw) => (raw.migrations = [])))).toBe(false);
+  });
+
+  it('component, doc, examples ou fonts pedem o pacote', () => {
+    const doc = sduiAs(4, (raw) => (firstType(raw).doc = 'docs/a.md'));
+    expect(usesPackageFiles(doc)).toBe(true);
+    const component = sduiAs(
+      4,
+      (raw) => (firstType(raw).component = 'components/a.json'),
+    );
+    expect(usesPackageFiles(component)).toBe(true);
+    const fonts = sduiAs(
+      4,
+      (raw) =>
+        (raw.fonts = [
+          { family: 'Roboto', weight: 400, style: 'normal', file: 'fonts/r.ttf' },
+        ]),
+    );
+    expect(usesPackageFiles(fonts)).toBe(true);
+  });
+
+  it('o material3 (pacote) usa arquivos do pacote', () => {
+    expect(usesPackageFiles(material3Spec())).toBe(true);
   });
 });

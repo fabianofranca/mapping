@@ -95,7 +95,7 @@ export async function findByCodeResult(
           typeId: hit.typeId,
           name: resolved?.type.name ?? hit.typeId,
         },
-        code: await typeCodeView({ refs, files }, code),
+        code: await typeCodeView({ refs, files }, hit.specId, code),
         annotationCount: hit.annotations.length,
         annotations: shown.map((found) => {
           const annotation = index.annotations.get(found.annotationId);

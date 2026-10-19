@@ -1,13 +1,17 @@
 import { fail } from './errors';
 import { memoByProject, projectIndex } from './projectIndex';
-import type { SpecCode } from './spec';
+import type { SpecCode, SpecRepo } from './spec';
 import type { PlatformRepo, PlatformRepos, Project } from './types';
 
-// Código das especializações (etapa 3b, schema v7; etapa 9): plataformas declaradas pelas
-// especializações aplicadas, repositório de cada plataforma (`platformRepos`), link para o
-// repositório e caminho local do arquivo de um tipo (`code.<plataforma>.path`), busca de
-// tipos por arquivo ou símbolo e o aviso de plataforma sem repositório. Funções puras, sem
-// APIs de navegador: a app e o servidor MCP usam as mesmas.
+// Código de instanciação das especializações (etapa 3b; schema v11): o `code` de um tipo diz
+// com que código se cria uma instância dele em cada plataforma (`symbol` é o que se chama),
+// e `path` é o arquivo que define o `symbol`, relativo à raiz do `repo` da especialização.
+// Aqui ficam as plataformas declaradas pelas especializações aplicadas (cada uma com o `repo`
+// da própria biblioteca), o link do arquivo de um tipo (pelo `urlTemplate` do `repo` da
+// especialização dona do tipo), o caminho local dele (o projeto só guarda onde está o clone,
+// `platformRepos[x].localPath`) e a busca de tipos por arquivo ou símbolo. O mapeamento não
+// sabe nada sobre a solução. Funções puras, sem APIs de navegador: a app e o servidor MCP
+// usam as mesmas.
 
 // ---------------------------------------------------------------------------
 // Caminhos
@@ -81,25 +85,37 @@ export interface ProjectPlatform {
    * é a mesma plataforma: `name` e `language` vêm da primeira (sem erro se divergirem).
    */
   readonly specIds: readonly string[];
+  /**
+   * As especializações aplicadas que declaram `repo` para a plataforma, na ordem de
+   * aplicação. Cada uma declara o repositório da própria biblioteca e eles podem diferir.
+   */
+  readonly repos: readonly { readonly specId: string; readonly repo: SpecRepo }[];
 }
 
 /** Plataformas de todas as especializações aplicadas, sem repetir id, na ordem de aplicação. */
 export const projectPlatforms: (p: Project) => readonly ProjectPlatform[] = memoByProject(
   (p) => {
-    const byId = new Map<string, ProjectPlatform & { specIds: string[] }>();
+    const byId = new Map<
+      string,
+      ProjectPlatform & { specIds: string[]; repos: { specId: string; repo: SpecRepo }[] }
+    >();
     for (const s of p.specializations) {
       for (const platform of s.spec?.platforms ?? []) {
-        const known = byId.get(platform.id);
-        if (known) {
-          if (!known.specIds.includes(s.id)) known.specIds.push(s.id);
-          continue;
+        let known = byId.get(platform.id);
+        if (!known) {
+          known = {
+            id: platform.id,
+            name: platform.name,
+            language: platform.language ?? null,
+            specIds: [],
+            repos: [],
+          };
+          byId.set(platform.id, known);
         }
-        byId.set(platform.id, {
-          id: platform.id,
-          name: platform.name,
-          language: platform.language ?? null,
-          specIds: [s.id],
-        });
+        if (!known.specIds.includes(s.id)) known.specIds.push(s.id);
+        if (platform.repo && !known.repos.some((r) => r.specId === s.id)) {
+          known.repos.push({ specId: s.id, repo: platform.repo });
+        }
       }
     }
     return [...byId.values()];
@@ -116,27 +132,37 @@ export function findPlatform(p: Project, platformId: string): ProjectPlatform | 
 }
 
 // ---------------------------------------------------------------------------
-// Repositórios por plataforma
+// Repositório (especialização) e clone local (projeto)
 
-/** Configuração gravada para a plataforma (mesmo vazia); `null` se não houver. */
+/**
+ * `repo` que a especialização `specId` declara para a plataforma; `null` se ela não está
+ * aplicada, não tem cópia válida, não declara a plataforma ou não tem `repo`.
+ */
+export function specPlatformRepo(
+  p: Project,
+  specId: string,
+  platformId: string,
+): SpecRepo | null {
+  return (
+    findPlatform(p, platformId)?.repos.find((r) => r.specId === specId)?.repo ?? null
+  );
+}
+
+/** Sobreposição local gravada para a plataforma; `null` se não houver. */
 export function platformRepoOf(p: Project, platformId: string): PlatformRepo | null {
   return Object.hasOwn(p.platformRepos, platformId)
     ? (p.platformRepos[platformId] ?? null)
     : null;
 }
 
-/** Há repositório configurado: `urlTemplate` ou `localPath` preenchido. */
-export function hasPlatformRepo(p: Project, platformId: string): boolean {
-  const repo = platformRepoOf(p, platformId);
-  return (
-    optionalText(repo?.urlTemplate) !== null || optionalText(repo?.localPath) !== null
-  );
+/** O projeto informa onde está o clone local da plataforma (`localPath` preenchido). */
+export function hasLocalPath(p: Project, platformId: string): boolean {
+  return optionalText(platformRepoOf(p, platformId)?.localPath) !== null;
 }
 
-/** Propriedades a gravar; as ausentes mantêm o valor atual. */
+/** Propriedades a gravar. */
 export interface PlatformRepoInput {
-  readonly urlTemplate?: string | null;
-  readonly localPath?: string | null;
+  readonly localPath: string | null;
 }
 
 function withoutRepo(repos: PlatformRepos, platformId: string): PlatformRepos {
@@ -144,9 +170,8 @@ function withoutRepo(repos: PlatformRepos, platformId: string): PlatformRepos {
 }
 
 /**
- * Configura o repositório de uma plataforma declarada por alguma especialização aplicada.
- * Propriedades ausentes mantêm o valor atual; texto vazio vira `null`. Sem `urlTemplate`
- * nem `localPath`, a configuração é removida (o arquivo não guarda configuração vazia).
+ * Informa onde está o clone local de uma plataforma declarada por alguma especialização
+ * aplicada. Texto vazio ou `null` remove a entrada (o arquivo não guarda configuração vazia).
  */
 export function setPlatformRepo(
   p: Project,
@@ -155,35 +180,23 @@ export function setPlatformRepo(
 ): Project {
   if (!findPlatform(p, platformId)) fail('unknown-platform', platformId);
   const current = platformRepoOf(p, platformId);
-  // Só as propriedades informadas são validadas: um valor antigo editado à mão não
-  // impede de alterar a outra.
-  let urlTemplate = optionalText(current?.urlTemplate);
-  if (input.urlTemplate !== undefined) {
-    urlTemplate = optionalText(input.urlTemplate);
-    if (urlTemplate !== null && !isValidUrlTemplate(urlTemplate)) {
-      fail('invalid-url-template', urlTemplate);
-    }
+  const localPath = input.localPath === null ? null : normalizeLocalPath(input.localPath);
+  if (localPath !== null && !isValidLocalPath(localPath)) {
+    fail('invalid-local-path', localPath);
   }
-  let localPath = optionalText(current?.localPath);
-  if (input.localPath !== undefined) {
-    localPath = input.localPath === null ? null : normalizeLocalPath(input.localPath);
-    if (localPath !== null && !isValidLocalPath(localPath)) {
-      fail('invalid-local-path', localPath);
-    }
-  }
-  if (urlTemplate === null && localPath === null) {
+  if (localPath === null) {
     return current
       ? { ...p, platformRepos: withoutRepo(p.platformRepos, platformId) }
       : p;
   }
-  if (current?.urlTemplate === urlTemplate && current.localPath === localPath) return p;
+  if (current?.localPath === localPath) return p;
   return {
     ...p,
-    platformRepos: { ...p.platformRepos, [platformId]: { urlTemplate, localPath } },
+    platformRepos: { ...p.platformRepos, [platformId]: { localPath } },
   };
 }
 
-/** Remove a configuração do repositório da plataforma (declarada ou não). */
+/** Remove a sobreposição local da plataforma (declarada ou não). */
 export function removePlatformRepo(p: Project, platformId: string): Project {
   if (!Object.hasOwn(p.platformRepos, platformId)) fail('not-found', platformId);
   return { ...p, platformRepos: withoutRepo(p.platformRepos, platformId) };
@@ -193,10 +206,11 @@ export function removePlatformRepo(p: Project, platformId: string): Project {
 // Link e caminho local
 
 /**
- * Onde um arquivo está: a plataforma (que dá o repositório) e o caminho relativo à raiz
- * dele (o `path` do `code` de um tipo da especialização).
+ * Onde um arquivo está: a especialização dona do tipo (que dá o `repo`), a plataforma (que
+ * dá o clone local) e o caminho relativo à raiz do repositório (o `path` do `code`).
  */
 export interface CodeLocation {
+  readonly specId: string;
   readonly platform: string;
   readonly path: string | null;
 }
@@ -215,15 +229,18 @@ function withoutLine(template: string): string {
 }
 
 /**
- * URL do arquivo no repositório da plataforma, a partir do `urlTemplate`; `null` sem
- * repositório, sem `urlTemplate` (ou inválido) ou sem caminho válido.
+ * URL do arquivo, a partir do `urlTemplate` do `repo` que a especialização `location.specId`
+ * declara para a plataforma; `null` sem `repo`, sem `urlTemplate` (ou inválido) ou sem
+ * caminho válido. Nada do projeto entra no link.
  * - `{path}`: o caminho com cada segmento codificado (`encodeURIComponent`), mantendo as `/`;
  * - `{line}`: o caminho não tem linha, então o trecho a partir do último `#` que contém
  *   `{line}` é removido (ex: `…/{path}#L{line}` → `…/{path}`); se `{line}` não estiver num
  *   fragmento assim, vira vazio.
  */
 export function codeLink(p: Project, location: CodeLocation): string | null {
-  const template = optionalText(platformRepoOf(p, location.platform)?.urlTemplate);
+  const template = optionalText(
+    specPlatformRepo(p, location.specId, location.platform)?.urlTemplate,
+  );
   if (template === null || !isValidUrlTemplate(template)) return null;
   if (location.path === null || !isValidCodePath(location.path)) return null;
   const path = location.path.split('/').map(encodeURIComponent).join('/');
@@ -242,9 +259,10 @@ function joinRelative(base: string, path: string): string {
 }
 
 /**
- * Caminho do arquivo relativo à pasta do projeto: o `localPath` da plataforma mais o
- * `path` (ex: `../..` + `app/Main.kt` → `../../app/Main.kt`). `null` sem `localPath` (ou
- * inválido) ou sem caminho válido. Não confere se o arquivo existe.
+ * Caminho do arquivo relativo à pasta do projeto: o `localPath` do clone da plataforma
+ * (sobreposição do projeto, igual para qualquer especialização) mais o `path` (ex:
+ * `../..` + `app/Main.kt` → `../../app/Main.kt`). `null` sem `localPath` (ou inválido) ou sem
+ * caminho válido. Não confere se o arquivo existe.
  */
 export function codeLocalPath(p: Project, location: CodeLocation): string | null {
   const localPath = optionalText(platformRepoOf(p, location.platform)?.localPath);
@@ -364,33 +382,3 @@ export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
     annotations: annotations.get(key) ?? [],
   }));
 }
-
-// ---------------------------------------------------------------------------
-// Aviso de repositório ausente
-
-/** Aviso (não é pendência): plataforma usada em `code.<plataforma>.path` sem repositório. */
-export interface PlatformRepoWarning {
-  readonly code: 'missing-repo';
-  readonly platform: string;
-  /** Quantos tipos das especializações aplicadas têm `path` nessa plataforma. */
-  readonly types: number;
-}
-
-/**
- * Avisos de repositório ausente, na ordem de `projectPlatforms`: plataformas declaradas em
- * cujo `code` algum tipo das especializações aplicadas tem `path` (o arquivo que define o
- * símbolo), e sem `urlTemplate` nem `localPath`.
- */
-export const platformRepoWarnings: (p: Project) => readonly PlatformRepoWarning[] =
-  memoByProject((p) => {
-    const counts = new Map<string, number>();
-    for (const entry of projectTypeCode(p)) {
-      if (entry.code.path === undefined) continue;
-      counts.set(entry.platform, (counts.get(entry.platform) ?? 0) + 1);
-    }
-    return projectPlatforms(p).flatMap((platform): PlatformRepoWarning[] => {
-      const types = counts.get(platform.id) ?? 0;
-      if (types === 0 || hasPlatformRepo(p, platform.id)) return [];
-      return [{ code: 'missing-repo', platform: platform.id, types }];
-    });
-  });

@@ -286,6 +286,14 @@ beforeAll(async () => {
   // Uma especialização de arquivo único (formatVersion 3), para o caminho sem pacote.
   mkdirSync(join(root, 'legado'), { recursive: true });
   cpSync('examples/specs/sdui.json', join(root, 'legado', 'sdui.json'));
+  // O mesmo, como v4 (e v5) que não cita arquivo do pacote: vale como arquivo isolado.
+  for (const v of [4, 5]) {
+    const raw = JSON.parse(readFileSync('examples/specs/sdui.json', 'utf8')) as object;
+    writeFileSync(
+      join(root, 'legado', `sdui-v${v}.json`),
+      JSON.stringify({ ...raw, formatVersion: v }),
+    );
+  }
 
   writeProject(join(root, 'projetos', 'telas'), projectWithLibrary(), true);
   // Projeto sem a biblioteca, com uma tela em branco.
@@ -632,5 +640,18 @@ describe('propose_changes com a pasta do pacote', () => {
     );
     expect(result.valid).toBe(true);
     expect(result.summary[0]).toMatch(/Aplicar a especialização/);
+  });
+
+  it('v4 e v5 sem arquivo do pacote valem como arquivo isolado', async () => {
+    for (const v of [4, 5]) {
+      const result = ok(
+        await mcp.call<{ valid: boolean; summary: string[] }>('plan_changes', {
+          project: 'vazio',
+          operations: [{ op: 'apply_specialization', file: `legado/sdui-v${v}.json` }],
+        }),
+      );
+      expect(result.valid).toBe(true);
+      expect(result.summary[0]).toMatch(/Aplicar a especialização/);
+    }
   });
 });

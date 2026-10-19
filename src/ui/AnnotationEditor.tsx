@@ -104,7 +104,11 @@ function TypedBody({
         {resolved.type.fields.map((field) => (
           <TypedField key={field.key} field={field} {...ctx} />
         ))}
-        <CodeDefinitions project={project} type={resolved.type} />
+        <CodeDefinitions
+          project={project}
+          specId={resolved.spec.id}
+          type={resolved.type}
+        />
       </PropertyGrid>
     </>
   );
