@@ -247,9 +247,47 @@ export function isToolWindowOpen(id: ToolWindowId): boolean {
   return openWindowsOf(WINDOW_SIDE[id]).includes(id);
 }
 
-/** Largura que cada lateral ocupa agora (0 quando recolhida). */
+/** Largura da área das janelas (corpo do editor sem as faixas); 0 = ainda não medida. */
+const paneWidth = signal(0);
+
+export function setPaneWidth(width: number): void {
+  if (width !== paneWidth.value) paneWidth.value = width;
+}
+
+/**
+ * Larguras que as laterais ocupam de fato: as guardadas, encolhidas (primeiro a direita,
+ * depois a esquerda, até o mínimo de cada uma) para o canvas manter `--size-canvas-min`
+ * numa janela mais estreita que a do layout guardado. Com 900px ou mais os mínimos
+ * sempre cabem (200 + 280 + 320 < 820), então nada fica fora da tela. `avail` 0
+ * (não medido) mantém as guardadas; lado recolhido passa 0. Função pura.
+ */
+export function fitSideWidths(
+  left: number,
+  right: number,
+  avail: number,
+): { readonly left: number; readonly right: number } {
+  if (avail <= 0) return { left, right };
+  const excess = left + right + CANVAS_MIN - avail;
+  if (excess <= 0) return { left, right };
+  // Lado recolhido (0) não encolhe; o aberto só desce até o mínimo.
+  const cutRight =
+    right === 0 ? 0 : clamp(excess, 0, Math.max(0, right - WINDOW_LIMITS.right.min));
+  const cutLeft =
+    left === 0
+      ? 0
+      : clamp(excess - cutRight, 0, Math.max(0, left - WINDOW_LIMITS.left.min));
+  return { left: left - cutLeft, right: right - cutRight };
+}
+
+/** Largura que cada lateral ocupa agora (0 quando recolhida), já ajustada à janela. */
 export function sideWidth(side: 'left' | 'right'): number {
-  return openWindowOf(side) ? toolWindowSizes.value[side] : 0;
+  const sizes = toolWindowSizes.value;
+  const fit = fitSideWidths(
+    openWindowOf('left') ? sizes.left : 0,
+    openWindowOf('right') ? sizes.right : 0,
+    paneWidth.value,
+  );
+  return fit[side];
 }
 
 function persist(): void {

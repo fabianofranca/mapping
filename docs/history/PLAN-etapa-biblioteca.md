@@ -292,3 +292,11 @@ Relato: [`relato-2026-10-19-dirigida.md`](relato-2026-10-19-dirigida.md) (build 
 - **R5.3 (média), terceira rodada com o mesmo sintoma:** a nota sugerida não abria no Chrome real ao rejeitar a anotação criada (✕ do cartão ou Rejeitar do popover). Duas causas, vistas no Playwright: o Chrome dispara `blur` ao remover o campo focado quando o cartão remonta, e esse `blur` apagava o pedido da nota (o jsdom não dispara, por isso os testes de componente passavam); e o critério `e.detail > 0` tratava como teclado o clique sintético da extensão. Correção: o `NoteArea` ignora o `blur` da remoção para o pedido (o texto ainda grava) e `clickSource.ts` só conta como teclado Enter/Espaço no próprio botão. E2e com clique real e sintético nos dois caminhos.
 - **Paleta (baixa):** sem mudança. "A tela sob o centro da vista vale antes da seleção" é a regra registrada (`src/ui/componentTarget.ts`, `docs/ARCHITECTURE.md`, R10.7); o R9.7 do guia passou a dizer em que tela adicionar e que ela fica no centro. Trocar a regra (seleção primeiro) fica para o dono decidir.
 - **Tabs (observação):** a aba ativa também volta à vista quando a faixa é estreitada depois (`ResizeObserver`); teste de componente e e2e.
+
+## Rodada dirigida de conferência do PR #179 e correções
+
+Relato: [`relato-2026-10-19-dirigida-pr179.md`](relato-2026-10-19-dirigida-pr179.md) (build `bcfbaf1`): 10 passos, 8 ✅, 1 ❌, 1 ⚠️. A nota sugerida (R5.3a a R5.3c) passou no Chrome real.
+
+- **R5.3d (média):** decidir pelo teclado remontava o cartão (ou o popover) e o foco caía no `body`. O store da revisão guarda qual controle tinha o foco (`requestControlFocus`) e o par ✓ ✕ novo o recupera ao montar, só se o foco se perdeu; e2e com teclado real nos dois caminhos.
+- **Detalhes fora da tela a ~900 px (média):** as larguras guardadas das laterais não olhavam a largura real da janela (a regra antiga só recolhia o Detalhes na primeira visita). `fitSideWidths` encolhe a direita e depois a esquerda até o mínimo de cada uma para o canvas manter `--size-canvas-min`, sem mudar os tamanhos guardados; e2e com layout guardado a 1100, 902 e 900 px.
+- **Guia (R9.7):** como centrar a tela (fechar a janela de baixo, **Enquadrar tudo**, arrastar o fundo do canvas).
