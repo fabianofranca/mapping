@@ -34,7 +34,8 @@ const stateOf = (h: ReviewHarness, changeId: string): DecisionState | null =>
 /**
  * O Chrome dispara `blur` no elemento focado quando ele sai do DOM; o jsdom não. Rejeitar a
  * criação troca o cartão da anotação (com o popover e o campo de nota dentro), então a
- * nota sugerida precisa sobreviver a esse `blur` (defeito das rodadas manuais do R5.3).
+ * nota sugerida precisa sobreviver a esse `blur` (defeito das rodadas manuais do R5.3), e o
+ * foco, que cai no body, volta ao controle equivalente do cartão novo (decisão pelo teclado).
  */
 function blurOnRemoval(): void {
   const original = Node.prototype.removeChild;
@@ -44,7 +45,8 @@ function blurOnRemoval(): void {
   ): T {
     const active = document.activeElement;
     if (active instanceof HTMLElement && child.contains(active)) {
-      active.dispatchEvent(new FocusEvent('blur'));
+      // `blur()` dispara o evento e leva o foco ao body, como o Chrome na remoção.
+      active.blur();
     }
     return original.call(this, child) as T;
   });
@@ -219,6 +221,18 @@ describe('decisão no popover do campo', () => {
     await user.keyboard('{Enter}');
     await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
     expect(screen.queryByRole('textbox', { name: 'Nota para o agente' })).toBeNull();
+    // O cartão foi trocado e o ✕ focado saiu do DOM: o foco volta ao ✕ do cartão novo
+    // (agora pressionado), nunca ao body, e Enter de novo limpa a decisão.
+    const pressed = () =>
+      within(card()).getByRole('button', {
+        name: /^Rejeitada: Anotação onClick criada$/,
+      });
+    await waitFor(() => expect(document.activeElement).toBe(pressed()));
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(stateOf(h, created.id)).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(reject()));
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
     await user.click(
       within(card()).getByRole('button', { name: /^Aceitar Anotação onClick criada$/ }),
     );

@@ -467,6 +467,10 @@ export function WholeDecision({ change }: { readonly change: Change }) {
       disabled={p.status !== 'open' || applied}
       disabledReason={applied ? t('review.appliedReason') : t('review.closedReason')}
       onDecide={(state) => decide({ level: 'change', id: change.id }, state)}
+      onDecidedByKeyboard={(control) =>
+        review.requestControlFocus(change.id, 'card', control)
+      }
+      takeFocus={() => review.takeControlFocus(change.id, 'card')}
       onRejectedByMouse={() => {
         // A nota sugerida mora no popover da mudança: o pedido vai ao store e o popover
         // abre (o cartão pode ser trocado pela rejeição; o novo cumpre o pedido ao montar).

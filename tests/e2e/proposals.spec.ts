@@ -270,3 +270,50 @@ test('rejeitar a anotação criada pelo teclado não abre a nota nem move o foco
   await expect(card.getByText('Criação rejeitada')).toBeVisible();
   await expect(noteBox(page)).toHaveCount(0);
 });
+
+// Foco depois de decidir pelo teclado (HANDOFF-REVIEW-DETAILS 5.5): rejeitar a anotação
+// criada troca o cartão (vira "Criação rejeitada") e o botão focado sai do DOM; o Chrome
+// manda o foco ao body (o jsdom não). O par novo devolve o foco ao controle equivalente.
+const focusedLabel = (page: Page) =>
+  page.evaluate(() => {
+    const el = document.activeElement;
+    return el === document.body ? 'BODY' : (el?.getAttribute('aria-label') ?? null);
+  });
+
+test('rejeitar a anotação criada pelo ✕ do cartão com Enter mantém o foco no ✕; Enter de novo desfaz', async ({
+  page,
+}) => {
+  const card = await openCreatedAnnotation(page);
+  await card.getByRole('button', { name: 'Rejeitar Anotação Input criada' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(card.getByText('Criação rejeitada')).toBeVisible();
+  await expect(
+    card.getByRole('button', { name: 'Rejeitada: Anotação Input criada' }),
+  ).toBeFocused();
+  expect(await focusedLabel(page)).not.toBe('BODY');
+  await page.keyboard.press('Enter');
+  await expect(card.getByText('Criação rejeitada')).toHaveCount(0);
+  await expect(
+    card.getByRole('button', { name: 'Rejeitar Anotação Input criada' }),
+  ).toBeFocused();
+});
+
+test('rejeitar a criação pelo Rejeitar do popover com Enter mantém o foco nele; Enter de novo desfaz', async ({
+  page,
+}) => {
+  const card = await openCreatedAnnotation(page);
+  await card.getByRole('button', { name: /^Anotação Input criada: novo/ }).click();
+  const popover = page.getByRole('dialog', { name: /^Anotação Input criada/ });
+  await popover.getByRole('button', { name: /^Rejeitar/ }).focus();
+  await page.keyboard.press('Enter');
+  await expect(card.getByText('Criação rejeitada')).toBeVisible();
+  await expect(
+    page
+      .getByRole('dialog', { name: /^Anotação Input criada/ })
+      .getByRole('button', { name: 'Rejeitada: Anotação Input criada' }),
+  ).toBeFocused();
+  expect(await focusedLabel(page)).not.toBe('BODY');
+  await page.keyboard.press('Enter');
+  await expect(card.getByText('Criação rejeitada')).toHaveCount(0);
+  expect(await focusedLabel(page)).not.toBe('BODY');
+});
