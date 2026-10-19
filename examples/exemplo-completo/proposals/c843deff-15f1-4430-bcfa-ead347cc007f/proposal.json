@@ -58,8 +58,8 @@
       "annotation": {
         "type": "List item",
         "values": {
-          "headline": "Fabiano",
-          "supporting": "fabiano@exemplo.com",
+          "headline": "Marina",
+          "supporting": "marina@exemplo.com",
           "initials": "F",
           "trailing": "chevron"
         }
@@ -294,8 +294,8 @@
           "typeId": "m3-list-item"
         },
         "values": {
-          "headline": "Fabiano",
-          "supporting": "fabiano@exemplo.com",
+          "headline": "Marina",
+          "supporting": "marina@exemplo.com",
           "leading": "person",
           "initials": "F",
           "trailing": "chevron"
