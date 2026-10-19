@@ -278,6 +278,59 @@ test('fechar a página logo depois de editar não perde a marcação (R6.2)', as
   expect(mapping.markings[0]?.imageId).toBe(mapping.images[0]?.id);
 });
 
+// R6.1 do guia: renomear (Enter) e, logo em seguida, começar a arrastar e apertar Esc sem
+// soltar. A gravação do nome sai ~250 ms depois do Enter (debounce da sessão); o arraste
+// cancelado não pode chegar ao disco nem à tela. `lateEsc` espera a gravação antes do arraste.
+for (const lateEsc of [false, true]) {
+  test(`renomear e cancelar o arraste com Esc deixa o nome novo e o rect antigo (R6.1, Esc ${
+    lateEsc ? 'depois' : 'antes'
+  } da gravação)`, async ({ page }) => {
+    const marking = await withMarking(page);
+    const center = await canvasPoint(page);
+    const before = await selectedRect(page);
+    expect(marking.rect).toEqual(before);
+    const base = (await readMapping(page)).revision;
+
+    const name = page.getByLabel('Nome', { exact: true });
+    await name.fill('Título R6');
+    await name.press('Enter');
+    if (lateEsc) {
+      await expect
+        .poll(async () => (await readMapping(page)).markings[0]?.name)
+        .toBe('Título R6');
+      await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+    }
+
+    // Botão no meio da marcação (longe das alças), desloca bem mais que o limiar e aperta
+    // Esc sem soltar.
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    await page.mouse.move(center.x + 60, center.y + 40, { steps: 6 });
+    await page.mouse.move(center.x + 120, center.y + 80, { steps: 6 });
+    await page.keyboard.press('Escape');
+    await page.mouse.move(center.x + 140, center.y + 90, { steps: 3 });
+    await page.mouse.up();
+
+    // Tela: a marcação voltou ao lugar e o nome novo ficou.
+    await expect(name).toHaveValue('Título R6');
+    expect(await selectedRect(page)).toEqual(before);
+
+    // Disco: depois de Salvo, nome novo com o rect antigo e uma só gravação de conteúdo novo.
+    await expect(page.getByText('Salvo', { exact: true }).first()).toBeVisible();
+    await expect
+      .poll(async () => (await readMapping(page)).markings[0]?.name)
+      .toBe('Título R6');
+    const saved = await readMapping(page);
+    expect(saved.markings[0]?.rect).toEqual(marking.rect);
+    expect(saved.revision).toBe(base + 1);
+    // Nada mais é gravado depois (a posição do arraste não aparece).
+    await page.waitForTimeout(800);
+    const later = await readMapping(page);
+    expect(later.markings[0]?.rect).toEqual(marking.rect);
+    expect(later.revision).toBe(base + 1);
+  });
+}
+
 test.describe('mudanças externas no mapping.json', () => {
   test('cada gravação sobe a revisão', async ({ page }) => {
     await withMarking(page);
