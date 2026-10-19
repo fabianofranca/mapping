@@ -146,7 +146,7 @@ const formatArg = z
 const platformArg = z
   .string()
   .describe(
-    'Id da plataforma declarada pelas especializações aplicadas (veja `platforms` em get_project).',
+    'Id da plataforma de código (alvo em que você escreve a solução) declarada pelas especializações aplicadas (veja `platforms` em get_project).',
   );
 
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
@@ -230,7 +230,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_project',
     {
       description:
-        'Resumo do projeto: imagens, camadas, especializações (com a situação da cópia), plataformas de código (`platforms`), repositórios por plataforma (`platformRepos`), avisos de repositório ausente (`warnings`), contagens e pendências (anotações incompletas).',
+        'Resumo do projeto: imagens, camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local) e o clone local por plataforma (`platformRepos`), contagens e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -302,13 +302,15 @@ export function registerTools(server: McpServer, roots: Roots): void {
     {
       description:
         'Tudo sobre uma marcação: caminho, imagem, retângulo em pixels da imagem original, trava, filhas, anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências. ' +
-        'Nas anotações tipadas, `code` traz o mapeamento do tipo por plataforma (`symbol`, `params`, `values`, `notes` e, com `path`, o arquivo que define o símbolo, com a `url` do repositório, o `localFile` relativo ao diretório de trabalho do cliente e `exists`). O servidor só confere se o arquivo existe: nunca lê código.',
+        'Nas anotações tipadas, `code` traz o código de instanciação do tipo por plataforma: `symbol` (o que se chama para criar uma instância), `definition` (o arquivo que define o `symbol`, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` relativo ao diretório de trabalho do cliente e `exists` pelo clone local do projeto; `null` sem `path`), `params`, `values` e `notes`. O servidor só confere se o arquivo existe: nunca lê código.',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
         platform: platformArg
           .optional()
-          .describe('Só o `code` desta plataforma (ex: a que você vai implementar).'),
+          .describe(
+            'Só o `code` desta plataforma (ex: a em que você vai escrever a solução).',
+          ),
       },
       annotations: READ_ONLY,
     },
@@ -325,8 +327,8 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_code_hints',
     {
       description:
-        'O que implementar numa plataforma a partir de uma marcação: a árvore da marcação e das descendentes, e em cada uma as anotações tipadas com o componente de código da plataforma (`symbol`), os parâmetros com os valores já traduzidos (`params`), as orientações (`notes`), os eventos vinculados sob a dona (`linked`), os valores de referência resolvidos (ex: `User.name`) e, quando a especialização informa, o arquivo que define o componente (`path`, com `url`, `localFile` e `exists`). ' +
-        'Tipos com `symbol: null` não têm mapeamento nesta plataforma.',
+        'As chamadas a escrever numa plataforma a partir de uma marcação, com o código de instanciação de cada tipo. `types` traz, por `specId/typeId`, o `symbol` (o que se chama para criar uma instância), a `definition` (o arquivo que o define, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` e `exists` pelo clone local), `params`, `values` e `notes`. `repos` traz o repositório da plataforma (`url`, `ref`, `localPath`). A `tree` espelha a marcação e as descendentes e, em cada anotação tipada, traz `type` (a chave de `types`), `label`, `layer`, `args` (os argumentos da chamada, com os valores da instância já traduzidos), `values` (valores de referência resolvidos, ex: `User.name`) e os eventos vinculados sob a dona (`linked`), sem arquivo por anotação. ' +
+        'Tipos em `unmappedTypes` não têm código de instanciação nesta plataforma.',
       inputSchema: { ref: refArg, platform: platformArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -341,7 +343,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'find_by_code',
     {
       description:
-        'Do código para o mapeamento: os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Devolve o tipo, o `code` das plataformas que casaram e as referências `mapping://` da anotação, da marcação e da imagem. Não abre arquivos de código.',
+        'Do código para o mapeamento (que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados): os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Devolve o tipo, o `code` (`symbol` e `definition`) das plataformas que casaram e as referências `mapping://` da anotação, da marcação e da imagem. Não abre arquivos de código.',
       inputSchema: {
         project: projectArg
           .optional()
@@ -447,7 +449,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_specialization',
     {
       description:
-        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes).',
+        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações, e as plataformas de código com o `repo` de cada uma), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes).',
       inputSchema: {
         project: projectArg,
         specId: z
@@ -797,7 +799,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_component',
     {
       description:
-        'Tudo de um tipo da biblioteca para montar telas com ele: o documento markdown (`doc`), os campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), os exemplos nomeados (valores, ou sistema + arquivo com o JSON do exemplo externo quando pequeno), `code`, `sources` e o JSON do componente (`component`). `type` é o id (ou o nome) do tipo. Tipo sem componente ou documento: resposta com `hasComponent: false` e `hint`. Informe `project` + `specId` ou `path` do pacote. Somente leitura.',
+        'Tudo de um tipo da biblioteca para montar telas com ele: o documento markdown (`doc`), os campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), os exemplos nomeados (valores, ou sistema + arquivo com o JSON do exemplo externo quando pequeno), `code` (o código de instanciação por plataforma: `symbol` e `definition`, com a `url` e a `ref` do `repo` da especialização e, com `project`, o `localFile` pelo clone local), `sources` e o JSON do componente (`component`). `type` é o id (ou o nome) do tipo. Tipo sem componente ou documento: resposta com `hasComponent: false` e `hint`. Informe `project` + `specId` ou `path` do pacote. Somente leitura.',
       inputSchema: {
         ...packageArgs,
         type: z

@@ -819,6 +819,12 @@ class Batch {
     const p = this.p;
     switch (op.op) {
       case 'set_platform_repo': {
+        if (op.urlTemplate !== undefined) {
+          throw new ToolError(
+            'unknown-field',
+            'o endereço do repositório vem da especialização (`platforms[].repo`); o projeto só informa `localPath`',
+          );
+        }
         if (op.localPath === undefined) {
           throw new ToolError(
             'nothing-to-change',

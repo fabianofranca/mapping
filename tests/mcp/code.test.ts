@@ -25,13 +25,19 @@ interface Annotation {
   values?: Record<string, unknown>;
   code?: Record<string, CodeEntry>;
 }
+interface Definition {
+  path: string;
+  url: string | null;
+  ref: string | null;
+  localFile: string | null;
+  exists: boolean | null;
+  localFileProblem?: string;
+}
 interface CodeEntry {
   symbol: string;
-  path?: string;
-  url?: string | null;
-  localFile?: string | null;
-  exists?: boolean | null;
-  localFileProblem?: string;
+  definition: Definition | null;
+  params?: Record<string, string>;
+  notes?: string;
 }
 interface MarkingData {
   platform?: string;
@@ -39,14 +45,10 @@ interface MarkingData {
 }
 interface HintAnnotation {
   ref: string;
-  type: { specId: string; typeId: string; name: string };
-  symbol: string | null;
-  path?: string;
-  url?: string | null;
-  localFile?: string | null;
-  exists?: boolean | null;
-  params?: { field: string; name: string; value: unknown }[];
-  notes?: string;
+  type: string;
+  label: string | null;
+  layer: string | null;
+  args?: { field: string; name: string; value: unknown }[];
   values?: Record<string, unknown>;
   linked?: HintAnnotation[];
 }
@@ -59,7 +61,11 @@ interface HintNode {
 interface Hints {
   marking: string;
   platform: { id: string; name: string; language: string | null };
-  repo: { url: string | null; ref: string | null; localPath: string | null } | null;
+  repos: Record<
+    string,
+    { url: string | null; ref: string | null; localPath: string | null }
+  >;
+  types: Record<string, CodeEntry & { name: string }>;
   unmappedTypes?: string[];
   tree: HintNode;
 }
@@ -127,18 +133,20 @@ const refOf = (project: string, kind: 'm' | 'a', key: string) =>
 
 const REPO_URL = 'https://github.com/org/app-android/blob/main';
 
-function findAnnotation(
-  data: HintNode,
-  predicate: (a: HintAnnotation) => boolean,
-): HintAnnotation | undefined {
-  const visit = (a: HintAnnotation): HintAnnotation | undefined =>
-    predicate(a) ? a : a.linked?.map(visit).find(Boolean);
-  const direct = data.annotations?.map(visit).find(Boolean);
-  return direct ?? data.children?.map((c) => findAnnotation(c, predicate)).find(Boolean);
+/** Anotações da árvore do `get_code_hints`, na ordem, com as vinculadas logo depois da dona. */
+function flatten(node: HintNode): HintAnnotation[] {
+  const visit = (a: HintAnnotation): HintAnnotation[] => [
+    a,
+    ...(a.linked ?? []).flatMap(visit),
+  ];
+  return [
+    ...(node.annotations ?? []).flatMap(visit),
+    ...(node.children ?? []).flatMap(flatten),
+  ];
 }
 
 describe('get_code_hints', () => {
-  it('traz a árvore do Formulário em android: símbolos, parâmetros traduzidos, eventos sob a dona e dado resolvido', async () => {
+  it('separa o tipo da instância: `types` com o código de instanciação e a árvore só com `args`', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', {
         ref: refOf('cadastro', 'm', 'MF'),
@@ -150,9 +158,9 @@ describe('get_code_hints', () => {
       name: 'Android',
       language: 'kotlin',
     });
-    expect(hints.repo).toEqual({
+    expect(hints).not.toHaveProperty('repo');
+    expect(hints.repos.android).toMatchObject({
       url: 'https://github.com/org/app-android',
-      ref: 'v1.2.0',
       localPath: '../../..',
     });
     expect(hints.tree.name).toBe('Formulário');
@@ -163,49 +171,69 @@ describe('get_code_hints', () => {
       'Cadastrar',
     ]);
 
-    // Inputs: símbolo, parâmetros com o enum traduzido e o `dado` resolvido pelo rótulo do alvo.
+    // Tipos: o símbolo (o que se chama), a definição (o arquivo da assinatura) e as orientações, uma vez só.
+    expect(hints.types['sdui/input']).toMatchObject({
+      name: 'Input',
+      symbol: 'com.app.ds.DSTextField',
+    });
+    expect(hints.types['sdui/input']!.notes).toContain('dado');
+    expect(hints.types['sdui/button']).toMatchObject({
+      symbol: 'com.app.ds.DSButton',
+      definition: {
+        path: DS_BUTTON_KT,
+        url: `${REPO_URL}/${DS_BUTTON_KT}`,
+        localFile: DS_BUTTON_KT,
+        exists: true,
+      },
+    });
+    expect(hints.types['sdui/button']!.notes).toContain('testTag');
+    expect(hints.types['sdui/onClick']).toMatchObject({ symbol: 'com.app.ds.OnClick' });
+
+    // Instâncias: nenhum arquivo, símbolo nem orientação por anotação.
+    for (const a of flatten(hints.tree)) {
+      for (const key of ['symbol', 'path', 'url', 'localFile', 'exists', 'notes']) {
+        expect(a).not.toHaveProperty(key);
+      }
+    }
+
+    // Inputs: os argumentos com o enum traduzido e o `dado` resolvido pelo rótulo do alvo.
     const inputs = hints.tree.children!.slice(0, 3).map((c) => c.annotations![0]!);
-    expect(inputs.map((a) => a.symbol)).toEqual(Array(3).fill('com.app.ds.DSTextField'));
-    expect(inputs.map((a) => a.params!.find((p) => p.field === 'tipo')!.value)).toEqual([
+    expect(inputs.map((a) => a.type)).toEqual(Array(3).fill('sdui/input'));
+    expect(inputs.map((a) => a.args!.find((p) => p.field === 'tipo')!.value)).toEqual([
       'KeyboardType.Text',
       'KeyboardType.Number',
       'KeyboardType.Email',
     ]);
     expect(
-      inputs.map((a) => a.params!.find((p) => p.field === 'obrigatorio')!.value),
+      inputs.map((a) => a.args!.find((p) => p.field === 'obrigatorio')!.value),
     ).toEqual(['false', 'false', 'true']);
     expect(inputs.map((a) => a.values!.dado)).toEqual([
       'User.name',
       'User.age',
       'Contato.email',
     ]);
-    expect(inputs[0]!.notes).toContain('dado');
 
     // Button com o estilo e o habilitado traduzidos; onClick e onHold vinculados sob ele.
     const button = hints.tree.children![3]!.annotations![0]!;
-    expect(button).toMatchObject({ symbol: 'com.app.ds.DSButton' });
-    expect(button.params).toEqual([
+    expect(button.type).toBe('sdui/button');
+    expect(button.args).toEqual([
       { field: 'texto', name: 'text', value: 'Cadastrar' },
       { field: 'estilo', name: 'style', value: 'ButtonStyle.Primary' },
       { field: 'habilitado', name: 'enabled', value: 'true' },
     ]);
-    expect(button.notes).toContain('testTag');
-    expect(button.linked?.map((l) => [l.type.typeId, l.symbol])).toEqual([
-      ['onClick', 'com.app.ds.OnClick'],
-      ['onHold', 'com.app.ds.OnHold'],
-    ]);
-    expect(button.linked![0]!.params).toContainEqual({
+    expect(button.linked?.map((l) => l.type)).toEqual(['sdui/onClick', 'sdui/onHold']);
+    expect(button.linked![0]!.args).toContainEqual({
       field: 'destino',
       name: 'target',
       value: '/usuarios',
     });
     // O onChange do E-mail também aparece sob o Input dele.
-    expect(hints.tree.children![2]!.annotations![0]!.linked?.[0]?.symbol).toBe(
-      'com.app.ds.OnChange',
+    expect(hints.tree.children![2]!.annotations![0]!.linked?.[0]?.type).toBe(
+      'sdui/onChange',
     );
   });
 
-  it('marca os tipos sem `code` na plataforma (symbol null), e o Screen traz só os valores do tipo', async () => {
+  it('marca os tipos sem `code` na plataforma (fora de `types`), e o Screen traz só os valores do tipo', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', {
         ref: refOf('cadastro', 'm', 'MF'),
@@ -215,13 +243,14 @@ describe('get_code_hints', () => {
     expect(hints.unmappedTypes).toEqual(
       expect.arrayContaining(['sdui/screen', 'modelo-dados/classe']),
     );
-    const screen = findAnnotation(hints.tree, (a) => a.type.typeId === 'screen')!;
-    expect(screen.symbol).toBeNull();
+    expect(hints.types).not.toHaveProperty('sdui/screen');
+    const screen = flatten(hints.tree).find((a) => a.type === 'sdui/screen')!;
     expect(screen.values).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
+    expect(screen).not.toHaveProperty('args');
     expect(Object.keys(screen)).not.toContain('codeRefs');
   });
 
-  it('usa os parâmetros e o `code` da plataforma pedida', async () => {
+  it('usa os argumentos e o `code` da plataforma pedida; sem `repo` na especialização, sem entrada em `repos`', async () => {
     const ios = ok(
       await mcp.call<Hints>('get_code_hints', {
         ref: refOf('cadastro', 'm', 'MC'),
@@ -229,10 +258,10 @@ describe('get_code_hints', () => {
       }),
     );
     expect(ios.platform.name).toBe('iOS');
-    expect(ios.repo).toBeNull();
+    expect(ios.repos).toEqual({});
     const button = ios.tree.annotations![0]!;
-    expect(button.symbol).toBe('DSButton');
-    expect(button.params).toContainEqual({
+    expect(ios.types[button.type]!.symbol).toBe('DSButton');
+    expect(button.args).toContainEqual({
       field: 'estilo',
       name: 'style',
       value: '.primary',
@@ -245,40 +274,46 @@ describe('get_code_hints', () => {
         platform: 'ios',
       }),
     );
-    const input = findAnnotation(form.tree, (a) => a.type.typeId === 'input')!;
-    expect(input.symbol).toBe('DSTextField');
-    // O Input não tem `path` no iOS (só no Android): nada de arquivo.
-    expect(input).not.toHaveProperty('path');
+    // O Input não tem `path` no iOS (só no Android): símbolo sem definição.
+    expect(form.types['sdui/input']).toMatchObject({
+      symbol: 'DSTextField',
+      definition: null,
+    });
   });
 
-  it('traz o arquivo do símbolo (path) com o endereço, o arquivo local e se ele existe', async () => {
+  it('a definição traz o endereço da especialização, o arquivo local e se ele existe', async () => {
     const hints = (platform: string) =>
       mcp.call<Hints>('get_code_hints', {
         ref: refOf('cadastro', 'm', 'MC'),
         platform,
       });
-    const android = ok(await hints('android')).tree.annotations![0]!;
-    expect(android).toMatchObject({
+    const android = ok(await hints('android')).types;
+    expect(android['sdui/button']).toMatchObject({
       symbol: 'com.app.ds.DSButton',
-      path: DS_BUTTON_KT,
-      url: `${REPO_URL}/${DS_BUTTON_KT}`,
-      localFile: DS_BUTTON_KT,
-      exists: true,
+      definition: {
+        path: DS_BUTTON_KT,
+        url: `${REPO_URL}/${DS_BUTTON_KT}`,
+        localFile: DS_BUTTON_KT,
+        exists: true,
+      },
     });
-    // O OnClick não tem path na especialização: nada de path, url nem exists.
-    const onClick = android.linked![0]!;
-    expect(onClick.symbol).toBe('com.app.ds.OnClick');
-    expect(onClick).not.toHaveProperty('path');
-    expect(onClick).not.toHaveProperty('exists');
+    // O OnClick não tem path na especialização: símbolo sem definição.
+    expect(android['sdui/onClick']).toMatchObject({
+      symbol: 'com.app.ds.OnClick',
+      definition: null,
+    });
 
-    // iOS: sem repositório configurado, o caminho vem sem endereço nem arquivo local.
-    const ios = ok(await hints('ios')).tree.annotations![0]!;
-    expect(ios).toMatchObject({
+    // iOS: a especialização não declara `repo` e o projeto não tem clone: só o caminho.
+    const ios = ok(await hints('ios')).types;
+    expect(ios['sdui/button']).toMatchObject({
       symbol: 'DSButton',
-      path: DS_BUTTON_SWIFT,
-      url: null,
-      localFile: null,
-      exists: null,
+      definition: {
+        path: DS_BUTTON_SWIFT,
+        url: null,
+        ref: null,
+        localFile: null,
+        exists: null,
+      },
     });
   });
 
@@ -368,20 +403,18 @@ describe('get_marking, get_annotation e get_project', () => {
       .find((a) => a.type?.typeId === 'button')!;
     expect(button.code!.android).toMatchObject({
       symbol: 'com.app.ds.DSButton',
-      path: DS_BUTTON_KT,
-      url: `${REPO_URL}/${DS_BUTTON_KT}`,
-      localFile: DS_BUTTON_KT,
-      exists: true,
+      definition: {
+        path: DS_BUTTON_KT,
+        url: `${REPO_URL}/${DS_BUTTON_KT}`,
+        localFile: DS_BUTTON_KT,
+        exists: true,
+      },
     });
     expect(button.code!.ios).toMatchObject({
-      path: DS_BUTTON_SWIFT,
-      url: null,
-      localFile: null,
-      exists: null,
+      definition: { path: DS_BUTTON_SWIFT, url: null, localFile: null, exists: null },
     });
-    // Plataforma sem path (bff no exemplo): a entrada continua como na especialização.
-    expect(button.code!.bff).not.toHaveProperty('path');
-    expect(button.code!.bff).not.toHaveProperty('exists');
+    // Plataforma sem path (bff no exemplo): a forma é a mesma, com `definition: null`.
+    expect(button.code!.bff!.definition).toBeNull();
 
     const only = ok(
       await mcp.call<MarkingData>('get_marking', {
@@ -393,14 +426,17 @@ describe('get_marking, get_annotation e get_project', () => {
       .flatMap((l) => l.annotations)
       .find((a) => a.type?.typeId === 'button')!;
     expect(Object.keys(androidButton.code!)).toEqual(['android']);
-    expect(androidButton.code!.android!.exists).toBe(true);
+    expect(androidButton.code!.android!.definition!.exists).toBe(true);
   });
 
   it('get_annotation também resolve o path do `code`', async () => {
     const data = ok(
       await mcp.call<Annotation>('get_annotation', { ref: refOf('cadastro', 'a', 'AB') }),
     );
-    expect(data.code!.android).toMatchObject({ path: DS_BUTTON_KT, exists: true });
+    expect(data.code!.android!.definition).toMatchObject({
+      path: DS_BUTTON_KT,
+      exists: true,
+    });
   });
 
   it('recusa uma plataforma não declarada no filtro', async () => {
@@ -424,7 +460,7 @@ describe('get_marking, get_annotation e get_project', () => {
     const button = data.layers
       .flatMap((l) => l.annotations)
       .find((a) => a.type?.typeId === 'button')!;
-    expect(button.code!.android).toMatchObject({
+    expect(button.code!.android!.definition).toMatchObject({
       path: DS_BUTTON_KT,
       url: `${REPO_URL}/${DS_BUTTON_KT}`,
       localFile: null,
@@ -435,7 +471,7 @@ describe('get_marking, get_annotation e get_project', () => {
     const link = ok(
       await mcp.call<Annotation>('get_annotation', { ref: refOf('link', 'a', 'AIN') }),
     );
-    expect(link.code!.android).toMatchObject({
+    expect(link.code!.android!.definition).toMatchObject({
       path: 'saida/segredo.kt',
       localFile: 'saida/segredo.kt',
       exists: false,
@@ -446,9 +482,25 @@ describe('get_marking, get_annotation e get_project', () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
     expect(data.schemaVersion).toBe(11);
     expect(data.platforms).toEqual([
-      { id: 'android', name: 'Android', language: 'kotlin', specs: ['sdui'] },
-      { id: 'ios', name: 'iOS', language: 'swift', specs: ['sdui'] },
-      { id: 'bff', name: 'Contrato SDUI', language: 'json', specs: ['sdui'] },
+      expect.objectContaining({
+        id: 'android',
+        name: 'Android',
+        language: 'kotlin',
+        specs: ['sdui'],
+        localPath: '../../..',
+      }),
+      expect.objectContaining({ id: 'ios', specs: ['sdui'], repos: [], localPath: null }),
+      expect.objectContaining({ id: 'bff', language: 'json', specs: ['sdui'] }),
+    ]);
+    // O `repo` de cada plataforma vem da especialização.
+    expect(
+      (data.platforms as { id: string; repos: { specId: string; url: string }[] }[])[0]!
+        .repos,
+    ).toEqual([
+      expect.objectContaining({
+        specId: 'sdui',
+        url: 'https://github.com/org/app-android',
+      }),
     ]);
     // O projeto só guarda o clone local; o iOS não tem e isso não é problema.
     expect(data.platformRepos).toEqual({ android: { localPath: '../../..' } });
@@ -470,6 +522,40 @@ describe('get_marking, get_annotation e get_project', () => {
   });
 });
 
+describe('get_component', () => {
+  it('traz o `code` na forma única: com o projeto, a definição ganha o clone local; por path, só o endereço', async () => {
+    const withProject = ok(
+      await mcp.call<{ code: Record<string, CodeEntry> }>('get_component', {
+        project: 'cadastro',
+        specId: 'sdui',
+        type: 'button',
+      }),
+    );
+    expect(withProject.code.android).toMatchObject({
+      symbol: 'com.app.ds.DSButton',
+      definition: {
+        path: DS_BUTTON_KT,
+        url: `${REPO_URL}/${DS_BUTTON_KT}`,
+        localFile: DS_BUTTON_KT,
+        exists: true,
+      },
+    });
+    expect(withProject.code.bff!.definition).toBeNull();
+
+    const byPath = ok(
+      await mcp.call<{ code: Record<string, CodeEntry> }>('get_component', {
+        path: join(ws.projectDir('cadastro'), 'specs', 'sdui.json'),
+        type: 'button',
+      }),
+    );
+    expect(byPath.code.android!.definition).toMatchObject({
+      url: `${REPO_URL}/${DS_BUTTON_KT}`,
+      localFile: null,
+      exists: null,
+    });
+  });
+});
+
 describe('find_by_code', () => {
   it('acha o tipo Button só pelo nome do arquivo, em todos os projetos, com as anotações dele', async () => {
     const found = ok(await mcp.call<Found>('find_by_code', { path: 'DSButton.kt' }));
@@ -486,10 +572,12 @@ describe('find_by_code', () => {
     expect(first.code).toEqual({
       android: expect.objectContaining({
         symbol: 'com.app.ds.DSButton',
-        path: DS_BUTTON_KT,
-        url: `${REPO_URL}/${DS_BUTTON_KT}`,
-        localFile: DS_BUTTON_KT,
-        exists: true,
+        definition: expect.objectContaining({
+          path: DS_BUTTON_KT,
+          url: `${REPO_URL}/${DS_BUTTON_KT}`,
+          localFile: DS_BUTTON_KT,
+          exists: true,
+        }),
       }),
     });
     expect(first.annotationCount).toBe(1);
@@ -539,10 +627,12 @@ describe('find_by_code', () => {
     expect(bySymbol.matches).toHaveLength(1);
     expect(bySymbol.matches[0]!.code).toEqual({
       ios: expect.objectContaining({
-        path: DS_BUTTON_SWIFT,
-        url: null,
-        localFile: null,
-        exists: null,
+        definition: expect.objectContaining({
+          path: DS_BUTTON_SWIFT,
+          url: null,
+          localFile: null,
+          exists: null,
+        }),
       }),
     });
     expect(
@@ -560,7 +650,7 @@ describe('find_by_code', () => {
     );
     expect(onClick.matches).toHaveLength(1);
     expect(onClick.matches[0]!.type.typeId).toBe('onClick');
-    expect(onClick.matches[0]!.code.android).not.toHaveProperty('path');
+    expect(onClick.matches[0]!.code.android!.definition).toBeNull();
     expect(onClick.matches[0]!.annotationCount).toBe(1);
 
     const image = ok(
@@ -601,7 +691,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
       await plan([
         { op: 'set_platform_repo', platform: 'web', localPath: '..' },
         { op: 'set_platform_repo', platform: 'ios' },
-        // O endereço do repositório saiu do projeto: o `urlTemplate` é ignorado.
+        // O endereço do repositório vem da especialização: o `urlTemplate` do projeto não existe.
         { op: 'set_platform_repo', platform: 'ios', urlTemplate: 'https://x.dev/{path}' },
         { op: 'set_platform_repo', platform: 'ios', localPath: '/abs/olute' },
         { op: 'remove_platform_repo', platform: 'ios' },
@@ -618,7 +708,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(result.errors!.map((e) => [e.index, e.code])).toEqual([
       [0, 'unknown-platform'],
       [1, 'nothing-to-change'],
-      [2, 'nothing-to-change'],
+      [2, 'unknown-field'],
       [3, 'invalid-local-path'],
       [4, 'not-found'],
       [5, 'unknown-field'],
@@ -695,7 +785,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     const button = marking.layers
       .flatMap((l) => l.annotations)
       .find((a) => a.type?.typeId === 'button')!;
-    expect(button.code!.ios).toMatchObject({
+    expect(button.code!.ios!.definition).toMatchObject({
       path: DS_BUTTON_SWIFT,
       url: null,
       localFile: DS_BUTTON_SWIFT,

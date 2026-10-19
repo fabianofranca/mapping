@@ -114,8 +114,9 @@ export const operationSchema = z.discriminatedUnion('op', [
       .nullable()
       .optional()
       .describe(
-        'Raiz do clone local do repositório da plataforma, relativa à pasta do projeto (ex: `../../..`). `null` ou vazio remove a configuração. O endereço do repositório vem da especialização (`repo`), não do projeto.',
+        'Raiz do clone local do repositório da plataforma, relativa à pasta do projeto (ex: `../../..`). `null` ou vazio remove a configuração. O endereço do repositório vem da especialização (`platforms[].repo`), não do projeto: `urlTemplate` aqui falha com `unknown-field`.',
       ),
+    urlTemplate: z.unknown().optional().describe('Não existe mais: veja `localPath`.'),
   }),
   z.object({
     op: z.literal('remove_platform_repo'),
