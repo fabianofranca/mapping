@@ -1,5 +1,5 @@
 import { readFile, stat } from 'node:fs/promises';
-import { parseSpecText, specWarnings, type Spec } from '../src/model';
+import { parseSpecText, specWarnings, usesPackageFiles, type Spec } from '../src/model';
 import { ToolError } from './errors';
 import { libraryCounts } from './library';
 import type { Roots } from './paths';
@@ -83,11 +83,10 @@ export async function validateSpecialization(
     spec: summary(parsed.spec),
     errors: [],
     warnings,
-    hint:
-      parsed.spec.formatVersion >= 4
-        ? 'só o ARQUIVO da especialização foi validado: para conferir os componentes, documentos, exemplos e fontes do pacote use validate_library na pasta; para aplicar um pacote v4 use apply_specialization (ou update_specialization) em propose_changes com `file` da pasta, ou a app (Especializações)'
-        : warnings.length > 0
-          ? 'a especialização é válida; os avisos não impedem a importação, mas costumam apontar descuidos'
-          : 'a especialização é válida e pode ser aplicada (apply_specialization em propose_changes)',
+    hint: usesPackageFiles(parsed.spec)
+      ? 'só o ARQUIVO da especialização foi validado: para conferir os componentes, documentos, exemplos e fontes do pacote use validate_library na pasta; para aplicar um pacote v4 use apply_specialization (ou update_specialization) em propose_changes com `file` da pasta, ou a app (Especializações)'
+      : warnings.length > 0
+        ? 'a especialização é válida; os avisos não impedem a importação, mas costumam apontar descuidos'
+        : 'a especialização é válida e pode ser aplicada (apply_specialization em propose_changes)',
   };
 }

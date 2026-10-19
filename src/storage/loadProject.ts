@@ -3,6 +3,7 @@ import {
   migrations,
   referencedSpecFiles,
   type DeserializeError,
+  type DiscardedUrlTemplate,
   type InvariantIssue,
   type Project,
   type RepairedLoad,
@@ -19,6 +20,8 @@ export type LoadProjectResult =
       readonly readOnly: boolean;
       /** Versão de origem, se o arquivo foi migrado. */
       readonly migratedFrom: number | null;
+      /** `urlTemplate` descartados pela migração para o schema 11 (vazio se não houve). */
+      readonly discardedUrlTemplates: readonly DiscardedUrlTemplate[];
       /** O `mapping.json` como estava no armazenamento. */
       readonly text: string;
       /**
@@ -74,6 +77,7 @@ export async function loadProject(storage: ProjectStorage): Promise<LoadProjectR
     project: result.project,
     readOnly: result.readOnly,
     migratedFrom: result.migratedFrom,
+    discardedUrlTemplates: result.discardedUrlTemplates,
     text,
     libraryIssues: await loadLibraryIssues(storage, result.project),
   };
