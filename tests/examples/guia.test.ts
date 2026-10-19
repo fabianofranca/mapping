@@ -67,8 +67,27 @@ describe('guia interativo', () => {
   });
 
   it('segue o tema escolhido na app (chave mapping.theme) e o do sistema', () => {
-    expect(html).toContain("localStorage.getItem('mapping.theme')");
+    expect(html).toContain("'mapping.theme'");
     expect(html).toContain("[data-theme='dark']");
+  });
+
+  it('lê a chave de tema do canal: preview:mapping.theme em /preview/guia/', () => {
+    const script = blocks(html, 'script').find((b) => b.includes('mapping.theme')) ?? '';
+    function themeAt(pathname: string, store: Record<string, string>): string | null {
+      let applied: string | null = null;
+      new Function('location', 'localStorage', 'document', script)(
+        { pathname },
+        { getItem: (k: string) => store[k] ?? null },
+        { documentElement: { setAttribute: (_: string, v: string) => (applied = v) } },
+      );
+      return applied;
+    }
+    const store = { 'mapping.theme': 'light', 'preview:mapping.theme': 'dark' };
+    expect(themeAt('/preview/guia/', store)).toBe('dark');
+    expect(themeAt('/preview/guia/index.html', store)).toBe('dark');
+    expect(themeAt('/guia/', store)).toBe('light');
+    expect(themeAt('/mapping/guia/', store)).toBe('light');
+    expect(themeAt('/preview/guia/', { 'mapping.theme': 'light' })).toBeNull();
   });
 
   it('os atalhos do guia são os da app', () => {

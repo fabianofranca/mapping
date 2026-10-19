@@ -6,9 +6,14 @@
     <title>Guia do Mapping</title>
     <link rel="icon" type="image/svg+xml" href="../icons/icon.svg" />
     <script>
-      // Segue o tema escolhido na app (mesma origem, mesma chave de Configurações).
+      // Segue o tema escolhido na app (mesma origem, mesma chave de Configurações). O guia é o
+      // mesmo arquivo nos dois canais; no preview (/preview/guia/) a app grava com o prefixo
+      // `preview:` (channelStorageKey), então o canal sai do caminho.
       try {
-        const theme = localStorage.getItem('mapping.theme');
+        const themeKey = /\/preview\/guia\//.test(location.pathname)
+          ? 'preview:mapping.theme'
+          : 'mapping.theme';
+        const theme = localStorage.getItem(themeKey);
         if (theme === 'light' || theme === 'dark') {
           document.documentElement.setAttribute('data-theme', theme);
         }
