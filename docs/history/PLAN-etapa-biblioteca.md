@@ -302,3 +302,5 @@ Relato: [`relato-2026-10-19-dirigida-pr179.md`](relato-2026-10-19-dirigida-pr179
 - **Guia (R9.7):** como centrar a tela (fechar a janela de baixo, **Enquadrar tudo**, arrastar o fundo do canvas).
 
 Conferência curta do PR #179 ([`relato-2026-10-19-dirigida-pr179-curta.md`](relato-2026-10-19-dirigida-pr179-curta.md), build `7dcee05`): 6 de 6 ✅, sem achados. Fica como observação o foco no `body` depois de **Limpar** com o mouse no popover (o popover continua aberto).
+
+**Decisão do dono (2026-10-19): o Adicionar do Catálogo segue a seleção primeiro.** Container selecionado → dentro dele; seleção numa tela (ou numa marcação dela) → essa tela, centrado no centro da vista se ele cai nela, senão no centro da tela; sem seleção → a tela sob o centro da vista. Se a marcação nova fica fora da área visível, a vista faz um pan mínimo até ela, sem mudar o zoom (`revealRect` em `src/canvas/viewport.ts`). O arraste do Catálogo para o canvas entrou nas Evoluções do `docs/ROADMAP.md`.

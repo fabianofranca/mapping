@@ -12,6 +12,7 @@ export interface LibraryHarness extends Harness {
   readonly canvas: {
     viewportCenter: ReturnType<typeof vi.fn>;
     centerSelection: ReturnType<typeof vi.fn>;
+    revealSelection: ReturnType<typeof vi.fn>;
   };
 }
 
@@ -42,6 +43,7 @@ export async function libraryHarness(options: Options = {}): Promise<LibraryHarn
       y: (image?.placement.y ?? 0) + 150,
     })),
     centerSelection: vi.fn(),
+    revealSelection: vi.fn(),
   };
   harness.context.canvas.current = canvas as unknown as CanvasController;
   return Object.assign(harness, { canvas });

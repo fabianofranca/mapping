@@ -7,6 +7,7 @@ import {
   fitRect,
   panBy,
   pinch,
+  revealRect,
   screenToCanvas,
   wheelZoomFactor,
   zoomAt,
@@ -116,5 +117,23 @@ describe('centralizar', () => {
     );
     expect(small.scale).toBeCloseTo(20);
     expect(small.x).toBeCloseTo(200 - 5 * 20);
+  });
+});
+
+describe('revealRect', () => {
+  const size = { width: 400, height: 300 };
+  const v = { x: 0, y: 0, scale: 1 };
+
+  it('já à vista: devolve a mesma vista', () => {
+    expect(revealRect(v, { x: 100, y: 100, width: 50, height: 50 }, size)).toBe(v);
+  });
+
+  it('fora da vista: pan mínimo, sem mudar o zoom', () => {
+    const r = revealRect(v, { x: 500, y: 100, width: 50, height: 50 }, size, 10);
+    expect(r.scale).toBe(1);
+    expect(r.x).toBe(400 - 10 - 550);
+    expect(r.y).toBe(0);
+    const left = revealRect(v, { x: -200, y: 100, width: 50, height: 50 }, size, 10);
+    expect(left.x).toBe(210);
   });
 });

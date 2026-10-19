@@ -327,6 +327,14 @@ export class CanvasController {
     );
   }
 
+  /** Se a seleção está fora da área visível, faz o pan mínimo até ela (sem mudar o zoom). */
+  revealSelection(): void {
+    this.view.measure();
+    const selected = resolveSelection(this.drawnProject.peek(), this.ui.selection.peek());
+    if (selected?.kind !== 'marking') return;
+    this.view.reveal(markingCanvasRect(selected.image.placement, selected.marking.rect));
+  }
+
   /** Ponto do canvas (unidades do canvas) sob uma coordenada de tela da página. */
   canvasPointAt(clientX: number, clientY: number): Point {
     return this.view.toCanvas(this.view.screenPoint({ clientX, clientY }));
