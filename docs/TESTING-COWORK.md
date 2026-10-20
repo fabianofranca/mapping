@@ -185,16 +185,16 @@ As fases C1 a C4 do épico `epic/instanciacao` (histórico em [`docs/history/PLA
 
 **Antes de começar**
 
-- O **build id** esperado é o do épico (preview do PR da C4 ou do épico); o MCP precisa ser o **0.6.0** ou mais novo (`node mapping-mcp.js --version`, seção 6 do guia; a rc `mcp-v0.6.0-rc.<n>` serve). Com um `mapping-mcp.js` anterior, o R3.6 e o R5 não valem: marque "não executado (MCP anterior à 0.6.0)".
+- O **build id** esperado é o do épico (preview do PR da C4 ou do épico); o MCP precisa ser o **0.6.0** ou mais novo (`node mapping-mcp.js --version`, seção 6 do guia; uma release candidate da 0.6.0 serve). Com um `mapping-mcp.js` anterior, o R3.6 e o R5 não valem: marque "não executado (MCP anterior à 0.6.0)".
 - **Todos os roteiros partem de projetos novos**, com o `sdui.json` do épico (`formatVersion` 5, com `repo` nas três plataformas). Não reaproveite pastas ou projetos de rodadas anteriores; registre em "Estado prévio do navegador" o que já existia.
 - O R3.8 e o R3.8b (projeto v10 com `urlTemplate`) usam o preparo do guia ("Preparo do R3.8 e do R3.9", antes da tabela do R3).
 
 **Lista dirigida** (depois do **R0 inteiro**; o R1 inteiro entra antes do R3, e o repositório de teste e o MCP da seção 6 antes do R3.6 e do R5):
 
-| Passos                   | Fase   | O que confere                                                                                                                                                                             |
-| ------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R3.1 a R3.5, R3.7 a R3.9 | C1     | Linha **Definição** com link logo depois de aplicar a especialização (sem configurar nada); Configurações só com o caminho local e o `repo` em leitura; migração v10 → v11 com backup     |
-| R3.6                     | C2, C3 | **A pergunta de conceito** (primeiro, em sessão limpa) e as chamadas do MCP 0.6.0: `get_code_hints` com `types`, `repos` e `args`; `find_by_code`; `set_platform_repo` só com `localPath` |
-| R5.3                     | C3     | Decisões e notas pelo painel com o MCP 0.6.0 (a proposta lida e aplicada com a forma nova das respostas)                                                                                  |
+| Passos                   | Fase   | O que confere                                                                                                                                                                                    |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| R3.1 a R3.5, R3.7 a R3.9 | C1     | Linha **Definição** com link logo depois de aplicar a especialização (sem configurar nada); Configurações só com o caminho local e o `repo` em leitura; migração v10 → v11 com backup            |
+| R3.6a e R3.6             | C2, C3 | **A pergunta de conceito** (R3.6a, primeiro, em sessão limpa) e as chamadas do MCP 0.6.0: `get_code_hints` com `types`, `repos` e `args`; `find_by_code`; `set_platform_repo` só com `localPath` |
+| R5.3                     | C3     | Decisões e notas pelo painel com o MCP 0.6.0 (a proposta lida e aplicada com a forma nova das respostas)                                                                                         |
 
 **Relato:** o mesmo template, em `docs/history/relato-<data>-instanciacao.md`; use o código da fase (C1 a C3) na coluna **Achado de origem**. **Registre a resposta literal à pergunta de conceito** e diga se passou ou reprovou pelo critério do R3.6. Se algo da lista não puder ser executado, marque "não executado (motivo)".
