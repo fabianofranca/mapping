@@ -384,7 +384,7 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
       return [specName(names, c), version].filter(Boolean).join(' ');
     }
     case 'platformRepo':
-      return text(value.urlTemplate) ?? text(value.localPath) ?? c.entityId;
+      return text(value.localPath) ?? c.entityId;
   }
 }
 

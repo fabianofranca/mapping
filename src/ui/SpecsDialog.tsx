@@ -8,6 +8,7 @@ import {
   parseSpecText,
   specializationRemovalImpact,
   specializationUpdateImpact,
+  usesPackageFiles,
   type IgnoredSpecField,
   type Project,
   type ProjectSpecialization,
@@ -248,7 +249,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
       ]);
       return;
     }
-    if (spec.formatVersion >= 4) {
+    if (usesPackageFiles(spec)) {
       info(t('spec.invalidTitle'), [t('spec.v4NeedsPackage', { name: spec.name })]);
       return;
     }
@@ -442,6 +443,20 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
                                 name: platform.name,
                                 id: platform.id,
                               })}
+                          {platform.repo && (
+                            <span class="spec-platform-repo muted">
+                              <a
+                                href={platform.repo.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {platform.repo.url}
+                              </a>
+                              {platform.repo.ref && (
+                                <span>{t('repos.ref', { ref: platform.repo.ref })}</span>
+                              )}
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>

@@ -4,7 +4,7 @@ import type { Spec } from './spec';
 // seções 4, 12.1 e 13.3. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -140,15 +140,16 @@ export interface FieldRef {
 /** Valor de um campo `ref`: um dos três formatos da 13.3. */
 export type RefValue = EntryRef | RowRef | FieldRef;
 
-/** Repositório do código de uma plataforma (v7), no nível do projeto. */
+/**
+ * Sobreposição local do repositório de uma plataforma (v11), no nível do projeto: onde está
+ * o clone. O endereço do repositório é da especialização (`platforms[].repo`).
+ */
 export interface PlatformRepo {
-  /** URL de um arquivo, com `{path}` e (opcional) `{line}`; `null` = sem link. */
-  readonly urlTemplate: string | null;
-  /** Raiz do repositório, relativa à pasta do projeto (ex: `../..`); `null` = não informada. */
+  /** Raiz do clone, relativa à pasta do projeto (ex: `../..`); `null` = não informada. */
   readonly localPath: string | null;
 }
 
-/** `platformRepos` do `mapping.json`: repositório por id de plataforma. */
+/** `platformRepos` do `mapping.json`: sobreposição local por id de plataforma. */
 export type PlatformRepos = { readonly [platformId: string]: PlatformRepo };
 
 export interface Annotation {

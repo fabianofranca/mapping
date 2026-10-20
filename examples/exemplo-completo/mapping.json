@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 10,
+  "schemaVersion": 11,
   "revision": 1,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -11,7 +11,7 @@
   "specializations": [
     {
       "id": "sdui",
-      "version": 2,
+      "version": 3,
       "file": "specs/sdui.json"
     },
     {
@@ -25,16 +25,7 @@
       "file": "specs/material3/material3.spec.json"
     }
   ],
-  "platformRepos": {
-    "android": {
-      "urlTemplate": "https://github.com/org/app/blob/main/{path}",
-      "localPath": null
-    },
-    "ios": {
-      "urlTemplate": "https://github.com/org/app-ios/blob/main/{path}",
-      "localPath": null
-    }
-  },
+  "platformRepos": {},
   "layers": [
     {
       "id": "cad1cc53-4610-48e5-9411-5405a34bce39",

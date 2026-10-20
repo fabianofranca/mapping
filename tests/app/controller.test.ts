@@ -246,6 +246,65 @@ describe('projeto em pasta', () => {
     expect(await root.files.get('mapping.json')?.text()).toContain('Renomeado');
   });
 
+  it('projeto v10 com urlTemplate: abre migrado, registra o descartado no Diagnóstico e grava o backup', async () => {
+    const project = emptyProject();
+    const data = JSON.parse(serialize(project)) as Record<string, unknown>;
+    data.platformRepos = {
+      android: { urlTemplate: 'https://git.example/{path}', localPath: '../..' },
+      ios: { urlTemplate: 'https://git.example/ios/{path}', localPath: null },
+    };
+    const v10 = `${JSON.stringify({ ...data, schemaVersion: 10 }, null, 2)}\n`;
+    const root = folderWith({ 'mapping.json': v10 });
+    pickDirectory.mockResolvedValue(root);
+    expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
+    const { session } = await openedOf(app);
+    expect(session.store.project.value?.platformRepos).toEqual({
+      android: { localPath: '../..' },
+    });
+
+    // Uma entrada no Diagnóstico, com a orientação (o registro é o da cópia carregada).
+    const report = await import('../../src/utils/report');
+    const entries = report.reportedErrors.value.filter(
+      (e) => e.context === 'open.migration',
+    );
+    expect(entries).toHaveLength(1);
+    // Língua da interface à parte: o texto leva as plataformas, os modelos e a orientação.
+    const message = entries[0]?.message ?? '';
+    expect(message).toContain('Schema 11');
+    expect(message).toContain('android, ios');
+    expect(message).toContain(
+      'https://git.example/{path}, https://git.example/ios/{path}',
+    );
+    expect(message).toContain('`repo` (formatVersion 5)');
+
+    // O original vai para backups/ na primeira gravação, como em toda migração.
+    expect(await backupsOf(root)).toEqual([]);
+    session.actions.renameProject('Migrado');
+    await session.flush();
+    const [backup, ...rest] = await backupsOf(root);
+    expect(rest).toEqual([]);
+    expect(backup).toMatch(/^mapping\.v10\.\d{8}-\d{6}\.json$/);
+    expect(
+      await root.dirs
+        .get('backups')
+        ?.files.get(backup ?? '')
+        ?.text(),
+    ).toBe(v10);
+  });
+
+  it('projeto v10 só com localPath migra sem registrar nada no Diagnóstico', async () => {
+    const data = JSON.parse(serialize(emptyProject())) as Record<string, unknown>;
+    data.platformRepos = { android: { urlTemplate: null, localPath: '..' } };
+    pickDirectory.mockResolvedValue(
+      folderWith({ 'mapping.json': JSON.stringify({ ...data, schemaVersion: 10 }) }),
+    );
+    expect((await app.openFolder()).ok).toBe(true);
+    const report = await import('../../src/utils/report');
+    expect(report.reportedErrors.value.map((e) => e.context)).not.toContain(
+      'open.migration',
+    );
+  });
+
   it('mapping.json inválido devolve o erro do modelo', async () => {
     pickDirectory.mockResolvedValue(folderWith({ 'mapping.json': '{ não é json' }));
     const result = await app.openFolder();
@@ -737,7 +796,7 @@ describe('projeto com dados inconsistentes', () => {
 
     const [backup, ...rest] = await backupsOf(root);
     expect(rest).toEqual([]);
-    expect(backup).toMatch(/^mapping\.v10\.\d{8}-\d{6}\.json$/);
+    expect(backup).toMatch(/^mapping\.v11\.\d{8}-\d{6}\.json$/);
     expect(
       await root.dirs
         .get('backups')

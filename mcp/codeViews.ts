@@ -1,25 +1,37 @@
 import {
   codeBlueprint,
-  codeLink,
   codeLocalPath,
   findPlatform,
+  findSpecType,
+  repoLink,
+  specPlatformRepo,
   projectPlatforms,
   typeOfAnnotation,
   type Annotation,
   type BlueprintAnnotation,
   type BlueprintNode,
+  type Spec,
   type SpecCode,
+  type SpecRepo,
 } from '../src/model';
 import type { LocalFileChecker } from './codeFiles';
 import { ToolError } from './errors';
 import type { Refs } from './items';
 
-// Visões em JSON do código das especializações (etapa 3b.4; etapa 9): o `code` das plataformas
-// de cada tipo, com o `path` resolvido (a URL, o caminho local e a existência do arquivo), e o
-// blueprint de `get_code_hints`. O servidor só monta caminhos e confere a existência
+// Visões em JSON do código de instanciação das especializações (etapa 3b.4; etapa 9; etapa
+// Código de instanciação): o `code` das plataformas de cada tipo (`symbol`, o que se chama, e
+// `definition`, o arquivo que o define, com a URL e a `ref` do `repo` da especialização e o
+// caminho local da sobreposição do projeto) e as chamadas de `get_code_hints`. O servidor só monta caminhos e confere a existência
 // (`codeFiles.ts`): nenhum arquivo de código é lido.
 
 type Json = Record<string, unknown>;
+
+/**
+ * O que é o `code` de um tipo, repetido nas respostas que mostram plataformas
+ * (`get_specialization`, `get_project`) para o conceito chegar ao agente por qualquer caminho.
+ */
+export const CODE_HINT =
+  'O `code` de um tipo é o código de instanciação: `symbol` é o que se chama para criar uma instância do tipo nessa plataforma, `path` é o arquivo que define o `symbol` (leia a assinatura antes de escrever a chamada), `params` e `values` dizem como passar os campos, `notes` orienta. O repositório da biblioteca está em `platforms[].repo` da especialização; o clone local, em `platformRepos` do projeto. O mapeamento não guarda nada sobre a solução.';
 
 /** O que as visões precisam para resolver o `path` de um tipo. */
 export interface CodeContext {
@@ -38,56 +50,84 @@ export function assertPlatform(refs: Refs, platformId: string): void {
   );
 }
 
-/** Onde um caminho de código está: a URL no repositório, o arquivo local e se ele existe. */
-async function resolveCodeFile(
-  ctx: CodeContext,
-  location: { readonly platform: string; readonly path: string | null },
-  url: string | null,
-): Promise<Json> {
-  const local = await ctx.files.check(
-    ctx.refs.loaded.location.dir,
-    codeLocalPath(ctx.refs.project, location),
-  );
+/** Onde o arquivo está no clone local do cliente (`null`s sem `localPath` configurado). */
+interface LocalPlace {
+  readonly localFile: string | null;
+  readonly exists: boolean | null;
+  readonly problem?: string | undefined;
+}
+
+const NO_LOCAL: LocalPlace = { localFile: null, exists: null };
+
+/**
+ * `definition` de uma entrada de `code`: o arquivo que define o `symbol`, com a `url` e o
+ * `ref` do `repo` da especialização e `localFile`/`exists` da sobreposição local do projeto.
+ * `null` sem `path`.
+ */
+function definitionJson(
+  path: string | null | undefined,
+  repo: SpecRepo | null,
+  local: LocalPlace,
+): Json | null {
+  if (path === null || path === undefined) return null;
   return {
-    url,
+    path,
+    url: repoLink(repo, path),
+    ref: repo?.ref ?? null,
     localFile: local.localFile,
     exists: local.exists,
     ...(local.problem ? { localFileProblem: local.problem } : {}),
   };
 }
 
-/** O `path` do `code` de um tipo, resolvido: `path` com `url`, `localFile` e `exists` ao lado. Vazio sem `path`. */
 async function resolveDefinition(
   ctx: CodeContext,
+  specId: string,
   platform: string,
   path: string | null | undefined,
-  url: string | null = path ? codeLink(ctx.refs.project, { platform, path }) : null,
-): Promise<Json> {
-  if (path === null || path === undefined) return {};
-  return { path, ...(await resolveCodeFile(ctx, { platform, path }, url)) };
+): Promise<Json | null> {
+  if (path === null || path === undefined) return null;
+  const local = await ctx.files.check(
+    ctx.refs.loaded.location.dir,
+    codeLocalPath(ctx.refs.project, { specId, platform, path }),
+  );
+  return definitionJson(path, specPlatformRepo(ctx.refs.project, specId, platform), {
+    localFile: local.localFile,
+    exists: local.exists,
+    problem: local.problem,
+  });
+}
+
+/** Forma única de uma entrada de `code`: `symbol`, `definition` (ou `null`) e o resto (`params`, `values`, `notes`). */
+function codeEntryJson(entry: SpecCode, definition: Json | null): Json {
+  const { symbol, ...rest } = entry;
+  delete (rest as { path?: string }).path;
+  return { symbol, definition, ...rest };
 }
 
 /**
- * `code` do tipo da anotação por plataforma (`symbol`, `path`, `params`, `values`, `notes`),
- * como na especialização; o `path` vem com `url`, `localFile` e `exists` ao lado. Com
- * `platform`, só ela. `null` se o tipo não tem `code` (para essa plataforma).
+ * `code` do tipo da anotação por plataforma (`symbol`, `definition`, `params`, `values`,
+ * `notes`). Com `platform`, só ela. `null` se o tipo não tem `code` (para essa plataforma).
  */
 export async function annotationCode(
   ctx: CodeContext,
   annotation: Annotation,
   platform?: string,
 ): Promise<Json | null> {
-  const code = typeOfAnnotation(ctx.refs.project, annotation)?.type.code;
-  if (!code) return null;
-  return typeCodeView(ctx, code, platform);
+  const resolved = typeOfAnnotation(ctx.refs.project, annotation);
+  const code = resolved?.type.code;
+  if (!resolved || !code) return null;
+  return typeCodeView(ctx, resolved.spec.id, code, platform);
 }
 
 /**
- * `code` de um tipo (ou só as plataformas de `only`) com o `path` resolvido; `null` se não
- * sobrar nenhuma plataforma. `get_marking`, `get_annotation` e `find_by_code` usam o mesmo.
+ * `code` de um tipo (ou só as plataformas de `only`) na forma única, com a `definition`
+ * resolvida; `null` se não sobrar nenhuma plataforma. `get_marking`, `get_annotation` e
+ * `find_by_code` usam o mesmo.
  */
 export async function typeCodeView(
   ctx: CodeContext,
+  specId: string,
   code: Readonly<Record<string, SpecCode>>,
   only?: string | ReadonlySet<string>,
 ): Promise<Json | null> {
@@ -96,71 +136,75 @@ export async function typeCodeView(
   const entries = await Promise.all(
     Object.entries(code)
       .filter(([id]) => wanted(id))
-      .map(async ([id, entry]): Promise<[string, Json]> => {
-        const { symbol, path, ...rest } = entry;
-        return [id, { symbol, ...(await resolveDefinition(ctx, id, path)), ...rest }];
-      }),
+      .map(async ([id, entry]): Promise<[string, Json]> => [
+        id,
+        codeEntryJson(entry, await resolveDefinition(ctx, specId, id, entry.path)),
+      ]),
   );
   return entries.length > 0 ? Object.fromEntries(entries) : null;
+}
+
+/**
+ * `code` de um tipo lido de um pacote (`get_component`): o `repo` vem da especialização do
+ * pacote e, com `ctx` (pacote aplicado a um projeto), a sobreposição local também.
+ */
+export async function packageCodeView(
+  spec: Spec,
+  code: Readonly<Record<string, SpecCode>>,
+  ctx: CodeContext | null,
+): Promise<Json> {
+  const entries = await Promise.all(
+    Object.entries(code).map(async ([id, entry]): Promise<[string, Json]> => {
+      const repo = spec.platforms?.find((x) => x.id === id)?.repo ?? null;
+      let local = NO_LOCAL;
+      if (ctx && entry.path) {
+        const checked = await ctx.files.check(
+          ctx.refs.loaded.location.dir,
+          codeLocalPath(ctx.refs.project, {
+            specId: spec.id,
+            platform: id,
+            path: entry.path,
+          }),
+        );
+        local = {
+          localFile: checked.localFile,
+          exists: checked.exists,
+          problem: checked.problem,
+        };
+      }
+      return [id, codeEntryJson(entry, definitionJson(entry.path, repo, local))];
+    }),
+  );
+  return Object.fromEntries(entries);
 }
 
 // ---------------------------------------------------------------------------
 // get_code_hints
 
-async function hintAnnotation(
-  ctx: CodeContext,
-  platform: string,
-  annotation: BlueprintAnnotation,
-): Promise<Json> {
-  const { refs } = ctx;
-  const definition = await resolveDefinition(
-    ctx,
-    platform,
-    annotation.path,
-    annotation.pathUrl,
-  );
-  const linked = await Promise.all(
-    annotation.linked.map((a) => hintAnnotation(ctx, platform, a)),
-  );
+function hintAnnotation(annotation: BlueprintAnnotation, refs: Refs): Json {
+  const linked = annotation.linked.map((a) => hintAnnotation(a, refs));
   return {
     ref: refs.bare('a', annotation.annotationId),
-    type: {
-      specId: annotation.specId,
-      typeId: annotation.typeId,
-      name: annotation.type,
-    },
+    type: `${annotation.specId}/${annotation.typeId}`,
     label: annotation.label,
     layer: annotation.layer,
-    symbol: annotation.symbol,
-    ...definition,
     ...(annotation.params.length > 0
       ? {
-          params: annotation.params.map((param) => ({
+          args: annotation.params.map((param) => ({
             field: param.key,
             name: param.name,
             value: param.value,
           })),
         }
       : {}),
-    ...(annotation.notes !== null ? { notes: annotation.notes } : {}),
     ...(Object.keys(annotation.values).length > 0 ? { values: annotation.values } : {}),
     ...(linked.length > 0 ? { linked } : {}),
   };
 }
 
-async function hintNode(
-  ctx: CodeContext,
-  platform: string,
-  node: BlueprintNode,
-  root: boolean,
-): Promise<Json> {
-  const { refs } = ctx;
-  const annotations = await Promise.all(
-    node.annotations.map((a) => hintAnnotation(ctx, platform, a)),
-  );
-  const children = await Promise.all(
-    node.children.map((c) => hintNode(ctx, platform, c, false)),
-  );
+function hintNode(node: BlueprintNode, refs: Refs, root: boolean): Json {
+  const annotations = node.annotations.map((a) => hintAnnotation(a, refs));
+  const children = node.children.map((c) => hintNode(c, refs, false));
   return {
     ref: root ? refs.ref('m', node.markingId) : refs.bare('m', node.markingId),
     name: node.name,
@@ -170,11 +214,11 @@ async function hintNode(
   };
 }
 
-/** Tipos (`specId/typeId`) que aparecem na árvore sem `code` para a plataforma (`symbol: null`). */
-function unmappedTypes(node: BlueprintNode): string[] {
-  const found = new Set<string>();
+/** Anotações da árvore, com as vinculadas. */
+function allAnnotations(node: BlueprintNode): BlueprintAnnotation[] {
+  const out: BlueprintAnnotation[] = [];
   const visitAnnotation = (a: BlueprintAnnotation) => {
-    if (a.symbol === null) found.add(`${a.specId}/${a.typeId}`);
+    out.push(a);
     a.linked.forEach(visitAnnotation);
   };
   const visit = (n: BlueprintNode) => {
@@ -182,10 +226,14 @@ function unmappedTypes(node: BlueprintNode): string[] {
     n.children.forEach(visit);
   };
   visit(node);
-  return [...found];
+  return out;
 }
 
-/** `get_code_hints`: o que implementar na plataforma, a partir da marcação e das descendentes. */
+/**
+ * `get_code_hints`: as chamadas a escrever na plataforma, a partir da marcação e das
+ * descendentes. `types` traz, por `specId/typeId`, o código de instanciação do tipo (uma vez
+ * só); a árvore traz, por anotação, só o que é da instância (`args`, `values`, `linked`).
+ */
 export async function codeHintsView(
   ctx: CodeContext,
   markingId: string,
@@ -194,7 +242,27 @@ export async function codeHintsView(
   const { refs } = ctx;
   assertPlatform(refs, platformId);
   const blueprint = codeBlueprint(refs.project, markingId, platformId);
-  const unmapped = unmappedTypes(blueprint.root);
+  const annotations = allAnnotations(blueprint.root);
+  const unmapped = [
+    ...new Set(
+      annotations.filter((a) => a.symbol === null).map((a) => `${a.specId}/${a.typeId}`),
+    ),
+  ];
+  const types: Record<string, Json> = {};
+  for (const a of annotations) {
+    const key = `${a.specId}/${a.typeId}`;
+    if (a.symbol === null || Object.hasOwn(types, key)) continue;
+    const entry = findSpecType(refs.project, { specId: a.specId, typeId: a.typeId })?.type
+      .code?.[platformId];
+    if (!entry) continue;
+    types[key] = {
+      name: a.type,
+      ...codeEntryJson(
+        entry,
+        await resolveDefinition(ctx, a.specId, platformId, entry.path),
+      ),
+    };
+  }
   return {
     marking: refs.ref('m', markingId),
     platform: {
@@ -202,13 +270,14 @@ export async function codeHintsView(
       name: blueprint.platform.name,
       language: blueprint.platform.language,
     },
-    repo: blueprint.repo,
+    repos: blueprint.repo === null ? {} : { [platformId]: blueprint.repo },
+    types,
     ...(unmapped.length > 0
       ? {
           unmappedTypes: unmapped,
-          hint: 'tipos com `symbol: null` não têm `code` nesta plataforma na especialização: não há componente mapeado para eles',
+          hint: 'tipos em `unmappedTypes` não têm `code` nesta plataforma na especialização: não há código de instanciação mapeado para eles',
         }
       : {}),
-    tree: await hintNode(ctx, platformId, blueprint.root, true),
+    tree: hintNode(blueprint.root, refs, true),
   };
 }

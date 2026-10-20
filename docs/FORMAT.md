@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v10)
+# Formato do `mapping.json` (schema v11)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -32,7 +32,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 10,
+  "schemaVersion": 11,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -90,19 +90,19 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 **Raiz**
 
-| Campo              | Tipo    | Descrição                                                                 |
-| ------------------ | ------- | ------------------------------------------------------------------------- |
-| `schemaVersion`    | `10`    | Versão do schema.                                                         |
-| `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                   |
-| `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).        |
-| `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.   |
-| `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601; fuso vira UTC).      |
-| `specializations`  | array   | Especializações aplicadas (ver v4).                                       |
-| `platformRepos`    | objeto  | Repositório do código de cada plataforma (v7, ver abaixo).                |
-| `layers`           | array   | Camadas, **globais** (valem para todas as imagens), na ordem de exibição. |
-| `images`           | array   | Imagens do projeto.                                                       |
-| `markings`         | array   | Marcações retangulares.                                                   |
-| `annotations`      | array   | Anotações (livres ou tipadas).                                            |
+| Campo              | Tipo    | Descrição                                                                    |
+| ------------------ | ------- | ---------------------------------------------------------------------------- |
+| `schemaVersion`    | `11`    | Versão do schema.                                                            |
+| `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                      |
+| `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).           |
+| `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.      |
+| `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601; fuso vira UTC).         |
+| `specializations`  | array   | Especializações aplicadas (ver v4).                                          |
+| `platformRepos`    | objeto  | Clone local de cada plataforma (v7; só `localPath` desde a v11, ver abaixo). |
+| `layers`           | array   | Camadas, **globais** (valem para todas as imagens), na ordem de exibição.    |
+| `images`           | array   | Imagens do projeto.                                                          |
+| `markings`         | array   | Marcações retangulares.                                                      |
+| `annotations`      | array   | Anotações (livres ou tipadas).                                               |
 
 **`layers[]`**: `id`; `name` (não vazio); `color`; `spec` (`null` ou `{ specId, layerId }`).
 
@@ -139,8 +139,9 @@ arquivo ao ler.
 - Linhas de `table`: `_id` único dentro da lista.
 - `source` (v8): `null` ou `{ system, id, url }`, com `system` e `id` textos não vazios e `url` texto ou
   `null` (as três chaves presentes).
-- `platformRepos`: chaves no formato `[a-z0-9-]+`; cada valor com `urlTemplate` e `localPath` (texto ou
-  `null`). Configuração de uma plataforma que nenhuma especialização declara não impede a abertura.
+- `platformRepos` (v11): chaves no formato `[a-z0-9-]+`; cada valor com `localPath` (texto). Uma chave
+  desconhecida na entrada (o antigo `urlTemplate`) é descartada na leitura. Configuração de uma plataforma
+  que nenhuma especialização declara não impede a abertura.
 - Anotação "dona" (`parentAnnotationId`): existe, está na **mesma marcação** e em **outra camada**, e a
   cadeia não tem ciclos.
 
@@ -173,8 +174,8 @@ e abra de novo.
 
 Ler nunca grava. Ao reparar, o projeto abre reparado em memória; o original vai para
 `backups/mapping.v<versão>.<AAAAMMDD-HHMMSS>.json` e o reparado para o `mapping.json` só na **primeira
-gravação**, como na migração. O nome é o mesmo do backup de migração (um v10 reparado vira
-`mapping.v10.<data>.json`): para saber qual foi o motivo, compare a data com o Diagnóstico ou o conteúdo
+gravação**, como na migração. O nome é o mesmo do backup de migração (um v11 reparado vira
+`mapping.v11.<data>.json`): para saber qual foi o motivo, compare a data com o Diagnóstico ou o conteúdo
 com o `mapping.json` atual. O resumo do reparo fica no aviso do editor e no Diagnóstico. O servidor MCP
 continua recusando o arquivo (ler nunca grava), com a mesma lista de problemas na resposta.
 
@@ -348,67 +349,15 @@ abertura do projeto.
 
 ## Campos da v7 (repositórios por plataforma)
 
-A v7 liga o mapeamento ao código das plataformas que as especializações declaram
-([`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas e code"): a especialização diz como cada tipo vira
-código (`code`, com o `symbol` e o arquivo que o define, `path`) e o projeto guarda **onde fica o
-repositório** de cada plataforma (`platformRepos`). Até a v8 havia também o campo `codeRef` (onde a
-instância foi implementada), que saiu na v9 (ver "Campos da v9").
+> **Histórico:** na v11 o `urlTemplate` saiu do projeto: o endereço do repositório passou para a
+> especialização e o projeto guarda só o `localPath`. Ver "Campos da v11".
 
-### Repositórios por plataforma (`platformRepos`)
-
-No nível do projeto, não da especialização, porque a mesma especialização serve a produtos diferentes.
-
-```json
-"platformRepos": {
-  "android": { "urlTemplate": "https://github.com/org/app-android/blob/main/{path}", "localPath": "../../.." },
-  "ios": { "urlTemplate": "https://github.com/org/app-ios/blob/main/{path}", "localPath": null }
-}
-```
-
-- A chave é o id da plataforma. Plataformas com o **mesmo id** em especializações diferentes são a
-  mesma plataforma e usam a mesma configuração (o nome exibido é o da primeira especialização aplicada).
-- **`urlTemplate`** (`null` = sem link): URL de um arquivo, com `{path}` (um `{line}`, de configurações
-  antigas, é aceito e sai do link: os caminhos não têm linha). Serve a GitHub, GitLab, Bitbucket ou um
-  servidor interno. A app e o MCP só aceitam `http://` ou `https://` com `{path}` (outro valor, editado
-  à mão, fica sem link).
-- **`localPath`** (`null` = não informado): raiz do repositório da plataforma, **relativa à pasta do
-  projeto** (ex: `../../..` quando o projeto fica em `docs/mapping/telas/` dentro do repositório do app).
-- A app não grava configuração vazia: sem `urlTemplate` nem `localPath`, a plataforma sai do objeto.
-  Remover uma especialização não apaga a configuração.
-
-### Como montar a URL do arquivo de um tipo
-
-O `path` do `code` de um tipo da especialização (`code.<plataforma>.path`, o arquivo que define o
-`symbol`, relativo à raiz do repositório da plataforma; [`SPEC-FORMAT.md`](SPEC-FORMAT.md)):
-
-1. Pegue `platformRepos[<plataforma>].urlTemplate`, com a plataforma da chave de `code`. Sem ele, não há
-   link.
-2. Troque `{path}` pelo `path`, codificando **cada segmento** (`encodeURIComponent`) e mantendo as `/`
-   (ex: `Minha Tela.kt` → `Minha%20Tela.kt`).
-3. Remova o trecho a partir do **último `#`** se ele contém `{line}` (e não `{path}`):
-   `…/{path}#L{line}` → `…/{path}`; `…#lines-{line}` → sem o fragmento. Se `{line}` não estiver num
-   fragmento assim (ex: `?linha={line}`), ele vira vazio.
-
-Ex.: `https://github.com/org/app-android/blob/main/{path}` com `path: "app/Main.kt"` dá
-`…/blob/main/app/Main.kt`.
-
-### Como achar o arquivo local
-
-Junte `localPath` e `path` com `/`: o resultado é relativo à **pasta do projeto** (a do `mapping.json`).
-Ex.: `localPath: "../../.."` e `path: "app/Main.kt"` → `../../../app/Main.kt`. Sem `localPath`, não há
-caminho local.
-
-### Aviso de repositório ausente
-
-Plataforma declarada em que algum tipo das especializações aplicadas tem `code.<plataforma>.path`, sem
-`urlTemplate` nem `localPath` em `platformRepos`: **aviso** (`missing-repo`), não pendência. Aparece na
-configuração de repositórios da app e no `get_project` do MCP.
-
-Em código TypeScript, `src/model/` oferece `codeLink` (a URL), `codeLocalPath` (o caminho relativo à
-pasta do projeto), `findByCode` (os tipos cujo `code` aponta para um arquivo ou símbolo, com as
-anotações deles), `codeBlueprint` (o que implementar numa plataforma a partir de uma marcação),
-`projectPlatforms` (plataformas das especializações aplicadas, sem repetir id) e
-`platformRepoWarnings` (o aviso acima).
+A v7 ligou o mapeamento ao código das plataformas que as especializações declaram
+([`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas e code"): a especialização diz como se cria uma
+instância de cada tipo (`code`, com o `symbol` e o arquivo que o define, `path`) e o projeto guardava
+**onde ficava o repositório** de cada plataforma (`platformRepos`), com um `urlTemplate` e um `localPath`.
+Até a v8 havia também o campo `codeRef` (o lugar da solução em que a instância foi escrita), que saiu
+na v9 (ver "Campos da v9").
 
 ## Campos da v8 (origem externa)
 
@@ -442,14 +391,16 @@ novo de uma ferramenta de design) e proponha só o que mudou.
    `layers[].id == layer.spec.layerId`, tipo `annotationTypes[].id == type.typeId`). Os campos
    (`fields`) dizem o `label`, o tipo e a descrição de cada chave de `values`.
 6. **Referências**: campos `ref` em `values` apontam para outras anotações (ver acima).
-7. **Código**: como o tipo vira código (`symbol`, `path`, `params`, `values`, `notes`) está em
-   `code`, no tipo da especialização; o `path` diz em que arquivo o `symbol` está (relativo à raiz do
-   repositório da plataforma). Para abrir no repositório, monte a URL com o `urlTemplate` de
-   `platformRepos[plataforma]`; para ler o arquivo na máquina, junte o `localPath` e o `path`
-   (relativos à pasta do projeto; ver "Campos da v7"). Para ir do código ao mapeamento, procure os
-   tipos cujo `path` é igual ao arquivo ou termina com ele por segmentos inteiros (`DSButton.kt` casa
-   com `app/…/DSButton.kt`, `Button.kt` não) ou cujo `symbol` é igual, e depois as anotações desses
-   tipos. O mapeamento não guarda onde o código gerado ficou.
+7. **Código de instanciação**: o `code` do tipo diz como se cria uma instância dele em cada plataforma
+   (`symbol` é o que se chama, `path` é o arquivo que o define, `params`, `values` e `notes` dizem como
+   passar os campos; [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas e code"). O arquivo de cada `symbol`
+   está no `repo` da plataforma, **na especialização do tipo**: monte a URL com o `urlTemplate` do `repo`
+   (ver "Campos da v11") ou, se o projeto informar o clone local em `platformRepos[plataforma].localPath`,
+   junte o `localPath` e o `path` (relativos à pasta do projeto). Leia o arquivo para saber a assinatura e
+   escreva a chamada na solução. Para ir do código ao mapeamento, procure os tipos cujo `path` é igual ao
+   arquivo ou termina com ele por segmentos inteiros (`DSButton.kt` casa com `app/…/DSButton.kt`,
+   `Button.kt` não) ou cujo `symbol` é igual, e depois as anotações desses tipos. O mapeamento não guarda
+   nada sobre a solução.
 
 Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, markingId)`,
 `getLinkedAnnotations(project, annotationId)` e, para o código, `codeLink`, `codeLocalPath`,
@@ -457,10 +408,10 @@ Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, ma
 
 ## Campos da v9 (sem o campo de código)
 
-A v9 não acrescenta campos: ela tira do formato o campo `codeRef` das especializações (onde a instância
-foi implementada, uma lista de entradas `{ _id, platform, path, symbol, line }` em `values`). O
-mapeamento e a especialização guardam só o que ajuda a **gerar** código (o `code` dos tipos), não
-referência ao código gerado.
+A v9 não acrescenta campos: ela tira do formato o campo `codeRef` das especializações (o lugar da
+solução em que a instância foi escrita, uma lista de entradas `{ _id, platform, path, symbol, line }` em
+`values`). O mapeamento e a especialização guardam só o que ajuda a **instanciar** os tipos (o `code`
+dos tipos), nunca onde a instância ficou.
 
 - **Migração v8 → v9**: os valores dos campos `codeRef` saem de `values`. O tipo de cada campo vem da
   **cópia da especialização aplicada** (`specs/<id>.json`): a migração lê a cópia (crua, sem validar) e
@@ -503,6 +454,78 @@ marcam e desenham componentes, sem foto por baixo. Em `images[]`:
 - **Migração v9 → v10**: toda imagem recebe `background: null` (um valor já presente é preservado). Nada
   mais muda.
 
+## Campos da v11 (sobreposição local do repositório)
+
+A v11 muda **onde fica o repositório** de cada plataforma. O arquivo de cada `symbol` está no repositório
+da **biblioteca**, e por isso o endereço dele passou para a especialização (`platforms[].repo`,
+`formatVersion` 5; [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas e code"). O projeto guarda só uma
+**sobreposição local**: onde o clone desse repositório está nesta máquina.
+
+### Sobreposição local (`platformRepos`)
+
+```json
+"platformRepos": {
+  "android": { "localPath": "../../.." },
+  "bff": { "localPath": "../../../../bff" }
+}
+```
+
+- A chave é o id da plataforma. Plataformas com o **mesmo id** em especializações diferentes são a mesma
+  plataforma e usam a mesma sobreposição (o nome exibido é o da primeira especialização aplicada). O
+  endereço, ao contrário, é de cada especialização: cada uma declara o `repo` da própria biblioteca.
+- **`localPath`**: raiz do clone local do repositório da plataforma, **relativa à pasta do projeto** (ex:
+  `../../..` quando o projeto fica em `docs/mapping/telas/` dentro do repositório do app). Texto não vazio:
+  a app não grava entrada vazia, e uma plataforma sem caminho sai do objeto. Remover uma especialização
+  não apaga a sobreposição.
+- Não há endereço no projeto: o `urlTemplate` não existe mais em `platformRepos`. Um arquivo antigo com
+  ele é lido, e o campo é descartado pela migração (ver abaixo).
+- Plataforma sem `localPath` não é problema: o agente usa o endereço do `repo` da especialização. O aviso
+  de repositório ausente (`missing-repo`) **saiu na v11**; o que resta é o aviso da especialização
+  (`path-without-repo`, plataforma em que algum tipo tem `path` e que não declara `repo`), conferido na
+  validação dela e na importação.
+
+### Como montar a URL do arquivo de um tipo
+
+O `path` do `code` de um tipo da especialização (`code.<plataforma>.path`, o arquivo que define o
+`symbol`, relativo à raiz do `repo` da plataforma; [`SPEC-FORMAT.md`](SPEC-FORMAT.md)):
+
+1. Pegue, na **especialização dona do tipo** (a de `type.specId`), `platforms[<plataforma>].repo.urlTemplate`,
+   com a plataforma da chave de `code`. Sem `repo` ou sem `urlTemplate`, não há link.
+2. Troque `{path}` pelo `path`, codificando **cada segmento** (`encodeURIComponent`) e mantendo as `/`
+   (ex: `Minha Tela.kt` → `Minha%20Tela.kt`).
+3. Remova o trecho a partir do **último `#`** se ele contém `{line}` (e não `{path}`):
+   `…/{path}#L{line}` → `…/{path}`; `…#lines-{line}` → sem o fragmento. Se `{line}` não estiver num
+   fragmento assim (ex: `?linha={line}`), ele vira vazio.
+
+Ex.: `https://github.com/org/app-android/blob/v3/{path}` com `path: "app/Main.kt"` dá
+`…/blob/v3/app/Main.kt`. O `repo.ref` é informativo e não entra no link.
+
+### Como achar o arquivo local
+
+Junte `localPath` e `path` com `/`: o resultado é relativo à **pasta do projeto** (a do `mapping.json`).
+Ex.: `localPath: "../../.."` e `path: "app/Main.kt"` → `../../../app/Main.kt`. Sem `localPath`, não há
+caminho local.
+
+Em código TypeScript, `src/model/` oferece `codeLink` (a URL, pelo `urlTemplate` do `repo` da
+especialização dona do tipo), `codeLocalPath` (o caminho relativo à pasta do projeto, pela sobreposição),
+`findByCode` (os tipos cujo `code` aponta para um arquivo ou símbolo, com as anotações deles),
+`codeBlueprint` (o que `get_code_hints` devolve: o código de instanciação de cada tipo e, por marcação,
+os valores a passar) e `projectPlatforms` (plataformas das especializações aplicadas, sem repetir id, cada
+uma com os `repo` das especializações que a declaram).
+
+### Migração v10 → v11
+
+- O `urlTemplate` de cada entrada de `platformRepos` é **descartado**.
+- A entrada que fica sem `localPath` (só tinha `urlTemplate`, ou o `localPath` era `null` ou vazio) é
+  **removida**. A que tinha `localPath` o mantém, sem mais nada.
+- Um v10 sem `platformRepos` migra sem mudar mais nada.
+- Como toda migração, o original vai para `backups/mapping.v10.<AAAAMMDD-HHMMSS>.json` antes do primeiro
+  salvamento (no modo pasta).
+- O **Diagnóstico** registra o que foi descartado (as plataformas e os endereços) com a orientação:
+  regrave a especialização com `repo` (`formatVersion` 5) e atualize-a no projeto. Até lá, a linha
+  "Definição" e o MCP não montam o link dessa plataforma; o endereço descartado está no registro e no
+  backup, para copiar para `repo.urlTemplate`.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -512,6 +535,8 @@ Arquivos v3 recebem `specializations: []`, `spec: null` em cada camada, `type: n
 imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 recebem `platformRepos: {}`.
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
-recebem `background: null` em cada imagem (ver "Campos da v10"). Ao salvar, o arquivo passa a ser v10 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Ao salvar, o
+arquivo passa a ser v11 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

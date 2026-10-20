@@ -11,6 +11,8 @@ import {
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const sdui = read('examples/specs/sdui.json');
+// A SDUI de antes do `repo` (formatVersion 2): base dos casos de plataformas e de code.
+const sduiV2 = read('tests/fixtures/sdui-v2.json');
 const modelo = read('examples/specs/modelo-de-dados.json');
 const biblioteca = read('examples/specs/biblioteca.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
@@ -20,7 +22,7 @@ type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
 
 /** Cópia do SDUI para o teste alterar. */
 function base(): Json {
-  return JSON.parse(sdui) as Json;
+  return JSON.parse(sduiV2) as Json;
 }
 
 function errorsOf(result: SpecParseResult): string[] {
@@ -39,17 +41,23 @@ describe('exemplos de especialização', () => {
     expect(jsonValidator.safeParse(JSON.parse(text)).success).toBe(true);
   });
 
-  it('lê os campos esperados do SDUI (formatVersion 2)', () => {
+  it('lê os campos esperados do SDUI (formatVersion 5, com o repo de cada plataforma)', () => {
     const result = parseSpecText(sdui);
     if (!result.ok) throw new Error('falhou');
     const { spec } = result;
-    expect(spec.formatVersion).toBe(2);
+    expect(spec.formatVersion).toBe(5);
+    expect(spec.version).toBe(3);
     expect(spec.layers.map((l) => l.id)).toEqual(['componentes', 'eventos', 'telas']);
     expect(spec.layers[1]?.annotationTypes[0]?.requiresOwner).toBe(true);
+    const repo = (name: string) => ({
+      url: `https://github.com/org/${name}`,
+      urlTemplate: `https://github.com/org/${name}/blob/v3/{path}`,
+      ref: 'v3',
+    });
     expect(spec.platforms).toEqual([
-      { id: 'android', name: 'Android', language: 'kotlin' },
-      { id: 'ios', name: 'iOS', language: 'swift' },
-      { id: 'bff', name: 'Contrato SDUI', language: 'json' },
+      { id: 'android', name: 'Android', language: 'kotlin', repo: repo('app-android') },
+      { id: 'ios', name: 'iOS', language: 'swift', repo: repo('app-ios') },
+      { id: 'bff', name: 'BFF', language: 'kotlin', repo: repo('bff') },
     ]);
   });
 
@@ -76,6 +84,17 @@ describe('exemplos de especialização', () => {
     expect(button?.path).toBe('app/src/main/java/com/app/ds/DSButton.kt');
     expect(button?.params).toMatchObject({ texto: 'text', estilo: 'style' });
     expect(button?.values?.estilo?.primary).toBe('ButtonStyle.Primary');
+    // A bff aponta para a função Kotlin que gera o nó do componente, não para o nó.
+    const bff = types[0]?.code?.bff;
+    expect(bff?.symbol).toBe('com.app.bff.sdui.button');
+    expect(bff?.path).toBe('src/main/kotlin/com/app/bff/sdui/Components.kt');
+    for (const type of types) {
+      const entry = type.code?.bff;
+      expect(entry?.symbol, type.id).toBe(`com.app.bff.sdui.${type.id}`);
+      expect(entry?.path, type.id).toMatch(
+        /^src\/main\/kotlin\/com\/app\/bff\/sdui\/\w+\.kt$/,
+      );
+    }
   });
 
   it('a camada Telas tem o Screen, só com nome e rota', () => {
@@ -105,7 +124,7 @@ describe('exemplos de especialização', () => {
 /** Cada caso: a mutação e o caminho (e trecho) esperado na mensagem. */
 const semantic: [string, (s: Json) => void, string][] = [
   ['format errado', (s) => (s.format = 'x'), 'format:'],
-  ['formatVersion errado', (s) => (s.formatVersion = 5), 'formatVersion:'],
+  ['formatVersion errado', (s) => (s.formatVersion = 6), 'formatVersion:'],
   ['id ausente', (s) => delete s.id, 'id:'],
   ['name ausente', (s) => delete s.name, 'name:'],
   ['version zero', (s) => (s.version = 0), 'version:'],
@@ -303,7 +322,7 @@ describe('validação do formato (13.2)', () => {
 /** Erros puramente estruturais: o JSON Schema também precisa rejeitar. */
 const structural: [string, (s: Json) => void][] = [
   ['format errado', (s) => (s.format = 'x')],
-  ['formatVersion errado', (s) => (s.formatVersion = 5)],
+  ['formatVersion errado', (s) => (s.formatVersion = 6)],
   ['id ausente', (s) => delete s.id],
   ['version zero', (s) => (s.version = 0)],
   ['key com espaço', (s) => (s.layers[0].annotationTypes[0].fields[0].key = 'a b')],
@@ -401,12 +420,12 @@ describe('formatVersion 1 e 2', () => {
     expect(parseSpec(withoutPlatforms(base())).ok).toBe(true);
   });
 
-  it('formatVersion fora de 1 a 4 é rejeitado, com a lista válida na mensagem', () => {
-    for (const bad of [0, 5, '2', null]) {
+  it('formatVersion fora de 1 a 5 é rejeitado, com a lista válida na mensagem', () => {
+    for (const bad of [0, 6, '2', null]) {
       const spec = { ...base(), formatVersion: bad };
       const errors = errorsOf(parseSpec(spec));
       expect(
-        errors.some((e) => e.startsWith('formatVersion: deve ser 1, 2, 3 ou 4')),
+        errors.some((e) => e.startsWith('formatVersion: deve ser 1, 2, 3, 4 ou 5')),
       ).toBe(true);
     }
   });
@@ -668,7 +687,7 @@ describe('validação do formatVersion 2 (plataformas e code)', () => {
 
 /** Erros estruturais do v2 que o JSON Schema também precisa rejeitar. */
 const structuralV2: [string, (s: Json) => void][] = [
-  ['formatVersion 5', (s) => (s.formatVersion = 5)],
+  ['formatVersion 6', (s) => (s.formatVersion = 6)],
   ['platforms[].id fora do formato', (s) => (s.platforms[0].id = 'Android')],
   ['platforms[].name ausente', (s) => delete s.platforms[0].name],
   ['platforms[] com propriedade desconhecida', (s) => (s.platforms[0].extra = 1)],
@@ -713,7 +732,7 @@ describe('consistência zod × JSON Schema (formatVersion 2)', () => {
 
   it('o JSON Schema declara as mesmas versões, tipos de campo e propriedades do zod', () => {
     const schema = jsonSchema as Json;
-    expect(schema.properties.formatVersion.enum).toEqual([1, 2, 3, 4]);
+    expect(schema.properties.formatVersion.enum).toEqual([1, 2, 3, 4, 5]);
     expect(Object.keys(schema.$defs.annotationType.properties)).toContain('sources');
     expect(Object.keys(schema.$defs.tableField.properties)).toContain('sources');
     expect(Object.keys(schema.properties)).toContain('platforms');

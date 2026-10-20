@@ -46,7 +46,6 @@ export type ModelErrorCode =
   | 'spec-missing-migrations'
   // Repositórios por plataforma (etapa 3b)
   | 'unknown-platform'
-  | 'invalid-url-template'
   | 'invalid-local-path'
   // Propostas de alteração (etapa 4)
   | 'invalid-source'

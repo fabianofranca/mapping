@@ -127,7 +127,7 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 | `annotation`     | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type` |
 | `layer`          | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                    |
 | `specialization` | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                               |
-| `platformRepo`   | — (`field: null`; `from`/`to` = `{ urlTemplate, localPath }`)                                                                                                                            |
+| `platformRepo`   | — (`field: null`; `from`/`to` = `{ localPath }`, a sobreposição local do clone; a leitura ignora o `urlTemplate` de propostas antigas)                                                   |
 
 - `values.<key>` ausente vale `null`. Uma tabela (`table`) muda inteira, numa mudança só.
 - `type` é a **troca de tipo** de uma anotação (ex: tipada convertida em livre ao remover uma especialização): `{ type, values, entries }` mudam juntos, numa mudança só, sem `values.*` nem `entries.*` separados.

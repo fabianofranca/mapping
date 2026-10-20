@@ -214,6 +214,8 @@ function fileNameOf(path: string): string {
 
 /** "Definição" de um tipo numa plataforma: o arquivo que define o símbolo do `code`. */
 export interface CodeDefinition {
+  /** Especialização dona do tipo: o `repo` dela dá o link do arquivo (`codeLink`). */
+  readonly specId: string;
   /** Id da plataforma. */
   readonly platform: string;
   /** Nome da plataforma declarado pela especialização (o id se ninguém a declara). */
@@ -228,10 +230,11 @@ export interface CodeDefinition {
 
 /**
  * "Definição" de um tipo: uma entrada por plataforma cujo `code` tem `path` (o arquivo que
- * define o símbolo), na ordem do `code`.
+ * define o símbolo), na ordem do `code`. `specId` é a especialização dona do tipo.
  */
 export function typeCodeDefinitions(
   p: Project,
+  specId: string,
   type: Pick<SpecAnnotationType, 'code'>,
 ): CodeDefinition[] {
   return Object.entries(type.code ?? {}).flatMap(([platform, code]) =>
@@ -239,6 +242,7 @@ export function typeCodeDefinitions(
       ? []
       : [
           {
+            specId,
             platform,
             platformName: findPlatform(p, platform)?.name ?? platform,
             path: code.path,

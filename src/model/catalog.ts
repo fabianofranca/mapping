@@ -47,7 +47,7 @@ export interface CatalogField {
   readonly accepts?: SpecRefAccepts;
 }
 
-/** `code` do tipo em uma plataforma. A UI monta os links com os repositórios do projeto (`codeLink`). */
+/** `code` do tipo em uma plataforma. A UI monta os links com o `repo` da especialização (`codeLink`). */
 export interface CatalogCode {
   readonly platform: {
     readonly id: string;

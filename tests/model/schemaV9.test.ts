@@ -41,7 +41,7 @@ describe('migração v8 → v9 (campo de código removido)', () => {
     expect(result.migratedFrom).toBe(8);
     expect(result.readOnly).toBe(false);
     expect(result.specWarnings).toEqual([]);
-    expect(result.project.schemaVersion).toBe(10);
+    expect(result.project.schemaVersion).toBe(11);
     expect(screenValues(result.project)).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
     // O mesmo projeto de antes do campo, com a cópia lida sem ele.
     expect(result.project).toEqual(codeProject());
@@ -51,7 +51,7 @@ describe('migração v8 → v9 (campo de código removido)', () => {
   it('grava a versão atual sem os valores, e a releitura é estável (com a cópia antiga em specs/)', () => {
     const { text, specs } = legacyCodeFiles();
     const saved = serialize(load(text, specs).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(10);
+    expect(JSON.parse(saved).schemaVersion).toBe(11);
     expect(saved).not.toContain('implementacao');
     expect(saved).not.toContain('CadastroScreen');
     const again = load(saved, specs);

@@ -34,7 +34,7 @@ test('projeto novo → imagem → marcação → anotação → zip com o mappin
   await page.getByLabel('Valor').press('Enter');
 
   const { mapping, files } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(10);
+  expect(mapping.schemaVersion).toBe(11);
   expect(files).toContain('images/tela.webp');
   expect(mapping.images).toHaveLength(1);
   expect(mapping.images[0]).toMatchObject({
@@ -103,7 +103,7 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
 
   const { mapping } = await exportMapping(page);
   expect(mapping.specializations).toEqual(
-    [{ id: 'sdui', version: 2 }].map((s) => expect.objectContaining(s)),
+    [{ id: 'sdui', version: 3 }].map((s) => expect.objectContaining(s)),
   );
   const free = mapping.annotations.find((a) => a.type === null);
   const input = mapping.annotations.find((a) => a.type?.typeId === 'input');
@@ -139,7 +139,7 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   await createProject(page, 'Janelas');
 
   // Barra de status e breadcrumbs sem seleção.
-  await expect(page.getByText('schema v10')).toBeVisible();
+  await expect(page.getByText('schema v11')).toBeVisible();
   await expect(page.locator('.crumbs')).toContainText('Nada selecionado');
 
   // Árvore e Detalhes abrem por padrão; a Lista abre pela faixa.
