@@ -26,6 +26,13 @@ import type { Refs } from './items';
 
 type Json = Record<string, unknown>;
 
+/**
+ * O que é o `code` de um tipo, repetido nas respostas que mostram plataformas
+ * (`get_specialization`, `get_project`) para o conceito chegar ao agente por qualquer caminho.
+ */
+export const CODE_HINT =
+  'O `code` de um tipo é o código de instanciação: `symbol` é o que se chama para criar uma instância do tipo nessa plataforma, `path` é o arquivo que define o `symbol` (leia a assinatura antes de escrever a chamada), `params` e `values` dizem como passar os campos, `notes` orienta. O repositório da biblioteca está em `platforms[].repo` da especialização; o clone local, em `platformRepos` do projeto. O mapeamento não guarda nada sobre a solução.';
+
 /** O que as visões precisam para resolver o `path` de um tipo. */
 export interface CodeContext {
   readonly refs: Refs;

@@ -230,7 +230,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_project',
     {
       description:
-        'Resumo do projeto: imagens, camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local) e o clone local por plataforma (`platformRepos`), contagens e pendências (anotações incompletas).',
+        'Resumo do projeto: imagens, camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) e o clone local por plataforma (`platformRepos`), contagens e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -449,7 +449,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_specialization',
     {
       description:
-        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações, e as plataformas de código com o `repo` de cada uma), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes).',
+        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações, e as plataformas de código com o `repo` de cada uma; com plataformas, `codeHint` diz o que é o `code` dos tipos (o código de instanciação: `symbol` é o que se chama para criar uma instância, `path` o arquivo que o define, para ler a assinatura)), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes).',
       inputSchema: {
         project: projectArg,
         specId: z

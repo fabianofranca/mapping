@@ -4,6 +4,8 @@
 // Uso:
 //   node scripts/testing/mcp-stdio-client.mjs <calls.json> [-- <argumentos do servidor>]
 //
+// Antes das chamadas, imprime as instruções do servidor, as mesmas que o Claude Code mostra ao agente.
+//
 // <calls.json> é uma lista: {"list":true} mostra as ferramentas e os esquemas; cada
 // {"name":"<ferramenta>","args":{...}} chama uma ferramenta, na ordem.
 //
@@ -119,12 +121,15 @@ const request = (method, params) =>
     send({ jsonrpc: '2.0', id, method, params });
   });
 
-await request('initialize', {
+const init = await request('initialize', {
   protocolVersion: '2025-06-18',
   capabilities: {},
   clientInfo: { name: 'agente-testador', version: '1' },
 });
 send({ jsonrpc: '2.0', method: 'notifications/initialized' });
+
+console.log('=== instructions');
+console.log(init.result?.instructions ?? '(sem instruções)');
 
 for (const call of calls) {
   const response = call.list

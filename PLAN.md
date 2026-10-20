@@ -131,6 +131,7 @@ A etapa muda a definição em cada documento, os textos da app, o exemplo, a ski
 
 - [x] R3.6a (pergunta de conceito, antes do R3.6): a resposta esperada cita instanciar, a assinatura e o repositório da especialização; reprova se falar de código gerado para a anotação ou de onde a instância foi implementada
 - [ ] Rodada dirigida do Cowork executada sobre o build do épico (R3, R5.3 e a pergunta), relato em `docs/history/relato-<data>-instanciacao.md`; achados corrigidos no épico antes do merge
+  - Rodada de 2026-10-20 sobre o build `dee8666` (MCP 0.6.0-rc.1): 54 ✅, 1 ❌ (R3.6a), relato em [`docs/history/relato-2026-10-20-instanciacao.md`](docs/history/relato-2026-10-20-instanciacao.md). Leitura do achado: o executor foi o cliente stdio, que não mostrava as instruções do servidor, e `get_specialization` e `get_project` não levavam o conceito. Correção: o cliente imprime as instruções antes das chamadas e as duas tools trazem `codeHint` com plataformas. O `urlTemplate` citado é o `repo.urlTemplate` da especialização (não reprova). Falta o dono refazer o R3.6a numa sessão limpa do Claude Code.
 - [ ] Rótulo `mcp-rc` no PR desta fase; a rc `mcp-v0.6.0-rc.<n>` sai no merge; a estável `mcp-v0.6.0` é tag do dono depois do merge do épico na `main`
 - [ ] Esta seção vai para `docs/history/PLAN-etapa-instanciacao.md` com as decisões consolidadas dos PRs e o relato; `PLAN.md` sem etapa em andamento; `ROADMAP.md` e `CLAUDE.md` atualizados
 
