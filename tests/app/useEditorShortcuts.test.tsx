@@ -581,6 +581,11 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
         constructor(readonly data: Record<string, unknown>) {}
       }
       vi.stubGlobal('ClipboardItem', FakeItem);
+      // O formato próprio só vai com `clipboard-read` já concedida.
+      Object.defineProperty(navigator, 'permissions', {
+        value: { query: () => Promise.resolve({ state: 'granted' }) },
+        configurable: true,
+      });
     }
     return { writeText, write };
   }
@@ -588,6 +593,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     Reflect.deleteProperty(navigator, 'clipboard');
+    Reflect.deleteProperty(navigator, 'permissions');
     window.getSelection()?.removeAllRanges();
   });
 
@@ -636,7 +642,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.press('c', { ctrl: true });
     await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
-    expect(writeText).not.toHaveBeenCalled();
+    expect(writeText).toHaveBeenCalledTimes(1);
     const item = write.mock.calls[0]?.[0][0] as { data: Record<string, Blob> };
     expect(Object.keys(item.data).sort()).toEqual([
       'text/plain',

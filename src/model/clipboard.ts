@@ -4,7 +4,8 @@ import type { ItemKind } from './itemRef';
 import type { Annotation, Marking, Project, ProjectImage } from './types';
 
 // Dados que o Ctrl+C grava na área de transferência além do texto da referência, num formato
-// próprio da app (formato web personalizado, ignorado por outros programas). Hoje só viaja:
+// próprio da app (formato web personalizado, ignorado por outros programas; os dados vão junto
+// do texto apenas quando a permissão `clipboard-read` já está concedida, senão só o texto). Hoje só viaja:
 // a ideia é, no futuro, duplicar itens com Ctrl+C / Ctrl+V dentro da app. Funções puras.
 
 /** Tipo MIME do formato próprio; no `ClipboardItem` ele vai com o prefixo `web `. */
