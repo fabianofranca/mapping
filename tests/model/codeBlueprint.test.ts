@@ -2,14 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   ModelError,
   addTypedAnnotation,
+  applySpecialization,
   codeBlueprint,
   createMarking,
+  removePlatformRepo,
+  removeSpecialization,
   setFieldValue,
+  setPlatformRepo,
   type BlueprintAnnotation,
   type BlueprintNode,
   type Project,
 } from '../../src/model';
-import { codeProject, layerOf } from './specFixtures';
+import { ANDROID_REPO, codeProject, idGen, layerOf, withSpecRepo } from './specFixtures';
 
 function codeOf(fn: () => unknown): string | null {
   try {
@@ -76,6 +80,7 @@ describe('codeBlueprint', () => {
       name: 'Android',
       language: 'kotlin',
       specIds: ['sdui'],
+      repos: [{ specId: 'sdui', repo: ANDROID_REPO }],
     });
     expect(outline(blueprint.root)).toEqual({
       Formulário: {
@@ -236,8 +241,10 @@ describe('codeBlueprint', () => {
 
   it('tipo sem code na plataforma entra com symbol null e só os valores do tipo', () => {
     const { root, repo } = codeBlueprint(codeProject(), 'MF', 'android');
+    // `url` e `ref` vêm do `repo` da especialização; `localPath`, da sobreposição do projeto.
     expect(repo).toEqual({
-      urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
+      url: 'https://github.com/org/app-android',
+      ref: 'v1.2.0',
       localPath: '../../..',
     });
     const screen = root.annotations.find((a) => a.typeId === 'screen');
@@ -283,7 +290,63 @@ describe('codeBlueprint', () => {
     expect(Object.keys(ios ?? {})).not.toContain('codeRefs');
   });
 
-  it('o path do code vem na planta; sem repositório da plataforma, sem endereço', () => {
+  it('repo: só da especialização, só do clone local, dos dois ou nenhum', () => {
+    const blueprint = (p: Project, platform: string) =>
+      codeBlueprint(p, 'MF', platform).repo;
+    const p = codeProject();
+    // iOS: a especialização não declara `repo` e o projeto não tem clone.
+    expect(blueprint(p, 'ios')).toBeNull();
+    // Só o clone local.
+    expect(blueprint(setPlatformRepo(p, 'ios', { localPath: '../ios' }), 'ios')).toEqual({
+      url: null,
+      ref: null,
+      localPath: '../ios',
+    });
+    // Só o `repo` da especialização (sem clone), com `ref` ausente.
+    const onlyUrl = withSpecRepo(removePlatformRepo(p, 'android'), 'sdui', 'android', {
+      url: 'https://git.interno/app',
+    });
+    expect(blueprint(onlyUrl, 'android')).toEqual({
+      url: 'https://git.interno/app',
+      ref: null,
+      localPath: null,
+    });
+    // Duas especializações: `url`/`ref` da primeira que declara `repo`.
+    const second = applySpecialization(
+      removeSpecialization(p, 'modelo-dados', 'convert'),
+      {
+        format: 'mapping-spec',
+        formatVersion: 5,
+        id: 'outra',
+        name: 'Outra',
+        version: 1,
+        platforms: [
+          { id: 'android', name: 'Android', repo: { url: 'https://gitlab.com/outra' } },
+        ],
+        layers: [],
+      },
+      { newId: idGen('LX') },
+    );
+    expect(blueprint(second, 'android')?.url).toBe('https://github.com/org/app-android');
+  });
+
+  it('o link do path vem do repo da especialização dona do tipo, não do projeto', () => {
+    const p = codeProject();
+    const android = nodeOf(codeBlueprint(p, 'MF', 'android').root, 'MC').annotations[0];
+    expect(android?.pathUrl).toBe(
+      'https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt',
+    );
+    // Sem `urlTemplate` no `repo`, sem link, mesmo com o clone local informado.
+    const noTemplate = withSpecRepo(p, 'sdui', 'android', {
+      url: 'https://git.interno/app',
+    });
+    expect(
+      nodeOf(codeBlueprint(noTemplate, 'MF', 'android').root, 'MC').annotations[0]
+        ?.pathUrl,
+    ).toBeNull();
+  });
+
+  it('o path do code vem na planta; sem repo da plataforma na especialização, sem endereço', () => {
     const android = nodeOf(codeBlueprint(codeProject(), 'MF', 'android').root, 'MC')
       .annotations[0];
     expect(android?.path).toBe('app/src/main/java/com/app/ds/DSButton.kt');

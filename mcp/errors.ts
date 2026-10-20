@@ -59,6 +59,7 @@ export const MCP_ERROR_CODES = [
   'spec-missing-migrations',
   'spec-unavailable',
   'unknown-alias',
+  'unknown-field',
   'unknown-platform',
   'unknown-root',
   'unknown-type',

@@ -20,7 +20,7 @@ describe('migração v5 → v6 (revisão)', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(5);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(10);
+    expect(result.project.schemaVersion).toBe(11);
     expect(result.project.revision).toBe(0);
     expect(result.project).toEqual(sampleProject());
   });
@@ -29,7 +29,7 @@ describe('migração v5 → v6 (revisão)', () => {
     const first = deserialize(v5Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(10);
+    expect(JSON.parse(saved).schemaVersion).toBe(11);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);

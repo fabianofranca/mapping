@@ -8,9 +8,9 @@ import {
   getSpec,
   isMarkingGeometryLocked,
   markingLockStates,
-  platformRepoWarnings,
   projectIndex,
   projectIssues,
+  platformRepoOf,
   projectPlatforms,
   refLabel,
   refsOf,
@@ -26,7 +26,7 @@ import {
   type ProjectImage,
   type ResolvedRef,
 } from '../src/model';
-import { annotationCode, assertPlatform, type CodeContext } from './codeViews';
+import { annotationCode, assertPlatform, CODE_HINT, type CodeContext } from './codeViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
@@ -415,7 +415,15 @@ export function projectDetail(refs: Refs): Json {
     markingsByImage.set(m.imageId, (markingsByImage.get(m.imageId) ?? 0) + 1);
   }
   const warnings = new Map(loaded.specWarnings.map((w) => [w.specId, w]));
-  const repoWarnings = platformRepoWarnings(p);
+
+  const platforms = projectPlatforms(p).map((platform) => ({
+    id: platform.id,
+    name: platform.name,
+    language: platform.language,
+    specs: platform.specIds,
+    repos: platform.repos.map((r) => ({ specId: r.specId, ...r.repo })),
+    localPath: platformRepoOf(p, platform.id)?.localPath ?? null,
+  }));
 
   return {
     ...projectSummary(loaded),
@@ -441,14 +449,9 @@ export function projectDetail(refs: Refs): Json {
         annotations: annotationsBySpec.get(s.id) ?? 0,
       };
     }),
-    platforms: projectPlatforms(p).map((platform) => ({
-      id: platform.id,
-      name: platform.name,
-      language: platform.language,
-      specs: platform.specIds,
-    })),
+    platforms,
+    ...(platforms.length > 0 ? { codeHint: CODE_HINT } : {}),
     platformRepos: p.platformRepos,
-    ...(repoWarnings.length > 0 ? { warnings: repoWarnings } : {}),
     lockedMarkings: p.markings.filter((m) => m.locked).length,
     needsReview: p.markings.filter((m) => m.needsReview).length,
     issues: {
@@ -486,6 +489,7 @@ export function specializationView(refs: Refs, specId: string): Json {
     projectLayers: p.layers
       .filter((l) => l.spec?.specId === specId)
       .map((l) => ({ id: l.id, name: l.name, specLayerId: l.spec?.layerId })),
+    ...(spec.platforms && spec.platforms.length > 0 ? { codeHint: CODE_HINT } : {}),
     spec,
   };
 }

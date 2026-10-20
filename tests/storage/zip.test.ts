@@ -47,7 +47,7 @@ describe('zip do projeto', () => {
     expect(read.files.specs).toEqual(specs);
   });
 
-  it('round-trip v10: SDUI v2 e Modelo de dados v1 juntos, com platformRepos', async () => {
+  it('round-trip v11: SDUI v5 (com repo) e Modelo de dados v1 juntos, com platformRepos', async () => {
     const project = codeProject();
     const mapping = serialize(project);
     const images = new Map([
@@ -69,7 +69,7 @@ describe('zip do projeto', () => {
       (JSON.parse(text) as { formatVersion: number }).formatVersion,
     ]);
     expect(formatVersions).toEqual([
-      ['specs/sdui.json', 2],
+      ['specs/sdui.json', 5],
       ['specs/modelo-dados.json', 1],
     ]);
 
@@ -81,13 +81,9 @@ describe('zip do projeto', () => {
     expect(serialize(loaded.project)).toBe(mapping);
 
     const data = JSON.parse(read.files.mapping);
-    expect(data.schemaVersion).toBe(10);
-    expect(data.platformRepos).toEqual({
-      android: {
-        urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
-        localPath: '../../..',
-      },
-    });
+    expect(data.schemaVersion).toBe(11);
+    // O projeto só guarda o clone local; o endereço está no `repo` da especialização.
+    expect(data.platformRepos).toEqual({ android: { localPath: '../../..' } });
     // O projeto lido do zip responde igual: busca pelo arquivo do tipo, link e pendências.
     const [found] = findByCode(loaded.project, { path: 'DSButton.kt' });
     expect(found?.typeId).toBe('button');
@@ -95,6 +91,7 @@ describe('zip do projeto', () => {
     expect(
       android &&
         codeLink(loaded.project, {
+          specId: found?.specId ?? '',
           platform: 'android',
           path: android.code.path ?? null,
         }),

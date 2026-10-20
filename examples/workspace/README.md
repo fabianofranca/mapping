@@ -28,9 +28,9 @@ Todas apontam para o mesmo comando: `node tools/mapping-mcp.js --root projetos -
 
 `projetos/` é onde o servidor procura `mapping.json` (em qualquer profundidade). `especializacoes/` guarda as fontes das especializações, que precisam estar dentro de uma raiz para `validate_specialization({ path })` e `apply_specialization` as lerem. `.git/` e `tools/` ficam de fora.
 
-## Ligar marcações a código
+## Escrever a solução a partir das marcações
 
-A conferência de existência de arquivos de código fica confinada ao diretório onde o cliente foi aberto. Para esse trabalho (`get_code_hints`, `find_by_code`), abra o agente no repositório do código e registre lá o servidor com esta pasta como raiz por caminho absoluto:
+O `code` de cada tipo diz como se cria uma instância dele em cada plataforma; o arquivo que o define fica no repositório (`repo`) da especialização. A conferência de existência de arquivos de código fica confinada ao diretório onde o cliente foi aberto. Para esse trabalho (`get_code_hints`, `find_by_code`), abra o agente no repositório do código e registre lá o servidor com esta pasta como raiz por caminho absoluto:
 
 ```json
 {

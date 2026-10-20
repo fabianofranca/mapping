@@ -52,7 +52,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     const result = load(v6Text(sampleProject()), sampleProject());
     expect(result.migratedFrom).toBe(6);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(10);
+    expect(result.project.schemaVersion).toBe(11);
     expect(result.project.platformRepos).toEqual({});
     expect(result.project).toEqual(sampleProject());
   });
@@ -78,7 +78,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
-    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 10, platformRepos: {} });
+    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 11, platformRepos: {} });
     const again = load(saved, p);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -86,16 +86,19 @@ describe('migração v6 → v7 (referências de código)', () => {
 
   it('é idempotente: preserva um platformRepos que já exista', () => {
     const repos = {
-      android: { urlTemplate: 'https://x/{path}', localPath: null },
+      android: { urlTemplate: 'https://x/{path}', localPath: '../app' },
     };
     expect(migrateFrom6To7({ platformRepos: repos })).toEqual({ platformRepos: repos });
     expect(migrateFrom6To7({})).toEqual({ platformRepos: {} });
     expect(migrateFrom6To7(migrateFrom6To7({ a: 1 }))).toEqual(migrateFrom6To7({ a: 1 }));
-    // Um v6 que já trazia o campo (ex: editado à mão) não perde a configuração.
+    // Um v6 que já trazia o campo (ex: editado à mão) não perde a configuração; na cadeia
+    // até a v11 só o `urlTemplate` sai (o endereço passou a ser da especialização).
     const p = specProject();
     const data = JSON.parse(serialize(p)) as Record<string, unknown>;
     const text = JSON.stringify({ ...data, schemaVersion: 6, platformRepos: repos });
-    expect(load(text, p).project.platformRepos).toEqual(repos);
+    expect(load(text, p).project.platformRepos).toEqual({
+      android: { localPath: '../app' },
+    });
   });
 
   it('o registro tem a migração da v6', () => {
@@ -112,12 +115,8 @@ describe('schema v7', () => {
     expect(Object.keys(data).indexOf('platformRepos')).toBe(
       Object.keys(data).indexOf('specializations') + 1,
     );
-    expect(data.platformRepos).toEqual({
-      android: {
-        urlTemplate: 'https://github.com/org/app-android/blob/main/{path}#L{line}',
-        localPath: '../../..',
-      },
-    });
+    // Desde a v11 o projeto guarda só o clone local; o endereço é da especialização.
+    expect(data.platformRepos).toEqual({ android: { localPath: '../../..' } });
     const loaded = load(text, p);
     expect(loaded.project).toEqual(p);
     expect(serialize(loaded.project)).toBe(text);
@@ -128,9 +127,9 @@ describe('schema v7', () => {
     const variants: unknown[] = [
       undefined,
       [],
-      { Android: { urlTemplate: null, localPath: null } },
-      { android: { urlTemplate: 1, localPath: null } },
-      { android: { urlTemplate: null } },
+      { Android: { localPath: null } },
+      { android: { localPath: 1 } },
+      { android: {} },
       { android: null },
     ];
     for (const platformRepos of variants) {
@@ -141,7 +140,7 @@ describe('schema v7', () => {
       });
     }
     // Plataforma que nenhuma especialização declara não impede a abertura.
-    const orphan = { web: { urlTemplate: '', localPath: null } };
+    const orphan = { web: { localPath: '.' } };
     const loaded = deserialize(JSON.stringify({ ...data, platformRepos: orphan }));
     expect(loaded.ok && loaded.project.platformRepos).toEqual(orphan);
   });

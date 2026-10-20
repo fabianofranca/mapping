@@ -9,7 +9,7 @@ import {
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deserialize } from '../../src/model';
-import { loadExample } from '../model/specFixtures';
+import { loadLegacySdui } from '../model/specFixtures';
 import {
   codeOf,
   connect,
@@ -157,11 +157,11 @@ describe('list_projects e descoberta', () => {
     expect(cadastro).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
-      schemaVersion: 10,
+      schemaVersion: 11,
       revision: 0,
       counts: { images: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
-        { id: 'sdui', version: loadExample('sdui').version },
+        { id: 'sdui', version: loadLegacySdui().version },
         { id: 'modelo-dados', version: 1 },
       ],
     });
@@ -207,6 +207,7 @@ describe('get_project', () => {
       lockedMarkings: 1,
       issues: { total: 1, byCode: { 'required-empty': 1 } },
     });
+    expect(data.codeHint).toEqual(expect.any(String));
     const layers = (
       data.layers as { name: string; spec: unknown; annotations: number }[]
     ).map((l) => [l.name, l.annotations]);
@@ -247,7 +248,7 @@ describe('get_project', () => {
       }),
     ]);
     const legado = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legado).toMatchObject({ schemaVersion: 10, revision: 0, migratedFrom: 5 });
+    expect(legado).toMatchObject({ schemaVersion: 11, revision: 0, migratedFrom: 5 });
   });
 
   it('ler nunca regrava o mapping.json (nem o de schema antigo)', () => {
@@ -719,15 +720,31 @@ describe('get_specialization', () => {
     );
     expect(data).toMatchObject({
       id: 'sdui',
-      version: loadExample('sdui').version,
+      version: loadLegacySdui().version,
       file: 'specs/sdui.json',
     });
-    expect(data.spec).toEqual(loadExample('sdui'));
+    expect(data.spec).toEqual(loadLegacySdui());
     expect((data.projectLayers as { name: string }[]).map((l) => l.name)).toEqual([
       'Componentes',
       'Eventos',
       'Telas',
     ]);
+  });
+
+  it('com plataformas traz o codeHint; sem plataformas, não', async () => {
+    const withPlatforms = ok(
+      await mcp.call('get_specialization', { project: 'cadastro', specId: 'sdui' }),
+    );
+    expect(withPlatforms.codeHint).toEqual(expect.stringContaining('instância'));
+    expect(withPlatforms.codeHint).toEqual(expect.stringContaining('assinatura'));
+    const without = ok(
+      await mcp.call('get_specialization', {
+        project: 'cadastro',
+        specId: 'modelo-dados',
+      }),
+    );
+    expect((without.spec as { platforms?: unknown[] }).platforms ?? []).toEqual([]);
+    expect(without).not.toHaveProperty('codeHint');
   });
 
   it('erra se não está aplicada ou se a cópia está ausente', async () => {
@@ -799,7 +816,7 @@ describe('create_project', () => {
       name: 'loja',
       path: 'novos/loja',
       projectName: 'Loja',
-      schemaVersion: 10,
+      schemaVersion: 11,
       revision: 0,
       counts: { images: 0, markings: 0, annotations: 0, layers: 1 },
     });

@@ -15,6 +15,11 @@ export type SpecWarningCode =
   | 'unused-platform'
   /** Tipo sem `code` numa especialização que declara plataformas. */
   | 'type-without-code'
+  /**
+   * Plataforma declarada sem `repo` em que algum tipo tem `code.<plataforma>.path`: o agente
+   * não sabe em que repositório estão esses arquivos (qualquer `formatVersion`; a v5 declara).
+   */
+  | 'path-without-repo'
   /** O `format` antigo (`mapeador-spec`), ainda aceito na importação. */
   | 'legacy-format'
   /** Campo de um tipo que saiu do formato (`REMOVED_FIELD_TYPE`): lido e ignorado. */
@@ -39,7 +44,8 @@ export function ignoredFieldWarnings(
 }
 
 /**
- * Avisos da especialização (já validada), na ordem do arquivo; `ignored` são os campos
+ * Avisos da especialização (já validada), na ordem do arquivo (os de tipo, depois
+ * `unused-platform` e `path-without-repo`, por plataforma); `ignored` são os campos
  * ignorados na leitura (`parseSpec`), que vêm logo depois do formato antigo.
  */
 export function specWarnings(
@@ -59,14 +65,21 @@ export function specWarnings(
 
   const platforms = spec.platforms ?? [];
   const used = new Set<string>();
+  /** id da plataforma → quantos tipos têm `code.<plataforma>.path`. */
+  const withPath = new Map<string, number>();
   spec.layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
-      for (const platform of Object.keys(type.code ?? {})) used.add(platform);
+      for (const [platform, entry] of Object.entries(type.code ?? {})) {
+        used.add(platform);
+        if (entry.path !== undefined) {
+          withPath.set(platform, (withPath.get(platform) ?? 0) + 1);
+        }
+      }
       if (platforms.length > 0 && Object.keys(type.code ?? {}).length === 0) {
         warnings.push({
           code: 'type-without-code',
           path: `layers[${li}].annotationTypes[${ti}]`,
-          message: `o tipo "${type.id}" não tem \`code\`: nenhuma plataforma saberá implementá-lo`,
+          message: `o tipo "${type.id}" não tem \`code\`: nenhuma plataforma diz como criar uma instância dele`,
         });
       }
     });
@@ -77,6 +90,15 @@ export function specWarnings(
       code: 'unused-platform',
       path: `platforms[${i}]`,
       message: `a plataforma "${platform.id}" é declarada, mas nenhum tipo a usa em \`code\``,
+    });
+  });
+  platforms.forEach((platform, i) => {
+    const count = withPath.get(platform.id) ?? 0;
+    if (platform.repo !== undefined || count === 0) return;
+    warnings.push({
+      code: 'path-without-repo',
+      path: `platforms[${i}]`,
+      message: `a plataforma "${platform.id}" tem tipos com \`path\` (${count}), mas não declara \`repo\`: o agente não sabe em que repositório estão esses arquivos; declare \`repo\` (formatVersion 5)`,
     });
   });
   return warnings;

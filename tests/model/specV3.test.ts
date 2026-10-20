@@ -14,7 +14,7 @@ import {
 // nas colunas de table). v1 e v2 continuam abrindo; `sources` só existe na v3.
 
 const read = (path: string): string => readFileSync(path, 'utf8');
-const sdui = read('examples/specs/sdui.json');
+const sdui = read('tests/fixtures/sdui-v2.json');
 const modelo = read('examples/specs/modelo-de-dados.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
 const jsonValidator = z.fromJSONSchema(jsonSchema as never);
@@ -59,8 +59,8 @@ function parsed(data: Json): Spec {
 }
 
 describe('especialização formatVersion 3 (sources)', () => {
-  it('a versão atual do formato é a 4', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(4);
+  it('a versão atual do formato é a 5', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(5);
   });
 
   it('aceita sources em tipos, campos e colunas de table, no zod e no JSON Schema', () => {

@@ -13,7 +13,10 @@ import {
   packageOfProject,
   type PackageSource,
 } from './library';
-import { findProject, loadProject } from './projects';
+import { LocalFileChecker } from './codeFiles';
+import { packageCodeView } from './codeViews';
+import { Refs } from './items';
+import { findProject, loadProject, type LoadedProject } from './projects';
 import type { Roots } from './paths';
 
 // `list_components` e `get_component` (etapa Biblioteca, B2): o que um agente precisa saber de
@@ -29,7 +32,13 @@ export interface ComponentArgs {
   path?: string | undefined;
 }
 
-async function openPackage(roots: Roots, args: ComponentArgs): Promise<PackageSource> {
+interface OpenedPackage {
+  readonly source: PackageSource;
+  /** Projeto que aplica o pacote (`project` + `specId`); `null` ao ler por `path`. */
+  readonly loaded: LoadedProject | null;
+}
+
+async function openPackage(roots: Roots, args: ComponentArgs): Promise<OpenedPackage> {
   const byPath = args.path !== undefined;
   if (byPath === (args.project !== undefined)) {
     throw new ToolError(
@@ -37,7 +46,9 @@ async function openPackage(roots: Roots, args: ComponentArgs): Promise<PackageSo
       'informe `project` + `specId` (a cópia aplicada) ou `path` (a pasta do pacote ou o arquivo da especialização), não os dois',
     );
   }
-  if (args.path !== undefined) return packageByPath(roots, args.path);
+  if (args.path !== undefined) {
+    return { source: await packageByPath(roots, args.path), loaded: null };
+  }
   if (args.specId === undefined) {
     throw new ToolError('invalid-arguments', 'informe `specId` (veja get_project)');
   }
@@ -57,7 +68,10 @@ async function openPackage(roots: Roots, args: ComponentArgs): Promise<PackageSo
       { specId: args.specId, file: applied.file },
     );
   }
-  return packageOfProject(roots, location.dir, applied.file, spec);
+  return {
+    source: await packageOfProject(roots, location.dir, applied.file, spec),
+    loaded,
+  };
 }
 
 interface LoadedComponent {
@@ -110,7 +124,7 @@ function typeEntries(
 
 /** `list_components`: um item por tipo com componente. */
 export async function listComponents(roots: Roots, args: ComponentArgs): Promise<Json> {
-  const source = await openPackage(roots, args);
+  const { source } = await openPackage(roots, args);
   const withComponent = typeEntries(source.spec).filter(
     (e) => e.type.component !== undefined,
   );
@@ -191,7 +205,7 @@ export async function getComponent(
   roots: Roots,
   args: ComponentArgs & { type: string },
 ): Promise<Json> {
-  const source = await openPackage(roots, args);
+  const { source, loaded: project } = await openPackage(roots, args);
   const entries = typeEntries(source.spec);
   const wanted = args.type.trim();
   let matches = entries.filter((e) => e.type.id === wanted);
@@ -260,7 +274,17 @@ export async function getComponent(
     doc,
     fields: type.fields.map(fieldView),
     examples,
-    ...(type.code === undefined ? {} : { code: type.code }),
+    ...(type.code === undefined
+      ? {}
+      : {
+          code: await packageCodeView(
+            source.spec,
+            type.code,
+            project === null
+              ? null
+              : { refs: new Refs(project), files: new LocalFileChecker(roots.workDir) },
+          ),
+        }),
     sources: type.sources ?? [],
     ...(hint === undefined ? {} : { hint }),
   };

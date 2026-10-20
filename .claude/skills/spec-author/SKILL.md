@@ -1,11 +1,11 @@
 ---
 name: spec-author
-description: Escreve, revisa ou atualiza uma especialização do Mapping (arquivo JSON "mapping-spec" com camadas, tipos de anotação, campos, relações, plataformas/code e origens) a partir de um código-fonte, design system ou documento, e a valida antes de entregar. Na formatVersion 4 escreve a BIBLIOTECA inteira (pasta com a especialização, um componente por arquivo, um documento por componente, exemplos e fontes) e a valida com validate_library. Use sempre que o pedido envolver criar ou mexer numa especialização, spec, "mapping-spec", tipos de anotação do Mapping, mapear componentes de um design system ou de um app para o Mapping, ou ligar tipos a código (code com symbol e path, platforms) ou a uma origem externa (sources, Figma) — mesmo que a palavra "especialização" não apareça.
+description: Escreve, revisa ou atualiza uma especialização do Mapping (arquivo JSON "mapping-spec" com camadas, tipos de anotação, campos, relações, plataformas/code e origens) a partir de um código-fonte, design system ou documento, e a valida antes de entregar. Na formatVersion 4 escreve a BIBLIOTECA inteira (pasta com a especialização, um componente por arquivo, um documento por componente, exemplos e fontes) e a valida com validate_library. Use sempre que o pedido envolver criar ou mexer numa especialização, spec, "mapping-spec", tipos de anotação do Mapping, mapear componentes de um design system ou de um app para o Mapping, ou dizer com que código se cria uma instância de cada tipo (code com symbol e path, platforms com repo), ou ligá-los a uma origem externa (sources, Figma) — mesmo que a palavra "especialização" não apareça.
 ---
 
 # Autor de especializações e bibliotecas do Mapping
 
-Uma **especialização** é o arquivo JSON que ensina o Mapping a falar a língua de um domínio: quais camadas existem, que tipos de anotação cada uma aceita, que campos cada tipo tem, como os tipos se relacionam e, opcionalmente, como cada tipo vira código em cada plataforma (`formatVersion` 2) e a que elemento de um sistema externo ele corresponde (`formatVersion` 3). Na `formatVersion` 4 a especialização vira uma **biblioteca**: uma pasta (o **pacote**) com a especialização, um arquivo de **componente** por tipo (o desenho), um **documento** markdown por componente, **exemplos** nomeados e a lista de **fontes**. O formato completo está em `docs/SPEC-FORMAT.md` do repositório do Mapping; esta skill é o método para produzir um arquivo que passe na validação de primeira e que modele bem o domínio.
+Uma **especialização** é o arquivo JSON que ensina o Mapping a falar a língua de um domínio: quais camadas existem, que tipos de anotação cada uma aceita, que campos cada tipo tem, como os tipos se relacionam e, opcionalmente, com que código se cria uma instância de cada tipo em cada plataforma (`formatVersion` 2; o repositório da biblioteca em cada plataforma entra na 5) e a que elemento de um sistema externo ele corresponde (`formatVersion` 3). Na `formatVersion` 4 a especialização vira uma **biblioteca**: uma pasta (o **pacote**) com a especialização, um arquivo de **componente** por tipo (o desenho), um **documento** markdown por componente, **exemplos** nomeados e a lista de **fontes**. O formato completo está em `docs/SPEC-FORMAT.md` do repositório do Mapping; esta skill é o método para produzir um arquivo que passe na validação de primeira e que modele bem o domínio.
 
 O prompt que invoca a skill traz o que muda de uma especialização para outra: id, nome, origem do material, `formatVersion`, plataformas, o que fica fora e, para uma biblioteca, a pasta de saída e a origem dos componentes. Tudo o que não muda está aqui.
 
@@ -72,11 +72,17 @@ Uma camada por natureza, não por módulo do código. `id` em `[a-z0-9-]+` e ún
 - `ref` é referência **forte** a uma tupla de outra anotação, por **etiqueta**: o campo alvo declara `tags`, e o campo `ref` declara `accepts: { tags: [...], free: true|false }`, com ao menos uma etiqueta ou `free: true`. Etiquetas em `[a-z0-9-]+`.
 - Uma especialização **nunca cita outra pelo nome**: a ligação entre elas é só por etiquetas. Reutilize `data-field` para atributo de um modelo de dados (classe, entidade, DTO); invente etiqueta nova só quando nenhuma existente serve, e registre-a na entrega.
 
-### 6. Plataformas e `code` (`formatVersion` 2)
+### 6. Plataformas e `code` (`formatVersion` 2; `repo` na 5)
 
-- `platforms` na raiz: `{ id, name, language }`, `id` em `[a-z0-9-]+` e único. Plataformas com o mesmo `id` em especializações diferentes são a mesma plataforma; alinhe com as já usadas no projeto (`get_project` mostra).
-- `code` por tipo, por id de plataforma declarada: `symbol` (obrigatório; confira que existe no código, com caminho, antes de escrever), `path` (opcional: o arquivo que define o `symbol`, **relativo à raiz do repositório da plataforma**, `/` como separador, sem `.`, `..` nem linha; preencha quando o arquivo for conhecido porque você o viu, nunca invente), `params` (chave do campo → nome do parâmetro; só o que é passado), `values` (só campos `enum`; valor do mapping → valor no código), `notes` (orientação curta para quem implementa).
-- **Nunca crie um campo `codeRef`** (nem outro campo para guardar onde a instância foi implementada): esse tipo saiu do formato. A especialização guarda só o que ajuda a **gerar** o código (`symbol`, `path`, `params`, `values`, `notes`), não referência ao código gerado. Ao revisar ou atualizar uma especialização que tem um campo `"type": "codeRef"`, **remova o campo** (e as chaves de `params` que o citam), suba a `version` e registre a remoção na entrega; o validador o aceita só por compatibilidade, com o aviso `ignored-field`.
+O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define, `params` e `values` dizem como passar os campos, `notes` orienta. O agente lê o arquivo para saber a assinatura e escreve a chamada na solução. O mapeamento não guarda nada sobre a solução: não é o código gerado para uma anotação.
+
+- `platforms` na raiz: `{ id, name, language, repo? }`. Uma plataforma é um alvo de código em que o agente escreve a solução (o app Android, o app iOS, o BFF que gera o JSON de uma tela). `id` em `[a-z0-9-]+` e único. Plataformas com o mesmo `id` em especializações diferentes são a mesma plataforma; alinhe com as já usadas no projeto (`get_project` mostra).
+- `repo` por plataforma (`formatVersion` 5): `{ url, urlTemplate?, ref? }`, o repositório **da biblioteca** naquela plataforma, a raiz a que os `path` se referem. Preencha `url` e `ref` do repositório que você leu (o endereço `http(s)://` e a tag, branch ou commit em que leu o código), nunca de memória; `urlTemplate` (com `{path}`) só quando souber o formato do endereço de um arquivo no host. Cada especialização declara o repositório da própria biblioteca. Plataforma em que algum tipo tem `path` e que não tem `repo` gera aviso de validação: preencha o `repo`.
+- `code` por tipo, por id de plataforma declarada:
+  - `symbol` (obrigatório): **o que se chama para criar uma instância do tipo**, com o nome completo e conferido no código: um composable, uma view, uma classe, a função do BFF que gera o JSON do componente. Não é o nome do nó de saída (`"button"`, `"onClick"`), é a função ou o construtor que o produz.
+  - `path` (opcional): o arquivo que define o `symbol`, para o agente ler a assinatura. **Relativo à raiz do `repo`**, `/` como separador, sem `.`, `..` nem linha. Preencha quando o arquivo for conhecido porque você o viu, nunca invente.
+  - `params` (chave do campo → nome do parâmetro; só o que é passado), `values` (só campos `enum`; valor do mapping → texto no código), `notes` (orientação curta para quem escreve a chamada: o que passar além dos campos, ordem, cuidados).
+- **Nunca crie um campo `codeRef`** (nem outro campo para guardar onde a instância foi escrita na solução): esse tipo saiu do formato. A especialização guarda só o que ajuda a **instanciar** (`symbol`, `path`, `params`, `values`, `notes`, `repo`), nada sobre a solução. Ao revisar ou atualizar uma especialização que tem um campo `"type": "codeRef"`, **remova o campo** (e as chaves de `params` que o citam), suba a `version` e registre a remoção na entrega; o validador o aceita só por compatibilidade, com o aviso `ignored-field`.
 - Nome de plataforma, linguagem ou framework só aparece dentro de `platforms` e `code`. O resto da especialização descreve o domínio, não a tecnologia.
 
 ### 7. Origens (`formatVersion` 3)
@@ -98,12 +104,12 @@ Só quando o prompt pede uma biblioteca (componentes que a app desenha). Faça o
 
 ### 9. Versão
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
 
-A validação é a mesma da importação da app, com o caminho exato do erro (`layers[0].annotationTypes[2].fields[1].default: …`). **Biblioteca (v4):** valide a **pasta inteira** (ver "Validar a biblioteca" abaixo), não só o arquivo. Rode, corrija o trecho apontado, rode de novo, até **zero erros**. Para cada **aviso** (plataforma declarada e não usada, tipo sem `code` numa especialização com plataformas, `format` antigo), ou corrija ou explique na entrega por que fica; o aviso `ignored-field` (campo `codeRef`) sempre se corrige, removendo o campo.
+A validação é a mesma da importação da app, com o caminho exato do erro (`layers[0].annotationTypes[2].fields[1].default: …`). **Biblioteca (v4):** valide a **pasta inteira** (ver "Validar a biblioteca" abaixo), não só o arquivo. Rode, corrija o trecho apontado, rode de novo, até **zero erros**. Para cada **aviso** (plataforma declarada e não usada, plataforma com `path` e sem `repo`, tipo sem `code` numa especialização com plataformas, `format` antigo), ou corrija ou explique na entrega por que fica; o aviso `ignored-field` (campo `codeRef`) sempre se corrige, removendo o campo.
 
 1. **Com o servidor MCP** (o caminho normal): `validate_specialization({ text })` com o JSON, ou `validate_specialization({ path })` se o arquivo estiver dentro das raízes. Não aplica a projeto algum.
 2. **Sem MCP, com o repositório do Mapping ao alcance**: um teste descartável em `tests/model/`, rodado com `npx vitest run tests/model/spec-draft.test.ts` e apagado depois. Ele não dá avisos, só erros.
@@ -170,6 +176,8 @@ Além do validador, releia o arquivo com estas perguntas: cada tipo do inventár
 
 ## Entrega
 
+**Revisão final, antes de entregar:** cada `symbol` é o que se chama para criar a instância (e não o nome do nó de saída), e cada plataforma com `path` tem `repo`?
+
 1. O arquivo JSON no caminho combinado, formatado com dois espaços, chaves na ordem do exemplo comentado de `docs/SPEC-FORMAT.md` (`format`, `formatVersion`, `id`, `name`, `version`, `description`, `platforms`, `layers`). Biblioteca: a **pasta** inteira (especialização, `components/`, `docs/`, `examples/`, `fonts/`), com os arquivos formatados com dois espaços.
 2. Um resumo curto, nesta ordem:
    - uma tabela camada → tipos, com a evidência de origem de cada tipo;
@@ -185,7 +193,9 @@ Não aplique a especialização a um projeto nem crie proposta, a menos que o pr
 - `id` de tipo repetido em camadas diferentes (`button` em Componentes e `button` em Telas): o id é único na especialização inteira.
 - Booleano como `string` com `default: "true"`: use `enum`.
 - `default` fora de `options`, ou `default` em `ref`.
-- Campo `codeRef` (onde foi implementado): saiu do formato; remova.
+- Campo `codeRef` (onde a instância foi escrita): saiu do formato; remova.
+- `symbol` com o nome do nó de saída (`"onClick"`, `"image"`) em vez da função ou classe que o gera.
+- Plataforma com `path` em algum tipo e sem `repo` (aviso): preencha `url` e `ref` do repositório que você leu.
 - `requiresOwner: true` sem nenhum tipo listando o filho em `allowedChildren`.
 - `code` referindo plataforma não declarada, ou `params` com chave que não é campo do tipo.
 - `sources[].values` em campo que não é `enum`, ou destino que não está em `options`.
@@ -200,11 +210,11 @@ O prompt só precisa especificar. Modelo:
 
 > /spec-author
 >
-> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4>.
+> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5>.
 >
 > **Origem:** <repositório, pasta ou design system>, lendo <o que ler: pasta dos componentes, catálogo exportado, documento>. Ignore <o que ignorar>.
 >
-> **Plataformas:** <`id` → nome, linguagem>, <…>. (Omitir na `formatVersion` 1.)
+> **Plataformas:** <`id` → nome, linguagem, repositório da biblioteca (`url` e `ref`)>, <…>; para cada uma, o que se chama para criar uma instância de um tipo (composable, view, classe, função do BFF). (Omitir na `formatVersion` 1; o repositório só na 5.)
 >
 > **Origem externa:** `system` = <nome exato>, ids/nomes em <onde pegar>. (Só na `formatVersion` 3.)
 >

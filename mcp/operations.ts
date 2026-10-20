@@ -109,20 +109,14 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         'Id de uma plataforma declarada pelas especializações aplicadas (veja `platforms` em get_project).',
       ),
-    urlTemplate: z
-      .string()
-      .nullable()
-      .optional()
-      .describe(
-        'URL de um arquivo no repositório, com `{path}` e, opcional, `{line}` (ex: `https://github.com/org/app/blob/main/{path}#L{line}`). `null` ou vazio remove; omitido mantém.',
-      ),
     localPath: z
       .string()
       .nullable()
       .optional()
       .describe(
-        'Raiz do repositório da plataforma, relativa à pasta do projeto (ex: `../../..`). `null` ou vazio remove; omitido mantém. Sem `urlTemplate` nem `localPath`, a configuração é removida.',
+        'Raiz do clone local do repositório da plataforma, relativa à pasta do projeto (ex: `../../..`). `null` ou vazio remove a configuração. O endereço do repositório vem da especialização (`platforms[].repo`), não do projeto: `urlTemplate` aqui falha com `unknown-field`.',
       ),
+    urlTemplate: z.unknown().optional().describe('Não existe mais: veja `localPath`.'),
   }),
   z.object({
     op: z.literal('remove_platform_repo'),

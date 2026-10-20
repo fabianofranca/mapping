@@ -5,7 +5,7 @@ Esta pasta centraliza os projetos **Mapping**: imagens (telas, protótipos, diag
 ## Para que servem estes mapeamentos
 
 <!-- Preencha: o objetivo de quem mantém esta pasta. Ex: "documentar as telas do app X, ligar cada
-componente ao código Android/iOS e gerar implementações a partir das marcações". É isto que o
+componente ao código de instanciação Android/iOS e escrever as telas na solução a partir das marcações". É isto que o
 servidor MCP não sabe dizer: ele explica o mecanismo, não o propósito. -->
 
 ## Estrutura
@@ -33,7 +33,7 @@ Comece por `list_projects`. O servidor descreve seu uso nas próprias instruçõ
 - **Nunca edite `mapping.json`, `specs/` ou `proposals/` à mão.** Toda alteração vai por `plan_changes` (prévia) e `propose_changes` (grava uma proposta); a pessoa revisa e aplica na app. Depois de propor, avise e espere a revisão (`get_proposal`, `get_proposal_review`).
 - **Especializações nascem em `especializacoes/`**, com a skill `spec-author` (abaixo), são validadas com `validate_specialization` e aplicadas a um projeto só por proposta (`apply_specialization` dentro de `propose_changes`). Para mudar uma aplicada, edite a fonte, suba a `version` e envie `update_specialization`. **Bibliotecas** (`formatVersion` 4) são **pastas** `especializacoes/<id>/`: valide com `validate_library({ path })` (não só o arquivo) e entregue a pasta à pessoa, que a aplica na app (Especializações); `propose_changes` recusa pacote v4. Para ler os componentes, use `list_components` e `get_component`.
 - **Coordenadas** de marcação são sempre em pixels da imagem original.
-- **Código**: o servidor só confere se arquivos de código existem, e só dentro do diretório onde o cliente foi aberto. Para ligar marcações a código (`get_code_hints`, `find_by_code`), abra o agente no repositório do código, com esta pasta como raiz do servidor por caminho absoluto.
+- **Código**: o servidor só confere se arquivos de código existem, e só dentro do diretório onde o cliente foi aberto. O `code` de um tipo diz como se cria uma instância dele em cada plataforma (o que se chama e o arquivo que o define, no repositório da especialização); o mapeamento não guarda nada sobre a solução. Para escrever a solução a partir das marcações (`get_code_hints`, `find_by_code`), abra o agente no repositório do código, com esta pasta como raiz do servidor por caminho absoluto.
 
 ## Skill `spec-author`
 

@@ -34,12 +34,20 @@ describe('ajuda: especializações', () => {
     expect(parseSpecText(code.code).ok).toBe(true);
   });
 
-  it('a seção de plataformas e code existe nos dois idiomas e o trecho é uma v2 válida', () => {
+  it('a seção de plataformas e code existe nos dois idiomas e o trecho é uma v5 válida', () => {
     for (const locale of ['pt-BR', 'en-US'] as const) {
       const section = specHelpSections(locale).find((s) => s.id === 'code');
       expect(section, locale).toBeDefined();
       const text = JSON.stringify(section);
-      for (const term of ['platforms', 'code', 'symbol', 'path', 'params', 'values']) {
+      for (const term of [
+        'platforms',
+        'repo',
+        'code',
+        'symbol',
+        'path',
+        'params',
+        'values',
+      ]) {
         expect(text, `${locale}: ${term}`).toContain(term);
       }
       // O tipo de campo removido na etapa 9 sai da ajuda inteira.
@@ -48,7 +56,7 @@ describe('ajuda: especializações', () => {
       if (code?.kind !== 'code') throw new Error('sem trecho de código');
       const parsed = parseSpecText(code.code);
       expect(parsed.ok, locale).toBe(true);
-      if (parsed.ok) expect(parsed.spec.formatVersion).toBe(2);
+      if (parsed.ok) expect(parsed.spec.formatVersion).toBe(5);
     }
   });
 
