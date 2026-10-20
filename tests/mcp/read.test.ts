@@ -207,6 +207,7 @@ describe('get_project', () => {
       lockedMarkings: 1,
       issues: { total: 1, byCode: { 'required-empty': 1 } },
     });
+    expect(data.codeHint).toEqual(expect.any(String));
     const layers = (
       data.layers as { name: string; spec: unknown; annotations: number }[]
     ).map((l) => [l.name, l.annotations]);
@@ -728,6 +729,22 @@ describe('get_specialization', () => {
       'Eventos',
       'Telas',
     ]);
+  });
+
+  it('com plataformas traz o codeHint; sem plataformas, não', async () => {
+    const withPlatforms = ok(
+      await mcp.call('get_specialization', { project: 'cadastro', specId: 'sdui' }),
+    );
+    expect(withPlatforms.codeHint).toEqual(expect.stringContaining('instância'));
+    expect(withPlatforms.codeHint).toEqual(expect.stringContaining('assinatura'));
+    const without = ok(
+      await mcp.call('get_specialization', {
+        project: 'cadastro',
+        specId: 'modelo-dados',
+      }),
+    );
+    expect((without.spec as { platforms?: unknown[] }).platforms ?? []).toEqual([]);
+    expect(without).not.toHaveProperty('codeHint');
   });
 
   it('erra se não está aplicada ou se a cópia está ausente', async () => {
