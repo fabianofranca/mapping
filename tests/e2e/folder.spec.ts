@@ -203,6 +203,24 @@ test('Detalhes: copiar referência e copiar recorte ao lado do ID', async ({
   await expect(toast(page, 'Recorte copiado')).toBeVisible();
 });
 
+test('Detalhes: copiar referência só com clipboard-write não pede permissão e grava o texto', async ({
+  page,
+  context,
+}) => {
+  // Cenário do dono: a pessoa nunca concedeu "ver texto e imagens copiados" (clipboard-read).
+  await context.grantPermissions(['clipboard-write']);
+  const marking = await withMarking(page);
+  await page.getByRole('button', { name: 'Copiar referência' }).first().click();
+  await expect(toast(page, 'Referência copiada')).toBeVisible();
+
+  // Só depois do clique concede a leitura, para conferir o que foi gravado.
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const code = marking.id.replaceAll('-', '').slice(0, 8);
+  const text = await clipboardText(page);
+  expect(text).toMatch(/^mapping:\/\//);
+  expect(text).toContain(`/m/${code} (`);
+});
+
 test('menu da linha da Árvore (desktop) copia a referência', async ({
   page,
   context,
