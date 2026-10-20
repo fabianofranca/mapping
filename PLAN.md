@@ -129,7 +129,7 @@ A etapa muda a definição em cada documento, os textos da app, o exemplo, a ski
 
 **Toca em:** `docs/TESTING.md` (R3.6: a pergunta de conceito ao agente, com a resposta esperada e o que a reprova; a seção 6 se o `.mcp.json` ou a versão mudarem; R5 se citar `set_platform_repo`), `docs/TESTING-COWORK.md` (rodada dirigida: R3 inteiro, R5.3 e a pergunta de conceito), `docs/ROADMAP.md`, `CLAUDE.md`, `PLAN.md`, novo `docs/history/PLAN-etapa-instanciacao.md`.
 
-- [ ] R3.6 com a pergunta de conceito: a resposta esperada cita instanciar, a assinatura e o repositório da especialização; reprova se falar de código gerado para a anotação ou de onde a instância foi implementada
+- [x] R3.6 com a pergunta de conceito: a resposta esperada cita instanciar, a assinatura e o repositório da especialização; reprova se falar de código gerado para a anotação ou de onde a instância foi implementada
 - [ ] Rodada dirigida do Cowork executada sobre o build do épico (R3, R5.3 e a pergunta), relato em `docs/history/relato-<data>-instanciacao.md`; achados corrigidos no épico antes do merge
 - [ ] Rótulo `mcp-rc` no PR desta fase; a rc `mcp-v0.6.0-rc.<n>` sai no merge; a estável `mcp-v0.6.0` é tag do dono depois do merge do épico na `main`
 - [ ] Esta seção vai para `docs/history/PLAN-etapa-instanciacao.md` com as decisões consolidadas dos PRs e o relato; `PLAN.md` sem etapa em andamento; `ROADMAP.md` e `CLAUDE.md` atualizados

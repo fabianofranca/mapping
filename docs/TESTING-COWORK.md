@@ -28,6 +28,7 @@ Se a mensagem do dono for só um link de PR do Mapping ("Teste <link>"), trate c
 > - **Rodada dirigida por lista de passos:** "… no modo dirigido: R0, R4.1 a R4.5 e R6.8a a R6.11."
 > - **Rodada dirigida pelas fases de um plano:** "… no modo dirigido: as fases 7.1 e 7.2 de `docs/history/PLAN-etapa-7.md`."
 > - **Rodada dirigida da etapa 9 (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da etapa 9 (seção 9 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
+> - **Rodada dirigida da etapa Código de instanciação (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da instanciação (seção 10 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Configurações."
 > - **Sessão sob demanda (roteiro manual):** "Leia `docs/TESTING-COWORK.md` e execute a **sessão sob demanda: RP**. Build id esperado: `abc1234 · AAAA-MM-DD`." (seção 5; só quando o dono pedir, citando o roteiro)
 
 - **Rodada sem interação (o dono só deixa a janela do Chrome na frente):** "Leia `docs/TESTING-COWORK.md` e execute **sem interação**: rodada completa. Build id esperado: `abc1234 · AAAA-MM-DD`." (vale também no modo dirigido, com o alvo)
@@ -175,3 +176,25 @@ As fases da etapa 9 ([`docs/history/PLAN-etapa-9.md`](history/PLAN-etapa-9.md)) 
 Na **passada visual**, olhe com atenção o painel **Detalhes** na revisão (marcador, popover, cabeçalho do item e "Outras mudanças"), nas visões **Atual** e **Proposto**, nos temas claro e escuro, e a janela **Propostas** (menu ⋯ da linha e o diálogo **Apagar proposta?**). Em cada decisão do R4 e do R5, confira também o **teclado** (`Tab` até o marcador, `A`, `R`, `Backspace`, `Esc`, setas) e que o foco nunca cai no `body`.
 
 **Relato:** o mesmo template; use o código da fase (9.2 a 9.6) na coluna **Achado de origem** e liste em "O que atrapalhou" o que o passo novo do guia (R3.8 e R3.9, R4.12 e R4.13) deixou ambíguo. Se algo da lista não puder ser executado, marque "não executado (motivo)".
+
+---
+
+## 10. Rodada dirigida da etapa Código de instanciação
+
+As fases C1 a C4 do épico `epic/instanciacao` (histórico em [`docs/history/PLAN-etapa-instanciacao.md`](history/PLAN-etapa-instanciacao.md), quando a etapa fechar) mudaram o conceito do `code` (o código com que se **cria uma instância** do tipo na solução), moveram o repositório para a especialização (`formatVersion` 5, `platforms[].repo`), deixaram no projeto só o caminho local (schema v11) e trocaram a forma das respostas do MCP (0.6.0). Vale como o modo dirigido "pelas fases de um plano", com a lista já montada abaixo (mostre-a ao dono e peça confirmação, como na seção 5).
+
+**Antes de começar**
+
+- O **build id** esperado é o do épico (preview do PR da C4 ou do épico); o MCP precisa ser o **0.6.0** ou mais novo (`node mapping-mcp.js --version`, seção 6 do guia; a rc `mcp-v0.6.0-rc.<n>` serve). Com um `mapping-mcp.js` anterior, o R3.6 e o R5 não valem: marque "não executado (MCP anterior à 0.6.0)".
+- **Todos os roteiros partem de projetos novos**, com o `sdui.json` do épico (`formatVersion` 5, com `repo` nas três plataformas). Não reaproveite pastas ou projetos de rodadas anteriores; registre em "Estado prévio do navegador" o que já existia.
+- O R3.8 e o R3.8b (projeto v10 com `urlTemplate`) usam o preparo do guia ("Preparo do R3.8 e do R3.9", antes da tabela do R3).
+
+**Lista dirigida** (depois do **R0 inteiro**; o R1 inteiro entra antes do R3, e o repositório de teste e o MCP da seção 6 antes do R3.6 e do R5):
+
+| Passos                   | Fase   | O que confere                                                                                                                                                                             |
+| ------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R3.1 a R3.5, R3.7 a R3.9 | C1     | Linha **Definição** com link logo depois de aplicar a especialização (sem configurar nada); Configurações só com o caminho local e o `repo` em leitura; migração v10 → v11 com backup     |
+| R3.6                     | C2, C3 | **A pergunta de conceito** (primeiro, em sessão limpa) e as chamadas do MCP 0.6.0: `get_code_hints` com `types`, `repos` e `args`; `find_by_code`; `set_platform_repo` só com `localPath` |
+| R5.3                     | C3     | Decisões e notas pelo painel com o MCP 0.6.0 (a proposta lida e aplicada com a forma nova das respostas)                                                                                  |
+
+**Relato:** o mesmo template, em `docs/history/relato-<data>-instanciacao.md`; use o código da fase (C1 a C3) na coluna **Achado de origem**. **Registre a resposta literal à pergunta de conceito** e diga se passou ou reprovou pelo critério do R3.6. Se algo da lista não puder ser executado, marque "não executado (motivo)".
