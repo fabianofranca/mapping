@@ -1,5 +1,6 @@
-import { readFile } from 'node:fs/promises';
-import { basename } from 'node:path';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   approximateMeasurer,
   createDrawingCache,
@@ -40,11 +41,13 @@ export interface MarkingImageOptions {
   readonly outlineChildren?: boolean;
   readonly maxSize?: number;
   readonly format?: ImageFormat;
+  readonly save?: boolean;
 }
 
 export interface ImageFileOptions {
   readonly maxSize?: number;
   readonly format?: ImageFormat;
+  readonly save?: boolean;
 }
 
 /** Texto (JSON) e a imagem que a tool devolve. */
@@ -61,6 +64,43 @@ interface LoadedImage {
   /** Razão arquivo / projeto: ≠ 1 se o arquivo não tem as dimensões gravadas no `mapping.json`. */
   readonly scaleX: number;
   readonly scaleY: number;
+}
+
+const EXTENSION: Record<ImageFormat, string> = { png: 'png', jpeg: 'jpg', webp: 'webp' };
+
+/**
+ * Grava os bytes devolvidos em `<pasta do projeto>/crops/<name>` (sobrescreve). Na primeira
+ * gravação cria `crops/.gitignore` com `*` (a pasta se ignora sozinha). O nome é montado pelo servidor.
+ */
+export async function saveOutput(
+  dir: string,
+  name: string,
+  bytes: Uint8Array,
+): Promise<{ path: string; url: string }> {
+  const folder = join(dir, 'crops');
+  await mkdir(folder, { recursive: true });
+  const ignore = join(folder, '.gitignore');
+  try {
+    await access(ignore);
+  } catch {
+    await writeFile(ignore, '*\n');
+  }
+  const path = join(folder, name);
+  await writeFile(path, bytes);
+  return { path, url: pathToFileURL(path).href };
+}
+
+/** `saved: { path, url, markdown }`; o markdown usa `<…>` se o caminho tiver espaço. */
+async function savedField(
+  dir: string,
+  name: string,
+  bytes: Uint8Array,
+  alt: string,
+): Promise<{ saved: { path: string; url: string; markdown: string } }> {
+  const { path, url } = await saveOutput(dir, name, bytes);
+  const cleanAlt = alt.replace(/[\]\r\n]+/g, ' ').trim();
+  const target = /\s/.test(path) ? `<${path}>` : path;
+  return { saved: { path, url, markdown: `![${cleanAlt}](${target})` } };
 }
 
 /** Mais pixels que isso, a tela em branco é rasterizada reduzida (é uma cor só). */
@@ -230,6 +270,15 @@ export async function markingImage(
   const format = outputFormat(options.format, loaded.format);
   const bytes = await encodeImage(composed.raster, format);
 
+  const saved = options.save
+    ? await savedField(
+        refs.loaded.location.dir,
+        `m-${refs.code('m', marking.id)}-${mode}${options.outlineChildren ? '-children' : ''}-${composed.raster.width}x${composed.raster.height}.${EXTENSION[format]}`,
+        bytes,
+        refs.markingName(marking.id),
+      )
+    : {};
+
   const markingOutline = mode === 'context' ? composed.outlines[0]! : null;
   const markingInOutput =
     markingOutline?.output ??
@@ -283,6 +332,7 @@ export async function markingImage(
           }
         : {}),
       ...sizeWarning(loaded, image),
+      ...saved,
     },
     image: { bytes, mimeType: MIME[format] },
   };
@@ -317,6 +367,15 @@ export async function imageFile(
         target.scale === 1 ? raster : resize(raster, target.width, target.height),
         format,
       );
+  const outFormat = same ? loaded.format : format;
+  const saved = options.save
+    ? await savedField(
+        refs.loaded.location.dir,
+        `i-${refs.code('i', image.id)}-${target.width}x${target.height}.${EXTENSION[outFormat]}`,
+        bytes,
+        image.file ?? '',
+      )
+    : {};
   return {
     json: {
       ref: refs.ref('i', image.id),
@@ -329,6 +388,7 @@ export async function imageFile(
       scale: target.scale,
       recoded: !same,
       ...sizeWarning(loaded, image),
+      ...saved,
     },
     image: { bytes, mimeType: MIME[same ? loaded.format : format] },
   };

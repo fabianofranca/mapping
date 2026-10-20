@@ -4,7 +4,7 @@ Este guia é para o agente de IA (Claude Code, Claude Desktop ou outro cliente M
 
 O Mapping marca **áreas retangulares** em imagens, organiza as informações em **camadas** e as descreve com **anotações** (pares chave-valor livres ou anotações **tipadas** de uma especialização). O servidor lê projetos guardados **em pasta** dentro das raízes configuradas (`--root`). Projetos guardados só no navegador não são alcançáveis.
 
-> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`), **dá o código de instanciação** de cada tipo mapeado (`get_code_hints`, `find_by_code`), **propõe alterações** para o usuário revisar (`propose_changes`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`), **casa elementos de uma origem externa** (`source`, `find_by_source`, `find_types_by_source`) **valida especializações** (`validate_specialization`) e **bibliotecas de componentes** (`validate_library`) e **lê os componentes** (`list_components`, `get_component`). **Você nunca grava o projeto**: o `apply_changes` não existe mais.
+> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`) e **grava o recorte em disco a pedido** (`save`), **dá o código de instanciação** de cada tipo mapeado (`get_code_hints`, `find_by_code`), **propõe alterações** para o usuário revisar (`propose_changes`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`), **casa elementos de uma origem externa** (`source`, `find_by_source`, `find_types_by_source`) **valida especializações** (`validate_specialization`) e **bibliotecas de componentes** (`validate_library`) e **lê os componentes** (`list_components`, `get_component`). **Você nunca grava o projeto**: o `apply_changes` não existe mais.
 
 ## Conceitos que importam
 
@@ -55,14 +55,16 @@ Quando o dev cola uma referência no chat, chame `get_marking` (ou `resolve`) co
 
 As duas tools de imagem devolvem a **imagem** (conteúdo `image`) e, antes dela, um texto JSON que a descreve. Leia o texto: ele diz o que a imagem mostra.
 
-- **`get_marking_image(ref, { padding, mode, outlineChildren, maxSize, format })`**
+- **`get_marking_image(ref, { padding, mode, outlineChildren, maxSize, format, save })`**
   - `mode: "crop"` (padrão): só o recorte da marcação, nos pixels do arquivo original. `padding` (em pixels da imagem original, padrão 0) acrescenta contexto em volta; fica limitado às bordas da imagem.
   - `mode: "context"`: a imagem inteira, com a marcação contornada em magenta (`#FF00FF`). Use para entender **onde** a marcação está.
   - `outlineChildren: true`: contorna as filhas diretas, cada uma com uma cor, e devolve `childrenLegend` (cor → nome → referência → `rect`). Use a legenda para ligar o que você vê às marcações filhas (e a `get_marking` de cada uma). Passando de 24 filhas, as demais não são contornadas (`childrenNotOutlined`).
   - `maxSize` (padrão 1568, entre 64 e 4096) limita o lado maior da imagem devolvida; a imagem nunca é ampliada. Uma marcação pequena sai no tamanho real: use `padding` para ver o entorno.
   - `format`: `png` (padrão, sem perdas: bom para telas e texto), `jpeg` (padrão se o arquivo original é JPEG) ou `webp`.
   - Numa **tela em branco** o recorte é o **desenho simplificado** dos componentes (`drawing: "simplified"`): texto em barras e cores sólidas, sem fontes, gradientes nem sombras. Confira posição, tamanho e hierarquia, não o acabamento.
-- **`get_image_file(ref, { maxSize, format })`** — a imagem inteira, reduzida se passar de `maxSize`. Cabendo e sem pedir outro formato, é o arquivo original.
+- **`get_image_file(ref, { maxSize, format, save })`** — a imagem inteira, reduzida se passar de `maxSize`. Cabendo e sem pedir outro formato, é o arquivo original.
+
+**`save: true`** (nas duas tools, padrão `false`) grava os mesmos bytes que a tool devolve em `crops/` na pasta do projeto (com um `crops/.gitignore`, então a pasta se ignora sozinha) e acrescenta ao texto `saved: { path, url, markdown }`. Use quando o seu cliente não mostra a imagem no chat: cole `saved.markdown` na resposta para o usuário ver o recorte; se o cliente não renderizar o caminho, tente a `url` (`file://`). O nome do arquivo é fixo para os mesmos parâmetros, então repetir a chamada sobrescreve. O conteúdo `image` continua sendo devolvido.
 
 No texto: `region` é a parte da imagem original que aparece (em pixels da imagem original), `scale` o fator de redução e `markingInOutput` onde a marcação ficou, **em pixels da imagem devolvida** (o contorno de uma filha usa a mesma conversão: `(x - region.x) × scale`). Se o arquivo tiver dimensões diferentes das do `mapping.json`, as coordenadas são ajustadas na proporção e vem um `warning`.
 
@@ -420,6 +422,11 @@ O **repositório é da biblioteca**: cada especialização declara o da própria
 ### O que o servidor nunca faz
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
+
+### Mudança na versão 0.7.0
+
+- **`save: true` em `get_marking_image` e `get_image_file`** grava o recorte em `crops/` da pasta do projeto e devolve `saved: { path, url, markdown }`, para clientes que não mostram o conteúdo `image` (como o Cursor). Sem `save`, nada muda.
+- Nomes das tools inalterados. Use a 0.7.0 com a app da mesma época (schema v11, sem mudança).
 
 ### Mudança na versão 0.6.0
 

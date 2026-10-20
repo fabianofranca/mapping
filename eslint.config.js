@@ -192,7 +192,7 @@ const mcpWriterImports = ['node:fs', 'node:fs/promises', 'fs', 'fs/promises'].ma
     name,
     importNames: [...fsWriters, ...fsWriters.map((fn) => `${fn}Sync`)],
     message:
-      'mcp/ só grava em paths.ts, createProject.ts e proposalStore.ts (o mapping.json é da app).',
+      'mcp/ só grava em paths.ts, createProject.ts, proposalStore.ts e imageTools.ts (crops/; o mapping.json é da app).',
   }),
 );
 
@@ -333,6 +333,7 @@ export default tseslint.config(
       'mcp/paths.ts',
       'mcp/createProject.ts',
       'mcp/proposalStore.ts',
+      'mcp/imageTools.ts',
       'mcp/build.mjs',
     ],
     rules: {

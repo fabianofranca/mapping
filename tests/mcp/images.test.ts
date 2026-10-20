@@ -1,7 +1,13 @@
-import { copyFileSync, mkdtempSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -43,6 +49,7 @@ interface MarkingImageData {
   childrenLegend?: { color: string; name: string; ref: string; rect: Rect }[];
   childrenNotOutlined?: number;
   warning?: string;
+  saved?: { path: string; url: string; markdown: string };
 }
 interface ImageFileData {
   ref: string;
@@ -54,6 +61,7 @@ interface ImageFileData {
   scale: number;
   recoded: boolean;
   warning?: string;
+  saved?: { path: string; url: string; markdown: string };
 }
 interface Rect {
   x: number;
@@ -541,5 +549,78 @@ describe('arquivo único', () => {
     } finally {
       await client.close();
     }
+  });
+});
+
+describe('save: grava o recorte em crops/', () => {
+  const cropsDir = () => join(ws.root, 'imagens', 'crops');
+  const files = () => (existsSync(cropsDir()) ? readdirSync(cropsDir()) : []);
+  const same = (path: string, bytes: Uint8Array | null) =>
+    Buffer.from(bytes!).equals(readFileSync(path));
+
+  it('sem save: sem o campo saved e sem criar crops/', async () => {
+    expect(existsSync(cropsDir())).toBe(false);
+    const r = ok(await crop(IDS.png));
+    expect(r.data.saved).toBeUndefined();
+    const f = ok(await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.png) }));
+    expect(f.data.saved).toBeUndefined();
+    expect(existsSync(cropsDir())).toBe(false);
+  });
+
+  it('get_marking_image grava exatamente os bytes devolvidos', async () => {
+    const r = ok(await crop(IDS.png, { save: true }));
+    const saved = r.data.saved!;
+    const name = `m-${codeOf(IDS.parent(IDS.png))}-crop-${r.data.width}x${r.data.height}.png`;
+    expect(isAbsolute(saved.path)).toBe(true);
+    expect(saved.path).toBe(join(cropsDir(), name));
+    expect(same(saved.path, r.bytes)).toBe(true);
+    expect(saved.url.startsWith('file://')).toBe(true);
+    expect(saved.markdown).toBe(`![Formulário](${saved.path})`);
+    expect(readFileSync(join(cropsDir(), '.gitignore'), 'utf8')).toBe('*\n');
+  });
+
+  it('mode context com outlineChildren entra no nome', async () => {
+    const r = ok(
+      await crop(IDS.png, { save: true, mode: 'context', outlineChildren: true }),
+    );
+    const name = `m-${codeOf(IDS.parent(IDS.png))}-context-children-${r.data.width}x${r.data.height}.png`;
+    expect(r.data.saved!.path).toBe(join(cropsDir(), name));
+    expect(same(r.data.saved!.path, r.bytes)).toBe(true);
+  });
+
+  it('chamadas iguais reutilizam o mesmo arquivo', async () => {
+    const first = ok(await crop(IDS.png, { save: true, padding: 0 }));
+    const before = files().length;
+    const second = ok(await crop(IDS.png, { save: true, padding: 0 }));
+    expect(second.data.saved!.path).toBe(first.data.saved!.path);
+    expect(files().length).toBe(before);
+  });
+
+  it('a extensão segue o formato da saída', async () => {
+    const j = ok(await crop(IDS.png, { save: true, format: 'jpeg' }));
+    expect(j.data.saved!.path.endsWith('.jpg')).toBe(true);
+    expect(same(j.data.saved!.path, j.bytes)).toBe(true);
+    const w = ok(await crop(IDS.png, { save: true, format: 'webp' }));
+    expect(w.data.saved!.path.endsWith('.webp')).toBe(true);
+    expect(same(w.data.saved!.path, w.bytes)).toBe(true);
+  });
+
+  it('get_image_file grava com i-<código>-<w>x<h>', async () => {
+    const r = ok(
+      await call<ImageFileData>('get_image_file', {
+        ref: imageRef(IDS.png),
+        save: true,
+      }),
+    );
+    const name = `i-${codeOf(IDS.png)}-${r.data.width}x${r.data.height}.png`;
+    expect(r.data.saved!.path).toBe(join(cropsDir(), name));
+    expect(same(r.data.saved!.path, r.bytes)).toBe(true);
+    expect(r.data.saved!.markdown).toBe(`![${IMAGE_FILES.png}](${r.data.saved!.path})`);
+  });
+
+  it('tela em branco grava o PNG do desenho simplificado', async () => {
+    const r = ok(await crop(IDS.blank, { save: true }));
+    expect(r.data.saved!.path.endsWith('.png')).toBe(true);
+    expect(same(r.data.saved!.path, r.bytes)).toBe(true);
   });
 });

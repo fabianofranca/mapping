@@ -33,7 +33,7 @@ describe('quem grava no disco (mcp/**)', () => {
     expect(sources.map((s) => s.file)).toContain('image/codecs.ts');
   });
 
-  it('só paths.ts, createProject.ts e proposalStore.ts chamam funções que gravam, e só estas', () => {
+  it('só paths.ts, createProject.ts, proposalStore.ts e imageTools.ts (crops/) chamam funções que gravam, e só estas', () => {
     const calls: Record<string, string[]> = {};
     for (const { file, code } of sources) {
       const names = [...new Set([...code.matchAll(WRITER_CALL)].map((m) => m[1]!))];
@@ -41,6 +41,7 @@ describe('quem grava no disco (mcp/**)', () => {
     }
     expect(calls).toEqual({
       'createProject.ts': ['mkdir'],
+      'imageTools.ts': ['mkdir', 'writeFile'],
       'paths.ts': ['rename', 'rm', 'writeFile'],
       'proposalStore.ts': ['link', 'mkdir', 'rm', 'writeFile'],
     });

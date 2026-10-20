@@ -143,6 +143,13 @@ const formatArg = z
     'Formato da imagem devolvida. Padrão: jpeg se o arquivo original é JPEG, senão png (sem perdas, bom para telas e texto).',
   );
 
+const saveArg = z
+  .boolean()
+  .optional()
+  .describe(
+    'Grava a imagem devolvida em `crops/` na pasta do projeto e devolve `saved: { path, url, markdown }`. Use quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor): cole o `markdown` na resposta.',
+  );
+
 const platformArg = z
   .string()
   .describe(
@@ -472,7 +479,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels da imagem original) ou a imagem inteira com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Numa tela em branco, o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas).',
+        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels da imagem original) ou a imagem inteira com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Numa tela em branco, o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas). Com `save: true`, grava a imagem devolvida em `crops/` na pasta do projeto e devolve `saved` (para clientes que não mostram a imagem).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -499,6 +506,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
           ),
         maxSize: maxSizeArg,
         format: formatArg,
+        save: saveArg,
       },
       annotations: READ_ONLY,
     },
@@ -515,12 +523,13 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_image_file',
     {
       description:
-        'Devolve a imagem inteira de uma imagem do projeto, reduzida se o lado maior passar de `maxSize`. Para ver só uma marcação, use get_marking_image.',
+        'Devolve a imagem inteira de uma imagem do projeto, reduzida se o lado maior passar de `maxSize`. Para ver só uma marcação, use get_marking_image. Com `save: true`, grava a imagem devolvida em `crops/` na pasta do projeto e devolve `saved`.',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
         maxSize: maxSizeArg,
         format: formatArg,
+        save: saveArg,
       },
       annotations: READ_ONLY,
     },

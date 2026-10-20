@@ -19,8 +19,9 @@ meu-projeto/
 │   └── 8c1f…/
 │       ├── proposal.json
 │       └── images/   # imagens novas ou trocadas, até serem aceitas
-└── backups/          # só no modo pasta: originais guardados antes de migrar o schema
-    └── mapping.v1.20260930-143015.json
+├── backups/          # só no modo pasta: originais guardados antes de migrar o schema
+│   └── mapping.v1.20260930-143015.json
+└── crops/            # só no modo pasta: imagens gravadas pelo servidor MCP com `save: true`; traz um `.gitignore` próprio; a app não lê
 ```
 
 Ao abrir um `mapping.json` de versão antiga, a app migra em memória e, **antes do primeiro
@@ -28,7 +29,7 @@ salvamento**, guarda o texto original em `backups/mapping.v<versão>.<AAAAMMDD-H
 (horário local). Ao **criar** um projeto numa pasta, a app grava também um `.gitignore` com `backups/`
 (ou acrescenta a linha a um `.gitignore` que já exista, sem sobrescrevê-lo), para quem versiona a pasta
 com git. No modo local, o backup fica no armazenamento do navegador (os 3 mais recentes
-por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não a inclui.
+por projeto). As pastas `backups/` e `crops/` não fazem parte do projeto: o zip exportado não as inclui.
 
 ```json
 {
