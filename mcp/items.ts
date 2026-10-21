@@ -79,11 +79,6 @@ export class Refs {
     ].join(PATH_SEPARATOR);
   }
 
-  /** Só o código curto do item (o mesmo da referência). */
-  code(kind: ItemKind, id: string): string {
-    return shortCode(this.project, kind, id);
-  }
-
   /** Referência completa, com o caminho legível. */
   ref(kind: ItemKind, id: string): string {
     return formatRef({

@@ -5,6 +5,8 @@ export interface CliOptions {
   readonly roots: readonly string[];
   readonly help: boolean;
   readonly version: boolean;
+  /** Servidor HTTP local de imagens (padrão: ligado; `--no-http` desliga). */
+  readonly http: boolean;
 }
 
 export class UsageError extends Error {
@@ -19,6 +21,7 @@ export const USAGE = `Uso: node mapping-mcp.js --root <pasta> [--root <pasta>...
 Servidor MCP do Mapping (stdio). Lê e grava projetos em pasta dentro das raízes.
 
   --root <pasta>  pasta que contém projetos (repita para mais de uma)
+  --no-http       não sobe o servidor HTTP local (127.0.0.1) que entrega as imagens das tools por URL
   --version       mostra a versão
   --help          mostra esta ajuda
 `;
@@ -27,10 +30,12 @@ export function parseArgs(argv: readonly string[]): CliOptions {
   const roots: string[] = [];
   let help = false;
   let version = false;
+  let http = true;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     if (arg === '--help' || arg === '-h') help = true;
     else if (arg === '--version' || arg === '-v') version = true;
+    else if (arg === '--no-http') http = false;
     else if (arg === '--root') {
       const value = argv[++i];
       if (value === undefined || value === '' || value.startsWith('--')) {
@@ -48,5 +53,5 @@ export function parseArgs(argv: readonly string[]): CliOptions {
   if (!help && !version && roots.length === 0) {
     throw new UsageError('informe ao menos uma raiz com --root <pasta>');
   }
-  return { roots, help, version };
+  return { roots, help, version, http };
 }

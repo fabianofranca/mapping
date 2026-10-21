@@ -1,6 +1,5 @@
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { basename, join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { readFile } from 'node:fs/promises';
+import { basename } from 'node:path';
 import {
   approximateMeasurer,
   createDrawingCache,
@@ -30,6 +29,7 @@ import {
   type Raster,
 } from './image/raster';
 import { paintScene } from './image/sceneRaster';
+import type { ImageServer } from './imageServer';
 import type { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
 
@@ -41,13 +41,11 @@ export interface MarkingImageOptions {
   readonly outlineChildren?: boolean;
   readonly maxSize?: number;
   readonly format?: ImageFormat;
-  readonly save?: boolean;
 }
 
 export interface ImageFileOptions {
   readonly maxSize?: number;
   readonly format?: ImageFormat;
-  readonly save?: boolean;
 }
 
 /** Texto (JSON) e a imagem que a tool devolve. */
@@ -69,38 +67,25 @@ interface LoadedImage {
 const EXTENSION: Record<ImageFormat, string> = { png: 'png', jpeg: 'jpg', webp: 'webp' };
 
 /**
- * Grava os bytes devolvidos em `<pasta do projeto>/crops/<name>` (sobrescreve). Na primeira
- * gravação cria `crops/.gitignore` com `*` (a pasta se ignora sozinha). O nome é montado pelo servidor.
+ * `url` (HTTP local) e `markdown` da imagem devolvida. Sem servidor, ou se ele não subir
+ * (aviso no stderr), a tool responde sem esses campos.
  */
-export async function saveOutput(
-  dir: string,
-  name: string,
+async function urlFields(
+  images: ImageServer | null,
   bytes: Uint8Array,
-): Promise<{ path: string; url: string }> {
-  const folder = join(dir, 'crops');
-  await mkdir(folder, { recursive: true });
-  const ignore = join(folder, '.gitignore');
-  try {
-    await access(ignore);
-  } catch {
-    await writeFile(ignore, '*\n');
-  }
-  const path = join(folder, name);
-  await writeFile(path, bytes);
-  return { path, url: pathToFileURL(path).href };
-}
-
-/** `saved: { path, url, markdown }`; o markdown usa `<…>` se o caminho tiver espaço. */
-async function savedField(
-  dir: string,
-  name: string,
-  bytes: Uint8Array,
+  format: ImageFormat,
   alt: string,
-): Promise<{ saved: { path: string; url: string; markdown: string } }> {
-  const { path, url } = await saveOutput(dir, name, bytes);
-  const cleanAlt = alt.replace(/[\]\r\n]+/g, ' ').trim();
-  const target = /\s/.test(path) ? `<${path}>` : path;
-  return { saved: { path, url, markdown: `![${cleanAlt}](${target})` } };
+): Promise<{ url?: string; markdown?: string }> {
+  if (!images) return {};
+  try {
+    const url = await images.publish(bytes, MIME[format], EXTENSION[format]);
+    const cleanAlt = alt.replace(/[\]\r\n]+/g, ' ').trim();
+    return { url, markdown: `![${cleanAlt}](${url})` };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`mapping-mcp: servidor de imagens indisponível: ${message}\n`);
+    return {};
+  }
 }
 
 /** Mais pixels que isso, a tela em branco é rasterizada reduzida (é uma cor só). */
@@ -193,6 +178,7 @@ export async function markingImage(
   refs: Refs,
   marking: Marking,
   options: MarkingImageOptions,
+  images: ImageServer | null = null,
 ): Promise<ImageResult> {
   const index = projectIndex(refs.project);
   const image = index.images.get(marking.imageId);
@@ -270,15 +256,6 @@ export async function markingImage(
   const format = outputFormat(options.format, loaded.format);
   const bytes = await encodeImage(composed.raster, format);
 
-  const saved = options.save
-    ? await savedField(
-        refs.loaded.location.dir,
-        `m-${refs.code('m', marking.id)}-${mode}${options.outlineChildren ? '-children' : ''}-${composed.raster.width}x${composed.raster.height}.${EXTENSION[format]}`,
-        bytes,
-        refs.markingName(marking.id),
-      )
-    : {};
-
   const markingOutline = mode === 'context' ? composed.outlines[0]! : null;
   const markingInOutput =
     markingOutline?.output ??
@@ -332,7 +309,7 @@ export async function markingImage(
           }
         : {}),
       ...sizeWarning(loaded, image),
-      ...saved,
+      ...(await urlFields(images, bytes, format, refs.markingName(marking.id))),
     },
     image: { bytes, mimeType: MIME[format] },
   };
@@ -344,6 +321,7 @@ export async function imageFile(
   refs: Refs,
   image: ProjectImage,
   options: ImageFileOptions,
+  images: ImageServer | null = null,
 ): Promise<ImageResult> {
   if (isBlankImage(image)) {
     throw new ToolError(
@@ -367,15 +345,6 @@ export async function imageFile(
         target.scale === 1 ? raster : resize(raster, target.width, target.height),
         format,
       );
-  const outFormat = same ? loaded.format : format;
-  const saved = options.save
-    ? await savedField(
-        refs.loaded.location.dir,
-        `i-${refs.code('i', image.id)}-${target.width}x${target.height}.${EXTENSION[outFormat]}`,
-        bytes,
-        image.file ?? '',
-      )
-    : {};
   return {
     json: {
       ref: refs.ref('i', image.id),
@@ -388,7 +357,12 @@ export async function imageFile(
       scale: target.scale,
       recoded: !same,
       ...sizeWarning(loaded, image),
-      ...saved,
+      ...(await urlFields(
+        images,
+        bytes,
+        same ? loaded.format : format,
+        image.file ?? '',
+      )),
     },
     image: { bytes, mimeType: MIME[same ? loaded.format : format] },
   };

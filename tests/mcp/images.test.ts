@@ -1,13 +1,7 @@
-import {
-  copyFileSync,
-  existsSync,
-  mkdtempSync,
-  readdirSync,
-  writeFileSync,
-} from 'node:fs';
+import { copyFileSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -49,7 +43,8 @@ interface MarkingImageData {
   childrenLegend?: { color: string; name: string; ref: string; rect: Rect }[];
   childrenNotOutlined?: number;
   warning?: string;
-  saved?: { path: string; url: string; markdown: string };
+  url?: string;
+  markdown?: string;
 }
 interface ImageFileData {
   ref: string;
@@ -61,7 +56,8 @@ interface ImageFileData {
   scale: number;
   recoded: boolean;
   warning?: string;
-  saved?: { path: string; url: string; markdown: string };
+  url?: string;
+  markdown?: string;
 }
 interface Rect {
   x: number;
@@ -552,75 +548,73 @@ describe('arquivo único', () => {
   });
 });
 
-describe('save: grava o recorte em crops/', () => {
-  const cropsDir = () => join(ws.root, 'imagens', 'crops');
-  const files = () => (existsSync(cropsDir()) ? readdirSync(cropsDir()) : []);
-  const same = (path: string, bytes: Uint8Array | null) =>
-    Buffer.from(bytes!).equals(readFileSync(path));
+describe('url: servidor HTTP local de imagens', () => {
+  const URL_FORMAT =
+    /^http:\/\/127\.0\.0\.1:\d+\/[0-9a-f]{32}\/[0-9a-f]{32}\.(png|jpg|webp)$/;
 
-  it('sem save: sem o campo saved e sem criar crops/', async () => {
-    expect(existsSync(cropsDir())).toBe(false);
+  async function fetched(url: string) {
+    const response = await fetch(url);
+    return {
+      status: response.status,
+      type: response.headers.get('content-type'),
+      bytes: new Uint8Array(await response.arrayBuffer()),
+    };
+  }
+
+  it('get_marking_image devolve url e markdown que entregam os mesmos bytes', async () => {
     const r = ok(await crop(IDS.png));
-    expect(r.data.saved).toBeUndefined();
-    const f = ok(await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.png) }));
-    expect(f.data.saved).toBeUndefined();
-    expect(existsSync(cropsDir())).toBe(false);
+    const url = r.data.url!;
+    expect(url).toMatch(URL_FORMAT);
+    expect(url.endsWith('.png')).toBe(true);
+    expect(r.data.markdown).toBe(`![Formulário](${url})`);
+    const got = await fetched(url);
+    expect(got.status).toBe(200);
+    expect(got.type).toBe(r.mimeType);
+    expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
   });
 
-  it('get_marking_image grava exatamente os bytes devolvidos', async () => {
-    const r = ok(await crop(IDS.png, { save: true }));
-    const saved = r.data.saved!;
-    const name = `m-${codeOf(IDS.parent(IDS.png))}-crop-${r.data.width}x${r.data.height}.png`;
-    expect(isAbsolute(saved.path)).toBe(true);
-    expect(saved.path).toBe(join(cropsDir(), name));
-    expect(same(saved.path, r.bytes)).toBe(true);
-    expect(saved.url.startsWith('file://')).toBe(true);
-    expect(saved.markdown).toBe(`![Formulário](${saved.path})`);
-    expect(readFileSync(join(cropsDir(), '.gitignore'), 'utf8')).toBe('*\n');
+  it('a extensão segue o formato devolvido', async () => {
+    const j = ok(await crop(IDS.png, { format: 'jpeg' }));
+    expect(j.data.url!.endsWith('.jpg')).toBe(true);
+    const w = ok(await crop(IDS.png, { format: 'webp' }));
+    expect(w.data.url!.endsWith('.webp')).toBe(true);
+    expect((await fetched(w.data.url!)).type).toBe('image/webp');
   });
 
-  it('mode context com outlineChildren entra no nome', async () => {
-    const r = ok(
-      await crop(IDS.png, { save: true, mode: 'context', outlineChildren: true }),
-    );
-    const name = `m-${codeOf(IDS.parent(IDS.png))}-context-children-${r.data.width}x${r.data.height}.png`;
-    expect(r.data.saved!.path).toBe(join(cropsDir(), name));
-    expect(same(r.data.saved!.path, r.bytes)).toBe(true);
+  it('get_image_file devolve url e markdown com o nome do arquivo', async () => {
+    const r = ok(await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.png) }));
+    expect(r.data.url).toMatch(URL_FORMAT);
+    expect(r.data.markdown).toBe(`![${IMAGE_FILES.png}](${r.data.url})`);
+    const got = await fetched(r.data.url!);
+    expect(got.type).toBe(r.mimeType);
+    expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
   });
 
-  it('chamadas iguais reutilizam o mesmo arquivo', async () => {
-    const first = ok(await crop(IDS.png, { save: true, padding: 0 }));
-    const before = files().length;
-    const second = ok(await crop(IDS.png, { save: true, padding: 0 }));
-    expect(second.data.saved!.path).toBe(first.data.saved!.path);
-    expect(files().length).toBe(before);
+  it('a tela em branco também tem url', async () => {
+    const r = ok(await crop(IDS.blank));
+    expect(r.data.url).toMatch(URL_FORMAT);
+    const got = await fetched(r.data.url!);
+    expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
   });
 
-  it('a extensão segue o formato da saída', async () => {
-    const j = ok(await crop(IDS.png, { save: true, format: 'jpeg' }));
-    expect(j.data.saved!.path.endsWith('.jpg')).toBe(true);
-    expect(same(j.data.saved!.path, j.bytes)).toBe(true);
-    const w = ok(await crop(IDS.png, { save: true, format: 'webp' }));
-    expect(w.data.saved!.path.endsWith('.webp')).toBe(true);
-    expect(same(w.data.saved!.path, w.bytes)).toBe(true);
-  });
-
-  it('get_image_file grava com i-<código>-<w>x<h>', async () => {
-    const r = ok(
-      await call<ImageFileData>('get_image_file', {
-        ref: imageRef(IDS.png),
-        save: true,
-      }),
-    );
-    const name = `i-${codeOf(IDS.png)}-${r.data.width}x${r.data.height}.png`;
-    expect(r.data.saved!.path).toBe(join(cropsDir(), name));
-    expect(same(r.data.saved!.path, r.bytes)).toBe(true);
-    expect(r.data.saved!.markdown).toBe(`![${IMAGE_FILES.png}](${r.data.saved!.path})`);
-  });
-
-  it('tela em branco grava o PNG do desenho simplificado', async () => {
-    const r = ok(await crop(IDS.blank, { save: true }));
-    expect(r.data.saved!.path.endsWith('.png')).toBe(true);
-    expect(same(r.data.saved!.path, r.bytes)).toBe(true);
+  it('--no-http: sem url nem markdown', async () => {
+    const off = await connect([ws.root], { args: ['--no-http'] });
+    try {
+      const result = await off.client.callTool({
+        name: 'get_marking_image',
+        arguments: { project: 'imagens', ref: markingRef(IDS.png) },
+      });
+      const content = result.content as { type: string; text?: string }[];
+      expect(result.isError).not.toBe(true);
+      expect(content.some((c) => c.type === 'image')).toBe(true);
+      const data = JSON.parse(content.find((c) => c.type === 'text')!.text!) as Record<
+        string,
+        unknown
+      >;
+      expect(data.url).toBeUndefined();
+      expect(data.markdown).toBeUndefined();
+    } finally {
+      await off.close();
+    }
   });
 });
