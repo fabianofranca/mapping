@@ -9,7 +9,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 ## Etapa 2.3 — Redesign da interface (concluída)
 
 - **Objetivo:** renovar a interface com os tokens e o design system 2.0, sem quebrar o uso no desktop nem no celular.
-- **Entra:** fases R1 a R9 (histórico em [`docs/history/PLAN-etapa-2-3.md`](history/PLAN-etapa-2-3.md)). A R10 (paleta de comandos e busca global) sai do caminho crítico e vai para [Evoluções](#evoluções).
+- **Entra:** fases R1 a R9 (histórico em [`docs/history/PLAN-etapa-2-3.md`](history/PLAN-etapa-2-3.md)). A R10 (paleta de comandos e busca global) foi retirada do roadmap em 2026-10-21.
 - **Depende de:** nada (etapas 1 a 2.2 concluídas).
 
 ## Etapa 2.4 — Privacidade garantida por CSP (concluída)
@@ -63,7 +63,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 ## Etapa 4 — Propostas de alteração com revisão (concluída)
 
 - **Objetivo:** toda alteração feita por um agente chega como uma proposta (um "pull request" dentro da ferramenta). O usuário vê o projeto como ficaria, aceita ou rejeita em qualquer nível (proposta, imagem, item ou mudança), deixa notas no que rejeitou, e o agente manda uma nova proposta corrigida. Vale para a primeira importação e para as atualizações.
-- **Genérica:** não sabe de onde vêm os dados. Importar do Figma, migrar telas antigas ou corrigir anotações são usos conduzidos por skills dos agentes (ver Evoluções).
+- **Genérica:** não sabe de onde vêm os dados. Importar do Figma, migrar telas antigas ou corrigir anotações são usos conduzidos por skills dos agentes.
 - **Entregue:**
   - **Formato e modelo** (fases 4.1 e 4.0): proposta em `proposals/<id>/proposal.json` (`formatVersion` 1), com as mudanças calculadas pelo servidor (valor antes e depois), decisões em quatro níveis (proposta, imagem, item, mudança) com "parcial" e dependências, conflitos, aviso de item trancado, validação do conjunto aceito e aplicação parcial (uma entrada de desfazer). Schema v8 com `source` (identidade externa genérica) em imagens e marcações, e especialização `formatVersion` 3 com `sources` nos tipos e nos campos (`findBySource`, `findTypesBySource`). Referência: [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md), [`FORMAT.md`](FORMAT.md) e [`SPEC-FORMAT.md`](SPEC-FORMAT.md).
   - **MCP 0.3.0** (fase 4.2): `propose_changes`, `list_proposals`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`, `find_by_source`, `find_types_by_source` e `validate_specialization`; operações aceitam `source`; **sai o `apply_changes`**: o agente nunca grava o `mapping.json`. Uso em [`MCP.md`](MCP.md) e [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
@@ -168,7 +168,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 
 ## Etapa — Código de instanciação (concluída, épico `epic/instanciacao`)
 
-- **Concluída em 2026-10-20** (fases C1 a C4, PRs #181 a #185, #188 e #189; o épico é o PR #190, testado pelo Cowork e pelo dono no Claude Code); histórico em [`history/PLAN-etapa-instanciacao.md`](history/PLAN-etapa-instanciacao.md). O merge do épico na `main` e a tag estável `mcp-v0.6.0` ficam com o dono.
+- **Concluída em 2026-10-20** (fases C1 a C4, PRs #181 a #185, #188 e #189; o épico é o PR #190, testado pelo Cowork e pelo dono no Claude Code); histórico em [`history/PLAN-etapa-instanciacao.md`](history/PLAN-etapa-instanciacao.md). Épico mesclado na `main`, com a tag estável `mcp-v0.6.0`.
 
 - **Objetivo:** corrigir o conceito do `code` das especializações em tudo que o agente lê: o `code` diz com que código se cria uma instância do tipo na solução; o mapeamento não sabe nada sobre a solução.
 - **Entrou:** vocabulário e definições em `SPEC-FORMAT.md`, `FORMAT.md`, Ajuda da app, skill `spec-author` e exemplo SDUI com a plataforma `bff` apontando para as funções que geram o JSON; MCP 0.6.0 com uma forma única de entrada de `code` com `definition` e `get_code_hints` separando `types` de `args` (e `codeHint` em `get_specialization` e `get_project`); aceite por uma pergunta de conceito ao agente (R3.6a); o repositório de cada plataforma passa para a especialização (`platforms[].repo`: `url`, `urlTemplate`, `ref`; `formatVersion` 5) e o projeto guarda só o clone local (`platformRepos[x].localPath`; schema v11, migração v10 → v11); `set_platform_repo` só com `localPath`.
@@ -183,9 +183,6 @@ Só depois do marco (alcançado em 2026-10-16), se a ferramenta se provar útil.
 
 - Biblioteca de componentes do DS e telas compostas: virou a [etapa Biblioteca, concluída](#etapa--biblioteca-concluída-épico-epicbiblioteca) (núcleo agnóstico; origens e saídas como SDUI, Figma ou código definidas por especializações).
 - Agentes gerando telas a partir da biblioteca e migração de Figmas antigos para o DS novo por inferência sobre as imagens (a etapa Biblioteca, que eles pedem, está concluída).
-- Skills para agentes que usam as propostas: importação e reexportação a partir do Figma (com `source` para reconhecer os elementos e o mapeamento componente → tipo vindo da especialização), migração de telas antigas por inferência sobre as imagens (a etapa Biblioteca, que eles pedem, está concluída).
-- Reverter, depois de aplicada, uma mudança específica de uma proposta.
-- Paleta de comandos e busca global (antiga R10).
 - **Migrações de versão maior adiadas** (PRs do Dependabot fechados em 2026-10-11 com `ignore this major version`): **TypeScript 7** (o compilador novo; hoje bloqueado porque `typescript-eslint` exige TypeScript < 6.1) e **Preact 11** (cerca de 40 erros de tipo nos controles de `src/ui/controls/` e nos handlers; confirmar `@preact/signals` e `@testing-library/preact`). Cada uma é uma fase própria, com os gates e o roteiro de fumaça do `docs/TESTING.md`; para retomar, `npm install <pacote>@<major>` num branch.
 - **Arrastar componente do Catálogo para o canvas** (decidido em 2026-10-19): arrastar um item da Paleta/Componentes e soltar sobre uma tela (ou dentro de um container sob o cursor), criando o componente onde foi solto; destaque do alvo durante o arraste (o canvas já destaca a imagem sob o cursor ao soltar arquivos: `useImageIntake.tsx` e `dropTarget`). O botão **Adicionar** continua (teclado e acessibilidade) com a regra "seleção primeiro". Teste e2e com o arraste do Playwright; a conferência manual pode precisar do dono, porque a extensão do Cowork tem limites com arraste.
 - **Diário de recuperação** (pedido do dono na etapa 5): ao sair da página, uma cópia das mudanças ainda não gravadas vai para o armazenamento do navegador, e ao reabrir o projeto a app oferece "Recuperar alterações não gravadas". **Condição de entrada:** algum testador perder dados ao fechar a aba (hoje a proteção é o "Sair da página?": quem escolhe ficar não perde nada).

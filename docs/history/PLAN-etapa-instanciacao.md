@@ -2,7 +2,7 @@
 
 > Fases C1 a C4 concluídas no épico `epic/instanciacao` (PRs #181 a #185, #188 e #189; o épico é o PR #190). Origem: a análise de 2026-10-19 sobre como os agentes liam o `code` das especializações. A rodada dirigida do Cowork está em [`relato-2026-10-20-instanciacao.md`](relato-2026-10-20-instanciacao.md) e o reteste do R3.6a no Claude Code em [`relato-2026-10-20-instanciacao-reteste.md`](relato-2026-10-20-instanciacao-reteste.md). Referência atual: [`../SPEC-FORMAT.md`](../SPEC-FORMAT.md) (`formatVersion` 5), [`../FORMAT.md`](../FORMAT.md) (schema v11), [`../MCP.md`](../MCP.md) (0.6.0) e [`../AGENT-GUIDE.md`](../AGENT-GUIDE.md).
 >
-> Arquivo histórico: seção movida do `PLAN.md` sem alterações de conteúdo, exceto os checkboxes da C4 (marcados ao fechar a etapa; a tag estável `mcp-v0.6.0` e o merge do épico na `main` ficam com o dono). Depois dela vêm as decisões consolidadas dos PRs, a rodada do Cowork e o reteste, e o que ficou para depois. As etapas anteriores estão nos outros arquivos desta pasta.
+> Arquivo histórico: seção movida do `PLAN.md` sem alterações de conteúdo, exceto os checkboxes da C4 (marcados ao fechar a etapa; depois, o épico foi mesclado na `main` e a tag estável `mcp-v0.6.0` foi publicada). Depois dela vêm as decisões consolidadas dos PRs, a rodada do Cowork e o reteste, e o que ficou para depois. As etapas anteriores estão nos outros arquivos desta pasta.
 
 ---
 
@@ -84,7 +84,7 @@ A etapa muda a definição em cada documento, os textos da app, o exemplo, a ski
 - [x] R3.6a (pergunta de conceito, antes do R3.6): a resposta esperada cita instanciar, a assinatura e o repositório da especialização; reprova se falar de código gerado para a anotação ou de onde a instância foi implementada
 - [x] Rodada dirigida do Cowork executada sobre o build do épico (R3, R5.3 e a pergunta), relato em `docs/history/relato-<data>-instanciacao.md`; achados corrigidos no épico antes do merge
   - Rodada de 2026-10-20 sobre o build `dee8666` (MCP 0.6.0-rc.1): 54 ✅, 1 ❌ (R3.6a), relato em [`docs/history/relato-2026-10-20-instanciacao.md`](docs/history/relato-2026-10-20-instanciacao.md). Leitura do achado: o executor foi o cliente stdio, que não mostrava as instruções do servidor, e `get_specialization` e `get_project` não levavam o conceito. Correção: o cliente imprime as instruções antes das chamadas e as duas tools trazem `codeHint` com plataformas. O `urlTemplate` citado é o `repo.urlTemplate` da especialização (não reprova). O dono refez o R3.6a numa sessão limpa do Claude Code com a `mcp-v0.6.0-rc.2`: **passou** ([`docs/history/relato-2026-10-20-instanciacao-reteste.md`](docs/history/relato-2026-10-20-instanciacao-reteste.md)).
-- [x] Rótulo `mcp-rc` no PR desta fase; a rc `mcp-v0.6.0-rc.<n>` sai no merge; a estável `mcp-v0.6.0` é tag do dono depois do merge do épico na `main` (o rótulo foi posto no #185 e no #188; a rc.2 saiu no merge do #188; a estável fica pendente, tag do dono)
+- [x] Rótulo `mcp-rc` no PR desta fase; a rc `mcp-v0.6.0-rc.<n>` sai no merge; a estável `mcp-v0.6.0` é tag do dono depois do merge do épico na `main` (o rótulo foi posto no #185 e no #188; a rc.2 saiu no merge do #188; a estável `mcp-v0.6.0` foi publicada pelo dono depois do merge do épico na `main`)
 - [x] Esta seção vai para `docs/history/PLAN-etapa-instanciacao.md` com as decisões consolidadas dos PRs e o relato; `PLAN.md` sem etapa em andamento; `ROADMAP.md` e `CLAUDE.md` atualizados
 
 **Aceite:** a pergunta de conceito passa na rodada do Cowork; o dono mescla o épico.
@@ -148,7 +148,7 @@ A etapa muda a definição em cada documento, os textos da app, o exemplo, a ski
 ### Fechamento da etapa (este PR)
 
 - Mudança só de documentação: a seção da etapa vai para este arquivo, `PLAN.md` fica sem etapa em andamento, `ROADMAP.md` e `CLAUDE.md` passam a mostrá-la como concluída.
-- Sem rótulo `mcp-rc` (ver #188). A estável `mcp-v0.6.0` é tag do dono depois do merge do épico na `main`, e apaga as rc.
+- Sem rótulo `mcp-rc` (ver #188). A estável `mcp-v0.6.0` foi tag do dono depois do merge do épico na `main`, e apagou as rc.
 
 ---
 
