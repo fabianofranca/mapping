@@ -6,6 +6,17 @@
 //
 // Antes das chamadas, imprime as instruções do servidor, as mesmas que o Claude Code mostra ao agente.
 //
+// O que imprime por chamada (`=== <ferramenta>` e o JSON da resposta):
+//   - texto: o texto da resposta, como veio;
+//   - imagem: grava o arquivo em IMGDIR com a extensão pelo tipo (image/png -> .png,
+//     image/jpeg -> .jpg, image/webp -> .webp, outro -> .bin) e imprime
+//     {"saved": <arquivo>, "mimeType": <tipo>};
+//   - `url`: se o texto JSON da resposta traz `url` (http://127.0.0.1:...), o cliente a confere
+//     ali mesmo, com o servidor vivo (HEAD e GET com fetch; a url só vale enquanto o servidor
+//     roda, e ele é encerrado ao fim das chamadas), e acrescenta um último item
+//     {"urlCheck": {url, head, get, sameAsImage}} (sameAsImage compara os bytes do GET com os da
+//     imagem da resposta; null se não há imagem; em falha do fetch, {url, error}).
+//
 // <calls.json> é uma lista: {"list":true} mostra as ferramentas e os esquemas; cada
 // {"name":"<ferramenta>","args":{...}} chama uma ferramenta, na ordem.
 //
@@ -83,6 +94,43 @@ console.error(
 const imgDir = process.env.IMGDIR || '.';
 const calls = JSON.parse(fs.readFileSync(callsFile, 'utf8'));
 
+const MIME_EXT = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp' };
+
+/** `url` local do servidor no texto JSON da resposta, ou null (texto que não é JSON é ignorado). */
+function urlFromText(text) {
+  try {
+    const url = JSON.parse(text)?.url;
+    return typeof url === 'string' && url.startsWith('http://127.0.0.1:') ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+/** HEAD e GET da url com o servidor vivo; compara os bytes do GET com os da imagem. */
+async function checkUrl(url, imageBytes) {
+  try {
+    const head = await fetch(url, { method: 'HEAD' });
+    const get = await fetch(url);
+    const bytes = Buffer.from(await get.arrayBuffer());
+    return {
+      url,
+      head: {
+        status: head.status,
+        contentType: head.headers.get('content-type'),
+        contentLength: head.headers.get('content-length'),
+      },
+      get: {
+        status: get.status,
+        contentType: get.headers.get('content-type'),
+        bytes: bytes.length,
+      },
+      sameAsImage: imageBytes ? bytes.equals(imageBytes) : null,
+    };
+  } catch (error) {
+    return { url, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 const server = spawn('node', serverArgs, {
   cwd: workspace,
   stdio: ['pipe', 'pipe', 'inherit'],
@@ -144,13 +192,21 @@ for (const call of calls) {
       inputSchema: t.inputSchema,
     }));
   } else {
+    let url = null;
+    let imageBytes = null;
     out = response.result.content.map((item) => {
-      if (item.type === 'text') return item.text;
+      if (item.type === 'text') {
+        url ??= urlFromText(item.text);
+        return item.text;
+      }
       // Imagem (ex.: get_marking_image): grava um arquivo para o agente abrir.
-      const file = path.join(imgDir, `${call.name}-${lastId}.png`);
-      fs.writeFileSync(file, Buffer.from(item.data, 'base64'));
-      return { saved: file };
+      const ext = MIME_EXT[item.mimeType] ?? '.bin';
+      const file = path.join(imgDir, `${call.name}-${lastId}${ext}`);
+      imageBytes = Buffer.from(item.data, 'base64');
+      fs.writeFileSync(file, imageBytes);
+      return { saved: file, mimeType: item.mimeType };
     });
+    if (url) out.push({ urlCheck: await checkUrl(url, imageBytes) });
   }
   console.log(`=== ${call.list ? 'tools/list' : call.name}`);
   console.log(JSON.stringify(out, null, 1));
