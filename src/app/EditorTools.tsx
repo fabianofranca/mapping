@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import { IconButton, Segmented } from '../ui/controls';
+import { setCleanView } from '../store/ui';
 import { SHORTCUT_LABELS } from './shortcuts';
 
 // Botões de ferramenta da barra principal e da barra dos breadcrumbs.
@@ -16,7 +17,7 @@ export function ModeButtons() {
           id: 'draw',
           label: t('editor.modeDraw'),
           icon: 'draw',
-          disabled: store.locked.value,
+          disabled: store.locked.value || ui.cleanView.value,
         },
       ]}
       value={ui.mode.value}
@@ -89,6 +90,21 @@ export function FitButton() {
       icon="fit"
       label={t('editor.fitAll')}
       onClick={() => canvas.current?.fitAll()}
+    />
+  );
+}
+
+/** Ver limpo: o canvas mostra só as imagens e os componentes (Alt+H). */
+export function CleanViewButton() {
+  const { ui } = useEditor();
+  return (
+    <IconButton
+      icon="eyeOff"
+      label={t('view.cleanView')}
+      shortcut={SHORTCUT_LABELS.cleanView}
+      tooltip={t('view.cleanViewHint')}
+      pressed={ui.cleanView.value}
+      onClick={() => setCleanView(ui, !ui.cleanView.peek())}
     />
   );
 }

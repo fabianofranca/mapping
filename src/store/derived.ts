@@ -132,6 +132,10 @@ const NO_ISSUES: ReadonlyMap<string, readonly AnnotationIssue[]> = new Map();
 const NO_ANNOTATIONS: ReadonlyMap<string, readonly Annotation[]> = new Map();
 const NO_DOTS: ReadonlyMap<string, readonly LayerDot[]> = new Map();
 const NO_VISIBILITY: ReadonlyMap<string, MarkingVisibility> = new Map();
+
+function hiddenVisibility(p: Project): ReadonlyMap<string, MarkingVisibility> {
+  return new Map(p.markings.map((m) => [m.id, 'hidden' as const]));
+}
 const NO_MARKINGS: ReadonlySet<string> = new Set();
 const NO_LOCKS: ReadonlyMap<string, MarkingLockState> = new Map();
 const NO_DRAWN: ReadonlySet<string> = new Set();
@@ -313,6 +317,8 @@ export function createEditorDerived(
   const visibility = computed(() => {
     const p = project.value;
     if (!p) return NO_VISIBILITY;
+    // Ver limpo: nenhuma marcação aparece (os componentes desenhados seguem em `drawn`).
+    if (ui.cleanView.value) return hiddenVisibility(p);
     const selection = ui.selection.value;
     return markingVisibility(
       p,

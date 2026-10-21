@@ -262,6 +262,9 @@ export const ptBR = {
   'editor.appName': 'Mapping',
   'editor.fitAllShort': 'Enquadrar',
 
+  'view.cleanView': 'Ver limpo',
+  'view.cleanViewHint':
+    'Ver limpo: esconde marcações, nomes e seleção; só a imagem e os componentes',
   'view.list': 'Lista',
   'view.showList': 'Mostrar a lista',
   'view.hideList': 'Esconder a lista',
@@ -710,6 +713,7 @@ export const ptBR = {
   'image.replaceLocked':
     'A imagem ou uma marcação dela está trancada: só dá para trocar por um arquivo do mesmo tamanho.',
   'marking.error.locked': 'A marcação está trancada. Destranque para alterar.',
+  'shortcuts.cleanView': 'Ver limpo (só a imagem e os componentes)',
   'shortcuts.toggleLock': 'Trancar ou destrancar o item selecionado',
   'editor.externalUpdated': 'Projeto atualizado por fora.',
   'review.readOnly':

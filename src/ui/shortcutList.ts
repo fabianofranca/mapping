@@ -65,6 +65,7 @@ export function shortcutGroups(): readonly ShortcutGroup[] {
       id: 'view',
       title: t('shortcuts.group.view'),
       rows: [
+        row('shortcuts.cleanView', combo(SHORTCUT_LABELS.cleanView)),
         row('shortcuts.zoomIn', ['Ctrl', '=']),
         row('shortcuts.zoomOut', ['Ctrl', '−']),
         row('shortcuts.zoomReset', ['Ctrl', '0']),

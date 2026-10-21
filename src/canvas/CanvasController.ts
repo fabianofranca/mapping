@@ -163,29 +163,33 @@ export class CanvasController {
   );
 
   /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
-  private readonly frame = computed((): Frame => ({
-    project: this.drawnProject.value,
-    readOnly: this.store.locked.value,
-    bitmaps: this.display.images.value,
-    preview: this.state.preview.value,
-    draft: this.state.draft.value,
-    dropTarget: this.dropTarget.value,
-    hoverLock: this.state.hoverLock.value,
-    hoverMarking: this.state.hoverMarking.value,
-    tokens: this.tokens.value,
-    size: this.view.size.value,
-    viewport: this.view.viewport.value,
-    selection: this.ui.selection.value,
-    mode: this.ui.mode.value,
-    locale: locale.value,
-    shown: this.derived.visibleLayers.value,
-    dots: this.derived.layerDots.value,
-    incomplete: this.derived.incompleteMarkings.value,
-    visibility: this.derived.markingVisibility.value,
-    drawings: this.drawings.value,
-    drawn: this.derived.drawnMarkings.value,
-    review: this.reviewCanvas.value,
-  }));
+  private readonly frame = computed((): Frame => {
+    // Ver limpo: nada de seleção, trava, hover ou marcas da revisão por cima da imagem.
+    const clean = this.ui.cleanView.value;
+    return {
+      project: this.drawnProject.value,
+      readOnly: this.store.locked.value,
+      bitmaps: this.display.images.value,
+      preview: this.state.preview.value,
+      draft: this.state.draft.value,
+      dropTarget: this.dropTarget.value,
+      hoverLock: clean ? null : this.state.hoverLock.value,
+      hoverMarking: clean ? null : this.state.hoverMarking.value,
+      tokens: this.tokens.value,
+      size: this.view.size.value,
+      viewport: this.view.viewport.value,
+      selection: clean ? null : this.ui.selection.value,
+      mode: this.ui.mode.value,
+      locale: locale.value,
+      shown: this.derived.visibleLayers.value,
+      dots: this.derived.layerDots.value,
+      incomplete: this.derived.incompleteMarkings.value,
+      visibility: this.derived.markingVisibility.value,
+      drawings: this.drawings.value,
+      drawn: this.derived.drawnMarkings.value,
+      review: clean ? null : this.reviewCanvas.value,
+    };
+  });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
   private drawn: Frame | null = null;
   /** Placements do último quadro (com a prévia do gesto aplicada). */

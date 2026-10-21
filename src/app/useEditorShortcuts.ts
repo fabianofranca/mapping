@@ -15,7 +15,7 @@ import {
   type ToolWindowId,
   type ToolWindowSide,
 } from '../store/toolWindows';
-import { resolveSelection, type Selection } from '../store/ui';
+import { resolveSelection, setCleanView, type Selection } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
 import { showAndFocusToolWindow, spaceFor } from '../ui/toolWindowLayout';
 import { isStandalone } from '../utils/platform';
@@ -207,6 +207,8 @@ export function useEditorShortcuts(
           }
           return;
         }
+        case 'clean-view':
+          return setCleanView(ui, !ui.cleanView.peek());
         case 'hide-window': {
           const focused = focusedWindow();
           if (focused) hideToolWindow(focused.id);

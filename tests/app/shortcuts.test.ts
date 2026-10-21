@@ -37,6 +37,16 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('l'))).toBeNull();
   });
 
+  // Canvas limpo: Alt+H liga ou desliga o Ver limpo.
+  it('Alt+H: Ver limpo (pela tecla física, por causa do Option no macOS)', () => {
+    expect(shortcutFor(key('h', { alt: true }))).toEqual({ kind: 'clean-view' });
+    expect(shortcutFor(key('˙', { alt: true }, 'KeyH'))).toEqual({ kind: 'clean-view' });
+    expect(shortcutFor(key('h', { alt: true, shift: true }))).toBeNull();
+    expect(shortcutFor(key('h', { alt: true, ctrl: true }))).toBeNull();
+    expect(shortcutFor(key('h'))).toBeNull();
+    expect(worksInTextInput({ kind: 'clean-view' })).toBe(false);
+  });
+
   // B3/P7: Alt+Shift+A arruma o container selecionado.
   it('Alt+Shift+A: arrumar (pela tecla física, por causa do Option no macOS)', () => {
     expect(shortcutFor(key('a', { alt: true, shift: true }))).toEqual({
