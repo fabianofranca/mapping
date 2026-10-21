@@ -255,6 +255,17 @@ describe('derivado: marcações desenhadas', () => {
       setActiveLayer(ui, typed.id);
       expect(derived.markingVisibility.value.get('C')).toBe('full');
     }
+    // Ver limpo: nenhuma marcação aparece, nem a selecionada, mas o desenho segue à vista.
+    setMarkingDisplay('all');
+    ui.selection.value = { kind: 'marking', id: 'T1' };
+    ui.cleanView.value = true;
+    const clean = derived.markingVisibility.value;
+    expect(clean.size).toBeGreaterThan(0);
+    expect([...clean.values()].every((v) => v === 'hidden')).toBe(true);
+    expect([...derived.drawnMarkings.value].sort()).toEqual([...drawable].sort());
+    ui.cleanView.value = false;
+    ui.selection.value = null;
+    expect(derived.markingVisibility.value.get('T1')).toBe('full');
     // Sem a opção, na foto nada desenha; o filtro volta a valer para o que não desenha.
     setShowComponentsOnPhotos(false);
     setMarkingDisplay('hide');

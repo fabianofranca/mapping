@@ -27,7 +27,7 @@ import { ZoomField } from '../ui/ZoomField';
 import { HELP_PROPOSALS } from '../ui/HelpDialog';
 import { ProposalsHeaderActions, ProposalsWindow } from '../ui/review/ProposalsWindow';
 import { ReviewCanvasControls } from '../ui/review/ReviewCanvasControls';
-import { FitButton } from './EditorTools';
+import { CleanViewButton, FitButton } from './EditorTools';
 import { EditorPanel, type EditorPanelProps } from './EditorPanel';
 
 // Estrutura do editor no desktop (R4): faixas, janelas de ferramenta, breadcrumbs e o
@@ -148,6 +148,7 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
             <Breadcrumbs onSelect={onSelect} />
             <div class="canvas-bar-end">
               <ReviewCanvasControls />
+              <CleanViewButton />
               <FitButton />
               <ZoomField />
             </div>

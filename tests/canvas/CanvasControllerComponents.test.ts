@@ -103,6 +103,25 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
+  it('Ver limpo esconde bordas e seleção, e a camada de componentes continua', () => {
+    const { controller, ui, internals, drawing } = setup();
+    // O grupo da marcação some inteiro (borda, nome e alças vão com ele).
+    const shown = (id: string) => internals.markings.node(id)?.group.visible();
+    ui.selection.value = { kind: 'marking', id: 'T1' };
+    flush();
+    expect(shown('T1')).toBe(true);
+    ui.cleanView.value = true;
+    flush();
+    expect(shown('T1')).toBe(false);
+    expect(shown('T2')).toBe(false);
+    expect(drawing('T1')).toBeDefined();
+    expect(drawing('T2')).toBeDefined();
+    ui.cleanView.value = false;
+    flush();
+    expect(shown('T1')).toBe(true);
+    controller.destroy();
+  });
+
   it('a foto só desenha com "Mostrar componentes sobre fotos"', () => {
     const { controller, drawing, container } = setup();
     setShowComponentsOnPhotos(true);

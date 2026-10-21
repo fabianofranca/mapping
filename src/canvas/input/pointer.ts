@@ -126,7 +126,8 @@ export class PointerInput {
     return {
       project: this.project(),
       readOnly: store.readOnly.peek() || (this.o.reviewing?.() ?? false),
-      mode: ui.mode.peek(),
+      // Ver limpo nunca desenha, mesmo que o modo ainda seja Desenhar.
+      mode: ui.cleanView.peek() ? 'navigate' : ui.mode.peek(),
       selection: ui.selection.peek(),
       zoom: this.o.viewport.scale,
       spaceDown: this.o.spaceDown(),

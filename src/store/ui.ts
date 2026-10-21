@@ -25,6 +25,11 @@ export interface EditorUi {
   readonly selection: Signal<Selection>;
   readonly mode: Signal<EditorMode>;
   /**
+   * Ver limpo (Alt+H): o canvas mostra só as imagens e os componentes. Não é preferência:
+   * nasce desligado com o editor de cada projeto e não é gravado.
+   */
+  readonly cleanView: Signal<boolean>;
+  /**
    * Camadas escondidas. Guardar as escondidas (e não as visíveis) faz camadas
    * novas, ou restauradas pelo desfazer, aparecerem visíveis por padrão.
    */
@@ -73,6 +78,7 @@ export function createEditorUi(): EditorUi {
   return {
     selection: signal<Selection>(null),
     mode: signal<EditorMode>('navigate'),
+    cleanView: signal<boolean>(false),
     hiddenLayers: signal<ReadonlySet<string>>(new Set()),
     activeLayer: signal<string | null>(null),
     listShowEmpty: signal<boolean>(false),
@@ -87,6 +93,12 @@ export function createEditorUi(): EditorUi {
     reviewLegend: signal<boolean>(false),
     compareImage: signal<string | null>(null),
   };
+}
+
+/** Liga ou desliga o Ver limpo. Ligar volta ao modo Navegar; desligar não mexe no modo. */
+export function setCleanView(ui: EditorUi, on: boolean): void {
+  if (on && ui.mode.peek() === 'draw') ui.mode.value = 'navigate';
+  ui.cleanView.value = on;
 }
 
 /** Quanto tempo o aviso curto fica na tela. */

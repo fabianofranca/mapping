@@ -175,7 +175,9 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Depois, sem data:** o que a etapa deixou ([`history/PLAN-etapa-instanciacao.md`](history/PLAN-etapa-instanciacao.md), "O que ficou para depois"): ajustes de texto do guia (R5.3, `login.png` do R5) e um clone local por plataforma mesmo com especializações de repositórios diferentes.
 - **Depende de:** etapa Biblioteca (concluída e mesclada).
 
-## Etapa — Canvas limpo (em andamento, épico `epic/canvas-limpo`)
+## Etapa — Canvas limpo (concluída, épico `epic/canvas-limpo`)
+
+- **Concluída em 2026-10-21** (fases V1 e V2); histórico em [`history/PLAN-etapa-canvas-limpo.md`](history/PLAN-etapa-canvas-limpo.md).
 
 - **Objetivo:** o dono pediu (2026-10-21) uma opção de ver o canvas limpo (só a imagem ou os componentes, sem borda, nome, indicador ou alça por cima) e a remoção do cartão de texto do zoom semântico, que repete o painel direito.
 - **Entra:**
