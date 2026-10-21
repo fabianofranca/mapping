@@ -15,7 +15,7 @@ import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
-import { locale, semanticText } from '../store/settings';
+import { locale } from '../store/settings';
 import { textMeasurer } from '../store/textMeasure';
 import { resolveSelection, type EditorUi } from '../store/ui';
 import {
@@ -44,7 +44,6 @@ import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
 import { ReviewRenderer } from './renderers/review';
 import { proposedDisplay, reviewMarks, type ReviewCanvas } from './reviewMarks';
-import { cardCache } from './renderers/cards';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import { clampZoom, type Point } from './viewport';
 import { ViewportController } from './viewportController';
@@ -79,7 +78,7 @@ export interface CanvasControllerOptions {
 }
 
 /** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
-const LABEL_KEYS = ['semantic', 'visibility', 'dots', 'incomplete', 'card'] as const;
+const LABEL_KEYS = ['visibility', 'dots', 'incomplete'] as const;
 
 export class CanvasController {
   private readonly store: ProjectStore;
@@ -154,16 +153,6 @@ export class CanvasController {
     });
   });
 
-  /** Cartões do zoom semântico; refeitos só quando o projeto, as camadas ou o idioma mudam. */
-  private readonly cards = computed(() => {
-    // `t()` dos rótulos lê o idioma só quando o cartão é montado: assina aqui.
-    void locale.value;
-    return cardCache(
-      this.drawnProject.value,
-      this.derived.visibleLayers.value,
-      this.derived.annotationsByMarking.value,
-    );
-  });
   /**
    * Desenhos dos componentes do projeto desenhado: na prévia de um gesto só a marcação
    * arrastada é reinstanciada, e na visão Proposto são os valores propostos. O cache é o do
@@ -174,31 +163,33 @@ export class CanvasController {
   );
 
   /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
-  private readonly frame = computed((): Frame => ({
-    project: this.drawnProject.value,
-    readOnly: this.store.locked.value,
-    bitmaps: this.display.images.value,
-    preview: this.state.preview.value,
-    draft: this.state.draft.value,
-    dropTarget: this.dropTarget.value,
-    hoverLock: this.state.hoverLock.value,
-    hoverMarking: this.state.hoverMarking.value,
-    tokens: this.tokens.value,
-    size: this.view.size.value,
-    viewport: this.view.viewport.value,
-    selection: this.ui.selection.value,
-    mode: this.ui.mode.value,
-    semantic: semanticText.value,
-    locale: locale.value,
-    shown: this.derived.visibleLayers.value,
-    dots: this.derived.layerDots.value,
-    incomplete: this.derived.incompleteMarkings.value,
-    visibility: this.derived.markingVisibility.value,
-    card: this.cards.value,
-    drawings: this.drawings.value,
-    drawn: this.derived.drawnMarkings.value,
-    review: this.reviewCanvas.value,
-  }));
+  private readonly frame = computed((): Frame => {
+    // Ver limpo: nada de seleção, trava, hover ou marcas da revisão por cima da imagem.
+    const clean = this.ui.cleanView.value;
+    return {
+      project: this.drawnProject.value,
+      readOnly: this.store.locked.value,
+      bitmaps: this.display.images.value,
+      preview: this.state.preview.value,
+      draft: this.state.draft.value,
+      dropTarget: this.dropTarget.value,
+      hoverLock: clean ? null : this.state.hoverLock.value,
+      hoverMarking: clean ? null : this.state.hoverMarking.value,
+      tokens: this.tokens.value,
+      size: this.view.size.value,
+      viewport: this.view.viewport.value,
+      selection: clean ? null : this.ui.selection.value,
+      mode: this.ui.mode.value,
+      locale: locale.value,
+      shown: this.derived.visibleLayers.value,
+      dots: this.derived.layerDots.value,
+      incomplete: this.derived.incompleteMarkings.value,
+      visibility: this.derived.markingVisibility.value,
+      drawings: this.drawings.value,
+      drawn: this.derived.drawnMarkings.value,
+      review: clean ? null : this.reviewCanvas.value,
+    };
+  });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
   private drawn: Frame | null = null;
   /** Placements do último quadro (com a prévia do gesto aplicada). */

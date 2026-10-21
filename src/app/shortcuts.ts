@@ -25,6 +25,8 @@ export type Shortcut =
   | { readonly kind: 'new-annotation' }
   /** Alt+L: tranca ou destranca o item selecionado. */
   | { readonly kind: 'toggle-lock' }
+  /** Alt+H: liga ou desliga o Ver limpo do canvas. */
+  | { readonly kind: 'clean-view' }
   /** Ctrl/Cmd+C: copia a referência do item (fora de campos de texto e sem texto selecionado). */
   | { readonly kind: 'copy-reference' }
   /** Ctrl+Alt+C: copia como PNG o recorte da marcação selecionada. */
@@ -45,6 +47,7 @@ export const SHORTCUT_LABELS = {
   settings: 'Ctrl+,',
   newAnnotation: 'Alt+N',
   toggleLock: 'Alt+L',
+  cleanView: 'Alt+H',
   newRow: 'Alt+Enter',
   pickRef: 'Ctrl+B',
   copyReference: 'Ctrl+C',
@@ -149,7 +152,7 @@ function numberOf(e: KeyInfo): number | null {
  * janela em foco. Ctrl+Shift+número abre e fecha as janelas (Alt+número é o extra,
  * ligado por `altNumbers`), Ctrl+Shift+setas as redimensiona, Alt+↑/↓ anda na
  * seleção, Alt+N cria uma anotação na camada ativa, Alt+L tranca/destranca o item
- * selecionado, Ctrl/Cmd+C copia a referência do item, Ctrl+Alt+C copia o recorte da
+ * selecionado, Alt+H liga o Ver limpo, Ctrl/Cmd+C copia a referência do item, Ctrl+Alt+C copia o recorte da
  * marcação e Ctrl+=/−/0 controlam o zoom.
  */
 export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
@@ -169,6 +172,7 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
     if (!e.shiftKey && (e.code === 'KeyN' || key === 'n'))
       return { kind: 'new-annotation' };
     if (!e.shiftKey && (e.code === 'KeyL' || key === 'l')) return { kind: 'toggle-lock' };
+    if (!e.shiftKey && (e.code === 'KeyH' || key === 'h')) return { kind: 'clean-view' };
     if (key === 'arrowup') return { kind: 'select-parent' };
     if (key === 'arrowdown') return { kind: 'select-child' };
     const n = altNumbers ? numberOf(e) : null;

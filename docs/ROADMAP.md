@@ -175,6 +175,18 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Depois, sem data:** o que a etapa deixou ([`history/PLAN-etapa-instanciacao.md`](history/PLAN-etapa-instanciacao.md), "O que ficou para depois"): ajustes de texto do guia (R5.3, `login.png` do R5) e um clone local por plataforma mesmo com especializações de repositórios diferentes.
 - **Depende de:** etapa Biblioteca (concluída e mesclada).
 
+## Etapa — Canvas limpo (concluída, épico `epic/canvas-limpo`)
+
+- **Concluída em 2026-10-21** (fases V1 e V2); histórico em [`history/PLAN-etapa-canvas-limpo.md`](history/PLAN-etapa-canvas-limpo.md).
+
+- **Objetivo:** o dono pediu (2026-10-21) uma opção de ver o canvas limpo (só a imagem ou os componentes, sem borda, nome, indicador ou alça por cima) e a remoção do cartão de texto do zoom semântico, que repete o painel direito.
+- **Entra:**
+  - **V1, sem cartão no canvas:** remove o cartão de anotações do zoom semântico, a preferência "Texto no canvas" e o código e os tokens do cartão; o cabeçalho (nome e indicadores) fica. Coordenador: Sonnet. Esforço: medium; subagentes medium (mecânicos: low).
+  - **V2, Ver limpo e fechamento:** estado de UI `cleanView` (nunca gravado), botão na barra do canvas e atalho `Alt+H`, que escondem marcações, overlay e revisão pelo caminho `'hidden'` que já existe; roteiros do `TESTING.md` e fechamento da etapa. Coordenador: Sonnet. Esforço: medium; subagentes medium (mecânicos: low).
+  - Sem schema, formato de especialização nem MCP novos (0.6.0 continua; sem rótulo `mcp-rc`). Detalhe no [`PLAN.md`](../PLAN.md).
+- **Fora:** exportar imagem limpa; esconder a camada ativa; esconder só o cabeçalho ou o nome; persistir o Ver limpo; layout de celular.
+- **Depende de:** nada (etapa Código de instanciação concluída e mesclada).
+
 ## Evoluções
 
 Só depois do marco (alcançado em 2026-10-16), se a ferramenta se provar útil.

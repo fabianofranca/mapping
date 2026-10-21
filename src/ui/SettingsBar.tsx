@@ -5,9 +5,7 @@ import {
   isLocale,
   isTheme,
   locale,
-  semanticText,
   setLocale,
-  setSemanticText,
   setShowComponentsOnPhotos,
   showComponentsOnPhotos,
   setTheme,
@@ -15,7 +13,7 @@ import {
 } from '../store/settings';
 import { Choice, Segmented, Select } from './controls';
 
-/** Idioma, tema (segmentado), texto no canvas e componentes sobre fotos. Vive no diálogo Configurações. */
+/** Idioma, tema (segmentado) e componentes sobre fotos. Vive no diálogo Configurações. */
 export function SettingsBar() {
   return (
     <div class="settings" role="group" aria-label={t('settings.title')}>
@@ -47,12 +45,6 @@ export function SettingsBar() {
           }}
         />
       </div>
-      <Choice
-        label={t('view.semanticText')}
-        hint={t('view.semanticTextHint')}
-        checked={semanticText.value}
-        onChange={(e) => setSemanticText(e.currentTarget.checked)}
-      />
       <Choice
         label={t('view.componentsOnPhotos')}
         hint={t('view.componentsOnPhotosHint')}

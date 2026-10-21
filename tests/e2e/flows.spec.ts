@@ -115,13 +115,13 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
   });
 });
 
-test('caixa de seleção e texto de "Texto no canvas" ficam na mesma linha', async ({
+test('caixa de seleção e texto de "Componentes sobre fotos" ficam na mesma linha', async ({
   page,
 }) => {
   await page.goto('/');
   // Configurações é um diálogo: botão da coluna lateral (desktop) ou da barra (celular).
   await page.getByRole('button', { name: 'Configurações', exact: true }).click();
-  const check = page.getByLabel('Texto no canvas');
+  const check = page.getByLabel('Mostrar componentes sobre fotos');
   const text = page.locator('label.choice .choice-label').first();
   await expect(check).toBeVisible();
   const [c, s] = await Promise.all([check.boundingBox(), text.boundingBox()]);

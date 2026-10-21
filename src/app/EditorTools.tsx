@@ -1,7 +1,7 @@
 import { t } from '../i18n';
-import { setSemanticText, semanticText } from '../store/settings';
 import { useEditor } from '../ui/EditorContext';
 import { IconButton, Segmented } from '../ui/controls';
+import { setCleanView } from '../store/ui';
 import { SHORTCUT_LABELS } from './shortcuts';
 
 // Botões de ferramenta da barra principal e da barra dos breadcrumbs.
@@ -17,7 +17,7 @@ export function ModeButtons() {
           id: 'draw',
           label: t('editor.modeDraw'),
           icon: 'draw',
-          disabled: store.locked.value,
+          disabled: store.locked.value || ui.cleanView.value,
         },
       ]}
       value={ui.mode.value}
@@ -94,13 +94,17 @@ export function FitButton() {
   );
 }
 
-export function SemanticTextButton() {
+/** Ver limpo: o canvas mostra só as imagens e os componentes (Alt+H). */
+export function CleanViewButton() {
+  const { ui } = useEditor();
   return (
     <IconButton
-      icon="text"
-      label={t('view.semanticText')}
-      pressed={semanticText.value}
-      onClick={() => setSemanticText(!semanticText.value)}
+      icon="eyeOff"
+      label={t('view.cleanView')}
+      shortcut={SHORTCUT_LABELS.cleanView}
+      tooltip={t('view.cleanViewHint')}
+      pressed={ui.cleanView.value}
+      onClick={() => setCleanView(ui, !ui.cleanView.peek())}
     />
   );
 }
