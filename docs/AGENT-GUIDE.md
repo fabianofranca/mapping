@@ -4,7 +4,7 @@ Este guia é para o agente de IA (Claude Code, Claude Desktop ou outro cliente M
 
 O Mapping marca **áreas retangulares** em imagens, organiza as informações em **camadas** e as descreve com **anotações** (pares chave-valor livres ou anotações **tipadas** de uma especialização). O servidor lê projetos guardados **em pasta** dentro das raízes configuradas (`--root`). Projetos guardados só no navegador não são alcançáveis.
 
-> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`), **dá o código de instanciação** de cada tipo mapeado (`get_code_hints`, `find_by_code`), **propõe alterações** para o usuário revisar (`propose_changes`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`), **casa elementos de uma origem externa** (`source`, `find_by_source`, `find_types_by_source`) **valida especializações** (`validate_specialization`) e **bibliotecas de componentes** (`validate_library`) e **lê os componentes** (`list_components`, `get_component`). **Você nunca grava o projeto**: o `apply_changes` não existe mais.
+> **Nesta versão** o servidor **lê**, cria projetos vazios (`create_project`), **mostra imagens** (`get_marking_image`, `get_image_file`) e **entrega cada imagem também por URL local** (`url`, `markdown`), **dá o código de instanciação** de cada tipo mapeado (`get_code_hints`, `find_by_code`), **propõe alterações** para o usuário revisar (`propose_changes`, `get_proposal`, `get_proposal_review`, `withdraw_proposal`), **casa elementos de uma origem externa** (`source`, `find_by_source`, `find_types_by_source`) **valida especializações** (`validate_specialization`) e **bibliotecas de componentes** (`validate_library`) e **lê os componentes** (`list_components`, `get_component`). **Você nunca grava o projeto**: o `apply_changes` não existe mais.
 
 ## Conceitos que importam
 
@@ -63,6 +63,8 @@ As duas tools de imagem devolvem a **imagem** (conteúdo `image`) e, antes dela,
   - `format`: `png` (padrão, sem perdas: bom para telas e texto), `jpeg` (padrão se o arquivo original é JPEG) ou `webp`.
   - Numa **tela em branco** o recorte é o **desenho simplificado** dos componentes (`drawing: "simplified"`): texto em barras e cores sólidas, sem fontes, gradientes nem sombras. Confira posição, tamanho e hierarquia, não o acabamento.
 - **`get_image_file(ref, { maxSize, format })`** — a imagem inteira, reduzida se passar de `maxSize`. Cabendo e sem pedir outro formato, é o arquivo original.
+
+**`url` e `markdown`** (nas duas tools, a menos que o servidor rode com `--no-http`) acompanham o conteúdo `image` no texto JSON: `url` é um endereço `http://127.0.0.1:<porta>/<token>/<chave>.<ext>` e `markdown` é `![nome](url)`, pronto para colar. A imagem fica só em memória no servidor e a `url` vale enquanto o processo do servidor MCP roda, só neste computador (ao reiniciar o cliente, as imagens de um chat antigo deixam de carregar). Use quando o seu cliente não mostra a imagem no chat (como o Cursor): cole o `markdown` na resposta para o usuário ver o recorte. Os mesmos bytes dão a mesma URL.
 
 No texto: `region` é a parte da imagem original que aparece (em pixels da imagem original), `scale` o fator de redução e `markingInOutput` onde a marcação ficou, **em pixels da imagem devolvida** (o contorno de uma filha usa a mesma conversão: `(x - region.x) × scale`). Se o arquivo tiver dimensões diferentes das do `mapping.json`, as coordenadas são ajustadas na proporção e vem um `warning`.
 
@@ -420,6 +422,11 @@ O **repositório é da biblioteca**: cada especialização declara o da própria
 ### O que o servidor nunca faz
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
+
+### Mudança na versão 0.7.0
+
+- **`url` e `markdown` em `get_marking_image` e `get_image_file`**: cada imagem também é entregue por um servidor HTTP local (127.0.0.1, porta aleatória, token, só em memória), para clientes que não mostram o conteúdo `image` (como o Cursor). Cole o `markdown` na resposta. Com `--no-http` as respostas vêm sem `url`/`markdown`.
+- Nomes das tools inalterados. Use a 0.7.0 com a app da mesma época (schema v11, sem mudança).
 
 ### Mudança na versão 0.6.0
 

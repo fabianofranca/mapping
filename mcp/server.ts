@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { DOC_RESOURCES } from './docs';
+import type { ImageServer } from './imageServer';
 import { Roots } from './paths';
 import { registerTools } from './tools';
 import { BUILD_VERSION, SERVER_NAME } from './version';
@@ -9,6 +10,8 @@ export interface ServerConfig {
   readonly roots: readonly string[];
   /** Diretório de trabalho do cliente (padrão: o do processo). Limita a conferência de arquivos de código. */
   readonly workDir?: string;
+  /** Servidor HTTP local das imagens (`null`/ausente: desligado). */
+  readonly images?: ImageServer | null;
 }
 
 const INSTRUCTIONS = `Servidor do Mapping: lê e altera projetos de mapeamento de imagens (marcações retangulares, camadas e anotações) guardados em pasta.
@@ -22,7 +25,7 @@ export function createServer(config: ServerConfig): McpServer {
     { name: SERVER_NAME, version: BUILD_VERSION },
     { instructions: INSTRUCTIONS },
   );
-  registerTools(server, new Roots(config.roots, config.workDir));
+  registerTools(server, new Roots(config.roots, config.workDir), config.images ?? null);
   for (const doc of DOC_RESOURCES) {
     server.registerResource(
       doc.name,

@@ -3,6 +3,7 @@ import { format } from 'node:util';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { USAGE, UsageError, parseArgs } from './args';
 import { MAX_MESSAGE_BYTES } from './image/formats';
+import { ImageServer } from './imageServer';
 import { createServer } from './server';
 import { BUILD_VERSION } from './version';
 
@@ -47,7 +48,10 @@ async function main(): Promise<void> {
     report(error);
     process.exit(1);
   });
-  const server = createServer({ roots: options.roots.map((root) => resolve(root)) });
+  const server = createServer({
+    roots: options.roots.map((root) => resolve(root)),
+    images: options.http ? new ImageServer() : null,
+  });
   // O teto de leitura acompanha o do `base64` no schema. Acima dele, o transporte do SDK avisa
   // por `onerror` e fecha sem responder (o processo sairia com 0, em silêncio): sai com erro.
   const transport = new StdioServerTransport(process.stdin, process.stdout, {

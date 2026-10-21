@@ -166,6 +166,10 @@ const mcpImportPatterns = [
     message: 'mcp/ não faz requisições de rede.',
   },
 ];
+// Os mesmos patterns sem o grupo de rede (só `mcp/imageServer.ts`, abaixo).
+const mcpImportPatternsWithoutNetwork = mcpImportPatterns.filter(
+  (pattern) => pattern.message !== 'mcp/ não faz requisições de rede.',
+);
 
 // Fase 8.5 (M8): só três módulos do mcp/ gravam no disco (`paths.ts`, `createProject.ts`,
 // `proposalStore.ts`); nos outros, as funções de escrita do `node:fs` não podem ser importadas.
@@ -337,6 +341,17 @@ export default tseslint.config(
     ],
     rules: {
       'no-restricted-imports': ['error', { patterns: mcpImportPatterns }],
+    },
+  },
+  // `mcp/imageServer.ts` escuta só em 127.0.0.1 para entregar as imagens das tools ao chat do
+  // cliente; nenhuma requisição de saída. Por isso só ele pode importar `node:http`.
+  {
+    files: ['mcp/imageServer.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: mcpImportPatternsWithoutNetwork, paths: mcpWriterImports },
+      ],
     },
   },
   prettier,

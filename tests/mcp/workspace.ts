@@ -276,6 +276,8 @@ export interface ConnectOptions {
    * servidor sobe com `node --import` do gancho. Só para os testes de concorrência.
    */
   readonly fsHooks?: string;
+  /** Argumentos extras, depois das raízes (ex.: `--no-http`). */
+  readonly args?: readonly string[];
 }
 
 const FS_HOOKS = resolve('tests/mcp/fsHooks.mjs');
@@ -289,7 +291,12 @@ export async function connect(
     options.fsHooks === undefined ? [] : ['--import', pathToFileURL(FS_HOOKS).href];
   const transport = new StdioClientTransport({
     command: process.execPath,
-    args: [...hooks, bundle, ...roots.flatMap((root) => ['--root', root])],
+    args: [
+      ...hooks,
+      bundle,
+      ...roots.flatMap((root) => ['--root', root]),
+      ...(options.args ?? []),
+    ],
     stderr: 'pipe',
     ...(options.cwd !== undefined ? { cwd: options.cwd } : {}),
     ...(options.fsHooks !== undefined
