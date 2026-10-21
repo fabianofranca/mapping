@@ -1,5 +1,5 @@
 // Marcações no canvas: borda, alerta de revisão, indicadores de camada e o
-// texto do zoom semântico. Só a parte visível na tela é atualizada.
+// nome do zoom semântico. Só a parte visível na tela é atualizada.
 import Konva from 'konva/lib/Core';
 import { Circle as KonvaCircle } from 'konva/lib/shapes/Circle';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
@@ -16,6 +16,7 @@ import {
   type Rect,
 } from '../../model';
 import { visibleArea, type Frame } from '../frame';
+import { semanticMode } from '../semanticText';
 import type { MarkingReviewMark } from '../reviewMarks';
 import { markingCanvasRect } from '../markingGeometry';
 import type { CanvasTokens } from '../theme';
@@ -33,7 +34,6 @@ import {
   intersectRects,
   sameInputs,
 } from './metrics';
-import { NO_CARD, semanticPlacement } from './cards';
 import {
   createSemanticNode,
   updateSemanticText,
@@ -70,14 +70,12 @@ export type MarkingFrame = Pick<
   Frame,
   | 'project'
   | 'selection'
-  | 'semantic'
   | 'size'
   | 'viewport'
   | 'dots'
   | 'incomplete'
   | 'visibility'
   | 'tokens'
-  | 'card'
   | 'review'
   | 'drawn'
   | 'hoverMarking'
@@ -89,7 +87,6 @@ export interface HeaderLookup {
 }
 
 const NO_LAYER_DOTS: readonly LayerDot[] = [];
-const NO_CHILDREN: ReadonlyMap<string | null, readonly Marking[]> = new Map();
 
 /** Marcações de cima para baixo na hierarquia, uma vez por versão do projeto. */
 const topDownMarkings = memoByProject((p: Project) => topDown(p.markings));
@@ -116,12 +113,10 @@ export class MarkingRenderer {
 
   /** Marcações de cima para baixo na hierarquia: as filhas ficam por cima dos pais. */
   render(frame: MarkingFrame, placements: ReadonlyMap<string, Placement>): void {
-    const { project, selection, semantic, dots, incomplete, tokens, review, drawn } =
-      frame;
+    const { project, selection, dots, incomplete, tokens, review, drawn } = frame;
     const zoom = frame.viewport.scale;
     const view = visibleArea(frame.size, frame.viewport);
     const lookup = project ? projectIndex(project) : null;
-    const children = lookup?.children ?? NO_CHILDREN;
     const ordered = project ? topDownMarkings(project) : [];
     const seen = new Set<string>();
     // Cabeçalho de cada marcação já desenhada (pais antes das filhas).
@@ -187,26 +182,25 @@ export class MarkingRenderer {
           reviewMark,
         );
       }
-      // Ancestral de contexto (modo Ocultar): só a borda, sem cartão nem nome.
-      const { mode, area } = semanticPlacement(
-        marking,
-        placement,
-        zoom,
-        // O desenho ocupa o lugar do cartão (e do nome) das marcações com componente à vista.
-        semantic && visibility !== 'outline' && !withDrawing,
-        children.get(marking.id) ?? [],
-        frame.visibility,
-      );
+      // Ancestral de contexto (modo Ocultar): só a borda, sem nome. O desenho ocupa o
+      // lugar do nome das marcações com componente à vista.
+      const pxPerUnit = placement.scale * zoom;
+      const mode =
+        visibility !== 'outline' && !withDrawing
+          ? semanticMode({
+              screenWidth: marking.rect.width * pxPerUnit,
+              screenHeight: marking.rect.height * pxPerUnit,
+            })
+          : 'none';
       const parentHeader = marking.parentId ? headers.get(marking.parentId) : undefined;
       const header = updateSemanticText(
         node.text,
         {
           marking,
           markingRect,
-          area: area && mode === 'full' ? markingCanvasRect(placement, area) : null,
           view,
           mode,
-          card: mode === 'none' ? NO_CARD : frame.card(marking),
+          dotCount: visibility === 'outline' ? 0 : markingDots.length,
           incomplete: markingIncomplete,
           // Filha começando sob o nome do pai: o dela desce uma linha.
           headerFloor:

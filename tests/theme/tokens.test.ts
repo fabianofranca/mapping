@@ -12,14 +12,7 @@ const FAMILIES: Record<string, readonly string[]> = {
   canvas: ['cv-line', 'cv-halo', 'cv-select', 'cv-invalid', 'cv-warning', 'cv-name-tag'],
   camadas: ['layer-01', 'layer-10'],
   fonte: ['font-sans', 'font-mono'],
-  tipografia: [
-    't-display',
-    't-body',
-    't-cv-name',
-    't-cv-caption-size',
-    't-code',
-    't-kbd',
-  ],
+  tipografia: ['t-display', 't-body', 't-cv-name', 't-code', 't-kbd'],
   espaço: ['space-0-5', 'space-1-5', 'space-3', 'space-4', 'space-8'],
   raio: ['radius-xs', 'radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'radius-full'],
   tamanho: [

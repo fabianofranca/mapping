@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cardRows, cardSections, type CardLabels } from '../../src/canvas/semanticText';
 import { removeTableRow, type Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { parseNumberInput } from '../../src/ui/FieldEditors';
@@ -63,36 +62,5 @@ describe('textos das anotações tipadas', () => {
     expect(parseNumberInput(' 1,5 ')).toBe(1.5);
     expect(parseNumberInput('')).toBeNull();
     expect(parseNumberInput('abc')).toBeUndefined();
-  });
-});
-
-describe('zoom semântico com anotações tipadas', () => {
-  it('título e valores tipados; alerta no obrigatório vazio', () => {
-    const p = cadastroProject();
-    const labels: CardLabels = {
-      untitled: (n) => `Anotação ${n}`,
-      linkedTo: (owner) => `↳ de ${annotationDisplayName(p, owner)}`,
-      inheritedFrom: () => '',
-      describe: (a) =>
-        a.type
-          ? {
-              title: annotationDisplayName(p, a),
-              alert: issuesOf(p, a.id).length > 0,
-              lines: [{ text: `x: ${a.id}`, alert: a.id === 'AT' }],
-            }
-          : null,
-    };
-    const owners = new Map(p.annotations.map((a) => [a.id, a]));
-    const own = p.annotations.filter((a) => a.markingId === 'MT' || a.id === 'AU');
-    const rows = cardRows(cardSections(p.layers, own, []), owners, labels);
-    expect(rows.filter((r) => r.kind === 'title')).toMatchObject([
-      { text: 'User', untitled: false },
-      { text: 'Text', alert: true },
-    ]);
-    expect(rows.filter((r) => r.kind === 'entry')).toMatchObject([
-      { text: 'name: string' },
-      { text: 'age: number' },
-      { text: 'x: AT', alert: true },
-    ]);
   });
 });

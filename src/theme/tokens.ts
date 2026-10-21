@@ -120,8 +120,6 @@ const TEXT_STYLES: readonly TextStyle[] = [
   { name: 't-micro', size: 11, line: 16, weight: 600 },
   { name: 't-cv-name', size: 11, line: 16, weight: 600, parts: true },
   { name: 't-cv-image', size: 12, line: 16, weight: 600, parts: true },
-  { name: 't-cv-card', size: 11, line: 15, weight: 400, parts: true },
-  { name: 't-cv-caption', size: 10, line: 14, weight: 400, parts: true },
   { name: 't-code', size: 12, line: 18, weight: 400, family: 'mono' },
   { name: 't-kbd', size: 11, line: 16, weight: 400 },
 ];

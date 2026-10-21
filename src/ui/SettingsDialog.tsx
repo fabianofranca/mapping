@@ -72,7 +72,7 @@ function About() {
 }
 
 /**
- * Configurações: idioma, tema e texto no canvas, com atalho para a lista de teclas; no
+ * Configurações: idioma, tema e opções do canvas, com atalho para a lista de teclas; no
  * editor, também os repositórios de código por plataforma; no fim, o Sobre.
  */
 export function SettingsDialog({

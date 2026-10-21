@@ -5,9 +5,7 @@ import { ptBR } from '../src/i18n/pt-BR';
 import {
   detectLocale,
   locale,
-  semanticText,
   setLocale,
-  setSemanticText,
   setShowComponentsOnPhotos,
   setTheme,
   showComponentsOnPhotos,
@@ -63,19 +61,6 @@ describe('tema e persistência', () => {
     } finally {
       Storage.prototype.setItem = original;
     }
-  });
-});
-
-describe('texto no canvas (zoom semântico)', () => {
-  beforeEach(() => localStorage.clear());
-
-  it('vem ligado e a preferência é gravada', () => {
-    expect(semanticText.value).toBe(true);
-    setSemanticText(false);
-    expect(semanticText.value).toBe(false);
-    expect(localStorage.getItem('mapping.semanticText')).toBe('off');
-    setSemanticText(true);
-    expect(localStorage.getItem('mapping.semanticText')).toBe('on');
   });
 });
 

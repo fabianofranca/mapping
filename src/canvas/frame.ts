@@ -5,7 +5,6 @@ import type {
   ComponentDrawings,
   Layer,
   LayerDot,
-  Marking,
   MarkingVisibility,
   Placement,
   Project,
@@ -14,7 +13,6 @@ import type {
 import type { DisplayImage } from '../store/displayImages';
 import type { Locale } from '../store/settings';
 import type { EditorMode, Selection } from '../store/ui';
-import type { MarkingCard } from './renderers/cards';
 import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
 import type { Size, Viewport } from './viewport';
@@ -70,13 +68,11 @@ export interface Frame {
   readonly viewport: Viewport;
   readonly selection: Selection;
   readonly mode: EditorMode;
-  readonly semantic: boolean;
   readonly locale: Locale;
   readonly shown: readonly Layer[];
   readonly dots: ReadonlyMap<string, readonly LayerDot[]>;
   readonly incomplete: ReadonlySet<string>;
   readonly visibility: ReadonlyMap<string, MarkingVisibility>;
-  readonly card: (marking: Marking) => MarkingCard;
   /**
    * Desenhos dos componentes do projeto desenhado (com a prévia do gesto), por marcação. O
    * canvas compara os objetos por identidade: só o que mudou é refeito.
