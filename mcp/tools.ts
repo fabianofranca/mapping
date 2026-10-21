@@ -7,6 +7,7 @@ import { codeHintsView, type CodeContext } from './codeViews';
 import { createProjectFolder } from './createProject';
 import { ToolError } from './errors';
 import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
+import type { ImageServer } from './imageServer';
 import { imageFile, markingImage, type ImageResult } from './imageTools';
 import { findByCodeResult } from './findByCode';
 import { Refs, resolveItem } from './items';
@@ -156,7 +157,11 @@ function codeContext(roots: Roots, refs: Refs): CodeContext {
   return { refs, files: new LocalFileChecker(roots.workDir) };
 }
 
-export function registerTools(server: McpServer, roots: Roots): void {
+export function registerTools(
+  server: McpServer,
+  roots: Roots,
+  images: ImageServer | null = null,
+): void {
   server.registerTool(
     'list_projects',
     {
@@ -472,7 +477,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels da imagem original) ou a imagem inteira com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Numa tela em branco, o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas).',
+        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels da imagem original) ou a imagem inteira com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Numa tela em branco, o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -507,7 +512,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
         const item = await resolveItem(roots, ref, project, 'm');
         const marking = projectIndex(item.refs.project).markings.get(item.id);
         if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
-        return markingImage(roots, item.refs, marking, options);
+        return markingImage(roots, item.refs, marking, options, images);
       }),
   );
 
@@ -515,7 +520,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
     'get_image_file',
     {
       description:
-        'Devolve a imagem inteira de uma imagem do projeto, reduzida se o lado maior passar de `maxSize`. Para ver só uma marcação, use get_marking_image.',
+        'Devolve a imagem inteira de uma imagem do projeto, reduzida se o lado maior passar de `maxSize`. Para ver só uma marcação, use get_marking_image. A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -529,7 +534,7 @@ export function registerTools(server: McpServer, roots: Roots): void {
         const item = await resolveItem(roots, ref, project, 'i');
         const image = projectIndex(item.refs.project).images.get(item.id);
         if (!image) throw new ToolError('not-found', `imagem não encontrada: ${ref}`);
-        return imageFile(roots, item.refs, image, options);
+        return imageFile(roots, item.refs, image, options, images);
       }),
   );
 

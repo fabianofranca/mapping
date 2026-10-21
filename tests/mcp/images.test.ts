@@ -43,6 +43,8 @@ interface MarkingImageData {
   childrenLegend?: { color: string; name: string; ref: string; rect: Rect }[];
   childrenNotOutlined?: number;
   warning?: string;
+  url?: string;
+  markdown?: string;
 }
 interface ImageFileData {
   ref: string;
@@ -54,6 +56,8 @@ interface ImageFileData {
   scale: number;
   recoded: boolean;
   warning?: string;
+  url?: string;
+  markdown?: string;
 }
 interface Rect {
   x: number;
@@ -540,6 +544,77 @@ describe('arquivo único', () => {
       }
     } finally {
       await client.close();
+    }
+  });
+});
+
+describe('url: servidor HTTP local de imagens', () => {
+  const URL_FORMAT =
+    /^http:\/\/127\.0\.0\.1:\d+\/[0-9a-f]{32}\/[0-9a-f]{32}\.(png|jpg|webp)$/;
+
+  async function fetched(url: string) {
+    const response = await fetch(url);
+    return {
+      status: response.status,
+      type: response.headers.get('content-type'),
+      bytes: new Uint8Array(await response.arrayBuffer()),
+    };
+  }
+
+  it('get_marking_image devolve url e markdown que entregam os mesmos bytes', async () => {
+    const r = ok(await crop(IDS.png));
+    const url = r.data.url!;
+    expect(url).toMatch(URL_FORMAT);
+    expect(url.endsWith('.png')).toBe(true);
+    expect(r.data.markdown).toBe(`![Formulário](${url})`);
+    const got = await fetched(url);
+    expect(got.status).toBe(200);
+    expect(got.type).toBe(r.mimeType);
+    expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
+  });
+
+  it('a extensão segue o formato devolvido', async () => {
+    const j = ok(await crop(IDS.png, { format: 'jpeg' }));
+    expect(j.data.url!.endsWith('.jpg')).toBe(true);
+    const w = ok(await crop(IDS.png, { format: 'webp' }));
+    expect(w.data.url!.endsWith('.webp')).toBe(true);
+    expect((await fetched(w.data.url!)).type).toBe('image/webp');
+  });
+
+  it('get_image_file devolve url e markdown com o nome do arquivo', async () => {
+    const r = ok(await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.png) }));
+    expect(r.data.url).toMatch(URL_FORMAT);
+    expect(r.data.markdown).toBe(`![${IMAGE_FILES.png}](${r.data.url})`);
+    const got = await fetched(r.data.url!);
+    expect(got.type).toBe(r.mimeType);
+    expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
+  });
+
+  it('a tela em branco também tem url', async () => {
+    const r = ok(await crop(IDS.blank));
+    expect(r.data.url).toMatch(URL_FORMAT);
+    const got = await fetched(r.data.url!);
+    expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
+  });
+
+  it('--no-http: sem url nem markdown', async () => {
+    const off = await connect([ws.root], { args: ['--no-http'] });
+    try {
+      const result = await off.client.callTool({
+        name: 'get_marking_image',
+        arguments: { project: 'imagens', ref: markingRef(IDS.png) },
+      });
+      const content = result.content as { type: string; text?: string }[];
+      expect(result.isError).not.toBe(true);
+      expect(content.some((c) => c.type === 'image')).toBe(true);
+      const data = JSON.parse(content.find((c) => c.type === 'text')!.text!) as Record<
+        string,
+        unknown
+      >;
+      expect(data.url).toBeUndefined();
+      expect(data.markdown).toBeUndefined();
+    } finally {
+      await off.close();
     }
   });
 });

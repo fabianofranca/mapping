@@ -12,6 +12,11 @@ describe('parseArgs', () => {
     expect(parseArgs(['-v'])).toMatchObject({ version: true });
   });
 
+  it('--no-http desliga o servidor de imagens (padrão: ligado)', () => {
+    expect(parseArgs(['--root', 'a']).http).toBe(true);
+    expect(parseArgs(['--root', 'a', '--no-http']).http).toBe(false);
+  });
+
   it('exige ao menos uma raiz e recusa argumentos desconhecidos', () => {
     expect(() => parseArgs([])).toThrow(UsageError);
     expect(() => parseArgs(['--foo'])).toThrow('desconhecido');

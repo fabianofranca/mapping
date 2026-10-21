@@ -29,6 +29,7 @@ import {
   type Raster,
 } from './image/raster';
 import { paintScene } from './image/sceneRaster';
+import type { ImageServer } from './imageServer';
 import type { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
 
@@ -61,6 +62,30 @@ interface LoadedImage {
   /** Razão arquivo / projeto: ≠ 1 se o arquivo não tem as dimensões gravadas no `mapping.json`. */
   readonly scaleX: number;
   readonly scaleY: number;
+}
+
+const EXTENSION: Record<ImageFormat, string> = { png: 'png', jpeg: 'jpg', webp: 'webp' };
+
+/**
+ * `url` (HTTP local) e `markdown` da imagem devolvida. Sem servidor, ou se ele não subir
+ * (aviso no stderr), a tool responde sem esses campos.
+ */
+async function urlFields(
+  images: ImageServer | null,
+  bytes: Uint8Array,
+  format: ImageFormat,
+  alt: string,
+): Promise<{ url?: string; markdown?: string }> {
+  if (!images) return {};
+  try {
+    const url = await images.publish(bytes, MIME[format], EXTENSION[format]);
+    const cleanAlt = alt.replace(/[\]\r\n]+/g, ' ').trim();
+    return { url, markdown: `![${cleanAlt}](${url})` };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`mapping-mcp: servidor de imagens indisponível: ${message}\n`);
+    return {};
+  }
 }
 
 /** Mais pixels que isso, a tela em branco é rasterizada reduzida (é uma cor só). */
@@ -153,6 +178,7 @@ export async function markingImage(
   refs: Refs,
   marking: Marking,
   options: MarkingImageOptions,
+  images: ImageServer | null = null,
 ): Promise<ImageResult> {
   const index = projectIndex(refs.project);
   const image = index.images.get(marking.imageId);
@@ -283,6 +309,7 @@ export async function markingImage(
           }
         : {}),
       ...sizeWarning(loaded, image),
+      ...(await urlFields(images, bytes, format, refs.markingName(marking.id))),
     },
     image: { bytes, mimeType: MIME[format] },
   };
@@ -294,6 +321,7 @@ export async function imageFile(
   refs: Refs,
   image: ProjectImage,
   options: ImageFileOptions,
+  images: ImageServer | null = null,
 ): Promise<ImageResult> {
   if (isBlankImage(image)) {
     throw new ToolError(
@@ -329,6 +357,12 @@ export async function imageFile(
       scale: target.scale,
       recoded: !same,
       ...sizeWarning(loaded, image),
+      ...(await urlFields(
+        images,
+        bytes,
+        same ? loaded.format : format,
+        image.file ?? '',
+      )),
     },
     image: { bytes, mimeType: MIME[same ? loaded.format : format] },
   };
