@@ -15,7 +15,6 @@ import {
   type Project,
 } from '../../src/model';
 import type { Frame } from '../../src/canvas/frame';
-import { cardCache } from '../../src/canvas/renderers/cards';
 import type { CanvasTokens } from '../../src/canvas/theme';
 import { createCanvasViewState } from '../../src/canvas/viewState';
 import { createEditorDerived, type ComponentSources } from '../../src/store/derived';
@@ -90,8 +89,6 @@ export const TOKENS: CanvasTokens = {
   type: {
     name: { size: 11, line: 16, weight: 600 },
     image: { size: 12, line: 16, weight: 600 },
-    card: { size: 11, line: 15, weight: 400 },
-    caption: { size: 10, line: 14, weight: 400 },
   },
   handleSize: 10,
   lock: { fill: '#0057ba', glyph: '#010204', size: 20 },
@@ -186,17 +183,11 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     viewport: { x: 0, y: 0, scale: 1 },
     selection: ui.selection.peek(),
     mode: ui.mode.peek(),
-    semantic: true,
     locale: locale.peek(),
     shown: derived.visibleLayers.peek(),
     dots: derived.layerDots.peek(),
     incomplete: derived.incompleteMarkings.peek(),
     visibility: derived.markingVisibility.peek(),
-    card: cardCache(
-      store.project.peek(),
-      derived.visibleLayers.peek(),
-      derived.annotationsByMarking.peek(),
-    ),
     drawings: derived.drawingsOf(store.project.peek()),
     drawn: derived.drawnMarkings.peek(),
     review: null,

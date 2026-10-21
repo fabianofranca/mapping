@@ -263,8 +263,6 @@ export const enUS: Dictionary = {
   'editor.fitAllShort': 'Fit',
 
   'view.list': 'List',
-  'view.semanticText': 'Text on canvas',
-  'view.semanticTextHint': 'Shows annotations inside markings when you zoom in.',
   'view.showList': 'Show the list',
   'view.hideList': 'Hide the list',
 
@@ -286,8 +284,6 @@ export const enUS: Dictionary = {
   'incomplete.go': 'Go to the incomplete annotation in {name}',
   'incomplete.col.reasons': 'Reasons',
 
-  'canvas.card.untitled': 'Annotation {n}',
-  'canvas.card.inheritedFrom': '↳ inherited from {name}',
   'canvas.imageMissing': 'Missing image',
   'canvas.imageError': 'Cannot display',
 

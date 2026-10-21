@@ -263,9 +263,6 @@ export const ptBR = {
   'editor.fitAllShort': 'Enquadrar',
 
   'view.list': 'Lista',
-  'view.semanticText': 'Texto no canvas',
-  'view.semanticTextHint':
-    'Mostra as anotações dentro das marcações ao aproximar o zoom.',
   'view.showList': 'Mostrar a lista',
   'view.hideList': 'Esconder a lista',
 
@@ -287,8 +284,6 @@ export const ptBR = {
   'incomplete.go': 'Ir para a anotação incompleta em {name}',
   'incomplete.col.reasons': 'Motivos',
 
-  'canvas.card.untitled': 'Anotação {n}',
-  'canvas.card.inheritedFrom': '↳ herdado de {name}',
   'canvas.imageMissing': 'Imagem ausente',
   'canvas.imageError': 'Não foi possível exibir',
 

@@ -1,5 +1,4 @@
 import { t } from '../i18n';
-import { setSemanticText, semanticText } from '../store/settings';
 import { useEditor } from '../ui/EditorContext';
 import { IconButton, Segmented } from '../ui/controls';
 import { SHORTCUT_LABELS } from './shortcuts';
@@ -90,17 +89,6 @@ export function FitButton() {
       icon="fit"
       label={t('editor.fitAll')}
       onClick={() => canvas.current?.fitAll()}
-    />
-  );
-}
-
-export function SemanticTextButton() {
-  return (
-    <IconButton
-      icon="text"
-      label={t('view.semanticText')}
-      pressed={semanticText.value}
-      onClick={() => setSemanticText(!semanticText.value)}
     />
   );
 }

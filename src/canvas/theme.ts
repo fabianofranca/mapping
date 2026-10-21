@@ -45,19 +45,17 @@ export interface CanvasTokens {
     readonly dimmed: number;
     /** Borda de contexto dos pais no modo Ocultar. */
     readonly ancestor: number;
-    /** Anotações herdadas no cartão. */
+    /** Elementos esmaecidos (ex.: cadeado de marcação travada). */
     readonly inherited: number;
   };
   readonly fontFamily: string;
   readonly type: {
     readonly name: CanvasTextStyle;
     readonly image: CanvasTextStyle;
-    readonly card: CanvasTextStyle;
-    readonly caption: CanvasTextStyle;
   };
   /** Lado visível da alça (px de tela): `size-handle`. */
   readonly handleSize: number;
-  /** Raios (px de tela): `sm` na etiqueta do nome, `md` no cartão do zoom semântico. */
+  /** Raios (px de tela): `sm` na etiqueta do nome, `md` nos demais cantos arredondados. */
   readonly radius: { readonly sm: number; readonly md: number };
   /** Emblema do cadeado: fundo, traço e lado (px de tela). */
   readonly lock: {
@@ -113,8 +111,6 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     type: {
       name: textStyle(read, 't-cv-name'),
       image: textStyle(read, 't-cv-image'),
-      card: textStyle(read, 't-cv-card'),
-      caption: textStyle(read, 't-cv-caption'),
     },
     handleSize: number(read, '--size-handle'),
     radius: { sm: number(read, '--radius-sm'), md: number(read, '--radius-md') },

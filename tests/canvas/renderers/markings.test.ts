@@ -211,7 +211,7 @@ describe('MarkingRenderer', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  it('zoom semântico: nome no cabeçalho e cartão com as anotações', () => {
+  it('zoom semântico: só o nome no cabeçalho, sem cartão de anotações', () => {
     const { renderer, render } = setup();
     render();
     const text = node(renderer, 'M1').text;
@@ -223,35 +223,17 @@ describe('MarkingRenderer', () => {
       fontFamily: TOKENS.fontFamily,
       fontSize: TOKENS.type.name.size,
     });
-    // Cartão: `color-card` (já semiopaco, sem `opacity`) com o raio do token.
-    expect(text.card.getAttrs()).toMatchObject({
-      visible: true,
-      fill: TOKENS.card,
-      cornerRadius: TOKENS.radius.md,
-    });
-    expect(text.card.opacity()).toBe(1);
-    const lines = text.lines.filter((l) => l.visible()).map((l) => l.text());
-    expect(lines).toEqual(
-      expect.arrayContaining([
-        'Lataria',
-        'Amassado',
-        'tipo: amassado',
-        'gravidade: média',
-      ]),
-    );
-    // Barra da camada na cor dela.
-    expect(text.shapes.some((s) => s.visible() && s.fill() === '#E53935')).toBe(true);
-    // Nome da camada em `t-cv-caption`, título e pares em `t-cv-card`, na fonte da app.
-    const sized = (text: string) => cardLine(text)?.fontSize();
-    expect(sized('Lataria')).toBe(TOKENS.type.caption.size);
-    expect(sized('tipo: amassado')).toBe(TOKENS.type.card.size);
-    expect(cardLine('tipo: amassado')?.fontFamily()).toBe(TOKENS.fontFamily);
+    // A única coisa de texto do grupo é o nome: as anotações ficam no painel direito.
+    expect(text.group.getChildren()).toEqual([text.header]);
+  });
 
-    function cardLine(text: string) {
-      return node(renderer, 'M1').text.lines.find(
-        (l) => l.visible() && l.text() === text,
-      );
-    }
+  it('zoom semântico: marcação grande sem filhas mostra só o nome', () => {
+    const { renderer, render } = setup();
+    render({ viewport: { x: -1100, y: -1100, scale: 6 } });
+    const text = node(renderer, 'M2').text;
+    expect(text.group.visible()).toBe(true);
+    expect(text.header.text()).toBe('Maçaneta');
+    expect(text.group.getChildren()).toEqual([text.header]);
   });
 
   // Etapa 6 (6.4), achado 6: filha no mesmo canto do pai ("Formulário …" sobre "Nome").
@@ -273,15 +255,10 @@ describe('MarkingRenderer', () => {
     expect(child.y()).toBeGreaterThanOrEqual(parent.y() + parent.height());
   });
 
-  it('zoom semântico: área pequena só mostra o nome com "…"; desligado, nada', () => {
+  it('zoom semântico: marcação pequena na tela não mostra o nome', () => {
     const { renderer, render } = setup();
-    render({ viewport: { x: 0, y: 0, scale: 0.31 } });
-    const text = node(renderer, 'M1').text;
-    expect(text.header.text()).toBe('Porta …');
-    expect(text.card.visible()).toBe(false);
-
-    render({ semantic: false });
-    expect(text.group.visible()).toBe(false);
+    render({ viewport: { x: 0, y: 0, scale: 0.1 } });
+    expect(node(renderer, 'M1').text.group.visible()).toBe(false);
   });
 
   it('remove o nó de uma marcação apagada', () => {
