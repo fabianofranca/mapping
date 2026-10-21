@@ -1,6 +1,6 @@
 # Histórico — Etapa 2.3, redesign da interface (seção do antigo PLAN.md)
 
-> Fases R1 a R9 concluídas; R10 movida para Evoluções no ROADMAP.
+> Fases R1 a R9 concluídas; R10 retirada do roadmap em 2026-10-21 (antes, movida para Evoluções).
 >
 > Arquivo histórico: seção "Fases pendentes — Etapa 2.3" do `PLAN.md`, movida sem alterações de conteúdo. A especificação continua em [`../redesign/HANDOFF.md`](../redesign/HANDOFF.md). As seções 1 a 13 estão em [`PLAN-etapas-1-2.md`](PLAN-etapas-1-2.md), a etapa 2.1 em [`PLAN-etapa-2-1.md`](PLAN-etapa-2-1.md) e a 2.2 em [`PLAN-etapa-2-2.md`](PLAN-etapa-2-2.md).
 
