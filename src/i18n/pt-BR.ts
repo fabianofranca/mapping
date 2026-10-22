@@ -152,10 +152,10 @@ export const ptBR = {
     'Não foi possível exibir esta imagem. Você pode trocá-la por outro arquivo.',
   'image.replace': 'Trocar imagem',
   'image.repoint': 'Reapontar imagem',
-  'image.delete': 'Excluir imagem',
-  'image.deleteTitle': 'Excluir imagem?',
+  'image.delete': 'Excluir container',
+  'image.deleteTitle': 'Excluir container?',
   'image.deleteMessage':
-    '"{file}" será removida do projeto, com {markings} marcação(ões) e {annotations} anotação(ões). Dá para desfazer.',
+    '"{file}" será removido do projeto, com {markings} marcação(ões) e {annotations} anotação(ões). Dá para desfazer.',
   'image.aspectTitle': 'Proporção diferente',
   'image.aspectMessage':
     'A imagem atual tem {from} e a nova tem {to}. As marcações serão reescaladas e marcadas para revisão.',
@@ -448,7 +448,7 @@ export const ptBR = {
   'spec.updateFolder': 'Atualizar de pasta…',
   'spec.updateZip': 'Atualizar de zip…',
   'spec.packageHint':
-    'Uma biblioteca (versão 4 ou 5) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
+    'Uma biblioteca (versão 4 a 6) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
   'spec.v4NeedsPackage':
     '"{name}" cita arquivos do pacote (componentes, documentos, exemplos ou fontes) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
   'spec.packageValidating': 'Conferindo o pacote…',
