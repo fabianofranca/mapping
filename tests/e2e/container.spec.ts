@@ -75,6 +75,7 @@ test('arrastar um tipo da Paleta até o canvas cria a instância onde cai', asyn
   const host = page.locator('.canvas-host');
   await page.getByRole('button', { name: 'Novo container' }).first().click();
   const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome', { exact: true }).fill('Home');
   await dialog.getByRole('button', { name: 'Criar container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', '1');
@@ -100,6 +101,8 @@ test('arrastar um tipo da Paleta até o canvas cria a instância onde cai', asyn
     has: page.getByRole('button', { name: 'Adicionar Button', exact: true }),
   });
   await expect(item).toHaveAttribute('draggable', 'true');
+  // Enquadrar tudo: o único container (360 × 800, alto) fica no centro da vista, com vazio dos lados.
+  await page.getByRole('button', { name: 'Enquadrar tudo' }).click();
   const canvas = page.getByRole('main', { name: 'Canvas do projeto' });
   const box = await canvas.boundingBox();
   if (!box) throw new Error('canvas sem tamanho');
@@ -108,8 +111,11 @@ test('arrastar um tipo da Paleta até o canvas cria a instância onde cai', asyn
   await item.dragTo(canvas, { targetPosition: { x: box.width / 2, y: box.height / 2 } });
   await expect(host).toHaveAttribute('data-components', /^[1-9]/);
 
-  // No vazio, longe do container: marcação do canvas.
-  await item.dragTo(canvas, { targetPosition: { x: 24, y: 24 }, force: true });
+  // No vazio, à esquerda do container (longe do encaixe): marcação do canvas.
+  await item.dragTo(canvas, {
+    targetPosition: { x: 24, y: box.height / 2 },
+    force: true,
+  });
   await expect(host).toHaveAttribute('data-components', '2');
 
   const { mapping } = await exportMapping(page);
