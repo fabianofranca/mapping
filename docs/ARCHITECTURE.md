@@ -133,6 +133,17 @@ nunca falha (se falhar, assenta a última prévia válida).
   pertencimento é refeito). Nada prende a marcação ao container: ela pode sair dele e virar marcação do canvas, ou entrar em
   outro container com o `rect` convertido.
 
+**Seleção múltipla e arrasto conjunto (ME2).** `ui.selection` continua sendo o item **principal** (alças, Detalhes); `ui.selectionGroup`
+guarda os **outros** itens presos ao objeto do principal, então qualquer escrita direta em `ui.selection` desfaz o grupo sem
+código extra; `selectedItems(ui)` junta os dois. Shift+clique, o duplo clique e "Selecionar com o conteúdo"
+(`selectionWithContents`, `src/model/multiSelection.ts`) montam o grupo. O arrasto conjunto é a operação pura `moveItems`: tudo ou
+nada (trava ou sobreposição com container que não se move falham), com o deslocamento em unidades do canvas; a marcação de
+container o recebe dividido pela escala e preso ao container, e o item levado por outro (marcação dentro de container movido,
+descendente) não recebe deslocamento à parte. As prévias usam `settle: false`; ao soltar, a ação final repete a operação com o
+assentar e há **uma** entrada de desfazer. O arrastar da Paleta usa `componentDropTarget` (`src/ui/componentTarget.ts`, puro: slot,
+container ou canvas, e o que acender) e o hook `useComponentDrop`, com o MIME `application/x-mapping-component`; o botão
+**Adicionar** usa o mesmo alvo pela seleção.
+
 **Trava.** Trancar uma marcação do canvas trava o `placement` dos containers dentro dela (`canEditImagePlacement`); a
 herança continua em `markingLockStates`, que o cadeado da Árvore e do canvas leem.
 
