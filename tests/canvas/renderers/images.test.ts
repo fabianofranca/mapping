@@ -132,7 +132,7 @@ describe('ImageRenderer', () => {
     expect(node?.group.getParent()).toBeFalsy();
   });
 
-  it('tela em branco: retângulo cheio na cor de fundo, nunca o reservado de carregando', () => {
+  it('container: retângulo cheio na cor de fundo, nunca o reservado de carregando', () => {
     const { renderer, editor } = setup();
     const project = addBlankImage(canvasProject(), {
       id: 'B1',
@@ -158,7 +158,7 @@ describe('ImageRenderer', () => {
       dash: [],
     });
     // Sem nome: o rótulo é o de tela sem nome, esmaecido.
-    expect(node?.title.text()).toBe(t('image.blankUntitled'));
+    expect(node?.title.text()).toBe(t('image.containerUntitled'));
     expect(node?.title.fill()).toBe(TOKENS.textMuted);
 
     // A espessura da borda segue o zoom.

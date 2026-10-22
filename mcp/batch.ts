@@ -166,6 +166,12 @@ export interface BatchResult {
   readonly packageFiles: ReadonlyMap<string, Uint8Array>;
   /** Avisos da validação dos pacotes (não impedem nada). */
   readonly libraryWarnings: readonly LibraryWarning[];
+  /** Operações antigas aceitas com aviso (ex: `add_blank_image` → `add_container`). */
+  readonly deprecations: readonly {
+    readonly index: number;
+    readonly op: string;
+    readonly message: string;
+  }[];
   /** Regras entre coleções violadas pelo resultado (não deveria acontecer). */
   readonly invariantIssues: readonly string[];
 }
@@ -263,6 +269,7 @@ class Batch {
   private readonly imageFiles = new Map<string, Uint8Array>();
   private readonly packageFiles = new Map<string, Uint8Array>();
   private readonly libraryWarnings: LibraryWarning[] = [];
+  private readonly deprecations: { index: number; op: string; message: string }[] = [];
   private readonly errors: OperationError[] = [];
   private readonly steps: { index: number; description: string }[] = [];
   private readonly created: CreatedItem[] = [];
@@ -298,6 +305,13 @@ class Batch {
         const step = await this.apply(op);
         this.p = step.project;
         this.steps.push({ index, description: step.description });
+        if (op.op === 'add_blank_image') {
+          this.deprecations.push({
+            index,
+            op: op.op,
+            message: 'add_blank_image é antiga: use add_container (mesmos campos)',
+          });
+        }
         for (const [file, data] of step.imageFiles ?? []) this.imageFiles.set(file, data);
         this.takePackage(index, step);
         for (const [name, target] of step.rowAliases ?? [])
@@ -331,6 +345,7 @@ class Batch {
       imageFiles: this.imageFiles,
       packageFiles: this.packageFiles,
       libraryWarnings: this.libraryWarnings,
+      deprecations: this.deprecations,
       invariantIssues,
     };
   }
@@ -978,6 +993,7 @@ class Batch {
           imageFiles: [[image.file, image.data]],
         };
       }
+      case 'add_container':
       case 'add_blank_image': {
         const id = crypto.randomUUID();
         let project = addBlankImage(p, {
@@ -993,7 +1009,7 @@ class Batch {
         }
         return {
           project,
-          description: `Adicionar a tela em branco "${this.refs(project).imageLabel(id)}" (${op.width}×${op.height} px, fundo ${op.background.toUpperCase()}${
+          description: `Adicionar o container "${this.refs(project).imageLabel(id)}" (${op.width}×${op.height} px, fundo ${op.background.toUpperCase()}${
             op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
           })`,
           created: [{ kind: 'i', id }],
@@ -1042,7 +1058,7 @@ class Batch {
           op.width !== undefined ||
           op.height !== undefined
         ) {
-          // Só a tela em branco: numa foto o modelo recusa com `not-blank`.
+          // Só o container sem arquivo: numa foto o modelo recusa com `not-blank`.
           project = setBlankImage(project, id, {
             ...(op.background !== undefined ? { background: op.background } : {}),
             ...(op.width !== undefined ? { width: op.width } : {}),
@@ -1050,7 +1066,7 @@ class Batch {
           });
           const image = projectIndex(project).images.get(id)!;
           changes.push(
-            `tela em branco ${image.width}×${image.height} px, fundo ${image.background}`,
+            `container ${image.width}×${image.height} px, fundo ${image.background}`,
           );
         }
         if (op.locked === true) {

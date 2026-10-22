@@ -16,8 +16,8 @@ export type EditorDialog =
   /** `section`: id da seção em que a Ajuda abre (ex.: os atalhos, pelas Configurações). */
   | { readonly kind: 'help'; readonly section?: string }
   | { readonly kind: 'specs' }
-  /** Nova tela em branco (etapa Biblioteca, B3). */
-  | { readonly kind: 'blank' }
+  /** Novo container (etapa Biblioteca, B3). */
+  | { readonly kind: 'container' }
   | { readonly kind: 'settings' }
   | { readonly kind: 'deleteImage'; readonly image: ProjectImage }
   | { readonly kind: 'deleteMarking'; readonly marking: Marking }

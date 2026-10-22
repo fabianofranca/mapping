@@ -296,7 +296,7 @@ beforeAll(async () => {
   }
 
   writeProject(join(root, 'projetos', 'telas'), projectWithLibrary(), true);
-  // Projeto sem a biblioteca, com uma tela em branco.
+  // Projeto sem a biblioteca, com um container.
   let empty = createProject({
     name: 'Vazio',
     now: NOW,

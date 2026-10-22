@@ -8,14 +8,20 @@ import { locale } from '../../src/store/settings';
 import { EditorMainBar } from '../../src/app/EditorMainBar';
 import type { EditorDialogs } from '../../src/app/useEditorDialogs';
 import type { ProjectCommands } from '../../src/app/useProjectCommands';
-import { BlankScreenDialog } from '../../src/ui/BlankScreenDialog';
+import { ContainerDialog } from '../../src/ui/ContainerDialog';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { SelectionPanel } from '../../src/ui/SelectionPanel';
-import { parseBlankColor, parseBlankSide, presetFor } from '../../src/ui/blankScreen';
+import {
+  parseBlankColor,
+  parseBlankSide,
+  presetGroups,
+  selectionSize,
+} from '../../src/ui/containerForm';
+import { applySpecialization, type Project, type Spec } from '../../src/model';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
-// B3/P7: o diálogo "Nova tela em branco" e os campos de tamanho e cor nos Detalhes da tela.
+// B3/P7: o diálogo "Novo container" e os campos de tamanho e cor nos Detalhes da tela.
 
 beforeEach(() => {
   locale.value = 'pt-BR';
@@ -34,14 +40,33 @@ function renderDialog(harness: Harness, onClose = vi.fn()) {
   harness.context.canvas.current = canvas as unknown as CanvasController;
   render(
     <EditorContext.Provider value={harness.context}>
-      <BlankScreenDialog onClose={onClose} />
+      <ContainerDialog onClose={onClose} />
     </EditorContext.Provider>,
   );
   return { canvas, onClose, user: userEvent.setup() };
 }
 
+const SPEC: Spec = {
+  format: 'mapping-spec',
+  formatVersion: 6,
+  id: 'ds',
+  name: 'Design System',
+  version: 1,
+  containers: [
+    { id: 'phone', name: 'Celular', width: 360, height: 800 },
+    { id: 'tablet', name: 'Tablet', width: 800, height: 1280, background: '#EEEEEE' },
+  ],
+  layers: [],
+};
+
+function withSpec(project: Project): Project {
+  return applySpecialization(project, SPEC);
+}
+
 const submit = (user: ReturnType<typeof userEvent.setup>) =>
-  user.click(inDialog().getByRole('button', { name: t('blank.create'), hidden: true }));
+  user.click(
+    inDialog().getByRole('button', { name: t('container.create'), hidden: true }),
+  );
 
 describe('leitura do formulário', () => {
   it('lados inteiros de 1 ao máximo; cor #RRGGBB', () => {
@@ -54,31 +79,30 @@ describe('leitura do formulário', () => {
     for (const bad of ['', 'fff', '#fff', '#GGGGGG', 'red']) {
       expect(parseBlankColor(bad), bad).toBeNull();
     }
-    expect(presetFor('412', '915')).toBe('phoneLarge');
-    expect(presetFor('413', '915')).toBe('custom');
   });
 });
 
-describe('diálogo Nova tela em branco', () => {
-  it('a predefinição preenche largura e altura; cria, seleciona e enquadra', async () => {
-    const harness = createHarness(sampleProject());
+describe('diálogo Novo container', () => {
+  it('o preset da especialização preenche tamanho e fundo; cria, seleciona e enquadra', async () => {
+    const harness = createHarness(withSpec(sampleProject()));
     const { user, canvas, onClose } = renderDialog(harness);
-    await user.type(field(t('blank.name')), 'Login');
-    await user.selectOptions(inDialog().getByLabelText(t('blank.preset')), 'tablet');
-    expect(field(t('blank.width')).value).toBe('800');
-    expect(field(t('blank.height')).value).toBe('1280');
-    await user.clear(field(t('blank.background')));
-    await user.type(field(t('blank.background')), '#112233');
+    await user.type(field(t('container.name')), 'Login');
+    await user.selectOptions(
+      inDialog().getByLabelText(t('container.preset')),
+      'ds:tablet',
+    );
+    expect(field(t('container.width')).value).toBe('800');
+    expect(field(t('container.height')).value).toBe('1280');
+    expect(field(t('container.background')).value).toBe('#EEEEEE');
     await submit(user);
 
-    const project = harness.project();
-    const created = project.images.at(-1);
+    const created = harness.project().images.at(-1);
     expect(created).toMatchObject({
       name: 'Login',
       file: null,
       width: 800,
       height: 1280,
-      background: '#112233',
+      background: '#EEEEEE',
     });
     expect(harness.ui.selection.value).toEqual({ kind: 'image', id: created?.id });
     expect(canvas.viewportCenter).toHaveBeenCalled();
@@ -86,23 +110,64 @@ describe('diálogo Nova tela em branco', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('abre com o celular 360×800 e fundo branco', () => {
+  it('com a especialização, os presets ficam agrupados pelo nome dela', () => {
+    renderDialog(createHarness(withSpec(sampleProject())));
+    const select = inDialog().getByLabelText<HTMLSelectElement>(t('container.preset'));
+    const group = select.querySelector('optgroup');
+    expect(group?.label).toBe('Design System');
+    expect(
+      Array.from(group?.querySelectorAll('option') ?? []).map((o) => o.value),
+    ).toEqual(['ds:phone', 'ds:tablet']);
+    expect(select.value).toBe('ds:phone');
+    expect(field(t('container.width')).value).toBe('360');
+  });
+
+  it('sem especialização só Personalizado e Tamanho da seleção (desabilitado sem seleção)', () => {
     renderDialog(createHarness(sampleProject()));
-    expect(field(t('blank.width')).value).toBe('360');
-    expect(field(t('blank.height')).value).toBe('800');
-    expect(field(t('blank.background')).value).toBe('#FFFFFF');
-    expect(inDialog().getByLabelText<HTMLSelectElement>(t('blank.preset')).value).toBe(
-      'phone',
+    const select = inDialog().getByLabelText<HTMLSelectElement>(t('container.preset'));
+    expect(Array.from(select.options).map((o) => o.value)).toEqual([
+      'custom',
+      'selection',
+    ]);
+    expect(select.querySelector('optgroup')).toBeNull();
+    expect(select.options[1]?.disabled).toBe(true);
+    expect(select.value).toBe('custom');
+  });
+
+  it('Tamanho da seleção usa o retângulo da marcação selecionada', async () => {
+    const harness = createHarness(sampleProject());
+    const marking = harness.project().markings[0];
+    if (!marking) throw new Error('sem marcação');
+    harness.ui.selection.value = { kind: 'marking', id: marking.id };
+    expect(selectionSize(harness.project(), harness.ui.selection.value)).toEqual({
+      width: marking.rect.width,
+      height: marking.rect.height,
+    });
+    const { user } = renderDialog(harness);
+    await user.selectOptions(
+      inDialog().getByLabelText(t('container.preset')),
+      'selection',
     );
+    expect(field(t('container.width')).value).toBe(String(marking.rect.width));
+    expect(field(t('container.height')).value).toBe(String(marking.rect.height));
+  });
+
+  it('presetGroups ignora especialização sem containers ou sem cópia', () => {
+    expect(
+      presetGroups([
+        { id: 'a', spec: { ...SPEC, containers: undefined } },
+        { id: 'b', spec: null },
+      ]),
+    ).toEqual([]);
   });
 
   it('editar o tamanho passa a predefinição para Personalizado', async () => {
-    const { user } = renderDialog(createHarness(sampleProject()));
-    await user.clear(field(t('blank.width')));
-    await user.type(field(t('blank.width')), '361');
-    expect(inDialog().getByLabelText<HTMLSelectElement>(t('blank.preset')).value).toBe(
-      'custom',
-    );
+    const { user } = renderDialog(createHarness(withSpec(sampleProject())));
+    await user.clear(field(t('container.width')));
+    await user.type(field(t('container.width')), '361');
+    expect(
+      inDialog().getByLabelText<HTMLSelectElement>(t('container.preset')).value,
+    ).toBe('custom');
   });
 
   it('valida: nome obrigatório, tamanho e cor; nada é criado', async () => {
@@ -112,24 +177,24 @@ describe('diálogo Nova tela em branco', () => {
 
     await submit(user);
     expect(inDialog().getByRole('alert', { hidden: true }).textContent).toBe(
-      t('blank.error.name'),
+      t('container.error.name'),
     );
 
-    await user.type(field(t('blank.name')), 'Tela');
-    await user.clear(field(t('blank.width')));
-    await user.type(field(t('blank.width')), '0');
+    await user.type(field(t('container.name')), 'Tela');
+    await user.clear(field(t('container.width')));
+    await user.type(field(t('container.width')), '0');
     await submit(user);
     expect(inDialog().getByRole('alert', { hidden: true }).textContent).toBe(
-      t('blank.error.size', { max: MAX_BLANK_SIZE }),
+      t('container.error.size', { max: MAX_BLANK_SIZE }),
     );
 
-    await user.clear(field(t('blank.width')));
-    await user.type(field(t('blank.width')), '300');
-    await user.clear(field(t('blank.background')));
-    await user.type(field(t('blank.background')), 'azul');
+    await user.clear(field(t('container.width')));
+    await user.type(field(t('container.width')), '300');
+    await user.clear(field(t('container.background')));
+    await user.type(field(t('container.background')), 'azul');
     await submit(user);
     expect(inDialog().getByRole('alert', { hidden: true }).textContent).toBe(
-      t('blank.error.color'),
+      t('container.error.color'),
     );
 
     expect(harness.project().images).toHaveLength(before);
@@ -137,8 +202,8 @@ describe('diálogo Nova tela em branco', () => {
   });
 });
 
-describe('Detalhes da tela em branco', () => {
-  function renderBlank() {
+describe('Detalhes do container', () => {
+  function renderContainer() {
     const harness = createHarness(sampleProject());
     const created = harness.actions.addBlankImage({
       name: 'Home',
@@ -169,35 +234,37 @@ describe('Detalhes da tela em branco', () => {
   }
 
   it('Largura, Altura e Cor de fundo no lugar de Arquivo', async () => {
-    const { image, user } = renderBlank();
+    const { image, user } = renderContainer();
     expect(screen.queryByText(t('image.file'))).toBeNull();
-    const width = screen.getByLabelText<HTMLInputElement>(t('blank.width'));
+    const width = screen.getByLabelText<HTMLInputElement>(t('container.width'));
     expect(width.value).toBe('360');
-    expect(screen.getByLabelText<HTMLInputElement>(t('blank.height')).value).toBe('800');
+    expect(screen.getByLabelText<HTMLInputElement>(t('container.height')).value).toBe(
+      '800',
+    );
 
     await user.clear(width);
     await user.type(width, '412{Enter}');
     expect(image().width).toBe(412);
 
-    const color = screen.getByLabelText<HTMLInputElement>(t('blank.background'));
+    const color = screen.getByLabelText<HTMLInputElement>(t('container.background'));
     await user.clear(color);
     await user.type(color, '#00ff00{Enter}');
     expect(image().background).toBe('#00FF00');
   });
 
   it('valor inválido mostra o erro e não grava', async () => {
-    const { image, user } = renderBlank();
-    const color = screen.getByLabelText<HTMLInputElement>(t('blank.background'));
+    const { image, user } = renderContainer();
+    const color = screen.getByLabelText<HTMLInputElement>(t('container.background'));
     await user.clear(color);
     await user.type(color, 'vermelho{Enter}');
-    expect(screen.getByRole('alert').textContent).toBe(t('blank.error.color'));
+    expect(screen.getByRole('alert').textContent).toBe(t('container.error.color'));
     expect(image().background).toBe('#FFFFFF');
 
-    const height = screen.getByLabelText<HTMLInputElement>(t('blank.height'));
+    const height = screen.getByLabelText<HTMLInputElement>(t('container.height'));
     await user.clear(height);
     await user.type(height, '0{Enter}');
     expect(screen.getByRole('alert').textContent).toBe(
-      t('blank.error.size', { max: MAX_BLANK_SIZE }),
+      t('container.error.size', { max: MAX_BLANK_SIZE }),
     );
     expect(image().height).toBe(800);
   });
@@ -218,7 +285,7 @@ describe('Detalhes da tela em branco', () => {
       ) : null;
     });
     expect(screen.getByText(t('image.file'))).toBeTruthy();
-    expect(screen.queryByLabelText(t('blank.background'))).toBeNull();
+    expect(screen.queryByLabelText(t('container.background'))).toBeNull();
   });
 });
 
@@ -240,14 +307,15 @@ describe('entrada pela barra principal', () => {
 
   it('o botão ao lado de Adicionar imagens abre o diálogo', async () => {
     const dialogs = renderBar(createHarness(sampleProject()));
-    await userEvent.click(screen.getByRole('button', { name: t('blank.new') }));
-    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'blank' });
+    await userEvent.click(screen.getByRole('button', { name: t('container.new') }));
+    expect(dialogs.show).toHaveBeenCalledWith({ kind: 'container' });
   });
 
   it('somente leitura: desabilitado', () => {
     renderBar(createHarness(sampleProject(), true));
     expect(
-      screen.getByRole<HTMLButtonElement>('button', { name: t('blank.new') }).disabled,
+      screen.getByRole<HTMLButtonElement>('button', { name: t('container.new') })
+        .disabled,
     ).toBe(true);
   });
 });

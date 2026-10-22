@@ -142,7 +142,7 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const files = new Set<string>();
   p.images.forEach((image, i) => {
-    // Tela em branco (sem arquivo) não disputa nome; cor e arquivo são mutuamente exclusivos.
+    // Container sem arquivo (sem arquivo) não disputa nome; cor e arquivo são mutuamente exclusivos.
     if (image.file !== null) {
       if (files.has(image.file)) imageIssue('duplicate-file', image);
       files.add(image.file);

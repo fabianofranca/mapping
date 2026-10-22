@@ -31,6 +31,7 @@ Quando o agente roda fora do repositório do Mapping (o caso normal: ele roda no
 | A origem: repositório, pasta, design system, documento | Pergunte. Sem origem não há o que modelar.                                                             |
 | O que ler na origem e o que ignorar                    | Leia o catálogo público (componentes exportados, entidades, eventos); ignore internos e testes.        |
 | `formatVersion` desejada                               | Use a mínima para o que a especialização usa (ver "Versão"); biblioteca pede a 4.                      |
+| (opcional) Tamanhos prontos de container               | Só declare `containers` se a origem evidenciar tamanhos (breakpoints, dispositivos); pede a 6.         |
 | Plataformas e linguagens                               | Só declare plataformas que o material de origem evidencie. Nenhuma, se for `formatVersion` 1.          |
 | Onde gravar o arquivo                                  | `<id>.json` na pasta de trabalho; diga onde ficou.                                                     |
 | (biblioteca) A pasta de saída                          | `<id>/` na pasta de trabalho, com `<id>/<id>.spec.json` dentro; diga onde ficou.                       |
@@ -102,9 +103,18 @@ Só quando o prompt pede uma biblioteca (componentes que a app desenha). Faça o
 5. **Fontes:** `fonts` na raiz (`family`, `file`, `weight`, `style`). Os arquivos têm licença e peso: se não puder incluí-los, deixe `fonts/LEIA-ME.txt` dizendo quais arquivos faltam e de onde obtê-los (fonte ausente é **aviso**, não erro).
 6. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`): remover ou renomear tipo, campo ou opção de `enum`, tornar um campo obrigatório, mudar o `type` de um campo. Passe a versão anterior à validação (`previous`).
 
-### 9. Versão
+### 9. Containers (`formatVersion` 6)
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+Só quando a origem evidencia **tamanhos prontos** para o objeto de topo do canvas (breakpoints de um design system, dispositivos-alvo de um app). É o que o diálogo **Novo container** oferece, agrupado pelo nome da especialização; o núcleo da app só tem **Personalizado** e **Tamanho da seleção** e não traz tamanhos de dispositivo. Tamanho de dispositivo, portanto, é domínio: se a especialização cobre telas de app, declare-os aqui.
+
+- `containers` na raiz: lista de `{ id, name, width, height, background? }`. `id` em `[a-z0-9-]+` e único na lista; `name` não vazio (o texto da opção, como a origem o chama: "Celular", "Tablet"); `width` e `height` inteiros de 1 a 20000; `background` opcional, `#RRGGBB` (sem ele, branco).
+- Exemplo: `"containers": [ { "id": "phone", "name": "Celular", "width": 360, "height": 800 } ]`.
+- Copie os números da origem, não os invente. Sem evidência, omita `containers` (e fique na `formatVersion` que o resto pede): é opcional e a 5 continua aceita.
+- Numa versão anterior à 6, `containers` é erro (`só é permitido com formatVersion 6`). A lista está fora do contrato de versão: mudar tamanhos não é quebra.
+
+### 10. Versão
+
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
@@ -178,7 +188,7 @@ Além do validador, releia o arquivo com estas perguntas: cada tipo do inventár
 
 **Revisão final, antes de entregar:** cada `symbol` é o que se chama para criar a instância (e não o nome do nó de saída), e cada plataforma com `path` tem `repo`?
 
-1. O arquivo JSON no caminho combinado, formatado com dois espaços, chaves na ordem do exemplo comentado de `docs/SPEC-FORMAT.md` (`format`, `formatVersion`, `id`, `name`, `version`, `description`, `platforms`, `layers`). Biblioteca: a **pasta** inteira (especialização, `components/`, `docs/`, `examples/`, `fonts/`), com os arquivos formatados com dois espaços.
+1. O arquivo JSON no caminho combinado, formatado com dois espaços, chaves na ordem do exemplo comentado de `docs/SPEC-FORMAT.md` (`format`, `formatVersion`, `id`, `name`, `version`, `description`, `platforms`, `containers`, `layers`). Biblioteca: a **pasta** inteira (especialização, `components/`, `docs/`, `examples/`, `fonts/`), com os arquivos formatados com dois espaços.
 2. Um resumo curto, nesta ordem:
    - uma tabela camada → tipos, com a evidência de origem de cada tipo;
    - as decisões de modelagem que não estavam no prompt (campo obrigatório ou não, o que ficou fora, etiquetas novas);
@@ -210,13 +220,15 @@ O prompt só precisa especificar. Modelo:
 
 > /spec-author
 >
-> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5>.
+> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6>.
 >
 > **Origem:** <repositório, pasta ou design system>, lendo <o que ler: pasta dos componentes, catálogo exportado, documento>. Ignore <o que ignorar>.
 >
 > **Plataformas:** <`id` → nome, linguagem, repositório da biblioteca (`url` e `ref`)>, <…>; para cada uma, o que se chama para criar uma instância de um tipo (composable, view, classe, função do BFF). (Omitir na `formatVersion` 1; o repositório só na 5.)
 >
 > **Origem externa:** `system` = <nome exato>, ids/nomes em <onde pegar>. (Só na `formatVersion` 3.)
+>
+> **Containers:** <tamanhos prontos (nome, largura × altura, cor de fundo) e de onde saem>. (Só na `formatVersion` 6; omitir sem evidência.)
 >
 > **Fora:** <o que não modelar>.
 >

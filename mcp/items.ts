@@ -20,8 +20,8 @@ import {
 } from './projects';
 import type { Roots } from './paths';
 
-/** Nome da tela em branco sem nome (o MCP não usa `t()`). */
-export const BLANK_IMAGE_LABEL = 'Tela em branco';
+/** Nome do container sem nome (o MCP não usa `t()`). */
+export const CONTAINER_LABEL = 'Container';
 
 export const KIND_NAMES: Record<ItemKind, string> = {
   m: 'marcação',
@@ -46,7 +46,7 @@ export class Refs {
   imageLabel(imageId: string): string {
     const image = projectIndex(this.project).images.get(imageId);
     if (!image) return imageId;
-    return refImageLabel(image) ?? BLANK_IMAGE_LABEL;
+    return refImageLabel(image) ?? CONTAINER_LABEL;
   }
 
   /** Nome da marcação; sem nome, "Marcação <código>" (único no projeto). */

@@ -7,7 +7,7 @@ import { PreviewBadge } from '../ui/PreviewBanner';
 import { showAndFocusToolWindow } from '../ui/toolWindowLayout';
 import { Button, IconButton } from '../ui/controls';
 import {
-  AddBlankScreenButton,
+  AddContainerButton,
   AddImagesButton,
   HistoryButtons,
   ModeButtons,
@@ -61,7 +61,7 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
       <div class="toolbar">
         <ModeButtons />
         <AddImagesButton busy={busy} onAdd={onAdd} />
-        <AddBlankScreenButton onAdd={() => dialogs.show({ kind: 'blank' })} />
+        <AddContainerButton onAdd={() => dialogs.show({ kind: 'container' })} />
         <HistoryButtons />
       </div>
 

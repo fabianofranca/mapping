@@ -291,7 +291,7 @@ describe('desenho de componentes (Material 3)', () => {
   );
 });
 
-// A tela de configurações do Material 3 (21 instâncias) numa tela em branco, dentro do
+// A tela de configurações do Material 3 (21 instâncias) num container, dentro do
 // `CanvasController`: o quadro inteiro (todos os desenhos reinstanciados e refeitos), editar um
 // campo (só uma marcação) e o zoom (a camada não se refaz). Medido (jsdom, máquina de
 // desenvolvimento, medidor aproximado): quadro inteiro ~11 ms (10 a 13; até ~20 com a máquina

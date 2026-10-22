@@ -416,14 +416,14 @@ describe('arquivos problemáticos', () => {
   });
 });
 
-describe('tela em branco (sem arquivo)', () => {
+describe('container (sem arquivo)', () => {
   it('get_image_file recusa com blank-image e manda usar get_marking_image', async () => {
     const r = await call<{ error: { code: string; message: string } }>('get_image_file', {
       ref: imageRef(IDS.blank),
     });
     expect(errorCode(r)).toBe('blank-image');
     expect(r.data.error.message).toBe(
-      'A imagem é uma tela em branco (sem arquivo): use get_marking_image para ver o desenho.',
+      'O container não tem arquivo: use get_marking_image para ver o desenho.',
     );
   });
 
@@ -590,7 +590,7 @@ describe('url: servidor HTTP local de imagens', () => {
     expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);
   });
 
-  it('a tela em branco também tem url', async () => {
+  it('o container também tem url', async () => {
     const r = ok(await crop(IDS.blank));
     expect(r.data.url).toMatch(URL_FORMAT);
     const got = await fetched(r.data.url!);

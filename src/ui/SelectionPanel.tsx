@@ -7,8 +7,8 @@ import {
   type Project,
   type ProjectImage,
 } from '../model';
-import { blankErrorMessage, imageLabel } from './labels';
-import { parseBlankColor, parseBlankSide } from './blankScreen';
+import { containerErrorMessage, imageLabel } from './labels';
+import { parseBlankColor, parseBlankSide } from './containerForm';
 import type { DisplayImage } from '../store/displayImages';
 import { useEditor } from './EditorContext';
 import { Button, IconButton, TextField } from './controls';
@@ -62,9 +62,9 @@ export function SelectionPanel({
       </div>
     );
   }
-  const blank = image.file === null;
-  const missing = !blank && display?.status === 'missing';
-  const broken = missing || (!blank && display?.status === 'error');
+  const bare = image.file === null;
+  const missing = !bare && display?.status === 'missing';
+  const broken = missing || (!bare && display?.status === 'error');
   const disabled = readOnly || busy;
   const dimensions = t('image.dimensions', { width: image.width, height: image.height });
   // Trava: a da imagem e a das marcações dela ("trancar todas" vira "destrancar todas").
@@ -78,7 +78,7 @@ export function SelectionPanel({
       <DetailsIdentity
         icon="image"
         name={imageLabel(image)}
-        sub={blank ? dimensions : `${image.file} · ${dimensions}`}
+        sub={bare ? dimensions : `${image.file} · ${dimensions}`}
         id={image.id}
         flags={identity?.flags}
         struck={identity?.struck}
@@ -132,7 +132,7 @@ export function SelectionPanel({
               id={nameId}
               size="sm"
               value={image.name ?? ''}
-              placeholder={image.file ?? t('image.blankUntitled')}
+              placeholder={image.file ?? t('image.containerUntitled')}
               disabled={disabled}
               onCommit={(text) => {
                 // Espaços em volta não contam como alteração.
@@ -151,7 +151,7 @@ export function SelectionPanel({
             </Property>
           )}
           {image.file === null && image.background !== null ? (
-            <BlankFields
+            <ContainerFields
               image={image}
               ids={{ width: widthId, height: heightId, background: backgroundId }}
               disabled={disabled}
@@ -183,7 +183,7 @@ export function SelectionPanel({
         </div>
       )}
       <div class="row">
-        {!broken && !blank && (
+        {!broken && !bare && (
           <Button disabled={disabled} onClick={() => onReplace(image)}>
             {t('image.replace')}
           </Button>
@@ -201,7 +201,7 @@ export function SelectionPanel({
   );
 }
 
-interface BlankFieldsProps {
+interface ContainerFieldsProps {
   readonly image: ProjectImage;
   readonly ids: {
     readonly width: string;
@@ -213,16 +213,25 @@ interface BlankFieldsProps {
   readonly setError: (message: string | null) => void;
 }
 
-/** Largura, altura e cor de fundo da tela em branco (no lugar de Arquivo e Tamanho). */
-function BlankFields({ image, ids, disabled, error, setError }: BlankFieldsProps) {
+/** Largura, altura e cor de fundo do container sem arquivo (no lugar de Arquivo e Tamanho). */
+function ContainerFields({
+  image,
+  ids,
+  disabled,
+  error,
+  setError,
+}: ContainerFieldsProps) {
   const { actions } = useEditor();
   const commit = (patch: BlankImageChanges): boolean => {
     const result = actions.setBlankImage(image.id, patch);
-    setError(result.ok ? null : blankErrorMessage(result.error));
+    setError(result.ok ? null : containerErrorMessage(result.error));
     return result.ok;
   };
   const side = (key: 'width' | 'height', id: string) => (
-    <Property label={t(key === 'width' ? 'blank.width' : 'blank.height')} for={id}>
+    <Property
+      label={t(key === 'width' ? 'container.width' : 'container.height')}
+      for={id}
+    >
       <TextField
         id={id}
         size="sm"
@@ -236,7 +245,7 @@ function BlankFields({ image, ids, disabled, error, setError }: BlankFieldsProps
           const value = parseBlankSide(text);
           if (value === image[key]) return false;
           if (value === null) {
-            setError(blankErrorMessage('invalid-dimensions'));
+            setError(containerErrorMessage('invalid-dimensions'));
             return false;
           }
           return commit(key === 'width' ? { width: value } : { height: value });
@@ -248,7 +257,7 @@ function BlankFields({ image, ids, disabled, error, setError }: BlankFieldsProps
     <>
       {side('width', ids.width)}
       {side('height', ids.height)}
-      <Property label={t('blank.background')} for={ids.background} error={error}>
+      <Property label={t('container.background')} for={ids.background} error={error}>
         <TextField
           id={ids.background}
           size="sm"
@@ -258,7 +267,7 @@ function BlankFields({ image, ids, disabled, error, setError }: BlankFieldsProps
             const color = parseBlankColor(text);
             if (color === image.background) return false;
             if (color === null) {
-              setError(blankErrorMessage('invalid-color'));
+              setError(containerErrorMessage('invalid-color'));
               return false;
             }
             return commit({ background: color });

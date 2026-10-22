@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
-  "title": "Mapping — especialização (formatVersion 1, 2, 3, 4 e 5)",
-  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; veja SPEC-FORMAT.md.",
+  "title": "Mapping — especialização (formatVersion 1, 2, 3, 4, 5 e 6)",
+  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; na formatVersion 6, containers (a 6 é a 5 mais containers; em versão anterior é erro, e o id repetido é verificado pelo validador da app); veja SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -11,7 +11,7 @@
       "enum": ["mapping-spec", "mapeador-spec"]
     },
     "formatVersion": {
-      "enum": [1, 2, 3, 4, 5]
+      "enum": [1, 2, 3, 4, 5, 6]
     },
     "id": {
       "type": "string",
@@ -32,6 +32,13 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/platform"
+      }
+    },
+    "containers": {
+      "description": "formatVersion 6: presets de tamanho do diálogo Novo container, agrupados pelo nome da especialização. Em versão anterior é erro; id único.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/container"
       }
     },
     "layers": {
@@ -472,6 +479,34 @@
         },
         "repo": {
           "$ref": "#/$defs/platformRepo"
+        }
+      }
+    },
+    "container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "width", "height"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20000
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20000
+        },
+        "background": {
+          "$ref": "#/$defs/color"
         }
       }
     },

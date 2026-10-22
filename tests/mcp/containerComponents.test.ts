@@ -28,7 +28,7 @@ import { findProject, loadProject, type LoadedProject } from '../../mcp/projects
 import { markingRow } from '../../mcp/views';
 import { NOW } from '../model/fixtures';
 
-// Tela em branco com componentes do Material 3 no MCP: o catálogo é lido ao carregar o projeto,
+// Container com componentes do Material 3 no MCP: o catálogo é lido ao carregar o projeto,
 // as operações novas (add_blank_image, create_marking com annotation, move_marking) e o
 // `minSize` valem no lote, e get_marking_image recorta o desenho simplificado.
 
@@ -84,7 +84,7 @@ function run(
 }
 
 const SCREEN: Operation = {
-  op: 'add_blank_image',
+  op: 'add_container',
   as: '$tela',
   name: 'Entrar',
   width: 390,
@@ -101,7 +101,7 @@ describe('catálogo ao carregar o projeto', () => {
   });
 });
 
-describe('add_blank_image e update_image', () => {
+describe('add_container e update_image', () => {
   it('cria a tela e edita fundo e tamanho; na foto, not-blank', async () => {
     const result = await run([
       SCREEN,
@@ -121,7 +121,26 @@ describe('add_blank_image e update_image', () => {
       background: '#000000',
     });
     expect(result.created[0]).toMatchObject({ kind: 'i', alias: '$tela' });
-    expect(result.steps[0]?.description).toMatch(/tela em branco "Entrar".*390×844/);
+    expect(result.steps[0]?.description).toMatch(/container "Entrar".*390×844/);
+  });
+});
+
+describe('add_blank_image (antiga)', () => {
+  it('ainda cria o container, com aviso para usar add_container', async () => {
+    const result = await run([{ ...SCREEN, op: 'add_blank_image' } as Operation]);
+    expect(result.errors).toEqual([]);
+    expect(result.project.images.find((i) => i.name === 'Entrar')).toMatchObject({
+      file: null,
+      width: 390,
+      height: 844,
+    });
+    expect(result.deprecations).toEqual([
+      {
+        index: 0,
+        op: 'add_blank_image',
+        message: expect.stringContaining('add_container'),
+      },
+    ]);
   });
 });
 
@@ -269,7 +288,7 @@ describe('leitura: ordem, componente e minSize', () => {
   });
 });
 
-describe('get_marking_image numa tela em branco com componentes', () => {
+describe('get_marking_image num container com componentes', () => {
   it('recorta o desenho simplificado: fundo, botão preenchido e texto em barras', async () => {
     const result = await run([
       SCREEN,

@@ -88,11 +88,11 @@ async function urlFields(
   }
 }
 
-/** Mais pixels que isso, a tela em branco é rasterizada reduzida (é uma cor só). */
+/** Mais pixels que isso, o container sem arquivo é rasterizado reduzido (é uma cor só). */
 const MAX_BLANK_PIXELS = 4096 * 4096;
 
 /**
- * Tela em branco (sem arquivo): um raster liso com a cor `background`, no tamanho da imagem
+ * Container sem arquivo: um raster liso com a cor `background`, no tamanho da imagem
  * (o desenho dos componentes é pintado por cima depois, só na região pedida) (reduzido se for enorme: `scaleX`/`scaleY` ≠ 1 já são tratados).
  */
 function blankImage(image: ProjectImage): LoadedImage {
@@ -212,7 +212,7 @@ export async function markingImage(
     );
   }
 
-  // Tela em branco: pinta o desenho simplificado dos componentes (cena instanciada com o
+  // Container sem arquivo: pinta o desenho simplificado dos componentes (cena instanciada com o
   // medidor aproximado; o servidor não tem fontes) na região que a saída mostra.
   const blank = isBlankImage(image);
   if (blank) {
@@ -326,7 +326,7 @@ export async function imageFile(
   if (isBlankImage(image)) {
     throw new ToolError(
       'blank-image',
-      'A imagem é uma tela em branco (sem arquivo): use get_marking_image para ver o desenho.',
+      'O container não tem arquivo: use get_marking_image para ver o desenho.',
       { image: refs.ref('i', image.id) },
     );
   }

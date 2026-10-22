@@ -144,7 +144,7 @@ const SHAPES = {
   library: {
     d: ['M2 2.5h3v11H2Z', 'M6 2.5h3v11H6Z', 'm10 3.2 2.8-.7 2.2 10.3-2.8.7Z'],
   },
-  blankScreen: {
+  container: {
     d: [
       'M4.5 2.5h7a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z',
       'M8 5.5v4',

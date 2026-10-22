@@ -202,7 +202,7 @@ export function componentSources(
   return { catalog: signal(catalog), fontsEpoch: signal(0) };
 }
 
-/** Quadro 1000×800 (foto I1) e tela em branco B1 (400×600, fundo branco) com dois textos. */
+/** Quadro 1000×800 (foto I1) e container B1 (400×600, fundo branco) com dois textos. */
 export function componentCanvasProject(): Project {
   let p = componentProject();
   p = addBlankImage(p, {

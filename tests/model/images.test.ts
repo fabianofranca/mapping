@@ -213,7 +213,7 @@ describe('arquivos da pasta do projeto', () => {
   });
 });
 
-describe('tela em branco (imagem sem arquivo)', () => {
+describe('container (imagem sem arquivo)', () => {
   const blank = (p = sampleProject()) =>
     addBlankImage(p, {
       id: 'B1',
@@ -284,7 +284,7 @@ describe('tela em branco (imagem sem arquivo)', () => {
     ).toThrow('duplicate-file');
   });
 
-  it('replaceImage recusa a tela em branco', () => {
+  it('replaceImage recusa o container', () => {
     expect(() =>
       replaceImage(blank(), 'B1', { file: 'images/x.png', width: 390, height: 844 }),
     ).toThrow('blank-image');

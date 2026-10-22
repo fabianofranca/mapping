@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 5)
+# Formato da especialização (`formatVersion` 1 a 6)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -10,10 +10,11 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 5; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 6; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
+- A `formatVersion` 6 é a 5 mais `containers`: a lista de **tamanhos prontos de container** que o diálogo **Novo container** oferece quando a especialização está aplicada (ver "Containers (tamanhos prontos)"). A 6 é aditiva: as versões 1 a 5 continuam aceitas sem mudança, e `containers` numa versão anterior é o erro `só é permitido com formatVersion 6`, no caminho exato. O núcleo da app não traz tamanhos de dispositivo; só **Personalizado** e **Tamanho da seleção**.
 
 Arquivos de apoio:
 
@@ -21,7 +22,7 @@ Arquivos de apoio:
 - `docs/component.schema.json`: JSON Schema do arquivo de componente (`docs/COMPONENT-FORMAT.md`).
 - `examples/specs/sdui.json` (`formatVersion` 5) e `examples/specs/modelo-de-dados.json` (`formatVersion` 1): exemplos completos.
 - `examples/specs/biblioteca.json` (`formatVersion` 4): exemplo pequeno com `component`, `doc`, `examples`, `fonts`, `origins`, `path`/`ignore` nas `sources` e `migrations`. É só o arquivo da especialização: os arquivos que ele cita (`components/`, `docs/`, `examples/`, `fonts/`) não vêm junto.
-- `examples/libraries/material3/`: um pacote de biblioteca **completo** (especialização v4, quinze componentes, documentos, exemplos e uma tela de exemplo de um sistema externo), gerado por `npm run build:examples` (ver "Biblioteca: o pacote").
+- `examples/libraries/material3/`: um pacote de biblioteca **completo** (especialização v6, quinze componentes, documentos, exemplos, os quatro tamanhos de container e uma tela de exemplo de um sistema externo), gerado por `npm run build:examples` (ver "Biblioteca: o pacote").
 
 ## Formato do arquivo
 
@@ -66,7 +67,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `5`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `6`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -248,6 +249,36 @@ O `repo` de uma plataforma tem três propriedades:
 - `params` diz o nome do parâmetro que recebe cada campo (`estilo` vai em `style` no Android e em `variant` no BFF); `values` diz como o valor `primary` é escrito no Android (`ButtonStyle.Primary`).
 - Cada plataforma declara o `repo` da biblioteca dela; os arquivos de `path` são relativos à raiz desse repositório.
 
+## Containers (tamanhos prontos)
+
+A `formatVersion` 6 deixa a especialização oferecer **tamanhos prontos de container**: o objeto de topo do canvas (uma tela de app, um painel, um cartão) criado sem arquivo, só com tamanho e cor de fundo. No diálogo **Novo container**, a lista **Tamanho predefinido** traz **Personalizado** e **Tamanho da seleção** (do núcleo; este é o retângulo da marcação selecionada e fica desabilitado sem seleção) e, abaixo, os `containers` de cada especialização aplicada, agrupados pelo nome dela. Tamanhos de dispositivo (celular, tablet, desktop) são de domínio: vêm da especialização, não do núcleo. A biblioteca Material 3 do repositório traz Celular 360 × 800, Celular grande 412 × 915, Tablet 800 × 1280 e Desktop 1440 × 900.
+
+```json
+{
+  "formatVersion": 6,
+  "containers": [
+    { "id": "phone", "name": "Celular", "width": 360, "height": 800 },
+    {
+      "id": "tablet",
+      "name": "Tablet",
+      "width": 800,
+      "height": 1280,
+      "background": "#FAFAFA"
+    }
+  ]
+}
+```
+
+Na raiz, opcional; lista de objetos com:
+
+- `containers`: a lista. Escolher um tamanho preenche largura, altura e cor de fundo do diálogo; a pessoa ainda pode editá-los antes de criar. O agente lê a lista em `get_specialization` (campo `containers`) e a usa nos tamanhos de `add_container`.
+- `id`: obrigatório; no formato `[a-z0-9-]+` e único na especialização.
+- `name`: obrigatório, não vazio; é o texto da opção na lista.
+- `width` e `height`: obrigatórios; inteiros de 1 a 20000 (pixels).
+- `background`: opcional; cor `#RRGGBB`. Sem ele, o container nasce branco (`#FFFFFF`).
+
+A 5 continua aceita: uma especialização sem `containers` só aparece na lista com **Personalizado** e **Tamanho da seleção**. A lista está fora do contrato de versão (acrescentar, mudar ou remover tamanhos nunca é quebra nem pede migração).
+
 ## Origens (sources)
 
 A `formatVersion` 3 diz a que elementos de um **sistema externo** (uma ferramenta de design, outro catálogo de componentes…) cada tipo corresponde e de que propriedade de origem vem cada campo. É o que um agente de importação usa para saber que componente vira que tipo, sem deduzir pelo nome. O núcleo não interpreta `system` nem os nomes: só valida a estrutura e devolve os dados a quem pedir.
@@ -385,7 +416,7 @@ Com a v4, uma especialização é uma **biblioteca**: um **pacote**, que é a **
 
 ```
 material3/
-  material3.spec.json          a especialização (formatVersion 4)
+  material3.spec.json          a especialização (formatVersion 6)
   components/m3-button.json    um arquivo por componente (mapping-component)
   docs/m3-button.md            o documento markdown do tipo
   examples/settings.sdui.json  uma tela de exemplo de um sistema externo
@@ -446,7 +477,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` ou `examples`, e sem `fonts` nem `origins` na raiz; `migrations` não conta) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
 
-**Pacote de exemplo.** `examples/libraries/material3/` é o Material Design 3 (baseline, tema claro) inteiro no formato: a especialização v4 com quinze tipos, cada um com `component`, `doc` e de um a três exemplos, os quinze componentes, a tela de configurações `examples/settings.sdui.json` (uma tela de SDUI sem retângulos, traduzida pela `origins`) e `fonts/LEIA-ME.txt`, que diz quais arquivos da Roboto baixar (os `.ttf` não são versionados). É **gerado** por `npm run build:examples` (`scripts/buildLibraryExamples.mjs`, a partir do Material 3 do laboratório) e um teste (`tests/model/libraryExamples.test.ts`) confere que o repositório está em dia com o gerador: não edite os arquivos à mão, regere.
+**Pacote de exemplo.** `examples/libraries/material3/` é o Material Design 3 (baseline, tema claro) inteiro no formato: a especialização v6 (a biblioteca v4 mais os `containers`) com quinze tipos, cada um com `component`, `doc` e de um a três exemplos, os quinze componentes, a tela de configurações `examples/settings.sdui.json` (uma tela de SDUI sem retângulos, traduzida pela `origins`) e `fonts/LEIA-ME.txt`, que diz quais arquivos da Roboto baixar (os `.ttf` não são versionados). É **gerado** por `npm run build:examples` (`scripts/buildLibraryExamples.mjs`, a partir do Material 3 do laboratório) e um teste (`tests/model/libraryExamples.test.ts`) confere que o repositório está em dia com o gerador: não edite os arquivos à mão, regere.
 
 ## Contrato de versão
 
@@ -460,7 +491,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Quebra** (e só isto): remover ou renomear um **tipo**, um **campo** (ou coluna) ou uma **opção de `enum`**; tornar um campo **obrigatório**, inclusive um campo novo que já nasce obrigatório (os valores existentes ficam incompletos); mudar o `type` de um campo.
 
-**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms` e `sources`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers` e `sources`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
 
 ### `migrations`
 
@@ -686,7 +717,7 @@ O pacote Material 3 do repositório (`examples/libraries/material3/`) passa pelo
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 5), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 6), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo;
@@ -696,6 +727,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
+- **v6, `containers`:** só a partir da `formatVersion` 6 (numa versão anterior o erro é `só é permitido com formatVersion 6`, no caminho `containers`); `id` no formato `[a-z0-9-]+` e único na lista; `name` não vazio; `width` e `height` inteiros de 1 a 20000; `background` opcional no formato `#RRGGBB`; qualquer outra propriedade é recusada;
 - `sources` a partir da `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name` (ou `path`, na v4, em sistema de `origins`); `values` só em campos `enum` e com destinos que existam em `options`;
 - **v4, chaves novas:** `fonts`, `origins`, `migrations` (raiz), `component`, `doc` e `examples` (tipo) só a partir da `formatVersion` 4: numa versão anterior o erro é `só é permitido com formatVersion 4`, no caminho da chave;
 - **v4, caminhos do pacote:** `component` e `examples[].file` com extensão `.json`, `doc` com `.md`, `fonts[].file` com `.ttf`, `.otf`, `.woff` ou `.woff2`, e `origins[].examples[].file` com `.json`; todos relativos, normalizados, com `/`, sem `.`, `..`, `/` no começo nem unidade;

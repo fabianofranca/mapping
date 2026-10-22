@@ -140,9 +140,9 @@ export function EditorScreen() {
                   </Button>
                   <Button
                     disabled={store.locked.value}
-                    onClick={() => dialogs.show({ kind: 'blank' })}
+                    onClick={() => dialogs.show({ kind: 'container' })}
                   >
-                    {t('blank.new')}
+                    {t('container.new')}
                   </Button>
                 </div>
               )}

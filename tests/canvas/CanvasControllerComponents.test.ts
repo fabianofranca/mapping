@@ -90,12 +90,12 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('a camada de componentes fica entre as imagens e as marcações, e a tela em branco desenha', () => {
+  it('a camada de componentes fica entre as imagens e as marcações, e o container desenha', () => {
     const { controller, internals, componentLayer, drawing, container } = setup();
     expect(internals.stage.getLayers()).toHaveLength(4);
     expect(container.querySelectorAll('canvas')).toHaveLength(4);
     expect(componentLayer()?.listening()).toBe(false);
-    // Os dois textos da tela em branco; o da foto só com a opção ligada.
+    // Os dois textos do container; o da foto só com a opção ligada.
     expect(drawing('T1')).toBeDefined();
     expect(drawing('T2')).toBeDefined();
     expect(drawing('TP')).toBeUndefined();
@@ -135,9 +135,9 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('a tela em branco conta como imagem pronta, sem pedir arquivo', () => {
+  it('o container conta como imagem pronta, sem pedir arquivo', () => {
     const { controller, container, ensure } = setup();
-    // A foto I1 ainda carrega; só a tela em branco está pronta.
+    // A foto I1 ainda carrega; só o container está pronta.
     expect(container.dataset.images).toBe('1');
     expect(ensure.mock.calls.map(([file]) => file)).toEqual(['images/tela.png']);
     controller.destroy();

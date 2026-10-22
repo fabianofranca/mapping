@@ -137,6 +137,44 @@ afterAll(async () => {
   rmSync(base, { recursive: true, force: true });
 });
 
+describe('validate_specialization com containers (v6)', () => {
+  const spec = (containers: unknown) =>
+    JSON.stringify({
+      format: 'mapping-spec',
+      formatVersion: 6,
+      id: 'ds',
+      name: 'DS',
+      version: 1,
+      containers,
+      layers: [],
+    });
+
+  it('resume a quantidade de containers', async () => {
+    const result = ok(
+      await mcp.call<{ valid: boolean; spec: Record<string, unknown> }>(
+        'validate_specialization',
+        { text: spec([{ id: 'phone', name: 'Celular', width: 360, height: 800 }]) },
+      ),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.spec).toMatchObject({ formatVersion: 6, containers: 1 });
+  });
+
+  it('recusa id repetido e tamanho fora do limite, com o caminho', async () => {
+    const result = ok(
+      await mcp.call<{ valid: boolean; errors: string[] }>('validate_specialization', {
+        text: spec([
+          { id: 'a', name: 'A', width: 10, height: 10 },
+          { id: 'a', name: 'B', width: 20001, height: 10 },
+        ]),
+      }),
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.startsWith('containers[1].id:'))).toBe(true);
+    expect(result.errors.some((e) => e.startsWith('containers[1].width:'))).toBe(true);
+  });
+});
+
 describe('validate_library', () => {
   it('aprova o Material 3 (pasta ou arquivo): sem erros, com os avisos esperados', async () => {
     for (const path of ['lib/material3', 'lib/material3/material3.spec.json']) {
@@ -146,7 +184,7 @@ describe('validate_library', () => {
       expect(result.summary).toMatchObject({ level: 3, components: 15, docs: 15 });
       expect(result.spec).toMatchObject({
         id: 'material3',
-        formatVersion: 4,
+        formatVersion: 6,
         components: 15,
         fonts: 2,
         origins: 1,
@@ -247,7 +285,7 @@ describe('validate_specialization com a v4', () => {
     );
     expect(result.valid).toBe(true);
     expect(result.spec).toMatchObject({
-      formatVersion: 4,
+      formatVersion: 6,
       components: 15,
       fonts: 2,
       origins: 1,

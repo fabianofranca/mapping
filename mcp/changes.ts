@@ -190,7 +190,14 @@ function libraryWarningViews(result: BatchResult): Record<string, unknown>[] {
 export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const { result, location, loaded, refs } = prepared;
   // Avisos (não impedem nada): os da biblioteca.
-  const warnings: unknown[] = [...libraryWarningViews(result)];
+  const warnings: unknown[] = [
+    ...libraryWarningViews(result),
+    ...result.deprecations.map((d) => ({
+      code: 'deprecated-op',
+      op: d.index,
+      message: d.message,
+    })),
+  ];
   return {
     valid: prepared.valid,
     project: { name: location.name, path: location.path },

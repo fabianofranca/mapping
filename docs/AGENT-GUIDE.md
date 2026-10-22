@@ -8,7 +8,7 @@ O Mapping marca **áreas retangulares** em imagens, organiza as informações em
 
 ## Conceitos que importam
 
-- **Coordenadas em pixels da imagem original.** O `rect` de uma marcação (`x`, `y`, `width`, `height`) está sempre nos pixels do arquivo de imagem, com a origem no canto superior esquerdo. `width` e `height` da imagem dizem o limite. Nunca é uma coordenada de tela.
+- **Coordenadas em pixels da imagem original.** O `rect` de uma marcação (`x`, `y`, `width`, `height`) está sempre nos pixels do arquivo de imagem, com a origem no canto superior esquerdo. `width` e `height` da imagem dizem o limite. Nunca é uma coordenada da janela. A "imagem" é o **container** (o objeto de topo do canvas); a letra `i` das referências `mapping://<projeto>/i/<código>` é o container.
 - **Hierarquia.** Uma marcação pode estar dentro de outra (`parent`); a filha cabe inteira no retângulo do pai.
 - **Camadas.** Cada anotação pertence a uma camada. Camadas **livres** guardam anotações livres; camadas **de especialização** (com `spec`) guardam as anotações tipadas daquele domínio.
 - **Herança.** Uma anotação com `inherit: true` também vale para todos os descendentes da marcação. `get_marking` mostra as herdadas separadas das próprias, com a marcação de origem.
@@ -16,7 +16,7 @@ O Mapping marca **áreas retangulares** em imagens, organiza as informações em
 - **Referências fortes.** Campos do tipo `ref` apontam para uma tupla, uma linha de tabela ou um campo de outra anotação. Em `refs` você vê para onde cada campo aponta; em `backlinks`, quem aponta para a anotação.
 - **Pendências.** Anotação incompleta (`issues`): campo obrigatório vazio, valor inválido, referência quebrada, tipo inexistente etc. São calculadas na leitura, não gravadas.
 - **Plataformas e código de instanciação.** O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define (relativo à raiz do `repo` da plataforma), `params` e `values` dizem como passar os campos, `notes` orienta. O repositório (`repo`) é da biblioteca, logo da **especialização**; o projeto só sobrepõe o clone local (`platformRepos[x].localPath`). Você lê o arquivo para saber a assinatura e escreve a chamada na solução; o mapeamento não guarda nada sobre a solução. `get_specialization` e `get_project` repetem isso em `codeHint` quando há plataformas. Veja "Do mapeamento ao código de instanciação".
-- **Tela em branco.** Uma imagem pode não ter arquivo: `blank: true`, `file: null` e `background` (cor `#RRGGBB`); é onde se monta uma tela com componentes. `get_image_file` nela falha com `blank-image`; use `get_marking_image`. Uma foto não tem `background` nem tamanho editável (`not-blank`).
+- **Container sem arquivo.** Um container (o JSON ainda o chama `image`) pode não ter arquivo: `blank: true`, `file: null` e `background` (cor `#RRGGBB`); é onde se monta, por exemplo, uma tela de app com componentes. `get_image_file` nele falha com `blank-image`; use `get_marking_image`. Um container com foto não tem `background` nem tamanho editável (`not-blank`).
 - **Ordem entre irmãs.** As irmãs (mesma imagem e mesmo `parent`) são desenhadas na ordem da lista: `order` 0 fica por baixo. `move_marking` muda a posição.
 - **Trava.** `lock.locked` indica marcação trancada; `lock.geometryLocked`, geometria travada (por ela ou por um ancestral trancado). Item trancado não pode ser movido, redimensionado nem excluído.
 
@@ -38,7 +38,7 @@ Toda tool que recebe um item (`ref`) aceita: a referência completa (a que o dev
 
 1. **`list_projects`** — projetos nas raízes (nome, `path`, contagens, especializações). Se dois projetos têm o mesmo nome, use o `path` (ou o `dir`) no parâmetro `project`.
 2. **`get_project(project)`** — imagens, camadas, especializações aplicadas e as pendências.
-3. **`get_specialization(project, specId)`** — antes de interpretar anotações tipadas, leia o JSON completo da especialização: ele traz as descrições e orientações de cada tipo e campo; com plataformas, o `codeHint` diz o que é o `code` dos tipos.
+3. **`get_specialization(project, specId)`** — antes de interpretar anotações tipadas, leia o JSON completo da especialização: ele traz as descrições e orientações de cada tipo e campo e, na `formatVersion` 6, os tamanhos prontos de container (`containers`: `id`, `name`, `width`, `height`, `background?`, úteis para o `add_container`); com plataformas, o `codeHint` diz o que é o `code` dos tipos.
 4. **`list_markings(project, …)`** — procure marcações por imagem, camada, tipo de anotação, `incomplete` ou texto (nome, chaves e valores; sem diferenciar acentos nem maiúsculas). A resposta é paginada (`limit`, `offset`; `truncated` e `nextOffset` indicam que há mais).
 5. **`get_marking(ref)`** — o detalhe de uma marcação: caminho, imagem, `rect`, trava, filhas, e as anotações por camada (próprias e herdadas), vínculos, referências de saída e backlinks.
 6. **`get_annotation(ref)`** / **`get_image(ref)`** — o detalhe de uma anotação ou de uma imagem (o `path` absoluto do arquivo, se existir).
@@ -61,7 +61,7 @@ As duas tools de imagem devolvem a **imagem** (conteúdo `image`) e, antes dela,
   - `outlineChildren: true`: contorna as filhas diretas, cada uma com uma cor, e devolve `childrenLegend` (cor → nome → referência → `rect`). Use a legenda para ligar o que você vê às marcações filhas (e a `get_marking` de cada uma). Passando de 24 filhas, as demais não são contornadas (`childrenNotOutlined`).
   - `maxSize` (padrão 1568, entre 64 e 4096) limita o lado maior da imagem devolvida; a imagem nunca é ampliada. Uma marcação pequena sai no tamanho real: use `padding` para ver o entorno.
   - `format`: `png` (padrão, sem perdas: bom para telas e texto), `jpeg` (padrão se o arquivo original é JPEG) ou `webp`.
-  - Numa **tela em branco** o recorte é o **desenho simplificado** dos componentes (`drawing: "simplified"`): texto em barras e cores sólidas, sem fontes, gradientes nem sombras. Confira posição, tamanho e hierarquia, não o acabamento.
+  - Num **container sem arquivo** o recorte é o **desenho simplificado** dos componentes (`drawing: "simplified"`): texto em barras e cores sólidas, sem fontes, gradientes nem sombras. Confira posição, tamanho e hierarquia, não o acabamento.
 - **`get_image_file(ref, { maxSize, format })`** — a imagem inteira, reduzida se passar de `maxSize`. Cabendo e sem pedir outro formato, é o arquivo original.
 
 **`url` e `markdown`** (nas duas tools, a menos que o servidor rode com `--no-http`) acompanham o conteúdo `image` no texto JSON: `url` é um endereço `http://127.0.0.1:<porta>/<token>/<chave>.<ext>` e `markdown` é `![nome](url)`, pronto para colar. A imagem fica só em memória no servidor e a `url` vale enquanto o processo do servidor MCP roda, só neste computador (ao reiniciar o cliente, as imagens de um chat antigo deixam de carregar). Use quando o seu cliente não mostra a imagem no chat (como o Cursor): cole o `markdown` na resposta para o usuário ver o recorte. Os mesmos bytes dão a mesma URL.
@@ -197,8 +197,9 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 | `update_specialization` | `file`                                                                                                                               | Versão maior de uma já aplicada (arquivo ou, na v4, a pasta do pacote). Executa as `migrations` da versão nova nas anotações; quebra sem migração falha com `spec-missing-migrations`. Veja "Evoluindo uma biblioteca já aplicada".                                                                                     |
 | `remove_specialization` | `specId`, `mode`                                                                                                                     | `delete` (apaga camadas e anotações) ou `convert` (viram livres).                                                                                                                                                                                                                                                       |
 | `add_image`             | `file` ou `base64`, `fileName?`, `name?`, `source?`, `center?`, `as?`                                                                | PNG, JPEG ou WebP. Mesma otimização da app (abaixo). `source`: `{system, id, url?}`.                                                                                                                                                                                                                                    |
-| `add_blank_image`       | `width`, `height`, `background`, `name?`, `source?`, `center?`, `as?`                                                                | Tela em branco (sem arquivo), de 1 a 20000 px por lado; `background` é `#RRGGBB`.                                                                                                                                                                                                                                       |
-| `update_image`          | `image`, `name?`, `source?`, `x?`, `y?`, `scale?`, `markingColor?`, `locked?`, `markingsLocked?`, `background?`, `width?`, `height?` | `markingsLocked` tranca ou destranca todas as marcações da imagem. `source: null` limpa a origem. `background`, `width` e `height` só valem numa tela em branco (foto: `not-blank`); mudar o tamanho exige que as marcações continuem dentro.                                                                           |
+| `add_container`         | `width`, `height`, `background`, `name?`, `source?`, `center?`, `as?`                                                                | Container sem arquivo, de 1 a 20000 px por lado; `background` é `#RRGGBB`. Exemplo: `{ "op": "add_container", "name": "Cadastro", "width": 390, "height": 844, "background": "#FFFFFF", "as": "$cadastro" }`.                                                                                                           |
+| `add_blank_image`       | `width`, `height`, `background`, `name?`, `source?`, `center?`, `as?`                                                                | **Antiga**, aceita com aviso (`deprecated-op` em `warnings`: "add_blank_image é antiga: use add_container"); os mesmos campos e o mesmo efeito de `add_container`.                                                                                                                                                      |
+| `update_image`          | `image`, `name?`, `source?`, `x?`, `y?`, `scale?`, `markingColor?`, `locked?`, `markingsLocked?`, `background?`, `width?`, `height?` | `markingsLocked` tranca ou destranca todas as marcações da imagem. `source: null` limpa a origem. `background`, `width` e `height` só valem num container sem arquivo (foto: `not-blank`); mudar o tamanho exige que as marcações continuem dentro.                                                                     |
 | `replace_image`         | `image`, `file` ou `base64`, `fileName?`, `source?`, `confirmAspectChange?`                                                          | Marcações reescaladas; com outra proporção, exige a confirmação e ficam "a revisar". Omitido, `source` é mantido.                                                                                                                                                                                                       |
 | `delete_image`          | `image`                                                                                                                              | Com as marcações e anotações dela.                                                                                                                                                                                                                                                                                      |
 | `create_marking`        | `image`, `rect?`, `name?`, `source?`, `parent?`, `annotation?`, `annotationAs?`, `as?`                                               | `rect` em pixels da imagem. Sem `parent`, o pai é a marcação mais interna que contém o retângulo (como na app); `null` = primeiro nível. `annotation: { type, name?, values? }` cria também a anotação tipada; se o tipo tem componente, `rect` é opcional e vale o `minSize` (veja "Montar uma tela com componentes"). |
@@ -219,22 +220,22 @@ Onde uma operação pede um item (`image`, `marking`, `parent`, `annotation`, `o
 
 **Travas.** Item trancado não é movido, redimensionado, trocado nem excluído (`locked`): destranque na mesma operação (`"locked": false` é aplicado primeiro; `true`, por último) ou numa anterior. Nome e anotações seguem livres. Repetir a geometria atual (`rect` igual ao atual, `move: {dx: 0, dy: 0}`) não é mudança e passa mesmo trancado, então a reexportação completa pode repetir o `rect` de tudo.
 
-### Montar uma tela com componentes
+### Montar um container com componentes
 
-Uma biblioteca (especialização `formatVersion` 4, aplicada pela app ou por proposta) traz componentes: tipos de anotação que a app **desenha** na marcação. Numa tela em branco, o desenho é a tela; o agente monta a tela por proposta e a pessoa revisa.
+Uma biblioteca (especialização `formatVersion` 4, aplicada pela app ou por proposta) traz componentes: tipos de anotação que a app **desenha** na marcação. Num container sem arquivo, o desenho é o conteúdo (uma tela de app, um painel, um cartão); o agente monta o container por proposta e a pessoa revisa.
 
-1. **Escolha os componentes.** `list_components({ project, specId })` lista os tipos com componente (`size`, `minSize`, se é container) e `get_component({ project, specId, type })` traz o documento, os `fields` e os exemplos de `values`. Use os `values` dos exemplos como ponto de partida.
-2. **Crie a tela.** `add_blank_image` com o tamanho (ex.: 390 × 844 num celular) e o `background`; dê o apelido `as` (`"$tela"`). A tela só aceita marcações dentro dela.
+1. **Escolha os componentes.** `list_components({ project, specId })` lista os tipos com componente (`size`, `minSize`, se tem slot) e `get_component({ project, specId, type })` traz o documento, os `fields` e os exemplos de `values`. Use os `values` dos exemplos como ponto de partida.
+2. **Crie o container.** `add_container` com o tamanho (ex.: 390 × 844 para uma tela de celular; a especialização pode trazer tamanhos prontos em `containers`, veja `get_specialization`) e o `background`; dê o apelido `as` (`"$tela"`). O container só aceita marcações dentro dele.
 3. **Crie as instâncias.** `create_marking` com `annotation: { type: "specId/typeId", values: { … } }`. Sem `rect`, a marcação nasce no tamanho inicial do componente, no centro da imagem, ou dentro do slot do `parent`, depois da última filha. Use `annotationAs` para citar a anotação depois (por exemplo num campo `ref`).
-4. **Container e filhas.** Crie primeiro o container (a marcação cujo componente tem slot) e dê um apelido; depois crie cada filha com `parent: "$container"`. A filha precisa ficar **inteira dentro do slot** do container; informe o `rect` da filha quando quiser uma posição específica.
+4. **Componente com slot e filhas.** Crie primeiro o componente com slot (a marcação cujo componente tem `slot`, como `Column` ou `Card`) e dê um apelido; depois crie cada filha com `parent: "$pai"`. A filha precisa ficar **inteira dentro do slot** do pai; informe o `rect` da filha quando quiser uma posição específica.
 5. **Ordem.** As irmãs são desenhadas na ordem em que foram criadas no lote (a última por cima); `move_marking` reordena quando precisar. Criar na ordem certa dispensa o `move_marking`.
-6. **Confira.** `plan_changes` valida; depois `propose_changes` e, com a proposta aplicada (ou numa cópia), `get_marking_image` de cada instância (ou `mode: "context"` da tela) mostra o desenho simplificado. Se algo não coube, ajuste `rect` ou `values` e envie outra proposta com `supersedes`.
+6. **Confira.** `plan_changes` valida; depois `propose_changes` e, com a proposta aplicada (ou numa cópia), `get_marking_image` de cada instância (ou `mode: "context"` do container) mostra o desenho simplificado. Se algo não coube, ajuste `rect` ou `values` e envie outra proposta com `supersedes`.
 7. **Proponha e aguarde a revisão.** O fluxo é o de sempre ("Alterando um projeto"): o agente nunca grava o projeto; a pessoa revisa, aceita e aplica.
 
 Regras:
 
 - **O servidor nunca arruma.** Os retângulos dos filhos são os que você informou. Quem recalcula as posições pelo `layout` do slot é a pessoa, com **Arrumar** na app. Posicione as filhas do jeito mais próximo do que o `layout` produziria e diga na descrição da proposta que a pessoa pode usar Arrumar.
-- **Componentes de primeiro nível sem `rect` nascem todos no centro da tela, sobrepostos.** Para uma tela inteira, crie um container `Column` cobrindo a tela e ponha os componentes dentro dele, sem `rect` (entram um depois do outro, no eixo do layout), ou passe o `rect` de cada um.
+- **Componentes de primeiro nível sem `rect` nascem todos no centro do container, sobrepostos.** Para preencher o container, crie um componente com slot `Column` cobrindo-o e ponha os componentes dentro dele, sem `rect` (entram um depois do outro, no eixo do layout), ou passe o `rect` de cada um.
 - **Respeite o `minSize`.** Um `rect` menor que o `minSize` do componente falha com `rect-too-small` (a mensagem traz o mínimo); vale também no `update_marking` com `rect`.
 - **Não grave nada de desenho.** Cores, formas e textos do componente vêm do pacote da biblioteca e dos `values`; o projeto guarda só a marcação, o `rect` e a anotação tipada.
 - **Tipo sem componente** (ou biblioteca não aplicada na app) é uma marcação comum: `rect` é obrigatório e nada é desenhado.
@@ -423,6 +424,12 @@ O **repositório é da biblioteca**: cada especialização declara o da própria
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
 
+### Mudança na versão 0.8.0 (Container)
+
+- **Container no lugar de tela.** O objeto de topo do canvas é o **container** (o JSON ainda usa `images`). A operação nova **`add_container`** (`name?`, `width`, `height`, `background`, `source?`, `center?`, `as?`) substitui `add_blank_image`, que continua aceita e devolve o aviso `deprecated-op` em `warnings` do `plan_changes`/`propose_changes`. As propostas novas saem com `formatVersion` 2; as de `formatVersion` 1 ainda são lidas.
+- `get_specialization` devolve `containers` (tamanhos prontos) quando a especialização tem `formatVersion` 6. Os nomes das tools de imagem não mudaram.
+- A letra `i` das referências é o container; as referências antigas valem.
+
 ### Mudança na versão 0.7.0
 
 - **`url` e `markdown` em `get_marking_image` e `get_image_file`**: cada imagem também é entregue por um servidor HTTP local (127.0.0.1, porta aleatória, token, só em memória), para clientes que não mostram o conteúdo `image` (como o Cursor). Cole o `markdown` na resposta. Com `--no-http` as respostas vêm sem `url`/`markdown`.
@@ -480,16 +487,16 @@ As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}
 
 **Imagens**
 
-| `code`                               | Significado                                                                                                                         |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `image-file-missing`                 | O arquivo da imagem não existe (ou aponta para fora das raízes).                                                                    |
-| `blank-image`                        | `get_image_file` ou `replace_image` numa tela em branco (sem arquivo): use `get_marking_image`; a tela não tem arquivo para trocar. |
-| `unsupported-image`, `invalid-image` | O arquivo não é PNG, JPEG nem WebP, ou está corrompido.                                                                             |
-| `image-too-large`                    | Arquivo maior que 64 MB (16 MB em `base64`) ou imagem com mais de 40 megapixels.                                                    |
-| `encode-failed`                      | Falha ao codificar a imagem em WebP (a origem provavelmente está corrompida).                                                       |
-| `marking-outside-image`              | O retângulo da marcação não toca a imagem: não há o que recortar.                                                                   |
-| `invalid-image-source`               | `add_image`/`replace_image`: informe `file` ou `base64`, exatamente um.                                                             |
-| `invalid-base64`                     | Conteúdo `base64` vazio ou inválido.                                                                                                |
+| `code`                               | Significado                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `image-file-missing`                 | O arquivo da imagem não existe (ou aponta para fora das raízes).                                                                 |
+| `blank-image`                        | `get_image_file` ou `replace_image` num container sem arquivo: use `get_marking_image`; o container não tem arquivo para trocar. |
+| `unsupported-image`, `invalid-image` | O arquivo não é PNG, JPEG nem WebP, ou está corrompido.                                                                          |
+| `image-too-large`                    | Arquivo maior que 64 MB (16 MB em `base64`) ou imagem com mais de 40 megapixels.                                                 |
+| `encode-failed`                      | Falha ao codificar a imagem em WebP (a origem provavelmente está corrompida).                                                    |
+| `marking-outside-image`              | O retângulo da marcação não toca a imagem: não há o que recortar.                                                                |
+| `invalid-image-source`               | `add_image`/`replace_image`: informe `file` ou `base64`, exatamente um.                                                          |
+| `invalid-base64`                     | Conteúdo `base64` vazio ou inválido.                                                                                             |
 
 **Lote (`plan_changes`, `propose_changes`)**
 

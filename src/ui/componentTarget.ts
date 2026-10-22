@@ -1,6 +1,6 @@
 import { imageAt, pointInRect } from '../canvas/imageGeometry';
 import { canvasToImagePixel } from '../canvas/markingGeometry';
-import { imageCanvasRect, isContainerComponent, markingComponent } from '../model';
+import { imageCanvasRect, hasSlotComponent, markingComponent } from '../model';
 import { resolveSelection } from '../store/ui';
 import type { EditorContextValue } from './EditorContext';
 
@@ -31,7 +31,7 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
 
   if (selected?.kind === 'marking') {
     const drawn = markingComponent(project, derived.catalog.value, selected.marking.id);
-    if (drawn && isContainerComponent(drawn.component)) {
+    if (drawn && hasSlotComponent(drawn.component)) {
       return { imageId: selected.marking.imageId, parentId: selected.marking.id };
     }
   }

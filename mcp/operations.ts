@@ -186,12 +186,37 @@ export const operationSchema = z.discriminatedUnion('op', [
       ),
   }),
   z.object({
-    op: z.literal('add_blank_image'),
+    op: z.literal('add_container'),
     as: alias,
     name: z
       .string()
       .optional()
-      .describe('Nome da tela (padrão: sem nome; a app mostra "Tela em branco").'),
+      .describe('Nome do container (padrão: sem nome; a app mostra "Container").'),
+    width: int
+      .min(1)
+      .max(20000)
+      .describe('Largura do container em pixels (1 a 20000; ex: 390 num celular).'),
+    height: int
+      .min(1)
+      .max(20000)
+      .describe('Altura do container em pixels (1 a 20000; ex: 844 num celular).'),
+    background: z.string().describe('Cor de fundo `#RRGGBB`.'),
+    source: externalSource.optional(),
+    center: z
+      .object({ x: z.number(), y: z.number() })
+      .optional()
+      .describe(
+        'Ponto do canvas perto do qual o container fica (padrão: à direita das outras imagens).',
+      ),
+  }),
+  z.object({
+    op: z.literal('add_blank_image'),
+    // Aceita com aviso: use `add_container`.
+    as: alias,
+    name: z
+      .string()
+      .optional()
+      .describe('Antiga: use `add_container`. Nome do container (padrão: sem nome).'),
     width: int
       .min(1)
       .max(20000)
@@ -234,21 +259,21 @@ export const operationSchema = z.discriminatedUnion('op', [
       .string()
       .optional()
       .describe(
-        'Só em tela em branco: nova cor de fundo `#RRGGBB`. Numa foto falha com `not-blank`.',
+        'Só em container sem arquivo (fundo liso): nova cor de fundo `#RRGGBB`. Numa foto falha com `not-blank`.',
       ),
     width: int
       .min(1)
       .max(20000)
       .optional()
       .describe(
-        'Só em tela em branco: nova largura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
+        'Só em container sem arquivo (fundo liso): nova largura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
       ),
     height: int
       .min(1)
       .max(20000)
       .optional()
       .describe(
-        'Só em tela em branco: nova altura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
+        'Só em container sem arquivo (fundo liso): nova altura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
       ),
   }),
   z.object({

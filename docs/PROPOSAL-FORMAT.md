@@ -1,4 +1,4 @@
-# Formato da proposta de alteração (`formatVersion` 1)
+# Formato da proposta de alteração (`formatVersion` 2)
 
 Toda alteração feita por um agente chega como uma **proposta**: o usuário revisa as diferenças, aceita ou rejeita em qualquer nível e deixa notas; só o que foi aceito é aplicado ao `mapping.json`. Este documento descreve o arquivo da proposta e as regras da revisão. O formato do projeto está em [`FORMAT.md`](FORMAT.md).
 
@@ -23,7 +23,7 @@ meu-projeto/
 ```
 
 - Uma pasta por proposta, `proposals/<id>/`, com o `proposal.json`. O id só usa `[A-Za-z0-9._-]` e não começa com ponto (vira nome de pasta).
-- Tela em branco (schema v10): a criação traz a imagem inteira com `file: null` e `background`, sem arquivo para mover; `background` e `size` só existem como campos de `update` quando a imagem é tela em branco nos dois lados (na foto, o tamanho vem da troca de arquivo, campo `file`).
+- Container sem arquivo (schema v10): a criação traz a imagem inteira com `file: null` e `background`, sem arquivo para mover; `background` e `size` só existem como campos de `update` quando a imagem é um container sem arquivo nos dois lados (na foto, o tamanho vem da troca de arquivo, campo `file`).
 - Imagem nova ou trocada: a mudança traz o caminho definitivo (`images/checkout.webp`) e o arquivo espera em `proposals/<id>/` mais esse caminho (`proposals/<id>/images/checkout.webp`). Ao aplicar, ele é movido para o lugar definitivo.
 - Pacote de biblioteca (especialização `formatVersion` 4, uma pasta com `components/`, `docs/`, `examples/` e `fonts/`): a mudança é a da especialização de sempre (`entity: "specialization"`, `to = { id, version, file, spec }`), com `to.file` dentro de uma pasta (`specs/material3/material3.spec.json`). Os arquivos do pacote esperam em `proposals/<id>/` mais o caminho definitivo (`proposals/<id>/specs/material3/components/botao.json`). A fonte da verdade da especialização é o `to.spec`: o arquivo dela na pasta da proposta pode faltar e, se vier, é ignorado. Ao aplicar, os arquivos são **copiados** (não movidos) para `specs/<pasta>/`, que a sessão regrava inteira junto com o `mapping.json`; ficam na proposta até ela ser apagada, então desfazer e refazer não mexem neles.
 - As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado, com os arquivos que esperam a aceitação (imagens em `proposals/<id>/images/` e pacotes em `proposals/<id>/specs/<pasta>/`, binários inclusive; os de mudanças já aplicadas não vão). Ao ler o zip, só entram caminhos desses dois tipos, com id válido e sem `..`.
@@ -33,12 +33,18 @@ meu-projeto/
 - **Servidor MCP** (`propose_changes`, `withdraw_proposal`): cria a pasta e o `proposal.json` (`status: open`, `revision: 0`, sem decisões nem notas) e, depois, só muda o `status` (`superseded` quando uma proposta **aberta** é substituída, `withdrawn` ao ser retirada; uma `applied` substituída não muda), sempre relendo o arquivo antes de gravar e com `revision + 1`. Nunca grava o `mapping.json`. No campo `operations` o conteúdo `base64` das imagens é trocado por um marcador (a imagem já está em `proposals/<id>/images/`).
 - **App**: grava `decisions`, `notes`, `applied` e o `status` à medida que o usuário revisa e aplica; é a única que grava o `mapping.json`.
 
+## Versões do formato
+
+- **`formatVersion` 2** (container): é a versão que a app e o servidor MCP gravam. A forma do arquivo é a mesma da 1; muda o vocabulário das `operations` enviadas pelo agente (guardadas só para referência): a operação `add_container` (`name?`, `width`, `height`, `background`, `source?`, `center?`, `as?`) cria um container sem arquivo. As mudanças de um container criado continuam em `entity: "image"`, porque o `mapping.json` ainda usa `images`.
+- **`formatVersion` 1**: continua **lida** e aplicada. Uma proposta antiga com `add_blank_image` nas `operations` vale como está.
+- **`add_blank_image` é aceita com aviso.** No lote (`plan_changes`/`propose_changes`) ela tem o mesmo efeito de `add_container`, mas o resultado traz em `warnings` um aviso `deprecated-op` ("add_blank_image é antiga: use add_container"). As propostas novas saem com `formatVersion` 2 e nascem de `add_container`.
+
 ## Exemplo
 
 ```json
 {
   "format": "mapping-proposal",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "id": "8c1f2d9e",
   "title": "Checkout a partir do Figma",
   "description": "Telas da página Checkout do arquivo Loja v3.",
@@ -83,7 +89,7 @@ Todos são obrigatórios (o "vazio" é `null`).
 | Campo           | Tipo             | Descrição                                                                                              |
 | --------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
 | `format`        | string           | Sempre `"mapping-proposal"`.                                                                           |
-| `formatVersion` | `1`              | Versão do formato.                                                                                     |
+| `formatVersion` | `1` ou `2`       | Versão do formato. A 2 é a gravada hoje; a 1 continua lida (veja "Versões do formato").                |
 | `id`            | string           | Id da proposta (nome da pasta em `proposals/`).                                                        |
 | `title`         | string           | Título (não vazio).                                                                                    |
 | `description`   | string ou `null` | Descrição.                                                                                             |
@@ -120,14 +126,14 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 - **Remoção**: uma mudança por entidade. A cascata do modelo (filhas e anotações de uma marcação, anotações vinculadas, marcações de uma imagem…) aparece como remoções separadas, ligadas por dependência.
 - **Alteração**: uma mudança por campo:
 
-| Entidade         | Campos (`field`)                                                                                                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `background` (cor `#RRGGBB`) e `size` (`{ width, height }`) só na tela em branco, `placement`, `markingColor`, `locked`, `source`   |
-| `marking`        | `name`, `rect`, `parentId`, `imageId`, `locked`, `source`, `position` (índice entre as irmãs)                                                                                            |
-| `annotation`     | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type` |
-| `layer`          | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                    |
-| `specialization` | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                               |
-| `platformRepo`   | — (`field: null`; `from`/`to` = `{ localPath }`, a sobreposição local do clone; a leitura ignora o `urlTemplate` de propostas antigas)                                                   |
+| Entidade         | Campos (`field`)                                                                                                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `background` (cor `#RRGGBB`) e `size` (`{ width, height }`) só no container sem arquivo, `placement`, `markingColor`, `locked`, `source` |
+| `marking`        | `name`, `rect`, `parentId`, `imageId`, `locked`, `source`, `position` (índice entre as irmãs)                                                                                                 |
+| `annotation`     | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type`      |
+| `layer`          | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                         |
+| `specialization` | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                                    |
+| `platformRepo`   | — (`field: null`; `from`/`to` = `{ localPath }`, a sobreposição local do clone; a leitura ignora o `urlTemplate` de propostas antigas)                                                        |
 
 - `values.<key>` ausente vale `null`. Uma tabela (`table`) muda inteira, numa mudança só.
 - `type` é a **troca de tipo** de uma anotação (ex: tipada convertida em livre ao remover uma especialização): `{ type, values, entries }` mudam juntos, numa mudança só, sem `values.*` nem `entries.*` separados.

@@ -116,7 +116,7 @@ export function imageField(i: ProjectImage, field: string): JsonValue | undefine
     case 'name':
       return i.name;
     case 'file':
-      // Tela em branco não tem arquivo: o tamanho dela é o campo `size`.
+      // Container sem arquivo não tem arquivo: o tamanho dela é o campo `size`.
       return i.file === null
         ? undefined
         : { file: i.file, width: i.width, height: i.height };

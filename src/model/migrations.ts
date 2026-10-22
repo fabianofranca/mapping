@@ -144,7 +144,7 @@ export const migrateFrom8To9: Migration = (data, context = NO_CONTEXT) => {
 };
 
 /**
- * v9 → v10 (tela em branco): imagens ganham `background: null` (a imagem com arquivo não
+ * v9 → v10 (container sem arquivo): imagens ganham `background: null` (a imagem com arquivo não
  * tem cor de fundo). Um valor já presente é preservado.
  */
 export const migrateFrom9To10: Migration = (data) => ({

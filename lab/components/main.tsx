@@ -14,7 +14,7 @@ import {
   arrange,
   dropIndex,
   findSlot,
-  isContainer,
+  hasSlot,
   resolveSlotLayout,
 } from '../../src/model/components/arrange';
 import {
@@ -290,7 +290,7 @@ function addFromType(type: TypeDef): void {
   const selectedType = typeOf(selected);
   const intoContainer =
     selected &&
-    isContainer(selectedType) &&
+    hasSlot(selectedType) &&
     (!selectedType?.allowedChildren || selectedType.allowedChildren.includes(type.id));
   const box = intoContainer
     ? {
@@ -494,7 +494,7 @@ function LibraryPanel() {
             <li key={type.id} data-type-id={type.id}>
               <span class="name" title={type.component?.description ?? type.name}>
                 {type.name}
-                {isContainer(type) ? ' ▣' : ''}
+                {hasSlot(type) ? ' ▣' : ''}
               </span>
               {!type.component && <span class="missing">sem componente</span>}
               <button
@@ -675,7 +675,7 @@ function ParentRow({ instance, disabled }: { instance: Instance; disabled: boole
   const containers = current.instances.filter((i) => {
     if (i.id === instance.id || blocked.has(i.id)) return false;
     const type = lib?.types.find((t) => t.id === i.typeId);
-    if (!isContainer(type)) return false;
+    if (!hasSlot(type)) return false;
     if (type?.allowedChildren && !type.allowedChildren.includes(instance.typeId))
       return false;
     // Um ancestral não pode virar filho do descendente.

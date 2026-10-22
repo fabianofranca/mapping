@@ -182,7 +182,7 @@ describe('validador de invariantes', () => {
   });
 });
 
-describe('validador de invariantes: tela em branco', () => {
+describe('validador de invariantes: container', () => {
   const blank = () =>
     addBlankImage(sampleProject(), {
       id: 'B1',
@@ -191,7 +191,7 @@ describe('validador de invariantes: tela em branco', () => {
       background: '#FFFFFF',
     });
 
-  it('tela em branco com cor é válida e não conta como arquivo repetido', () => {
+  it('container com cor é válida e não conta como arquivo repetido', () => {
     const p = blank();
     const two = addBlankImage(p, {
       id: 'B2',

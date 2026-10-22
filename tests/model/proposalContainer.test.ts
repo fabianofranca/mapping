@@ -19,7 +19,7 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, changeOf, decided, propose } from './proposalFixtures';
 
-// Tela em branco na proposta (schema v10): a criação leva a entidade inteira com `file: null`
+// Container na proposta (schema v10): a criação leva a entidade inteira com `file: null`
 // (nada para mover de `proposals/<id>/`); `update` ganha `background` e `size`, só na tela em
 // branco; na foto o tamanho continua vindo da troca de arquivo (campo `file`).
 
@@ -36,7 +36,7 @@ function accept(base: Project, p: Proposal): Proposal {
   return decided(p, base, { level: 'proposal', id: null }, 'accepted');
 }
 
-describe('proposta: tela em branco', () => {
+describe('proposta: container', () => {
   it('criação: a entidade inteira com file nulo, sem arquivo para mover', () => {
     const base = sampleProject();
     const after = createMarking(blank(base), {

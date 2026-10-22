@@ -16,11 +16,13 @@ import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './sp
 import type { JsonValue } from './types';
 
 // Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
-// `formatVersion` 1. Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
+// `formatVersion` 2 (a 1 continua lida). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
 // leitura devolve os erros com o caminho exato (`changes[3].to.rect.width: …`).
 
 export const PROPOSAL_FORMAT = 'mapping-proposal';
-export const PROPOSAL_FORMAT_VERSION = 1;
+export const PROPOSAL_FORMAT_VERSION = 2;
+/** Versões lidas: a 2 acrescenta `add_container` às `operations`; a 1 continua válida. */
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2] as const;
 /** Pasta das propostas, relativa à raiz do projeto. */
 export const PROPOSALS_DIR = 'proposals';
 /** Nome do arquivo da proposta dentro de `proposals/<id>/`. */
@@ -56,7 +58,7 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
 
 /**
  * Campos alterados de uma imagem (`file` é a troca: `{ file, width, height }`). `background` e
- * `size` (`{ width, height }`) só existem na tela em branco (v10).
+ * `size` (`{ width, height }`) só existem no container sem arquivo (v10).
  */
 export const IMAGE_FIELDS = [
   'name',
@@ -151,7 +153,7 @@ export interface ProposalNote {
 
 export interface Proposal {
   readonly format: typeof PROPOSAL_FORMAT;
-  readonly formatVersion: typeof PROPOSAL_FORMAT_VERSION;
+  readonly formatVersion: (typeof PROPOSAL_FORMAT_VERSIONS)[number];
   readonly id: string;
   readonly title: string;
   readonly description: string | null;
@@ -471,9 +473,7 @@ const targetSchema = z
 export const proposalSchema = z
   .object({
     format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
-    formatVersion: z.literal(PROPOSAL_FORMAT_VERSION, {
-      error: `deve ser ${PROPOSAL_FORMAT_VERSION}`,
-    }),
+    formatVersion: z.union([z.literal(1), z.literal(2)], { error: 'deve ser 1 ou 2' }),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),
     description: optionalText,

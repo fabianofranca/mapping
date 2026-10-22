@@ -41,12 +41,12 @@ export function focusedAnnotationTarget(): CopyTarget | null {
   return id ? { kind: 'a', id } : null;
 }
 
-/** Nome da imagem na referência: o dado ou o do arquivo; tela em branco sem nome, o texto da interface. */
+/** Nome da imagem na referência: o dado ou o do arquivo; container sem arquivo sem nome, o texto da interface. */
 function imageRefLabel(image: Parameters<typeof refImageLabel>[0]): string {
-  return refImageLabel(image) ?? t('image.blankUntitled');
+  return refImageLabel(image) ?? t('image.containerUntitled');
 }
 
-/** "Copiar recorte" só existe para marcação de imagem com arquivo (não de tela em branco). */
+/** "Copiar recorte" só existe para marcação de imagem com arquivo (não de container sem arquivo). */
 export function canCopyCrop(project: Project | null, markingId: string): boolean {
   const marking = project?.markings.find((m) => m.id === markingId);
   const image = marking && project?.images.find((i) => i.id === marking.imageId);
@@ -129,7 +129,7 @@ export async function copyCrop(
   const project = store.committed.peek();
   const marking = project?.markings.find((m) => m.id === markingId);
   const image = marking && project?.images.find((i) => i.id === marking.imageId);
-  // Tela em branco não tem arquivo para recortar.
+  // Container sem arquivo não tem arquivo para recortar.
   if (!marking || !image || image.file === null) return false;
   const file = image.file;
   const png = (async () => {
