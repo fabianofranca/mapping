@@ -255,7 +255,7 @@ test.describe('CSP do index.html', () => {
     await expect(page.getByRole('button', { name: /^Trancar images\// })).toHaveCount(4, {
       timeout: 15_000,
     });
-    expect((await exportMapping(page)).mapping.images).toHaveLength(4);
+    expect((await exportMapping(page)).mapping.containers).toHaveLength(4);
 
     expect(violations()).toEqual([]);
     expect(consoleErrors).toEqual([]);

@@ -96,7 +96,10 @@ const MAX_BACKGROUND_PIXELS = 4096 * 4096;
  * (o desenho dos componentes é pintado por cima depois, só na região pedida) (reduzido se for enorme: `scaleX`/`scaleY` ≠ 1 já são tratados).
  */
 function blankImage(image: ProjectContainer): LoadedImage {
-  const shrink = Math.min(1, Math.sqrt(MAX_BACKGROUND_PIXELS / (image.width * image.height)));
+  const shrink = Math.min(
+    1,
+    Math.sqrt(MAX_BACKGROUND_PIXELS / (image.width * image.height)),
+  );
   const raster = createRaster(
     Math.max(1, Math.round(image.width * shrink)),
     Math.max(1, Math.round(image.height * shrink)),

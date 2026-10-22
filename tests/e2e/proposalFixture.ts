@@ -98,7 +98,12 @@ export function fixtureProject(): Project {
   // O pai vem da contenção (o Botão Pagar fica dentro do Rodapé).
   const mark = (id: string, imageId: string, name: string, rect: readonly number[]) => {
     const [x = 0, y = 0, width = 0, height = 0] = rect;
-    p = createMarking(p, { id, containerId: imageId, name, rect: { x, y, width, height } });
+    p = createMarking(p, {
+      id,
+      containerId: imageId,
+      name,
+      rect: { x, y, width, height },
+    });
   };
   mark('M1', 'I1', 'Cabeçalho', [0, 0, 390, 64]);
   mark('M2', 'I1', 'Lista de itens', [16, 80, 358, 300]);

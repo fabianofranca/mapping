@@ -304,7 +304,7 @@ export function proposedDisplay(preview: Project, p: Proposal): Project {
       ? preview
       : {
           ...preview,
-          images: preview.containers.map((image) => {
+          containers: preview.containers.map((image) => {
             const file = files.get(image.id);
             return file === undefined || image.file === file ? image : { ...image, file };
           }),

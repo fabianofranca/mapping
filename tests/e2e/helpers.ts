@@ -17,9 +17,9 @@ export interface MappingJson {
     readonly name: string;
     readonly spec: { readonly specId: string } | null;
   }[];
-  readonly images: readonly {
+  readonly containers: readonly {
     readonly id: string;
-    readonly file: string;
+    readonly file: string | null;
     readonly width: number;
     readonly height: number;
     readonly locked: boolean;

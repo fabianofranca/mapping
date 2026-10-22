@@ -37,29 +37,36 @@ function load(text: string): Project {
 }
 
 describe('migração v1 → v2', () => {
-  it('abre um v1 real como v10 sem perder nada', () => {
+  it('abre um v1 real como v12 sem perder nada', () => {
     const result = deserialize(v1Text);
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(11);
+    expect(p.schemaVersion).toBe(12);
     expect(p.containers.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => !a.inherit && a.parentAnnotationId === null)).toBe(
       true,
     );
     // Os dados originais continuam idênticos.
-    const original = JSON.parse(v1Text) as Project;
+    // O v1 usa `images` e `imageId`; o projeto de hoje, `containers` e `containerId`.
+    const original = JSON.parse(v1Text) as Record<string, unknown>;
     expect(p.layers.map((l) => omit(l, ['spec']))).toEqual(original.layers);
-    expect(p.markings.map((m) => omit(m, ['locked', 'source']))).toEqual(
-      original.markings,
-    );
+    expect(
+      p.markings.map((m) => {
+        const { containerId, ...rest } = omit(m, ['locked', 'source']) as Record<
+          string,
+          unknown
+        >;
+        return { ...rest, imageId: containerId };
+      }),
+    ).toEqual(original.markings);
     expect(p.project).toEqual(original.project);
     expect(
       p.containers.map((i) =>
         omit(i, ['name', 'markingColor', 'locked', 'source', 'background']),
       ),
-    ).toEqual(original.containers);
+    ).toEqual(original.images);
     expect(
       p.annotations.map((a) => ({
         ...omit(a, ['inherit', 'parentAnnotationId', 'type', 'values']),
@@ -68,16 +75,16 @@ describe('migração v1 → v2', () => {
     ).toEqual(original.annotations);
   });
 
-  it('salvar o v1 migrado gera v10 estável (round-trip)', () => {
+  it('salvar o v1 migrado gera v12 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     expect(serialize(load(saved))).toBe(saved);
   });
 
   it('serializa os campos novos na ordem fixa', () => {
     const text = serialize(sampleProject());
     const data = JSON.parse(text);
-    expect(Object.keys(data.images[0])).toEqual([
+    expect(Object.keys(data.containers[0])).toEqual([
       'id',
       'name',
       'file',

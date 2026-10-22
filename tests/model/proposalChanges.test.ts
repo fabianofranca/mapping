@@ -71,7 +71,7 @@ describe('cálculo das mudanças: marcações', () => {
         from: null,
         to: {
           id: 'M9',
-          imageId: 'I2',
+          containerId: 'I2',
           parentId: null,
           name: 'Novo',
           rect: { x: 200, y: 200, width: 100, height: 100 },

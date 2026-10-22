@@ -242,7 +242,10 @@ describe('sessão de projeto', () => {
       expect(await s.replaceImage(containerId, file('c.jpg', '400x300'), confirm)).toBe(
         'replaced',
       );
-      expect(current(s).containers[0]).toMatchObject({ file: 'images/c.jpg', locked: true });
+      expect(current(s).containers[0]).toMatchObject({
+        file: 'images/c.jpg',
+        locked: true,
+      });
     });
 
     it('marcação trancada: trocar por outro tamanho é recusado', async () => {
@@ -256,9 +259,9 @@ describe('sessão de projeto', () => {
     it('arquivo ilegível falha sem alterar o projeto', async () => {
       const { s, containerId } = await withImage();
       const before = current(s);
-      expect(await s.replaceImage(containerId, file('b.jpg', 'ruim'), async () => true)).toBe(
-        'failed',
-      );
+      expect(
+        await s.replaceImage(containerId, file('b.jpg', 'ruim'), async () => true),
+      ).toBe('failed');
       expect(current(s)).toBe(before);
     });
 
@@ -828,7 +831,10 @@ describe('sessão de projeto', () => {
       // Alguém de fora regrava o arquivo sem a imagem: ela virou órfã por decisão de fora.
       externalWrite(
         root,
-        { ...saved, containers: saved.containers.filter((i) => i.file !== 'images/a.jpg') },
+        {
+          ...saved,
+          containers: saved.containers.filter((i) => i.file !== 'images/a.jpg'),
+        },
         'De fora',
       );
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
@@ -1100,7 +1106,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backupPath())).toBe(v1Text);
     });
 
-    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v11', async () => {
+    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v12', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -1131,13 +1137,13 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(11);
+      expect(saved.schemaVersion).toBe(12);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({ android: { localPath: '../..' } });
       expect(session.backupSaved.value).toBe(6);
     });
 
-    it('projeto v8 com o campo de código removido: backup do original e grava v11 sem os valores', async () => {
+    it('projeto v8 com o campo de código removido: backup do original e grava v12 sem os valores', async () => {
       const root = new MemoryDirectory('p');
       const { text: v8Text, specs } = legacyCodeFiles();
       root.put('mapping.json', v8Text);
@@ -1164,7 +1170,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backup)).toBe(v8Text);
       const savedText = (await root.read('mapping.json')) ?? '';
       const saved = JSON.parse(savedText) as { schemaVersion: number; revision: number };
-      expect(saved.schemaVersion).toBe(11);
+      expect(saved.schemaVersion).toBe(12);
       expect(saved.revision).toBe(1);
       expect(savedText).not.toContain('implementacao');
       // A cópia antiga em specs/ continua como estava (a leitura ignora o campo).
@@ -1175,7 +1181,7 @@ describe('sessão de projeto', () => {
       expect(reopened.ok && reopened.migratedFrom).toBeNull();
     });
 
-    it('projeto v10 com urlTemplate: o original vai para backups/mapping.v10.… e o salvamento grava v11 sem o endereço', async () => {
+    it('projeto v10 com urlTemplate: o original vai para backups/mapping.v10.… e o salvamento grava v12 sem o endereço', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -1220,7 +1226,7 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(11);
+      expect(saved.schemaVersion).toBe(12);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({ android: { localPath: '../..' } });
       expect(savedText).not.toContain('urlTemplate');

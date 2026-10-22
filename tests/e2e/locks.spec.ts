@@ -82,9 +82,9 @@ test('o atalho Alt+L tranca e destranca a seleção, e o locked vai para o mappi
 
   await page.keyboard.press('Alt+L');
   const locked = await exportMapping(page);
-  expect(locked.mapping.schemaVersion).toBe(11);
+  expect(locked.mapping.schemaVersion).toBe(12);
   expect(locked.mapping.markings.map((m) => m.locked)).toEqual([true]);
-  expect(locked.mapping.images.map((i) => i.locked)).toEqual([false]);
+  expect(locked.mapping.containers.map((i) => i.locked)).toEqual([false]);
   // Baixar fecha o diálogo de exportação; a seleção continua na marcação.
   await expect(page.getByRole('dialog')).toBeHidden();
 
@@ -115,6 +115,6 @@ test('imagem trancada: "trancar todas" e Excluir desabilitado', async ({ page })
   await expect(page.getByRole('button', { name: 'Excluir imagem' })).toBeDisabled();
 
   const { mapping } = await exportMapping(page);
-  expect(mapping.images.map((i) => i.locked)).toEqual([true]);
+  expect(mapping.containers.map((i) => i.locked)).toEqual([true]);
   expect(mapping.markings.map((m) => m.locked)).toEqual([true]);
 });

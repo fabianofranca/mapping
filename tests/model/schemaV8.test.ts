@@ -15,6 +15,7 @@ import {
   type Project,
 } from '../../src/model';
 import { sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 import { codeProject } from './specFixtures';
 
 const strip = (item: Record<string, unknown>, key: string) =>
@@ -22,7 +23,7 @@ const strip = (item: Record<string, unknown>, key: string) =>
 
 /** Um mapping.json v7 do projeto: sem `source` nas imagens e marcações. */
 function v7Text(p: Project): string {
-  const data = JSON.parse(serialize(p)) as Record<string, unknown>;
+  const data = legacyJson(p);
   return JSON.stringify({
     ...data,
     schemaVersion: 7,
@@ -48,7 +49,7 @@ describe('migração v7 → v8 (origem externa)', () => {
     const result = load(v7Text(sampleProject()));
     expect(result.migratedFrom).toBe(7);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(11);
+    expect(result.project.schemaVersion).toBe(12);
     expect(result.project.containers.every((i) => i.source === null)).toBe(true);
     expect(result.project.markings.every((m) => m.source === null)).toBe(true);
     expect(result.project).toEqual(sampleProject());
@@ -59,9 +60,9 @@ describe('migração v7 → v8 (origem externa)', () => {
     expect(load(v7Text(p), p).project).toEqual(p);
   });
 
-  it('o v7 migrado salva como v10 estável (round-trip)', () => {
+  it('o v7 migrado salva como v12 estável (round-trip)', () => {
     const saved = serialize(load(v7Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -89,8 +90,8 @@ describe('schema v8: source', () => {
     const text = serialize(p);
     const data = JSON.parse(text);
     // `background` (v10) vem depois do `source`.
-    expect(Object.keys(data.images[0]).at(-2)).toBe('source');
-    expect(Object.keys(data.images[0].source)).toEqual(['system', 'id', 'url']);
+    expect(Object.keys(data.containers[0]).at(-2)).toBe('source');
+    expect(Object.keys(data.containers[0].source)).toEqual(['system', 'id', 'url']);
     expect(data.markings[0].source).toEqual({ system: 'figma', id: '12:35', url: null });
     expect(data.markings[1].source).toBeNull();
     const loaded = load(text);

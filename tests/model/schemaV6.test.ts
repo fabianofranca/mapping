@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { deserialize, migrateFrom5To6, serialize } from '../../src/model';
 import { sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 
 const strip = (data: Record<string, unknown>, key: string) =>
   Object.fromEntries(Object.entries(data).filter(([k]) => k !== key));
 
 /** Um mapping.json v5: sem `revision` (nem `platformRepos`, da v7). */
 function v5Text(): string {
-  const data = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
+  const data = legacyJson(sampleProject());
   return JSON.stringify({
     ...strip(strip(data, 'revision'), 'platformRepos'),
     schemaVersion: 5,
@@ -20,16 +21,16 @@ describe('migração v5 → v6 (revisão)', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(5);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(11);
+    expect(result.project.schemaVersion).toBe(12);
     expect(result.project.revision).toBe(0);
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('o v5 migrado salva como v10 estável (round-trip)', () => {
+  it('o v5 migrado salva como v12 estável (round-trip)', () => {
     const first = deserialize(v5Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);

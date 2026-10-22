@@ -30,7 +30,10 @@ export const PNG_1X1 = Buffer.from(
 type Doc = Record<string, unknown>;
 
 /** `Doc` com os arrays de itens, para os testes ajustarem o `mapping.json` antes de gravar. */
-function items(doc: Doc, key: 'layers' | 'images' | 'markings' | 'annotations'): Doc[] {
+function items(
+  doc: Doc,
+  key: 'layers' | 'containers' | 'markings' | 'annotations',
+): Doc[] {
   return doc[key] as Doc[];
 }
 
@@ -213,14 +216,14 @@ export function createWorkspace(): Workspace {
   write(
     join(root, 'hostil'),
     mappingText((doc) => {
-      items(doc, 'images')[0]!.file = '../../../fora/segredo.png';
+      items(doc, 'containers')[0]!.file = '../../../fora/segredo.png';
     }),
     {},
   );
   write(
     join(root, 'hostil-link'),
     mappingText((doc) => {
-      items(doc, 'images')[0]!.file = 'images/link.png';
+      items(doc, 'containers')[0]!.file = 'images/link.png';
     }),
     { image: false },
   );

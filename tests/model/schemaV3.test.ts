@@ -7,13 +7,14 @@ import {
   type Project,
 } from '../../src/model';
 import { sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 
 const without = (item: Record<string, unknown>, keys: string[]) =>
   Object.fromEntries(Object.entries(item).filter(([key]) => !keys.includes(key)));
 
 /** Um mapping.json v2 (sem `markingColor` nas imagens nem os campos da v4). */
 function v2Text(): string {
-  const data = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
+  const data = legacyJson(sampleProject());
   const images = (data.images as Record<string, unknown>[]).map((i) =>
     without(i, ['markingColor']),
   );
@@ -51,18 +52,18 @@ function load(text: string): Project {
 }
 
 describe('migração v2 → v3', () => {
-  it('abre um v2 como v10 com markingColor nulo e sem perder nada', () => {
+  it('abre um v2 como v12 com markingColor nulo e sem perder nada', () => {
     const result = deserialize(v2Text());
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(2);
-    expect(result.project.schemaVersion).toBe(11);
+    expect(result.project.schemaVersion).toBe(12);
     expect(result.project.containers.every((i) => i.markingColor === null)).toBe(true);
     expect(withoutEntryIds(result.project)).toEqual(withoutEntryIds(sampleProject()));
   });
 
-  it('salvar o v2 migrado gera v10 estável (round-trip)', () => {
+  it('salvar o v2 migrado gera v12 estável (round-trip)', () => {
     const saved = serialize(load(v2Text()));
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     expect(serialize(load(saved))).toBe(saved);
   });
 });

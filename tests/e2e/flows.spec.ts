@@ -34,10 +34,10 @@ test('projeto novo → imagem → marcação → anotação → zip com o mappin
   await page.getByLabel('Valor').press('Enter');
 
   const { mapping, files } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(11);
+  expect(mapping.schemaVersion).toBe(12);
   expect(files).toContain('images/tela.webp');
-  expect(mapping.images).toHaveLength(1);
-  expect(mapping.images[0]).toMatchObject({
+  expect(mapping.containers).toHaveLength(1);
+  expect(mapping.containers[0]).toMatchObject({
     file: 'images/tela.webp',
     width: 400,
     height: 800,
@@ -45,7 +45,7 @@ test('projeto novo → imagem → marcação → anotação → zip com o mappin
   expect(mapping.markings).toHaveLength(1);
   const marking = mapping.markings[0];
   if (!marking) throw new Error('sem marcação');
-  expect(marking.containerId).toBe(mapping.images[0]?.id);
+  expect(marking.containerId).toBe(mapping.containers[0]?.id);
   // O retângulo vai em pixels da imagem original, dentro dela.
   const { x, y, width, height } = marking.rect;
   expect(width).toBeGreaterThan(0);

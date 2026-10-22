@@ -76,7 +76,7 @@ describe('validador de invariantes', () => {
     const p = sampleProject();
     const overlapping = {
       ...p,
-      images: p.containers.map((i) =>
+      containers: p.containers.map((i) =>
         i.id === 'I2' ? { ...i, placement: { ...i.placement, x: 500 } } : i,
       ),
     };
@@ -212,7 +212,9 @@ describe('validador de invariantes: container', () => {
     expect(validateProject(patch('B1', { background: null }))).toEqual([
       { code: 'container-content', entity: 'image', id: 'B1' },
     ]);
-    expect(codes(patch('B1', { file: 'images/x.png' }))).toEqual(['container-content:B1']);
+    expect(codes(patch('B1', { file: 'images/x.png' }))).toEqual([
+      'container-content:B1',
+    ]);
     expect(codes(patch('I2', { background: '#000000' }))).toEqual([
       'container-content:I2',
     ]);

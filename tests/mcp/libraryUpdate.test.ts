@@ -114,7 +114,12 @@ function projectWithLibrary(): Project {
     now: NOW,
     firstLayer: { id: ids.layer, name: 'Livre', color: '#D32F2F' },
   });
-  p = addContainer(p, { id: ids.image, file: 'images/foto.png', width: 400, height: 400 });
+  p = addContainer(p, {
+    id: ids.image,
+    file: 'images/foto.png',
+    width: 400,
+    height: 400,
+  });
   p = applySpecialization(p, material3(), {
     newId,
     packageSpecName: 'material3.spec.json',

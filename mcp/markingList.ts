@@ -129,7 +129,8 @@ export function listMarkings(
     );
   }
   const containerQuery = filters.container ?? filters.image;
-  const container = containerQuery !== undefined ? findContainer(p, containerQuery) : null;
+  const container =
+    containerQuery !== undefined ? findContainer(p, containerQuery) : null;
   let layerId: string | null = null;
   if (filters.layer !== undefined) {
     const wanted = fold(filters.layer);

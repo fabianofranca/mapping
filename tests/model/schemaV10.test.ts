@@ -10,6 +10,7 @@ import {
   type Project,
 } from '../../src/model';
 import { emptyProject, sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 
 // Schema v10 (etapa Biblioteca, B3): a imagem pode não ter arquivo (container: `file`
 // nulo, `background` com a cor). A migração v9 → v10 só dá `background: null` às imagens.
@@ -22,7 +23,7 @@ function load(text: string) {
 
 /** Um mapping.json v9 do projeto: sem `background` nas imagens e com a versão antiga. */
 function v9Text(p: Project): string {
-  const data = JSON.parse(serialize(p)) as { images: Record<string, unknown>[] };
+  const data = legacyJson(p) as { images: Record<string, unknown>[] };
   for (const image of data.images) delete image.background;
   return JSON.stringify({ ...data, schemaVersion: 9 });
 }
@@ -39,8 +40,8 @@ function blankProject(): Project {
 
 /** Troca campos da imagem no JSON gravado (para montar combinações inválidas). */
 function withImage(p: Project, id: string, patch: Record<string, unknown>): string {
-  const data = JSON.parse(serialize(p)) as { images: { id: string }[] };
-  data.images = data.images.map((i) => (i.id === id ? { ...i, ...patch } : i));
+  const data = JSON.parse(serialize(p)) as { containers: { id: string }[] };
+  data.containers = data.containers.map((i) => (i.id === id ? { ...i, ...patch } : i));
   return JSON.stringify(data);
 }
 
@@ -50,14 +51,14 @@ describe('migração v9 → v10 (container)', () => {
     const result = load(v9Text(p));
     expect(result.migratedFrom).toBe(9);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(11);
+    expect(result.project.schemaVersion).toBe(12);
     expect(result.project.containers.every((i) => i.background === null)).toBe(true);
     expect(result.project).toEqual(p);
   });
 
   it('grava v10 e a releitura é estável', () => {
     const saved = serialize(load(v9Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -100,7 +101,7 @@ describe('schema v10', () => {
   });
 
   it('o projeto novo e a imagem com arquivo têm `background: null`', () => {
-    expect(emptyProject().schemaVersion).toBe(11);
+    expect(emptyProject().schemaVersion).toBe(12);
     expect(sampleProject().containers.every((i) => i.background === null)).toBe(true);
   });
 

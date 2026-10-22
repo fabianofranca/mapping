@@ -82,7 +82,7 @@ test('revisar e aplicar em parte uma proposta', async ({ page }) => {
   const mapping = JSON.parse(
     (await zip.file('mapping.json')?.async('string')) ?? '{}',
   ) as MappingJson;
-  const image = mapping.images.find((i) => i.id === 'I3');
+  const image = mapping.containers.find((i) => i.id === 'I3');
   expect(image?.file).toBe('images/confirmacao.png');
   expect(zip.file('images/confirmacao.png')).not.toBeNull();
   const markings = new Map(mapping.markings.map((m) => [m.id, m]));

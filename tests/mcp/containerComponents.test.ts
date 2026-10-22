@@ -29,7 +29,7 @@ import { markingRow } from '../../mcp/views';
 import { NOW } from '../model/fixtures';
 
 // Container com componentes do Material 3 no MCP: o catálogo é lido ao carregar o projeto,
-// as operações novas (add_blank_image, create_marking com annotation, move_marking) e o
+// as operações novas (add_container, create_marking com annotation, move_marking) e o
 // `minSize` valem no lote, e get_marking_image recorta o desenho simplificado.
 
 const LIBRARY = resolve('examples/libraries/material3');
@@ -56,7 +56,7 @@ function project(): Project {
 }
 
 beforeAll(async () => {
-  base = mkdtempSync(join(tmpdir(), 'mapping-blank-'));
+  base = mkdtempSync(join(tmpdir(), 'mapping-container-'));
   const dir = join(base, 'telas');
   mkdirSync(join(dir, 'specs'), { recursive: true });
   cpSync(LIBRARY, join(dir, 'specs', 'material3'), { recursive: true });
@@ -101,13 +101,13 @@ describe('catálogo ao carregar o projeto', () => {
   });
 });
 
-describe('add_container e update_image', () => {
-  it('cria a tela e edita fundo e tamanho; na foto, container-has-file', async () => {
+describe('add_container e update_container', () => {
+  it('cria o container e edita fundo e tamanho; na foto, container-has-file', async () => {
     const result = await run([
       SCREEN,
-      { op: 'update_image', image: '$tela', background: '#000000', height: 900 },
-      { op: 'update_image', image: PHOTO, background: '#000000' },
-      { op: 'update_image', image: PHOTO, width: 300 },
+      { op: 'update_container', container: '$tela', background: '#000000', height: 900 },
+      { op: 'update_container', container: PHOTO, background: '#000000' },
+      { op: 'update_container', container: PHOTO, width: 300 },
     ]);
     expect(result.errors.map((e) => [e.index, e.code])).toEqual([
       [2, 'container-has-file'],
@@ -149,13 +149,13 @@ describe('create_marking com annotation', () => {
     op: 'create_marking',
     as: '$row',
     annotationAs: '$rowNote',
-    image: '$tela',
+    container: '$tela',
     annotation: { type: 'material3/m3-row' },
   } as const;
   const BUTTON = {
     op: 'create_marking',
     as: '$btn',
-    image: '$tela',
+    container: '$tela',
     parent: '$row',
     annotation: { type: 'material3/m3-button', values: { label: 'Entrar' } },
   } as const;
@@ -196,7 +196,7 @@ describe('create_marking com annotation', () => {
       SCREEN,
       {
         op: 'create_marking',
-        image: '$tela',
+        container: '$tela',
         rect: { x: 10, y: 10, width: 20, height: 20 },
         annotation: { type: 'material3/m3-button' },
       },
@@ -212,10 +212,10 @@ describe('create_marking com annotation', () => {
   it('sem componente (ou sem annotation) o rect continua obrigatório', async () => {
     const noRect = await run([
       SCREEN,
-      { op: 'create_marking', image: '$tela' },
+      { op: 'create_marking', container: '$tela' },
       {
         op: 'create_marking',
-        image: '$tela',
+        container: '$tela',
         annotation: { type: 'material3/m3-button' },
         rect: { x: 0, y: 0, width: 100, height: 50 },
         annotationAs: '$a',
@@ -226,7 +226,7 @@ describe('create_marking com annotation', () => {
       SCREEN,
       {
         op: 'create_marking',
-        image: '$tela',
+        container: '$tela',
         rect: { x: 0, y: 0, width: 100, height: 50 },
         annotationAs: '$a',
       },
@@ -252,7 +252,7 @@ describe('create_marking com annotation', () => {
 const BUTTON_ON_SCREEN: Operation = {
   op: 'create_marking',
   as: '$btn',
-  image: '$tela',
+  container: '$tela',
   annotation: { type: 'material3/m3-button' },
 };
 
@@ -295,7 +295,7 @@ describe('get_marking_image num container com componentes', () => {
       {
         op: 'create_marking',
         as: '$btn',
-        image: '$tela',
+        container: '$tela',
         rect: { x: 100, y: 200, width: 160, height: 56 },
         annotation: { type: 'material3/m3-button', values: { label: 'Entrar' } },
       },
@@ -309,7 +309,7 @@ describe('get_marking_image num container com componentes', () => {
     expect(out.json).toMatchObject({
       drawing: 'simplified',
       drawingNote: expect.stringContaining('barras'),
-      image: { file: null, blank: true, background: '#FFEBEE' },
+      container: { file: null, background: '#FFEBEE' },
       width: 180,
       height: 76,
     });

@@ -327,7 +327,9 @@ export async function containerView(
     image.file === null
       ? null
       : await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
-  const topLevel = (index.children.get(null) ?? []).filter((m) => m.containerId === image.id);
+  const topLevel = (index.children.get(null) ?? []).filter(
+    (m) => m.containerId === image.id,
+  );
   return {
     ...containerSummary(refs, image),
     // Container sem arquivo não tem arquivo: nada a conferir.
@@ -412,7 +414,10 @@ export function projectDetail(refs: Refs): Json {
   }
   const markingsByContainer = new Map<string, number>();
   for (const m of p.markings) {
-    markingsByContainer.set(m.containerId, (markingsByContainer.get(m.containerId) ?? 0) + 1);
+    markingsByContainer.set(
+      m.containerId,
+      (markingsByContainer.get(m.containerId) ?? 0) + 1,
+    );
   }
   const warnings = new Map(loaded.specWarnings.map((w) => [w.specId, w]));
 

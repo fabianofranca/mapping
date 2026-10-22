@@ -55,7 +55,7 @@ export interface Proposed {
   reviewChanges: { total: number; create: number; update: number; remove: number };
   levels: {
     project?: { state: string; changes: number };
-    images: { image: string; change: string; items: number; changes: number }[];
+    containers: { container: string; change: string; items: number; changes: number }[];
   };
   files: {
     proposal: string;
