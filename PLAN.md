@@ -294,6 +294,7 @@ O dono quer que as fases sejam desenvolvidas **em sequência, sem ele, durante a
 **Pré-requisitos (o gerente confere antes de começar e para se algum faltar):**
 
 - O plano desta etapa está no branch de partida (o PR #205 mesclado, ou o branch dele como ponto de partida).
+- As sessões na nuvem instalam as dependências sozinhas pelo hook de SessionStart (`.claude/hooks/session-start.sh`, registrado em `.claude/settings.json`; só age em sessão remota, é idempotente e síncrono), então os gates rodam sem passo manual. O hook vale a partir do branch que o contém (o do PR #205); numa sessão aberta em branch anterior, `npm install` à mão.
 - O épico Container está concluído e na `main`. Se não estiver, a cascata **começa pelo Container** (CN1 e CN2, sobre `epic/container`, pelas regras daquela etapa) e o `epic/marcacoes-espaciais` nasce da ponta do `epic/container`; quando o Container entrar na `main`, o épico novo recebe a `main` por merge (nunca rebase).
 - Nenhuma fase começa com decisão aberta. Com as decisões da ME4 fechadas em 2026-10-22 (decisão 14), a noite cobre **ME0 → ME5**; se uma fase levantar uma decisão nova, a cascata para nela (abaixo). A ME5 nunca roda sem a ME4.
 
