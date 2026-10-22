@@ -17,5 +17,7 @@ export function offeredTypes(
   layerId: string,
   kind: AnnotationOwnerKind,
 ): readonly SpecAnnotationType[] {
-  return layerAnnotationTypes(project, layerId).filter((type) => typeAppliesTo(type, kind));
+  return layerAnnotationTypes(project, layerId).filter((type) =>
+    typeAppliesTo(type, kind),
+  );
 }
