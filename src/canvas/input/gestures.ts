@@ -5,7 +5,7 @@ import {
   projectIndex,
   type Placement,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
   type Rect,
 } from '../../model';
 import type { Draft } from '../frame';
@@ -27,14 +27,14 @@ export type Gesture =
   | {
       readonly kind: 'move-image';
       readonly pointerId: number;
-      readonly imageId: string;
+      readonly containerId: string;
       readonly startCanvas: Point;
       readonly startPlacement: Placement;
     }
   | {
       readonly kind: 'resize-image';
       readonly pointerId: number;
-      readonly imageId: string;
+      readonly containerId: string;
       readonly corner: Corner;
       readonly startPlacement: Placement;
     }
@@ -58,7 +58,7 @@ export type Gesture =
   | {
       readonly kind: 'draw';
       readonly pointerId: number;
-      readonly image: ProjectImage;
+      readonly image: ProjectContainer;
       readonly startPixel: Point;
     }
   /** Arrasto do mouse sobre o item trancado: não faz nada até soltar (cursor "não permitido"). */
@@ -106,31 +106,34 @@ export function startGesture(
   const index = projectIndex(project);
 
   if (intent.kind === 'draw') {
-    const image = index.images.get(intent.imageId);
+    const image = index.containers.get(intent.containerId);
     if (!image) return null;
     const startPixel = canvasToImagePixel(image.placement, startCanvas);
     return {
       gesture: { kind: 'draw', pointerId, image, startPixel },
-      draft: { imageId: image.id, rect: rectFromPoints(startPixel, startPixel, image) },
+      draft: {
+        containerId: image.id,
+        rect: rectFromPoints(startPixel, startPixel, image),
+      },
     };
   }
 
   if (intent.kind === 'move-image' || intent.kind === 'resize-image') {
-    const image = index.images.get(intent.imageId);
+    const image = index.containers.get(intent.containerId);
     if (!image || !beginGesture()) return null;
     const gesture: Gesture =
       intent.kind === 'move-image'
         ? {
             kind: 'move-image',
             pointerId,
-            imageId: image.id,
+            containerId: image.id,
             startCanvas,
             startPlacement: image.placement,
           }
         : {
             kind: 'resize-image',
             pointerId,
-            imageId: image.id,
+            containerId: image.id,
             corner: intent.corner,
             startPlacement: image.placement,
           };
@@ -138,7 +141,7 @@ export function startGesture(
   }
 
   const marking = index.markings.get(intent.markingId);
-  const image = marking && index.images.get(marking.imageId);
+  const image = marking && index.containers.get(marking.containerId);
   if (!marking || !image) return null;
   const limits = markingRectLimits(project, marking.id);
   if (!beginGesture()) return null;

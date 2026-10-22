@@ -63,20 +63,22 @@ export function markingName(names: ReviewNames, id: string): string {
   return t('marking.unnamed');
 }
 
-/** Tela em branco criada pela proposta (imagem sem arquivo): o nome padrão dela. */
-function blankName(record: Record<string, JsonValue> | null | undefined): string | null {
+/** Container sem arquivo criada pela proposta (imagem sem arquivo): o nome padrão dela. */
+function backgroundName(
+  record: Record<string, JsonValue> | null | undefined,
+): string | null {
   return record && record.file === null && typeof record.background === 'string'
-    ? t('image.blankUntitled')
+    ? t('image.containerUntitled')
     : null;
 }
 
 export function imageName(names: ReviewNames, id: string): string {
-  const found = lookup(names, (p) => projectIndex(p).images.get(id));
+  const found = lookup(names, (p) => projectIndex(p).containers.get(id));
   if (found) return imageLabel(found);
   for (const c of names.proposal.changes) {
     if (c.entity === 'image' && c.entityId === id && c.field === null) {
       const record = entityRecord(c);
-      const name = text(record?.name) ?? text(record?.file) ?? blankName(record);
+      const name = text(record?.name) ?? text(record?.file) ?? backgroundName(record);
       if (name) return name;
     }
   }
@@ -170,7 +172,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'marking.name': 'review.field.name',
   'marking.rect': 'review.field.rect',
   'marking.parentId': 'review.field.parent',
-  'marking.imageId': 'review.field.image',
+  'marking.containerId': 'review.field.image',
   'marking.locked': 'review.field.locked',
   'marking.source': 'review.field.source',
   'marking.position': 'review.field.position',
@@ -223,7 +225,7 @@ export function entityName(names: ReviewNames, id: string): string | null {
   for (const p of names.preview ? [names.preview, names.current] : [names.current]) {
     const index = projectIndex(p);
     if (index.markings.has(id)) return markingName(names, id);
-    if (index.images.has(id)) return imageName(names, id);
+    if (index.containers.has(id)) return imageName(names, id);
     if (index.layers.has(id)) return layerName(names, id);
     if (index.annotations.has(id)) return annotationName(names, id);
     // Sem a cópia em `specs/` (`spec: null`), o nome pode estar na própria proposta.
@@ -240,7 +242,7 @@ export function entityName(names: ReviewNames, id: string): string | null {
     } else if (c.entity !== 'platformRepo') {
       const name =
         text(record?.name) ??
-        (c.entity === 'image' ? (text(record?.file) ?? blankName(record)) : null);
+        (c.entity === 'image' ? (text(record?.file) ?? backgroundName(record)) : null);
       if (name) return name;
     }
   }
@@ -365,7 +367,7 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
       return rect ? `${name} · ${rect.map((p) => p.text).join('')}` : name;
     }
     case 'image': {
-      const name = text(value.name) ?? text(value.file) ?? blankName(value) ?? '';
+      const name = text(value.name) ?? text(value.file) ?? backgroundName(value) ?? '';
       const size =
         typeof value.width === 'number' && typeof value.height === 'number'
           ? t('image.dimensions', { width: value.width, height: value.height })
@@ -413,7 +415,7 @@ export function valueParts(
   if (field === 'markingId' && typeof value === 'string') {
     return [{ text: markingName(names, value) }];
   }
-  if (field === 'imageId' && typeof value === 'string') {
+  if (field === 'containerId' && typeof value === 'string') {
     return [{ text: imageName(names, value) }];
   }
   if (field === 'layerId' && typeof value === 'string') {

@@ -104,7 +104,7 @@ function normalize(p: Project) {
       version: s.version,
       file: s.file,
     })),
-    images: p.images.map((i) => ({ width: i.width, height: i.height })),
+    images: p.containers.map((i) => ({ width: i.width, height: i.height })),
     markings: p.markings.map((m) => ({
       name: m.name,
       rect: m.rect,
@@ -135,46 +135,46 @@ const CADASTRO_OPERATIONS = [
   { op: 'create_layer', as: '$model', name: 'Model', color: '#757575' },
   { op: 'apply_specialization', file: 'fontes/sdui.json' },
   { op: 'apply_specialization', file: 'fontes/modelo-de-dados.json' },
-  { op: 'add_image', as: '$tela', file: 'fontes/cadastro.png' },
+  { op: 'add_container', as: '$tela', file: 'fontes/cadastro.png' },
   {
     op: 'create_marking',
     as: '$titulo',
-    image: '$tela',
+    container: '$tela',
     name: 'Título',
     rect: { x: 100, y: 50, width: 800, height: 100 },
   },
   {
     op: 'create_marking',
     as: '$form',
-    image: '$tela',
+    container: '$tela',
     name: 'Formulário',
     rect: { x: 50, y: 200, width: 900, height: 1200 },
   },
   {
     op: 'create_marking',
     as: '$nome',
-    image: '$tela',
+    container: '$tela',
     name: 'Nome',
     rect: { x: 100, y: 250, width: 800, height: 100 },
   },
   {
     op: 'create_marking',
     as: '$idade',
-    image: '$tela',
+    container: '$tela',
     name: 'Idade',
     rect: { x: 100, y: 400, width: 800, height: 100 },
   },
   {
     op: 'create_marking',
     as: '$email',
-    image: '$tela',
+    container: '$tela',
     name: 'E-mail',
     rect: { x: 100, y: 550, width: 800, height: 100 },
   },
   {
     op: 'create_marking',
     as: '$cadastrar',
-    image: '$tela',
+    container: '$tela',
     name: 'Cadastrar',
     rect: { x: 100, y: 700, width: 800, height: 100 },
     parent: '$form',
@@ -300,6 +300,8 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     plan = result.data;
     expect(plan.errors).toBeUndefined();
     expect(plan.valid).toBe(true);
+    // Só nomes novos (add_container, `container`): nenhum aviso de operação antiga.
+    expect((plan as { warnings?: unknown }).warnings).toBeUndefined();
     // A prévia não tem plano para gravar: o caminho é propose_changes.
     expect(plan.planId).toBeUndefined();
     // Uma mudança por criação: 2 especializações, 6 camadas, 1 imagem, 6 marcações e 11 anotações.
@@ -308,13 +310,13 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     expect(plan.revision).toBe(0);
     expect(plan.summary).toHaveLength(CADASTRO_OPERATIONS.length);
     expect(plan.summary[3]).toMatch(
-      /^3\. Adicionar a imagem images\/cadastro\.webp \(1000×2000 px, otimizada: WebP\)$/,
+      /^3\. Adicionar o container com a imagem images\/cadastro\.webp \(1000×2000 px, otimizada: WebP\)$/,
     );
     expect(plan.summary[9]).toContain('Formulário › Cadastrar');
     expect(plan.changes).toMatchObject({
       specializations: { created: 2 },
       layers: { created: 6 },
-      images: { created: 1 },
+      containers: { created: 1 },
       markings: { created: 6 },
       annotations: { created: 11 },
     });
@@ -377,7 +379,7 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
     expect(saved.revision).toBe(1);
     const onDisk = readProject(dir);
-    expect(onDisk.images[0]!.file).toBe('images/cadastro.webp');
+    expect(onDisk.containers[0]!.file).toBe('images/cadastro.webp');
     expect(webpSize(readFileSync(join(dir, 'images', 'cadastro.webp')))).toEqual({
       width: 1000,
       height: 2000,
@@ -418,7 +420,7 @@ describe('lote inválido e revisão desatualizada', () => {
         {
           op: 'create_marking',
           as: '$fora',
-          image: `i/${ws.uniqueIds.I1!.slice(0, 8)}`,
+          container: `i/${ws.uniqueIds.I1!.slice(0, 8)}`,
           rect: { x: 900, y: 0, width: 200, height: 50 },
         },
         { op: 'create_annotation', marking: '$fora', type: 'text' },
@@ -563,8 +565,8 @@ describe('regras do modelo no lote', () => {
     const result = await mcp.call<Plan>('plan_changes', {
       project: 'apps/cadastro',
       operations: [
-        { op: 'add_image', file: join(ws.base, 'fora', 'segredo.png') },
-        { op: 'add_image', file: '../../fora/segredo.png' },
+        { op: 'add_container', file: join(ws.base, 'fora', 'segredo.png') },
+        { op: 'add_container', file: '../../fora/segredo.png' },
         { op: 'apply_specialization', file: 'escape/spec-sdui.json' },
       ],
     });
@@ -591,19 +593,19 @@ describe('imagens pelo lote', () => {
     const wide = (await encodePng(quadrants(3000, 1000))).toString('base64');
 
     const firstOps = [
-      { op: 'add_image', as: '$foto', file: 'foto.jpg', name: 'Foto' },
+      { op: 'add_container', as: '$foto', file: 'foto.jpg', name: 'Foto' },
       {
-        op: 'add_image',
+        op: 'add_container',
         as: '$larga',
         base64: `data:image/png;base64,${wide}`,
         fileName: 'larga.png',
       },
       {
         op: 'create_marking',
-        image: '$foto',
+        container: '$foto',
         rect: { x: 10, y: 10, width: 100, height: 200 },
       },
-      { op: 'update_image', image: '$larga', locked: true },
+      { op: 'update_container', container: '$larga', locked: true },
     ];
     const replacement = (await encodePng(quadrants(200, 300))).toString('base64');
     const plan = await mcp.call<Plan>('plan_changes', {
@@ -630,7 +632,7 @@ describe('imagens pelo lote', () => {
     acceptAllAndApply(dir, first.proposal.id);
     let saved = readProject(dir);
     expect(
-      saved.images.map((i) => [i.file, i.width, i.height, i.name, i.locked]),
+      saved.containers.map((i) => [i.file, i.width, i.height, i.name, i.locked]),
     ).toEqual([
       ['images/foto.webp', 200, 300, 'Foto', false],
       ['images/larga.webp', 2560, 853, null, true],
@@ -646,10 +648,10 @@ describe('imagens pelo lote', () => {
     const second = await mcp.call<Plan>('plan_changes', {
       project: 'imagens',
       operations: [
-        { op: 'delete_image', image: larga },
+        { op: 'delete_container', container: larga },
         {
-          op: 'replace_image',
-          image: foto,
+          op: 'replace_container',
+          container: foto,
           base64: replacement,
           fileName: 'foto.png',
         },
@@ -657,9 +659,14 @@ describe('imagens pelo lote', () => {
     });
     expect(second.data.errors?.map((e) => [e.index, e.code])).toEqual([[0, 'locked']]);
     const thirdOps = [
-      { op: 'update_image', image: larga, locked: false },
-      { op: 'delete_image', image: larga },
-      { op: 'replace_image', image: foto, base64: replacement, fileName: 'foto.png' },
+      { op: 'update_container', container: larga, locked: false },
+      { op: 'delete_container', container: larga },
+      {
+        op: 'replace_container',
+        container: foto,
+        base64: replacement,
+        fileName: 'foto.png',
+      },
     ];
     const third = await mcp.call<Plan>('plan_changes', {
       project: 'imagens',
@@ -673,7 +680,7 @@ describe('imagens pelo lote', () => {
     ]);
     acceptAllAndApply(dir, done.proposal.id);
     saved = readProject(dir);
-    expect(saved.images.map((i) => i.file)).toEqual(['images/foto-2.webp']);
+    expect(saved.containers.map((i) => i.file)).toEqual(['images/foto-2.webp']);
     expect(saved.markings).toHaveLength(1);
     expect(readdirSync(join(dir, 'images')).sort()).toEqual(['foto-2.webp']);
   });
@@ -681,7 +688,9 @@ describe('imagens pelo lote', () => {
   it('recusa formato não suportado', async () => {
     const result = await mcp.call<Plan>('plan_changes', {
       project: 'imagens',
-      operations: [{ op: 'add_image', base64: Buffer.from('GIF89a').toString('base64') }],
+      operations: [
+        { op: 'add_container', base64: Buffer.from('GIF89a').toString('base64') },
+      ],
     });
     expect(result.data.errors?.[0]?.code).toBe('unsupported-image');
   });
@@ -702,7 +711,7 @@ describe('projeto de schema antigo', () => {
     expect(readProposal(dir, proposed.proposal.id).baseRevision).toBe(0);
 
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
-    expect(saved.schemaVersion).toBe(11);
+    expect(saved.schemaVersion).toBe(12);
     expect(saved.platformRepos).toEqual({});
     expect(saved.layers.at(-1)!.name).toBe('Notas');
   });

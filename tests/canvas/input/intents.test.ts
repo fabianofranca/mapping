@@ -46,18 +46,18 @@ describe('intentAt', () => {
     // 10 unidades do canvas = 20 px de tela do canto: dentro do raio de 22.
     expect(intentAt(c, { x: 1610, y: 510 })).toEqual({
       kind: 'resize-image',
-      imageId: 'I2',
+      containerId: 'I2',
       corner: 'se',
     });
     expect(intentAt(c, { x: 1300, y: 300 })).toEqual({
       kind: 'move-image',
-      imageId: 'I2',
+      containerId: 'I2',
     });
   });
 
   it('modo Desenhar: sobre uma imagem desenha (mesmo nas alças); fora, pan', () => {
     const c = ctx({ mode: 'draw', selection: { kind: 'marking', id: 'M1' } });
-    expect(intentAt(c, { x: 100, y: 100 })).toEqual({ kind: 'draw', imageId: 'I1' });
+    expect(intentAt(c, { x: 100, y: 100 })).toEqual({ kind: 'draw', containerId: 'I1' });
     expect(intentAt(c, { x: 1050, y: 100 })).toEqual({ kind: 'pan' });
   });
 
@@ -103,20 +103,20 @@ describe('isRepeatTap', () => {
 describe('dragModeOf e cursorFor', () => {
   it('classificam a intenção', () => {
     expect(dragModeOf({ kind: 'pan' })).toBe('pan');
-    expect(dragModeOf({ kind: 'draw', imageId: 'I1' })).toBe('draw');
-    expect(dragModeOf({ kind: 'move-image', imageId: 'I1' })).toBe('move');
+    expect(dragModeOf({ kind: 'draw', containerId: 'I1' })).toBe('draw');
+    expect(dragModeOf({ kind: 'move-image', containerId: 'I1' })).toBe('move');
     expect(dragModeOf({ kind: 'resize-marking', markingId: 'M1', corner: 'ne' })).toBe(
       'resize',
     );
     expect(cursorFor({ kind: 'pan' })).toBe('');
     expect(cursorFor({ kind: 'move-marking', markingId: 'M1' })).toBe('move');
-    expect(cursorFor({ kind: 'resize-image', imageId: 'I1', corner: 'se' })).toBe(
+    expect(cursorFor({ kind: 'resize-image', containerId: 'I1', corner: 'se' })).toBe(
       'nwse-resize',
     );
-    expect(cursorFor({ kind: 'resize-image', imageId: 'I1', corner: 'ne' })).toBe(
+    expect(cursorFor({ kind: 'resize-image', containerId: 'I1', corner: 'ne' })).toBe(
       'nesw-resize',
     );
-    expect(cursorFor({ kind: 'draw', imageId: 'I1' })).toBe('crosshair');
+    expect(cursorFor({ kind: 'draw', containerId: 'I1' })).toBe('crosshair');
   });
 });
 
@@ -162,7 +162,7 @@ describe('trava (etapa 2.5)', () => {
       mode: 'draw',
       selection: select('M1'),
     });
-    expect(intentAt(c, { x: 400, y: 400 })).toEqual({ kind: 'draw', imageId: 'I1' });
+    expect(intentAt(c, { x: 400, y: 400 })).toEqual({ kind: 'draw', containerId: 'I1' });
   });
 
   it('cursor "não permitido" e arrastar tentaria mover', () => {

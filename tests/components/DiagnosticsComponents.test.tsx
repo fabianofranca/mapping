@@ -107,7 +107,7 @@ describe('Diagnóstico: Componentes', () => {
   it('avisos do desenho: nome da marcação, botão que seleciona e a conta dos "não cabe"', async () => {
     const harness = await libraryHarness();
     const result = harness.actions.addComponent({
-      imageId: 'I1',
+      containerId: 'I1',
       parentId: null,
       specId: 'material3',
       typeId: 'm3-button',

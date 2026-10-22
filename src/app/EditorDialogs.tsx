@@ -1,7 +1,7 @@
 import { Fragment, type ComponentChildren } from 'preact';
 import { t } from '../i18n';
-import { imageDeletionImpact, markingDeletionImpact } from '../model';
-import { BlankScreenDialog } from '../ui/BlankScreenDialog';
+import { containerDeletionImpact, markingDeletionImpact } from '../model';
+import { ContainerDialog } from '../ui/ContainerDialog';
 import { Dialog } from '../ui/Dialog';
 import { DialogSlotContext } from '../ui/focus';
 import { useEditor, type EditorContextValue } from '../ui/EditorContext';
@@ -72,8 +72,8 @@ function renderDialog(
   switch (dialog.kind) {
     case 'specs':
       return <SpecsDialog project={project} readOnly={readOnly} onClose={close} />;
-    case 'blank':
-      return <BlankScreenDialog onClose={close} />;
+    case 'container':
+      return <ContainerDialog onClose={close} />;
     case 'settings':
       return (
         <SettingsDialog
@@ -87,7 +87,7 @@ function renderDialog(
       return <HelpDialog onClose={close} section={dialog.section} />;
     case 'deleteImage': {
       const { image } = dialog;
-      const impact = imageDeletionImpact(project, image.id);
+      const impact = containerDeletionImpact(project, image.id);
       return (
         <ConfirmDialog
           title={t('image.deleteTitle')}
@@ -96,7 +96,7 @@ function renderDialog(
           onCancel={close}
           onConfirm={() => {
             close();
-            if (actions.removeImage(image.id).ok) ui.selection.value = null;
+            if (actions.removeContainer(image.id).ok) ui.selection.value = null;
           }}
         >
           <p>

@@ -30,7 +30,9 @@ const layer = z
 const int = z.number().int();
 const rect = z
   .object({ x: int, y: int, width: int, height: int })
-  .describe('Retângulo em pixels inteiros da imagem original (com a orientação EXIF).');
+  .describe(
+    'Retângulo em pixels inteiros do container (com arquivo: da imagem original, com a orientação EXIF).',
+  );
 
 const name = z.string().nullable().describe('Nome; vazio ou `null` remove o nome.');
 
@@ -99,6 +101,62 @@ const owner = item('Anotação dona (mesma marcação, outra camada)')
   .describe(
     'Anotação dona (vínculo, ex: o onClick de um Button): referência, id ou apelido; `null` remove o vínculo.',
   );
+
+/** Campos de `update_container` (e da antiga `update_image`). */
+const updateContainerFields = {
+  name: name.optional(),
+  source: externalSource.optional(),
+  x: z.number().optional().describe('Posição no canvas (unidades do canvas).'),
+  y: z.number().optional(),
+  scale: z
+    .number()
+    .optional()
+    .describe('Unidades do canvas por pixel do container (tamanho exibido).'),
+  markingColor: z
+    .string()
+    .nullable()
+    .optional()
+    .describe('Cor da borda das marcações (#RRGGBB) ou `null` (cor do tema).'),
+  locked: z.boolean().optional().describe('Trancar ou destrancar o container.'),
+  markingsLocked: z
+    .boolean()
+    .optional()
+    .describe('Trancar (ou destrancar) todas as marcações do container.'),
+  background: z
+    .string()
+    .optional()
+    .describe(
+      'Só em container sem arquivo (fundo liso): nova cor de fundo `#RRGGBB`. Num container com arquivo falha com `container-has-file`.',
+    ),
+  width: int
+    .min(1)
+    .max(20000)
+    .optional()
+    .describe(
+      'Só em container sem arquivo (fundo liso): nova largura em pixels (as marcações precisam continuar dentro). Num container com arquivo falha com `container-has-file`.',
+    ),
+  height: int
+    .min(1)
+    .max(20000)
+    .optional()
+    .describe(
+      'Só em container sem arquivo (fundo liso): nova altura em pixels (as marcações precisam continuar dentro). Num container com arquivo falha com `container-has-file`.',
+    ),
+};
+
+/** Campos de `replace_container` (e da antiga `replace_image`): o novo arquivo de imagem. */
+const replaceContainerFields = {
+  ...imageSource,
+  source: externalSource
+    .optional()
+    .describe('Nova origem do container; omitida, a origem atual é mantida.'),
+  confirmAspectChange: z
+    .boolean()
+    .optional()
+    .describe(
+      'Necessário se a proporção mudar: as marcações são reescaladas e ficam "a revisar".',
+    ),
+};
 
 export const operationSchema = z.discriminatedUnion('op', [
   // Repositórios por plataforma
@@ -171,101 +229,112 @@ export const operationSchema = z.discriminatedUnion('op', [
         '`delete` apaga as camadas e anotações dela; `convert` as transforma em livres.',
       ),
   }),
-  // Imagens
+  // Containers
   z.object({
-    op: z.literal('add_image'),
+    op: z.literal('add_container'),
     as: alias,
     ...imageSource,
-    name: z.string().optional().describe('Nome de exibição (padrão: o do arquivo).'),
+    name: z
+      .string()
+      .optional()
+      .describe(
+        'Nome do container (padrão: o nome do arquivo, ou sem nome num container só com fundo; a app mostra "Container").',
+      ),
+    width: int
+      .min(1)
+      .max(20000)
+      .optional()
+      .describe(
+        'Container só com fundo: largura em pixels (1 a 20000; ex: 390 num celular). Com `file`/`base64` a largura vem do arquivo e `width` não vale.',
+      ),
+    height: int
+      .min(1)
+      .max(20000)
+      .optional()
+      .describe(
+        'Container só com fundo: altura em pixels (1 a 20000; ex: 844 num celular). Com `file`/`base64` a altura vem do arquivo e `height` não vale.',
+      ),
+    background: z
+      .string()
+      .optional()
+      .describe(
+        'Container só com fundo: cor `#RRGGBB`. Com `file`/`base64` o container tem a imagem como conteúdo e `background` não vale.',
+      ),
     source: externalSource.optional(),
     center: z
       .object({ x: z.number(), y: z.number() })
       .optional()
       .describe(
-        'Ponto do canvas perto do qual a imagem fica (padrão: à direita das outras).',
+        'Ponto do canvas perto do qual o container fica (padrão: à direita dos outros containers).',
       ),
   }),
   z.object({
+    // Antiga, aceita com aviso: use `add_container` com `file`.
+    op: z.literal('add_image'),
+    as: alias,
+    ...imageSource,
+    name: z
+      .string()
+      .optional()
+      .describe('Antiga: use `add_container` com `file`. Nome (padrão: o do arquivo).'),
+    source: externalSource.optional(),
+    center: z
+      .object({ x: z.number(), y: z.number() })
+      .optional()
+      .describe(
+        'Ponto do canvas perto do qual o container fica (padrão: à direita dos outros).',
+      ),
+  }),
+  z.object({
+    // Antiga, aceita com aviso: use `add_container` com `width`, `height` e `background`.
     op: z.literal('add_blank_image'),
     as: alias,
     name: z
       .string()
       .optional()
-      .describe('Nome da tela (padrão: sem nome; a app mostra "Tela em branco").'),
+      .describe('Antiga: use `add_container`. Nome do container (padrão: sem nome).'),
     width: int
       .min(1)
       .max(20000)
-      .describe('Largura da tela em pixels (1 a 20000; ex: 390 num celular).'),
+      .describe('Largura do container em pixels (1 a 20000; ex: 390 num celular).'),
     height: int
       .min(1)
       .max(20000)
-      .describe('Altura da tela em pixels (1 a 20000; ex: 844 num celular).'),
+      .describe('Altura do container em pixels (1 a 20000; ex: 844 num celular).'),
     background: z.string().describe('Cor de fundo `#RRGGBB`.'),
     source: externalSource.optional(),
     center: z
       .object({ x: z.number(), y: z.number() })
       .optional()
       .describe(
-        'Ponto do canvas perto do qual a tela fica (padrão: à direita das outras imagens).',
+        'Ponto do canvas perto do qual o container fica (padrão: à direita dos outros).',
       ),
   }),
   z.object({
+    op: z.literal('update_container'),
+    container: item('Container'),
+    ...updateContainerFields,
+  }),
+  z.object({
+    // Antiga, aceita com aviso: use `update_container` (o argumento `image` virou `container`).
     op: z.literal('update_image'),
-    image: item('Imagem'),
-    name: name.optional(),
-    source: externalSource.optional(),
-    x: z.number().optional().describe('Posição no canvas (unidades do canvas).'),
-    y: z.number().optional(),
-    scale: z
-      .number()
-      .optional()
-      .describe('Unidades do canvas por pixel da imagem (tamanho exibido).'),
-    markingColor: z
-      .string()
-      .nullable()
-      .optional()
-      .describe('Cor da borda das marcações (#RRGGBB) ou `null` (cor do tema).'),
-    locked: z.boolean().optional().describe('Trancar ou destrancar a imagem.'),
-    markingsLocked: z
-      .boolean()
-      .optional()
-      .describe('Trancar (ou destrancar) todas as marcações da imagem.'),
-    background: z
-      .string()
-      .optional()
-      .describe(
-        'Só em tela em branco: nova cor de fundo `#RRGGBB`. Numa foto falha com `not-blank`.',
-      ),
-    width: int
-      .min(1)
-      .max(20000)
-      .optional()
-      .describe(
-        'Só em tela em branco: nova largura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
-      ),
-    height: int
-      .min(1)
-      .max(20000)
-      .optional()
-      .describe(
-        'Só em tela em branco: nova altura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
-      ),
+    image: item('Container'),
+    ...updateContainerFields,
   }),
   z.object({
-    op: z.literal('replace_image'),
-    image: item('Imagem'),
-    ...imageSource,
-    source: externalSource
-      .optional()
-      .describe('Nova origem da imagem; omitida, a origem atual é mantida.'),
-    confirmAspectChange: z
-      .boolean()
-      .optional()
-      .describe(
-        'Necessário se a proporção mudar: as marcações são reescaladas e ficam "a revisar".',
-      ),
+    op: z.literal('replace_container'),
+    container: item('Container'),
+    ...replaceContainerFields,
   }),
-  z.object({ op: z.literal('delete_image'), image: item('Imagem') }),
+  z.object({
+    // Antiga, aceita com aviso: use `replace_container`.
+    op: z.literal('replace_image'),
+    image: item('Container'),
+    ...replaceContainerFields,
+  }),
+  z.object({ op: z.literal('delete_container'), container: item('Container') }),
+  // Antiga, aceita com aviso: use `delete_container`.
+  z.object({ op: z.literal('delete_image'), image: item('Container') }),
   // Marcações
   z.object({
     op: z.literal('create_marking'),
@@ -273,11 +342,18 @@ export const operationSchema = z.discriminatedUnion('op', [
     annotationAs: alias.describe(
       'Apelido temporário (ex: "$botao") para citar a anotação criada por `annotation` nas operações seguintes.',
     ),
-    image: item('Imagem'),
+    container: item('Container')
+      .optional()
+      .describe(
+        'Container onde a marcação nasce (obrigatório, a menos que a antiga `image` seja dada).',
+      ),
+    image: item('Container')
+      .optional()
+      .describe('Antiga: use `container`. Aceita com aviso.'),
     rect: rect
       .optional()
       .describe(
-        'Retângulo em pixels da imagem. Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (dentro do slot do `parent`, se dado; senão no centro da imagem). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
+        'Retângulo em pixels do container. Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (dentro do slot do `parent`, se dado; senão no centro do container). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
       ),
     name: name.optional(),
     source: externalSource.optional(),
@@ -313,7 +389,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     index: int
       .min(0)
       .describe(
-        'Nova posição entre as irmãs (mesma imagem e mesmo pai): 0 = a primeira, desenhada por baixo; a última fica por cima.',
+        'Nova posição entre as irmãs (mesmo container e mesmo pai): 0 = a primeira, desenhada por baixo; a última fica por cima.',
       ),
   }),
   z.object({
@@ -329,7 +405,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     move: z
       .object({ dx: int, dy: int })
       .optional()
-      .describe('Desloca a marcação com as filhas (em pixels da imagem).'),
+      .describe('Desloca a marcação com as filhas (em pixels do container).'),
     parent: item('Marcação pai')
       .nullable()
       .optional()

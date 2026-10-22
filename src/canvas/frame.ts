@@ -19,13 +19,13 @@ import type { Size, Viewport } from './viewport';
 
 /** Posição exibida durante um gesto de imagem (segue o dedo, mesmo se inválida). */
 export interface ImagePreview {
-  readonly imageId: string;
+  readonly containerId: string;
   readonly placement: Placement;
   readonly valid: boolean;
 }
 
 /** Alvo de um arrastar-e-soltar de arquivos: área vazia ou uma imagem (será trocada). */
-export type DropTarget = { readonly imageId: string | null } | null;
+export type DropTarget = { readonly containerId: string | null } | null;
 
 /** Item trancado sob o mouse: recebe o emblema do cadeado enquanto o cursor está nele. */
 export interface HoverLock {
@@ -35,7 +35,7 @@ export interface HoverLock {
 
 /** Retângulo sendo desenhado (modo Desenhar), em pixels da imagem. */
 export interface Draft {
-  readonly imageId: string;
+  readonly containerId: string;
   readonly rect: Rect;
 }
 

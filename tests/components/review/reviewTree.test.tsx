@@ -10,7 +10,7 @@ import {
   vi,
 } from 'vitest';
 import { EditorScreen } from '../../../src/app/Editor';
-import { addImage, createMarking, createProject } from '../../../src/model';
+import { addContainer, createMarking, createProject } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { showToolWindow } from '../../../src/store/toolWindows';
 import { TreeWindow } from '../../../src/ui/TreeWindow';
@@ -46,7 +46,7 @@ function firstImport() {
     now: AT,
     firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
   });
-  let after = addImage(base, {
+  let after = addContainer(base, {
     id: 'I1',
     file: 'images/cadastro.webp',
     width: 800,
@@ -54,7 +54,7 @@ function firstImport() {
   });
   after = createMarking(after, {
     id: 'M1',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 10, y: 10, width: 200, height: 100 },
     name: 'Formulário',
   });

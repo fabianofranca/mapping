@@ -10,6 +10,7 @@ import {
   type Project,
 } from '../../src/model';
 import { emptyProject, sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 
 // Schema v11 (etapa Código de instanciação): o repositório da plataforma é da especialização
 // (`platforms[].repo`) e `platformRepos[x]` fica só com `localPath`. A migração v10 → v11
@@ -23,7 +24,7 @@ function load(text: string) {
 
 /** Um mapping.json v10 do projeto, com `platformRepos` no formato antigo. */
 function v10Text(p: Project, platformRepos?: Record<string, unknown>): string {
-  const data = JSON.parse(serialize(p)) as Record<string, unknown>;
+  const data = legacyJson(p);
   if (platformRepos !== undefined) data.platformRepos = platformRepos;
   return JSON.stringify({ ...data, schemaVersion: 10 });
 }
@@ -39,7 +40,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     );
     expect(result.migratedFrom).toBe(10);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(11);
+    expect(result.project.schemaVersion).toBe(12);
     expect(result.project.platformRepos).toEqual({ android: { localPath: '../..' } });
     expect(result.discardedUrlTemplates).toEqual([
       { platform: 'android', urlTemplate: TEMPLATE },
@@ -84,14 +85,14 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     expect(migrateFrom10To11(data)).toBe(data);
   });
 
-  it('grava v11 e a releitura é estável', () => {
+  it('grava a versão atual e a releitura é estável', () => {
     const saved = serialize(
       load(
         v10Text(sampleProject(), { android: { urlTemplate: TEMPLATE, localPath: '..' } }),
       ).project,
     );
     const parsed = JSON.parse(saved) as { schemaVersion: number; platformRepos: unknown };
-    expect(parsed.schemaVersion).toBe(11);
+    expect(parsed.schemaVersion).toBe(12);
     expect(parsed.platformRepos).toEqual({ android: { localPath: '..' } });
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
@@ -99,7 +100,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     expect(serialize(again.project)).toBe(saved);
   });
 
-  it('a cadeia v1 → v11 junta o que os passos anteriores já faziam', () => {
+  it('a cadeia v1 → v12 junta o que os passos anteriores já faziam', () => {
     const p = emptyProject();
     const v1 = JSON.stringify({
       schemaVersion: 1,
@@ -113,7 +114,7 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
     });
     const result = load(v1);
     expect(result.migratedFrom).toBe(1);
-    expect(result.project.schemaVersion).toBe(11);
+    expect(result.project.schemaVersion).toBe(12);
     expect(result.project.platformRepos).toEqual({});
     expect(result.discardedUrlTemplates).toEqual([]);
   });
@@ -155,17 +156,17 @@ describe('migração v10 → v11 (repositório na especialização)', () => {
   });
 
   it('o registro tem a migração v10 → v11', () => {
-    expect(SCHEMA_VERSION).toBe(11);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(11);
     expect(migrations.get(10)).toBe(migrateFrom10To11);
-    expect([...migrations.keys()]).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect([...migrations.keys()].slice(0, 10)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 });
 
 describe('schema v11', () => {
-  it('o projeto novo grava v11 com platformRepos vazio', () => {
-    expect(emptyProject().schemaVersion).toBe(11);
+  it('o projeto novo grava a versão atual com platformRepos vazio', () => {
+    expect(emptyProject().schemaVersion).toBe(SCHEMA_VERSION);
     expect(JSON.parse(serialize(emptyProject()))).toMatchObject({
-      schemaVersion: 11,
+      schemaVersion: SCHEMA_VERSION,
       platformRepos: {},
     });
   });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
-  addBlankImage,
+  addBackgroundContainer,
   deserialize,
   migrateFrom9To10,
   migrations,
@@ -10,8 +10,9 @@ import {
   type Project,
 } from '../../src/model';
 import { emptyProject, sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 
-// Schema v10 (etapa Biblioteca, B3): a imagem pode não ter arquivo (tela em branco: `file`
+// Schema v10 (etapa Biblioteca, B3): a imagem pode não ter arquivo (container: `file`
 // nulo, `background` com a cor). A migração v9 → v10 só dá `background: null` às imagens.
 
 function load(text: string) {
@@ -22,13 +23,13 @@ function load(text: string) {
 
 /** Um mapping.json v9 do projeto: sem `background` nas imagens e com a versão antiga. */
 function v9Text(p: Project): string {
-  const data = JSON.parse(serialize(p)) as { images: Record<string, unknown>[] };
+  const data = legacyJson(p) as { images: Record<string, unknown>[] };
   for (const image of data.images) delete image.background;
   return JSON.stringify({ ...data, schemaVersion: 9 });
 }
 
-function blankProject(): Project {
-  return addBlankImage(sampleProject(), {
+function backgroundProject(): Project {
+  return addBackgroundContainer(sampleProject(), {
     id: 'B1',
     name: 'Login',
     width: 390,
@@ -39,25 +40,25 @@ function blankProject(): Project {
 
 /** Troca campos da imagem no JSON gravado (para montar combinações inválidas). */
 function withImage(p: Project, id: string, patch: Record<string, unknown>): string {
-  const data = JSON.parse(serialize(p)) as { images: { id: string }[] };
-  data.images = data.images.map((i) => (i.id === id ? { ...i, ...patch } : i));
+  const data = JSON.parse(serialize(p)) as { containers: { id: string }[] };
+  data.containers = data.containers.map((i) => (i.id === id ? { ...i, ...patch } : i));
   return JSON.stringify(data);
 }
 
-describe('migração v9 → v10 (tela em branco)', () => {
+describe('migração v9 → v10 (container)', () => {
   it('todas as imagens ganham `background: null`, sem perder mais nada', () => {
     const p = sampleProject();
     const result = load(v9Text(p));
     expect(result.migratedFrom).toBe(9);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(11);
-    expect(result.project.images.every((i) => i.background === null)).toBe(true);
+    expect(result.project.schemaVersion).toBe(12);
+    expect(result.project.containers.every((i) => i.background === null)).toBe(true);
     expect(result.project).toEqual(p);
   });
 
   it('grava v10 e a releitura é estável', () => {
     const saved = serialize(load(v9Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -82,15 +83,15 @@ describe('migração v9 → v10 (tela em branco)', () => {
 });
 
 describe('schema v10', () => {
-  it('um projeto v10 com tela em branco é lido sem mudança', () => {
-    const p = blankProject();
+  it('um projeto v10 com container é lido sem mudança', () => {
+    const p = backgroundProject();
     const text = serialize(p);
     const result = load(text);
     expect(result.migratedFrom).toBeNull();
     expect(result.project).toEqual(p);
     expect(serialize(result.project)).toBe(text);
-    const blank = result.project.images.find((i) => i.id === 'B1');
-    expect(blank).toMatchObject({
+    const bgContainer = result.project.containers.find((i) => i.id === 'B1');
+    expect(bgContainer).toMatchObject({
       file: null,
       background: '#FFFFFF',
       width: 390,
@@ -100,12 +101,12 @@ describe('schema v10', () => {
   });
 
   it('o projeto novo e a imagem com arquivo têm `background: null`', () => {
-    expect(emptyProject().schemaVersion).toBe(11);
-    expect(sampleProject().images.every((i) => i.background === null)).toBe(true);
+    expect(emptyProject().schemaVersion).toBe(12);
+    expect(sampleProject().containers.every((i) => i.background === null)).toBe(true);
   });
 
   it('cor, dimensões e `file` malformados são recusados pelo schema', () => {
-    const p = blankProject();
+    const p = backgroundProject();
     const bad = (patch: Record<string, unknown>) =>
       deserialize(withImage(p, 'B1', patch), migrations, new Map()).ok;
     expect(bad({ background: 'branco' })).toBe(false);
@@ -116,8 +117,8 @@ describe('schema v10', () => {
     expect(bad({ file: '' })).toBe(false);
   });
 
-  it('arquivo e cor juntos (ou nenhum dos dois) violam o invariante blank-background', () => {
-    const p = blankProject();
+  it('arquivo e cor juntos (ou nenhum dos dois) violam o invariante container-content', () => {
+    const p = backgroundProject();
     const issues = (id: string, patch: Record<string, unknown>) => {
       const result = deserialize(withImage(p, id, patch), migrations, new Map());
       if (result.ok || result.error.code !== 'invariant-violation') {
@@ -125,8 +126,8 @@ describe('schema v10', () => {
       }
       return result.error.issues.map((i) => `${i.code}:${i.id}`);
     };
-    expect(issues('B1', { background: null })).toEqual(['blank-background:B1']);
-    expect(issues('B1', { file: 'images/x.png' })).toEqual(['blank-background:B1']);
-    expect(issues('I2', { background: '#000000' })).toEqual(['blank-background:I2']);
+    expect(issues('B1', { background: null })).toEqual(['container-content:B1']);
+    expect(issues('B1', { file: 'images/x.png' })).toEqual(['container-content:B1']);
+    expect(issues('I2', { background: '#000000' })).toEqual(['container-content:I2']);
   });
 });

@@ -1,5 +1,5 @@
 import { t } from '../i18n';
-import { ancestorsOf, type Marking, type Project, type ProjectImage } from '../model';
+import { ancestorsOf, type Marking, type Project, type ProjectContainer } from '../model';
 import { resolveSelection, type Selection } from '../store/ui';
 import { selectionProject } from '../store/shownSelection';
 import { useEditor } from './EditorContext';
@@ -15,7 +15,7 @@ interface Crumb {
   readonly name: string;
 }
 
-function imageCrumb(image: ProjectImage): Crumb {
+function imageCrumb(image: ProjectContainer): Crumb {
   const name = imageLabel(image);
   return {
     selection: { kind: 'image', id: image.id },

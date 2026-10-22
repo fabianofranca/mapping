@@ -123,7 +123,7 @@ describe('markingComponent e componentMinSize', () => {
     let p = componentProject();
     p = createMarking(p, {
       id: 'M1',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 10, y: 10, width: 200, height: 100 },
     });
     return p;
@@ -195,7 +195,7 @@ describe('markingComponent e componentMinSize', () => {
     let p = withMarking();
     p = createMarking(p, {
       id: 'M2',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 20, y: 20, width: 100, height: 40 },
     });
     p = addTypedAnnotation(p, {

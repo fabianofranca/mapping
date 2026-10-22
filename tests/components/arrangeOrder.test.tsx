@@ -32,7 +32,7 @@ async function scene(options: { readOnly?: boolean } = {}): Promise<Scene> {
   const harness = await libraryHarness();
   const add = (typeId: string, parentId: string | null) => {
     const result = harness.actions.addComponent({
-      imageId: 'I1',
+      containerId: 'I1',
       parentId,
       specId: 'material3',
       typeId,
@@ -50,7 +50,7 @@ async function scene(options: { readOnly?: boolean } = {}): Promise<Scene> {
 function renderPanel(harness: LibraryHarness, markingId: string) {
   renderLive(harness, (project) => {
     const marking = project.markings.find((m) => m.id === markingId);
-    const image = project.images.find((i) => i.id === marking?.imageId);
+    const image = project.containers.find((i) => i.id === marking?.containerId);
     if (!marking || !image) return null;
     return (
       <MarkingPanel

@@ -25,7 +25,7 @@ import type {
   Placement,
   PlatformRepo,
   Project,
-  ProjectImage,
+  ProjectContainer,
   ProjectSpecialization,
   Rect,
   TypedValues,
@@ -52,7 +52,7 @@ export interface PatchProblem {
 }
 
 type Entity =
-  ProjectSpecialization | PlatformRepo | Layer | ProjectImage | Marking | Annotation;
+  ProjectSpecialization | PlatformRepo | Layer | ProjectContainer | Marking | Annotation;
 
 /** Ordem de aplicação: criações e alterações de cima para baixo, remoções de baixo para cima. */
 const UPSERT_PHASE: Record<ChangeEntity, number> = {
@@ -112,11 +112,11 @@ function withField(
   const to = c.to;
   switch (entity) {
     case 'image': {
-      const i = current as ProjectImage;
-      // Tela em branco não troca de arquivo; cor e tamanho só existem nela.
-      const blank = i.file === null;
-      if (blank && field === 'file') return null;
-      if (!blank && (field === 'background' || field === 'size')) return null;
+      const i = current as ProjectContainer;
+      // Container sem arquivo não troca de arquivo; cor e tamanho só existem nela.
+      const noFile = i.file === null;
+      if (noFile && field === 'file') return null;
+      if (!noFile && (field === 'background' || field === 'size')) return null;
       if (field === 'size' && isRecord(to)) {
         return { ...i, width: to.width as number, height: to.height as number };
       }
@@ -204,7 +204,7 @@ function placeAmongSiblings(markings: Marking[], id: string, index: number): voi
   const marking = markings.find((m) => m.id === id);
   if (!marking) return;
   const siblings = markings.filter(
-    (m) => m.parentId === marking.parentId && m.imageId === marking.imageId,
+    (m) => m.parentId === marking.parentId && m.containerId === marking.containerId,
   );
   const order = siblings.filter((m) => m.id !== id);
   order.splice(Math.min(index, order.length), 0, marking);
@@ -230,7 +230,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     specialization: new Map(p.specializations.map((s) => [s.id, s])),
     platformRepo: new Map(Object.entries(p.platformRepos)),
     layer: new Map(p.layers.map((l) => [l.id, l])),
-    image: new Map(p.images.map((i) => [i.id, i])),
+    image: new Map(p.containers.map((i) => [i.id, i])),
     marking: new Map(p.markings.map((m) => [m.id, m])),
     annotation: new Map(p.annotations.map((a) => [a.id, a])),
   };
@@ -290,7 +290,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
         PlatformRepo
       >,
       layers,
-      images: [...maps.image.values()] as ProjectImage[],
+      containers: [...maps.image.values()] as ProjectContainer[],
       markings,
       annotations: [...maps.annotation.values()] as Annotation[],
     },

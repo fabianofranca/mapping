@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { createProject, exportMapping, projectAction } from './helpers';
 
-// Etapa Biblioteca, B3: tela em branco e componentes desenhados no canvas do produto.
+// Etapa Biblioteca, B3: container e componentes desenhados no canvas do produto.
 
 const PACKAGE_DIR = 'examples/libraries/material3';
 
@@ -22,17 +22,17 @@ async function packageZip(): Promise<Buffer> {
   return zip.generateAsync({ type: 'nodebuffer' });
 }
 
-test('tela em branco com um componente da Biblioteca, sem desenho gravado', async ({
+test('container com um componente da Biblioteca, sem desenho gravado', async ({
   page,
 }) => {
   await createProject(page, 'Telas');
   const host = page.locator('.canvas-host');
 
-  // Nova tela em branco (predefinição de celular, a primeira).
-  await page.getByRole('button', { name: 'Nova tela em branco' }).first().click();
+  // Novo container (Personalizado, 360×800).
+  await page.getByRole('button', { name: 'Novo container' }).first().click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome', { exact: true }).fill('Configurações');
-  await dialog.getByRole('button', { name: 'Criar tela' }).click();
+  await dialog.getByRole('button', { name: 'Criar container' }).click();
   await expect(dialog).toBeHidden();
   await expect(host).toHaveAttribute('data-images', '1');
 
@@ -60,9 +60,9 @@ test('tela em branco com um componente da Biblioteca, sem desenho gravado', asyn
 
   // O mapping.json guarda a marcação e a anotação, nada do desenho.
   const { mapping } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(11);
-  expect(mapping.images).toHaveLength(1);
-  expect(mapping.images[0]).toMatchObject({ file: null, background: '#FFFFFF' });
+  expect(mapping.schemaVersion).toBe(12);
+  expect(mapping.containers).toHaveLength(1);
+  expect(mapping.containers[0]).toMatchObject({ file: null, background: '#FFFFFF' });
   expect(mapping.markings).toHaveLength(1);
   expect(mapping.annotations.some((a) => a.type?.typeId === 'm3-button')).toBe(true);
   expect(JSON.stringify(mapping)).not.toMatch(/"(scene|drawing|root|children)"/);

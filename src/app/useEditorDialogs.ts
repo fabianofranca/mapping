@@ -3,7 +3,7 @@ import {
   canDeleteMarking,
   markingDeletionImpact,
   type Marking,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../model';
 import type { AspectChange } from '../store/session';
 import type { RefObject } from 'preact';
@@ -16,10 +16,10 @@ export type EditorDialog =
   /** `section`: id da seção em que a Ajuda abre (ex.: os atalhos, pelas Configurações). */
   | { readonly kind: 'help'; readonly section?: string }
   | { readonly kind: 'specs' }
-  /** Nova tela em branco (etapa Biblioteca, B3). */
-  | { readonly kind: 'blank' }
+  /** Novo container (etapa Biblioteca, B3). */
+  | { readonly kind: 'container' }
   | { readonly kind: 'settings' }
-  | { readonly kind: 'deleteImage'; readonly image: ProjectImage }
+  | { readonly kind: 'deleteImage'; readonly image: ProjectContainer }
   | { readonly kind: 'deleteMarking'; readonly marking: Marking }
   | {
       readonly kind: 'aspect';
@@ -43,7 +43,7 @@ export interface EditorDialogs {
    * aberto depois de gerar o zip com o botão desabilitado.
    */
   readonly exportButton: RefObject<HTMLButtonElement>;
-  requestDeleteImage(image: ProjectImage): void;
+  requestDeleteImage(image: ProjectContainer): void;
   /** Em cascata pede confirmação; simples, não (o desfazer cobre). Item trancado: não faz nada. */
   requestDeleteMarking(marking: Marking): void;
 }

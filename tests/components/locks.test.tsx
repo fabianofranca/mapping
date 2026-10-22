@@ -35,7 +35,7 @@ function renderMarkingPanel(
   const onDelete = vi.fn();
   renderLive(harness, (p) => {
     const m = p.markings.find((x) => x.id === markingId);
-    const image = p.images.find((i) => i.id === m?.imageId);
+    const image = p.containers.find((i) => i.id === m?.containerId);
     if (!m || !image) return null;
     return (
       <MarkingPanel
@@ -146,7 +146,7 @@ describe('Detalhes da marcação: cadeado', () => {
 });
 
 function renderImagePanel(
-  imageId: string,
+  containerId: string,
   { readOnly = false, setup }: { readOnly?: boolean; setup?: (h: Harness) => void } = {},
 ) {
   const harness = createHarness(sampleProject(), readOnly);
@@ -154,7 +154,7 @@ function renderImagePanel(
   const onDelete = vi.fn();
   renderLive(harness, (p) => (
     <SelectionPanel
-      image={p.images.find((i) => i.id === imageId) ?? null}
+      image={p.containers.find((i) => i.id === containerId) ?? null}
       display={undefined}
       readOnly={readOnly}
       busy={false}
@@ -172,7 +172,7 @@ describe('Detalhes da imagem: cadeado', () => {
   it('tranca e destranca a imagem, com aviso e Excluir bloqueado', async () => {
     const { harness, onDelete, user } = renderImagePanel('I2');
     await user.click(imageLock());
-    expect(harness.project().images[1]?.locked).toBe(true);
+    expect(harness.project().containers[1]?.locked).toBe(true);
     expect(imageLock().getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByText(t('lock.imageNotice'))).toBeTruthy();
     const remove = screen.getByRole('button', { name: t('image.delete') });
@@ -180,7 +180,7 @@ describe('Detalhes da imagem: cadeado', () => {
     await user.click(remove);
     expect(onDelete).not.toHaveBeenCalled();
     await user.click(imageLock());
-    expect(harness.project().images[1]?.locked).toBe(false);
+    expect(harness.project().containers[1]?.locked).toBe(false);
   });
 
   it('"Trancar todas as marcações desta imagem" é uma entrada só no desfazer', async () => {
@@ -203,7 +203,7 @@ describe('Detalhes da imagem: cadeado', () => {
     harness.actions.removeMarking('M4');
     renderLive(harness, (p) => (
       <SelectionPanel
-        image={p.images[1] ?? null}
+        image={p.containers[1] ?? null}
         display={undefined}
         readOnly={false}
         busy={false}
@@ -253,7 +253,7 @@ describe('Árvore: cadeado na linha', () => {
     expect(treeLock('Porta').className).toContain('tree-lock-on');
     expect(onSelect).not.toHaveBeenCalled();
     await user.click(treeLock('images/lateral.jpg'));
-    expect(harness.project().images[0]?.locked).toBe(true);
+    expect(harness.project().containers[0]?.locked).toBe(true);
     await user.click(treeLock('Porta'));
     expect(marking(harness.project(), 'M1').locked).toBe(false);
   });

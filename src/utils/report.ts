@@ -93,7 +93,7 @@ export interface DiagnosticsInfo {
   readonly language: string;
   readonly theme: string;
   readonly counts: {
-    readonly images: number;
+    readonly containers: number;
     readonly markings: number;
     readonly annotations: number;
   } | null;
@@ -121,8 +121,8 @@ export function formatDiagnosticsReport(
 ): string {
   const none = '-';
   const counts = info.counts
-    ? `images: ${info.counts.images}, markings: ${info.counts.markings}, annotations: ${info.counts.annotations}`
-    : `images: ${none}, markings: ${none}, annotations: ${none}`;
+    ? `containers: ${info.counts.containers}, markings: ${info.counts.markings}, annotations: ${info.counts.annotations}`
+    : `containers: ${none}, markings: ${none}, annotations: ${none}`;
   const pending = info.pendingSave === null ? none : info.pendingSave ? 'yes' : 'no';
   const header = [
     formatBuildInfo(info),

@@ -194,7 +194,7 @@ describe('barra de status', () => {
   it('mostra salvamento, destino, seleção, cursor, zoom, schema, canal e build', () => {
     const harness = createHarness(sampleProject());
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
-    harness.context.view.cursor.value = { imageId: 'I1', x: 120, y: 48 };
+    harness.context.view.cursor.value = { containerId: 'I1', x: 120, y: 48 };
     harness.context.view.viewport.value = { x: 0, y: 0, scale: 0.5 };
     withContext(harness, <StatusBar />);
     expect(screen.getByText(t('status.saved'))).toBeTruthy();

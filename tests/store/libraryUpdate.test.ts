@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { addImage, createMarking, type Spec } from '../../src/model';
+import { addContainer, createMarking, type Spec } from '../../src/model';
 import { createFolderStorage } from '../../src/storage/folder';
 import { openSession, type ProjectSession } from '../../src/store/session';
 import { emptyProject, NOW } from '../model/fixtures';
@@ -65,7 +65,7 @@ describe('atualizar biblioteca pela sessão', () => {
 
   async function start() {
     const root = new MemoryDirectory('p');
-    let project = addImage(emptyProject(), {
+    let project = addContainer(emptyProject(), {
       id: 'I1',
       file: 'images/a.png',
       width: 1000,
@@ -73,7 +73,7 @@ describe('atualizar biblioteca pela sessão', () => {
     });
     project = createMarking(project, {
       id: 'M1',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 0, y: 0, width: 100, height: 100 },
     });
     let n = 0;

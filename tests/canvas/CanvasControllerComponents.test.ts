@@ -90,12 +90,12 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('a camada de componentes fica entre as imagens e as marcações, e a tela em branco desenha', () => {
+  it('a camada de componentes fica entre as imagens e as marcações, e o container desenha', () => {
     const { controller, internals, componentLayer, drawing, container } = setup();
     expect(internals.stage.getLayers()).toHaveLength(4);
     expect(container.querySelectorAll('canvas')).toHaveLength(4);
     expect(componentLayer()?.listening()).toBe(false);
-    // Os dois textos da tela em branco; o da foto só com a opção ligada.
+    // Os dois textos do container; o da foto só com a opção ligada.
     expect(drawing('T1')).toBeDefined();
     expect(drawing('T2')).toBeDefined();
     expect(drawing('TP')).toBeUndefined();
@@ -135,9 +135,9 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('a tela em branco conta como imagem pronta, sem pedir arquivo', () => {
+  it('o container conta como imagem pronta, sem pedir arquivo', () => {
     const { controller, container, ensure } = setup();
-    // A foto I1 ainda carrega; só a tela em branco está pronta.
+    // A foto I1 ainda carrega; só o container está pronta.
     expect(container.dataset.images).toBe('1');
     expect(ensure.mock.calls.map(([file]) => file)).toEqual(['images/tela.png']);
     controller.destroy();
@@ -249,7 +249,9 @@ describe('CanvasController: componentes', () => {
     function hoverSetup() {
       const made = setup();
       const { controller, container, store } = made;
-      const placement = store.project.value?.images.find((i) => i.id === 'B1')?.placement;
+      const placement = store.project.value?.containers.find(
+        (i) => i.id === 'B1',
+      )?.placement;
       const t1 = store.project.value?.markings.find((m) => m.id === 'T1');
       if (!placement || !t1) throw new Error('fixture');
       controller.zoomTo(1);
@@ -320,8 +322,8 @@ describe('CanvasController: componentes', () => {
     // A visibilidade do texto depende de caber na tela: enquadra a marcação conferida.
     const focus = (id: string) => {
       const marking = store.project.value?.markings.find((m) => m.id === id);
-      const placement = store.project.value?.images.find(
-        (i) => i.id === marking?.imageId,
+      const placement = store.project.value?.containers.find(
+        (i) => i.id === marking?.containerId,
       )?.placement;
       if (!marking || !placement) throw new Error('fixture');
       const rect = markingCanvasRect(placement, marking.rect);

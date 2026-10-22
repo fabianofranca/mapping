@@ -14,6 +14,7 @@ import {
   type Project,
 } from '../../src/model';
 import { sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 import { cadastroProject, codeProject, specProject } from './specFixtures';
 
 const strip = (data: Record<string, unknown>, key: string) =>
@@ -21,7 +22,7 @@ const strip = (data: Record<string, unknown>, key: string) =>
 
 /** Um mapping.json v6 do projeto: sem `platformRepos`. */
 function v6Text(p: Project): string {
-  const data = JSON.parse(serialize(p)) as Record<string, unknown>;
+  const data = legacyJson(p);
   return JSON.stringify({ ...strip(data, 'platformRepos'), schemaVersion: 6 });
 }
 
@@ -52,7 +53,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     const result = load(v6Text(sampleProject()), sampleProject());
     expect(result.migratedFrom).toBe(6);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(11);
+    expect(result.project.schemaVersion).toBe(12);
     expect(result.project.platformRepos).toEqual({});
     expect(result.project).toEqual(sampleProject());
   });
@@ -71,14 +72,14 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(screen?.values).toEqual({ nome: 'Cadastro', rota: null });
     expect(getAnnotationIssues(result.project, 'AS')).toEqual([]);
     expect(result.project.markings.find((m) => m.id === 'MF')?.locked).toBe(true);
-    expect(result.project.images[0]?.locked).toBe(true);
+    expect(result.project.containers[0]?.locked).toBe(true);
   });
 
-  it('o v6 migrado salva como v10 estável (round-trip)', () => {
+  it('o v6 migrado salva como v12 estável (round-trip)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
-    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 11, platformRepos: {} });
+    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 12, platformRepos: {} });
     const again = load(saved, p);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);

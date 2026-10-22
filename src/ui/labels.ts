@@ -1,21 +1,21 @@
 // Textos derivados do projeto (nomes de marcações, caminhos, erros), sempre via `t()`.
 import { t, type TranslationKey } from '../i18n';
 import {
-  MAX_BLANK_SIZE,
+  MAX_CONTAINER_SIZE,
   MIN_MARKING_SIZE,
   ancestorsOf,
   type Annotation,
   type Marking,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../model';
 import type { StoreErrorCode } from '../store/history';
 import type { ProposalActionError } from '../store/proposalActions';
 import type { ProposalNotice } from '../store/proposals';
 
-/** Nome da imagem; sem nome, o nome do arquivo (tela em branco: "Tela em branco"). */
-export function imageLabel(image: Pick<ProjectImage, 'name' | 'file'>): string {
-  return image.name ?? image.file ?? t('image.blankUntitled');
+/** Nome da imagem; sem nome, o nome do arquivo (container sem arquivo: "Container"). */
+export function imageLabel(image: Pick<ProjectContainer, 'name' | 'file'>): string {
+  return image.name ?? image.file ?? t('image.containerUntitled');
 }
 
 export function markingLabel(marking: Pick<Marking, 'name'>): string {
@@ -53,17 +53,19 @@ export function libraryErrorMessage(code: StoreErrorCode): string {
   return t(LIBRARY_ERRORS[code] ?? 'library.error.generic');
 }
 
-const BLANK_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
-  'invalid-dimensions': 'blank.error.size',
-  'invalid-color': 'blank.error.color',
-  'rect-out-of-image': 'blank.error.rect-out-of-image',
-  locked: 'blank.error.locked',
+const CONTAINER_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
+  'invalid-dimensions': 'container.error.size',
+  'invalid-color': 'container.error.color',
+  'rect-out-of-image': 'container.error.rect-out-of-image',
+  locked: 'container.error.locked',
   reviewing: 'review.readOnly',
 };
 
-/** Erro de editar a tela em branco (tamanho e cor de fundo). */
-export function blankErrorMessage(code: StoreErrorCode): string {
-  return t(BLANK_ERRORS[code] ?? 'blank.error.generic', { max: MAX_BLANK_SIZE });
+/** Erro de editar o container sem arquivo (tamanho e cor de fundo). */
+export function containerErrorMessage(code: StoreErrorCode): string {
+  return t(CONTAINER_ERRORS[code] ?? 'container.error.generic', {
+    max: MAX_CONTAINER_SIZE,
+  });
 }
 
 export function markingErrorMessage(code: StoreErrorCode): string {

@@ -105,7 +105,7 @@ export interface EditorDerived {
    */
   drawingsOf(p: Project | null): ComponentDrawings;
   /**
-   * Marcações cujo desenho está visível: têm desenho, a imagem é uma tela em branco ou a pessoa
+   * Marcações cujo desenho está visível: têm desenho, a imagem é um container sem arquivo ou a pessoa
    * ligou "desenhar sobre fotos", e a visibilidade delas não é `hidden`.
    */
   readonly drawnMarkings: ReadonlySignal<ReadonlySet<string>>;
@@ -287,17 +287,17 @@ export function createEditorDerived(
     return p && layer ? layerDotsByMarking(p, [layer]) : NO_DOTS;
   });
 
-  // Marcações cujo desenho pode aparecer: tela em branco, ou foto com a opção ligada. Não depende
+  // Marcações cujo desenho pode aparecer: container sem arquivo, ou foto com a opção ligada. Não depende
   // da visibilidade: ao contrário, o filtro "sem anotação" não esconde o que desenha.
   const drawn = computed((): ReadonlySet<string> => {
     const all = scenes.value;
     const p = project.value;
     if (!p || all.size === 0) return NO_DRAWN;
-    const { images } = projectIndex(p);
+    const { containers: images } = projectIndex(p);
     const onPhotos = showComponentsOnPhotos.value;
     const result = new Set<string>();
     for (const [id, drawing] of all) {
-      const image = images.get(drawing.imageId);
+      const image = images.get(drawing.containerId);
       if (!image || (image.file !== null && !onPhotos)) continue;
       result.add(id);
     }
@@ -349,7 +349,7 @@ export function createEditorDerived(
 
   const hasLocks = computed(() => {
     const p = project.value;
-    return markingLocks.value.size > 0 || (p?.images.some((i) => i.locked) ?? false);
+    return markingLocks.value.size > 0 || (p?.containers.some((i) => i.locked) ?? false);
   });
 
   const listing = computed((): readonly ListedImage[] => {

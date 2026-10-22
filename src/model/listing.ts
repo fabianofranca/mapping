@@ -1,6 +1,6 @@
 import type { AnnotationIssue } from './issues';
 import { projectIndex } from './projectIndex';
-import type { Annotation, Layer, Marking, Project, ProjectImage } from './types';
+import type { Annotation, Layer, Marking, Project, ProjectContainer } from './types';
 
 /** Anotações de uma marcação numa camada. */
 export interface LayerAnnotations {
@@ -83,7 +83,7 @@ export function inheritedSections(
 }
 
 export interface ListedImage {
-  readonly image: ProjectImage;
+  readonly image: ProjectContainer;
   readonly markings: readonly ListedMarking[];
 }
 
@@ -121,7 +121,7 @@ export function buildListing(
   const roots = children.get(null) ?? [];
   const result: ListedImage[] = [];
 
-  for (const image of p.images) {
+  for (const image of p.containers) {
     const markings: ListedMarking[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
@@ -132,7 +132,7 @@ export function buildListing(
       }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };
-    for (const root of roots) if (root.imageId === image.id) visit(root, []);
+    for (const root of roots) if (root.containerId === image.id) visit(root, []);
     if (showEmpty || markings.length > 0) result.push({ image, markings });
   }
   return result;
@@ -149,7 +149,7 @@ export interface IncompleteItem {
 }
 
 export interface IncompleteImage {
-  readonly image: ProjectImage;
+  readonly image: ProjectContainer;
   readonly items: readonly IncompleteItem[];
 }
 
@@ -169,7 +169,7 @@ export function buildIncompleteList(
   const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
   const result: IncompleteImage[] = [];
 
-  for (const image of p.images) {
+  for (const image of p.containers) {
     const items: IncompleteItem[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
@@ -182,7 +182,7 @@ export function buildIncompleteList(
       for (const child of index.children.get(marking.id) ?? []) visit(child, path);
     };
     for (const root of index.children.get(null) ?? []) {
-      if (root.imageId === image.id) visit(root, []);
+      if (root.containerId === image.id) visit(root, []);
     }
     if (items.length > 0) result.push({ image, items });
   }

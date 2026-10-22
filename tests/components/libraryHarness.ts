@@ -36,7 +36,7 @@ export async function libraryHarness(options: Options = {}): Promise<LibraryHarn
   if (options.readOnly) harness.store.load(harness.project(), { readOnly: true });
 
   // Centro da vista: dentro da I1 por padrão (placement dela no canvas).
-  const image = harness.project().images[0];
+  const image = harness.project().containers[0];
   const canvas = {
     viewportCenter: vi.fn(() => ({
       x: (image?.placement.x ?? 0) + 200,

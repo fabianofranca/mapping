@@ -15,7 +15,7 @@ import {
   textBars,
 } from '../../mcp/image/sceneRaster';
 
-// Desenho simplificado de uma cena em pixels (get_marking_image numa tela em branco): formas
+// Desenho simplificado de uma cena em pixels (get_marking_image num container): formas
 // preenchidas, traço, recorte do frame, texto em barras e composição com transparência.
 
 const WHITE = [255, 255, 255, 255];

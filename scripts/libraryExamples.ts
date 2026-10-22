@@ -336,9 +336,39 @@ Sem os arquivos, o desenho cai na fonte do sistema e o Diagnóstico mostra um av
 por fonte ausente. O pacote continua válido.
 `;
 
+/** Tamanhos de container que a Material 3 oferece no diálogo Novo container (`formatVersion` 6). */
+const CONTAINER_PRESETS = [
+  { id: 'phone', name: 'Celular', width: 360, height: 800 },
+  { id: 'phone-large', name: 'Celular grande', width: 412, height: 915 },
+  { id: 'tablet', name: 'Tablet', width: 800, height: 1280 },
+  { id: 'desktop', name: 'Desktop', width: 1440, height: 900 },
+] as const;
+
 /** Todos os arquivos do pacote, com caminhos relativos a `examples/libraries/material3/`. */
 export function libraryExampleFiles(): LibraryExampleFile[] {
-  const spec = structuredClone(M3_SPEC) as unknown as RawSpec;
+  const base = structuredClone(M3_SPEC) as unknown as RawSpec;
+  // O pacote publicado usa a `formatVersion` 6, que acrescenta `containers` logo depois de
+  // `description` (a especialização do laboratório continua na 4).
+  const {
+    format,
+    formatVersion: _version,
+    id,
+    name,
+    version,
+    description,
+    ...rest
+  } = base;
+  void _version;
+  const spec: RawSpec = {
+    format,
+    formatVersion: 6,
+    id,
+    name,
+    version,
+    description,
+    containers: CONTAINER_PRESETS.map((c) => ({ ...c })),
+    ...rest,
+  } as RawSpec;
   const byId = new Map<string, ComponentFile>(M3_COMPONENTS.map((c) => [c.id, c]));
   const files: LibraryExampleFile[] = [];
   const docs: LibraryExampleFile[] = [];

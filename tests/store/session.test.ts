@@ -109,13 +109,13 @@ describe('sessão de projeto', () => {
     // Operação cara (fase 5.5): a importação inteira grava uma vez, ao terminar.
     expect(session.saveStatus.value).toBe('saved');
     const saved = await savedProject(root);
-    expect(saved.images.map((i) => [i.file, i.width, i.height])).toEqual([
+    expect(saved.containers.map((i) => [i.file, i.width, i.height])).toEqual([
       ['images/a.jpg', 400, 300],
       ['images/a-2.jpg', 100, 100],
     ]);
     // Cada imagem é uma entrada de desfazer.
     session.store.undo();
-    expect(session.store.project.value?.images).toHaveLength(1);
+    expect(session.store.project.value?.containers).toHaveLength(1);
   });
 
   it('informa as imagens que não puderam ser importadas', async () => {
@@ -134,20 +134,20 @@ describe('sessão de projeto', () => {
     session = start(root);
     await session.addImages([file('a.jpg', '400x300')]);
     await session.flush();
-    const imageId = session.store.project.value?.images[0]?.id ?? '';
+    const containerId = session.store.project.value?.containers[0]?.id ?? '';
 
-    session.actions.removeImage(imageId);
+    session.actions.removeContainer(containerId);
     expect(await root.read('images/a.jpg')).toBe('400x300');
     await session.flush();
     expect(await root.read('images/a.jpg')).toBeNull();
-    expect((await savedProject(root)).images).toEqual([]);
+    expect((await savedProject(root)).containers).toEqual([]);
     // Enquanto isso, a sessão ainda consegue ler a imagem (para exibir no desfazer).
     expect(await (await session.readImage('images/a.jpg'))?.text()).toBe('400x300');
 
     session.store.undo();
     await session.flush();
     expect(await root.read('images/a.jpg')).toBe('400x300');
-    expect((await savedProject(root)).images.map((i) => i.file)).toEqual([
+    expect((await savedProject(root)).containers.map((i) => i.file)).toEqual([
       'images/a.jpg',
     ]);
   });
@@ -159,13 +159,13 @@ describe('sessão de projeto', () => {
       session = s;
       await s.addImages([file('a.jpg', content)]);
       const created = s.actions.createMarking(
-        s.store.project.value?.images[0]?.id ?? '',
+        s.store.project.value?.containers[0]?.id ?? '',
         { x: 100, y: 100, width: 200, height: 100 },
       );
       if (!created.ok) throw new Error(created.error);
       await s.flush();
-      const imageId = s.store.project.value?.images[0]?.id ?? '';
-      return { root, s, imageId };
+      const containerId = s.store.project.value?.containers[0]?.id ?? '';
+      return { root, s, containerId };
     }
     const current = (s: ProjectSession) => {
       const p = s.store.project.value;
@@ -174,14 +174,14 @@ describe('sessão de projeto', () => {
     };
 
     it('mesma proporção: reescala sem perguntar e troca o arquivo', async () => {
-      const { root, s, imageId } = await withImage();
+      const { root, s, containerId } = await withImage();
       const confirm = vi.fn(async () => true);
-      expect(await s.replaceImage(imageId, file('b.jpg', '800x600'), confirm)).toBe(
+      expect(await s.replaceImage(containerId, file('b.jpg', '800x600'), confirm)).toBe(
         'replaced',
       );
       expect(confirm).not.toHaveBeenCalled();
       const p = current(s);
-      expect(p.images[0]).toMatchObject({
+      expect(p.containers[0]).toMatchObject({
         file: 'images/b.jpg',
         width: 800,
         height: 600,
@@ -198,14 +198,14 @@ describe('sessão de projeto', () => {
       // Desfazer volta ao arquivo antigo, que é restaurado no disco.
       s.store.undo();
       await s.flush();
-      expect(current(s).images[0]?.file).toBe('images/a.jpg');
+      expect(current(s).containers[0]?.file).toBe('images/a.jpg');
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
     it('proporção diferente: pergunta e marca as marcações para revisão', async () => {
-      const { s, imageId } = await withImage();
+      const { s, containerId } = await withImage();
       const confirm = vi.fn(async () => true);
-      expect(await s.replaceImage(imageId, file('b.jpg', '400x400'), confirm)).toBe(
+      expect(await s.replaceImage(containerId, file('b.jpg', '400x400'), confirm)).toBe(
         'replaced',
       );
       expect(confirm).toHaveBeenCalledWith({
@@ -216,10 +216,10 @@ describe('sessão de projeto', () => {
     });
 
     it('proporção diferente recusada: não grava nem altera nada', async () => {
-      const { root, s, imageId } = await withImage();
+      const { root, s, containerId } = await withImage();
       const before = current(s);
       const result = await s.replaceImage(
-        imageId,
+        containerId,
         file('b.jpg', '400x400'),
         async () => false,
       );
@@ -229,47 +229,50 @@ describe('sessão de projeto', () => {
     });
 
     it('imagem trancada: trocar por outro tamanho é recusado sem perguntar nem gravar; do mesmo tamanho, não', async () => {
-      const { root, s, imageId } = await withImage();
-      s.actions.setImageLocked(imageId, true);
+      const { root, s, containerId } = await withImage();
+      s.actions.setImageLocked(containerId, true);
       const before = current(s);
       const confirm = vi.fn(async () => true);
-      expect(await s.replaceImage(imageId, file('b.jpg', '400x400'), confirm)).toBe(
+      expect(await s.replaceImage(containerId, file('b.jpg', '400x400'), confirm)).toBe(
         'locked',
       );
       expect(confirm).not.toHaveBeenCalled();
       expect(current(s)).toBe(before);
       expect(await root.read('images/b.jpg')).toBeNull();
-      expect(await s.replaceImage(imageId, file('c.jpg', '400x300'), confirm)).toBe(
+      expect(await s.replaceImage(containerId, file('c.jpg', '400x300'), confirm)).toBe(
         'replaced',
       );
-      expect(current(s).images[0]).toMatchObject({ file: 'images/c.jpg', locked: true });
+      expect(current(s).containers[0]).toMatchObject({
+        file: 'images/c.jpg',
+        locked: true,
+      });
     });
 
     it('marcação trancada: trocar por outro tamanho é recusado', async () => {
-      const { s, imageId } = await withImage();
+      const { s, containerId } = await withImage();
       s.actions.setMarkingLocked(current(s).markings[0]?.id ?? '', true);
       expect(
-        await s.replaceImage(imageId, file('b.jpg', '800x600'), async () => true),
+        await s.replaceImage(containerId, file('b.jpg', '800x600'), async () => true),
       ).toBe('locked');
     });
 
     it('arquivo ilegível falha sem alterar o projeto', async () => {
-      const { s, imageId } = await withImage();
+      const { s, containerId } = await withImage();
       const before = current(s);
-      expect(await s.replaceImage(imageId, file('b.jpg', 'ruim'), async () => true)).toBe(
-        'failed',
-      );
+      expect(
+        await s.replaceImage(containerId, file('b.jpg', 'ruim'), async () => true),
+      ).toBe('failed');
       expect(current(s)).toBe(before);
     });
 
     it('reaponta uma imagem ausente', async () => {
-      const { root, s, imageId } = await withImage();
+      const { root, s, containerId } = await withImage();
       await root.getDirectoryHandle('images').then((d) => d.removeEntry('a.jpg'));
       expect(await s.readImage('images/a.jpg')).toBeNull();
       expect(
-        await s.replaceImage(imageId, file('a.jpg', '400x300'), async () => true),
+        await s.replaceImage(containerId, file('a.jpg', '400x300'), async () => true),
       ).toBe('replaced');
-      expect(current(s).images[0]?.file).toBe('images/a-2.jpg');
+      expect(current(s).containers[0]?.file).toBe('images/a-2.jpg');
       expect(current(s).markings[0]?.rect).toEqual({
         x: 100,
         y: 100,
@@ -286,8 +289,8 @@ describe('sessão de projeto', () => {
       session = s;
       await s.addImages([file('a.jpg', '400x300')]);
       await s.flush();
-      const imageId = s.store.project.value?.images[0]?.id ?? '';
-      s.actions.removeImage(imageId);
+      const containerId = s.store.project.value?.containers[0]?.id ?? '';
+      s.actions.removeContainer(containerId);
       await s.flush();
       return { root, s };
     }
@@ -384,7 +387,7 @@ describe('sessão de projeto', () => {
       const s = start(root);
       session = s;
       await s.addImages([file('a.jpg', '400x300')]);
-      s.actions.removeImage(s.store.project.value?.images[0]?.id ?? '');
+      s.actions.removeContainer(s.store.project.value?.containers[0]?.id ?? '');
       bump(s, HISTORY_LIMIT + 1);
       await s.flush();
       expect(await root.read('images/a.jpg')).toBeNull();
@@ -432,17 +435,17 @@ describe('sessão de projeto', () => {
     await session.addImages([file('a.jpg', '400x300')]);
     await session.flush();
     const revision = (await savedProject(root)).revision;
-    const imageId = session.store.project.value?.images[0]?.id ?? '';
+    const containerId = session.store.project.value?.containers[0]?.id ?? '';
 
     const remove = vi
       .spyOn(storage, 'removeImage')
       .mockRejectedValue(new Error('arquivo em uso'));
-    session.actions.removeImage(imageId);
+    session.actions.removeContainer(containerId);
     const flushed = await session.flush();
     expect(session.saveStatus.value).toBe('saved');
     expect(flushed).toEqual({ ok: true });
     expect((await savedProject(root)).revision).toBe(revision + 1);
-    expect((await savedProject(root)).images).toEqual([]);
+    expect((await savedProject(root)).containers).toEqual([]);
     expect(reportedErrors.value.map((e) => [e.context, e.message])).toEqual([
       ['session.cleanup', 'arquivo em uso'],
     ]);
@@ -613,7 +616,7 @@ describe('sessão de projeto', () => {
       session = t.session;
       await session.addImages([file('a.jpg', '400x300')]);
       expect(session.saveStatus.value).toBe('saved');
-      expect((await savedProject(root)).images.map((i) => i.file)).toEqual([
+      expect((await savedProject(root)).containers.map((i) => i.file)).toEqual([
         'images/a.jpg',
       ]);
       expect(t.saves()).toBe(1);
@@ -627,7 +630,7 @@ describe('sessão de projeto', () => {
         Promise.resolve(true),
       );
       expect(result).toBe('replaced');
-      expect((await savedProject(root)).images.find((i) => i.id === 'I1')?.file).toBe(
+      expect((await savedProject(root)).containers.find((i) => i.id === 'I1')?.file).toBe(
         'images/nova.jpg',
       );
     });
@@ -655,9 +658,9 @@ describe('sessão de projeto', () => {
       await vi.advanceTimersByTimeAsync(0);
       expect((await savedProject(root)).specializations).toEqual([]);
 
-      expect(session.actions.removeImage('I2').ok).toBe(true);
+      expect(session.actions.removeContainer('I2').ok).toBe(true);
       await vi.advanceTimersByTimeAsync(0);
-      expect((await savedProject(root)).images.map((i) => i.id)).toEqual(['I1']);
+      expect((await savedProject(root)).containers.map((i) => i.id)).toEqual(['I1']);
     });
 
     it('duas operações caras seguidas não gravam em paralelo', async () => {
@@ -672,7 +675,7 @@ describe('sessão de projeto', () => {
         await vi.advanceTimersByTimeAsync(0);
         // A primeira gravação está em andamento quando a segunda operação chega.
         expect(t.saves()).toBe(1);
-        expect(session.actions.removeImage('I2').ok).toBe(true);
+        expect(session.actions.removeContainer('I2').ok).toBe(true);
         await vi.advanceTimersByTimeAsync(0);
         expect(t.saves()).toBe(1);
         release();
@@ -682,7 +685,7 @@ describe('sessão de projeto', () => {
         expect(session.saveStatus.value).toBe('saved');
         const saved = await savedProject(root);
         expect(saved.revision).toBe(sampleProject().revision + 2);
-        expect(saved.images.map((i) => i.id)).toEqual(['I1']);
+        expect(saved.containers.map((i) => i.id)).toEqual(['I1']);
         expect(saved.specializations.map((s) => s.id)).toEqual(['sdui']);
       } finally {
         release();
@@ -822,13 +825,16 @@ describe('sessão de projeto', () => {
       session = start(root, project);
       await session.addImages([file('a.jpg', '400x300')]);
       const saved = await savedProject(root);
-      expect(saved.images.map((i) => i.file)).toContain('images/a.jpg');
+      expect(saved.containers.map((i) => i.file)).toContain('images/a.jpg');
 
       session.actions.renameProject('Pendente');
       // Alguém de fora regrava o arquivo sem a imagem: ela virou órfã por decisão de fora.
       externalWrite(
         root,
-        { ...saved, images: saved.images.filter((i) => i.file !== 'images/a.jpg') },
+        {
+          ...saved,
+          containers: saved.containers.filter((i) => i.file !== 'images/a.jpg'),
+        },
         'De fora',
       );
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
@@ -891,13 +897,13 @@ describe('sessão de projeto', () => {
       // A primeira gravação não cita a imagem; a segunda já a regravou (está parada no saveMapping).
       const between = await savedProject(root);
       expect(between.project.name).toBe('Um');
-      expect(between.images.map((i) => i.file)).not.toContain('images/a.jpg');
+      expect(between.containers.map((i) => i.file)).not.toContain('images/a.jpg');
       expect(await root.read('images/a.jpg')).toBe('400x300');
       second.resolve();
       await adding;
       expect(session.saveStatus.value).toBe('saved');
       const after = await savedProject(root);
-      expect(after.images.map((i) => i.file)).toContain('images/a.jpg');
+      expect(after.containers.map((i) => i.file)).toContain('images/a.jpg');
       expect(await root.read('images/a.jpg')).toBe('400x300');
     });
 
@@ -922,7 +928,7 @@ describe('sessão de projeto', () => {
       expect(session.saveStatus.value).toBe('saved');
       // Nada a gravar depois do desfazer (o disco já tem 'Um'); a limpeza da primeira apagou o arquivo.
       expect(h.savesStarted()).toBe(1);
-      expect((await savedProject(root)).images.map((i) => i.file)).not.toContain(
+      expect((await savedProject(root)).containers.map((i) => i.file)).not.toContain(
         'images/a.jpg',
       );
       expect(await root.read('images/a.jpg')).toBeNull();
@@ -931,7 +937,7 @@ describe('sessão de projeto', () => {
       await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS * 2);
       await vi.waitFor(() => expect(h.session.saveStatus.value).toBe('saved'));
       expect(h.savesStarted()).toBe(2);
-      expect((await savedProject(root)).images.map((i) => i.file)).toContain(
+      expect((await savedProject(root)).containers.map((i) => i.file)).toContain(
         'images/a.jpg',
       );
       expect(await root.read('images/a.jpg')).toBe('400x300');
@@ -1100,7 +1106,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backupPath())).toBe(v1Text);
     });
 
-    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v11', async () => {
+    it('projeto v6: o original vai para backups/mapping.v6.… e o salvamento grava v12', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -1131,13 +1137,13 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(11);
+      expect(saved.schemaVersion).toBe(12);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({ android: { localPath: '../..' } });
       expect(session.backupSaved.value).toBe(6);
     });
 
-    it('projeto v8 com o campo de código removido: backup do original e grava v11 sem os valores', async () => {
+    it('projeto v8 com o campo de código removido: backup do original e grava v12 sem os valores', async () => {
       const root = new MemoryDirectory('p');
       const { text: v8Text, specs } = legacyCodeFiles();
       root.put('mapping.json', v8Text);
@@ -1164,7 +1170,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backup)).toBe(v8Text);
       const savedText = (await root.read('mapping.json')) ?? '';
       const saved = JSON.parse(savedText) as { schemaVersion: number; revision: number };
-      expect(saved.schemaVersion).toBe(11);
+      expect(saved.schemaVersion).toBe(12);
       expect(saved.revision).toBe(1);
       expect(savedText).not.toContain('implementacao');
       // A cópia antiga em specs/ continua como estava (a leitura ignora o campo).
@@ -1175,7 +1181,7 @@ describe('sessão de projeto', () => {
       expect(reopened.ok && reopened.migratedFrom).toBeNull();
     });
 
-    it('projeto v10 com urlTemplate: o original vai para backups/mapping.v10.… e o salvamento grava v11 sem o endereço', async () => {
+    it('projeto v10 com urlTemplate: o original vai para backups/mapping.v10.… e o salvamento grava v12 sem o endereço', async () => {
       const root = new MemoryDirectory('p');
       const project = cadastroProject();
       const data = JSON.parse(serialize(project)) as Record<string, unknown>;
@@ -1220,7 +1226,7 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(11);
+      expect(saved.schemaVersion).toBe(12);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({ android: { localPath: '../..' } });
       expect(savedText).not.toContain('urlTemplate');

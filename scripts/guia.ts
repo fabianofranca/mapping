@@ -30,7 +30,7 @@ function guiaData(root: string): unknown {
   }
   const project = parsed.project;
   const files: Record<string, string> = {};
-  for (const image of project.images) {
+  for (const image of project.containers) {
     if (image.file === null) continue;
     const mime = MIME[extname(image.file).toLowerCase()];
     if (!mime) throw new Error(`${image.file}: tipo de imagem desconhecido`);
@@ -44,7 +44,7 @@ function guiaData(root: string): unknown {
       color,
       spec,
     })),
-    images: project.images.map((image) => ({
+    images: project.containers.map((image) => ({
       id: image.id,
       name: image.name ?? image.file ?? image.id,
       file: image.file,
@@ -54,7 +54,7 @@ function guiaData(root: string): unknown {
     })),
     markings: project.markings.map((m) => ({
       id: m.id,
-      imageId: m.imageId,
+      containerId: m.containerId,
       parentId: m.parentId,
       name: m.name ?? '',
       rect: m.rect,

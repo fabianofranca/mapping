@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -80,7 +80,7 @@
       }
     }
   ],
-  "images": [
+  "containers": [
     {
       "id": "I1",
       "name": null,
@@ -117,7 +117,7 @@
   "markings": [
     {
       "id": "MT",
-      "imageId": "I1",
+      "containerId": "I1",
       "parentId": null,
       "name": "Título",
       "rect": {
@@ -132,7 +132,7 @@
     },
     {
       "id": "MF",
-      "imageId": "I1",
+      "containerId": "I1",
       "parentId": null,
       "name": "Formulário",
       "rect": {
@@ -147,7 +147,7 @@
     },
     {
       "id": "MN",
-      "imageId": "I1",
+      "containerId": "I1",
       "parentId": "MF",
       "name": "Nome",
       "rect": {
@@ -162,7 +162,7 @@
     },
     {
       "id": "MI",
-      "imageId": "I1",
+      "containerId": "I1",
       "parentId": "MF",
       "name": "Idade",
       "rect": {
@@ -177,7 +177,7 @@
     },
     {
       "id": "ME",
-      "imageId": "I1",
+      "containerId": "I1",
       "parentId": "MF",
       "name": "E-mail",
       "rect": {
@@ -192,7 +192,7 @@
     },
     {
       "id": "MC",
-      "imageId": "I1",
+      "containerId": "I1",
       "parentId": "MF",
       "name": "Cadastrar",
       "rect": {

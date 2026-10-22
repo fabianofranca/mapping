@@ -47,8 +47,8 @@ describe('geometria das marcações no canvas', () => {
   it('cadeia sob o ponto: a mais interna primeiro, depois os ancestrais', () => {
     const p = sampleProject();
     // M3 (Fechadura) fica em 1300..1350 × 1250..1300, dentro de M2 e M1.
-    const ids = (x: number, y: number, imageId = 'I1') =>
-      markingChainAt(p.markings, imageId, { x, y }).map((m) => m.id);
+    const ids = (x: number, y: number, containerId = 'I1') =>
+      markingChainAt(p.markings, containerId, { x, y }).map((m) => m.id);
     expect(ids(1320, 1270)).toEqual(['M3', 'M2', 'M1']);
     expect(ids(1500, 1300)).toEqual(['M2', 'M1']);
     expect(ids(1900, 1900)).toEqual(['M1']);
@@ -60,12 +60,12 @@ describe('geometria das marcações no canvas', () => {
     let p = sampleProject();
     p = createMarking(p, {
       id: 'M5',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 1500, y: 1500, width: 400, height: 400 },
     });
     p = createMarking(p, {
       id: 'M6',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 1400, y: 1600, width: 200, height: 200 },
     });
     expect(marking(p, 'M5').parentId).toBe('M1');

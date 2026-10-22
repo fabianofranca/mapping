@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addBlankImage, validateProject, type Project } from '../../src/model';
+import { addBackgroundContainer, validateProject, type Project } from '../../src/model';
 import { sampleProject } from './fixtures';
 
 function codes(p: Project) {
@@ -14,13 +14,13 @@ describe('validador de invariantes', () => {
   it('ids e arquivos repetidos', () => {
     const p = sampleProject();
     const layer = p.layers[0];
-    const image = p.images[1];
+    const image = p.containers[1];
     if (!layer || !image) throw new Error('fixture');
     expect(codes({ ...p, layers: [...p.layers, layer] })).toContain('duplicate-id:L1');
     expect(
       codes({
         ...p,
-        images: p.images.map((i) =>
+        containers: p.containers.map((i) =>
           i.id === 'I2' ? { ...i, file: 'images/lateral.jpg' } : i,
         ),
       }),
@@ -39,7 +39,7 @@ describe('validador de invariantes', () => {
       layers: [...p.layers, layer],
       markings: p.markings.map((m) =>
         m.id === 'M2'
-          ? { ...m, imageId: 'I9' }
+          ? { ...m, containerId: 'I9' }
           : m.id === 'M4'
             ? { ...m, parentId: 'M9' }
             : m,
@@ -76,7 +76,7 @@ describe('validador de invariantes', () => {
     const p = sampleProject();
     const overlapping = {
       ...p,
-      images: p.images.map((i) =>
+      containers: p.containers.map((i) =>
         i.id === 'I2' ? { ...i, placement: { ...i.placement, x: 500 } } : i,
       ),
     };
@@ -95,7 +95,7 @@ describe('validador de invariantes', () => {
       ...p,
       markings: p.markings.map((m) =>
         m.id === 'M4'
-          ? { ...m, imageId: 'I9' }
+          ? { ...m, containerId: 'I9' }
           : m.id === 'M3'
             ? { ...m, parentId: 'M9' }
             : m,
@@ -182,18 +182,18 @@ describe('validador de invariantes', () => {
   });
 });
 
-describe('validador de invariantes: tela em branco', () => {
-  const blank = () =>
-    addBlankImage(sampleProject(), {
+describe('validador de invariantes: container', () => {
+  const bgContainer = () =>
+    addBackgroundContainer(sampleProject(), {
       id: 'B1',
       width: 390,
       height: 844,
       background: '#FFFFFF',
     });
 
-  it('tela em branco com cor é válida e não conta como arquivo repetido', () => {
-    const p = blank();
-    const two = addBlankImage(p, {
+  it('container com cor é válida e não conta como arquivo repetido', () => {
+    const p = bgContainer();
+    const two = addBackgroundContainer(p, {
       id: 'B2',
       width: 100,
       height: 100,
@@ -203,18 +203,20 @@ describe('validador de invariantes: tela em branco', () => {
     expect(validateProject(two)).toEqual([]);
   });
 
-  it('blank-background: sem arquivo e sem cor, ou com arquivo e com cor', () => {
-    const p = blank();
+  it('container-content: sem arquivo e sem cor, ou com arquivo e com cor', () => {
+    const p = bgContainer();
     const patch = (id: string, change: object): Project => ({
       ...p,
-      images: p.images.map((i) => (i.id === id ? { ...i, ...change } : i)),
+      containers: p.containers.map((i) => (i.id === id ? { ...i, ...change } : i)),
     });
     expect(validateProject(patch('B1', { background: null }))).toEqual([
-      { code: 'blank-background', entity: 'image', id: 'B1' },
+      { code: 'container-content', entity: 'image', id: 'B1' },
     ]);
-    expect(codes(patch('B1', { file: 'images/x.png' }))).toEqual(['blank-background:B1']);
+    expect(codes(patch('B1', { file: 'images/x.png' }))).toEqual([
+      'container-content:B1',
+    ]);
     expect(codes(patch('I2', { background: '#000000' }))).toEqual([
-      'blank-background:I2',
+      'container-content:I2',
     ]);
   });
 });

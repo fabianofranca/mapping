@@ -15,10 +15,10 @@ const i1 = image(p, 'I1');
 
 describe('geometria das imagens no canvas', () => {
   it('encontra a imagem sob o ponto', () => {
-    expect(imageAt(p.images, { x: 10, y: 10 })?.id).toBe('I1');
-    expect(imageAt(p.images, { x: 1100, y: 10 })?.id).toBe('I2');
-    expect(imageAt(p.images, { x: 1025, y: 10 })).toBeNull();
-    expect(imageAt(p.images, { x: -1, y: 10 })).toBeNull();
+    expect(imageAt(p.containers, { x: 10, y: 10 })?.id).toBe('I1');
+    expect(imageAt(p.containers, { x: 1100, y: 10 })?.id).toBe('I2');
+    expect(imageAt(p.containers, { x: 1025, y: 10 })).toBeNull();
+    expect(imageAt(p.containers, { x: -1, y: 10 })).toBeNull();
   });
 
   it('encontra o canto mais próximo dentro do raio', () => {
@@ -54,7 +54,7 @@ describe('geometria das imagens no canvas', () => {
     expect(imagesBounds([])).toBeNull();
     const i2 = image(p, 'I2');
     const r2 = imageCanvasRect(i2, i2.placement);
-    expect(imagesBounds(p.images)).toEqual({
+    expect(imagesBounds(p.containers)).toEqual({
       x: 0,
       y: 0,
       width: r2.x + r2.width,

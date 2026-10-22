@@ -1,5 +1,5 @@
 import {
-  addImage,
+  addContainer,
   addTypedAnnotation,
   applySpecialization,
   createMarking,
@@ -110,15 +110,15 @@ export function libProject(
   annotations: readonly FixtureAnnotation[],
 ): Project {
   let p = applySpecialization(emptyProject(), spec, { newId: idGen('S') });
-  p = addImage(p, { id: 'I1', file: 'images/a.png', width: 1000, height: 1000 });
+  p = addContainer(p, { id: 'I1', file: 'images/a.png', width: 1000, height: 1000 });
   p = createMarking(p, {
     id: 'M1',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 0, y: 0, width: 100, height: 100 },
   });
   p = createMarking(p, {
     id: 'M2',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 200, y: 0, width: 100, height: 100 },
   });
   for (const a of annotations) {

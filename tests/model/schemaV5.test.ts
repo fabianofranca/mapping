@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { deserialize, migrateFrom4To5, serialize } from '../../src/model';
 import { sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 
 const strip = (item: Record<string, unknown>, key: string) =>
   Object.fromEntries(Object.entries(item).filter(([k]) => k !== key));
 
 /** Um mapping.json v4: sem `locked` nas imagens nem nas marcações (nem `platformRepos`). */
 function v4Text(): string {
-  const data = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
+  const data = legacyJson(sampleProject());
   return JSON.stringify({
     ...strip(data, 'platformRepos'),
     schemaVersion: 4,
@@ -22,17 +23,17 @@ describe('migração v4 → v5 (trava)', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(4);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(11);
-    expect(result.project.images.every((i) => i.locked === false)).toBe(true);
+    expect(result.project.schemaVersion).toBe(12);
+    expect(result.project.containers.every((i) => i.locked === false)).toBe(true);
     expect(result.project.markings.every((m) => m.locked === false)).toBe(true);
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('o v4 migrado salva como v10 estável (round-trip)', () => {
+  it('o v4 migrado salva como v12 estável (round-trip)', () => {
     const first = deserialize(v4Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);
@@ -49,7 +50,7 @@ describe('migração v4 → v5 (trava)', () => {
 
   it('serializa locked na ordem fixa, no fim de cada imagem e marcação (antes do source da v8)', () => {
     const data = JSON.parse(serialize(sampleProject()));
-    expect(Object.keys(data.images[0]).slice(-3)).toEqual([
+    expect(Object.keys(data.containers[0]).slice(-3)).toEqual([
       'locked',
       'source',
       'background',

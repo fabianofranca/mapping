@@ -4,7 +4,7 @@ import {
   boundingBox,
   imageCanvasRect,
   type Placement,
-  type ProjectImage,
+  type ProjectContainer,
   type Rect,
 } from '../model';
 import type { Point } from './viewport';
@@ -32,7 +32,10 @@ function opposite(corner: Corner): Corner {
 }
 
 /** Imagem sob o ponto (a última da lista, que é desenhada por cima). */
-export function imageAt(images: readonly ProjectImage[], p: Point): ProjectImage | null {
+export function imageAt(
+  images: readonly ProjectContainer[],
+  p: Point,
+): ProjectContainer | null {
   for (let i = images.length - 1; i >= 0; i--) {
     const image = images[i];
     if (image && pointInRect(p, imageCanvasRect(image, image.placement))) return image;
@@ -60,7 +63,7 @@ export function cornerAt(rect: Rect, p: Point, radius: number): Corner | null {
  * e a escala segue o ponteiro no eixo em que ele mais se afastou.
  */
 export function resizeFromCorner(
-  image: Pick<ProjectImage, 'width' | 'height'>,
+  image: Pick<ProjectContainer, 'width' | 'height'>,
   start: Placement,
   corner: Corner,
   pointer: Point,
@@ -84,6 +87,6 @@ export function resizeFromCorner(
 }
 
 /** Caixa que envolve todas as imagens no canvas, ou `null` se não houver imagens. */
-export function imagesBounds(images: readonly ProjectImage[]): Rect | null {
+export function imagesBounds(images: readonly ProjectContainer[]): Rect | null {
   return boundingBox(images.map((i) => imageCanvasRect(i, i.placement)));
 }

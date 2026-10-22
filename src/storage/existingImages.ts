@@ -1,4 +1,4 @@
-import { addImage, uniqueImageFile, type Project } from '../model';
+import { addContainer, uniqueImageFile, type Project } from '../model';
 import type { ExistingImage } from './folder';
 import { IMAGES_DIR, type ProjectStorage } from './types';
 import { reportError } from '../utils/report';
@@ -42,7 +42,7 @@ export async function importExistingImages(
       const size = await deps.readSize(data, image.name);
       const inImages = isInImages(image.path);
       const file = inImages ? image.path : uniqueImageFile(p, image.name, taken);
-      const next = addImage(p, { id: deps.newId(), file, ...size });
+      const next = addContainer(p, { id: deps.newId(), file, ...size });
       if (!inImages) {
         await storage.writeImage(file, data);
         await storage.removeImage(image.path);

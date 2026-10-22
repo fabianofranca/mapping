@@ -33,7 +33,7 @@ function base(): Project {
   ] as const) {
     p = createMarking(p, {
       id,
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 0, y, width: 100, height: 50 },
     });
   }

@@ -71,7 +71,7 @@ export function EditorScreen() {
   // O estado vazio é do projeto à vista: na visão Proposto da revisão, o "como ficaria"
   // (uma importação nova só tem imagens na prévia; o aviso não pode cobri-las).
   const noImages = useComputed(
-    () => (review.derived.shownProject.value?.images.length ?? 0) === 0,
+    () => (review.derived.shownProject.value?.containers.length ?? 0) === 0,
   );
   const { busy } = notices;
 
@@ -140,9 +140,9 @@ export function EditorScreen() {
                   </Button>
                   <Button
                     disabled={store.locked.value}
-                    onClick={() => dialogs.show({ kind: 'blank' })}
+                    onClick={() => dialogs.show({ kind: 'container' })}
                   >
-                    {t('blank.new')}
+                    {t('container.new')}
                   </Button>
                 </div>
               )}

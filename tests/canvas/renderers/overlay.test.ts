@@ -64,7 +64,7 @@ describe('OverlayRenderer', () => {
     render(
       {
         selection: { kind: 'image', id: 'I2' },
-        preview: { imageId: 'I2', placement, valid: false },
+        preview: { containerId: 'I2', placement, valid: false },
       },
       new Map([...PLACEMENTS, ['I2', placement]]),
     );
@@ -244,10 +244,12 @@ describe('OverlayRenderer', () => {
 
   it('rascunho: tracejado; vermelho enquanto for pequeno demais', () => {
     const { overlay, render } = setup();
-    render({ draft: { imageId: 'I1', rect: { x: 10, y: 10, width: 2, height: 2 } } });
+    render({ draft: { containerId: 'I1', rect: { x: 10, y: 10, width: 2, height: 2 } } });
     expect(overlay.draftRect.visible()).toBe(true);
     expect(overlay.draftRect.stroke()).toBe(TOKENS.invalid);
-    render({ draft: { imageId: 'I1', rect: { x: 10, y: 10, width: 80, height: 60 } } });
+    render({
+      draft: { containerId: 'I1', rect: { x: 10, y: 10, width: 80, height: 60 } },
+    });
     expect(overlay.draftRect.stroke()).toBe(TOKENS.select);
     expect(overlay.draftRect.dash()).toEqual([6, 4]);
     render();
@@ -256,12 +258,12 @@ describe('OverlayRenderer', () => {
 
   it('alvo de soltar: imagem destacada; área vazia marca o container', () => {
     const { container, overlay, render } = setup();
-    render({ dropTarget: { imageId: 'I1' } });
+    render({ dropTarget: { containerId: 'I1' } });
     expect(overlay.dropRect.visible()).toBe(true);
     expect(overlay.dropRect.width()).toBe(1000);
     expect(container.classList.contains('canvas-host--drop')).toBe(false);
 
-    render({ dropTarget: { imageId: null } });
+    render({ dropTarget: { containerId: null } });
     expect(overlay.dropRect.visible()).toBe(false);
     expect(container.classList.contains('canvas-host--drop')).toBe(true);
 

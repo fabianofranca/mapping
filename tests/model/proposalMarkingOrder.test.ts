@@ -25,7 +25,7 @@ function withSiblings(): Project {
   ] as const) {
     p = createMarking(p, {
       id,
-      imageId: 'I2',
+      containerId: 'I2',
       rect: { x, y: 0, width: 100, height: 100 },
     });
   }
@@ -33,7 +33,9 @@ function withSiblings(): Project {
 }
 
 const order = (p: Project, imageId: string) =>
-  p.markings.filter((m) => m.imageId === imageId && m.parentId === null).map((m) => m.id);
+  p.markings
+    .filter((m) => m.containerId === imageId && m.parentId === null)
+    .map((m) => m.id);
 
 describe('proposta: ordem entre marcações irmãs', () => {
   it('reordenar gera position só em quem sai da ordem relativa', () => {
@@ -56,7 +58,7 @@ describe('proposta: ordem entre marcações irmãs', () => {
     const base = withSiblings();
     const created = createMarking(base, {
       id: 'M7',
-      imageId: 'I2',
+      containerId: 'I2',
       rect: { x: 600, y: 0, width: 100, height: 100 },
     });
     expect(propose(base, created).changes.map((c) => c.field)).toEqual([null]);
@@ -71,7 +73,7 @@ describe('proposta: ordem entre marcações irmãs', () => {
     const created = reorderMarking(
       createMarking(base, {
         id: 'M7',
-        imageId: 'I2',
+        containerId: 'I2',
         rect: { x: 600, y: 0, width: 100, height: 100 },
       }),
       'M7',

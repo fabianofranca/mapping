@@ -59,7 +59,7 @@ export function serialize(p: Project): string {
       color: l.color,
       spec: l.spec && { specId: l.spec.specId, layerId: l.spec.layerId },
     })),
-    images: p.images.map((i) => ({
+    containers: p.containers.map((i) => ({
       id: i.id,
       name: i.name,
       file: i.file,
@@ -73,7 +73,7 @@ export function serialize(p: Project): string {
     })),
     markings: p.markings.map((m) => ({
       id: m.id,
-      imageId: m.imageId,
+      containerId: m.containerId,
       parentId: m.parentId,
       name: m.name,
       rect: { x: m.rect.x, y: m.rect.y, width: m.rect.width, height: m.rect.height },

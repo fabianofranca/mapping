@@ -23,7 +23,7 @@ export function normalizeId(id: string): string {
 }
 
 function idsOf(p: Project, kind: ItemKind): readonly string[] {
-  const items = kind === 'm' ? p.markings : kind === 'i' ? p.images : p.annotations;
+  const items = kind === 'm' ? p.markings : kind === 'i' ? p.containers : p.annotations;
   return items.map((item) => item.id);
 }
 
@@ -105,7 +105,7 @@ export function matchShortCode(
 /**
  * Nome da imagem no caminho legível da referência: o nome dado ou, sem nome, o nome do
  * arquivo sem a pasta (`images/cadastro.webp` → `cadastro.webp`). O mesmo na app (que
- * copia) e no MCP (que devolve no `resolve`). Tela em branco sem nome: `null` (quem chama
+ * copia) e no MCP (que devolve no `resolve`). Container sem arquivo sem nome: `null` (quem chama
  * decide o texto, a app pela tradução e o MCP em português).
  */
 export function refImageLabel(image: {

@@ -134,7 +134,7 @@ export const ptBR = {
   'marking.error.generic': 'Não foi possível alterar a marcação.',
 
   'image.name': 'Nome',
-  'image.blankUntitled': 'Tela em branco',
+  'image.containerUntitled': 'Container',
   'image.markingColor': 'Cor das linhas das marcações',
   'image.markingColorTheme': 'Cor do tema',
   'image.markingColorHint':
@@ -147,10 +147,10 @@ export const ptBR = {
     'Não foi possível exibir esta imagem. Você pode trocá-la por outro arquivo.',
   'image.replace': 'Trocar imagem',
   'image.repoint': 'Reapontar imagem',
-  'image.delete': 'Excluir imagem',
-  'image.deleteTitle': 'Excluir imagem?',
+  'image.delete': 'Excluir container',
+  'image.deleteTitle': 'Excluir container?',
   'image.deleteMessage':
-    '"{file}" será removida do projeto, com {markings} marcação(ões) e {annotations} anotação(ões). Dá para desfazer.',
+    '"{file}" será removido do projeto, com {markings} marcação(ões) e {annotations} anotação(ões). Dá para desfazer.',
   'image.aspectTitle': 'Proporção diferente',
   'image.aspectMessage':
     'A imagem atual tem {from} e a nova tem {to}. As marcações serão reescaladas e marcadas para revisão.',
@@ -344,7 +344,7 @@ export const ptBR = {
   'inconsistent.entity.spec': 'Especialização',
   'invariant.duplicate-id': 'id repetido',
   'invariant.duplicate-file': 'arquivo repetido',
-  'invariant.blank-background': 'cor de fundo e arquivo juntos (ou nenhum dos dois)',
+  'invariant.container-content': 'cor de fundo e arquivo juntos (ou nenhum dos dois)',
   'invariant.images-overlap': 'sobrepõe outra imagem',
   'invariant.missing-image': 'imagem inexistente',
   'invariant.missing-parent': 'pai inexistente',
@@ -440,7 +440,7 @@ export const ptBR = {
   'spec.updateFolder': 'Atualizar de pasta…',
   'spec.updateZip': 'Atualizar de zip…',
   'spec.packageHint':
-    'Uma biblioteca (versão 4 ou 5) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
+    'Uma biblioteca (versão 4 a 6) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
   'spec.v4NeedsPackage':
     '"{name}" cita arquivos do pacote (componentes, documentos, exemplos ou fontes) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
   'spec.packageValidating': 'Conferindo o pacote…',
@@ -506,7 +506,7 @@ export const ptBR = {
   'help.search': 'Buscar na ajuda',
   'help.guide.title': 'Guia interativo',
   'help.guide.intro':
-    'Um passeio de 12 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, telas em branco com Material 3 e a revisão de uma proposta. Funciona sem internet e abre numa aba nova.',
+    'Um passeio de 12 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, containers com Material 3 e a revisão de uma proposta. Funciona sem internet e abre numa aba nova.',
   'help.guide.example':
     'Para ver o mesmo projeto na app, use Abrir projeto de exemplo na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).',
   'help.guide.fileProtocol':
@@ -828,28 +828,25 @@ export const ptBR = {
   'library.readOnly': 'O projeto está somente leitura.',
   'library.error.generic': 'Não foi possível adicionar o componente.',
   'library.error.rect-out-of-image': 'O componente não cabe nessa tela.',
-  'library.error.locked': 'A tela ou o container está trancado.',
-  'blank.new': 'Nova tela em branco',
-  'blank.name': 'Nome',
-  'blank.width': 'Largura',
-  'blank.height': 'Altura',
-  'blank.background': 'Cor de fundo',
-  'blank.backgroundHint': 'No formato #RRGGBB.',
-  'blank.preset': 'Tamanho predefinido',
-  'blank.preset.custom': 'Personalizado',
-  'blank.preset.phone': 'Celular',
-  'blank.preset.phoneLarge': 'Celular grande',
-  'blank.preset.tablet': 'Tablet',
-  'blank.preset.desktop': 'Desktop',
-  'blank.create': 'Criar tela',
-  'blank.intro':
-    'Uma tela sem foto: serve para montar telas com os componentes da biblioteca. Largura e altura em pixels.',
-  'blank.error.name': 'Dê um nome à tela.',
-  'blank.error.size': 'Largura e altura são números inteiros de 1 a {max}.',
-  'blank.error.color': 'Use uma cor no formato #RRGGBB.',
-  'blank.error.generic': 'Não foi possível alterar a tela.',
-  'blank.error.locked': 'A tela está trancada.',
-  'blank.error.rect-out-of-image': 'Alguma marcação deixaria de caber na tela.',
+  'library.error.locked': 'O container ou o componente com slot está trancado.',
+  'container.new': 'Novo container',
+  'container.name': 'Nome',
+  'container.width': 'Largura',
+  'container.height': 'Altura',
+  'container.background': 'Cor de fundo',
+  'container.backgroundHint': 'No formato #RRGGBB.',
+  'container.preset': 'Tamanho predefinido',
+  'container.preset.custom': 'Personalizado',
+  'container.preset.selection': 'Tamanho da seleção',
+  'container.create': 'Criar container',
+  'container.intro':
+    'Um container sem arquivo de imagem: serve para montar telas, painéis ou cartões com os componentes da biblioteca. Largura e altura em pixels; as especializações aplicadas oferecem tamanhos prontos.',
+  'container.error.name': 'Dê um nome ao container.',
+  'container.error.size': 'Largura e altura são números inteiros de 1 a {max}.',
+  'container.error.color': 'Use uma cor no formato #RRGGBB.',
+  'container.error.generic': 'Não foi possível alterar o container.',
+  'container.error.locked': 'O container está trancado.',
+  'container.error.rect-out-of-image': 'Alguma marcação deixaria de caber no container.',
   'marking.order': 'Ordem',
   'marking.orderValue': '{index} de {count}',
   'marking.orderHint':
@@ -864,7 +861,7 @@ export const ptBR = {
   'shortcuts.arrange': 'Arrumar o container selecionado',
   'view.componentsOnPhotos': 'Mostrar componentes sobre fotos',
   'view.componentsOnPhotosHint':
-    'Desenha o componente por cima da foto. Nas telas em branco ele sempre aparece.',
+    'Desenha o componente por cima da foto. Nos containers sem arquivo ele sempre aparece.',
   'diagnostics.components': 'Componentes',
   'diagnostics.componentsHint':
     'Fontes que não carregaram, componentes que não puderam ser lidos e avisos do desenho.',

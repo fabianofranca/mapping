@@ -4,7 +4,7 @@ import JSZip from 'jszip';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   addAnnotation,
-  addImage,
+  addContainer,
   proposalFilePath,
   proposalImagePath,
   serialize,
@@ -37,7 +37,7 @@ import { MemoryDirectory } from './memoryFs';
 /** Uma proposta com uma imagem nova e uma anotação nova, como o MCP a deixaria. */
 function sampleProposal(id = 'P1', title = 'Teste'): Proposal {
   const base = sampleProject();
-  let after = addImage(base, {
+  let after = addContainer(base, {
     id: 'I3',
     file: 'images/nova.webp',
     width: 800,

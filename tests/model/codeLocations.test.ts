@@ -473,7 +473,7 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
           }),
         },
       ],
-      annotations: [{ imageId: 'I1', markingId: 'MC', annotationId: 'AB' }],
+      annotations: [{ containerId: 'I1', markingId: 'MC', annotationId: 'AB' }],
     });
     // O Input tem três anotações, na ordem do projeto.
     const [input] = findByCode(codeProject(), { path: 'DSTextField.kt' });
@@ -497,7 +497,7 @@ describe('findByCode (tipos pelo path e pelo symbol do code)', () => {
       type: { specId: 'outra', typeId: 'pagina' },
     });
     expect(findByCode(p, { path: 'Pagina.tsx' })[0]?.annotations).toEqual([
-      { imageId: 'I1', markingId: 'MT', annotationId: 'AP' },
+      { containerId: 'I1', markingId: 'MT', annotationId: 'AP' },
     ]);
   });
 

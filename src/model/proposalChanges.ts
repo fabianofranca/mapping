@@ -77,7 +77,7 @@ function markingPositions(diff: Diff, base: Project, after: Project): void {
     .forEach((m, i) => rank.set(m.id, base.markings.length + i));
   const groups = new Map<string, Marking[]>();
   for (const m of after.markings) {
-    const key = `${m.imageId}|${m.parentId ?? ''}`;
+    const key = `${m.containerId}|${m.parentId ?? ''}`;
     const group = groups.get(key);
     if (group) group.push(m);
     else groups.set(key, [m]);
@@ -89,7 +89,7 @@ function markingPositions(diff: Diff, base: Project, after: Project): void {
       diff.push({
         entity: 'marking',
         entityId: m.id,
-        imageId: m.imageId,
+        imageId: m.containerId,
         markingId: m.id,
         kind: 'update',
         field: 'position',
@@ -313,8 +313,8 @@ export function computeChanges(base: Project, after: Project): Change[] {
 
   // Imagens, marcações e anotações, cada coleção na ordem de depois e, em seguida, as
   // removidas na ordem de antes: aplicar tudo acrescenta as criadas na mesma ordem.
-  const baseImages = byId(base.images);
-  const afterImages = byId(after.images);
+  const baseImages = byId(base.containers);
+  const afterImages = byId(after.containers);
   const baseMarkings = byId(base.markings);
   const afterMarkings = byId(after.markings);
   const baseAnnotations = byId(base.annotations);
@@ -325,7 +325,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
     nextIds: ReadonlyMap<string, T>,
   ): T[] => [...next, ...previous.filter((item) => !nextIds.has(item.id))];
 
-  for (const image of union(after.images, base.images, afterImages)) {
+  for (const image of union(after.containers, base.containers, afterImages)) {
     diff.entity(
       'image',
       image.id,
@@ -341,7 +341,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
     diff.entity(
       'marking',
       m.id,
-      { imageId: m.imageId, markingId: m.id },
+      { imageId: m.containerId, markingId: m.id },
       baseMarkings.get(m.id),
       afterMarkings.get(m.id),
       markingValue,
@@ -354,7 +354,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
     const marking = afterMarkings.get(a.markingId) ?? baseMarkings.get(a.markingId);
     annotationChanges(
       diff,
-      { imageId: marking?.imageId ?? '', markingId: a.markingId },
+      { imageId: marking?.containerId ?? '', markingId: a.markingId },
       baseAnnotations.get(a.id),
       afterAnnotations.get(a.id),
     );

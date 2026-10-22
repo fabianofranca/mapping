@@ -24,7 +24,7 @@
     <style>
       /*__TOKENS_CSS__*/
 
-      /* Guia: roteiro à esquerda, tela anotada no centro, inspetor à direita.
+      /* Guia: roteiro à esquerda, container anotado no centro, inspetor à direita.
        Só tokens da app (cores, espaços, raios, fontes, durações); os desenhos dos
        componentes Material 3 ficam no JS (representam o componente, não a interface). */
       * {
@@ -417,9 +417,9 @@
       <header>
         <h1>Guia do Mapping</h1>
         <p>
-          Um projeto de exemplo completo, desenhado aqui como a app o mostra: telas,
-          marcações, camadas e anotações. Clique nas marcações para ver o que cada uma
-          guarda e siga o roteiro à esquerda.
+          Um projeto de exemplo completo, desenhado aqui como a app o mostra: containers
+          (aqui, telas de um app), marcações, camadas e anotações. Clique nas marcações
+          para ver o que cada uma guarda e siga o roteiro à esquerda.
         </p>
         <div class="open">
           <span
@@ -442,10 +442,10 @@
           </div>
         </aside>
 
-        <main class="panel" aria-label="Tela anotada">
+        <main class="panel" aria-label="Container anotado">
           <div class="tabs" role="tablist" id="tabs"></div>
           <div class="stage">
-            <svg id="svg" role="img" aria-label="Tela com marcações"></svg>
+            <svg id="svg" role="img" aria-label="Container com marcações"></svg>
           </div>
           <div class="layers" id="layers" aria-label="Camadas"></div>
           <div class="hint">
@@ -468,11 +468,11 @@
           </p>
           <div class="diff">
             <div>
-              <b>ATUAL</b>Botão do Cadastro: “Cadastrar”<br />Telas: Cadastro, Login,
+              <b>ATUAL</b>Botão do Cadastro: “Cadastrar”<br />Containers: Cadastro, Login,
               Configurações, Detalhes do pedido
             </div>
             <div>
-              <b>PROPOSTO</b>Botão renomeado: “Botão cadastrar”<br />Nova tela
+              <b>PROPOSTO</b>Botão renomeado: “Botão cadastrar”<br />Novo container
               <i>Perfil</i> 360 × 800 com Top app bar, 2 List items e Button “Sair”
             </div>
           </div>
@@ -535,7 +535,7 @@
       const A = Object.fromEntries(D.annotations.map((a) => [a.id, a]));
       const IM = Object.fromEntries(D.images.map((i) => [i.id, i]));
       const byName = (img, name) =>
-        D.markings.find((m) => IM[m.imageId].name === img && m.name === name);
+        D.markings.find((m) => IM[m.containerId].name === img && m.name === name);
       const state = { img: D.images[0].id, sel: null, hidden: new Set(), step: 0 };
       const $ = (id) => document.getElementById(id);
       const NS = 'http://www.w3.org/2000/svg';
@@ -576,7 +576,7 @@
         return as.length ? L[as[0].layerId].color : null;
       }
 
-      /* Desenho simples dos componentes Material 3 nas telas em branco. As cores são as do
+      /* Desenho simples dos componentes Material 3 nos containers sem foto. As cores são as do
        tema Material 3 (o que o componente desenha), não as da interface do Mapping. */
       const M3 = {
         primary: '#6750A4',
@@ -792,11 +792,11 @@
             }),
           );
           D.markings
-            .filter((m) => m.imageId === img.id)
+            .filter((m) => m.containerId === img.id)
             .forEach((m) => m3(m).forEach((n) => svg.appendChild(n)));
         }
         const ms = D.markings
-          .filter((m) => m.imageId === img.id && visible(m))
+          .filter((m) => m.containerId === img.id && visible(m))
           .sort((a, b) => depth(a) - depth(b));
         ms.forEach((m) => {
           const c = colorOf(m),
@@ -850,7 +850,7 @@
             b.className = 'tab';
             b.setAttribute('role', 'tab');
             b.setAttribute('aria-selected', i.id === state.img);
-            b.textContent = i.name + (i.file ? '' : ' (tela em branco)');
+            b.textContent = i.name + (i.file ? '' : ' (container sem foto)');
             b.onclick = () => {
               state.img = i.id;
               state.sel = null;
@@ -863,7 +863,7 @@
         // camadas
         const used = new Set(
           D.annotations
-            .filter((a) => M[a.markingId].imageId === state.img)
+            .filter((a) => M[a.markingId].containerId === state.img)
             .map((a) => a.layerId),
         );
         $('layers').replaceChildren(
@@ -888,8 +888,8 @@
         );
       }
       function select(id) {
-        if (id && M[id].imageId !== state.img) {
-          state.img = M[id].imageId;
+        if (id && M[id].containerId !== state.img) {
+          state.img = M[id].containerId;
         }
         state.sel = id;
         render();
@@ -931,9 +931,9 @@
       function inspect() {
         const box = $('insp');
         if (!state.sel) {
-          const n = D.markings.filter((m) => m.imageId === state.img).length;
+          const n = D.markings.filter((m) => m.containerId === state.img).length;
           box.innerHTML =
-            '<h2>Detalhes</h2><p class="empty">Clique numa marcação da tela para ver as anotações dela. Esta tela tem ' +
+            '<h2>Detalhes</h2><p class="empty">Clique numa marcação do container para ver as anotações dela. Este container tem ' +
             n +
             ' marcações.</p>';
           return;
@@ -1003,11 +1003,11 @@
       /* Roteiro */
       const S = [
         {
-          t: 'Telas e marcações',
+          t: 'Containers e marcações',
           img: 'Cadastro',
           sel: null,
-          p: 'Um projeto é uma pasta: <code>mapping.json</code>, as imagens e as especializações. Cada tela vira um canvas, e cada contorno é uma <b>marcação</b>. Esta é a tela de Cadastro, uma foto com 6 marcações.',
-          try: 'Passe pela tela e clique em qualquer contorno.',
+          p: 'Um projeto é uma pasta: <code>mapping.json</code>, os containers (cada imagem, ou área sem foto, vira um canvas) e as especializações. Cada contorno é uma <b>marcação</b>. Este é o container Cadastro, a foto de uma tela do app com 6 marcações.',
+          try: 'Passe pelo container e clique em qualquer contorno.',
         },
         {
           t: 'Marcações dentro de marcações',
@@ -1059,28 +1059,28 @@
           try: 'Ache a nota no painel de Cadastrar.',
         },
         {
-          t: 'Uma segunda tela',
+          t: 'Um segundo container',
           img: 'Login',
           sel: ['Login', 'Formulário de login'],
           p: 'O Login repete o padrão com um Model próprio, “Credenciais”, e um endpoint <code>POST /v1/sessoes</code> na camada Endpoints do Modelo de dados.',
           try: 'Veja que “Entrar” e “E-mail” apontam para o mesmo Model.',
         },
         {
-          t: 'Tela em branco com Material 3',
+          t: 'Container sem foto com Material 3',
           img: 'Configurações',
           sel: ['Configurações', 'Filtros'],
-          p: 'Sem foto, a tela é um canvas branco e os componentes <b>Material 3</b> são desenhados na hora. O <b>Row</b> “Filtros” é um container: use <b>Arrumar</b> (<kbd>Alt+Shift+A</kbd>) para distribuir os chips.',
+          p: 'Sem foto, o container é um canvas de cor lisa e os componentes <b>Material 3</b> são desenhados na hora. O <b>Row</b> “Filtros” é um componente com slot: use <b>Arrumar</b> (<kbd>Alt+Shift+A</kbd>) para distribuir os chips.',
           try: 'Selecione um chip e veja que o pai é o Row.',
         },
         {
-          t: 'Container com filho',
+          t: 'Componente com slot e filho',
           img: 'Configurações',
           sel: ['Configurações', 'Gerenciar plano'],
-          p: 'O botão “Gerenciar plano” está dentro do Card “Sua conta”. Cards, Boxes, Rows e Columns são containers e levam os filhos junto.',
+          p: 'O botão “Gerenciar plano” está dentro do Card “Sua conta”. Cards, Boxes, Rows e Columns têm slot e levam os filhos junto.',
           try: 'Clique em “Sua conta” e depois no botão.',
         },
         {
-          t: 'Mais uma tela',
+          t: 'Mais um container',
           img: 'Detalhes do pedido',
           sel: ['Detalhes do pedido', 'Ajuda'],
           p: 'Detalhes do pedido usa Top app bar, Card, List items, Button e FAB. Tudo vem do catálogo do Material 3, aba <b>Paleta</b> (<kbd>Ctrl+Shift+9</kbd>).',

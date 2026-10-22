@@ -19,8 +19,8 @@ import { isMarkingGeometryLocked } from './locks';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
 
-// Arrumar (etapa Biblioteca, B3): recalcula e grava os retângulos das filhas de um container
-// pelo `layout` do slot, e o tamanho do container que abraça o conteúdo (`hug`). Só por ação
+// Arrumar (etapa Biblioteca, B3): recalcula e grava os retângulos das filhas de um componente
+// com slot pelo `layout` do slot, e o tamanho do componente que abraça o conteúdo (`hug`). Só por ação
 // da pessoa: nunca na carga, no MCP nem ao aplicar proposta. Puro; o store faz dela uma
 // entrada de desfazer.
 
@@ -30,10 +30,10 @@ export interface ArrangeResult {
   readonly warnings: readonly string[];
 }
 
-/** Voltas no máximo até os tamanhos estabilizarem (um container esticado pelo pai rearruma as filhas). */
+/** Voltas no máximo até os tamanhos estabilizarem (um componente com slot esticado pelo pai rearruma as filhas). */
 const MAX_PASSES = 4;
 
-/** Um container que arruma: componente com slot `row`/`column` e ao menos uma filha. */
+/** Um componente com slot que arruma: slot `row`/`column` e ao menos uma filha. */
 interface Container {
   readonly id: string;
   readonly component: ComponentFile;
@@ -68,7 +68,7 @@ function containerOf(
   };
 }
 
-/** Dá para arrumar: a marcação é um container `row`/`column` com filhas. */
+/** Dá para arrumar: a marcação é um componente com slot `row`/`column` com filhas. */
 export function canArrange(
   p: Project,
   catalog: ComponentCatalog,
@@ -109,14 +109,14 @@ function clampRect(inner: Rect, outer: Rect, mode: 'push' | 'shrink'): Rect {
 }
 
 /**
- * Arruma o container escolhido e os containers dentro dele (a subárvore). Do mais fundo para
- * o raso, cada container posiciona as filhas na caixa do slot (a ordem é a do array; o
+ * Arruma o componente com slot escolhido e os componentes com slot dentro dele (a subárvore). Do mais fundo para
+ * o raso, cada componente com slot posiciona as filhas na caixa do slot (a ordem é a do array; o
  * tamanho no eixo principal fica (menos o das filhas `hug`, remedidas), `align: stretch` estica o cruzado, `justify` distribui) e,
- * se o componente é `hug` num eixo, ajusta o container ao conteúdo (nunca abaixo do
+ * se o componente é `hug` num eixo, ajusta o componente com slot ao conteúdo (nunca abaixo do
  * `minSize`; a posição fica). Eixo fixo não muda: se o conteúdo não cabe, avisa. Mover uma
  * filha leva os descendentes dela. No fim, toda marcação fica inteira e dentro do pai e da
  * imagem: o que passaria é preso, com aviso. Devolve o mesmo `Project` quando nada muda;
- * falha com `not-arrangeable` (não é container `row`/`column` com filhas) e `locked` (algum
+ * falha com `not-arrangeable` (não é componente com slot `row`/`column` com filhas) e `locked` (algum
  * retângulo que mudaria tem a geometria travada).
  */
 export function arrangeMarking(
@@ -167,7 +167,7 @@ export function arrangeMarking(
     }
   };
 
-  /** O pai estica este container no eixo (o `stretch` do pai vale mais que o `hug`). */
+  /** O pai estica este componente com slot no eixo (o `stretch` do pai vale mais que o `hug`). */
   const stretchedByParent = (id: string, axis: 'width' | 'height'): boolean => {
     const parentId = (index.markings.get(id) as Marking).parentId;
     const parent = parentId === null ? null : containerAt(parentId);
@@ -179,7 +179,7 @@ export function arrangeMarking(
 
   /**
    * Remede as filhas folha cujo componente é `hug` num eixo: o eixo vira o tamanho medido
-   * (inteiro para cima, nunca abaixo do `minSize`). O container filho já se ajustou na própria
+   * (inteiro para cima, nunca abaixo do `minSize`). O componente com slot filho já se ajustou na própria
    * volta (do mais fundo para o raso). O eixo que o `stretch` do pai estica fica.
    */
   const remeasureHugKids = (kids: readonly Marking[]) => {
@@ -294,7 +294,9 @@ export function arrangeMarking(
     const isRoot = id === markingId;
     const outer =
       marking.parentId === null
-        ? imagePixelRect(index.images.get(marking.imageId) ?? { width: 0, height: 0 })
+        ? imagePixelRect(
+            index.containers.get(marking.containerId) ?? { width: 0, height: 0 },
+          )
         : isRoot
           ? (index.markings.get(marking.parentId) as Marking).rect
           : (rects.get(marking.parentId) as Rect);
@@ -304,7 +306,7 @@ export function arrangeMarking(
     translate(id, fixed.x - rect.x, fixed.y - rect.y);
     const where =
       marking.parentId === null
-        ? (index.images.get(marking.imageId)?.name ?? marking.imageId)
+        ? (index.containers.get(marking.containerId)?.name ?? marking.containerId)
         : labelOf(marking.parentId);
     warnings.add(`${labelOf(id)}: não cabe em ${where}`);
   }

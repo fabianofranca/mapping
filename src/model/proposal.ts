@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   annotationSchema,
   entrySchema,
-  imageSchema,
+  containerSchema,
   jsonValue,
   layerSchema,
   markingSchema,
@@ -16,11 +16,13 @@ import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './sp
 import type { JsonValue } from './types';
 
 // Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
-// `formatVersion` 1. Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
+// `formatVersion` 2 (a 1 continua lida). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
 // leitura devolve os erros com o caminho exato (`changes[3].to.rect.width: …`).
 
 export const PROPOSAL_FORMAT = 'mapping-proposal';
-export const PROPOSAL_FORMAT_VERSION = 1;
+export const PROPOSAL_FORMAT_VERSION = 2;
+/** Versões lidas: a 2 acrescenta `add_container` às `operations`; a 1 continua válida. */
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2] as const;
 /** Pasta das propostas, relativa à raiz do projeto. */
 export const PROPOSALS_DIR = 'proposals';
 /** Nome do arquivo da proposta dentro de `proposals/<id>/`. */
@@ -56,7 +58,7 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
 
 /**
  * Campos alterados de uma imagem (`file` é a troca: `{ file, width, height }`). `background` e
- * `size` (`{ width, height }`) só existem na tela em branco (v10).
+ * `size` (`{ width, height }`) só existem no container sem arquivo (v10).
  */
 export const IMAGE_FIELDS = [
   'name',
@@ -73,7 +75,7 @@ export const MARKING_FIELDS = [
   'name',
   'rect',
   'parentId',
-  'imageId',
+  'containerId',
   'locked',
   'source',
   'position',
@@ -151,7 +153,7 @@ export interface ProposalNote {
 
 export interface Proposal {
   readonly format: typeof PROPOSAL_FORMAT;
-  readonly formatVersion: typeof PROPOSAL_FORMAT_VERSION;
+  readonly formatVersion: (typeof PROPOSAL_FORMAT_VERSIONS)[number];
   readonly id: string;
   readonly title: string;
   readonly description: string | null;
@@ -276,7 +278,7 @@ const entitySchemas: Record<ChangeEntity, z.ZodType> = {
   specialization: specializationValue,
   platformRepo: platformRepoSchema,
   layer: layerSchema,
-  image: imageSchema,
+  image: containerSchema,
   marking: markingSchema,
   annotation: annotationSchema,
 };
@@ -296,7 +298,7 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
   name: z.string().nullable(),
   rect: rectSchema,
   parentId: id.nullable(),
-  imageId: id,
+  containerId: id,
   locked: z.boolean(),
   source: sourceSchema.nullable(),
   position: z.number().int().min(0),
@@ -471,9 +473,7 @@ const targetSchema = z
 export const proposalSchema = z
   .object({
     format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
-    formatVersion: z.literal(PROPOSAL_FORMAT_VERSION, {
-      error: `deve ser ${PROPOSAL_FORMAT_VERSION}`,
-    }),
+    formatVersion: z.union([z.literal(1), z.literal(2)], { error: 'deve ser 1 ou 2' }),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),
     description: optionalText,
@@ -556,9 +556,41 @@ function withoutLegacyUrlTemplate(proposal: Proposal): Proposal {
   };
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Proposta escrita antes do schema 12: a marcação apontava para a imagem por `imageId`, e agora
+ * aponta para o container por `containerId`. Na leitura, a criação e a remoção de marcação
+ * (valor inteiro) e a mudança do campo `imageId` passam para o nome novo. O cabeçalho da
+ * mudança (`imageId`, que diz em que container ela aparece na revisão) não muda.
+ */
+function withContainerIdOnMarkings(data: unknown): unknown {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return data;
+  const rename = (value: unknown): unknown => {
+    if (!isPlainRecord(value) || !Object.hasOwn(value, 'imageId')) return value;
+    if (Object.hasOwn(value, 'containerId')) return value;
+    const { imageId, ...rest } = value;
+    return { ...rest, containerId: imageId };
+  };
+  return {
+    ...data,
+    changes: data.changes.map((c: unknown) => {
+      if (!isPlainRecord(c) || c.entity !== 'marking') return c;
+      return {
+        ...c,
+        field: c.field === 'imageId' ? 'containerId' : c.field,
+        from: c.field === null ? rename(c.from) : c.from,
+        to: c.field === null ? rename(c.to) : c.to,
+      };
+    }),
+  };
+}
+
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseProposal(data: unknown): ProposalParseResult {
-  const result = proposalSchema.safeParse(data);
+  const result = proposalSchema.safeParse(withContainerIdOnMarkings(data));
   if (result.success) {
     return { ok: true, proposal: withoutLegacyUrlTemplate(result.data as Proposal) };
   }

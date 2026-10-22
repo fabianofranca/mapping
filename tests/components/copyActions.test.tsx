@@ -107,7 +107,7 @@ describe('Detalhes', () => {
   function renderMarking(harness: Harness, id: string) {
     renderLive(harness, (p) => {
       const m = p.markings.find((x) => x.id === id);
-      const image = p.images.find((i) => i.id === m?.imageId);
+      const image = p.containers.find((i) => i.id === m?.containerId);
       if (!m || !image) return null;
       return (
         <MarkingPanel
@@ -149,7 +149,7 @@ describe('Detalhes', () => {
     const { user, writeText } = setupClipboard();
     const harness = createHarness(sampleProject());
     renderLive(harness, (p) => {
-      const image = p.images[0];
+      const image = p.containers[0];
       return image ? (
         <SelectionPanel
           image={image}

@@ -45,14 +45,14 @@ export function AddImagesButton({
   );
 }
 
-/** Nova tela em branco: ao lado de "Adicionar imagens". */
-export function AddBlankScreenButton({ onAdd }: { readonly onAdd: () => void }) {
+/** Novo container: ao lado de "Adicionar imagens". */
+export function AddContainerButton({ onAdd }: { readonly onAdd: () => void }) {
   const { store } = useEditor();
   return (
     <IconButton
-      icon="blankScreen"
-      label={t('blank.new')}
-      text={t('blank.new')}
+      icon="container"
+      label={t('container.new')}
+      text={t('container.new')}
       disabled={store.locked.value}
       onClick={onAdd}
     />

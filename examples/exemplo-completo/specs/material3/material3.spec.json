@@ -1,10 +1,114 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 4,
+  "formatVersion": 6,
   "id": "material3",
   "name": "Material Design 3 (baseline)",
   "version": 1,
   "description": "Componentes do Material 3, tema claro baseline, escritos no formato de componente do laboratório.",
+  "containers": [
+    {
+      "id": "phone",
+      "name": "Celular",
+      "width": 360,
+      "height": 800
+    },
+    {
+      "id": "phone-large",
+      "name": "Celular grande",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "id": "tablet",
+      "name": "Tablet",
+      "width": 800,
+      "height": 1280
+    },
+    {
+      "id": "desktop",
+      "name": "Desktop",
+      "width": 1440,
+      "height": 900
+    }
+  ],
+  "fonts": [
+    {
+      "family": "Roboto",
+      "file": "fonts/Roboto-Regular.ttf",
+      "weight": 400
+    },
+    {
+      "family": "Roboto",
+      "file": "fonts/Roboto-Medium.ttf",
+      "weight": 500
+    }
+  ],
+  "origins": [
+    {
+      "system": "sdui",
+      "name": "SDUI do backend",
+      "node": {
+        "type": "type",
+        "props": "props",
+        "children": "children"
+      },
+      "screen": {
+        "id": {
+          "path": "screen.id"
+        },
+        "name": {
+          "path": "screen.title",
+          "default": "Tela"
+        },
+        "width": {
+          "path": "screen.device.width"
+        },
+        "height": {
+          "path": "screen.device.height"
+        },
+        "background": {
+          "path": "screen.background",
+          "values": {
+            "surface": "#FEF7FF"
+          },
+          "default": "#FFFFFF"
+        },
+        "roots": [
+          {
+            "path": "content"
+          },
+          {
+            "path": "bottomBar",
+            "anchor": "bottom"
+          },
+          {
+            "path": "floating[*]",
+            "anchor": {
+              "path": "anchor"
+            },
+            "margin": {
+              "path": "margin"
+            }
+          },
+          {
+            "path": "modal",
+            "anchor": "bottom",
+            "scrim": "m3-scrim"
+          }
+        ]
+      },
+      "booleans": {
+        "true": "sim",
+        "false": "não"
+      },
+      "examples": [
+        {
+          "name": "Configurações",
+          "file": "examples/settings.sdui.json"
+        }
+      ]
+    }
+  ],
   "layers": [
     {
       "id": "componentes",
@@ -15,6 +119,13 @@
           "id": "m3-top-app-bar",
           "name": "Top app bar",
           "labelField": "title",
+          "component": "components/m3-top-app-bar.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "TopAppBar"
+            }
+          ],
           "fields": [
             {
               "key": "title",
@@ -32,7 +143,6 @@
               "key": "navigation",
               "label": "Navigation icon",
               "type": "enum",
-              "default": "menu",
               "options": [
                 "home",
                 "search",
@@ -48,6 +158,7 @@
                 "chevron",
                 "settings"
               ],
+              "default": "menu",
               "sources": [
                 {
                   "system": "sdui",
@@ -59,7 +170,6 @@
               "key": "action",
               "label": "Action icon",
               "type": "enum",
-              "default": "more",
               "options": [
                 "home",
                 "search",
@@ -75,6 +185,7 @@
                 "chevron",
                 "settings"
               ],
+              "default": "more",
               "sources": [
                 {
                   "system": "sdui",
@@ -86,11 +197,8 @@
               "key": "align",
               "label": "Title align",
               "type": "enum",
+              "options": ["start", "center"],
               "default": "start",
-              "options": [
-                "start",
-                "center"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -99,13 +207,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "TopAppBar"
-            }
-          ],
-          "component": "components/m3-top-app-bar.json",
           "doc": "docs/m3-top-app-bar.md",
           "examples": [
             {
@@ -132,6 +233,14 @@
           "id": "m3-button",
           "name": "Button",
           "labelField": "label",
+          "component": "components/m3-button.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Button",
+              "ignore": ["contentDescription"]
+            }
+          ],
           "fields": [
             {
               "key": "label",
@@ -149,14 +258,8 @@
               "key": "variant",
               "label": "Variant",
               "type": "enum",
+              "options": ["filled", "tonal", "outlined", "text", "elevated"],
               "default": "filled",
-              "options": [
-                "filled",
-                "tonal",
-                "outlined",
-                "text",
-                "elevated"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -194,11 +297,8 @@
               "key": "disabled",
               "label": "Disabled",
               "type": "enum",
+              "options": ["sim", "não"],
               "default": "não",
-              "options": [
-                "sim",
-                "não"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -207,16 +307,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "Button",
-              "ignore": [
-                "contentDescription"
-              ]
-            }
-          ],
-          "component": "components/m3-button.json",
           "doc": "docs/m3-button.md",
           "examples": [
             {
@@ -249,12 +339,18 @@
           "id": "m3-fab",
           "name": "FAB",
           "labelField": "label",
+          "component": "components/m3-fab.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "FAB"
+            }
+          ],
           "fields": [
             {
               "key": "icon",
               "label": "Icon",
               "type": "enum",
-              "default": "add",
               "options": [
                 "home",
                 "search",
@@ -270,6 +366,7 @@
                 "chevron",
                 "settings"
               ],
+              "default": "add",
               "sources": [
                 {
                   "system": "sdui",
@@ -293,12 +390,8 @@
               "key": "color",
               "label": "Color",
               "type": "enum",
+              "options": ["primary", "secondary", "surface"],
               "default": "primary",
-              "options": [
-                "primary",
-                "secondary",
-                "surface"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -307,13 +400,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "FAB"
-            }
-          ],
-          "component": "components/m3-fab.json",
           "doc": "docs/m3-fab.md",
           "examples": [
             {
@@ -343,6 +429,13 @@
           "id": "m3-text-field",
           "name": "Text field",
           "labelField": "label",
+          "component": "components/m3-text-field.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "TextField"
+            }
+          ],
           "fields": [
             {
               "key": "label",
@@ -396,13 +489,8 @@
               "key": "state",
               "label": "State",
               "type": "enum",
+              "options": ["enabled", "focused", "error", "disabled"],
               "default": "enabled",
-              "options": [
-                "enabled",
-                "focused",
-                "error",
-                "disabled"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -437,13 +525,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "TextField"
-            }
-          ],
-          "component": "components/m3-text-field.json",
           "doc": "docs/m3-text-field.md",
           "examples": [
             {
@@ -479,6 +560,13 @@
           "id": "m3-switch",
           "name": "Switch",
           "labelField": "label",
+          "component": "components/m3-switch.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Switch"
+            }
+          ],
           "fields": [
             {
               "key": "label",
@@ -496,11 +584,8 @@
               "key": "selected",
               "label": "Selected",
               "type": "enum",
+              "options": ["sim", "não"],
               "default": "não",
-              "options": [
-                "sim",
-                "não"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -512,11 +597,8 @@
               "key": "icon",
               "label": "Icon",
               "type": "enum",
+              "options": ["sim", "não"],
               "default": "não",
-              "options": [
-                "sim",
-                "não"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -525,13 +607,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "Switch"
-            }
-          ],
-          "component": "components/m3-switch.json",
           "doc": "docs/m3-switch.md",
           "examples": [
             {
@@ -556,6 +631,13 @@
           "id": "m3-checkbox",
           "name": "Checkbox",
           "labelField": "label",
+          "component": "components/m3-checkbox.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Checkbox"
+            }
+          ],
           "fields": [
             {
               "key": "label",
@@ -573,11 +655,8 @@
               "key": "checked",
               "label": "Checked",
               "type": "enum",
+              "options": ["sim", "não"],
               "default": "não",
-              "options": [
-                "sim",
-                "não"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -589,11 +668,8 @@
               "key": "error",
               "label": "Error",
               "type": "enum",
+              "options": ["sim", "não"],
               "default": "não",
-              "options": [
-                "sim",
-                "não"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -602,13 +678,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "Checkbox"
-            }
-          ],
-          "component": "components/m3-checkbox.json",
           "doc": "docs/m3-checkbox.md",
           "examples": [
             {
@@ -641,6 +710,13 @@
           "id": "m3-chip",
           "name": "Chip",
           "labelField": "label",
+          "component": "components/m3-chip.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Chip"
+            }
+          ],
           "fields": [
             {
               "key": "label",
@@ -658,11 +734,8 @@
               "key": "selected",
               "label": "Selected",
               "type": "enum",
+              "options": ["sim", "não"],
               "default": "não",
-              "options": [
-                "sim",
-                "não"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -697,13 +770,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "Chip"
-            }
-          ],
-          "component": "components/m3-chip.json",
           "doc": "docs/m3-chip.md",
           "examples": [
             {
@@ -726,6 +792,14 @@
           "id": "m3-card",
           "name": "Card",
           "labelField": "headline",
+          "component": "components/m3-card.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Card",
+              "slot": "ações"
+            }
+          ],
           "fields": [
             {
               "key": "headline",
@@ -767,12 +841,8 @@
               "key": "variant",
               "label": "Variant",
               "type": "enum",
+              "options": ["elevated", "filled", "outlined"],
               "default": "elevated",
-              "options": [
-                "elevated",
-                "filled",
-                "outlined"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -781,14 +851,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "Card",
-              "slot": "ações"
-            }
-          ],
-          "component": "components/m3-card.json",
           "doc": "docs/m3-card.md",
           "examples": [
             {
@@ -824,6 +886,13 @@
           "id": "m3-list-item",
           "name": "List item",
           "labelField": "headline",
+          "component": "components/m3-list-item.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "ListItem"
+            }
+          ],
           "fields": [
             {
               "key": "headline",
@@ -914,13 +983,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "ListItem"
-            }
-          ],
-          "component": "components/m3-list-item.json",
           "doc": "docs/m3-list-item.md",
           "examples": [
             {
@@ -938,6 +1000,13 @@
           "id": "m3-navigation-bar",
           "name": "Navigation bar",
           "labelField": null,
+          "component": "components/m3-navigation-bar.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "NavigationBar"
+            }
+          ],
           "fields": [
             {
               "key": "label1",
@@ -955,7 +1024,6 @@
               "key": "icon1",
               "label": "Icon 1",
               "type": "enum",
-              "default": "home",
               "options": [
                 "home",
                 "search",
@@ -971,6 +1039,7 @@
                 "chevron",
                 "settings"
               ],
+              "default": "home",
               "sources": [
                 {
                   "system": "sdui",
@@ -994,7 +1063,6 @@
               "key": "icon2",
               "label": "Icon 2",
               "type": "enum",
-              "default": "search",
               "options": [
                 "home",
                 "search",
@@ -1010,6 +1078,7 @@
                 "chevron",
                 "settings"
               ],
+              "default": "search",
               "sources": [
                 {
                   "system": "sdui",
@@ -1033,7 +1102,6 @@
               "key": "icon3",
               "label": "Icon 3",
               "type": "enum",
-              "default": "person",
               "options": [
                 "home",
                 "search",
@@ -1049,6 +1117,7 @@
                 "chevron",
                 "settings"
               ],
+              "default": "person",
               "sources": [
                 {
                   "system": "sdui",
@@ -1060,12 +1129,8 @@
               "key": "active",
               "label": "Active",
               "type": "enum",
+              "options": ["1", "2", "3"],
               "default": "1",
-              "options": [
-                "1",
-                "2",
-                "3"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -1079,13 +1144,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "NavigationBar"
-            }
-          ],
-          "component": "components/m3-navigation-bar.json",
           "doc": "docs/m3-navigation-bar.md",
           "examples": [
             {
@@ -1130,6 +1188,13 @@
           "id": "m3-bottom-sheet",
           "name": "Bottom sheet",
           "labelField": "title",
+          "component": "components/m3-bottom-sheet.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "BottomSheet"
+            }
+          ],
           "fields": [
             {
               "key": "title",
@@ -1147,11 +1212,8 @@
               "key": "handle",
               "label": "Drag handle",
               "type": "enum",
+              "options": ["sim", "não"],
               "default": "sim",
-              "options": [
-                "sim",
-                "não"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -1274,13 +1336,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "BottomSheet"
-            }
-          ],
-          "component": "components/m3-bottom-sheet.json",
           "doc": "docs/m3-bottom-sheet.md",
           "examples": [
             {
@@ -1315,8 +1370,8 @@
           "id": "m3-scrim",
           "name": "Scrim",
           "labelField": null,
-          "fields": [],
           "component": "components/m3-scrim.json",
+          "fields": [],
           "doc": "docs/m3-scrim.md",
           "examples": [
             {
@@ -1329,12 +1384,18 @@
           "id": "m3-box",
           "name": "Box",
           "labelField": null,
+          "component": "components/m3-box.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Box"
+            }
+          ],
           "fields": [
             {
               "key": "background",
               "label": "Background",
               "type": "enum",
-              "default": "none",
               "options": [
                 "none",
                 "surface",
@@ -1342,6 +1403,7 @@
                 "primary-container",
                 "secondary-container"
               ],
+              "default": "none",
               "sources": [
                 {
                   "system": "sdui",
@@ -1353,14 +1415,8 @@
               "key": "shape",
               "label": "Shape",
               "type": "enum",
+              "options": ["none", "small", "medium", "large", "extra-large"],
               "default": "none",
-              "options": [
-                "none",
-                "small",
-                "medium",
-                "large",
-                "extra-large"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -1369,13 +1425,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "Box"
-            }
-          ],
-          "component": "components/m3-box.json",
           "doc": "docs/m3-box.md",
           "examples": [
             {
@@ -1405,6 +1454,13 @@
           "id": "m3-row",
           "name": "Row",
           "labelField": null,
+          "component": "components/m3-row.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Row"
+            }
+          ],
           "fields": [
             {
               "key": "spacing",
@@ -1434,7 +1490,6 @@
               "key": "background",
               "label": "Background",
               "type": "enum",
-              "default": "none",
               "options": [
                 "none",
                 "surface",
@@ -1442,6 +1497,7 @@
                 "primary-container",
                 "secondary-container"
               ],
+              "default": "none",
               "sources": [
                 {
                   "system": "sdui",
@@ -1453,14 +1509,8 @@
               "key": "shape",
               "label": "Shape",
               "type": "enum",
+              "options": ["none", "small", "medium", "large", "extra-large"],
               "default": "none",
-              "options": [
-                "none",
-                "small",
-                "medium",
-                "large",
-                "extra-large"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -1469,13 +1519,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "Row"
-            }
-          ],
-          "component": "components/m3-row.json",
           "doc": "docs/m3-row.md",
           "examples": [
             {
@@ -1511,6 +1554,13 @@
           "id": "m3-column",
           "name": "Column",
           "labelField": null,
+          "component": "components/m3-column.json",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Column"
+            }
+          ],
           "fields": [
             {
               "key": "spacing",
@@ -1540,7 +1590,6 @@
               "key": "background",
               "label": "Background",
               "type": "enum",
-              "default": "none",
               "options": [
                 "none",
                 "surface",
@@ -1548,6 +1597,7 @@
                 "primary-container",
                 "secondary-container"
               ],
+              "default": "none",
               "sources": [
                 {
                   "system": "sdui",
@@ -1559,14 +1609,8 @@
               "key": "shape",
               "label": "Shape",
               "type": "enum",
+              "options": ["none", "small", "medium", "large", "extra-large"],
               "default": "none",
-              "options": [
-                "none",
-                "small",
-                "medium",
-                "large",
-                "extra-large"
-              ],
               "sources": [
                 {
                   "system": "sdui",
@@ -1575,13 +1619,6 @@
               ]
             }
           ],
-          "sources": [
-            {
-              "system": "sdui",
-              "name": "Column"
-            }
-          ],
-          "component": "components/m3-column.json",
           "doc": "docs/m3-column.md",
           "examples": [
             {
@@ -1612,84 +1649,6 @@
               }
             }
           ]
-        }
-      ]
-    }
-  ],
-  "fonts": [
-    {
-      "family": "Roboto",
-      "file": "fonts/Roboto-Regular.ttf",
-      "weight": 400
-    },
-    {
-      "family": "Roboto",
-      "file": "fonts/Roboto-Medium.ttf",
-      "weight": 500
-    }
-  ],
-  "origins": [
-    {
-      "system": "sdui",
-      "name": "SDUI do backend",
-      "node": {
-        "type": "type",
-        "props": "props",
-        "children": "children"
-      },
-      "screen": {
-        "id": {
-          "path": "screen.id"
-        },
-        "name": {
-          "path": "screen.title",
-          "default": "Tela"
-        },
-        "width": {
-          "path": "screen.device.width"
-        },
-        "height": {
-          "path": "screen.device.height"
-        },
-        "background": {
-          "path": "screen.background",
-          "values": {
-            "surface": "#FEF7FF"
-          },
-          "default": "#FFFFFF"
-        },
-        "roots": [
-          {
-            "path": "content"
-          },
-          {
-            "path": "bottomBar",
-            "anchor": "bottom"
-          },
-          {
-            "path": "floating[*]",
-            "anchor": {
-              "path": "anchor"
-            },
-            "margin": {
-              "path": "margin"
-            }
-          },
-          {
-            "path": "modal",
-            "anchor": "bottom",
-            "scrim": "m3-scrim"
-          }
-        ]
-      },
-      "booleans": {
-        "true": "sim",
-        "false": "não"
-      },
-      "examples": [
-        {
-          "name": "Configurações",
-          "file": "examples/settings.sdui.json"
         }
       ]
     }

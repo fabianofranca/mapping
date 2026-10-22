@@ -117,11 +117,11 @@ export function useEditorShortcuts(
       const index = projectIndex(project);
       let next: Selection = null;
       if (current.kind === 'marking') {
-        const { parentId, imageId, id } = current.marking;
+        const { parentId, containerId: containerId, id } = current.marking;
         if (up) {
           next =
             parentId === null
-              ? { kind: 'image', id: imageId }
+              ? { kind: 'image', id: containerId }
               : { kind: 'marking', id: parentId };
         } else {
           const child = index.children.get(id)?.[0];
@@ -130,7 +130,7 @@ export function useEditorShortcuts(
       } else if (!up) {
         const first = index.children
           .get(null)
-          ?.find((m) => m.imageId === current.image.id);
+          ?.find((m) => m.containerId === current.image.id);
         next = first ? { kind: 'marking', id: first.id } : null;
       }
       if (!next) return;
@@ -146,7 +146,7 @@ export function useEditorShortcuts(
       if (!canCopyItems(editor)) return null;
       if (shortcut.kind === 'copy-crop') {
         const target = copyShortcutTarget(editor);
-        // Tela em branco não tem recorte: o atalho não assume a tecla.
+        // Container sem arquivo não tem recorte: o atalho não assume a tecla.
         return target?.kind === 'm' && canCopyCrop(shown.peek(), target.id)
           ? target
           : null;

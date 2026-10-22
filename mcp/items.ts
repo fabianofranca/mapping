@@ -20,13 +20,28 @@ import {
 } from './projects';
 import type { Roots } from './paths';
 
-/** Nome da tela em branco sem nome (o MCP não usa `t()`). */
-export const BLANK_IMAGE_LABEL = 'Tela em branco';
+/** Nome do container sem nome (o MCP não usa `t()`). */
+export const CONTAINER_LABEL = 'Container';
 
+/** Nomes dos tipos de item. A letra `i` das referências é o container (não mudou por compatibilidade). */
 export const KIND_NAMES: Record<ItemKind, string> = {
   m: 'marcação',
-  i: 'imagem',
+  i: 'container',
   a: 'anotação',
+};
+
+/** O tipo com artigo indefinido (`uma marcação`, `um container`), para as mensagens. */
+export const KIND_WITH_ARTICLE: Record<ItemKind, string> = {
+  m: 'uma marcação',
+  i: 'um container',
+  a: 'uma anotação',
+};
+
+/** `marcação não encontrada`, `container não encontrado`: a concordância muda com o tipo. */
+export const KIND_NOT_FOUND: Record<ItemKind, string> = {
+  m: 'marcação não encontrada',
+  i: 'container não encontrado',
+  a: 'anotação não encontrada',
 };
 
 const PATH_SEPARATOR = ' › ';
@@ -43,10 +58,10 @@ export class Refs {
     return this.loaded.location.name;
   }
 
-  imageLabel(imageId: string): string {
-    const image = projectIndex(this.project).images.get(imageId);
-    if (!image) return imageId;
-    return refImageLabel(image) ?? BLANK_IMAGE_LABEL;
+  imageLabel(containerId: string): string {
+    const image = projectIndex(this.project).containers.get(containerId);
+    if (!image) return containerId;
+    return refImageLabel(image) ?? CONTAINER_LABEL;
   }
 
   /** Nome da marcação; sem nome, "Marcação <código>" (único no projeto). */
@@ -56,13 +71,13 @@ export class Refs {
     return marking.name ?? `Marcação ${shortCode(this.project, 'm', markingId)}`;
   }
 
-  /** `Imagem › Pai › Marcação`: o mesmo texto entre parênteses das referências copiadas. */
+  /** `Container › Pai › Marcação`: o mesmo texto entre parênteses das referências copiadas. */
   markingPath(markingId: string): string[] {
     const marking = projectIndex(this.project).markings.get(markingId);
     if (!marking) return [markingId];
     const chain = [...ancestorsOf(this.project, markingId).reverse(), marking];
     return [
-      this.imageLabel(marking.imageId),
+      this.imageLabel(marking.containerId),
       ...chain.map((m) => this.markingName(m.id)),
     ];
   }
@@ -132,7 +147,7 @@ export async function resolveItem(
   if (expected && parsed.kind && parsed.kind !== expected) {
     throw new ToolError(
       'wrong-kind',
-      `a referência é de uma ${KIND_NAMES[parsed.kind]}, não de uma ${KIND_NAMES[expected]}`,
+      `a referência é de ${KIND_WITH_ARTICLE[parsed.kind]}, não de ${KIND_WITH_ARTICLE[expected]}`,
       { kind: parsed.kind },
     );
   }

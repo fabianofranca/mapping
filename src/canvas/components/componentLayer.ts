@@ -9,7 +9,7 @@ import { type RenderPalette, renderScene } from './renderScene';
 /** O que o renderer desenha de cada marcação (o `ComponentDrawing` do modelo tem esta forma). */
 export interface LayerDrawing {
   readonly markingId: string;
-  readonly imageId: string;
+  readonly containerId: string;
   /** Cena instanciada no retângulo da marcação, em pixels da imagem. */
   readonly root: FrameNode;
 }
@@ -62,10 +62,10 @@ export class ComponentLayerRenderer {
     // Ordem de desenho por imagem, só do que aparece.
     const wanted = new Map<string, LayerDrawing[]>();
     for (const drawing of drawings.values()) {
-      if (!placements.has(drawing.imageId) || !visible(drawing)) continue;
-      const list = wanted.get(drawing.imageId);
+      if (!placements.has(drawing.containerId) || !visible(drawing)) continue;
+      const list = wanted.get(drawing.containerId);
       if (list) list.push(drawing);
-      else wanted.set(drawing.imageId, [drawing]);
+      else wanted.set(drawing.containerId, [drawing]);
     }
 
     // Some o que não está mais na lista (ou trocou de imagem).
@@ -77,17 +77,17 @@ export class ComponentLayerRenderer {
       this.mounted.delete(markingId);
       changed = true;
     }
-    for (const [imageId, group] of this.imageGroups) {
-      if (wanted.has(imageId)) continue;
+    for (const [containerId, group] of this.imageGroups) {
+      if (wanted.has(containerId)) continue;
       group.destroy();
-      this.imageGroups.delete(imageId);
+      this.imageGroups.delete(containerId);
       changed = true;
     }
 
-    for (const [imageId, list] of wanted) {
-      const placement = placements.get(imageId);
+    for (const [containerId, list] of wanted) {
+      const placement = placements.get(containerId);
       if (!placement) continue;
-      const { group, created } = this.groupOf(imageId);
+      const { group, created } = this.groupOf(containerId);
       if (created) changed = true;
       if (placeGroup(group, placement)) changed = true;
       for (const drawing of list) {
@@ -117,13 +117,13 @@ export class ComponentLayerRenderer {
     this.mounted.clear();
   }
 
-  private groupOf(imageId: string): { group: Konva.Group; created: boolean } {
-    const existing = this.imageGroups.get(imageId);
+  private groupOf(containerId: string): { group: Konva.Group; created: boolean } {
+    const existing = this.imageGroups.get(containerId);
     if (existing) return { group: existing, created: false };
     const group = new Konva.Group({ listening: false, name: 'component-layer-image' });
-    group.setAttr('imageId', imageId);
+    group.setAttr('containerId', containerId);
     this.parent.add(group);
-    this.imageGroups.set(imageId, group);
+    this.imageGroups.set(containerId, group);
     return { group, created: true };
   }
 

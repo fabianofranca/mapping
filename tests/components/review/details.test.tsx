@@ -501,7 +501,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     const h = await openReviewHarness({ proposals: [proposal] });
     const project = h.session.store.committed.value as Project;
     const marking = project.markings.find((m) => m.id === 'M1');
-    const image = project.images.find((i) => i.id === 'I1');
+    const image = project.containers.find((i) => i.id === 'I1');
     if (!marking || !image) throw new Error('fixture');
     renderInEditor(
       h,
