@@ -7,6 +7,14 @@ import {
   addLayer,
   addTableRow,
   addTypedAnnotation,
+  arrowDeletionImpact,
+  createArrow,
+  placeFloatingNear,
+  removeArrow,
+  setArrowLocked,
+  setArrowName,
+  setArrowStyle,
+  type FloatingNearTarget,
   annotationDeletionImpact,
   annotationShortLabel,
   applySpecialization,
@@ -168,6 +176,8 @@ export interface BatchResult {
     readonly index: number;
     readonly op: string;
     readonly message: string;
+    /** Código do aviso no relatório; ausente = `deprecated-op`. */
+    readonly code?: string;
   }[];
   /** Regras entre coleções violadas pelo resultado (não deveria acontecer). */
   readonly invariantIssues: readonly string[];
@@ -196,6 +206,8 @@ interface LoadedSpec {
 
 interface Step {
   readonly project: Project;
+  /** Avisos da operação (argumento ignorado…): vão para `warnings` da resposta. */
+  readonly notes?: readonly string[];
   /** Pacote da biblioteca levado pela operação: pasta definitiva e arquivos dela. */
   readonly packageFiles?: readonly [string, Uint8Array][];
   readonly warnings?: readonly LibraryIssue[];
@@ -282,7 +294,12 @@ class Batch {
   private readonly imageFiles = new Map<string, Uint8Array>();
   private readonly packageFiles = new Map<string, Uint8Array>();
   private readonly libraryWarnings: LibraryWarning[] = [];
-  private readonly deprecations: { index: number; op: string; message: string }[] = [];
+  private readonly deprecations: {
+    index: number;
+    op: string;
+    message: string;
+    code?: string;
+  }[] = [];
   private readonly errors: OperationError[] = [];
   private readonly steps: { index: number; description: string }[] = [];
   private readonly created: CreatedItem[] = [];
@@ -349,6 +366,14 @@ class Batch {
             op: op.op,
             message:
               'o argumento `inherit` saiu do formato (v13) e foi ignorado: a anotação vale só para a própria marcação',
+          });
+        }
+        for (const note of step.notes ?? []) {
+          this.deprecations.push({
+            index,
+            op: op.op,
+            message: note,
+            code: 'ignored-argument',
           });
         }
         for (const [file, data] of step.imageFiles ?? []) this.imageFiles.set(file, data);
@@ -1094,6 +1119,24 @@ class Batch {
           })`,
         };
       }
+      case 'create_arrow':
+        return this.createArrowOp(op);
+      case 'update_arrow':
+        return this.updateArrowOp(op);
+      case 'delete_arrow': {
+        const id = this.item(op.arrow, 'm');
+        this.requireArrow(id);
+        const label = this.markingLabel(p, id);
+        const impact = arrowDeletionImpact(p, id);
+        return {
+          project: removeArrow(p, id),
+          description: `Excluir a seta "${label}" (${impact.annotations} anotação(ões)${
+            impact.brokenRefs > 0
+              ? `, ${impact.brokenRefs} referência(s) quebrada(s)`
+              : ''
+          })`,
+        };
+      }
       case 'create_annotation':
         return this.createAnnotation(op);
       case 'update_annotation':
@@ -1313,6 +1356,109 @@ class Batch {
     };
   }
 
+  /** O id é de uma seta (as setas dividem o espaço de ids das marcações). */
+  private requireArrow(id: string): void {
+    if (!projectIndex(this.p).arrows.has(id)) {
+      throw new ToolError('wrong-kind', 'a referência não é de uma seta', {
+        hint: 'use o id ou a referência de uma seta (`arrows` de get_marking)',
+      });
+    }
+  }
+
+  private noPoints(op: { readonly points?: unknown }): void {
+    if (op.points !== undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`points` não é aceito: a rota da seta é da pessoa (o servidor só informa as pontas e o estilo)',
+      );
+    }
+  }
+
+  private createArrowOp(op: Extract<Operation, { op: 'create_arrow' }>): Step {
+    this.noPoints(op);
+    const from = this.item(op.from, 'm');
+    const to = this.item(op.to, 'm');
+    const id = crypto.randomUUID();
+    const project = createArrow(this.p, {
+      id,
+      from,
+      to,
+      ...(op.style !== undefined ? { style: op.style } : {}),
+      ...(op.name !== undefined ? { name: op.name } : {}),
+    });
+    return {
+      project,
+      description: `Criar a seta "${this.markingLabel(project, from)}" → "${this.markingLabel(project, to)}" (${projectIndex(project).arrows.get(id)!.style})`,
+      created: [{ kind: 'm', id }],
+    };
+  }
+
+  private updateArrowOp(op: Extract<Operation, { op: 'update_arrow' }>): Step {
+    this.noPoints(op);
+    const id = this.item(op.arrow, 'm');
+    this.requireArrow(id);
+    let project = this.p;
+    const label = this.markingLabel(project, id);
+    const changes: string[] = [];
+    if (op.locked === false) {
+      project = setArrowLocked(project, id, false);
+      changes.push('destrancar');
+    }
+    if (op.name !== undefined) {
+      project = setArrowName(project, id, op.name);
+      changes.push(`nome ${quoted(projectIndex(project).arrows.get(id)!.name)}`);
+    }
+    if (op.style !== undefined) {
+      project = setArrowStyle(project, id, op.style);
+      changes.push(`estilo ${op.style}`);
+    }
+    if (op.locked === true) {
+      project = setArrowLocked(project, id, true);
+      changes.push('trancar');
+    }
+    // A proposta só leva a criação e a remoção da seta: nome, estilo e trava de uma seta que já
+    // existe no projeto são da pessoa e não viram mudança.
+    const existing = this.loaded.project.arrows.some((a) => a.id === id);
+    return {
+      project,
+      description: `Alterar a seta "${label}": ${changes.join(', ') || 'nada'}`,
+      ...(existing && changes.length > 0
+        ? {
+            notes: [
+              'a proposta só leva a criação e a remoção de setas: a mudança de nome, estilo ou trava de uma seta que já existe não entra na proposta (vale na prévia deste lote e numa seta criada nele)',
+            ],
+          }
+        : {}),
+    };
+  }
+
+  /**
+   * Alvo do `near`: um container ou uma marcação (nunca uma seta), por apelido, referência ou id.
+   */
+  private nearTarget(text: string): FloatingNearTarget {
+    const wanted = text.trim();
+    const index = projectIndex(this.p);
+    if (wanted.startsWith('$')) {
+      const target = this.aliases.get(wanted);
+      if (target && 'id' in target && target.kind === 'i') {
+        return { kind: 'container', id: target.id };
+      }
+    } else {
+      const parsed = parseRef(wanted);
+      if (parsed?.kind === 'i') return { kind: 'container', id: this.item(wanted, 'i') };
+      if (parsed?.kind === null || parsed === null) {
+        if (index.containers.has(wanted)) return { kind: 'container', id: wanted };
+      }
+    }
+    const id = this.item(wanted, 'm');
+    if (index.arrows.has(id)) {
+      throw new ToolError('invalid-arguments', '`near` não aceita uma seta', {
+        hint: 'informe um container ou uma marcação',
+      });
+    }
+    return { kind: 'marking', id };
+  }
+
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
     const p = this.p;
     const catalog = this.loaded.catalog;
@@ -1347,6 +1493,28 @@ class Batch {
       );
     }
     const minSize = component?.component.minSize ?? null;
+    // `near` (ME4): só um tipo flutuante; o lugar sai de `placeFloatingNear` e o `rect`, se vier,
+    // dá só o tamanho. Nos outros casos o argumento é ignorado, com aviso.
+    const notes: string[] = [];
+    let nearRect: { x: number; y: number; width: number; height: number } | null = null;
+    if (op.near !== undefined) {
+      if (component?.floating === true && containerId === null) {
+        const target = this.nearTarget(op.near);
+        const size =
+          op.rect ??
+          componentPlacement(
+            p,
+            catalog,
+            { containerId: null, parentId: null, ...typeRef! },
+            approximateMeasurer,
+          );
+        nearRect = placeFloatingNear(p, target, size);
+      } else {
+        notes.push(
+          '`near` só vale para um tipo de anotação flutuante, sem `container`: foi ignorado',
+        );
+      }
+    }
     const rowAliases: [string, AliasTarget][] = [];
     let project: Project;
     let annotationId: string | null = null;
@@ -1356,6 +1524,7 @@ class Batch {
       annotationId = newAnnotationId;
       // O pai sai da geometria (o modelo assenta ao criar): sem `rect`, no centro do container.
       const rect =
+        nearRect ??
         op.rect ??
         componentPlacement(
           p,
@@ -1419,6 +1588,7 @@ class Batch {
     const { rect } = projectIndex(project).markings.get(markingId)!;
     return {
       project,
+      ...(notes.length > 0 ? { notes } : {}),
       description: `Criar a marcação "${this.markingLabel(project, markingId)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
         op.rect === undefined ? ', tamanho inicial do componente' : ''
       }${op.source ? `, ${sourceLabel(toSource(op.source))}` : ''})${
@@ -1599,6 +1769,7 @@ export function changeCounts(before: Project, after: Project): Record<string, un
     layers: count(before.layers, after.layers),
     containers: count(before.containers, after.containers),
     markings: count(before.markings, after.markings),
+    arrows: count(before.arrows, after.arrows),
     annotations: count(before.annotations, after.annotations),
     platformRepos: count(repos(before), repos(after)),
   };

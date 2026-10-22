@@ -69,6 +69,18 @@ export function MarkingPanel({
     return result.ok;
   };
 
+  // Container destacado (ME4): cria o container sem arquivo e seleciona o novo.
+  const detach = (markingId: string) => {
+    const result = actions.detachMarking(markingId);
+    if (!result.ok) {
+      setError(markingErrorMessage(result.error));
+      return;
+    }
+    setError(null);
+    ui.selection.value = { kind: 'image', id: result.value };
+    editor.canvas.current?.revealSelection();
+  };
+
   const commitRect = (key: keyof Rect, text: string): boolean => {
     const value = Number(text.trim());
     if (text.trim() === '' || !Number.isInteger(value)) {
@@ -324,6 +336,13 @@ export function MarkingPanel({
             onClick={() => arrangeMarking(editor, marking.id)}
           />
         )}
+        <Button
+          disabled={readOnly}
+          title={t('marking.detachHint')}
+          onClick={() => detach(marking.id)}
+        >
+          {t('marking.detach')}
+        </Button>
         <Button
           variant="danger"
           disabled={readOnly || !deletable}

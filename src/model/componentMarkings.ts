@@ -17,7 +17,7 @@ import {
   bottom,
 } from './geometry';
 import { childrenOf } from './hierarchy';
-import { createMarking } from './markings';
+import { createMarking, placeFloatingNear, type FloatingNearTarget } from './markings';
 import { findById } from './project';
 import { projectIndex } from './projectIndex';
 import type { SpecAnnotationType } from './spec';
@@ -91,6 +91,11 @@ export interface NewComponentArgs {
   readonly center?: { readonly x: number; readonly y: number };
   /** Retângulo explícito (MCP), no espaço da instância; ausente = `componentPlacement`. */
   readonly rect?: Rect;
+  /**
+   * Só tipo flutuante: posiciona a instância num lugar livre da margem do alvo (container ou
+   * marcação; `placeFloatingNear`) com o tamanho do componente. `rect` explícito vence.
+   */
+  readonly near?: FloatingNearTarget;
   /** Valores iniciais; ausente = `preview` do componente sobre os `default` dos campos. */
   readonly values?: TypedValues;
   readonly name?: string | null;
@@ -259,11 +264,20 @@ export function addComponentMarking(
     projectLayerFor(p, args.specId, layerId) ?? fail('type-not-in-layer', args.typeId);
   // Tipo flutuante (decisão 10): nasce marcação flutuante no canvas, fora do pertencimento.
   const floating = type.floating === true;
+  const defaultSize = (): Rect =>
+    componentPlacement(
+      p,
+      catalog,
+      { containerId: null, parentId: null, specId: args.specId, typeId: args.typeId },
+      measure,
+    );
   if (floating && (args.containerId !== null || args.parentId !== null)) {
     fail('invalid-space', args.typeId);
   }
+  const near = floating && args.near && !args.rect ? args.near : null;
   const rect =
     args.rect ??
+    (near ? placeFloatingNear(p, near, defaultSize()) : null) ??
     componentPlacement(
       p,
       catalog,
