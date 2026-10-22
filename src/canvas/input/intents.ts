@@ -187,11 +187,7 @@ export function tapSelection(
   if (!project) return null;
   const chain = hitChain(project, visibility, c);
   const keyOf = (pick: HitItem) => `${pick.kind}:${pick.id}`;
-  const next = nextInChain(
-    chain.map(keyOf),
-    selection ? keyOf(selection) : null,
-    repeat,
-  );
+  const next = nextInChain(chain.map(keyOf), selection ? keyOf(selection) : null, repeat);
   return chain.find((pick) => keyOf(pick) === next) ?? null;
 }
 

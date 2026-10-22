@@ -74,6 +74,11 @@ export class OverlayRenderer {
     layer.add(this.nameTag, this.selectionLock.group, this.hoverLockBadge.group);
   }
 
+  /** Os nós dos destaques de absorção (reaproveitados; os que não servem ficam invisíveis). */
+  absorbHighlights(): readonly KonvaRect[] {
+    return this.absorbRects;
+  }
+
   /** Há algo ancorado na parte visível da tela (a etiqueta do nome, o cadeado): pan precisa redesenhar. */
   get followsView(): boolean {
     return (
@@ -148,6 +153,7 @@ export class OverlayRenderer {
     while (this.absorbRects.length < absorb.length) {
       const rect = new KonvaRect({ visible: false, listening: false });
       this.layer.add(rect);
+      rect.moveToBottom(); // Abaixo do rascunho, da seleção e das alças.
       this.absorbRects.push(rect);
     }
     this.absorbRects.forEach((node, i) => {

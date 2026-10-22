@@ -319,7 +319,10 @@ export function createEditorDerived(
   const floatingMarkings = computed((): ReadonlySet<string> => {
     const next = new Set<string>();
     for (const m of project.value?.markings ?? []) if (m.floating) next.add(m.id);
-    if (next.size === lastFloating.size && [...next].every((id) => lastFloating.has(id))) {
+    if (
+      next.size === lastFloating.size &&
+      [...next].every((id) => lastFloating.has(id))
+    ) {
       return lastFloating;
     }
     lastFloating = next.size === 0 ? NO_DRAWN : next;

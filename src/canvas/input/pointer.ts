@@ -34,7 +34,12 @@ import {
 } from '../markingGeometry';
 import { wheelZoomFactor, type Point } from '../viewport';
 import type { ViewportController } from '../viewportController';
-import { isStoreGesture, startGesture, type Gesture, type StoreGesture } from './gestures';
+import {
+  isStoreGesture,
+  startGesture,
+  type Gesture,
+  type StoreGesture,
+} from './gestures';
 import {
   cursorFor,
   dragModeOf,
@@ -316,9 +321,10 @@ export class PointerInput {
    * Para onde a marcação arrastada iria se fosse solta agora: o container que a contém ou a
    * recebe pelo encaixe (`snapTarget`), com o deslocamento extra. A flutuante nunca encaixa.
    */
-  private moveSnap(
-    g: Extract<Gesture, { kind: 'move-marking' }>,
-  ): { readonly snap: SnapTarget | null; readonly origin: string | null } {
+  private moveSnap(g: Extract<Gesture, { kind: 'move-marking' }>): {
+    readonly snap: SnapTarget | null;
+    readonly origin: string | null;
+  } {
     const project = this.o.store.project.peek();
     const marking = this.markingNow(g.markingId);
     if (!project || !marking) return { snap: null, origin: null };
@@ -435,15 +441,29 @@ export class PointerInput {
       case 'move-marking': {
         // Encaixe: quase inteira num container, a marcação é levada para dentro dele.
         const { snap } = this.moveSnap(g);
-        actions.finishMarkingMove(g.markingId, g.dx + (snap?.dx ?? 0), g.dy + (snap?.dy ?? 0));
+        actions.finishMarkingMove(
+          g.markingId,
+          g.dx + (snap?.dx ?? 0),
+          g.dy + (snap?.dy ?? 0),
+        );
         return;
       }
       case 'resize-marking': {
         // Absorção: o retângulo cresce até envolver o que cruza dentro da tolerância.
         const marking = this.markingNow(g.markingId);
         if (!marking) return;
+        // Terminou onde começou (a alça não chegou a mudar nada): não é um redimensionamento.
+        if (sameRect(marking.rect, g.startRect)) {
+          actions.finishMarkingRect(g.markingId, g.startRect);
+          return;
+        }
         const tolerance = spaceTolerance(this.o.viewport.scale, g.placement.scale);
-        const { rect } = absorbInto(marking.rect, g.candidates, tolerance, g.limits.outer);
+        const { rect } = absorbInto(
+          marking.rect,
+          g.candidates,
+          tolerance,
+          g.limits.outer,
+        );
         actions.finishMarkingRect(g.markingId, rect);
         return;
       }
@@ -455,7 +475,10 @@ export class PointerInput {
     const drawn = draft.peek();
     this.clearTransient();
     if (cancelled || !drawn || !isDrawableRect(drawn.rect)) return;
-    const tolerance = spaceTolerance(this.o.viewport.scale, g.image?.placement.scale ?? 1);
+    const tolerance = spaceTolerance(
+      this.o.viewport.scale,
+      g.image?.placement.scale ?? 1,
+    );
     const { rect } = absorbInto(
       drawn.rect,
       g.candidates,

@@ -123,7 +123,9 @@ export function startGesture(
         ? null
         : (index.containers.get(intent.containerId) ?? null);
     if (intent.containerId !== null && !image) return null;
-    const startPixel = image ? canvasToImagePixel(image.placement, startCanvas) : startCanvas;
+    const startPixel = image
+      ? canvasToImagePixel(image.placement, startCanvas)
+      : startCanvas;
     return {
       gesture: {
         kind: 'draw',
@@ -187,12 +189,18 @@ export function startGesture(
           placement: space.placement,
           startRect: marking.rect,
           limits: { outer: space.bounds },
-          // Absorve o que cruza o retângulo, menos ela mesma e os ancestrais (que a contêm).
-          candidates: absorbCandidates(
-            project,
-            marking.containerId,
-            new Set([marking.id, ...ancestorsOf(project, marking.id).map((a) => a.id)]),
-          ),
+          // Absorve o que cruza o retângulo, menos ela mesma e os ancestrais (que a contêm). A
+          // flutuante não absorve nada: fica fora da árvore de pertencimento nos dois sentidos.
+          candidates: marking.floating
+            ? []
+            : absorbCandidates(
+                project,
+                marking.containerId,
+                new Set([
+                  marking.id,
+                  ...ancestorsOf(project, marking.id).map((a) => a.id),
+                ]),
+              ),
         };
   return { gesture, draft: null };
 }

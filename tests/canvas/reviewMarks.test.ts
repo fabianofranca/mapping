@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  IDENTITY_PLACEMENT,
   changeType,
   createMarking,
+  moveMarking,
   previewProject,
   removeMarking,
   reviewTree,
@@ -139,6 +141,113 @@ describe('reviewMarks', () => {
     );
     // Memoizado pela versão do "como ficaria".
     expect(proposedDisplay(preview, proposal)).toBe(shown);
+  });
+});
+
+// Marcações do canvas (v13): o espaço delas é a identidade, e a troca de espaço é uma mudança só
+// (`space`), com o fantasma no espaço de cada lado.
+describe('reviewMarks: marcações do canvas', () => {
+  /** sampleProject com C1 no canvas, longe das imagens (I1 em 0..1000 × 0..750, I2 a partir de 1050). */
+  function withCanvasMarking(): Project {
+    return createMarking(sampleProject(), {
+      id: 'C1',
+      containerId: null,
+      rect: { x: -3000, y: -3000, width: 400, height: 300 },
+      name: 'Grupo',
+    });
+  }
+
+  it('criada no canvas e rejeitada: fantasma com a posição identidade na visão Atual', () => {
+    const base = sampleProject();
+    const after = createMarking(base, {
+      id: 'C9',
+      containerId: null,
+      rect: { x: -500, y: -400, width: 120, height: 80 },
+      name: 'Nova',
+    });
+    const p = propose(base, after);
+    const rejected = decided(p, base, { level: 'item', id: 'C9' }, 'rejected');
+    const ghosts = marks(rejected, base, 'current').ghosts;
+    expect(ghosts).toEqual([
+      expect.objectContaining({
+        key: 'rejected:C9',
+        placement: IDENTITY_PLACEMENT,
+        rect: { x: -500, y: -400, width: 120, height: 80 },
+        name: 'Nova',
+        badges: ['rejected'],
+      }),
+    ]);
+    // Aceita, aparece como criada na visão Proposto.
+    expect(marks(p, base, 'proposed').markings.get('C9')).toEqual({
+      line: 'created',
+      dim: false,
+      badges: ['created'],
+    });
+  });
+
+  it('movida no canvas: o fantasma está no espaço identidade, na posição antiga (Proposto) ou nova (Atual)', () => {
+    const base = withCanvasMarking();
+    const p = propose(base, moveMarking(base, 'C1', 100, 50));
+    const proposed = marks(p, base, 'proposed');
+    expect(proposed.markings.get('C1')).toEqual({
+      line: null,
+      dim: false,
+      badges: ['moved'],
+    });
+    expect(proposed.ghosts).toEqual([
+      expect.objectContaining({
+        key: 'moved:C1',
+        placement: IDENTITY_PLACEMENT,
+        rect: { x: -3000, y: -3000, width: 400, height: 300 },
+      }),
+    ]);
+    expect(marks(p, base, 'current').ghosts).toEqual([
+      expect.objectContaining({
+        key: 'moved:C1',
+        placement: IDENTITY_PLACEMENT,
+        rect: { x: -2900, y: -2950, width: 400, height: 300 },
+      }),
+    ]);
+  });
+
+  it('troca de espaço (de um container para o canvas): o fantasma fica no espaço de cada lado', () => {
+    const base = sampleProject();
+    // M4 (0,0,100×100 em I2, que está em (1050, 0) na escala 1) sai por 5000 pixels à esquerda.
+    const after = moveMarking(base, 'M4', -5000, 0);
+    const moved = after.markings.find((m) => m.id === 'M4');
+    expect(moved?.containerId).toBeNull();
+    const p = propose(base, after);
+    const i2 = base.containers.find((i) => i.id === 'I2');
+    const proposed = marks(p, base, 'proposed');
+    expect(proposed.ghosts).toEqual([
+      expect.objectContaining({
+        key: 'moved:M4',
+        placement: i2?.placement,
+        rect: { x: 0, y: 0, width: 100, height: 100 },
+      }),
+    ]);
+    expect(marks(p, base, 'current').ghosts).toEqual([
+      expect.objectContaining({
+        key: 'moved:M4',
+        placement: IDENTITY_PLACEMENT,
+        rect: moved?.rect,
+      }),
+    ]);
+  });
+
+  it('removida no canvas: a hachura usa a posição identidade', () => {
+    const base = withCanvasMarking();
+    const p = propose(base, removeMarking(base, 'C1'));
+    for (const view of ['proposed', 'current'] as const) {
+      expect(marks(p, base, view).removed).toEqual([
+        expect.objectContaining({
+          key: 'marking:C1',
+          name: 'Grupo',
+          placement: IDENTITY_PLACEMENT,
+          rect: { x: -3000, y: -3000, width: 400, height: 300 },
+        }),
+      ]);
+    }
   });
 });
 

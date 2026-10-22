@@ -190,7 +190,8 @@ export function absorbInto(
     } | null = null;
     for (const [index, candidate] of remaining.entries()) {
       const item = candidate.rect;
-      if (containsRectApprox(item, current) || containsRectApprox(current, item)) continue;
+      if (containsRectApprox(item, current) || containsRectApprox(current, item))
+        continue;
       if (!rectsOverlap(current, item)) continue;
       const o = overflowOf(current, item);
       const excess = Math.max(o.left, o.right, o.top, o.bottom);
@@ -198,7 +199,11 @@ export function absorbInto(
       const grown = growToCover(current, item);
       if (limit !== null && !containsRect(limit, grown)) continue;
       const sum = o.left + o.right + o.top + o.bottom;
-      if (best === null || excess < best.excess || (excess === best.excess && sum < best.sum)) {
+      if (
+        best === null ||
+        excess < best.excess ||
+        (excess === best.excess && sum < best.sum)
+      ) {
         best = { index, excess, sum, grown };
       }
     }

@@ -64,7 +64,10 @@ export class ComponentLayerRenderer {
     // Ordem de desenho por espaço, só do que aparece.
     const wanted = new Map<string | null, LayerDrawing[]>();
     for (const drawing of drawings.values()) {
-      if (placementOf(placements, drawing.containerId) === undefined || !visible(drawing)) {
+      if (
+        placementOf(placements, drawing.containerId) === undefined ||
+        !visible(drawing)
+      ) {
         continue;
       }
       const list = wanted.get(drawing.containerId);

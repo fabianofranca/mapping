@@ -18,7 +18,7 @@ import {
   WARNING_PATHS,
 } from '../../utils/reviewGlyphs';
 import { visibleArea, type Frame } from '../frame';
-import { markingCanvasRect } from '../markingGeometry';
+import { markingCanvasRect, placementOfSpace } from '../markingGeometry';
 import { importantBadge, type ReviewBadge, type ReviewShape } from '../reviewMarks';
 import type { CanvasTokens } from '../theme';
 import { HALO_WIDTH, fontStyle, intersectRects } from './metrics';
@@ -192,7 +192,9 @@ export class ReviewRenderer {
       }
       for (const [id, mark] of review.markings) {
         const marking = index.markings.get(id);
-        const placement = marking ? placements.get(marking.containerId) : undefined;
+        const placement = marking
+          ? placementOfSpace(placements, marking.containerId)
+          : undefined;
         if (!marking || !placement || mark.badges.length === 0) continue;
         const rect = markingCanvasRect(placement, marking.rect);
         if (!intersectRects(rect, view)) continue;

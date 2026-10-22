@@ -53,9 +53,12 @@ const PAIRS: readonly [string, string, number][] = [
 describe.each(['light', 'dark'] as const)('marcação do canvas no tema %s', (theme) => {
   const canvasBg = tokenValue('color-canvas-bg', theme);
 
-  it.each(['cv-canvas-marking', 'cv-absorb'])('%s sobre o fundo do canvas ≥ 3', (name) => {
-    expect(contrast(tokenValue(name, theme), canvasBg)).toBeGreaterThanOrEqual(3);
-  });
+  it.each(['cv-canvas-marking', 'cv-absorb'])(
+    '%s sobre o fundo do canvas ≥ 3',
+    (name) => {
+      expect(contrast(tokenValue(name, theme), canvasBg)).toBeGreaterThanOrEqual(3);
+    },
+  );
 });
 
 describe('canvas (iguais nos dois temas)', () => {

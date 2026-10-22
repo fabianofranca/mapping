@@ -164,8 +164,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       center?: { readonly x: number; readonly y: number },
     ) =>
       create(
-        (id) => (p) =>
-          model.addContainer(p, { ...file, id, center }, settleOptions(p)),
+        (id) => (p) => model.addContainer(p, { ...file, id, center }, settleOptions(p)),
       ),
     setContainerPlacement: (containerId: string, placement: Placement) =>
       store.apply((p) =>
@@ -190,8 +189,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly center?: Point;
     }) =>
       create(
-        (id) => (p) =>
-          model.addBackgroundContainer(p, { ...args, id }, settleOptions(p)),
+        (id) => (p) => model.addBackgroundContainer(p, { ...args, id }, settleOptions(p)),
       ),
     setBackgroundContainer: (
       containerId: string,
@@ -221,7 +219,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         const placement = last.containers.find((c) => c.id === containerId)?.placement;
         return placement === undefined
           ? last
-          : model.setContainerPlacement(base, containerId, placement, settleOptions(base));
+          : model.setContainerPlacement(
+              base,
+              containerId,
+              placement,
+              settleOptions(base),
+            );
       }),
     /**
      * Prévia de mover a marcação pelo deslocamento `dx`, `dy` (inteiros, no espaço da marcação).
@@ -296,7 +299,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         model.adjustMarkingRect(p, markingId, field, value, rectOptions(p, markingId)),
       ),
     moveMarking: (markingId: string, dx: number, dy: number) =>
-      store.apply((p) => model.moveMarking(p, markingId, dx, dy, rectOptions(p, markingId))),
+      store.apply((p) =>
+        model.moveMarking(p, markingId, dx, dy, rectOptions(p, markingId)),
+      ),
     /**
      * Liga ou desliga a marcação flutuante (comentário sobre o canvas, fora do pertencimento).
      * Ligar a tira do container e a leva ao canvas, convertida; desligar a devolve ao container

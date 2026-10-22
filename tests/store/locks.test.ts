@@ -121,6 +121,30 @@ describe('store: trava', () => {
     expect(current(store).markings[0]?.rect.x).toBe(1000);
   });
 
+  it('um gesto de mover container dentro de uma marcação do canvas trancada não vira entrada', () => {
+    const { store, actions } = setup();
+    // Marcação do canvas em volta de I1 e I2 (a imagem I2 começa em 1050).
+    const created = actions.createMarking(null, {
+      x: -50,
+      y: -50,
+      width: 2200,
+      height: 1100,
+    });
+    if (!created.ok) throw new Error('createMarking');
+    expect(actions.setMarkingLocked(created.value, true).ok).toBe(true);
+    const revision = store.revision.value;
+    expect(actions.beginGesture().ok).toBe(true);
+    expect(actions.previewImagePlacement('I2', { x: 1100, y: 0, scale: 1 })).toEqual({
+      ok: false,
+      error: 'locked',
+    });
+    // A final nunca falha, mas também não muda nada (a prévia é a do início).
+    actions.finishImagePlacement('I2');
+    actions.commitGesture();
+    expect(store.revision.value).toBe(revision);
+    expect(current(store).containers.find((i) => i.id === 'I2')?.placement.x).toBe(1050);
+  });
+
   it('em projeto somente leitura, trancar falha', () => {
     const { actions } = setup(true);
     expect(actions.setMarkingLocked('M1', true)).toEqual({
@@ -155,6 +179,31 @@ describe('estado derivado: markingLocks', () => {
     expect(derived.markingLocks.value).toBe(before);
     actions.cancelGesture();
     expect(store.gestureActive.value).toBe(false);
+  });
+
+  it('uma marcação do canvas trancada conta como trava (hasLocks) e a herança chega aos descendentes', () => {
+    const { derived, actions } = setup();
+    expect(derived.hasLocks.value).toBe(false);
+    const outer = actions.createMarking(null, {
+      x: -3000,
+      y: -3000,
+      width: 500,
+      height: 500,
+    });
+    if (!outer.ok) throw new Error('createMarking');
+    const inner = actions.createMarking(null, {
+      x: -2900,
+      y: -2900,
+      width: 100,
+      height: 100,
+    });
+    if (!inner.ok) throw new Error('createMarking');
+    actions.setMarkingLocked(outer.value, true);
+    expect(derived.hasLocks.value).toBe(true);
+    expect(Object.fromEntries(derived.markingLocks.value)).toEqual({
+      [outer.value]: 'self',
+      [inner.value]: 'inherited',
+    });
   });
 
   it('sem projeto, é vazio', () => {

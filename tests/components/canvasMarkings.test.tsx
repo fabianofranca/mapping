@@ -225,10 +225,11 @@ describe('Detalhes', () => {
     );
   });
 
-  it('marcação de container: mostra o pai assentado e não tem o interruptor', () => {
+  it('marcação de container: mostra o pai assentado e também tem o interruptor', () => {
     renderPanel('M2');
     expect(screen.getByText('Porta', { selector: '.props-text' })).toBeTruthy();
-    expect(screen.queryByRole('checkbox', { name: t('marking.floating') })).toBeNull();
+    // Qualquer marcação pode virar flutuante (decisão 10).
+    expect(screen.getByRole('checkbox', { name: t('marking.floating') })).toBeTruthy();
     // x/y/w/h continuam editáveis.
     expect(screen.getByLabelText('X')).toBeTruthy();
   });

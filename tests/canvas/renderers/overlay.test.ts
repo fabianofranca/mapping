@@ -423,3 +423,109 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
     expect(overlay.selectionLock.group.y()).toBe(100 + 2);
   });
 });
+
+// Marcações do canvas, absorção e trava herdada (etapa Marcações espaciais, ME1).
+describe('OverlayRenderer: marcações do canvas', () => {
+  function spatialSetup() {
+    const container = document.createElement('div');
+    const overlay = new OverlayRenderer(new Konva.Layer(), container);
+    const editor = editorFor();
+    const created = editor.actions.createMarking(null, {
+      x: -100,
+      y: -100,
+      width: 1800,
+      height: 1000,
+    });
+    const id = created.ok ? created.value : '';
+    const render = (overrides: Partial<Frame> = {}, placements = PLACEMENTS) =>
+      overlay.render(frameOf(editor, overrides), placements);
+    return { overlay, editor, render, id };
+  }
+
+  it('rascunho no vazio (sem imagem): no espaço identidade do canvas', () => {
+    const { overlay, render } = spatialSetup();
+    render({
+      draft: { containerId: null, rect: { x: 1050, y: 600, width: 300, height: 200 } },
+    });
+    expect(overlay.draftRect.getAttrs()).toMatchObject({
+      visible: true,
+      x: 1050,
+      y: 600,
+      width: 300,
+      height: 200,
+      stroke: TOKENS.select,
+    });
+  });
+
+  it('marcação do canvas selecionada: alças nos cantos dela e sem etiqueta de título de imagem', () => {
+    const { overlay, render, id } = spatialSetup();
+    render({
+      selection: { kind: 'marking', id },
+      viewport: { x: 100, y: 100, scale: 1 },
+    });
+    expect(overlay.handles.get('nw')?.getAttrs()).toMatchObject({
+      visible: true,
+      x: -105,
+      y: -105,
+    });
+    expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 1695, y: 895 });
+  });
+
+  it('itens a absorver acendem com o token novo e somem quando a lista esvazia', () => {
+    const { overlay, render } = spatialSetup();
+    render({ absorb: [{ x: 10, y: 20, width: 30, height: 40 }] });
+    const lit = overlay.absorbHighlights();
+    expect(lit).toHaveLength(1);
+    expect(lit[0]?.getAttrs()).toMatchObject({
+      visible: true,
+      x: 10,
+      y: 20,
+      width: 30,
+      height: 40,
+      stroke: TOKENS.absorb,
+      fill: TOKENS.absorbFill,
+    });
+    render({ absorb: [] });
+    expect(overlay.absorbHighlights().every((r) => !r.visible())).toBe(true);
+    // Dois itens, depois um: o segundo nó some, o primeiro é reaproveitado.
+    render({
+      absorb: [
+        { x: 1, y: 1, width: 5, height: 5 },
+        { x: 9, y: 9, width: 5, height: 5 },
+      ],
+    });
+    expect(overlay.absorbHighlights().filter((r) => r.visible())).toHaveLength(2);
+    render({ absorb: [{ x: 1, y: 1, width: 5, height: 5 }] });
+    expect(overlay.absorbHighlights().filter((r) => r.visible())).toHaveLength(1);
+  });
+
+  it('container dentro de uma marcação do canvas trancada: cadeado esmaecido (trava herdada)', () => {
+    const { overlay, editor, render, id } = spatialSetup();
+    expect(editor.actions.setMarkingLocked(id, true).ok).toBe(true);
+    render({ selection: { kind: 'image', id: 'I2' } });
+    expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(overlay.selectionLock.group.opacity()).toBe(TOKENS.opacity.inherited);
+    // O cadeado sob o mouse também mostra a herança.
+    render({ hoverLock: { kind: 'image', id: 'I1' } });
+    expect(overlay.hoverLockBadge.group.visible()).toBe(true);
+    expect(overlay.hoverLockBadge.group.opacity()).toBe(TOKENS.opacity.inherited);
+  });
+
+  it('a marcação do canvas trancada tem o cadeado cheio e as filhas do espaço dela, o esmaecido', () => {
+    const { overlay, editor, render, id } = spatialSetup();
+    const inner = editor.actions.createMarking(null, {
+      x: -50,
+      y: -50,
+      width: 60,
+      height: 60,
+    });
+    const innerId = inner.ok ? inner.value : '';
+    expect(editor.actions.setMarkingLocked(id, true).ok).toBe(true);
+    render({ selection: { kind: 'marking', id } });
+    expect(overlay.selectionLock.group.opacity()).toBe(1);
+    render({ selection: { kind: 'marking', id: innerId } });
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(overlay.selectionLock.group.opacity()).toBe(TOKENS.opacity.inherited);
+  });
+});

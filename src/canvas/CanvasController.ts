@@ -464,7 +464,8 @@ export class CanvasController {
     if (current?.id !== lock?.id || current?.kind !== lock?.kind) {
       this.state.hoverLock.value = lock;
     }
-    if (this.state.hoverMarking.peek() !== marking) this.state.hoverMarking.value = marking;
+    if (this.state.hoverMarking.peek() !== marking)
+      this.state.hoverMarking.value = marking;
   }
 
   private loadBitmaps(): void {
