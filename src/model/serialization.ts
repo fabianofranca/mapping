@@ -1,8 +1,10 @@
 import { validateProject, type InvariantIssue } from './invariants';
 import {
   discardedOnMigrationTo11,
+  discardedOnMigrationTo13,
   migrate,
   migrations as defaultMigrations,
+  type DiscardedInherit,
   type DiscardedUrlTemplate,
   type Migration,
 } from './migrations';
@@ -86,7 +88,6 @@ export function serialize(p: Project): string {
       markingId: a.markingId,
       layerId: a.layerId,
       name: a.name,
-      inherit: a.inherit,
       parentAnnotationId: a.parentAnnotationId,
       type: a.type && { specId: a.type.specId, typeId: a.type.typeId },
       values:
@@ -164,6 +165,11 @@ export type DeserializeResult =
        * dos arquivos passou a ser da especialização); vazio quando não houve.
        */
       readonly discardedUrlTemplates: readonly DiscardedUrlTemplate[];
+      /**
+       * Anotações que tinham `inherit: true` e perderam a herança na migração para o schema 13
+       * (vazio se não houve).
+       */
+      readonly discardedInherit: readonly DiscardedInherit[];
     }
   | {
       readonly ok: false;
@@ -182,6 +188,7 @@ export interface RepairedLoad extends RepairResult {
   readonly migratedFrom: number | null;
   readonly specWarnings: readonly SpecFileWarning[];
   readonly discardedUrlTemplates: readonly DiscardedUrlTemplate[];
+  readonly discardedInherit: readonly DiscardedInherit[];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -255,6 +262,7 @@ export function deserialize(
   let data: Record<string, unknown> = raw;
   let migratedFrom: number | null = null;
   let discardedUrlTemplates: readonly DiscardedUrlTemplate[] = [];
+  let discardedInherit: readonly DiscardedInherit[] = [];
   const readOnly = version > SCHEMA_VERSION;
   if (readOnly) {
     data = { ...raw, schemaVersion: SCHEMA_VERSION };
@@ -269,6 +277,7 @@ export function deserialize(
     data = migrated.data;
     migratedFrom = version;
     discardedUrlTemplates = discardedOnMigrationTo11(raw);
+    discardedInherit = discardedOnMigrationTo13(raw);
   }
 
   const parsed = projectSchema.safeParse(data);
@@ -291,6 +300,7 @@ export function deserialize(
         migratedFrom,
         specWarnings: warnings,
         discardedUrlTemplates,
+        discardedInherit,
       },
     };
   }
@@ -301,5 +311,6 @@ export function deserialize(
     migratedFrom,
     specWarnings: warnings,
     discardedUrlTemplates,
+    discardedInherit,
   };
 }

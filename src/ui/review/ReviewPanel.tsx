@@ -91,11 +91,10 @@ function itemOfTarget(
 
 interface ReviewPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
-  readonly onSelectMarking: (markingId: string) => void;
 }
 
 /** Detalhes na revisão: escolhe entre o painel do item e o painel do nível. */
-export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelProps) {
+export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
   const { review, ui, store } = useEditor();
   const host = useRef<HTMLDivElement>(null);
   const hadFocus = useRef(false);
@@ -151,10 +150,9 @@ export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelPr
           key={`${stable.kind}:${stable.id}`}
           item={stable}
           onGoToAnnotation={onGoToAnnotation}
-          onSelectMarking={onSelectMarking}
         />
       ) : null,
-    [stable, onGoToAnnotation, onSelectMarking],
+    [stable, onGoToAnnotation],
   );
 
   // Trocar de item desmonta o painel: se o foco estava nele (um marcador, o popover), fica
@@ -229,7 +227,6 @@ function FollowTarget({
 function ReviewItemPanel({
   item,
   onGoToAnnotation,
-  onSelectMarking,
 }: ReviewPanelProps & { readonly item: ShownItem }) {
   const { review, ui, store, display, derived } = useEditor();
   const d = review.derived;
@@ -349,7 +346,6 @@ function ReviewItemPanel({
                 image={resolved.image}
                 readOnly
                 onDelete={noop}
-                onSelectMarking={onSelectMarking}
                 onGoToAnnotation={onGoToAnnotation}
               />
             ) : (

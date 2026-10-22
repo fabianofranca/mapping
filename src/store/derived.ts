@@ -520,7 +520,7 @@ export interface EntityChanges {
   readonly whole: Change | null;
   /**
    * Alterações por campo, como em `Change.field`: `name`, `rect`, `parentId`, `file`,
-   * `markingColor`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `type`,
+   * `markingColor`, `parentAnnotationId`, `markingId`, `layerId`, `type`,
    * `values.<chave>` (campo da tipada) e `entries.<id>` (par da livre).
    */
   readonly fields: ReadonlyMap<string, Change>;

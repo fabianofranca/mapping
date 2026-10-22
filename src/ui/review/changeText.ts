@@ -185,7 +185,6 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'image.locked': 'review.field.locked',
   'image.source': 'review.field.source',
   'annotation.name': 'review.field.annotationName',
-  'annotation.inherit': 'review.field.inherit',
   'annotation.parentAnnotationId': 'review.field.owner',
   'annotation.markingId': 'review.field.marking',
   'annotation.layerId': 'review.field.layer',

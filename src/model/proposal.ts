@@ -16,13 +16,16 @@ import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './sp
 import type { JsonValue } from './types';
 
 // Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
-// `formatVersion` 2 (a 1 continua lida). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
+// `formatVersion` 3 (a 1 e a 2 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
 // leitura devolve os erros com o caminho exato (`changes[3].to.rect.width: …`).
 
 export const PROPOSAL_FORMAT = 'mapping-proposal';
-export const PROPOSAL_FORMAT_VERSION = 2;
-/** Versões lidas: a 2 acrescenta `add_container` às `operations`; a 1 continua válida. */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2] as const;
+export const PROPOSAL_FORMAT_VERSION = 3;
+/**
+ * Versões lidas: a 3 não tem `inherit` na anotação (o campo de uma proposta antiga é ignorado,
+ * com aviso); a 2 acrescenta `add_container` às `operations`; a 1 continua válida.
+ */
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3] as const;
 /** Pasta das propostas, relativa à raiz do projeto. */
 export const PROPOSALS_DIR = 'proposals';
 /** Nome do arquivo da proposta dentro de `proposals/<id>/`. */
@@ -87,7 +90,6 @@ export const MARKING_FIELDS = [
  */
 export const ANNOTATION_FIELDS = [
   'name',
-  'inherit',
   'parentAnnotationId',
   'markingId',
   'layerId',
@@ -306,7 +308,6 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
 
 const annotationFieldSchemas: Record<(typeof ANNOTATION_FIELDS)[number], z.ZodType> = {
   name: z.string().nullable(),
-  inherit: z.boolean(),
   parentAnnotationId: id.nullable(),
   markingId: id,
   layerId: id,
@@ -473,7 +474,9 @@ const targetSchema = z
 export const proposalSchema = z
   .object({
     format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
-    formatVersion: z.union([z.literal(1), z.literal(2)], { error: 'deve ser 1 ou 2' }),
+    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3)], {
+      error: 'deve ser 1, 2 ou 3',
+    }),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),
     description: optionalText,
@@ -533,7 +536,12 @@ export const proposalSchema = z
   });
 
 export type ProposalParseResult =
-  | { readonly ok: true; readonly proposal: Proposal }
+  | {
+      readonly ok: true;
+      readonly proposal: Proposal;
+      /** Avisos da leitura (ex.: campo que saiu do formato e foi ignorado). */
+      readonly warnings: readonly string[];
+    }
   | { readonly ok: false; readonly issues: SpecIssue[]; readonly errors: string[] };
 
 /**
@@ -588,11 +596,77 @@ function withContainerIdOnMarkings(data: unknown): unknown {
   };
 }
 
+/**
+ * Proposta escrita antes do schema 13: a anotação tinha `inherit` (a herança para as marcações
+ * descendentes saiu do formato). Na leitura, a mudança do campo `inherit` é descartada (com a
+ * decisão e a aplicação dela; uma nota presa a ela passa para a proposta) e o campo some das
+ * anotações inteiras de criação e remoção. `ignored` conta o que foi ignorado, para o aviso.
+ */
+function withoutInherit(data: unknown): { data: unknown; ignored: number } {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return { data, ignored: 0 };
+  let ignored = 0;
+  const dropped = new Set<string>();
+  const strip = (value: unknown): unknown => {
+    if (!isPlainRecord(value) || !Object.hasOwn(value, 'inherit')) return value;
+    const { inherit, ...rest } = value;
+    void inherit;
+    ignored += 1;
+    return rest;
+  };
+  const changes: unknown[] = [];
+  for (const c of data.changes as unknown[]) {
+    if (!isPlainRecord(c) || c.entity !== 'annotation') {
+      changes.push(c);
+    } else if (c.field === 'inherit') {
+      ignored += 1;
+      if (typeof c.id === 'string') dropped.add(c.id);
+    } else if (c.field === null) {
+      changes.push({ ...c, from: strip(c.from), to: strip(c.to) });
+    } else {
+      changes.push(c);
+    }
+  }
+  if (ignored === 0) return { data, ignored };
+  const without = (record: unknown): unknown =>
+    isPlainRecord(record)
+      ? Object.fromEntries(Object.entries(record).filter(([key]) => !dropped.has(key)))
+      : record;
+  const notes = Array.isArray(data.notes)
+    ? (data.notes as unknown[]).map((n) => {
+        if (!isPlainRecord(n) || !isPlainRecord(n.target)) return n;
+        const { level, id: targetId } = n.target;
+        return level === 'change' && typeof targetId === 'string' && dropped.has(targetId)
+          ? { ...n, target: { level: 'proposal', id: null } }
+          : n;
+      })
+    : data.notes;
+  return {
+    data: {
+      ...data,
+      changes,
+      decisions: without(data.decisions),
+      applied: without(data.applied),
+      notes,
+    },
+    ignored,
+  };
+}
+
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseProposal(data: unknown): ProposalParseResult {
-  const result = proposalSchema.safeParse(withContainerIdOnMarkings(data));
+  const { data: current, ignored } = withoutInherit(withContainerIdOnMarkings(data));
+  const result = proposalSchema.safeParse(current);
   if (result.success) {
-    return { ok: true, proposal: withoutLegacyUrlTemplate(result.data as Proposal) };
+    return {
+      ok: true,
+      proposal: withoutLegacyUrlTemplate(result.data as Proposal),
+      warnings:
+        ignored === 0
+          ? []
+          : [
+              `"inherit" saiu do formato (schema 13): ${ignored} ocorrência(s) na proposta ignorada(s); a anotação vale só para a própria marcação`,
+            ],
+    };
   }
   const issues = result.error.issues.map((i) => ({
     path: formatSpecPath(i.path),

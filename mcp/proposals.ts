@@ -506,6 +506,14 @@ export class Proposals {
         changedSinceProposal: loaded.project.revision !== p.baseRevision,
       },
       progress: progressView(p),
+      ...(stored.warnings === undefined
+        ? {}
+        : {
+            warnings: stored.warnings.map((message) => ({
+              code: 'proposal-field-ignored',
+              message,
+            })),
+          }),
       ready: complete,
       rejected,
       notes: [...notes, ...otherChangeNotes],

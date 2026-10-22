@@ -1,10 +1,10 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v12). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
+// Tipos do `mapping.json` (schema v13). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
 // seções 4, 12.1 e 13.3. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -157,8 +157,6 @@ export interface Annotation {
   readonly markingId: string;
   readonly layerId: string;
   readonly name: string | null;
-  /** `true`: a anotação também vale para todos os descendentes da marcação. */
-  readonly inherit: boolean;
   /** Anotação "dona" (mesma marcação, outra camada, sem ciclos) ou `null`. */
   readonly parentAnnotationId: string | null;
   /** `null` = anotação livre (pares em `entries`). */

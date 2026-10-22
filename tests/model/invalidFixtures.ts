@@ -64,7 +64,6 @@ const freeAnnotation = (p: Project, annotation: Partial<Annotation>): Project =>
       markingId: 'MN',
       layerId: 'LM',
       name: 'Extra',
-      inherit: false,
       parentAnnotationId: null,
       type: null,
       values: null,

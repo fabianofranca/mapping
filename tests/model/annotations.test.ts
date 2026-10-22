@@ -31,7 +31,6 @@ describe('anotações', () => {
       markingId: 'M3',
       layerId: 'L2',
       name: null,
-      inherit: false,
       parentAnnotationId: null,
       type: null,
       values: null,

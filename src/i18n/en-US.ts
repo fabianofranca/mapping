@@ -163,7 +163,6 @@ export const enUS: Dictionary = {
   'tree.expand': 'Expand {name}',
   'tree.collapse': 'Collapse {name}',
   'tree.layerDot': 'Layer {name}',
-  'tree.layerDotInherited': 'Layer {name} (inherited)',
 
   'layer.newName': 'Layer {n}',
   'layer.title': 'Layers',
@@ -191,7 +190,7 @@ export const enUS: Dictionary = {
   'layer.display.dim': 'Dim without annotations',
   'layer.display.hide': 'Hide without annotations',
   'layer.displayHint':
-    'Based on the active layer: counts its own and inherited annotations. The selected marking always shows.',
+    'Based on the active layer: counts its annotations. The selected marking always shows.',
 
   'annotation.heading': 'Annotations',
   'annotation.add': '+ Annotation',
@@ -209,7 +208,6 @@ export const enUS: Dictionary = {
   'annotation.error.empty-key': 'The key cannot be empty.',
   'annotation.error.duplicate-key': 'A pair with this key already exists.',
   'annotation.error.generic': 'Could not change the annotation.',
-  'annotation.inherit': 'Apply to child markings',
   'annotation.owner': 'Belongs to',
   'annotation.noOwner': 'None',
   'annotation.ownerOption': '{layer}: {name}',
@@ -221,9 +219,6 @@ export const enUS: Dictionary = {
   'annotation.linkedHeading': 'Linked',
   'annotation.goToAnnotation': 'Go to annotation {name}',
   'annotation.showLayer': 'Show layer {layer}',
-  'annotation.inheritedHeading': 'Inherited',
-  'annotation.inheritedFrom': 'inherited from {name}',
-  'annotation.goToMarking': 'Go to {name}',
 
   'window.stripLabel': 'Tool windows',
   'window.show': 'Show {name}',
@@ -662,7 +657,6 @@ export const enUS: Dictionary = {
   'details.summarySeparator': ' · ',
   'annotation.expand': 'Show {name}',
   'annotation.collapse': 'Collapse {name}',
-  'annotation.inheritLabel': 'Inheritance',
   'annotation.pairs': 'Annotation pairs',
   'annotation.entryActions': 'Actions for pair {key}',
   'annotation.dragEntry': 'Move pair {key}',
@@ -770,6 +764,8 @@ export const enUS: Dictionary = {
   'code.copyFailed': 'Could not copy the path.',
   'migration.v11.discardedUrlTemplate':
     'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with `repo` (formatVersion 5) and update it in the project.',
+  'migration.v13.discardedInherit':
+    'Schema 13: annotation inheritance was removed from the format. {count} annotation(s) also applied to the descendant markings and now apply only to their own marking: {markings}. No annotation was deleted.',
   'repos.title': 'Code repositories',
   'repos.intro':
     'The repository address of each platform comes from the specialization and is shown here for reference only. Just say where the local clone of the code is on your computer.',

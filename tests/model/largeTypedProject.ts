@@ -8,7 +8,7 @@ import { layerOf, specProject } from './specFixtures';
  * especializações de exemplo e 1.500 anotações — metade tipadas — e 500 referências.
  *
  * Por marcação `i`:
- * - uma livre (camada L1; nas marcações pai, herdada pelas filhas);
+ * - uma livre (camada L1);
  * - par: uma Classe com 2 linhas em `atributos` e um Text com `dado` → tupla da
  *   livre da marcação seguinte; ímpar: um Input com `dado` → linha da Classe da
  *   marcação anterior e mais uma livre (camada LM).
@@ -24,13 +24,12 @@ export function buildLargeTypedProject(): Project {
     componentes: layerOf(spec, 'sdui', 'componentes'),
   };
   const annotations: Annotation[] = [];
-  const free = (id: string, markingId: string, layerId: string, inherit: boolean) =>
+  const free = (id: string, markingId: string, layerId: string) =>
     annotations.push({
       id,
       markingId,
       layerId,
       name: null,
-      inherit,
       parentAnnotationId: null,
       type: null,
       values: null,
@@ -52,7 +51,6 @@ export function buildLargeTypedProject(): Project {
       markingId,
       layerId,
       name: null,
-      inherit: false,
       parentAnnotationId: null,
       type: { specId, typeId },
       values,
@@ -60,7 +58,7 @@ export function buildLargeTypedProject(): Project {
     });
 
   markings.forEach((marking, i) => {
-    free(`F${i}`, marking.id, 'L1', marking.parentId === null);
+    free(`F${i}`, marking.id, 'L1');
     if (i % 2 === 0) {
       typed(`C${i}`, marking.id, layer.classe, 'modelo-dados', 'classe', {
         nome: `Classe${i}`,
@@ -82,7 +80,7 @@ export function buildLargeTypedProject(): Project {
         tipo: 'text',
         dado: { annotationId: `C${i - 1}`, key: 'atributos', rowId },
       });
-      free(`G${i}`, marking.id, 'LM', false);
+      free(`G${i}`, marking.id, 'LM');
     }
   });
   return { ...spec, containers: images, markings, annotations };

@@ -31,7 +31,6 @@ interface MarkingPanelProps {
   readonly image: ProjectContainer;
   readonly readOnly: boolean;
   readonly onDelete: (marking: Marking) => void;
-  readonly onSelectMarking: (markingId: string) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
@@ -55,7 +54,6 @@ export function MarkingPanel({
   image,
   readOnly,
   onDelete,
-  onSelectMarking,
   onGoToAnnotation,
 }: MarkingPanelProps) {
   const editor = useEditor();
@@ -300,7 +298,6 @@ export function MarkingPanel({
         activeLayer={derived.activeLayer.value}
         readOnly={readOnly}
         onShowLayer={(layerId) => showLayer(ui, layerId)}
-        onSelectMarking={onSelectMarking}
         onGoToAnnotation={onGoToAnnotation}
         focusAnnotation={ui.focusAnnotation.value}
         onFocusDone={() => (ui.focusAnnotation.value = null)}

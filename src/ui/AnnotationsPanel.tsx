@@ -3,7 +3,6 @@ import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationsOf,
-  getInheritedAnnotations,
   layerAnnotationTypes,
   validTypedOwners,
   type Annotation,
@@ -21,14 +20,12 @@ import {
   type AnnotationLocation,
 } from '../store/ui';
 import { AnnotationEditor } from './AnnotationEditor';
-import { AnnotationLines, AnnotationTitle } from './AnnotationSummary';
 import { useDetailsExtension, type DetailsExtension } from './DetailsExtension';
 import { Dialog } from './Dialog';
 import { DialogSlotContext, useDialogSlot } from './focus';
 import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
-import { markingPath } from './labels';
 import {
   annotationDisplayName,
   annotationSummary,
@@ -49,8 +46,6 @@ interface AnnotationsPanelProps {
   readonly readOnly: boolean;
   /** Torna a camada visível (para ir até uma anotação vinculada numa camada oculta). */
   readonly onShowLayer: (layerId: string) => void;
-  /** Seleciona outra marcação e centraliza o canvas nela ("ir para Porta"). */
-  readonly onSelectMarking: (markingId: string) => void;
   /** Vai até a anotação, em qualquer marcação (backlinks, alvo, vinculadas). */
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
   /** Anotação para rolar até assim que estiver na tela (estado da UI). */
@@ -88,7 +83,6 @@ export function AnnotationsPanel({
   activeLayer,
   readOnly,
   onShowLayer,
-  onSelectMarking,
   onGoToAnnotation,
   focusAnnotation,
   onFocusDone,
@@ -105,8 +99,6 @@ export function AnnotationsPanel({
   const onFocusDoneRef = useRef(onFocusDone);
   onFocusDoneRef.current = onFocusDone;
   const visibleLayerIds = new Set(layers.map((l) => l.id));
-  const inherited = getInheritedAnnotations(project, marking.id);
-  const sourceOf = (a: Annotation) => project.markings.find((m) => m.id === a.markingId);
   const collapsed = ui.collapsed.value;
   const byLayer = layers.map((layer) => ({
     layer,
@@ -205,7 +197,6 @@ export function AnnotationsPanel({
       >
         {ext?.annotationsNotice(marking.id)}
         {byLayer.map(({ layer, annotations, removed }) => {
-          const inheritedHere = inherited.filter((a) => a.layerId === layer.id);
           const items: { readonly key: string; readonly node: ComponentChildren }[] =
             annotations.map((annotation) => ({
               key: annotation.id,
@@ -227,7 +218,7 @@ export function AnnotationsPanel({
           return (
             <LayerGroup
               key={layer.id}
-              hasBody={items.length > 0 || inheritedHere.length > 0}
+              hasBody={items.length > 0}
               project={project}
               layer={layer}
               active={layer.id === activeLayer?.id}
@@ -236,12 +227,6 @@ export function AnnotationsPanel({
               onAdd={() => add(layer)}
             >
               <PagedList items={items} page={ext?.annotationPage ?? null} />
-              <InheritedList
-                project={project}
-                items={inheritedHere}
-                sourceOf={sourceOf}
-                onSelectMarking={onSelectMarking}
-              />
             </LayerGroup>
           );
         })}
@@ -512,60 +497,5 @@ function TypeList({
         ))}
       </div>
     </>
-  );
-}
-
-interface InheritedListProps {
-  readonly project: Project;
-  readonly items: readonly Annotation[];
-  readonly sourceOf: (annotation: Annotation) => Marking | undefined;
-  readonly onSelectMarking: (markingId: string) => void;
-}
-
-/** Herdadas de uma camada: anotações dos ancestrais, somente leitura (caixa tracejada). */
-function InheritedList({
-  project,
-  items,
-  sourceOf,
-  onSelectMarking,
-}: InheritedListProps) {
-  if (items.length === 0) return null;
-  return (
-    <div class="inherited">
-      <h4 class="inherited-heading">{t('annotation.inheritedHeading')}</h4>
-      {items.map((a) => {
-        const source = sourceOf(a);
-        const sourceName = source ? markingPath(project, source) : '';
-        // Livre sem nome: o título já é o primeiro par.
-        const lines =
-          a.type || a.name !== null ? a : { ...a, entries: a.entries.slice(1) };
-        return (
-          <div key={a.id} class="inherited-item">
-            <span class="inherited-head">
-              <span class="layer-dot layer-dot-inherited" aria-hidden="true" />
-              <AnnotationTitle project={project} annotation={a} class="inherited-name" />
-            </span>
-            <AnnotationLines
-              project={project}
-              annotation={lines}
-              lineClass="inherited-entry"
-            />
-            {source && (
-              <span class="inherited-source">
-                {t('annotation.inheritedFrom', { name: sourceName })}
-                {' · '}
-                <button
-                  type="button"
-                  class="link-button"
-                  onClick={() => onSelectMarking(source.id)}
-                >
-                  {t('annotation.goToMarking', { name: sourceName })}
-                </button>
-              </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
   );
 }

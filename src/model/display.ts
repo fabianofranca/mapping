@@ -1,22 +1,20 @@
 import { projectIndex } from './projectIndex';
 import type { Layer, Project } from './types';
 
-// Como as marcações aparecem de acordo com as anotações (próprias e herdadas) nas
+// Como as marcações aparecem de acordo com as anotações nas
 // camadas visíveis. Funções puras: o canvas só aplica o resultado.
 
 /** Modos de exibição das marcações (preferência do dispositivo, fora do JSON). */
 export const MARKING_DISPLAY_MODES = ['all', 'dim', 'hide'] as const;
 export type MarkingDisplayMode = (typeof MARKING_DISPLAY_MODES)[number];
 
-/** Uma camada que chega à marcação. `inheritedOnly`: só por herança, sem anotação própria. */
+/** Uma camada com anotação própria na marcação. */
 export interface LayerDot {
   readonly layer: Layer;
-  readonly inheritedOnly: boolean;
 }
 
 /**
- * Camadas visíveis que chegam a cada marcação, na ordem de `layers`. Conta a
- * anotação própria e a herdada (`inherit: true` em qualquer ancestral).
+ * Camadas visíveis com anotação própria em cada marcação, na ordem de `layers`.
  * Marcações sem nenhuma não aparecem no mapa.
  */
 export function layerDotsByMarking(
@@ -25,51 +23,22 @@ export function layerDotsByMarking(
 ): Map<string, LayerDot[]> {
   const order = new Map(layers.map((l, i) => [l.id, i]));
   const own = new Map<string, Set<number>>();
-  const inheriting = new Map<string, Set<number>>();
-  const add = (map: Map<string, Set<number>>, key: string, index: number) => {
-    const set = map.get(key) ?? new Set<number>();
-    set.add(index);
-    map.set(key, set);
-  };
   for (const a of p.annotations) {
     const index = order.get(a.layerId);
     if (index === undefined) continue;
-    add(own, a.markingId, index);
-    if (a.inherit) add(inheriting, a.markingId, index);
+    const set = own.get(a.markingId) ?? new Set<number>();
+    set.add(index);
+    own.set(a.markingId, set);
   }
-
-  const byId = projectIndex(p).markings;
-  // Camadas herdadas por marcação, com memória para não refazer a subida.
-  const inheritedOf = new Map<string, ReadonlySet<number>>();
-  const inherited = (id: string, guard = 0): ReadonlySet<number> => {
-    const cached = inheritedOf.get(id);
-    if (cached) return cached;
-    const parentId = byId.get(id)?.parentId ?? null;
-    let result: ReadonlySet<number> = new Set();
-    if (parentId !== null && guard <= byId.size) {
-      result = new Set([
-        ...inherited(parentId, guard + 1),
-        ...(inheriting.get(parentId) ?? []),
-      ]);
-    }
-    inheritedOf.set(id, result);
-    return result;
-  };
 
   const result = new Map<string, LayerDot[]>();
   for (const m of p.markings) {
     const ownSet = own.get(m.id);
-    const inheritedSet = inherited(m.id);
-    if (!ownSet && inheritedSet.size === 0) continue;
-    const indexes = [...new Set([...(ownSet ?? []), ...inheritedSet])].sort(
-      (a, b) => a - b,
-    );
+    if (!ownSet) continue;
+    const indexes = [...ownSet].sort((a, b) => a - b);
     result.set(
       m.id,
-      indexes.map((i) => ({
-        layer: layers[i] as Layer,
-        inheritedOnly: !ownSet?.has(i),
-      })),
+      indexes.map((i) => ({ layer: layers[i] as Layer })),
     );
   }
   return result;

@@ -97,7 +97,6 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         markingId: marking.id,
         layerId,
         name: `Anotação ${index}`,
-        inherit: false,
         parentAnnotationId: null,
         type: null,
         values: null,

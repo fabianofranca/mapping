@@ -163,7 +163,6 @@ export const ptBR = {
   'tree.expand': 'Expandir {name}',
   'tree.collapse': 'Recolher {name}',
   'tree.layerDot': 'Camada {name}',
-  'tree.layerDotInherited': 'Camada {name} (herdada)',
 
   'layer.newName': 'Camada {n}',
   'layer.title': 'Camadas',
@@ -191,7 +190,7 @@ export const ptBR = {
   'layer.display.dim': 'Esmaecer sem anotação',
   'layer.display.hide': 'Ocultar sem anotação',
   'layer.displayHint':
-    'Vale pela camada ativa: conta a anotação própria e a herdada nela. A marcação selecionada sempre aparece.',
+    'Vale pela camada ativa: conta as anotações dela. A marcação selecionada sempre aparece.',
 
   'annotation.heading': 'Anotações',
   'annotation.add': '+ Anotação',
@@ -209,7 +208,6 @@ export const ptBR = {
   'annotation.error.empty-key': 'A chave não pode ficar vazia.',
   'annotation.error.duplicate-key': 'Já existe um par com esta chave.',
   'annotation.error.generic': 'Não foi possível alterar a anotação.',
-  'annotation.inherit': 'Aplicar às marcações filhas',
   'annotation.owner': 'Pertence a',
   'annotation.noOwner': 'Nenhuma',
   'annotation.ownerOption': '{layer}: {name}',
@@ -221,9 +219,6 @@ export const ptBR = {
   'annotation.linkedHeading': 'Vinculadas',
   'annotation.goToAnnotation': 'Ir para a anotação {name}',
   'annotation.showLayer': 'Mostrar a camada {layer}',
-  'annotation.inheritedHeading': 'Herdadas',
-  'annotation.inheritedFrom': 'herdado de {name}',
-  'annotation.goToMarking': 'Ir para {name}',
 
   'window.stripLabel': 'Janelas de ferramenta',
   'window.show': 'Mostrar {name}',
@@ -664,7 +659,6 @@ export const ptBR = {
   'details.summarySeparator': ' · ',
   'annotation.expand': 'Mostrar {name}',
   'annotation.collapse': 'Recolher {name}',
-  'annotation.inheritLabel': 'Herança',
   'annotation.pairs': 'Pares da anotação',
   'annotation.entryActions': 'Ações do par {key}',
   'annotation.dragEntry': 'Mover o par {key}',
@@ -775,6 +769,8 @@ export const ptBR = {
   'code.copyFailed': 'Não foi possível copiar o caminho.',
   'migration.v11.discardedUrlTemplate':
     'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com `repo` (formatVersion 5) e atualize-a no projeto.',
+  'migration.v13.discardedInherit':
+    'Schema 13: a herança de anotações saiu do formato. {count} anotação(ões) valiam também para as marcações descendentes e agora valem só para a própria marcação: {markings}. Nenhuma anotação foi apagada.',
   'repos.title': 'Repositórios de código',
   'repos.intro':
     'O endereço do repositório de cada plataforma vem da especialização e aparece aqui só para consulta. Informe apenas onde está o clone local do código no seu computador.',

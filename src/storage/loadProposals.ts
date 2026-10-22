@@ -77,6 +77,8 @@ export function parseProposalFile(
       text,
     };
   }
+  for (const warning of parsed.warnings)
+    reportError('proposals.read', `${id}: ${warning}`);
   return { ok: true, proposal: parsed.proposal, text, stamp };
 }
 

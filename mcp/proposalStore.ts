@@ -44,6 +44,8 @@ export interface StoredProposal {
   readonly proposal: Proposal;
   /** Texto do arquivo como estava no disco. */
   readonly text: string;
+  /** Avisos da leitura (ex.: `inherit` de uma proposta antiga, ignorado). */
+  readonly warnings?: readonly string[];
 }
 
 export interface BrokenProposal {
@@ -82,7 +84,12 @@ function parseStored(id: string, text: string): StoredProposal | BrokenProposal 
       error: `o id do arquivo ("${parsed.proposal.id}") não bate com o da pasta ("${id}")`,
     };
   }
-  return { id, proposal: parsed.proposal, text };
+  return {
+    id,
+    proposal: parsed.proposal,
+    text,
+    ...(parsed.warnings.length > 0 ? { warnings: parsed.warnings } : {}),
+  };
 }
 
 /** Todas as propostas da pasta do projeto, na ordem de criação; as ilegíveis vêm em `broken`. */

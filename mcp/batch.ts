@@ -50,7 +50,6 @@ import {
   renameLayer,
   renameMarking,
   replaceContainer,
-  setAnnotationInherit,
   setAnnotationParent,
   setEntries,
   setFieldValue,
@@ -330,6 +329,17 @@ class Batch {
             index,
             op: op.op,
             message: 'o argumento `image` de create_marking é antigo: use `container`',
+          });
+        }
+        if (
+          (op.op === 'create_annotation' || op.op === 'update_annotation') &&
+          op.inherit !== undefined
+        ) {
+          this.deprecations.push({
+            index,
+            op: op.op,
+            message:
+              'o argumento `inherit` saiu do formato (v13) e foi ignorado: a anotação vale só para a própria marcação',
           });
         }
         for (const [file, data] of step.imageFiles ?? []) this.imageFiles.set(file, data);
@@ -1519,7 +1529,6 @@ class Batch {
       });
       if (ownerId !== null) project = setAnnotationParent(project, id, ownerId);
     }
-    if (op.inherit !== undefined) project = setAnnotationInherit(project, id, op.inherit);
     const owner = ownerId
       ? `, vinculada a ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`
       : '';
@@ -1528,9 +1537,7 @@ class Batch {
     )!.name;
     return {
       project,
-      description: `Criar a anotação ${this.annotationLabel(project, id)} na camada "${layerName}"${owner}${
-        op.inherit ? ', herdada pelas descendentes' : ''
-      }`,
+      description: `Criar a anotação ${this.annotationLabel(project, id)} na camada "${layerName}"${owner}`,
       created: [{ kind: 'a', id }],
       rowAliases,
     };
@@ -1563,10 +1570,6 @@ class Batch {
           ? 'sem dona'
           : `dona ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`,
       );
-    }
-    if (op.inherit !== undefined) {
-      project = setAnnotationInherit(project, id, op.inherit);
-      changes.push(op.inherit ? 'herdada pelas descendentes' : 'não herdada');
     }
     return {
       project,

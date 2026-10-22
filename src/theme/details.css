@@ -476,17 +476,6 @@ button.layer-group-label:hover {
   white-space: nowrap;
 }
 
-.layer-dot-inherited {
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 2px var(--layer-color);
-}
-
-.inherited-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1-5);
-}
-
 /* Pendências da marcação: cada motivo leva ao campo */
 .issues-title {
   display: flex;

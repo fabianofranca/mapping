@@ -258,7 +258,6 @@
         "markingId": "67dbf95b-3ac0-40f6-8b06-f27d670b6c98",
         "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
         "name": null,
-        "inherit": false,
         "parentAnnotationId": null,
         "type": {
           "specId": "material3",
@@ -287,7 +286,6 @@
         "markingId": "99b50852-55a9-4d26-a409-7ab000b62e51",
         "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
         "name": null,
-        "inherit": false,
         "parentAnnotationId": null,
         "type": {
           "specId": "material3",
@@ -317,7 +315,6 @@
         "markingId": "394827fd-557d-49ea-a2a7-3f91270b39b4",
         "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
         "name": null,
-        "inherit": false,
         "parentAnnotationId": null,
         "type": {
           "specId": "material3",
@@ -347,7 +344,6 @@
         "markingId": "a34c81b9-49a7-4319-a80f-9021bfdd46da",
         "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
         "name": null,
-        "inherit": false,
         "parentAnnotationId": null,
         "type": {
           "specId": "material3",

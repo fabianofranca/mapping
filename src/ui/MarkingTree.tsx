@@ -31,18 +31,16 @@ export function afterPaint(callback: () => void): void {
   else setTimeout(callback, 0);
 }
 
-/** Bolinhas das camadas visíveis que chegam à marcação; as herdadas ficam esmaecidas. */
+/** Bolinhas das camadas visíveis com anotação na marcação. */
 export function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
   return (
     <span class="tree-dots" aria-hidden="true">
-      {dots.map(({ layer, inheritedOnly }) => (
+      {dots.map(({ layer }) => (
         <span
           key={layer.id}
-          class={inheritedOnly ? 'tree-dot tree-dot-inherited' : 'tree-dot'}
+          class="tree-dot"
           style={{ '--layer-color': layer.color }}
-          title={t(inheritedOnly ? 'tree.layerDotInherited' : 'tree.layerDot', {
-            name: layer.name,
-          })}
+          title={t('tree.layerDot', { name: layer.name })}
         />
       ))}
     </span>

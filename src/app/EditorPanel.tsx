@@ -1,5 +1,5 @@
 import type { ProjectContainer } from '../model';
-import { resolveSelection, type AnnotationLocation, type Selection } from '../store/ui';
+import { resolveSelection, type AnnotationLocation } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
 import { MarkingPanel } from '../ui/MarkingPanel';
 import { SelectionPanel } from '../ui/SelectionPanel';
@@ -20,27 +20,18 @@ export function EditorPanel({
   onReplace,
   onGoToAnnotation,
 }: EditorPanelProps) {
-  const { store, ui, display, canvas, review } = useEditor();
+  const { store, ui, display, review } = useEditor();
   // O projeto à vista: fora da revisão, o confirmado (os campos do painel atualizam ao
   // soltar o gesto, não durante); na revisão, o que a visão Atual/Proposto mostra.
   const project = review.derived.shownProject.value;
   if (!project) return null;
-
-  const onSelectMarking = (id: string) => {
-    const next: NonNullable<Selection> = { kind: 'marking', id };
-    ui.selection.value = next;
-    canvas.current?.centerSelection();
-  };
 
   // Revisão de uma proposta: o painel normal do item, somente leitura, com os marcadores
   // (ou o nível selecionado com as mudanças, na proposta e no grupo Projeto).
   if (review.proposalId.value !== null) {
     return (
       <div class="tab-panel">
-        <ReviewPanel
-          onGoToAnnotation={onGoToAnnotation}
-          onSelectMarking={onSelectMarking}
-        />
+        <ReviewPanel onGoToAnnotation={onGoToAnnotation} />
       </div>
     );
   }
@@ -58,7 +49,6 @@ export function EditorPanel({
           image={selected.image}
           readOnly={readOnly || busy}
           onDelete={dialogs.requestDeleteMarking}
-          onSelectMarking={onSelectMarking}
           onGoToAnnotation={onGoToAnnotation}
         />
       ) : (
