@@ -347,6 +347,24 @@ describe('marcações: mover', () => {
     expect(marking(r, 'M4').containerId).toBe('I1');
   });
 
+  it('o mínimo do componente vale ao converter para o espaço novo (minSize e minSizeOf)', () => {
+    // M4 (100×100 de I2) vira 400×400 na I1; o mínimo do componente é maior.
+    const viaMinSize = moveMarking(sampleProject(), 'M4', -1000, 100, {
+      minSize: { width: 500, height: 450 },
+    });
+    expect(marking(viaMinSize, 'M4')).toMatchObject({
+      containerId: 'I1',
+      rect: { width: 500, height: 450 },
+    });
+    const viaMinSizeOf = moveMarking(sampleProject(), 'M4', -1000, 100, {
+      minSizeOf: (id) => (id === 'M4' ? { width: 600, height: 420 } : null),
+    });
+    expect(marking(viaMinSizeOf, 'M4')).toMatchObject({
+      containerId: 'I1',
+      rect: { width: 600, height: 420 },
+    });
+  });
+
   it('marcação do canvas move só a si mesma (não leva os membros)', () => {
     let p = withCanvas('K', rect(0, 1200, 1000, 800));
     p = createMarking(p, { id: 'J', containerId: null, rect: rect(100, 1300, 300, 200) });
@@ -492,7 +510,9 @@ describe('marcações: ajuste fino pelo painel', () => {
       2700,
     );
     // O pai pode encolher abaixo da caixa das filhas.
-    expect(marking(adjustMarkingRect(p, 'M1', 'width', 10), 'M1').rect.width).toBe(8);
+    const shrunk = expectValid(adjustMarkingRect(p, 'M1', 'width', 10));
+    expect(marking(shrunk, 'M1').rect.width).toBe(10);
+    expect(marking(shrunk, 'M2').parentId).toBeNull();
     expect(marking(adjustMarkingRect(p, 'M1', 'height', 99999), 'M1').rect.height).toBe(
       2000,
     );

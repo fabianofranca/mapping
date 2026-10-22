@@ -45,13 +45,18 @@ function checkRectShape(rect: Rect, options?: RectOptions): void {
   if (min && (rect.width < min.width || rect.height < min.height)) fail('rect-too-small');
 }
 
-/** Assenta ao fim da operação (salvo `settle: false`), com o `minSize` na marcação da operação. */
+/**
+ * Assenta ao fim da operação (salvo `settle: false`). Sem `minSizeOf`, o `minSize` vale para a
+ * marcação da operação; com `minSizeOf`, o `minSize` ainda vale para ela e o `minSizeOf` para
+ * as demais.
+ */
 function settled(p: Project, markingId: string, options?: RectOptions): Project {
   const min = options?.minSize;
-  if (options?.minSizeOf !== undefined || min === undefined) return settleIf(p, options);
+  if (min === undefined) return settleIf(p, options);
+  const minSizeOf = options?.minSizeOf;
   return settleIf(p, {
     ...options,
-    minSizeOf: (id) => (id === markingId ? min : null),
+    minSizeOf: (id) => (id === markingId ? min : (minSizeOf?.(id) ?? null)),
   });
 }
 
@@ -87,12 +92,11 @@ export function createMarking(
   if (p.markings.some((m) => m.id === args.id)) fail('duplicate-id', args.id);
   const floating = args.floating ?? false;
   if (floating && args.containerId !== null) fail('invalid-space', args.id);
-  if (args.containerId !== null) {
-    const container = findById(p.containers, args.containerId);
-    checkRectShape(args.rect, options);
-    if (!containsRect(imagePixelRect(container), args.rect)) fail('rect-out-of-image');
-  } else {
-    checkRectShape(args.rect, options);
+  const container =
+    args.containerId === null ? null : findById(p.containers, args.containerId);
+  checkRectShape(args.rect, options);
+  if (container && !containsRect(imagePixelRect(container), args.rect)) {
+    fail('rect-out-of-image');
   }
   const marking: Marking = {
     id: args.id,
@@ -179,9 +183,7 @@ export function moveMarking(
   if (dx === 0 && dy === 0) return p;
   requireUnlocked(canEditMarkingGeometry(p, markingId));
   const affected =
-    marking.containerId === null
-      ? new Set<string>()
-      : descendantIds(p, markingId);
+    marking.containerId === null ? new Set<string>() : descendantIds(p, markingId);
   affected.add(markingId);
   return settled(
     {
@@ -230,7 +232,9 @@ export function adjustMarkingRect(
   }
   const minimum = Math.max(MIN_MARKING_SIZE, options?.minSize?.[field] ?? 0);
   const maximum = bounds
-    ? (field === 'width' ? right(bounds) - rect.x : bottom(bounds) - rect.y)
+    ? field === 'width'
+      ? right(bounds) - rect.x
+      : bottom(bounds) - rect.y
     : Infinity;
   const size = clamp(value, minimum, maximum);
   if (size === rect[field]) return p;

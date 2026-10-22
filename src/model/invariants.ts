@@ -190,7 +190,8 @@ export function validateProject(p: Project): InvariantIssue[] {
       continue;
     }
     if (parent.floating) marking('parent-floating', m, parent.id);
-    else if (parent.containerId !== m.containerId) marking('parent-other-image', m, parent.id);
+    else if (parent.containerId !== m.containerId)
+      marking('parent-other-image', m, parent.id);
     else if (!containsRect(parent.rect, m.rect))
       marking('rect-outside-parent', m, parent.id);
   }

@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   IMAGE_GAP,
+  createMarking,
+  deserialize,
   imageCanvasRect,
   repairProject,
   right,
+  serialize,
   validateProject,
+  type Marking,
   type Project,
 } from '../../src/model';
 import { idGen } from './specFixtures';
@@ -221,5 +225,181 @@ describe('repairProject', () => {
     expect(result.unrepaired.map((i) => `${i.code}:${i.id}`)).toEqual([
       'duplicate-id:M4',
     ]);
+  });
+});
+
+// Pertencimento por geometria (v13): o reparo só torna o projeto válido; nunca assenta.
+describe('repairProject: canvas e pertencimento', () => {
+  const rect = (x: number, y: number, width: number, height: number) => ({
+    x,
+    y,
+    width,
+    height,
+  });
+  /** sampleProject + K (canvas, cerca só a I1) + J (canvas, dentro de K). */
+  function withCanvas(): Project {
+    let p = createMarking(sampleProject(), {
+      id: 'K',
+      containerId: null,
+      rect: rect(-100, -100, 1200, 1000),
+    });
+    p = createMarking(p, { id: 'J', containerId: null, rect: rect(-50, -50, 200, 100) });
+    return p;
+  }
+  const patchMarking = (p: Project, id: string, change: Partial<Marking>): Project => ({
+    ...p,
+    markings: p.markings.map((m) => (m.id === id ? { ...m, ...change } : m)),
+  });
+  const patchContainer = (p: Project, id: string, parentId: string | null): Project => ({
+    ...p,
+    containers: p.containers.map((c) => (c.id === id ? { ...c, parentId } : c)),
+  });
+
+  it('pai de container ausente: o container fica sem pai', () => {
+    const result = repair(patchContainer(sampleProject(), 'I1', 'ZZ'));
+    expect(result.unrepaired).toEqual([]);
+    expect(image(result.project, 'I1').parentId).toBeNull();
+    expect(result.repaired).toEqual([
+      {
+        action: 'made-root',
+        code: 'container-parent-missing',
+        entity: 'image',
+        id: 'I1',
+        name: 'images/lateral.jpg',
+      },
+    ]);
+  });
+
+  it('pai de container que não é do canvas (de container ou flutuante): sem pai', () => {
+    const ofContainer = repair(patchContainer(withCanvas(), 'I1', 'M1'));
+    expect(ofContainer.unrepaired).toEqual([]);
+    expect(image(ofContainer.project, 'I1').parentId).toBeNull();
+    expect(ofContainer.repaired.map((r) => `${r.action}:${r.code}:${r.id}`)).toEqual([
+      'made-root:container-parent-not-canvas:I1',
+    ]);
+
+    const floating = patchMarking(
+      patchMarking(withCanvas(), 'J', { parentId: null }),
+      'J',
+      {
+        floating: true,
+      },
+    );
+    const ofFloating = repair(patchContainer(floating, 'I1', 'J'));
+    expect(ofFloating.unrepaired).toEqual([]);
+    expect(image(ofFloating.project, 'I1').parentId).toBeNull();
+    // A flutuante em si não é tocada.
+    expect(marking(ofFloating.project, 'J')).toEqual(marking(floating, 'J'));
+  });
+
+  it('container fora da marcação do canvas: sem pai', () => {
+    const result = repair(patchContainer(withCanvas(), 'I2', 'K'));
+    expect(result.unrepaired).toEqual([]);
+    expect(image(result.project, 'I2').parentId).toBeNull();
+    expect(result.repaired.map((r) => `${r.code}:${r.id}`)).toEqual([
+      'container-outside-parent:I2',
+    ]);
+    // Os outros pais continuam.
+    expect(image(result.project, 'I1').parentId).toBe('K');
+  });
+
+  it('flutuante dentro de um container: vai para o canvas, o rect convertido; as filhas perdem o pai', () => {
+    const broken = patchMarking(sampleProject(), 'M1', { floating: true });
+    const result = repair(broken);
+    expect(result.unrepaired).toEqual([]);
+    expect(marking(result.project, 'M1')).toMatchObject({
+      containerId: null,
+      parentId: null,
+      floating: true,
+      // 1000 px de I1 (escala 0,25, em 0,0): 250 unidades do canvas.
+      rect: rect(250, 250, 250, 250),
+    });
+    // M2 apontava para a M1 flutuante: sem pai. M3 continua em M2.
+    expect(marking(result.project, 'M2').parentId).toBeNull();
+    expect(marking(result.project, 'M3').parentId).toBe('M2');
+    expect(result.repaired).toContainEqual({
+      action: 'made-root',
+      code: 'floating-in-container',
+      entity: 'marking',
+      id: 'M1',
+      name: 'Porta',
+    });
+    expect(result.repaired).toContainEqual({
+      action: 'made-root',
+      code: 'parent-floating',
+      entity: 'marking',
+      id: 'M2',
+      name: 'Maçaneta',
+    });
+  });
+
+  it('flutuante do canvas que tem pai: o pai sai e o rect fica', () => {
+    const broken = patchMarking(withCanvas(), 'J', { floating: true });
+    expect(marking(broken, 'J').parentId).toBe('K');
+    const result = repair(broken);
+    expect(result.unrepaired).toEqual([]);
+    expect(marking(result.project, 'J')).toMatchObject({
+      containerId: null,
+      parentId: null,
+      floating: true,
+      rect: rect(-50, -50, 200, 100),
+    });
+  });
+
+  it('marcação com pai flutuante: vira raiz', () => {
+    const broken = patchMarking(
+      patchMarking(withCanvas(), 'K', { floating: true }),
+      'K',
+      {
+        parentId: null,
+      },
+    );
+    const result = repair(broken);
+    expect(result.unrepaired).toEqual([]);
+    expect(marking(result.project, 'J').parentId).toBeNull();
+    // K é flutuante: não pode ser pai do container I1.
+    expect(image(result.project, 'I1').parentId).toBeNull();
+    expect(result.repaired.map((r) => `${r.code}:${r.id}`).sort()).toEqual([
+      'container-parent-not-canvas:I1',
+      'parent-floating:J',
+    ]);
+  });
+
+  it('a marcação do canvas nunca é órfã nem é recortada; só a de container', () => {
+    // M2 aponta para um container inexistente (removida); K, do canvas, com coordenadas negativas, fica.
+    const broken = patchMarking(withCanvas(), 'M2', { containerId: 'I9' });
+    const result = repair(broken);
+    expect(result.unrepaired).toEqual([]);
+    expect(result.project.markings.map((m) => m.id)).toEqual([
+      'M1',
+      'M3',
+      'M4',
+      'K',
+      'J',
+    ]);
+    expect(marking(result.project, 'K')).toEqual(marking(broken, 'K'));
+    expect(marking(result.project, 'J')).toEqual(marking(broken, 'J'));
+  });
+
+  it('só torna o projeto válido: não assenta (um pai válido que não é o menor fica)', () => {
+    // M3 aponta para M1 (válido, mas M2 é a menor que a contém); M2 tem pai ausente.
+    let broken = patchMarking(sampleProject(), 'M3', { parentId: 'M1' });
+    broken = patchMarking(broken, 'M2', { parentId: 'M9' });
+    const result = repair(broken);
+    expect(result.unrepaired).toEqual([]);
+    expect(marking(result.project, 'M2').parentId).toBeNull();
+    expect(marking(result.project, 'M3').parentId).toBe('M1');
+    expect(validateProject(result.project)).toEqual([]);
+  });
+
+  it('o projeto reparado grava e relê sem passar de novo pelo reparo', () => {
+    const broken = patchContainer(
+      patchMarking(withCanvas(), 'J', { floating: true }),
+      'I2',
+      'K',
+    );
+    const result = repair(broken);
+    expect(validateProject(result.project)).toEqual([]);
+    expect(deserialize(serialize(result.project)).ok).toBe(true);
   });
 });

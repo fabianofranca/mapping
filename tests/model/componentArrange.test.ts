@@ -271,6 +271,44 @@ describe('arrangeMarking: hug', () => {
   });
 });
 
+describe('arrangeMarking: no canvas e assentar', () => {
+  /** Linha hug no canvas (containerId nulo), longe da imagem I1 (que ocupa 0–1000 × 0–800). */
+  function onCanvas(): Project {
+    let p = add(componentProject(), 'C', 'rowhug', box(3000, 100, 100, 60), null, {
+      name: 'Linha',
+      containerId: null,
+    });
+    p = add(p, 'T1', 'text', box(3000, 100, 100, 40), 'C', { containerId: null });
+    p = add(p, 'T2', 'text', box(3000, 110, 100, 40), 'C', { containerId: null });
+    return p;
+  }
+
+  it('a raiz do canvas não tem limite: cresce além de qualquer borda, sem aviso de "não cabe"', () => {
+    const p = onCanvas();
+    expect(marking(p, 'C').containerId).toBeNull();
+    expect(marking(p, 'T2').parentId).toBe('C');
+    const { project, warnings } = arrange(p, 'C');
+    // 2 × 100 + gap 8, a partir de x = 3000; a mesma largura que o teste dentro da imagem pediria.
+    expect(rectOf(project, 'C')).toEqual(box(3000, 100, 208, 40));
+    expect(warnings.some((w) => w.includes('não cabe'))).toBe(false);
+    expectValid(project);
+  });
+
+  it('as filhas continuam filhas da linha depois de arrumar (o pai é refeito pela geometria)', () => {
+    const { project } = arrange(onCanvas(), 'C');
+    expect(marking(project, 'T1').parentId).toBe('C');
+    expect(marking(project, 'T2').parentId).toBe('C');
+    expect(rectOf(project, 'T2')).toEqual(box(3108, 100, 100, 40));
+  });
+
+  it('settle: false (prévia) arruma igual, sem assentar', () => {
+    const preview = arrangeMarking(onCanvas(), catalog, 'C', approximateMeasurer, {
+      settle: false,
+    });
+    expect(rectOf(preview.project, 'C')).toEqual(box(3000, 100, 208, 40));
+  });
+});
+
 describe('arrangeMarking: aninhados', () => {
   /** Coluna hug › [linha hug › [T1, T2], T3]. */
   function nested(): Project {

@@ -5,11 +5,14 @@ import {
   canDeleteImage,
   canDeleteMarking,
   canEditMarkingGeometry,
+  canEditImagePlacement,
   canReplaceImage,
   createMarking,
   containerDeletionImpact,
+  containerLockStates,
   isMarkingGeometryLocked,
   markingDeletionImpact,
+  markingLockStates,
   moveContainer,
   moveMarking,
   removeContainer,
@@ -20,6 +23,8 @@ import {
   setImageLocked,
   setImageMarkingsLocked,
   setMarkingLocked,
+  setBackgroundContainer,
+  addBackgroundContainer,
   setMarkingRect,
   type Project,
 } from '../../src/model';
@@ -403,5 +408,152 @@ describe('trava: imagem com marcação trancada', () => {
   it('a imagem sem trava nenhuma é trocada normalmente', () => {
     const bigger = { file: 'images/nova.jpg', width: 8000, height: 6000 };
     expect(codeOf(() => replaceContainer(sampleProject(), 'I1', bigger))).toBeNull();
+  });
+});
+
+// Marcação do canvas (v13): a trava dela desce aos containers dentro dela (decisão 6).
+describe('trava: marcação do canvas trava o placement dos containers dentro dela', () => {
+  const rect = (x: number, y: number, width: number, height: number) => ({
+    x,
+    y,
+    width,
+    height,
+  });
+  /** sampleProject: K cerca as duas telas; J (dentro de K) cerca só a I1 (0,0)–(1000,750). */
+  function withCanvas(): Project {
+    let p = createMarking(sampleProject(), {
+      id: 'K',
+      containerId: null,
+      rect: rect(-200, -200, 2500, 1400),
+    });
+    p = createMarking(p, {
+      id: 'J',
+      containerId: null,
+      rect: rect(-100, -100, 1200, 1000),
+    });
+    return p;
+  }
+  const lockedK = () => setMarkingLocked(withCanvas(), 'K', true);
+
+  it('a marcação do canvas trancada não se move, redimensiona nem exclui', () => {
+    const p = lockedK();
+    expect(codeOf(() => moveMarking(p, 'K', 10, 0))).toBe('locked');
+    expect(codeOf(() => setMarkingRect(p, 'K', rect(-200, -200, 2600, 1400)))).toBe(
+      'locked',
+    );
+    expect(codeOf(() => adjustMarkingRect(p, 'K', 'width', 2600))).toBe('locked');
+    expect(codeOf(() => removeMarking(p, 'K'))).toBe('locked');
+    // A marcação do canvas dentro dela herda a trava de geometria, mas pode ser excluída.
+    expect(isMarkingGeometryLocked(p, 'J')).toBe(true);
+    expect(codeOf(() => moveMarking(p, 'J', 1, 0))).toBe('locked');
+    expect(canDeleteMarking(p, 'J')).toBe(true);
+  });
+
+  it('o container dentro dela não pode ser movido nem redimensionado; excluir pode', () => {
+    const p = lockedK();
+    expect(image(p, 'I1').parentId).toBe('J');
+    expect(canEditImagePlacement(p, 'I1')).toBe(false);
+    expect(codeOf(() => moveContainer(p, 'I1', 0, 5000))).toBe('locked');
+    expect(codeOf(() => resizeContainer(p, 'I1', { x: 0, y: 0, scale: 0.2 }))).toBe(
+      'locked',
+    );
+    // Excluir a imagem é outra coisa (como a marcação trancada que não impede o pai).
+    expect(canDeleteImage(p, 'I1')).toBe(true);
+    expect(codeOf(() => removeContainer(p, 'I1'))).toBeNull();
+    // A I2 também é membro de K, direto.
+    expect(image(p, 'I2').parentId).toBe('K');
+    expect(canEditImagePlacement(p, 'I2')).toBe(false);
+  });
+
+  it('sobe a cadeia inteira: o pai do container é uma filha, o ancestral trancado é outra', () => {
+    // I1 tem J como pai e J tem K como pai. Trancar só K basta; trancar só J também.
+    expect(image(withCanvas(), 'I1').parentId).toBe('J');
+    expect(canEditImagePlacement(lockedK(), 'I1')).toBe(false);
+    const onlyJ = setMarkingLocked(withCanvas(), 'J', true);
+    expect(canEditImagePlacement(onlyJ, 'I1')).toBe(false);
+    // A I2 só está em K, que não está trancada: livre.
+    expect(canEditImagePlacement(onlyJ, 'I2')).toBe(true);
+  });
+
+  it('o tamanho de um container sem arquivo também é placement', () => {
+    let p = createMarking(sampleProject(), {
+      id: 'K',
+      containerId: null,
+      rect: rect(-200, 1100, 1500, 1300),
+    });
+    p = addBackgroundContainer(p, {
+      id: 'B1',
+      width: 390,
+      height: 844,
+      background: '#FFFFFF',
+      center: { x: 300, y: 1700 },
+    });
+    expect(image(p, 'B1').parentId).toBe('K');
+    p = setMarkingLocked(p, 'K', true);
+    expect(codeOf(() => setBackgroundContainer(p, 'B1', { width: 400 }))).toBe('locked');
+    // A cor não é geometria.
+    expect(
+      codeOf(() => setBackgroundContainer(p, 'B1', { background: '#000000' })),
+    ).toBeNull();
+  });
+
+  it('entrar numa marcação trancada é permitido; depois de dentro, o container fica travado', () => {
+    let p = createMarking(sampleProject(), {
+      id: 'K',
+      containerId: null,
+      rect: rect(0, 1200, 3000, 1500),
+    });
+    p = setMarkingLocked(p, 'K', true);
+    expect(image(p, 'I2').parentId).toBeNull();
+    p = expectValid(moveContainer(p, 'I2', 1050, 1300));
+    expect(image(p, 'I2').parentId).toBe('K');
+    expect(codeOf(() => moveContainer(p, 'I2', 1050, 0))).toBe('locked');
+    // Criar marcação dentro da trancada também é permitido.
+    const q = createMarking(p, {
+      id: 'N',
+      containerId: null,
+      rect: rect(100, 1300, 100, 100),
+    });
+    expect(marking(q, 'N').parentId).toBe('K');
+  });
+
+  it('a flutuante não é membro: a trava da marcação por baixo não a alcança', () => {
+    let p = createMarking(lockedK(), {
+      id: 'N',
+      containerId: null,
+      rect: rect(100, 100, 200, 100),
+      floating: true,
+    });
+    expect(marking(p, 'N').parentId).toBeNull();
+    expect(isMarkingGeometryLocked(p, 'N')).toBe(false);
+    p = moveMarking(p, 'N', 5, 5);
+    expect(marking(p, 'N').rect.x).toBe(105);
+  });
+
+  it('markingLockStates cobre as marcações do canvas; containerLockStates, os containers', () => {
+    const p = lockedK();
+    expect(markingLockStates(p)).toEqual(
+      new Map([
+        ['K', 'self'],
+        ['J', 'inherited'],
+      ]),
+    );
+    expect(containerLockStates(p)).toEqual(
+      new Map([
+        ['I1', 'inherited'],
+        ['I2', 'inherited'],
+      ]),
+    );
+    // A trava da própria imagem vale mais que a herdada.
+    expect(containerLockStates(setImageLocked(p, 'I1', true)).get('I1')).toBe('self');
+    // Sem nenhuma trava, o mapa é vazio.
+    expect(containerLockStates(withCanvas()).size).toBe(0);
+    expect(containerLockStates(sampleProject()).size).toBe(0);
+  });
+
+  it('destrancar a marcação libera os containers', () => {
+    const p = setMarkingLocked(lockedK(), 'K', false);
+    expect(canEditImagePlacement(p, 'I1')).toBe(true);
+    expect(codeOf(() => moveContainer(p, 'I1', 0, 5000))).toBeNull();
   });
 });

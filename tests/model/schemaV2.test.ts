@@ -50,17 +50,18 @@ describe('migração v1 → v2', () => {
     expect(p.layers.map((l) => omit(l, ['spec']))).toEqual(original.layers);
     expect(
       p.markings.map((m) => {
-        const { containerId, ...rest } = omit(m, ['locked', 'source']) as Record<
-          string,
-          unknown
-        >;
+        const { containerId, ...rest } = omit(m, [
+          'locked',
+          'floating',
+          'source',
+        ]) as Record<string, unknown>;
         return { ...rest, imageId: containerId };
       }),
     ).toEqual(original.markings);
     expect(p.project).toEqual(original.project);
     expect(
       p.containers.map((i) =>
-        omit(i, ['name', 'markingColor', 'locked', 'source', 'background']),
+        omit(i, ['name', 'parentId', 'markingColor', 'locked', 'source', 'background']),
       ),
     ).toEqual(original.images);
     expect(
@@ -87,6 +88,7 @@ describe('migração v1 → v2', () => {
       'width',
       'height',
       'placement',
+      'parentId',
       'markingColor',
       'locked',
       'source',

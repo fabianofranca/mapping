@@ -296,27 +296,24 @@ export function arrangeMarking(
     const marking = index.markings.get(id) as Marking;
     const rect = rects.get(id) as Rect;
     const isRoot = id === markingId;
-    let outer: Rect | null;
+    let outer: Rect;
+    let where: string;
     if (marking.parentId !== null) {
       outer = isRoot
         ? (index.markings.get(marking.parentId) as Marking).rect
         : (rects.get(marking.parentId) as Rect);
+      where = labelOf(marking.parentId);
     } else if (marking.containerId === null) {
-      outer = null;
+      continue; // Marcação do canvas sem pai: nada a limita.
     } else {
-      outer = imagePixelRect(
-        index.containers.get(marking.containerId) ?? { width: 0, height: 0 },
-      );
+      const container = index.containers.get(marking.containerId);
+      outer = imagePixelRect(container ?? { width: 0, height: 0 });
+      where = container?.name ?? marking.containerId;
     }
-    if (outer === null) continue;
     const fixed = clampRect(rect, outer, isRoot ? 'shrink' : 'push');
     if (sameRect(rect, fixed)) continue;
     rects.set(id, fixed);
     translate(id, fixed.x - rect.x, fixed.y - rect.y);
-    const where =
-      marking.parentId === null
-        ? (index.containers.get(marking.containerId ?? '')?.name ?? marking.containerId)
-        : labelOf(marking.parentId);
     warnings.add(`${labelOf(id)}: não cabe em ${where}`);
   }
 

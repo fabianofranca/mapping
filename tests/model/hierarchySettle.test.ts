@@ -94,7 +94,10 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
 
   it('bordas coincidentes contam como dentro', () => {
     const p = settleHierarchy(
-      project([A], [mk('out', 'A', rect(0, 0, 100, 100)), mk('in', 'A', rect(0, 0, 100, 50))]),
+      project(
+        [A],
+        [mk('out', 'A', rect(0, 0, 100, 100)), mk('in', 'A', rect(0, 0, 100, 50))],
+      ),
     );
     expect(get(p, 'in').parentId).toBe('out');
   });
@@ -141,12 +144,20 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
         ],
       ),
     );
-    expect(parents(p)).toEqual({ left: null, right: null, both: 'left', partial: 'right' });
+    expect(parents(p)).toEqual({
+      left: null,
+      right: null,
+      both: 'left',
+      partial: 'right',
+    });
   });
 
   it('item parcialmente coberto não é filho', () => {
     const p = settleHierarchy(
-      project([A], [mk('box', 'A', rect(0, 0, 100, 100)), mk('half', 'A', rect(50, 50, 100, 20))]),
+      project(
+        [A],
+        [mk('box', 'A', rect(0, 0, 100, 100)), mk('half', 'A', rect(50, 50, 100, 20))],
+      ),
     );
     expect(get(p, 'half').parentId).toBeNull();
   });
@@ -194,17 +205,24 @@ describe('os dois espaços', () => {
   });
 
   it('container parcialmente coberto não é membro', () => {
-    const p = settleHierarchy(project([A], [mk('half', null, rect(-10, -10, 500, 2000))]));
+    const p = settleHierarchy(
+      project([A], [mk('half', null, rect(-10, -10, 500, 2000))]),
+    );
     expect(get(p, 'half').containerId).toBeNull();
     expect(containerParents(p)).toEqual({ A: null });
   });
 
   it('o pai de um container sai quando a marcação deixa de contê-lo', () => {
-    const base = settleHierarchy(project([A], [mk('box', null, rect(-10, -10, 1020, 1020))]));
+    const base = settleHierarchy(
+      project([A], [mk('box', null, rect(-10, -10, 1020, 1020))]),
+    );
     expect(base.containers[0]?.parentId).toBe('box');
     const moved = settleHierarchy({
       ...base,
-      containers: base.containers.map((c) => ({ ...c, placement: { ...c.placement, x: 5000 } })),
+      containers: base.containers.map((c) => ({
+        ...c,
+        placement: { ...c.placement, x: 5000 },
+      })),
     });
     expect(moved.containers[0]?.parentId).toBeNull();
   });
@@ -232,7 +250,10 @@ describe('troca de espaço ao assentar', () => {
         ],
       ),
     );
-    expect(get(p, 'card')).toMatchObject({ containerId: 'B', rect: rect(50, 50, 200, 200) });
+    expect(get(p, 'card')).toMatchObject({
+      containerId: 'B',
+      rect: rect(50, 50, 200, 200),
+    });
     expect(get(p, 'icon')).toMatchObject({
       containerId: 'B',
       parentId: 'card',
@@ -243,7 +264,10 @@ describe('troca de espaço ao assentar', () => {
   it('solta fora de todos os containers vira marcação do canvas, em unidades do canvas', () => {
     // Em pixels de B (escala 2, em 2000,0): -300 px = 1400 no canvas, no vão entre A e B.
     const p = settleHierarchy(project([A, B], [mk('m', 'B', rect(-300, 10, 50, 20))]));
-    expect(get(p, 'm')).toMatchObject({ containerId: null, rect: rect(1400, 20, 100, 40) });
+    expect(get(p, 'm')).toMatchObject({
+      containerId: null,
+      rect: rect(1400, 20, 100, 40),
+    });
   });
 
   it('marcação do canvas que fica inteira dentro de um container vira dele (decisão 5)', () => {
@@ -265,7 +289,10 @@ describe('troca de espaço ao assentar', () => {
       { minSizeOf: (id) => (id === 'button' ? { width: 40, height: 12 } : null) },
     );
     expect(get(p, 'tiny')).toMatchObject({ containerId: 'D', rect: rect(10, 10, 8, 8) });
-    expect(get(p, 'button')).toMatchObject({ containerId: 'D', rect: rect(100, 100, 40, 12) });
+    expect(get(p, 'button')).toMatchObject({
+      containerId: 'D',
+      rect: rect(100, 100, 40, 12),
+    });
   });
 
   it('a marcação de container que continua dentro dele não muda', () => {

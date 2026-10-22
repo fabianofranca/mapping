@@ -72,10 +72,7 @@ export function markingCanvasRectOf(p: Project, marking: Marking): Rect {
  * O container que contém inteiro o retângulo `canvas` (unidades do canvas). Como os
  * containers não se sobrepõem, há no máximo um; `null` = nenhum (o espaço é o canvas).
  */
-export function containerContaining(
-  p: Project,
-  canvas: Rect,
-): ProjectContainer | null {
+export function containerContaining(p: Project, canvas: Rect): ProjectContainer | null {
   for (const c of p.containers) {
     if (containsRectApprox(imageCanvasRect(c, c.placement), canvas)) return c;
   }
@@ -146,10 +143,17 @@ export function settleHierarchy(p: Project, options?: SettleOptions): Project {
     else bySpace.set(m.containerId, [{ m, i }]);
   });
 
-  const parentOf = (rect: Rect, index: number, group: readonly { m: Marking; i: number }[]) => {
+  const parentOf = (
+    rect: Rect,
+    index: number,
+    group: readonly { m: Marking; i: number }[],
+  ) => {
     let best: { m: Marking; i: number } | null = null;
     for (const candidate of group) {
-      if (candidate.i === index || !canContain(candidate.m.rect, candidate.i, rect, index))
+      if (
+        candidate.i === index ||
+        !canContain(candidate.m.rect, candidate.i, rect, index)
+      )
         continue;
       if (
         best === null ||
@@ -204,7 +208,10 @@ export function settleIf(p: Project, options?: SettleOptions): Project {
 export function membersOf(
   p: Project,
   markingId: string,
-): { readonly markings: readonly Marking[]; readonly containers: readonly ProjectContainer[] } {
+): {
+  readonly markings: readonly Marking[];
+  readonly containers: readonly ProjectContainer[];
+} {
   const index = projectIndex(p);
   return {
     markings: index.children.get(markingId) ?? [],
