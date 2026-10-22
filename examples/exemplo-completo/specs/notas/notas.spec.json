@@ -28,7 +28,7 @@
               "label": "Texto",
               "type": "string",
               "required": true,
-              "description": "O comentário em si. Aceita várias linhas."
+              "description": "O comentário em si. Aceita várias linhas: Shift+Enter quebra a linha (Enter confirma enquanto o campo é de uma linha; na área de várias linhas, Enter também insere linha)."
             }
           ],
           "component": "components/nota.json",
