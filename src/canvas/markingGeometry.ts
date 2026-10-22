@@ -58,7 +58,7 @@ export function isDrawableRect(rect: Rect): boolean {
  */
 export function markingChainAt(
   markings: readonly Marking[],
-  imageId: string,
+  containerId: string,
   p: Point,
 ): Marking[] {
   const byId = new Map(markings.map((m) => [m.id, m]));
@@ -74,7 +74,7 @@ export function markingChainAt(
   let best: Marking | null = null;
   let bestDepth = -1;
   for (const m of markings) {
-    if (m.imageId !== imageId || !pointInRect(p, m.rect)) continue;
+    if (m.containerId !== containerId || !pointInRect(p, m.rect)) continue;
     const d = depth(m);
     if (!best || d > bestDepth || (d === bestDepth && area(m.rect) <= area(best.rect))) {
       best = m;

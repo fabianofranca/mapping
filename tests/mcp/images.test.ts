@@ -417,11 +417,11 @@ describe('arquivos problemáticos', () => {
 });
 
 describe('container (sem arquivo)', () => {
-  it('get_image_file recusa com blank-image e manda usar get_marking_image', async () => {
+  it('get_image_file recusa com container-without-file e manda usar get_marking_image', async () => {
     const r = await call<{ error: { code: string; message: string } }>('get_image_file', {
       ref: imageRef(IDS.blank),
     });
-    expect(errorCode(r)).toBe('blank-image');
+    expect(errorCode(r)).toBe('container-without-file');
     expect(r.data.error.message).toBe(
       'O container não tem arquivo: use get_marking_image para ver o desenho.',
     );

@@ -3,7 +3,7 @@ import {
   ModelError,
   deserialize,
   serialize,
-  setImageMarkingColor,
+  setContainerMarkingColor,
   type Project,
 } from '../../src/model';
 import { sampleProject } from './fixtures';
@@ -56,7 +56,7 @@ describe('migração v2 → v3', () => {
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(2);
     expect(result.project.schemaVersion).toBe(11);
-    expect(result.project.images.every((i) => i.markingColor === null)).toBe(true);
+    expect(result.project.containers.every((i) => i.markingColor === null)).toBe(true);
     expect(withoutEntryIds(result.project)).toEqual(withoutEntryIds(sampleProject()));
   });
 
@@ -69,24 +69,24 @@ describe('migração v2 → v3', () => {
 
 describe('cor da borda das marcações', () => {
   it('define (normalizando para maiúsculas) e limpa a cor da imagem', () => {
-    let p = setImageMarkingColor(sampleProject(), 'I1', '#ffeb3b');
-    expect(p.images[0]?.markingColor).toBe('#FFEB3B');
-    expect(p.images[1]?.markingColor).toBeNull();
-    p = setImageMarkingColor(p, 'I1', null);
-    expect(p.images[0]?.markingColor).toBeNull();
+    let p = setContainerMarkingColor(sampleProject(), 'I1', '#ffeb3b');
+    expect(p.containers[0]?.markingColor).toBe('#FFEB3B');
+    expect(p.containers[1]?.markingColor).toBeNull();
+    p = setContainerMarkingColor(p, 'I1', null);
+    expect(p.containers[0]?.markingColor).toBeNull();
   });
 
   it('rejeita cor inválida e imagem inexistente', () => {
-    expect(() => setImageMarkingColor(sampleProject(), 'I1', 'vermelho')).toThrow(
+    expect(() => setContainerMarkingColor(sampleProject(), 'I1', 'vermelho')).toThrow(
       ModelError,
     );
-    expect(() => setImageMarkingColor(sampleProject(), 'nada', '#FFFFFF')).toThrow(
+    expect(() => setContainerMarkingColor(sampleProject(), 'nada', '#FFFFFF')).toThrow(
       ModelError,
     );
   });
 
   it('sobrevive ao round-trip do JSON', () => {
-    const p = setImageMarkingColor(sampleProject(), 'I2', '#00E5FF');
-    expect(load(serialize(p)).images[1]?.markingColor).toBe('#00E5FF');
+    const p = setContainerMarkingColor(sampleProject(), 'I2', '#00E5FF');
+    expect(load(serialize(p)).containers[1]?.markingColor).toBe('#00E5FF');
   });
 });

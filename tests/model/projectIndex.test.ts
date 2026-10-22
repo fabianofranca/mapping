@@ -31,7 +31,7 @@ describe('projectIndex', () => {
     const index = projectIndex(p);
     expect(index.markings.get('MN')?.name).toBe('Nome');
     expect(index.layers.get('LM')?.name).toBe('Model');
-    expect(index.images.get('I1')?.file).toBe('images/cadastro.png');
+    expect(index.containers.get('I1')?.file).toBe('images/cadastro.png');
     expect(index.entries.get('AU')?.get('EN')?.key).toBe('name');
     expect(index.annotationsByMarking.get('MC')?.map((a) => a.id)).toEqual([
       'AB',

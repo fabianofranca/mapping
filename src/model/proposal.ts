@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   annotationSchema,
   entrySchema,
-  imageSchema,
+  containerSchema,
   jsonValue,
   layerSchema,
   markingSchema,
@@ -75,7 +75,7 @@ export const MARKING_FIELDS = [
   'name',
   'rect',
   'parentId',
-  'imageId',
+  'containerId',
   'locked',
   'source',
   'position',
@@ -278,7 +278,7 @@ const entitySchemas: Record<ChangeEntity, z.ZodType> = {
   specialization: specializationValue,
   platformRepo: platformRepoSchema,
   layer: layerSchema,
-  image: imageSchema,
+  image: containerSchema,
   marking: markingSchema,
   annotation: annotationSchema,
 };
@@ -298,7 +298,7 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
   name: z.string().nullable(),
   rect: rectSchema,
   parentId: id.nullable(),
-  imageId: id,
+  containerId: id,
   locked: z.boolean(),
   source: sourceSchema.nullable(),
   position: z.number().int().min(0),
@@ -556,9 +556,41 @@ function withoutLegacyUrlTemplate(proposal: Proposal): Proposal {
   };
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Proposta escrita antes do schema 12: a marcação apontava para a imagem por `imageId`, e agora
+ * aponta para o container por `containerId`. Na leitura, a criação e a remoção de marcação
+ * (valor inteiro) e a mudança do campo `imageId` passam para o nome novo. O cabeçalho da
+ * mudança (`imageId`, que diz em que container ela aparece na revisão) não muda.
+ */
+function withContainerIdOnMarkings(data: unknown): unknown {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return data;
+  const rename = (value: unknown): unknown => {
+    if (!isPlainRecord(value) || !Object.hasOwn(value, 'imageId')) return value;
+    if (Object.hasOwn(value, 'containerId')) return value;
+    const { imageId, ...rest } = value;
+    return { ...rest, containerId: imageId };
+  };
+  return {
+    ...data,
+    changes: data.changes.map((c: unknown) => {
+      if (!isPlainRecord(c) || c.entity !== 'marking') return c;
+      return {
+        ...c,
+        field: c.field === 'imageId' ? 'containerId' : c.field,
+        from: c.field === null ? rename(c.from) : c.from,
+        to: c.field === null ? rename(c.to) : c.to,
+      };
+    }),
+  };
+}
+
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseProposal(data: unknown): ProposalParseResult {
-  const result = proposalSchema.safeParse(data);
+  const result = proposalSchema.safeParse(withContainerIdOnMarkings(data));
   if (result.success) {
     return { ok: true, proposal: withoutLegacyUrlTemplate(result.data as Proposal) };
   }

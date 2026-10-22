@@ -1,9 +1,9 @@
 import {
   ModelError,
   addAnnotation,
-  addBlankImage,
+  addBackgroundContainer,
   addComponentMarking,
-  addImage,
+  addContainer,
   addLayer,
   addTableRow,
   addTypedAnnotation,
@@ -19,13 +19,13 @@ import {
   createMarking,
   innermostContaining,
   reorderMarking,
-  setBlankImage,
+  setBackgroundContainer,
   siblingPosition,
   extensionForMime,
   fieldOf,
   getSpecialization,
   packageDirOf,
-  imageDeletionImpact,
+  containerDeletionImpact,
   layerDeletionImpact,
   markingDeletionImpact,
   matchShortCode,
@@ -39,25 +39,25 @@ import {
   projectIssues,
   projectLayerFor,
   removeAnnotation,
-  removeImage,
+  removeContainer,
   removeLayer,
   removeMarking,
   removePlatformRepo,
   removeSpecialization,
   removeTableRow,
   renameAnnotation,
-  renameImage,
+  renameContainer,
   renameLayer,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   setAnnotationInherit,
   setAnnotationParent,
   setEntries,
   setFieldValue,
   setImageLocked,
-  setImageMarkingColor,
+  setContainerMarkingColor,
   setImageMarkingsLocked,
-  setImagePlacement,
+  setContainerPlacement,
   setImageSource,
   setLayerColor,
   setMarkingLocked,
@@ -973,14 +973,14 @@ class Batch {
       case 'add_image': {
         const image = await this.image(op, p);
         const id = crypto.randomUUID();
-        let project = addImage(p, {
+        let project = addContainer(p, {
           id,
           file: image.file,
           width: image.width,
           height: image.height,
           ...(op.center ? { center: op.center } : {}),
         });
-        if (op.name !== undefined) project = renameImage(project, id, op.name);
+        if (op.name !== undefined) project = renameContainer(project, id, op.name);
         if (op.source !== undefined) {
           project = setImageSource(project, id, toSource(op.source));
         }
@@ -996,7 +996,7 @@ class Batch {
       case 'add_container':
       case 'add_blank_image': {
         const id = crypto.randomUUID();
-        let project = addBlankImage(p, {
+        let project = addBackgroundContainer(p, {
           id,
           ...(op.name !== undefined ? { name: op.name } : {}),
           width: op.width,
@@ -1024,25 +1024,25 @@ class Batch {
           changes.push('destrancar');
         }
         if (op.name !== undefined) {
-          project = renameImage(project, id, op.name);
-          changes.push(`nome ${quoted(projectIndex(project).images.get(id)!.name)}`);
+          project = renameContainer(project, id, op.name);
+          changes.push(`nome ${quoted(projectIndex(project).containers.get(id)!.name)}`);
         }
         if (op.source !== undefined) {
           project = setImageSource(project, id, toSource(op.source));
-          changes.push(sourceLabel(projectIndex(project).images.get(id)!.source));
+          changes.push(sourceLabel(projectIndex(project).containers.get(id)!.source));
         }
         if (op.x !== undefined || op.y !== undefined || op.scale !== undefined) {
-          const { placement } = projectIndex(project).images.get(id)!;
+          const { placement } = projectIndex(project).containers.get(id)!;
           const next = {
             x: op.x ?? placement.x,
             y: op.y ?? placement.y,
             scale: op.scale ?? placement.scale,
           };
-          project = setImagePlacement(project, id, next);
+          project = setContainerPlacement(project, id, next);
           changes.push(`posição (${next.x}, ${next.y}) escala ${next.scale}`);
         }
         if (op.markingColor !== undefined) {
-          project = setImageMarkingColor(project, id, op.markingColor);
+          project = setContainerMarkingColor(project, id, op.markingColor);
           changes.push(`cor das marcações ${op.markingColor ?? 'do tema'}`);
         }
         if (op.markingsLocked !== undefined) {
@@ -1058,13 +1058,13 @@ class Batch {
           op.width !== undefined ||
           op.height !== undefined
         ) {
-          // Só o container sem arquivo: numa foto o modelo recusa com `not-blank`.
-          project = setBlankImage(project, id, {
+          // Só o container sem arquivo: numa foto o modelo recusa com `container-has-file`.
+          project = setBackgroundContainer(project, id, {
             ...(op.background !== undefined ? { background: op.background } : {}),
             ...(op.width !== undefined ? { width: op.width } : {}),
             ...(op.height !== undefined ? { height: op.height } : {}),
           });
-          const image = projectIndex(project).images.get(id)!;
+          const image = projectIndex(project).containers.get(id)!;
           changes.push(
             `container ${image.width}×${image.height} px, fundo ${image.background}`,
           );
@@ -1081,7 +1081,7 @@ class Batch {
       case 'replace_image': {
         const id = this.item(op.image, 'i');
         const image = await this.image(op, p);
-        let project = replaceImage(
+        let project = replaceContainer(
           p,
           id,
           { file: image.file, width: image.width, height: image.height },
@@ -1090,7 +1090,7 @@ class Batch {
         if (op.source !== undefined) {
           project = setImageSource(project, id, toSource(op.source));
         }
-        const old = projectIndex(p).images.get(id)!;
+        const old = projectIndex(p).containers.get(id)!;
         return {
           project,
           description: `Trocar o arquivo da imagem "${this.refs(p).imageLabel(id)}": ${old.file} → ${image.file} (${image.width}×${image.height} px, ${image.note})`,
@@ -1099,9 +1099,9 @@ class Batch {
       }
       case 'delete_image': {
         const id = this.item(op.image, 'i');
-        const impact = imageDeletionImpact(p, id);
+        const impact = containerDeletionImpact(p, id);
         return {
-          project: removeImage(p, id),
+          project: removeContainer(p, id),
           description: `Excluir a imagem "${this.refs(p).imageLabel(id)}" (${impact.markings} marcação(ões), ${impact.annotations} anotação(ões))`,
         };
       }
@@ -1232,7 +1232,7 @@ class Batch {
         '`annotationAs` só vale com `annotation` na mesma operação',
       );
     }
-    const imageId = this.item(op.image, 'i');
+    const containerId = this.item(op.image, 'i');
     const markingId = crypto.randomUUID();
     const parentGiven = op.parent !== undefined;
     const parentId =
@@ -1265,13 +1265,13 @@ class Batch {
         ? parentId
         : op.rect === undefined
           ? null
-          : (innermostContaining(p, imageId, op.rect)?.id ?? null);
+          : (innermostContaining(p, containerId, op.rect)?.id ?? null);
       const rect =
         op.rect ??
         componentPlacement(
           p,
           catalog,
-          { imageId, parentId: effectiveParent, ...typeRef },
+          { containerId: containerId, parentId: effectiveParent, ...typeRef },
           approximateMeasurer,
         );
       if (annotation.layer !== undefined) {
@@ -1290,7 +1290,7 @@ class Batch {
           {
             markingId,
             annotationId: newAnnotationId,
-            imageId,
+            containerId: containerId,
             parentId: effectiveParent,
             ...typeRef,
             rect,
@@ -1308,7 +1308,7 @@ class Batch {
     } else {
       project = createMarking(p, {
         id: markingId,
-        imageId,
+        containerId: containerId,
         rect: op.rect!,
         name: op.name ?? null,
       });
@@ -1521,7 +1521,7 @@ export function changeCounts(before: Project, after: Project): Record<string, un
   return {
     specializations: count(specs(before), specs(after)),
     layers: count(before.layers, after.layers),
-    images: count(before.images, after.images),
+    images: count(before.containers, after.containers),
     markings: count(before.markings, after.markings),
     annotations: count(before.annotations, after.annotations),
     platformRepos: count(repos(before), repos(after)),

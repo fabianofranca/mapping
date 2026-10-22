@@ -11,7 +11,7 @@ import {
   parentCandidates,
   removeMarking,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   setMarkingParent,
   setMarkingRect,
   topDown,
@@ -26,7 +26,7 @@ describe('marcações: criar', () => {
     expect(marking(p, 'M3').parentId).toBe('M2');
     const q = createMarking(p, {
       id: 'M5',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 1700, y: 1700, width: 100, height: 100 },
     });
     expect(marking(expectValid(q), 'M5').parentId).toBe('M1');
@@ -37,13 +37,13 @@ describe('marcações: criar', () => {
     // Em I1 este retângulo cairia dentro de M1; em I2 não tem pai.
     const p = createMarking(sampleProject(), {
       id: 'M5',
-      imageId: 'I2',
+      containerId: 'I2',
       rect: { x: 500, y: 500, width: 100, height: 100 },
     });
     expect(marking(p, 'M5').parentId).toBeNull();
     const q = createMarking(sampleProject(), {
       id: 'M5',
-      imageId: 'I2',
+      containerId: 'I2',
       rect: { x: 10, y: 10, width: 50, height: 50 },
     });
     expect(marking(q, 'M5').parentId).toBe('M4');
@@ -52,7 +52,7 @@ describe('marcações: criar', () => {
   it('valida inteiros, tamanho mínimo e limites da imagem', () => {
     const p = sampleProject();
     const make = (rect: { x: number; y: number; width: number; height: number }) => () =>
-      createMarking(p, { id: 'X', imageId: 'I2', rect });
+      createMarking(p, { id: 'X', containerId: 'I2', rect });
     expect(make({ x: 0.5, y: 0, width: 10, height: 10 })).toThrow('rect-not-integer');
     expect(make({ x: 0, y: 0, width: 7, height: 10 })).toThrow('rect-too-small');
     expect(make({ x: 995, y: 0, width: 10, height: 10 })).toThrow('rect-out-of-image');
@@ -127,7 +127,7 @@ describe('marcações: trocar pai', () => {
     let p = sampleProject();
     p = createMarking(p, {
       id: 'M5',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 1210, y: 1210, width: 380, height: 180 },
     });
     // M5 cai dentro de M2. Candidatos para M2: só M1 (M5 é descendente, M3 é filha).
@@ -174,7 +174,7 @@ describe('marcações: excluir e revisão', () => {
   });
 
   it('confirmar posição limpa needsReview', () => {
-    let p = replaceImage(
+    let p = replaceContainer(
       sampleProject(),
       'I2',
       { file: 'images/x.jpg', width: 2000, height: 1000 },

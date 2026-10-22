@@ -13,7 +13,7 @@ function setup(readOnly = false) {
   document.body.append(container);
   const viewport = new ViewportController(
     container,
-    () => editor.store.project.peek()?.images ?? [],
+    () => editor.store.project.peek()?.containers ?? [],
   );
   const state = {
     preview: signal<ImagePreview | null>(null),
@@ -129,11 +129,11 @@ describe('PointerInput', () => {
     s.fire('pointerdown', 1300, 300);
     s.fire('pointermove', 1100, 300);
     s.fire('pointermove', 800, 300);
-    expect(s.state.preview.value).toMatchObject({ imageId: 'I2', valid: false });
+    expect(s.state.preview.value).toMatchObject({ containerId: 'I2', valid: false });
     s.fire('pointerup', 800, 300);
     expect(s.state.preview.value).toBeNull();
     const p = s.store.project.peek();
-    expect(p && projectIndex(p).images.get('I2')?.placement.x).toBe(1100);
+    expect(p && projectIndex(p).containers.get('I2')?.placement.x).toBe(1100);
     s.cleanup();
   });
 
@@ -151,7 +151,7 @@ describe('PointerInput', () => {
     s.ui.mode.value = 'draw';
     s.fire('pointerdown', 750, 650);
     s.fire('pointermove', 800, 700);
-    expect(s.state.draft.value?.imageId).toBe('I1');
+    expect(s.state.draft.value?.containerId).toBe('I1');
     s.fire('pointermove', 850, 720);
     s.fire('pointerup', 850, 720);
     expect(s.state.draft.value).toBeNull();
@@ -293,7 +293,7 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     s.ui.selection.value = { kind: 'image', id: 'I2' };
     s.drag([1300, 300], [1400, 300]);
     const p = s.store.project.peek();
-    expect(p && projectIndex(p).images.get('I2')?.placement.x).toBe(1100);
+    expect(p && projectIndex(p).containers.get('I2')?.placement.x).toBe(1100);
     s.cleanup();
   });
 

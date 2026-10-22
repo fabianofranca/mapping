@@ -71,7 +71,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(screen?.values).toEqual({ nome: 'Cadastro', rota: null });
     expect(getAnnotationIssues(result.project, 'AS')).toEqual([]);
     expect(result.project.markings.find((m) => m.id === 'MF')?.locked).toBe(true);
-    expect(result.project.images[0]?.locked).toBe(true);
+    expect(result.project.containers[0]?.locked).toBe(true);
   });
 
   it('o v6 migrado salva como v10 estável (round-trip)', () => {

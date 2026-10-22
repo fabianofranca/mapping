@@ -12,7 +12,7 @@ import type { Entry, Project } from './types';
 export type InvariantCode =
   | 'duplicate-id'
   | 'duplicate-file'
-  | 'blank-background'
+  | 'container-content'
   | 'images-overlap'
   | 'missing-image'
   | 'missing-parent'
@@ -107,7 +107,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   const lists = [
     [p.specializations, spec],
     [p.layers, layer],
-    [p.images, imageIssue],
+    [p.containers, imageIssue],
     [p.markings, marking],
     [p.annotations, annotation],
   ] as const;
@@ -141,30 +141,30 @@ export function validateProject(p: Project): InvariantIssue[] {
   }
 
   const files = new Set<string>();
-  p.images.forEach((image, i) => {
+  p.containers.forEach((image, i) => {
     // Container sem arquivo (sem arquivo) não disputa nome; cor e arquivo são mutuamente exclusivos.
     if (image.file !== null) {
       if (files.has(image.file)) imageIssue('duplicate-file', image);
       files.add(image.file);
     }
     if ((image.file === null) !== (image.background !== null)) {
-      imageIssue('blank-background', image);
+      imageIssue('container-content', image);
     }
     const rect = imageCanvasRect(image, image.placement);
-    for (const other of p.images.slice(i + 1)) {
+    for (const other of p.containers.slice(i + 1)) {
       if (rectsOverlap(rect, imageCanvasRect(other, other.placement))) {
         imageIssue('images-overlap', image, other.id);
       }
     }
   });
 
-  const images = new Map(p.images.map((image) => [image.id, image]));
+  const images = new Map(p.containers.map((image) => [image.id, image]));
   const markings = new Map(p.markings.map((m) => [m.id, m]));
   const annotations = new Map(p.annotations.map((a) => [a.id, a]));
 
   for (const m of p.markings) {
-    const image = images.get(m.imageId);
-    if (!image) marking('missing-image', m, m.imageId);
+    const image = images.get(m.containerId);
+    if (!image) marking('missing-image', m, m.containerId);
     if (!isIntegerRect(m.rect)) marking('rect-not-integer', m);
     if (m.rect.width < MIN_MARKING_SIZE || m.rect.height < MIN_MARKING_SIZE) {
       marking('rect-too-small', m);
@@ -178,7 +178,7 @@ export function validateProject(p: Project): InvariantIssue[] {
       marking('missing-parent', m, m.parentId);
       continue;
     }
-    if (parent.imageId !== m.imageId) marking('parent-other-image', m, parent.id);
+    if (parent.containerId !== m.containerId) marking('parent-other-image', m, parent.id);
     else if (!containsRect(parent.rect, m.rect))
       marking('rect-outside-parent', m, parent.id);
   }

@@ -19,7 +19,7 @@ import type { Project, Rect } from './types';
 
 export interface ComponentDrawing {
   readonly markingId: string;
-  readonly imageId: string;
+  readonly containerId: string;
   readonly annotationId: string;
   /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem). */
   readonly root: FrameNode;
@@ -47,7 +47,7 @@ export type DrawingCache = (
 
 interface Entry {
   readonly markingId: string;
-  readonly imageId: string;
+  readonly containerId: string;
   readonly annotationId: string;
   readonly rect: Rect;
   readonly component: ComponentFile;
@@ -90,7 +90,7 @@ function childOutsideSlot(root: FrameNode, childRects: readonly Rect[]): boolean
 function draw(
   mc: MarkingComponent,
   markingId: string,
-  imageId: string,
+  containerId: string,
   rect: Rect,
   values: FieldValues,
   valueWarnings: readonly string[],
@@ -106,7 +106,7 @@ function draw(
     (childRects.length > 0 && childOutsideSlot(root, childRects));
   return {
     markingId,
-    imageId,
+    containerId: containerId,
     annotationId: mc.annotation.id,
     root,
     warnings: [...warnings, ...valueWarnings],
@@ -166,7 +166,7 @@ export function createDrawingCache(): DrawingCache {
       if (
         before !== undefined &&
         before.annotationId === mc.annotation.id &&
-        before.imageId === marking.imageId &&
+        before.containerId === marking.containerId &&
         sameRect(before.rect, marking.rect) &&
         before.component === mc.component &&
         before.measure === measure &&
@@ -183,7 +183,7 @@ export function createDrawingCache(): DrawingCache {
       const drawing = draw(
         mc,
         marking.id,
-        marking.imageId,
+        marking.containerId,
         marking.rect,
         values,
         valueWarnings,
@@ -192,7 +192,7 @@ export function createDrawingCache(): DrawingCache {
       );
       next.set(marking.id, {
         markingId: marking.id,
-        imageId: marking.imageId,
+        containerId: marking.containerId,
         annotationId: mc.annotation.id,
         rect: marking.rect,
         component: mc.component,

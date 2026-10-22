@@ -2,33 +2,33 @@ import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   addEntry,
-  addImage,
+  addContainer,
   addLayer,
   applySpecialization,
   computeChanges,
   createMarking,
-  moveImage,
+  moveContainer,
   moveLayer,
   moveMarking,
   parseProposalText,
   removeAnnotation,
   removeEntry,
-  removeImage,
+  removeContainer,
   removeLayer,
   removeMarking,
   removePlatformRepo,
   removeSpecialization,
   renameAnnotation,
-  renameImage,
+  renameContainer,
   renameLayer,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   serializeProposal,
   setAnnotationInherit,
   setAnnotationParent,
   setFieldValue,
   setImageLocked,
-  setImageMarkingColor,
+  setContainerMarkingColor,
   setImageSource,
   setLayerColor,
   setMarkingLocked,
@@ -55,7 +55,7 @@ describe('cálculo das mudanças: marcações', () => {
     const base = sampleProject();
     const after = createMarking(base, {
       id: 'M9',
-      imageId: 'I2',
+      containerId: 'I2',
       rect: { x: 200, y: 200, width: 100, height: 100 },
       name: 'Novo',
     });
@@ -145,15 +145,15 @@ describe('cálculo das mudanças: marcações', () => {
 describe('cálculo das mudanças: imagens', () => {
   it('criação, alteração de cada campo e remoção', () => {
     const base = sampleProject();
-    let after = addImage(base, {
+    let after = addContainer(base, {
       id: 'I3',
       file: 'images/nova.png',
       width: 400,
       height: 300,
     });
-    after = renameImage(after, 'I2', 'Frente');
-    after = moveImage(after, 'I2', 5000, 5000);
-    after = setImageMarkingColor(after, 'I2', '#FFEB3B');
+    after = renameContainer(after, 'I2', 'Frente');
+    after = moveContainer(after, 'I2', 5000, 5000);
+    after = setContainerMarkingColor(after, 'I2', '#FFEB3B');
     after = setImageLocked(after, 'I2', true);
     after = setImageSource(after, 'I2', FIGMA);
     const p = propose(base, after);
@@ -173,7 +173,7 @@ describe('cálculo das mudanças: imagens', () => {
       ['source', FIGMA],
     ]);
 
-    const removed = propose(base, removeImage(base, 'I2'));
+    const removed = propose(base, removeContainer(base, 'I2'));
     expect(removed.changes.map((c) => [c.kind, c.entity, c.entityId])).toEqual([
       ['remove', 'image', 'I2'],
       ['remove', 'marking', 'M4'],
@@ -183,7 +183,7 @@ describe('cálculo das mudanças: imagens', () => {
 
   it('troca de arquivo: `file` com as dimensões; as marcações reescaladas mudam de rect', () => {
     const base = sampleProject();
-    const after = replaceImage(base, 'I2', {
+    const after = replaceContainer(base, 'I2', {
       file: 'images/frente-2.jpg',
       width: 2000,
       height: 2000,
@@ -367,7 +367,7 @@ describe('cálculo das mudanças: grupo Projeto', () => {
 describe('proposta', () => {
   function bigChange(base: Project): Project {
     let after = addLayer(base, { id: 'L3', name: 'Rodas', color: '#2E7D32' });
-    after = renameImage(after, 'I2', 'Frente');
+    after = renameContainer(after, 'I2', 'Frente');
     after = renameMarking(after, 'M3', 'Chave');
     after = renameMarking(after, 'M1', 'Porta da frente');
     after = renameAnnotation(after, 'A1', 'Risco');

@@ -17,7 +17,7 @@ import {
 } from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
-import type { Marking, Placement, Project, ProjectImage, Rect } from './types';
+import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
 /** Lado maior de uma imagem recém-adicionada, em unidades do canvas. */
 export const INITIAL_IMAGE_SIZE = 1000;
@@ -27,7 +27,7 @@ export const IMAGE_GAP = 50;
 export const ASPECT_TOLERANCE = 0.01;
 
 /** Maior lado (largura ou altura) de um container sem arquivo, em pixels. */
-export const MAX_BLANK_SIZE = 20000;
+export const MAX_CONTAINER_SIZE = 20000;
 
 export interface ImageFile {
   readonly file: string;
@@ -54,19 +54,19 @@ function checkBackground(color: string): string {
   return color.toUpperCase();
 }
 
-/** Dimensões de um container sem arquivo: inteiros de 1 a `MAX_BLANK_SIZE`. */
-function checkBlankDimensions(size: {
+/** Dimensões de um container sem arquivo: inteiros de 1 a `MAX_CONTAINER_SIZE`. */
+function checkBackgroundDimensions(size: {
   readonly width: number;
   readonly height: number;
 }): void {
   checkDimensions(size);
-  if (size.width > MAX_BLANK_SIZE || size.height > MAX_BLANK_SIZE) {
+  if (size.width > MAX_CONTAINER_SIZE || size.height > MAX_CONTAINER_SIZE) {
     fail('invalid-dimensions');
   }
 }
 
 /** `true` se a imagem é um container sem arquivo (sem arquivo, só com cor de fundo). */
-export function isBlankImage(image: Pick<ProjectImage, 'file'>): boolean {
+export function isBackgroundContainer(image: Pick<ProjectContainer, 'file'>): boolean {
   return image.file === null;
 }
 
@@ -76,7 +76,7 @@ function checkPlacement({ x, y, scale }: Placement): void {
 
 /** Posição livre à direita de todas as imagens (exceto `excludeId`). */
 function placementAtRight(p: Project, scale: number, excludeId?: string): Placement {
-  const others = p.images.filter((i) => i.id !== excludeId);
+  const others = p.containers.filter((i) => i.id !== excludeId);
   const rects = others.map((i) => imageCanvasRect(i, i.placement));
   if (rects.length === 0) return { x: 0, y: 0, scale };
   const rightmost = rects.reduce((a, b) => (right(b) > right(a) ? b : a));
@@ -98,7 +98,7 @@ export function placementNear(
   const w = size.width * scale;
   const h = size.height * scale;
   const wanted = { x: center.x - w / 2, y: center.y - h / 2 };
-  const others = p.images
+  const others = p.containers
     .filter((i) => i.id !== excludeId)
     .map((i) => imageCanvasRect(i, i.placement));
   const xs = [wanted.x];
@@ -124,22 +124,22 @@ export function placementNear(
 }
 
 /** `true` se a imagem pode ocupar `placement` sem sobrepor outra imagem. */
-export function canPlaceImage(
+export function canPlaceContainer(
   p: Project,
-  imageId: string,
+  containerId: string,
   placement: Placement,
 ): boolean {
-  const image = findById(p.images, imageId);
+  const image = findById(p.containers, containerId);
   const rect = imageCanvasRect(image, placement);
-  return p.images.every(
+  return p.containers.every(
     (other) =>
-      other.id === imageId ||
+      other.id === containerId ||
       !rectsOverlap(rect, imageCanvasRect(other, other.placement)),
   );
 }
 
 /** Arquivos das imagens (o container sem arquivo não tem), na ordem das imagens. */
-export function imageFileNames(images: readonly Pick<ProjectImage, 'file'>[]): string[] {
+export function imageFileNames(images: readonly Pick<ProjectContainer, 'file'>[]): string[] {
   const files: string[] = [];
   for (const image of images) if (image.file !== null) files.push(image.file);
   return files;
@@ -160,7 +160,7 @@ export function uniqueImageFile(
   taken: ReadonlySet<string> = new Set(),
 ): string {
   const used = new Set<string>(taken);
-  for (const i of p.images) if (i.file !== null) used.add(i.file);
+  for (const i of p.containers) if (i.file !== null) used.add(i.file);
   const dot = fileName.lastIndexOf('.');
   const base = dot > 0 ? fileName.slice(0, dot) : fileName;
   const ext = dot > 0 ? fileName.slice(dot) : '';
@@ -175,7 +175,7 @@ export function uniqueImageFile(
  * Adiciona a imagem, com o lado maior medindo `INITIAL_IMAGE_SIZE` unidades do
  * canvas: perto de `center`, se informado; senão à direita da imagem mais à direita.
  */
-export function addImage(
+export function addContainer(
   p: Project,
   args: ImageFile & {
     readonly id: string;
@@ -183,13 +183,13 @@ export function addImage(
     readonly center?: { readonly x: number; readonly y: number };
   },
 ): Project {
-  if (p.images.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
+  if (p.containers.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
   checkDimensions(args);
-  if (p.images.some((i) => i.file !== null && i.file === args.file)) {
+  if (p.containers.some((i) => i.file !== null && i.file === args.file)) {
     fail('duplicate-file');
   }
   const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
-  const image: ProjectImage = {
+  const image: ProjectContainer = {
     id: args.id,
     name: null,
     markingColor: null,
@@ -203,14 +203,14 @@ export function addImage(
       ? placementNear(p, args, scale, args.center)
       : placementAtRight(p, scale),
   };
-  return { ...p, images: [...p.images, image] };
+  return { ...p, containers: [...p.containers, image] };
 }
 
 /**
  * Adiciona um container sem arquivo (imagem sem arquivo, só com cor de fundo), com a mesma
  * colocação de `addImage`: lado maior de `INITIAL_IMAGE_SIZE` unidades do canvas.
  */
-export function addBlankImage(
+export function addBackgroundContainer(
   p: Project,
   args: {
     readonly id: string;
@@ -223,12 +223,12 @@ export function addBlankImage(
     readonly center?: { readonly x: number; readonly y: number };
   },
 ): Project {
-  if (p.images.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
-  checkBlankDimensions(args);
+  if (p.containers.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
+  checkBackgroundDimensions(args);
   const background = checkBackground(args.background);
   const name = normalizeOptionalName(args.name ?? null);
   const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
-  const image: ProjectImage = {
+  const image: ProjectContainer = {
     id: args.id,
     name,
     markingColor: null,
@@ -242,10 +242,10 @@ export function addBlankImage(
       ? placementNear(p, args, scale, args.center)
       : placementAtRight(p, scale),
   };
-  return { ...p, images: [...p.images, image] };
+  return { ...p, containers: [...p.containers, image] };
 }
 
-export interface BlankImageChanges {
+export interface BackgroundContainerChanges {
   readonly width?: number;
   readonly height?: number;
   readonly background?: string;
@@ -255,15 +255,15 @@ export interface BlankImageChanges {
  * Edita o container sem arquivo: tamanho e/ou cor de fundo. Mudar o tamanho é geometria
  * (imagem trancada recusa com `locked`), mantém a escala do `placement` e recusa se alguma
  * marcação deixar de caber (`rect-out-of-image`) ou se a imagem passar a sobrepor outra
- * (`image-overlap`). Só vale para container sem arquivo (`not-blank`).
+ * (`image-overlap`). Só vale para container sem arquivo (`container-has-file`).
  */
-export function setBlankImage(
+export function setBackgroundContainer(
   p: Project,
-  imageId: string,
-  changes: BlankImageChanges,
+  containerId: string,
+  changes: BackgroundContainerChanges,
 ): Project {
-  const image = findById(p.images, imageId);
-  if (!isBlankImage(image)) fail('not-blank');
+  const image = findById(p.containers, containerId);
+  if (!isBackgroundContainer(image)) fail('container-has-file');
   const background =
     changes.background === undefined
       ? image.background
@@ -272,18 +272,18 @@ export function setBlankImage(
   const height = changes.height ?? image.height;
   const resized = width !== image.width || height !== image.height;
   if (resized) {
-    checkBlankDimensions({ width, height });
-    requireUnlocked(canEditImagePlacement(p, imageId));
+    checkBackgroundDimensions({ width, height });
+    requireUnlocked(canEditImagePlacement(p, containerId));
     const bounds = imagePixelRect({ width, height });
     for (const m of p.markings) {
-      if (m.imageId === imageId && !containsRect(bounds, m.rect)) {
+      if (m.containerId === containerId && !containsRect(bounds, m.rect)) {
         fail('rect-out-of-image', m.id);
       }
     }
     if (
-      !canPlaceImage(
-        { ...p, images: updateById(p.images, imageId, (i) => ({ ...i, width, height })) },
-        imageId,
+      !canPlaceContainer(
+        { ...p, containers: updateById(p.containers, containerId, (i) => ({ ...i, width, height })) },
+        containerId,
         image.placement,
       )
     ) {
@@ -293,16 +293,16 @@ export function setBlankImage(
   if (!resized && background === image.background) return p;
   return {
     ...p,
-    images: updateById(p.images, imageId, (i) => ({ ...i, width, height, background })),
+    containers: updateById(p.containers, containerId, (i) => ({ ...i, width, height, background })),
   };
 }
 
 /** Nome de exibição da imagem; vazio vira `null` (a app mostra o nome do arquivo). */
-export function renameImage(p: Project, imageId: string, name: string | null): Project {
+export function renameContainer(p: Project, containerId: string, name: string | null): Project {
   const normalized = normalizeOptionalName(name);
   return {
     ...p,
-    images: updateById(p.images, imageId, (i) => ({ ...i, name: normalized })),
+    containers: updateById(p.containers, containerId, (i) => ({ ...i, name: normalized })),
   };
 }
 
@@ -319,48 +319,48 @@ export const MARKING_COLOR_PALETTE: readonly string[] = [
 ];
 
 /** Cor da borda das marcações da imagem (`#RRGGBB`); `null` volta para a cor do tema. */
-export function setImageMarkingColor(
+export function setContainerMarkingColor(
   p: Project,
-  imageId: string,
+  containerId: string,
   color: string | null,
 ): Project {
   if (color !== null && !/^#[0-9A-Fa-f]{6}$/.test(color)) fail('invalid-color');
   const normalized = color === null ? null : color.toUpperCase();
   return {
     ...p,
-    images: updateById(p.images, imageId, (i) => ({ ...i, markingColor: normalized })),
+    containers: updateById(p.containers, containerId, (i) => ({ ...i, markingColor: normalized })),
   };
 }
 
 /** Define posição e escala (mover ou redimensionar). Falha se sobrepor outra imagem. */
-export function setImagePlacement(
+export function setContainerPlacement(
   p: Project,
-  imageId: string,
+  containerId: string,
   placement: Placement,
 ): Project {
   checkPlacement(placement);
-  requireUnlocked(canEditImagePlacement(p, imageId));
-  if (!canPlaceImage(p, imageId, placement)) fail('image-overlap');
+  requireUnlocked(canEditImagePlacement(p, containerId));
+  if (!canPlaceContainer(p, containerId, placement)) fail('image-overlap');
   const copy: Placement = { x: placement.x, y: placement.y, scale: placement.scale };
   return {
     ...p,
-    images: updateById(p.images, imageId, (i) => ({ ...i, placement: copy })),
+    containers: updateById(p.containers, containerId, (i) => ({ ...i, placement: copy })),
   };
 }
 
-export function moveImage(p: Project, imageId: string, x: number, y: number): Project {
-  const { placement } = findById(p.images, imageId);
-  return setImagePlacement(p, imageId, { ...placement, x, y });
+export function moveContainer(p: Project, containerId: string, x: number, y: number): Project {
+  const { placement } = findById(p.containers, containerId);
+  return setContainerPlacement(p, containerId, { ...placement, x, y });
 }
 
 /** Redimensionamento proporcional: nova escala com o canto (`x`, `y`) informado. */
-export function resizeImage(p: Project, imageId: string, placement: Placement): Project {
-  return setImagePlacement(p, imageId, placement);
+export function resizeContainer(p: Project, containerId: string, placement: Placement): Project {
+  return setContainerPlacement(p, containerId, placement);
 }
 
-export function imageDeletionImpact(
+export function containerDeletionImpact(
   p: Project,
-  imageId: string,
+  containerId: string,
 ): {
   markings: number;
   /** Quantas das marcações estão trancadas (serão excluídas junto). */
@@ -368,30 +368,30 @@ export function imageDeletionImpact(
   annotations: number;
   brokenRefs: number;
 } {
-  findById(p.images, imageId);
-  const own = p.markings.filter((m) => m.imageId === imageId);
+  findById(p.containers, containerId);
+  const own = p.markings.filter((m) => m.containerId === containerId);
   const ids = new Set(own.map((m) => m.id));
   return {
     markings: ids.size,
     lockedMarkings: own.filter((m) => m.locked).length,
     annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
-    brokenRefs: countBrokenRefs(p, cascadeRemoveImage(p, imageId)),
+    brokenRefs: countBrokenRefs(p, cascadeRemoveImage(p, containerId)),
   };
 }
 
 /** Exclui a imagem com as marcações (trancadas ou não) e anotações dela. Falha só se a própria imagem estiver trancada. */
-export function removeImage(p: Project, imageId: string): Project {
-  findById(p.images, imageId);
-  requireUnlocked(canDeleteImage(p, imageId));
-  return cascadeRemoveImage(p, imageId);
+export function removeContainer(p: Project, containerId: string): Project {
+  findById(p.containers, containerId);
+  requireUnlocked(canDeleteImage(p, containerId));
+  return cascadeRemoveImage(p, containerId);
 }
 
 /** A exclusão em si, sem a trava: também serve para contar o impacto. */
-function cascadeRemoveImage(p: Project, imageId: string): Project {
-  const ids = new Set(p.markings.filter((m) => m.imageId === imageId).map((m) => m.id));
+function cascadeRemoveImage(p: Project, containerId: string): Project {
+  const ids = new Set(p.markings.filter((m) => m.containerId === containerId).map((m) => m.id));
   return {
     ...p,
-    images: p.images.filter((i) => i.id !== imageId),
+    containers: p.containers.filter((i) => i.id !== containerId),
     markings: p.markings.filter((m) => !ids.has(m.id)),
     annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
   };
@@ -399,7 +399,7 @@ function cascadeRemoveImage(p: Project, imageId: string): Project {
 
 /** `true` se a troca mantém a proporção (diferença ≤ 1%). */
 export function isSameAspect(
-  old: Pick<ProjectImage, 'width' | 'height'>,
+  old: Pick<ProjectContainer, 'width' | 'height'>,
   next: Pick<ImageFile, 'width' | 'height'>,
 ): boolean {
   const sx = next.width / old.width;
@@ -438,7 +438,7 @@ function growSpan(
 
 function rescaleMarkings(
   markings: readonly Marking[],
-  image: ProjectImage,
+  image: ProjectContainer,
   next: ImageFile,
   needsReview: boolean,
 ): Map<string, Marking> {
@@ -462,7 +462,7 @@ function rescaleMarkings(
   return result;
 }
 
-export interface ReplaceImageOptions {
+export interface ReplaceContainerOptions {
   /** O usuário confirmou a troca por uma imagem com proporção diferente. */
   readonly confirmAspectChange?: boolean;
 }
@@ -473,22 +473,22 @@ export interface ReplaceImageOptions {
  * Mantém `x`/`y` e a largura exibida; se passar a sobrepor outra imagem,
  * vai para um espaço livre à direita.
  */
-export function replaceImage(
+export function replaceContainer(
   p: Project,
-  imageId: string,
+  containerId: string,
   next: ImageFile,
-  options: ReplaceImageOptions = {},
+  options: ReplaceContainerOptions = {},
 ): Project {
   checkDimensions(next);
-  const image = findById(p.images, imageId);
-  if (isBlankImage(image)) fail('blank-image');
-  requireUnlocked(canReplaceImage(p, imageId, next));
-  if (p.images.some((i) => i.id !== imageId && i.file !== null && i.file === next.file))
+  const image = findById(p.containers, containerId);
+  if (isBackgroundContainer(image)) fail('container-without-file');
+  requireUnlocked(canReplaceImage(p, containerId, next));
+  if (p.containers.some((i) => i.id !== containerId && i.file !== null && i.file === next.file))
     fail('duplicate-file');
   const sameAspect = isSameAspect(image, next);
   if (!sameAspect && !options.confirmAspectChange) fail('aspect-change-not-confirmed');
 
-  const own = p.markings.filter((m) => m.imageId === imageId);
+  const own = p.markings.filter((m) => m.containerId === containerId);
   if (
     own.length > 0 &&
     (next.width < MIN_MARKING_SIZE || next.height < MIN_MARKING_SIZE)
@@ -500,14 +500,14 @@ export function replaceImage(
   const scale = (image.placement.scale * image.width) / next.width;
   let placement: Placement = { ...image.placement, scale };
   const candidate = imageCanvasRect(next, placement);
-  const overlaps = p.images.some(
-    (o) => o.id !== imageId && rectsOverlap(candidate, imageCanvasRect(o, o.placement)),
+  const overlaps = p.containers.some(
+    (o) => o.id !== containerId && rectsOverlap(candidate, imageCanvasRect(o, o.placement)),
   );
   if (overlaps) {
-    placement = placementAtRight(p, scale, imageId);
+    placement = placementAtRight(p, scale, containerId);
   }
 
-  const updated: ProjectImage = {
+  const updated: ProjectContainer = {
     id: image.id,
     name: image.name,
     markingColor: image.markingColor,
@@ -521,7 +521,7 @@ export function replaceImage(
   };
   return {
     ...p,
-    images: p.images.map((i) => (i.id === imageId ? updated : i)),
+    containers: p.containers.map((i) => (i.id === containerId ? updated : i)),
     markings: p.markings.map((m) => rescaled.get(m.id) ?? m),
   };
 }

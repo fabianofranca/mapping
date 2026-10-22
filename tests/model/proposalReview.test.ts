@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
-  addImage,
+  addContainer,
   addNote,
   addTypedAnnotation,
   changeStatus,
@@ -9,14 +9,14 @@ import {
   createMarking,
   decide,
   editNote,
-  moveImage,
+  moveContainer,
   moveMarking,
   notesOf,
-  removeImage,
+  removeContainer,
   removeMarking,
   removeNote,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   reviewProgress,
   reviewTree,
   setAnnotationParent,
@@ -40,7 +40,7 @@ import { cadastroProject, layerOf } from './specFixtures';
  */
 function creations(): { base: Project; after: Project; p: Proposal } {
   const base = sampleProject();
-  let after = addImage(base, {
+  let after = addContainer(base, {
     id: 'I3',
     file: 'images/nova.png',
     width: 1000,
@@ -48,12 +48,12 @@ function creations(): { base: Project; after: Project; p: Proposal } {
   });
   after = createMarking(after, {
     id: 'N1',
-    imageId: 'I3',
+    containerId: 'I3',
     rect: { x: 100, y: 100, width: 500, height: 500 },
   });
   after = createMarking(after, {
     id: 'N2',
-    imageId: 'I3',
+    containerId: 'I3',
     rect: { x: 200, y: 200, width: 100, height: 100 },
   });
   after = addAnnotation(after, { id: 'B1', markingId: 'N2', layerId: 'L1' });
@@ -185,7 +185,7 @@ describe('dependências', () => {
     const base = cadastroProject();
     let after = createMarking(base, {
       id: 'MX',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 100, y: 1500, width: 300, height: 100 },
     });
     after = addAnnotation(after, {
@@ -318,13 +318,13 @@ describe('conflitos', () => {
       base,
       createMarking(base, {
         id: 'M9',
-        imageId: 'I2',
+        containerId: 'I2',
         rect: { x: 300, y: 300, width: 50, height: 50 },
       }),
     );
     const taken = createMarking(base, {
       id: 'M9',
-      imageId: 'I2',
+      containerId: 'I2',
       rect: { x: 600, y: 600, width: 50, height: 50 },
     });
     expect(changeStatus(created, created.changes[0]!, taken).conflict).toBe(true);
@@ -336,14 +336,14 @@ describe('conflitos', () => {
     ).toBe(true);
     // Confirmar a posição ("a revisar") não é mudança: não vira conflito.
     expect(changeStatus(removed, removal, base).conflict).toBe(false);
-    expect(changeStatus(removed, removal, removeImage(base, 'I2'))).toMatchObject({
+    expect(changeStatus(removed, removal, removeContainer(base, 'I2'))).toMatchObject({
       conflict: true,
       current: undefined,
     });
 
     const renamed = propose(base, renameMarking(base, 'M4', 'Farol'));
     expect(
-      changeStatus(renamed, renamed.changes[0]!, removeImage(base, 'I2')).conflict,
+      changeStatus(renamed, renamed.changes[0]!, removeContainer(base, 'I2')).conflict,
     ).toBe(true);
   });
 
@@ -395,7 +395,7 @@ describe('aviso de item trancado', () => {
     const free = setImageLocked(base, 'I2', false);
     const moved = propose(
       base,
-      setImageLocked(moveImage(free, 'I2', 5000, 0), 'I2', true),
+      setImageLocked(moveContainer(free, 'I2', 5000, 0), 'I2', true),
     );
     expect(
       changeStatus(moved, changeOf(moved, 'image', 'I2', 'placement'), base).locked,
@@ -403,7 +403,7 @@ describe('aviso de item trancado', () => {
     const replaced = propose(
       base,
       setImageLocked(
-        replaceImage(free, 'I2', { file: 'images/f2.jpg', width: 2000, height: 2000 }),
+        replaceContainer(free, 'I2', { file: 'images/f2.jpg', width: 2000, height: 2000 }),
         'I2',
         true,
       ),
@@ -411,7 +411,7 @@ describe('aviso de item trancado', () => {
     expect(
       changeStatus(replaced, changeOf(replaced, 'image', 'I2', 'file'), base).locked,
     ).toBe(true);
-    const removed = propose(base, removeImage(free, 'I2'));
+    const removed = propose(base, removeContainer(free, 'I2'));
     expect(changeStatus(removed, changeOf(removed, 'image', 'I2'), base).locked).toBe(
       true,
     );
@@ -466,7 +466,7 @@ describe('progresso, notas e estado da proposta', () => {
     const base = cadastroProject();
     let after = createMarking(base, {
       id: 'MB',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 100, y: 850, width: 800, height: 100 },
     });
     after = addTypedAnnotation(after, {

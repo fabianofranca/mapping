@@ -324,7 +324,7 @@ describe('LocalLibrary (IndexedDB)', () => {
     const parsed = deserialize(loaded ?? '', migrations, readSpecs);
     if (!parsed.ok) throw new Error(parsed.error.code);
     const exported = new Map<string, Blob>();
-    for (const file of imageFileNames(parsed.project.images)) {
+    for (const file of imageFileNames(parsed.project.containers)) {
       const blob = await storage.readImage(file);
       if (blob) exported.set(file, blob);
     }

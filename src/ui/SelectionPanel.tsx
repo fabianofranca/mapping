@@ -3,12 +3,12 @@ import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   canDeleteImage,
-  type BlankImageChanges,
+  type BackgroundContainerChanges,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../model';
 import { containerErrorMessage, imageLabel } from './labels';
-import { parseBlankColor, parseBlankSide } from './containerForm';
+import { parseContainerColor, parseContainerSide } from './containerForm';
 import type { DisplayImage } from '../store/displayImages';
 import { useEditor } from './EditorContext';
 import { Button, IconButton, TextField } from './controls';
@@ -21,7 +21,7 @@ import { MarkingColorField } from './MarkingColorField';
 import { Property, PropertyGrid } from './PropertyGrid';
 
 interface SelectionPanelProps {
-  readonly image: ProjectImage | null;
+  readonly image: ProjectContainer | null;
   /**
    * Projeto de onde a imagem veio (as marcações dela, a trava). Padrão: o projeto à vista
    * (`review.derived.shownProject`, que fora da revisão é o confirmado).
@@ -30,8 +30,8 @@ interface SelectionPanelProps {
   readonly display: DisplayImage<unknown> | undefined;
   readonly readOnly: boolean;
   readonly busy: boolean;
-  readonly onReplace: (image: ProjectImage) => void;
-  readonly onDelete: (image: ProjectImage) => void;
+  readonly onReplace: (image: ProjectContainer) => void;
+  readonly onDelete: (image: ProjectContainer) => void;
 }
 
 /** Detalhes da imagem selecionada (ou o estado vazio, sem seleção). */
@@ -52,7 +52,7 @@ export function SelectionPanel({
   const widthId = useId();
   const heightId = useId();
   const backgroundId = useId();
-  const [blankError, setBlankError] = useState<string | null>(null);
+  const [backgroundError, setBackgroundError] = useState<string | null>(null);
   if (!image) {
     return (
       <div class="details-empty">
@@ -68,7 +68,7 @@ export function SelectionPanel({
   const disabled = readOnly || busy;
   const dimensions = t('image.dimensions', { width: image.width, height: image.height });
   // Trava: a da imagem e a das marcações dela ("trancar todas" vira "destrancar todas").
-  const own = project?.markings.filter((m) => m.imageId === image.id) ?? [];
+  const own = project?.markings.filter((m) => m.containerId === image.id) ?? [];
   const allMarkingsLocked = own.length > 0 && own.every((m) => m.locked);
   const deletable = project ? canDeleteImage(project, image.id) : true;
   const identity = ext?.identity(image.id) ?? null;
@@ -137,7 +137,7 @@ export function SelectionPanel({
               onCommit={(text) => {
                 // Espaços em volta não contam como alteração.
                 if ((text.trim() || null) === image.name) return false;
-                return actions.renameImage(image.id, text).ok;
+                return actions.renameContainer(image.id, text).ok;
               }}
             />
           </Property>
@@ -155,8 +155,8 @@ export function SelectionPanel({
               image={image}
               ids={{ width: widthId, height: heightId, background: backgroundId }}
               disabled={disabled}
-              error={blankError}
-              setError={setBlankError}
+              error={backgroundError}
+              setError={setBackgroundError}
             />
           ) : (
             <Property label={t('image.size')}>
@@ -202,7 +202,7 @@ export function SelectionPanel({
 }
 
 interface ContainerFieldsProps {
-  readonly image: ProjectImage;
+  readonly image: ProjectContainer;
   readonly ids: {
     readonly width: string;
     readonly height: string;
@@ -222,8 +222,8 @@ function ContainerFields({
   setError,
 }: ContainerFieldsProps) {
   const { actions } = useEditor();
-  const commit = (patch: BlankImageChanges): boolean => {
-    const result = actions.setBlankImage(image.id, patch);
+  const commit = (patch: BackgroundContainerChanges): boolean => {
+    const result = actions.setBackgroundContainer(image.id, patch);
     setError(result.ok ? null : containerErrorMessage(result.error));
     return result.ok;
   };
@@ -242,7 +242,7 @@ function ContainerFields({
         value={String(image[key])}
         disabled={disabled}
         onCommit={(text) => {
-          const value = parseBlankSide(text);
+          const value = parseContainerSide(text);
           if (value === image[key]) return false;
           if (value === null) {
             setError(containerErrorMessage('invalid-dimensions'));
@@ -264,7 +264,7 @@ function ContainerFields({
           value={image.background ?? ''}
           disabled={disabled}
           onCommit={(text) => {
-            const color = parseBlankColor(text);
+            const color = parseContainerColor(text);
             if (color === image.background) return false;
             if (color === null) {
               setError(containerErrorMessage('invalid-color'));

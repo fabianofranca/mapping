@@ -220,7 +220,7 @@ export class PointerInput {
       case 'move-image': {
         const c = viewport.toCanvas(p);
         const { startPlacement: s, startCanvas } = g;
-        this.previewPlacement(g.imageId, {
+        this.previewPlacement(g.containerId, {
           x: s.x + c.x - startCanvas.x,
           y: s.y + c.y - startCanvas.y,
           scale: s.scale,
@@ -229,7 +229,7 @@ export class PointerInput {
       }
       case 'resize-image': {
         const project = this.o.store.project.peek();
-        const image = project && projectIndex(project).images.get(g.imageId);
+        const image = project && projectIndex(project).containers.get(g.containerId);
         if (!image) return;
         const placement = resizeFromCorner(
           image,
@@ -237,7 +237,7 @@ export class PointerInput {
           g.corner,
           viewport.toCanvas(p),
         );
-        this.previewPlacement(g.imageId, placement);
+        this.previewPlacement(g.containerId, placement);
         return;
       }
       case 'move-marking': {
@@ -260,7 +260,7 @@ export class PointerInput {
       case 'draw': {
         const pixel = canvasToImagePixel(g.image.placement, viewport.toCanvas(p));
         this.o.state.draft.value = {
-          imageId: g.image.id,
+          containerId: g.image.id,
           rect: rectFromPoints(g.startPixel, pixel, g.image),
         };
         return;
@@ -283,9 +283,9 @@ export class PointerInput {
     return started.gesture;
   }
 
-  private previewPlacement(imageId: string, placement: Placement): void {
-    const result = this.o.actions.previewImagePlacement(imageId, placement);
-    this.o.state.preview.value = { imageId, placement, valid: result.ok };
+  private previewPlacement(containerId: string, placement: Placement): void {
+    const result = this.o.actions.previewImagePlacement(containerId, placement);
+    this.o.state.preview.value = { containerId: containerId, placement, valid: result.ok };
   }
 
   private onPointerUp(e: PointerEvent, cancelled: boolean): void {
@@ -322,7 +322,7 @@ export class PointerInput {
     const drawn = draft.peek();
     draft.value = null;
     if (cancelled || !drawn || !isDrawableRect(drawn.rect)) return;
-    const result = this.o.actions.createMarking(drawn.imageId, drawn.rect);
+    const result = this.o.actions.createMarking(drawn.containerId, drawn.rect);
     if (result.ok) this.o.ui.selection.value = { kind: 'marking', id: result.value };
   }
 

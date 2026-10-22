@@ -38,7 +38,7 @@ function add(
     {
       markingId: id,
       annotationId: `A_${id}`,
-      imageId: 'I1',
+      containerId: 'I1',
       parentId,
       specId,
       typeId,
@@ -84,7 +84,7 @@ describe('canArrange e not-arrangeable', () => {
     p = add(p, 'BT', 'text', box(500, 300, 100, 40), 'B');
     expect(canArrange(p, catalog, 'B')).toBe(false);
     // Marcação comum.
-    p = createMarking(p, { id: 'P', imageId: 'I1', rect: box(0, 0, 50, 50) });
+    p = createMarking(p, { id: 'P', containerId: 'I1', rect: box(0, 0, 50, 50) });
     expect(canArrange(p, catalog, 'P')).toBe(false);
   });
 
@@ -177,7 +177,7 @@ describe('arrangeMarking: linha e coluna', () => {
     });
     p = add(p, 'B', 'box', box(150, 150, 100, 100), 'C');
     p = add(p, 'BT', 'text', box(160, 160, 80, 30), 'B');
-    p = createMarking(p, { id: 'Deep', imageId: 'I1', rect: box(170, 200, 20, 20) });
+    p = createMarking(p, { id: 'Deep', containerId: 'I1', rect: box(170, 200, 20, 20) });
     expect(marking(p, 'Deep').parentId).toBe('B');
     const { project } = arrange(p, 'C');
     // B vai para o início do slot (100,100): deslocamento (-50,-50).
@@ -217,7 +217,7 @@ describe('arrangeMarking: hug', () => {
 
   it('nunca abaixo do minSize', () => {
     let p = add(componentProject(), 'C', 'rowhug', box(100, 100, 200, 60));
-    p = createMarking(p, { id: 'Small', imageId: 'I1', rect: box(105, 105, 10, 10) });
+    p = createMarking(p, { id: 'Small', containerId: 'I1', rect: box(105, 105, 10, 10) });
     expect(marking(p, 'Small').parentId).toBe('C');
     const { project } = arrange(p, 'C');
     // minSize 40×20 do componente.
@@ -417,7 +417,7 @@ describe('arrangeMarking: Material 3', () => {
     });
     p = {
       ...p,
-      images: [
+      containers: [
         {
           id: 'I1',
           name: null,

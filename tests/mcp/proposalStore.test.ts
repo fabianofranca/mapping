@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  addImage,
+  addContainer,
   addLayer,
   buildProposal,
   createProject,
@@ -177,7 +177,7 @@ describe('reservedImages', () => {
       ['I3', 'images/rejeitada.webp'],
       ['I4', 'images/aplicada.webp'],
     ] as const) {
-      after = addImage(after, { id, file, width: 100, height: 100 });
+      after = addContainer(after, { id, file, width: 100, height: 100 });
     }
     const proposal = buildProposal(base, after, {
       id: 'prop-img',

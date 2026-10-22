@@ -214,7 +214,7 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
   const root = make('proposal', null);
   let projectNode: MutableNode | null = null;
   const images = new Map<string, MutableNode>();
-  const items = new Map<string, { node: MutableNode; imageId: string }>();
+  const items = new Map<string, { node: MutableNode; containerId: string }>();
 
   for (const c of p.changes) {
     if (c.imageId === null) {
@@ -237,7 +237,7 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
     }
     let item = items.get(c.markingId);
     if (!item) {
-      item = { node: make('item', c.markingId), imageId: c.imageId };
+      item = { node: make('item', c.markingId), containerId: c.imageId };
       items.set(c.markingId, item);
     }
     item.node.changeIds.push(c.id);
@@ -245,13 +245,13 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
 
   // Aninha cada item no ancestral mais próximo com mudanças (na mesma imagem).
   const parentOf = parentLookup(p, project);
-  for (const [markingId, { node, imageId }] of items) {
+  for (const [markingId, { node, containerId: imageId }] of items) {
     const seen = new Set([markingId]);
     let host: MutableNode | undefined;
     for (let up = parentOf(markingId); up !== null && !seen.has(up); up = parentOf(up)) {
       seen.add(up);
       const candidate = items.get(up);
-      if (candidate && candidate.imageId === imageId) {
+      if (candidate && candidate.containerId === imageId) {
         host = candidate.node;
         break;
       }
@@ -449,7 +449,7 @@ function lockWarning(c: Change, project: Project): boolean {
       return !canEditMarkingGeometry(project, c.entityId);
     }
   }
-  if (c.entity === 'image' && index.images.has(c.entityId)) {
+  if (c.entity === 'image' && index.containers.has(c.entityId)) {
     if (c.kind === 'remove') return !canDeleteImage(project, c.entityId);
     if (c.kind === 'update' && c.field === 'placement') {
       return !canEditImagePlacement(project, c.entityId);

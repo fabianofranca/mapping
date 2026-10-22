@@ -54,10 +54,10 @@ describe('paleta da Biblioteca', () => {
     const project = harness.project();
     expect(project.markings).toHaveLength(before + 1);
     const created = project.markings.at(-1);
-    expect(created?.imageId).toBe('I1');
+    expect(created?.containerId).toBe('I1');
     expect(created?.parentId).toBeNull();
     // O ponto do viewport (200, 150 do canvas da I1, escala 0,25) cai em (800, 600) da imagem.
-    const image = project.images.find((i) => i.id === 'I1');
+    const image = project.containers.find((i) => i.id === 'I1');
     const scale = image?.placement.scale ?? 1;
     expect((created?.rect.x ?? 0) + (created?.rect.width ?? 0) / 2).toBeCloseTo(
       200 / scale,
@@ -95,8 +95,8 @@ describe('paleta da Biblioteca', () => {
     const { user } = renderLibrary(harness);
     await user.click(addButton('Button'));
     const created = harness.project().markings.at(-1);
-    const image = harness.project().images.find((i) => i.id === 'I2');
-    expect(created?.imageId).toBe('I2');
+    const image = harness.project().containers.find((i) => i.id === 'I2');
+    expect(created?.containerId).toBe('I2');
     expect((created?.rect.x ?? 0) + (created?.rect.width ?? 0) / 2).toBeCloseTo(
       (image?.width ?? 0) / 2,
       -1,
@@ -114,8 +114,8 @@ describe('paleta da Biblioteca', () => {
     const { user } = renderLibrary(harness);
     await user.click(addButton('Button'));
     const created = harness.project().markings.at(-1);
-    const scale = harness.project().images[0]?.placement.scale ?? 1;
-    expect(created?.imageId).toBe('I1');
+    const scale = harness.project().containers[0]?.placement.scale ?? 1;
+    expect(created?.containerId).toBe('I1');
     expect((created?.rect.x ?? 0) + (created?.rect.width ?? 0) / 2).toBeCloseTo(
       200 / scale,
       -1,
@@ -127,7 +127,7 @@ describe('paleta da Biblioteca', () => {
     harness.ui.selection.value = null;
     const { user } = renderLibrary(harness);
     await user.click(addButton('Button'));
-    expect(harness.project().markings.at(-1)?.imageId).toBe('I1');
+    expect(harness.project().markings.at(-1)?.containerId).toBe('I1');
   });
 
   it('sem tela sob o centro nem seleção, o botão fica desabilitado com a dica', async () => {
@@ -147,7 +147,7 @@ describe('paleta da Biblioteca', () => {
     const button = addButton('Button');
     expect(button.disabled).toBe(false);
     await user.click(button);
-    expect(harness.project().markings.at(-1)?.imageId).toBe('I2');
+    expect(harness.project().markings.at(-1)?.containerId).toBe('I2');
   });
 
   it('somente leitura: desabilitado', async () => {

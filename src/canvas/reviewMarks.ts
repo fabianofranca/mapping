@@ -112,8 +112,8 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
   const rejected = (c: Change) => p.decisions[c.id]?.state === 'rejected';
   const applied = (c: Change) => Object.hasOwn(p.applied, c.id);
   const placementOf = (imageId: string): Placement | null =>
-    drawnIndex.images.get(imageId)?.placement ??
-    currentIndex.images.get(imageId)?.placement ??
+    drawnIndex.containers.get(imageId)?.placement ??
+    currentIndex.containers.get(imageId)?.placement ??
     null;
 
   const markings = new Map<string, MarkingReviewMark>();
@@ -149,7 +149,7 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
           : ownType;
 
     if (node.level === 'image') {
-      const image = currentIndex.images.get(id);
+      const image = currentIndex.containers.get(id);
       if (remove && !rejected(remove) && image) {
         removed.push({
           key: `image:${id}`,
@@ -182,7 +182,7 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
     );
     const imageId =
       create?.imageId ??
-      marking?.imageId ??
+      marking?.containerId ??
       node.changeIds
         .map((changeId) => changes.get(changeId)?.imageId)
         .find((x): x is string => typeof x === 'string');
@@ -304,7 +304,7 @@ export function proposedDisplay(preview: Project, p: Proposal): Project {
       ? preview
       : {
           ...preview,
-          images: preview.images.map((image) => {
+          images: preview.containers.map((image) => {
             const file = files.get(image.id);
             return file === undefined || image.file === file ? image : { ...image, file };
           }),

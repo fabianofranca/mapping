@@ -44,7 +44,7 @@ describe('sessão: componentes', () => {
     expect(components?.byType.has('m3-button')).toBe(true);
 
     const created = session.actions.addComponent({
-      imageId: 'I2',
+      containerId: 'I2',
       parentId: null,
       specId: 'material3',
       typeId: 'm3-button',

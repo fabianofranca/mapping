@@ -1,4 +1,4 @@
-import type { ProjectImage } from '../model';
+import type { ProjectContainer } from '../model';
 import { resolveSelection, type AnnotationLocation, type Selection } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
 import { MarkingPanel } from '../ui/MarkingPanel';
@@ -9,7 +9,7 @@ import type { EditorDialogs } from './useEditorDialogs';
 export interface EditorPanelProps {
   readonly busy: boolean;
   readonly dialogs: EditorDialogs;
-  readonly onReplace: (image: ProjectImage) => void;
+  readonly onReplace: (image: ProjectContainer) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 

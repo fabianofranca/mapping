@@ -18,7 +18,7 @@ beforeAll(() => installFakeCanvas());
 
 function drawing(
   markingId: string,
-  imageId = 'img-1',
+  containerId = 'img-1',
   x = 0,
   color = '#ffffff',
 ): LayerDrawing {
@@ -36,7 +36,7 @@ function drawing(
     fills: [{ type: 'solid', color }],
     children: [],
   };
-  return { markingId, imageId, root };
+  return { markingId, containerId: containerId, root };
 }
 
 function toMap(...list: LayerDrawing[]): Map<string, LayerDrawing> {
@@ -53,10 +53,10 @@ function setup() {
   const parent = new Konva.Group();
   const layer = new ComponentLayerRenderer(parent);
   /** Nós dos desenhos de uma imagem, na ordem de desenho. */
-  const nodes = (imageId: string): Konva.Node[] => {
+  const nodes = (containerId: string): Konva.Node[] => {
     const group = parent
       .getChildren()
-      .find((n: Konva.Node) => n.getAttr('imageId') === imageId) as
+      .find((n: Konva.Node) => n.getAttr('containerId') === containerId) as
       Konva.Group | undefined;
     return group ? [...group.getChildren()] : [];
   };
@@ -235,7 +235,7 @@ describe('ComponentLayerRenderer', () => {
         },
       ],
     };
-    layer.render(toMap({ markingId: 'm', imageId: 'img-1', root }), all, PLACEMENTS);
+    layer.render(toMap({ markingId: 'm', containerId: 'img-1', root }), all, PLACEMENTS);
     const rects = parent.find('Rect') as Konva.Rect[];
     expect(rects.some((r) => r.stroke() === '#00aa00')).toBe(true);
   });

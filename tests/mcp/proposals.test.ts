@@ -464,7 +464,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
     // "Aplicar aceitas": o modelo que a app usa aplica a proposta que o MCP gerou.
     const project = applyAcceptedOnDisk(dir(), first.proposal.id);
     expect(project.revision).toBe(1);
-    expect(project.images.map((i) => i.name)).toEqual(['Checkout', 'Pagamento']);
+    expect(project.containers.map((i) => i.name)).toEqual(['Checkout', 'Pagamento']);
     expect(project.markings.map((m) => m.name)).toEqual(['Título', 'Botão Pagar']);
     expect(project.annotations).toHaveLength(3);
     expect(readProposal(dir(), first.proposal.id)).toMatchObject({

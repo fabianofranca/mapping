@@ -48,7 +48,7 @@ describe('serialização', () => {
     const shuffled = JSON.stringify({
       annotations: p.annotations,
       markings: p.markings,
-      images: p.images,
+      images: p.containers,
       layers: p.layers,
       platformRepos: p.platformRepos,
       specializations: p.specializations,

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
-import { MAX_BLANK_SIZE } from './images';
+import { MAX_CONTAINER_SIZE } from './containers';
 import { parseOrigins, parsePath, type Origin } from './components/origin';
 import { isPackagePath, packagePathProblem } from './packagePaths';
 
@@ -204,7 +204,7 @@ export interface SpecContainer {
   /** `[a-z0-9-]+`, único na especialização. */
   id: string;
   name: string;
-  /** Pixels, inteiro de 1 a `MAX_BLANK_SIZE`. */
+  /** Pixels, inteiro de 1 a `MAX_CONTAINER_SIZE`. */
   width: number;
   height: number;
   /** `#RRGGBB`; ausente = branco. */
@@ -719,7 +719,7 @@ const containerSide = z
   .number({ error: 'deve ser um número' })
   .int('deve ser inteiro')
   .min(1, 'deve ser >= 1')
-  .max(MAX_BLANK_SIZE, `deve ser <= ${MAX_BLANK_SIZE}`);
+  .max(MAX_CONTAINER_SIZE, `deve ser <= ${MAX_CONTAINER_SIZE}`);
 
 const containerShape = z
   .object({

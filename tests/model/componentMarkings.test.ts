@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   EMPTY_CATALOG,
   addComponentMarking,
-  addImage,
+  addContainer,
   componentPlacement,
   componentTypes,
   setFieldValue,
@@ -30,7 +30,7 @@ function add(
     {
       markingId: id,
       annotationId: `A_${id}`,
-      imageId: 'I1',
+      containerId: 'I1',
       parentId: null,
       specId: SPEC_ID,
       typeId,
@@ -77,7 +77,7 @@ describe('componentPlacement: sem container', () => {
       componentProject(),
       catalog,
       {
-        imageId: 'I1',
+        containerId: 'I1',
         parentId: null,
         specId: SPEC_ID,
         typeId,
@@ -113,11 +113,11 @@ describe('componentPlacement: sem container', () => {
 
   it('imagem menor que o tamanho inicial: encolhe até o mínimo', () => {
     let p = componentProject();
-    p = addImage(p, { id: 'I2', file: 'images/pequena.png', width: 80, height: 30 });
+    p = addContainer(p, { id: 'I2', file: 'images/pequena.png', width: 80, height: 30 });
     const rect = componentPlacement(
       p,
       catalog,
-      { imageId: 'I2', parentId: null, specId: SPEC_ID, typeId: 'text' },
+      { containerId: 'I2', parentId: null, specId: SPEC_ID, typeId: 'text' },
       approximateMeasurer,
     );
     // 100×40 preso em 80×30; o mínimo (60×24) cabe.
@@ -126,12 +126,12 @@ describe('componentPlacement: sem container', () => {
 
   it('nem o mínimo cabe na imagem: rect-out-of-image', () => {
     let p = componentProject();
-    p = addImage(p, { id: 'I2', file: 'images/minuscula.png', width: 50, height: 50 });
+    p = addContainer(p, { id: 'I2', file: 'images/minuscula.png', width: 50, height: 50 });
     expect(() =>
       componentPlacement(
         p,
         catalog,
-        { imageId: 'I2', parentId: null, specId: SPEC_ID, typeId: 'text' },
+        { containerId: 'I2', parentId: null, specId: SPEC_ID, typeId: 'text' },
         approximateMeasurer,
       ),
     ).toThrow('rect-out-of-image');
@@ -139,7 +139,7 @@ describe('componentPlacement: sem container', () => {
 
   it('tipo desconhecido, sem componente ou imagem inexistente', () => {
     const p = componentProject();
-    const args = { imageId: 'I1', parentId: null, specId: SPEC_ID };
+    const args = { containerId: 'I1', parentId: null, specId: SPEC_ID };
     expect(() =>
       componentPlacement(p, catalog, { ...args, typeId: 'plain' }, approximateMeasurer),
     ).toThrow('unknown-type');
@@ -150,7 +150,7 @@ describe('componentPlacement: sem container', () => {
       componentPlacement(
         p,
         catalog,
-        { ...args, typeId: 'text', imageId: 'X' },
+        { ...args, typeId: 'text', containerId: 'X' },
         approximateMeasurer,
       ),
     ).toThrow('not-found');
@@ -232,8 +232,8 @@ describe('componentPlacement: dentro de um container', () => {
 
   it('o pai precisa estar na mesma imagem', () => {
     let p = withRow();
-    p = addImage(p, { id: 'I2', file: 'images/outra.png', width: 500, height: 500 });
-    expect(() => add(p, 'T1', 'text', { parentId: 'C', imageId: 'I2' })).toThrow(
+    p = addContainer(p, { id: 'I2', file: 'images/outra.png', width: 500, height: 500 });
+    expect(() => add(p, 'T1', 'text', { parentId: 'C', containerId: 'I2' })).toThrow(
       'invalid-parent',
     );
   });
@@ -246,7 +246,7 @@ describe('addComponentMarking', () => {
     expect(m).toMatchObject({
       parentId: null,
       name: 'Título',
-      imageId: 'I1',
+      containerId: 'I1',
       needsReview: false,
       locked: false,
     });

@@ -1,5 +1,5 @@
 import {
-  addImage,
+  addContainer,
   applySpecialization,
   loadSpecComponents,
   parseSpec,
@@ -259,5 +259,5 @@ export function componentProject(): Project {
     })(),
     packageSpecName: 'test.spec.json',
   });
-  return addImage(p, { id: 'I1', file: 'images/tela.png', width: 1000, height: 800 });
+  return addContainer(p, { id: 'I1', file: 'images/tela.png', width: 1000, height: 800 });
 }

@@ -7,7 +7,7 @@ import {
   type JsonValue,
   type Marking,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../src/model';
 import { ToolError } from './errors';
 import { CONTAINER_LABEL, type Refs } from './items';
@@ -63,12 +63,12 @@ function annotationTexts(p: Project, a: Annotation): string[] {
   return out;
 }
 
-function findImage(p: Project, query: string): ProjectImage {
+function findImage(p: Project, query: string): ProjectContainer {
   const index = projectIndex(p);
-  const direct = index.images.get(query);
+  const direct = index.containers.get(query);
   if (direct) return direct;
   const folded = fold(query);
-  const byName = p.images.filter(
+  const byName = p.containers.filter(
     (i) =>
       (i.name !== null && fold(i.name) === folded) ||
       (i.file !== null &&
@@ -76,11 +76,11 @@ function findImage(p: Project, query: string): ProjectImage {
   );
   if (byName.length === 1) return byName[0]!;
   const coded = matchShortCode(p, 'i', query.replace(/^i\//, ''));
-  if (coded.length === 1) return index.images.get(coded[0]!.id)!;
+  if (coded.length === 1) return index.containers.get(coded[0]!.id)!;
   throw new ToolError(
     byName.length > 1 || coded.length > 1 ? 'ambiguous-image' : 'not-found',
     `imagem não encontrada ou ambígua: ${query}`,
-    { images: p.images.map((i) => i.name ?? i.file ?? CONTAINER_LABEL) },
+    { images: p.containers.map((i) => i.name ?? i.file ?? CONTAINER_LABEL) },
   );
 }
 
@@ -96,17 +96,17 @@ function matchesType(p: Project, a: Annotation, query: string): boolean {
 }
 
 /** Marcações em profundidade (o pai antes das filhas), imagem por imagem. */
-function inDisplayOrder(p: Project, only: ProjectImage | null): Marking[] {
+function inDisplayOrder(p: Project, only: ProjectContainer | null): Marking[] {
   const children = projectIndex(p).children;
   const result: Marking[] = [];
   const visit = (marking: Marking) => {
     result.push(marking);
     for (const child of children.get(marking.id) ?? []) visit(child);
   };
-  const images = only ? [only] : p.images;
+  const images = only ? [only] : p.containers;
   for (const image of images) {
     for (const root of children.get(null) ?? []) {
-      if (root.imageId === image.id) visit(root);
+      if (root.containerId === image.id) visit(root);
     }
   }
   return result;

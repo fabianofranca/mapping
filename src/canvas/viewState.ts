@@ -9,7 +9,7 @@ import type { Size, Viewport } from './viewport';
 
 /** Posição do ponteiro em pixels da imagem sob ele. */
 export interface CanvasCursor {
-  readonly imageId: string;
+  readonly containerId: string;
   readonly x: number;
   readonly y: number;
 }
@@ -35,5 +35,5 @@ export function createCanvasViewState(): CanvasViewState {
 /** Mesmo cursor (evita escrever o signal a cada quadro parado). */
 export function sameCursor(a: CanvasCursor | null, b: CanvasCursor | null): boolean {
   if (a === null || b === null) return a === b;
-  return a.imageId === b.imageId && a.x === b.x && a.y === b.y;
+  return a.containerId === b.containerId && a.x === b.x && a.y === b.y;
 }

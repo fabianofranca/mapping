@@ -28,15 +28,15 @@ export const HANDLE_HIT_RADIUS = 22;
 
 export type Intent =
   | { readonly kind: 'pan' }
-  | { readonly kind: 'move-image'; readonly imageId: string }
-  | { readonly kind: 'resize-image'; readonly imageId: string; readonly corner: Corner }
+  | { readonly kind: 'move-image'; readonly containerId: string }
+  | { readonly kind: 'resize-image'; readonly containerId: string; readonly corner: Corner }
   | { readonly kind: 'move-marking'; readonly markingId: string }
   | {
       readonly kind: 'resize-marking';
       readonly markingId: string;
       readonly corner: Corner;
     }
-  | { readonly kind: 'draw'; readonly imageId: string }
+  | { readonly kind: 'draw'; readonly containerId: string }
   /** Sobre o item selecionado e trancado: arrastar não faz nada (cursor "não permitido"). */
   | { readonly kind: 'locked' };
 
@@ -65,8 +65,8 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
   const { project, zoom } = ctx;
   if (ctx.spaceDown || !project || ctx.readOnly) return PAN;
   if (ctx.mode === 'draw') {
-    const image = imageAt(project.images, c);
-    return image ? { kind: 'draw', imageId: image.id } : PAN;
+    const image = imageAt(project.containers, c);
+    return image ? { kind: 'draw', containerId: image.id } : PAN;
   }
   const selected = resolveSelection(project, ctx.selection);
   if (selected?.kind === 'marking') {
@@ -89,8 +89,8 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
       return pointInRect(c, rect) ? LOCKED : PAN;
     }
     const corner = cornerAt(rect, c, HANDLE_HIT_RADIUS / zoom);
-    if (corner) return { kind: 'resize-image', imageId: image.id, corner };
-    if (pointInRect(c, rect)) return { kind: 'move-image', imageId: image.id };
+    if (corner) return { kind: 'resize-image', containerId: image.id, corner };
+    if (pointInRect(c, rect)) return { kind: 'move-image', containerId: image.id };
   }
   return PAN;
 }
@@ -122,7 +122,7 @@ export function tapSelection(
   c: Point,
   repeat: boolean,
 ): Selection {
-  const image = project && imageAt(project.images, c);
+  const image = project && imageAt(project.containers, c);
   if (!project || !image) return null;
   const chain = markingChainAt(
     selectableMarkings(project, visibility),

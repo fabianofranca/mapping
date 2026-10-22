@@ -10,7 +10,7 @@ import {
   layerDeletionImpact,
   removeAnnotation,
   removeLayer,
-  renameImage,
+  renameContainer,
   serialize,
   setAnnotationInherit,
   setAnnotationParent,
@@ -44,7 +44,7 @@ describe('migração v1 → v2', () => {
     expect(result.readOnly).toBe(false);
     const p = result.project;
     expect(p.schemaVersion).toBe(11);
-    expect(p.images.every((i) => i.name === null)).toBe(true);
+    expect(p.containers.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => !a.inherit && a.parentAnnotationId === null)).toBe(
       true,
     );
@@ -56,10 +56,10 @@ describe('migração v1 → v2', () => {
     );
     expect(p.project).toEqual(original.project);
     expect(
-      p.images.map((i) =>
+      p.containers.map((i) =>
         omit(i, ['name', 'markingColor', 'locked', 'source', 'background']),
       ),
-    ).toEqual(original.images);
+    ).toEqual(original.containers);
     expect(
       p.annotations.map((a) => ({
         ...omit(a, ['inherit', 'parentAnnotationId', 'type', 'values']),
@@ -105,12 +105,12 @@ describe('migração v1 → v2', () => {
 
 describe('nome da imagem', () => {
   it('define, normaliza e limpa o nome sem mexer no arquivo', () => {
-    let p = renameImage(sampleProject(), 'I1', '  Tela Home ');
-    expect(p.images[0]?.name).toBe('Tela Home');
-    expect(p.images[0]?.file).toBe('images/lateral.jpg');
-    p = renameImage(p, 'I1', '   ');
-    expect(p.images[0]?.name).toBeNull();
-    expect(() => renameImage(p, 'nada', 'x')).toThrow(ModelError);
+    let p = renameContainer(sampleProject(), 'I1', '  Tela Home ');
+    expect(p.containers[0]?.name).toBe('Tela Home');
+    expect(p.containers[0]?.file).toBe('images/lateral.jpg');
+    p = renameContainer(p, 'I1', '   ');
+    expect(p.containers[0]?.name).toBeNull();
+    expect(() => renameContainer(p, 'nada', 'x')).toThrow(ModelError);
   });
 });
 

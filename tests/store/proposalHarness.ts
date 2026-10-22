@@ -1,6 +1,6 @@
 import {
   addAnnotation,
-  addImage,
+  addContainer,
   createMarking,
   parseProposalText,
   proposalFilePath,
@@ -30,7 +30,7 @@ export function richScenario(id = 'P1') {
   const base = sampleProject();
   let after = renameMarking(base, 'M1', 'Porta dianteira');
   after = setMarkingRect(after, 'M4', { x: 10, y: 10, width: 100, height: 100 });
-  after = addImage(after, {
+  after = addContainer(after, {
     id: 'I3',
     file: 'images/nova.webp',
     width: 800,
@@ -38,7 +38,7 @@ export function richScenario(id = 'P1') {
   });
   after = createMarking(after, {
     id: 'M5',
-    imageId: 'I3',
+    containerId: 'I3',
     rect: { x: 0, y: 0, width: 100, height: 100 },
     name: 'Botão',
   });

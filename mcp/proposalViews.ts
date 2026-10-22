@@ -55,7 +55,7 @@ export class ProposalLabels {
     for (const refs of [this.proposed, this.current]) {
       const index = projectIndex(refs.project);
       const map =
-        kind === 'm' ? index.markings : kind === 'i' ? index.images : index.annotations;
+        kind === 'm' ? index.markings : kind === 'i' ? index.containers : index.annotations;
       if (map.has(id)) return refs.ref(kind, id);
     }
     return null;

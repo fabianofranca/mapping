@@ -192,9 +192,9 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       // Snapshots vizinhos costumam compartilhar o mesmo array de imagens.
       const seen = new Set<readonly unknown[]>();
       const collect = (p: Project | null) => {
-        if (!p || seen.has(p.images)) return;
-        seen.add(p.images);
-        for (const image of p.images) if (image.file !== null) files.add(image.file);
+        if (!p || seen.has(p.containers)) return;
+        seen.add(p.containers);
+        for (const image of p.containers) if (image.file !== null) files.add(image.file);
       };
       collect(project.peek());
       collect(gestureBase.peek());

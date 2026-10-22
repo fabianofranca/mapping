@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NO_FILTERS,
   addAnnotation,
-  addImage,
+  addContainer,
   canRemoveProposal,
   changeImageFile,
   changeLayerId,
@@ -13,13 +13,13 @@ import {
   hasActiveFilters,
   leftBehind,
   levelType,
-  moveImage,
+  moveContainer,
   needsExitReminder,
   proposalListStatus,
   removeAnnotation,
   removeMarking,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   reviewKey,
   reviewProgress,
   reviewTree,
@@ -44,8 +44,8 @@ function scenario() {
     name: 'Novo',
   });
   after = removeAnnotation(after, 'A4');
-  after = moveImage(after, 'I2', 5000, 5000);
-  after = addImage(after, {
+  after = moveContainer(after, 'I2', 5000, 5000);
+  after = addContainer(after, {
     id: 'I3',
     file: 'images/nova.webp',
     width: 800,
@@ -65,7 +65,7 @@ describe('tipo e alvo das mudanças', () => {
 
     const replaced = propose(
       base,
-      replaceImage(base, 'I2', { file: 'images/outra.jpg', width: 1000, height: 1000 }),
+      replaceContainer(base, 'I2', { file: 'images/outra.jpg', width: 1000, height: 1000 }),
     );
     expect(changeType(changeOf(replaced, 'image', 'I2', 'file'))).toBe('replaced');
     expect(changeImageFile(changeOf(replaced, 'image', 'I2', 'file'))).toBe(
@@ -223,7 +223,7 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
     // Só a posição muda: movida (item e imagem).
     const onlyMoved = propose(
       base,
-      moveImage(
+      moveContainer(
         setMarkingRect(base, 'M4', { x: 1, y: 1, width: 10, height: 10 }),
         'I1',
         9,
@@ -244,7 +244,7 @@ describe('tipo do nível, status da lista e lembrete ao sair (fase 8.2)', () => 
     const swapped = propose(
       base,
       renameMarking(
-        replaceImage(base, 'I1', {
+        replaceContainer(base, 'I1', {
           file: 'images/outra.webp',
           width: 4000,
           height: 3000,

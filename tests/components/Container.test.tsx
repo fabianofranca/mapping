@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CanvasController } from '../../src/canvas/CanvasController';
 import { t } from '../../src/i18n';
-import { MAX_BLANK_SIZE } from '../../src/model';
+import { MAX_CONTAINER_SIZE } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { EditorMainBar } from '../../src/app/EditorMainBar';
 import type { EditorDialogs } from '../../src/app/useEditorDialogs';
@@ -12,8 +12,8 @@ import { ContainerDialog } from '../../src/ui/ContainerDialog';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import {
-  parseBlankColor,
-  parseBlankSide,
+  parseContainerColor,
+  parseContainerSide,
   presetGroups,
   selectionSize,
 } from '../../src/ui/containerForm';
@@ -70,14 +70,14 @@ const submit = (user: ReturnType<typeof userEvent.setup>) =>
 
 describe('leitura do formulário', () => {
   it('lados inteiros de 1 ao máximo; cor #RRGGBB', () => {
-    expect(parseBlankSide('360')).toBe(360);
-    expect(parseBlankSide(' 20000 ')).toBe(MAX_BLANK_SIZE);
-    for (const bad of ['0', '-1', '12.5', 'abc', '', String(MAX_BLANK_SIZE + 1)]) {
-      expect(parseBlankSide(bad), bad).toBeNull();
+    expect(parseContainerSide('360')).toBe(360);
+    expect(parseContainerSide(' 20000 ')).toBe(MAX_CONTAINER_SIZE);
+    for (const bad of ['0', '-1', '12.5', 'abc', '', String(MAX_CONTAINER_SIZE + 1)]) {
+      expect(parseContainerSide(bad), bad).toBeNull();
     }
-    expect(parseBlankColor('#a1b2c3')).toBe('#A1B2C3');
+    expect(parseContainerColor('#a1b2c3')).toBe('#A1B2C3');
     for (const bad of ['', 'fff', '#fff', '#GGGGGG', 'red']) {
-      expect(parseBlankColor(bad), bad).toBeNull();
+      expect(parseContainerColor(bad), bad).toBeNull();
     }
   });
 });
@@ -96,7 +96,7 @@ describe('diálogo Novo container', () => {
     expect(field(t('container.background')).value).toBe('#EEEEEE');
     await submit(user);
 
-    const created = harness.project().images.at(-1);
+    const created = harness.project().containers.at(-1);
     expect(created).toMatchObject({
       name: 'Login',
       file: null,
@@ -172,7 +172,7 @@ describe('diálogo Novo container', () => {
 
   it('valida: nome obrigatório, tamanho e cor; nada é criado', async () => {
     const harness = createHarness(sampleProject());
-    const before = harness.project().images.length;
+    const before = harness.project().containers.length;
     const { user, onClose } = renderDialog(harness);
 
     await submit(user);
@@ -185,7 +185,7 @@ describe('diálogo Novo container', () => {
     await user.type(field(t('container.width')), '0');
     await submit(user);
     expect(inDialog().getByRole('alert', { hidden: true }).textContent).toBe(
-      t('container.error.size', { max: MAX_BLANK_SIZE }),
+      t('container.error.size', { max: MAX_CONTAINER_SIZE }),
     );
 
     await user.clear(field(t('container.width')));
@@ -197,7 +197,7 @@ describe('diálogo Novo container', () => {
       t('container.error.color'),
     );
 
-    expect(harness.project().images).toHaveLength(before);
+    expect(harness.project().containers).toHaveLength(before);
     expect(onClose).not.toHaveBeenCalled();
   });
 });
@@ -205,7 +205,7 @@ describe('diálogo Novo container', () => {
 describe('Detalhes do container', () => {
   function renderContainer() {
     const harness = createHarness(sampleProject());
-    const created = harness.actions.addBlankImage({
+    const created = harness.actions.addBackgroundContainer({
       name: 'Home',
       width: 360,
       height: 800,
@@ -213,7 +213,7 @@ describe('Detalhes do container', () => {
     });
     if (!created.ok) throw new Error(created.error);
     renderLive(harness, (project) => {
-      const image = project.images.find((i) => i.id === created.value);
+      const image = project.containers.find((i) => i.id === created.value);
       return image ? (
         <SelectionPanel
           image={image}
@@ -225,8 +225,8 @@ describe('Detalhes do container', () => {
         />
       ) : null;
     });
-    const image = (): ReturnType<Harness['project']>['images'][number] => {
-      const found = harness.project().images.find((i) => i.id === created.value);
+    const image = (): ReturnType<Harness['project']>['containers'][number] => {
+      const found = harness.project().containers.find((i) => i.id === created.value);
       if (!found) throw new Error('sem tela');
       return found;
     };
@@ -264,7 +264,7 @@ describe('Detalhes do container', () => {
     await user.clear(height);
     await user.type(height, '0{Enter}');
     expect(screen.getByRole('alert').textContent).toBe(
-      t('container.error.size', { max: MAX_BLANK_SIZE }),
+      t('container.error.size', { max: MAX_CONTAINER_SIZE }),
     );
     expect(image().height).toBe(800);
   });
@@ -272,7 +272,7 @@ describe('Detalhes do container', () => {
   it('uma foto continua com Arquivo e Tamanho, sem os campos da tela', () => {
     const harness = createHarness(sampleProject());
     renderLive(harness, (project) => {
-      const image = project.images[0];
+      const image = project.containers[0];
       return image ? (
         <SelectionPanel
           image={image}

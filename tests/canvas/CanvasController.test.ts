@@ -69,7 +69,7 @@ describe('CanvasController', () => {
   it('alvo de soltar na área vazia marca o container no próximo quadro', () => {
     const { container, controller } = setup();
     flush();
-    controller.setDropTarget({ imageId: null });
+    controller.setDropTarget({ containerId: null });
     expect(container.classList.contains('canvas-host--drop')).toBe(false);
     flush();
     expect(container.classList.contains('canvas-host--drop')).toBe(true);
@@ -138,7 +138,7 @@ describe('CanvasController', () => {
 
     // A imagem sai do projeto: o mapa de exibição a solta na hora, mas o bitmap continua
     // aberto até o quadro seguinte (que tira a referência do nó) ser desenhado.
-    editor.actions.removeImage('I2');
+    editor.actions.removeContainer('I2');
     expect(display.images.value.has('images/b.jpg')).toBe(false);
     expect(b.closed).toBe(false);
     flush();
@@ -176,7 +176,7 @@ describe('CanvasController', () => {
     flush();
     const canvasPoint = controller.canvasPointAt(10, 20);
     expect(view.cursor.value).toEqual({
-      imageId: 'I1',
+      containerId: 'I1',
       x: Math.floor(canvasPoint.x),
       y: Math.floor(canvasPoint.y),
     });

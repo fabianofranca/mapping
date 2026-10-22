@@ -54,13 +54,13 @@ export function canDeleteMarking(p: Project, markingId: string): boolean {
 }
 
 /** Mover ou redimensionar a imagem no canvas. */
-export function canEditImagePlacement(p: Project, imageId: string): boolean {
-  return !findById(p.images, imageId).locked;
+export function canEditImagePlacement(p: Project, containerId: string): boolean {
+  return !findById(p.containers, containerId).locked;
 }
 
 /** Excluir a imagem leva as marcações, trancadas ou não: só a imagem trancada bloqueia. */
-export function canDeleteImage(p: Project, imageId: string): boolean {
-  return !findById(p.images, imageId).locked;
+export function canDeleteImage(p: Project, containerId: string): boolean {
+  return !findById(p.containers, containerId).locked;
 }
 
 /**
@@ -71,12 +71,12 @@ export function canDeleteImage(p: Project, imageId: string): boolean {
  */
 export function canReplaceImage(
   p: Project,
-  imageId: string,
+  containerId: string,
   next: { readonly width: number; readonly height: number },
 ): boolean {
-  const image = findById(p.images, imageId);
+  const image = findById(p.containers, containerId);
   if (image.width === next.width && image.height === next.height) return true;
-  return !image.locked && !p.markings.some((m) => m.imageId === imageId && m.locked);
+  return !image.locked && !p.markings.some((m) => m.containerId === containerId && m.locked);
 }
 
 export function setMarkingLocked(
@@ -91,26 +91,26 @@ export function setMarkingLocked(
   };
 }
 
-export function setImageLocked(p: Project, imageId: string, locked: boolean): Project {
-  if (findById(p.images, imageId).locked === locked) return p;
+export function setImageLocked(p: Project, containerId: string, locked: boolean): Project {
+  if (findById(p.containers, containerId).locked === locked) return p;
   return {
     ...p,
-    images: updateById(p.images, imageId, (i) => ({ ...i, locked })),
+    containers: updateById(p.containers, containerId, (i) => ({ ...i, locked })),
   };
 }
 
 /** Tranca (ou destranca) todas as marcações da imagem de uma vez: uma operação, uma entrada no histórico. */
 export function setImageMarkingsLocked(
   p: Project,
-  imageId: string,
+  containerId: string,
   locked: boolean,
 ): Project {
-  findById(p.images, imageId);
-  if (!p.markings.some((m) => m.imageId === imageId && m.locked !== locked)) return p;
+  findById(p.containers, containerId);
+  if (!p.markings.some((m) => m.containerId === containerId && m.locked !== locked)) return p;
   return {
     ...p,
     markings: p.markings.map((m) =>
-      m.imageId === imageId && m.locked !== locked ? { ...m, locked } : m,
+      m.containerId === containerId && m.locked !== locked ? { ...m, locked } : m,
     ),
   };
 }

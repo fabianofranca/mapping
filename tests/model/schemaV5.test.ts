@@ -23,7 +23,7 @@ describe('migração v4 → v5 (trava)', () => {
     expect(result.migratedFrom).toBe(4);
     expect(result.readOnly).toBe(false);
     expect(result.project.schemaVersion).toBe(11);
-    expect(result.project.images.every((i) => i.locked === false)).toBe(true);
+    expect(result.project.containers.every((i) => i.locked === false)).toBe(true);
     expect(result.project.markings.every((m) => m.locked === false)).toBe(true);
     expect(result.project).toEqual(sampleProject());
   });

@@ -1,6 +1,6 @@
 import {
   addAnnotation,
-  addImage,
+  addContainer,
   addLayer,
   createMarking,
   createProject,
@@ -26,29 +26,29 @@ export function emptyProject(): Project {
 export function sampleProject(): Project {
   let p = emptyProject();
   p = addLayer(p, { id: 'L2', name: 'Vidros', color: '#1E88E5' });
-  p = addImage(p, { id: 'I1', file: 'images/lateral.jpg', width: 4000, height: 3000 });
-  p = addImage(p, { id: 'I2', file: 'images/frente.jpg', width: 1000, height: 1000 });
+  p = addContainer(p, { id: 'I1', file: 'images/lateral.jpg', width: 4000, height: 3000 });
+  p = addContainer(p, { id: 'I2', file: 'images/frente.jpg', width: 1000, height: 1000 });
   p = createMarking(p, {
     id: 'M1',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 1000, y: 1000, width: 1000, height: 1000 },
     name: 'Porta',
   });
   p = createMarking(p, {
     id: 'M2',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 1200, y: 1200, width: 400, height: 200 },
     name: 'Maçaneta',
   });
   p = createMarking(p, {
     id: 'M3',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 1300, y: 1250, width: 50, height: 50 },
     name: 'Fechadura',
   });
   p = createMarking(p, {
     id: 'M4',
-    imageId: 'I2',
+    containerId: 'I2',
     rect: { x: 0, y: 0, width: 100, height: 100 },
   });
   p = addAnnotation(p, {
@@ -79,7 +79,7 @@ export function marking(p: Project, id: string) {
 }
 
 export function image(p: Project, id: string) {
-  const i = p.images.find((x) => x.id === id);
+  const i = p.containers.find((x) => x.id === id);
   if (!i) throw new Error(`image ${id} not found`);
   return i;
 }

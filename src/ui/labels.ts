@@ -1,20 +1,20 @@
 // Textos derivados do projeto (nomes de marcações, caminhos, erros), sempre via `t()`.
 import { t, type TranslationKey } from '../i18n';
 import {
-  MAX_BLANK_SIZE,
+  MAX_CONTAINER_SIZE,
   MIN_MARKING_SIZE,
   ancestorsOf,
   type Annotation,
   type Marking,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../model';
 import type { StoreErrorCode } from '../store/history';
 import type { ProposalActionError } from '../store/proposalActions';
 import type { ProposalNotice } from '../store/proposals';
 
 /** Nome da imagem; sem nome, o nome do arquivo (container sem arquivo: "Container"). */
-export function imageLabel(image: Pick<ProjectImage, 'name' | 'file'>): string {
+export function imageLabel(image: Pick<ProjectContainer, 'name' | 'file'>): string {
   return image.name ?? image.file ?? t('image.containerUntitled');
 }
 
@@ -63,7 +63,7 @@ const CONTAINER_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
 
 /** Erro de editar o container sem arquivo (tamanho e cor de fundo). */
 export function containerErrorMessage(code: StoreErrorCode): string {
-  return t(CONTAINER_ERRORS[code] ?? 'container.error.generic', { max: MAX_BLANK_SIZE });
+  return t(CONTAINER_ERRORS[code] ?? 'container.error.generic', { max: MAX_CONTAINER_SIZE });
 }
 
 export function markingErrorMessage(code: StoreErrorCode): string {

@@ -101,18 +101,18 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       );
     },
     renameProject: (name: string) => store.apply((p) => model.renameProject(p, name)),
-    setImageMarkingColor: (imageId: string, color: string | null) =>
-      store.apply((p) => model.setImageMarkingColor(p, imageId, color)),
-    renameImage: (imageId: string, name: string | null) =>
-      store.apply((p) => model.renameImage(p, imageId, name)),
+    setContainerMarkingColor: (containerId: string, color: string | null) =>
+      store.apply((p) => model.setContainerMarkingColor(p, containerId, color)),
+    renameContainer: (containerId: string, name: string | null) =>
+      store.apply((p) => model.renameContainer(p, containerId, name)),
 
     // Trava (etapa 2.5): cada chamada é uma entrada no histórico, inclusive "trancar todas".
     setMarkingLocked: (markingId: string, locked: boolean) =>
       store.apply((p) => model.setMarkingLocked(p, markingId, locked)),
-    setImageLocked: (imageId: string, locked: boolean) =>
-      store.apply((p) => model.setImageLocked(p, imageId, locked)),
-    setImageMarkingsLocked: (imageId: string, locked: boolean) =>
-      store.apply((p) => model.setImageMarkingsLocked(p, imageId, locked)),
+    setImageLocked: (containerId: string, locked: boolean) =>
+      store.apply((p) => model.setImageLocked(p, containerId, locked)),
+    setImageMarkingsLocked: (containerId: string, locked: boolean) =>
+      store.apply((p) => model.setImageMarkingsLocked(p, containerId, locked)),
 
     // Camadas
     addLayer: (name: string, color: string) =>
@@ -126,34 +126,34 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     removeLayer: (layerId: string) => store.apply((p) => model.removeLayer(p, layerId)),
 
     // Imagens
-    addImage: (
+    addContainer: (
       file: model.ImageFile,
       center?: { readonly x: number; readonly y: number },
-    ) => create((id) => (p) => model.addImage(p, { ...file, id, center })),
-    setImagePlacement: (imageId: string, placement: Placement) =>
-      store.apply((p) => model.setImagePlacement(p, imageId, placement)),
-    replaceImage: (
-      imageId: string,
+    ) => create((id) => (p) => model.addContainer(p, { ...file, id, center })),
+    setContainerPlacement: (containerId: string, placement: Placement) =>
+      store.apply((p) => model.setContainerPlacement(p, containerId, placement)),
+    replaceContainer: (
+      containerId: string,
       file: model.ImageFile,
-      options?: model.ReplaceImageOptions,
-    ) => store.apply((p) => model.replaceImage(p, imageId, file, options)),
-    removeImage: (imageId: string) => store.apply((p) => model.removeImage(p, imageId)),
+      options?: model.ReplaceContainerOptions,
+    ) => store.apply((p) => model.replaceContainer(p, containerId, file, options)),
+    removeContainer: (containerId: string) => store.apply((p) => model.removeContainer(p, containerId)),
     /** Container sem arquivo: imagem sem arquivo, com tamanho e cor de fundo. */
-    addBlankImage: (args: {
+    addBackgroundContainer: (args: {
       readonly name: string | null;
       readonly width: number;
       readonly height: number;
       readonly background: string;
       readonly center?: Point;
-    }) => create((id) => (p) => model.addBlankImage(p, { ...args, id })),
-    setBlankImage: (imageId: string, patch: model.BlankImageChanges) =>
-      store.apply((p) => model.setBlankImage(p, imageId, patch)),
+    }) => create((id) => (p) => model.addBackgroundContainer(p, { ...args, id })),
+    setBackgroundContainer: (containerId: string, patch: model.BackgroundContainerChanges) =>
+      store.apply((p) => model.setBackgroundContainer(p, containerId, patch)),
 
     // Gestos: prévias sem histórico e uma única entrada no fim (ver `ProjectStore`).
     beginGesture: () => store.beginGesture(),
     /** Prévia de mover/redimensionar. Se sobrepuser, fica na última posição válida. */
-    previewImagePlacement: (imageId: string, placement: Placement) =>
-      store.updateGesture((p) => model.setImagePlacement(p, imageId, placement)),
+    previewImagePlacement: (containerId: string, placement: Placement) =>
+      store.updateGesture((p) => model.setContainerPlacement(p, containerId, placement)),
     /** Prévia de mover a marcação (com os descendentes), limitada ao pai ou à imagem. */
     previewMarkingMove: (markingId: string, dx: number, dy: number) =>
       store.updateGesture((p) => {
@@ -172,10 +172,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     cancelGesture: () => store.cancelGesture(),
 
     // Marcações
-    createMarking: (imageId: string, rect: Rect, name?: string | null) =>
+    createMarking: (containerId: string, rect: Rect, name?: string | null) =>
       create(
         (id) => (p) =>
-          model.createMarking(p, { id, imageId, rect, name }, rectOptions(p, id)),
+          model.createMarking(p, { id, containerId: containerId, rect, name }, rectOptions(p, id)),
       ),
     renameMarking: (markingId: string, name: string | null) =>
       store.apply((p) => model.renameMarking(p, markingId, name)),
@@ -203,7 +203,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     // Componentes (etapa Biblioteca, B3): cada action é uma entrada de desfazer.
     /** Cria a marcação e a anotação tipada que a desenha; devolve o id da marcação. */
     addComponent: (args: {
-      readonly imageId: string;
+      readonly containerId: string;
       readonly parentId: string | null;
       readonly specId: string;
       readonly typeId: string;

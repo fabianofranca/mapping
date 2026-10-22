@@ -90,7 +90,7 @@ export async function findBySourceResult(
           kind: 'marking',
           ref: refs.ref('m', match.marking.id),
           name: match.marking.name,
-          image: refs.ref('i', match.marking.imageId),
+          image: refs.ref('i', match.marking.containerId),
           rect: match.marking.rect,
           source: match.marking.source,
         });

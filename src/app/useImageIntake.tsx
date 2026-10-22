@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { modalOpen } from '../ui/focus';
 import { t } from '../i18n';
-import type { ProjectImage } from '../model';
+import type { ProjectContainer } from '../model';
 import type { AspectChange } from '../store/session';
 import { useEditor } from '../ui/EditorContext';
 import { dragHasFiles, imagesFromPaste, splitImageFiles } from './imageIntake';
@@ -21,7 +21,7 @@ export interface ImageIntake {
   onReplaceChosen(input: HTMLInputElement): Promise<void>;
   /** Botão de adicionar: abre o seletor de arquivos. */
   onAddClick(): void;
-  requestReplace(image: ProjectImage): void;
+  requestReplace(image: ProjectContainer): void;
   readonly dropHandlers: {
     readonly onDragOver: (e: DragEvent) => void;
     readonly onDragLeave: (e: DragEvent) => void;
@@ -52,7 +52,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
       added.push(...result.added);
     }
     setProgress(null);
-    const last = store.project.peek()?.images.find((i) => i.file === added.at(-1));
+    const last = store.project.peek()?.containers.find((i) => i.file === added.at(-1));
     if (last) {
       ui.selection.value = { kind: 'image', id: last.id };
       if (!center) canvas.current?.fitAll();
@@ -67,10 +67,10 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
   const askAspectChange = (change: AspectChange) =>
     new Promise<boolean>((resolve) => dialogs.show({ kind: 'aspect', change, resolve }));
 
-  const replaceWith = async (imageId: string, file: File) => {
+  const replaceWith = async (containerId: string, file: File) => {
     setMessage(null);
     setProgress(t('image.replacing'));
-    const result = await session.replaceImage(imageId, file, askAspectChange);
+    const result = await session.replaceImage(containerId, file, askAspectChange);
     setProgress(null);
     if (result === 'failed') setMessage(t('image.replaceFailed'));
     else if (result === 'locked') setMessage(t('image.replaceLocked'));
@@ -96,14 +96,14 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
 
   /** Imagem sob o ponto que um arquivo solto trocaria; o container sem arquivo não tem arquivo para trocar. */
   const replaceableImageAt = (e: DragEvent): string | null => {
-    const imageId = canvas.current?.imageIdAt(e.clientX, e.clientY) ?? null;
-    const image = imageId && store.project.peek()?.images.find((i) => i.id === imageId);
+    const containerId = canvas.current?.imageIdAt(e.clientX, e.clientY) ?? null;
+    const image = containerId && store.project.peek()?.containers.find((i) => i.id === containerId);
     return image && image.file !== null ? image.id : null;
   };
 
   const dropTargetAt = (e: DragEvent) => {
     const single = (e.dataTransfer?.items.length ?? 0) === 1;
-    return { imageId: single ? replaceableImageAt(e) : null };
+    return { containerId: single ? replaceableImageAt(e) : null };
   };
 
   const onDragOver = (e: DragEvent) => {
@@ -153,10 +153,10 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
     onReplaceChosen: async (input) => {
       const file = input.files?.[0];
       input.value = '';
-      const imageId = replaceTarget.current;
+      const containerId = replaceTarget.current;
       replaceTarget.current = null;
-      if (!file || !imageId) return;
-      await replaceWith(imageId, file);
+      if (!file || !containerId) return;
+      await replaceWith(containerId, file);
     },
     onAddClick: () => imageInput.current?.click(),
     requestReplace: (image) => {

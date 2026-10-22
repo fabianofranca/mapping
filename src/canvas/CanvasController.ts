@@ -234,7 +234,7 @@ export class CanvasController {
 
     this.view = new ViewportController(
       container,
-      () => this.drawnProject.peek()?.images ?? [],
+      () => this.drawnProject.peek()?.containers ?? [],
     );
     const space = watchSpaceKey(() => this.pointer.updateCursor(null));
     this.pointer = new PointerInput({
@@ -271,7 +271,7 @@ export class CanvasController {
         // minimapa a cada quadro; na visão Proposto, as imagens da prévia.
         const shown =
           this.review?.derived.shownProject.value ?? this.store.committed.value;
-        this.viewState.bounds.value = imagesBounds(shown?.images ?? []);
+        this.viewState.bounds.value = imagesBounds(shown?.containers ?? []);
       }),
       this.watchCursor(),
       () => {
@@ -338,7 +338,7 @@ export class CanvasController {
 
   /** Id da imagem sob uma coordenada de tela da página, ou `null` em área vazia. */
   imageIdAt(clientX: number, clientY: number): string | null {
-    const images = this.drawnProject.peek()?.images ?? [];
+    const images = this.drawnProject.peek()?.containers ?? [];
     return imageAt(images, this.canvasPointAt(clientX, clientY))?.id ?? null;
   }
 
@@ -400,13 +400,13 @@ export class CanvasController {
       const point = this.cursorPoint;
       // O projeto desenhado: na visão Proposto, a imagem que só existe na proposta também
       // dá coordenadas (fase 8.2, P1).
-      const images = this.drawnProject.peek()?.images ?? [];
+      const images = this.drawnProject.peek()?.containers ?? [];
       const canvas = point && this.canvasPointAt(point.x, point.y);
       const image = canvas && imageAt(images, canvas);
       const pixel = image && canvasToImagePixel(image.placement, canvas);
       const next =
         image && pixel
-          ? { imageId: image.id, x: Math.floor(pixel.x), y: Math.floor(pixel.y) }
+          ? { containerId: image.id, x: Math.floor(pixel.x), y: Math.floor(pixel.y) }
           : null;
       if (!sameCursor(this.viewState.cursor.peek(), next)) {
         this.viewState.cursor.value = next;
@@ -421,22 +421,22 @@ export class CanvasController {
    * ponto, ou a imagem se não houver marcação. Só escreve o signal quando o item muda, e
    * nada é calculado em projetos sem itens trancados.
    */
-  private updateHoverLock(imageId: string | null, pixel: Point | null): void {
+  private updateHoverLock(containerId: string | null, pixel: Point | null): void {
     const project = this.drawnProject.peek();
     let next: HoverLock | null = null;
-    if (project && imageId !== null && pixel && this.derived.hasLocks.peek()) {
+    if (project && containerId !== null && pixel && this.derived.hasLocks.peek()) {
       const visibility = this.derived.markingVisibility.peek();
       const chain = markingChainAt(
         selectableMarkings(project, visibility),
-        imageId,
+        containerId,
         pixel,
       );
       const top = chain[0];
       if (top) {
         if (isMarkingGeometryLocked(project, top.id))
           next = { kind: 'marking', id: top.id };
-      } else if (projectIndex(project).images.get(imageId)?.locked) {
-        next = { kind: 'image', id: imageId };
+      } else if (projectIndex(project).containers.get(containerId)?.locked) {
+        next = { kind: 'image', id: containerId };
       }
     }
     const current = this.state.hoverLock.peek();
@@ -450,14 +450,14 @@ export class CanvasController {
    * selecionáveis, se for uma das desenhadas. Nada é calculado sem marcações desenhadas, e o
    * signal só é escrito quando o resultado muda.
    */
-  private updateHoverMarking(imageId: string | null, pixel: Point | null): void {
+  private updateHoverMarking(containerId: string | null, pixel: Point | null): void {
     const project = this.drawnProject.peek();
     const drawn = this.derived.drawnMarkings.peek();
     let next: string | null = null;
-    if (project && imageId !== null && pixel && drawn.size > 0) {
+    if (project && containerId !== null && pixel && drawn.size > 0) {
       const top = markingChainAt(
         selectableMarkings(project, this.derived.markingVisibility.peek()),
-        imageId,
+        containerId,
         pixel,
       )[0];
       if (top && drawn.has(top.id)) next = top.id;
@@ -466,9 +466,9 @@ export class CanvasController {
   }
 
   private loadBitmaps(): void {
-    const images = this.store.project.value?.images ?? [];
+    const images = this.store.project.value?.containers ?? [];
     // Na revisão, também as imagens novas ou trocadas que esperam em `proposals/`.
-    const drawn = this.drawnProject.value?.images ?? [];
+    const drawn = this.drawnProject.value?.containers ?? [];
     untracked(() => {
       // Container sem arquivo (sem arquivo) não tem bitmap.
       const files = new Set<string>();
@@ -510,7 +510,7 @@ export class CanvasController {
       placementsChanged ||= !samePlacements(this.placements, next);
       this.placements = next;
       this.readyImages =
-        frame.project?.images.filter(
+        frame.project?.containers.filter(
           (i) => i.file === null || frame.bitmaps.get(i.file)?.status === 'ready',
         ).length ?? 0;
     }

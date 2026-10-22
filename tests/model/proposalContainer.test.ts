@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addBlankImage,
+  addBackgroundContainer,
   applyAccepted,
   changeImageFile,
   changeStatus,
@@ -8,9 +8,9 @@ import {
   parseProposal,
   parseProposalText,
   previewProject,
-  replaceImage,
+  replaceContainer,
   serializeProposal,
-  setBlankImage,
+  setBackgroundContainer,
   setImageLocked,
   validateProject,
   type Project,
@@ -24,7 +24,7 @@ import { AT, changeOf, decided, propose } from './proposalFixtures';
 // branco; na foto o tamanho continua vindo da troca de arquivo (campo `file`).
 
 const blank = (p: Project) =>
-  addBlankImage(p, {
+  addBackgroundContainer(p, {
     id: 'B1',
     name: 'Login',
     width: 390,
@@ -41,7 +41,7 @@ describe('proposta: container', () => {
     const base = sampleProject();
     const after = createMarking(blank(base), {
       id: 'MB',
-      imageId: 'B1',
+      containerId: 'B1',
       rect: { x: 10, y: 10, width: 100, height: 100 },
     });
     const p = propose(base, after);
@@ -73,7 +73,7 @@ describe('proposta: container', () => {
 
   it('alteração: cor e tamanho viram `background` e `size`, e aplicam', () => {
     const base = blank(sampleProject());
-    const after = setBlankImage(base, 'B1', {
+    const after = setBackgroundContainer(base, 'B1', {
       background: '#101010',
       width: 400,
       height: 900,
@@ -103,17 +103,17 @@ describe('proposta: container', () => {
 
   it('só a cor: um `background` e nenhum `size`', () => {
     const base = blank(sampleProject());
-    const p = propose(base, setBlankImage(base, 'B1', { background: '#000000' }));
+    const p = propose(base, setBackgroundContainer(base, 'B1', { background: '#000000' }));
     expect(p.changes.map((c) => c.field)).toEqual(['background']);
   });
 
   it('o tamanho que deixa marcação de fora não é aplicado (rect-out-of-image)', () => {
     const base = createMarking(blank(sampleProject()), {
       id: 'MB',
-      imageId: 'B1',
+      containerId: 'B1',
       rect: { x: 100, y: 600, width: 200, height: 200 },
     });
-    const p = propose(base, setBlankImage(base, 'B1', { height: 900 }));
+    const p = propose(base, setBackgroundContainer(base, 'B1', { height: 900 }));
     const shrink: Proposal = {
       ...p,
       changes: p.changes.map((c) =>
@@ -128,7 +128,7 @@ describe('proposta: container', () => {
     const open = blank(sampleProject());
     const base = setImageLocked(open, 'B1', true);
     const after = setImageLocked(
-      setBlankImage(open, 'B1', { background: '#000000', width: 400 }),
+      setBackgroundContainer(open, 'B1', { background: '#000000', width: 400 }),
       'B1',
       true,
     );
@@ -141,7 +141,7 @@ describe('proposta: container', () => {
 
   it('`size` e `background` na foto são recusados na aplicação; a troca de arquivo da foto segue igual', () => {
     const base = sampleProject();
-    const swapped = replaceImage(base, 'I2', {
+    const swapped = replaceContainer(base, 'I2', {
       file: 'images/f2.jpg',
       width: 2000,
       height: 2000,
@@ -171,7 +171,7 @@ describe('proposta: container', () => {
     const base = blank(sampleProject());
     const p = propose(
       base,
-      setBlankImage(base, 'B1', { background: '#000000', width: 400 }),
+      setBackgroundContainer(base, 'B1', { background: '#000000', width: 400 }),
     );
     const json = JSON.parse(serializeProposal(p)) as {
       changes: { field: string; to: unknown }[];

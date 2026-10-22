@@ -104,7 +104,7 @@ function normalize(p: Project) {
       version: s.version,
       file: s.file,
     })),
-    images: p.images.map((i) => ({ width: i.width, height: i.height })),
+    images: p.containers.map((i) => ({ width: i.width, height: i.height })),
     markings: p.markings.map((m) => ({
       name: m.name,
       rect: m.rect,
@@ -377,7 +377,7 @@ describe('roteiro 13.9 criado pelo MCP', () => {
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
     expect(saved.revision).toBe(1);
     const onDisk = readProject(dir);
-    expect(onDisk.images[0]!.file).toBe('images/cadastro.webp');
+    expect(onDisk.containers[0]!.file).toBe('images/cadastro.webp');
     expect(webpSize(readFileSync(join(dir, 'images', 'cadastro.webp')))).toEqual({
       width: 1000,
       height: 2000,
@@ -630,7 +630,7 @@ describe('imagens pelo lote', () => {
     acceptAllAndApply(dir, first.proposal.id);
     let saved = readProject(dir);
     expect(
-      saved.images.map((i) => [i.file, i.width, i.height, i.name, i.locked]),
+      saved.containers.map((i) => [i.file, i.width, i.height, i.name, i.locked]),
     ).toEqual([
       ['images/foto.webp', 200, 300, 'Foto', false],
       ['images/larga.webp', 2560, 853, null, true],
@@ -673,7 +673,7 @@ describe('imagens pelo lote', () => {
     ]);
     acceptAllAndApply(dir, done.proposal.id);
     saved = readProject(dir);
-    expect(saved.images.map((i) => i.file)).toEqual(['images/foto-2.webp']);
+    expect(saved.containers.map((i) => i.file)).toEqual(['images/foto-2.webp']);
     expect(saved.markings).toHaveLength(1);
     expect(readdirSync(join(dir, 'images')).sort()).toEqual(['foto-2.webp']);
   });

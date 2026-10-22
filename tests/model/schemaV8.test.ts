@@ -49,7 +49,7 @@ describe('migração v7 → v8 (origem externa)', () => {
     expect(result.migratedFrom).toBe(7);
     expect(result.readOnly).toBe(false);
     expect(result.project.schemaVersion).toBe(11);
-    expect(result.project.images.every((i) => i.source === null)).toBe(true);
+    expect(result.project.containers.every((i) => i.source === null)).toBe(true);
     expect(result.project.markings.every((m) => m.source === null)).toBe(true);
     expect(result.project).toEqual(sampleProject());
   });
@@ -144,7 +144,7 @@ describe('schema v8: source', () => {
     p = setMarkingLocked(p, 'M1', true);
     p = setImageSource(p, 'I1', FIGMA);
     p = setMarkingSource(p, 'M1', FIGMA);
-    expect(p.images[0]?.source).toEqual(FIGMA);
+    expect(p.containers[0]?.source).toEqual(FIGMA);
     expect(p.markings[0]?.locked).toBe(true);
   });
 });

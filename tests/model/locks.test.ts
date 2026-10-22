@@ -7,16 +7,16 @@ import {
   canEditMarkingGeometry,
   canReplaceImage,
   createMarking,
-  imageDeletionImpact,
+  containerDeletionImpact,
   isMarkingGeometryLocked,
   markingDeletionImpact,
-  moveImage,
+  moveContainer,
   moveMarking,
-  removeImage,
+  removeContainer,
   removeMarking,
   renameMarking,
-  replaceImage,
-  resizeImage,
+  replaceContainer,
+  resizeContainer,
   setImageLocked,
   setImageMarkingsLocked,
   setMarkingLocked,
@@ -37,7 +37,7 @@ function codeOf(op: () => unknown): string | null {
 }
 
 const image = (p: Project, id: string) => {
-  const found = p.images.find((i) => i.id === id);
+  const found = p.containers.find((i) => i.id === id);
   if (!found) throw new Error(id);
   return found;
 };
@@ -46,7 +46,7 @@ describe('trava: trancar e destrancar', () => {
   it('itens novos nascem destrancados', () => {
     const p = sampleProject();
     expect(p.markings.every((m) => !m.locked)).toBe(true);
-    expect(p.images.every((i) => !i.locked)).toBe(true);
+    expect(p.containers.every((i) => !i.locked)).toBe(true);
   });
 
   it('tranca e destranca uma marcação sem mexer no resto', () => {
@@ -223,7 +223,7 @@ describe('trava: pai trancado trava a geometria dos descendentes', () => {
   it('criar uma marcação dentro de um pai trancado continua permitido', () => {
     const p = createMarking(parentLocked(), {
       id: 'M5',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 1700, y: 1700, width: 100, height: 100 },
     });
     expect(marking(p, 'M5').parentId).toBe('M1');
@@ -332,19 +332,19 @@ describe('trava: imagem trancada', () => {
 
   it('não pode ser movida, redimensionada nem excluída', () => {
     const p = locked();
-    expect(codeOf(() => moveImage(p, 'I2', 5000, 0))).toBe('locked');
+    expect(codeOf(() => moveContainer(p, 'I2', 5000, 0))).toBe('locked');
     expect(
       codeOf(() =>
-        resizeImage(p, 'I2', { ...placement(p), scale: placement(p).scale / 2 }),
+        resizeContainer(p, 'I2', { ...placement(p), scale: placement(p).scale / 2 }),
       ),
     ).toBe('locked');
-    expect(codeOf(() => removeImage(p, 'I2'))).toBe('locked');
+    expect(codeOf(() => removeContainer(p, 'I2'))).toBe('locked');
   });
 
   it('destrancada, volta a funcionar', () => {
     const p = setImageLocked(locked(), 'I2', false);
-    expect(codeOf(() => moveImage(p, 'I2', 5000, 0))).toBeNull();
-    expect(codeOf(() => removeImage(p, 'I2'))).toBeNull();
+    expect(codeOf(() => moveContainer(p, 'I2', 5000, 0))).toBeNull();
+    expect(codeOf(() => removeContainer(p, 'I2'))).toBeNull();
   });
 
   it('as marcações da imagem trancada continuam editáveis', () => {
@@ -352,7 +352,7 @@ describe('trava: imagem trancada', () => {
   });
 
   it('o impacto da exclusão ainda pode ser calculado', () => {
-    expect(imageDeletionImpact(locked(), 'I2').markings).toBe(1);
+    expect(containerDeletionImpact(locked(), 'I2').markings).toBe(1);
   });
 
   it('trocar o arquivo por um de outro tamanho é bloqueado; do mesmo tamanho, não', () => {
@@ -361,10 +361,10 @@ describe('trava: imagem trancada', () => {
     const bigger = { file: 'images/nova.png', width: 2000, height: 2000 };
     expect(canReplaceImage(p, 'I2', same)).toBe(true);
     expect(canReplaceImage(p, 'I2', bigger)).toBe(false);
-    expect(codeOf(() => replaceImage(p, 'I2', same))).toBeNull();
-    expect(codeOf(() => replaceImage(p, 'I2', bigger))).toBe('locked');
+    expect(codeOf(() => replaceContainer(p, 'I2', same))).toBeNull();
+    expect(codeOf(() => replaceContainer(p, 'I2', bigger))).toBe('locked');
     // O replace mantém a trava da imagem.
-    expect(image(replaceImage(p, 'I2', same), 'I2').locked).toBe(true);
+    expect(image(replaceContainer(p, 'I2', same), 'I2').locked).toBe(true);
   });
 });
 
@@ -373,35 +373,35 @@ describe('trava: imagem com marcação trancada', () => {
 
   it('a imagem pode ser excluída, e as marcações trancadas vão junto', () => {
     expect(canDeleteImage(p(), 'I1')).toBe(true);
-    const q = expectValid(removeImage(p(), 'I1'));
-    expect(q.images.map((i) => i.id)).toEqual(['I2']);
+    const q = expectValid(removeContainer(p(), 'I1'));
+    expect(q.containers.map((i) => i.id)).toEqual(['I2']);
     expect(q.markings.map((m) => m.id)).toEqual(['M4']);
   });
 
   it('o impacto da exclusão conta as marcações trancadas', () => {
-    expect(imageDeletionImpact(sampleProject(), 'I1').lockedMarkings).toBe(0);
+    expect(containerDeletionImpact(sampleProject(), 'I1').lockedMarkings).toBe(0);
     const locked = setImageMarkingsLocked(sampleProject(), 'I1', true);
-    expect(imageDeletionImpact(locked, 'I1')).toMatchObject({
+    expect(containerDeletionImpact(locked, 'I1')).toMatchObject({
       markings: 3,
       lockedMarkings: 3,
     });
-    expect(imageDeletionImpact(locked, 'I2').lockedMarkings).toBe(0);
+    expect(containerDeletionImpact(locked, 'I2').lockedMarkings).toBe(0);
   });
 
   it('a imagem pode ser movida, pois as marcações usam pixels da imagem', () => {
-    expect(codeOf(() => moveImage(p(), 'I1', 0, 5000))).toBeNull();
+    expect(codeOf(() => moveContainer(p(), 'I1', 0, 5000))).toBeNull();
   });
 
   it('trocar por um arquivo de outro tamanho segue bloqueado (a troca reescalaria a marcação revisada)', () => {
     const bigger = { file: 'images/nova.jpg', width: 8000, height: 6000 };
     expect(canReplaceImage(p(), 'I1', bigger)).toBe(false);
-    expect(codeOf(() => replaceImage(p(), 'I1', bigger))).toBe('locked');
+    expect(codeOf(() => replaceContainer(p(), 'I1', bigger))).toBe('locked');
     const same = { file: 'images/nova.jpg', width: 4000, height: 3000 };
-    expect(codeOf(() => replaceImage(p(), 'I1', same))).toBeNull();
+    expect(codeOf(() => replaceContainer(p(), 'I1', same))).toBeNull();
   });
 
   it('a imagem sem trava nenhuma é trocada normalmente', () => {
     const bigger = { file: 'images/nova.jpg', width: 8000, height: 6000 };
-    expect(codeOf(() => replaceImage(sampleProject(), 'I1', bigger))).toBeNull();
+    expect(codeOf(() => replaceContainer(sampleProject(), 'I1', bigger))).toBeNull();
   });
 });

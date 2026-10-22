@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  addImage,
+  addContainer,
   applySpecialization,
   createProject,
   parseSpecText,
@@ -51,7 +51,7 @@ function project(): Project {
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
-  p = addImage(p, { id: PHOTO, file: 'images/foto.png', width: 200, height: 100 });
+  p = addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 200, height: 100 });
   return applySpecialization(p, spec, { packageSpecName: 'material3.spec.json' });
 }
 
@@ -102,7 +102,7 @@ describe('catálogo ao carregar o projeto', () => {
 });
 
 describe('add_container e update_image', () => {
-  it('cria a tela e edita fundo e tamanho; na foto, not-blank', async () => {
+  it('cria a tela e edita fundo e tamanho; na foto, container-has-file', async () => {
     const result = await run([
       SCREEN,
       { op: 'update_image', image: '$tela', background: '#000000', height: 900 },
@@ -110,10 +110,10 @@ describe('add_container e update_image', () => {
       { op: 'update_image', image: PHOTO, width: 300 },
     ]);
     expect(result.errors.map((e) => [e.index, e.code])).toEqual([
-      [2, 'not-blank'],
-      [3, 'not-blank'],
+      [2, 'container-has-file'],
+      [3, 'container-has-file'],
     ]);
-    const screen = result.project.images.find((i) => i.name === 'Entrar');
+    const screen = result.project.containers.find((i) => i.name === 'Entrar');
     expect(screen).toMatchObject({
       file: null,
       width: 390,
@@ -129,7 +129,7 @@ describe('add_blank_image (antiga)', () => {
   it('ainda cria o container, com aviso para usar add_container', async () => {
     const result = await run([{ ...SCREEN, op: 'add_blank_image' } as Operation]);
     expect(result.errors).toEqual([]);
-    expect(result.project.images.find((i) => i.name === 'Entrar')).toMatchObject({
+    expect(result.project.containers.find((i) => i.name === 'Entrar')).toMatchObject({
       file: null,
       width: 390,
       height: 844,

@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ModelError, isBlankImage, projectIndex } from '../src/model';
+import { ModelError, isBackgroundContainer, projectIndex } from '../src/model';
 import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
@@ -398,7 +398,7 @@ export function registerTools(
     ({ ref, project }) =>
       respond(async () => {
         const item = await resolveItem(roots, ref, project, 'i');
-        const image = projectIndex(item.refs.project).images.get(item.id);
+        const image = projectIndex(item.refs.project).containers.get(item.id);
         if (!image) throw new ToolError('not-found', `imagem não encontrada: ${ref}`);
         return imageView(roots, item.refs, image);
       }),
@@ -428,17 +428,17 @@ export function registerTools(
           return {
             ...base,
             name: marking.name,
-            image: refs.ref('i', marking.imageId),
+            image: refs.ref('i', marking.containerId),
             rect: marking.rect,
           };
         }
         if (item.kind === 'i') {
-          const image = index.images.get(item.id)!;
+          const image = index.containers.get(item.id)!;
           return {
             ...base,
             name: image.name,
             file: image.file,
-            ...(isBlankImage(image) ? { blank: true, background: image.background } : {}),
+            ...(isBackgroundContainer(image) ? { blank: true, background: image.background } : {}),
           };
         }
         const annotation = index.annotations.get(item.id)!;
@@ -532,7 +532,7 @@ export function registerTools(
     ({ ref, project, ...options }) =>
       respondWithImage(async () => {
         const item = await resolveItem(roots, ref, project, 'i');
-        const image = projectIndex(item.refs.project).images.get(item.id);
+        const image = projectIndex(item.refs.project).containers.get(item.id);
         if (!image) throw new ToolError('not-found', `imagem não encontrada: ${ref}`);
         return imageFile(roots, item.refs, image, options, images);
       }),

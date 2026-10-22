@@ -128,14 +128,14 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
     expect(text).toContain('language: ');
     expect(text).toContain('theme: ');
     expect(text).toContain(
-      `images: ${project.images.length}, markings: ${project.markings.length}, annotations: ${project.annotations.length}`,
+      `images: ${project.containers.length}, markings: ${project.markings.length}, annotations: ${project.annotations.length}`,
     );
     expect(text).toContain('pendingSave: no');
     // O cabeçalho vem antes dos erros.
     expect(text.indexOf('build: ')).toBeLessThan(text.indexOf('[local.open] bloqueado'));
     // Privacidade: nem nome do projeto nem caminhos de imagem.
     expect(text).not.toContain(project.project.name);
-    for (const image of project.images) expect(text).not.toContain(image.file);
+    for (const image of project.containers) expect(text).not.toContain(image.file);
   });
 
   it('sem erros, Copiar leva o cabeçalho (para relatar um problema sem erro)', async () => {

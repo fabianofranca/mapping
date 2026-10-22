@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   addEntry,
-  addImage,
+  addContainer,
   addLayer,
   applyAccepted,
   applySpecialization,
@@ -10,29 +10,29 @@ import {
   createMarking,
   deserialize,
   getAnnotationIssues,
-  moveImage,
+  moveContainer,
   moveLayer,
   moveMarking,
   previewProject,
   removeAnnotation,
   removeEntry,
-  removeImage,
+  removeContainer,
   removeLayer,
   removeMarking,
   removePlatformRepo,
   removeSpecialization,
   renameAnnotation,
-  renameImage,
+  renameContainer,
   renameLayer,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   reviewTree,
   serialize,
   setAnnotationInherit,
   setAnnotationParent,
   setFieldValue,
   setImageLocked,
-  setImageMarkingColor,
+  setContainerMarkingColor,
   setImageSource,
   setLayerColor,
   setMarkingLocked,
@@ -100,12 +100,12 @@ const scenarios: [string, () => [Project, Project]][] = [
       const base = sampleProject();
       let after = createMarking(base, {
         id: 'N1',
-        imageId: 'I2',
+        containerId: 'I2',
         rect: { x: 200, y: 200, width: 500, height: 500 },
       });
       after = createMarking(after, {
         id: 'N2',
-        imageId: 'I2',
+        containerId: 'I2',
         rect: { x: 300, y: 300, width: 100, height: 100 },
       });
       after = addAnnotation(after, { id: 'B1', markingId: 'N2', layerId: 'L1' });
@@ -122,15 +122,15 @@ const scenarios: [string, () => [Project, Project]][] = [
     'imagem criada e alterada em cada campo',
     () => {
       const base = sampleProject();
-      let after = addImage(base, {
+      let after = addContainer(base, {
         id: 'I3',
         file: 'images/n.png',
         width: 400,
         height: 300,
       });
-      after = renameImage(after, 'I2', 'Frente');
-      after = moveImage(after, 'I2', 5000, 5000);
-      after = setImageMarkingColor(after, 'I2', '#FFEB3B');
+      after = renameContainer(after, 'I2', 'Frente');
+      after = moveContainer(after, 'I2', 5000, 5000);
+      after = setContainerMarkingColor(after, 'I2', '#FFEB3B');
       after = setImageLocked(after, 'I2', true);
       after = setImageSource(after, 'I2', FIGMA);
       return [base, after];
@@ -140,14 +140,14 @@ const scenarios: [string, () => [Project, Project]][] = [
     'imagem trocada (marcações reescaladas)',
     () => [
       sampleProject(),
-      replaceImage(sampleProject(), 'I2', {
+      replaceContainer(sampleProject(), 'I2', {
         file: 'images/f2.jpg',
         width: 2000,
         height: 2000,
       }),
     ],
   ],
-  ['imagem removida', () => [sampleProject(), removeImage(sampleProject(), 'I1')]],
+  ['imagem removida', () => [sampleProject(), removeContainer(sampleProject(), 'I1')]],
   [
     'anotações: nome, herança, dona, pares e remoção com as vinculadas',
     () => {
@@ -274,21 +274,21 @@ describe('aplicar só as aceitas', () => {
   /** Duas imagens novas, cada uma com uma marcação e uma anotação. */
   function twoScreens(): [Project, Project] {
     const base = sampleProject();
-    let after = addImage(base, {
+    let after = addContainer(base, {
       id: 'T1',
       file: 'images/t1.png',
       width: 500,
       height: 500,
     });
-    after = addImage(after, { id: 'T2', file: 'images/t2.png', width: 500, height: 500 });
+    after = addContainer(after, { id: 'T2', file: 'images/t2.png', width: 500, height: 500 });
     after = createMarking(after, {
       id: 'X1',
-      imageId: 'T1',
+      containerId: 'T1',
       rect: { x: 0, y: 0, width: 50, height: 50 },
     });
     after = createMarking(after, {
       id: 'X2',
-      imageId: 'T2',
+      containerId: 'T2',
       rect: { x: 0, y: 0, width: 50, height: 50 },
     });
     after = addAnnotation(after, { id: 'Y1', markingId: 'X1', layerId: 'L1' });
@@ -302,7 +302,7 @@ describe('aplicar só as aceitas', () => {
     let p = propose(base, after);
     p = decided(p, base, { level: 'image', id: 'T1' }, 'accepted');
     const first = apply(base, p, AT);
-    expect(first.project.images.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
+    expect(first.project.containers.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
     expect(first.applied.map((c) => c.entityId)).toEqual(['T1', 'X1', 'Y1']);
     expect(first.files).toEqual([
       { from: 'proposals/P1/images/t1.png', to: 'images/t1.png' },
@@ -342,7 +342,7 @@ describe('aplicar só as aceitas', () => {
     expect(done.applied).toEqual([]);
     expect(done.project).toBe(partial.project);
     expect(done.proposal.status).toBe('applied');
-    expect(done.project.images.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
+    expect(done.project.containers.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
   });
 
   it('conjunto inválido fica bloqueado e aponta as mudanças envolvidas', () => {
@@ -387,7 +387,7 @@ describe('aplicar só as aceitas', () => {
   it('alteração de item que sumiu bloqueia (entity-missing); remoção de item já removido não faz nada', () => {
     const base = sampleProject();
     const renamed = acceptAll(propose(base, renameMarking(base, 'M4', 'Farol')), base);
-    const gone = removeImage(base, 'I2');
+    const gone = removeContainer(base, 'I2');
     const result = applyAccepted(gone, renamed, AT);
     expect(result.ok).toBe(false);
     expect(!result.ok && result.issues.map((i) => i.code)).toEqual(['entity-missing']);
@@ -455,7 +455,7 @@ describe('aplicar só as aceitas', () => {
     expect(previewProject(base, p)).toEqual({ project: after, problems: [] });
     p = decided(p, base, { level: 'image', id: 'T2' }, 'rejected');
     const preview = previewProject(base, p).project;
-    expect(preview.images.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
+    expect(preview.containers.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
     expect(preview.markings.find((m) => m.id === 'M1')?.name).toBe('Porta dianteira');
   });
 });

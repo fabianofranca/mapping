@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { replaceImage, setMarkingLocked } from '../../../src/model';
+import { replaceContainer, setMarkingLocked } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { sampleProject } from '../../model/fixtures';
 import { changeOf, propose } from '../../model/proposalFixtures';
@@ -52,7 +52,7 @@ describe('Outras mudanças', () => {
 
   it('imagem trocada: o marcador do Arquivo tem Comparar; a posição vai para "Outras mudanças"', async () => {
     const base = sampleProject();
-    const after = replaceImage(base, 'I2', {
+    const after = replaceContainer(base, 'I2', {
       file: 'images/frente-2.jpg',
       width: 2000,
       height: 2000,

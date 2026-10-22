@@ -1,7 +1,7 @@
 import { fail } from './errors';
 import { updateById } from './project';
 import type { Spec, SpecAnnotationType, SpecLayer, SpecTypeSource } from './spec';
-import type { ExternalSource, Marking, Project, ProjectImage } from './types';
+import type { ExternalSource, Marking, Project, ProjectContainer } from './types';
 
 // Identidade externa (etapa 4): `source` em imagens e marcações (schema v8) e `sources`
 // nos tipos e campos das especializações (formatVersion 3). O núcleo não interpreta
@@ -23,13 +23,13 @@ export function normalizeSource(source: ExternalSource | null): ExternalSource |
 /** Define (ou limpa, com `null`) a origem da imagem. Não é geometria: a trava não impede. */
 export function setImageSource(
   p: Project,
-  imageId: string,
+  containerId: string,
   source: ExternalSource | null,
 ): Project {
   const normalized = normalizeSource(source);
   return {
     ...p,
-    images: updateById(p.images, imageId, (i) => ({ ...i, source: normalized })),
+    containers: updateById(p.containers, containerId, (i) => ({ ...i, source: normalized })),
   };
 }
 
@@ -47,7 +47,7 @@ export function setMarkingSource(
 }
 
 export type SourceMatch =
-  | { readonly kind: 'image'; readonly image: ProjectImage }
+  | { readonly kind: 'image'; readonly image: ProjectContainer }
   | { readonly kind: 'marking'; readonly marking: Marking };
 
 /**
@@ -59,7 +59,7 @@ export function findBySource(p: Project, system: string, id: string): SourceMatc
   const same = (s: ExternalSource | null) =>
     s !== null && s.system === system && s.id === id;
   return [
-    ...p.images
+    ...p.containers
       .filter((image) => same(image.source))
       .map((image): SourceMatch => ({ kind: 'image', image })),
     ...p.markings

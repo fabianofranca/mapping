@@ -501,7 +501,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
   /** Nada mudou: projeto sem as mudanças, histórico vazio, proposta aberta e imagens no lugar. */
   async function expectNothingApplied(h: Harness) {
     const { session, root, review } = h;
-    expect(session.store.project.value?.images.map((i) => i.id)).not.toContain('I3');
+    expect(session.store.project.value?.containers.map((i) => i.id)).not.toContain('I3');
     expect(session.store.canUndo.value).toBe(false);
     expect(session.store.canRedo.value).toBe(false);
     await session.proposals.settled();
@@ -579,7 +579,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
       // O mapping.json aplicado já gravou e cita images/nova.webp. Nessa janela, o MCP o
       // relê, edita o nome do projeto e grava revision + 1 (o arquivo continua citando a cópia).
       const applied = await diskProject(h);
-      expect(applied.images.map((i) => i.file)).toContain('images/nova.webp');
+      expect(applied.containers.map((i) => i.file)).toContain('images/nova.webp');
       h.root.put(
         'mapping.json',
         serialize({
@@ -601,10 +601,10 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     await h.session.proposals.settled();
     // O projeto em memória e no disco são o de fora, e ele cita a cópia.
     expect(h.session.store.project.value?.project.name).toBe('Do agente');
-    expect(h.session.store.project.value?.images.map((i) => i.file)).toContain(
+    expect(h.session.store.project.value?.containers.map((i) => i.file)).toContain(
       'images/nova.webp',
     );
-    expect((await diskProject(h)).images.map((i) => i.file)).toContain(
+    expect((await diskProject(h)).containers.map((i) => i.file)).toContain(
       'images/nova.webp',
     );
     // A proposta continua sem `applied` e a origem continua lá.
@@ -630,7 +630,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(h.session.conflict.value).toBeNull();
     // O disco tem o projeto de antes, regravado por cima do aplicado (duas revisões a mais).
     const disk = await diskProject(h);
-    expect(disk.images.map((i) => i.id)).not.toContain('I3');
+    expect(disk.containers.map((i) => i.id)).not.toContain('I3');
     expect(disk.revision).toBe(5);
     expect(h.session.saveStatus.value).toBe('saved');
 
@@ -640,7 +640,7 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect((await diskProposal(h.root)).status).toBe('applied');
     expect(await h.root.read('images/nova.webp')).toBe('WEBP');
     expect(await h.root.read(NEW_IMAGE_PATH)).toBeNull();
-    expect((await diskProject(h)).images.map((i) => i.id)).toContain('I3');
+    expect((await diskProject(h)).containers.map((i) => i.id)).toContain('I3');
     expect(h.session.store.canUndo.value).toBe(true);
   });
 
@@ -659,16 +659,16 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
 
     expect(await h.review.apply()).toEqual({ ok: false, error: 'write-failed' });
     // Em memória, o projeto de antes; no disco, ainda o aplicado, que cita a cópia: ela fica.
-    expect(h.session.store.project.value?.images.map((i) => i.id)).not.toContain('I3');
+    expect(h.session.store.project.value?.containers.map((i) => i.id)).not.toContain('I3');
     expect(h.session.store.canUndo.value).toBe(false);
-    expect((await diskProject(h)).images.map((i) => i.id)).toContain('I3');
+    expect((await diskProject(h)).containers.map((i) => i.id)).toContain('I3');
     expect(await h.root.read('images/nova.webp')).toBe('WEBP');
     expect(h.session.saveStatus.value).toBe('error');
 
     // "Tentar de novo": o projeto de antes vai ao disco e a limpeza tira a cópia órfã.
     save.mockRestore();
     expect(await h.session.flush()).toEqual({ ok: true });
-    expect((await diskProject(h)).images.map((i) => i.id)).not.toContain('I3');
+    expect((await diskProject(h)).containers.map((i) => i.id)).not.toContain('I3');
     expect(await h.root.read('images/nova.webp')).toBeNull();
     expect(await h.root.read(NEW_IMAGE_PATH)).toBe('WEBP');
     dir.failWrites = null;
@@ -720,8 +720,8 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     const applying = h.review.apply();
     await hold.reached;
     // O projeto já tem as mudanças e o mapping.json já gravou; a proposta ainda não diz.
-    expect(h.session.store.committed.value?.images.map((i) => i.id)).toContain('I3');
-    expect((await diskProject(h)).images.map((i) => i.id)).toContain('I3');
+    expect(h.session.store.committed.value?.containers.map((i) => i.id)).toContain('I3');
+    expect((await diskProject(h)).containers.map((i) => i.id)).toContain('I3');
     expect(h.review.derived.proposal.value?.applied).toEqual({});
     expectNoWarnings(h);
 

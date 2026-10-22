@@ -14,7 +14,7 @@ import type {
   Marking,
   PlatformRepo,
   Project,
-  ProjectImage,
+  ProjectContainer,
   ProjectSpecialization,
 } from './types';
 
@@ -40,7 +40,7 @@ export function jsonEqual(a: JsonValue | undefined, b: JsonValue | undefined): b
   return ka.every((k) => Object.hasOwn(b, k) && jsonEqual(a[k], b[k]));
 }
 
-export function imageValue(i: ProjectImage): JsonValue {
+export function imageValue(i: ProjectContainer): JsonValue {
   return toJson({
     id: i.id,
     name: i.name,
@@ -58,7 +58,7 @@ export function imageValue(i: ProjectImage): JsonValue {
 export function markingValue(m: Marking): JsonValue {
   return toJson({
     id: m.id,
-    imageId: m.imageId,
+    containerId: m.containerId,
     parentId: m.parentId,
     name: m.name,
     rect: m.rect,
@@ -106,12 +106,12 @@ export const COMPARED_FIELDS = {
     'locked',
     'source',
   ],
-  marking: ['name', 'rect', 'parentId', 'imageId', 'locked', 'source'],
+  marking: ['name', 'rect', 'parentId', 'containerId', 'locked', 'source'],
   annotation: ['name', 'inherit', 'parentAnnotationId', 'markingId', 'layerId'],
   layer: ['name', 'color', 'spec'],
 } as const;
 
-export function imageField(i: ProjectImage, field: string): JsonValue | undefined {
+export function imageField(i: ProjectContainer, field: string): JsonValue | undefined {
   switch (field) {
     case 'name':
       return i.name;
@@ -151,8 +151,8 @@ export function markingField(
       return toJson(m.rect);
     case 'parentId':
       return m.parentId;
-    case 'imageId':
-      return m.imageId;
+    case 'containerId':
+      return m.containerId;
     case 'locked':
       return m.locked;
     case 'source':
@@ -237,7 +237,7 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
       return whole ? layerValue(l) : layerField(p, l, c.field ?? '');
     }
     case 'image': {
-      const i = index.images.get(c.entityId);
+      const i = index.containers.get(c.entityId);
       if (!i) return undefined;
       return whole ? imageValue(i) : imageField(i, c.field ?? '');
     }
@@ -292,7 +292,7 @@ function push(out: ValueRef[], entity: ChangeEntity, id: string | null): void {
 function entityRefs(entity: ChangeEntity, value: JsonValue): ValueRef[] {
   const out: ValueRef[] = [];
   if (entity === 'marking') {
-    push(out, 'image', str(field(value, 'imageId')));
+    push(out, 'image', str(field(value, 'containerId')));
     push(out, 'marking', str(field(value, 'parentId')));
   } else if (entity === 'annotation') {
     push(out, 'marking', str(field(value, 'markingId')));
@@ -311,7 +311,7 @@ function fieldRefs(entity: ChangeEntity, name: string, value: JsonValue): ValueR
   const out: ValueRef[] = [];
   if (entity === 'marking') {
     if (name === 'parentId') push(out, 'marking', str(value));
-    if (name === 'imageId') push(out, 'image', str(value));
+    if (name === 'containerId') push(out, 'image', str(value));
   } else if (entity === 'annotation') {
     if (name === 'parentAnnotationId') push(out, 'annotation', str(value));
     if (name === 'markingId') push(out, 'marking', str(value));

@@ -455,7 +455,7 @@ describe('importar zip', () => {
     expect(current.kind).toBe('local');
     expect(current.unexported.value).toBe(false);
     const project = current.session.store.project.value;
-    expect(project?.images).toHaveLength(4);
+    expect(project?.containers).toHaveLength(4);
     expect(project?.markings).toHaveLength(31);
     expect(project?.annotations).toHaveLength(41);
     expect(current.session.proposals.list.value).toHaveLength(1);
@@ -742,7 +742,7 @@ describe('propostas de alteração (etapa 4)', () => {
       applied: 5,
     });
     expect(await root.read('images/nova.webp')).toBe('WEBP');
-    expect(session.store.project.value?.images.some((i) => i.id === 'I3')).toBe(true);
+    expect(session.store.project.value?.containers.some((i) => i.id === 'I3')).toBe(true);
   });
 });
 

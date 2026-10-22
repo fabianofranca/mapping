@@ -324,7 +324,7 @@ export function codePathMatches(path: string, query: string): boolean {
 
 /** Onde está uma anotação do tipo encontrado (para montar a referência `mapping://`). */
 export interface CodeAnnotationLocation {
-  readonly imageId: string;
+  readonly containerId: string;
   readonly markingId: string;
   readonly annotationId: string;
 }
@@ -378,7 +378,7 @@ export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
     const marking = markings.get(a.markingId);
     if (!matches.has(key) || !marking) continue;
     const list = annotations.get(key) ?? [];
-    list.push({ imageId: marking.imageId, markingId: marking.id, annotationId: a.id });
+    list.push({ containerId: marking.containerId, markingId: marking.id, annotationId: a.id });
     annotations.set(key, list);
   }
   return [...matches.entries()].map(([key, match]) => ({

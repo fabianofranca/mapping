@@ -181,12 +181,12 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
       </ul>
     );
 
-  if (project.images.length === 0) return <p class="muted">{t('panel.treeEmpty')}</p>;
+  if (project.containers.length === 0) return <p class="muted">{t('panel.treeEmpty')}</p>;
   return (
     <ul class="tree" aria-label={t('panel.treeTitle')} ref={list}>
-      {project.images.map((image) => {
+      {project.containers.map((image) => {
         const key = treeKey('image', image.id);
-        const roots = (index.get(null) ?? []).filter((m) => m.imageId === image.id);
+        const roots = (index.get(null) ?? []).filter((m) => m.containerId === image.id);
         const current = isSelected('image', image.id);
         return (
           <li key={image.id}>

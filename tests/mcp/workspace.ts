@@ -9,7 +9,7 @@ import {
   getDefaultEnvironment,
 } from '@modelcontextprotocol/sdk/client/stdio.js';
 import {
-  addImage,
+  addContainer,
   createMarking,
   createProject,
   serialize,
@@ -69,7 +69,7 @@ function collidingProject(): Project {
       color: '#D32F2F',
     },
   });
-  p = addImage(p, {
+  p = addContainer(p, {
     id: COLLIDING_IDS.image,
     file: 'images/a.png',
     width: 100,
@@ -83,7 +83,7 @@ function collidingProject(): Project {
   ] as const) {
     p = createMarking(p, {
       id: COLLIDING_IDS[key],
-      imageId: COLLIDING_IDS.image,
+      containerId: COLLIDING_IDS.image,
       rect: rect(x),
       name: key,
     });
@@ -94,7 +94,7 @@ function collidingProject(): Project {
 export function allIds(p: Project): Set<string> {
   const ids = new Set<string>();
   for (const l of p.layers) ids.add(l.id);
-  for (const i of p.images) ids.add(i.id);
+  for (const i of p.containers) ids.add(i.id);
   for (const m of p.markings) ids.add(m.id);
   for (const a of p.annotations) {
     ids.add(a.id);

@@ -26,7 +26,7 @@ export interface MappingJson {
   }[];
   readonly markings: readonly {
     readonly id: string;
-    readonly imageId: string;
+    readonly containerId: string;
     readonly name: string;
     readonly rect: Rect;
     readonly locked: boolean;

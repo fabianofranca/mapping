@@ -344,7 +344,7 @@ export const ptBR = {
   'inconsistent.entity.spec': 'Especialização',
   'invariant.duplicate-id': 'id repetido',
   'invariant.duplicate-file': 'arquivo repetido',
-  'invariant.blank-background': 'cor de fundo e arquivo juntos (ou nenhum dos dois)',
+  'invariant.container-content': 'cor de fundo e arquivo juntos (ou nenhum dos dois)',
   'invariant.images-overlap': 'sobrepõe outra imagem',
   'invariant.missing-image': 'imagem inexistente',
   'invariant.missing-parent': 'pai inexistente',

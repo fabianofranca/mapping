@@ -32,7 +32,7 @@ describe('store: trava', () => {
     expect(store.undo()).toBe(true); // volta a trava de M1
     expect(current(store).markings[0]?.locked).toBe(true);
     expect(store.undo()).toBe(true); // desfaz a trava de I2
-    expect(current(store).images[1]?.locked).toBe(false);
+    expect(current(store).containers[1]?.locked).toBe(false);
     expect(store.undo()).toBe(true); // desfaz a trava de M1
     expect(current(store).markings[0]?.locked).toBe(false);
     expect(store.redo()).toBe(true);
@@ -71,7 +71,7 @@ describe('store: trava', () => {
       error: 'locked',
     });
     expect(actions.removeMarking('M2')).toEqual({ ok: false, error: 'locked' });
-    expect(actions.removeImage('I2')).toEqual({ ok: false, error: 'locked' });
+    expect(actions.removeContainer('I2')).toEqual({ ok: false, error: 'locked' });
     expect(current(store)).toBe(before);
   });
 

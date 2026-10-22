@@ -170,7 +170,7 @@ export function applyAcceptedOnDisk(dir: string, id: string): Project {
   }
   writeFileSync(join(dir, 'mapping.json'), serialize(next));
   // Como a sessão: arquivos de imagem e de especialização que ninguém mais cita saem.
-  const referenced = new Set(next.images.map((i) => i.file));
+  const referenced = new Set(next.containers.map((i) => i.file));
   if (existsSync(join(dir, 'images'))) {
     for (const name of readdirSync(join(dir, 'images'))) {
       if (!referenced.has(`images/${name}`)) rmSync(join(dir, 'images', name));

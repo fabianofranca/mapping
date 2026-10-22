@@ -43,9 +43,9 @@ export class Refs {
     return this.loaded.location.name;
   }
 
-  imageLabel(imageId: string): string {
-    const image = projectIndex(this.project).images.get(imageId);
-    if (!image) return imageId;
+  imageLabel(containerId: string): string {
+    const image = projectIndex(this.project).containers.get(containerId);
+    if (!image) return containerId;
     return refImageLabel(image) ?? CONTAINER_LABEL;
   }
 
@@ -62,7 +62,7 @@ export class Refs {
     if (!marking) return [markingId];
     const chain = [...ancestorsOf(this.project, markingId).reverse(), marking];
     return [
-      this.imageLabel(marking.imageId),
+      this.imageLabel(marking.containerId),
       ...chain.map((m) => this.markingName(m.id)),
     ];
   }

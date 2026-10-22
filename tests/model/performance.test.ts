@@ -32,7 +32,7 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
   const project = buildLargeProject();
 
   it('o fixture é válido', () => {
-    expect(project.images).toHaveLength(20);
+    expect(project.containers).toHaveLength(20);
     expect(project.markings).toHaveLength(500);
     expect(validateProject(project)).toEqual([]);
   });

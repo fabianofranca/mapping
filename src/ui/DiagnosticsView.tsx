@@ -40,7 +40,7 @@ function diagnosticsInfo(editor: EditorContextValue | null): DiagnosticsInfo {
     language: locale.peek(),
     theme: theme.peek(),
     counts: project && {
-      images: project.images.length,
+      images: project.containers.length,
       markings: project.markings.length,
       annotations: project.annotations.length,
     },

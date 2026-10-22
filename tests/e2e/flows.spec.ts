@@ -45,7 +45,7 @@ test('projeto novo → imagem → marcação → anotação → zip com o mappin
   expect(mapping.markings).toHaveLength(1);
   const marking = mapping.markings[0];
   if (!marking) throw new Error('sem marcação');
-  expect(marking.imageId).toBe(mapping.images[0]?.id);
+  expect(marking.containerId).toBe(mapping.images[0]?.id);
   // O retângulo vai em pixels da imagem original, dentro dela.
   const { x, y, width, height } = marking.rect;
   expect(width).toBeGreaterThan(0);

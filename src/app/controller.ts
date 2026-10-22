@@ -195,7 +195,7 @@ async function openLoaded(
   const display = createDisplayImages(async (path) => {
     const blob = await session.readImage(path);
     if (!blob) return null;
-    const image = session.store.project.peek()?.images.find((i) => i.file === path);
+    const image = session.store.project.peek()?.containers.find((i) => i.file === path);
     return createDisplayBitmap(
       blob,
       image && { width: image.width, height: image.height },

@@ -259,21 +259,21 @@ export const operationSchema = z.discriminatedUnion('op', [
       .string()
       .optional()
       .describe(
-        'Só em container sem arquivo (fundo liso): nova cor de fundo `#RRGGBB`. Numa foto falha com `not-blank`.',
+        'Só em container sem arquivo (fundo liso): nova cor de fundo `#RRGGBB`. Numa foto falha com `container-has-file`.',
       ),
     width: int
       .min(1)
       .max(20000)
       .optional()
       .describe(
-        'Só em container sem arquivo (fundo liso): nova largura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
+        'Só em container sem arquivo (fundo liso): nova largura em pixels (as marcações precisam continuar dentro). Numa foto falha com `container-has-file`.',
       ),
     height: int
       .min(1)
       .max(20000)
       .optional()
       .describe(
-        'Só em container sem arquivo (fundo liso): nova altura em pixels (as marcações precisam continuar dentro). Numa foto falha com `not-blank`.',
+        'Só em container sem arquivo (fundo liso): nova altura em pixels (as marcações precisam continuar dentro). Numa foto falha com `container-has-file`.',
       ),
   }),
   z.object({

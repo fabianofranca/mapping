@@ -88,7 +88,7 @@ describe('reviewMarks', () => {
       base,
       createMarking(base, {
         id: 'M9',
-        imageId: 'I1',
+        containerId: 'I1',
         rect: { x: 10, y: 10, width: 50, height: 50 },
         name: 'Novo',
       }),
@@ -130,12 +130,12 @@ describe('reviewMarks', () => {
     const { base, proposal } = richScenario();
     const preview = previewProject(base, proposal).project;
     const shown = proposedDisplay(preview, proposal);
-    expect(shown.images.find((i) => i.id === 'I3')?.file).toBe(
+    expect(shown.containers.find((i) => i.id === 'I3')?.file).toBe(
       'proposals/P1/images/nova.webp',
     );
     // As demais imagens não mudam (mesmo objeto).
-    expect(shown.images.find((i) => i.id === 'I1')).toBe(
-      preview.images.find((i) => i.id === 'I1'),
+    expect(shown.containers.find((i) => i.id === 'I1')).toBe(
+      preview.containers.find((i) => i.id === 'I1'),
     );
     // Memoizado pela versão do "como ficaria".
     expect(proposedDisplay(preview, proposal)).toBe(shown);

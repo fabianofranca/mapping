@@ -70,7 +70,7 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
 export interface NewComponentArgs {
   readonly markingId: string;
   readonly annotationId: string;
-  readonly imageId: string;
+  readonly containerId: string;
   /** Componente com slot que adota a instância (dentro do slot); `null` = nível da imagem. */
   readonly parentId: string | null;
   readonly specId: string;
@@ -162,13 +162,13 @@ function slotArea(
 export function componentPlacement(
   p: Project,
   catalog: ComponentCatalog,
-  args: Pick<NewComponentArgs, 'imageId' | 'parentId' | 'specId' | 'typeId' | 'center'>,
+  args: Pick<NewComponentArgs, 'containerId' | 'parentId' | 'specId' | 'typeId' | 'center'>,
   measure: TextMeasurer,
 ): Rect {
   const { component } = resolveType(p, catalog, args.specId, args.typeId);
-  const image = findById(p.images, args.imageId);
+  const image = findById(p.containers, args.containerId);
   const parent = args.parentId === null ? null : findById(p.markings, args.parentId);
-  if (parent !== null && parent.imageId !== image.id) fail('invalid-parent', parent.id);
+  if (parent !== null && parent.containerId !== image.id) fail('invalid-parent', parent.id);
 
   const slot = parent === null ? null : slotArea(p, catalog, parent.id, measure);
   const area = slot?.area ?? imagePixelRect(image);
@@ -236,7 +236,7 @@ export function addComponentMarking(
       p,
       catalog,
       {
-        imageId: args.imageId,
+        containerId: args.containerId,
         parentId: args.parentId,
         specId: args.specId,
         typeId: args.typeId,
@@ -246,7 +246,7 @@ export function addComponentMarking(
     );
   if (args.parentId !== null) {
     const parent = findById(p.markings, args.parentId);
-    if (parent.imageId !== args.imageId) fail('invalid-parent', parent.id);
+    if (parent.containerId !== args.containerId) fail('invalid-parent', parent.id);
     if (!containsRect(parent.rect, rect)) fail('rect-outside-parent');
   }
 
@@ -254,7 +254,7 @@ export function addComponentMarking(
     p,
     {
       id: args.markingId,
-      imageId: args.imageId,
+      containerId: args.containerId,
       rect,
       ...(args.name !== undefined ? { name: args.name } : {}),
     },

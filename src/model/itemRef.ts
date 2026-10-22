@@ -23,7 +23,7 @@ export function normalizeId(id: string): string {
 }
 
 function idsOf(p: Project, kind: ItemKind): readonly string[] {
-  const items = kind === 'm' ? p.markings : kind === 'i' ? p.images : p.annotations;
+  const items = kind === 'm' ? p.markings : kind === 'i' ? p.containers : p.annotations;
   return items.map((item) => item.id);
 }
 
