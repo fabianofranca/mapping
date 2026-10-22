@@ -90,3 +90,18 @@ A CN1 vem primeiro porque fixa o vocabulário que a CN2 leva ao formato.
   - **Identificadores:** `ProjectContainer`, `Project.containers`, `src/model/containers.ts`, funções `*Container*`, `addBackgroundContainer`/`isBackgroundContainer`/`MAX_CONTAINER_SIZE`; códigos de erro `blank-image` → `container-without-file` e `not-blank` → `container-has-file`. Códigos de invariante `missing-image`, `rect-out-of-image`, `images-overlap` e `parent-other-image` ficaram.
   - **Rótulo `mcp-rc` e rodada do Cowork:** não postos na CN2 (cascata noturna); ficam para decisão do dono.
   - Roteiros novos: R3.8c (abrir um v11), R9.19 e R9.20 (tools novas e depreciações).
+
+## Rodada do Cowork (2026-10-22)
+
+Build b9b124c · 2026-10-22, rc `mcp-v0.8.0-rc.1`: 27 passos OK, nenhum achado alto ou médio (relato em `relato-2026-10-22-container.md`). A fase CN3 corrigiu quatro textos, sem mudar comportamento, schema, formato, MCP nem versão:
+
+1. O diálogo Especializações dizia "biblioteca (versão 4 ou 5)"; passou a "4 a 6" (a `formatVersion` 6 já vale).
+2. O guia `docs/TESTING.md` falava em `images` no `mapping.json` e na linha de contagens do Diagnóstico; o schema v12 grava `containers`, e o Diagnóstico imprime `containers: …`.
+3. O R3.8c se contradizia sobre a faixa da migração: ela só aparece depois do primeiro Salvo (junto com o backup); o passo foi reescrito.
+4. "Excluir imagem" / "Excluir imagem?" (botão e título da confirmação que excluem o container) viraram "Excluir container" / "Excluir container?" (e en-US), com o corpo da confirmação no masculino.
+
+Ficou sem mudança de propósito:
+
+- (a) `add_container` com `width`/`height` sem `background` é recusado: um container sem arquivo exige cor de fundo, por desenho.
+- (b) O `file` do `add_container` é relativo à raiz do repositório do projeto (herdado do `add_image`).
+- (c) O R9.7 foi conferido só em parte (adicionar e posicionar), fora da lista pedida.

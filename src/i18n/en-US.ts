@@ -153,8 +153,8 @@ export const enUS: Dictionary = {
     'This image cannot be displayed. You can replace it with another file.',
   'image.replace': 'Replace image',
   'image.repoint': 'Repoint image',
-  'image.delete': 'Delete image',
-  'image.deleteTitle': 'Delete image?',
+  'image.delete': 'Delete container',
+  'image.deleteTitle': 'Delete container?',
   'image.deleteMessage':
     '"{file}" will be removed from the project, with {markings} marking(s) and {annotations} annotation(s). You can undo this.',
   'image.aspectTitle': 'Different aspect ratio',
@@ -447,7 +447,7 @@ export const enUS: Dictionary = {
   'spec.updateFolder': 'Update from folder…',
   'spec.updateZip': 'Update from zip…',
   'spec.packageHint':
-    'A library (version 4 or 5) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
+    'A library (version 4 to 6) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
   'spec.v4NeedsPackage':
     '"{name}" refers to package files (components, documents, examples or fonts) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
   'spec.packageValidating': 'Checking the package…',
