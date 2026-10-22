@@ -457,8 +457,8 @@ describe('importar zip', () => {
     expect(current.unexported.value).toBe(false);
     const project = current.session.store.project.value;
     expect(project?.containers).toHaveLength(4);
-    expect(project?.markings).toHaveLength(31);
-    expect(project?.annotations).toHaveLength(41);
+    expect(project?.markings).toHaveLength(32);
+    expect(project?.annotations).toHaveLength(42);
     expect(current.session.proposals.list.value).toHaveLength(1);
     // Nenhum rastro além do que o "Abrir zip" deixa: um projeto local, nenhuma pasta lembrada.
     await app.closeProject();
