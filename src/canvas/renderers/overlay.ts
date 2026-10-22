@@ -7,6 +7,7 @@ import {
   canEditImagePlacement,
   canEditMarkingGeometry,
   imageCanvasRect,
+  markingCanvasRectOf,
   projectIndex,
   type Placement,
   type Rect,
@@ -126,16 +127,25 @@ export class OverlayRenderer {
   private renderDropTarget(frame: OverlayFrame): void {
     const { project, dropTarget: target, tokens } = frame;
     const zoom = frame.viewport.scale;
-    this.container.classList.toggle('canvas-host--drop', target?.containerId === null);
+    this.container.classList.toggle(
+      'canvas-host--drop',
+      target?.containerId === null && target.markingId === undefined,
+    );
+    const index = project && projectIndex(project);
+    const marking = target?.markingId ? index?.markings.get(target.markingId) : undefined;
     const image = target?.containerId
-      ? project && projectIndex(project).containers.get(target.containerId)
+      ? index?.containers.get(target.containerId)
       : undefined;
-    if (!image) {
+    const rect =
+      marking && project
+        ? markingCanvasRectOf(project, marking)
+        : image && imageCanvasRect(image, image.placement);
+    if (!rect) {
       this.dropRect.visible(false);
       return;
     }
     this.dropRect.setAttrs({
-      ...imageCanvasRect(image, image.placement),
+      ...rect,
       visible: true,
       stroke: tokens.select,
       strokeWidth: (3 * SELECTION_STROKE) / zoom,

@@ -25,7 +25,11 @@ export interface ImagePreview {
 }
 
 /** Alvo de um arrastar-e-soltar de arquivos: área vazia ou uma imagem (será trocada). */
-export type DropTarget = { readonly containerId: string | null } | null;
+export type DropTarget = {
+  readonly containerId: string | null;
+  /** Marcação (componente com slot) que receberia o item: acende o retângulo dela. */
+  readonly markingId?: string;
+} | null;
 
 /** Item trancado sob o mouse: recebe o emblema do cadeado enquanto o cursor está nele. */
 export interface HoverLock {

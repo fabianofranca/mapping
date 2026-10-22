@@ -832,6 +832,7 @@ export const enUS: Dictionary = {
   'library.addInside': 'Add inside {name}',
   'library.addToScreen': 'Add to screen {name}',
   'library.addToCanvas': 'Add to canvas',
+  'library.dragHint': 'Drag to the canvas to create where you drop',
   'library.noScreen': 'Select or center a screen',
   'library.readOnly': 'The project is read-only.',
   'library.error.generic': 'Could not add the component.',

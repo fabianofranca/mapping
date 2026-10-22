@@ -270,6 +270,13 @@ describe('OverlayRenderer', () => {
     render();
     expect(container.classList.contains('canvas-host--drop')).toBe(false);
   });
+
+  it('alvo de soltar com marcação: acende o retângulo dela, sem o fundo', () => {
+    const { container, overlay, render } = setup();
+    render({ dropTarget: { containerId: null, markingId: 'M1' } });
+    expect(overlay.dropRect.visible()).toBe(true);
+    expect(container.classList.contains('canvas-host--drop')).toBe(false);
+  });
 });
 
 describe('OverlayRenderer: trava (etapa 2.5)', () => {

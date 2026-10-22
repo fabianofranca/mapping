@@ -836,6 +836,7 @@ export const ptBR = {
   'library.addInside': 'Adicionar dentro de {name}',
   'library.addToScreen': 'Adicionar na tela {name}',
   'library.addToCanvas': 'Adicionar no canvas',
+  'library.dragHint': 'Arraste até o canvas para criar onde soltar',
   'library.noScreen': 'Selecione ou centralize uma tela',
   'library.readOnly': 'O projeto está somente leitura.',
   'library.error.generic': 'Não foi possível adicionar o componente.',
