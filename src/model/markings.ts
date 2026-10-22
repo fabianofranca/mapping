@@ -6,8 +6,10 @@ import {
   clamp,
   containsRect,
   fromCanvasRect,
+  imageCanvasRect,
   imagePixelRect,
   isIntegerRect,
+  rectsOverlap,
   right,
   translateRect,
   type Size,
@@ -413,4 +415,81 @@ export function reorderMarking(p: Project, markingId: string, index: number): Pr
     ...p,
     markings: p.markings.map((m) => (slots.has(m.id) ? (order[next++] as Marking) : m)),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Lugar de uma flutuante perto de um alvo (etapa Marcações espaciais, ME4)
+
+/** Vão constante, em unidades do canvas, entre a flutuante, o alvo e as outras flutuantes. */
+export const FLOATING_GAP = 24;
+
+/** Alvo do `near`: um container ou uma marcação. */
+export interface FloatingNearTarget {
+  readonly kind: 'container' | 'marking';
+  readonly id: string;
+}
+
+/**
+ * Retângulo (unidades do canvas) para uma marcação flutuante de `size` perto de `target`, num
+ * lugar livre da margem. Determinístico: tenta a **direita** do alvo (na marcação de container,
+ * a margem é a do container dela, começando na altura da marcação), empilhando de cima para
+ * baixo com `FLOATING_GAP` sem sobrepor containers nem outras flutuantes; se o empilhamento
+ * passaria da altura do alvo, tenta a **esquerda**, depois **embaixo** (empilhando para a
+ * direita) e **em cima**; se nenhum lado couber, fica na direita, empilhada até achar vão.
+ * Alvo inexistente falha com `not-found`.
+ */
+export function placeFloatingNear(
+  p: Project,
+  target: FloatingNearTarget,
+  size: Size,
+): Rect {
+  const index = projectIndex(p);
+  let anchor: Rect;
+  let start: Rect;
+  if (target.kind === 'container') {
+    const container = index.containers.get(target.id) ?? fail('not-found', target.id);
+    anchor = imageCanvasRect(container, container.placement);
+    start = anchor;
+  } else {
+    const marking = index.markings.get(target.id) ?? fail('not-found', target.id);
+    start = markingCanvasRectOf(p, marking);
+    const container =
+      marking.containerId === null
+        ? undefined
+        : index.containers.get(marking.containerId);
+    anchor = container ? imageCanvasRect(container, container.placement) : start;
+  }
+  const obstacles: Rect[] = p.containers.map((c) => imageCanvasRect(c, c.placement));
+  for (const m of p.markings) {
+    if (m.floating && m.containerId === null && m.id !== target.id) {
+      obstacles.push(markingCanvasRectOf(p, m));
+    }
+  }
+  const { width, height } = size;
+  const hit = (rect: Rect): Rect | undefined =>
+    obstacles.find((o) => rectsOverlap(rect, o));
+
+  // Empilha para baixo (x fixo) ou para a direita (y fixo) até achar vão.
+  const stackDown = (x: number, y: number): Rect => {
+    let rect: Rect = { x, y, width, height };
+    for (let o = hit(rect); o; o = hit(rect))
+      rect = { ...rect, y: bottom(o) + FLOATING_GAP };
+    return rect;
+  };
+  const stackRight = (x: number, y: number): Rect => {
+    let rect: Rect = { x, y, width, height };
+    for (let o = hit(rect); o; o = hit(rect))
+      rect = { ...rect, x: right(o) + FLOATING_GAP };
+    return rect;
+  };
+
+  const onRight = stackDown(right(anchor) + FLOATING_GAP, start.y);
+  if (onRight.y <= bottom(anchor)) return onRight;
+  const onLeft = stackDown(anchor.x - FLOATING_GAP - width, start.y);
+  if (onLeft.y <= bottom(anchor)) return onLeft;
+  const below = stackRight(start.x, bottom(anchor) + FLOATING_GAP);
+  if (below.x <= right(anchor)) return below;
+  const above = stackRight(start.x, anchor.y - FLOATING_GAP - height);
+  if (above.x <= right(anchor)) return above;
+  return onRight;
 }

@@ -1,4 +1,5 @@
 import {
+  arrowsOf,
   markingComponent,
   siblingPosition,
   annotationShortLabel,
@@ -19,6 +20,7 @@ import {
   typeOfAnnotation,
   ancestorsOf,
   type Annotation,
+  type Arrow,
   type AnnotationIssue,
   type Layer,
   type Marking,
@@ -246,6 +248,7 @@ export async function markingView(
   const issues = projectIssues(p);
   const tree = linkTree(refs, own);
   const children = index.children.get(marking.id) ?? [];
+  const attachedArrows = arrowsOf(p, marking.id);
   return {
     ref: refs.ref('m', marking.id),
     id: marking.id,
@@ -275,6 +278,86 @@ export async function markingView(
       rect: rectOf(c),
     })),
     ...(children.length > LIST_LIMIT ? { childrenTotal: children.length } : {}),
+    ...(platform !== undefined ? { platform } : {}),
+    layers,
+    ...(attachedArrows.outgoing.length + attachedArrows.incoming.length > 0
+      ? {
+          arrows: {
+            outgoing: attachedArrows.outgoing.map((a) => arrowRow(refs, a, 'to')),
+            incoming: attachedArrows.incoming.map((a) => arrowRow(refs, a, 'from')),
+          },
+        }
+      : {}),
+    ...(tree ? { linkTree: tree } : {}),
+    incompleteAnnotations: own.filter((a) => issues.has(a.id)).length,
+  };
+}
+
+/** A outra ponta de uma seta: referência, nome e caminho legível. */
+function arrowEnd(refs: Refs, markingId: string): Json {
+  const exists = projectIndex(refs.project).markings.has(markingId);
+  return {
+    ref: refs.bare('m', markingId),
+    name: exists ? refs.markingName(markingId) : null,
+    path: exists ? refs.markingPath(markingId) : [],
+  };
+}
+
+/** Seta numa linha, vista de uma das pontas: `other` diz qual é a outra (`to` nas que saem). */
+function arrowRow(refs: Refs, arrow: Arrow, other: 'from' | 'to'): Json {
+  return {
+    ref: refs.ref('m', arrow.id),
+    id: arrow.id,
+    [other]: arrowEnd(refs, arrow[other]),
+    name: arrow.name,
+    style: arrow.style,
+    locked: arrow.locked,
+  };
+}
+
+/**
+ * Tudo sobre a seta (`get_marking` com o id dela): `kind: "arrow"`, as duas pontas, estilo,
+ * trava e as anotações por camada, como numa marcação. Não traz `points` (a rota é da pessoa).
+ */
+export async function arrowView(
+  ctx: CodeContext,
+  arrow: Arrow,
+  platform?: string,
+): Promise<Json> {
+  const { refs } = ctx;
+  if (platform !== undefined) assertPlatform(refs, platform);
+  const p = refs.project;
+  const index = projectIndex(p);
+  const own = index.annotationsByMarking.get(arrow.id) ?? [];
+  const codes = new Map<string, Json | null>(
+    await Promise.all(
+      own.map(async (a) => [a.id, await annotationCode(ctx, a, platform)] as const),
+    ),
+  );
+  const layers = p.layers.flatMap((layer) => {
+    const mine = own.filter((a) => a.layerId === layer.id);
+    if (mine.length === 0) return [];
+    return [
+      {
+        layer: { id: layer.id, name: layer.name },
+        annotations: mine.map((a) =>
+          annotationView(refs, a, { code: codes.get(a.id) ?? null }),
+        ),
+      },
+    ];
+  });
+  const issues = projectIssues(p);
+  const tree = linkTree(refs, own);
+  return {
+    kind: 'arrow',
+    ref: refs.ref('m', arrow.id),
+    id: arrow.id,
+    name: arrow.name,
+    path: [{ ref: refs.bare('m', arrow.id), name: refs.arrowName(arrow.id) }],
+    from: arrowEnd(refs, arrow.from),
+    to: arrowEnd(refs, arrow.to),
+    style: arrow.style,
+    lock: { locked: arrow.locked },
     ...(platform !== undefined ? { platform } : {}),
     layers,
     ...(tree ? { linkTree: tree } : {}),

@@ -15,6 +15,7 @@ export const MCP_ERROR_CODES = [
   'ambiguous-project',
   'ambiguous-ref',
   'ambiguous-type',
+  'arrow',
   'container-without-file',
   'duplicate-alias',
   'encode-failed',

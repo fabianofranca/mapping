@@ -195,6 +195,29 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       create(
         (id) => (p) => model.addBackgroundContainer(p, { ...args, id }, settleOptions(p)),
       ),
+    /**
+     * Container destacado (ME4): a marcação vira um container sem arquivo ao lado do de origem;
+     * com componente na marcação, a cópia dela e as anotações ocupam o container novo. Uma
+     * entrada de desfazer; devolve o id do container novo.
+     */
+    detachMarking: (markingId: string): ActionResult<string> => {
+      const containerId = newId();
+      const copyId = newId();
+      const result = store.apply((p) =>
+        model.detachMarking(
+          p,
+          markingId,
+          {
+            containerId,
+            markingId: copyId,
+            newId,
+            copyContent: model.markingComponent(p, catalog(), markingId) !== null,
+          },
+          settleOptions(p),
+        ),
+      );
+      return result.ok ? { ok: true, value: containerId } : result;
+    },
     setBackgroundContainer: (
       containerId: string,
       patch: model.BackgroundContainerChanges,
@@ -399,6 +422,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly specId: string;
       readonly typeId: string;
       readonly center?: Point;
+      /** Só tipo flutuante: perto deste alvo (`placeFloatingNear`), no lugar de `center`. */
+      readonly near?: model.FloatingNearTarget;
     }): ActionResult<string> => {
       const markingId = newId();
       const annotationId = newId();

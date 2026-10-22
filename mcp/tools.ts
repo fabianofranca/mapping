@@ -25,6 +25,7 @@ import { discoverProjects, findProject, loadProject } from './projects';
 import {
   annotationDetail,
   containerView,
+  arrowView,
   markingView,
   projectDetail,
   projectSummary,
@@ -346,6 +347,8 @@ export function registerTools(
     ({ ref, project, platform }) =>
       respond(async () => {
         const item = await resolveItem(roots, ref, project, 'm');
+        const arrow = projectIndex(item.refs.project).arrows.get(item.id);
+        if (arrow) return arrowView(codeContext(roots, item.refs), arrow, platform);
         const marking = projectIndex(item.refs.project).markings.get(item.id);
         if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
         return markingView(codeContext(roots, item.refs), marking, platform);
@@ -464,12 +467,24 @@ export function registerTools(
         const item = await resolveItem(roots, ref, project);
         const index = projectIndex(item.refs.project);
         const { refs } = item;
+        const arrow = item.kind === 'm' ? index.arrows.get(item.id) : undefined;
         const base = {
-          kind: { m: 'marking', i: 'container', a: 'annotation' }[item.kind],
+          kind: arrow
+            ? 'arrow'
+            : { m: 'marking', i: 'container', a: 'annotation' }[item.kind],
           ref: refs.ref(item.kind, item.id),
           id: item.id,
           project: { name: refs.projectName, path: item.loaded.location.path },
         };
+        if (arrow) {
+          return {
+            ...base,
+            name: arrow.name,
+            from: refs.ref('m', arrow.from),
+            to: refs.ref('m', arrow.to),
+            style: arrow.style,
+          };
+        }
         if (item.kind === 'm') {
           const marking = index.markings.get(item.id)!;
           return {
@@ -558,6 +573,15 @@ export function registerTools(
     ({ ref, project, ...options }) =>
       respondWithImage(async () => {
         const item = await resolveItem(roots, ref, project, 'm');
+        if (projectIndex(item.refs.project).arrows.has(item.id)) {
+          throw new ToolError(
+            'arrow',
+            'a seta não tem imagem: ela é uma linha entre duas marcações',
+            {
+              hint: 'peça a imagem da marcação de origem ou de destino (`from`/`to` de get_marking na seta)',
+            },
+          );
+        }
         const marking = projectIndex(item.refs.project).markings.get(item.id);
         if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
         return markingImage(roots, item.refs, marking, options, images);
