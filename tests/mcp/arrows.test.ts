@@ -204,6 +204,27 @@ describe('seta lida, anotada e recusada onde não cabe', () => {
     expect(arrow.layers[0]?.annotations.map((a) => a.name)).toEqual(['Ao tocar']);
   });
 
+  it('create_annotation com tipo só de marcação na seta falha com type-not-applicable e uma dica', async () => {
+    const result = await plan([
+      { op: 'create_annotation', marking: arrowRef, type: 'notas/nota' },
+    ]);
+    expect(result.valid).toBe(false);
+    const error = result.errors?.[0] as unknown as Record<string, unknown>;
+    expect(error.code).toBe('type-not-applicable');
+    expect(String(error.hint)).toContain('appliesTo');
+  });
+
+  it('update_marking e delete_marking com o id de uma seta apontam update_arrow e delete_arrow', async () => {
+    const update = await plan([{ op: 'update_marking', marking: arrowRef, name: 'x' }]);
+    const updateError = update.errors?.[0] as unknown as Record<string, unknown>;
+    expect(updateError.code).toBe('wrong-kind');
+    expect(String(updateError.hint)).toContain('update_arrow');
+    const del = await plan([{ op: 'delete_marking', marking: arrowRef }]);
+    const delError = del.errors?.[0] as unknown as Record<string, unknown>;
+    expect(delError.code).toBe('wrong-kind');
+    expect(String(delError.hint)).toContain('delete_arrow');
+  });
+
   it('get_marking_image recusa a seta com o erro arrow e uma dica', async () => {
     const error = errorOf(
       await mcp.call('get_marking_image', { project, ref: arrowRef }),

@@ -14,6 +14,7 @@ import {
 } from './refs';
 import {
   isIsoDate,
+  typeAppliesTo,
   type SpecAnnotationType,
   type SpecColumn,
   type SpecField,
@@ -160,6 +161,10 @@ export function addTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Pr
     layer.spec.layerId !== resolved.layer.id
   ) {
     fail('type-not-in-layer', args.type.typeId);
+  }
+  const ownerKind = projectIndex(p).arrows.has(args.markingId) ? 'arrow' : 'marking';
+  if (!typeAppliesTo(resolved.type, ownerKind)) {
+    fail('type-not-applicable', `${args.type.specId}/${args.type.typeId}`);
   }
   const ownerId = args.parentAnnotationId ?? null;
   if (ownerId === null) {

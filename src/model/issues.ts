@@ -3,7 +3,7 @@ import { memoByProject, projectIndex } from './projectIndex';
 import { isTargetAccepted, parseRefValue, resolveRef, tableRows } from './refs';
 import { fieldOf, isAllowedOwner, specLayerOf, typeOfAnnotation } from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
-import type { SpecRefAccepts } from './spec';
+import { typeAppliesTo, type SpecRefAccepts } from './spec';
 import type { Annotation, JsonValue, Project } from './types';
 
 // Pendências ("incompletas", docs/history/PLAN-etapas-1-2.md 13.5): calculadas a partir do projeto e das
@@ -26,6 +26,8 @@ export type AnnotationIssueCode =
   | 'missing-owner'
   /** Dono cujo tipo não lista este em `allowedChildren`. */
   | 'owner-not-allowed'
+  /** O tipo deixou de se aplicar à dona (marcação ou seta) depois de uma atualização. */
+  | 'type-not-applicable'
   /** O alvo da referência não existe mais. */
   | 'broken-ref'
   /** O alvo existe, mas não é aceito pelo campo (perdeu a etiqueta, deixou de ser livre). */
@@ -81,6 +83,10 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
     issues.push({ code: 'layer-mismatch' });
   } else if (specLayerOf(p, layer)?.id !== resolved.layer.id) {
     issues.push({ code: 'layer-mismatch' });
+  }
+
+  if (!typeAppliesTo(type, index.arrows.has(a.markingId) ? 'arrow' : 'marking')) {
+    issues.push({ code: 'type-not-applicable' });
   }
 
   for (const key of Object.keys(values)) {

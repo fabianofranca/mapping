@@ -47,6 +47,8 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'not-typed': 'anotação livre: use `entries`, não `values`',
   'unknown-type': 'tipo de anotação inexistente nas especializações aplicadas',
   'type-not-in-layer': 'o tipo não pertence a esta camada',
+  'type-not-applicable':
+    'o tipo não se aplica a este item (veja `appliesTo` do tipo em get_specialization: marcação, seta ou ambos)',
   'owner-required': 'este tipo exige uma anotação dona (`owner`)',
   'unknown-field': 'campo inexistente no tipo (veja os campos em get_specialization)',
   'invalid-value': 'valor incompatível com o tipo do campo',
@@ -64,10 +66,18 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
     'a marcação não é um container com layout em linha ou coluna e filhas para arrumar',
 };
 
+/** Dica do próximo passo para os erros do modelo que a têm. */
+export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>> = {
+  'type-not-applicable':
+    'escolha um tipo cujo `appliesTo` inclua este item (marcação ou seta) ou use uma anotação livre numa camada sem especialização',
+};
+
 /** Erro de regra do modelo numa tool de leitura → `ToolError` com a explicação e o detalhe. */
 export function modelToolError(error: ModelError): ToolError {
   const [, detail] = error.message.split(': ');
+  const hint = MODEL_ERROR_HINTS[error.code];
   return new ToolError(error.code, MODEL_ERROR_MESSAGES[error.code], {
     ...(detail ? { detail } : {}),
+    ...(hint ? { hint } : {}),
   });
 }

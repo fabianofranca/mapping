@@ -226,3 +226,30 @@ test('arrastar o meio do traço cria um ponto de passagem', async ({ page }) => 
   await drag(page, middle, { x: middle.x, y: middle.y - 80 });
   await expect.poll(async () => (await arrowsOf(page))[0]?.points.length).toBe(1);
 });
+
+test('Ligar a… nos Detalhes cria a seta curva sem arrastar (o caminho do agente do Cowork)', async ({
+  page,
+}) => {
+  await createProject(page, 'Setas');
+  const host = page.locator('.canvas-host');
+  const [first] = await twoMarkedScreens(page, host);
+  await expect(host).toHaveAttribute('data-arrows', '0');
+
+  // Seleciona a primeira marcação e abre o seletor pelo botão dos Detalhes.
+  await page.mouse.click(centerOf(first).x, centerOf(first).y);
+  await page.getByRole('button', { name: 'Ligar a…', exact: true }).click();
+  const picker = page.getByRole('dialog', { name: /^Ligar .* a…$/ });
+  await expect(picker).toBeVisible();
+  // A própria marcação não aparece: só a outra é oferecida.
+  const options = picker.getByRole('option');
+  await expect(options).toHaveCount(1);
+  await options.first().click();
+  await expect(picker).toBeHidden();
+  await expect(host).toHaveAttribute('data-arrows', '1');
+
+  const { mapping } = await exportMapping(page);
+  const arrows = (mapping as MappingWithArrows).arrows;
+  const [a, b] = mapping.markings;
+  expect(arrows).toHaveLength(1);
+  expect(arrows[0]).toMatchObject({ from: a?.id, to: b?.id, style: 'curve', points: [] });
+});

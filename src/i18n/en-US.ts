@@ -655,6 +655,7 @@ export const enUS: Dictionary = {
   'issue.layer-mismatch': 'outside the layer of its type',
   'issue.missing-owner': 'no owner (must belong to {owners})',
   'issue.owner-not-allowed': 'owner type not allowed',
+  'issue.type-not-applicable': 'the type does not apply to this item (marking or arrow)',
   'issue.broken-ref': 'broken reference',
   'issue.ref-not-accepted': 'target not accepted (lost the tag or is no longer free)',
   'issue.component-overflow': 'The component does not fit',

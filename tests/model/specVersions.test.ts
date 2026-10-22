@@ -184,6 +184,22 @@ describe('diffSpecs: aditivas', () => {
     ]);
   });
 
+  it('appliesTo trocado de um tipo existente é aditivo; igual ao padrão não conta', () => {
+    const before = spec(1, [button(), badge]);
+    const same = spec(2, [button({ appliesTo: ['marking'] }), badge]);
+    expect(diffSpecs(before, same)).toEqual([]);
+    const next = spec(2, [button({ appliesTo: ['arrow', 'marking'] }), badge]);
+    const changes = diffSpecs(before, next);
+    expect(changes).toHaveLength(1);
+    expect(changes[0]).toMatchObject({
+      kind: 'additive',
+      code: 'changed-applies-to',
+      path: `${BTN_PATH}.appliesTo`,
+      typeId: 'button',
+    });
+    expect(missingMigrations(before, next)).toEqual([]);
+  });
+
   it('component, doc, exemplo e fonte novos; component trocado', () => {
     const before = spec(1, [button({ component: 'components/a.json' }), badge]);
     const next = spec(
