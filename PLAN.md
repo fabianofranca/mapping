@@ -284,6 +284,70 @@ Todas as decisões abaixo foram **confirmadas pelo dono em 2026-10-22** (a 2 e a
 | ME4  | Opus        | high                   | medium; high nos briefings do motor (`repeat`) e do renderer das setas; mecânicos Haiku low                              |
 | ME5  | Sonnet      | medium                 | medium; mecânicos Haiku low                                                                                              |
 
+### Execução em cascata (desenvolvimento noturno sem o dono)
+
+O dono quer que as fases sejam desenvolvidas **em sequência, sem ele, durante a noite**, e testadas e mescladas por ele de manhã, uma a uma, com o Cowork. Para isso as fases não esperam o merge da anterior: cada uma nasce da ponta da anterior, e os PRs ficam **empilhados**. Esta seção é o contrato do agente que gerencia a noite e do agente que ajuda de manhã; o `PLAN.md` continua sendo a especificação, e nada aqui a muda.
+
+**Pré-requisitos (o gerente confere antes de começar e para se algum faltar):**
+
+- O plano desta etapa está no branch de partida (o PR #205 mesclado, ou o branch dele como ponto de partida).
+- O épico Container está concluído e na `main`. Se não estiver, a cascata **começa pelo Container** (CN1 e CN2, sobre `epic/container`, pelas regras daquela etapa) e o `epic/marcacoes-espaciais` nasce da ponta do `epic/container`; quando o Container entrar na `main`, o épico novo recebe a `main` por merge (nunca rebase).
+- Nenhuma fase começa com decisão aberta: hoje a ME4 depende das decisões (a) a (f), então a noite cobre **ME0 → ME3** (e a ME4 e a ME5 só se o dono as fechar antes). A ME5 nunca roda sem a ME4.
+
+**Topologia dos branches e PRs.**
+
+- `epic/marcacoes-espaciais` a partir da `main` (ou da ponta do `epic/container`, acima). O PR do épico para a `main` é aberto pelo dono (ou pelo agente da manhã) depois do primeiro merge nele: o GitHub não abre PR sem diferença, e a noite não mescla nada.
+- Fase N no branch `me<N>/<nome>` (`me0/sem-heranca`, `me1/marcacao-do-canvas`, `me2/selecao-e-arrasto`, `me3/notas`, `me4/setas-e-anexos`, `me5/mcp-e-fechamento`), criado da **ponta do branch da fase N-1** (a ME0, do épico). O PR da fase N tem **base no branch da fase N-1** (o da ME0, no épico), então mostra só a própria fase. Quando a fase N-1 é mesclada no épico e o branch dela apagado, o GitHub muda a base do PR N para o épico sozinho.
+- O que isso custa: o `ci.yml` roda em todo PR, qualquer que seja a base, e em todo push fora da `main`, então cada PR da cascata tem CI; o preview é o do último PR atualizado, então de manhã cada fase é publicada à mão pelo Deploy (`workflow_dispatch` com o branch); o snapshot do MCP (`mcp-snapshot-pr<N>`) só nasce em PR com base num `epic/**`, logo a ME0 já o tem e as outras o ganham no primeiro push depois de a base virar o épico (o merge-forward da manhã, abaixo).
+
+**O gerente da madrugada** (uma sessão, que **não executa fase nenhuma**: cria uma sessão por fase, com o modelo certo, e acompanha).
+
+1. Lê o `CLAUDE.md`, esta seção e as fases; confere os pré-requisitos.
+2. Para cada fase, em ordem: cria a sessão da fase com `create_session` do servidor `claude-code-remote`, com o **modelo coordenador da fase** (tabela acima), `source_url` do repositório, `source_revision` no branch da fase anterior, `outcome_branch` no branch da fase e o modo de permissão sem perguntas que o dono configurar; o prompt é o modelo abaixo. O esforço do coordenador vai **no prompt** (a ferramenta não o fixa) e a sessão o repassa aos briefings dos subagentes, lidos da tabela da fase.
+3. Acompanha a sessão (`get_session`, `list_events`) sem interferir; quando ela termina, confere a entrega: branch publicado, PR aberto com a base certa, CI verde (ou o relato do que ficou vermelho e por quê), checkboxes da fase marcados no `PLAN.md`, descrição com Resumo, Como testar e Decisões tomadas. Dúvida que o plano não resolve aparece na descrição do PR, nunca vira comportamento inventado.
+4. Só então começa a fase seguinte, da ponta do branch recém-entregue.
+5. **Para a cascata**, sem iniciar a próxima fase, quando: a fase passa do tempo (sugestão: 3 h; a ME1, 4 h); os gates continuam vermelhos depois de duas rodadas de correção da própria sessão; a sessão pede uma decisão que não está no plano; a próxima fase tem decisão aberta. A fase interrompida fica como está (branch publicado, PR em rascunho se não terminou), e o gerente deixa para a manhã um comentário no PR da última fase entregue (ou no PR #205, se nenhuma) com: fases entregues e seus PRs, o que parou e por quê, e o que a manhã precisa decidir.
+6. **Nunca:** mesclar PR, mexer na `main` ou no épico além de criá-lo, apagar branch, rebase ou force-push, pular gate, pôr `mcp-rc` fora da ME5, implementar além da fase.
+
+**Prompt da sessão de uma fase** (o gerente preenche os colchetes):
+
+```
+Você é o coordenador da fase [ME_N] da etapa Marcações espaciais, notas e setas.
+Leia o CLAUDE.md e, no PLAN.md, a seção da etapa inteira (conceitos, decisões,
+regras de contenção, o que quebra, execução em cascata) e a sua fase. Confira o
+modelo em que roda (regra "Uso de modelos" do CLAUDE.md): esta fase pede [modelo],
+esforço [esforço]; subagentes conforme a tabela da fase. Trabalhe no branch
+[me_N/nome], criado a partir de [branch anterior]; nunca toque na main nem no
+épico. Entregue: a fase inteira (código, testes, docs e roteiros que ela lista);
+os gates verdes (npm run lint && npm run typecheck && npm test && npm run build,
+mais build:mcp, build:example e build:guia onde a fase tocar); os checkboxes da
+fase marcados no PLAN.md; o PR com base [branch anterior], ready for review, com
+Resumo, Como testar (dizendo que o preview da fase é publicado pelo
+workflow_dispatch do Deploy com este branch) e Decisões tomadas, e dizendo que
+faz parte da cascata noturna. Rótulo mcp-rc só na ME5. Dúvida que o plano não
+resolve: registre no PR e siga a leitura mais simples; se ela bloquear a fase,
+pare com o que está verde e relate no PR. Não mescle nada.
+```
+
+**A manhã** (o dono, o Cowork e um agente de apoio), fase a fase, na ordem:
+
+1. Publicar o branch da fase N no preview (Deploy › `workflow_dispatch` com o branch) e rodar o Cowork nos roteiros que a fase lista (R12 e os que ela toca). Para o MCP, usar o `mcp-snapshot-pr<N>` quando existir (ME0 de saída; as outras depois do primeiro merge-forward).
+2. Achados viram correções no próprio branch da fase, por uma sessão com o modelo da fase; o Cowork reconfere o que mudou.
+3. O dono mescla o PR N no épico e apaga o branch (o GitHub muda a base do PR N+1 para o épico).
+4. **Merge-forward:** o agente de apoio mescla o épico no branch da fase N+1 (`git merge`, nunca rebase), resolve conflitos no branch que recebe, roda os gates, publica; depois mescla N+1 em N+2, e assim até o último branch da cascata. Assim cada PR continua mostrando só a própria fase, e as correções da manhã chegam a todas as fases seguintes. Se um merge quebrar os testes de uma fase seguinte (a correção mudou um comportamento de que ela dependia), a correção é feita naquele branch, dentro do escopo daquela fase.
+5. Repetir com a fase N+1. No fim, a ME5 (quando existir) leva o rótulo `mcp-rc`, e o épico vai para a `main` pelo PR do épico, como sempre.
+
+**O que a cascata troca:** tempo por risco. As fases da noite são construídas sobre fases ainda não testadas; um achado da manhã na ME1 pode exigir retrabalho na ME2 e na ME3 além do merge-forward. Por isso o gerente para na primeira fase que não fecha verde, em vez de empilhar sobre ela, e a manhã segue a ordem.
+
+**Prompt de abertura do gerente** (o dono cola numa sessão nova, no modelo que preferir; o gerente não executa fases, só as cria com o modelo de cada uma):
+
+```
+Gerencie a cascata noturna da etapa Marcações espaciais, notas e setas:
+leia o CLAUDE.md e a seção "Execução em cascata" do PLAN.md e siga o
+protocolo do gerente da madrugada, fase a fase, a partir de [branch de
+partida], parando onde o protocolo manda parar. Não mescle nada.
+```
+
 ### Fases
 
 #### ME0 — Sem herança
