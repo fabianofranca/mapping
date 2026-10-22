@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  layerDotsByMarking,
-  markingVisibility,
-} from '../../src/model';
+import { layerDotsByMarking, markingVisibility } from '../../src/model';
 import { sampleProject } from './fixtures';
 
 // Porta (M1) › Maçaneta (M2) › Fechadura (M3); A1 (M1/L1) e A3 (M2/L1) são próprias.
