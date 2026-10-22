@@ -63,6 +63,7 @@ export type HeaderVariant =
   | 'imageRemove'
   | 'proposal'
   | 'project'
+  | 'canvas'
   | 'change';
 
 export function headerVariant(
@@ -71,6 +72,7 @@ export function headerVariant(
 ): HeaderVariant {
   if (target.level === 'proposal') return 'proposal';
   if (target.level === 'project') return 'project';
+  if (target.level === 'canvas') return 'canvas';
   if (target.level === 'change') return 'change';
   const base = target.level === 'image' ? 'image' : 'marking';
   if (whole?.kind === 'create') return `${base}Create`;

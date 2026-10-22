@@ -68,6 +68,7 @@ export function serialize(p: Project): string {
       width: i.width,
       height: i.height,
       placement: { x: i.placement.x, y: i.placement.y, scale: i.placement.scale },
+      parentId: i.parentId,
       markingColor: i.markingColor,
       locked: i.locked,
       source: i.source && { system: i.source.system, id: i.source.id, url: i.source.url },
@@ -81,6 +82,7 @@ export function serialize(p: Project): string {
       rect: { x: m.rect.x, y: m.rect.y, width: m.rect.width, height: m.rect.height },
       needsReview: m.needsReview,
       locked: m.locked,
+      floating: m.floating,
       source: m.source && { system: m.source.system, id: m.source.id, url: m.source.url },
     })),
     annotations: p.annotations.map((a) => ({

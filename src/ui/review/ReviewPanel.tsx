@@ -110,11 +110,12 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
     if (c?.imageId) return { kind: 'image', id: c.imageId };
     return null;
   };
-  // Proposta e Projeto não têm painel normal; uma mudança sem item (camada,
+  // Proposta, Projeto e Canvas não têm painel normal; uma mudança sem item (camada,
   // especialização, repositório) também não.
   const levelOnly =
     target?.level === 'proposal' ||
     target?.level === 'project' ||
+    target?.level === 'canvas' ||
     (target?.level === 'change' && changeItem(target.id ?? '') === null);
   // A seleção do canvas acompanha o nível (`useReviewSync`) e também pode ser um item sem
   // mudanças, que o nível não segue: ela é quem diz o item.

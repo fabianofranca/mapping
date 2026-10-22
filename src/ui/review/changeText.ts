@@ -147,13 +147,15 @@ function specName(names: ReviewNames, c: Change): string {
   return text(spec?.name) ?? c.entityId;
 }
 
-/** Nome de um nível da revisão (proposta, Projeto, imagem ou item). */
+/** Nome de um nível da revisão (proposta, Projeto, Canvas, imagem ou item). */
 export function targetName(names: ReviewNames, target: ReviewTarget): string {
   switch (target.level) {
     case 'proposal':
       return names.proposal.title;
     case 'project':
       return t('review.level.project');
+    case 'canvas':
+      return t('review.level.canvas');
     case 'image':
       return target.id === null ? '' : imageName(names, target.id);
     case 'item':
@@ -171,7 +173,8 @@ export function targetName(names: ReviewNames, target: ReviewTarget): string {
 const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'marking.name': 'review.field.name',
   'marking.rect': 'review.field.rect',
-  'marking.parentId': 'review.field.parent',
+  'marking.space': 'review.field.space',
+  'marking.floating': 'review.field.floating',
   'marking.containerId': 'review.field.image',
   'marking.locked': 'review.field.locked',
   'marking.source': 'review.field.source',
@@ -325,6 +328,17 @@ function rectParts(value: JsonValue, other: JsonValue | undefined): ValuePart[] 
   return parts;
 }
 
+/** Espaço da marcação: o container (ou Canvas) e o `rect` nele, "Tela Home · X 10 · …". */
+function spaceParts(names: ReviewNames, value: JsonValue): ValuePart[] {
+  if (!isRecord(value)) return [{ text: compact(value) }];
+  const space =
+    typeof value.containerId === 'string'
+      ? imageName(names, value.containerId)
+      : t('review.level.canvas');
+  const rect = rectParts(value.rect ?? null, undefined);
+  return [{ text: space }, ...(rect ? [{ text: ' · ' }, ...rect] : [])];
+}
+
 function placementParts(
   value: JsonValue,
   other: JsonValue | undefined,
@@ -363,7 +377,10 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
     case 'marking': {
       const rect = rectParts(value.rect ?? null, undefined);
       const name = text(value.name) ?? t('marking.unnamed');
-      return rect ? `${name} · ${rect.map((p) => p.text).join('')}` : name;
+      const where = value.containerId === null ? ` · ${t('review.level.canvas')}` : '';
+      return rect
+        ? `${name} · ${rect.map((p) => p.text).join('')}${where}`
+        : name + where;
     }
     case 'image': {
       const name = text(value.name) ?? text(value.file) ?? backgroundName(value) ?? '';
@@ -405,12 +422,10 @@ export function valueParts(
   }
   const field = c.field;
   if (field === 'rect') return rectParts(value, other) ?? [{ text: compact(value) }];
+  if (field === 'space') return spaceParts(names, value);
   if (field === 'placement')
     return placementParts(value, other) ?? [{ text: compact(value) }];
   if (value === null) return [{ text: t('review.value.empty') }];
-  if (c.entity === 'marking' && field === 'parentId' && typeof value === 'string') {
-    return [{ text: markingName(names, value) }];
-  }
   if (field === 'markingId' && typeof value === 'string') {
     return [{ text: markingName(names, value) }];
   }

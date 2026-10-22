@@ -1,3 +1,4 @@
+import { settleHierarchy } from './hierarchySettle';
 import { validateProject, type InvariantCode } from './invariants';
 import { packageDirOf } from './libraryPackage';
 import {
@@ -136,6 +137,14 @@ function withField(
     case 'marking': {
       const m = current as Marking;
       if (field === 'rect') return { ...m, rect: to as unknown as Rect };
+      // Troca de espaço: o container (ou o canvas) e o `rect` nele, juntos.
+      if (field === 'space' && isRecord(to)) {
+        return {
+          ...m,
+          containerId: (to.containerId ?? null) as string | null,
+          rect: to.rect as unknown as Rect,
+        };
+      }
       if (field === 'source')
         return { ...m, source: to as unknown as ExternalSource | null };
       return { ...m, [field]: to };
@@ -197,7 +206,7 @@ function withField(
 }
 
 /**
- * Põe a marcação na posição `index` entre as irmãs (mesma imagem e mesmo pai), preso ao
+ * Põe a marcação na posição `index` entre as irmãs (mesmo espaço e mesmo pai), preso ao
  * intervalo válido; as irmãs ocupam as mesmas casas do array (como `reorderMarking`).
  */
 function placeAmongSiblings(markings: Marking[], id: string, index: number): void {
@@ -223,7 +232,9 @@ export interface PatchResult {
  * Aplica `changes` ao projeto, sem validar o resultado: criações entram no fim das
  * listas, remoções de entidade ausente não fazem nada, e as camadas e as marcações reposicionadas vão
  * para o índice proposto (em ordem crescente). O que não pôde ser aplicado volta em
- * `problems` e fica de fora.
+ * `problems` e fica de fora. Mexer em marcação ou container assenta o pertencimento
+ * (`settleHierarchy`) antes das posições: o pai sempre sai da geometria, nunca da proposta, e
+ * as irmãs são as do espaço e do pai já assentados.
  */
 export function patchProject(p: Project, changes: readonly Change[]): PatchResult {
   const maps: Record<ChangeEntity, Map<string, Entity>> = {
@@ -274,7 +285,13 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     if (layer) layers.splice(Math.min(c.to as number, layers.length), 0, layer);
   }
 
-  const markings = [...maps.marking.values()] as Marking[];
+  let markings = [...maps.marking.values()] as Marking[];
+  let containers = [...maps.image.values()] as ProjectContainer[];
+  if (changes.some((c) => c.entity === 'marking' || c.entity === 'image')) {
+    const settled = settleHierarchy({ ...p, containers, markings });
+    markings = [...settled.markings];
+    containers = [...settled.containers];
+  }
   for (const c of [...markingPositions].sort(
     (a, b) => (a.to as number) - (b.to as number),
   )) {
@@ -290,7 +307,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
         PlatformRepo
       >,
       layers,
-      containers: [...maps.image.values()] as ProjectContainer[],
+      containers,
       markings,
       annotations: [...maps.annotation.values()] as Annotation[],
     },

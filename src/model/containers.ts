@@ -1,6 +1,7 @@
 import { fail } from './errors';
 import {
   MIN_MARKING_SIZE,
+  bottom,
   clamp,
   containsRect,
   imageCanvasRect,
@@ -8,7 +9,7 @@ import {
   rectsOverlap,
   right,
 } from './geometry';
-import { topDown } from './hierarchy';
+import { settleIf, type SettleOptions } from './hierarchySettle';
 import {
   canDeleteImage,
   canEditImagePlacement,
@@ -17,7 +18,7 @@ import {
 } from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
-import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
+import type { Marking, Placement, Project, ProjectContainer } from './types';
 
 /** Lado maior de uma imagem recém-adicionada, em unidades do canvas. */
 export const INITIAL_IMAGE_SIZE = 1000;
@@ -175,7 +176,8 @@ export function uniqueImageFile(
 
 /**
  * Adiciona a imagem, com o lado maior medindo `INITIAL_IMAGE_SIZE` unidades do
- * canvas: perto de `center`, se informado; senão à direita da imagem mais à direita.
+ * canvas: perto de `center`, se informado; senão à direita da imagem mais à direita. Nasce
+ * sem pai (`parentId: null`); o assentar decide se alguma marcação do canvas a contém.
  */
 export function addContainer(
   p: Project,
@@ -184,6 +186,7 @@ export function addContainer(
     /** Onde o centro da imagem deve ficar (vai para o espaço livre mais próximo). */
     readonly center?: { readonly x: number; readonly y: number };
   },
+  options?: SettleOptions,
 ): Project {
   if (p.containers.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
   checkDimensions(args);
@@ -194,6 +197,7 @@ export function addContainer(
   const image: ProjectContainer = {
     id: args.id,
     name: null,
+    parentId: null,
     markingColor: null,
     locked: false,
     source: null,
@@ -205,7 +209,7 @@ export function addContainer(
       ? placementNear(p, args, scale, args.center)
       : placementAtRight(p, scale),
   };
-  return { ...p, containers: [...p.containers, image] };
+  return settleIf({ ...p, containers: [...p.containers, image] }, options);
 }
 
 /**
@@ -224,6 +228,7 @@ export function addBackgroundContainer(
     /** Onde o centro da imagem deve ficar (vai para o espaço livre mais próximo). */
     readonly center?: { readonly x: number; readonly y: number };
   },
+  options?: SettleOptions,
 ): Project {
   if (p.containers.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
   checkBackgroundDimensions(args);
@@ -233,6 +238,7 @@ export function addBackgroundContainer(
   const image: ProjectContainer = {
     id: args.id,
     name,
+    parentId: null,
     markingColor: null,
     locked: false,
     source: null,
@@ -244,7 +250,7 @@ export function addBackgroundContainer(
       ? placementNear(p, args, scale, args.center)
       : placementAtRight(p, scale),
   };
-  return { ...p, containers: [...p.containers, image] };
+  return settleIf({ ...p, containers: [...p.containers, image] }, options);
 }
 
 export interface BackgroundContainerChanges {
@@ -263,6 +269,7 @@ export function setBackgroundContainer(
   p: Project,
   containerId: string,
   changes: BackgroundContainerChanges,
+  options?: SettleOptions,
 ): Project {
   const image = findById(p.containers, containerId);
   if (!isBackgroundContainer(image)) fail('container-has-file');
@@ -300,15 +307,18 @@ export function setBackgroundContainer(
     }
   }
   if (!resized && background === image.background) return p;
-  return {
-    ...p,
-    containers: updateById(p.containers, containerId, (i) => ({
-      ...i,
-      width,
-      height,
-      background,
-    })),
-  };
+  return settleIf(
+    {
+      ...p,
+      containers: updateById(p.containers, containerId, (i) => ({
+        ...i,
+        width,
+        height,
+        background,
+      })),
+    },
+    options,
+  );
 }
 
 /** Nome de exibição da imagem; vazio vira `null` (a app mostra o nome do arquivo). */
@@ -356,20 +366,32 @@ export function setContainerMarkingColor(
   };
 }
 
-/** Define posição e escala (mover ou redimensionar). Falha se sobrepor outra imagem. */
+/**
+ * Define posição e escala (mover ou redimensionar). Falha se sobrepor outra imagem ou se o
+ * container (ou a marcação do canvas que o contém) estiver trancado. Assenta ao fim (salvo
+ * `settle: false`, das prévias de gesto): o container entra ou sai de uma marcação do canvas,
+ * e as marcações do canvas que passam a caber inteiras nele viram dele.
+ */
 export function setContainerPlacement(
   p: Project,
   containerId: string,
   placement: Placement,
+  options?: SettleOptions,
 ): Project {
   checkPlacement(placement);
   requireUnlocked(canEditImagePlacement(p, containerId));
   if (!canPlaceContainer(p, containerId, placement)) fail('image-overlap');
   const copy: Placement = { x: placement.x, y: placement.y, scale: placement.scale };
-  return {
-    ...p,
-    containers: updateById(p.containers, containerId, (i) => ({ ...i, placement: copy })),
-  };
+  return settleIf(
+    {
+      ...p,
+      containers: updateById(p.containers, containerId, (i) => ({
+        ...i,
+        placement: copy,
+      })),
+    },
+    options,
+  );
 }
 
 export function moveContainer(
@@ -377,9 +399,10 @@ export function moveContainer(
   containerId: string,
   x: number,
   y: number,
+  options?: SettleOptions,
 ): Project {
   const { placement } = findById(p.containers, containerId);
-  return setContainerPlacement(p, containerId, { ...placement, x, y });
+  return setContainerPlacement(p, containerId, { ...placement, x, y }, options);
 }
 
 /** Redimensionamento proporcional: nova escala com o canto (`x`, `y`) informado. */
@@ -387,8 +410,9 @@ export function resizeContainer(
   p: Project,
   containerId: string,
   placement: Placement,
+  options?: SettleOptions,
 ): Project {
-  return setContainerPlacement(p, containerId, placement);
+  return setContainerPlacement(p, containerId, placement, options);
 }
 
 export function containerDeletionImpact(
@@ -412,11 +436,18 @@ export function containerDeletionImpact(
   };
 }
 
-/** Exclui a imagem com as marcações (trancadas ou não) e anotações dela. Falha só se a própria imagem estiver trancada. */
-export function removeContainer(p: Project, containerId: string): Project {
+/**
+ * Exclui a imagem com as marcações (trancadas ou não) e anotações dela. Falha só se a própria
+ * imagem estiver trancada. As marcações do canvas ficam e o assentar refaz o pertencimento.
+ */
+export function removeContainer(
+  p: Project,
+  containerId: string,
+  options?: SettleOptions,
+): Project {
   findById(p.containers, containerId);
   requireUnlocked(canDeleteImage(p, containerId));
-  return cascadeRemoveImage(p, containerId);
+  return settleIf(cascadeRemoveImage(p, containerId), options);
 }
 
 /** A exclusão em si, sem a trava: também serve para contar o impacto. */
@@ -471,6 +502,11 @@ function growSpan(
   return [grown, MIN_MARKING_SIZE];
 }
 
+/**
+ * Reescala cada marcação da imagem sozinha (bordas arredondadas, lado mínimo, presa à imagem
+ * nova), sem depender do pai: o pai é derivado da geometria, e o assentar refaz o
+ * pertencimento depois.
+ */
 function rescaleMarkings(
   markings: readonly Marking[],
   image: ProjectContainer,
@@ -481,13 +517,11 @@ function rescaleMarkings(
   const sy = next.height / image.height;
   const bounds = imagePixelRect(next);
   const result = new Map<string, Marking>();
-  // De cima para baixo: cada filha é ajustada dentro do pai já reescalado.
-  for (const m of topDown(markings)) {
-    const container: Rect = (m.parentId && result.get(m.parentId)?.rect) || bounds;
+  for (const m of markings) {
     const [x0, w0] = scaleSpan(m.rect.x, m.rect.width, sx);
     const [y0, h0] = scaleSpan(m.rect.y, m.rect.height, sy);
-    const [x, width] = growSpan(x0, w0, container.x, right(container));
-    const [y, height] = growSpan(y0, h0, container.y, container.y + container.height);
+    const [x, width] = growSpan(x0, w0, bounds.x, right(bounds));
+    const [y, height] = growSpan(y0, h0, bounds.y, bottom(bounds));
     result.set(m.id, {
       ...m,
       rect: { x, y, width, height },
@@ -497,7 +531,7 @@ function rescaleMarkings(
   return result;
 }
 
-export interface ReplaceContainerOptions {
+export interface ReplaceContainerOptions extends SettleOptions {
   /** O usuário confirmou a troca por uma imagem com proporção diferente. */
   readonly confirmAspectChange?: boolean;
 }
@@ -550,6 +584,7 @@ export function replaceContainer(
   const updated: ProjectContainer = {
     id: image.id,
     name: image.name,
+    parentId: image.parentId,
     markingColor: image.markingColor,
     locked: image.locked,
     source: image.source,
@@ -559,9 +594,12 @@ export function replaceContainer(
     height: next.height,
     placement,
   };
-  return {
-    ...p,
-    containers: p.containers.map((i) => (i.id === containerId ? updated : i)),
-    markings: p.markings.map((m) => rescaled.get(m.id) ?? m),
-  };
+  return settleIf(
+    {
+      ...p,
+      containers: p.containers.map((i) => (i.id === containerId ? updated : i)),
+      markings: p.markings.map((m) => rescaled.get(m.id) ?? m),
+    },
+    options,
+  );
 }

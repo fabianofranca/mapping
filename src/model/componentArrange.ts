@@ -15,6 +15,7 @@ import { markingComponent, type ComponentCatalog } from './componentCatalog';
 import { drawingValues } from './componentValues';
 import { fail } from './errors';
 import { MIN_MARKING_SIZE, bottom, clamp, imagePixelRect, right } from './geometry';
+import { settleIf, type SettleOptions } from './hierarchySettle';
 import { isMarkingGeometryLocked } from './locks';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
@@ -115,15 +116,17 @@ function clampRect(inner: Rect, outer: Rect, mode: 'push' | 'shrink'): Rect {
  * se o componente é `hug` num eixo, ajusta o componente com slot ao conteúdo (nunca abaixo do
  * `minSize`; a posição fica). Eixo fixo não muda: se o conteúdo não cabe, avisa. Mover uma
  * filha leva os descendentes dela. No fim, toda marcação fica inteira e dentro do pai e da
- * imagem: o que passaria é preso, com aviso. Devolve o mesmo `Project` quando nada muda;
- * falha com `not-arrangeable` (não é componente com slot `row`/`column` com filhas) e `locked` (algum
- * retângulo que mudaria tem a geometria travada).
+ * imagem: o que passaria é preso, com aviso (uma raiz do canvas não tem limite). Assenta ao fim
+ * (as filhas mudaram de lugar: o pertencimento se refaz). Devolve o mesmo `Project` quando nada
+ * muda; falha com `not-arrangeable` (não é componente com slot `row`/`column` com filhas) e
+ * `locked` (algum retângulo que mudaria tem a geometria travada).
  */
 export function arrangeMarking(
   p: Project,
   catalog: ComponentCatalog,
   markingId: string,
   measure: TextMeasurer,
+  options?: SettleOptions,
 ): ArrangeResult {
   if (containerOf(p, catalog, markingId) === null) fail('not-arrangeable', markingId);
   const index = projectIndex(p);
@@ -286,27 +289,33 @@ export function arrangeMarking(
     if (after.every((r, i) => sameRect(r, before[i] as Rect))) break;
   }
 
-  // Invariantes: inteiros e dentro do pai (ou da imagem). A raiz encolhe, as demais são
-  // empurradas para dentro e só encolhem se forem maiores que o pai.
+  // Invariantes: inteiros e dentro do pai (ou do container). A raiz encolhe, as demais são
+  // empurradas para dentro e só encolhem se forem maiores que o pai. Sem pai, o limite é o
+  // container (marcação de container) ou nenhum (marcação do canvas).
   for (const id of topDownIds) {
     const marking = index.markings.get(id) as Marking;
     const rect = rects.get(id) as Rect;
     const isRoot = id === markingId;
-    const outer =
-      marking.parentId === null
-        ? imagePixelRect(
-            index.containers.get(marking.containerId) ?? { width: 0, height: 0 },
-          )
-        : isRoot
-          ? (index.markings.get(marking.parentId) as Marking).rect
-          : (rects.get(marking.parentId) as Rect);
+    let outer: Rect | null;
+    if (marking.parentId !== null) {
+      outer = isRoot
+        ? (index.markings.get(marking.parentId) as Marking).rect
+        : (rects.get(marking.parentId) as Rect);
+    } else if (marking.containerId === null) {
+      outer = null;
+    } else {
+      outer = imagePixelRect(
+        index.containers.get(marking.containerId) ?? { width: 0, height: 0 },
+      );
+    }
+    if (outer === null) continue;
     const fixed = clampRect(rect, outer, isRoot ? 'shrink' : 'push');
     if (sameRect(rect, fixed)) continue;
     rects.set(id, fixed);
     translate(id, fixed.x - rect.x, fixed.y - rect.y);
     const where =
       marking.parentId === null
-        ? (index.containers.get(marking.containerId)?.name ?? marking.containerId)
+        ? (index.containers.get(marking.containerId ?? '')?.name ?? marking.containerId)
         : labelOf(marking.parentId);
     warnings.add(`${labelOf(id)}: não cabe em ${where}`);
   }
@@ -318,12 +327,15 @@ export function arrangeMarking(
   if (changed.some((id) => isMarkingGeometryLocked(p, id))) fail('locked');
   const next = new Set(changed);
   return {
-    project: {
-      ...p,
-      markings: p.markings.map((m) =>
-        next.has(m.id) ? { ...m, rect: rects.get(m.id) as Rect } : m,
-      ),
-    },
+    project: settleIf(
+      {
+        ...p,
+        markings: p.markings.map((m) =>
+          next.has(m.id) ? { ...m, rect: rects.get(m.id) as Rect } : m,
+        ),
+      },
+      options,
+    ),
     warnings: [...warnings],
   };
 }

@@ -127,8 +127,8 @@ export const enUS: Dictionary = {
   'marking.error.rect-too-small': 'Each side must be at least {min} px.',
   'marking.error.rect-out-of-image': 'The marking must stay inside the image.',
   'marking.error.rect-outside-parent': 'The marking must stay inside its parent marking.',
-  'marking.error.rect-excludes-children': 'The marking must contain its inner markings.',
   'marking.error.invalid-parent': 'That marking cannot be the parent.',
+  'marking.error.invalid-space': 'Only a canvas marking can be floating.',
   'marking.error.not-arrangeable':
     'Only a row or column container that has markings inside can be arranged.',
   'marking.error.generic': 'Could not change the marking.',
@@ -350,6 +350,12 @@ export const enUS: Dictionary = {
   'invariant.parent-other-image': 'parent in another image',
   'invariant.rect-outside-parent': "outside the parent's rectangle",
   'invariant.hierarchy-cycle': 'cycle in the hierarchy',
+  'invariant.container-parent-missing': "container's parent marking does not exist",
+  'invariant.container-parent-not-canvas': "container's parent is not a canvas marking",
+  'invariant.container-outside-parent': 'container outside its parent marking',
+  'invariant.floating-in-container':
+    'floating marking inside a container or another marking',
+  'invariant.parent-floating': 'parent is a floating marking',
   'invariant.missing-parent-annotation': 'owner annotation does not exist',
   'invariant.annotation-parent-other-marking': 'owner in another marking',
   'invariant.annotation-parent-same-layer': 'owner in the same layer',

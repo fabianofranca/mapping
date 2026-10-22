@@ -17,7 +17,7 @@ import {
   bottom,
 } from './geometry';
 import { childrenOf } from './hierarchy';
-import { createMarking, setMarkingParent } from './markings';
+import { createMarking } from './markings';
 import { findById } from './project';
 import { projectIndex } from './projectIndex';
 import type { SpecAnnotationType } from './spec';
@@ -70,14 +70,22 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
 export interface NewComponentArgs {
   readonly markingId: string;
   readonly annotationId: string;
-  readonly containerId: string;
-  /** Componente com slot que adota a instância (dentro do slot); `null` = nível da imagem. */
+  /** Container da instância (posição em pixels dele); `null` = o canvas (unidades do canvas). */
+  readonly containerId: string | null;
+  /**
+   * Componente com slot **alvo**, onde a instância é posicionada (dentro do slot); `null` = fora
+   * de qualquer slot. É só o destino do posicionamento: o pai gravado é sempre o que o assentar
+   * decide pela geometria (a menor marcação do espaço que contém a instância), nunca o pedido.
+   */
   readonly parentId: string | null;
   readonly specId: string;
   readonly typeId: string;
-  /** Centro desejado (pixels da imagem) sem componente com slot; ausente = centro da imagem. */
+  /**
+   * Centro desejado sem componente com slot, no espaço da instância: pixels do container
+   * (ausente = centro dele) ou unidades do canvas (ausente = `{ x: 0, y: 0 }`).
+   */
   readonly center?: { readonly x: number; readonly y: number };
-  /** Retângulo explícito (MCP); ausente = `componentPlacement`. */
+  /** Retângulo explícito (MCP), no espaço da instância; ausente = `componentPlacement`. */
   readonly rect?: Rect;
   /** Valores iniciais; ausente = `preview` do componente sobre os `default` dos campos. */
   readonly values?: TypedValues;
@@ -154,7 +162,9 @@ function slotArea(
  * Retângulo de uma instância nova. Tamanho = `size` do componente, preso à área disponível
  * (a imagem ou a caixa do slot do componente com slot) e nunca abaixo do `minSize`; se nem o mínimo
  * cabe, `rect-out-of-image` (nível da imagem) ou `rect-outside-parent` (componente com slot). Sem
- * componente com slot: centrada em `center` (padrão, o centro da imagem) e presa dentro da imagem. Com
+ * componente com slot: centrada em `center` (padrão, o centro da imagem) e presa dentro da imagem.
+ * No canvas (`containerId` nulo, sem componente com slot alvo): o `size` do componente em unidades do
+ * canvas, centrado em `center` (padrão `{ x: 0, y: 0 }`), sem limite. Com
  * componente com slot: dentro da caixa do slot, logo depois da última filha no eixo do layout (linha:
  * à direita; coluna: abaixo; com o `gap` e o `padding` do slot), ou no início do conteúdo do
  * slot se o layout é `none` ou não há filhas; se passar do slot, presa dentro do componente com slot.
@@ -169,13 +179,15 @@ export function componentPlacement(
   measure: TextMeasurer,
 ): Rect {
   const { component } = resolveType(p, catalog, args.specId, args.typeId);
-  const image = findById(p.containers, args.containerId);
+  const image =
+    args.containerId === null ? null : findById(p.containers, args.containerId);
   const parent = args.parentId === null ? null : findById(p.markings, args.parentId);
-  if (parent !== null && parent.containerId !== image.id)
+  if (parent !== null && parent.containerId !== args.containerId)
     fail('invalid-parent', parent.id);
 
   const slot = parent === null ? null : slotArea(p, catalog, parent.id, measure);
-  const area = slot?.area ?? imagePixelRect(image);
+  // Sem imagem (canvas) e sem slot, não há limite.
+  const area: Rect | null = slot?.area ?? (image === null ? null : imagePixelRect(image));
 
   const min = component.minSize;
   const fit = (size: number, minimum: number, available: number): number => {
@@ -188,26 +200,32 @@ export function componentPlacement(
       fail(parent === null ? 'rect-out-of-image' : 'rect-outside-parent');
     return value;
   };
-  const width = fit(component.size.width, min?.width ?? 0, area.width);
-  const height = fit(component.size.height, min?.height ?? 0, area.height);
+  const width = fit(component.size.width, min?.width ?? 0, area?.width ?? Infinity);
+  const height = fit(component.size.height, min?.height ?? 0, area?.height ?? Infinity);
 
   if (parent === null || slot === null) {
-    const center = args.center ?? { x: image.width / 2, y: image.height / 2 };
+    const center =
+      args.center ??
+      (image === null ? { x: 0, y: 0 } : { x: image.width / 2, y: image.height / 2 });
+    const x = Math.round(center.x - width / 2);
+    const y = Math.round(center.y - height / 2);
+    if (area === null) return { x, y, width, height };
     return {
-      x: clamp(Math.round(center.x - width / 2), area.x, right(area) - width),
-      y: clamp(Math.round(center.y - height / 2), area.y, bottom(area) - height),
+      x: clamp(x, area.x, right(area) - width),
+      y: clamp(y, area.y, bottom(area) - height),
       width,
       height,
     };
   }
 
-  let x = area.x + slot.padding.left;
-  let y = area.y + slot.padding.top;
+  const slotBox = slot.area;
+  let x = slotBox.x + slot.padding.left;
+  let y = slotBox.y + slot.padding.top;
   const last = childrenOf(p, parent.id).at(-1);
   if (last !== undefined && slot.flow === 'row') x = right(last.rect) + slot.gap;
   else if (last !== undefined && slot.flow === 'column') y = bottom(last.rect) + slot.gap;
   const placed: Rect = { x: Math.round(x), y: Math.round(y), width, height };
-  if (containsRect(area, placed)) return placed;
+  if (containsRect(slotBox, placed)) return placed;
   const outer = parent.rect;
   return {
     x: clamp(placed.x, outer.x, right(outer) - width),
@@ -219,8 +237,9 @@ export function componentPlacement(
 
 /**
  * Cria a marcação e a anotação tipada que a desenha, numa operação só (o store faz uma
- * entrada de desfazer). O pai é o componente com slot pedido (`null` = nível da imagem), nunca o "mais
- * interno que contém". A anotação vai na camada do projeto que veio da camada da
+ * entrada de desfazer). `parentId` é o componente com slot alvo onde a instância é posicionada;
+ * o pai gravado é o que o assentar decide pela geometria (`createMarking` assenta), nunca o
+ * pedido. A anotação vai na camada do projeto que veio da camada da
  * especialização do tipo, com os valores de `args.values` sobre os `default`, ou, sem eles,
  * o `preview` do componente (campos `table` e `ref` ficam no `default`). O tamanho mínimo do
  * componente vale desde a criação.
@@ -264,7 +283,6 @@ export function addComponentMarking(
     },
     component.minSize ? { minSize: component.minSize } : undefined,
   );
-  next = setMarkingParent(next, args.markingId, args.parentId);
   next = addTypedAnnotation(next, {
     id: args.annotationId,
     markingId: args.markingId,

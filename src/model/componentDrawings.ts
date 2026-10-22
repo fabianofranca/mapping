@@ -19,9 +19,10 @@ import type { Project, Rect } from './types';
 
 export interface ComponentDrawing {
   readonly markingId: string;
-  readonly containerId: string;
+  /** Container da marcação; `null` = marcação do canvas (retângulo em unidades do canvas). */
+  readonly containerId: string | null;
   readonly annotationId: string;
-  /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem). */
+  /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem ou unidades do canvas). */
   readonly root: FrameNode;
   readonly warnings: readonly string[];
   /** Não cabe: aviso "conteúdo maior que a caixa" do motor ou filha fora da caixa do slot. */
@@ -47,7 +48,7 @@ export type DrawingCache = (
 
 interface Entry {
   readonly markingId: string;
-  readonly containerId: string;
+  readonly containerId: string | null;
   readonly annotationId: string;
   readonly rect: Rect;
   readonly component: ComponentFile;
@@ -90,7 +91,7 @@ function childOutsideSlot(root: FrameNode, childRects: readonly Rect[]): boolean
 function draw(
   mc: MarkingComponent,
   markingId: string,
-  containerId: string,
+  containerId: string | null,
   rect: Rect,
   values: FieldValues,
   valueWarnings: readonly string[],
@@ -106,7 +107,7 @@ function draw(
     (childRects.length > 0 && childOutsideSlot(root, childRects));
   return {
     markingId,
-    containerId: containerId,
+    containerId,
     annotationId: mc.annotation.id,
     root,
     warnings: [...warnings, ...valueWarnings],

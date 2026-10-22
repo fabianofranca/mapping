@@ -126,9 +126,8 @@ export const ptBR = {
   'marking.error.rect-too-small': 'Cada lado precisa ter pelo menos {min} px.',
   'marking.error.rect-out-of-image': 'A marcação precisa ficar dentro da imagem.',
   'marking.error.rect-outside-parent': 'A marcação precisa ficar dentro da marcação pai.',
-  'marking.error.rect-excludes-children':
-    'A marcação precisa envolver as marcações internas.',
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
+  'marking.error.invalid-space': 'Só uma marcação do canvas pode ser flutuante.',
   'marking.error.not-arrangeable':
     'Só é possível arrumar um container em linha ou coluna que tenha marcações dentro.',
   'marking.error.generic': 'Não foi possível alterar a marcação.',
@@ -351,6 +350,13 @@ export const ptBR = {
   'invariant.parent-other-image': 'pai em outra imagem',
   'invariant.rect-outside-parent': 'fora do retângulo do pai',
   'invariant.hierarchy-cycle': 'ciclo na hierarquia',
+  'invariant.container-parent-missing': 'marcação pai do container inexistente',
+  'invariant.container-parent-not-canvas':
+    'pai do container não é uma marcação do canvas',
+  'invariant.container-outside-parent': 'container fora da marcação pai',
+  'invariant.floating-in-container':
+    'marcação flutuante dentro de um container ou de outra marcação',
+  'invariant.parent-floating': 'pai é uma marcação flutuante',
   'invariant.missing-parent-annotation': 'anotação dona inexistente',
   'invariant.annotation-parent-other-marking': 'dona em outra marcação',
   'invariant.annotation-parent-same-layer': 'dona na mesma camada',

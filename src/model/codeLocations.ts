@@ -324,7 +324,7 @@ export function codePathMatches(path: string, query: string): boolean {
 
 /** Onde está uma anotação do tipo encontrado (para montar a referência `mapping://`). */
 export interface CodeAnnotationLocation {
-  readonly containerId: string;
+  readonly containerId: string | null;
   readonly markingId: string;
   readonly annotationId: string;
 }

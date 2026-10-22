@@ -260,8 +260,10 @@ describe('arrangeMarking: hug', () => {
       name: 'Pai',
     });
     p = add(p, 'C', 'rowhug', box(100, 100, 100, 60), 'Outer', { name: 'Linha' });
+    // Retângulos diferentes: o pai é derivado da geometria (iguais, a segunda seria filha da primeira).
     p = add(p, 'T1', 'text', box(100, 100, 100, 40), 'C');
-    p = add(p, 'T2', 'text', box(100, 100, 100, 40), 'C');
+    p = add(p, 'T2', 'text', box(100, 110, 100, 40), 'C');
+    expect(marking(p, 'T2').parentId).toBe('C');
     const { project, warnings } = arrange(p, 'C');
     expect(rectOf(project, 'C')).toEqual(box(100, 100, 150, 40));
     expect(warnings).toContain('Linha: não cabe em Pai');
@@ -425,6 +427,7 @@ describe('arrangeMarking: Material 3', () => {
           width: 800,
           height: 1000,
           placement: { x: 0, y: 0, scale: 1 },
+          parentId: null,
           markingColor: null,
           locked: false,
           source: null,

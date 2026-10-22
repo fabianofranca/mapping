@@ -10,6 +10,7 @@ import { screenFromSource } from './components/origin';
 import { parseComponentText } from './components/parseComponent';
 import { type FrameNode, baseNode, translate } from './components/scene';
 import { renderOrder } from './components/screen';
+import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
 import { defaultValues, nodeProbeLibrary, withoutNodePrefix } from './libraryDrawing';
 import { packageSpecNameOf } from './libraryPackage';
@@ -300,11 +301,6 @@ export function findEntry(catalog: Catalog, typeId: string): CatalogEntry | unde
 // ---------------------------------------------------------------------------------------
 // Desenho
 // ---------------------------------------------------------------------------------------
-
-export interface Size {
-  readonly width: number;
-  readonly height: number;
-}
 
 export interface CatalogDrawing {
   readonly root: FrameNode;

@@ -92,6 +92,7 @@
         "y": 0,
         "scale": 0.5
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -112,6 +113,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -127,6 +129,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -142,6 +145,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -157,6 +161,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -172,6 +177,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -187,6 +193,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -202,6 +209,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     }
   ],

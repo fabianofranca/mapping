@@ -17,7 +17,7 @@ import type { Project } from './types';
 
 /**
  * Tipo da mudança, para o selo e o filtro (a forma diz o tipo; a cor diz a decisão).
- * `moved`: geometria (`rect` da marcação, `placement` da imagem). `replaced`: troca do
+ * `moved`: geometria (`rect` ou troca de espaço da marcação, `placement` da imagem). `replaced`: troca do
  * arquivo da imagem. `changed`: qualquer outro campo.
  */
 export type ChangeType = 'created' | 'removed' | 'moved' | 'changed' | 'replaced';
@@ -35,7 +35,7 @@ export function changeType(c: Change): ChangeType {
   if (c.kind === 'remove') return 'removed';
   if (c.entity === 'image' && c.field === 'file') return 'replaced';
   if (
-    (c.entity === 'marking' && c.field === 'rect') ||
+    (c.entity === 'marking' && (c.field === 'rect' || c.field === 'space')) ||
     (c.entity === 'image' && c.field === 'placement')
   ) {
     return 'moved';
@@ -61,8 +61,8 @@ export function dominantChangeType(types: Iterable<ChangeType>): ChangeType | nu
  * ele agrupa (`ReviewTree.changeIdsOf`). Item e imagem: o tipo da própria entidade (a
  * marcação, a imagem), na ordem criada > removida > trocada > alterada; "movida" só se a
  * posição é a única coisa que muda. Sem mudança na própria entidade, o que muda dentro
- * (uma anotação criada, uma marcação da imagem) faz o nível "alterado". Proposta e
- * Projeto: o dominante de tudo. `null` sem mudanças.
+ * (uma anotação criada, uma marcação da imagem) faz o nível "alterado". Proposta,
+ * Projeto e Canvas: o dominante de tudo. `null` sem mudanças.
  */
 export function levelType(
   level: ReviewLevel,
@@ -84,7 +84,18 @@ export function reviewKey(target: ReviewTarget): string {
   return `${target.level}:${target.id ?? ''}`;
 }
 
-/** Onde a mudança aparece na revisão: o item, a imagem ou o grupo Projeto. */
+/**
+ * A mudança é de uma marcação do canvas (ou de uma anotação dela)? `imageId` nulo com
+ * `markingId`; sem os dois é o grupo Projeto.
+ */
+export function isCanvasChange(c: Change): boolean {
+  return c.imageId === null && c.markingId !== null;
+}
+
+/**
+ * Onde a mudança aparece na revisão: o item (marcação, também a do canvas, que fica no grupo
+ * Canvas), a imagem ou o grupo Projeto.
+ */
 export function changeTarget(c: Change): ReviewTarget {
   if (c.markingId !== null) return { level: 'item', id: c.markingId };
   if (c.imageId !== null) return { level: 'image', id: c.imageId };
@@ -120,11 +131,18 @@ export type DecisionFilter = 'all' | 'undecided' | 'accepted' | 'rejected';
 /** Filtros da revisão. Vazio/`null`/`'all'`/`false` = sem filtro naquele critério. */
 export interface ReviewFilters {
   readonly types: readonly ChangeType[];
+  /** Id de um container, `CANVAS_FILTER` (o grupo Canvas) ou `null` (todos). */
   readonly imageId: string | null;
   readonly layerId: string | null;
   readonly decision: DecisionFilter;
   readonly onlyConflicts: boolean;
 }
+
+/**
+ * Valor de `ReviewFilters.imageId` que filtra o grupo Canvas (as marcações do canvas) em vez
+ * de um container. Não é um id de imagem.
+ */
+export const CANVAS_FILTER = '@canvas';
 
 export const NO_FILTERS: ReviewFilters = {
   types: [],
@@ -158,7 +176,9 @@ export function filterChanges(
   const types = new Set(filters.types);
   return p.changes.filter((c) => {
     if (types.size > 0 && !types.has(changeType(c))) return false;
-    if (filters.imageId !== null && c.imageId !== filters.imageId) return false;
+    if (filters.imageId === CANVAS_FILTER) {
+      if (!isCanvasChange(c)) return false;
+    } else if (filters.imageId !== null && c.imageId !== filters.imageId) return false;
     if (filters.layerId !== null && changeLayerId(c, project) !== filters.layerId) {
       return false;
     }
