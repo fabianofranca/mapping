@@ -28,7 +28,6 @@ import {
   replaceContainer,
   reviewTree,
   serialize,
-  setAnnotationInherit,
   setAnnotationParent,
   setFieldValue,
   setImageLocked,
@@ -149,11 +148,10 @@ const scenarios: [string, () => [Project, Project]][] = [
   ],
   ['imagem removida', () => [sampleProject(), removeContainer(sampleProject(), 'I1')]],
   [
-    'anotações: nome, herança, dona, pares e remoção com as vinculadas',
+    'anotações: nome, dona, pares e remoção com as vinculadas',
     () => {
       const base = setAnnotationParent(sampleProject(), 'A2', 'A1');
       let after = renameAnnotation(base, 'A3', 'Trinco');
-      after = setAnnotationInherit(after, 'A3', true);
       after = setAnnotationParent(after, 'A2', null);
       after = addEntry(after, 'A2', { id: 'E7', key: 'lado', value: 'esquerdo' });
       after = updateEntry(after, 'A2', 'E3', { key: 'tipo', value: 'risco' });

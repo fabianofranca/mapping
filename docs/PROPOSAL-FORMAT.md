@@ -1,4 +1,4 @@
-# Formato da proposta de alteração (`formatVersion` 2)
+# Formato da proposta de alteração (`formatVersion` 3)
 
 Toda alteração feita por um agente chega como uma **proposta**: o usuário revisa as diferenças, aceita ou rejeita em qualquer nível e deixa notas; só o que foi aceito é aplicado ao `mapping.json`. Este documento descreve o arquivo da proposta e as regras da revisão. O formato do projeto está em [`FORMAT.md`](FORMAT.md).
 
@@ -35,9 +35,11 @@ meu-projeto/
 
 ## Versões do formato
 
-- **`formatVersion` 2** (container): é a versão que a app e o servidor MCP gravam. A forma do arquivo é a mesma da 1; muda o vocabulário das `operations` enviadas pelo agente (guardadas só para referência). As do lote do servidor MCP 0.8.0 são `add_container` (com arquivo: `file` ou `base64`; ou só com fundo: `width`, `height`, `background`; mais `name?`, `source?`, `center?`, `as?`), `update_container`, `replace_container` e `delete_container` (argumento `container`), e `create_marking` com `container`.
+- **`formatVersion` 3** (sem herança, schema v13): é a versão que a app e o servidor MCP gravam. A forma do arquivo é a da 2; `inherit` saiu dos campos de `annotation` na mudança e das anotações inteiras de criação e remoção.
+- **Proposta antiga com `inherit`.** Uma proposta de `formatVersion` 1 ou 2 com mudança do campo `inherit` é lida com essa mudança **descartada**: a decisão e a aplicação dela vão junto, e uma nota presa a ela passa ao nível da proposta. O campo `inherit` das anotações inteiras de criação e remoção também é removido. A leitura devolve um aviso (`warnings`; no MCP, `proposal_review` mostra `warnings` com `code: 'proposal-field-ignored'`; na app, o aviso vai ao Diagnóstico).
+- **`formatVersion` 2** (container): era a versão gravada até o schema v12. A forma do arquivo é a mesma da 1; muda o vocabulário das `operations` enviadas pelo agente (guardadas só para referência). As do lote do servidor MCP 0.8.0 são `add_container` (com arquivo: `file` ou `base64`; ou só com fundo: `width`, `height`, `background`; mais `name?`, `source?`, `center?`, `as?`), `update_container`, `replace_container` e `delete_container` (argumento `container`), e `create_marking` com `container`.
 - **`formatVersion` 1**: continua **lida** e aplicada. Uma proposta antiga com `add_image`, `add_blank_image`, `update_image`, `replace_image` ou `delete_image` nas `operations` vale como está (as `operations` são só referência; a revisão e a aplicação usam as `changes`).
-- **As operações antigas são aceitas com aviso.** No lote (`plan_changes`/`propose_changes`) `add_image`, `add_blank_image`, `update_image`, `replace_image`, `delete_image` e o argumento `image` de `create_marking` têm o mesmo efeito das novas, mas o resultado traz em `warnings` um aviso `deprecated-op` ("add_blank_image é antiga: use add_container", e assim por diante). As propostas novas saem com `formatVersion` 2 e nascem das operações novas. A aceitação das antigas dura uma versão do servidor.
+- **As operações antigas são aceitas com aviso.** No lote (`plan_changes`/`propose_changes`) `add_image`, `add_blank_image`, `update_image`, `replace_image`, `delete_image` e o argumento `image` de `create_marking` têm o mesmo efeito das novas, mas o resultado traz em `warnings` um aviso `deprecated-op` ("add_blank_image é antiga: use add_container", e assim por diante). As propostas novas saem com `formatVersion` 3 e nascem das operações novas. A aceitação das antigas dura uma versão do servidor.
 - **Os nomes gravados não mudaram com o schema v12.** O `proposal.json` continua chamando o container de `image` nos nomes que já existiam: `entity: "image"`, o cabeçalho `imageId` da mudança (o container em que ela aparece), o nível `image` do `reviewTree` e dos `target` das notas, e os campos `file`/`background`/`size`/`placement`/`markingColor` do container. A única troca está nos valores da **marcação**: no `mapping.json` v12 ela aponta para o container por `containerId` (era `imageId`), e então a criação e a remoção de marcação levam `containerId` no valor inteiro, e a alteração do campo é `field: "containerId"`. A leitura aceita as propostas gravadas antes (formato 1 ou 2) com `imageId` dentro do valor da marcação e as passa a `containerId` sozinha.
 
 ## Exemplo
@@ -45,7 +47,7 @@ meu-projeto/
 ```json
 {
   "format": "mapping-proposal",
-  "formatVersion": 2,
+  "formatVersion": 3,
   "id": "8c1f2d9e",
   "title": "Checkout a partir do Figma",
   "description": "Telas da página Checkout do arquivo Loja v3.",
@@ -90,7 +92,7 @@ Todos são obrigatórios (o "vazio" é `null`).
 | Campo           | Tipo             | Descrição                                                                                              |
 | --------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
 | `format`        | string           | Sempre `"mapping-proposal"`.                                                                           |
-| `formatVersion` | `1` ou `2`       | Versão do formato. A 2 é a gravada hoje; a 1 continua lida (veja "Versões do formato").                |
+| `formatVersion` | `1`, `2` ou `3`  | Versão do formato. A 3 é a gravada hoje; a 1 e a 2 continuam lidas (veja "Versões do formato").        |
 | `id`            | string           | Id da proposta (nome da pasta em `proposals/`).                                                        |
 | `title`         | string           | Título (não vazio).                                                                                    |
 | `description`   | string ou `null` | Descrição.                                                                                             |
@@ -131,7 +133,7 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `image` (container) | `name`, `file` (a troca: `{ file, width, height }`), `background` (cor `#RRGGBB`) e `size` (`{ width, height }`) só no container sem arquivo, `placement`, `markingColor`, `locked`, `source` |
 | `marking`           | `name`, `rect`, `parentId`, `containerId`, `locked`, `source`, `position` (índice entre as irmãs)                                                                                             |
-| `annotation`        | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type`      |
+| `annotation`        | `name`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type`                 |
 | `layer`             | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                         |
 | `specialization`    | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                                    |
 | `platformRepo`      | — (`field: null`; `from`/`to` = `{ localPath }`, a sobreposição local do clone; a leitura ignora o `urlTemplate` de propostas antigas)                                                        |

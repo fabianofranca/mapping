@@ -63,7 +63,7 @@ async function showLevel(
   act(() => h.review.select(target));
   renderInEditor(
     h,
-    <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />,
+    <ReviewPanel onGoToAnnotation={() => {}} />,
   );
   return h;
 }
@@ -357,7 +357,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     renderInEditor(
       h,
-      <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />,
+      <ReviewPanel onGoToAnnotation={() => {}} />,
     );
     // A seção Marcação (com a mudança) abriu; as Anotações (sem mudanças) ficaram.
     expect(h.ui.collapsed.value.has('marking')).toBe(false);
@@ -382,7 +382,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     renderInEditor(
       h,
-      <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />,
+      <ReviewPanel onGoToAnnotation={() => {}} />,
     );
     expect(screen.getByText('1 mudança(s) em camada escondida: Vidros')).toBeTruthy();
     expect(document.querySelector('[data-layer="L2"]')).toBeNull();
@@ -479,7 +479,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     act(() => h.review.select({ level: 'image', id: 'I3' }));
     renderInEditor(
       h,
-      <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />,
+      <ReviewPanel onGoToAnnotation={() => {}} />,
     );
     expect(h.review.derived.levels.value.get('image:I3')?.state).toBe('partial');
     // O painel da imagem nova, com o arquivo marcado como parte da criação.
@@ -511,7 +511,6 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
         image={image}
         readOnly={false}
         onDelete={() => {}}
-        onSelectMarking={() => {}}
         onGoToAnnotation={() => {}}
       />,
     );

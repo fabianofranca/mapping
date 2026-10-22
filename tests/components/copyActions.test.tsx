@@ -116,7 +116,6 @@ describe('Detalhes', () => {
           image={image}
           readOnly={false}
           onDelete={() => undefined}
-          onSelectMarking={() => undefined}
           onGoToAnnotation={() => undefined}
         />
       );

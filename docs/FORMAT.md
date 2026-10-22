@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v12)
+# Formato do `mapping.json` (schema v13)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -72,7 +72,6 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "markingId": "M1",
       "layerId": "L1",
       "name": "Button",
-      "inherit": false,
       "parentAnnotationId": null,
       "type": null,
       "values": null,
@@ -117,7 +116,7 @@ ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo do conta
 `needsReview` (booleano, só para a interface); `locked` (booleano, v5: ver abaixo); `source` (`null`
 ou origem, v8: ver abaixo).
 
-**`annotations[]`**: `id`; `markingId`; `layerId`; `name` (`string` ou `null`); `inherit`;
+**`annotations[]`**: `id`; `markingId`; `layerId`; `name` (`string` ou `null`);
 `parentAnnotationId`; `type`, `values` e `entries` (ver v4). Livre: `type` e `values` são `null`.
 Tipada: os dois preenchidos e `entries` vazio.
 
@@ -182,19 +181,20 @@ continua recusando o arquivo (ler nunca grava), com a mesma lista de problemas n
 Datas (`createdAt`, `updatedAt`) com fuso (`2026-10-01T09:30:00-03:00`, de outra ferramenta) são aceitas
 e gravadas em UTC (`2026-10-01T12:30:00.000Z`).
 
-## Campos da v2 e v3
+## Campos da v2 e v3 (registro histórico)
+
+O campo `annotations[].inherit` (v2) saiu na v13 (ver "Campos da v13"); abaixo, o que a v2 e a v3 introduziram.
 
 - `containers[].name`: rótulo opcional (`null` = use o nome do arquivo). Mudá-lo não renomeia o arquivo.
 - `containers[].markingColor` (v3): cor `#RRGGBB` da borda das marcações da imagem, ou `null` (cor neutra do tema). Só afeta a interface, não o recorte.
-- `annotations[].inherit`: se `true`, a anotação também vale para **todos os descendentes** da marcação.
+- `annotations[].inherit` (v2, **removido na v13**): marcava a anotação como válida para os descendentes da marcação.
 - `annotations[].parentAnnotationId`: anotação "dona" (ou `null`).
   - a dona está na **mesma marcação** e em **outra camada**;
   - não há ciclos (a cadeia pode atravessar várias camadas).
 - `placement` e `needsReview` só importam para a interface; `placement` não afeta o recorte.
 
-A herança **não é materializada** no JSON: é sempre calculada a partir de `parentId` e `inherit`.
-Herança e vínculo são independentes: se a dona tem `inherit: true`, suas vinculadas só descem
-para as marcações filhas se também tiverem `inherit: true`.
+Uma anotação vale só para a própria marcação; o contexto de uma marcação filha vem do caminho (`parentId`),
+não de anotações herdadas.
 
 ## Campos da v4 (especializações)
 
@@ -237,7 +237,6 @@ Anotação tipada (Classe da especialização `modelo-dados`):
   "markingId": "M-form",
   "layerId": "L3",
   "name": null,
-  "inherit": false,
   "parentAnnotationId": null,
   "type": { "specId": "modelo-dados", "typeId": "classe" },
   "values": {
@@ -380,18 +379,62 @@ novo de uma ferramenta de design) e proponha só o que mudou.
   devolve todas as imagens e marcações com a mesma origem, imagens primeiro.
 - Quem atribui a origem é quem importa (um agente, por uma proposta); a app a mostra e a preserva.
 
+Em código TypeScript, `src/model/` oferece `resolveRef`, `refLabel`, `findRefTargets` (alvos aceitos
+por um campo) e `getBacklinks` (quem aponta para uma anotação).
+
+### Pendências
+
+O estado "incompleta" **não é gravado**: é calculado a partir do projeto e das cópias em `specs/`
+(`getAnnotationIssues` em `src/model/`). Motivos: campo obrigatório vazio (inclusive coluna
+obrigatória numa linha), valor incompatível com o tipo, opção inexistente, chave fora do tipo,
+tipo inexistente, anotação fora da camada do seu tipo, dono ausente (`requiresOwner`), dono de
+tipo não permitido (`allowedChildren`), referência quebrada e alvo não aceito. Nenhum deles impede a
+abertura do projeto.
+
+## Campos da v7 (repositórios por plataforma)
+
+> **Histórico:** na v11 o `urlTemplate` saiu do projeto: o endereço do repositório passou para a
+> especialização e o projeto guarda só o `localPath`. Ver "Campos da v11".
+
+A v7 ligou o mapeamento ao código das plataformas que as especializações declaram
+([`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas e code"): a especialização diz como se cria uma
+instância de cada tipo (`code`, com o `symbol` e o arquivo que o define, `path`) e o projeto guardava
+**onde ficava o repositório** de cada plataforma (`platformRepos`), com um `urlTemplate` e um `localPath`.
+Até a v8 havia também o campo `codeRef` (o lugar da solução em que a instância foi escrita), que saiu
+na v9 (ver "Campos da v9").
+
+## Campos da v8 (origem externa)
+
+`containers[].source` e `markings[].source` guardam a **identidade do item num sistema externo**, para que
+uma reexportação reconheça os mesmos elementos (ex: o mesmo container ou o mesmo componente exportados de
+novo de uma ferramenta de design) e proponha só o que mudou.
+
+```json
+"source": { "system": "figma", "id": "12:34", "url": "https://www.figma.com/design/abc?node-id=12-34" }
+```
+
+| Campo    | Tipo             | Descrição                                                              |
+| -------- | ---------------- | ---------------------------------------------------------------------- |
+| `system` | string           | Sistema de origem (texto livre, não vazio). O núcleo não o interpreta. |
+| `id`     | string           | Id do elemento no sistema de origem (não vazio).                       |
+| `url`    | string ou `null` | Endereço do elemento na origem, se houver.                             |
+
+- `null` = item sem origem (criado à mão). A origem não muda o significado dos dados nem a trava.
+- O formato não exige origens únicas: a busca (`findBySource(project, system, id)` em `src/model/`)
+  devolve todas as imagens e marcações com a mesma origem, imagens primeiro.
+- Quem atribui a origem é quem importa (um agente, por uma proposta); a app a mostra e a preserva.
+
 ## Como um agente lê o `mapping.json`
 
 1. **Recorte da marcação**: `rect` em pixels da imagem em `containers[].file` (orientação EXIF aplicada).
 2. **Anotações próprias**: `annotations` com o `markingId` da marcação, agrupadas por `layerId`.
-3. **Herdadas**: subir por `parentId` e pegar as anotações dos ancestrais com `inherit: true`.
-4. **Estrutura**: anotações com `parentAnnotationId` formam uma árvore; o nome da camada da
+3. **Estrutura**: anotações com `parentAnnotationId` formam uma árvore; o nome da camada da
    vinculada é o nome da propriedade na dona. Ex.: `Button.Eventos = [onClick, onLongPress]`.
-5. **Significado**: numa anotação tipada, leia o tipo em `specs/<arquivo>.json` (camada
+4. **Significado**: numa anotação tipada, leia o tipo em `specs/<arquivo>.json` (camada
    `layers[].id == layer.spec.layerId`, tipo `annotationTypes[].id == type.typeId`). Os campos
    (`fields`) dizem o `label`, o tipo e a descrição de cada chave de `values`.
-6. **Referências**: campos `ref` em `values` apontam para outras anotações (ver acima).
-7. **Código de instanciação**: o `code` do tipo diz como se cria uma instância dele em cada plataforma
+5. **Referências**: campos `ref` em `values` apontam para outras anotações (ver acima).
+6. **Código de instanciação**: o `code` do tipo diz como se cria uma instância dele em cada plataforma
    (`symbol` é o que se chama, `path` é o arquivo que o define, `params`, `values` e `notes` dizem como
    passar os campos; [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas e code"). O arquivo de cada `symbol`
    está no `repo` da plataforma, **na especialização do tipo**: monte a URL com o `urlTemplate` do `repo`
@@ -402,8 +445,7 @@ novo de uma ferramenta de design) e proponha só o que mudou.
    `Button.kt` não) ou cujo `symbol` é igual, e depois as anotações desses tipos. O mapeamento não guarda
    nada sobre a solução.
 
-Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, markingId)`,
-`getLinkedAnnotations(project, annotationId)` e, para o código, `codeLink`, `codeLocalPath`,
+Em código TypeScript, `src/model/` oferece `getLinkedAnnotations(project, annotationId)` e, para o código, `codeLink`, `codeLocalPath`,
 `findByCode` e `codeBlueprint`.
 
 ## Campos da v9 (sem o campo de código)
@@ -559,6 +601,23 @@ com ou sem arquivo de imagem). Só o vocabulário do `mapping.json` muda; os dad
 | v10    | Container sem arquivo (`file: null`, `background`)               |
 | v11    | `platformRepos` guarda só o `localPath`                          |
 | v12    | `images` → `containers`, `imageId` → `containerId` (só os nomes) |
+| v13    | Sem herança de anotações (`annotations[].inherit` saiu)          |
+
+## Campos da v13 (sem herança)
+
+A v13 tira do formato a herança de anotações: o campo `annotations[].inherit` ("a anotação vale para todos os
+descendentes da marcação") não existe mais. Uma anotação vale **só para a própria marcação**. O que fica:
+
+- O vínculo entre anotações (`parentAnnotationId`, `allowedChildren`, `requiresOwner`): é relação de dados na
+  mesma marcação.
+- A herança da **trava** (`lock.inherited`: a trava de um pai alcança os descendentes), que é outra coisa.
+- **Migração v12 → v13**: ao abrir, a app apaga `inherit` de cada anotação e muda `schemaVersion` para 13.
+  Nenhuma anotação é perdida; só deixa de valer para as marcações filhas. Como toda migração, o original vai
+  para `backups/mapping.v12.<AAAAMMDD-HHMMSS>.json` antes do primeiro salvamento (no modo pasta) e a faixa da
+  migração aparece no topo.
+- O **Diagnóstico** registra quais anotações tinham a herança ligada (quantas e em que marcações), para quem
+  quiser repetir a informação à mão (por exemplo, copiando a anotação para as filhas).
+- A mesma v13 será estendida pelas fases seguintes da etapa.
 
 ## Migração
 
@@ -570,7 +629,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Ao salvar, o
-arquivo passa a ser v12 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação (ver "Campos da v13"). Ao salvar, o
+arquivo passa a ser v13 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

@@ -117,7 +117,6 @@ function normalize(p: Project) {
       name: a.name,
       type: a.type,
       owner: a.parentAnnotationId ? label(a.parentAnnotationId) : null,
-      inherit: a.inherit,
       entries: a.entries.map((e) => [e.key, e.value]),
       values:
         a.values &&
@@ -561,6 +560,50 @@ describe('regras do modelo no lote', () => {
     ]);
   });
 
+  it('`inherit` em create_annotation é aceito, ignorado e avisado (v13)', async () => {
+    const operations = [
+      {
+        op: 'create_annotation',
+        marking: `m/${code('MN')}`,
+        layer: 'Model',
+        name: 'Sem herança',
+        inherit: true,
+        entries: [{ key: 'k', value: 'v' }],
+      },
+    ];
+    const plan = await mcp.call<Plan & { warnings?: unknown }>('plan_changes', {
+      project: 'apps/cadastro',
+      operations,
+    });
+    expect(plan.data.errors).toBeUndefined();
+    expect(plan.data.valid).toBe(true);
+    expect(plan.data.warnings).toEqual([
+      {
+        code: 'deprecated-op',
+        op: 0,
+        message: expect.stringContaining(
+          'o argumento `inherit` saiu do formato (v13) e foi ignorado',
+        ),
+      },
+    ]);
+
+    const proposed = await mcp.call<{ proposal: { id: string }; warnings?: unknown }>(
+      'propose_changes',
+      { project: 'apps/cadastro', title: 'Sem herança', operations },
+    );
+    expect(proposed.isError).toBe(false);
+    expect(proposed.data.warnings).toEqual([
+      expect.objectContaining({ code: 'deprecated-op', op: 0 }),
+    ]);
+    const dir = ws.projectDir('apps/cadastro');
+    const text = readFileSync(
+      join(dir, 'proposals', proposed.data.proposal.id, 'proposal.json'),
+      'utf8',
+    );
+    expect(JSON.parse(text).formatVersion).toBe(3);
+    expect(text).not.toContain('"inherit"');
+  });
+
   it('caminhos fora das raízes são recusados', async () => {
     const result = await mcp.call<Plan>('plan_changes', {
       project: 'apps/cadastro',
@@ -711,7 +754,7 @@ describe('projeto de schema antigo', () => {
     expect(readProposal(dir, proposed.proposal.id).baseRevision).toBe(0);
 
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
-    expect(saved.schemaVersion).toBe(12);
+    expect(saved.schemaVersion).toBe(13);
     expect(saved.platformRepos).toEqual({});
     expect(saved.layers.at(-1)!.name).toBe('Notas');
   });

@@ -1137,7 +1137,7 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(12);
+      expect(saved.schemaVersion).toBe(13);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({ android: { localPath: '../..' } });
       expect(session.backupSaved.value).toBe(6);
@@ -1170,7 +1170,7 @@ describe('sessão de projeto', () => {
       expect(await root.read(backup)).toBe(v8Text);
       const savedText = (await root.read('mapping.json')) ?? '';
       const saved = JSON.parse(savedText) as { schemaVersion: number; revision: number };
-      expect(saved.schemaVersion).toBe(12);
+      expect(saved.schemaVersion).toBe(13);
       expect(saved.revision).toBe(1);
       expect(savedText).not.toContain('implementacao');
       // A cópia antiga em specs/ continua como estava (a leitura ignora o campo).
@@ -1226,7 +1226,7 @@ describe('sessão de projeto', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(12);
+      expect(saved.schemaVersion).toBe(13);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({ android: { localPath: '../..' } });
       expect(savedText).not.toContain('urlTemplate');

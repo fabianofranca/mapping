@@ -52,8 +52,8 @@ function errorsOf(data: unknown): string[] {
 }
 
 describe('formato da proposta', () => {
-  it('lê a formatVersion 1 e a 2', () => {
-    for (const formatVersion of [1, 2]) {
+  it('lê a formatVersion 1, 2 e 3', () => {
+    for (const formatVersion of [1, 2, 3]) {
       const result = parseProposal({ ...sample(), formatVersion });
       if (!result.ok) throw new Error(result.errors.join('\n'));
       expect(result.proposal.formatVersion).toBe(formatVersion);
@@ -87,8 +87,8 @@ describe('formato da proposta', () => {
     ],
     [
       'formatVersion errado',
-      (p) => (p.formatVersion = 3),
-      'formatVersion: deve ser 1 ou 2',
+      (p) => (p.formatVersion = 4),
+      'formatVersion: deve ser 1, 2 ou 3',
     ],
     ['id com barra', (p) => (p.id = '../fora'), 'id: id inválido'],
     ['título vazio', (p) => (p.title = '  '), 'title: não pode ser vazio'],

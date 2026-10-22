@@ -92,7 +92,7 @@ function renderReview(h: ReviewHarness) {
     h,
     <>
       <ReviewBar onExit={() => {}} />
-      <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />
+      <ReviewPanel onGoToAnnotation={() => {}} />
       <ProposalsWindow onHelp={() => {}} />
     </>,
   );

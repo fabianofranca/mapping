@@ -59,7 +59,6 @@ function renderPanel(harness: LibraryHarness, markingId: string) {
         image={image}
         readOnly={harness.store.locked.value}
         onDelete={() => undefined}
-        onSelectMarking={() => undefined}
         onGoToAnnotation={() => undefined}
       />
     );

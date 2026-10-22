@@ -1022,7 +1022,7 @@ describe('find_types_by_source (especialização v3 aplicada)', () => {
 describe('add_container e a antiga add_blank_image', () => {
   const box = { name: 'Cartão', width: 300, height: 200, background: '#FFFFFF' };
 
-  it('add_container planeja sem aviso e vira proposta formatVersion 2', async () => {
+  it('add_container planeja sem aviso e vira proposta formatVersion 3', async () => {
     const operations = [{ op: 'add_container', ...box }];
     const plan = ok(
       await mcp.call<{ valid: boolean; summary: string[]; warnings?: unknown[] }>(
@@ -1036,7 +1036,7 @@ describe('add_container e a antiga add_blank_image', () => {
 
     const proposed = await propose(mcp, 'loja', operations, { title: 'Container' });
     const proposal = readProposal(dir(), proposed.proposal.id);
-    expect(proposal.formatVersion).toBe(2);
+    expect(proposal.formatVersion).toBe(3);
     expect(
       proposal.changes.some((c) => c.entity === 'image' && c.kind === 'create'),
     ).toBe(true);
