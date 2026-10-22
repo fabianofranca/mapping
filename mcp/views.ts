@@ -87,6 +87,8 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     ref: refs.ref('m', marking.id),
     name: marking.name,
     container: refs.imageLabel(marking.containerId),
+    space: marking.containerId === null ? 'canvas' : 'container',
+    floating: marking.floating,
     parent: marking.parentId === null ? null : refs.bare('m', marking.parentId),
     rect: rectOf(marking),
     // Posição entre as irmãs (0 = primeira, desenhada por baixo).
@@ -248,19 +250,25 @@ export async function markingView(
   const issues = projectIssues(p);
   const tree = linkTree(refs, own);
   const children = index.children.get(marking.id) ?? [];
+  const memberContainers = index.containersByParent.get(marking.id) ?? [];
   const attachedArrows = arrowsOf(p, marking.id);
   return {
     ref: refs.ref('m', marking.id),
     id: marking.id,
     name: marking.name,
     path: [
-      image ? { ref: refs.bare('i', image.id), name: refs.imageLabel(image.id) } : null,
+      image
+        ? { ref: refs.bare('i', image.id), name: refs.imageLabel(image.id) }
+        : // Marcação do canvas: o segmento do espaço é "Canvas", sem referência.
+          { ref: null, name: refs.imageLabel(null) },
       ...[...ancestors, marking].map((m) => ({
         ref: refs.bare('m', m.id),
         name: refs.markingName(m.id),
       })),
-    ].filter((segment) => segment !== null),
+    ],
     container: image ? containerSummary(refs, image) : null,
+    space: marking.containerId === null ? 'canvas' : 'container',
+    floating: marking.floating,
     rect: rectOf(marking),
     // Ordem entre as irmãs (mesmo container e mesmo pai): 0 = primeira, desenhada por baixo.
     order: siblingPosition(p, marking.id),
@@ -278,6 +286,23 @@ export async function markingView(
       rect: rectOf(c),
     })),
     ...(children.length > LIST_LIMIT ? { childrenTotal: children.length } : {}),
+    // Quem tem esta marcação como pai (derivado da geometria): marcações do mesmo espaço e,
+    // numa marcação do canvas, os containers que ela contém.
+    members: {
+      markings: children.slice(0, LIST_LIMIT).map((c) => ({
+        ref: refs.ref('m', c.id),
+        name: c.name,
+        rect: rectOf(c),
+      })),
+      containers: memberContainers.slice(0, LIST_LIMIT).map((c) => ({
+        ref: refs.ref('i', c.id),
+        name: c.name,
+      })),
+      ...(children.length > LIST_LIMIT ? { markingsTotal: children.length } : {}),
+      ...(memberContainers.length > LIST_LIMIT
+        ? { containersTotal: memberContainers.length }
+        : {}),
+    },
     ...(platform !== undefined ? { platform } : {}),
     layers,
     ...(attachedArrows.outgoing.length + attachedArrows.incoming.length > 0
@@ -375,6 +400,8 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     width: image.width,
     height: image.height,
     locked: image.locked,
+    // Marcação do canvas que contém o container (derivado da geometria), ou `null`.
+    parent: image.parentId === null ? null : refs.bare('m', image.parentId),
   };
 }
 
@@ -433,6 +460,9 @@ export function projectSummary(loaded: LoadedProject): Json {
     counts: {
       containers: project.containers.length,
       markings: project.markings.length,
+      canvasMarkings: project.markings.filter((m) => m.containerId === null).length,
+      floatingMarkings: project.markings.filter((m) => m.floating).length,
+      arrows: project.arrows.length,
       annotations: project.annotations.length,
       layers: project.layers.length,
     },

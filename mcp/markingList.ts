@@ -18,6 +18,10 @@ export interface MarkingFilters {
   readonly container?: string;
   /** Antigo: use `container` (aceito com aviso). */
   readonly image?: string;
+  /** Só marcações do canvas (sem container); não combina com `container`. */
+  readonly canvas?: boolean;
+  /** Só flutuantes (`true`) ou só não flutuantes (`false`). */
+  readonly floating?: boolean;
   /** Camada: id ou nome. */
   readonly layer?: string;
   /** Tipo de anotação: `typeId`, `specId/typeId` ou o nome do tipo. */
@@ -98,13 +102,21 @@ function matchesType(p: Project, a: Annotation, query: string): boolean {
 }
 
 /** Marcações em profundidade (o pai antes das filhas), container por container. */
-function inDisplayOrder(p: Project, only: ProjectContainer | null): Marking[] {
+function inDisplayOrder(
+  p: Project,
+  only: ProjectContainer | null,
+  canvas: boolean,
+): Marking[] {
   const children = projectIndex(p).children;
   const result: Marking[] = [];
   const visit = (marking: Marking) => {
     result.push(marking);
     for (const child of children.get(marking.id) ?? []) visit(child);
   };
+  if (canvas) {
+    for (const root of projectIndex(p).canvasRoots) visit(root);
+    return result;
+  }
   const containers = only ? [only] : p.containers;
   for (const container of containers) {
     for (const root of children.get(null) ?? []) {
@@ -129,6 +141,12 @@ export function listMarkings(
     );
   }
   const containerQuery = filters.container ?? filters.image;
+  if (filters.canvas === true && containerQuery !== undefined) {
+    throw new ToolError(
+      'invalid-arguments',
+      '`canvas` não combina com `container` (nem com a antiga `image`): escolha um dos dois',
+    );
+  }
   const container =
     containerQuery !== undefined ? findContainer(p, containerQuery) : null;
   let layerId: string | null = null;
@@ -151,7 +169,13 @@ export function listMarkings(
     filters.annotationType !== undefined ||
     filters.incomplete === true;
 
-  const matching = inDisplayOrder(p, container).filter((marking) => {
+  // As flutuantes vivem no canvas: pedir só flutuantes, sem container, olha o canvas.
+  const canvasSpace =
+    filters.canvas === true || (filters.floating === true && container === null);
+  const matching = inDisplayOrder(p, container, canvasSpace).filter((marking) => {
+    if (filters.floating !== undefined && marking.floating !== filters.floating) {
+      return false;
+    }
     let candidates = index.annotationsByMarking.get(marking.id) ?? [];
     if (byAnnotation) {
       candidates = candidates.filter(

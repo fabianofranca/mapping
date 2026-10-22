@@ -67,7 +67,9 @@ import {
   setImageSource,
   setLayerColor,
   setMarkingLocked,
+  setMarkingFloating,
   setMarkingRect,
+  setMarkingSpace,
   setMarkingSource,
   setPlatformRepo,
   setTableCell,
@@ -1087,7 +1089,33 @@ class Batch {
           project = moveMarking(project, id, op.move.dx, op.move.dy);
           changes.push(`mover (${op.move.dx}, ${op.move.dy}) com as filhas`);
         }
-        if (op.rect !== undefined) {
+        if (op.floating !== undefined) {
+          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          project = setMarkingFloating(
+            project,
+            id,
+            op.floating,
+            minSize ? { minSize } : undefined,
+          );
+          changes.push(op.floating ? 'flutuante' : 'deixar de ser flutuante');
+        }
+        if (op.container !== undefined) {
+          if (op.rect === undefined) {
+            throw new ToolError(
+              'invalid-arguments',
+              'trocar de `container` exige o `rect` nos pixels do container novo (no canvas, em unidades do canvas)',
+            );
+          }
+          const target = op.container === null ? null : this.item(op.container, 'i');
+          const { rect } = op;
+          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          project = this.checkMinSize(minSize, `"${label}"`, () =>
+            setMarkingSpace(project, id, target, rect, minSize ? { minSize } : undefined),
+          );
+          changes.push(
+            `${target === null ? 'ir para o canvas' : `ir para o container "${this.refs(project).imageLabel(target)}"`}, retângulo x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}`,
+          );
+        } else if (op.rect !== undefined) {
           const { rect } = op;
           const minSize = componentMinSize(project, this.loaded.catalog, id);
           project = this.checkMinSize(minSize, `"${label}"`, () =>
