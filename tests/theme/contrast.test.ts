@@ -50,6 +50,17 @@ const PAIRS: readonly [string, string, number][] = [
   ['accent', 'bg', 3],
 ];
 
+describe.each(['light', 'dark'] as const)('marcação do canvas no tema %s', (theme) => {
+  const canvasBg = tokenValue('color-canvas-bg', theme);
+
+  it.each(['cv-canvas-marking', 'cv-absorb'])(
+    '%s sobre o fundo do canvas ≥ 3',
+    (name) => {
+      expect(contrast(tokenValue(name, theme), canvasBg)).toBeGreaterThanOrEqual(3);
+    },
+  );
+});
+
 describe('canvas (iguais nos dois temas)', () => {
   const cv = (name: string) => tokenValue(name, 'light');
 

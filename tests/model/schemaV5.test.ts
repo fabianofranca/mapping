@@ -55,7 +55,12 @@ describe('migração v4 → v5 (trava)', () => {
       'source',
       'background',
     ]);
-    expect(Object.keys(data.markings[0]).slice(-2)).toEqual(['locked', 'source']);
+    // `floating` (v13) vem entre `locked` e `source`.
+    expect(Object.keys(data.markings[0]).slice(-3)).toEqual([
+      'locked',
+      'floating',
+      'source',
+    ]);
   });
 
   it('recusa um arquivo v5 sem locked', () => {

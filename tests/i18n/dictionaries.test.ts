@@ -81,6 +81,13 @@ describe('dicionários', () => {
       'review.rect.y',
       'review.placement.x',
       'review.placement.y',
+      // "Canvas" é o mesmo nos dois idiomas (o grupo Canvas da revisão).
+      'review.level.canvas',
+      'review.filter.canvas',
+      // O nome do canvas e o rótulo "Container" são iguais nos dois idiomas.
+      'canvas.name',
+      'crumbs.canvas',
+      'marking.container',
       // Palavras iguais nos dois idiomas (biblioteca de componentes, B3).
       'library.container',
       'library.typeSize',

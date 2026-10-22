@@ -4,6 +4,7 @@
 // revisão (tipos, conflitos, conjunto inválido) e os dois projetos; os renderers só
 // desenham o resultado.
 import {
+  IDENTITY_PLACEMENT,
   changeImageFile,
   dominantChangeType,
   isRecord,
@@ -115,6 +116,24 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
     drawnIndex.containers.get(imageId)?.placement ??
     currentIndex.containers.get(imageId)?.placement ??
     null;
+  /** Posição de um espaço: a do container ou, no canvas (`null`), a identidade. */
+  const spacePlacement = (containerId: JsonValue | undefined): Placement | null =>
+    containerId === null
+      ? IDENTITY_PLACEMENT
+      : typeof containerId === 'string'
+        ? placementOf(containerId)
+        : null;
+  /** Retângulo e posição de um dos lados de `rect` ou da composta `space` (`{ containerId, rect }`). */
+  const sideOf = (
+    change: Change,
+    value: JsonValue | undefined,
+    fallback: Placement | null,
+  ): { readonly placement: Placement; readonly rect: Rect } | null => {
+    const record = change.field === 'space' && isRecord(value) ? value : null;
+    const rect = asRect(record ? record.rect : value);
+    const placement = record ? spacePlacement(record.containerId) : fallback;
+    return rect && placement ? { placement, rect } : null;
+  };
 
   const markings = new Map<string, MarkingReviewMark>();
   const images = new Map<string, ImageReviewMark>();
@@ -175,18 +194,18 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
       continue;
     }
 
-    // Item (marcação com tudo que mudou nela).
+    // Item (marcação com tudo que mudou nela). O espaço dela: o container ou, `null`, o canvas.
     const marking = currentIndex.markings.get(id);
     const rectChange = own.find(
-      (c) => self(c) && c.kind === 'update' && c.field === 'rect',
+      (c) =>
+        self(c) && c.kind === 'update' && (c.field === 'rect' || c.field === 'space'),
     );
-    const imageId =
-      create?.imageId ??
-      marking?.containerId ??
-      node.changeIds
-        .map((changeId) => changes.get(changeId)?.imageId)
-        .find((x): x is string => typeof x === 'string');
-    const placement = imageId ? placementOf(imageId) : null;
+    const spaceId: string | null | undefined = create
+      ? create.imageId
+      : marking
+        ? marking.containerId
+        : node.changeIds.map((changeId) => changes.get(changeId)).find((c) => c)?.imageId;
+    const placement = spaceId === undefined ? null : spacePlacement(spaceId);
 
     if (create) {
       if (!rejected(create)) {
@@ -238,12 +257,11 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
       // Tudo rejeitado: só aparece na visão Atual (fantasma e ✕), nunca na Proposto.
       if (view === 'current') {
         markings.set(id, { line: 'rejected', dim: true, badges: ['rejected'] });
-        const rect = rectChange ? asRect(rectChange.to) : null;
-        if (rect && placement) {
+        const ghost = rectChange ? sideOf(rectChange, rectChange.to, placement) : null;
+        if (ghost) {
           ghosts.push({
             key: `rejected:${id}`,
-            placement,
-            rect,
+            ...ghost,
             name: null,
             badges: ['rejected'],
           });
@@ -262,11 +280,16 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
       dim: false,
       badges: badgesOf(liveType, conflict, isInvalid),
     });
-    // Movida: fantasma na posição antiga (Proposto) ou na nova (Atual).
-    if (rectChange && !rejected(rectChange) && placement) {
-      const rect = asRect(view === 'proposed' ? rectChange.from : rectChange.to);
-      if (rect)
-        ghosts.push({ key: `moved:${id}`, placement, rect, name: null, badges: [] });
+    // Movida: fantasma na posição antiga (Proposto) ou na nova (Atual), no espaço em que ela estava.
+    if (rectChange && !rejected(rectChange)) {
+      const ghost = sideOf(
+        rectChange,
+        view === 'proposed' ? rectChange.from : rectChange.to,
+        placement,
+      );
+      if (ghost) {
+        ghosts.push({ key: `moved:${id}`, ...ghost, name: null, badges: [] });
+      }
     }
   }
   return { view, markings, images, ghosts, removed };

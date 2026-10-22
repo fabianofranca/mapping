@@ -20,8 +20,9 @@ export type ModelErrorCode =
   | 'rect-too-small'
   | 'rect-out-of-image'
   | 'rect-outside-parent'
-  | 'rect-excludes-children'
   | 'invalid-parent'
+  // Espaço da marcação (etapa Marcações espaciais): a flutuante vive só no canvas
+  | 'invalid-space'
   | 'invalid-annotation-parent'
   | 'empty-key'
   | 'duplicate-key'

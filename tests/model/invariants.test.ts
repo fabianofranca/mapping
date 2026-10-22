@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { addBackgroundContainer, validateProject, type Project } from '../../src/model';
+import {
+  addBackgroundContainer,
+  createMarking,
+  validateProject,
+  type Marking,
+  type Project,
+} from '../../src/model';
 import { sampleProject } from './fixtures';
 
 function codes(p: Project) {
@@ -218,5 +224,161 @@ describe('validador de invariantes: container', () => {
     expect(codes(patch('I2', { background: '#000000' }))).toEqual([
       'container-content:I2',
     ]);
+  });
+});
+
+// Pertencimento por geometria (v13): marcação do canvas (`containerId` nulo), flutuante e pai de
+// container. A regra "o menor que contém" não é invariante: só o que o pai garante.
+describe('validador de invariantes: canvas e pertencimento', () => {
+  const rect = (x: number, y: number, width: number, height: number) => ({
+    x,
+    y,
+    width,
+    height,
+  });
+  /** sampleProject + K (canvas, cerca só a I1: (0,0)–(1000,750)) + J (canvas, dentro de K). */
+  function withCanvas(): Project {
+    let p = createMarking(sampleProject(), {
+      id: 'K',
+      containerId: null,
+      rect: rect(-100, -100, 1200, 1000),
+    });
+    p = createMarking(p, { id: 'J', containerId: null, rect: rect(-50, -50, 200, 100) });
+    return p;
+  }
+  const patchMarking = (p: Project, id: string, change: Partial<Marking>): Project => ({
+    ...p,
+    markings: p.markings.map((m) => (m.id === id ? { ...m, ...change } : m)),
+  });
+  const patchContainer = (p: Project, id: string, parentId: string | null): Project => ({
+    ...p,
+    containers: p.containers.map((c) => (c.id === id ? { ...c, parentId } : c)),
+  });
+
+  it('o projeto com marcações do canvas, aninhadas e com container dentro, é válido', () => {
+    const p = withCanvas();
+    expect(p.containers.find((c) => c.id === 'I1')?.parentId).toBe('K');
+    expect(p.markings.find((m) => m.id === 'J')?.parentId).toBe('K');
+    expect(validateProject(p)).toEqual([]);
+  });
+
+  it('marcação do canvas não é órfã nem está "fora da imagem": x e y negativos valem', () => {
+    const p = patchMarking(withCanvas(), 'J', { rect: rect(-9000, -9000, 200, 100) });
+    // Sai de K (que não a contém mais): só `rect-outside-parent`, nada de imagem.
+    expect(codes(p)).toEqual(['rect-outside-parent:J']);
+    const free = patchMarking(patchMarking(p, 'J', { parentId: null }), 'K', {
+      parentId: null,
+    });
+    expect(validateProject(free)).toEqual([]);
+  });
+
+  it('o canvas não dispensa forma: inteiros e lado mínimo', () => {
+    const p = withCanvas();
+    expect(codes(patchMarking(p, 'K', { rect: rect(0.5, 0, 1200, 1000) }))).toContain(
+      'rect-not-integer:K',
+    );
+    expect(codes(patchMarking(p, 'K', { rect: rect(0, 0, 7, 1000) }))).toContain(
+      'rect-too-small:K',
+    );
+  });
+
+  it('marcação de container continua dentro da imagem: x negativo é rect-out-of-image', () => {
+    const p = patchMarking(sampleProject(), 'M4', { rect: rect(-5, 0, 100, 100) });
+    expect(codes(p)).toEqual(['rect-out-of-image:M4']);
+  });
+
+  it('pai no mesmo espaço: canvas com container (e o inverso) é parent-other-image', () => {
+    const p = withCanvas();
+    expect(codes(patchMarking(p, 'M1', { parentId: 'K' }))).toContain(
+      'parent-other-image:M1',
+    );
+    expect(codes(patchMarking(p, 'J', { parentId: 'M1' }))).toContain(
+      'parent-other-image:J',
+    );
+  });
+
+  it('o pai do canvas precisa conter a filha', () => {
+    const p = withCanvas();
+    const out = patchMarking(p, 'J', { rect: rect(900, 600, 400, 400) });
+    expect(codes(out)).toContain('rect-outside-parent:J');
+  });
+
+  it('o pai válido que não é o menor que contém NÃO é erro (a leitura não assenta)', () => {
+    let p = sampleProject();
+    p = patchMarking(p, 'M3', { parentId: 'M1' }); // M2 é menor e também a contém
+    expect(validateProject(p)).toEqual([]);
+    expect(validateProject(patchContainer(withCanvas(), 'I1', 'K'))).toEqual([]);
+    // J cerca a I1? Não (200×100): o container fica em K, que o contém.
+    expect(validateProject(patchContainer(withCanvas(), 'I2', null))).toEqual([]);
+  });
+
+  it('flutuante com container ou pai: floating-in-container', () => {
+    const p = withCanvas();
+    const inContainer = patchMarking(p, 'M4', { floating: true });
+    expect(codes(inContainer)).toEqual(['floating-in-container:M4']);
+    const withParent = patchMarking(p, 'J', { floating: true });
+    expect(codes(withParent)).toEqual(['floating-in-container:J']);
+    const ok = patchMarking(patchMarking(p, 'J', { floating: true }), 'J', {
+      parentId: null,
+    });
+    expect(validateProject(ok)).toEqual([]);
+  });
+
+  it('marcação com pai flutuante: parent-floating (e não parent-other-image nem rect-outside-parent)', () => {
+    const p = withCanvas();
+    const q = patchMarking(patchMarking(p, 'K', { floating: true }), 'J', {
+      parentId: 'K',
+    });
+    // K flutuante e sem pai; J aponta para ela.
+    expect(codes(patchMarking(q, 'K', { parentId: null }))).toEqual([
+      'parent-floating:J',
+      'container-parent-not-canvas:I1',
+    ]);
+  });
+
+  it('pai de container ausente: container-parent-missing', () => {
+    expect(validateProject(patchContainer(sampleProject(), 'I1', 'ZZ'))).toEqual([
+      {
+        code: 'container-parent-missing',
+        entity: 'image',
+        id: 'I1',
+        name: 'images/lateral.jpg',
+        otherId: 'ZZ',
+      },
+    ]);
+  });
+
+  it('pai de container que não é do canvas: container-parent-not-canvas', () => {
+    const p = withCanvas();
+    // Marcação de container.
+    expect(codes(patchContainer(p, 'I1', 'M1'))).toEqual([
+      'container-parent-not-canvas:I1',
+    ]);
+    // Marcação flutuante.
+    const floating = patchMarking(patchMarking(p, 'J', { parentId: null }), 'J', {
+      floating: true,
+    });
+    expect(codes(patchContainer(floating, 'I1', 'J'))).toEqual([
+      'container-parent-not-canvas:I1',
+    ]);
+  });
+
+  it('container fora da marcação do canvas: container-outside-parent', () => {
+    const p = withCanvas();
+    // K cerca só a I1; a I2 (1050,0)–(2050,1000) não cabe em K.
+    expect(codes(patchContainer(p, 'I2', 'K'))).toEqual(['container-outside-parent:I2']);
+    // J (200×100) não cerca a I1.
+    expect(codes(patchContainer(p, 'I1', 'J'))).toEqual(['container-outside-parent:I1']);
+  });
+
+  it('a borda coincidente conta como dentro (com a folga do ponto flutuante)', () => {
+    const p = createMarking(sampleProject(), {
+      id: 'K',
+      containerId: null,
+      rect: rect(0, -50, 1000, 800),
+    });
+    // Bordas esquerda e direita coincidem com as da I1 (0–1000).
+    expect(p.containers.find((c) => c.id === 'I1')?.parentId).toBe('K');
+    expect(validateProject(p)).toEqual([]);
   });
 });

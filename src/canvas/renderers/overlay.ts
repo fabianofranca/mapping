@@ -14,7 +14,7 @@ import {
 import { resolveSelection } from '../../store/ui';
 import { visibleArea, type Frame } from '../frame';
 import { CORNERS, cornerPoint, type Corner } from '../imageGeometry';
-import { isDrawableRect, markingCanvasRect } from '../markingGeometry';
+import { isDrawableRect, markingCanvasRect, placementOfSpace } from '../markingGeometry';
 import { LockBadge } from './lockBadge';
 import type { HeaderLookup } from './markings';
 import { HALO_WIDTH, SELECTION_STROKE, fontStyle, intersectRects } from './metrics';
@@ -34,6 +34,7 @@ export type OverlayFrame = Pick<
   | 'preview'
   | 'draft'
   | 'dropTarget'
+  | 'absorb'
   | 'hoverLock'
   | 'tokens'
   | 'selection'
@@ -48,6 +49,9 @@ export class OverlayRenderer {
   readonly selectionOutline = new KonvaRect({ visible: false });
   readonly draftRect = new KonvaRect({ visible: false });
   readonly dropRect = new KonvaRect({ visible: false });
+  /** Destaques dos itens que o desenho ou o redimensionamento absorveria ao soltar (um reaproveitado por item). */
+  private readonly absorbRects: KonvaRect[] = [];
+  private readonly layer: Konva.Layer;
   readonly handles = new Map<Corner, KonvaRect>();
   /** Etiqueta com o nome da marcação selecionada, acima do canto superior esquerdo. */
   readonly nameTag = new Konva.Group({ visible: false });
@@ -59,6 +63,7 @@ export class OverlayRenderer {
 
   constructor(layer: Konva.Layer, container: HTMLElement) {
     this.container = container;
+    this.layer = layer;
     this.nameTag.add(this.nameTagBox, this.nameTagText);
     layer.add(this.selectionOutline, this.draftRect, this.dropRect);
     for (const corner of CORNERS) {
@@ -67,6 +72,11 @@ export class OverlayRenderer {
       layer.add(handle);
     }
     layer.add(this.nameTag, this.selectionLock.group, this.hoverLockBadge.group);
+  }
+
+  /** Os nós dos destaques de absorção (reaproveitados; os que não servem ficam invisíveis). */
+  absorbHighlights(): readonly KonvaRect[] {
+    return this.absorbRects;
   }
 
   /** Há algo ancorado na parte visível da tela (a etiqueta do nome, o cadeado): pan precisa redesenhar. */
@@ -85,6 +95,7 @@ export class OverlayRenderer {
     headers: HeaderLookup = NO_HEADERS,
   ): void {
     this.renderDraft(frame, placements);
+    this.renderAbsorb(frame);
     this.renderSelection(frame, placements, headers);
     this.renderHoverLock(frame, placements);
     this.renderDropTarget(frame);
@@ -132,13 +143,42 @@ export class OverlayRenderer {
     });
   }
 
+  /**
+   * Itens que seriam absorvidos se o gesto terminasse agora: traço e preenchimento do token
+   * novo, por cima da imagem e abaixo da seleção.
+   */
+  private renderAbsorb(frame: OverlayFrame): void {
+    const { absorb, tokens } = frame;
+    const zoom = frame.viewport.scale;
+    while (this.absorbRects.length < absorb.length) {
+      const rect = new KonvaRect({ visible: false, listening: false });
+      this.layer.add(rect);
+      rect.moveToBottom(); // Abaixo do rascunho, da seleção e das alças.
+      this.absorbRects.push(rect);
+    }
+    this.absorbRects.forEach((node, i) => {
+      const rect = absorb[i];
+      if (!rect) {
+        node.visible(false);
+        return;
+      }
+      node.setAttrs({
+        ...rect,
+        visible: true,
+        stroke: tokens.absorb,
+        strokeWidth: (2 * SELECTION_STROKE) / zoom,
+        fill: tokens.absorbFill,
+      });
+    });
+  }
+
   private renderDraft(
     frame: OverlayFrame,
     placements: ReadonlyMap<string, Placement>,
   ): void {
     const { draft, tokens } = frame;
     const zoom = frame.viewport.scale;
-    const placement = draft && placements.get(draft.containerId);
+    const placement = draft && placementOfSpace(placements, draft.containerId);
     if (!draft || !placement) {
       this.draftRect.visible(false);
       return;
@@ -187,10 +227,15 @@ export class OverlayRenderer {
       this.nameTag.visible(false);
     } else {
       // A borda da marcação selecionada já fica mais grossa; aqui só as alças.
-      const placement = placements.get(selected.image.id) ?? selected.image.placement;
+      const placement =
+        placementOfSpace(placements, selected.marking.containerId) ??
+        selected.space.placement;
       rect = markingCanvasRect(placement, selected.marking.rect);
       this.selectionOutline.visible(false);
-      const imageTop = imageCanvasRect(selected.image, placement).y;
+      // Sem container (marcação do canvas), não há título de imagem a evitar.
+      const imageTop = selected.image
+        ? imageCanvasRect(selected.image, placement).y
+        : -Infinity;
       const { parentId } = selected.marking;
       const parentLabel = parentId === null ? undefined : headers.get(parentId);
       this.renderNameTag(frame, rect, selected.marking.name, imageTop, parentLabel);
@@ -304,9 +349,9 @@ export class OverlayRenderer {
 }
 
 /**
- * Retângulo (canvas) do item se a geometria dele está travada, com `inherited` quando a
- * trava vem de um ancestral; `null` se ele é livre. Marcação: ela ou um ancestral
- * trancado; imagem: a própria.
+ * Retângulo (canvas) do item se a geometria dele está travada, com `inherited` quando a trava vem
+ * de um ancestral; `null` se ele é livre. Marcação: ela ou um ancestral trancado; imagem: a
+ * própria ou uma marcação do canvas que a contém (trancada, ou com ancestral trancado).
  */
 function lockedRect(
   project: NonNullable<OverlayFrame['project']>,
@@ -319,14 +364,19 @@ function lockedRect(
     if (!image || canEditImagePlacement(project, image.id)) return null;
     return {
       rect: imageCanvasRect(image, placements.get(image.id) ?? image.placement),
-      inherited: false,
+      inherited: !image.locked,
     };
   }
   const marking = index.markings.get(item.id);
-  const image = marking && index.containers.get(marking.containerId);
-  if (!marking || !image || canEditMarkingGeometry(project, marking.id)) return null;
+  if (!marking || canEditMarkingGeometry(project, marking.id)) return null;
+  const placement =
+    marking.containerId === null
+      ? placementOfSpace(placements, null)
+      : (placements.get(marking.containerId) ??
+        index.containers.get(marking.containerId)?.placement);
+  if (!placement) return null;
   return {
-    rect: markingCanvasRect(placements.get(image.id) ?? image.placement, marking.rect),
+    rect: markingCanvasRect(placement, marking.rect),
     inherited: !marking.locked,
   };
 }

@@ -3,6 +3,7 @@
 import {
   boundingBox,
   imageCanvasRect,
+  type Marking,
   type Placement,
   type ProjectContainer,
   type Rect,
@@ -86,7 +87,17 @@ export function resizeFromCorner(
   };
 }
 
-/** Caixa que envolve todas as imagens no canvas, ou `null` se não houver imagens. */
-export function imagesBounds(images: readonly ProjectContainer[]): Rect | null {
-  return boundingBox(images.map((i) => imageCanvasRect(i, i.placement)));
+/**
+ * Caixa que envolve tudo o que ocupa o canvas: as imagens e as marcações do canvas (v13,
+ * `containerId` nulo, flutuantes inclusive; o `rect` delas já está em unidades do canvas).
+ * `null` se não há nada.
+ */
+export function imagesBounds(
+  images: readonly ProjectContainer[],
+  markings: readonly Pick<Marking, 'containerId' | 'rect'>[] = [],
+): Rect | null {
+  return boundingBox([
+    ...images.map((i) => imageCanvasRect(i, i.placement)),
+    ...markings.filter((m) => m.containerId === null).map((m) => m.rect),
+  ]);
 }

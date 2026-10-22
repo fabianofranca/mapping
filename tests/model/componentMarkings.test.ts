@@ -341,13 +341,21 @@ describe('addComponentMarking', () => {
     expect(marking(p, 'M2').parentId).toBe('C');
   });
 
-  it('nível da imagem: não vira filha de quem está por baixo', () => {
+  it('o pai gravado é o que a geometria dá, nunca o pedido', () => {
     let p = add(componentProject(), 'C', 'box', {
       rect: { x: 400, y: 300, width: 300, height: 200 },
     });
+    // Sem pai pedido, mas o centro da imagem cai dentro de C: C é o pai.
     p = add(p, 'M1', 'text');
-    // O centro da imagem cai dentro de C, mas o pedido foi nível da imagem.
-    expect(marking(p, 'M1').parentId).toBeNull();
+    expect(marking(p, 'M1').parentId).toBe('C');
+    // Pedido C como alvo do posicionamento; a instância cai dentro de D (dentro de C): D é o pai.
+    p = add(p, 'D', 'box', { rect: { x: 420, y: 320, width: 100, height: 100 } });
+    expect(marking(p, 'D').parentId).toBe('C');
+    p = add(p, 'M2', 'text', {
+      parentId: 'C',
+      rect: { x: 430, y: 330, width: 60, height: 30 },
+    });
+    expect(marking(p, 'M2').parentId).toBe('D');
     expectValid(p);
   });
 
@@ -375,6 +383,113 @@ describe('addComponentMarking', () => {
     expect(() => add(once, 'M1', 'text')).toThrow('duplicate-id');
     expect(() => add(p, 'M2', 'text', { annotationId: 'A_M2', parentId: 'ZZ' })).toThrow(
       'not-found',
+    );
+  });
+});
+
+describe('no canvas (containerId nulo)', () => {
+  const place = (args: Partial<Parameters<typeof componentPlacement>[2]> = {}) =>
+    componentPlacement(
+      componentProject(),
+      catalog,
+      { containerId: null, parentId: null, specId: SPEC_ID, typeId: 'text', ...args },
+      approximateMeasurer,
+    );
+
+  it('sem centro: o size do componente em unidades do canvas, centrado em (0, 0)', () => {
+    expect(place()).toEqual({ x: -50, y: -20, width: 100, height: 40 });
+  });
+
+  it('centrada no ponto pedido, com coordenadas inteiras e sem limite nenhum', () => {
+    expect(place({ center: { x: 5000.5, y: -3000.4 } })).toEqual({
+      x: 4951,
+      y: -3020,
+      width: 100,
+      height: 40,
+    });
+    expect(place({ center: { x: -90000, y: 90000 } })).toEqual({
+      x: -90050,
+      y: 89980,
+      width: 100,
+      height: 40,
+    });
+  });
+
+  it('tipo sem componente continua recusado no canvas', () => {
+    expect(() => place({ typeId: 'plain' })).toThrow('unknown-type');
+  });
+
+  it('cria a marcação do canvas com a anotação tipada, sem container nem pai', () => {
+    const p = add(componentProject(), 'M1', 'text', {
+      containerId: null,
+      center: { x: -3000, y: 500 },
+      name: 'Solta',
+    });
+    expect(marking(p, 'M1')).toMatchObject({
+      containerId: null,
+      parentId: null,
+      floating: false,
+      name: 'Solta',
+      rect: { x: -3050, y: 480, width: 100, height: 40 },
+    });
+    const annotation = p.annotations.find((a) => a.id === 'A_M1')!;
+    expect(annotation.type).toEqual({ specId: SPEC_ID, typeId: 'text' });
+    expectValid(p);
+  });
+
+  it('o tamanho inicial vale mesmo onde um container não o comportaria', () => {
+    const p = addContainer(componentProject(), {
+      id: 'I2',
+      file: 'images/minuscula.png',
+      width: 50,
+      height: 50,
+    });
+    expect(() =>
+      componentPlacement(
+        p,
+        catalog,
+        { containerId: 'I2', parentId: null, specId: SPEC_ID, typeId: 'text' },
+        approximateMeasurer,
+      ),
+    ).toThrow('rect-out-of-image');
+    const q = add(p, 'M1', 'text', { containerId: null, center: { x: 0, y: -500 } });
+    expect(rectOf(q, 'M1')).toEqual({ x: -50, y: -520, width: 100, height: 40 });
+    expectValid(q);
+  });
+
+  it('caiu inteira dentro de um container: o assentar a faz marcação dele, convertida', () => {
+    const p = add(componentProject(), 'M1', 'text', {
+      containerId: null,
+      center: { x: 200, y: 300 },
+    });
+    // Container I1 em (0,0) na escala 1: o retângulo do canvas vira o mesmo em pixels dele.
+    expect(marking(p, 'M1')).toMatchObject({
+      containerId: 'I1',
+      rect: { x: 150, y: 280, width: 100, height: 40 },
+    });
+    expectValid(p);
+  });
+
+  it('dentro de um componente com slot do canvas: posiciona no slot e grava o pai assentado', () => {
+    let p = add(componentProject(), 'C', 'row', {
+      containerId: null,
+      rect: { x: -2000, y: 100, width: 300, height: 100 },
+    });
+    expect(marking(p, 'C').containerId).toBeNull();
+    p = add(p, 'T1', 'text', { containerId: null, parentId: 'C' });
+    p = add(p, 'T2', 'text', { containerId: null, parentId: 'C' });
+    expect(rectOf(p, 'T1')).toEqual({ x: -2000, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T2')).toEqual({ x: -1892, y: 100, width: 100, height: 40 });
+    expect(marking(p, 'T2')).toMatchObject({ containerId: null, parentId: 'C' });
+    expectValid(p);
+  });
+
+  it('o pai alvo precisa ser do mesmo espaço', () => {
+    const p = add(componentProject(), 'C', 'row', {
+      rect: { x: 100, y: 100, width: 300, height: 100 },
+    });
+    expect(() => add(p, 'T1', 'text', { containerId: null, parentId: 'C' })).toThrow(
+      'invalid-parent',
     );
   });
 });

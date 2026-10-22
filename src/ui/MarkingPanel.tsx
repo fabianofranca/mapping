@@ -2,9 +2,9 @@ import { useId, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   ancestorsOf,
+  projectIndex,
   canDeleteMarking,
   canEditMarkingGeometry,
-  parentCandidates,
   siblingPosition,
   type Marking,
   type Project,
@@ -15,20 +15,21 @@ import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
-import { Button, IconButton, Select, TextField } from './controls';
+import { Button, Choice, IconButton, TextField } from './controls';
 import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
 import { arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
-import { imageLabel, markingErrorMessage, markingLabel, markingPath } from './labels';
+import { imageLabel, markingErrorMessage, markingLabel } from './labels';
 import { Property, PropertyGrid } from './PropertyGrid';
 
 interface MarkingPanelProps {
   readonly project: Project;
   readonly marking: Marking;
-  readonly image: ProjectContainer;
+  /** Container da marcação; `null` na marcação do canvas (v13). */
+  readonly image: ProjectContainer | null;
   readonly readOnly: boolean;
   readonly onDelete: (marking: Marking) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
@@ -62,7 +63,6 @@ export function MarkingPanel({
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
   const nameId = useId();
-  const parentId = useId();
 
   const report = (result: ActionResult): boolean => {
     setError(result.ok ? null : markingErrorMessage(result.error));
@@ -101,7 +101,7 @@ export function MarkingPanel({
         type="number"
         inputMode="numeric"
         step={1}
-        min={0}
+        {...(image ? { min: 0 } : {})}
         aria-label={label}
         disabled={readOnly || !geometryEditable}
         value={String(marking.rect[key])}
@@ -110,13 +110,20 @@ export function MarkingPanel({
     </label>
   );
 
-  const candidates = parentCandidates(project, marking.id);
+  // Pertencimento é resolvido pela geometria (só leitura): o pai assentado, se houver.
+  const parent =
+    marking.parentId === null
+      ? null
+      : (projectIndex(project).markings.get(marking.parentId) ?? null);
+  const containerName = image ? imageLabel(image) : t('canvas.name');
   const identity = ext?.identity(marking.id) ?? null;
   const order = siblingPosition(project, marking.id);
   const arrangeable = canArrangeMarking(editor, marking.id);
   // Posição e tamanho são uma mudança só (`rect`): com um marcador, as duas linhas viram
   // uma, com o rótulo de duas linhas e um colchete (HANDOFF-REVIEW-DETAILS 2.2).
-  const rectMark = ext?.mark(marking.id, 'rect') ?? null;
+  const rectMark =
+    ext?.mark(marking.id, 'rect') || ext?.mark(marking.id, 'space') || null;
+  const rectBelow = ext?.below(marking.id, 'rect') ?? ext?.below(marking.id, 'space');
   const position = (
     <div class="props-pair">
       {rectField('x', t('marking.x'), t('marking.x'))}
@@ -130,7 +137,7 @@ export function MarkingPanel({
     </div>
   );
   const where = [
-    imageLabel(image),
+    containerName,
     ...ancestorsOf(project, marking.id).reverse().map(markingLabel),
   ].join(t('marking.pathSeparator'));
 
@@ -208,29 +215,29 @@ export function MarkingPanel({
               }}
             />
           </Property>
+          <Property label={t('marking.container')}>
+            <span class="props-text">{containerName}</span>
+          </Property>
+          <Property label={t('marking.parent')}>
+            <span class="props-text">
+              {parent ? markingLabel(parent) : t('marking.noParent')}
+            </span>
+          </Property>
+          {/* Qualquer marcação pode virar flutuante: sai do container e passa ao canvas (decisão 10). */}
           <Property
-            label={t('marking.parent')}
-            for={parentId}
-            mark={ext?.mark(marking.id, 'parentId')}
-            below={ext?.below(marking.id, 'parentId')}
+            label={t('marking.floating')}
+            hint={t('marking.floatingHint')}
+            mark={ext?.mark(marking.id, 'floating')}
+            below={ext?.below(marking.id, 'floating')}
           >
-            <Select
-              id={parentId}
-              size="sm"
-              value={marking.parentId ?? ''}
+            <Choice
+              checked={marking.floating}
+              label={t('marking.floating')}
               disabled={readOnly}
-              onChange={(e) => {
-                const value = e.currentTarget.value;
-                report(actions.setMarkingParent(marking.id, value === '' ? null : value));
-              }}
-            >
-              <option value="">{t('marking.noParent')}</option>
-              {candidates.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {markingPath(project, m)}
-                </option>
-              ))}
-            </Select>
+              onChange={(e) =>
+                report(actions.setMarkingFloating(marking.id, e.currentTarget.checked))
+              }
+            />
           </Property>
           <Property label={t('marking.order')} hint={t('marking.orderHint')}>
             <div class="order-field">
@@ -267,7 +274,7 @@ export function MarkingPanel({
               }
               hint={t('marking.pixelsHint')}
               mark={<span class="props-rect-bracket">{rectMark}</span>}
-              below={ext?.below(marking.id, 'rect')}
+              below={rectBelow}
             >
               {position}
               {size}

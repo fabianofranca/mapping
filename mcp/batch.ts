@@ -17,7 +17,6 @@ import {
   approximateMeasurer,
   confirmMarkingReview,
   createMarking,
-  innermostContaining,
   reorderMarking,
   setBackgroundContainer,
   siblingPosition,
@@ -60,7 +59,6 @@ import {
   setImageSource,
   setLayerColor,
   setMarkingLocked,
-  setMarkingParent,
   setMarkingRect,
   setMarkingSource,
   setPlatformRepo,
@@ -329,6 +327,17 @@ class Batch {
             index,
             op: op.op,
             message: 'o argumento `image` de create_marking é antigo: use `container`',
+          });
+        }
+        if (
+          (op.op === 'create_marking' || op.op === 'update_marking') &&
+          op.parent !== undefined
+        ) {
+          this.deprecations.push({
+            index,
+            op: op.op,
+            message:
+              'o argumento `parent` foi ignorado: o pai da marcação sai da geometria (a mais interna que a contém)',
           });
         }
         if (
@@ -1047,15 +1056,6 @@ class Batch {
           project = setMarkingSource(project, id, toSource(op.source));
           changes.push(sourceLabel(projectIndex(project).markings.get(id)!.source));
         }
-        if (op.parent !== undefined) {
-          const parentId = op.parent === null ? null : this.item(op.parent, 'm', project);
-          project = setMarkingParent(project, id, parentId);
-          changes.push(
-            parentId === null
-              ? 'primeiro nível'
-              : `pai "${this.markingLabel(project, parentId)}"`,
-          );
-        }
         if (op.move !== undefined) {
           project = moveMarking(project, id, op.move.dx, op.move.dy);
           changes.push(`mover (${op.move.dx}, ${op.move.dy}) com as filhas`);
@@ -1330,18 +1330,9 @@ class Batch {
       );
     }
     const containerRef = op.container ?? op.image;
-    if (containerRef === undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`container` é obrigatório em create_marking',
-      );
-    }
-    const containerId = this.item(containerRef, 'i');
+    // Sem `container`: marcação do canvas (rect em unidades do canvas, podendo ser negativo).
+    const containerId = containerRef === undefined ? null : this.item(containerRef, 'i');
     const markingId = crypto.randomUUID();
-    const parentGiven = op.parent !== undefined;
-    const parentId =
-      op.parent === undefined || op.parent === null ? null : this.item(op.parent, 'm');
-
     const typeRef = annotation ? this.type(annotation.type) : null;
     const component =
       typeRef === null
@@ -1363,19 +1354,13 @@ class Batch {
     if (annotation && typeRef !== null && component !== null) {
       const newAnnotationId = crypto.randomUUID();
       annotationId = newAnnotationId;
-      // Sem `rect` e sem `parent`: primeiro nível, no centro do container; com `rect`, a mais
-      // interna que o contém (como na app).
-      const effectiveParent = parentGiven
-        ? parentId
-        : op.rect === undefined
-          ? null
-          : (innermostContaining(p, containerId, op.rect)?.id ?? null);
+      // O pai sai da geometria (o modelo assenta ao criar): sem `rect`, no centro do container.
       const rect =
         op.rect ??
         componentPlacement(
           p,
           catalog,
-          { containerId: containerId, parentId: effectiveParent, ...typeRef },
+          { containerId, parentId: null, ...typeRef },
           approximateMeasurer,
         );
       if (annotation.layer !== undefined) {
@@ -1395,7 +1380,7 @@ class Batch {
             markingId,
             annotationId: newAnnotationId,
             containerId: containerId,
-            parentId: effectiveParent,
+            parentId: null,
             ...typeRef,
             rect,
             name: op.name ?? null,
@@ -1416,12 +1401,6 @@ class Batch {
         rect: op.rect!,
         name: op.name ?? null,
       });
-      if (
-        parentGiven &&
-        projectIndex(project).markings.get(markingId)!.parentId !== parentId
-      ) {
-        project = setMarkingParent(project, markingId, parentId);
-      }
       if (annotation && typeRef !== null) {
         annotationId = crypto.randomUUID();
         project = this.typedAnnotation(project, annotationId, markingId, {

@@ -26,7 +26,8 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'rect-too-small': 'retângulo menor que o tamanho mínimo de uma marcação',
   'rect-out-of-image': 'o retângulo sai do container',
   'rect-outside-parent': 'o retângulo sai da marcação pai',
-  'rect-excludes-children': 'o retângulo deixaria filhas de fora',
+  'invalid-space':
+    'espaço inválido: só a marcação do canvas pode ser flutuante, e ela não tem container',
   'invalid-parent':
     'pai inválido: precisa ser do mesmo container, conter o retângulo e não ser descendente',
   'invalid-annotation-parent':

@@ -106,6 +106,7 @@
         "y": 0,
         "scale": 2.0661157024793386
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -120,8 +121,9 @@
       "placement": {
         "x": 1100,
         "y": 0,
-        "scale": 2.0
+        "scale": 2
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -138,6 +140,7 @@
         "y": 0,
         "scale": 1.25
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -154,6 +157,7 @@
         "y": 0,
         "scale": 1.25
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -174,6 +178,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -189,6 +194,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -204,6 +210,7 @@
       },
       "needsReview": true,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -219,6 +226,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -234,6 +242,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -249,6 +258,7 @@
       },
       "needsReview": false,
       "locked": true,
+      "floating": false,
       "source": null
     },
     {
@@ -264,6 +274,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -279,6 +290,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -294,6 +306,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -309,6 +322,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -324,6 +338,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -339,6 +354,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -354,6 +370,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -369,6 +386,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -384,6 +402,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -399,6 +418,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -414,6 +434,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -429,6 +450,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -444,6 +466,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -459,6 +482,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -474,6 +498,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -489,6 +514,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -504,6 +530,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -519,6 +546,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -534,6 +562,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -549,6 +578,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -564,6 +594,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -579,6 +610,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -594,6 +626,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -609,6 +642,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -624,6 +658,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     }
   ],

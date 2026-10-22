@@ -305,6 +305,48 @@ describe('derivado: marcações desenhadas', () => {
     actions.renameProject('Outro nome');
     expect(derived.drawnMarkings.value).toBe(before);
   });
+
+  it('a marcação do canvas desenha sempre, sem depender da opção das fotos', () => {
+    const { derived, actions } = setup();
+    setShowComponentsOnPhotos(false);
+    const created = actions.addComponent({
+      containerId: null,
+      parentId: null,
+      specId: SPEC_ID,
+      typeId: 'text',
+      center: { x: 3000, y: 100 },
+    });
+    if (!created.ok) throw new Error('addComponent');
+    // T1 e T2 estão na foto I1 (escondidos); a do canvas aparece.
+    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
+    expect(derived.componentScenes.value.get(created.value)?.containerId).toBeNull();
+  });
+});
+
+describe('derivado: marcações flutuantes', () => {
+  it('lista as flutuantes e mantém o mesmo conjunto enquanto nenhuma muda', () => {
+    const { derived, actions } = setup();
+    const empty = derived.floatingMarkings.value;
+    expect(empty.size).toBe(0);
+    actions.renameProject('Outro nome');
+    expect(derived.floatingMarkings.value).toBe(empty);
+
+    const note = actions.addComponent({
+      containerId: null,
+      parentId: null,
+      specId: SPEC_ID,
+      typeId: 'text',
+      center: { x: 3000, y: 100 },
+    });
+    if (!note.ok) throw new Error('addComponent');
+    // Comum no canvas: ainda não é flutuante.
+    expect(derived.floatingMarkings.value.size).toBe(0);
+    expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
+    const floating = derived.floatingMarkings.value;
+    expect([...floating]).toEqual([note.value]);
+    actions.renameProject('Mais outro');
+    expect(derived.floatingMarkings.value).toBe(floating);
+  });
 });
 
 describe('derivado: pendência "componente não cabe"', () => {

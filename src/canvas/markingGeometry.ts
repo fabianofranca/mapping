@@ -1,6 +1,7 @@
 // Geometria das marcações no canvas: conversões imagem ↔ canvas, hit-test,
 // desenho e redimensionamento. Funções puras, testadas em `tests/canvas/`.
 import {
+  IDENTITY_PLACEMENT,
   MIN_MARKING_SIZE,
   area,
   bottom,
@@ -23,6 +24,18 @@ export function markingCanvasRect(placement: Placement, rect: Rect): Rect {
   };
 }
 
+/**
+ * Posição do espaço de uma marcação no quadro: a do container (com a prévia de um gesto de
+ * imagem aplicada) ou a identidade, no canvas (`containerId` nulo). `undefined` se o container
+ * não está no mapa.
+ */
+export function placementOfSpace(
+  placements: ReadonlyMap<string, Placement>,
+  containerId: string | null,
+): Placement | undefined {
+  return containerId === null ? IDENTITY_PLACEMENT : placements.get(containerId);
+}
+
 /** Ponto do canvas em pixels da imagem (sem arredondar). */
 export function canvasToImagePixel(placement: Placement, p: Point): Point {
   return {
@@ -32,18 +45,20 @@ export function canvasToImagePixel(placement: Placement, p: Point): Point {
 }
 
 /**
- * Retângulo (pixels inteiros) entre dois pontos do desenho, limitado às bordas
- * da imagem. Pode ficar menor que o mínimo: ver `isDrawableRect`.
+ * Retângulo (inteiro) entre dois pontos do desenho, limitado às bordas da imagem (pixels da
+ * imagem). Sem `image` é o desenho no canvas (v13): unidades do canvas, sem limite. Pode ficar
+ * menor que o mínimo: ver `isDrawableRect`.
  */
 export function rectFromPoints(
   a: Point,
   b: Point,
-  image: { readonly width: number; readonly height: number },
+  image: { readonly width: number; readonly height: number } | null,
 ): Rect {
-  const x0 = Math.round(clamp(Math.min(a.x, b.x), 0, image.width));
-  const x1 = Math.round(clamp(Math.max(a.x, b.x), 0, image.width));
-  const y0 = Math.round(clamp(Math.min(a.y, b.y), 0, image.height));
-  const y1 = Math.round(clamp(Math.max(a.y, b.y), 0, image.height));
+  const lo = (v: number, size: number) => (image ? clamp(v, 0, size) : v);
+  const x0 = Math.round(lo(Math.min(a.x, b.x), image?.width ?? 0));
+  const x1 = Math.round(lo(Math.max(a.x, b.x), image?.width ?? 0));
+  const y0 = Math.round(lo(Math.min(a.y, b.y), image?.height ?? 0));
+  const y1 = Math.round(lo(Math.max(a.y, b.y), image?.height ?? 0));
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
@@ -52,13 +67,14 @@ export function isDrawableRect(rect: Rect): boolean {
 }
 
 /**
- * Marcações da imagem sob o ponto (pixels da imagem): a mais interna primeiro,
- * seguida dos ancestrais até a raiz. A mais interna é a mais funda na
- * hierarquia; no empate, a de menor área e, depois, a última do array.
+ * Marcações do espaço sob o ponto (pixels do container, ou unidades do canvas com
+ * `containerId` nulo): a mais interna primeiro, seguida dos ancestrais até a raiz. A mais
+ * interna é a mais funda na hierarquia; no empate, a de menor área e, depois, a última do array.
+ * As flutuantes ficam de fora (têm a vez antes, em `floatingAt`): não pertencem à cadeia.
  */
 export function markingChainAt(
   markings: readonly Marking[],
-  containerId: string,
+  containerId: string | null,
   p: Point,
 ): Marking[] {
   const byId = new Map(markings.map((m) => [m.id, m]));
@@ -74,7 +90,7 @@ export function markingChainAt(
   let best: Marking | null = null;
   let bestDepth = -1;
   for (const m of markings) {
-    if (m.containerId !== containerId || !pointInRect(p, m.rect)) continue;
+    if (m.floating || m.containerId !== containerId || !pointInRect(p, m.rect)) continue;
     const d = depth(m);
     if (!best || d > bestDepth || (d === bestDepth && area(m.rect) <= area(best.rect))) {
       best = m;
@@ -88,6 +104,19 @@ export function markingChainAt(
     m = m.parentId === null ? undefined : byId.get(m.parentId);
   }
   return chain;
+}
+
+/**
+ * Marcações flutuantes sob o ponto do canvas (unidades do canvas), a de cima primeiro (a última
+ * do array é a desenhada por cima). A flutuante é a primeira a receber o toque onde estiver.
+ */
+export function floatingAt(markings: readonly Marking[], p: Point): Marking[] {
+  const hits: Marking[] = [];
+  for (let i = markings.length - 1; i >= 0; i--) {
+    const m = markings[i];
+    if (m?.floating && pointInRect(p, m.rect)) hits.push(m);
+  }
+  return hits;
 }
 
 /**
@@ -107,16 +136,17 @@ export function nextInChain(
 }
 
 export interface RectLimits {
-  /** Área em que a marcação precisa ficar (pai ou imagem). */
-  readonly outer: Rect;
-  /** Caixa das filhas, que a marcação precisa envolver (`null` sem filhas). */
-  readonly inner: Rect | null;
+  /**
+   * Área em que a marcação precisa ficar: o container dela (pixels dele); `null` na marcação do
+   * canvas (sem limite). As filhas não limitam: redimensionar é livre e não as move.
+   */
+  readonly outer: Rect | null;
 }
 
 /**
  * Redimensiona pelo canto `corner` (o canto oposto fica fixo), seguindo o
- * ponteiro em pixels da imagem. O resultado é inteiro, tem o tamanho mínimo,
- * fica dentro de `outer` e envolve `inner`.
+ * ponteiro no espaço da marcação (pixels do container ou unidades do canvas). O resultado é
+ * inteiro, tem o tamanho mínimo e fica dentro de `outer`, se houver.
  */
 export function resizeMarkingRect(
   start: Rect,
@@ -125,7 +155,11 @@ export function resizeMarkingRect(
   limits: RectLimits,
   min = MIN_MARKING_SIZE,
 ): Rect {
-  const { outer, inner } = limits;
+  const { outer } = limits;
+  const lowX = outer ? outer.x : -Infinity;
+  const highX = outer ? right(outer) : Infinity;
+  const lowY = outer ? outer.y : -Infinity;
+  const highY = outer ? bottom(outer) : Infinity;
   const px = Math.round(pointer.x);
   const py = Math.round(pointer.y);
   let x0 = start.x;
@@ -133,14 +167,14 @@ export function resizeMarkingRect(
   let y0 = start.y;
   let y1 = bottom(start);
   if (corner === 'ne' || corner === 'se') {
-    x1 = clamp(px, Math.max(x0 + min, inner ? right(inner) : -Infinity), right(outer));
+    x1 = clamp(px, x0 + min, highX);
   } else {
-    x0 = clamp(px, outer.x, Math.min(x1 - min, inner ? inner.x : Infinity));
+    x0 = clamp(px, lowX, x1 - min);
   }
   if (corner === 'sw' || corner === 'se') {
-    y1 = clamp(py, Math.max(y0 + min, inner ? bottom(inner) : -Infinity), bottom(outer));
+    y1 = clamp(py, y0 + min, highY);
   } else {
-    y0 = clamp(py, outer.y, Math.min(y1 - min, inner ? inner.y : Infinity));
+    y0 = clamp(py, lowY, y1 - min);
   }
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }

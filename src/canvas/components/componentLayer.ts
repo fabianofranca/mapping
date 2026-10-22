@@ -2,14 +2,15 @@
 // Konva imperativo (como os outros renderers de `src/canvas/`); o desenho em si vem pronto
 // do modelo (cena instanciada na caixa da marcação, em pixels da imagem).
 import Konva from 'konva/lib/Core';
-import type { Placement } from '../../model';
+import { IDENTITY_PLACEMENT, type Placement } from '../../model';
 import type { FrameNode } from '../../model/components/scene';
 import { type RenderPalette, renderScene } from './renderScene';
 
 /** O que o renderer desenha de cada marcação (o `ComponentDrawing` do modelo tem esta forma). */
 export interface LayerDrawing {
   readonly markingId: string;
-  readonly containerId: string;
+  /** Container da marcação; `null` = marcação do canvas (espaço de `placement` identidade). */
+  readonly containerId: string | null;
   /** Cena instanciada no retângulo da marcação, em pixels da imagem. */
   readonly root: FrameNode;
 }
@@ -29,12 +30,13 @@ interface Mounted {
 type Parent = Konva.Group | Konva.Layer;
 
 /**
- * Desenha os desenhos de componentes dentro de um grupo (ou camada) do Konva. Cada imagem tem
- * um grupo próprio, posicionado pelo `placement` dela (pixels da imagem → canvas); dentro dele,
- * um nó por marcação. Não ouve eventos (`listening: false`) e não recorta o conteúdo.
+ * Desenha os desenhos de componentes dentro de um grupo (ou camada) do Konva. Cada espaço tem um
+ * grupo próprio, posicionado pelo `placement` dele (pixels da imagem → canvas; o canvas, com
+ * `containerId` nulo, usa a identidade); dentro dele, um nó por marcação. Não ouve eventos
+ * (`listening: false`) e não recorta o conteúdo.
  */
 export class ComponentLayerRenderer {
-  private readonly imageGroups = new Map<string, Konva.Group>();
+  private readonly imageGroups = new Map<string | null, Konva.Group>();
   private readonly mounted = new Map<string, Mounted>();
 
   constructor(
@@ -59,10 +61,15 @@ export class ComponentLayerRenderer {
     placements: ReadonlyMap<string, Placement>,
   ): boolean {
     let changed = false;
-    // Ordem de desenho por imagem, só do que aparece.
-    const wanted = new Map<string, LayerDrawing[]>();
+    // Ordem de desenho por espaço, só do que aparece.
+    const wanted = new Map<string | null, LayerDrawing[]>();
     for (const drawing of drawings.values()) {
-      if (!placements.has(drawing.containerId) || !visible(drawing)) continue;
+      if (
+        placementOf(placements, drawing.containerId) === undefined ||
+        !visible(drawing)
+      ) {
+        continue;
+      }
       const list = wanted.get(drawing.containerId);
       if (list) list.push(drawing);
       else wanted.set(drawing.containerId, [drawing]);
@@ -85,7 +92,7 @@ export class ComponentLayerRenderer {
     }
 
     for (const [containerId, list] of wanted) {
-      const placement = placements.get(containerId);
+      const placement = placementOf(placements, containerId);
       if (!placement) continue;
       const { group, created } = this.groupOf(containerId);
       if (created) changed = true;
@@ -117,11 +124,11 @@ export class ComponentLayerRenderer {
     this.mounted.clear();
   }
 
-  private groupOf(containerId: string): { group: Konva.Group; created: boolean } {
+  private groupOf(containerId: string | null): { group: Konva.Group; created: boolean } {
     const existing = this.imageGroups.get(containerId);
     if (existing) return { group: existing, created: false };
     const group = new Konva.Group({ listening: false, name: 'component-layer-image' });
-    group.setAttr('containerId', containerId);
+    group.setAttr('containerId', containerId ?? '');
     this.parent.add(group);
     this.imageGroups.set(containerId, group);
     return { group, created: true };
@@ -140,6 +147,14 @@ export class ComponentLayerRenderer {
     root.setAttr('markingId', drawing.markingId);
     return root;
   }
+}
+
+/** Posição do espaço: a do container ou, no canvas (`null`), a identidade. */
+function placementOf(
+  placements: ReadonlyMap<string, Placement>,
+  containerId: string | null,
+): Placement | undefined {
+  return containerId === null ? IDENTITY_PLACEMENT : placements.get(containerId);
 }
 
 /** Posiciona o grupo da imagem; `true` se algo mudou. */

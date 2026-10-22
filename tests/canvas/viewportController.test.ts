@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_CANVAS_RECT, fitRect } from '../../src/canvas/viewport';
 import { ViewportController } from '../../src/canvas/viewportController';
-import type { ProjectContainer } from '../../src/model';
+import { createMarking, type Project } from '../../src/model';
 import { canvasProject } from './harness';
 
 function container(width: number, height: number): HTMLDivElement {
@@ -15,14 +15,14 @@ const SIZE = { width: 380, height: 700 };
 
 describe('ViewportController', () => {
   it('na primeira medida com tamanho, enquadra as imagens (uma vez só)', () => {
-    let images: readonly ProjectContainer[] = canvasProject().containers;
-    const view = new ViewportController(container(380, 700), () => images);
+    let content: Project | null = canvasProject();
+    const view = new ViewportController(container(380, 700), () => content);
     const stop = view.observe();
     expect(view.size.value).toEqual(SIZE);
     const fitted = fitRect({ x: 0, y: 0, width: 1600, height: 800 }, SIZE);
     expect(view.viewport.value).toEqual(fitted);
 
-    images = [];
+    content = null;
     view.panBy(10, 0);
     view.measure();
     expect(view.viewport.value.x).toBe(fitted.x + 10);
@@ -31,7 +31,7 @@ describe('ViewportController', () => {
 
   it('sem tamanho, não enquadra; canvas vazio enquadra a área padrão', () => {
     const el = container(0, 0);
-    const view = new ViewportController(el, () => []);
+    const view = new ViewportController(el, () => null);
     view.measure();
     view.fitAll();
     expect(view.viewport.value).toEqual({ x: 0, y: 0, scale: 1 });
@@ -45,7 +45,7 @@ describe('ViewportController', () => {
   // usava a altura antiga (o ResizeObserver ainda não tinha disparado).
   it('enquadrar tudo mede o container antes (sem esperar o ResizeObserver)', () => {
     const el = container(380, 300);
-    const view = new ViewportController(el, () => canvasProject().containers);
+    const view = new ViewportController(el, () => canvasProject());
     view.measure();
     Object.defineProperty(el, 'clientHeight', { value: 700 });
     view.fitAll();
@@ -55,8 +55,22 @@ describe('ViewportController', () => {
     );
   });
 
+  it('enquadrar tudo inclui as marcações do canvas', () => {
+    const base = canvasProject();
+    const content = createMarking(base, {
+      id: 'C1',
+      containerId: null,
+      rect: { x: 1700, y: -400, width: 400, height: 300 },
+    });
+    const view = new ViewportController(container(380, 700), () => content);
+    view.measure();
+    expect(view.viewport.value).toEqual(
+      fitRect({ x: 0, y: -400, width: 2100, height: 1200 }, SIZE),
+    );
+  });
+
   it('centraliza num retângulo e converte tela ↔ canvas', () => {
-    const view = new ViewportController(container(380, 700), () => []);
+    const view = new ViewportController(container(380, 700), () => null);
     view.measure();
     view.centerOn({ x: 1000, y: 1000, width: 100, height: 100 });
     const center = view.center();
@@ -66,7 +80,7 @@ describe('ViewportController', () => {
   });
 
   it('zoom no ponto mantém o ponto parado; pinça escala pela distância', () => {
-    const view = new ViewportController(container(380, 700), () => []);
+    const view = new ViewportController(container(380, 700), () => null);
     const before = view.toCanvas({ x: 100, y: 200 });
     view.zoomAt({ x: 100, y: 200 }, 2);
     expect(view.scale).toBe(2);

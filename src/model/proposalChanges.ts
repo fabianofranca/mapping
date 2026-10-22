@@ -17,6 +17,7 @@ import {
   layerField,
   layerValue,
   markingField,
+  markingFieldsFor,
   markingValue,
   platformRepoValue,
   specializationValue,
@@ -64,7 +65,7 @@ function longestIncreasing(seq: readonly number[]): Set<number> {
 }
 
 /**
- * Ordem entre irmãs (mesma imagem e mesmo pai): quem sai da maior subsequência crescente da
+ * Ordem entre irmãs (mesmo espaço e mesmo pai): quem sai da maior subsequência crescente da
  * ordem do array muda de posição. O array aplicado é o de antes, com as criadas no fim (na
  * ordem de depois); reparentar não mexe no array. `from` é o índice entre as irmãs de antes
  * (`null` na criada); `to`, o índice entre as irmãs de depois.
@@ -77,7 +78,7 @@ function markingPositions(diff: Diff, base: Project, after: Project): void {
     .forEach((m, i) => rank.set(m.id, base.markings.length + i));
   const groups = new Map<string, Marking[]>();
   for (const m of after.markings) {
-    const key = `${m.containerId}|${m.parentId ?? ''}`;
+    const key = `${m.containerId ?? ''}|${m.parentId ?? ''}`;
     const group = groups.get(key);
     if (group) group.push(m);
     else groups.set(key, [m]);
@@ -136,7 +137,7 @@ class Diff {
 /** Mudanças de uma anotação: a troca de tipo leva `values` e `entries` junto. */
 function annotationChanges(
   diff: Diff,
-  where: { imageId: string; markingId: string },
+  where: { imageId: string | null; markingId: string },
   before: Annotation | undefined,
   after: Annotation | undefined,
 ): void {
@@ -338,14 +339,17 @@ export function computeChanges(base: Project, after: Project): Change[] {
     );
   }
   for (const m of union(after.markings, base.markings, afterMarkings)) {
+    const before = baseMarkings.get(m.id);
+    const next = afterMarkings.get(m.id);
     diff.entity(
       'marking',
       m.id,
+      // `imageId` nulo com `markingId`: a marcação do canvas (o grupo Canvas da revisão).
       { imageId: m.containerId, markingId: m.id },
-      baseMarkings.get(m.id),
-      afterMarkings.get(m.id),
+      before,
+      next,
       markingValue,
-      COMPARED_FIELDS.marking,
+      before && next ? markingFieldsFor(before, next) : [],
       (marking, f) => markingField(after, marking, f),
     );
   }
@@ -354,7 +358,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
     const marking = afterMarkings.get(a.markingId) ?? baseMarkings.get(a.markingId);
     annotationChanges(
       diff,
-      { imageId: marking?.containerId ?? '', markingId: a.markingId },
+      { imageId: marking?.containerId ?? null, markingId: a.markingId },
       baseAnnotations.get(a.id),
       afterAnnotations.get(a.id),
     );

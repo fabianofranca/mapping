@@ -6,7 +6,7 @@ import {
   imagesBounds,
   resizeFromCorner,
 } from '../../src/canvas/imageGeometry';
-import { imageCanvasRect } from '../../src/model';
+import { createMarking, imageCanvasRect } from '../../src/model';
 import { image, sampleProject } from '../model/fixtures';
 
 // I1: 4000×3000 em (0, 0) com escala 0.25 → 1000×750. I2: 1000×1000 à direita.
@@ -59,6 +59,41 @@ describe('geometria das imagens no canvas', () => {
       y: 0,
       width: r2.x + r2.width,
       height: Math.max(750, r2.height),
+    });
+  });
+
+  it('inclui as marcações do canvas (flutuantes também), mas não as de container', () => {
+    const withCanvas = createMarking(p, {
+      id: 'C1',
+      containerId: null,
+      rect: { x: -300, y: -200, width: 400, height: 300 },
+    });
+    const noted = createMarking(withCanvas, {
+      id: 'N1',
+      containerId: null,
+      rect: { x: 5000, y: 900, width: 100, height: 100 },
+      floating: true,
+    });
+    const r2 = imageCanvasRect(image(p, 'I2'), image(p, 'I2').placement);
+    expect(imagesBounds(p.containers, p.markings)).toEqual(imagesBounds(p.containers));
+    expect(imagesBounds(withCanvas.containers, withCanvas.markings)).toEqual({
+      x: -300,
+      y: -200,
+      width: r2.x + r2.width + 300,
+      height: Math.max(750, r2.height) + 200,
+    });
+    expect(imagesBounds(noted.containers, noted.markings)).toMatchObject({
+      x: -300,
+      y: -200,
+      width: 5400,
+      height: 1200,
+    });
+    // Só marcações do canvas, sem imagens.
+    expect(imagesBounds([], noted.markings)).toEqual({
+      x: -300,
+      y: -200,
+      width: 5400,
+      height: 1200,
     });
   });
 });

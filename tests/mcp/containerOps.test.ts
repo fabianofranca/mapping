@@ -332,11 +332,9 @@ describe('as antigas add_image e add_blank_image, e o argumento image', () => {
         image: '$c',
         rect: { x: 0, y: 0, width: 10, height: 10 },
       },
-      { op: 'create_marking', rect: { x: 0, y: 0, width: 10, height: 10 } },
     ]);
     expect(result.errors?.map((e) => [e.index, e.code])).toEqual([
       [1, 'invalid-arguments'],
-      [2, 'invalid-arguments'],
     ]);
   });
 

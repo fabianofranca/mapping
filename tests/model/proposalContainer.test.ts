@@ -110,7 +110,7 @@ describe('proposta: container', () => {
     expect(p.changes.map((c) => c.field)).toEqual(['background']);
   });
 
-  it('o tamanho que deixa marcação de fora não é aplicado (rect-out-of-image)', () => {
+  it('o tamanho que deixa marcação de fora não bloqueia: o assentar a leva ao canvas', () => {
     const base = createMarking(bgContainer(sampleProject()), {
       id: 'MB',
       containerId: 'B1',
@@ -124,7 +124,11 @@ describe('proposta: container', () => {
       ),
     };
     const result = applyAccepted(base, accept(base, shrink), AT);
-    expect(result.ok).toBe(false);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const marking = result.project.markings.find((m) => m.id === 'MB');
+    expect(marking?.containerId).toBeNull();
+    expect(validateProject(result.project)).toEqual([]);
   });
 
   it('imagem trancada: o tamanho avisa trava; a cor não', () => {

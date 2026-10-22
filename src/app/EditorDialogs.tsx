@@ -135,6 +135,9 @@ function renderDialog(
               ...impact,
             })}
           </p>
+          {impact.containers > 0 && (
+            <p>{t('marking.deleteContainersStay', { containers: impact.containers })}</p>
+          )}
           {impact.lockedDescendants > 0 && (
             <p role="alert">
               <strong>

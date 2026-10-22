@@ -1,11 +1,13 @@
 import { signal, type Signal } from '@preact/signals';
 import {
   projectIndex,
+  spaceOf,
   type Annotation,
   type Layer,
   type Marking,
   type Project,
   type ProjectContainer,
+  type Space,
 } from '../model';
 
 /** Item selecionado no editor. */
@@ -248,7 +250,10 @@ export type ResolvedSelection =
   | {
       readonly kind: 'marking';
       readonly marking: Marking;
-      readonly image: ProjectContainer;
+      /** Container da marcação; `null` na marcação do canvas (v13). */
+      readonly image: ProjectContainer | null;
+      /** Espaço do `rect`: o container (pixels dele) ou o canvas (`placement` identidade). */
+      readonly space: Space;
     }
   | null;
 
@@ -262,16 +267,23 @@ export function resolveSelection(
     const image = project.containers.find((i) => i.id === selection.id);
     return image ? { kind: 'image', image } : null;
   }
-  const marking = project.markings.find((m) => m.id === selection.id);
-  const image = marking && project.containers.find((i) => i.id === marking.containerId);
-  return marking && image ? { kind: 'marking', marking, image } : null;
+  const index = projectIndex(project);
+  const marking = index.markings.get(selection.id);
+  if (!marking) return null;
+  if (marking.containerId === null) {
+    return { kind: 'marking', marking, image: null, space: spaceOf(project, marking) };
+  }
+  const image = index.containers.get(marking.containerId);
+  return image
+    ? { kind: 'marking', marking, image, space: spaceOf(project, marking) }
+    : null;
 }
 
 // Árvore de marcações: quais nós estão recolhidos. Estado de UI, fora do projeto e do
 // desfazer. As chaves levam o tipo do nó porque ids de imagem e de marcação vêm de
-// geradores diferentes.
+// geradores diferentes. A raiz Canvas (v13) é `treeKey('canvas', '')`.
 
-export function treeKey(kind: 'image' | 'marking', id: string): string {
+export function treeKey(kind: 'image' | 'marking' | 'canvas', id: string): string {
   return `${kind}:${id}`;
 }
 
@@ -282,22 +294,33 @@ export function toggleTreeNode(ui: EditorUi, key: string): void {
   ui.collapsedTree.value = next;
 }
 
-/** Recolhe todos os nós que têm filhos (as imagens e as marcações com filhas). */
+/**
+ * Recolhe todos os nós que têm filhos: a raiz Canvas, os containers com marcações e as
+ * marcações com filhas ou com containers membros.
+ */
 export function collapseTree(ui: EditorUi, project: Project | null): void {
   if (!project) return;
   const next = new Set<string>();
   const parents = new Set<string>();
+  const floating = new Set(project.markings.filter((m) => m.floating).map((m) => m.id));
   for (const m of project.markings) {
-    next.add(treeKey('image', m.containerId));
+    next.add(
+      m.containerId === null ? treeKey('canvas', '') : treeKey('image', m.containerId),
+    );
     if (m.parentId !== null) parents.add(m.parentId);
+  }
+  // Uma flutuante não tem filhos na árvore: não há o que recolher nela.
+  for (const c of project.containers) {
+    if (c.parentId !== null && !floating.has(c.parentId)) parents.add(c.parentId);
   }
   for (const id of parents) next.add(treeKey('marking', id));
   ui.collapsedTree.value = next;
 }
 
 /**
- * Abre os ancestrais do item para ele aparecer na árvore (a imagem e as marcações
- * acima). Devolve se algo mudou, para não regravar o signal à toa.
+ * Abre os ancestrais do item para ele aparecer na árvore: a cadeia inteira (marcação de
+ * container → container → marcações do canvas que o contêm → Canvas). Devolve se algo
+ * mudou, para não regravar o signal à toa.
  */
 export function revealInTree(
   ui: EditorUi,
@@ -305,18 +328,45 @@ export function revealInTree(
   selection: Selection,
 ): boolean {
   const collapsed = ui.collapsedTree.peek();
-  if (collapsed.size === 0 || !project || !selection || selection.kind === 'image') {
-    return false;
-  }
-  const byId = projectIndex(project).markings;
+  if (collapsed.size === 0 || !project || !selection) return false;
+  const index = projectIndex(project);
+  const byId = index.markings;
   const next = new Set(collapsed);
-  let current = byId.get(selection.id);
-  if (!current) return false;
-  next.delete(treeKey('image', current.containerId));
-  // O limite evita laço em dados corrompidos (a hierarquia é validada no modelo).
-  for (let guard = byId.size; current?.parentId != null && guard > 0; guard--) {
-    next.delete(treeKey('marking', current.parentId));
-    current = byId.get(current.parentId);
+
+  /** Abre a marcação `startId` e as marcações acima dela (o limite evita laço em dados corrompidos). */
+  const openMarkings = (startId: string | null): void => {
+    let current = startId === null ? undefined : byId.get(startId);
+    for (let guard = byId.size; current && guard > 0; guard--) {
+      next.delete(treeKey('marking', current.id));
+      current = current.parentId === null ? undefined : byId.get(current.parentId);
+    }
+  };
+  /** Abre o container e, se uma marcação do canvas o contém, a cadeia dela até o Canvas. */
+  const openContainer = (container: ProjectContainer): void => {
+    next.delete(treeKey('image', container.id));
+    if (container.parentId !== null) {
+      openMarkings(container.parentId);
+      next.delete(treeKey('canvas', ''));
+    }
+  };
+
+  if (selection.kind === 'image') {
+    const container = index.containers.get(selection.id);
+    if (!container) return false;
+    if (container.parentId !== null) {
+      openMarkings(container.parentId);
+      next.delete(treeKey('canvas', ''));
+    }
+  } else {
+    const marking = byId.get(selection.id);
+    if (!marking) return false;
+    openMarkings(marking.parentId);
+    if (marking.containerId === null) {
+      next.delete(treeKey('canvas', ''));
+    } else {
+      const container = index.containers.get(marking.containerId);
+      if (container) openContainer(container);
+    }
   }
   if (next.size === collapsed.size) return false;
   ui.collapsedTree.value = next;

@@ -218,7 +218,8 @@ export async function markingView(
   if (platform !== undefined) assertPlatform(refs, platform);
   const p = refs.project;
   const index = projectIndex(p);
-  const image = index.containers.get(marking.containerId);
+  const image =
+    marking.containerId === null ? null : index.containers.get(marking.containerId);
   const own = index.annotationsByMarking.get(marking.id) ?? [];
   const ancestors = ancestorsOf(p, marking.id).reverse();
   const lockState = markingLockStates(p).get(marking.id) ?? null;
@@ -389,6 +390,7 @@ export function projectDetail(refs: Refs): Json {
   }
   const markingsByContainer = new Map<string, number>();
   for (const m of p.markings) {
+    if (m.containerId === null) continue;
     markingsByContainer.set(
       m.containerId,
       (markingsByContainer.get(m.containerId) ?? 0) + 1,

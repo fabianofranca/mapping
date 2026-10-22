@@ -258,7 +258,12 @@ const BUTTON_ON_SCREEN: Operation = {
 
 describe('move_marking', () => {
   it('reordena entre as irmãs e fala do índice inválido', async () => {
-    const second: Operation = { ...BUTTON_ON_SCREEN, as: '$btn2' };
+    // Fora do primeiro (o pai sai da geometria): senão a segunda nasceria dentro da primeira.
+    const second: Operation = {
+      ...BUTTON_ON_SCREEN,
+      as: '$btn2',
+      rect: { x: 0, y: 0, width: 48, height: 40 },
+    };
     const result = await run([
       SCREEN,
       BUTTON_ON_SCREEN,
@@ -335,5 +340,76 @@ describe('get_marking_image num container com componentes', () => {
     expect(out.json).toMatchObject({ mode: 'context', drawing: 'simplified' });
     const { raster } = await decodeImage(out.image.bytes);
     expect([raster.data[0], raster.data[1], raster.data[2]]).toEqual([0xff, 0xeb, 0xee]);
+  });
+});
+
+describe('marcação do canvas e pai pela geometria (ME1)', () => {
+  const idOf = (result: BatchResult, alias: string) =>
+    (result.aliases.get(alias) as { id: string }).id;
+
+  it('create_marking sem container cria a marcação do canvas, com rect negativo', async () => {
+    const result = await run([
+      {
+        op: 'create_marking',
+        as: '$m',
+        name: 'Solta',
+        rect: { x: -50, y: -20, width: 100, height: 60 },
+      },
+    ]);
+    expect(result.errors).toEqual([]);
+    const marking = result.project.markings.find((m) => m.id === idOf(result, '$m'))!;
+    expect(marking.containerId).toBeNull();
+    expect(marking.rect).toEqual({ x: -50, y: -20, width: 100, height: 60 });
+    const refs = new Refs({ ...loaded, project: result.project });
+    expect(refs.label('m', marking.id)).toBe('Canvas › Solta');
+    expect(markingRow(refs, marking)).toMatchObject({ container: 'Canvas' });
+  });
+
+  it('`parent` em create_marking e update_marking gera aviso e o pai é o da geometria', async () => {
+    const result = await run([
+      SCREEN,
+      {
+        op: 'create_marking',
+        as: '$a',
+        container: '$tela',
+        rect: { x: 0, y: 0, width: 200, height: 200 },
+      },
+      {
+        op: 'create_marking',
+        as: '$b',
+        container: '$tela',
+        rect: { x: 300, y: 300, width: 50, height: 50 },
+      },
+      {
+        op: 'create_marking',
+        as: '$c',
+        container: '$tela',
+        rect: { x: 10, y: 10, width: 50, height: 50 },
+        parent: '$b',
+      },
+      { op: 'update_marking', marking: '$c', parent: null },
+    ]);
+    expect(result.errors).toEqual([]);
+    const c = result.project.markings.find((m) => m.id === idOf(result, '$c'))!;
+    expect(c.parentId).toBe(idOf(result, '$a'));
+    expect(result.deprecations.map((d) => [d.index, d.op])).toEqual([
+      [3, 'create_marking'],
+      [4, 'update_marking'],
+    ]);
+  });
+
+  it('get_marking_image numa marcação do canvas dá erro claro', async () => {
+    const result = await run([
+      {
+        op: 'create_marking',
+        as: '$m',
+        rect: { x: -500, y: -500, width: 10, height: 10 },
+      },
+    ]);
+    const next: LoadedProject = { ...loaded, project: result.project };
+    const marking = result.project.markings.find((m) => m.id === idOf(result, '$m'))!;
+    await expect(markingImage(roots, new Refs(next), marking, {})).rejects.toThrow(
+      /canvas/,
+    );
   });
 });

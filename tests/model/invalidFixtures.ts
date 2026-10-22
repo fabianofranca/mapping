@@ -49,6 +49,7 @@ const extraMarking = (p: Project, marking: Partial<Marking>): Project => ({
       rect: { x: 100, y: 1500, width: 200, height: 100 },
       needsReview: false,
       locked: false,
+      floating: false,
       source: null,
       ...marking,
     },

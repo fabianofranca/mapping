@@ -1,7 +1,7 @@
 // Viewport do canvas: tamanho do container, pan, zoom, enquadrar e centralizar.
 // As contas ficam em `viewport.ts` (puras); aqui ficam os signals e o DOM.
 import { signal } from '@preact/signals';
-import type { ProjectContainer, Rect } from '../model';
+import type { Project, Rect } from '../model';
 import { imagesBounds } from './imageGeometry';
 import {
   EMPTY_CANVAS_RECT,
@@ -21,16 +21,19 @@ export class ViewportController {
   readonly viewport = signal<Viewport>({ x: 0, y: 0, scale: 1 });
   readonly size = signal<Size>({ width: 0, height: 0 });
   private readonly container: HTMLElement;
-  /** Imagens a enquadrar (lidas sem assinar). */
-  private readonly images: () => readonly ProjectContainer[];
+  /** O que enquadrar: as imagens e as marcações do canvas do projeto (lido sem assinar). */
+  private readonly content: () => Pick<Project, 'containers' | 'markings'> | null;
   /** Já enquadrou na primeira vez que o container teve tamanho. */
   private fitted = false;
   /** Quantas vezes enquadrou; o canvas publica no container para os testes e2e. */
   fits = 0;
 
-  constructor(container: HTMLElement, images: () => readonly ProjectContainer[]) {
+  constructor(
+    container: HTMLElement,
+    content: () => Pick<Project, 'containers' | 'markings'> | null,
+  ) {
     this.container = container;
-    this.images = images;
+    this.content = content;
   }
 
   /** Acompanha o tamanho do container. Devolve a função que para de acompanhar. */
@@ -54,7 +57,8 @@ export class ViewportController {
   }
 
   /**
-   * Enquadra todas as imagens (ou uma área padrão, com o canvas vazio). Mede o container
+   * Enquadra tudo o que está no canvas (imagens e marcações do canvas; ou uma área padrão, com o
+   * canvas vazio). Mede o container
    * antes: logo depois de uma janela de ferramenta fechar, o `ResizeObserver` ainda não
    * disparou e o último tamanho medido é o antigo.
    */
@@ -63,7 +67,11 @@ export class ViewportController {
     if (size.width === 0) return;
     this.fitted = true;
     this.fits += 1;
-    this.viewport.value = fitRect(imagesBounds(this.images()) ?? EMPTY_CANVAS_RECT, size);
+    const content = this.content();
+    this.viewport.value = fitRect(
+      imagesBounds(content?.containers ?? [], content?.markings) ?? EMPTY_CANVAS_RECT,
+      size,
+    );
   }
 
   /** Tamanho atual do container; atualiza `size` só se ele mudou. */

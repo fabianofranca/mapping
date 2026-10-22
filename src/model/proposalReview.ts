@@ -26,7 +26,7 @@ import { isRecord } from './refs';
 import type { JsonValue, Project } from './types';
 
 // Revisão de uma proposta (etapa 4): dependências entre mudanças, níveis (proposta →
-// projeto/imagem → item → mudança), decisões de três estados com "parcial", conflitos
+// projeto/canvas/imagem → item → mudança), decisões de três estados com "parcial", conflitos
 // e o aviso de item trancado. Tudo puro: a app (estado derivado) e o MCP usam o mesmo.
 
 // ---------------------------------------------------------------------------
@@ -160,8 +160,9 @@ function nodeKey(level: ReviewLevel, id: string | null): string {
 }
 
 /**
- * Pai de cada marcação citada pela proposta, para aninhar os itens: o proposto (criação
- * ou mudança de `parentId`), senão o atual, senão o anterior (marcação removida).
+ * Pai de cada marcação citada pela proposta, para aninhar os itens: o proposto (criação;
+ * o `parentId` de uma alteração é derivado e não vem na proposta), senão o atual, senão o
+ * anterior (marcação removida).
  */
 function parentLookup(
   p: Proposal,
@@ -173,8 +174,6 @@ function parentLookup(
     if (c.entity !== 'marking') continue;
     if (c.kind === 'create' && isRecord(c.to)) {
       proposed.set(c.entityId, typeof c.to.parentId === 'string' ? c.to.parentId : null);
-    } else if (c.kind === 'update' && c.field === 'parentId') {
-      proposed.set(c.entityId, typeof c.to === 'string' ? c.to : null);
     } else if (c.kind === 'remove' && isRecord(c.from)) {
       removed.set(
         c.entityId,
@@ -192,7 +191,8 @@ function parentLookup(
 }
 
 /**
- * Os níveis da revisão: Projeto (especializações, repositórios e camadas) e uma imagem
+ * Os níveis da revisão: Projeto (especializações, repositórios e camadas), Canvas (as
+ * marcações do canvas, `imageId` nulo com `markingId`) e uma imagem
  * para cada imagem citada, com os itens (marcações com tudo que mudou nelas, inclusive
  * as anotações) aninhados pela hierarquia: a filha fica dentro do ancestral mais próximo
  * que também tem mudanças. `project` é o projeto atual (para achar os pais das marcações
@@ -213,11 +213,13 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
   });
   const root = make('proposal', null);
   let projectNode: MutableNode | null = null;
+  let canvasNode: MutableNode | null = null;
   const containers = new Map<string, MutableNode>();
-  const items = new Map<string, { node: MutableNode; containerId: string }>();
+  // `containerId` nulo: o item é do canvas.
+  const items = new Map<string, { node: MutableNode; containerId: string | null }>();
 
   for (const c of p.changes) {
-    if (c.imageId === null) {
+    if (c.imageId === null && c.markingId === null) {
       if (!projectNode) {
         projectNode = make('project', null);
         root.children.unshift(projectNode);
@@ -225,16 +227,25 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
       projectNode.changeIds.push(c.id);
       continue;
     }
-    let image = containers.get(c.imageId);
-    if (!image) {
-      image = make('image', c.imageId);
-      containers.set(c.imageId, image);
-      root.children.push(image);
+    if (c.markingId !== null && c.imageId === null && !canvasNode) {
+      canvasNode = make('canvas', null);
+      // Depois do Projeto e antes das imagens: o Canvas é irmão dos containers.
+      root.children.splice(projectNode ? 1 : 0, 0, canvasNode);
     }
-    if (c.markingId === null) {
-      image.changeIds.push(c.id);
-      continue;
+    let image: MutableNode | undefined;
+    if (c.imageId !== null) {
+      image = containers.get(c.imageId);
+      if (!image) {
+        image = make('image', c.imageId);
+        containers.set(c.imageId, image);
+        root.children.push(image);
+      }
+      if (c.markingId === null) {
+        image.changeIds.push(c.id);
+        continue;
+      }
     }
+    if (c.markingId === null) continue;
     let item = items.get(c.markingId);
     if (!item) {
       item = { node: make('item', c.markingId), containerId: c.imageId };
@@ -243,7 +254,7 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
     item.node.changeIds.push(c.id);
   }
 
-  // Aninha cada item no ancestral mais próximo com mudanças (na mesma imagem).
+  // Aninha cada item no ancestral mais próximo com mudanças (no mesmo espaço).
   const parentOf = parentLookup(p, project);
   for (const [markingId, { node, containerId: imageId }] of items) {
     const seen = new Set([markingId]);
@@ -256,7 +267,9 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
         break;
       }
     }
-    (host ?? containers.get(imageId))?.children.push(node);
+    (host ?? (imageId === null ? canvasNode : containers.get(imageId)))?.children.push(
+      node,
+    );
   }
 
   const nodes = new Map<string, ReviewNode>();
@@ -271,10 +284,13 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
     return ids;
   };
   visit(root);
-  if (!projectNode) {
-    const empty = make('project', null);
-    nodes.set(nodeKey('project', null), empty);
-    all.set(nodeKey('project', null), []);
+  for (const [level, node] of [
+    ['project', projectNode],
+    ['canvas', canvasNode],
+  ] as const) {
+    if (node) continue;
+    nodes.set(nodeKey(level, null), make(level, null));
+    all.set(nodeKey(level, null), []);
   }
   const changes = proposalIndex(p).changes;
   return {
@@ -445,7 +461,7 @@ function lockWarning(c: Change, project: Project): boolean {
   const index = projectIndex(project);
   if (c.entity === 'marking' && index.markings.has(c.entityId)) {
     if (c.kind === 'remove') return !canDeleteMarking(project, c.entityId);
-    if (c.kind === 'update' && c.field === 'rect') {
+    if (c.kind === 'update' && (c.field === 'rect' || c.field === 'space')) {
       return !canEditMarkingGeometry(project, c.entityId);
     }
   }

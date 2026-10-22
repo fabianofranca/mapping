@@ -43,6 +43,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
     imageList.push({
       id: containerId,
       name: null,
+      parentId: null,
       markingColor: null,
       locked: false,
       source: null,
@@ -69,6 +70,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         rect: parent,
         needsReview: false,
         locked: false,
+        floating: false,
         source: null,
       });
       for (let c = 0; c < 4; c++) {
@@ -85,6 +87,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
           },
           needsReview: false,
           locked: false,
+          floating: false,
           source: null,
         });
       }

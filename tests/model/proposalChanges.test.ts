@@ -31,7 +31,7 @@ import {
   setImageSource,
   setLayerColor,
   setMarkingLocked,
-  setMarkingParent,
+  setMarkingFloating,
   setMarkingRect,
   setMarkingSource,
   setPlatformRepo,
@@ -72,6 +72,7 @@ describe('cálculo das mudanças: marcações', () => {
           id: 'M9',
           containerId: 'I2',
           parentId: null,
+          floating: false,
           name: 'Novo',
           rect: { x: 200, y: 200, width: 100, height: 100 },
           needsReview: false,
@@ -98,11 +99,10 @@ describe('cálculo das mudanças: marcações', () => {
     });
   });
 
-  it('alteração: uma mudança por campo (nome, rect, pai, trava e origem)', () => {
+  it('alteração: uma mudança por campo (nome, rect, trava e origem; o pai não é comparado)', () => {
     const base = sampleProject();
     let after = renameMarking(base, 'M4', 'Farol');
     after = setMarkingRect(after, 'M4', { x: 10, y: 20, width: 100, height: 100 });
-    after = setMarkingParent(after, 'M3', 'M1');
     after = setMarkingLocked(after, 'M1', true);
     after = setMarkingSource(after, 'M1', FIGMA);
     const p = propose(base, after);
@@ -115,10 +115,6 @@ describe('cálculo das mudanças: marcações', () => {
       from: { x: 0, y: 0, width: 100, height: 100 },
       to: { x: 10, y: 20, width: 100, height: 100 },
     });
-    expect(changeOf(p, 'marking', 'M3', 'parentId')).toMatchObject({
-      from: 'M2',
-      to: 'M1',
-    });
     expect(changeOf(p, 'marking', 'M1', 'locked')).toMatchObject({
       from: false,
       to: true,
@@ -127,7 +123,60 @@ describe('cálculo das mudanças: marcações', () => {
       from: null,
       to: FIGMA,
     });
-    expect(p.changes).toHaveLength(5);
+    expect(p.changes).toHaveLength(4);
+    expect(p.changes.map((c) => c.field)).not.toContain('parentId');
+  });
+
+  it('o pai derivado muda sem virar mudança (parentId não é comparado)', () => {
+    const base = sampleProject();
+    // M3 sai de M2 pela geometria: só o rect aparece, o pai (M2 → M1) é recalculado.
+    const after = moveMarking(base, 'M3', 0, 200);
+    expect(after.markings.find((m) => m.id === 'M3')?.parentId).not.toBe('M2');
+    const p = propose(base, after);
+    expect(p.changes.map((c) => [c.entityId, c.field])).toEqual([['M3', 'rect']]);
+  });
+
+  it('flutuante: muda o espaço (container → canvas) e vira uma `space` composta', () => {
+    const base = sampleProject();
+    const after = setMarkingFloating(base, 'M4', true);
+    const p = propose(base, after);
+    const moved = after.markings.find((m) => m.id === 'M4');
+    expect(p.changes.map((c) => [c.entityId, c.field])).toEqual([
+      ['M4', 'space'],
+      ['M4', 'floating'],
+    ]);
+    const space = changeOf(p, 'marking', 'M4', 'space');
+    expect(space).toMatchObject({
+      kind: 'update',
+      imageId: null,
+      markingId: 'M4',
+      from: { containerId: 'I2', rect: { x: 0, y: 0, width: 100, height: 100 } },
+      to: { containerId: null, rect: moved?.rect },
+    });
+    expect(changeOf(p, 'marking', 'M4', 'floating')).toMatchObject({
+      from: false,
+      to: true,
+    });
+    // Sem rect separado: o rect vai dentro da composta.
+    expect(p.changes.some((c) => c.field === 'rect')).toBe(false);
+  });
+
+  it('marcação do canvas: criação sem container tem imageId nulo e markingId', () => {
+    const base = sampleProject();
+    const after = createMarking(base, {
+      id: 'C1',
+      containerId: null,
+      rect: { x: -50, y: -50, width: 100, height: 100 },
+      name: 'Nota',
+    });
+    const [change] = propose(base, after).changes;
+    expect(change).toMatchObject({
+      kind: 'create',
+      entity: 'marking',
+      imageId: null,
+      markingId: 'C1',
+      to: { containerId: null, floating: false },
+    });
   });
 
   it('mover a marcação leva as filhas: uma mudança de rect em cada', () => {

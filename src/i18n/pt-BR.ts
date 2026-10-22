@@ -112,8 +112,14 @@ export const ptBR = {
   'marking.y': 'Y',
   'marking.width': 'Largura',
   'marking.height': 'Altura',
-  'marking.parent': 'Marcação pai',
+  'marking.parent': 'Pertence a',
   'marking.noParent': 'Nenhuma',
+  'marking.container': 'Container',
+  'marking.floating': 'Flutuante',
+  'marking.floatingHint': 'Fica acima de tudo e não pertence a ninguém',
+  'marking.deleteContainersStay':
+    '{containers} container(s) dentro dela ficam no canvas.',
+  'canvas.name': 'Canvas',
   'marking.needsReview': 'Posição a revisar',
   'marking.reviewMessage':
     'A imagem foi trocada por outra com proporção diferente e esta marcação foi reescalada. Confira a posição.',
@@ -126,9 +132,8 @@ export const ptBR = {
   'marking.error.rect-too-small': 'Cada lado precisa ter pelo menos {min} px.',
   'marking.error.rect-out-of-image': 'A marcação precisa ficar dentro da imagem.',
   'marking.error.rect-outside-parent': 'A marcação precisa ficar dentro da marcação pai.',
-  'marking.error.rect-excludes-children':
-    'A marcação precisa envolver as marcações internas.',
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
+  'marking.error.invalid-space': 'Só uma marcação do canvas pode ser flutuante.',
   'marking.error.not-arrangeable':
     'Só é possível arrumar um container em linha ou coluna que tenha marcações dentro.',
   'marking.error.generic': 'Não foi possível alterar a marcação.',
@@ -230,6 +235,7 @@ export const ptBR = {
   'crumbs.label': 'Caminho da seleção',
   'crumbs.image': 'Imagem {name}',
   'crumbs.marking': 'Marcação {name}',
+  'crumbs.canvas': 'Canvas',
 
   'zoom.value': '{percent}%',
   'zoom.reset': 'Zoom em {percent}%; clique para voltar a 100%',
@@ -351,6 +357,13 @@ export const ptBR = {
   'invariant.parent-other-image': 'pai em outra imagem',
   'invariant.rect-outside-parent': 'fora do retângulo do pai',
   'invariant.hierarchy-cycle': 'ciclo na hierarquia',
+  'invariant.container-parent-missing': 'marcação pai do container inexistente',
+  'invariant.container-parent-not-canvas':
+    'pai do container não é uma marcação do canvas',
+  'invariant.container-outside-parent': 'container fora da marcação pai',
+  'invariant.floating-in-container':
+    'marcação flutuante dentro de um container ou de outra marcação',
+  'invariant.parent-floating': 'pai é uma marcação flutuante',
   'invariant.missing-parent-annotation': 'anotação dona inexistente',
   'invariant.annotation-parent-other-marking': 'dona em outra marcação',
   'invariant.annotation-parent-same-layer': 'dona na mesma camada',
@@ -820,6 +833,9 @@ export const ptBR = {
   'library.typeSize': '{width} × {height}',
   'library.add': 'Adicionar',
   'library.addType': 'Adicionar {name}',
+  'library.addInside': 'Adicionar dentro de {name}',
+  'library.addToScreen': 'Adicionar na tela {name}',
+  'library.addToCanvas': 'Adicionar no canvas',
   'library.noScreen': 'Selecione ou centralize uma tela',
   'library.readOnly': 'O projeto está somente leitura.',
   'library.error.generic': 'Não foi possível adicionar o componente.',

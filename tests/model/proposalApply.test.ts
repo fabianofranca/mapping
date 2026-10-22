@@ -35,7 +35,7 @@ import {
   setImageSource,
   setLayerColor,
   setMarkingLocked,
-  setMarkingParent,
+  setMarkingFloating,
   setMarkingRect,
   setMarkingSource,
   setPlatformRepo,
@@ -47,6 +47,7 @@ import {
   validateProject,
   withdrawProposal,
   type Project,
+  type Change,
   type Proposal,
   type SpecMigrationStep,
 } from '../../src/model';
@@ -78,12 +79,12 @@ function acceptAll(p: Proposal, project: Project): Proposal {
 /** Cada cenário: antes → depois pelas operações do modelo. */
 const scenarios: [string, () => [Project, Project]][] = [
   [
-    'marcação: nome, rect, pai, trava e origem',
+    'marcação: nome, rect, flutuante, trava e origem',
     () => {
       const base = sampleProject();
       let after = renameMarking(base, 'M4', 'Farol');
       after = setMarkingRect(after, 'M4', { x: 10, y: 20, width: 100, height: 100 });
-      after = setMarkingParent(after, 'M3', 'M1');
+      after = setMarkingFloating(after, 'M3', true);
       after = setMarkingLocked(after, 'M1', true);
       after = setMarkingSource(after, 'M1', FIGMA);
       return [base, after];
@@ -348,32 +349,46 @@ describe('aplicar só as aceitas', () => {
     expect(done.project.containers.map((i) => i.id)).toEqual(['I1', 'I2', 'T1']);
   });
 
-  it('conjunto inválido fica bloqueado e aponta as mudanças envolvidas', () => {
+  it('aceitar só a posição da filha não bloqueia: o assentar refaz o pai', () => {
     const base = sampleProject();
-    // Mover M2 leva M3 junto; aceitar só a posição da filha a deixa fora do pai.
+    // Mover M2 leva M3 junto; aceitar só a posição da filha a tira de M2 (o pai sai da
+    // geometria, não da proposta) e ela passa a ser filha de M1, que ainda a contém.
     const p0 = propose(base, moveMarking(base, 'M2', 300, 0));
     const m2 = changeOf(p0, 'marking', 'M2', 'rect').id;
     const m3 = changeOf(p0, 'marking', 'M3', 'rect').id;
     const p = decided(p0, base, { level: 'change', id: m3 }, 'accepted');
-    const validation = validateAccepted(base, p);
-    expect(validation.ok).toBe(false);
-    expect(validation.issues).toEqual([
-      {
-        code: 'rect-outside-parent',
-        id: 'M3',
-        otherId: 'M2',
-        changeIds: [m3],
-        related: [m2],
-      },
-    ]);
-    const blocked = applyAccepted(base, p, AT);
-    expect(blocked.ok).toBe(false);
-    // As duas saídas: aceitar a que falta ou rejeitar a que causa o problema.
+    expect(validateAccepted(base, p).ok).toBe(true);
+    const applied = apply(base, p);
+    expect(applied.project.markings.find((m) => m.id === 'M3')?.parentId).toBe('M1');
     expect(
       apply(base, decided(p, base, { level: 'change', id: m2 }, 'accepted')).project,
     ).toEqual(moveMarking(base, 'M2', 300, 0));
     expect(
       apply(base, decided(p, base, { level: 'change', id: m3 }, 'rejected')).project,
+    ).toEqual(base);
+  });
+
+  it('conjunto inválido fica bloqueado e aponta as mudanças envolvidas', () => {
+    const base = sampleProject();
+    const i1 = base.containers.find((c) => c.id === 'I1')!;
+    const p0 = propose(base, moveContainer(base, 'I2', 5000, 5000));
+    const placement = changeOf(p0, 'image', 'I2', 'placement');
+    // Um placement que põe I2 sobre I1 não é aplicado.
+    const tampered: Proposal = {
+      ...p0,
+      changes: p0.changes.map((c) =>
+        c.id === placement.id ? { ...c, to: i1.placement as unknown as Change['to'] } : c,
+      ),
+    };
+    const p = decided(tampered, base, { level: 'change', id: placement.id }, 'accepted');
+    const validation = validateAccepted(base, p);
+    expect(validation.ok).toBe(false);
+    expect(validation.issues.map((i) => i.code)).toEqual(['images-overlap']);
+    expect(validation.issues[0]?.changeIds).toEqual([placement.id]);
+    expect(applyAccepted(base, p, AT).ok).toBe(false);
+    expect(
+      apply(base, decided(p, base, { level: 'change', id: placement.id }, 'rejected'))
+        .project,
     ).toEqual(base);
   });
 

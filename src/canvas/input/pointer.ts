@@ -1,11 +1,28 @@
 // Entrada de ponteiro e roda do canvas: eventos → `gestureMachine` → intenções
 // → actions do store. Pan, zoom e pinça vão para o `ViewportController`; a
 // prévia dos gestos vai para o `InteractionState`, que as sobreposições desenham.
-import { projectIndex, type Placement, type Project } from '../../model';
+import {
+  IDENTITY_PLACEMENT,
+  imagePixelRect,
+  projectIndex,
+  spaceOf,
+  toCanvasRect,
+  type Placement,
+  type Project,
+  type Rect,
+} from '../../model';
 import type { EditorDerived } from '../../store/derived';
 import type { ProjectStore } from '../../store/history';
 import type { ProjectActions } from '../../store/project';
 import type { EditorUi } from '../../store/ui';
+import {
+  ABSORB_TOLERANCE,
+  absorbInto,
+  snapTarget,
+  spaceTolerance,
+  type AbsorbCandidate,
+  type SnapTarget,
+} from '../containment';
 import type { InteractionState } from '../frame';
 import { IDLE, stepGesture, type GestureState } from '../gestureMachine';
 import { resizeFromCorner } from '../imageGeometry';
@@ -17,7 +34,12 @@ import {
 } from '../markingGeometry';
 import { wheelZoomFactor, type Point } from '../viewport';
 import type { ViewportController } from '../viewportController';
-import { isStoreGesture, startGesture, type Gesture } from './gestures';
+import {
+  isStoreGesture,
+  startGesture,
+  type Gesture,
+  type StoreGesture,
+} from './gestures';
 import {
   cursorFor,
   dragModeOf,
@@ -42,6 +64,10 @@ export interface PointerInputOptions {
   readonly project?: () => Project | null;
   /** Revisão aberta: tudo é somente leitura e o menu de contexto não abre. */
   readonly reviewing?: () => boolean;
+}
+
+function sameRect(a: Rect, b: Rect): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
 export class PointerInput {
@@ -95,12 +121,19 @@ export class PointerInput {
     const g = this.gesture;
     if (!isStoreGesture(g) && g?.kind !== 'draw') return false;
     if (isStoreGesture(g)) this.o.actions.cancelGesture();
-    const { state } = this.o;
-    state.preview.value = null;
-    state.draft.value = null;
+    this.clearTransient();
     this.gesture = { kind: 'pinch' }; // Ignora o resto do arrasto até soltar.
     this.gestureState = { phase: 'pinch' };
     return true;
+  }
+
+  /** Apaga a prévia, o rascunho e os destaques do gesto (destino do encaixe, itens a absorver). */
+  private clearTransient(): void {
+    const { state } = this.o;
+    state.preview.value = null;
+    state.draft.value = null;
+    state.moveTarget.value = null;
+    if (state.absorb.peek().length > 0) state.absorb.value = [];
   }
 
   /** Desfaz um gesto do store pela metade. */
@@ -241,12 +274,13 @@ export class PointerInput {
         return;
       }
       case 'move-marking': {
+        // O deslocamento do canvas vira unidades do espaço da marcação; nada prende a marcação
+        // ao container (o espaço novo é decidido ao soltar).
         const c = viewport.toCanvas(p);
-        actions.previewMarkingMove(
-          g.markingId,
-          (c.x - g.startCanvas.x) / g.scale,
-          (c.y - g.startCanvas.y) / g.scale,
-        );
+        g.dx = Math.round((c.x - g.startCanvas.x) / g.scale);
+        g.dy = Math.round((c.y - g.startCanvas.y) / g.scale);
+        actions.previewMarkingMove(g.markingId, g.dx, g.dy);
+        this.updateMoveTarget(g);
         return;
       }
       case 'resize-marking': {
@@ -255,17 +289,87 @@ export class PointerInput {
           g.markingId,
           resizeMarkingRect(g.startRect, g.corner, pixel, g.limits),
         );
+        const marking = this.markingNow(g.markingId);
+        if (marking) {
+          this.updateAbsorb(marking.rect, g.candidates, g.placement, g.limits.outer);
+        }
         return;
       }
       case 'draw': {
-        const pixel = canvasToImagePixel(g.image.placement, viewport.toCanvas(p));
-        this.o.state.draft.value = {
-          containerId: g.image.id,
-          rect: rectFromPoints(g.startPixel, pixel, g.image),
-        };
+        const c = viewport.toCanvas(p);
+        const pixel = g.image ? canvasToImagePixel(g.image.placement, c) : c;
+        const rect = rectFromPoints(g.startPixel, pixel, g.image);
+        this.o.state.draft.value = { containerId: g.image?.id ?? null, rect };
+        this.updateAbsorb(
+          isDrawableRect(rect) ? rect : null,
+          g.candidates,
+          g.image?.placement ?? IDENTITY_PLACEMENT,
+          g.image ? imagePixelRect(g.image) : null,
+        );
         return;
       }
     }
+  }
+
+  /** A marcação no projeto atual do store (com a prévia do gesto). */
+  private markingNow(id: string) {
+    const project = this.o.store.project.peek();
+    return project ? projectIndex(project).markings.get(id) : undefined;
+  }
+
+  /**
+   * Para onde a marcação arrastada iria se fosse solta agora: o container que a contém ou a
+   * recebe pelo encaixe (`snapTarget`), com o deslocamento extra. A flutuante nunca encaixa.
+   */
+  private moveSnap(g: Extract<Gesture, { kind: 'move-marking' }>): {
+    readonly snap: SnapTarget | null;
+    readonly origin: string | null;
+  } {
+    const project = this.o.store.project.peek();
+    const marking = this.markingNow(g.markingId);
+    if (!project || !marking) return { snap: null, origin: null };
+    if (marking.floating) return { snap: null, origin: marking.containerId };
+    const space = spaceOf(project, marking);
+    const snap = snapTarget(
+      toCanvasRect(space.placement, marking.rect),
+      space.placement,
+      project.containers,
+      ABSORB_TOLERANCE / this.o.viewport.scale,
+    );
+    return { snap, origin: marking.containerId };
+  }
+
+  /** Acende o container de destino enquanto a marcação é arrastada (se não é o de origem). */
+  private updateMoveTarget(g: Extract<Gesture, { kind: 'move-marking' }>): void {
+    const { snap, origin } = this.moveSnap(g);
+    const next = snap && snap.containerId !== origin ? snap.containerId : null;
+    if (this.o.state.moveTarget.peek() !== next) this.o.state.moveTarget.value = next;
+  }
+
+  /**
+   * Acende os itens que `rect` absorveria se o gesto terminasse agora (`null` = nenhum). Só
+   * escreve o signal quando o conjunto muda.
+   */
+  private updateAbsorb(
+    rect: Rect | null,
+    candidates: readonly AbsorbCandidate[],
+    placement: Placement,
+    limit: Rect | null,
+  ): void {
+    const tolerance = spaceTolerance(this.o.viewport.scale, placement.scale);
+    const next = rect
+      ? absorbInto(rect, candidates, tolerance, limit).absorbed.map((a) =>
+          toCanvasRect(placement, a.rect),
+        )
+      : [];
+    const current = this.o.state.absorb.peek();
+    if (
+      current.length === next.length &&
+      current.every((r, i) => sameRect(r, next[i] as Rect))
+    ) {
+      return;
+    }
+    this.o.state.absorb.value = next;
   }
 
   /** Gesto do arrasto; se a intenção não se aplica mais, pan. */
@@ -306,27 +410,82 @@ export class PointerInput {
       return;
     }
     if (g.pointerId !== e.pointerId) return;
-    const { actions, state } = this.o;
+    const { actions } = this.o;
     this.gesture = null;
     const step = stepGesture(this.gestureState, { type: cancelled ? 'cancel' : 'up' });
     this.gestureState = step.state;
     if (g.kind === 'pending' && step.effect.kind === 'tap') this.tap(step.effect.at);
     if (isStoreGesture(g)) {
-      // Volta para a última posição válida (a do projeto) e grava uma entrada.
+      // Cancelado: volta ao projeto de antes do gesto. Senão, a operação final repete a mesma
+      // operação com os valores finais (encaixe, absorção) e assenta o pertencimento; só então
+      // grava uma entrada.
       if (cancelled) actions.cancelGesture();
-      else actions.commitGesture();
-      state.preview.value = null;
+      else {
+        this.finishStoreGesture(g);
+        actions.commitGesture();
+      }
+      this.clearTransient();
     }
-    if (g.kind === 'draw') this.finishDraw(cancelled);
+    if (g.kind === 'draw') this.finishDraw(g, cancelled);
     if (e.pointerType === 'mouse') this.updateCursor(this.o.viewport.screenPoint(e));
   }
 
-  private finishDraw(cancelled: boolean): void {
+  /** A operação final de um gesto do store, com tudo o que a interação acrescenta ao soltar. */
+  private finishStoreGesture(g: StoreGesture): void {
+    const { actions } = this.o;
+    switch (g.kind) {
+      case 'move-image':
+      case 'resize-image':
+        actions.finishImagePlacement(g.containerId);
+        return;
+      case 'move-marking': {
+        // Encaixe: quase inteira num container, a marcação é levada para dentro dele.
+        const { snap } = this.moveSnap(g);
+        actions.finishMarkingMove(
+          g.markingId,
+          g.dx + (snap?.dx ?? 0),
+          g.dy + (snap?.dy ?? 0),
+        );
+        return;
+      }
+      case 'resize-marking': {
+        // Absorção: o retângulo cresce até envolver o que cruza dentro da tolerância.
+        const marking = this.markingNow(g.markingId);
+        if (!marking) return;
+        // Terminou onde começou (a alça não chegou a mudar nada): não é um redimensionamento.
+        if (sameRect(marking.rect, g.startRect)) {
+          actions.finishMarkingRect(g.markingId, g.startRect);
+          return;
+        }
+        const tolerance = spaceTolerance(this.o.viewport.scale, g.placement.scale);
+        const { rect } = absorbInto(
+          marking.rect,
+          g.candidates,
+          tolerance,
+          g.limits.outer,
+        );
+        actions.finishMarkingRect(g.markingId, rect);
+        return;
+      }
+    }
+  }
+
+  private finishDraw(g: Extract<Gesture, { kind: 'draw' }>, cancelled: boolean): void {
     const { draft } = this.o.state;
     const drawn = draft.peek();
-    draft.value = null;
+    this.clearTransient();
     if (cancelled || !drawn || !isDrawableRect(drawn.rect)) return;
-    const result = this.o.actions.createMarking(drawn.containerId, drawn.rect);
+    const tolerance = spaceTolerance(
+      this.o.viewport.scale,
+      g.image?.placement.scale ?? 1,
+    );
+    const { rect } = absorbInto(
+      drawn.rect,
+      g.candidates,
+      tolerance,
+      g.image ? imagePixelRect(g.image) : null,
+    );
+    const result = this.o.actions.createMarking(drawn.containerId, rect);
     if (result.ok) this.o.ui.selection.value = { kind: 'marking', id: result.value };
   }
 

@@ -47,7 +47,7 @@ function useComparable(): string | null {
   const imageId =
     selection.kind === 'image'
       ? selection.id
-      : (resolveSelection(project, selection)?.image.id ??
+      : (resolveSelection(project, selection)?.image?.id ??
         p.changes.find((c) => c.markingId === selection.id)?.imageId ??
         null);
   return imageId && replaceChangeOf(p, imageId) ? imageId : null;

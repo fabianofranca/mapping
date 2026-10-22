@@ -5,6 +5,7 @@ import {
   canEditImagePlacement,
   canEditMarkingGeometry,
   imageCanvasRect,
+  projectIndex,
   type Marking,
   type MarkingVisibility,
   type Project,
@@ -14,12 +15,15 @@ import type { DragMode } from '../gestureMachine';
 import { cornerAt, imageAt, pointInRect, type Corner } from '../imageGeometry';
 import {
   canvasToImagePixel,
+  floatingAt,
   handleHitRadius,
   markingCanvasRect,
   markingChainAt,
   nextInChain,
 } from '../markingGeometry';
 import type { Point } from '../viewport';
+
+export { ABSORB_TOLERANCE } from '../containment';
 
 /** Distância (px de tela) em que um novo toque conta como "no mesmo ponto". */
 export const TAP_REPEAT_DISTANCE = 12;
@@ -40,7 +44,8 @@ export type Intent =
       readonly markingId: string;
       readonly corner: Corner;
     }
-  | { readonly kind: 'draw'; readonly containerId: string }
+  /** Desenhar: `containerId` nulo = no vazio do canvas (marcação do canvas). */
+  | { readonly kind: 'draw'; readonly containerId: string | null }
   /** Sobre o item selecionado e trancado: arrastar não faz nada (cursor "não permitido"). */
   | { readonly kind: 'locked' };
 
@@ -62,19 +67,20 @@ export interface IntentContext {
 /**
  * O que um arrasto começando em `c` (canvas) faria. Em Navegar, as alças do
  * item selecionado redimensionam e arrastar o item o move. Em Desenhar,
- * arrastar sobre uma imagem sempre cria uma marcação (sem alças, para não
- * atrapalhar o desenho de filhas perto dos cantos do pai).
+ * arrastar sempre cria uma marcação (sem alças, para não atrapalhar o desenho de filhas perto
+ * dos cantos do pai): sobre uma imagem, preso a ela; no vazio, uma marcação do canvas. O pan
+ * no modo Desenhar fica com a barra de espaço, o botão do meio e a roda.
  */
 export function intentAt(ctx: IntentContext, c: Point): Intent {
   const { project, zoom } = ctx;
   if (ctx.spaceDown || !project || ctx.readOnly) return PAN;
   if (ctx.mode === 'draw') {
     const image = imageAt(project.containers, c);
-    return image ? { kind: 'draw', containerId: image.id } : PAN;
+    return { kind: 'draw', containerId: image?.id ?? null };
   }
   const selected = resolveSelection(project, ctx.selection);
   if (selected?.kind === 'marking') {
-    const rect = markingCanvasRect(selected.image.placement, selected.marking.rect);
+    const rect = markingCanvasRect(selected.space.placement, selected.marking.rect);
     const radius = handleHitRadius(Math.min(rect.width, rect.height) * zoom) / zoom;
     const markingId = selected.marking.id;
     // Trancada (ela ou um ancestral): sem alças e sem mover. Descendentes trancados não
@@ -114,10 +120,62 @@ export function isRepeatTap(last: Point | null, c: Point, zoom: number): boolean
   );
 }
 
+/** Item que um toque pode selecionar. */
+export type HitItem = NonNullable<Selection>;
+
 /**
- * Seleção depois de um toque em `c`: a marcação mais interna sob o ponto;
- * tocar de novo no mesmo ponto (`repeat`) sobe para o pai. Fora das
- * marcações, a imagem; fora das imagens, nada.
+ * Tudo o que um toque em `c` (canvas) alcança, do primeiro a receber o toque ao último (a cadeia
+ * do "clicar de novo sobe"):
+ *
+ * 1. as marcações flutuantes sob o ponto, onde estiverem (a de cima primeiro);
+ * 2. dentro de um container: a marcação mais interna → os ancestrais → o container → as marcações
+ *    do canvas que o contêm (pela cadeia de `parentId` do container) → as demais marcações do
+ *    canvas sobrepostas ao ponto;
+ * 3. fora dos containers: as marcações do canvas sob o ponto, a mais interna primeiro e depois os
+ *    ancestrais.
+ *
+ * As marcações ocultas pela visibilidade ficam de fora.
+ */
+export function hitChain(
+  project: Project,
+  visibility: ReadonlyMap<string, MarkingVisibility>,
+  c: Point,
+): HitItem[] {
+  const markings = selectableMarkings(project, visibility);
+  const selectable = new Set(markings.map((m) => m.id));
+  const chain: HitItem[] = [];
+  const seen = new Set<string>();
+  const add = (pick: HitItem) => {
+    const key = `${pick.kind}:${pick.id}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    chain.push(pick);
+  };
+  for (const m of floatingAt(markings, c)) add({ kind: 'marking', id: m.id });
+  const image = imageAt(project.containers, c);
+  if (image) {
+    const pixel = canvasToImagePixel(image.placement, c);
+    for (const m of markingChainAt(markings, image.id, pixel)) {
+      add({ kind: 'marking', id: m.id });
+    }
+    add({ kind: 'image', id: image.id });
+    // As marcações do canvas que contêm o container, de dentro para fora.
+    const byId = projectIndex(project).markings;
+    let parentId = image.parentId;
+    for (let guard = byId.size; parentId !== null && guard > 0; guard--) {
+      const parent = byId.get(parentId);
+      if (!parent) break;
+      if (selectable.has(parent.id)) add({ kind: 'marking', id: parent.id });
+      parentId = parent.parentId;
+    }
+  }
+  for (const m of markingChainAt(markings, null, c)) add({ kind: 'marking', id: m.id });
+  return chain;
+}
+
+/**
+ * Seleção depois de um toque em `c`: o primeiro da cadeia (`hitChain`); tocar de novo no mesmo
+ * ponto (`repeat`) sobe um degrau e, depois do último, volta ao primeiro. Fora de tudo, nada.
  */
 export function tapSelection(
   project: Project | null,
@@ -126,19 +184,11 @@ export function tapSelection(
   c: Point,
   repeat: boolean,
 ): Selection {
-  const image = project && imageAt(project.containers, c);
-  if (!project || !image) return null;
-  const chain = markingChainAt(
-    selectableMarkings(project, visibility),
-    image.id,
-    canvasToImagePixel(image.placement, c),
-  ).map((m) => m.id);
-  const next = nextInChain(
-    chain,
-    selection?.kind === 'marking' ? selection.id : null,
-    repeat,
-  );
-  return next ? { kind: 'marking', id: next } : { kind: 'image', id: image.id };
+  if (!project) return null;
+  const chain = hitChain(project, visibility, c);
+  const keyOf = (pick: HitItem) => `${pick.kind}:${pick.id}`;
+  const next = nextInChain(chain.map(keyOf), selection ? keyOf(selection) : null, repeat);
+  return chain.find((pick) => keyOf(pick) === next) ?? null;
 }
 
 export function dragModeOf(intent: Intent): DragMode {

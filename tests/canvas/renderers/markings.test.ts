@@ -3,8 +3,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Frame } from '../../../src/canvas/frame';
 import { MarkingRenderer } from '../../../src/canvas/renderers/markings';
 import {
+  createMarking,
   removeMarking,
   setContainerMarkingColor,
+  setMarkingFloating,
   type LayerDot,
   type Placement,
   type Project,
@@ -266,5 +268,112 @@ describe('MarkingRenderer', () => {
     render({ project: removeMarking(canvasProject(), 'M2') });
     expect(renderer.node('M2')).toBeUndefined();
     expect(layer.getChildren()).toHaveLength(2);
+  });
+});
+
+// Marcações do canvas e flutuantes (etapa Marcações espaciais, ME1).
+describe('MarkingRenderer: marcações do canvas', () => {
+  /** Uma marcação do canvas C1 em volta das duas imagens e a flutuante N1 sobre a Porta. */
+  function spatial(): Project {
+    const p = createMarking(canvasProject(), {
+      id: 'C1',
+      containerId: null,
+      rect: { x: -100, y: -100, width: 1800, height: 1000 },
+    });
+    return createMarking(p, {
+      id: 'N1',
+      containerId: null,
+      rect: { x: 400, y: 400, width: 200, height: 100 },
+      floating: true,
+    });
+  }
+
+  function twoParents() {
+    const layer = new Konva.Layer();
+    const floatingParent = new Konva.Group();
+    layer.add(floatingParent);
+    const renderer = new MarkingRenderer(layer, floatingParent);
+    const editor = editorFor(spatial());
+    const render = (overrides: Partial<Frame> = {}) =>
+      renderer.render(
+        frameOf(editor, { size: { width: 2000, height: 1200 }, ...overrides }),
+        PLACEMENTS,
+      );
+    return { layer, floatingParent, renderer, render };
+  }
+
+  it('a marcação do canvas é desenhada no espaço identidade, com borda tracejada e o token dela', () => {
+    const { renderer, render } = twoParents();
+    render({ viewport: { x: 0, y: 0, scale: 2 } });
+    const c1 = node(renderer, 'C1');
+    expect(c1.border.getAttrs()).toMatchObject({
+      x: -100,
+      y: -100,
+      width: 1800,
+      height: 1000,
+      stroke: TOKENS.canvasMarking,
+      dash: [5, 3],
+    });
+    expect(c1.halo.dash()).toEqual([5, 3]);
+    // A de container não é tracejada nem usa o token do canvas.
+    expect(node(renderer, 'M1').border.dash()).toEqual([]);
+    expect(node(renderer, 'M1').border.stroke()).toBe(TOKENS.line);
+  });
+
+  it('selecionada, a marcação do canvas usa a cor de seleção e continua tracejada', () => {
+    const { renderer, render } = twoParents();
+    render({ selection: { kind: 'marking', id: 'C1' } });
+    expect(node(renderer, 'C1').border.getAttrs()).toMatchObject({
+      stroke: TOKENS.select,
+      dash: [10, 6],
+    });
+  });
+
+  it('a flutuante fica no grupo de cima e as demais na camada; trocar de lado move o nó', () => {
+    const { layer, floatingParent, renderer, render } = twoParents();
+    render();
+    expect(node(renderer, 'N1').group.getParent()).toBe(floatingParent);
+    expect(node(renderer, 'C1').group.getParent()).toBe(layer);
+    expect(node(renderer, 'M1').group.getParent()).toBe(layer);
+    // Cada pilha tem a sua ordem (o pai antes das filhas).
+    expect(node(renderer, 'M2').group.zIndex()).toBeGreaterThan(
+      node(renderer, 'M1').group.zIndex(),
+    );
+    expect(node(renderer, 'N1').group.zIndex()).toBe(0);
+
+    // A Porta passa a flutuante: o nó muda de grupo.
+    const project = setMarkingFloating(spatial(), 'M1', true);
+    render({ project });
+    expect(node(renderer, 'M1').group.getParent()).toBe(floatingParent);
+    render({ project: spatial() });
+    expect(node(renderer, 'M1').group.getParent()).toBe(layer);
+  });
+
+  it('sem grupo próprio das flutuantes, tudo fica na mesma camada (compatível)', () => {
+    const layer = new Konva.Layer();
+    const renderer = new MarkingRenderer(layer);
+    const editor = editorFor(spatial());
+    renderer.render(frameOf(editor, { size: { width: 2000, height: 1200 } }), PLACEMENTS);
+    expect(node(renderer, 'N1').group.getParent()).toBe(layer);
+  });
+
+  it('o nome da marcação do canvas aparece no zoom semântico como o das outras', () => {
+    const named = createMarking(canvasProject(), {
+      id: 'C2',
+      containerId: null,
+      rect: { x: 2000, y: 100, width: 600, height: 400 },
+      name: 'Grupo',
+    });
+    const layer = new Konva.Layer();
+    const renderer = new MarkingRenderer(layer);
+    const editor = editorFor(named);
+    renderer.render(
+      frameOf(editor, {
+        size: { width: 3000, height: 1000 },
+        viewport: { x: 0, y: 0, scale: 1 },
+      }),
+      PLACEMENTS,
+    );
+    expect(node(renderer, 'C2').text.header.text()).toBe('Grupo');
   });
 });

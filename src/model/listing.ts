@@ -46,7 +46,8 @@ export interface ListedMarking {
 }
 
 export interface ListedImage {
-  readonly image: ProjectContainer;
+  /** Container do grupo; `null` = o grupo Canvas (marcações do canvas, v13). */
+  readonly image: ProjectContainer | null;
   readonly markings: readonly ListedMarking[];
 }
 
@@ -84,7 +85,8 @@ export function buildListing(
   const roots = children.get(null) ?? [];
   const result: ListedImage[] = [];
 
-  for (const image of p.containers) {
+  // O grupo Canvas vem primeiro (como a raiz da Árvore), depois um grupo por container.
+  for (const image of [null, ...p.containers]) {
     const markings: ListedMarking[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
@@ -94,8 +96,13 @@ export function buildListing(
       }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };
-    for (const root of roots) if (root.containerId === image.id) visit(root, []);
-    if (showEmpty || markings.length > 0) result.push({ image, markings });
+    for (const root of roots) {
+      if (root.containerId === (image?.id ?? null)) visit(root, []);
+    }
+    // O grupo Canvas sem marcação nenhuma não aparece, nem com `showEmpty`.
+    if (markings.length > 0 || (showEmpty && image !== null)) {
+      result.push({ image, markings });
+    }
   }
   return result;
 }
@@ -111,7 +118,8 @@ export interface IncompleteItem {
 }
 
 export interface IncompleteImage {
-  readonly image: ProjectContainer;
+  /** Container do grupo; `null` = o grupo Canvas (marcações do canvas, v13). */
+  readonly image: ProjectContainer | null;
   readonly items: readonly IncompleteItem[];
 }
 
@@ -131,7 +139,7 @@ export function buildIncompleteList(
   const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
   const result: IncompleteImage[] = [];
 
-  for (const image of p.containers) {
+  for (const image of [null, ...p.containers]) {
     const items: IncompleteItem[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
@@ -144,7 +152,7 @@ export function buildIncompleteList(
       for (const child of index.children.get(marking.id) ?? []) visit(child, path);
     };
     for (const root of index.children.get(null) ?? []) {
-      if (root.containerId === image.id) visit(root, []);
+      if (root.containerId === (image?.id ?? null)) visit(root, []);
     }
     if (items.length > 0) result.push({ image, items });
   }

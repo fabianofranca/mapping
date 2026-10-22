@@ -19,6 +19,7 @@ import { approximateMeasurer } from '../../src/model';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { setShowComponentsOnPhotos } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
+import { SPEC_ID } from '../model/componentFixtures';
 import { componentEditor, installFakeCanvas } from './harness';
 
 // A camada de componentes dentro do `CanvasController` (B3, P6): o desenho de cada marcação com
@@ -92,8 +93,8 @@ describe('CanvasController: componentes', () => {
 
   it('a camada de componentes fica entre as imagens e as marcações, e o container desenha', () => {
     const { controller, internals, componentLayer, drawing, container } = setup();
-    expect(internals.stage.getLayers()).toHaveLength(4);
-    expect(container.querySelectorAll('canvas')).toHaveLength(4);
+    expect(internals.stage.getLayers()).toHaveLength(5);
+    expect(container.querySelectorAll('canvas')).toHaveLength(5);
     expect(componentLayer()?.listening()).toBe(false);
     // Os dois textos do container; o da foto só com a opção ligada.
     expect(drawing('T1')).toBeDefined();
@@ -243,6 +244,84 @@ describe('CanvasController: componentes', () => {
     expect(drawing('T1')).not.toBe(before);
     document.documentElement.removeAttribute('data-theme');
     controller.destroy();
+  });
+
+  describe('marcações do canvas e flutuantes', () => {
+    const markingNodes = (layer: Konva.Layer | undefined, id: string) =>
+      layer?.find((n: Konva.Node) => n.getAttr('markingId') === id) ?? [];
+
+    it('a marcação do canvas desenha na camada de componentes; a flutuante, na camada de cima', () => {
+      const { controller, actions, internals, container } = setup();
+      const layers = internals.stage.getLayers();
+      const regular = actions.addComponent({
+        containerId: null,
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+        center: { x: 3000, y: 100 },
+      });
+      const note = actions.addComponent({
+        containerId: null,
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+        center: { x: 3000, y: 400 },
+      });
+      if (!regular.ok || !note.ok) throw new Error('addComponent');
+      expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
+      flush();
+      // Imagens, componentes, marcações, flutuantes, sobreposições.
+      expect(markingNodes(layers[1], regular.value)).toHaveLength(1);
+      expect(markingNodes(layers[1], note.value)).toHaveLength(0);
+      expect(markingNodes(layers[3], note.value)).toHaveLength(1);
+      expect(markingNodes(layers[3], regular.value)).toHaveLength(0);
+      // T1, T2 e as duas do canvas (a do canvas desenha sempre: não há foto por baixo).
+      expect(container.dataset.components).toBe('4');
+      // As bordas da flutuante ficam no grupo de cima, depois do desenho dela.
+      const floatingLayer = layers[3] as Konva.Layer;
+      expect(floatingLayer.getChildren()).toHaveLength(2);
+      expect(internals.markings.node(note.value)?.group.getParent()).toBe(
+        floatingLayer.getChildren()[1],
+      );
+      expect(internals.markings.node(regular.value)?.group.getParent()).toBe(layers[2]);
+      controller.destroy();
+    });
+
+    it('a flutuante aparece sobre fotos mesmo sem "Mostrar componentes sobre fotos"', () => {
+      const { controller, actions, internals } = setup();
+      const note = actions.addComponent({
+        containerId: null,
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+        center: { x: 500, y: 400 }, // sobre a foto I1
+      });
+      if (!note.ok) throw new Error('addComponent');
+      actions.setMarkingFloating(note.value, true);
+      flush();
+      expect(markingNodes(internals.stage.getLayers()[3], note.value)).toHaveLength(1);
+      // Os componentes de dentro da foto (TP) continuam escondidos.
+      expect(markingNodes(internals.stage.getLayers()[1], 'TP')).toHaveLength(0);
+      controller.destroy();
+    });
+
+    it('desfazer tira o desenho do canvas', () => {
+      const { controller, actions, internals, store } = setup();
+      const note = actions.addComponent({
+        containerId: null,
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+        center: { x: 3000, y: 400 },
+      });
+      if (!note.ok) throw new Error('addComponent');
+      flush();
+      expect(markingNodes(internals.stage.getLayers()[1], note.value)).toHaveLength(1);
+      store.undo();
+      flush();
+      expect(markingNodes(internals.stage.getLayers()[1], note.value)).toHaveLength(0);
+      controller.destroy();
+    });
   });
 
   describe('borda só em hover e seleção', () => {

@@ -20,6 +20,11 @@ export interface CanvasTokens {
   readonly select: string;
   /** Gesto inválido. */
   readonly invalid: string;
+  /** Borda tracejada da marcação do canvas (sem container, sem cor de container). */
+  readonly canvasMarking: string;
+  /** Item que será absorvido ao soltar o desenho ou o redimensionamento: traço e preenchimento. */
+  readonly absorb: string;
+  readonly absorbFill: string;
   /** Alerta (⚠) sobre a imagem. */
   readonly warning: string;
   readonly nameTag: string;
@@ -87,6 +92,9 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     halo: read('--cv-halo'),
     select: read('--cv-select'),
     invalid: read('--cv-invalid'),
+    canvasMarking: read('--cv-canvas-marking'),
+    absorb: read('--cv-absorb'),
+    absorbFill: read('--cv-absorb-fill'),
     warning: read('--cv-warning'),
     nameTag: read('--cv-name-tag'),
     nameTagText: read('--cv-name-tag-text'),

@@ -32,7 +32,7 @@ function text(value: JsonValue | undefined): string {
 
 /**
  * As criações de uma proposta vistas pelo caminho legível, que não depende dos ids gerados a
- * cada `propose_changes`: imagem pelo nome (ou arquivo); marcação por imagem › pai › nome;
+ * cada `propose_changes`: imagem pelo nome (ou arquivo); marcação por imagem (ou Canvas) › pai › nome;
  * anotação por marcação › camada › tipo › nome; camada pelo nome. Entidades que já existem
  * no projeto entram pelo id (é o mesmo nas duas propostas).
  */
@@ -79,7 +79,9 @@ class Created {
     if (entity === 'image') {
       path = `image(${text(to.name) || text(to.file) || `${text(to.background)} ${String(to.width)}x${String(to.height)}`})`;
     } else if (entity === 'marking') {
-      path = `marking(${ref('image', to.containerId)} › ${ref('marking', to.parentId)} › ${text(to.name)})`;
+      // Container nulo: a marcação do canvas ("Canvas › pai › nome").
+      const space = to.containerId === null ? 'Canvas' : ref('image', to.containerId);
+      path = `marking(${space} › ${ref('marking', to.parentId)} › ${text(to.name)})`;
     } else if (entity === 'annotation') {
       const type = isRecord(to.type)
         ? `${text(to.type.specId)}/${text(to.type.typeId)}`
@@ -123,7 +125,7 @@ class Created {
  * Compara cada mudança de `previous` com as de `next`. A mudança correspondente na nova é
  * achada, nesta ordem: na criação de imagem ou marcação com `source`, pela origem (a mesma
  * tela recriada com outro id); pela entidade e campo (ids das entidades existentes e dos
- * itens criados citados de novo); e, nas criações, pelo caminho legível (imagem › pai › nome),
+ * itens criados citados de novo); e, nas criações, pelo caminho legível (imagem ou Canvas › pai › nome),
  * uma a uma e na ordem. Os valores são comparados com os ids gerados por cada proposta
  * trocados pelo caminho. Devolve o resultado por id de mudança de `previous`.
  */

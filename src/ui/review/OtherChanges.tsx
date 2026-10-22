@@ -1,13 +1,13 @@
 import { useState } from 'preact/hooks';
 import { t } from '../../i18n';
-import type { Change, ReviewTarget } from '../../model';
+import { reviewKey, type Change, type ReviewTarget } from '../../model';
 import { Button } from '../controls';
 import { Section } from '../DetailsSection';
 import { useEditor } from '../EditorContext';
 import { ChangeKind } from './ChangeKind';
 import { ChangeMark } from './ChangeMark';
 import { markType } from './ChangePopover';
-import { changeSummary, changeTitle, imageName } from './changeText';
+import { changeSummary, changeTitle, targetName } from './changeText';
 import { DecisionCounts } from './ProposalRow';
 import { useReviewNames, useReviewNavigate } from './useReview';
 
@@ -81,7 +81,10 @@ export function ImagesSection() {
   const d = review.derived;
   const tree = d.tree.value;
   if (!names || !tree) return null;
-  const images = tree.root.children.filter((n) => n.level === 'image');
+  // O grupo Canvas (marcações do canvas) é irmão dos containers e abre como eles.
+  const images = tree.root.children.filter(
+    (n) => n.level === 'image' || n.level === 'canvas',
+  );
   if (images.length === 0) return null;
   const levels = d.levels.value;
   return (
@@ -92,11 +95,18 @@ export function ImagesSection() {
     >
       <ul class="other-changes">
         {images.map((node) => {
-          const target: ReviewTarget = { level: 'image', id: node.id };
-          const summary = levels.get(`image:${node.id ?? ''}`);
-          const label = imageName(names, node.id ?? '');
+          const canvas = node.level === 'canvas';
+          const target: ReviewTarget = canvas
+            ? { level: 'canvas', id: null }
+            : { level: 'image', id: node.id };
+          const summary = levels.get(reviewKey(target));
+          const label = targetName(names, target);
           return (
-            <li key={node.id} class="other-change-row" data-image={node.id ?? ''}>
+            <li
+              key={canvas ? 'canvas' : node.id}
+              class="other-change-row"
+              data-image={canvas ? 'canvas' : (node.id ?? '')}
+            >
               <span class="other-change-text">
                 <span class="other-change-title">{label}</span>
                 {summary && (

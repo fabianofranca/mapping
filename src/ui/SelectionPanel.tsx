@@ -3,11 +3,12 @@ import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   canDeleteImage,
+  projectIndex,
   type BackgroundContainerChanges,
   type Project,
   type ProjectContainer,
 } from '../model';
-import { containerErrorMessage, imageLabel } from './labels';
+import { containerErrorMessage, imageLabel, markingLabel } from './labels';
 import { parseContainerColor, parseContainerSide } from './containerForm';
 import type { DisplayImage } from '../store/displayImages';
 import { useEditor } from './EditorContext';
@@ -72,6 +73,12 @@ export function SelectionPanel({
   const allMarkingsLocked = own.length > 0 && own.every((m) => m.locked);
   const deletable = project ? canDeleteImage(project, image.id) : true;
   const identity = ext?.identity(image.id) ?? null;
+  // Pertencimento resolvido pela geometria (só leitura): a marcação do canvas que o contém.
+  const parent =
+    project && image.parentId !== null
+      ? projectIndex(project).markings.get(image.parentId)
+      : undefined;
+  const parentName = parent ? markingLabel(parent) : null;
 
   return (
     <div class="panel-details">
@@ -140,6 +147,9 @@ export function SelectionPanel({
                 return actions.renameContainer(image.id, text).ok;
               }}
             />
+          </Property>
+          <Property label={t('marking.parent')}>
+            <span class="props-text">{parentName ?? t('marking.noParent')}</span>
           </Property>
           {image.file !== null && (
             <Property

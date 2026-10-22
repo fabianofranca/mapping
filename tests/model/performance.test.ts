@@ -12,6 +12,7 @@ import {
   projectIssues,
   refsOf,
   serialize,
+  settleHierarchy,
   validateProject,
   type Project,
 } from '../../src/model';
@@ -54,6 +55,36 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
     );
     expect(value.length).toBeGreaterThan(0);
     expect(ms).toBeLessThan(BUDGET_MS);
+  });
+
+  it('assentar o projeto grande (pertencimento por geometria) é rápido e estável', () => {
+    const settled = time(() => settleHierarchy({ ...project }));
+    expect(settled.ms).toBeLessThan(BUDGET_MS);
+    // O fixture já está assentado: não há o que mudar e o resultado é o mesmo, marcação a marcação.
+    expect(settled.value.markings).toEqual(project.markings);
+    expect(settled.value.containers).toEqual(project.containers);
+    // Assentar de novo é idempotente (devolve o mesmo objeto).
+    expect(settleHierarchy(settled.value)).toBe(settled.value);
+  });
+
+  it('assentar 500 marcações num só container (o pior caso, O(n²) por espaço) cabe no orçamento', () => {
+    const dense = buildLargeProject({
+      images: 1,
+      markingsPerImage: 500,
+      imageWidth: 100000,
+    });
+    expect(dense.markings).toHaveLength(500);
+    expect(validateProject(dense)).toEqual([]);
+    // Zera o pai de todas: o assentar refaz a hierarquia inteira.
+    const scrambled = {
+      ...dense,
+      markings: dense.markings.map((m) => ({ ...m, parentId: null })),
+    };
+    const settled = time(() => settleHierarchy(scrambled));
+    expect(settled.ms).toBeLessThan(BUDGET_MS);
+    expect(settled.value.markings.map((m) => m.parentId)).toEqual(
+      dense.markings.map((m) => m.parentId),
+    );
   });
 
   it('operações de edição continuam rápidas', () => {

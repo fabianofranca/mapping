@@ -1,27 +1,43 @@
 import { imageAt, pointInRect } from '../canvas/imageGeometry';
 import { canvasToImagePixel } from '../canvas/markingGeometry';
-import { imageCanvasRect, hasSlotComponent, markingComponent } from '../model';
+import { t } from '../i18n';
+import {
+  imageCanvasRect,
+  hasSlotComponent,
+  markingComponent,
+  type ProjectContainer,
+} from '../model';
 import { resolveSelection } from '../store/ui';
 import type { EditorContextValue } from './EditorContext';
+import { imageLabel, markingLabel } from './labels';
 
-// Onde a Biblioteca coloca o componente novo: seleção primeiro (container selecionado, ou a
-// tela da seleção); sem seleção, a tela à vista. Função de leitura: lê os sinais com `.value`, então dentro de um `computed` ela
-// segue a seleção, o projeto e o viewport; chamada num clique, só lê.
+// Onde a Biblioteca coloca o componente novo: seleção primeiro (componente com slot, container
+// ou marcação de container, marcação do canvas); sem seleção, o container sob o centro da vista
+// ou, sem container, o canvas. Função de leitura: lê os sinais com `.value`, então dentro de um
+// `computed` ela segue a seleção, o projeto e o viewport; chamada num clique, só lê.
 
-/** Para onde vai o componente: imagem, container pai (ou `null`) e centro em pixels da imagem. */
+/**
+ * Para onde vai o componente: container (`null` = canvas), marcação pai com slot (ou `null`) e
+ * centro no espaço do destino (pixels do container ou unidades do canvas).
+ */
 export interface ComponentTarget {
-  readonly containerId: string;
+  readonly containerId: string | null;
   readonly parentId: string | null;
   readonly center?: { readonly x: number; readonly y: number };
+  /** Como o rótulo do botão descreve o destino. */
+  readonly destination:
+    | { readonly kind: 'slot' | 'container'; readonly name: string }
+    | { readonly kind: 'canvas' };
 }
 
 /**
- * Alvo do "Adicionar" da paleta, ou `null` sem tela possível.
+ * Alvo do "Adicionar" da paleta (sempre existe: sem container, é o canvas).
  *
- * 1. A seleção é uma marcação que desenha um componente container: entra nela.
- * 2. Há seleção: a imagem selecionada (ou a da marcação selecionada). Se o centro do viewport
- *    cai nela, o componente nasce centrado nesse ponto; senão, no centro da própria imagem.
- * 3. Sem seleção: a imagem sob o centro do viewport, centrado nesse ponto; sem imagem, `null`.
+ * 1. A seleção é uma marcação que desenha um componente com slot: entra nela.
+ * 2. A seleção é um container ou uma marcação de container: nele. Se o centro do viewport
+ *    cai nele, o componente nasce centrado nesse ponto; senão, no centro do próprio container.
+ * 3. A seleção é uma marcação do canvas sem slot: no canvas.
+ * 4. Sem seleção: o container sob o centro do viewport; sem container, o canvas, no centro.
  */
 export function componentTarget(editor: EditorContextValue): ComponentTarget | null {
   const { review, ui, derived, canvas, view } = editor;
@@ -32,38 +48,55 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
   if (selected?.kind === 'marking') {
     const drawn = markingComponent(project, derived.catalog.value, selected.marking.id);
     if (drawn && hasSlotComponent(drawn.component)) {
-      return { containerId: selected.marking.containerId, parentId: selected.marking.id };
+      return {
+        containerId: selected.marking.containerId,
+        parentId: selected.marking.id,
+        destination: { kind: 'slot', name: markingLabel(selected.marking) },
+      };
     }
   }
 
   // Ler o viewport faz o alvo acompanhar o pan e o zoom.
   void view.viewport.value;
   const point = canvas.current?.viewportCenter();
+  const inContainer = (image: ProjectContainer): ComponentTarget =>
+    point && pointInRect(point, imageCanvasRect(image, image.placement))
+      ? {
+          containerId: image.id,
+          parentId: null,
+          center: canvasToImagePixel(image.placement, point),
+          destination: { kind: 'container', name: imageLabel(image) },
+        }
+      : {
+          containerId: image.id,
+          parentId: null,
+          destination: { kind: 'container', name: imageLabel(image) },
+        };
+  const onCanvas = (): ComponentTarget => ({
+    containerId: null,
+    parentId: null,
+    ...(point ? { center: { x: Math.round(point.x), y: Math.round(point.y) } } : {}),
+    destination: { kind: 'canvas' },
+  });
 
-  // 2. Com seleção, a imagem dela; sem o centro da vista nela, `center` falta e o componente
-  // nasce no centro da própria imagem (padrão de `addComponent`).
   if (selected) {
-    const { image } = selected;
-    if (point && pointInRect(point, imageCanvasRect(image, image.placement))) {
-      return {
-        containerId: image.id,
-        parentId: null,
-        center: canvasToImagePixel(image.placement, point),
-      };
-    }
-    return { containerId: image.id, parentId: null };
+    if (selected.image) return inContainer(selected.image);
+    return onCanvas();
   }
 
-  // 3. Sem seleção, a tela sob o centro da vista.
-  if (point) {
-    const image = imageAt(project.containers, point);
-    if (image) {
-      return {
-        containerId: image.id,
-        parentId: null,
-        center: canvasToImagePixel(image.placement, point),
-      };
-    }
+  const image = point ? imageAt(project.containers, point) : undefined;
+  return image ? inContainer(image) : onCanvas();
+}
+
+/** Rótulo do botão Adicionar com o destino ("Adicionar dentro de Lista"). */
+export function addLabel(target: ComponentTarget | null): string {
+  const destination = target?.destination;
+  if (!destination) return t('library.add');
+  if (destination.kind === 'slot') {
+    return t('library.addInside', { name: destination.name });
   }
-  return null;
+  if (destination.kind === 'container') {
+    return t('library.addToScreen', { name: destination.name });
+  }
+  return t('library.addToCanvas');
 }

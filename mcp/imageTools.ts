@@ -184,6 +184,12 @@ export async function markingImage(
   images: ImageServer | null = null,
 ): Promise<ImageResult> {
   const index = projectIndex(refs.project);
+  if (marking.containerId === null) {
+    throw new ToolError(
+      'invalid-arguments',
+      'marcação do canvas não tem imagem própria: use get_container_file dos containers sob ela',
+    );
+  }
   const image = index.containers.get(marking.containerId);
   if (!image) throw new ToolError('not-found', 'container da marcação não encontrado');
   const mode = options.mode ?? 'crop';

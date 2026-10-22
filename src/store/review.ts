@@ -2,6 +2,7 @@ import { batch, computed, effect, signal, type ReadonlySignal } from '@preact/si
 import { z } from 'zod';
 import {
   CHANGE_TYPES,
+  CANVAS_FILTER,
   NO_FILTERS,
   hasActiveFilters,
   proposalIndex,
@@ -199,7 +200,7 @@ const MAX_RESUME_PER_COPY = 12;
 const MAX_KNOWN_CONFLICTS = 500;
 
 const targetSchema = z.object({
-  level: z.enum(['proposal', 'project', 'image', 'item', 'change']),
+  level: z.enum(['proposal', 'project', 'canvas', 'image', 'item', 'change']),
   id: z.string().nullable(),
 });
 
@@ -377,7 +378,13 @@ export function createReviewState(session: ProjectSession): ReviewState {
 
   /** O alvo existe na proposta aberta? */
   const exists = (target: ReviewTarget, p: Proposal): boolean => {
-    if (target.level === 'proposal' || target.level === 'project') return true;
+    if (
+      target.level === 'proposal' ||
+      target.level === 'project' ||
+      target.level === 'canvas'
+    ) {
+      return true;
+    }
     if (target.id === null) return false;
     if (target.level === 'change') return proposalIndex(p).changes.has(target.id);
     return derived.tree.peek()?.nodes.has(reviewKey(target)) ?? false;
@@ -523,7 +530,9 @@ export function createReviewState(session: ProjectSession): ReviewState {
         ...savedFilters,
         imageId:
           savedFilters.imageId !== null &&
-          tree?.nodes.has(`image:${savedFilters.imageId}`)
+          (savedFilters.imageId === CANVAS_FILTER
+            ? (tree?.changeIdsOf({ level: 'canvas', id: null }).length ?? 0) > 0
+            : tree?.nodes.has(`image:${savedFilters.imageId}`))
             ? savedFilters.imageId
             : null,
         layerId:
