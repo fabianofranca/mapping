@@ -78,7 +78,7 @@ export async function findBySourceResult(
       if (match.kind === 'image') {
         matches.push({
           project: location.name,
-          kind: 'image',
+          kind: 'container',
           ref: refs.ref('i', match.image.id),
           name: match.image.name,
           file: match.image.file,
@@ -90,7 +90,7 @@ export async function findBySourceResult(
           kind: 'marking',
           ref: refs.ref('m', match.marking.id),
           name: match.marking.name,
-          image: refs.ref('i', match.marking.containerId),
+          container: refs.ref('i', match.marking.containerId),
           rect: match.marking.rect,
           source: match.marking.source,
         });

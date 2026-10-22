@@ -96,7 +96,7 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
       const kind = item.kind as ItemKind;
       return {
         ...base,
-        kind: { m: 'marking', i: 'image', a: 'annotation' }[kind],
+        kind: { m: 'marking', i: 'container', a: 'annotation' }[kind],
         ref: refs.ref(kind, item.id),
       };
     });

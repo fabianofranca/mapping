@@ -104,7 +104,7 @@ export async function findByCodeResult(
             title: annotation ? annotationShortLabel(p, annotation) : null,
             marking: refs.ref('m', found.markingId),
             markingName: index.markings.get(found.markingId)?.name ?? null,
-            image: refs.ref('i', found.containerId),
+            container: refs.ref('i', found.containerId),
           };
         }),
       });

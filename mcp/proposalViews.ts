@@ -50,7 +50,7 @@ export class ProposalLabels {
     return new ProposalLabels(proposed, current);
   }
 
-  /** Referência da marcação, imagem ou anotação; `null` se não existir em nenhum dos dois. */
+  /** Referência da marcação, container ou anotação; `null` se não existir em nenhum dos dois. */
   ref(kind: ItemKind, id: string): string | null {
     for (const refs of [this.proposed, this.current]) {
       const index = projectIndex(refs.project);
@@ -73,7 +73,7 @@ export class ProposalLabels {
   target(c: Change): string {
     switch (c.entity) {
       case 'image':
-        return this.ref('i', c.entityId) ?? `imagem ${c.entityId}`;
+        return this.ref('i', c.entityId) ?? `container ${c.entityId}`;
       case 'marking':
         return this.ref('m', c.entityId) ?? `marcação ${c.entityId}`;
       case 'annotation':
@@ -157,7 +157,7 @@ function imageKind(
   return own.length > 0 ? 'changed' : 'items';
 }
 
-/** Resumo por nível: Projeto e cada imagem, com o estado de decisão e as contagens. */
+/** Resumo por nível: Projeto e cada container (nível `image` no `proposal.json`), com o estado de decisão e as contagens. */
 export function levelsView(p: Proposal, tree: ReviewTree, labels: ProposalLabels): Json {
   const summarize = (node: ReviewNode) => {
     const summary = summarizeDecisions(
@@ -176,10 +176,10 @@ export function levelsView(p: Proposal, tree: ReviewTree, labels: ProposalLabels
   const project = tree.nodes.get('project:');
   return {
     ...(project ? { project: summarize(project) } : {}),
-    images: tree.root.children
+    containers: tree.root.children
       .filter((node) => node.level === 'image')
       .map((node) => ({
-        image: labels.ref('i', node.id!) ?? node.id,
+        container: labels.ref('i', node.id!) ?? node.id,
         change: imageKind(p, node.id!),
         items: countItems(node),
         ...summarize(node),
@@ -194,7 +194,7 @@ export function kindCounts(p: Proposal): Json {
   return { total: p.changes.length, ...counts };
 }
 
-/** Nota com o alvo legível (referência da imagem ou do item; id da mudança). */
+/** Nota com o alvo legível (referência do container ou do item; id da mudança). */
 export function noteView(p: Proposal, note: ProposalNote, labels: ProposalLabels): Json {
   const { level, id } = note.target;
   let target: string | null = null;

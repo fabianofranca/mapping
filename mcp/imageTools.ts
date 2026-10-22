@@ -182,7 +182,7 @@ export async function markingImage(
 ): Promise<ImageResult> {
   const index = projectIndex(refs.project);
   const image = index.containers.get(marking.containerId);
-  if (!image) throw new ToolError('not-found', 'imagem da marcação não encontrada');
+  if (!image) throw new ToolError('not-found', 'container da marcação não encontrado');
   const mode = options.mode ?? 'crop';
   const padding = options.padding ?? 0;
   const maxSize = options.maxSize ?? DEFAULT_MAX_SIZE;
@@ -204,10 +204,10 @@ export async function markingImage(
   if (!region) {
     throw new ToolError(
       'marking-outside-image',
-      'a marcação está fora da imagem: nada a recortar',
+      'a marcação está fora do container: nada a recortar',
       {
         rect: rectJson(marking.rect),
-        image: { width: image.width, height: image.height },
+        container: { width: image.width, height: image.height },
       },
     );
   }
@@ -273,10 +273,10 @@ export async function markingImage(
     json: {
       ref: refs.ref('m', marking.id),
       mode,
-      image: {
+      container: {
         ref: refs.ref('i', image.id),
         file: image.file,
-        ...(blank ? { blank: true, background: image.background } : {}),
+        background: image.background,
       },
       ...(blank
         ? {
@@ -315,7 +315,7 @@ export async function markingImage(
   };
 }
 
-/** `get_image_file`: a imagem inteira, reduzida se passar de `maxSize`. */
+/** `get_container_file`: a imagem inteira do container, reduzida se passar de `maxSize`. */
 export async function imageFile(
   roots: Roots,
   refs: Refs,
@@ -326,8 +326,8 @@ export async function imageFile(
   if (isBackgroundContainer(image)) {
     throw new ToolError(
       'container-without-file',
-      'O container não tem arquivo: use get_marking_image para ver o desenho.',
-      { image: refs.ref('i', image.id) },
+      'O container não tem arquivo de imagem (só cor de fundo): use get_marking_image para ver o desenho.',
+      { container: refs.ref('i', image.id) },
     );
   }
   const maxSize = options.maxSize ?? DEFAULT_MAX_SIZE;
