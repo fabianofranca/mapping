@@ -194,7 +194,7 @@ test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um c
   // Aba Componentes, agora com duas bibliotecas: escolhe a Material 3, e o Button abre a
   // página num diálogo com Adicionar à tela.
   await page
-    .getByLabel('Biblioteca', { exact: true })
+    .locator('.catalog-window select')
     .selectOption({ label: 'Material Design 3 (baseline)' });
   const entry = page.locator('button[data-type-id="m3-button"]');
   await expect(entry).toBeVisible();
