@@ -118,7 +118,7 @@ describe('texto copiado do Diagnóstico', () => {
     window: { width: 1280, height: 800 },
     language: 'pt-BR',
     theme: 'dark',
-    counts: { images: 2, markings: 4, annotations: 3 },
+    counts: { containers: 2, markings: 4, annotations: 3 },
     pendingSave: true,
   };
 
@@ -134,7 +134,7 @@ describe('texto copiado do Diagnóstico', () => {
         'window: 1280x800',
         'language: pt-BR',
         'theme: dark',
-        'images: 2, markings: 4, annotations: 3',
+        'containers: 2, markings: 4, annotations: 3',
         'pendingSave: yes',
         'errors: 1',
         '',
@@ -149,7 +149,7 @@ describe('texto copiado do Diagnóstico', () => {
       [],
     );
     expect(text).toContain('storage: -');
-    expect(text).toContain('images: -');
+    expect(text).toContain('containers: -');
     expect(text).toContain('pendingSave: -');
     expect(text.endsWith('errors: 0')).toBe(true);
   });

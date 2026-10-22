@@ -535,7 +535,7 @@
       const A = Object.fromEntries(D.annotations.map((a) => [a.id, a]));
       const IM = Object.fromEntries(D.images.map((i) => [i.id, i]));
       const byName = (img, name) =>
-        D.markings.find((m) => IM[m.imageId].name === img && m.name === name);
+        D.markings.find((m) => IM[m.containerId].name === img && m.name === name);
       const state = { img: D.images[0].id, sel: null, hidden: new Set(), step: 0 };
       const $ = (id) => document.getElementById(id);
       const NS = 'http://www.w3.org/2000/svg';
@@ -792,11 +792,11 @@
             }),
           );
           D.markings
-            .filter((m) => m.imageId === img.id)
+            .filter((m) => m.containerId === img.id)
             .forEach((m) => m3(m).forEach((n) => svg.appendChild(n)));
         }
         const ms = D.markings
-          .filter((m) => m.imageId === img.id && visible(m))
+          .filter((m) => m.containerId === img.id && visible(m))
           .sort((a, b) => depth(a) - depth(b));
         ms.forEach((m) => {
           const c = colorOf(m),
@@ -863,7 +863,7 @@
         // camadas
         const used = new Set(
           D.annotations
-            .filter((a) => M[a.markingId].imageId === state.img)
+            .filter((a) => M[a.markingId].containerId === state.img)
             .map((a) => a.layerId),
         );
         $('layers').replaceChildren(
@@ -888,8 +888,8 @@
         );
       }
       function select(id) {
-        if (id && M[id].imageId !== state.img) {
-          state.img = M[id].imageId;
+        if (id && M[id].containerId !== state.img) {
+          state.img = M[id].containerId;
         }
         state.sel = id;
         render();
@@ -931,7 +931,7 @@
       function inspect() {
         const box = $('insp');
         if (!state.sel) {
-          const n = D.markings.filter((m) => m.imageId === state.img).length;
+          const n = D.markings.filter((m) => m.containerId === state.img).length;
           box.innerHTML =
             '<h2>Detalhes</h2><p class="empty">Clique numa marcação do container para ver as anotações dela. Este container tem ' +
             n +

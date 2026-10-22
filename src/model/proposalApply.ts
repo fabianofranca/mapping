@@ -114,9 +114,9 @@ function withField(
     case 'image': {
       const i = current as ProjectContainer;
       // Container sem arquivo não troca de arquivo; cor e tamanho só existem nela.
-      const blank = i.file === null;
-      if (blank && field === 'file') return null;
-      if (!blank && (field === 'background' || field === 'size')) return null;
+      const noFile = i.file === null;
+      if (noFile && field === 'file') return null;
+      if (!noFile && (field === 'background' || field === 'size')) return null;
       if (field === 'size' && isRecord(to)) {
         return { ...i, width: to.width as number, height: to.height as number };
       }

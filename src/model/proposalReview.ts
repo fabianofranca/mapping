@@ -213,7 +213,7 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
   });
   const root = make('proposal', null);
   let projectNode: MutableNode | null = null;
-  const images = new Map<string, MutableNode>();
+  const containers = new Map<string, MutableNode>();
   const items = new Map<string, { node: MutableNode; containerId: string }>();
 
   for (const c of p.changes) {
@@ -225,10 +225,10 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
       projectNode.changeIds.push(c.id);
       continue;
     }
-    let image = images.get(c.imageId);
+    let image = containers.get(c.imageId);
     if (!image) {
       image = make('image', c.imageId);
-      images.set(c.imageId, image);
+      containers.set(c.imageId, image);
       root.children.push(image);
     }
     if (c.markingId === null) {
@@ -256,7 +256,7 @@ export function reviewTree(p: Proposal, project: Project): ReviewTree {
         break;
       }
     }
-    (host ?? images.get(imageId))?.children.push(node);
+    (host ?? containers.get(imageId))?.children.push(node);
   }
 
   const nodes = new Map<string, ReviewNode>();

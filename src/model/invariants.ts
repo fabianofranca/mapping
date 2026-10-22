@@ -158,12 +158,12 @@ export function validateProject(p: Project): InvariantIssue[] {
     }
   });
 
-  const images = new Map(p.containers.map((image) => [image.id, image]));
+  const containers = new Map(p.containers.map((image) => [image.id, image]));
   const markings = new Map(p.markings.map((m) => [m.id, m]));
   const annotations = new Map(p.annotations.map((a) => [a.id, a]));
 
   for (const m of p.markings) {
-    const image = images.get(m.containerId);
+    const image = containers.get(m.containerId);
     if (!image) marking('missing-image', m, m.containerId);
     if (!isIntegerRect(m.rect)) marking('rect-not-integer', m);
     if (m.rect.width < MIN_MARKING_SIZE || m.rect.height < MIN_MARKING_SIZE) {

@@ -43,7 +43,7 @@ describe('zip do projeto de exemplo', () => {
 
   it('abre como o "Abrir zip": mapping.json válido no schema atual, sem migração', async () => {
     const { project } = await readExample();
-    expect(project.schemaVersion).toBe(11);
+    expect(project.schemaVersion).toBe(12);
     expect(project.revision).toBe(1);
     const read = await readProjectZip(new Blob([readFileSync(EXAMPLE_ZIP)]));
     const parsed = read.ok

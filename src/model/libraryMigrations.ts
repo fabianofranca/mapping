@@ -113,7 +113,7 @@ const NO_COUNTS: Counts = {
 };
 
 /** Vazio para fins de perda: `isEmptyValue` ou tabela sem linhas. */
-function isBlank(value: JsonValue | undefined): boolean {
+function isNothingToLose(value: JsonValue | undefined): boolean {
   return isEmptyValue(value) || (Array.isArray(value) && value.length === 0);
 }
 
@@ -314,7 +314,7 @@ function renameField(
         );
       } else {
         result = editCells(a.values, from, (value, rowId) => {
-          if (isBlank(value)) return { drop: true };
+          if (isNothingToLose(value)) return { drop: true };
           losses.push({
             reason: 'removed-field',
             ...base,
@@ -368,8 +368,8 @@ function renameInPlace(
     if (!(fromKey in record)) return null;
     const { [fromKey]: moved, ...rest } = record;
     const old = rest[toKey];
-    if (isBlank(moved) && !isBlank(old)) return rest;
-    if (!isBlank(old) && !sameJson(old, moved)) {
+    if (isNothingToLose(moved) && !isNothingToLose(old)) return rest;
+    if (!isNothingToLose(old) && !sameJson(old, moved)) {
       loss({
         reason: 'overwritten-value',
         field: targetName(to),
@@ -407,7 +407,7 @@ function removeField(
   const losses: MigrationLoss[] = [];
   return mapAnnotations(p, specId, step.type, losses, (a) =>
     editCells(a.values ?? {}, target, (value, rowId) => {
-      if (!isBlank(value)) {
+      if (!isNothingToLose(value)) {
         losses.push({
           reason: 'removed-field',
           ...lossBase(a, step.type),

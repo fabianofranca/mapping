@@ -1,8 +1,8 @@
-# Formato do `mapping.json` (schema v11)
+# Formato do `mapping.json` (schema v12)
 
-O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` e,
+O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
-**pixels inteiros da imagem original** (`images[].file`, com a orientação EXIF já aplicada).
+**pixels inteiros da imagem original** do container (`containers[].file`, com a orientação EXIF já aplicada).
 
 ```
 meu-projeto/
@@ -32,7 +32,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -40,7 +40,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
   "specializations": [],
   "platformRepos": {},
   "layers": [{ "id": "L1", "name": "Componentes", "color": "#E53935", "spec": null }],
-  "images": [
+  "containers": [
     {
       "id": "I1",
       "name": "Tela Home",
@@ -57,7 +57,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
   "markings": [
     {
       "id": "M1",
-      "imageId": "I1",
+      "containerId": "I1",
       "parentId": null,
       "name": "Botão",
       "rect": { "x": 10, "y": 20, "width": 300, "height": 80 },
@@ -92,27 +92,27 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                    |
 | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| `schemaVersion`    | `11`    | Versão do schema.                                                            |
+| `schemaVersion`    | `12`    | Versão do schema.                                                            |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                      |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).           |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.      |
 | `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601; fuso vira UTC).         |
 | `specializations`  | array   | Especializações aplicadas (ver v4).                                          |
 | `platformRepos`    | objeto  | Clone local de cada plataforma (v7; só `localPath` desde a v11, ver abaixo). |
-| `layers`           | array   | Camadas, **globais** (valem para todas as imagens), na ordem de exibição.    |
-| `images`           | array   | Imagens do projeto.                                                          |
+| `layers`           | array   | Camadas, **globais** (valem para todos os containers), na ordem de exibição. |
+| `containers`       | array   | Containers do projeto (v12; antes `images`).                                 |
 | `markings`         | array   | Marcações retangulares.                                                      |
 | `annotations`      | array   | Anotações (livres ou tipadas).                                               |
 
 **`layers[]`**: `id`; `name` (não vazio); `color`; `spec` (`null` ou `{ specId, layerId }`).
 
-**`images[]`**: `id`; `name` (`string` ou `null`); `file` (caminho relativo, ex: `images/home.webp`, único
+**`containers[]`** (v12; até a v11 a coleção se chamava `images`): `id`; `name` (`string` ou `null`); `file` (caminho relativo, ex: `images/home.webp`, único
 no projeto; `null` no container sem arquivo, v10: ver abaixo); `width` e `height` (pixels inteiros, com a orientação EXIF já aplicada);
 `placement` (`{ x, y, scale }` — posição e escala da imagem no canvas, só para a interface);
 `markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo); `source` (`null` ou origem, v8:
 ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo do container sem arquivo).
 
-**`markings[]`**: `id`; `imageId`; `parentId` (marcação-pai ou `null`); `name` (`string` ou `null`);
+**`markings[]`**: `id`; `containerId` (v12; antes `imageId`); `parentId` (marcação-pai ou `null`); `name` (`string` ou `null`);
 `rect` (`{ x, y, width, height }`, **inteiros em pixels da imagem original**, `x`/`y` ≥ 0);
 `needsReview` (booleano, só para a interface); `locked` (booleano, v5: ver abaixo); `source` (`null`
 ou origem, v8: ver abaixo).
@@ -128,8 +128,8 @@ lista os problemas e repara o que tem reparo mecânico (ver "Arquivos inconsiste
 arquivo ao ler.
 
 - Ids únicos em cada coleção; `file` único entre as imagens que têm arquivo; `file` das especializações único.
-- Container sem arquivo (v10): `file` é `null` se, e somente se, `background` é uma cor (`blank-background`).
-- Toda marcação aponta para uma imagem existente; `parentId`, se houver, é uma marcação existente.
+- Container (v12): `file` é `null` se, e somente se, `background` é uma cor (`container-content`).
+- Toda marcação aponta para um container existente; `parentId`, se houver, é uma marcação existente.
 - `rect`: inteiros, largura e altura **≥ 8 px**, e **inteiramente dentro** da imagem (`0 ≤ x`,
   `x + width ≤ width da imagem`; idem para `y`).
 - A marcação-pai está **na mesma imagem** e **contém** o `rect` da filha. Não há ciclos.
@@ -184,8 +184,8 @@ e gravadas em UTC (`2026-10-01T12:30:00.000Z`).
 
 ## Campos da v2 e v3
 
-- `images[].name`: rótulo opcional (`null` = use o nome do arquivo). Mudá-lo não renomeia o arquivo.
-- `images[].markingColor` (v3): cor `#RRGGBB` da borda das marcações da imagem, ou `null` (cor neutra do tema). Só afeta a interface, não o recorte.
+- `containers[].name`: rótulo opcional (`null` = use o nome do arquivo). Mudá-lo não renomeia o arquivo.
+- `containers[].markingColor` (v3): cor `#RRGGBB` da borda das marcações da imagem, ou `null` (cor neutra do tema). Só afeta a interface, não o recorte.
 - `annotations[].inherit`: se `true`, a anotação também vale para **todos os descendentes** da marcação.
 - `annotations[].parentAnnotationId`: anotação "dona" (ou `null`).
   - a dona está na **mesma marcação** e em **outra camada**;
@@ -272,7 +272,7 @@ migração.
 
 ## Campos da v5 (trava)
 
-`images[].locked` e `markings[].locked` (`true`/`false`, obrigatórios) protegem itens já revisados
+`containers[].locked` e `markings[].locked` (`true`/`false`, obrigatórios) protegem itens já revisados
 contra alterações acidentais. Quem **lê** o arquivo (um agente que recorta a imagem) pode ignorá-los:
 a trava não muda o significado dos dados, só o que a app deixa **alterar**.
 
@@ -361,7 +361,7 @@ na v9 (ver "Campos da v9").
 
 ## Campos da v8 (origem externa)
 
-`images[].source` e `markings[].source` guardam a **identidade do item num sistema externo**, para que
+`containers[].source` e `markings[].source` guardam a **identidade do item num sistema externo**, para que
 uma reexportação reconheça os mesmos elementos (ex: o mesmo container ou o mesmo componente exportados de
 novo de uma ferramenta de design) e proponha só o que mudou.
 
@@ -382,7 +382,7 @@ novo de uma ferramenta de design) e proponha só o que mudou.
 
 ## Como um agente lê o `mapping.json`
 
-1. **Recorte da marcação**: `rect` em pixels da imagem em `images[].file` (orientação EXIF aplicada).
+1. **Recorte da marcação**: `rect` em pixels da imagem em `containers[].file` (orientação EXIF aplicada).
 2. **Anotações próprias**: `annotations` com o `markingId` da marcação, agrupadas por `layerId`.
 3. **Herdadas**: subir por `parentId` e pegar as anotações dos ancestrais com `inherit: true`.
 4. **Estrutura**: anotações com `parentAnnotationId` formam uma árvore; o nome da camada da
@@ -431,15 +431,18 @@ dos tipos), nunca onde a instância ficou.
 
 ## Campos da v10 (container sem arquivo)
 
-A v10 permite uma imagem **sem arquivo**, o **container** sem arquivo (antes chamado "tela em branco"): uma área
+> Esta seção descreve a v10 com os nomes de então (`images[]`, `blank-background`, `blank-image`); na v12 a
+> coleção é `containers[]` e a invariante é `container-content` (ver "Campos da v12").
+
+A v10 permite uma imagem **sem arquivo**, o **container** sem arquivo: uma área
 com tamanho e cor de fundo onde se marcam e desenham componentes, sem foto por baixo. **Container** é o nome
 que a interface, o MCP e a documentação dão ao objeto de topo do canvas (com foto ou sem ela); o `mapping.json`
-ainda o grava em `images[]` e a letra `i` das referências `mapping://<projeto>/i/<código>` é o container. Em `images[]`:
+o grava em `images[]` (na v12, `containers[]`) e a letra `i` das referências `mapping://<projeto>/i/<código>` é o container. Em `images[]`:
 
 - `file: null` e `background: "#RRGGBB"` (cor em maiúsculas); `width` e `height` inteiros de 1 a 20000
   (`MAX_BLANK_SIZE`). Não há arquivo em `images/`, nem no zip exportado, nem bitmap: o container é desenhado
   pela app. A imagem com arquivo tem `background: null`.
-- **Invariante `blank-background`**: `file === null` se, e somente se, `background !== null`. A checagem
+- **Invariante `blank-background`** (hoje `container-content`): `file === null` se, e somente se, `background !== null`. A checagem
   de `file` repetido (`duplicate-file`) ignora o container sem arquivo.
 - Tudo o mais é igual ao de uma imagem: `placement` (mesma colocação ao adicionar, lado maior de 1000
   unidades do canvas), marcações em pixels do container, nome (`name`; sem nome a interface mostra
@@ -447,8 +450,8 @@ ainda o grava em `images[]` e a letra `i` das referências `mapping://<projeto>/
 - **Editar**: a cor muda livremente; o tamanho é geometria (imagem trancada recusa) e não pode deixar
   marcação para fora (`rect-out-of-image`) nem fazer a imagem sobrepor outra. Mantém a escala do
   `placement`.
-- **Não vale** para o container sem arquivo: trocar o arquivo (`replace_image`/"Trocar imagem"), "Copiar recorte"
-  e ler o arquivo pelo MCP (`get_image_file` devolve `blank-image`; `get_marking_image` devolve a região
+- **Não vale** para o container sem arquivo: trocar o arquivo (`replace_container`/"Trocar imagem"), "Copiar recorte"
+  e ler o arquivo pelo MCP (`get_container_file` devolve `container-without-file`; `get_marking_image` devolve a região
   na cor de fundo).
 - **Propostas**: a criação leva a imagem inteira com `file: null`; a alteração ganha os campos `background`
   (cor) e `size` (`{ width, height }`), só quando a imagem é um container sem arquivo (ver
@@ -528,6 +531,35 @@ uma com os `repo` das especializações que a declaram).
   "Definição" e o MCP não montam o link dessa plataforma; o endereço descartado está no registro e no
   backup, para copiar para `repo.urlTemplate`.
 
+## Campos da v12 (container)
+
+A v12 troca o nome do objeto de topo do canvas: o que era a **imagem** passa a ser o **container** (uma área
+com ou sem arquivo de imagem). Só o vocabulário do `mapping.json` muda; os dados são os mesmos.
+
+- A coleção `images` vira **`containers`**, e a marcação troca `imageId` por **`containerId`**. Os campos de
+  cada container (`id`, `name`, `file`, `width`, `height`, `placement`, `markingColor`, `locked`, `source`,
+  `background`) não mudam.
+- `file`: `string` (caminho em `images/`) ou `null` (container sem arquivo). `background`: cor `#RRGGBB` ou
+  `null`.
+- **Invariante `container-content`** (antes `blank-background`): `file === null` se, e somente se,
+  `background !== null`. Erros relacionados: `container-without-file` (ler o arquivo de um container sem
+  arquivo) e `container-has-file` (operação só do container sem arquivo aplicada a um com arquivo).
+- Continuam com o nome antigo: a pasta `images/` (guarda os arquivos de imagem), a letra `i` das referências
+  `mapping://<projeto>/i/<código>` (agora é o container), a chave `screen` de `origins` e, na proposta, o
+  cabeçalho da mudança (`imageId`, `entity: "image"`; ver [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)). Os
+  campos da marcação dentro da proposta usam `containerId`; a proposta antiga (`imageId`) é lida convertendo.
+- **Migração v11 → v12**: ao abrir, a app renomeia só essas duas chaves (`images` → `containers`,
+  `imageId` → `containerId` em cada marcação) e muda `schemaVersion` para 12. Nada é apagado. Como toda
+  migração, o original vai para `backups/mapping.v11.<AAAAMMDD-HHMMSS>.json` antes do primeiro salvamento
+  (no modo pasta) e a faixa da migração aparece no topo.
+
+| Versão | O que mudou                                                      |
+| ------ | ---------------------------------------------------------------- |
+| v9     | Sem o campo de código (`codeRef`)                                |
+| v10    | Container sem arquivo (`file: null`, `background`)               |
+| v11    | `platformRepos` guarda só o `localPath`                          |
+| v12    | `images` → `containers`, `imageId` → `containerId` (só os nomes) |
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -538,7 +570,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Ao salvar, o
-arquivo passa a ser v11 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Ao salvar, o
+arquivo passa a ser v12 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

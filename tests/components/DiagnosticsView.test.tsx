@@ -128,7 +128,7 @@ describe('Diagnóstico: o texto copiado identifica o ambiente', () => {
     expect(text).toContain('language: ');
     expect(text).toContain('theme: ');
     expect(text).toContain(
-      `images: ${project.containers.length}, markings: ${project.markings.length}, annotations: ${project.annotations.length}`,
+      `containers: ${project.containers.length}, markings: ${project.markings.length}, annotations: ${project.annotations.length}`,
     );
     expect(text).toContain('pendingSave: no');
     // O cabeçalho vem antes dos erros.

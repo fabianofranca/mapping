@@ -128,7 +128,7 @@ function repairRound(
     codesOf.get(`${entity}:${id}`)?.has(code) ?? false;
 
   // Marcações: removidas (imagem inexistente, recorte sem área), recortadas ou viradas raiz.
-  const images = new Map(p.containers.map((i) => [i.id, i]));
+  const containers = new Map(p.containers.map((i) => [i.id, i]));
   const byId = new Map(p.markings.map((m) => [m.id, m]));
   const markings: Marking[] = [];
   for (const m of p.markings) {
@@ -137,7 +137,7 @@ function repairRound(
       continue;
     }
     let next = m;
-    const image = images.get(m.containerId);
+    const image = containers.get(m.containerId);
     if (image && has('marking', m.id, 'rect-out-of-image')) {
       const rect = clipToImage(m.rect, image);
       if (!rect) {

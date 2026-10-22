@@ -35,7 +35,7 @@ export function Minimap() {
   if (!layout) return null;
   // O projeto à vista (sem a prévia do gesto: um gesto em andamento não redesenha o
   // minimapa a cada quadro); na visão Proposto da revisão, as imagens da prévia.
-  const images = review.derived.shownProject.value?.containers ?? [];
+  const containers = review.derived.shownProject.value?.containers ?? [];
 
   const goTo = (e: MouseEvent, l: MinimapLayout) => {
     const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -53,7 +53,7 @@ export function Minimap() {
       title={t('minimap.goTo')}
       onClick={(e) => goTo(e, layout)}
     >
-      {images.map((image) => (
+      {containers.map((image) => (
         <span
           key={image.id}
           class="minimap-image"
