@@ -81,7 +81,7 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
   const index = projectIndex(refs.project);
   const byKind = {
     layer: index.layers,
-    i: index.images,
+    i: index.containers,
     m: index.markings,
     a: index.annotations,
   };
@@ -96,7 +96,7 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
       const kind = item.kind as ItemKind;
       return {
         ...base,
-        kind: { m: 'marking', i: 'image', a: 'annotation' }[kind],
+        kind: { m: 'marking', i: 'container', a: 'annotation' }[kind],
         ref: refs.ref(kind, item.id),
       };
     });

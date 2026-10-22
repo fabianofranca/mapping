@@ -79,7 +79,7 @@ class Created {
     if (entity === 'image') {
       path = `image(${text(to.name) || text(to.file) || `${text(to.background)} ${String(to.width)}x${String(to.height)}`})`;
     } else if (entity === 'marking') {
-      path = `marking(${ref('image', to.imageId)} › ${ref('marking', to.parentId)} › ${text(to.name)})`;
+      path = `marking(${ref('image', to.containerId)} › ${ref('marking', to.parentId)} › ${text(to.name)})`;
     } else if (entity === 'annotation') {
       const type = isRecord(to.type)
         ? `${text(to.type.specId)}/${text(to.type.typeId)}`

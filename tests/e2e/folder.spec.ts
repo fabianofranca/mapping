@@ -293,7 +293,7 @@ test('fechar a página logo depois de editar não perde a marcação (R6.2)', as
   await expect(reopened.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
   await expect.poll(async () => (await readMapping(reopened)).markings.length).toBe(1);
   const mapping = await readMapping(reopened);
-  expect(mapping.markings[0]?.imageId).toBe(mapping.images[0]?.id);
+  expect(mapping.markings[0]?.containerId).toBe(mapping.containers[0]?.id);
 });
 
 // R6.1 do guia: renomear (Enter) e, logo em seguida, começar a arrastar e apertar Esc sem

@@ -9,7 +9,7 @@ import {
   getDefaultEnvironment,
 } from '@modelcontextprotocol/sdk/client/stdio.js';
 import {
-  addImage,
+  addContainer,
   createMarking,
   createProject,
   serialize,
@@ -30,7 +30,10 @@ export const PNG_1X1 = Buffer.from(
 type Doc = Record<string, unknown>;
 
 /** `Doc` com os arrays de itens, para os testes ajustarem o `mapping.json` antes de gravar. */
-function items(doc: Doc, key: 'layers' | 'images' | 'markings' | 'annotations'): Doc[] {
+function items(
+  doc: Doc,
+  key: 'layers' | 'containers' | 'markings' | 'annotations',
+): Doc[] {
   return doc[key] as Doc[];
 }
 
@@ -69,7 +72,7 @@ function collidingProject(): Project {
       color: '#D32F2F',
     },
   });
-  p = addImage(p, {
+  p = addContainer(p, {
     id: COLLIDING_IDS.image,
     file: 'images/a.png',
     width: 100,
@@ -83,7 +86,7 @@ function collidingProject(): Project {
   ] as const) {
     p = createMarking(p, {
       id: COLLIDING_IDS[key],
-      imageId: COLLIDING_IDS.image,
+      containerId: COLLIDING_IDS.image,
       rect: rect(x),
       name: key,
     });
@@ -94,7 +97,7 @@ function collidingProject(): Project {
 export function allIds(p: Project): Set<string> {
   const ids = new Set<string>();
   for (const l of p.layers) ids.add(l.id);
-  for (const i of p.images) ids.add(i.id);
+  for (const i of p.containers) ids.add(i.id);
   for (const m of p.markings) ids.add(m.id);
   for (const a of p.annotations) {
     ids.add(a.id);
@@ -213,14 +216,14 @@ export function createWorkspace(): Workspace {
   write(
     join(root, 'hostil'),
     mappingText((doc) => {
-      items(doc, 'images')[0]!.file = '../../../fora/segredo.png';
+      items(doc, 'containers')[0]!.file = '../../../fora/segredo.png';
     }),
     {},
   );
   write(
     join(root, 'hostil-link'),
     mappingText((doc) => {
-      items(doc, 'images')[0]!.file = 'images/link.png';
+      items(doc, 'containers')[0]!.file = 'images/link.png';
     }),
     { image: false },
   );

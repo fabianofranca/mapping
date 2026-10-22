@@ -43,7 +43,7 @@ describe('zip do projeto de exemplo', () => {
 
   it('abre como o "Abrir zip": mapping.json válido no schema atual, sem migração', async () => {
     const { project } = await readExample();
-    expect(project.schemaVersion).toBe(11);
+    expect(project.schemaVersion).toBe(12);
     expect(project.revision).toBe(1);
     const read = await readProjectZip(new Blob([readFileSync(EXAMPLE_ZIP)]));
     const parsed = read.ok
@@ -54,7 +54,7 @@ describe('zip do projeto de exemplo', () => {
 
   it('tem 4 imagens, 31 marcações, 41 anotações, 8 camadas e 3 especializações', async () => {
     const { project } = await readExample();
-    expect(project.images).toHaveLength(4);
+    expect(project.containers).toHaveLength(4);
     expect(project.markings).toHaveLength(31);
     expect(project.annotations).toHaveLength(41);
     expect(project.layers).toHaveLength(8);
@@ -63,9 +63,9 @@ describe('zip do projeto de exemplo', () => {
 
   it('duas telas são fotos e duas são telas em branco; cada foto está no zip', async () => {
     const { project, files } = await readExample();
-    const photos = project.images.filter((image) => image.file !== null);
+    const photos = project.containers.filter((image) => image.file !== null);
     expect(photos).toHaveLength(2);
-    expect(project.images.filter((image) => image.file === null)).toHaveLength(2);
+    expect(project.containers.filter((image) => image.file === null)).toHaveLength(2);
     for (const image of photos)
       expect(files.images.has(image.file ?? ''), image.name ?? '').toBe(true);
   });

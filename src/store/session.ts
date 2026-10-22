@@ -225,7 +225,7 @@ export interface ProjectSession {
    * marcações. Com proporção diferente, pergunta antes via `confirmAspectChange`.
    */
   replaceImage(
-    imageId: string,
+    containerId: string,
     file: File,
     confirmAspectChange: (change: AspectChange) => Promise<boolean>,
   ): Promise<ReplaceImageResult>;
@@ -325,7 +325,7 @@ export function openSession(options: SessionOptions): ProjectSession {
   });
 
   // Arquivos de imagem que a sessão sabe estarem gravados e referenciados.
-  const stored = new Set(imageFileNames(options.project.images));
+  const stored = new Set(imageFileNames(options.project.containers));
   // Arquivos de imagem que a sessão gravou e que nenhum `mapping.json` gravado cita ainda: se
   // o projeto for recarregado do disco antes de a gravação citá-los, são órfãos e saem.
   const pendingFiles = new Set<string>();
@@ -450,7 +450,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     for (const path of paths) imageStamps.set(path, await stampOf(path));
   };
   const initialStamps = watchable
-    ? stampImages(imageFileNames(options.project.images)).catch(reportCleanupFailure)
+    ? stampImages(imageFileNames(options.project.containers)).catch(reportCleanupFailure)
     : Promise.resolve();
   const putImage = async (path: string, data: Blob) => {
     await storage.writeImage(path, data);
@@ -530,7 +530,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       backupSaved.value = pendingBackup.version;
       pendingBackup = null;
     }
-    const referenced = new Set(imageFileNames(p.images));
+    const referenced = new Set(imageFileNames(p.containers));
     for (const file of referenced) {
       const blob = trash.get(file);
       if (stored.has(file) || !blob) continue;
@@ -705,7 +705,7 @@ export function openSession(options: SessionOptions): ProjectSession {
   };
   const actions: ProjectActions = {
     ...baseActions,
-    removeImage: (imageId) => saveNow(baseActions.removeImage(imageId)),
+    removeContainer: (containerId) => saveNow(baseActions.removeContainer(containerId)),
     // O pacote entra no cache em memória antes da gravação (que começa no `saveNow`).
     applySpecialization: (spec, packageFiles) => {
       const result = baseActions.applySpecialization(spec, packageFiles);
@@ -769,7 +769,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     // O `load` zera o contador de revisão do store, o que agendaria uma gravação: descarta.
     lastRevision = store.revision.peek();
     saver.reset();
-    const referenced = new Set(imageFileNames(project.images));
+    const referenced = new Set(imageFileNames(project.containers));
     const orphans = [...pendingFiles].filter((file) => !referenced.has(file));
     pendingFiles.clear();
     stored.clear();
@@ -810,7 +810,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     await initialStamps;
     const changed: string[] = [];
     const current = new Set<string>();
-    for (const file of imageFileNames(project.images)) {
+    for (const file of imageFileNames(project.containers)) {
       current.add(file);
       const stamp = await stampOf(file);
       const known = imageStamps.has(file);
@@ -984,7 +984,7 @@ export function openSession(options: SessionOptions): ProjectSession {
           path = uniqueImageFile(currentProject(store), safeFileName(prepared.name));
           await putImage(path, prepared.data);
           stored.add(path);
-          const result = actions.addImage(
+          const result = actions.addContainer(
             { file: path, width: prepared.width, height: prepared.height },
             addOptions.center,
           );
@@ -1004,21 +1004,25 @@ export function openSession(options: SessionOptions): ProjectSession {
       return { added, failed };
     },
 
-    async replaceImage(imageId, file, confirmAspectChange) {
+    async replaceImage(containerId, file, confirmAspectChange) {
       if (store.readOnly.value || store.reviewing.value || !store.project.value) {
         return 'failed';
       }
       // Container sem arquivo não tem arquivo para trocar.
-      if (currentProject(store).images.some((i) => i.id === imageId && i.file === null)) {
+      if (
+        currentProject(store).containers.some(
+          (i) => i.id === containerId && i.file === null,
+        )
+      ) {
         return 'failed';
       }
       let path: string | null = null;
       try {
         const prepared = await prepareImage(file);
-        const image = currentProject(store).images.find((i) => i.id === imageId);
+        const image = currentProject(store).containers.find((i) => i.id === containerId);
         if (!image) return 'failed';
         const next = { width: prepared.width, height: prepared.height };
-        if (!canReplaceImage(currentProject(store), imageId, next)) return 'locked';
+        if (!canReplaceImage(currentProject(store), containerId, next)) return 'locked';
         const sameAspect = isSameAspect(image, next);
         if (!sameAspect) {
           const from = { width: image.width, height: image.height };
@@ -1027,8 +1031,8 @@ export function openSession(options: SessionOptions): ProjectSession {
         path = uniqueImageFile(currentProject(store), safeFileName(prepared.name));
         await putImage(path, prepared.data);
         stored.add(path);
-        const result = actions.replaceImage(
-          imageId,
+        const result = actions.replaceContainer(
+          containerId,
           { file: path, ...next },
           { confirmAspectChange: !sameAspect },
         );
@@ -1056,7 +1060,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       const p = committedProject(store);
       const images = new Map<string, Blob>();
       const missingImages: string[] = [];
-      for (const file of imageFileNames(p.images)) {
+      for (const file of imageFileNames(p.containers)) {
         const blob = await storage.readImage(file);
         if (blob) images.set(file, blob);
         else missingImages.push(file);

@@ -194,6 +194,23 @@ export const migrateFrom10To11: Migration = (data) => {
   return { ...data, platformRepos: kept };
 };
 
+/**
+ * v11 → v12 (container): a coleção `images` vira `containers` e a marcação troca `imageId` por
+ * `containerId`. Só renomeia as chaves; nada é apagado nem muda de valor. Um valor já presente
+ * na chave nova é preservado (a antiga é descartada).
+ */
+export const migrateFrom11To12: Migration = (data) => {
+  const { images, ...rest } = data;
+  return {
+    ...rest,
+    containers: data.containers ?? images,
+    markings: mapItems(data.markings, (m) => {
+      const { imageId, ...marking } = m;
+      return { ...marking, containerId: marking.containerId ?? imageId };
+    }),
+  };
+};
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -206,6 +223,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [8, migrateFrom8To9],
   [9, migrateFrom9To10],
   [10, migrateFrom10To11],
+  [11, migrateFrom11To12],
 ]);
 
 export type MigrationResult =

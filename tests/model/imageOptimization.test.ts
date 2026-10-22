@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAX_IMAGE_SIDE,
-  addImage,
+  addContainer,
   chooseOutputFormat,
   createProject,
   extensionForMime,
@@ -106,7 +106,12 @@ describe('placementNear', () => {
       firstLayer: { id: 'L', name: 'L', color: '#000' },
     });
   const withImage = () =>
-    addImage(project(), { id: 'I1', file: 'images/a.png', width: 1000, height: 1000 });
+    addContainer(project(), {
+      id: 'I1',
+      file: 'images/a.png',
+      width: 1000,
+      height: 1000,
+    });
 
   it('usa o ponto pedido quando está livre', () => {
     const p = withImage();
@@ -129,14 +134,14 @@ describe('placementNear', () => {
     );
   });
   it('addImage com center posiciona sem sobrepor', () => {
-    const p = addImage(withImage(), {
+    const p = addContainer(withImage(), {
       id: 'I2',
       file: 'images/b.png',
       width: 500,
       height: 500,
       center: { x: 500, y: 500 },
     });
-    const [a, b] = p.images;
+    const [a, b] = p.containers;
     const overlap =
       a!.placement.x < b!.placement.x + 500 * b!.placement.scale &&
       b!.placement.x < a!.placement.x + 1000 * a!.placement.scale &&

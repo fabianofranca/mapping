@@ -3,10 +3,10 @@ import { basename } from 'node:path';
 import {
   approximateMeasurer,
   createDrawingCache,
-  isBlankImage,
+  isBackgroundContainer,
   projectIndex,
   type Marking,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../src/model';
 import { ToolError } from './errors';
 import { decodeImage, encodeImage } from './image/codecs';
@@ -89,14 +89,17 @@ async function urlFields(
 }
 
 /** Mais pixels que isso, o container sem arquivo é rasterizado reduzido (é uma cor só). */
-const MAX_BLANK_PIXELS = 4096 * 4096;
+const MAX_BACKGROUND_PIXELS = 4096 * 4096;
 
 /**
  * Container sem arquivo: um raster liso com a cor `background`, no tamanho da imagem
  * (o desenho dos componentes é pintado por cima depois, só na região pedida) (reduzido se for enorme: `scaleX`/`scaleY` ≠ 1 já são tratados).
  */
-function blankImage(image: ProjectImage): LoadedImage {
-  const shrink = Math.min(1, Math.sqrt(MAX_BLANK_PIXELS / (image.width * image.height)));
+function backgroundImage(image: ProjectContainer): LoadedImage {
+  const shrink = Math.min(
+    1,
+    Math.sqrt(MAX_BACKGROUND_PIXELS / (image.width * image.height)),
+  );
   const raster = createRaster(
     Math.max(1, Math.round(image.width * shrink)),
     Math.max(1, Math.round(image.height * shrink)),
@@ -121,9 +124,9 @@ function blankImage(image: ProjectImage): LoadedImage {
 async function loadImage(
   roots: Roots,
   refs: Refs,
-  image: ProjectImage,
+  image: ProjectContainer,
 ): Promise<LoadedImage> {
-  if (image.file === null) return blankImage(image);
+  if (image.file === null) return backgroundImage(image);
   const absolute = await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
   if (absolute === null) {
     throw new ToolError(
@@ -158,7 +161,7 @@ function scaleRect(rect: PixelRect, loaded: LoadedImage): PixelRect {
   };
 }
 
-const sizeWarning = (loaded: LoadedImage, image: ProjectImage) =>
+const sizeWarning = (loaded: LoadedImage, image: ProjectContainer) =>
   (loaded.scaleX === 1 && loaded.scaleY === 1) || loaded.file === null
     ? {}
     : {
@@ -181,8 +184,8 @@ export async function markingImage(
   images: ImageServer | null = null,
 ): Promise<ImageResult> {
   const index = projectIndex(refs.project);
-  const image = index.images.get(marking.imageId);
-  if (!image) throw new ToolError('not-found', 'imagem da marcação não encontrada');
+  const image = index.containers.get(marking.containerId);
+  if (!image) throw new ToolError('not-found', 'container da marcação não encontrado');
   const mode = options.mode ?? 'crop';
   const padding = options.padding ?? 0;
   const maxSize = options.maxSize ?? DEFAULT_MAX_SIZE;
@@ -204,18 +207,18 @@ export async function markingImage(
   if (!region) {
     throw new ToolError(
       'marking-outside-image',
-      'a marcação está fora da imagem: nada a recortar',
+      'a marcação está fora do container: nada a recortar',
       {
         rect: rectJson(marking.rect),
-        image: { width: image.width, height: image.height },
+        container: { width: image.width, height: image.height },
       },
     );
   }
 
   // Container sem arquivo: pinta o desenho simplificado dos componentes (cena instanciada com o
   // medidor aproximado; o servidor não tem fontes) na região que a saída mostra.
-  const blank = isBlankImage(image);
-  if (blank) {
+  const bgContainer = isBackgroundContainer(image);
+  if (bgContainer) {
     const drawings = createDrawingCache()(
       refs.project,
       refs.loaded.catalog,
@@ -224,7 +227,7 @@ export async function markingImage(
     );
     paintScene(
       loaded.raster,
-      [...drawings.values()].filter((d) => d.imageId === image.id),
+      [...drawings.values()].filter((d) => d.containerId === image.id),
       approximateMeasurer,
       { scaleX: loaded.scaleX, scaleY: loaded.scaleY, clip: region },
     );
@@ -273,12 +276,12 @@ export async function markingImage(
     json: {
       ref: refs.ref('m', marking.id),
       mode,
-      image: {
+      container: {
         ref: refs.ref('i', image.id),
         file: image.file,
-        ...(blank ? { blank: true, background: image.background } : {}),
+        background: image.background,
       },
-      ...(blank
+      ...(bgContainer
         ? {
             drawing: 'simplified',
             drawingNote:
@@ -315,19 +318,19 @@ export async function markingImage(
   };
 }
 
-/** `get_image_file`: a imagem inteira, reduzida se passar de `maxSize`. */
+/** `get_container_file`: a imagem inteira do container, reduzida se passar de `maxSize`. */
 export async function imageFile(
   roots: Roots,
   refs: Refs,
-  image: ProjectImage,
+  image: ProjectContainer,
   options: ImageFileOptions,
   images: ImageServer | null = null,
 ): Promise<ImageResult> {
-  if (isBlankImage(image)) {
+  if (isBackgroundContainer(image)) {
     throw new ToolError(
-      'blank-image',
-      'O container não tem arquivo: use get_marking_image para ver o desenho.',
-      { image: refs.ref('i', image.id) },
+      'container-without-file',
+      'O container não tem arquivo de imagem (só cor de fundo): use get_marking_image para ver o desenho.',
+      { container: refs.ref('i', image.id) },
     );
   }
   const maxSize = options.maxSize ?? DEFAULT_MAX_SIZE;

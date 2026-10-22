@@ -45,7 +45,7 @@ function senha(
 ): Project {
   let p = createMarking(base, {
     id: ids.marking,
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 100, y: 1100, width: 800, height: 100 },
     name: 'Senha',
   });
@@ -104,7 +104,7 @@ describe('comparação de criações sem source (achado 15)', () => {
     // A nova só recria a marcação (com outro id) e o Input em outra marcação.
     let b = createMarking(base, {
       id: 'Z1',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 100, y: 1100, width: 800, height: 100 },
       name: 'Senha',
     });
@@ -122,13 +122,13 @@ describe('comparação de criações sem source (achado 15)', () => {
     const build = (prefix: string, childName: string) => {
       let p = createMarking(base, {
         id: `${prefix}1`,
-        imageId: 'I1',
+        containerId: 'I1',
         rect: { x: 50, y: 1500, width: 900, height: 300 },
         name: 'Rodapé',
       });
       p = createMarking(p, {
         id: `${prefix}2`,
-        imageId: 'I1',
+        containerId: 'I1',
         rect: { x: 60, y: 1510, width: 100, height: 50 },
         name: childName,
       });
@@ -189,7 +189,7 @@ describe('comparação de criações sem source (achado 15)', () => {
       widths.forEach((width, i) => {
         p = createMarking(p, {
           id: `${prefix}${i}`,
-          imageId: 'I1',
+          containerId: 'I1',
           rect: { x: 10 + i * 30, y: 1900, width, height: 50 },
         });
       });

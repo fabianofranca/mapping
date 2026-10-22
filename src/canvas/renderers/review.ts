@@ -192,7 +192,7 @@ export class ReviewRenderer {
       }
       for (const [id, mark] of review.markings) {
         const marking = index.markings.get(id);
-        const placement = marking ? placements.get(marking.imageId) : undefined;
+        const placement = marking ? placements.get(marking.containerId) : undefined;
         if (!marking || !placement || mark.badges.length === 0) continue;
         const rect = markingCanvasRect(placement, marking.rect);
         if (!intersectRects(rect, view)) continue;
@@ -201,7 +201,7 @@ export class ReviewRenderer {
         placeBadges(this.badgeNodes(key), mark.badges, rect, zoom, tokens);
       }
       for (const [id, mark] of review.images) {
-        const image = index.images.get(id);
+        const image = index.containers.get(id);
         const placement = placements.get(id);
         if (!image || !placement) continue;
         const rect = imageCanvasRect(image, placement);

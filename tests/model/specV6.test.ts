@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { MAX_BLANK_SIZE, parseSpec, type SpecIssue } from '../../src/model';
+import { MAX_CONTAINER_SIZE, parseSpec, type SpecIssue } from '../../src/model';
 
 // Especialização formatVersion 6 (etapa Container): `containers` na raiz, os presets do
 // diálogo Novo container. v1 a v5 seguem como estavam e recusam a chave.
@@ -71,7 +71,7 @@ describe('formatVersion 6: containers', () => {
     ['largura zero', { ...PHONE, width: 0 }, 'containers[0].width'],
     [
       'altura acima do limite',
-      { ...PHONE, height: MAX_BLANK_SIZE + 1 },
+      { ...PHONE, height: MAX_CONTAINER_SIZE + 1 },
       'containers[0].height',
     ],
     ['largura fracionada', { ...PHONE, width: 10.5 }, 'containers[0].width'],
@@ -82,8 +82,8 @@ describe('formatVersion 6: containers', () => {
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('aceita os limites 1 e MAX_BLANK_SIZE', () => {
-    const spec = withContainers([{ ...PHONE, width: 1, height: MAX_BLANK_SIZE }]);
+  it('aceita os limites 1 e MAX_CONTAINER_SIZE', () => {
+    const spec = withContainers([{ ...PHONE, width: 1, height: MAX_CONTAINER_SIZE }]);
     expect(parseSpec(spec).ok).toBe(true);
   });
 });

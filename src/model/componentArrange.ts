@@ -294,7 +294,9 @@ export function arrangeMarking(
     const isRoot = id === markingId;
     const outer =
       marking.parentId === null
-        ? imagePixelRect(index.images.get(marking.imageId) ?? { width: 0, height: 0 })
+        ? imagePixelRect(
+            index.containers.get(marking.containerId) ?? { width: 0, height: 0 },
+          )
         : isRoot
           ? (index.markings.get(marking.parentId) as Marking).rect
           : (rects.get(marking.parentId) as Rect);
@@ -304,7 +306,7 @@ export function arrangeMarking(
     translate(id, fixed.x - rect.x, fixed.y - rect.y);
     const where =
       marking.parentId === null
-        ? (index.images.get(marking.imageId)?.name ?? marking.imageId)
+        ? (index.containers.get(marking.containerId)?.name ?? marking.containerId)
         : labelOf(marking.parentId);
     warnings.add(`${labelOf(id)}: não cabe em ${where}`);
   }

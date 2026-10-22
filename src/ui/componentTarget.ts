@@ -10,7 +10,7 @@ import type { EditorContextValue } from './EditorContext';
 
 /** Para onde vai o componente: imagem, container pai (ou `null`) e centro em pixels da imagem. */
 export interface ComponentTarget {
-  readonly imageId: string;
+  readonly containerId: string;
   readonly parentId: string | null;
   readonly center?: { readonly x: number; readonly y: number };
 }
@@ -32,7 +32,7 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
   if (selected?.kind === 'marking') {
     const drawn = markingComponent(project, derived.catalog.value, selected.marking.id);
     if (drawn && hasSlotComponent(drawn.component)) {
-      return { imageId: selected.marking.imageId, parentId: selected.marking.id };
+      return { containerId: selected.marking.containerId, parentId: selected.marking.id };
     }
   }
 
@@ -46,20 +46,20 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
     const { image } = selected;
     if (point && pointInRect(point, imageCanvasRect(image, image.placement))) {
       return {
-        imageId: image.id,
+        containerId: image.id,
         parentId: null,
         center: canvasToImagePixel(image.placement, point),
       };
     }
-    return { imageId: image.id, parentId: null };
+    return { containerId: image.id, parentId: null };
   }
 
   // 3. Sem seleção, a tela sob o centro da vista.
   if (point) {
-    const image = imageAt(project.images, point);
+    const image = imageAt(project.containers, point);
     if (image) {
       return {
-        imageId: image.id,
+        containerId: image.id,
         parentId: null,
         center: canvasToImagePixel(image.placement, point),
       };

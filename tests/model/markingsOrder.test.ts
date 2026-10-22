@@ -19,7 +19,11 @@ function withSiblings(): Project {
     ['S3', 200],
     ['S4', 300],
   ] as const) {
-    p = createMarking(p, { id, imageId: 'I1', rect: { x, y: 0, width: 50, height: 50 } });
+    p = createMarking(p, {
+      id,
+      containerId: 'I1',
+      rect: { x, y: 0, width: 50, height: 50 },
+    });
   }
   return p;
 }
@@ -90,7 +94,7 @@ describe('reorderMarking', () => {
     let p = withSiblings();
     p = createMarking(p, {
       id: 'C1',
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: 1010, y: 1010, width: 30, height: 30 },
     });
     // C1 cabe em M1 › M2? (1200..) não; cabe em M1 mas fora de M2: pai = M1.
@@ -125,7 +129,7 @@ describe('tamanho mínimo (minSize)', () => {
     const p = sampleProject();
     const args = {
       id: 'N1',
-      imageId: 'I2',
+      containerId: 'I2',
       rect: { x: 200, y: 200, width: 59, height: 60 },
     };
     expect(() => createMarking(p, args, { minSize })).toThrow('rect-too-small');
@@ -149,7 +153,7 @@ describe('tamanho mínimo (minSize)', () => {
     const p = sampleProject();
     const next = createMarking(p, {
       id: 'N1',
-      imageId: 'I2',
+      containerId: 'I2',
       rect: { x: 200, y: 200, width: 10, height: 10 },
     });
     expect(next.markings.at(-1)?.rect.width).toBe(10);

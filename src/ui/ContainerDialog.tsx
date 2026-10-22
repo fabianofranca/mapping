@@ -1,11 +1,11 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
-import { MAX_BLANK_SIZE } from '../model';
+import { MAX_CONTAINER_SIZE } from '../model';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import {
   CUSTOM_PRESET,
-  DEFAULT_BLANK_BACKGROUND,
+  DEFAULT_CONTAINER_BACKGROUND,
   SELECTION_PRESET,
   presetGroups,
   readContainerForm,
@@ -30,7 +30,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
   const [width, setWidth] = useState(String(first?.width ?? 360));
   const [height, setHeight] = useState(String(first?.height ?? 800));
   const [background, setBackground] = useState(
-    first?.background ?? DEFAULT_BLANK_BACKGROUND,
+    first?.background ?? DEFAULT_CONTAINER_BACKGROUND,
   );
   const [error, setError] = useState<string | null>(null);
   const [invalid, setInvalid] = useState<'name' | 'size' | 'color' | null>(null);
@@ -47,13 +47,13 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
             : form.error === 'size'
               ? 'container.error.size'
               : 'container.error.color',
-          { max: MAX_BLANK_SIZE },
+          { max: MAX_CONTAINER_SIZE },
         ),
       );
       return;
     }
     const center = canvas.current?.viewportCenter();
-    const result = actions.addBlankImage({
+    const result = actions.addBackgroundContainer({
       ...form.value,
       ...(center ? { center } : {}),
     });
@@ -152,7 +152,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
         <TextField
           label={t('container.background')}
           value={background}
-          placeholder={DEFAULT_BLANK_BACKGROUND}
+          placeholder={DEFAULT_CONTAINER_BACKGROUND}
           invalid={invalid === 'color'}
           onInput={(e) => setBackground(e.currentTarget.value)}
         />

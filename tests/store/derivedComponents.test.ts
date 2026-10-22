@@ -40,7 +40,7 @@ function add(
     {
       markingId: id,
       annotationId: `A_${id}`,
-      imageId: 'I1',
+      containerId: 'I1',
       parentId: null,
       specId: SPEC_ID,
       typeId,
@@ -214,15 +214,15 @@ describe('derivado: marcações desenhadas', () => {
     setShowComponentsOnPhotos(false);
     expect(derived.drawnMarkings.value.size).toBe(0);
 
-    const blank = actions.addBlankImage({
+    const bgContainer = actions.addBackgroundContainer({
       name: null,
       width: 400,
       height: 600,
       background: '#FFFFFF',
     });
-    if (!blank.ok) throw new Error('addBlankImage');
+    if (!bgContainer.ok) throw new Error('addBackgroundContainer');
     const created = actions.addComponent({
-      imageId: blank.value,
+      containerId: bgContainer.value,
       parentId: null,
       specId: SPEC_ID,
       typeId: 'text',
@@ -236,7 +236,7 @@ describe('derivado: marcações desenhadas', () => {
     // Container com filha, mais uma marcação comum sem anotação, no container... e na foto.
     let p = add(screen(), 'C', 'row', box(100, 300, 300, 100));
     p = add(p, 'K', 'text', box(100, 300, 100, 40), { parentId: 'C' });
-    p = createMarking(p, { id: 'P', imageId: 'I1', rect: box(500, 500, 50, 50) });
+    p = createMarking(p, { id: 'P', containerId: 'I1', rect: box(500, 500, 50, 50) });
     const { derived, ui, store } = setup(p);
     setShowComponentsOnPhotos(true);
     const layers = store.project.value?.layers ?? [];
@@ -276,15 +276,15 @@ describe('derivado: marcações desenhadas', () => {
 
   it('no container o componente aparece mesmo com a opção de fotos desligada', () => {
     const { derived, actions, ui, store } = setup();
-    const blank = actions.addBlankImage({
+    const bgContainer = actions.addBackgroundContainer({
       name: null,
       width: 400,
       height: 600,
       background: '#FFFFFF',
     });
-    if (!blank.ok) throw new Error('addBlankImage');
+    if (!bgContainer.ok) throw new Error('addBackgroundContainer');
     const created = actions.addComponent({
-      imageId: blank.value,
+      containerId: bgContainer.value,
       parentId: null,
       specId: SPEC_ID,
       typeId: 'row',

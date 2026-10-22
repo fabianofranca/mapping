@@ -2,7 +2,11 @@ import Konva from 'konva/lib/Core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ImageRenderer } from '../../../src/canvas/renderers/images';
 import { t } from '../../../src/i18n';
-import { addBlankImage, removeImage, renameImage } from '../../../src/model';
+import {
+  addBackgroundContainer,
+  removeContainer,
+  renameContainer,
+} from '../../../src/model';
 import { canvasProject, editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
 
 beforeAll(installFakeCanvas);
@@ -30,7 +34,7 @@ describe('ImageRenderer', () => {
   it('usa a posição da prévia do gesto em andamento', () => {
     const { renderer, editor } = setup();
     const preview = {
-      imageId: 'I2',
+      containerId: 'I2',
       placement: { x: 2000, y: 50, scale: 2 },
       valid: true,
     };
@@ -103,7 +107,7 @@ describe('ImageRenderer', () => {
     expect(renderer.node('I1')?.title.text()).toBe('images/a.jpg');
     expect(renderer.node('I1')?.title.fill()).toBe(TOKENS.textMuted);
 
-    const named = renameImage(canvasProject(), 'I1', 'Lateral');
+    const named = renameContainer(canvasProject(), 'I1', 'Lateral');
     renderer.render(frameOf(editor, { project: named }));
     expect(renderer.node('I1')?.title.text()).toBe('Lateral');
     expect(renderer.node('I1')?.title.fill()).toBe(TOKENS.text);
@@ -125,7 +129,7 @@ describe('ImageRenderer', () => {
     const { layer, renderer, editor } = setup();
     renderer.render(frameOf(editor));
     const node = renderer.node('I2');
-    const without = removeImage(canvasProject(), 'I2');
+    const without = removeContainer(canvasProject(), 'I2');
     renderer.render(frameOf(editor, { project: without }));
     expect(renderer.node('I2')).toBeUndefined();
     expect(layer.getChildren()).toHaveLength(1);
@@ -134,7 +138,7 @@ describe('ImageRenderer', () => {
 
   it('container: retângulo cheio na cor de fundo, nunca o reservado de carregando', () => {
     const { renderer, editor } = setup();
-    const project = addBlankImage(canvasProject(), {
+    const project = addBackgroundContainer(canvasProject(), {
       id: 'B1',
       width: 400,
       height: 600,

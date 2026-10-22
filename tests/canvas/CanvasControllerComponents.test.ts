@@ -249,7 +249,9 @@ describe('CanvasController: componentes', () => {
     function hoverSetup() {
       const made = setup();
       const { controller, container, store } = made;
-      const placement = store.project.value?.images.find((i) => i.id === 'B1')?.placement;
+      const placement = store.project.value?.containers.find(
+        (i) => i.id === 'B1',
+      )?.placement;
       const t1 = store.project.value?.markings.find((m) => m.id === 'T1');
       if (!placement || !t1) throw new Error('fixture');
       controller.zoomTo(1);
@@ -320,8 +322,8 @@ describe('CanvasController: componentes', () => {
     // A visibilidade do texto depende de caber na tela: enquadra a marcação conferida.
     const focus = (id: string) => {
       const marking = store.project.value?.markings.find((m) => m.id === id);
-      const placement = store.project.value?.images.find(
-        (i) => i.id === marking?.imageId,
+      const placement = store.project.value?.containers.find(
+        (i) => i.id === marking?.containerId,
       )?.placement;
       if (!marking || !placement) throw new Error('fixture');
       const rect = markingCanvasRect(placement, marking.rect);

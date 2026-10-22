@@ -431,7 +431,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
           }
           // 1. As imagens vão para o lugar definitivo (copiadas; a origem só sai no fim).
           for (const move of applying.files) {
-            if (base.images.some((image) => image.file === move.to)) {
+            if (base.containers.some((image) => image.file === move.to)) {
               failedPath = move.to;
               await rollback();
               return 'image-exists';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_CANVAS_RECT, fitRect } from '../../src/canvas/viewport';
 import { ViewportController } from '../../src/canvas/viewportController';
-import type { ProjectImage } from '../../src/model';
+import type { ProjectContainer } from '../../src/model';
 import { canvasProject } from './harness';
 
 function container(width: number, height: number): HTMLDivElement {
@@ -15,7 +15,7 @@ const SIZE = { width: 380, height: 700 };
 
 describe('ViewportController', () => {
   it('na primeira medida com tamanho, enquadra as imagens (uma vez só)', () => {
-    let images: readonly ProjectImage[] = canvasProject().images;
+    let images: readonly ProjectContainer[] = canvasProject().containers;
     const view = new ViewportController(container(380, 700), () => images);
     const stop = view.observe();
     expect(view.size.value).toEqual(SIZE);
@@ -45,7 +45,7 @@ describe('ViewportController', () => {
   // usava a altura antiga (o ResizeObserver ainda não tinha disparado).
   it('enquadrar tudo mede o container antes (sem esperar o ResizeObserver)', () => {
     const el = container(380, 300);
-    const view = new ViewportController(el, () => canvasProject().images);
+    const view = new ViewportController(el, () => canvasProject().containers);
     view.measure();
     Object.defineProperty(el, 'clientHeight', { value: 700 });
     view.fitAll();

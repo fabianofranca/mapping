@@ -31,7 +31,7 @@ import type { Raster } from '../../mcp/image/raster';
 interface MarkingImageData {
   ref: string;
   mode: 'crop' | 'context';
-  image: { ref: string; file: string | null; blank?: boolean; background?: string };
+  container: { ref: string; file: string | null; background: string | null };
   format: string;
   width: number;
   height: number;
@@ -56,6 +56,7 @@ interface ImageFileData {
   scale: number;
   recoded: boolean;
   warning?: string;
+  warnings?: Record<string, unknown>[];
   url?: string;
   markdown?: string;
 }
@@ -145,7 +146,8 @@ describe('get_marking_image: recorte', () => {
     expect(r.data.ref).toMatch(
       /^mapping:\/\/imagens\/m\/[0-9a-f]{8} \(tela\.png › Formulário\)$/,
     );
-    expect(r.data.image.file).toBe(IMAGE_FILES.png);
+    expect(r.data.container.file).toBe(IMAGE_FILES.png);
+    expect(r.data.container.background).toBeNull();
     expect([r.raster.width, r.raster.height]).toEqual([PARENT.width, PARENT.height]);
     // PNG sem perdas: o pixel é exatamente o da imagem original, filhas incluídas (sem contorno).
     expect(pixel(r.raster, 20, 120)).toEqual([...SOLID.form, 255]);
@@ -313,9 +315,11 @@ describe('formatos', () => {
   });
 });
 
-describe('get_image_file', () => {
+describe('get_container_file', () => {
   it('devolve o arquivo como está quando cabe em maxSize', async () => {
-    const r = ok(await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.png) }));
+    const r = ok(
+      await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.png) }),
+    );
     expect(r.data).toMatchObject({
       format: 'png',
       width: 400,
@@ -329,8 +333,30 @@ describe('get_image_file', () => {
     ).toBe(true);
   });
 
+  it('get_image_file (antiga) ainda responde, com aviso, e devolve o mesmo que get_container_file', async () => {
+    const current = ok(
+      await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.png) }),
+    );
+    expect(current.data.warnings).toBeUndefined();
+    const old = ok(
+      await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.png) }),
+    );
+    expect(old.data.warnings).toEqual([
+      expect.objectContaining({
+        code: 'deprecated-tool',
+        tool: 'get_image_file',
+        message: expect.stringContaining('get_container_file'),
+      }),
+    ]);
+    expect(old.mimeType).toBe(current.mimeType);
+    expect(Buffer.from(old.bytes!).equals(Buffer.from(current.bytes!))).toBe(true);
+    expect(old.data).toMatchObject({ format: 'png', width: 400, height: 300 });
+  });
+
   it('reduz a 1568 px por padrão, mantendo a proporção', async () => {
-    const r = ok(await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.big) }));
+    const r = ok(
+      await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.big) }),
+    );
     expect([r.raster.width, r.raster.height]).toEqual([1568, 1045]);
     expect(r.data).toMatchObject({
       width: 1568,
@@ -348,7 +374,7 @@ describe('get_image_file', () => {
 
   it('respeita maxSize e format', async () => {
     const r = ok(
-      await call<ImageFileData>('get_image_file', {
+      await call<ImageFileData>('get_container_file', {
         ref: imageRef(IDS.big),
         maxSize: 500,
         format: 'jpeg',
@@ -360,7 +386,7 @@ describe('get_image_file', () => {
 
   it('muda o formato mesmo sem reduzir', async () => {
     const r = ok(
-      await call<ImageFileData>('get_image_file', {
+      await call<ImageFileData>('get_container_file', {
         ref: imageRef(IDS.webp),
         format: 'png',
       }),
@@ -373,7 +399,7 @@ describe('get_image_file', () => {
   it('devolve o JPEG e o WebP originais intactos', async () => {
     for (const key of ['jpeg', 'webp'] as const) {
       const r = ok(
-        await call<ImageFileData>('get_image_file', { ref: imageRef(IDS[key]) }),
+        await call<ImageFileData>('get_container_file', { ref: imageRef(IDS[key]) }),
       );
       expect(r.data.recoded).toBe(false);
       expect(
@@ -385,15 +411,15 @@ describe('get_image_file', () => {
 
 describe('arquivos problemáticos', () => {
   it('imagem ausente', async () => {
-    const r = await call('get_image_file', { ref: imageRef(IDS.missing) });
+    const r = await call('get_container_file', { ref: imageRef(IDS.missing) });
     expect(errorCode(r)).toBe('image-file-missing');
     expect(errorCode(await crop(IDS.missing))).toBe('image-file-missing');
   });
 
   it('link simbólico para fora das raízes é tratado como inexistente', async () => {
-    expect(errorCode(await call('get_image_file', { ref: imageRef(IDS.escape) }))).toBe(
-      'image-file-missing',
-    );
+    expect(
+      errorCode(await call('get_container_file', { ref: imageRef(IDS.escape) })),
+    ).toBe('image-file-missing');
   });
 
   it('arquivo que não é imagem', async () => {
@@ -410,32 +436,35 @@ describe('arquivos problemáticos', () => {
     expect([r.raster.width, r.raster.height]).toEqual([100, 75]);
     expect(pixel(r.raster, 50, 40)).toEqual([...SOLID.form, 255]);
     const file = ok(
-      await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.mismatch) }),
+      await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.mismatch) }),
     );
     expect(file.data.warning).toBeDefined();
   });
 });
 
 describe('container (sem arquivo)', () => {
-  it('get_image_file recusa com blank-image e manda usar get_marking_image', async () => {
-    const r = await call<{ error: { code: string; message: string } }>('get_image_file', {
-      ref: imageRef(IDS.blank),
-    });
-    expect(errorCode(r)).toBe('blank-image');
+  it('get_container_file recusa com container-without-file e manda usar get_marking_image', async () => {
+    const r = await call<{ error: { code: string; message: string } }>(
+      'get_container_file',
+      {
+        ref: imageRef(IDS.bgContainer),
+      },
+    );
+    expect(errorCode(r)).toBe('container-without-file');
     expect(r.data.error.message).toBe(
-      'O container não tem arquivo: use get_marking_image para ver o desenho.',
+      'O container não tem arquivo de imagem (só cor de fundo): use get_marking_image para ver o desenho.',
     );
   });
 
   it('get_marking_image: recorte liso com a cor de fundo, no tamanho da marcação', async () => {
-    const r = ok(await crop(IDS.blank));
+    const r = ok(await crop(IDS.bgContainer));
     expect(r.data).toMatchObject({
       mode: 'crop',
       width: PARENT.width,
       height: PARENT.height,
       scale: 1,
       region: PARENT,
-      image: { file: null, blank: true, background: BLANK_BACKGROUND },
+      container: { file: null, background: BLANK_BACKGROUND },
     });
     expect(r.data.warning).toBeUndefined();
     const [red, green, blue] = [0x10, 0x60, 0xa0];
@@ -449,25 +478,25 @@ describe('container (sem arquivo)', () => {
   });
 
   it('get_marking_image no modo contexto: a imagem inteira com a marcação contornada', async () => {
-    const r = ok(await crop(IDS.blank, { mode: 'context' }));
+    const r = ok(await crop(IDS.bgContainer, { mode: 'context' }));
     expect(r.data).toMatchObject({ mode: 'context', width: 400, height: 300 });
     expect(pixel(r.raster, 5, 5)).toEqual([0x10, 0x60, 0xa0, 255]);
   });
 
-  it('get_image e get_project trazem file nulo, background e blank', async () => {
-    const image = await call<{
+  it('get_container traz file nulo e background, sem o campo bgContainer', async () => {
+    const container = await call<{
       file: string | null;
-      blank: boolean;
+      bgContainer?: boolean;
       background: string;
       exists: boolean;
-    }>('get_image', { ref: imageRef(IDS.blank) });
-    expect(image.isError).toBe(false);
-    expect(image.data).toMatchObject({
+    }>('get_container', { ref: imageRef(IDS.bgContainer) });
+    expect(container.isError).toBe(false);
+    expect(container.data).toMatchObject({
       file: null,
-      blank: true,
       background: BLANK_BACKGROUND,
       exists: true,
     });
+    expect(container.data.bgContainer).toBeUndefined();
   });
 });
 
@@ -484,9 +513,9 @@ describe('referências e argumentos', () => {
   });
 
   it('recusa referência do tipo errado', async () => {
-    expect(errorCode(await call('get_image_file', { ref: markingRef(IDS.png) }))).toBe(
-      'wrong-kind',
-    );
+    expect(
+      errorCode(await call('get_container_file', { ref: markingRef(IDS.png) })),
+    ).toBe('wrong-kind');
     expect(errorCode(await call('get_marking_image', { ref: imageRef(IDS.png) }))).toBe(
       'wrong-kind',
     );
@@ -512,6 +541,7 @@ describe('referências e argumentos', () => {
     const { tools } = await mcp.client.listTools();
     const names = tools.map((t) => t.name);
     expect(names).toContain('get_marking_image');
+    expect(names).toContain('get_container_file');
     expect(names).toContain('get_image_file');
     expect(BLOCKS.length).toBe(3);
   });
@@ -581,8 +611,10 @@ describe('url: servidor HTTP local de imagens', () => {
     expect((await fetched(w.data.url!)).type).toBe('image/webp');
   });
 
-  it('get_image_file devolve url e markdown com o nome do arquivo', async () => {
-    const r = ok(await call<ImageFileData>('get_image_file', { ref: imageRef(IDS.png) }));
+  it('get_container_file devolve url e markdown com o nome do arquivo', async () => {
+    const r = ok(
+      await call<ImageFileData>('get_container_file', { ref: imageRef(IDS.png) }),
+    );
     expect(r.data.url).toMatch(URL_FORMAT);
     expect(r.data.markdown).toBe(`![${IMAGE_FILES.png}](${r.data.url})`);
     const got = await fetched(r.data.url!);
@@ -591,7 +623,7 @@ describe('url: servidor HTTP local de imagens', () => {
   });
 
   it('o container também tem url', async () => {
-    const r = ok(await crop(IDS.blank));
+    const r = ok(await crop(IDS.bgContainer));
     expect(r.data.url).toMatch(URL_FORMAT);
     const got = await fetched(r.data.url!);
     expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);

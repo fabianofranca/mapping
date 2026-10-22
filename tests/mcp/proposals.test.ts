@@ -86,14 +86,14 @@ const figma = (id: string) => ({
 const IMPORT_OPERATIONS = [
   { op: 'apply_specialization', file: 'fontes/sdui.json' },
   {
-    op: 'add_image',
+    op: 'add_container',
     as: '$t1',
     file: 'fontes/tela1.png',
     name: 'Checkout',
     source: figma('1:10'),
   },
   {
-    op: 'add_image',
+    op: 'add_container',
     as: '$t2',
     file: 'fontes/tela2.png',
     name: 'Pagamento',
@@ -102,7 +102,7 @@ const IMPORT_OPERATIONS = [
   {
     op: 'create_marking',
     as: '$titulo',
-    image: '$t1',
+    container: '$t1',
     name: 'Título',
     rect: { x: 20, y: 20, width: 400, height: 60 },
     source: figma('1:11'),
@@ -110,7 +110,7 @@ const IMPORT_OPERATIONS = [
   {
     op: 'create_marking',
     as: '$botao',
-    image: '$t1',
+    container: '$t1',
     name: 'Botão Pagar',
     rect: { x: 20, y: 600, width: 300, height: 80 },
     source: figma('1:12'),
@@ -118,7 +118,7 @@ const IMPORT_OPERATIONS = [
   {
     op: 'create_marking',
     as: '$cartao',
-    image: '$t2',
+    container: '$t2',
     name: 'Campo cartão',
     rect: { x: 20, y: 100, width: 500, height: 70 },
     source: figma('2:21'),
@@ -194,7 +194,7 @@ interface Got {
   conflicts: number;
   levels: {
     project?: { state: string; changes: number };
-    images: { image: string; change: string; state: string; changes: number }[];
+    containers: { container: string; change: string; state: string; changes: number }[];
   };
   total: number;
   returned: number;
@@ -300,7 +300,7 @@ describe('importação inteira', () => {
     });
     expect(first.reviewChanges).toEqual({ total: 13, create: 13, update: 0, remove: 0 });
     expect(first.levels.project).toMatchObject({ state: 'undecided', changes: 4 });
-    expect(first.levels.images).toEqual([
+    expect(first.levels.containers).toEqual([
       expect.objectContaining({ change: 'new', items: 2 }),
       expect.objectContaining({ change: 'new', items: 1 }),
     ]);
@@ -342,7 +342,7 @@ describe('importação inteira', () => {
     });
     // A especialização inteira não entra na resposta.
     expect(JSON.stringify(got.changes[0])).not.toContain('"layers"');
-    expect(got.levels.images.map((i) => [i.change, i.state])).toEqual([
+    expect(got.levels.containers.map((i) => [i.change, i.state])).toEqual([
       ['new', 'undecided'],
       ['new', 'undecided'],
     ]);
@@ -447,7 +447,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       applied: 0,
       complete: false,
     });
-    expect(got.levels.images.map((i) => i.state)).toEqual(['accepted', 'partial']);
+    expect(got.levels.containers.map((i) => i.state)).toEqual(['accepted', 'partial']);
     expect(got.notes.map((n) => [n.level, n.text])).toEqual([
       ['item', 'O campo é mais largo e fica em y 90.'],
       ['proposal', 'Faltou a tela de erro.'],
@@ -464,7 +464,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
     // "Aplicar aceitas": o modelo que a app usa aplica a proposta que o MCP gerou.
     const project = applyAcceptedOnDisk(dir(), first.proposal.id);
     expect(project.revision).toBe(1);
-    expect(project.images.map((i) => i.name)).toEqual(['Checkout', 'Pagamento']);
+    expect(project.containers.map((i) => i.name)).toEqual(['Checkout', 'Pagamento']);
     expect(project.markings.map((m) => m.name)).toEqual(['Título', 'Botão Pagar']);
     expect(project.annotations).toHaveLength(3);
     expect(readProposal(dir(), first.proposal.id)).toMatchObject({
@@ -563,7 +563,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
         {
           op: 'create_marking',
           as: '$cartao',
-          image: pagamentoRef,
+          container: pagamentoRef,
           name: 'Campo cartão',
           rect: { x: 20, y: 90, width: 560, height: 70 },
           source: figma('2:21'),
@@ -681,7 +681,7 @@ describe('nova proposta com supersedes (só as correções)', () => {
       {
         op: 'create_marking',
         as: '$senha',
-        image: pagamentoRef,
+        container: pagamentoRef,
         name: 'Senha',
         rect: { x: 20, y: 200, width: 500, height: 70 },
         source: figma('2:30'),
@@ -836,7 +836,7 @@ describe('reexportação: casar por source e propor só o que mudou', () => {
       'loja',
       [
         {
-          op: 'add_image',
+          op: 'add_container',
           as: '$t3',
           file: 'fontes/tela1.png',
           name: 'Erro',
@@ -863,7 +863,7 @@ describe('reexportação: casar por source e propor só o que mudou', () => {
     const again = await propose(
       mcp,
       'loja',
-      [{ op: 'add_image', file: 'fontes/tela1.png', name: 'Erro 2' }],
+      [{ op: 'add_container', file: 'fontes/tela1.png', name: 'Erro 2' }],
       { title: 'Outra tela' },
     );
     expect(again.files.images[0]).not.toBe(proposed.files.images[0]);
@@ -1071,11 +1071,11 @@ describe('source nas operações de imagens e marcações', () => {
     const checkout = await refBySource('1:10');
     const operations = [
       { op: 'update_marking', marking: titulo, source: null },
-      { op: 'update_image', image: checkout, source: figma('1:10-v2') },
+      { op: 'update_container', container: checkout, source: figma('1:10-v2') },
       {
         op: 'create_marking',
         as: '$novo',
-        image: checkout,
+        container: checkout,
         rect: { x: 400, y: 400, width: 50, height: 50 },
         source: { system: 'sketch', id: 'abc' },
       },
@@ -1178,7 +1178,7 @@ describe('o agente nunca altera o mapping.json', () => {
     const invalid = await mcp.call<Proposed>('propose_changes', {
       project: 'loja',
       title: 'Inválida',
-      operations: [{ op: 'delete_image', image: 'i/00000000' }],
+      operations: [{ op: 'delete_container', container: 'i/00000000' }],
     });
     expect(invalid.data.valid).toBe(false);
     expect(files.map((f) => hashOf(f))).toEqual(before);

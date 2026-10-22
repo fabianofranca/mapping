@@ -2,8 +2,8 @@ import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  addBlankImage,
-  addImage,
+  addBackgroundContainer,
+  addContainer,
   createMarking,
   createProject,
   serialize,
@@ -84,21 +84,21 @@ export async function decodeBytes(bytes: Uint8Array): Promise<Raster> {
   return (await decodeImage(bytes)).raster;
 }
 
-const imageId = (digit: string) => `${digit.repeat(8)}-0000-4000-8000-000000000001`;
+const containerId = (digit: string) => `${digit.repeat(8)}-0000-4000-8000-000000000001`;
 
 export const IDS = {
   layer: 'cccccccc-0000-4000-8000-000000000001',
-  png: imageId('1'),
-  jpeg: imageId('2'),
-  webp: imageId('3'),
-  big: imageId('4'),
-  mismatch: imageId('5'),
-  missing: imageId('6'),
-  text: imageId('7'),
-  bomb: imageId('8'),
-  escape: imageId('9'),
+  png: containerId('1'),
+  jpeg: containerId('2'),
+  webp: containerId('3'),
+  big: containerId('4'),
+  mismatch: containerId('5'),
+  missing: containerId('6'),
+  text: containerId('7'),
+  bomb: containerId('8'),
+  escape: containerId('9'),
   // Container (sem arquivo): não está em IMAGE_FILES.
-  blank: imageId('d'),
+  bgContainer: containerId('d'),
   // As marcações de cada imagem trocam o primeiro caractere do id da imagem (códigos distintos).
   parent: (image: string) => `a${image.slice(1)}`,
   childA: (image: string) => `b${image.slice(1)}`,
@@ -142,17 +142,17 @@ function imageProject(): Project {
     escape: IMAGE_SIZE,
   };
   for (const key of Object.keys(IMAGE_FILES) as (keyof typeof IMAGE_FILES)[]) {
-    p = addImage(p, { id: IDS[key], file: IMAGE_FILES[key], ...sizes[key] });
+    p = addContainer(p, { id: IDS[key], file: IMAGE_FILES[key], ...sizes[key] });
   }
-  p = addBlankImage(p, {
-    id: IDS.blank,
+  p = addBackgroundContainer(p, {
+    id: IDS.bgContainer,
     width: IMAGE_SIZE.width,
     height: IMAGE_SIZE.height,
     background: BLANK_BACKGROUND,
   });
-  const named = (id: string, imageId: string, rect: PixelRect, name: string) => ({
+  const named = (id: string, containerId: string, rect: PixelRect, name: string) => ({
     id,
-    imageId,
+    containerId,
     rect,
     name,
   });
@@ -164,7 +164,7 @@ function imageProject(): Project {
     'missing',
     'text',
     'bomb',
-    'blank',
+    'bgContainer',
   ] as const) {
     const image = IDS[key];
     p = createMarking(p, named(IDS.parent(image), image, PARENT, 'Formulário'));

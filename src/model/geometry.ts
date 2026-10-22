@@ -1,4 +1,4 @@
-import type { Placement, ProjectImage, Rect } from './types';
+import type { Placement, ProjectContainer, Rect } from './types';
 
 /** Tamanho mínimo de cada lado de uma marcação, em pixels da imagem. */
 export const MIN_MARKING_SIZE = 8;
@@ -63,13 +63,13 @@ export function isIntegerRect(r: Rect): boolean {
 }
 
 /** Retângulo da imagem inteira, em pixels da imagem. */
-export function imagePixelRect(image: Pick<ProjectImage, 'width' | 'height'>): Rect {
+export function imagePixelRect(image: Pick<ProjectContainer, 'width' | 'height'>): Rect {
   return { x: 0, y: 0, width: image.width, height: image.height };
 }
 
 /** Retângulo ocupado pela imagem no canvas, em unidades do canvas. */
 export function imageCanvasRect(
-  image: Pick<ProjectImage, 'width' | 'height'>,
+  image: Pick<ProjectContainer, 'width' | 'height'>,
   placement: Placement,
 ): Rect {
   return {

@@ -60,9 +60,9 @@ test('container com um componente da Biblioteca, sem desenho gravado', async ({
 
   // O mapping.json guarda a marcação e a anotação, nada do desenho.
   const { mapping } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(11);
-  expect(mapping.images).toHaveLength(1);
-  expect(mapping.images[0]).toMatchObject({ file: null, background: '#FFFFFF' });
+  expect(mapping.schemaVersion).toBe(12);
+  expect(mapping.containers).toHaveLength(1);
+  expect(mapping.containers[0]).toMatchObject({ file: null, background: '#FFFFFF' });
   expect(mapping.markings).toHaveLength(1);
   expect(mapping.annotations.some((a) => a.type?.typeId === 'm3-button')).toBe(true);
   expect(JSON.stringify(mapping)).not.toMatch(/"(scene|drawing|root|children)"/);

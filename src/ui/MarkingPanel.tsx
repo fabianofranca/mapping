@@ -8,7 +8,7 @@ import {
   siblingPosition,
   type Marking,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
   type Rect,
 } from '../model';
 import type { ActionResult } from '../store/history';
@@ -28,7 +28,7 @@ import { Property, PropertyGrid } from './PropertyGrid';
 interface MarkingPanelProps {
   readonly project: Project;
   readonly marking: Marking;
-  readonly image: ProjectImage;
+  readonly image: ProjectContainer;
   readonly readOnly: boolean;
   readonly onDelete: (marking: Marking) => void;
   readonly onSelectMarking: (markingId: string) => void;

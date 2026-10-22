@@ -18,7 +18,7 @@ import { layerOf, specProject } from './specFixtures';
  */
 export function buildLargeTypedProject(): Project {
   const spec = specProject();
-  const { images, markings } = buildLargeProject();
+  const { containers: images, markings } = buildLargeProject();
   const layer = {
     classe: layerOf(spec, 'modelo-dados', 'classes'),
     componentes: layerOf(spec, 'sdui', 'componentes'),
@@ -85,5 +85,5 @@ export function buildLargeTypedProject(): Project {
       free(`G${i}`, marking.id, 'LM', false);
     }
   });
-  return { ...spec, images, markings, annotations };
+  return { ...spec, containers: images, markings, annotations };
 }

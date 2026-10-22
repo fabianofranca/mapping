@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addImage,
+  addContainer,
   createMarking,
   formatRef,
   matchShortCode,
@@ -17,7 +17,7 @@ const UUID_B = '9a8b7c6d-1111-4222-8333-444455556666';
 
 /** Projeto com marcações de ids dados, todas na mesma imagem. */
 function withMarkings(ids: readonly string[]): Project {
-  let p = addImage(emptyProject(), {
+  let p = addContainer(emptyProject(), {
     id: 'I1',
     file: 'images/a.jpg',
     width: 1000,
@@ -26,7 +26,7 @@ function withMarkings(ids: readonly string[]): Project {
   ids.forEach((id, i) => {
     p = createMarking(p, {
       id,
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: i * 100, y: 0, width: 50, height: 50 },
       name: null,
     });
@@ -67,7 +67,7 @@ describe('shortCode', () => {
 
   it('é calculado por tipo: marcação e imagem com o mesmo começo não colidem', () => {
     let p = withMarkings(['3f2a9c1e-0000-4000-8000-000000000001']);
-    p = addImage(p, {
+    p = addContainer(p, {
       id: '3f2a9c1e-9999-4000-8000-000000000002',
       file: 'images/b.jpg',
       width: 10,

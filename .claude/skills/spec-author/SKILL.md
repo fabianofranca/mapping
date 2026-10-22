@@ -109,6 +109,7 @@ Só quando a origem evidencia **tamanhos prontos** para o objeto de topo do canv
 
 - `containers` na raiz: lista de `{ id, name, width, height, background? }`. `id` em `[a-z0-9-]+` e único na lista; `name` não vazio (o texto da opção, como a origem o chama: "Celular", "Tablet"); `width` e `height` inteiros de 1 a 20000; `background` opcional, `#RRGGBB` (sem ele, branco).
 - Exemplo: `"containers": [ { "id": "phone", "name": "Celular", "width": 360, "height": 800 } ]`.
+- Vocabulário: **container** é o objeto de topo do canvas (com arquivo de imagem ou só com tamanho e cor de fundo); no projeto (`mapping.json`, schema v12) ele fica em `containers[]` e a marcação aponta para ele por `containerId`. A especialização nunca cita o projeto: `containers` aqui são só os tamanhos prontos. "Imagem" fica para o arquivo de imagem do container.
 - Copie os números da origem, não os invente. Sem evidência, omita `containers` (e fique na `formatVersion` que o resto pede): é opcional e a 5 continua aceita.
 - Numa versão anterior à 6, `containers` é erro (`só é permitido com formatVersion 6`). A lista está fora do contrato de versão: mudar tamanhos não é quebra.
 

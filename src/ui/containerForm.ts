@@ -1,9 +1,9 @@
-import { MAX_BLANK_SIZE } from '../model';
+import { MAX_CONTAINER_SIZE } from '../model';
 import type { Project, Spec } from '../model';
 import { resolveSelection, type Selection } from '../store/ui';
 
 // Regras do diálogo "Novo container" (e dos campos de Detalhes do container): predefinições
-// de tamanho (as das especializações, Personalizado e Tamanho da seleção) e a leitura do que a pessoa digitou. O modelo valida de novo (`addBlankImage`).
+// de tamanho (as das especializações, Personalizado e Tamanho da seleção) e a leitura do que a pessoa digitou. O modelo valida de novo (`addBackgroundContainer`).
 
 export interface ContainerPreset {
   /** Único no diálogo: `<specId>:<id do preset>`. */
@@ -27,7 +27,7 @@ export const CUSTOM_PRESET = 'custom';
 export const SELECTION_PRESET = 'selection';
 
 /** Cor de fundo inicial de um container. */
-export const DEFAULT_BLANK_BACKGROUND = '#FFFFFF';
+export const DEFAULT_CONTAINER_BACKGROUND = '#FFFFFF';
 
 const COLOR = /^#[0-9A-Fa-f]{6}$/;
 
@@ -46,7 +46,7 @@ export function presetGroups(
         name: c.name,
         width: c.width,
         height: c.height,
-        background: c.background ?? DEFAULT_BLANK_BACKGROUND,
+        background: c.background ?? DEFAULT_CONTAINER_BACKGROUND,
       })),
     });
   }
@@ -63,16 +63,16 @@ export function selectionSize(
   return { width: resolved.marking.rect.width, height: resolved.marking.rect.height };
 }
 
-/** Lado do container: inteiro de 1 a `MAX_BLANK_SIZE`, ou `null`. */
-export function parseBlankSide(text: string): number | null {
+/** Lado do container: inteiro de 1 a `MAX_CONTAINER_SIZE`, ou `null`. */
+export function parseContainerSide(text: string): number | null {
   const trimmed = text.trim();
   if (!/^\d+$/.test(trimmed)) return null;
   const value = Number(trimmed);
-  return value >= 1 && value <= MAX_BLANK_SIZE ? value : null;
+  return value >= 1 && value <= MAX_CONTAINER_SIZE ? value : null;
 }
 
 /** Cor `#RRGGBB` (maiúsculas), ou `null`. */
-export function parseBlankColor(text: string): string | null {
+export function parseContainerColor(text: string): string | null {
   const trimmed = text.trim();
   return COLOR.test(trimmed) ? trimmed.toUpperCase() : null;
 }
@@ -96,14 +96,14 @@ export type ContainerResult =
     }
   | { readonly ok: false; readonly error: 'name' | 'size' | 'color' };
 
-/** Lê o formulário: nome obrigatório, lados inteiros de 1 a `MAX_BLANK_SIZE`, cor `#RRGGBB`. */
+/** Lê o formulário: nome obrigatório, lados inteiros de 1 a `MAX_CONTAINER_SIZE`, cor `#RRGGBB`. */
 export function readContainerForm(form: ContainerForm): ContainerResult {
   const name = form.name.trim();
   if (name === '') return { ok: false, error: 'name' };
-  const width = parseBlankSide(form.width);
-  const height = parseBlankSide(form.height);
+  const width = parseContainerSide(form.width);
+  const height = parseContainerSide(form.height);
   if (width === null || height === null) return { ok: false, error: 'size' };
-  const background = parseBlankColor(form.background);
+  const background = parseContainerColor(form.background);
   if (background === null) return { ok: false, error: 'color' };
   return { ok: true, value: { name, width, height, background } };
 }

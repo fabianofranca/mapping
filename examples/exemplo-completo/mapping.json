@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
   "revision": 1,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -94,7 +94,7 @@
       }
     }
   ],
-  "images": [
+  "containers": [
     {
       "id": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "name": "Cadastro",
@@ -163,7 +163,7 @@
   "markings": [
     {
       "id": "6a948fb4-7e74-48b4-9c21-4a5756727559",
-      "imageId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
+      "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": null,
       "name": "Formulário",
       "rect": {
@@ -178,7 +178,7 @@
     },
     {
       "id": "4ece99b6-20dd-4b92-9a3e-0c5cc2b88636",
-      "imageId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
+      "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "name": "Nome",
       "rect": {
@@ -193,7 +193,7 @@
     },
     {
       "id": "bb9d7d83-f19b-4139-b3b4-39a10ab14dd0",
-      "imageId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
+      "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "name": "Idade",
       "rect": {
@@ -208,7 +208,7 @@
     },
     {
       "id": "9fe1fd67-7669-4c8a-89f8-8754cfd6a254",
-      "imageId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
+      "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "name": "E-mail",
       "rect": {
@@ -223,7 +223,7 @@
     },
     {
       "id": "8f9464dd-8756-4027-83df-02a9038a4d47",
-      "imageId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
+      "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "name": "Cadastrar",
       "rect": {
@@ -238,7 +238,7 @@
     },
     {
       "id": "74c52a78-68c7-4b5c-8ebf-097957e1b532",
-      "imageId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
+      "containerId": "1be97c93-5f7c-4bbd-b29a-6b76ab45e8aa",
       "parentId": null,
       "name": "Título",
       "rect": {
@@ -253,7 +253,7 @@
     },
     {
       "id": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
-      "imageId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
+      "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": null,
       "name": "Formulário de login",
       "rect": {
@@ -268,7 +268,7 @@
     },
     {
       "id": "058aa9cd-b5ea-4aea-b4d0-53a800d9a131",
-      "imageId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
+      "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": null,
       "name": "Título",
       "rect": {
@@ -283,7 +283,7 @@
     },
     {
       "id": "ca9ebac1-cb65-4ff7-8698-c46ed22d9a9e",
-      "imageId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
+      "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
       "name": "E-mail",
       "rect": {
@@ -298,7 +298,7 @@
     },
     {
       "id": "671b7e2a-8064-4d2a-98d3-9bf34bff1492",
-      "imageId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
+      "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
       "name": "Senha",
       "rect": {
@@ -313,7 +313,7 @@
     },
     {
       "id": "0ce8b079-f32c-45b7-b4b5-9840dfac0ae4",
-      "imageId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
+      "containerId": "cf62aa56-01dc-4dbe-8fb9-8274d46c4dd5",
       "parentId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
       "name": "Entrar",
       "rect": {
@@ -328,7 +328,7 @@
     },
     {
       "id": "29f6699b-499c-4ac8-8514-242a06290b7c",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
       "name": "Barra",
       "rect": {
@@ -343,7 +343,7 @@
     },
     {
       "id": "21af251a-72ae-44d7-a7de-50948b3b4ce2",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
       "name": "Filtros",
       "rect": {
@@ -358,7 +358,7 @@
     },
     {
       "id": "8990769e-ec0d-4e80-b836-ae92f74c991a",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "21af251a-72ae-44d7-a7de-50948b3b4ce2",
       "name": "Chip Wi-Fi",
       "rect": {
@@ -373,7 +373,7 @@
     },
     {
       "id": "c20a3cc2-14f9-422a-8fbc-db9da1ee0498",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "21af251a-72ae-44d7-a7de-50948b3b4ce2",
       "name": "Chip Bluetooth",
       "rect": {
@@ -388,7 +388,7 @@
     },
     {
       "id": "729919a6-779f-4dce-9dce-a6057d294886",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "21af251a-72ae-44d7-a7de-50948b3b4ce2",
       "name": "Chip Dados",
       "rect": {
@@ -403,7 +403,7 @@
     },
     {
       "id": "2d5cacea-d724-455f-b51c-8a8c8b6919a2",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
       "name": "Nome de exibição",
       "rect": {
@@ -418,7 +418,7 @@
     },
     {
       "id": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
       "name": "Preferências",
       "rect": {
@@ -433,7 +433,7 @@
     },
     {
       "id": "bb5ff089-d924-4337-a3f6-2327d5a98840",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
       "name": "Notificações",
       "rect": {
@@ -448,7 +448,7 @@
     },
     {
       "id": "82c5e51d-80ba-411d-9cb6-64050f804ff4",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
       "name": "Modo escuro",
       "rect": {
@@ -463,7 +463,7 @@
     },
     {
       "id": "89ae4fc7-8e64-4f2c-a28d-8f1d19085a14",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
       "name": "Novidades por e-mail",
       "rect": {
@@ -478,7 +478,7 @@
     },
     {
       "id": "99dc1828-02bd-4976-a1f2-907a05f1eaea",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
       "name": "Sua conta",
       "rect": {
@@ -493,7 +493,7 @@
     },
     {
       "id": "1d73d841-f973-4f45-8b51-b03f414afd03",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": "99dc1828-02bd-4976-a1f2-907a05f1eaea",
       "name": "Gerenciar plano",
       "rect": {
@@ -508,7 +508,7 @@
     },
     {
       "id": "e5a1a106-cc83-4d95-8239-666b95af7c8b",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
       "name": "Salvar",
       "rect": {
@@ -523,7 +523,7 @@
     },
     {
       "id": "8f92eca4-7a1d-4797-9c6b-0e4b97bb0770",
-      "imageId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
+      "containerId": "eba6abfa-9d4d-4c49-b1e6-baa81fc0bc86",
       "parentId": null,
       "name": "Navegação",
       "rect": {
@@ -538,7 +538,7 @@
     },
     {
       "id": "4daee06e-146d-4ecc-9b36-59682c4347f0",
-      "imageId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
+      "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
       "name": "Barra",
       "rect": {
@@ -553,7 +553,7 @@
     },
     {
       "id": "e4df851e-d6f7-4ed0-a849-717f8ebcb092",
-      "imageId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
+      "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
       "name": "Resumo",
       "rect": {
@@ -568,7 +568,7 @@
     },
     {
       "id": "51dcefc9-bc80-4b9f-825d-6ece25c70c9a",
-      "imageId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
+      "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
       "name": "Item 1",
       "rect": {
@@ -583,7 +583,7 @@
     },
     {
       "id": "8f75ed2b-cde5-4b96-b6b3-0c09f5595e59",
-      "imageId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
+      "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
       "name": "Item 2",
       "rect": {
@@ -598,7 +598,7 @@
     },
     {
       "id": "93418690-bc11-46e6-9452-f7f707380f00",
-      "imageId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
+      "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
       "name": "Pedir novamente",
       "rect": {
@@ -613,7 +613,7 @@
     },
     {
       "id": "568acb90-25f6-4e19-bed2-fb22b85a0642",
-      "imageId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
+      "containerId": "1c281db4-0983-4ff8-96ca-3bf330a79d31",
       "parentId": null,
       "name": "Ajuda",
       "rect": {

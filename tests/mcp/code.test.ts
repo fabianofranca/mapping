@@ -79,7 +79,7 @@ interface Match {
     title: string | null;
     marking: string;
     markingName: string | null;
-    image: string;
+    container: string;
   }[];
 }
 interface Found {
@@ -480,7 +480,7 @@ describe('get_marking, get_annotation e get_project', () => {
 
   it('get_project traz as plataformas e o clone local; plataforma sem caminho local não gera aviso', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
-    expect(data.schemaVersion).toBe(11);
+    expect(data.schemaVersion).toBe(12);
     expect(data.platforms).toEqual([
       expect.objectContaining({
         id: 'android',
@@ -509,7 +509,7 @@ describe('get_marking, get_annotation e get_project', () => {
 
   it('um projeto v8 com o campo de código removido abre migrado, sem os valores dele', async () => {
     const data = ok(await mcp.call('get_project', { project: 'antigo' }));
-    expect(data.schemaVersion).toBe(11);
+    expect(data.schemaVersion).toBe(12);
     expect(data.migratedFrom).toBe(8);
     const screen = ok(
       await mcp.call<Annotation>('get_annotation', { ref: refOf('antigo', 'a', 'AS') }),
@@ -589,7 +589,7 @@ describe('find_by_code', () => {
       /^mapping:\/\/cadastro\/m\/[0-9a-f]{8} \(cadastro\.png › Formulário › Cadastrar\)$/,
     );
     expect(hit!.annotation).toMatch(/^mapping:\/\/cadastro\/a\/[0-9a-f]{8}/);
-    expect(hit!.image).toMatch(/^mapping:\/\/cadastro\/i\/[0-9a-f]{8}/);
+    expect(hit!.container).toMatch(/^mapping:\/\/cadastro\/i\/[0-9a-f]{8}/);
   });
 
   it('a referência devolvida leva de volta à anotação e à marcação', async () => {
@@ -730,7 +730,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     );
   });
 
-  it('o lote do roteiro (clone local do ios) é aplicado e grava v11 com revision + 1', async () => {
+  it('o lote do roteiro (clone local do ios) é aplicado e grava v12 com revision + 1', async () => {
     const dir = ws.projectDir('escrita');
     const operations = [
       {
@@ -767,7 +767,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     const saved = parsed.project;
-    expect(saved.schemaVersion).toBe(11);
+    expect(saved.schemaVersion).toBe(12);
     expect(saved.revision).toBe(1);
     expect(saved.platformRepos).toEqual({
       android: { localPath: '../../..' },

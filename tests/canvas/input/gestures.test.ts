@@ -10,16 +10,22 @@ describe('startGesture', () => {
     const begin = vi.fn(() => true);
     expect(startGesture(project, 1, at, { kind: 'pan' }, begin)).toBeNull();
     expect(
-      startGesture(null, 1, at, { kind: 'move-image', imageId: 'I1' }, begin),
+      startGesture(null, 1, at, { kind: 'move-image', containerId: 'I1' }, begin),
     ).toBeNull();
     expect(begin).not.toHaveBeenCalled();
   });
 
   it('desenhar: rascunho no ponto inicial, sem abrir gesto no store', () => {
     const begin = vi.fn(() => true);
-    const started = startGesture(project, 1, at, { kind: 'draw', imageId: 'I1' }, begin);
+    const started = startGesture(
+      project,
+      1,
+      at,
+      { kind: 'draw', containerId: 'I1' },
+      begin,
+    );
     expect(started?.gesture).toMatchObject({ kind: 'draw', startPixel: at });
-    expect(started?.draft?.imageId).toBe('I1');
+    expect(started?.draft?.containerId).toBe('I1');
     expect(isStoreGesture(started?.gesture ?? null)).toBe(false);
     expect(begin).not.toHaveBeenCalled();
   });
@@ -30,7 +36,7 @@ describe('startGesture', () => {
       project,
       1,
       at,
-      { kind: 'move-image', imageId: 'I2' },
+      { kind: 'move-image', containerId: 'I2' },
       begin,
     );
     expect(move?.gesture).toMatchObject({

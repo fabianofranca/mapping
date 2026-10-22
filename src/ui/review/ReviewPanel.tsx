@@ -53,7 +53,7 @@ interface ShownItem {
 const has = (project: Project | null, sel: NonNullable<Selection>): boolean =>
   project !== null &&
   (sel.kind === 'image'
-    ? projectIndex(project).images.has(sel.id)
+    ? projectIndex(project).containers.has(sel.id)
     : projectIndex(project).markings.has(sel.id));
 
 /**
@@ -334,7 +334,7 @@ function ReviewItemPanel({
 
   const image = resolved?.kind === 'image' ? resolved.image : null;
   const sameFile =
-    image !== null && projectIndex(current).images.get(image.id)?.file === image.file;
+    image !== null && projectIndex(current).containers.get(image.id)?.file === image.file;
 
   return (
     <div class="review-details review-details-panel">

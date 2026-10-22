@@ -23,8 +23,8 @@ meu-projeto/
 ```
 
 - Uma pasta por proposta, `proposals/<id>/`, com o `proposal.json`. O id só usa `[A-Za-z0-9._-]` e não começa com ponto (vira nome de pasta).
-- Container sem arquivo (schema v10): a criação traz a imagem inteira com `file: null` e `background`, sem arquivo para mover; `background` e `size` só existem como campos de `update` quando a imagem é um container sem arquivo nos dois lados (na foto, o tamanho vem da troca de arquivo, campo `file`).
-- Imagem nova ou trocada: a mudança traz o caminho definitivo (`images/checkout.webp`) e o arquivo espera em `proposals/<id>/` mais esse caminho (`proposals/<id>/images/checkout.webp`). Ao aplicar, ele é movido para o lugar definitivo.
+- Container sem arquivo: a criação traz o container inteiro com `file: null` e `background`, sem arquivo para mover; `background` e `size` só existem como campos de `update` quando o container é sem arquivo nos dois lados (com arquivo, o tamanho vem da troca de arquivo, campo `file`).
+- Imagem nova ou trocada (container com arquivo): a mudança traz o caminho definitivo (`images/checkout.webp`) e o arquivo espera em `proposals/<id>/` mais esse caminho (`proposals/<id>/images/checkout.webp`). Ao aplicar, ele é movido para o lugar definitivo.
 - Pacote de biblioteca (especialização `formatVersion` 4, uma pasta com `components/`, `docs/`, `examples/` e `fonts/`): a mudança é a da especialização de sempre (`entity: "specialization"`, `to = { id, version, file, spec }`), com `to.file` dentro de uma pasta (`specs/material3/material3.spec.json`). Os arquivos do pacote esperam em `proposals/<id>/` mais o caminho definitivo (`proposals/<id>/specs/material3/components/botao.json`). A fonte da verdade da especialização é o `to.spec`: o arquivo dela na pasta da proposta pode faltar e, se vier, é ignorado. Ao aplicar, os arquivos são **copiados** (não movidos) para `specs/<pasta>/`, que a sessão regrava inteira junto com o `mapping.json`; ficam na proposta até ela ser apagada, então desfazer e refazer não mexem neles.
 - As propostas ficam na pasta do projeto, versionadas no git junto com o resto, e vão no zip exportado, com os arquivos que esperam a aceitação (imagens em `proposals/<id>/images/` e pacotes em `proposals/<id>/specs/<pasta>/`, binários inclusive; os de mudanças já aplicadas não vão). Ao ler o zip, só entram caminhos desses dois tipos, com id válido e sem `..`.
 
@@ -35,9 +35,10 @@ meu-projeto/
 
 ## Versões do formato
 
-- **`formatVersion` 2** (container): é a versão que a app e o servidor MCP gravam. A forma do arquivo é a mesma da 1; muda o vocabulário das `operations` enviadas pelo agente (guardadas só para referência): a operação `add_container` (`name?`, `width`, `height`, `background`, `source?`, `center?`, `as?`) cria um container sem arquivo. As mudanças de um container criado continuam em `entity: "image"`, porque o `mapping.json` ainda usa `images`.
-- **`formatVersion` 1**: continua **lida** e aplicada. Uma proposta antiga com `add_blank_image` nas `operations` vale como está.
-- **`add_blank_image` é aceita com aviso.** No lote (`plan_changes`/`propose_changes`) ela tem o mesmo efeito de `add_container`, mas o resultado traz em `warnings` um aviso `deprecated-op` ("add_blank_image é antiga: use add_container"). As propostas novas saem com `formatVersion` 2 e nascem de `add_container`.
+- **`formatVersion` 2** (container): é a versão que a app e o servidor MCP gravam. A forma do arquivo é a mesma da 1; muda o vocabulário das `operations` enviadas pelo agente (guardadas só para referência). As do lote do servidor MCP 0.8.0 são `add_container` (com arquivo: `file` ou `base64`; ou só com fundo: `width`, `height`, `background`; mais `name?`, `source?`, `center?`, `as?`), `update_container`, `replace_container` e `delete_container` (argumento `container`), e `create_marking` com `container`.
+- **`formatVersion` 1**: continua **lida** e aplicada. Uma proposta antiga com `add_image`, `add_blank_image`, `update_image`, `replace_image` ou `delete_image` nas `operations` vale como está (as `operations` são só referência; a revisão e a aplicação usam as `changes`).
+- **As operações antigas são aceitas com aviso.** No lote (`plan_changes`/`propose_changes`) `add_image`, `add_blank_image`, `update_image`, `replace_image`, `delete_image` e o argumento `image` de `create_marking` têm o mesmo efeito das novas, mas o resultado traz em `warnings` um aviso `deprecated-op` ("add_blank_image é antiga: use add_container", e assim por diante). As propostas novas saem com `formatVersion` 2 e nascem das operações novas. A aceitação das antigas dura uma versão do servidor.
+- **Os nomes gravados não mudaram com o schema v12.** O `proposal.json` continua chamando o container de `image` nos nomes que já existiam: `entity: "image"`, o cabeçalho `imageId` da mudança (o container em que ela aparece), o nível `image` do `reviewTree` e dos `target` das notas, e os campos `file`/`background`/`size`/`placement`/`markingColor` do container. A única troca está nos valores da **marcação**: no `mapping.json` v12 ela aponta para o container por `containerId` (era `imageId`), e então a criação e a remoção de marcação levam `containerId` no valor inteiro, e a alteração do campo é `field: "containerId"`. A leitura aceita as propostas gravadas antes (formato 1 ou 2) com `imageId` dentro do valor da marcação e as passa a `containerId` sozinha.
 
 ## Exemplo
 
@@ -110,43 +111,43 @@ Todos são obrigatórios (o "vazio" é `null`).
 
 Quem envia a proposta aplica as operações a uma cópia do projeto (com as operações puras de `src/model/`) e compara o antes e o depois entidade por entidade, campo por campo (`computeChanges` / `buildProposal`). Cada mudança guarda o valor **antes** (`from`, no momento da proposta) e o **depois** (`to`).
 
-| Campo       | Descrição                                                                                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `id`        | `c1`, `c2`… (único na proposta).                                                                                                |
-| `kind`      | `create`, `update` ou `remove`.                                                                                                 |
-| `entity`    | `specialization`, `platformRepo`, `layer`, `image`, `marking` ou `annotation`.                                                  |
-| `entityId`  | Id da entidade; no repositório, o id da plataforma.                                                                             |
-| `imageId`   | Imagem em que a mudança aparece na revisão (`null` no grupo Projeto: especializações, repositórios e camadas).                  |
-| `markingId` | Item (marcação) em que a mudança aparece: a própria marcação ou a marcação da anotação (`null` nas imagens e no grupo Projeto). |
-| `field`     | Campo alterado; `null` na criação, na remoção e na alteração de especialização ou repositório (que levam a entidade inteira).   |
-| `from`      | Criação: `null`. Remoção: a entidade inteira. Alteração: o valor do campo antes.                                                |
-| `to`        | Criação: a entidade inteira. Remoção: `null`. Alteração: o valor do campo depois.                                               |
+| Campo       | Descrição                                                                                                                          |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | `c1`, `c2`… (único na proposta).                                                                                                   |
+| `kind`      | `create`, `update` ou `remove`.                                                                                                    |
+| `entity`    | `specialization`, `platformRepo`, `layer`, `image` (o **container**: o nome ficou no formato), `marking` ou `annotation`.          |
+| `entityId`  | Id da entidade; no repositório, o id da plataforma.                                                                                |
+| `imageId`   | Container em que a mudança aparece na revisão (`null` no grupo Projeto: especializações, repositórios e camadas).                  |
+| `markingId` | Item (marcação) em que a mudança aparece: a própria marcação ou a marcação da anotação (`null` nos containers e no grupo Projeto). |
+| `field`     | Campo alterado; `null` na criação, na remoção e na alteração de especialização ou repositório (que levam a entidade inteira).      |
+| `from`      | Criação: `null`. Remoção: a entidade inteira. Alteração: o valor do campo antes.                                                   |
+| `to`        | Criação: a entidade inteira. Remoção: `null`. Alteração: o valor do campo depois.                                                  |
 
 - **Criação**: uma mudança com a entidade inteira, no formato do `mapping.json`. O id já é o **definitivo**: notas, dependências e propostas seguintes podem citá-lo.
-- **Remoção**: uma mudança por entidade. A cascata do modelo (filhas e anotações de uma marcação, anotações vinculadas, marcações de uma imagem…) aparece como remoções separadas, ligadas por dependência.
+- **Remoção**: uma mudança por entidade. A cascata do modelo (filhas e anotações de uma marcação, anotações vinculadas, marcações de um container…) aparece como remoções separadas, ligadas por dependência.
 - **Alteração**: uma mudança por campo:
 
-| Entidade         | Campos (`field`)                                                                                                                                                                              |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `image`          | `name`, `file` (a troca: `{ file, width, height }`), `background` (cor `#RRGGBB`) e `size` (`{ width, height }`) só no container sem arquivo, `placement`, `markingColor`, `locked`, `source` |
-| `marking`        | `name`, `rect`, `parentId`, `imageId`, `locked`, `source`, `position` (índice entre as irmãs)                                                                                                 |
-| `annotation`     | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type`      |
-| `layer`          | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                         |
-| `specialization` | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                                    |
-| `platformRepo`   | — (`field: null`; `from`/`to` = `{ localPath }`, a sobreposição local do clone; a leitura ignora o `urlTemplate` de propostas antigas)                                                        |
+| Entidade            | Campos (`field`)                                                                                                                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `image` (container) | `name`, `file` (a troca: `{ file, width, height }`), `background` (cor `#RRGGBB`) e `size` (`{ width, height }`) só no container sem arquivo, `placement`, `markingColor`, `locked`, `source` |
+| `marking`           | `name`, `rect`, `parentId`, `containerId`, `locked`, `source`, `position` (índice entre as irmãs)                                                                                             |
+| `annotation`        | `name`, `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `values.<key>` (um campo da tipada), `entries.<id>` (um par da livre: `{ key, value }` ou `null` = par ausente), `type`      |
+| `layer`             | `name`, `color`, `spec`, `position` (índice na lista)                                                                                                                                         |
+| `specialization`    | — (`field: null`; `from`/`to` = `{ id, version, file, spec }`, com o conteúdo da especialização em `spec`)                                                                                    |
+| `platformRepo`      | — (`field: null`; `from`/`to` = `{ localPath }`, a sobreposição local do clone; a leitura ignora o `urlTemplate` de propostas antigas)                                                        |
 
 - `values.<key>` ausente vale `null`. Uma tabela (`table`) muda inteira, numa mudança só.
 - `type` é a **troca de tipo** de uma anotação (ex: tipada convertida em livre ao remover uma especialização): `{ type, values, entries }` mudam juntos, numa mudança só, sem `values.*` nem `entries.*` separados.
 - `position` só aparece nas camadas que mudam de **ordem relativa** (criar ou remover outra camada não gera `position`). Numa camada criada pela própria proposta, `from` é `null`.
-- `position` da marcação é o índice entre as **irmãs** (mesma imagem e mesmo `parentId`; 0 = a primeira, desenhada por baixo) e também só aparece quando a ordem relativa das irmãs muda: criar ou remover outra marcação não gera `position`, e a marcação criada que já nasce na ordem do projeto proposto (no fim, como a aplicação acrescenta) também não. Se a criada precisa ficar antes de alguma irmã, ela leva `position` com `from` `null`. Aplicar reordena como a ação de reordenar da app (índice preso ao intervalo válido) e há conflito se o `from` não bate com a posição atual.
+- `position` da marcação é o índice entre as **irmãs** (mesmo container e mesmo `parentId`; 0 = a primeira, desenhada por baixo) e também só aparece quando a ordem relativa das irmãs muda: criar ou remover outra marcação não gera `position`, e a marcação criada que já nasce na ordem do projeto proposto (no fim, como a aplicação acrescenta) também não. Se a criada precisa ficar antes de alguma irmã, ela leva `position` com `from` `null`. Aplicar reordena como a ação de reordenar da app (índice preso ao intervalo válido) e há conflito se o `from` não bate com a posição atual.
 - Não viram mudança: a ordem dos pares dentro da lista, `needsReview` (a revisão é a própria conferência; a criação leva o valor proposto) e `project.updatedAt`.
-- Ordem das mudanças: grupo Projeto (especializações, repositórios, camadas), imagens, marcações e anotações; em cada coleção, a ordem do projeto proposto e, no fim, as removidas. Aplicar tudo acrescenta as entidades criadas na mesma ordem do projeto proposto.
+- Ordem das mudanças: grupo Projeto (especializações, repositórios, camadas), containers, marcações e anotações; em cada coleção, a ordem do projeto proposto e, no fim, as removidas. Aplicar tudo acrescenta as entidades criadas na mesma ordem do projeto proposto.
 
 ## Revisão
 
 ### Níveis
 
-**Proposta → Projeto / Imagem → Item → Mudança** (`reviewTree`). O grupo Projeto reúne especializações, repositórios e camadas; cada imagem reúne a própria imagem e os itens dela; um item é uma marcação com tudo que mudou nela (geometria, nome, trava, origem, anotações), e as marcações filhas com mudanças aparecem dentro dela (no ancestral mais próximo que também tem mudanças). A nota usa os mesmos níveis em `target.level` (`proposal`, `project`, `image`, `item`, `change`); `target.id` é `null` em `proposal` e `project`.
+**Proposta → Projeto / Container → Item → Mudança** (`reviewTree`). O grupo Projeto reúne especializações, repositórios e camadas; cada container (nível `image` no arquivo) reúne o próprio container e os itens dele; um item é uma marcação com tudo que mudou nela (geometria, nome, trava, origem, anotações), e as marcações filhas com mudanças aparecem dentro dela (no ancestral mais próximo que também tem mudanças). A nota usa os mesmos níveis em `target.level` (`proposal`, `project`, `image`, `item`, `change`); `target.id` é `null` em `proposal` e `project`.
 
 ### Decisões
 
@@ -158,7 +159,7 @@ Quem envia a proposta aplica as operações a uma cópia do projeto (com as oper
 
 Resolvidas sozinhas ao decidir; `decide` devolve quais mudanças mudaram junto (`cascaded`), para a revisão explicar ("3 anotações rejeitadas junto").
 
-1. **Aceitar uma mudança dentro de um item criado aceita a criação dele** e a dos ancestrais criados na mesma proposta (e de tudo que ela cita e foi criado pela proposta: imagem, camada, dona, especialização, alvo de uma referência).
+1. **Aceitar uma mudança dentro de um item criado aceita a criação dele** e a dos ancestrais criados na mesma proposta (e de tudo que ela cita e foi criado pela proposta: container, camada, dona, especialização, alvo de uma referência).
 2. **Rejeitar a criação de um item rejeita o que depende dele**: anotações, filhas, vinculadas e referências (`ref`) que apontam para ele.
 3. **Aceitar a remoção de um item aceita a remoção do que a cascata do modelo remove** (filhas, anotações, vinculadas…).
 4. **Rejeitar a remoção de algo da cascata rejeita a remoção de quem a causa** (não dá para remover o pai e manter a filha).
@@ -171,7 +172,7 @@ Uma mudança é **conflito** quando o projeto mudou depois da proposta: o `from`
 
 ### Item trancado
 
-Mudanças de geometria (`rect` da marcação; `placement` e troca de arquivo de outro tamanho da imagem) ou remoção num item trancado (pela trava própria ou, na geometria, de um ancestral) trazem o aviso "item trancado" (`changeStatus(...).locked`). Aceitar é permitido (a revisão é uma decisão deliberada) e a trava continua ligada depois.
+Mudanças de geometria (`rect` da marcação; `placement` e troca de arquivo de outro tamanho do container) ou remoção num item trancado (pela trava própria ou, na geometria, de um ancestral) trazem o aviso "item trancado" (`changeStatus(...).locked`). Aceitar é permitido (a revisão é uma decisão deliberada) e a trava continua ligada depois.
 
 ### Validação do conjunto aceito
 
@@ -194,7 +195,7 @@ Mudanças de geometria (`rect` da marcação; `placement` e troca de arquivo de 
 
 ### Proposta substituída
 
-Cada mudança da proposta antiga mostra se a nova traz a **mesma** coisa, **outra** coisa ou **não consta** nela (`compareProposals(antiga, nova)`): a mudança correspondente é achada pela origem (criação de imagem ou marcação com `source`, mesmo recriada com outro id), depois pela entidade e pelo campo e, nas criações que sobraram, pelo caminho legível (imagem › pai › nome; na anotação, marcação › camada › tipo › nome), uma a uma e na ordem. O valor `to` é comparado com os ids gerados por cada proposta trocados pelo caminho.
+Cada mudança da proposta antiga mostra se a nova traz a **mesma** coisa, **outra** coisa ou **não consta** nela (`compareProposals(antiga, nova)`): a mudança correspondente é achada pela origem (criação de container ou marcação com `source`, mesmo recriada com outro id), depois pela entidade e pelo campo e, nas criações que sobraram, pelo caminho legível (container › pai › nome; na anotação, marcação › camada › tipo › nome), uma a uma e na ordem. O valor `to` é comparado com os ids gerados por cada proposta trocados pelo caminho.
 
 Uma proposta **aplicada** substituída continua `applied`: a app deriva do `supersedes` da nova o "Aplicada · substituída por <título>", com **Abrir a nova**.
 
@@ -204,7 +205,7 @@ Uma proposta **aplicada** substituída continua `applied`: a app deriva do `supe
 
 - raiz com todos os campos; `format`, `formatVersion`, `status` e datas ISO 8601 válidos; `title` não vazio; `supersedes` diferente do próprio `id`;
 - ids de mudança e de nota únicos;
-- cada mudança coerente com o `kind` (criação com `from: null`, remoção com `to: null`, alteração com `field` da entidade), com os valores no formato do `mapping.json` (a especialização é validada como em `SPEC-FORMAT.md`), o id da entidade inteira igual a `entityId`, `imageId`/`markingId` preenchidos fora do grupo Projeto;
+- cada mudança coerente com o `kind` (criação com `from: null`, remoção com `to: null`, alteração com `field` da entidade), com os valores no formato do `mapping.json` (a especialização é validada como em `SPEC-FORMAT.md`), o id da entidade inteira igual a `entityId`, `imageId` (o container)/`markingId` preenchidos fora do grupo Projeto;
 - `decisions` e `applied` só citam mudanças existentes, e `applied` só mudanças aceitas;
 - `target` das notas com `id` `null` em `proposal` e `project`, e citando uma mudança existente em `change`.
 

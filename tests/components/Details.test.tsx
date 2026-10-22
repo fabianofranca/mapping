@@ -22,7 +22,7 @@ function renderMarking(markingId: string, project: Project = cadastroProject()) 
   const harness = createHarness(project);
   renderLive(harness, (p) => {
     const marking = p.markings.find((m) => m.id === markingId);
-    const image = p.images.find((i) => i.id === marking?.imageId);
+    const image = p.containers.find((i) => i.id === marking?.containerId);
     if (!marking || !image) return null;
     return (
       <MarkingPanel
@@ -365,7 +365,7 @@ describe('Detalhes — escolher e ir até o alvo (F2)', () => {
       const marking = p.markings.find(
         (m) => selection?.kind === 'marking' && m.id === selection.id,
       );
-      const image = p.images.find((i) => i.id === marking?.imageId);
+      const image = p.containers.find((i) => i.id === marking?.containerId);
       if (!marking || !image) return null;
       return (
         <MarkingPanel

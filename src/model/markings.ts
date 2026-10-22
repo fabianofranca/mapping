@@ -36,9 +36,12 @@ function checkRectShape(rect: Rect, options?: RectOptions): void {
 }
 
 /** Área onde a marcação pode ficar: o `rect` do pai ou a imagem inteira. */
-function containerOf(p: Project, marking: Pick<Marking, 'imageId' | 'parentId'>): Rect {
+function containerOf(
+  p: Project,
+  marking: Pick<Marking, 'containerId' | 'parentId'>,
+): Rect {
   if (marking.parentId !== null) return findById(p.markings, marking.parentId).rect;
-  return imagePixelRect(findById(p.images, marking.imageId));
+  return imagePixelRect(findById(p.containers, marking.containerId));
 }
 
 /**
@@ -59,14 +62,14 @@ export function markingRectLimits(
 /** A marcação mais interna da imagem que contém `rect` (menor área; empate → mais funda). */
 export function innermostContaining(
   p: Project,
-  imageId: string,
+  containerId: string,
   rect: Rect,
   exclude: ReadonlySet<string> = new Set(),
 ): Marking | null {
   let best: Marking | null = null;
   let bestDepth = -1;
   for (const m of p.markings) {
-    if (m.imageId !== imageId || exclude.has(m.id) || !containsRect(m.rect, rect))
+    if (m.containerId !== containerId || exclude.has(m.id) || !containsRect(m.rect, rect))
       continue;
     const depth = depthOf(p, m.id);
     if (
@@ -83,7 +86,7 @@ export function innermostContaining(
 
 export interface NewMarkingArgs {
   readonly id: string;
-  readonly imageId: string;
+  readonly containerId: string;
   readonly rect: Rect;
   readonly name?: string | null;
 }
@@ -95,13 +98,13 @@ export function createMarking(
   options?: RectOptions,
 ): Project {
   if (p.markings.some((m) => m.id === args.id)) fail('duplicate-id', args.id);
-  const image = findById(p.images, args.imageId);
+  const image = findById(p.containers, args.containerId);
   checkRectShape(args.rect, options);
   if (!containsRect(imagePixelRect(image), args.rect)) fail('rect-out-of-image');
   const parent = innermostContaining(p, image.id, args.rect);
   const marking: Marking = {
     id: args.id,
-    imageId: image.id,
+    containerId: image.id,
     parentId: parent?.id ?? null,
     name: normalizeOptionalName(args.name ?? null),
     rect: {
@@ -262,7 +265,7 @@ export function parentCandidates(p: Project, markingId: string): Marking[] {
   const excluded = descendantIds(p, markingId).add(markingId);
   return p.markings.filter(
     (m) =>
-      m.imageId === marking.imageId &&
+      m.containerId === marking.containerId &&
       !excluded.has(m.id) &&
       containsRect(m.rect, marking.rect),
   );
@@ -343,7 +346,7 @@ function cascadeRemove(p: Project, markingId: string): Project {
 function siblingsOf(p: Project, marking: Marking): readonly Marking[] {
   const group = projectIndex(p).children.get(marking.parentId) ?? [];
   return marking.parentId === null
-    ? group.filter((m) => m.imageId === marking.imageId)
+    ? group.filter((m) => m.containerId === marking.containerId)
     : group;
 }
 

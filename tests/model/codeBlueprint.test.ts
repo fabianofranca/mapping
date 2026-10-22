@@ -58,7 +58,7 @@ function outline(node: BlueprintNode): unknown {
 function withIcon(): Project {
   let p = createMarking(codeProject(), {
     id: 'MCI',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 120, y: 720, width: 40, height: 40 },
     name: 'Ícone',
   });

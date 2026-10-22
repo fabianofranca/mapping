@@ -6,9 +6,9 @@ import {
   moveMarking,
   removeAnnotation,
   removeEntry,
-  removeImage,
+  removeContainer,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   reviewKey,
   serialize,
   setMarkingRect,
@@ -468,7 +468,7 @@ describe('conflitos', () => {
     // Por fora, o nome de M1 muda e a imagem I2 é apagada: a mudança do nome e a da
     // posição de M4 (que está em I2) passam a conflitar.
     let external = renameMarking(base, 'M1', 'Outro nome');
-    external = removeImage(external, 'I2');
+    external = removeContainer(external, 'I2');
     root.put('mapping.json', serialize({ ...external, revision: 4 }));
     expect(await session.sync()).toBe('reloaded');
     expect(review.derived.conflictIds.value).toEqual(new Set([ids.name, ids.rect]));
@@ -1058,12 +1058,12 @@ describe('aplicar aceitas', () => {
 
     // Projeto: tudo aplicado, em uma única entrada.
     const project = must(session.store.project.value);
-    expect(project.images.map((i) => i.id)).toContain('I3');
+    expect(project.containers.map((i) => i.id)).toContain('I3');
     expect(project.markings.find((m) => m.id === 'M1')?.name).toBe('Porta dianteira');
     expect(project.annotations.some((a) => a.id === 'A9')).toBe(true);
     expect(undoBefore).toBe(false);
     expect(session.store.canUndo.value).toBe(true);
-    expect((await projectOnDisk(h)).images.map((i) => i.id)).toContain('I3');
+    expect((await projectOnDisk(h)).containers.map((i) => i.id)).toContain('I3');
     // Imagem movida: a de images/ existe e a da proposta saiu.
     expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
@@ -1076,7 +1076,7 @@ describe('aplicar aceitas', () => {
 
     // Um único desfazer volta tudo: projeto, imagem e proposta.
     expect(session.store.undo()).toBe(true);
-    expect(session.store.project.value?.images.map((i) => i.id)).not.toContain('I3');
+    expect(session.store.project.value?.containers.map((i) => i.id)).not.toContain('I3');
     await session.proposals.settled();
     await h.session.flush();
     const undone = await diskProposal(root);
@@ -1098,7 +1098,7 @@ describe('aplicar aceitas', () => {
     expect(redone.status).toBe('applied');
     expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
-    expect(session.store.project.value?.images.map((i) => i.id)).toContain('I3');
+    expect(session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
   });
 
   it('aplicação parcial: o que está sem decisão continua pendente, e uma nova aplicação efetiva o resto', async () => {
@@ -1209,7 +1209,7 @@ describe('aplicar aceitas', () => {
 
   it('não sobrescreve o arquivo de uma imagem do projeto (troca com o mesmo nome)', async () => {
     const base = sampleProject();
-    const after = replaceImage(base, 'I2', {
+    const after = replaceContainer(base, 'I2', {
       file: 'images/frente.jpg',
       width: 800,
       height: 800,
@@ -1265,7 +1265,7 @@ describe('como ficaria', () => {
     review.open('P1');
     await review.decide({ level: 'change', id: ids.rect }, 'rejected');
     const preview = must(review.derived.preview.value);
-    expect(preview.project.images.map((i) => i.id)).toContain('I3');
+    expect(preview.project.containers.map((i) => i.id)).toContain('I3');
     expect(preview.project.markings.find((m) => m.id === 'M1')?.name).toBe(
       'Porta dianteira',
     );
@@ -1374,9 +1374,9 @@ describe('apagar proposta (fase 9.2)', () => {
     clearReportedErrors();
     expect(session.store.undo()).toBe(true);
     await session.proposals.settled();
-    expect(session.store.project.value?.images.map((i) => i.id)).not.toContain('I3');
+    expect(session.store.project.value?.containers.map((i) => i.id)).not.toContain('I3');
     const undone = await projectOnDisk(h);
-    expect(undone.images.map((i) => i.id)).not.toContain('I3');
+    expect(undone.containers.map((i) => i.id)).not.toContain('I3');
     // Nada de proposta ressuscitada, nem imagem devolvida a proposals/P1/.
     expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
     expect(await root.read(NEW_IMAGE_PATH)).toBeNull();
@@ -1387,9 +1387,9 @@ describe('apagar proposta (fase 9.2)', () => {
     expect(session.store.redo()).toBe(true);
     await session.proposals.settled();
     const redone = await projectOnDisk(h);
-    expect(redone.images.map((i) => i.id)).toContain('I3');
+    expect(redone.containers.map((i) => i.id)).toContain('I3');
     // O mapping.json cita images/nova.webp e o arquivo está lá (restaurado da lixeira).
-    expect(redone.images.find((i) => i.id === 'I3')?.file).toBe('images/nova.webp');
+    expect(redone.containers.find((i) => i.id === 'I3')?.file).toBe('images/nova.webp');
     expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
     expect(await session.proposals.scan()).toEqual({
@@ -1426,7 +1426,7 @@ describe('apagar proposta (fase 9.2)', () => {
     expect(session.store.redo()).toBe(true);
     await session.proposals.settled();
     await session.flush();
-    expect(session.store.project.value?.images.map((i) => i.id)).toContain('I3');
+    expect(session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
     expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(root.dirs.get('proposals')?.dirs.has('P1') ?? false).toBe(false);
     expect(reportedErrors.value).toEqual([]);

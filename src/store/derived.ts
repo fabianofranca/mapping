@@ -293,11 +293,11 @@ export function createEditorDerived(
     const all = scenes.value;
     const p = project.value;
     if (!p || all.size === 0) return NO_DRAWN;
-    const { images } = projectIndex(p);
+    const { containers: images } = projectIndex(p);
     const onPhotos = showComponentsOnPhotos.value;
     const result = new Set<string>();
     for (const [id, drawing] of all) {
-      const image = images.get(drawing.imageId);
+      const image = images.get(drawing.containerId);
       if (!image || (image.file !== null && !onPhotos)) continue;
       result.add(id);
     }
@@ -349,7 +349,7 @@ export function createEditorDerived(
 
   const hasLocks = computed(() => {
     const p = project.value;
-    return markingLocks.value.size > 0 || (p?.images.some((i) => i.locked) ?? false);
+    return markingLocks.value.size > 0 || (p?.containers.some((i) => i.locked) ?? false);
   });
 
   const listing = computed((): readonly ListedImage[] => {

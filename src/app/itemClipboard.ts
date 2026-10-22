@@ -5,7 +5,7 @@ import { t } from '../i18n';
 import {
   ITEM_CLIPBOARD_MIME,
   formatRef,
-  isBlankImage,
+  isBackgroundContainer,
   itemClipboardData,
   refImageLabel,
   shortCode,
@@ -49,14 +49,14 @@ function imageRefLabel(image: Parameters<typeof refImageLabel>[0]): string {
 /** "Copiar recorte" só existe para marcação de imagem com arquivo (não de container sem arquivo). */
 export function canCopyCrop(project: Project | null, markingId: string): boolean {
   const marking = project?.markings.find((m) => m.id === markingId);
-  const image = marking && project?.images.find((i) => i.id === marking.imageId);
-  return image !== undefined && !isBlankImage(image);
+  const image = marking && project?.containers.find((i) => i.id === marking.containerId);
+  return image !== undefined && !isBackgroundContainer(image);
 }
 
 /** Caminho legível da referência: `Imagem › Marcação › Anotação`. */
 function readablePath(project: Project, target: CopyTarget): string | null {
   const separator = t('marking.pathSeparator');
-  const imageOf = (id: string) => project.images.find((i) => i.id === id);
+  const imageOf = (id: string) => project.containers.find((i) => i.id === id);
   const markingOf = (id: string) => project.markings.find((m) => m.id === id);
   if (target.kind === 'i') {
     const image = imageOf(target.id);
@@ -64,13 +64,13 @@ function readablePath(project: Project, target: CopyTarget): string | null {
   }
   if (target.kind === 'm') {
     const marking = markingOf(target.id);
-    const image = marking && imageOf(marking.imageId);
+    const image = marking && imageOf(marking.containerId);
     if (!marking || !image) return null;
     return [imageRefLabel(image), markingPath(project, marking)].join(separator);
   }
   const annotation = project.annotations.find((a) => a.id === target.id);
   const owner = annotation && markingOf(annotation.markingId);
-  const image = owner && imageOf(owner.imageId);
+  const image = owner && imageOf(owner.containerId);
   if (!annotation || !owner || !image) return null;
   return [
     imageRefLabel(image),
@@ -128,7 +128,7 @@ export async function copyCrop(
   const { store, session, ui } = editor;
   const project = store.committed.peek();
   const marking = project?.markings.find((m) => m.id === markingId);
-  const image = marking && project?.images.find((i) => i.id === marking.imageId);
+  const image = marking && project?.containers.find((i) => i.id === marking.containerId);
   // Container sem arquivo não tem arquivo para recortar.
   if (!marking || !image || image.file === null) return false;
   const file = image.file;

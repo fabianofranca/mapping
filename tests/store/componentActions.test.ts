@@ -35,7 +35,7 @@ function add(
     {
       markingId: id,
       annotationId: `A_${id}`,
-      imageId: 'I1',
+      containerId: 'I1',
       parentId,
       specId: SPEC_ID,
       typeId,
@@ -74,10 +74,10 @@ describe('actions do container', () => {
     ctx = setup();
   });
 
-  it('addBlankImage cria a imagem sem arquivo, numa entrada, e o desfazer a tira', () => {
+  it('addBackgroundContainer cria a imagem sem arquivo, numa entrada, e o desfazer a tira', () => {
     const { store, actions } = ctx;
     const before = current(store);
-    const result = actions.addBlankImage({
+    const result = actions.addBackgroundContainer({
       name: 'Tela',
       width: 360,
       height: 640,
@@ -85,7 +85,7 @@ describe('actions do container', () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const image = current(store).images.find((i) => i.id === result.value);
+    const image = current(store).containers.find((i) => i.id === result.value);
     expect(image).toMatchObject({
       file: null,
       background: '#FFFFFF',
@@ -95,51 +95,59 @@ describe('actions do container', () => {
     });
     expect(undoDepth(store)).toBe(1);
     store.undo();
-    expect(current(store).images).toEqual(before.images);
+    expect(current(store).containers).toEqual(before.containers);
   });
 
-  it('addBlankImage recusa medida ou cor inválida sem mexer em nada', () => {
+  it('addBackgroundContainer recusa medida ou cor inválida sem mexer em nada', () => {
     const { store, actions } = ctx;
     const before = current(store);
     expect(
-      actions.addBlankImage({ name: null, width: 0, height: 640, background: '#FFFFFF' })
-        .ok,
+      actions.addBackgroundContainer({
+        name: null,
+        width: 0,
+        height: 640,
+        background: '#FFFFFF',
+      }).ok,
     ).toBe(false);
     expect(
-      actions.addBlankImage({ name: null, width: 100, height: 100, background: 'branco' })
-        .ok,
+      actions.addBackgroundContainer({
+        name: null,
+        width: 100,
+        height: 100,
+        background: 'branco',
+      }).ok,
     ).toBe(false);
     expect(current(store)).toBe(before);
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('setBlankImage muda cor e tamanho numa entrada; só vale paro container', () => {
+  it('setBackgroundContainer muda cor e tamanho numa entrada; só vale paro container', () => {
     const { store, actions } = ctx;
-    const created = actions.addBlankImage({
+    const created = actions.addBackgroundContainer({
       name: null,
       width: 360,
       height: 640,
       background: '#FFFFFF',
     });
-    if (!created.ok) throw new Error('addBlankImage');
+    if (!created.ok) throw new Error('addBackgroundContainer');
     const id = created.value;
-    expect(actions.setBlankImage(id, { background: '#000000', width: 400 }).ok).toBe(
-      true,
-    );
-    expect(current(store).images.find((i) => i.id === id)).toMatchObject({
+    expect(
+      actions.setBackgroundContainer(id, { background: '#000000', width: 400 }).ok,
+    ).toBe(true);
+    expect(current(store).containers.find((i) => i.id === id)).toMatchObject({
       background: '#000000',
       width: 400,
     });
     expect(undoDepth(store)).toBe(2);
     store.undo();
-    expect(current(store).images.find((i) => i.id === id)).toMatchObject({
+    expect(current(store).containers.find((i) => i.id === id)).toMatchObject({
       background: '#FFFFFF',
       width: 360,
     });
 
     const before = current(store);
-    const photo = actions.setBlankImage('I1', { background: '#000000' });
-    expect(photo).toEqual({ ok: false, error: 'not-blank' });
+    const photo = actions.setBackgroundContainer('I1', { background: '#000000' });
+    expect(photo).toEqual({ ok: false, error: 'container-has-file' });
     expect(current(store)).toBe(before);
   });
 });
@@ -148,7 +156,7 @@ describe('addComponent', () => {
   it('cria a marcação e a anotação numa entrada de desfazer', () => {
     const { store, actions } = setup();
     const result = actions.addComponent({
-      imageId: 'I1',
+      containerId: 'I1',
       parentId: null,
       specId: SPEC_ID,
       typeId: 'text',
@@ -175,7 +183,7 @@ describe('addComponent', () => {
     const initial = add(componentProject(), 'C', 'row', box(100, 100, 300, 100));
     const { store, actions } = setup(initial);
     const result = actions.addComponent({
-      imageId: 'I1',
+      containerId: 'I1',
       parentId: 'C',
       specId: SPEC_ID,
       typeId: 'text',
@@ -189,7 +197,7 @@ describe('addComponent', () => {
     const before = current(store);
     expect(
       actions.addComponent({
-        imageId: 'I1',
+        containerId: 'I1',
         parentId: null,
         specId: SPEC_ID,
         typeId: 'plain',
@@ -197,7 +205,7 @@ describe('addComponent', () => {
     ).toEqual({ ok: false, error: 'unknown-type' });
     expect(
       actions.addComponent({
-        imageId: 'nada',
+        containerId: 'nada',
         parentId: null,
         specId: SPEC_ID,
         typeId: 'text',
@@ -213,7 +221,7 @@ describe('addComponent', () => {
     store.load(componentProject());
     expect(
       actions.addComponent({
-        imageId: 'I1',
+        containerId: 'I1',
         parentId: null,
         specId: SPEC_ID,
         typeId: 'text',
@@ -226,7 +234,7 @@ describe('reorderMarking', () => {
   function threeSiblings() {
     let p = componentProject();
     ['A', 'B', 'C'].forEach((id, i) => {
-      p = createMarking(p, { id, imageId: 'I1', rect: box(i * 100, 0, 50, 50) });
+      p = createMarking(p, { id, containerId: 'I1', rect: box(i * 100, 0, 50, 50) });
     });
     return setup(p);
   }
@@ -327,7 +335,7 @@ describe('tamanho mínimo do componente', () => {
     const { store, actions } = setup(
       createMarking(componentProject(), {
         id: 'P',
-        imageId: 'I1',
+        containerId: 'I1',
         rect: box(0, 0, 50, 50),
       }),
     );

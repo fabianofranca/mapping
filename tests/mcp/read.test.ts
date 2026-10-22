@@ -25,7 +25,7 @@ import {
 interface Row {
   ref: string;
   name: string | null;
-  image: string;
+  container: string;
   parent: string | null;
   rect: { x: number; y: number; width: number; height: number };
   locked: boolean;
@@ -39,6 +39,7 @@ interface RowList {
   offset: number;
   truncated?: boolean;
   nextOffset?: number;
+  warnings?: { code: string; message: string }[];
   markings: Row[];
 }
 interface AnnotationData {
@@ -67,7 +68,7 @@ interface MarkingData {
   ref: string;
   name: string | null;
   path: { ref: string; name: string }[];
-  image: {
+  container: {
     ref: string;
     name: string | null;
     file: string;
@@ -157,9 +158,9 @@ describe('list_projects e descoberta', () => {
     expect(cadastro).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
-      schemaVersion: 11,
+      schemaVersion: 12,
       revision: 0,
-      counts: { images: 1, markings: 6, annotations: 11, layers: 7 },
+      counts: { containers: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
         { id: 'sdui', version: loadLegacySdui().version },
         { id: 'modelo-dados', version: 1 },
@@ -191,11 +192,11 @@ describe('list_projects e descoberta', () => {
 });
 
 describe('get_project', () => {
-  it('resume imagens, camadas, especializações e pendências', async () => {
+  it('resume containers, camadas, especializações e pendências', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
     expect(data).toMatchObject({
       name: 'cadastro',
-      images: [
+      containers: [
         {
           name: null,
           file: 'images/cadastro.png',
@@ -248,7 +249,7 @@ describe('get_project', () => {
       }),
     ]);
     const legado = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legado).toMatchObject({ schemaVersion: 11, revision: 0, migratedFrom: 5 });
+    expect(legado).toMatchObject({ schemaVersion: 12, revision: 0, migratedFrom: 5 });
   });
 
   it('ler nunca regrava o mapping.json (nem o de schema antigo)', () => {
@@ -284,7 +285,7 @@ describe('list_markings', () => {
     ]);
     expect(list.markings[1]).toMatchObject({
       ref: markingRef('MF', 'Formulário'),
-      image: 'cadastro.png',
+      container: 'cadastro.png',
       parent: null,
       rect: { x: 50, y: 200, width: 900, height: 1200 },
       locked: true,
@@ -336,15 +337,22 @@ describe('list_markings', () => {
     expect(names(await listRows({ text: 'cadastro.png' }))).toEqual([]);
   });
 
-  it('filtra por imagem e pagina', async () => {
-    for (const image of [
+  it('filtra por container (e pelo filtro antigo image, com aviso) e pagina', async () => {
+    for (const container of [
       'cadastro.png',
       'images/cadastro.png',
       `i/${codeOf(ws.ids.I1!)}`,
       ws.ids.I1,
     ]) {
-      expect(await listRows({ image })).toMatchObject({ total: 6 });
+      const rows = await listRows({ container });
+      expect(rows).toMatchObject({ total: 6 });
+      expect(rows.warnings).toBeUndefined();
     }
+    const old = await listRows({ image: 'cadastro.png' });
+    expect(old).toMatchObject({
+      total: 6,
+      warnings: [{ code: 'deprecated-argument' }],
+    });
     const first = await listRows({ limit: 4 });
     expect(first).toMatchObject({
       returned: 4,
@@ -357,12 +365,12 @@ describe('list_markings', () => {
     expect(second.truncated).toBeUndefined();
   });
 
-  it('erra com camada ou imagem desconhecida', async () => {
+  it('erra com camada ou container desconhecido', async () => {
     expect(
       errorCode(await mcp.call('list_markings', { project: 'cadastro', layer: 'X' })),
     ).toBe('not-found');
     expect(
-      errorCode(await mcp.call('list_markings', { project: 'cadastro', image: 'X' })),
+      errorCode(await mcp.call('list_markings', { project: 'cadastro', container: 'X' })),
     ).toBe('not-found');
   });
 });
@@ -375,7 +383,13 @@ describe('get_marking', () => {
     expect(data).toMatchObject({
       ref: markingRef('MC', 'Cadastrar'),
       name: 'Cadastrar',
-      image: { name: null, file: 'images/cadastro.png', width: 1000, height: 2000 },
+      container: {
+        name: null,
+        file: 'images/cadastro.png',
+        background: null,
+        width: 1000,
+        height: 2000,
+      },
       rect: { x: 100, y: 700, width: 800, height: 100 },
       lock: { locked: false, geometryLocked: true, source: 'inherited' },
       parent: expect.stringContaining('Formulário'),
@@ -513,7 +527,7 @@ describe('get_marking', () => {
   });
 });
 
-describe('get_annotation, get_image e resolve', () => {
+describe('get_annotation, get_container e resolve', () => {
   async function annotationRefOf(
     marking: string,
     name: string,
@@ -565,11 +579,15 @@ describe('get_annotation, get_image e resolve', () => {
     expect(data.entries?.map((e) => e.key)).toEqual(['name', 'age']);
   });
 
-  it('get_image traz o arquivo, o caminho absoluto e as marcações de primeiro nível', async () => {
+  it('get_container traz o arquivo, o caminho absoluto e as marcações de primeiro nível', async () => {
     const data = ok(
-      await mcp.call('get_image', { ref: `mapping://cadastro/i/${codeOf(ws.ids.I1!)}` }),
+      await mcp.call('get_container', {
+        ref: `mapping://cadastro/i/${codeOf(ws.ids.I1!)}`,
+      }),
     );
+    expect(data.warnings).toBeUndefined();
     expect(data).toMatchObject({
+      background: null,
       file: 'images/cadastro.png',
       exists: true,
       path: join(realpathSync(ws.projectDir('apps/cadastro')), 'images', 'cadastro.png'),
@@ -581,9 +599,23 @@ describe('get_annotation, get_image e resolve', () => {
     });
   });
 
-  it('get_image avisa quando o arquivo não existe', async () => {
+  it('get_image continua respondendo, com aviso de que é antiga', async () => {
+    const ref = `mapping://cadastro/i/${codeOf(ws.ids.I1!)}`;
+    const old = ok(await mcp.call('get_image', { ref }));
+    const current = ok(await mcp.call('get_container', { ref }));
+    expect(old.warnings).toEqual([
+      expect.objectContaining({
+        code: 'deprecated-tool',
+        tool: 'get_image',
+        message: expect.stringContaining('get_container'),
+      }),
+    ]);
+    expect({ ...old, warnings: undefined }).toEqual({ ...current, warnings: undefined });
+  });
+
+  it('get_container avisa quando o arquivo não existe', async () => {
     const data = ok(
-      await mcp.call('get_image', {
+      await mcp.call('get_container', {
         project: 'sem-copias',
         ref: `i/${codeOf(ws.ids.I1!)}`,
       }),
@@ -601,7 +633,11 @@ describe('get_annotation, get_image e resolve', () => {
       project: { name: 'cadastro', path: 'apps/cadastro' },
     });
     const image = ok(await mcp.call('resolve', { ref: ws.ids.I1, project: 'cadastro' }));
-    expect(image).toMatchObject({ kind: 'image', file: 'images/cadastro.png' });
+    expect(image).toMatchObject({
+      kind: 'container',
+      file: 'images/cadastro.png',
+      background: null,
+    });
     const annotation = ok(
       await mcp.call('resolve', { ref: ws.ids.AU, project: 'cadastro' }),
     );
@@ -800,7 +836,7 @@ describe('segurança de caminhos', () => {
     const image = `i/${codeOf(ws.ids.I1!)}`;
     // `file` com `..` apontando para um arquivo que existe, e `images/link.png` link para fora.
     for (const project of ['hostil', 'hostil-link']) {
-      const data = ok(await mcp.call('get_image', { project, ref: image }));
+      const data = ok(await mcp.call('get_container', { project, ref: image }));
       expect(data, project).toMatchObject({ exists: false, path: null });
     }
   });
@@ -816,9 +852,9 @@ describe('create_project', () => {
       name: 'loja',
       path: 'novos/loja',
       projectName: 'Loja',
-      schemaVersion: 11,
+      schemaVersion: 12,
       revision: 0,
-      counts: { images: 0, markings: 0, annotations: 0, layers: 1 },
+      counts: { containers: 0, markings: 0, annotations: 0, layers: 1 },
     });
     const dir = ws.projectDir('novos/loja');
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('backups/\n');
@@ -828,7 +864,7 @@ describe('create_project', () => {
     expect(parsed.ok && parsed.project.layers[0]!.name).toBe('Camada 1');
 
     const project = ok(await mcp.call('get_project', { project: 'loja' }));
-    expect(project).toMatchObject({ projectName: 'Loja', images: [] });
+    expect(project).toMatchObject({ projectName: 'Loja', containers: [] });
   });
 
   it('recusa nome vazio, projeto existente e projeto dentro de outro', async () => {
@@ -998,6 +1034,8 @@ describe('recursos e instruções', () => {
       'get_annotation',
       'get_code_hints',
       'get_component',
+      'get_container',
+      'get_container_file',
       'get_image',
       'get_image_file',
       'get_marking',

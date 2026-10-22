@@ -16,7 +16,7 @@ export {
   type NewProjectArgs,
 } from './project';
 export * from './layers';
-export * from './images';
+export * from './containers';
 export * from './imageOptimization';
 export * from './exif';
 export * from './markings';

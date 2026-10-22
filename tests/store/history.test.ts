@@ -1,6 +1,6 @@
 import { effect } from '@preact/signals';
 import { describe, expect, it } from 'vitest';
-import { moveImage, moveMarking, renameLayer, renameProject } from '../../src/model';
+import { moveContainer, moveMarking, renameLayer, renameProject } from '../../src/model';
 import { HISTORY_LIMIT, createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
@@ -102,16 +102,16 @@ describe('store: actions e histórico', () => {
     let seq = 0;
     const actions = createProjectActions(store, { newId: () => `id${++seq}` });
     store.load(emptyProject());
-    expect(actions.addImage({ file: 'images/a.jpg', width: 10, height: 10 }).ok).toBe(
+    expect(actions.addContainer({ file: 'images/a.jpg', width: 10, height: 10 }).ok).toBe(
       true,
     );
-    expect(actions.addImage({ file: 'images/b.jpg', width: 10, height: 10 }).ok).toBe(
+    expect(actions.addContainer({ file: 'images/b.jpg', width: 10, height: 10 }).ok).toBe(
       true,
     );
-    const imageId = (file: string) =>
-      project(store).images.find((i) => i.file === file)?.id ?? '';
-    actions.removeImage(imageId('images/a.jpg'));
-    expect(project(store).images.map((i) => i.file)).toEqual(['images/b.jpg']);
+    const containerId = (file: string) =>
+      project(store).containers.find((i) => i.file === file)?.id ?? '';
+    actions.removeContainer(containerId('images/a.jpg'));
+    expect(project(store).containers.map((i) => i.file)).toEqual(['images/b.jpg']);
     // a.jpg saiu do projeto, mas o desfazer ainda a restauraria.
     expect([...store.referencedImageFiles()].sort()).toEqual([
       'images/a.jpg',
@@ -120,7 +120,7 @@ describe('store: actions e histórico', () => {
 
     // Desfazer tudo: a.jpg e b.jpg ficam só no "refazer".
     while (store.undo());
-    expect(project(store).images).toEqual([]);
+    expect(project(store).containers).toEqual([]);
     expect([...store.referencedImageFiles()].sort()).toEqual([
       'images/a.jpg',
       'images/b.jpg',
@@ -175,19 +175,19 @@ describe('store: gestos', () => {
   it('prévia inválida mantém a última posição válida', () => {
     const { store } = setup();
     store.beginGesture();
-    store.updateGesture((p) => moveImage(p, 'I2', 1200, 0));
-    const result = store.updateGesture((p) => moveImage(p, 'I2', 500, 0));
+    store.updateGesture((p) => moveContainer(p, 'I2', 1200, 0));
+    const result = store.updateGesture((p) => moveContainer(p, 'I2', 500, 0));
     expect(result).toEqual({ ok: false, error: 'image-overlap' });
-    expect(project(store).images[1]?.placement.x).toBe(1200);
+    expect(project(store).containers[1]?.placement.x).toBe(1200);
     store.commitGesture();
-    expect(project(store).images[1]?.placement.x).toBe(1200);
+    expect(project(store).containers[1]?.placement.x).toBe(1200);
   });
 
   it('cancelar volta ao início sem histórico', () => {
     const { store } = setup();
     const before = project(store);
     store.beginGesture();
-    store.updateGesture((p) => moveImage(p, 'I2', 1200, 0));
+    store.updateGesture((p) => moveContainer(p, 'I2', 1200, 0));
     store.cancelGesture();
     expect(project(store)).toBe(before);
     expect(store.canUndo.value).toBe(false);
@@ -203,7 +203,7 @@ describe('store: gestos', () => {
   it('actions de gesto: mover imagem com prévias, sobreposição e uma entrada', () => {
     const { store, actions } = setup();
     const before = project(store);
-    const start = before.images[1]?.placement;
+    const start = before.containers[1]?.placement;
     if (!start) throw new Error('sem I2');
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewImagePlacement('I2', { ...start, y: 900 }).ok).toBe(true);
@@ -212,11 +212,11 @@ describe('store: gestos', () => {
       ok: false,
       error: 'image-overlap',
     });
-    expect(project(store).images[1]?.placement).toEqual({ ...start, y: 900 });
+    expect(project(store).containers[1]?.placement).toEqual({ ...start, y: 900 });
     actions.commitGesture();
-    expect(project(store).images[1]?.placement).toEqual({ ...start, y: 900 });
+    expect(project(store).containers[1]?.placement).toEqual({ ...start, y: 900 });
     expect(store.undo()).toBe(true);
-    expect(project(store).images).toBe(before.images);
+    expect(project(store).containers).toBe(before.containers);
     expect(store.undo()).toBe(false);
   });
 
@@ -225,7 +225,7 @@ describe('store: gestos', () => {
     const before = project(store);
     actions.beginGesture();
     actions.previewImagePlacement('I1', { x: 0, y: 0, scale: 0.1 });
-    expect(project(store).images[0]?.placement.scale).toBe(0.1);
+    expect(project(store).containers[0]?.placement.scale).toBe(0.1);
     actions.cancelGesture();
     expect(project(store)).toBe(before);
     expect(store.canUndo.value).toBe(false);
@@ -341,7 +341,7 @@ describe('store: projeto confirmado (committed)', () => {
     const { store } = setup();
     const before = project(store);
     store.beginGesture();
-    store.updateGesture((p) => moveImage(p, 'I2', 1200, 0));
+    store.updateGesture((p) => moveContainer(p, 'I2', 1200, 0));
     store.cancelGesture();
     expect(committed(store)).toBe(before);
     expect(project(store)).toBe(before);

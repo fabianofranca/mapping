@@ -1,9 +1,9 @@
 import {
   ModelError,
   addAnnotation,
-  addBlankImage,
+  addBackgroundContainer,
   addComponentMarking,
-  addImage,
+  addContainer,
   addLayer,
   addTableRow,
   addTypedAnnotation,
@@ -19,13 +19,13 @@ import {
   createMarking,
   innermostContaining,
   reorderMarking,
-  setBlankImage,
+  setBackgroundContainer,
   siblingPosition,
   extensionForMime,
   fieldOf,
   getSpecialization,
   packageDirOf,
-  imageDeletionImpact,
+  containerDeletionImpact,
   layerDeletionImpact,
   markingDeletionImpact,
   matchShortCode,
@@ -39,25 +39,25 @@ import {
   projectIssues,
   projectLayerFor,
   removeAnnotation,
-  removeImage,
+  removeContainer,
   removeLayer,
   removeMarking,
   removePlatformRepo,
   removeSpecialization,
   removeTableRow,
   renameAnnotation,
-  renameImage,
+  renameContainer,
   renameLayer,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   setAnnotationInherit,
   setAnnotationParent,
   setEntries,
   setFieldValue,
   setImageLocked,
-  setImageMarkingColor,
+  setContainerMarkingColor,
   setImageMarkingsLocked,
-  setImagePlacement,
+  setContainerPlacement,
   setImageSource,
   setLayerColor,
   setMarkingLocked,
@@ -99,7 +99,7 @@ import {
 import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
-import { KIND_NAMES, Refs } from './items';
+import { KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
 import { MODEL_ERROR_MESSAGES } from './modelErrors';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
@@ -209,7 +209,23 @@ interface Step {
   readonly imageFiles?: readonly [string, Uint8Array][];
 }
 
-const KIND_LABEL: Record<CreatedKind, string> = { layer: 'camada', ...KIND_NAMES };
+const KIND_LABEL: Record<CreatedKind, string> = {
+  layer: 'uma camada',
+  ...KIND_WITH_ARTICLE,
+};
+
+/** Operações antigas aceitas com aviso por uma versão (MCP 0.8.0), com o que usar no lugar. */
+const DEPRECATED_OPS: Partial<Record<Operation['op'], string>> = {
+  add_image: 'add_image é antiga: use add_container com `file` (ou `base64`)',
+  add_blank_image:
+    'add_blank_image é antiga: use add_container (mesmos campos: width, height e background)',
+  update_image:
+    'update_image é antiga: use update_container (o argumento `image` virou `container`)',
+  replace_image:
+    'replace_image é antiga: use replace_container (o argumento `image` virou `container`)',
+  delete_image:
+    'delete_image é antiga: use delete_container (o argumento `image` virou `container`)',
+};
 
 /** Minúsculas e sem acentos, para achar camadas e tipos pelo nome. */
 function fold(text: string): string {
@@ -305,11 +321,15 @@ class Batch {
         const step = await this.apply(op);
         this.p = step.project;
         this.steps.push({ index, description: step.description });
-        if (op.op === 'add_blank_image') {
+        const deprecated = DEPRECATED_OPS[op.op];
+        if (deprecated !== undefined) {
+          this.deprecations.push({ index, op: op.op, message: deprecated });
+        }
+        if (op.op === 'create_marking' && op.image !== undefined) {
           this.deprecations.push({
             index,
             op: op.op,
-            message: 'add_blank_image é antiga: use add_container (mesmos campos)',
+            message: 'o argumento `image` de create_marking é antigo: use `container`',
           });
         }
         for (const [file, data] of step.imageFiles ?? []) this.imageFiles.set(file, data);
@@ -402,7 +422,7 @@ class Batch {
       if (target.kind !== kind) {
         throw new ToolError(
           'wrong-kind',
-          `o apelido ${name} não é de uma ${kindLabel(kind)}`,
+          `o apelido ${name} não é de ${kindLabel(kind)}`,
         );
       }
       return target;
@@ -422,7 +442,7 @@ class Batch {
     );
   }
 
-  /** Id de uma marcação, imagem ou anotação deste projeto: apelido, referência ou id. */
+  /** Id de uma marcação, container ou anotação deste projeto: apelido, referência ou id. */
   private item(text: string, kind: ItemKind, p: Project = this.p): string {
     const wanted = text.trim();
     if (wanted.startsWith('$')) {
@@ -442,13 +462,13 @@ class Batch {
     if (parsed.kind !== null && parsed.kind !== kind) {
       throw new ToolError(
         'wrong-kind',
-        `a referência é de uma ${KIND_NAMES[parsed.kind]}, não de uma ${KIND_NAMES[kind]}`,
+        `a referência é de ${KIND_WITH_ARTICLE[parsed.kind]}, não de ${KIND_WITH_ARTICLE[kind]}`,
       );
     }
     const found = matchShortCode(p, kind, parsed.code);
     if (found.length === 1) return found[0]!.id;
     if (found.length === 0) {
-      throw new ToolError('not-found', `${KIND_NAMES[kind]} não encontrada: ${text}`);
+      throw new ToolError('not-found', `${KIND_NOT_FOUND[kind]}: ${text}`);
     }
     throw new ToolError(
       'ambiguous-ref',
@@ -970,141 +990,26 @@ class Batch {
               : `Remover a especialização "${op.specId}": ${layers} camada(s) e ${impact.annotations} anotação(ões) viram livres${broken}`,
         };
       }
-      case 'add_image': {
-        const image = await this.image(op, p);
-        const id = crypto.randomUUID();
-        let project = addImage(p, {
-          id,
-          file: image.file,
-          width: image.width,
-          height: image.height,
-          ...(op.center ? { center: op.center } : {}),
-        });
-        if (op.name !== undefined) project = renameImage(project, id, op.name);
-        if (op.source !== undefined) {
-          project = setImageSource(project, id, toSource(op.source));
-        }
-        return {
-          project,
-          description: `Adicionar a imagem ${image.file} (${image.width}×${image.height} px, ${image.note}${
-            op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
-          })`,
-          created: [{ kind: 'i', id }],
-          imageFiles: [[image.file, image.data]],
-        };
-      }
       case 'add_container':
-      case 'add_blank_image': {
-        const id = crypto.randomUUID();
-        let project = addBlankImage(p, {
-          id,
-          ...(op.name !== undefined ? { name: op.name } : {}),
-          width: op.width,
-          height: op.height,
-          background: op.background,
-          ...(op.center ? { center: op.center } : {}),
-        });
-        if (op.source !== undefined) {
-          project = setImageSource(project, id, toSource(op.source));
-        }
-        return {
-          project,
-          description: `Adicionar o container "${this.refs(project).imageLabel(id)}" (${op.width}×${op.height} px, fundo ${op.background.toUpperCase()}${
-            op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
-          })`,
-          created: [{ kind: 'i', id }],
-        };
-      }
-      case 'update_image': {
-        const id = this.item(op.image, 'i');
-        let project = p;
-        const changes: string[] = [];
-        if (op.locked === false) {
-          project = setImageLocked(project, id, false);
-          changes.push('destrancar');
-        }
-        if (op.name !== undefined) {
-          project = renameImage(project, id, op.name);
-          changes.push(`nome ${quoted(projectIndex(project).images.get(id)!.name)}`);
-        }
-        if (op.source !== undefined) {
-          project = setImageSource(project, id, toSource(op.source));
-          changes.push(sourceLabel(projectIndex(project).images.get(id)!.source));
-        }
-        if (op.x !== undefined || op.y !== undefined || op.scale !== undefined) {
-          const { placement } = projectIndex(project).images.get(id)!;
-          const next = {
-            x: op.x ?? placement.x,
-            y: op.y ?? placement.y,
-            scale: op.scale ?? placement.scale,
-          };
-          project = setImagePlacement(project, id, next);
-          changes.push(`posição (${next.x}, ${next.y}) escala ${next.scale}`);
-        }
-        if (op.markingColor !== undefined) {
-          project = setImageMarkingColor(project, id, op.markingColor);
-          changes.push(`cor das marcações ${op.markingColor ?? 'do tema'}`);
-        }
-        if (op.markingsLocked !== undefined) {
-          project = setImageMarkingsLocked(project, id, op.markingsLocked);
-          changes.push(
-            op.markingsLocked
-              ? 'trancar todas as marcações'
-              : 'destrancar todas as marcações',
-          );
-        }
-        if (
-          op.background !== undefined ||
-          op.width !== undefined ||
-          op.height !== undefined
-        ) {
-          // Só o container sem arquivo: numa foto o modelo recusa com `not-blank`.
-          project = setBlankImage(project, id, {
-            ...(op.background !== undefined ? { background: op.background } : {}),
-            ...(op.width !== undefined ? { width: op.width } : {}),
-            ...(op.height !== undefined ? { height: op.height } : {}),
-          });
-          const image = projectIndex(project).images.get(id)!;
-          changes.push(
-            `container ${image.width}×${image.height} px, fundo ${image.background}`,
-          );
-        }
-        if (op.locked === true) {
-          project = setImageLocked(project, id, true);
-          changes.push('trancar');
-        }
-        return {
-          project,
-          description: `Alterar a imagem "${this.refs(p).imageLabel(id)}": ${changes.join(', ') || 'nada'}`,
-        };
-      }
-      case 'replace_image': {
-        const id = this.item(op.image, 'i');
-        const image = await this.image(op, p);
-        let project = replaceImage(
-          p,
-          id,
-          { file: image.file, width: image.width, height: image.height },
-          { confirmAspectChange: op.confirmAspectChange === true },
-        );
-        if (op.source !== undefined) {
-          project = setImageSource(project, id, toSource(op.source));
-        }
-        const old = projectIndex(p).images.get(id)!;
-        return {
-          project,
-          description: `Trocar o arquivo da imagem "${this.refs(p).imageLabel(id)}": ${old.file} → ${image.file} (${image.width}×${image.height} px, ${image.note})`,
-          imageFiles: [[image.file, image.data]],
-        };
-      }
-      case 'delete_image': {
-        const id = this.item(op.image, 'i');
-        const impact = imageDeletionImpact(p, id);
-        return {
-          project: removeImage(p, id),
-          description: `Excluir a imagem "${this.refs(p).imageLabel(id)}" (${impact.markings} marcação(ões), ${impact.annotations} anotação(ões))`,
-        };
-      }
+        return op.file !== undefined || op.base64 !== undefined
+          ? this.addContainerFromFile(op, p)
+          : this.addContainerWithBackground(op, p);
+      case 'add_image':
+        return this.addContainerFromFile(op, p);
+      case 'add_blank_image':
+        return this.addContainerWithBackground(op, p);
+      case 'update_container':
+        return this.updateContainerOp(op, this.item(op.container, 'i'), p);
+      case 'update_image':
+        return this.updateContainerOp(op, this.item(op.image, 'i'), p);
+      case 'replace_container':
+        return this.replaceContainerOp(op, this.item(op.container, 'i'), p);
+      case 'replace_image':
+        return this.replaceContainerOp(op, this.item(op.image, 'i'), p);
+      case 'delete_container':
+        return this.deleteContainerOp(this.item(op.container, 'i'), p);
+      case 'delete_image':
+        return this.deleteContainerOp(this.item(op.image, 'i'), p);
       case 'create_marking':
         return this.createMarkingOp(op);
       case 'move_marking': {
@@ -1222,6 +1127,182 @@ class Batch {
    * componente) e vale o `minSize`; a anotação nasce como na paleta da app (`preview`), com os
    * `values` por cima. O servidor nunca arruma: os retângulos são os que o agente informou.
    */
+  /** Container com arquivo de imagem: `add_container` com `file`/`base64` e a antiga `add_image`. */
+  private async addContainerFromFile(
+    op: Extract<Operation, { op: 'add_container' | 'add_image' }>,
+    p: Project,
+  ): Promise<Step> {
+    if (
+      op.op === 'add_container' &&
+      (op.width !== undefined || op.height !== undefined || op.background !== undefined)
+    ) {
+      throw new ToolError(
+        'invalid-arguments',
+        'add_container ambígua: com `file`/`base64` a largura e a altura vêm do arquivo; informe `file` ou `base64`, ou então `width`, `height` e `background`, nunca os dois grupos',
+      );
+    }
+    const image = await this.image(op, p);
+    const id = crypto.randomUUID();
+    let project = addContainer(p, {
+      id,
+      file: image.file,
+      width: image.width,
+      height: image.height,
+      ...(op.center ? { center: op.center } : {}),
+    });
+    if (op.name !== undefined) project = renameContainer(project, id, op.name);
+    if (op.source !== undefined) {
+      project = setImageSource(project, id, toSource(op.source));
+    }
+    return {
+      project,
+      description: `Adicionar o container com a imagem ${image.file} (${image.width}×${image.height} px, ${image.note}${
+        op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
+      })`,
+      created: [{ kind: 'i', id }],
+      imageFiles: [[image.file, image.data]],
+    };
+  }
+
+  /** Container só com fundo: `add_container` sem arquivo e a antiga `add_blank_image`. */
+  private addContainerWithBackground(
+    op: Extract<Operation, { op: 'add_container' | 'add_blank_image' }>,
+    p: Project,
+  ): Step {
+    const { width, height, background } = op;
+    if (width === undefined || height === undefined || background === undefined) {
+      const missing = [
+        width === undefined ? '`width`' : null,
+        height === undefined ? '`height`' : null,
+        background === undefined ? '`background`' : null,
+      ].filter((m) => m !== null);
+      throw new ToolError(
+        'invalid-arguments',
+        `add_container precisa de \`file\` (ou \`base64\`), ou de \`width\`, \`height\` e \`background\`; faltam: ${missing.join(', ')}`,
+      );
+    }
+    const id = crypto.randomUUID();
+    let project = addBackgroundContainer(p, {
+      id,
+      ...(op.name !== undefined ? { name: op.name } : {}),
+      width,
+      height,
+      background,
+      ...(op.center ? { center: op.center } : {}),
+    });
+    if (op.source !== undefined) {
+      project = setImageSource(project, id, toSource(op.source));
+    }
+    return {
+      project,
+      description: `Adicionar o container "${this.refs(project).imageLabel(id)}" (${width}×${height} px, fundo ${background.toUpperCase()}${
+        op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
+      })`,
+      created: [{ kind: 'i', id }],
+    };
+  }
+
+  /** `update_container` e a antiga `update_image`. */
+  private updateContainerOp(
+    op: Extract<Operation, { op: 'update_container' | 'update_image' }>,
+    id: string,
+    p: Project,
+  ): Step {
+    let project = p;
+    const changes: string[] = [];
+    if (op.locked === false) {
+      project = setImageLocked(project, id, false);
+      changes.push('destrancar');
+    }
+    if (op.name !== undefined) {
+      project = renameContainer(project, id, op.name);
+      changes.push(`nome ${quoted(projectIndex(project).containers.get(id)!.name)}`);
+    }
+    if (op.source !== undefined) {
+      project = setImageSource(project, id, toSource(op.source));
+      changes.push(sourceLabel(projectIndex(project).containers.get(id)!.source));
+    }
+    if (op.x !== undefined || op.y !== undefined || op.scale !== undefined) {
+      const { placement } = projectIndex(project).containers.get(id)!;
+      const next = {
+        x: op.x ?? placement.x,
+        y: op.y ?? placement.y,
+        scale: op.scale ?? placement.scale,
+      };
+      project = setContainerPlacement(project, id, next);
+      changes.push(`posição (${next.x}, ${next.y}) escala ${next.scale}`);
+    }
+    if (op.markingColor !== undefined) {
+      project = setContainerMarkingColor(project, id, op.markingColor);
+      changes.push(`cor das marcações ${op.markingColor ?? 'do tema'}`);
+    }
+    if (op.markingsLocked !== undefined) {
+      project = setImageMarkingsLocked(project, id, op.markingsLocked);
+      changes.push(
+        op.markingsLocked
+          ? 'trancar todas as marcações'
+          : 'destrancar todas as marcações',
+      );
+    }
+    if (
+      op.background !== undefined ||
+      op.width !== undefined ||
+      op.height !== undefined
+    ) {
+      // Só o container sem arquivo: com arquivo o modelo recusa com `container-has-file`.
+      project = setBackgroundContainer(project, id, {
+        ...(op.background !== undefined ? { background: op.background } : {}),
+        ...(op.width !== undefined ? { width: op.width } : {}),
+        ...(op.height !== undefined ? { height: op.height } : {}),
+      });
+      const container = projectIndex(project).containers.get(id)!;
+      changes.push(
+        `tamanho ${container.width}×${container.height} px, fundo ${container.background}`,
+      );
+    }
+    if (op.locked === true) {
+      project = setImageLocked(project, id, true);
+      changes.push('trancar');
+    }
+    return {
+      project,
+      description: `Alterar o container "${this.refs(p).imageLabel(id)}": ${changes.join(', ') || 'nada'}`,
+    };
+  }
+
+  /** `replace_container` e a antiga `replace_image`: troca o arquivo de imagem do container. */
+  private async replaceContainerOp(
+    op: Extract<Operation, { op: 'replace_container' | 'replace_image' }>,
+    id: string,
+    p: Project,
+  ): Promise<Step> {
+    const image = await this.image(op, p);
+    let project = replaceContainer(
+      p,
+      id,
+      { file: image.file, width: image.width, height: image.height },
+      { confirmAspectChange: op.confirmAspectChange === true },
+    );
+    if (op.source !== undefined) {
+      project = setImageSource(project, id, toSource(op.source));
+    }
+    const old = projectIndex(p).containers.get(id)!;
+    return {
+      project,
+      description: `Trocar a imagem do container "${this.refs(p).imageLabel(id)}": ${old.file} → ${image.file} (${image.width}×${image.height} px, ${image.note})`,
+      imageFiles: [[image.file, image.data]],
+    };
+  }
+
+  /** `delete_container` e a antiga `delete_image`. */
+  private deleteContainerOp(id: string, p: Project): Step {
+    const impact = containerDeletionImpact(p, id);
+    return {
+      project: removeContainer(p, id),
+      description: `Excluir o container "${this.refs(p).imageLabel(id)}" (${impact.markings} marcação(ões), ${impact.annotations} anotação(ões))`,
+    };
+  }
+
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
     const p = this.p;
     const catalog = this.loaded.catalog;
@@ -1232,7 +1313,20 @@ class Batch {
         '`annotationAs` só vale com `annotation` na mesma operação',
       );
     }
-    const imageId = this.item(op.image, 'i');
+    if (op.container !== undefined && op.image !== undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        'informe `container` (a antiga `image` também é aceita), não os dois',
+      );
+    }
+    const containerRef = op.container ?? op.image;
+    if (containerRef === undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`container` é obrigatório em create_marking',
+      );
+    }
+    const containerId = this.item(containerRef, 'i');
     const markingId = crypto.randomUUID();
     const parentGiven = op.parent !== undefined;
     const parentId =
@@ -1259,19 +1353,19 @@ class Batch {
     if (annotation && typeRef !== null && component !== null) {
       const newAnnotationId = crypto.randomUUID();
       annotationId = newAnnotationId;
-      // Sem `rect` e sem `parent`: primeiro nível, no centro da imagem; com `rect`, a mais
+      // Sem `rect` e sem `parent`: primeiro nível, no centro do container; com `rect`, a mais
       // interna que o contém (como na app).
       const effectiveParent = parentGiven
         ? parentId
         : op.rect === undefined
           ? null
-          : (innermostContaining(p, imageId, op.rect)?.id ?? null);
+          : (innermostContaining(p, containerId, op.rect)?.id ?? null);
       const rect =
         op.rect ??
         componentPlacement(
           p,
           catalog,
-          { imageId, parentId: effectiveParent, ...typeRef },
+          { containerId: containerId, parentId: effectiveParent, ...typeRef },
           approximateMeasurer,
         );
       if (annotation.layer !== undefined) {
@@ -1290,7 +1384,7 @@ class Batch {
           {
             markingId,
             annotationId: newAnnotationId,
-            imageId,
+            containerId: containerId,
             parentId: effectiveParent,
             ...typeRef,
             rect,
@@ -1308,7 +1402,7 @@ class Batch {
     } else {
       project = createMarking(p, {
         id: markingId,
-        imageId,
+        containerId: containerId,
         rect: op.rect!,
         name: op.name ?? null,
       });
@@ -1483,7 +1577,7 @@ class Batch {
 }
 
 function kindLabel(kind: AliasTarget['kind']): string {
-  return kind === 'row' ? 'linha de tabela' : KIND_LABEL[kind];
+  return kind === 'row' ? 'uma linha de tabela' : KIND_LABEL[kind];
 }
 
 function fail(code: 'not-found', message: string): never {
@@ -1521,7 +1615,7 @@ export function changeCounts(before: Project, after: Project): Record<string, un
   return {
     specializations: count(specs(before), specs(after)),
     layers: count(before.layers, after.layers),
-    images: count(before.images, after.images),
+    containers: count(before.containers, after.containers),
     markings: count(before.markings, after.markings),
     annotations: count(before.annotations, after.annotations),
     platformRepos: count(repos(before), repos(after)),

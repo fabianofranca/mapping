@@ -8,7 +8,7 @@ import { useEditorShortcuts } from '../../../src/app/useEditorShortcuts';
 import { ReviewPanel } from '../../../src/ui/review/ReviewPanel';
 import {
   addAnnotation,
-  addImage,
+  addContainer,
   addLayer,
   createMarking,
   createProject,
@@ -51,7 +51,7 @@ export function firstImport() {
     firstLayer: { id: 'L1', name: 'Camada 1', color: '#D32F2F' },
   });
   let after = addLayer(base, { id: 'L2', name: 'Eventos', color: '#1E88E5' });
-  after = addImage(after, {
+  after = addContainer(after, {
     id: 'I1',
     file: 'images/cadastro.webp',
     width: 800,
@@ -59,7 +59,7 @@ export function firstImport() {
   });
   after = createMarking(after, {
     id: 'M1',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 10, y: 10, width: 200, height: 100 },
     name: 'Formulário',
   });

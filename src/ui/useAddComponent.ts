@@ -29,7 +29,7 @@ export function useAddComponent(): AddComponent {
     const target = componentTarget(editor);
     if (!target) return false;
     const result = actions.addComponent({
-      imageId: target.imageId,
+      containerId: target.containerId,
       parentId: target.parentId,
       specId,
       typeId,
