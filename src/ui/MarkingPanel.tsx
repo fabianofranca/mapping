@@ -223,23 +223,22 @@ export function MarkingPanel({
               {parent ? markingLabel(parent) : t('marking.noParent')}
             </span>
           </Property>
-          {image === null && (
-            <Property
+          {/* Qualquer marcação pode virar flutuante: sai do container e passa ao canvas (decisão 10). */}
+          <Property
+            label={t('marking.floating')}
+            hint={t('marking.floatingHint')}
+            mark={ext?.mark(marking.id, 'floating')}
+            below={ext?.below(marking.id, 'floating')}
+          >
+            <Choice
+              checked={marking.floating}
               label={t('marking.floating')}
-              hint={t('marking.floatingHint')}
-              mark={ext?.mark(marking.id, 'floating')}
-              below={ext?.below(marking.id, 'floating')}
-            >
-              <Choice
-                checked={marking.floating}
-                label={t('marking.floating')}
-                disabled={readOnly}
-                onChange={(e) =>
-                  report(actions.setMarkingFloating(marking.id, e.currentTarget.checked))
-                }
-              />
-            </Property>
-          )}
+              disabled={readOnly}
+              onChange={(e) =>
+                report(actions.setMarkingFloating(marking.id, e.currentTarget.checked))
+              }
+            />
+          </Property>
           <Property label={t('marking.order')} hint={t('marking.orderHint')}>
             <div class="order-field">
               <span class="props-text order-field-value">

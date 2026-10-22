@@ -427,7 +427,11 @@
   cursor: pointer;
 }
 
-.crumb:hover {
+.crumb-static {
+  cursor: default;
+}
+
+.crumb:not(.crumb-static):hover {
   color: var(--color-text);
   background: var(--color-hover);
 }

@@ -1,13 +1,15 @@
 // Gestos de arrasto em andamento e como cada intenção começa um. Sem DOM nem
 // Konva: o `PointerInput` guarda o gesto e o alimenta com os eventos.
 import {
-  markingRectLimits,
+  ancestorsOf,
   projectIndex,
+  spaceOf,
   type Placement,
   type Project,
   type ProjectContainer,
   type Rect,
 } from '../../model';
+import { absorbCandidates, type AbsorbCandidate } from '../containment';
 import type { Draft } from '../frame';
 import type { Corner } from '../imageGeometry';
 import { canvasToImagePixel, rectFromPoints, type RectLimits } from '../markingGeometry';
@@ -43,23 +45,33 @@ export type Gesture =
       readonly pointerId: number;
       readonly markingId: string;
       readonly startCanvas: Point;
-      /** Escala da imagem: converte o deslocamento do canvas em pixels. */
+      /** Escala do espaço da marcação: converte o deslocamento do canvas em unidades dele. */
       readonly scale: number;
+      /** Último deslocamento mostrado na prévia (unidades do espaço da marcação, inteiras). */
+      dx: number;
+      dy: number;
     }
   | {
       readonly kind: 'resize-marking';
       readonly pointerId: number;
       readonly markingId: string;
       readonly corner: Corner;
+      /** Posição do espaço da marcação: a do container ou a identidade, no canvas. */
       readonly placement: Placement;
       readonly startRect: Rect;
       readonly limits: RectLimits;
+      /** Itens do espaço que o redimensionamento pode absorver ao soltar. */
+      readonly candidates: readonly AbsorbCandidate[];
     }
   | {
       readonly kind: 'draw';
       readonly pointerId: number;
-      readonly image: ProjectContainer;
+      /** Container em que o desenho começou; `null` = no vazio, desenho no canvas. */
+      readonly image: ProjectContainer | null;
+      /** Onde começou, no espaço do desenho (pixels da imagem ou unidades do canvas). */
       readonly startPixel: Point;
+      /** Itens do espaço que o desenho pode absorver ao soltar. */
+      readonly candidates: readonly AbsorbCandidate[];
     }
   /** Arrasto do mouse sobre o item trancado: não faz nada até soltar (cursor "não permitido"). */
   | { readonly kind: 'blocked'; readonly pointerId: number }
@@ -106,13 +118,22 @@ export function startGesture(
   const index = projectIndex(project);
 
   if (intent.kind === 'draw') {
-    const image = index.containers.get(intent.containerId);
-    if (!image) return null;
-    const startPixel = canvasToImagePixel(image.placement, startCanvas);
+    const image =
+      intent.containerId === null
+        ? null
+        : (index.containers.get(intent.containerId) ?? null);
+    if (intent.containerId !== null && !image) return null;
+    const startPixel = image ? canvasToImagePixel(image.placement, startCanvas) : startCanvas;
     return {
-      gesture: { kind: 'draw', pointerId, image, startPixel },
+      gesture: {
+        kind: 'draw',
+        pointerId,
+        image,
+        startPixel,
+        candidates: absorbCandidates(project, image?.id ?? null, new Set()),
+      },
       draft: {
-        containerId: image.id,
+        containerId: image?.id ?? null,
         rect: rectFromPoints(startPixel, startPixel, image),
       },
     };
@@ -141,9 +162,11 @@ export function startGesture(
   }
 
   const marking = index.markings.get(intent.markingId);
-  const image = marking && index.containers.get(marking.containerId);
-  if (!marking || !image) return null;
-  const limits = markingRectLimits(project, marking.id);
+  if (!marking) return null;
+  if (marking.containerId !== null && !index.containers.has(marking.containerId)) {
+    return null;
+  }
+  const space = spaceOf(project, marking);
   if (!beginGesture()) return null;
   const gesture: Gesture =
     intent.kind === 'move-marking'
@@ -152,16 +175,24 @@ export function startGesture(
           pointerId,
           markingId: marking.id,
           startCanvas,
-          scale: image.placement.scale,
+          scale: space.placement.scale,
+          dx: 0,
+          dy: 0,
         }
       : {
           kind: 'resize-marking',
           pointerId,
           markingId: marking.id,
           corner: intent.corner,
-          placement: image.placement,
+          placement: space.placement,
           startRect: marking.rect,
-          limits,
+          limits: { outer: space.bounds },
+          // Absorve o que cruza o retângulo, menos ela mesma e os ancestrais (que a contêm).
+          candidates: absorbCandidates(
+            project,
+            marking.containerId,
+            new Set([marking.id, ...ancestorsOf(project, marking.id).map((a) => a.id)]),
+          ),
         };
   return { gesture, draft: null };
 }

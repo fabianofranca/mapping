@@ -69,6 +69,18 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-select': '#4d8dff',
   'cv-invalid': '#ff6b6b',
   'cv-warning': '#ffc247',
+  /**
+   * Borda tracejada da marcação do canvas (v13). Fica sobre o fundo do canvas e sobre as
+   * fotos: um violeta que passa de 3:1 sobre `color-canvas-bg` nos dois temas.
+   */
+  'cv-canvas-marking': { light: '#5a3fc0', dark: '#b9a8ff' },
+  /**
+   * Destaque da absorção (ao desenhar ou redimensionar, o que será envolvido ao soltar):
+   * traço e preenchimento translúcido, iguais nos dois temas (o verde passa de 3:1 sobre
+   * `color-canvas-bg` claro e escuro).
+   */
+  'cv-absorb': '#0a8a5c',
+  'cv-absorb-fill': 'rgba(10, 138, 92, 0.2)',
   'cv-name-tag': 'var(--cv-select)',
   /** Texto da etiqueta do nome (≥ 4,5:1 sobre `cv-name-tag`); não está no DS 2.0. */
   'cv-name-tag-text': '#0b1220',

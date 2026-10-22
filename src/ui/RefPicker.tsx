@@ -46,7 +46,9 @@ function groupTargets(project: Project, targets: readonly RefTarget[]): TargetGr
     if (!group) {
       const marking = index.markings.get(target.annotation.markingId);
       const image =
-        marking?.containerId != null ? index.containers.get(marking.containerId) : undefined;
+        marking?.containerId != null
+          ? index.containers.get(marking.containerId)
+          : undefined;
       const context = [
         image ? imageLabel(image) : marking ? t('canvas.name') : '',
         marking ? markingPath(project, marking) : '',

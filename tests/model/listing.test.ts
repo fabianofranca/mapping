@@ -133,7 +133,7 @@ describe('lista de incompletas', () => {
     let q = createMarking(p, {
       id: 'C1',
       containerId: null,
-      rect: { x: 0, y: 0, width: 900, height: 700 },
+      rect: { x: -50, y: -50, width: 900, height: 700 },
     });
     q = addAnnotation(q, { id: 'AC', markingId: 'C1', layerId: 'L1' });
     const list = buildIncompleteList(

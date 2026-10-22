@@ -113,6 +113,11 @@ export interface EditorDerived {
   readonly componentMinSizes: ReadonlySignal<
     ReadonlyMap<string, { readonly width: number; readonly height: number }>
   >;
+  /**
+   * Marcações flutuantes do projeto à vista (v13): desenhadas acima de tudo. O mesmo conjunto
+   * enquanto nenhuma muda, para o canvas não refazer a camada de componentes à toa.
+   */
+  readonly floatingMarkings: ReadonlySignal<ReadonlySet<string>>;
   /** Tipos com componente das especializações aplicadas, para a paleta. */
   readonly componentTypes: ReadonlySignal<readonly ComponentType[]>;
   /** Avisos do desenho de cada marcação que tem algum (Diagnóstico). */
@@ -310,6 +315,17 @@ export function createEditorDerived(
     return result;
   });
 
+  let lastFloating: ReadonlySet<string> = NO_DRAWN;
+  const floatingMarkings = computed((): ReadonlySet<string> => {
+    const next = new Set<string>();
+    for (const m of project.value?.markings ?? []) if (m.floating) next.add(m.id);
+    if (next.size === lastFloating.size && [...next].every((id) => lastFloating.has(id))) {
+      return lastFloating;
+    }
+    lastFloating = next.size === 0 ? NO_DRAWN : next;
+    return lastFloating;
+  });
+
   let lastDrawn: ReadonlySet<string> = NO_DRAWN;
   const drawnMarkings = computed(() => {
     const next = drawn.value;
@@ -447,6 +463,7 @@ export function createEditorDerived(
     incompleteCount,
     catalog: components.catalog,
     componentScenes: scenes,
+    floatingMarkings,
     drawingsOf,
     drawnMarkings,
     componentMinSizes,

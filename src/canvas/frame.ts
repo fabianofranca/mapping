@@ -1,6 +1,6 @@
 // Entradas de um quadro do canvas e o estado de interação que a entrada de
 // ponteiro escreve e os renderers leem. Sem Konva: só tipos e funções puras.
-import type { Signal } from '@preact/signals';
+import { signal, type Signal } from '@preact/signals';
 import type {
   ComponentDrawings,
   Layer,
@@ -33,9 +33,12 @@ export interface HoverLock {
   readonly id: string;
 }
 
-/** Retângulo sendo desenhado (modo Desenhar), em pixels da imagem. */
+/**
+ * Retângulo sendo desenhado (modo Desenhar): em pixels do container, ou em unidades do canvas
+ * (`containerId` nulo) quando o desenho começou no vazio.
+ */
 export interface Draft {
-  readonly containerId: string;
+  readonly containerId: string | null;
   readonly rect: Rect;
 }
 
@@ -50,6 +53,28 @@ export interface InteractionState {
    * mouse está fora delas. Só é escrito quando muda e só enquanto há marcações desenhadas.
    */
   readonly hoverMarking: Signal<string | null>;
+  /**
+   * Container que fica com a marcação arrastada se ela fosse solta agora (a contém ou a recebe
+   * pelo encaixe), quando é outro que o de origem: acende como o alvo de soltar um arquivo.
+   */
+  readonly moveTarget: Signal<string | null>;
+  /**
+   * Itens que seriam absorvidos se o desenho ou o redimensionamento terminasse agora (acendem),
+   * em unidades do canvas. Escrito só quando muda.
+   */
+  readonly absorb: Signal<readonly Rect[]>;
+}
+
+/** Sinais de interação vazios (o canvas e os testes montam o estado por aqui). */
+export function createInteractionState(): InteractionState {
+  return {
+    preview: signal<ImagePreview | null>(null),
+    draft: signal<Draft | null>(null),
+    hoverLock: signal<HoverLock | null>(null),
+    hoverMarking: signal<string | null>(null),
+    moveTarget: signal<string | null>(null),
+    absorb: signal<readonly Rect[]>([]),
+  };
 }
 
 /** Tudo o que um quadro desenha. Mudar qualquer item agenda um novo quadro. */
@@ -60,6 +85,8 @@ export interface Frame {
   readonly preview: ImagePreview | null;
   readonly draft: Draft | null;
   readonly dropTarget: DropTarget;
+  /** Itens que o desenho ou o redimensionamento em andamento absorveria (canvas). */
+  readonly absorb: readonly Rect[];
   readonly hoverLock: HoverLock | null;
   /** Marcação desenhada sob o mouse (a borda dela aparece); `null` se nenhuma. */
   readonly hoverMarking: string | null;
@@ -80,6 +107,8 @@ export interface Frame {
   readonly drawings: ComponentDrawings;
   /** Marcações cujo desenho está visível (têm borda só em hover e seleção, e sem cartão de texto). */
   readonly drawn: ReadonlySet<string>;
+  /** Marcações flutuantes do projeto à vista: o desenho delas fica acima de tudo. */
+  readonly floating: ReadonlySet<string>;
   /** Marcas da revisão de uma proposta (etapa 4); `null` fora da revisão. */
   readonly review: ReviewCanvas | null;
 }
@@ -96,7 +125,7 @@ export function sameFrame(
 /** O que muda o desenho das imagens (o deslocamento do viewport não muda). */
 export const IMAGE_KEYS = ['project', 'bitmaps', 'preview', 'tokens', 'locale'] as const;
 /** O que muda a camada de componentes (as posições das imagens também, comparadas à parte). */
-export const COMPONENT_KEYS = ['drawings', 'drawn', 'tokens'] as const;
+export const COMPONENT_KEYS = ['drawings', 'drawn', 'floating', 'tokens'] as const;
 /** O que muda as sobreposições (seleção, alças, rascunho, alvo de soltar). */
 export const OVERLAY_KEYS = [
   'project',
@@ -104,6 +133,7 @@ export const OVERLAY_KEYS = [
   'preview',
   'draft',
   'dropTarget',
+  'absorb',
   'hoverLock',
   'tokens',
   'selection',

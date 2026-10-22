@@ -130,13 +130,43 @@ describe('paleta da Biblioteca', () => {
     expect(harness.project().markings.at(-1)?.containerId).toBe('I1');
   });
 
-  it('sem tela sob o centro nem seleção, o botão fica desabilitado com a dica', async () => {
+  it('sem tela sob o centro nem seleção, Adicionar cria no canvas e o rótulo diz o destino', async () => {
     const harness = await libraryHarness();
     harness.canvas.viewportCenter.mockReturnValue({ x: -5000, y: -5000 });
-    renderLibrary(harness);
+    harness.ui.selection.value = null;
+    const { user } = renderLibrary(harness);
     const button = addButton('Button');
-    expect(button.disabled).toBe(true);
-    expect(button.title).toBe(t('library.noScreen'));
+    expect(button.disabled).toBe(false);
+    expect(button.textContent).toBe(t('library.addToCanvas'));
+    await user.click(button);
+    const created = harness.project().markings.at(-1);
+    expect(created?.containerId).toBeNull();
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
+  });
+
+  it('o rótulo mostra a tela de destino quando há container sob o centro', async () => {
+    const harness = await libraryHarness();
+    harness.ui.selection.value = null;
+    renderLibrary(harness);
+    const image = harness.project().containers.find((i) => i.id === 'I1');
+    expect(addButton('Button').textContent).toBe(
+      t('library.addToScreen', { name: image?.name ?? image?.file ?? '' }),
+    );
+  });
+
+  it('seleção numa marcação do canvas sem slot: adiciona no canvas', async () => {
+    const harness = await libraryHarness();
+    const placed = harness.actions.createMarking(null, {
+      x: -400,
+      y: -400,
+      width: 300,
+      height: 200,
+    });
+    expect(placed.ok).toBe(true);
+    if (!placed.ok) return;
+    harness.ui.selection.value = { kind: 'marking', id: placed.value };
+    renderLibrary(harness);
+    expect(addButton('Button').textContent).toBe(t('library.addToCanvas'));
   });
 
   it('com a tela do centro fora de vista, a imagem selecionada serve (sem centro)', async () => {
