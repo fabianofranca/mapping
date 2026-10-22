@@ -383,6 +383,20 @@ export class PointerInput {
         // arredondados, ou unidades do canvas): um ponto novo (`mid`) entra na posição `index`.
         const at = fromCanvasPoint(g.placement, viewport.toCanvas(p));
         const point = { x: Math.round(at.x), y: Math.round(at.y) };
+        if (g.mode === 'segment') {
+          // O segmento anda em paralelo: só a coordenada perpendicular a ele segue o ponteiro.
+          actions.previewArrowRoute(
+            g.arrowId,
+            g.base.map((q, i) =>
+              i !== g.index
+                ? q
+                : g.axis === 'x'
+                  ? { x: point.x, y: q.y }
+                  : { x: q.x, y: point.y },
+            ),
+          );
+          return;
+        }
         actions.previewArrowRoute(
           g.arrowId,
           g.mode === 'mid'
@@ -730,7 +744,8 @@ export class PointerInput {
 
   /**
    * Clique duplo num ponto de passagem da seta `arrowId`: remove o ponto (uma entrada) e deixa a
-   * seta selecionada (o segundo toque pode tê-la trocado). Fora de um ponto, ou com a seta
+   * seta selecionada (o segundo toque pode tê-la trocado). Num segmento do meio de uma seta
+   * `elbow`, volta à rota padrão (`points` vazio). Fora de um ponto ou segmento, ou com a seta
    * trancada ou o projeto somente leitura, não faz nada.
    */
   private removeWaypointAt(e: MouseEvent, project: Project, arrowId: string): void {
@@ -744,10 +759,10 @@ export class PointerInput {
       viewport.toCanvas(viewport.screenPoint(e)),
       viewport.scale,
     );
-    if (handle?.kind !== 'point') return;
+    if (handle?.kind !== 'point' && handle?.kind !== 'segment') return;
     const result = actions.setArrowRoute(
       arrowId,
-      arrow.points.filter((_, i) => i !== handle.index),
+      handle.kind === 'segment' ? [] : arrow.points.filter((_, i) => i !== handle.index),
     );
     if (result.ok) ui.selection.value = { kind: 'arrow', id: arrowId };
   }

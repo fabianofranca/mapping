@@ -17,7 +17,7 @@ import {
   type Rect,
 } from '../../model';
 import { existingItems, type SelectionItem } from '../../store/ui';
-import { arrowShape, type ArrowShape } from '../arrowGeometry';
+import { arrowShape, elbowLanePoints, type ArrowShape } from '../arrowGeometry';
 import { absorbCandidates, type AbsorbCandidate } from '../containment';
 import type { Draft } from '../frame';
 import type { Corner } from '../imageGeometry';
@@ -109,14 +109,18 @@ export type Gesture =
     }
   /**
    * Mover um ponto de passagem (`mode` `point`, `index` em `points`) ou criar um no meio de um
-   * trecho (`mode` `mid`, `index` = onde entra), no espaço dos pontos (`placement`).
+   * trecho (`mode` `mid`, `index` = onde entra), no espaço dos pontos (`placement`). No `elbow`,
+   * mover em paralelo um segmento do meio (`mode` `segment`, `index` = a pista, `axis` = a
+   * coordenada do ponto que o ponteiro muda; `base` já traz um ponto por pista).
    */
   | {
       readonly kind: 'arrow-route';
       readonly pointerId: number;
       readonly arrowId: string;
-      readonly mode: 'point' | 'mid';
+      readonly mode: 'point' | 'mid' | 'segment';
       readonly index: number;
+      /** Só no `segment`: a coordenada do espaço dos pontos que o ponteiro muda. */
+      readonly axis: 'x' | 'y' | null;
       /** Os pontos de passagem de antes do gesto. */
       readonly base: readonly ArrowPoint[];
       /** Posição do espaço dos pontos: a do container ou a identidade, no canvas. */
@@ -246,6 +250,24 @@ export function startGesture(
       if (!shape || !beginGesture()) return null;
       return { gesture: arrowEndGesture(pointerId, shape, handle.end), draft: null };
     }
+    const { placement } = arrowPointsSpace(project, arrow);
+    if (handle.kind === 'segment') {
+      const shape = arrowShape(project, arrow);
+      if (!shape || !beginGesture()) return null;
+      return {
+        gesture: {
+          kind: 'arrow-route',
+          pointerId,
+          arrowId: arrow.id,
+          mode: 'segment',
+          index: handle.index,
+          axis: handle.axis,
+          base: elbowLanePoints(shape, placement),
+          placement,
+        },
+        draft: null,
+      };
+    }
     if (!beginGesture()) return null;
     return {
       gesture: {
@@ -254,8 +276,9 @@ export function startGesture(
         arrowId: arrow.id,
         mode: handle.kind,
         index: handle.index,
+        axis: null,
         base: arrow.points,
-        placement: arrowPointsSpace(project, arrow).placement,
+        placement,
       },
       draft: null,
     };

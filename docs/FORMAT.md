@@ -775,6 +775,17 @@ lado é o da caixa voltado para o ponto seguinte (o primeiro ponto de passagem, 
 o último ponto de passagem ou o centro da origem), escolhido pelo eixo dominante do vetor do centro ao alvo (empate:
 horizontal). A rota desenhada é âncora de saída, pontos de passagem e âncora de chegada, em unidades do canvas.
 
+**Os `points` no canto (`elbow`).** O traço do canto só tem trechos horizontais e verticais, sai perpendicular ao
+lado da origem e chega perpendicular ao lado do destino (sem desvio de obstáculos). Ali **cada ponto de `points`
+fixa um segmento do meio** do traço, na ordem do traço, e só conta a coordenada perpendicular ao segmento (o `x` de
+um segmento vertical, o `y` de um horizontal; a outra é ignorada, e a app grava nela o meio do segmento). Mover uma
+marcação estica só o primeiro e o último segmento; os do meio ficam parados. Os `points` só valem se a quantidade
+casa com os lados: ímpar quando o primeiro e o último segmento são paralelos (os dois horizontais ou os dois
+verticais), par quando são perpendiculares; do contrário, e com `points` vazio, vale a rota padrão (a mais curta, com
+um trecho mínimo de saída e de chegada), que segue as marcações. O lado automático do canto olha o centro da outra
+marcação, nunca os pontos. Arrastar um segmento do meio o move em paralelo (uma entrada no histórico) e clicar duas
+vezes nele volta à rota padrão.
+
 **Fora da árvore de pertencimento.** A seta não tem `rect`, container nem pai, não é pai nem filha, nenhum arrasto
 a carrega e `get_marking_image` não a recorta. O assentar só mexe nela para apagar os `points` de uma ponta que
 trocou de espaço.

@@ -4,13 +4,16 @@
 // toque entram em px de tela e são divididas pelo zoom.
 import {
   arrowRoute,
+  fromCanvasPoint,
   projectIndex,
   type Arrow,
   type ArrowEnd,
+  type ArrowPoint,
   type ArrowRoute,
   type ArrowSide,
   type Marking,
   type MarkingVisibility,
+  type Placement,
   type Project,
   type ProjectContainer,
   type Rect,
@@ -329,17 +332,27 @@ export function arrowsAt(
 
 /**
  * Uma alça da seta selecionada: a ponta (`end`, arrastar até outra marcação ou outro lado), um
- * ponto de passagem (`point`, `index` em `arrow.points`: mover; clique duplo remove) ou o meio de
- * um trecho (`mid`, `index` = onde o ponto novo entra em `arrow.points`: arrastar o cria).
+ * ponto de passagem (`point`, `index` em `arrow.points`: mover; clique duplo remove), o meio de
+ * um trecho (`mid`, `index` = onde o ponto novo entra em `arrow.points`: arrastar o cria) ou, só
+ * no `elbow`, um segmento do meio (`segment`, `index` = a pista em `arrow.points` e `route.lanes`;
+ * `axis` = a coordenada que ele fixa: arrastar o move em paralelo, e o clique duplo volta à rota
+ * padrão). O `elbow` não tem `point` nem `mid`: `points` ali são os segmentos.
  */
 export type ArrowHandle =
   | { readonly kind: 'end'; readonly end: ArrowEnd; readonly at: Point }
   | { readonly kind: 'point'; readonly index: number; readonly at: Point }
-  | { readonly kind: 'mid'; readonly index: number; readonly at: Point };
+  | { readonly kind: 'mid'; readonly index: number; readonly at: Point }
+  | {
+      readonly kind: 'segment';
+      readonly index: number;
+      readonly axis: 'x' | 'y';
+      readonly at: Point;
+    };
 
 /**
  * As alças da seta, na ordem de prioridade do toque: as duas pontas, os pontos de passagem, os
- * meios dos trechos (só dos que têm `ARROW_MID_HANDLE_MIN` px de tela ou mais).
+ * meios dos trechos (só dos que têm `ARROW_MID_HANDLE_MIN` px de tela ou mais). No `elbow`, as
+ * pontas e o meio de cada segmento do meio (com o mesmo comprimento mínimo).
  */
 export function arrowHandles(shape: ArrowShape, zoom: number): ArrowHandle[] {
   const points = shape.route.points;
@@ -351,6 +364,21 @@ export function arrowHandles(shape: ArrowShape, zoom: number): ArrowHandle[] {
     { kind: 'end', end: 'from', at: first },
     { kind: 'end', end: 'to', at: last },
   );
+  if (shape.arrow.style === 'elbow') {
+    shape.route.lanes.forEach((lane, index) => {
+      const a = points[index + 1] as Point;
+      const b = points[index + 2] as Point;
+      if (dist(a, b) * zoom >= ARROW_MID_HANDLE_MIN) {
+        handles.push({
+          kind: 'segment',
+          index,
+          axis: lane.axis,
+          at: shape.mids[index + 1] as Point,
+        });
+      }
+    });
+    return handles;
+  }
   for (let i = 1; i < points.length - 1; i++) {
     handles.push({ kind: 'point', index: i - 1, at: points[i] as Point });
   }
@@ -361,6 +389,47 @@ export function arrowHandles(shape: ArrowShape, zoom: number): ArrowHandle[] {
       handles.push({ kind: 'mid', index: i, at });
   });
   return handles;
+}
+
+/**
+ * A alça do segmento do meio de uma seta `elbow` sob `c`: o segmento inteiro pega o toque (não só
+ * a alça do meio), o mais perto primeiro; segmento de comprimento zero não pega.
+ */
+function segmentHandleAt(shape: ArrowShape, c: Point, zoom: number): ArrowHandle | null {
+  const points = shape.route.points;
+  const reach = ARROW_HIT_TOLERANCE / zoom;
+  let best: ArrowHandle | null = null;
+  let bestDistance = Infinity;
+  shape.route.lanes.forEach((lane, index) => {
+    const a = points[index + 1] as Point;
+    const b = points[index + 2] as Point;
+    if (a.x === b.x && a.y === b.y) return;
+    const distance = distanceToSegment(c, a, b);
+    if (distance <= reach && distance < bestDistance) {
+      best = {
+        kind: 'segment',
+        index,
+        axis: lane.axis,
+        at: shape.mids[index + 1] as Point,
+      };
+      bestDistance = distance;
+    }
+  });
+  return best;
+}
+
+/**
+ * Os pontos de passagem de uma seta `elbow` com uma pista por segmento do meio, para o gesto que
+ * move um segmento: os gravados, se casam com a rota (`arrow.points`), ou o meio de cada segmento
+ * da rota padrão, no espaço dos pontos (`placement`), arredondado para o pixel.
+ */
+export function elbowLanePoints(shape: ArrowShape, placement: Placement): ArrowPoint[] {
+  const { arrow, route } = shape;
+  if (arrow.points.length === route.lanes.length) return [...arrow.points];
+  return route.lanes.map((_, index) => {
+    const at = fromCanvasPoint(placement, shape.mids[index + 1] as Point);
+    return { x: Math.round(at.x), y: Math.round(at.y) };
+  });
 }
 
 /** A alça sob `c`: a primeira da ordem de prioridade, e entre as do mesmo tipo a mais perto. */
@@ -381,6 +450,7 @@ export function arrowHandleAt(
       bestDistance = distance;
     }
   }
+  if (!best && shape.arrow.style === 'elbow') return segmentHandleAt(shape, c, zoom);
   return best;
 }
 
@@ -484,6 +554,8 @@ export function flatPoints(path: readonly Point[]): number[] {
 export interface ArrowStrokes {
   /** Lista plana `[x0, y0, x1, y1, …]` do traço de cada seta, menos o trecho da ponta. */
   readonly bodies: readonly (readonly number[])[];
+  /** O mesmo para as setas `elbow`, que o desenho pinta com cantos vivos (junção em esquadro). */
+  readonly corners: readonly (readonly number[])[];
   /** Triângulo de cada ponta, lista plana de três pontos. */
   readonly heads: readonly (readonly number[])[];
 }
@@ -517,16 +589,18 @@ export function arrowStrokes(
 ): ArrowStrokes {
   const length = headPx / zoom;
   const bodies: number[][] = [];
+  const corners: number[][] = [];
   const heads: number[][] = [];
   for (const shape of shapes) {
     const tip = shape.path[shape.path.length - 1];
     if (!tip) continue;
-    bodies.push(
-      flatPoints(
-        thinPath(trimPathEnd(shape.path, length * HEAD_OVERLAP), DRAW_SPACING / zoom),
-      ),
+    const trimmed = trimPathEnd(shape.path, length * HEAD_OVERLAP);
+    // O canto não é afinado: tirar um ponto perto do outro comeria a dobra de um trecho curto.
+    const flat = flatPoints(
+      shape.arrow.style === 'elbow' ? trimmed : thinPath(trimmed, DRAW_SPACING / zoom),
     );
+    (shape.arrow.style === 'elbow' ? corners : bodies).push(flat);
     heads.push(headPoints(tip, headDirection(shape.path), length));
   }
-  return { bodies, heads };
+  return { bodies, corners, heads };
 }

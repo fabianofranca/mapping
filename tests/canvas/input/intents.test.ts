@@ -564,6 +564,26 @@ describe('setas no toque e nas alças', () => {
     expect(intentAt(context, { x: 560, y: 285 })).toEqual({ kind: 'pan' });
   });
 
+  it('seta de canto selecionada: as pontas e o segmento do meio (inteiro) são alças', () => {
+    const p = setArrowStyle(base(), 'r1', 'elbow');
+    // r1 em canto: (400,250) → (500,250) → (500,700) → (600,700).
+    const context = arrowCtx(p, { selection: { kind: 'arrow', id: 'r1' } });
+    expect(intentAt(context, { x: 402, y: 251 })).toMatchObject({
+      handle: { kind: 'end', end: 'from' },
+    });
+    expect(intentAt(context, { x: 500, y: 475 })).toEqual({
+      kind: 'arrow-handle',
+      arrowId: 'r1',
+      handle: { kind: 'segment', index: 0, axis: 'x', at: { x: 500, y: 475 } },
+    });
+    expect(intentAt(context, { x: 497, y: 320 })).toMatchObject({
+      handle: { kind: 'segment', index: 0 },
+    });
+    // O primeiro trecho não é um segmento do meio: arrastar ali faz pan.
+    expect(intentAt(context, { x: 450, y: 250 })).toEqual({ kind: 'pan' });
+    expect(cursorFor(intentAt(context, { x: 500, y: 475 }))).toBe('ew-resize');
+  });
+
   it('seta trancada: arrastar o traço é `locked`, sem alças; fora do traço, pan', () => {
     const p = withArrow(base(), 'r2', 'a3', 'b2', { locked: true });
     const context = arrowCtx(p, { selection: { kind: 'arrow', id: 'r2' } });

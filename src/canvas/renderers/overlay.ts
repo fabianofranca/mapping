@@ -517,7 +517,8 @@ export class OverlayRenderer {
         return;
       }
       // A ponta é cheia na cor da seleção; o ponto de passagem é vazado; o meio do trecho é
-      // menor e esmaecido (só vira ponto quando arrastado).
+      // menor e esmaecido (só vira ponto quando arrastado); o segmento do canto é vazado e
+      // um pouco menor que o ponto de passagem.
       const common = {
         visible: true,
         x: handle.at.x,
@@ -532,10 +533,10 @@ export class OverlayRenderer {
           stroke: tokens.line,
           opacity: OPAQUE,
         });
-      } else if (handle.kind === 'point') {
+      } else if (handle.kind === 'point' || handle.kind === 'segment') {
         circle.setAttrs({
           ...common,
-          radius,
+          radius: handle.kind === 'point' ? radius : radius * 0.85,
           fill: tokens.line,
           stroke: tokens.arrow.select,
           opacity: OPAQUE,

@@ -4,6 +4,8 @@ import {
   ARROW_MID_HANDLE_MIN,
   arrowHandleAt,
   arrowHandles,
+  arrowStrokes,
+  elbowLanePoints,
   arrowShape,
   arrowsAt,
   curvePath,
@@ -20,7 +22,12 @@ import {
   trimPathEnd,
   visibleArrowShapes,
 } from '../../src/canvas/arrowGeometry';
-import { setArrowRoute, setArrowStyle, type Project } from '../../src/model';
+import {
+  createMarking,
+  setArrowRoute,
+  setArrowStyle,
+  type Project,
+} from '../../src/model';
 import { arrowProject, withArrow } from '../model/arrowFixtures';
 
 // r1: a1 (100,100,300,300) → a3 (600,600,200,200), as duas no container A (escala 1, em 0,0).
@@ -65,8 +72,23 @@ describe('traço', () => {
     ]);
     expect(shape.mids).toEqual([{ x: 500, y: 475 }]);
     expect(shape.bounds).toEqual({ x: 400, y: 250, width: 200, height: 450 });
+  });
+
+  it('canto: a polilinha ortogonal do roteador (Z com a pista no meio), meios por trecho', () => {
     const elbow = shapeOf(setArrowStyle(arrowProject(), 'r1', 'elbow'));
-    expect(elbow.path).toEqual(shape.path);
+    expect(elbow.path).toEqual([
+      { x: 400, y: 250 },
+      { x: 500, y: 250 },
+      { x: 500, y: 700 },
+      { x: 600, y: 700 },
+    ]);
+    expect(elbow.route.lanes).toEqual([{ axis: 'x', value: 500 }]);
+    expect(elbow.mids).toEqual([
+      { x: 450, y: 250 },
+      { x: 500, y: 475 },
+      { x: 550, y: 700 },
+    ]);
+    expect(elbow.bounds).toEqual({ x: 400, y: 250, width: 200, height: 450 });
   });
 
   it('curva: sai perpendicular ao lado, passa pelos pontos e termina na âncora', () => {
@@ -221,6 +243,97 @@ describe('toque', () => {
     // r3 passa a uma distância diferente do mesmo ponto: o de menor distância vem antes.
     const near = arrowsAt(visibleArrowShapes(q, NONE), { x: 500, y: 475 }, 1);
     expect(near.map((s) => s.arrow.id)).toContain('r1');
+  });
+});
+
+describe('alças do canto', () => {
+  // r1 em canto: (400,250) → (500,250) → (500,700) → (600,700); a pista é o trecho vertical.
+  const elbow = (points: { x: number; y: number }[] = []): Project =>
+    setArrowStyle(setArrowRoute(arrowProject(), 'r1', points), 'r1', 'elbow');
+
+  it('as pontas e o meio do segmento do meio; sem pontos de passagem nem meios soltos', () => {
+    const handles = arrowHandles(shapeOf(elbow()), 1);
+    expect(handles.map((h) => h.kind)).toEqual(['end', 'end', 'segment']);
+    expect(handles[0]).toMatchObject({ end: 'from', at: { x: 400, y: 250 } });
+    expect(handles[1]).toMatchObject({ end: 'to', at: { x: 600, y: 700 } });
+    expect(handles[2]).toEqual({
+      kind: 'segment',
+      index: 0,
+      axis: 'x',
+      at: { x: 500, y: 475 },
+    });
+  });
+
+  it('o segmento curto na tela não ganha a alça do meio, mas continua pegando o toque', () => {
+    const shape = shapeOf(elbow());
+    expect(arrowHandles(shape, (ARROW_MID_HANDLE_MIN - 1) / 450)).toHaveLength(2);
+    expect(arrowHandleAt(shape, { x: 503, y: 300 }, 1)).toMatchObject({
+      kind: 'segment',
+      index: 0,
+      axis: 'x',
+    });
+  });
+
+  it('o segmento inteiro pega o toque; a ponta tem prioridade; fora dele, nada', () => {
+    const shape = shapeOf(elbow());
+    expect(arrowHandleAt(shape, { x: 496, y: 600 }, 1)).toMatchObject({
+      kind: 'segment',
+    });
+    expect(arrowHandleAt(shape, { x: 402, y: 252 }, 1)).toMatchObject({
+      kind: 'end',
+      end: 'from',
+    });
+    // O primeiro e o último trecho não são segmentos do meio: sem alça.
+    expect(arrowHandleAt(shape, { x: 450, y: 250 }, 1)).toBeNull();
+    expect(arrowHandleAt(shape, { x: 520, y: 475 }, 1)).toBeNull();
+    // O alcance é em px de tela: com zoom 2 ele é a metade em unidades do canvas.
+    expect(arrowHandleAt(shape, { x: 500 + 5, y: 600 }, 2)).toBeNull();
+    expect(arrowHandleAt(shape, { x: 500 + 3, y: 600 }, 2)).not.toBeNull();
+  });
+
+  it('segmento de comprimento zero não pega o toque nem ganha alça', () => {
+    // a1 e z na mesma altura: o Z vira uma reta e a pista não tem comprimento.
+    const base = createMarking(arrowProject(), {
+      id: 'z',
+      containerId: null,
+      rect: { x: 800, y: 200, width: 100, height: 100 },
+    });
+    const shape = shapeOf(
+      setArrowStyle(withArrow(base, 'rz', 'a1', 'z'), 'rz', 'elbow'),
+      'rz',
+    );
+    expect(shape.route.lanes).toEqual([{ axis: 'x', value: 600 }]);
+    expect(arrowHandles(shape, 1).map((h) => h.kind)).toEqual(['end', 'end']);
+    expect(arrowHandleAt(shape, { x: 600, y: 250 }, 1)).toBeNull();
+  });
+
+  it('pontos de passagem do canto: os gravados quando casam, senão o meio de cada segmento', () => {
+    const container = { x: 0, y: 0, scale: 1 };
+    expect(elbowLanePoints(shapeOf(elbow()), container)).toEqual([{ x: 500, y: 475 }]);
+    const stored = [{ x: 520, y: 400 }];
+    expect(elbowLanePoints(shapeOf(elbow(stored)), container)).toEqual(stored);
+    // Uma quantidade que não casa com os lados é ignorada: a rota é a padrão.
+    const odd = elbow([
+      { x: 520, y: 400 },
+      { x: 530, y: 410 },
+    ]);
+    expect(elbowLanePoints(shapeOf(odd), container)).toEqual([{ x: 500, y: 475 }]);
+    // Num espaço escalado, o meio do segmento volta para os pixels do container.
+    expect(elbowLanePoints(shapeOf(elbow()), { x: 100, y: 50, scale: 2 })).toEqual([
+      { x: 200, y: 213 },
+    ]);
+  });
+
+  it('o desenho separa as setas de canto (cantos vivos) das demais', () => {
+    const mixed = visibleArrowShapes(
+      setArrowStyle(withArrow(arrowProject(), 'r2', 'a3', 'b2'), 'r2', 'elbow'),
+      NONE,
+    );
+    const strokes = arrowStrokes(mixed, 1, 10);
+    expect(strokes.bodies).toHaveLength(1); // a curva r1
+    expect(strokes.corners).toHaveLength(1); // o canto r2
+    // O canto não é afinado: todos os cantos da rota estão no traço.
+    expect((strokes.corners[0] as number[]).length).toBeGreaterThanOrEqual(8);
   });
 });
 

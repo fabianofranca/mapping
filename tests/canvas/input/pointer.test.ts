@@ -4,6 +4,7 @@ import { PointerInput } from '../../../src/canvas/input/pointer';
 import { ViewportController } from '../../../src/canvas/viewportController';
 import {
   addContainer,
+  arrowRoute,
   createMarking,
   projectIndex,
   setArrowRoute,
@@ -1566,6 +1567,107 @@ describe('PointerInput: setas (ME4)', () => {
       expect(undoAll(s)).toBe(1);
       expect(r1(s)?.points).toEqual([{ x: 700, y: 300 }]);
       s.cleanup();
+    });
+
+    describe('canto (elbow): arrastar um segmento', () => {
+      // r1 em canto: (400,250) → (500,250) → (500,700) → (600,700); a pista é o x = 500.
+      const elbowProject = (points: { x: number; y: number }[] = []) =>
+        setArrowStyle(setArrowRoute(arrowProject(), 'r1', points), 'r1', 'elbow');
+      const route = (s: ReturnType<typeof setup>) => {
+        const project = s.store.project.peek();
+        const arrow = r1(s);
+        if (!project || !arrow) throw new Error('seta');
+        return arrowRoute(project, arrow)?.points;
+      };
+
+      it('move o segmento em paralelo, mantém os ângulos retos e grava uma entrada', () => {
+        const s = setup(false, elbowProject());
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.fire('pointerdown', 500, 475);
+        s.fire('pointermove', 520, 470);
+        s.fire('pointermove', 560.4, 300);
+        // A prévia: só o x acompanha o ponteiro; o y do ponto fica no meio do segmento.
+        expect(r1(s)?.points).toEqual([{ x: 560, y: 475 }]);
+        expect(route(s)).toEqual([
+          { x: 400, y: 250 },
+          { x: 560, y: 250 },
+          { x: 560, y: 700 },
+          { x: 600, y: 700 },
+        ]);
+        expect(s.store.canUndo.value).toBe(false);
+        s.fire('pointerup', 560.4, 300);
+        expect(r1(s)?.points).toEqual([{ x: 560, y: 475 }]);
+        expect(undoAll(s)).toBe(1);
+        expect(r1(s)?.points).toEqual([]);
+        s.cleanup();
+      });
+
+      it('o segmento inteiro pega o arrasto, não só a alça do meio', () => {
+        const s = setup(false, elbowProject([{ x: 500, y: 475 }]));
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.drag([498, 640], [450, 640]);
+        expect(r1(s)?.points).toEqual([{ x: 450, y: 475 }]);
+        s.cleanup();
+      });
+
+      it('um primeiro trecho (que não é do meio) faz pan, sem mexer na rota', () => {
+        const s = setup(false, elbowProject());
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.drag([450, 250], [470, 280]);
+        expect(r1(s)?.points).toEqual([]);
+        expect(s.store.canUndo.value).toBe(false);
+        s.cleanup();
+      });
+
+      it('cursor de redimensionar no eixo do arrasto', () => {
+        const s = setup(false, elbowProject());
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.input.updateCursor({ x: 500, y: 600 });
+        expect(s.container.style.cursor).toBe('ew-resize');
+        s.cleanup();
+      });
+
+      it('clique duplo no segmento volta à rota padrão (uma entrada)', () => {
+        const s = setup(false, elbowProject([{ x: 560, y: 475 }]));
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.doubleClick(560, 600);
+        expect(r1(s)?.points).toEqual([]);
+        expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
+        expect(undoAll(s)).toBe(1);
+        expect(r1(s)?.points).toEqual([{ x: 560, y: 475 }]);
+        s.cleanup();
+      });
+
+      it('seta trancada e somente leitura: o segmento não se move', () => {
+        const ro = setup(true, elbowProject());
+        select(ro, { kind: 'arrow', id: 'r1' });
+        ro.drag([500, 600], [560, 600]);
+        expect(r1(ro)?.points).toEqual([]);
+        ro.cleanup();
+        const locked = setup(false, {
+          ...elbowProject(),
+          arrows: elbowProject().arrows.map((a) => ({ ...a, locked: true })),
+        });
+        select(locked, { kind: 'arrow', id: 'r1' });
+        locked.drag([500, 600], [560, 600]);
+        expect(r1(locked)?.points).toEqual([]);
+        expect(locked.store.canUndo.value).toBe(false);
+        locked.cleanup();
+      });
+
+      it('cancelar (Esc) volta os pontos', () => {
+        const s = setup(false, elbowProject());
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.fire('pointerdown', 500, 600);
+        s.fire('pointermove', 520, 600);
+        s.fire('pointermove', 580, 600);
+        expect(r1(s)?.points).toHaveLength(1);
+        expect(s.input.cancelInteraction()).toBe(true);
+        expect(r1(s)?.points).toEqual([]);
+        s.fire('pointerup', 580, 600);
+        expect(s.store.canUndo.value).toBe(false);
+        s.cleanup();
+      });
     });
 
     it('o ponto novo vai para a posição certa entre os pontos que já existem', () => {

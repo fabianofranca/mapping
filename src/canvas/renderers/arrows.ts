@@ -110,13 +110,8 @@ export class ArrowRenderer {
     const { arrow: style } = tokens;
     const strokes = this.strokesFor(style.head);
     painter.setAttr('lineCap', 'round');
-    painter.setAttr('lineJoin', 'round');
     // Halo: o traço mais largo e a ponta com um contorno, na cor do halo.
-    painter.beginPath();
-    for (const body of strokes.bodies) polyline(painter, body, false);
-    painter.setAttr('strokeStyle', tokens.halo);
-    painter.setAttr('lineWidth', (style.width + 2 * HALO_WIDTH) / zoom);
-    painter.stroke();
+    strokeBodies(painter, strokes, tokens.halo, (style.width + 2 * HALO_WIDTH) / zoom);
     painter.beginPath();
     for (const head of strokes.heads) polyline(painter, head, true);
     painter.setAttr('fillStyle', tokens.halo);
@@ -125,11 +120,7 @@ export class ArrowRenderer {
     painter.fill();
     painter.stroke();
     // Traço e ponta na cor da seta.
-    painter.beginPath();
-    for (const body of strokes.bodies) polyline(painter, body, false);
-    painter.setAttr('strokeStyle', style.stroke);
-    painter.setAttr('lineWidth', style.width / zoom);
-    painter.stroke();
+    strokeBodies(painter, strokes, style.stroke, style.width / zoom);
     painter.beginPath();
     for (const head of strokes.heads) polyline(painter, head, true);
     painter.setAttr('fillStyle', style.stroke);
@@ -225,6 +216,33 @@ export class ArrowRenderer {
     node.zoom = zoom;
     node.tokens = tokens;
   }
+}
+
+/**
+ * Traça os corpos das setas numa cor e espessura: o traço com junção redonda (reta e curva) e,
+ * depois, o das setas `elbow` com junção em esquadro, para a dobra sair viva. Deixa a junção
+ * redonda ao fim (a das pontas).
+ */
+function strokeBodies(
+  painter: ArrowPainter,
+  strokes: ArrowStrokes,
+  color: string,
+  width: number,
+): void {
+  painter.setAttr('lineJoin', 'round');
+  painter.beginPath();
+  for (const body of strokes.bodies) polyline(painter, body, false);
+  painter.setAttr('strokeStyle', color);
+  painter.setAttr('lineWidth', width);
+  painter.stroke();
+  if (strokes.corners.length === 0) return;
+  painter.setAttr('lineJoin', 'miter');
+  painter.beginPath();
+  for (const body of strokes.corners) polyline(painter, body, false);
+  painter.setAttr('strokeStyle', color);
+  painter.setAttr('lineWidth', width);
+  painter.stroke();
+  painter.setAttr('lineJoin', 'round');
 }
 
 /** Acrescenta ao caminho a lista plana de pontos (`closed` fecha o triângulo da ponta). */

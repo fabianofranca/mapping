@@ -360,6 +360,9 @@ export function cursorFor(intent: Intent): string {
     case 'arrow-link':
       return 'crosshair';
     case 'arrow-handle':
+      if (intent.handle.kind === 'segment') {
+        return intent.handle.axis === 'x' ? 'ew-resize' : 'ns-resize';
+      }
       return intent.handle.kind === 'end' ? 'crosshair' : 'move';
     case 'pan':
       return '';

@@ -125,16 +125,123 @@ export function autoArrowSide(rect: Rect, target: ArrowPoint): ArrowSide {
   return dy >= 0 ? 'bottom' : 'top';
 }
 
+/**
+ * Um segmento do meio de uma seta `elbow` que a pessoa pode mover em paralelo ("pista"): `axis`
+ * é a coordenada que ele fixa (`x` num segmento vertical, `y` num horizontal) e `value` o valor
+ * dela, em unidades do canvas.
+ */
+export interface ElbowLane {
+  readonly axis: 'x' | 'y';
+  readonly value: number;
+}
+
 /** A polilinha da seta em unidades do canvas e os lados em que ela prende nas marcações. */
 export interface ArrowRoute {
   /** Âncora de saída, pontos de passagem (já no canvas) e âncora de chegada. */
   readonly points: readonly ArrowPoint[];
   readonly fromSide: ArrowSide;
   readonly toSide: ArrowSide;
+  /**
+   * Só no `elbow`: os segmentos do meio, na ordem do traço. A pista `j` é o trecho entre
+   * `points[j + 1]` e `points[j + 2]`. Vazio nos outros estilos e no canto de uma dobra só.
+   */
+  readonly lanes: readonly ElbowLane[];
 }
 
 function centerOf(rect: Rect): ArrowPoint {
   return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+}
+
+/** Trecho mínimo (unidades do canvas) que o canto percorre ao sair e ao chegar perpendicular ao lado. */
+export const ELBOW_STUB = 16;
+
+function sideNormal(side: ArrowSide): ArrowPoint {
+  switch (side) {
+    case 'top':
+      return { x: 0, y: -1 };
+    case 'bottom':
+      return { x: 0, y: 1 };
+    case 'left':
+      return { x: -1, y: 0 };
+    case 'right':
+      return { x: 1, y: 0 };
+  }
+}
+
+const transpose = (pt: ArrowPoint): ArrowPoint => ({ x: pt.y, y: pt.x });
+
+/**
+ * O roteador do canto (sem desvio de obstáculos): uma polilinha só de trechos horizontais e
+ * verticais, em unidades do canvas.
+ *
+ * O traço é uma sequência de segmentos que alternam de direção. O primeiro sai da âncora `a`
+ * perpendicular ao lado `fromSide` e o último chega na âncora `b` perpendicular ao `toSide`. Os
+ * segmentos do meio ("pistas") são o que `points` controla: **cada ponto de passagem fixa um
+ * segmento do meio**, na ordem do traço, e só conta a coordenada perpendicular ao segmento (o `x`
+ * num segmento vertical, o `y` num horizontal; a outra é ignorada, e o gesto grava ali o meio do
+ * segmento). Mover uma marcação então estica só o primeiro ou o último segmento.
+ *
+ * `points` só vale se a quantidade casa com os lados: ímpar quando o primeiro e o último segmento
+ * são paralelos (os dois horizontais ou os dois verticais), par quando são perpendiculares. Do
+ * contrário, e vazio, vale a rota padrão: a menor que sai e chega do lado certo, com um trecho
+ * mínimo de `ELBOW_STUB` (uma pista no Z ou no C, nenhuma no L, três ou duas quando os lados não
+ * deixam o caminho curto); ela segue as marcações.
+ */
+function elbowRoute(
+  a: ArrowPoint,
+  fromSide: ArrowSide,
+  b: ArrowPoint,
+  toSide: ArrowSide,
+  given: readonly ArrowPoint[],
+): { readonly points: ArrowPoint[]; readonly lanes: ElbowLane[] } {
+  // Trabalha com o primeiro segmento horizontal (transpõe x e y quando ele é vertical).
+  const swap = fromSide === 'top' || fromSide === 'bottom';
+  const f = (pt: ArrowPoint): ArrowPoint => (swap ? transpose(pt) : pt);
+  const A = f(a);
+  const B = f(b);
+  const sx = f(sideNormal(fromSide)).x;
+  const nb = f(sideNormal(toSide));
+  const parallel = nb.y === 0;
+  const axisOf = (j: number): 'x' | 'y' => ((j % 2 === 0) !== swap ? 'x' : 'y');
+
+  let values: number[];
+  if (given.length > 0 && given.length % 2 === (parallel ? 1 : 0)) {
+    values = given.map((pt, j) => pt[axisOf(j)]);
+  } else if (parallel) {
+    const tx = nb.x;
+    if (sx === tx) {
+      values = [
+        sx > 0 ? Math.max(A.x, B.x) + ELBOW_STUB : Math.min(A.x, B.x) - ELBOW_STUB,
+      ];
+    } else if ((B.x - A.x) * sx >= 2 * ELBOW_STUB) {
+      values = [(A.x + B.x) / 2];
+    } else {
+      values = [A.x + sx * ELBOW_STUB, (A.y + B.y) / 2, B.x + tx * ELBOW_STUB];
+    }
+  } else {
+    const ty = nb.y;
+    const direct = (B.x - A.x) * sx >= ELBOW_STUB && (A.y - B.y) * ty >= ELBOW_STUB;
+    values = direct ? [] : [A.x + sx * ELBOW_STUB, B.y + ty * ELBOW_STUB];
+  }
+
+  // Segmento i (1 a n): horizontal nos ímpares, vertical nos pares; `fixed` é a coordenada que ele
+  // fixa. Cada canto leva o `x` do vertical e o `y` do horizontal.
+  const n = values.length + 2;
+  const fixed = (i: number): number => {
+    if (i === 1) return A.y;
+    if (i === n) return parallel ? B.y : B.x;
+    return values[i - 2] as number;
+  };
+  const corners: ArrowPoint[] = [];
+  for (let i = 1; i < n; i++) {
+    corners.push(
+      i % 2 === 1 ? { x: fixed(i + 1), y: fixed(i) } : { x: fixed(i), y: fixed(i + 1) },
+    );
+  }
+  return {
+    points: [A, ...corners, B].map(f),
+    lanes: values.map((value, j) => ({ axis: axisOf(j), value })),
+  };
 }
 
 /**
@@ -144,9 +251,10 @@ function centerOf(rect: Rect): ArrowPoint {
  * para o ponto seguinte (o primeiro ponto de passagem, ou o centro da outra ponta; na chegada, o
  * último ponto de passagem ou o centro da origem). `null` se uma ponta não existe.
  *
- * `straight` e `curve` têm a mesma polilinha (a curva é só a suavização do desenho). Para o
- * `elbow` devolve, por ora, a mesma polilinha: o roteador de canto (saída perpendicular ao lado
- * e uma ou duas dobras) entra aqui, trocando `points` pelo caminho com dobras.
+ * `straight` e `curve` têm a mesma polilinha (a curva é só a suavização do desenho). O `elbow`
+ * troca a polilinha pelo caminho ortogonal de `elbowRoute`, em que os pontos de passagem são
+ * segmentos do meio; o lado automático dele olha só o centro da outra marcação (um ponto de
+ * passagem fixa só uma coordenada, não aponta para lugar nenhum).
  */
 export function arrowRoute(p: Project, arrow: Arrow): ArrowRoute | null {
   const markings = projectIndex(p).markings;
@@ -157,14 +265,16 @@ export function arrowRoute(p: Project, arrow: Arrow): ArrowRoute | null {
   const toRect = markingCanvasRectOf(p, to);
   const { placement } = arrowPointsSpace(p, arrow);
   const via = arrow.points.map((pt) => toCanvasPoint(placement, pt));
-  const fromSide = arrow.fromSide ?? autoArrowSide(fromRect, via[0] ?? centerOf(toRect));
+  const elbow = arrow.style === 'elbow';
+  const fromSide =
+    arrow.fromSide ?? autoArrowSide(fromRect, (!elbow && via[0]) || centerOf(toRect));
   const toSide =
-    arrow.toSide ?? autoArrowSide(toRect, via[via.length - 1] ?? centerOf(fromRect));
-  return {
-    points: [sideAnchor(fromRect, fromSide), ...via, sideAnchor(toRect, toSide)],
-    fromSide,
-    toSide,
-  };
+    arrow.toSide ??
+    autoArrowSide(toRect, (!elbow && via[via.length - 1]) || centerOf(fromRect));
+  const a = sideAnchor(fromRect, fromSide);
+  const b = sideAnchor(toRect, toSide);
+  if (elbow) return { ...elbowRoute(a, fromSide, b, toSide, via), fromSide, toSide };
+  return { points: [a, ...via, b], fromSide, toSide, lanes: [] };
 }
 
 // ---------------------------------------------------------------------------

@@ -142,9 +142,30 @@ describe('ArrowRenderer', () => {
     // Dois pontos na rota: o traço (um lineTo) e dois lineTo da ponta, em cada passagem.
     const lines = straight.paint().filter((c) => c[0] === 'lineTo').length;
     expect(lines).toBeLessThan(curvePoints);
+    // O canto tem quatro pontos na rota (três trechos): dois lineTo a mais que a reta por passagem.
     const elbow = setup(setArrowStyle(arrowProject(), 'r1', 'elbow'));
     elbow.render();
-    expect(elbow.paint().filter((c) => c[0] === 'lineTo').length).toBe(lines);
+    const elbowLines = elbow.paint().filter((c) => c[0] === 'lineTo').length;
+    expect(elbowLines).toBeGreaterThan(lines);
+    expect(elbowLines).toBeLessThan(curvePoints);
+  });
+
+  it('o canto é traçado com junção em esquadro (cantos vivos); a curva e a reta, redonda', () => {
+    const joins = (project: Project) => {
+      const { render, paint } = setup(project);
+      render();
+      return attr(paint(), 'lineJoin');
+    };
+    expect(joins(arrowProject())).toEqual(['round', 'round']);
+    // Halo e traço em esquadro, voltando à junção redonda para as pontas.
+    expect(joins(setArrowStyle(arrowProject(), 'r1', 'elbow'))).toEqual([
+      'round',
+      'miter',
+      'round',
+      'round',
+      'miter',
+      'round',
+    ]);
   });
 });
 

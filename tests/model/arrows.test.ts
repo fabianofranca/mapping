@@ -467,6 +467,7 @@ describe('arrowRoute: a polilinha em unidades do canvas', () => {
       ],
       fromSide: 'right',
       toSide: 'left',
+      lanes: [],
     });
   });
 
@@ -480,6 +481,7 @@ describe('arrowRoute: a polilinha em unidades do canvas', () => {
       ],
       fromSide: 'bottom',
       toSide: 'top',
+      lanes: [],
     });
   });
 
@@ -493,6 +495,7 @@ describe('arrowRoute: a polilinha em unidades do canvas', () => {
       ],
       fromSide: 'right',
       toSide: 'left',
+      lanes: [],
     });
   });
 
@@ -508,11 +511,13 @@ describe('arrowRoute: a polilinha em unidades do canvas', () => {
       ],
       fromSide: 'top',
       toSide: 'right',
+      lanes: [],
     });
     const half = withArrow(arrowBase(), 'r3', 'a1', 'a3', { toSide: 'bottom' });
     expect(arrowRoute(half, arrow(half, 'r3'))).toMatchObject({
       fromSide: 'right',
       toSide: 'bottom',
+      lanes: [],
     });
   });
 
@@ -531,6 +536,7 @@ describe('arrowRoute: a polilinha em unidades do canvas', () => {
       ],
       fromSide: 'right',
       toSide: 'top',
+      lanes: [],
     });
   });
 
