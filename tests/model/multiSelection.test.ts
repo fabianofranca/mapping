@@ -540,6 +540,15 @@ describe('canDeleteItems', () => {
     );
   });
 
+  it('trancada que sai junto com a mãe ou com o container selecionados não impede', () => {
+    const p = setMarkingLocked(multiProject(), 'a2', true);
+    // a2 é filha de a1 em A.
+    expect(canDeleteItems(p, [mark('a2')])).toBe(false);
+    expect(canDeleteItems(p, [mark('a1'), mark('a2')])).toBe(true);
+    expect(canDeleteItems(p, [img('A'), mark('a2')])).toBe(true);
+    expect(canDeleteItems(p, [img('B'), mark('a2')])).toBe(false);
+  });
+
   it('a trava de um ancestral é de geometria e não impede excluir', () => {
     const p = setMarkingLocked(multiProject(), 'a1', true);
     expect(canDeleteItems(p, [mark('a2')])).toBe(true);
@@ -602,7 +611,9 @@ describe('removeItems', () => {
   it('item trancado falha sem excluir nada; inexistentes são ignorados', () => {
     const locked = setMarkingLocked(p, 'a1', true);
     expect(codeOf(() => removeItems(locked, [mark('H'), mark('a1')]))).toBe('locked');
-    expect(codeOf(() => removeItems(locked, [img('A'), mark('a1')]))).toBe('locked');
+    // Trancada que sai junto com o container selecionado não barra.
+    expect(codeOf(() => removeItems(locked, [img('A'), mark('a1')]))).toBeNull();
+    expect(codeOf(() => removeItems(locked, [mark('a1'), img('D')]))).toBe('locked');
     const container = setImageLocked(p, 'D', true);
     expect(codeOf(() => removeItems(container, [mark('H'), img('D')]))).toBe('locked');
     // Descendente trancado sai junto com a mãe, sem barrar.

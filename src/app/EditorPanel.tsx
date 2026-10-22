@@ -1,7 +1,13 @@
 import type { ProjectContainer } from '../model';
-import { resolveSelection, type AnnotationLocation } from '../store/ui';
+import {
+  existingItems,
+  resolveSelection,
+  selectedItems,
+  type AnnotationLocation,
+} from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
 import { MarkingPanel } from '../ui/MarkingPanel';
+import { MultiSelectionPanel } from '../ui/MultiSelectionPanel';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import { ReviewPanel } from '../ui/review/ReviewPanel';
 import type { EditorDialogs } from './useEditorDialogs';
@@ -36,6 +42,19 @@ export function EditorPanel({
     );
   }
   const readOnly = store.locked.value;
+  const items = existingItems(project, selectedItems(ui));
+  if (items.length > 1) {
+    return (
+      <div class="tab-panel">
+        <MultiSelectionPanel
+          project={project}
+          items={items}
+          readOnly={readOnly || busy}
+          onDelete={dialogs.requestDeleteItems}
+        />
+      </div>
+    );
+  }
   const selected = resolveSelection(project, ui.selection.value);
   const selectedImage = selected?.kind === 'image' ? selected.image : null;
 

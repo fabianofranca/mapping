@@ -50,6 +50,11 @@
   background: var(--color-accent);
 }
 
+.tree-row-selected,
+.tree-row-selected:hover {
+  background: var(--color-pressed);
+}
+
 .tree-toggle {
   flex: none;
   display: flex;

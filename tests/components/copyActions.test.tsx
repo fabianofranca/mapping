@@ -95,11 +95,25 @@ describe('menu da linha da Árvore', () => {
     expect(copied(writeText)).toMatchObject({ kind: 'i', code: 'i2' });
   });
 
-  it('fora de uma pasta, a Árvore não tem o menu', () => {
+  it('fora de uma pasta, a Árvore só tem o menu das marcações, sem copiar', async () => {
     const harness = createHarness(sampleProject());
     makeNotAFolder(harness);
     renderTree(harness);
-    expect(screen.queryByRole('button', { name: /^Ações de/ })).toBeNull();
+    expect(
+      screen.queryByRole('button', {
+        name: t('copy.itemActions', { name: 'images/frente.jpg' }),
+      }),
+    ).toBeNull();
+    await userEvent.click(
+      screen.getByRole('button', { name: t('copy.itemActions', { name: 'Maçaneta' }) }),
+    );
+    const menu = screen.getByRole('menu');
+    expect(
+      within(menu).queryByRole('menuitem', { name: t('copy.reference') }),
+    ).toBeNull();
+    expect(
+      within(menu).getByRole('menuitem', { name: t('multi.selectWithContents') }),
+    ).toBeTruthy();
   });
 });
 
@@ -232,11 +246,14 @@ describe('menu de contexto do canvas', () => {
     expect(harness.ui.canvasMenu.value).toBeNull();
   });
 
-  it('fora de uma pasta não mostra nada', () => {
+  it('fora de uma pasta não mostra nada para a imagem e só "selecionar" para a marcação', async () => {
     const harness = createHarness(sampleProject());
     makeNotAFolder(harness);
     renderMenu(harness);
-    harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'm', id: 'M1' } };
+    harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'i', id: 'I1' } };
     expect(screen.queryByRole('menu')).toBeNull();
+    harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'm', id: 'M1' } };
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((i) => i.textContent)).toEqual([t('multi.selectWithContents')]);
   });
 });

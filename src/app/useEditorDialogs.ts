@@ -1,6 +1,8 @@
 import {
   canDeleteImage,
+  canDeleteItems,
   canDeleteMarking,
+  type ItemRef,
   markingDeletionImpact,
   type Marking,
   type ProjectContainer,
@@ -21,6 +23,8 @@ export type EditorDialog =
   | { readonly kind: 'settings' }
   | { readonly kind: 'deleteImage'; readonly image: ProjectContainer }
   | { readonly kind: 'deleteMarking'; readonly marking: Marking }
+  /** Excluir a seleção inteira (vários itens). */
+  | { readonly kind: 'deleteItems'; readonly items: readonly ItemRef[] }
   | {
       readonly kind: 'aspect';
       readonly change: AspectChange;
@@ -46,6 +50,8 @@ export interface EditorDialogs {
   requestDeleteImage(image: ProjectContainer): void;
   /** Em cascata pede confirmação; simples, não (o desfazer cobre). Item trancado: não faz nada. */
   requestDeleteMarking(marking: Marking): void;
+  /** Vários itens: uma confirmação só; se algum trancado impede, não faz nada. */
+  requestDeleteItems(items: readonly ItemRef[]): void;
 }
 
 export function useEditorDialogs(): EditorDialogs {
@@ -75,6 +81,11 @@ export function useEditorDialogs(): EditorDialogs {
       } else if (actions.removeMarking(marking.id).ok) {
         ui.selection.value = null;
       }
+    },
+    requestDeleteItems: (items) => {
+      const project = store.project.peek();
+      if (!project || !canDeleteItems(project, items)) return;
+      show({ kind: 'deleteItems', items });
     },
   };
 }

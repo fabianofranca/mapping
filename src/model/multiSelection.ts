@@ -336,16 +336,38 @@ export function itemsDeletionImpact(
 }
 
 /**
- * Excluir é permitido: há o que excluir e nenhum item selecionado está trancado (a trava de um
- * ancestral é de geometria e não impede; as marcações trancadas que saem junto não bloqueiam,
- * como em `canDeleteMarking`/`canDeleteImage`).
+ * O item selecionado sai junto com outro item selecionado (e, por isso, a trava própria dele
+ * não impede a exclusão): uma marcação de container cujo container está selecionado ou que
+ * tem uma ancestral selecionada. Marcações do canvas e containers não levam ninguém.
+ */
+function leavesWithSelection(
+  p: Project,
+  item: ItemRef,
+  selected: ResolvedItems,
+): boolean {
+  if (item.kind === 'image') return false;
+  const marking = selected.markings.get(item.id);
+  if (!marking || marking.containerId === null) return false;
+  if (selected.containers.has(marking.containerId)) return true;
+  return ancestorsOf(p, marking.id).some((a) => selected.markings.has(a.id));
+}
+
+/**
+ * Excluir é permitido: há o que excluir e nenhum item selecionado trancado fica de fora da
+ * cascata (a trava de um ancestral é de geometria e não impede; as marcações trancadas que
+ * saem junto não bloqueiam, como em `canDeleteMarking`/`canDeleteImage`; uma selecionada e
+ * trancada que sai junto com a mãe ou com o container selecionados também não).
  */
 export function canDeleteItems(p: Project, items: readonly ItemRef[]): boolean {
-  const { list } = resolveItems(p, items);
+  const selected = resolveItems(p, items);
   return (
-    list.length > 0 &&
-    list.every((item) =>
-      item.kind === 'image' ? canDeleteImage(p, item.id) : canDeleteMarking(p, item.id),
+    selected.list.length > 0 &&
+    selected.list.every(
+      (item) =>
+        leavesWithSelection(p, item, selected) ||
+        (item.kind === 'image'
+          ? canDeleteImage(p, item.id)
+          : canDeleteMarking(p, item.id)),
     )
   );
 }
@@ -355,7 +377,7 @@ export function canDeleteItems(p: Project, items: readonly ItemRef[]): boolean {
  * anotações, como `removeMarking`) e os containers selecionados (com as marcações e anotações
  * deles, como `removeContainer`). Nunca exclui um container não selecionado: os que estavam
  * dentro de uma marcação que sai passam ao pai dela, ou a nenhum (o assentar refaz). Algum item
- * selecionado trancado falha com `locked`, sem excluir nada; itens inexistentes são ignorados.
+ * selecionado trancado que não sai junto com outro selecionado (`canDeleteItems`) falha com `locked`, sem excluir nada; itens inexistentes são ignorados.
  * Assenta uma vez, no fim (salvo `settle: false`).
  */
 export function removeItems(
@@ -365,11 +387,7 @@ export function removeItems(
 ): Project {
   const selected = resolveItems(p, items);
   if (selected.list.length === 0) return p;
-  for (const item of selected.list) {
-    requireUnlocked(
-      item.kind === 'image' ? canDeleteImage(p, item.id) : canDeleteMarking(p, item.id),
-    );
-  }
+  requireUnlocked(canDeleteItems(p, items));
   return settleIf(cascadeRemoveItems(p, selected), options);
 }
 

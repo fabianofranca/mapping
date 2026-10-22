@@ -88,6 +88,7 @@ describe('dicionários', () => {
       'canvas.name',
       'crumbs.canvas',
       'marking.container',
+      'multi.containers',
       // Palavras iguais nos dois idiomas (biblioteca de componentes, B3).
       'library.container',
       'library.typeSize',

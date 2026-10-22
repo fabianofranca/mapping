@@ -9,7 +9,16 @@ import {
   type Project,
   type ProjectContainer,
 } from '../model';
-import { revealInTree, toggleTreeNode, treeKey, type Selection } from '../store/ui';
+import {
+  isItemSelected,
+  revealInTree,
+  selectedItems,
+  toggleSelectedItem,
+  toggleTreeNode,
+  treeKey,
+  type Selection,
+  type SelectionItem,
+} from '../store/ui';
 import { ItemMenu } from './CopyActions';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
@@ -70,6 +79,15 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
   const containerLocks = useMemo(() => containerLockStates(project), [project]);
   const isSelected = (kind: 'image' | 'marking', id: string) =>
     selection?.kind === kind && selection.id === id;
+  // Seleção múltipla: as outras linhas selecionadas (o primário tem o destaque de sempre).
+  const items = selectedItems(ui);
+  const isGrouped = (kind: 'image' | 'marking', id: string) =>
+    items.length > 1 && isItemSelected(items, { kind, id });
+  /** Shift+clique acrescenta ou tira o item da seleção; o clique simples seleciona. */
+  const pick = (e: MouseEvent, item: SelectionItem) => {
+    if (e.shiftKey) toggleSelectedItem(ui, item);
+    else onSelect(item);
+  };
 
   const list = useRef<HTMLUListElement>(null);
   const latest = useRef({ project, selection });
@@ -115,12 +133,19 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     expandable: boolean,
     name: string,
     current: boolean,
+    grouped: boolean,
     item: ComponentChildren,
     lock: ComponentChildren,
     menu: ComponentChildren,
   ) => (
     <div
-      class={current ? 'tree-row tree-row-current' : 'tree-row'}
+      class={
+        current
+          ? 'tree-row tree-row-current'
+          : grouped
+            ? 'tree-row tree-row-selected'
+            : 'tree-row'
+      }
       style={{ '--depth': depth }}
     >
       {expandable ? (
@@ -166,11 +191,12 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
           roots.length > 0,
           imageLabel(image),
           current,
+          isGrouped('image', image.id),
           <button
             type="button"
             class="tree-item tree-image"
             aria-current={current || undefined}
-            onClick={() => onSelect({ kind: 'image', id: image.id })}
+            onClick={(e) => pick(e, { kind: 'image', id: image.id })}
           >
             <span class="tree-label">{imageLabel(image)}</span>
           </button>,
@@ -204,11 +230,12 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                 children.length > 0 || members.length > 0,
                 markingLabel(m),
                 current,
+                isGrouped('marking', m.id),
                 <button
                   type="button"
                   class="tree-item"
                   aria-current={current || undefined}
-                  onClick={() => onSelect({ kind: 'marking', id: m.id })}
+                  onClick={(e) => pick(e, { kind: 'marking', id: m.id })}
                 >
                   {m.needsReview && (
                     <span class="tree-warning" title={t('marking.needsReview')}>
@@ -259,6 +286,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
             0,
             true,
             canvasName,
+            false,
             false,
             <button
               type="button"

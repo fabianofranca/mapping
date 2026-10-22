@@ -885,4 +885,21 @@ export const enUS: Dictionary = {
   'diagnostics.drawWarnings': 'Drawing warnings',
   'diagnostics.overflowCount': '{count} marking(s) with a component that does not fit',
   'diagnostics.selectMarking': 'Select {name}',
+  'multi.title': '{count} items selected',
+  'multi.containers': '{count} container(s)',
+  'multi.markings': '{count} marking(s)',
+  'multi.delete': 'Delete',
+  'multi.lock': 'Lock',
+  'multi.unlock': 'Unlock',
+  'multi.deleteTitle': 'Delete {count} items?',
+  'multi.deleteMessage':
+    '{markings} marking(s), {containers} container(s) and {annotations} annotation(s) will be deleted. You can undo this.',
+  'multi.deleteBlocked': 'Unlock the locked items to delete',
+  'multi.selectWithContents': 'Select with contents',
+  'shortcuts.shiftClick':
+    'Add to or remove from the selection (Shift+click on the canvas and in the Tree)',
+  'shortcuts.doubleClick': 'Select the marking with its contents (double click)',
+  'shortcuts.escapeToPrimary': 'With several items selected, go back to the main item',
+  'shortcuts.key.click': 'click',
+  'shortcuts.key.doubleClick': 'double click',
 };

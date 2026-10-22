@@ -1,4 +1,6 @@
 import { t } from '../i18n';
+import { selectionWithContents } from '../model';
+import { selectItems } from '../store/ui';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import {
   canCopyCrop,
@@ -40,38 +42,72 @@ export function CopyButtons({ target }: { readonly target: CopyTarget }) {
   );
 }
 
+/** "Selecionar com o conteúdo": a marcação e tudo o que ela cobre. Só para marcações. */
+export function SelectContentsItem({
+  markingId,
+  close,
+}: {
+  readonly markingId: string;
+  readonly close: () => void;
+}) {
+  const { ui, review } = useEditor();
+  return (
+    <Button
+      role="menuitem"
+      onClick={() => {
+        close();
+        const project = review.derived.shownProject.peek();
+        if (project && project.markings.some((m) => m.id === markingId)) {
+          selectItems(ui, selectionWithContents(project, markingId));
+        }
+      }}
+    >
+      {t('multi.selectWithContents')}
+    </Button>
+  );
+}
+
 /** Itens do menu (botões) de um item da imagem ou da marcação; `close` fecha o menu. */
 export function CopyMenuItems({
   target,
   close,
+  copyable = true,
 }: {
   readonly target: CopyTarget;
   readonly close: () => void;
+  /** Falso quando não há o que copiar (projeto fora de uma pasta): só as outras entradas. */
+  readonly copyable?: boolean;
 }) {
   const editor = useEditor();
+  const selectable = target.kind === 'm';
   return (
     <div class="menu-items">
-      <Button
-        role="menuitem"
-        onClick={() => {
-          close();
-          void copyReference(editor, target);
-        }}
-      >
-        {t('copy.reference')}
-      </Button>
-      {target.kind === 'm' &&
-        canCopyCrop(editor.review.derived.shownProject.value, target.id) && (
+      {copyable && (
+        <>
           <Button
             role="menuitem"
             onClick={() => {
               close();
-              void copyCrop(editor, target.id);
+              void copyReference(editor, target);
             }}
           >
-            {t('copy.crop')}
+            {t('copy.reference')}
           </Button>
-        )}
+          {target.kind === 'm' &&
+            canCopyCrop(editor.review.derived.shownProject.value, target.id) && (
+              <Button
+                role="menuitem"
+                onClick={() => {
+                  close();
+                  void copyCrop(editor, target.id);
+                }}
+              >
+                {t('copy.crop')}
+              </Button>
+            )}
+        </>
+      )}
+      {selectable && <SelectContentsItem markingId={target.id} close={close} />}
     </div>
   );
 }
@@ -85,7 +121,8 @@ export function ItemMenu({
   readonly name: string;
 }) {
   const editor = useEditor();
-  if (!canCopyItems(editor)) return null;
+  const copyable = canCopyItems(editor);
+  if (!copyable && target.kind !== 'm') return null;
   const label = t('copy.itemActions', { name });
   return (
     <Popover
@@ -103,7 +140,7 @@ export function ItemMenu({
         />
       )}
     >
-      {(close) => <CopyMenuItems target={target} close={close} />}
+      {(close) => <CopyMenuItems target={target} close={close} copyable={copyable} />}
     </Popover>
   );
 }
