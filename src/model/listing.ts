@@ -1,6 +1,13 @@
 import type { AnnotationIssue } from './issues';
 import { projectIndex } from './projectIndex';
-import type { Annotation, Layer, Marking, Project, ProjectContainer } from './types';
+import type {
+  Annotation,
+  Arrow,
+  Layer,
+  Marking,
+  Project,
+  ProjectContainer,
+} from './types';
 
 /** Anotações de uma marcação numa camada. */
 export interface LayerAnnotations {
@@ -39,10 +46,16 @@ export function layerSections(
 }
 
 export interface ListedMarking {
+  /** A marcação; numa linha de seta (`arrow`), a marcação de origem dela. */
   readonly marking: Marking;
   /** Da marcação raiz até ela mesma (o último item é `marking`). */
   readonly path: readonly Marking[];
   readonly sections: readonly LayerAnnotations[];
+  /**
+   * Linha de uma seta (ME4): fica logo depois da marcação de origem, com as anotações da
+   * própria seta em `sections`.
+   */
+  readonly arrow?: Arrow;
 }
 
 export interface ListedImage {
@@ -94,6 +107,14 @@ export function buildListing(
       if (showEmpty || sections.length > 0) {
         markings.push({ marking, path, sections });
       }
+      // As setas que saem da marcação, logo depois dela (as anotações são da seta).
+      for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
+        if (arrow.from !== marking.id) continue;
+        const arrowSections = layerSections(byMarking, arrow.id, layers);
+        if (showEmpty || arrowSections.length > 0) {
+          markings.push({ marking, path, sections: arrowSections, arrow });
+        }
+      }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };
     for (const root of roots) {
@@ -110,11 +131,14 @@ export function buildListing(
 /** Anotação incompleta com o contexto para achá-la: onde está e por quê. */
 export interface IncompleteItem {
   readonly annotation: Annotation;
+  /** A marcação; numa anotação de seta (`arrow`), a marcação de origem dela. */
   readonly marking: Marking;
   /** Da marcação raiz até ela mesma (o último item é `marking`). */
   readonly path: readonly Marking[];
   readonly layer: Layer;
   readonly issues: readonly AnnotationIssue[];
+  /** A anotação é desta seta (ME4), não da marcação. */
+  readonly arrow?: Arrow;
 }
 
 export interface IncompleteImage {
@@ -148,6 +172,15 @@ export function buildIncompleteList(
         const layer = index.layers.get(annotation.layerId);
         if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
         items.push({ annotation, marking, path, layer, issues: found });
+      }
+      for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
+        if (arrow.from !== marking.id) continue;
+        for (const annotation of index.annotationsByMarking.get(arrow.id) ?? []) {
+          const found = issues.get(annotation.id);
+          const layer = index.layers.get(annotation.layerId);
+          if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
+          items.push({ annotation, marking, path, layer, issues: found, arrow });
+        }
       }
       for (const child of index.children.get(marking.id) ?? []) visit(child, path);
     };

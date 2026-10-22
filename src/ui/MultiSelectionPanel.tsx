@@ -22,9 +22,13 @@ export function MultiSelectionPanel({
 }: MultiSelectionPanelProps) {
   const { actions } = useEditor();
   const containers = items.filter((i) => i.kind === 'image').length;
-  const markings = items.length - containers;
+  const arrows = items.filter((i) => i.kind === 'arrow').length;
+  const markings = items.length - containers - arrows;
   const index = new Map(
-    [...project.containers, ...project.markings].map((x) => [x.id, x.locked]),
+    [...project.containers, ...project.markings, ...project.arrows].map((x) => [
+      x.id,
+      x.locked,
+    ]),
   );
   const locked = items.filter((i) => index.get(i.id) === true).length;
   const deletable = canDeleteItems(project, items);
@@ -38,6 +42,7 @@ export function MultiSelectionPanel({
       <strong>{t('multi.title', { count: items.length })}</strong>
       {markings > 0 && <span>{t('multi.markings', { count: markings })}</span>}
       {containers > 0 && <span>{t('multi.containers', { count: containers })}</span>}
+      {arrows > 0 && <span>{t('multi.arrows', { count: arrows })}</span>}
       <div class="multi-actions">
         <Button
           disabled={readOnly || locked === items.length}

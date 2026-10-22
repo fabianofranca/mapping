@@ -1,4 +1,4 @@
-import { useId, useState } from 'preact/hooks';
+import { useId, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   ancestorsOf,
@@ -23,6 +23,7 @@ import { Section } from './DetailsSection';
 import { arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
 import { imageLabel, markingErrorMessage, markingLabel } from './labels';
+import { MarkingPicker } from './MarkingPicker';
 import { Property, PropertyGrid } from './PropertyGrid';
 
 interface MarkingPanelProps {
@@ -63,6 +64,9 @@ export function MarkingPanel({
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
   const nameId = useId();
+  // "Ligar a…": o seletor de marcações; escolher cria a seta e a seleciona.
+  const [linking, setLinking] = useState(false);
+  const linkButton = useRef<HTMLButtonElement>(null);
 
   const report = (result: ActionResult): boolean => {
     setError(result.ok ? null : markingErrorMessage(result.error));
@@ -325,6 +329,14 @@ export function MarkingPanel({
           />
         )}
         <Button
+          buttonRef={linkButton}
+          title={t('arrow.linkToHint')}
+          disabled={readOnly}
+          onClick={() => setLinking(true)}
+        >
+          {t('arrow.linkTo')}
+        </Button>
+        <Button
           variant="danger"
           disabled={readOnly || !deletable}
           title={deletable ? undefined : t('lock.deleteBlocked')}
@@ -333,6 +345,21 @@ export function MarkingPanel({
           {t('marking.delete')}
         </Button>
       </div>
+
+      {linking && (
+        <MarkingPicker
+          project={project}
+          source={marking}
+          returnFocus={() => linkButton.current}
+          onClose={() => setLinking(false)}
+          onPick={(target) => {
+            setLinking(false);
+            const result = actions.addArrow(marking.id, target.id);
+            if (result.ok) ui.selection.value = { kind: 'arrow', id: result.value };
+            else report(result);
+          }}
+        />
+      )}
     </div>
   );
 }

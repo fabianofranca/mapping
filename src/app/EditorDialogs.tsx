@@ -1,6 +1,7 @@
 import { Fragment, type ComponentChildren } from 'preact';
 import { t } from '../i18n';
 import {
+  arrowDeletionImpact,
   containerDeletionImpact,
   itemsDeletionImpact,
   markingDeletionImpact,
@@ -9,7 +10,7 @@ import { ContainerDialog } from '../ui/ContainerDialog';
 import { Dialog } from '../ui/Dialog';
 import { DialogSlotContext } from '../ui/focus';
 import { useEditor, type EditorContextValue } from '../ui/EditorContext';
-import { imageLabel, markingLabel } from '../ui/labels';
+import { arrowText, imageLabel, markingLabel } from '../ui/labels';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
 import { SettingsDialog } from '../ui/SettingsDialog';
 import { SpecsDialog } from '../ui/SpecsDialog';
@@ -110,6 +111,9 @@ function renderDialog(
               ...impact,
             })}
           </p>
+          {impact.arrows > 0 && (
+            <p>{t('image.deleteArrows', { arrows: impact.arrows })}</p>
+          )}
           {impact.lockedMarkings > 0 && (
             <p role="alert">
               <strong>
@@ -143,6 +147,9 @@ function renderDialog(
           {impact.containers > 0 && (
             <p>{t('marking.deleteContainersStay', { containers: impact.containers })}</p>
           )}
+          {impact.arrows > 0 && (
+            <p>{t('marking.deleteArrows', { arrows: impact.arrows })}</p>
+          )}
           {impact.lockedDescendants > 0 && (
             <p role="alert">
               <strong>
@@ -150,6 +157,29 @@ function renderDialog(
               </strong>
             </p>
           )}
+        </ConfirmDialog>
+      );
+    }
+    case 'deleteArrow': {
+      const { arrow } = dialog;
+      const impact = arrowDeletionImpact(project, arrow.id);
+      return (
+        <ConfirmDialog
+          title={t('arrow.deleteTitle')}
+          confirmLabel={t('common.delete')}
+          tone="danger"
+          onCancel={close}
+          onConfirm={() => {
+            close();
+            if (actions.removeArrow(arrow.id).ok) ui.selection.value = null;
+          }}
+        >
+          <p>
+            {t('arrow.deleteMessage', {
+              name: arrowText(project, arrow),
+              annotations: impact.annotations,
+            })}
+          </p>
         </ConfirmDialog>
       );
     }
@@ -168,6 +198,9 @@ function renderDialog(
           }}
         >
           <p>{t('multi.deleteMessage', { ...impact })}</p>
+          {impact.arrows > 0 && (
+            <p>{t('multi.deleteArrows', { arrows: impact.arrows })}</p>
+          )}
           {impact.containersStay > 0 && (
             <p>
               {t('marking.deleteContainersStay', { containers: impact.containersStay })}

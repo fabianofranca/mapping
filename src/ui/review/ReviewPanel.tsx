@@ -18,6 +18,7 @@ import {
 import { Button } from '../controls';
 import { DetailsExtensionContext } from '../DetailsExtension';
 import { useEditor } from '../EditorContext';
+import { ArrowPanel } from '../ArrowPanel';
 import { MarkingPanel } from '../MarkingPanel';
 import { Notice } from '../Notice';
 import { SelectionPanel } from '../SelectionPanel';
@@ -42,6 +43,8 @@ import {
 interface ShownItem {
   readonly kind: 'marking' | 'image';
   readonly id: string;
+  /** O item é uma seta (v13): `kind` fica `marking` (os ids dividem o espaço e o nível é o item). */
+  readonly arrow: boolean;
   readonly project: Project;
   /**
    * Por que o item vem de outro projeto: não existe na visão Proposto (removido), ainda
@@ -54,7 +57,9 @@ const has = (project: Project | null, sel: NonNullable<Selection>): boolean =>
   project !== null &&
   (sel.kind === 'image'
     ? projectIndex(project).containers.has(sel.id)
-    : projectIndex(project).markings.has(sel.id));
+    : sel.kind === 'arrow'
+      ? projectIndex(project).arrows.has(sel.id)
+      : projectIndex(project).markings.has(sel.id));
 
 /**
  * Onde o item está: no projeto à vista; senão, na visão Proposto, no atual (removido) e,
@@ -68,10 +73,16 @@ function shownItem(
   other: () => Project | null,
   full: () => Project | null,
 ): ShownItem | null {
-  // ME4: Detalhes da seta na revisão (UI)
-  if (sel.kind === 'arrow') return null;
   const at = (project: Project | null, away: ShownItem['away']): ShownItem | null =>
-    project && has(project, sel) ? { ...sel, project, away } : null;
+    project && has(project, sel)
+      ? {
+          kind: sel.kind === 'image' ? 'image' : 'marking',
+          id: sel.id,
+          arrow: sel.kind === 'arrow',
+          project,
+          away,
+        }
+      : null;
   return (
     at(shown, null) ??
     at(other(), view === 'proposed' ? 'proposed' : 'current') ??
@@ -142,6 +153,7 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
     last.current !== null &&
     last.current.kind === item.kind &&
     last.current.id === item.id &&
+    last.current.arrow === item.arrow &&
     last.current.project === item.project &&
     last.current.away === item.away;
   const stable = same ? last.current : item;
@@ -300,7 +312,10 @@ function ReviewItemPanel({
 
   if (!current || !ext) return null;
 
-  const resolved = resolveSelection(project, { kind, id } as NonNullable<Selection>);
+  const resolved = resolveSelection(project, {
+    kind: item.arrow ? 'arrow' : kind,
+    id,
+  } as NonNullable<Selection>);
   const away =
     item.away === 'proposed' ? (
       <Notice
@@ -342,7 +357,15 @@ function ReviewItemPanel({
         <OpenMarkContext.Provider value={openMark}>
           {away}
           <div class="review-panel">
-            {resolved?.kind === 'marking' ? (
+            {resolved?.kind === 'arrow' ? (
+              <ArrowPanel
+                project={project}
+                arrow={resolved.arrow}
+                readOnly
+                onDelete={noop}
+                onGoToAnnotation={onGoToAnnotation}
+              />
+            ) : resolved?.kind === 'marking' ? (
               <MarkingPanel
                 project={project}
                 marking={resolved.marking}
