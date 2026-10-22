@@ -253,7 +253,7 @@ O dono quer que as fases sejam desenvolvidas **em sequência, sem ele, durante a
   3. Ao ver PR aberto, CI (verde ou vermelho), rodada de correção da própria sessão (`fixing`), entrega (`delivered`, `endedAt`): o campo correspondente na fase; evento.
   4. Enquanto a fase roda, **a cada 15 minutos no máximo**: `note` da fase com o que a sessão está fazendo (lido de `list_events`) e `updatedAt` da execução; evento só se algo mudou. Se a execução ficar mais de 30 minutos sem `updatedAt`, o painel mostra "sem sinal do gerente".
   5. Ao parar ou terminar: `status` da execução (`stopped` ou `done`), `endedAt`, `stopReason` ou `summary` (uma frase: fases entregues e onde parou); a fase interrompida em `stopped`; evento `stop`.
-  6. De manhã, o agente de apoio marca cada fase mesclada no épico como `merged` (opcional; o resto o dono vê no GitHub).
+  6. De manhã, o gerente da manhã marca cada fase mesclada no épico como `merged` e grava eventos com o prefixo "manhã:" (o resto o dono vê no GitHub).
 - **Custo e falha:** nunca mais de uma escrita por acontecimento e uma por 15 minutos; nada de reescrever a página. Se a ferramenta não existir na sessão ou a escrita for recusada, o gerente avisa no relato da manhã e segue sem o painel: o painel nunca para a cascata.
 
 **Prompt da sessão de uma fase** (o gerente preenche os colchetes):
@@ -276,13 +276,63 @@ resolve: registre no PR e siga a leitura mais simples; se ela bloquear a fase,
 pare com o que está verde e relate no PR. Não mescle nada.
 ```
 
-**A manhã** (o dono, o Cowork e um agente de apoio), fase a fase, na ordem:
+**A manhã** (o dono, o Cowork e o gerente da manhã, descrito abaixo), fase a fase ou por grupo de fases, na ordem:
 
 1. Publicar o branch da fase N no preview (Deploy › `workflow_dispatch` com o branch) e rodar o Cowork nos roteiros que a fase lista (R12 e os que ela toca). Para o MCP, usar o `mcp-snapshot-pr<N>` quando existir (ME0 de saída; as outras depois do primeiro merge-forward).
 2. Achados viram correções no próprio branch da fase, por uma sessão com o modelo da fase; o Cowork reconfere o que mudou.
 3. O dono mescla o PR N no épico e apaga o branch (o GitHub muda a base do PR N+1 para o épico).
-4. **Merge-forward:** o agente de apoio mescla o épico no branch da fase N+1 (`git merge`, nunca rebase), resolve conflitos no branch que recebe, roda os gates, publica; depois mescla N+1 em N+2, e assim até o último branch da cascata. Assim cada PR continua mostrando só a própria fase, e as correções da manhã chegam a todas as fases seguintes. Se um merge quebrar os testes de uma fase seguinte (a correção mudou um comportamento de que ela dependia), a correção é feita naquele branch, dentro do escopo daquela fase.
+4. **Merge-forward:** o gerente da manhã mescla o épico no branch da fase N+1 (`git merge`, nunca rebase), resolve conflitos no branch que recebe, roda os gates, publica; depois mescla N+1 em N+2, e assim até o último branch da cascata. Assim cada PR continua mostrando só a própria fase, e as correções da manhã chegam a todas as fases seguintes. Se um merge quebrar os testes de uma fase seguinte (a correção mudou um comportamento de que ela dependia), a correção é feita naquele branch, dentro do escopo daquela fase.
 5. Repetir com a fase N+1. No fim, a ME5 (quando existir) leva o rótulo `mcp-rc`, e o épico vai para a `main` pelo PR do épico, como sempre.
+
+**O gerente da manhã** (pedido do dono em 2026-10-22): uma sessão que conduz o dono pela manhã, passo a passo, e faz sozinha tudo o que é git, GitHub e painel. **Sonnet, esforço high**, modo de permissão sem perguntas, no mesmo ambiente; o dono conversa com ela e faz só o que é dele: mesclar, rotular, decidir e rodar o Cowork no computador. As correções que as rodadas pedirem **não** são feitas por ela: ela escreve o briefing e abre a sessão no modelo e no esforço da fase (`create_session`), ou entrega o briefing ao dono.
+
+Ao abrir, ela lê o `CLAUDE.md`, esta seção inteira, o painel (`ArtifactData`: `cascade/state`, a execução, as fases e os eventos), os PRs abertos com as bases deles e os branches; monta o **quadro da manhã** (fases entregues com PR e base, fase em andamento, ordem das rodadas) e o mostra ao dono antes do primeiro passo. A cada passo, diz **quem faz** (ela ou o dono), **o que conferir** antes de seguir e, quando for a vez do Cowork, entrega o **prompt pronto**, com o build id (`<sha7 da ponta do branch> · AAAA-MM-DD`) e o MCP a usar.
+
+Regras fixas, por cima de qualquer atalho:
+
+- Ela **nunca** mescla PR, nunca muda a `main` ou um épico fora dos merges previstos aqui, nunca faz rebase ou force-push e nunca apaga branch. Apagar branch é do dono, e **só** quando o PR seguinte já existe: o branch da fase em andamento, e o da última fase entregue até a seguinte abrir o PR dela, não podem sumir, porque são a base da próxima sessão e do próximo PR.
+- Ela **nunca** empurra no branch da fase em andamento (a sessão da noite está empurrando nele). Merge-forward só para branches de fases já entregues.
+- **Agrupamento:** uma rodada por grupo, não por fase: **Container** (CN1 + CN2, no épico, como o plano daquela etapa manda), **ME0 + ME1** (no branch da ME1), **ME2**, **ME3**, **ME4**, **ME5**; o dono pode juntar ou separar.
+- O preview é um só e muda a cada PR atualizado: ela dispara o Deploy (`workflow_dispatch`, input `branch`) para o branch da rodada **depois** de qualquer push da manhã e confirma o build id publicado antes de entregar o prompt.
+- O MCP a testar: o snapshot `mcp-snapshot-pr<N>` quando o PR tem base num `epic/**` (ele nasce no primeiro push depois de a base virar o épico), a release candidate `mcp-v<versão>-rc.<n>` quando um PR com o rótulo `mcp-rc` foi mesclado, ou nenhum, quando a rodada não toca o MCP (ME0 a ME4). Sem MCP compatível com o schema do branch, os passos de MCP ficam "não executado".
+- Painel: ela marca `merged` as fases mescladas e grava eventos `info` com o prefixo "manhã:" (rodada iniciada, relato recebido, correção aberta, PR mesclado).
+
+**Rodada do Container** (quando CN1 e CN2 chegam juntas, como nesta cascata):
+
+1. Dono: mescla o PR da CN1 no `epic/container`; põe o rótulo `mcp-rc` no PR da CN2 e o mescla (o GitHub já mudou a base dele para o épico). O rótulo faz o workflow publicar a `mcp-v0.8.0-rc.1`.
+2. Gerente: abre o PR `epic/container` → `main` (Resumo, Como testar e Decisões, apontando os PRs das fases); dispara o Deploy com `branch=epic/container`; espera o Deploy e a rc; entrega o prompt (modelo abaixo).
+3. Dono: roda o Cowork. Gerente: lê o relato; achados alto e médio viram um briefing de correção, executado por uma sessão Sonnet medium (o modelo da CN2) num branch `cn3/correcoes-cowork` com PR para o `epic/container`; achados baixos entram no mesmo PR se forem baratos, senão ficam registrados no PR do épico.
+4. Dono: roda o Cowork de reconferência (dirigido pelos achados do relato); mescla a correção no épico; mescla o épico na `main` e cria a tag `mcp-v0.8.0` (ela apaga as rc).
+5. Gerente: mescla a `main` no `epic/marcacoes-espaciais` (merge, nunca rebase); muda a base do PR da ME0 para `epic/marcacoes-espaciais` (o GitHub o teria deixado no `epic/container` ao apagar o branch da CN2); confere que o diff do PR mostra só a ME0.
+
+**Rodada de fases do ME** (grupo de uma ou duas fases, no branch da última do grupo):
+
+1. Gerente: confere CI verde no PR; dispara o Deploy com `branch=<branch da fase>`; espera; entrega o prompt (modelo abaixo) com o build id da ponta do branch e os passos do guia que as fases listam.
+2. Dono: roda o Cowork. Gerente: triagem do relato como acima; a correção vai **no branch da fase** (sessão no modelo e no esforço da fase, pela tabela da etapa; num grupo, a fase que o achado toca); depois do push, ela faz o merge-forward para os branches das fases seguintes **já entregues** (`git merge`, conflito resolvido no branch que recebe, gates, push) e dispara o Deploy de novo para a reconferência.
+3. Dono: reconfere pelo Cowork; mescla os PRs do grupo no épico, na ordem (o GitHub muda a base do PR seguinte sozinho); apaga os branches só se o PR seguinte já existe.
+4. Gerente: confere as bases, marca `merged` no painel e repete com o grupo seguinte. A fase que a cascata entregar entra na fila; se a sessão da noite ainda estiver na fase seguinte à do grupo, o merge-forward para o branch dela espera a entrega.
+
+**Prompts do Cowork que ela entrega** (o `docs/TESTING-COWORK.md` do branch testado é a referência; "sem interação" sai se o dono quiser acompanhar e confirmar a lista):
+
+- Container: `Leia docs/TESTING-COWORK.md e execute sem interação, no modo dirigido: as fases CN1 e CN2 de docs/history/PLAN-etapa-container.md (branch epic/container, PR #<n>): R0 inteiro e, com as dependências do guia, R9.2, R9.13 a R9.20, R10.9 e R3.8c. Build id esperado: <sha7> · <data>. MCP: mcp-v0.8.0-rc.1 (seção 6 do guia). Passada visual: Novo container, Árvore, Detalhes, Propostas.`
+- Fases do ME: `Leia docs/TESTING-COWORK.md e execute sem interação, no modo dirigido: as fases <ME_a e ME_b> do PLAN.md (branch <branch>, PR #<n>): R0 inteiro e <passos R12 que as fases listam>, com as dependências do guia. Build id esperado: <sha7> · <data>. Sem MCP nesta rodada (os passos de MCP ficam "não executado"). Passada visual: <janelas que as fases tocam>.`
+- Reconferência: `Leia docs/TESTING-COWORK.md e execute sem interação, no modo dirigido: os achados <lista> do relato <caminho, ou colado abaixo>, no branch <branch> (PR #<n>). Build id esperado: <sha7> · <data>.`
+
+**O que o dono avisa ao gerente da madrugada** (na sessão dele, como dono): **uma vez**, que a manhã começou (as bases dos PRs mudam sozinhas; correções entram em branches entregues com merge-forward, nunca no branch em andamento; se a base de um PR tiver sumido, abrir o PR com base no épico; continuar alimentando o painel); e **só mais isto**, quando acontecer: "pare depois da fase X", quando uma rodada achar algo que muda as fases seguintes ou quando o dono quiser parar, e "retome", se tiver mandado parar. Nada mais precisa de aviso: a próxima fase nasce da ponta atual do branch anterior, com as correções que já estiverem lá.
+
+**Prompt de abertura do gerente da manhã** (o dono cola numa sessão nova, **Sonnet, esforço high**, modo sem perguntas):
+
+```
+Você é o gerente da manhã da cascata noturna do Mapping. Leia o CLAUDE.md e,
+no PLAN.md, a seção "Execução em cascata" inteira, em especial "O gerente da
+manhã" e "Painel da noite". Levante o estado (painel, PRs abertos e as bases
+deles, branches, fase em andamento), mostre o quadro da manhã e me conduza
+passo a passo: diga o que você faz e o que eu faço, confira cada passo antes
+do seguinte e me entregue os prompts do Cowork prontos, com build id e MCP.
+Faça você mesmo o que é git, GitHub e painel. Nunca mescle PR, nunca apague
+branch, nunca empurre no branch da fase em andamento, nunca faça rebase ou
+force-push. Correções vão para sessões no modelo e no esforço da fase.
+```
 
 **O que a cascata troca:** tempo por risco. As fases da noite são construídas sobre fases ainda não testadas; um achado da manhã na ME1 pode exigir retrabalho na ME2 e na ME3 além do merge-forward. Por isso o gerente para na primeira fase que não fecha verde, em vez de empilhar sobre ela, e a manhã segue a ordem.
 
