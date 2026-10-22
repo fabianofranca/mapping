@@ -112,7 +112,7 @@ test('imagem trancada: "trancar todas" e Excluir desabilitado', async ({ page })
     page.getByRole('button', { name: 'Destrancar todas as marcações desta imagem' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Trancar imagem', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Excluir imagem' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Excluir container' })).toBeDisabled();
 
   const { mapping } = await exportMapping(page);
   expect(mapping.containers.map((i) => i.locked)).toEqual([true]);
