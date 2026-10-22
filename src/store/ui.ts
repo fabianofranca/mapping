@@ -1,4 +1,4 @@
-import { signal, type Signal } from '@preact/signals';
+import { batch, signal, type Signal } from '@preact/signals';
 import {
   projectIndex,
   spaceOf,
@@ -10,11 +10,30 @@ import {
   type Space,
 } from '../model';
 
-/** Item selecionado no editor. */
+/**
+ * Item **primário** da seleção (o último clicado): o que Detalhes, a trilha, as alças e os
+ * atalhos de um item só usam. `null` = nada selecionado. A seleção inteira (ME2) é
+ * `selectedItems(ui)`: o primário mais os outros de `selectionGroup`.
+ */
 export type Selection =
   | { readonly kind: 'image'; readonly id: string }
   | { readonly kind: 'marking'; readonly id: string }
   | null;
+
+/** Um item da seleção: um container (`image`) ou uma marcação. */
+export type SelectionItem = NonNullable<Selection>;
+
+/**
+ * Os outros itens da seleção múltipla, presos ao primário em que foram juntados. Vale só
+ * enquanto `primary` é **o mesmo objeto** que `selection`: qualquer escrita direta em
+ * `ui.selection` (clique simples, criar, ir até uma anotação) desfaz o grupo sozinha, sem que
+ * cada escritor precise saber da seleção múltipla.
+ */
+export interface SelectionGroup {
+  readonly primary: SelectionItem;
+  /** Na ordem em que entraram; nunca contém o primário. */
+  readonly others: readonly SelectionItem[];
+}
 
 /** Navegar: tocar seleciona, arrastar move ou faz pan. Desenhar: arrastar cria marcações. */
 export type EditorMode = 'navigate' | 'draw';
@@ -25,6 +44,8 @@ export type EditorMode = 'navigate' | 'draw';
  */
 export interface EditorUi {
   readonly selection: Signal<Selection>;
+  /** Seleção múltipla: os outros itens além do primário (ver `SelectionGroup`). */
+  readonly selectionGroup: Signal<SelectionGroup | null>;
   readonly mode: Signal<EditorMode>;
   /**
    * Ver limpo (Alt+H): o canvas mostra só as imagens e os componentes. Não é preferência:
@@ -79,6 +100,7 @@ export interface CanvasMenu {
 export function createEditorUi(): EditorUi {
   return {
     selection: signal<Selection>(null),
+    selectionGroup: signal<SelectionGroup | null>(null),
     mode: signal<EditorMode>('navigate'),
     cleanView: signal<boolean>(false),
     hiddenLayers: signal<ReadonlySet<string>>(new Set()),
@@ -95,6 +117,102 @@ export function createEditorUi(): EditorUi {
     reviewLegend: signal<boolean>(false),
     compareImage: signal<string | null>(null),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Seleção múltipla (ME2): um conjunto ordenado de itens com um primário, o último clicado.
+
+/** Mesmo item (mesmo tipo e id). */
+export function sameItem(a: SelectionItem | null, b: SelectionItem | null): boolean {
+  return a !== null && b !== null && a.kind === b.kind && a.id === b.id;
+}
+
+/** A seleção inteira a partir do primário e do grupo: os outros primeiro, o primário por último. */
+export function itemsOf(
+  selection: Selection,
+  group: SelectionGroup | null,
+): readonly SelectionItem[] {
+  if (!selection) return [];
+  if (group === null || group.primary !== selection) return [selection];
+  return [...group.others, selection];
+}
+
+/** Itens selecionados, com o primário por último. Lê os sinais com `.value` (reativo). */
+export function selectedItems(ui: EditorUi): readonly SelectionItem[] {
+  return itemsOf(ui.selection.value, ui.selectionGroup.value);
+}
+
+/** Como `selectedItems`, sem assinar (handlers de evento). */
+export function peekSelectedItems(ui: EditorUi): readonly SelectionItem[] {
+  return itemsOf(ui.selection.peek(), ui.selectionGroup.peek());
+}
+
+/** O item está na seleção? */
+export function isItemSelected(
+  items: readonly SelectionItem[],
+  item: SelectionItem,
+): boolean {
+  return items.some((i) => sameItem(i, item));
+}
+
+/**
+ * Troca a seleção inteira: o **último** item é o primário. Repetidos ficam uma vez só (na
+ * última posição em que aparecem). Lista vazia = nada selecionado.
+ */
+export function selectItems(ui: EditorUi, items: readonly SelectionItem[]): void {
+  const unique: SelectionItem[] = [];
+  for (let i = items.length - 1; i >= 0; i--) {
+    const item = items[i] as SelectionItem;
+    if (!isItemSelected(unique, item)) unique.unshift(item);
+  }
+  const primary = unique.at(-1);
+  batch(() => {
+    if (!primary) {
+      ui.selection.value = null;
+      ui.selectionGroup.value = null;
+      return;
+    }
+    // Um objeto novo: o grupo fica preso a ele, e uma escrita direta depois o desfaz.
+    const fresh: SelectionItem = { kind: primary.kind, id: primary.id };
+    ui.selection.value = fresh;
+    ui.selectionGroup.value =
+      unique.length > 1 ? { primary: fresh, others: unique.slice(0, -1) } : null;
+  });
+}
+
+/**
+ * Shift+clique: tira o item da seleção se ele está nela (o primário passa a ser o último dos
+ * que ficam) ou o acrescenta como primário.
+ */
+export function toggleSelectedItem(ui: EditorUi, item: SelectionItem): void {
+  const items = peekSelectedItems(ui);
+  if (isItemSelected(items, item)) {
+    selectItems(
+      ui,
+      items.filter((i) => !sameItem(i, item)),
+    );
+  } else {
+    selectItems(ui, [...items, item]);
+  }
+}
+
+/** Esc com vários itens: fica só o primário. Devolve `true` se havia outros itens. */
+export function collapseToPrimary(ui: EditorUi): boolean {
+  if (peekSelectedItems(ui).length < 2) return false;
+  ui.selectionGroup.value = null;
+  return true;
+}
+
+/** Os itens que ainda existem no projeto (depois de desfazer, um pode ter sumido). */
+export function existingItems(
+  project: Project | null,
+  items: readonly SelectionItem[],
+): readonly SelectionItem[] {
+  if (!project) return [];
+  const index = projectIndex(project);
+  return items.filter((i) =>
+    i.kind === 'image' ? index.containers.has(i.id) : index.markings.has(i.id),
+  );
 }
 
 /** Liga ou desliga o Ver limpo. Ligar volta ao modo Navegar; desligar não mexe no modo. */
