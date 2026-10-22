@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addBlankImage,
+  addBackgroundContainer,
   applyAccepted,
   changeImageFile,
   changeStatus,
@@ -8,9 +8,9 @@ import {
   parseProposal,
   parseProposalText,
   previewProject,
-  replaceImage,
+  replaceContainer,
   serializeProposal,
-  setBlankImage,
+  setBackgroundContainer,
   setImageLocked,
   validateProject,
   type Project,
@@ -19,12 +19,12 @@ import {
 import { sampleProject } from './fixtures';
 import { AT, changeOf, decided, propose } from './proposalFixtures';
 
-// Tela em branco na proposta (schema v10): a criação leva a entidade inteira com `file: null`
+// Container na proposta (schema v10): a criação leva a entidade inteira com `file: null`
 // (nada para mover de `proposals/<id>/`); `update` ganha `background` e `size`, só na tela em
 // branco; na foto o tamanho continua vindo da troca de arquivo (campo `file`).
 
-const blank = (p: Project) =>
-  addBlankImage(p, {
+const bgContainer = (p: Project) =>
+  addBackgroundContainer(p, {
     id: 'B1',
     name: 'Login',
     width: 390,
@@ -36,12 +36,12 @@ function accept(base: Project, p: Proposal): Proposal {
   return decided(p, base, { level: 'proposal', id: null }, 'accepted');
 }
 
-describe('proposta: tela em branco', () => {
+describe('proposta: container', () => {
   it('criação: a entidade inteira com file nulo, sem arquivo para mover', () => {
     const base = sampleProject();
-    const after = createMarking(blank(base), {
+    const after = createMarking(bgContainer(base), {
       id: 'MB',
-      imageId: 'B1',
+      containerId: 'B1',
       rect: { x: 10, y: 10, width: 100, height: 100 },
     });
     const p = propose(base, after);
@@ -72,8 +72,8 @@ describe('proposta: tela em branco', () => {
   });
 
   it('alteração: cor e tamanho viram `background` e `size`, e aplicam', () => {
-    const base = blank(sampleProject());
-    const after = setBlankImage(base, 'B1', {
+    const base = bgContainer(sampleProject());
+    const after = setBackgroundContainer(base, 'B1', {
       background: '#101010',
       width: 400,
       height: 900,
@@ -102,18 +102,21 @@ describe('proposta: tela em branco', () => {
   });
 
   it('só a cor: um `background` e nenhum `size`', () => {
-    const base = blank(sampleProject());
-    const p = propose(base, setBlankImage(base, 'B1', { background: '#000000' }));
+    const base = bgContainer(sampleProject());
+    const p = propose(
+      base,
+      setBackgroundContainer(base, 'B1', { background: '#000000' }),
+    );
     expect(p.changes.map((c) => c.field)).toEqual(['background']);
   });
 
   it('o tamanho que deixa marcação de fora não é aplicado (rect-out-of-image)', () => {
-    const base = createMarking(blank(sampleProject()), {
+    const base = createMarking(bgContainer(sampleProject()), {
       id: 'MB',
-      imageId: 'B1',
+      containerId: 'B1',
       rect: { x: 100, y: 600, width: 200, height: 200 },
     });
-    const p = propose(base, setBlankImage(base, 'B1', { height: 900 }));
+    const p = propose(base, setBackgroundContainer(base, 'B1', { height: 900 }));
     const shrink: Proposal = {
       ...p,
       changes: p.changes.map((c) =>
@@ -125,10 +128,10 @@ describe('proposta: tela em branco', () => {
   });
 
   it('imagem trancada: o tamanho avisa trava; a cor não', () => {
-    const open = blank(sampleProject());
+    const open = bgContainer(sampleProject());
     const base = setImageLocked(open, 'B1', true);
     const after = setImageLocked(
-      setBlankImage(open, 'B1', { background: '#000000', width: 400 }),
+      setBackgroundContainer(open, 'B1', { background: '#000000', width: 400 }),
       'B1',
       true,
     );
@@ -141,7 +144,7 @@ describe('proposta: tela em branco', () => {
 
   it('`size` e `background` na foto são recusados na aplicação; a troca de arquivo da foto segue igual', () => {
     const base = sampleProject();
-    const swapped = replaceImage(base, 'I2', {
+    const swapped = replaceContainer(base, 'I2', {
       file: 'images/f2.jpg',
       width: 2000,
       height: 2000,
@@ -168,10 +171,10 @@ describe('proposta: tela em branco', () => {
   });
 
   it('o formato valida os campos novos', () => {
-    const base = blank(sampleProject());
+    const base = bgContainer(sampleProject());
     const p = propose(
       base,
-      setBlankImage(base, 'B1', { background: '#000000', width: 400 }),
+      setBackgroundContainer(base, 'B1', { background: '#000000', width: 400 }),
     );
     const json = JSON.parse(serializeProposal(p)) as {
       changes: { field: string; to: unknown }[];

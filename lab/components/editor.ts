@@ -17,7 +17,7 @@
 import Konva from 'konva';
 import { attachPinchZoom, capPixelRatio, freezeGroup, thawGroup } from '../shared/pinch';
 import { ScreenRenderer } from '../../src/canvas/components/screenRenderer';
-import { isContainer } from '../../src/model/components/arrange';
+import { hasSlot } from '../../src/model/components/arrange';
 import { type Board, boardBounds, findScreen } from './board';
 import type { Library, TypeDef } from '../../src/model/components/library';
 import {
@@ -539,7 +539,7 @@ export class ScreenEditor {
     for (const candidate of renderOrder(screen)) {
       if (excluded.has(candidate.id)) continue;
       const type = library.types.find((t) => t.id === candidate.typeId);
-      if (!isContainer(type)) continue;
+      if (!hasSlot(type)) continue;
       if (type?.allowedChildren && !type.allowedChildren.includes(dragged.typeId))
         continue;
       const b = candidate.box;

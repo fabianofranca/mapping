@@ -192,7 +192,7 @@ function fieldValue(
       return m ? markingField(project, m, field) : undefined;
     }
     case 'image': {
-      const i = index.images.get(entityId);
+      const i = index.containers.get(entityId);
       return i ? imageField(i, field) : undefined;
     }
     case 'annotation': {

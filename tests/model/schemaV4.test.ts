@@ -43,6 +43,7 @@ import {
   type Spec,
 } from '../../src/model';
 import { expectValid, sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 import {
   cadastroProject,
   idGen,
@@ -84,7 +85,7 @@ function withChanges(spec: Spec, change: (s: Spec) => void): Spec {
 describe('migração v3 → v4', () => {
   /** Um mapping.json v3: sem `specializations`, `spec`, `type`, `values` nem ids de tupla. */
   function v3Text(): string {
-    const data = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
+    const data = legacyJson(sampleProject());
     delete data.specializations;
     delete data.platformRepos;
     const drop = (item: Record<string, unknown>, keys: string[]) =>
@@ -104,7 +105,7 @@ describe('migração v3 → v4', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(3);
     const p = result.project;
-    expect(p.schemaVersion).toBe(11);
+    expect(p.schemaVersion).toBe(12);
     expect(p.specializations).toEqual([]);
     expect(p.layers.every((l) => l.spec === null)).toBe(true);
     expect(p.annotations.every((a) => a.type === null && a.values === null)).toBe(true);
@@ -119,11 +120,11 @@ describe('migração v3 → v4', () => {
     ]);
   });
 
-  it('o v3 migrado salva como v10 estável', () => {
+  it('o v3 migrado salva como v12 estável', () => {
     const first = deserialize(v3Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);

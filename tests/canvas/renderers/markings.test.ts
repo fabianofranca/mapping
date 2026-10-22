@@ -4,7 +4,7 @@ import type { Frame } from '../../../src/canvas/frame';
 import { MarkingRenderer } from '../../../src/canvas/renderers/markings';
 import {
   removeMarking,
-  setImageMarkingColor,
+  setContainerMarkingColor,
   type LayerDot,
   type Placement,
   type Project,
@@ -79,7 +79,7 @@ describe('MarkingRenderer', () => {
 
   it('cor de borda escolhida para a imagem', () => {
     const { renderer, render } = setup();
-    render({ project: setImageMarkingColor(canvasProject(), 'I1', '#00ff00') });
+    render({ project: setContainerMarkingColor(canvasProject(), 'I1', '#00ff00') });
     expect(node(renderer, 'M1').border.stroke()).toBe('#00FF00');
   });
 

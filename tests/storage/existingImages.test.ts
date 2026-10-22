@@ -35,7 +35,7 @@ describe('importExistingImages', () => {
     );
 
     expect(skipped).toEqual([]);
-    expect(project.images.map((i) => [i.file, i.width, i.height])).toEqual([
+    expect(project.containers.map((i) => [i.file, i.width, i.height])).toEqual([
       ['images/frente.jpg', 400, 300],
       ['images/lateral.jpg', 800, 600],
     ]);
@@ -59,7 +59,7 @@ describe('importExistingImages', () => {
     );
 
     expect(skipped).toEqual(['images/foto-2.jpg']);
-    expect(project.images.map((i) => i.file)).toEqual([
+    expect(project.containers.map((i) => i.file)).toEqual([
       'images/foto.jpg',
       'images/foto-3.jpg',
     ]);

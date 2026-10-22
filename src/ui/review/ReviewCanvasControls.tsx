@@ -169,7 +169,7 @@ export function CompareDialog() {
   const project = store.committed.value;
   const change = p && imageId ? replaceChangeOf(p, imageId) : null;
   const image =
-    project && imageId ? projectIndex(project).images.get(imageId) : undefined;
+    project && imageId ? projectIndex(project).containers.get(imageId) : undefined;
   const newFile = change ? changeImageFile(change) : null;
   const afterPath = p && newFile ? proposalImagePath(p.id, newFile) : null;
   useEffect(() => {

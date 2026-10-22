@@ -1,7 +1,7 @@
 // Viewport do canvas: tamanho do container, pan, zoom, enquadrar e centralizar.
 // As contas ficam em `viewport.ts` (puras); aqui ficam os signals e o DOM.
 import { signal } from '@preact/signals';
-import type { ProjectImage, Rect } from '../model';
+import type { ProjectContainer, Rect } from '../model';
 import { imagesBounds } from './imageGeometry';
 import {
   EMPTY_CANVAS_RECT,
@@ -22,13 +22,13 @@ export class ViewportController {
   readonly size = signal<Size>({ width: 0, height: 0 });
   private readonly container: HTMLElement;
   /** Imagens a enquadrar (lidas sem assinar). */
-  private readonly images: () => readonly ProjectImage[];
+  private readonly images: () => readonly ProjectContainer[];
   /** Já enquadrou na primeira vez que o container teve tamanho. */
   private fitted = false;
   /** Quantas vezes enquadrou; o canvas publica no container para os testes e2e. */
   fits = 0;
 
-  constructor(container: HTMLElement, images: () => readonly ProjectImage[]) {
+  constructor(container: HTMLElement, images: () => readonly ProjectContainer[]) {
     this.container = container;
     this.images = images;
   }

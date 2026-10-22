@@ -53,7 +53,7 @@ export const layerSchema = z.object({
   spec: z.object({ specId: id, layerId: id }).nullable(),
 });
 
-export const imageSchema = z.object({
+export const containerSchema = z.object({
   id,
   name: z.string().nullable(),
   file: z.string().min(1).nullable(),
@@ -68,7 +68,7 @@ export const imageSchema = z.object({
 
 export const markingSchema = z.object({
   id,
-  imageId: id,
+  containerId: id,
   parentId: id.nullable(),
   name: z.string().nullable(),
   rect: rectSchema,
@@ -148,7 +148,7 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   specializations: z.array(specializationSchema),
   platformRepos: z.record(z.string().regex(PLATFORM_ID_RE), platformRepoSchema),
   layers: z.array(layerSchema),
-  images: z.array(imageSchema),
+  containers: z.array(containerSchema),
   markings: z.array(markingSchema),
   annotations: z.array(annotationSchema),
 });

@@ -110,7 +110,7 @@ export function useReviewSync(): void {
           const exists =
             project &&
             (selection.kind === 'image'
-              ? projectIndex(project).images.has(selection.id)
+              ? projectIndex(project).containers.has(selection.id)
               : projectIndex(project).markings.has(selection.id));
           if (!exists) ui.selection.value = null;
         }

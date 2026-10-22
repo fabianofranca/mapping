@@ -2,7 +2,7 @@ import { effect } from '@preact/signals';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addAnnotation,
-  addImage,
+  addContainer,
   createMarking,
   createProject,
   renameMarking,
@@ -24,11 +24,16 @@ function bigScenario(n: number) {
     now: '2026-09-30T12:00:00.000Z',
     firstLayer: { id: 'L1', name: 'Camada', color: '#D32F2F' },
   });
-  base = addImage(base, { id: 'I1', file: 'images/a.png', width: 20000, height: 20000 });
+  base = addContainer(base, {
+    id: 'I1',
+    file: 'images/a.png',
+    width: 20000,
+    height: 20000,
+  });
   for (let i = 0; i < n; i++) {
     base = createMarking(base, {
       id: `M${i}`,
-      imageId: 'I1',
+      containerId: 'I1',
       rect: { x: (i % 100) * 150, y: Math.floor(i / 100) * 150, width: 100, height: 100 },
       name: `m${i}`,
     });

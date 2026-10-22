@@ -7,14 +7,16 @@ import {
   type JsonValue,
   type Marking,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../src/model';
 import { ToolError } from './errors';
-import { BLANK_IMAGE_LABEL, type Refs } from './items';
+import { CONTAINER_LABEL, type Refs } from './items';
 import { markingRow } from './views';
 
 export interface MarkingFilters {
-  /** Imagem: referência, id, nome ou nome do arquivo. */
+  /** Container: referência, id, nome ou nome do arquivo. */
+  readonly container?: string;
+  /** Antigo: use `container` (aceito com aviso). */
   readonly image?: string;
   /** Camada: id ou nome. */
   readonly layer?: string;
@@ -63,12 +65,12 @@ function annotationTexts(p: Project, a: Annotation): string[] {
   return out;
 }
 
-function findImage(p: Project, query: string): ProjectImage {
+function findContainer(p: Project, query: string): ProjectContainer {
   const index = projectIndex(p);
-  const direct = index.images.get(query);
+  const direct = index.containers.get(query);
   if (direct) return direct;
   const folded = fold(query);
-  const byName = p.images.filter(
+  const byName = p.containers.filter(
     (i) =>
       (i.name !== null && fold(i.name) === folded) ||
       (i.file !== null &&
@@ -76,11 +78,11 @@ function findImage(p: Project, query: string): ProjectImage {
   );
   if (byName.length === 1) return byName[0]!;
   const coded = matchShortCode(p, 'i', query.replace(/^i\//, ''));
-  if (coded.length === 1) return index.images.get(coded[0]!.id)!;
+  if (coded.length === 1) return index.containers.get(coded[0]!.id)!;
   throw new ToolError(
     byName.length > 1 || coded.length > 1 ? 'ambiguous-image' : 'not-found',
-    `imagem não encontrada ou ambígua: ${query}`,
-    { images: p.images.map((i) => i.name ?? i.file ?? BLANK_IMAGE_LABEL) },
+    `container não encontrado ou ambíguo: ${query}`,
+    { containers: p.containers.map((i) => i.name ?? i.file ?? CONTAINER_LABEL) },
   );
 }
 
@@ -95,18 +97,18 @@ function matchesType(p: Project, a: Annotation, query: string): boolean {
   );
 }
 
-/** Marcações em profundidade (o pai antes das filhas), imagem por imagem. */
-function inDisplayOrder(p: Project, only: ProjectImage | null): Marking[] {
+/** Marcações em profundidade (o pai antes das filhas), container por container. */
+function inDisplayOrder(p: Project, only: ProjectContainer | null): Marking[] {
   const children = projectIndex(p).children;
   const result: Marking[] = [];
   const visit = (marking: Marking) => {
     result.push(marking);
     for (const child of children.get(marking.id) ?? []) visit(child);
   };
-  const images = only ? [only] : p.images;
-  for (const image of images) {
+  const containers = only ? [only] : p.containers;
+  for (const container of containers) {
     for (const root of children.get(null) ?? []) {
-      if (root.imageId === image.id) visit(root);
+      if (root.containerId === container.id) visit(root);
     }
   }
   return result;
@@ -120,7 +122,15 @@ export function listMarkings(
   const index = projectIndex(p);
   const issues = projectIssues(p);
 
-  const image = filters.image !== undefined ? findImage(p, filters.image) : null;
+  if (filters.container !== undefined && filters.image !== undefined) {
+    throw new ToolError(
+      'invalid-arguments',
+      'informe `container` (a antiga `image` também é aceita), não os dois',
+    );
+  }
+  const containerQuery = filters.container ?? filters.image;
+  const container =
+    containerQuery !== undefined ? findContainer(p, containerQuery) : null;
   let layerId: string | null = null;
   if (filters.layer !== undefined) {
     const wanted = fold(filters.layer);
@@ -141,7 +151,7 @@ export function listMarkings(
     filters.annotationType !== undefined ||
     filters.incomplete === true;
 
-  const matching = inDisplayOrder(p, image).filter((marking) => {
+  const matching = inDisplayOrder(p, container).filter((marking) => {
     let candidates = index.annotationsByMarking.get(marking.id) ?? [];
     if (byAnnotation) {
       candidates = candidates.filter(
@@ -175,5 +185,15 @@ export function listMarkings(
       ? { truncated: true, nextOffset: offset + page.length }
       : {}),
     markings: page.map((m) => markingRow(refs, m)),
+    ...(filters.image !== undefined
+      ? {
+          warnings: [
+            {
+              code: 'deprecated-argument',
+              message: 'o filtro `image` de list_markings é antigo: use `container`',
+            },
+          ],
+        }
+      : {}),
   };
 }

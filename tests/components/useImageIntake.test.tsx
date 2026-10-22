@@ -257,7 +257,7 @@ describe('useImageIntake: soltar arquivos', () => {
     s.canvas.imageIdAt.mockReturnValue('I2');
     s.intake().dropHandlers.onDragOver(over);
     expect(over.defaultPrevented).toBe(true);
-    expect(s.canvas.setDropTarget).toHaveBeenLastCalledWith({ imageId: 'I2' });
+    expect(s.canvas.setDropTarget).toHaveBeenLastCalledWith({ containerId: 'I2' });
 
     s.intake().dropHandlers.onDragLeave(new Event('dragleave') as DragEvent);
     expect(s.canvas.setDropTarget).toHaveBeenLastCalledWith(null);

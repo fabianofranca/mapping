@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addImage,
+  addContainer,
   compareProposals,
   createMarking,
   parseProposal,
@@ -25,7 +25,7 @@ function sample(): Json {
   const base = sampleProject();
   let after = createMarking(base, {
     id: 'M9',
-    imageId: 'I2',
+    containerId: 'I2',
     rect: { x: 300, y: 300, width: 100, height: 100 },
   });
   after = renameMarking(after, 'M4', 'Farol');
@@ -52,6 +52,14 @@ function errorsOf(data: unknown): string[] {
 }
 
 describe('formato da proposta', () => {
+  it('lê a formatVersion 1 e a 2', () => {
+    for (const formatVersion of [1, 2]) {
+      const result = parseProposal({ ...sample(), formatVersion });
+      if (!result.ok) throw new Error(result.errors.join('\n'));
+      expect(result.proposal.formatVersion).toBe(formatVersion);
+    }
+  });
+
   it('o exemplo é válido e volta igual', () => {
     const json = sample();
     const result = parseProposal(json);
@@ -77,7 +85,11 @@ describe('formato da proposta', () => {
       (p) => (p.format = 'mapping-spec'),
       'format: deve ser "mapping-proposal"',
     ],
-    ['formatVersion errado', (p) => (p.formatVersion = 2), 'formatVersion: deve ser 1'],
+    [
+      'formatVersion errado',
+      (p) => (p.formatVersion = 3),
+      'formatVersion: deve ser 1 ou 2',
+    ],
     ['id com barra', (p) => (p.id = '../fora'), 'id: id inválido'],
     ['título vazio', (p) => (p.title = '  '), 'title: não pode ser vazio'],
     ['data inválida', (p) => (p.createdAt = 'ontem'), 'createdAt: data inválida'],
@@ -245,27 +257,27 @@ describe('comparação com a proposta que substitui', () => {
     let a = renameMarking(base, 'M4', 'Farol');
     a = setMarkingRect(a, 'M2', { x: 1200, y: 1200, width: 400, height: 300 });
     a = renameMarking(a, 'M1', 'Porta dianteira');
-    a = addImage(a, { id: 'T1', file: 'images/t.png', width: 500, height: 500 });
+    a = addContainer(a, { id: 'T1', file: 'images/t.png', width: 500, height: 500 });
     a = createMarking(a, {
       id: 'X1',
-      imageId: 'T1',
+      containerId: 'T1',
       rect: { x: 0, y: 0, width: 50, height: 50 },
     });
     a = setMarkingSource(a, 'X1', { system: 'figma', id: '9:9', url: null });
     a = createMarking(a, {
       id: 'X2',
-      imageId: 'T1',
+      containerId: 'T1',
       rect: { x: 100, y: 0, width: 50, height: 50 },
     });
     const first = propose(base, a, { id: 'P1' });
 
     let b = renameMarking(base, 'M4', 'Farol');
     b = setMarkingRect(b, 'M2', { x: 1200, y: 1200, width: 400, height: 250 });
-    b = addImage(b, { id: 'T1', file: 'images/t.png', width: 500, height: 500 });
+    b = addContainer(b, { id: 'T1', file: 'images/t.png', width: 500, height: 500 });
     // A mesma marcação de origem, recriada com outro id.
     b = createMarking(b, {
       id: 'Z1',
-      imageId: 'T1',
+      containerId: 'T1',
       rect: { x: 0, y: 0, width: 50, height: 50 },
     });
     b = setMarkingSource(b, 'Z1', { system: 'figma', id: '9:9', url: null });

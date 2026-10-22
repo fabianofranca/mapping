@@ -6,7 +6,7 @@ import type {
   Layer,
   Marking,
   Project,
-  ProjectImage,
+  ProjectContainer,
   ProjectSpecialization,
 } from './types';
 
@@ -17,7 +17,7 @@ import type {
 
 export interface ProjectIndex {
   readonly layers: ReadonlyMap<string, Layer>;
-  readonly images: ReadonlyMap<string, ProjectImage>;
+  readonly containers: ReadonlyMap<string, ProjectContainer>;
   readonly markings: ReadonlyMap<string, Marking>;
   readonly annotations: ReadonlyMap<string, Annotation>;
   /** Tuplas de cada anotação, por id. */
@@ -90,7 +90,7 @@ function buildIndex(p: Project): ProjectIndex {
   }
   return {
     layers: byId(p.layers),
-    images: byId(p.images),
+    containers: byId(p.containers),
     markings: byId(p.markings),
     annotations: byId(p.annotations),
     entries,

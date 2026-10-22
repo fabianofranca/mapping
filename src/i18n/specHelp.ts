@@ -182,6 +182,15 @@ const SDUI_EXCERPT = `{
   ]
 }`;
 
+/** Trecho de uma especialização v6: os tamanhos prontos de container (`containers`). */
+const CONTAINERS_EXCERPT = `{
+  "formatVersion": 6,
+  "containers": [
+    { "id": "phone", "name": "Celular", "width": 360, "height": 800 },
+    { "id": "tablet", "name": "Tablet", "width": 800, "height": 1280, "background": "#FAFAFA" }
+  ]
+}`;
+
 /** Trecho de uma especialização v5: as plataformas com `repo` e o `code` de um tipo. */
 const CODE_EXCERPT = `{
   "format": "mapping-spec",
@@ -328,7 +337,7 @@ const ORIGINS_EXCERPT = `{
 
 /** A árvore de um pacote de biblioteca (a pasta da especialização, v4). */
 const PACKAGE_TREE = `material3/
-  material3.spec.json          a especialização (formatVersion 4)
+  material3.spec.json          a especialização (formatVersion 6)
   components/m3-button.json    um arquivo por componente (mapping-component)
   docs/m3-button.md            o documento markdown do tipo
   examples/settings.sdui.json  uma tela de exemplo de um sistema externo
@@ -384,6 +393,7 @@ const ptBR: readonly HelpSection[] = [
           'A especialização aplicada é copiada para specs/<id>.json dentro do projeto, que fica autocontido.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
+          'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
         ],
       },
     ],
@@ -394,7 +404,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 5), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 6), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -637,6 +647,50 @@ const ptBR: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'containers',
+    title: 'Containers (tamanhos prontos)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A formatVersion 6 deixa a especialização oferecer tamanhos prontos de container: o objeto de topo do canvas (uma tela de app, um painel, um cartão) criado sem arquivo, só com tamanho e cor de fundo. No diálogo Novo container, a lista Tamanho predefinido traz Personalizado e Tamanho da seleção (do núcleo; o segundo é o retângulo da marcação selecionada e fica desabilitado sem seleção) e, abaixo, os containers de cada especialização aplicada, agrupados pelo nome dela. Tamanhos de dispositivo (celular, tablet, desktop) vêm da especialização, não do núcleo.',
+      },
+      { kind: 'code', code: CONTAINERS_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'containers',
+            text: 'Na raiz, opcional, só na formatVersion 6. A lista de tamanhos prontos. Escolher um preenche largura, altura e cor de fundo do diálogo, que a pessoa ainda pode editar. O agente a lê em get_specialization e a usa no add_container.',
+          },
+          {
+            term: 'id',
+            text: 'Obrigatório. No formato [a-z0-9-]+ e único na especialização.',
+          },
+          {
+            term: 'name',
+            text: 'Obrigatório, não vazio. É o texto da opção na lista.',
+          },
+          {
+            term: 'width',
+            text: 'Obrigatória. Largura em pixels, inteiro de 1 a 20000.',
+          },
+          {
+            term: 'height',
+            text: 'Obrigatória. Altura em pixels, inteiro de 1 a 20000.',
+          },
+          {
+            term: 'background',
+            text: 'Opcional. Cor #RRGGBB; sem ela, o container nasce branco (#FFFFFF).',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'A 5 continua aceita: uma especialização sem containers só aparece na lista com Personalizado e Tamanho da seleção. A lista está fora do contrato de versão: acrescentar, mudar ou remover tamanhos nunca é quebra nem pede migração. O pacote Material 3 do repositório traz Celular 360 × 800, Celular grande 412 × 915, Tablet 800 × 1280 e Desktop 1440 × 900.',
+      },
+    ],
+  },
+  {
     id: 'sources',
     title: 'Origens (sources)',
     blocks: [
@@ -821,7 +875,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 5), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 6), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
@@ -830,6 +884,7 @@ const ptBR: readonly HelpSection[] = [
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
+          'formatVersion 6, containers: só na versão 6 (antes dela o erro é só é permitido com formatVersion 6); id no formato [a-z0-9-]+ e único na lista; name não vazio; width e height inteiros de 1 a 20000; background opcional, #RRGGBB; qualquer outra propriedade é recusada;',
           'formatVersion 5, repo: só na versão 5, dentro de uma entrada de platforms (antes dela o erro é só é permitido com formatVersion 5); url obrigatória, começando com http:// ou https://; urlTemplate opcional, http(s):// e com {path}; ref opcional, texto não vazio; qualquer outra propriedade é recusada. Plataforma com path em algum tipo e sem repo é só aviso (path-without-repo);',
           'code só em especializações com platforms; os ids de code precisam existir em platforms;',
           'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório e path, se houver, relativo à raiz do repo da plataforma;',
@@ -879,6 +934,7 @@ const enUS: readonly HelpSection[] = [
           'The applied specialization is copied to specs/<id>.json inside the project, which stays self-contained.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
+          'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
         ],
       },
     ],
@@ -889,7 +945,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 5), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 6), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1135,6 +1191,50 @@ const enUS: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'containers',
+    title: 'Containers (ready-made sizes)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'formatVersion 6 lets the specialization offer ready-made container sizes: the top-level object of the canvas (an app screen, a panel, a card) created without a file, with just a size and a background color. In the New container dialog, the Preset size list has Custom and Selection size (from the core; the second is the rectangle of the selected marking and is disabled with no selection) and, below them, the containers of each applied specialization, grouped by its name. Device sizes (phone, tablet, desktop) come from the specialization, not from the core.',
+      },
+      { kind: 'code', code: CONTAINERS_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'containers',
+            text: 'At the root, optional, formatVersion 6 only. The list of ready-made sizes. Choosing one fills in the dialog width, height and background color, which the person can still edit. The agent reads it in get_specialization and uses it in add_container.',
+          },
+          {
+            term: 'id',
+            text: 'Required. In the [a-z0-9-]+ format and unique in the specialization.',
+          },
+          {
+            term: 'name',
+            text: 'Required, non-empty. It is the text of the option in the list.',
+          },
+          {
+            term: 'width',
+            text: 'Required. Width in pixels, an integer from 1 to 20000.',
+          },
+          {
+            term: 'height',
+            text: 'Required. Height in pixels, an integer from 1 to 20000.',
+          },
+          {
+            term: 'background',
+            text: 'Optional. A #RRGGBB color; without it the container is born white (#FFFFFF).',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'Version 5 is still accepted: a specialization without containers only shows Custom and Selection size in the list. The list is outside the version contract: adding, changing or removing sizes is never a break and needs no migration. The repository Material 3 package brings Phone 360 × 800, Large phone 412 × 915, Tablet 800 × 1280 and Desktop 1440 × 900.',
+      },
+    ],
+  },
+  {
     id: 'sources',
     title: 'Sources (sources)',
     blocks: [
@@ -1319,7 +1419,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 5), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 6), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
@@ -1328,6 +1428,7 @@ const enUS: readonly HelpSection[] = [
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
+          'formatVersion 6, containers: version 6 only (before it the error is only allowed with formatVersion 6); id in the [a-z0-9-]+ format and unique in the list; name non-empty; width and height integers from 1 to 20000; background optional, #RRGGBB; any other property is rejected;',
           'formatVersion 5, repo: version 5 only, inside a platforms entry (before it the error is only allowed with formatVersion 5); url required, starting with http:// or https://; urlTemplate optional, http(s):// and containing {path}; ref optional, non-empty text; any other property is rejected. A platform with a path on some type and no repo is only a warning (path-without-repo);',
           'code only in specializations with platforms; the ids in code must exist in platforms;',
           'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required and path, if present, relative to the platform repo root;',

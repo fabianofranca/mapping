@@ -1,11 +1,11 @@
 import type { ComponentChildren } from 'preact';
 import { useId } from 'preact/hooks';
 import { t } from '../i18n';
-import { MARKING_COLOR_PALETTE, type ProjectImage } from '../model';
+import { MARKING_COLOR_PALETTE, type ProjectContainer } from '../model';
 import { useEditor } from './EditorContext';
 
 interface MarkingColorFieldProps {
-  readonly image: ProjectImage;
+  readonly image: ProjectContainer;
   readonly disabled: boolean;
   /** Peça depois do rótulo (o marcador da revisão). */
   readonly mark?: ComponentChildren;
@@ -26,7 +26,7 @@ export function MarkingColorField({
   const { actions } = useEditor();
   const labelId = useId();
   const current = image.markingColor?.toUpperCase() ?? null;
-  const set = (color: string | null) => actions.setImageMarkingColor(image.id, color);
+  const set = (color: string | null) => actions.setContainerMarkingColor(image.id, color);
   const name = `marking-color-${image.id}`;
   return (
     <div class="color-field">

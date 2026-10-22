@@ -48,10 +48,10 @@ describe('pacote material3 é válido', () => {
   const specText = byPath.get('material3.spec.json') ?? '';
   const parsed = parseSpec(JSON.parse(specText));
 
-  it('a especialização valida na formatVersion 4', () => {
+  it('a especialização valida na formatVersion 6', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec.formatVersion).toBe(4);
+    expect(parsed.spec.formatVersion).toBe(6);
   });
 
   it('os quinze componentes validam', () => {

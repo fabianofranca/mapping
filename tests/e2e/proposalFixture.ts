@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import {
   addAnnotation,
-  addImage,
+  addContainer,
   addLayer,
   buildProposal,
   createMarking,
@@ -9,9 +9,9 @@ import {
   proposalFilePath,
   proposalImagePath,
   removeMarking,
-  renameImage,
+  renameContainer,
   renameMarking,
-  replaceImage,
+  replaceContainer,
   serialize,
   serializeProposal,
   setMarkingLocked,
@@ -81,24 +81,29 @@ export function fixtureProject(): Project {
     now: NOW,
     firstLayer: { id: 'L1', name: 'Componentes', color: '#1e88e5' },
   });
-  p = addImage(p, {
+  p = addContainer(p, {
     id: 'I1',
     file: 'images/checkout.png',
     width: WIDTH,
     height: HEIGHT,
   });
-  p = renameImage(p, 'I1', 'Checkout');
-  p = addImage(p, {
+  p = renameContainer(p, 'I1', 'Checkout');
+  p = addContainer(p, {
     id: 'I2',
     file: 'images/carrinho.png',
     width: WIDTH,
     height: HEIGHT,
   });
-  p = renameImage(p, 'I2', 'Carrinho');
+  p = renameContainer(p, 'I2', 'Carrinho');
   // O pai vem da contenção (o Botão Pagar fica dentro do Rodapé).
   const mark = (id: string, imageId: string, name: string, rect: readonly number[]) => {
     const [x = 0, y = 0, width = 0, height = 0] = rect;
-    p = createMarking(p, { id, imageId, name, rect: { x, y, width, height } });
+    p = createMarking(p, {
+      id,
+      containerId: imageId,
+      name,
+      rect: { x, y, width, height },
+    });
   };
   mark('M1', 'I1', 'Cabeçalho', [0, 0, 390, 64]);
   mark('M2', 'I1', 'Lista de itens', [16, 80, 358, 300]);
@@ -140,7 +145,7 @@ export function fixtureProposal(base: Project = fixtureProject()): Proposal {
   after = removeMarking(after, 'M5');
   after = createMarking(after, {
     id: 'M7',
-    imageId: 'I1',
+    containerId: 'I1',
     name: 'Campo Cupom',
     rect: { x: 16, y: 620, width: 358, height: 56 },
   });
@@ -159,20 +164,20 @@ export function fixtureProposal(base: Project = fixtureProject()): Proposal {
     name: 'onClick',
     entries: [{ id: 'E8', key: 'acao', value: 'checkout.pay' }],
   });
-  after = addImage(after, {
+  after = addContainer(after, {
     id: 'I3',
     file: 'images/confirmacao.png',
     width: WIDTH,
     height: HEIGHT,
   });
-  after = renameImage(after, 'I3', 'Confirmação');
+  after = renameContainer(after, 'I3', 'Confirmação');
   after = createMarking(after, {
     id: 'M8',
-    imageId: 'I3',
+    containerId: 'I3',
     name: 'Mensagem de sucesso',
     rect: { x: 95, y: 220, width: 200, height: 200 },
   });
-  after = replaceImage(after, 'I2', {
+  after = replaceContainer(after, 'I2', {
     file: 'images/carrinho-v2.png',
     width: WIDTH,
     height: HEIGHT,

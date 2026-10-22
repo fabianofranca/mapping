@@ -1,14 +1,14 @@
 // Reparo mecânico de um projeto que viola invariantes (docs/FORMAT.md, "Arquivos
 // inconsistentes"). Função pura: quem grava o reparado (e o backup do original) é a sessão.
 import { imageCanvasRect, imagePixelRect, rectsOverlap, right } from './geometry';
-import { IMAGE_GAP } from './images';
+import { IMAGE_GAP } from './containers';
 import {
   validateProject,
   type InvariantCode,
   type InvariantEntity,
   type InvariantIssue,
 } from './invariants';
-import type { Annotation, Marking, Project, ProjectImage, Rect } from './types';
+import type { Annotation, Marking, Project, ProjectContainer, Rect } from './types';
 
 /** O que o reparo fez com o item. */
 export type RepairAction = 'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved';
@@ -90,7 +90,7 @@ function record(
 }
 
 /** Recorte de `rect` aos limites da imagem; `null` se não sobra área. */
-function clipToImage(rect: Rect, image: ProjectImage): Rect | null {
+function clipToImage(rect: Rect, image: ProjectContainer): Rect | null {
   const bounds = imagePixelRect(image);
   const x = Math.max(rect.x, bounds.x);
   const y = Math.max(rect.y, bounds.y);
@@ -128,7 +128,7 @@ function repairRound(
     codesOf.get(`${entity}:${id}`)?.has(code) ?? false;
 
   // Marcações: removidas (imagem inexistente, recorte sem área), recortadas ou viradas raiz.
-  const images = new Map(p.images.map((i) => [i.id, i]));
+  const containers = new Map(p.containers.map((i) => [i.id, i]));
   const byId = new Map(p.markings.map((m) => [m.id, m]));
   const markings: Marking[] = [];
   for (const m of p.markings) {
@@ -137,7 +137,7 @@ function repairRound(
       continue;
     }
     let next = m;
-    const image = images.get(m.imageId);
+    const image = containers.get(m.containerId);
     if (image && has('marking', m.id, 'rect-out-of-image')) {
       const rect = clipToImage(m.rect, image);
       if (!rect) {
@@ -209,10 +209,10 @@ function repairRound(
   }
 
   // Imagens sobrepostas: cada uma que encosta numa anterior vai para a direita de todas elas.
-  let projectImages = p.images;
+  let projectImages = p.containers;
   if (issues.some((i) => i.code === 'images-overlap')) {
     const placed: Rect[] = [];
-    projectImages = p.images.map((image) => {
+    projectImages = p.containers.map((image) => {
       let next = image;
       let rect = imageCanvasRect(image, image.placement);
       if (placed.some((r) => rectsOverlap(r, rect))) {
@@ -226,5 +226,5 @@ function repairRound(
     });
   }
 
-  return { ...p, images: projectImages, markings, annotations: kept };
+  return { ...p, containers: projectImages, markings, annotations: kept };
 }

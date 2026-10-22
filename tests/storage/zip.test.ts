@@ -47,7 +47,7 @@ describe('zip do projeto', () => {
     expect(read.files.specs).toEqual(specs);
   });
 
-  it('round-trip v11: SDUI v5 (com repo) e Modelo de dados v1 juntos, com platformRepos', async () => {
+  it('round-trip v12: SDUI v5 (com repo) e Modelo de dados v1 juntos, com platformRepos', async () => {
     const project = codeProject();
     const mapping = serialize(project);
     const images = new Map([
@@ -81,7 +81,7 @@ describe('zip do projeto', () => {
     expect(serialize(loaded.project)).toBe(mapping);
 
     const data = JSON.parse(read.files.mapping);
-    expect(data.schemaVersion).toBe(11);
+    expect(data.schemaVersion).toBe(12);
     // O projeto só guarda o clone local; o endereço está no `repo` da especialização.
     expect(data.platformRepos).toEqual({ android: { localPath: '../../..' } });
     // O projeto lido do zip responde igual: busca pelo arquivo do tipo, link e pendências.

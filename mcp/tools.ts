@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ModelError, isBlankImage, projectIndex } from '../src/model';
+import { ModelError, projectIndex } from '../src/model';
 import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
@@ -24,7 +24,7 @@ import type { Roots } from './paths';
 import { discoverProjects, findProject, loadProject } from './projects';
 import {
   annotationDetail,
-  imageView,
+  containerView,
   markingView,
   projectDetail,
   projectSummary,
@@ -72,6 +72,20 @@ async function respondWithImage(
   } catch (error) {
     return failure(error);
   }
+}
+
+/** Aviso de uma tool antiga (aceita por uma versão): vai em `warnings`, como o `deprecated-op` do lote. */
+function deprecatedTool(tool: string, use: string): Json {
+  return {
+    code: 'deprecated-tool',
+    tool,
+    message: `${tool} é antiga: use ${use} (mesmos argumentos)`,
+  };
+}
+
+/** Acrescenta `warnings` ao JSON de uma resposta. */
+function withWarnings<T extends { json: Json }>(result: T, warnings: Json[]): T {
+  return { ...result, json: { ...result.json, warnings } };
 }
 
 /** Erro de uma tool → resposta `isError`; só o inesperado vira `internal-error` (com stack no stderr). */
@@ -235,7 +249,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        'Resumo do projeto: imagens, camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) e o clone local por plataforma (`platformRepos`), contagens e pendências (anotações incompletas).',
+        'Resumo do projeto: containers (com `file` e `background`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) e o clone local por plataforma (`platformRepos`), contagens e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -250,13 +264,17 @@ export function registerTools(
     'list_markings',
     {
       description:
-        'Lista marcações em linhas compactas (referência, caminho, retângulo em pixels da imagem original, trava, anotações). Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
+        'Lista marcações em linhas compactas (referência, caminho, retângulo em pixels do container, trava, anotações). Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
       inputSchema: {
         project: projectArg,
+        container: z
+          .string()
+          .optional()
+          .describe('Só deste container: referência, id, nome ou nome do arquivo.'),
         image: z
           .string()
           .optional()
-          .describe('Só desta imagem: referência, id, nome ou nome do arquivo.'),
+          .describe('Antigo: use `container`. Aceito com aviso.'),
         layer: z
           .string()
           .optional()
@@ -306,7 +324,7 @@ export function registerTools(
     'get_marking',
     {
       description:
-        'Tudo sobre uma marcação: caminho, imagem, retângulo em pixels da imagem original, trava, filhas, anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências. ' +
+        'Tudo sobre uma marcação: caminho, container, retângulo em pixels do container, trava, filhas, anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências. ' +
         'Nas anotações tipadas, `code` traz o código de instanciação do tipo por plataforma: `symbol` (o que se chama para criar uma instância), `definition` (o arquivo que define o `symbol`, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` relativo ao diretório de trabalho do cliente e `exists` pelo clone local do projeto; `null` sem `path`), `params`, `values` e `notes`. O servidor só confere se o arquivo existe: nunca lê código.',
       inputSchema: {
         ref: refArg,
@@ -348,7 +366,7 @@ export function registerTools(
     'find_by_code',
     {
       description:
-        'Do código para o mapeamento (que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados): os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Devolve o tipo, o `code` (`symbol` e `definition`) das plataformas que casaram e as referências `mapping://` da anotação, da marcação e da imagem. Não abre arquivos de código.',
+        'Do código para o mapeamento (que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados): os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Devolve o tipo, o `code` (`symbol` e `definition`) das plataformas que casaram e as referências `mapping://` da anotação, da marcação e do container. Não abre arquivos de código.',
       inputSchema: {
         project: projectArg
           .optional()
@@ -387,20 +405,43 @@ export function registerTools(
       }),
   );
 
+  const containerOf = async (ref: string, project: string | undefined) => {
+    const item = await resolveItem(roots, ref, project, 'i');
+    const container = projectIndex(item.refs.project).containers.get(item.id);
+    if (!container) throw new ToolError('not-found', `container não encontrado: ${ref}`);
+    return { item, container };
+  };
+
   server.registerTool(
-    'get_image',
+    'get_container',
     {
       description:
-        'Uma imagem do projeto: arquivo e caminho absoluto (se existir), dimensões, posição, trava, e as marcações de primeiro nível.',
+        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, e as marcações de primeiro nível.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
     ({ ref, project }) =>
       respond(async () => {
-        const item = await resolveItem(roots, ref, project, 'i');
-        const image = projectIndex(item.refs.project).images.get(item.id);
-        if (!image) throw new ToolError('not-found', `imagem não encontrada: ${ref}`);
-        return imageView(roots, item.refs, image);
+        const { item, container } = await containerOf(ref, project);
+        return containerView(roots, item.refs, container);
+      }),
+  );
+
+  server.registerTool(
+    'get_image',
+    {
+      description:
+        'Antiga (aceita com aviso por uma versão): use get_container, que devolve o mesmo.',
+      inputSchema: { ref: refArg, project: optionalProjectArg },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project }) =>
+      respond(async () => {
+        const { item, container } = await containerOf(ref, project);
+        return {
+          ...(await containerView(roots, item.refs, container)),
+          warnings: [deprecatedTool('get_image', 'get_container')],
+        };
       }),
   );
 
@@ -408,7 +449,7 @@ export function registerTools(
     'resolve',
     {
       description:
-        'Descobre o que uma referência designa (marcação, imagem ou anotação) e devolve a referência completa, com o caminho legível. Use antes de get_* quando não souber o tipo.',
+        'Descobre o que uma referência designa (marcação, container ou anotação; a letra `i` da referência é o container) e devolve a referência completa, com o caminho legível. Use antes de get_* quando não souber o tipo.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -418,7 +459,7 @@ export function registerTools(
         const index = projectIndex(item.refs.project);
         const { refs } = item;
         const base = {
-          kind: { m: 'marking', i: 'image', a: 'annotation' }[item.kind],
+          kind: { m: 'marking', i: 'container', a: 'annotation' }[item.kind],
           ref: refs.ref(item.kind, item.id),
           id: item.id,
           project: { name: refs.projectName, path: item.loaded.location.path },
@@ -428,17 +469,17 @@ export function registerTools(
           return {
             ...base,
             name: marking.name,
-            image: refs.ref('i', marking.imageId),
+            container: refs.ref('i', marking.containerId),
             rect: marking.rect,
           };
         }
         if (item.kind === 'i') {
-          const image = index.images.get(item.id)!;
+          const container = index.containers.get(item.id)!;
           return {
             ...base,
-            name: image.name,
-            file: image.file,
-            ...(isBlankImage(image) ? { blank: true, background: image.background } : {}),
+            name: container.name,
+            file: container.file,
+            background: container.background,
           };
         }
         const annotation = index.annotations.get(item.id)!;
@@ -477,7 +518,7 @@ export function registerTools(
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels da imagem original) ou a imagem inteira com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Numa tela em branco, o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
+        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -488,13 +529,13 @@ export function registerTools(
           .max(4096)
           .optional()
           .describe(
-            'Margem em volta da marcação, em pixels da imagem original (padrão 0; limitada às bordas da imagem). Só no modo "crop".',
+            'Margem em volta da marcação, em pixels do container (padrão 0; limitada às bordas dele). Só no modo "crop".',
           ),
         mode: z
           .enum(['crop', 'context'])
           .optional()
           .describe(
-            '"crop" (padrão): só o recorte. "context": a imagem inteira com a marcação destacada.',
+            '"crop" (padrão): só o recorte. "context": o container inteiro com a marcação destacada.',
           ),
         outlineChildren: z
           .boolean()
@@ -517,10 +558,10 @@ export function registerTools(
   );
 
   server.registerTool(
-    'get_image_file',
+    'get_container_file',
     {
       description:
-        'Devolve a imagem inteira de uma imagem do projeto, reduzida se o lado maior passar de `maxSize`. Para ver só uma marcação, use get_marking_image. A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
+        'Devolve a imagem inteira de um container que tem arquivo, reduzida se o lado maior passar de `maxSize`. Num container só com fundo (sem arquivo) falha com `container-without-file`: use get_marking_image. Para ver só uma marcação, use get_marking_image. A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -531,10 +572,31 @@ export function registerTools(
     },
     ({ ref, project, ...options }) =>
       respondWithImage(async () => {
-        const item = await resolveItem(roots, ref, project, 'i');
-        const image = projectIndex(item.refs.project).images.get(item.id);
-        if (!image) throw new ToolError('not-found', `imagem não encontrada: ${ref}`);
-        return imageFile(roots, item.refs, image, options, images);
+        const { item, container } = await containerOf(ref, project);
+        return imageFile(roots, item.refs, container, options, images);
+      }),
+  );
+
+  server.registerTool(
+    'get_image_file',
+    {
+      description:
+        'Antiga (aceita com aviso por uma versão): use get_container_file, que devolve o mesmo.',
+      inputSchema: {
+        ref: refArg,
+        project: optionalProjectArg,
+        maxSize: maxSizeArg,
+        format: formatArg,
+      },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project, ...options }) =>
+      respondWithImage(async () => {
+        const { item, container } = await containerOf(ref, project);
+        return withWarnings(
+          await imageFile(roots, item.refs, container, options, images),
+          [deprecatedTool('get_image_file', 'get_container_file')],
+        );
       }),
   );
 
@@ -566,8 +628,8 @@ export function registerTools(
     'propose_changes',
     {
       description:
-        'Envia uma alteração ao usuário como PROPOSTA para revisão: valida o lote como o plan_changes, calcula as mudanças (criações, alterações campo a campo, remoções) e grava `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). O `mapping.json` NÃO é alterado: o usuário revisa na app, aceita ou rejeita em qualquer nível (proposta, imagem, item, mudança), deixa notas e aplica o que aceitou. ' +
-        'Devolve a referência `mapping://<projeto>/p/<código>`, um resumo por nível e as referências definitivas dos itens criados. Depois, avise o usuário e espere a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar); leia o resultado com get_proposal_review e, para corrigir, envie outra proposta com `supersedes` só com as correções. Reexportações: use `source` nas imagens e marcações e find_by_source para propor só o que mudou.',
+        'Envia uma alteração ao usuário como PROPOSTA para revisão: valida o lote como o plan_changes, calcula as mudanças (criações, alterações campo a campo, remoções) e grava `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). O `mapping.json` NÃO é alterado: o usuário revisa na app, aceita ou rejeita em qualquer nível (proposta, container, item, mudança), deixa notas e aplica o que aceitou. ' +
+        'Devolve a referência `mapping://<projeto>/p/<código>`, um resumo por nível e as referências definitivas dos itens criados. Depois, avise o usuário e espere a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar); leia o resultado com get_proposal_review e, para corrigir, envie outra proposta com `supersedes` só com as correções. Reexportações: use `source` nos containers e marcações e find_by_source para propor só o que mudou.',
       inputSchema: {
         project: projectArg,
         title: z
@@ -621,7 +683,7 @@ export function registerTools(
     'get_proposal',
     {
       description:
-        'Uma proposta: progresso da revisão (`progress.complete` = nada pendente nem aceito sem aplicar), resumo por nível (Projeto e imagens), as mudanças com o estado de cada uma (pending, accepted, rejected, applied), conflitos (o projeto mudou depois da proposta), aviso de item trancado e as notas. Use para saber se a revisão terminou.',
+        'Uma proposta: progresso da revisão (`progress.complete` = nada pendente nem aceito sem aplicar), resumo por nível (Projeto e containers), as mudanças com o estado de cada uma (pending, accepted, rejected, applied), conflitos (o projeto mudou depois da proposta), aviso de item trancado e as notas. Use para saber se a revisão terminou.',
       inputSchema: {
         ref: proposalRefArg,
         project: optionalProjectArg,
@@ -649,7 +711,7 @@ export function registerTools(
     'get_proposal_review',
     {
       description:
-        'O resultado da revisão, só o que importa para a próxima rodada: as mudanças rejeitadas (com o alvo, antes/depois e as notas do usuário), as notas gerais (proposta, projeto, imagem, item), os conflitos e se a revisão terminou (`ready`). Corrija só isso e envie com propose_changes e `supersedes`.',
+        'O resultado da revisão, só o que importa para a próxima rodada: as mudanças rejeitadas (com o alvo, antes/depois e as notas do usuário), as notas gerais (proposta, projeto, container, item), os conflitos e se a revisão terminou (`ready`). Corrija só isso e envie com propose_changes e `supersedes`.',
       inputSchema: { ref: proposalRefArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -671,7 +733,7 @@ export function registerTools(
     'find_by_source',
     {
       description:
-        'Acha as imagens e marcações cuja origem (`source`) é `system` + `id` (comparação exata), para uma reexportação casar os elementos que já existem em vez de duplicá-los. Sem `project`, procura em todos os projetos das raízes. Também lista (`proposed`) as propostas ainda abertas que criam um elemento com essa origem.',
+        'Acha os containers e marcações cuja origem (`source`) é `system` + `id` (comparação exata), para uma reexportação casar os elementos que já existem em vez de duplicá-los. Sem `project`, procura em todos os projetos das raízes. Também lista (`proposed`) as propostas ainda abertas que criam um elemento com essa origem.',
       inputSchema: {
         project: projectArg
           .optional()

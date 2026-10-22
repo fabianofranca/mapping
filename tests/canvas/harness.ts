@@ -5,13 +5,13 @@ import { vi } from 'vitest';
 import {
   approximateMeasurer,
   addAnnotation,
-  addBlankImage,
+  addBackgroundContainer,
   addComponentMarking,
   type ComponentCatalog,
-  addImage,
+  addContainer,
   createMarking,
   createProject,
-  setImagePlacement,
+  setContainerPlacement,
   type Project,
 } from '../../src/model';
 import type { Frame } from '../../src/canvas/frame';
@@ -108,25 +108,25 @@ export function canvasProject(): Project {
     now: NOW,
     firstLayer: { id: 'L1', name: 'Lataria', color: '#E53935' },
   });
-  p = addImage(p, { id: 'I1', file: 'images/a.jpg', width: 1000, height: 800 });
-  p = addImage(p, { id: 'I2', file: 'images/b.jpg', width: 500, height: 500 });
-  p = setImagePlacement(p, 'I1', { x: 0, y: 0, scale: 1 });
-  p = setImagePlacement(p, 'I2', { x: 1100, y: 0, scale: 1 });
+  p = addContainer(p, { id: 'I1', file: 'images/a.jpg', width: 1000, height: 800 });
+  p = addContainer(p, { id: 'I2', file: 'images/b.jpg', width: 500, height: 500 });
+  p = setContainerPlacement(p, 'I1', { x: 0, y: 0, scale: 1 });
+  p = setContainerPlacement(p, 'I2', { x: 1100, y: 0, scale: 1 });
   p = createMarking(p, {
     id: 'M1',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 100, y: 100, width: 600, height: 500 },
     name: 'Porta',
   });
   p = createMarking(p, {
     id: 'M2',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 200, y: 200, width: 100, height: 100 },
     name: 'Maçaneta',
   });
   p = createMarking(p, {
     id: 'M3',
-    imageId: 'I2',
+    containerId: 'I2',
     rect: { x: 50, y: 50, width: 200, height: 200 },
   });
   p = addAnnotation(p, {
@@ -202,10 +202,10 @@ export function componentSources(
   return { catalog: signal(catalog), fontsEpoch: signal(0) };
 }
 
-/** Quadro 1000×800 (foto I1) e tela em branco B1 (400×600, fundo branco) com dois textos. */
+/** Quadro 1000×800 (foto I1) e container B1 (400×600, fundo branco) com dois textos. */
 export function componentCanvasProject(): Project {
   let p = componentProject();
-  p = addBlankImage(p, {
+  p = addBackgroundContainer(p, {
     id: 'B1',
     name: 'Tela',
     width: 400,
@@ -214,14 +214,14 @@ export function componentCanvasProject(): Project {
     center: { x: 1500, y: 300 },
   });
   const catalog = testCatalog();
-  const add = (id: string, imageId: string, x: number, y: number) =>
+  const add = (id: string, containerId: string, x: number, y: number) =>
     addComponentMarking(
       p,
       catalog,
       {
         markingId: id,
         annotationId: `A_${id}`,
-        imageId,
+        containerId: containerId,
         parentId: null,
         specId: SPEC_ID,
         typeId: 'text',

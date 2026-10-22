@@ -18,6 +18,7 @@ import { cadastroProject } from '../model/specFixtures';
 import { emptyProject, sampleProject } from '../model/fixtures';
 import { exampleProjectBlob } from '../../src/app/exampleProject';
 import { readInvalidFixture } from '../model/invalidFixtures';
+import { legacyJson } from '../model/legacyShape';
 import {
   keepDirectoriesInClone,
   MemoryDirectory,
@@ -248,7 +249,7 @@ describe('projeto em pasta', () => {
 
   it('projeto v10 com urlTemplate: abre migrado, registra o descartado no Diagnóstico e grava o backup', async () => {
     const project = emptyProject();
-    const data = JSON.parse(serialize(project)) as Record<string, unknown>;
+    const data = legacyJson(project);
     data.platformRepos = {
       android: { urlTemplate: 'https://git.example/{path}', localPath: '../..' },
       ios: { urlTemplate: 'https://git.example/ios/{path}', localPath: null },
@@ -293,7 +294,7 @@ describe('projeto em pasta', () => {
   });
 
   it('projeto v10 só com localPath migra sem registrar nada no Diagnóstico', async () => {
-    const data = JSON.parse(serialize(emptyProject())) as Record<string, unknown>;
+    const data = legacyJson(emptyProject());
     data.platformRepos = { android: { urlTemplate: null, localPath: '..' } };
     pickDirectory.mockResolvedValue(
       folderWith({ 'mapping.json': JSON.stringify({ ...data, schemaVersion: 10 }) }),
@@ -455,7 +456,7 @@ describe('importar zip', () => {
     expect(current.kind).toBe('local');
     expect(current.unexported.value).toBe(false);
     const project = current.session.store.project.value;
-    expect(project?.images).toHaveLength(4);
+    expect(project?.containers).toHaveLength(4);
     expect(project?.markings).toHaveLength(31);
     expect(project?.annotations).toHaveLength(41);
     expect(current.session.proposals.list.value).toHaveLength(1);
@@ -742,7 +743,7 @@ describe('propostas de alteração (etapa 4)', () => {
       applied: 5,
     });
     expect(await root.read('images/nova.webp')).toBe('WEBP');
-    expect(session.store.project.value?.images.some((i) => i.id === 'I3')).toBe(true);
+    expect(session.store.project.value?.containers.some((i) => i.id === 'I3')).toBe(true);
   });
 });
 
@@ -796,7 +797,7 @@ describe('projeto com dados inconsistentes', () => {
 
     const [backup, ...rest] = await backupsOf(root);
     expect(rest).toEqual([]);
-    expect(backup).toMatch(/^mapping\.v11\.\d{8}-\d{6}\.json$/);
+    expect(backup).toMatch(/^mapping\.v12\.\d{8}-\d{6}\.json$/);
     expect(
       await root.dirs
         .get('backups')

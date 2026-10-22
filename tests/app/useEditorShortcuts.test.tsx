@@ -264,9 +264,9 @@ describe('useEditorShortcuts: trava (Alt+L)', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'image', id: 'I1' };
     s.press('l', { alt: true });
-    expect(s.harness.project().images[0]?.locked).toBe(true);
+    expect(s.harness.project().containers[0]?.locked).toBe(true);
     s.press('l', { alt: true });
-    expect(s.harness.project().images[0]?.locked).toBe(false);
+    expect(s.harness.project().containers[0]?.locked).toBe(false);
   });
 
   it('o item trancado continua selecionado', () => {

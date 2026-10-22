@@ -145,7 +145,7 @@ export function ListView({ onSelect }: ListViewProps) {
         />
       </div>
 
-      {project.images.length === 0 ? (
+      {project.containers.length === 0 ? (
         <p class="muted list-message">{t('list.emptyNoImages')}</p>
       ) : listing.length === 0 ? (
         <p class="muted list-message">

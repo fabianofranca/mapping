@@ -43,7 +43,7 @@ const extraMarking = (p: Project, marking: Partial<Marking>): Project => ({
     ...p.markings,
     {
       id: 'MX',
-      imageId: 'I1',
+      containerId: 'I1',
       parentId: null,
       name: 'Extra',
       rect: { x: 100, y: 1500, width: 200, height: 100 },
@@ -76,13 +76,13 @@ const freeAnnotation = (p: Project, annotation: Partial<Annotation>): Project =>
 
 /** Segunda imagem (500×500); sem `at`, à direita da primeira e sem sobrepor. */
 const secondImage = (p: Project, at?: { x: number; y: number }): Project => {
-  const first = p.images[0];
+  const first = p.containers[0];
   if (!first) throw new Error('fixture sem imagem');
   const firstRect = imageCanvasRect(first, first.placement);
   return {
     ...p,
-    images: [
-      ...p.images,
+    containers: [
+      ...p.containers,
       {
         ...first,
         id: 'I2',
@@ -128,7 +128,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     name: 'missing-image',
     code: 'missing-image',
     repairable: true,
-    build: (p) => extraMarking(p, { name: 'Órfã', imageId: 'I9' }),
+    build: (p) => extraMarking(p, { name: 'Órfã', containerId: 'I9' }),
   },
   {
     name: 'missing-marking',
@@ -160,7 +160,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     code: 'images-overlap',
     repairable: true,
     // A segunda imagem começa no mesmo ponto da primeira.
-    build: (p) => secondImage(p, p.images[0]?.placement),
+    build: (p) => secondImage(p, p.containers[0]?.placement),
   },
   // ---- Recusados (sem reparo mecânico inequívoco) ----
   {
@@ -177,7 +177,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
       const q = secondImage(p);
       return {
         ...q,
-        images: q.images.map((i) =>
+        containers: q.containers.map((i) =>
           i.id === 'I2' ? { ...i, file: 'images/cadastro.png' } : i,
         ),
       };
@@ -196,7 +196,7 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     repairable: false,
     build: (p) =>
       extraMarking(secondImage(p), {
-        imageId: 'I2',
+        containerId: 'I2',
         parentId: 'MF',
         rect: { x: 10, y: 10, width: 100, height: 100 },
       }),

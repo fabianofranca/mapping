@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   addAnnotation,
-  addImage,
+  addContainer,
   addLayer,
   addTableRow,
   addTypedAnnotation,
@@ -116,7 +116,12 @@ function typed(
  */
 export function cadastroProject(): Project {
   let p = specProject();
-  p = addImage(p, { id: 'I1', file: 'images/cadastro.png', width: 1000, height: 2000 });
+  p = addContainer(p, {
+    id: 'I1',
+    file: 'images/cadastro.png',
+    width: 1000,
+    height: 2000,
+  });
   const rect = (x: number, y: number, width: number, height: number) => ({
     x,
     y,
@@ -125,37 +130,37 @@ export function cadastroProject(): Project {
   });
   p = createMarking(p, {
     id: 'MT',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: rect(100, 50, 800, 100),
     name: 'Título',
   });
   p = createMarking(p, {
     id: 'MF',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: rect(50, 200, 900, 1200),
     name: 'Formulário',
   });
   p = createMarking(p, {
     id: 'MN',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: rect(100, 250, 800, 100),
     name: 'Nome',
   });
   p = createMarking(p, {
     id: 'MI',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: rect(100, 400, 800, 100),
     name: 'Idade',
   });
   p = createMarking(p, {
     id: 'ME',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: rect(100, 550, 800, 100),
     name: 'E-mail',
   });
   p = createMarking(p, {
     id: 'MC',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: rect(100, 700, 800, 100),
     name: 'Cadastrar',
   });

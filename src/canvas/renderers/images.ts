@@ -6,9 +6,9 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../../i18n';
 import {
   imageCanvasRect,
-  isBlankImage,
+  isBackgroundContainer,
   type Placement,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../../model';
 import type { DisplayImage } from '../../store/displayImages';
 import type { Frame } from '../frame';
@@ -54,13 +54,13 @@ export class ImageRenderer {
   render(frame: ImageFrame): ReadonlyMap<string, Placement> {
     const { project, preview, bitmaps, tokens } = frame;
     const zoom = frame.viewport.scale;
-    const images = project?.images ?? [];
+    const images = project?.containers ?? [];
     const placements = new Map<string, Placement>();
     const seen = new Set<string>();
     images.forEach((image, index) => {
       seen.add(image.id);
       const placement =
-        preview?.imageId === image.id ? preview.placement : image.placement;
+        preview?.containerId === image.id ? preview.placement : image.placement;
       placements.set(image.id, placement);
       const node = this.nodes.get(image.id) ?? this.createNode(image.id);
       updateNode(
@@ -106,7 +106,7 @@ function isClosed(bitmap: ImageBitmap): boolean {
 
 function updateNode(
   node: ImageNode,
-  image: ProjectImage,
+  image: ProjectContainer,
   placement: Placement,
   state: DisplayImage<ImageBitmap> | undefined,
   tokens: CanvasTokens,
@@ -116,9 +116,9 @@ function updateNode(
   node.group.position({ x: rect.x, y: rect.y });
   const box = { width: rect.width, height: rect.height };
 
-  // Tela em branco (sem arquivo): um retângulo cheio com a cor de fundo, sempre pronto. Nunca o
+  // Container sem arquivo (sem arquivo): um retângulo cheio com a cor de fundo, sempre pronto. Nunca o
   // reservado de "carregando": não há bitmap para esperar.
-  if (isBlankImage(image)) {
+  if (isBackgroundContainer(image)) {
     node.bitmap.setAttrs({ ...box, visible: false, image: undefined });
     node.placeholder.setAttrs({
       ...box,
@@ -182,7 +182,7 @@ function updateNode(
 /** Rótulo com o nome da imagem (ou do arquivo) logo acima dela. */
 function updateTitle(
   node: ImageNode,
-  image: ProjectImage,
+  image: ProjectContainer,
   width: number,
   tokens: CanvasTokens,
   zoom: number,
@@ -195,7 +195,7 @@ function updateTitle(
   const { size, line, weight } = tokens.type.image;
   node.title.setAttrs({
     visible: true,
-    text: image.name ?? image.file ?? t('image.blankUntitled'),
+    text: image.name ?? image.file ?? t('image.containerUntitled'),
     x: 0,
     y: -(line + IMAGE_TITLE_GAP) / zoom,
     width,

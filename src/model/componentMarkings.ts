@@ -2,7 +2,7 @@ import { findSlot, resolveSlotLayout, slotBoxOfScene } from './components/arrang
 import type { ComponentFile } from './components/componentFormat';
 import { instantiate, type TextMeasurer } from './components/instantiate';
 import {
-  isContainerComponent,
+  hasSlotComponent,
   markingComponent,
   type ComponentCatalog,
 } from './componentCatalog';
@@ -58,7 +58,7 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
           typeId: type.id,
           name: type.name,
           layerId: layer.id,
-          container: isContainerComponent(component),
+          container: hasSlotComponent(component),
           component,
         });
       }
@@ -70,12 +70,12 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
 export interface NewComponentArgs {
   readonly markingId: string;
   readonly annotationId: string;
-  readonly imageId: string;
-  /** Container que adota a instância (dentro do slot); `null` = nível da imagem. */
+  readonly containerId: string;
+  /** Componente com slot que adota a instância (dentro do slot); `null` = nível da imagem. */
   readonly parentId: string | null;
   readonly specId: string;
   readonly typeId: string;
-  /** Centro desejado (pixels da imagem) sem container; ausente = centro da imagem. */
+  /** Centro desejado (pixels da imagem) sem componente com slot; ausente = centro da imagem. */
   readonly center?: { readonly x: number; readonly y: number };
   /** Retângulo explícito (MCP); ausente = `componentPlacement`. */
   readonly rect?: Rect;
@@ -111,7 +111,7 @@ function resolveType(
   return { component, type: resolved.type, layerId: resolved.layer.id };
 }
 
-/** Caixa do slot em pixels inteiros, dentro do container; o retângulo dele se não houver slot. */
+/** Caixa do slot em pixels inteiros, dentro do componente com slot; o retângulo dele se não houver slot. */
 function slotArea(
   p: Project,
   catalog: ComponentCatalog,
@@ -152,23 +152,27 @@ function slotArea(
 
 /**
  * Retângulo de uma instância nova. Tamanho = `size` do componente, preso à área disponível
- * (a imagem ou a caixa do slot do container) e nunca abaixo do `minSize`; se nem o mínimo
- * cabe, `rect-out-of-image` (nível da imagem) ou `rect-outside-parent` (container). Sem
- * container: centrada em `center` (padrão, o centro da imagem) e presa dentro da imagem. Com
- * container: dentro da caixa do slot, logo depois da última filha no eixo do layout (linha:
+ * (a imagem ou a caixa do slot do componente com slot) e nunca abaixo do `minSize`; se nem o mínimo
+ * cabe, `rect-out-of-image` (nível da imagem) ou `rect-outside-parent` (componente com slot). Sem
+ * componente com slot: centrada em `center` (padrão, o centro da imagem) e presa dentro da imagem. Com
+ * componente com slot: dentro da caixa do slot, logo depois da última filha no eixo do layout (linha:
  * à direita; coluna: abaixo; com o `gap` e o `padding` do slot), ou no início do conteúdo do
- * slot se o layout é `none` ou não há filhas; se passar do slot, presa dentro do container.
+ * slot se o layout é `none` ou não há filhas; se passar do slot, presa dentro do componente com slot.
  */
 export function componentPlacement(
   p: Project,
   catalog: ComponentCatalog,
-  args: Pick<NewComponentArgs, 'imageId' | 'parentId' | 'specId' | 'typeId' | 'center'>,
+  args: Pick<
+    NewComponentArgs,
+    'containerId' | 'parentId' | 'specId' | 'typeId' | 'center'
+  >,
   measure: TextMeasurer,
 ): Rect {
   const { component } = resolveType(p, catalog, args.specId, args.typeId);
-  const image = findById(p.images, args.imageId);
+  const image = findById(p.containers, args.containerId);
   const parent = args.parentId === null ? null : findById(p.markings, args.parentId);
-  if (parent !== null && parent.imageId !== image.id) fail('invalid-parent', parent.id);
+  if (parent !== null && parent.containerId !== image.id)
+    fail('invalid-parent', parent.id);
 
   const slot = parent === null ? null : slotArea(p, catalog, parent.id, measure);
   const area = slot?.area ?? imagePixelRect(image);
@@ -215,7 +219,7 @@ export function componentPlacement(
 
 /**
  * Cria a marcação e a anotação tipada que a desenha, numa operação só (o store faz uma
- * entrada de desfazer). O pai é o container pedido (`null` = nível da imagem), nunca o "mais
+ * entrada de desfazer). O pai é o componente com slot pedido (`null` = nível da imagem), nunca o "mais
  * interno que contém". A anotação vai na camada do projeto que veio da camada da
  * especialização do tipo, com os valores de `args.values` sobre os `default`, ou, sem eles,
  * o `preview` do componente (campos `table` e `ref` ficam no `default`). O tamanho mínimo do
@@ -236,7 +240,7 @@ export function addComponentMarking(
       p,
       catalog,
       {
-        imageId: args.imageId,
+        containerId: args.containerId,
         parentId: args.parentId,
         specId: args.specId,
         typeId: args.typeId,
@@ -246,7 +250,7 @@ export function addComponentMarking(
     );
   if (args.parentId !== null) {
     const parent = findById(p.markings, args.parentId);
-    if (parent.imageId !== args.imageId) fail('invalid-parent', parent.id);
+    if (parent.containerId !== args.containerId) fail('invalid-parent', parent.id);
     if (!containsRect(parent.rect, rect)) fail('rect-outside-parent');
   }
 
@@ -254,7 +258,7 @@ export function addComponentMarking(
     p,
     {
       id: args.markingId,
-      imageId: args.imageId,
+      containerId: args.containerId,
       rect,
       ...(args.name !== undefined ? { name: args.name } : {}),
     },

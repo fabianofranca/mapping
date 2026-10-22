@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  addImage,
+  addContainer,
   applySpecialization,
   createProject,
   parseSpecText,
@@ -28,8 +28,8 @@ import { findProject, loadProject, type LoadedProject } from '../../mcp/projects
 import { markingRow } from '../../mcp/views';
 import { NOW } from '../model/fixtures';
 
-// Tela em branco com componentes do Material 3 no MCP: o catálogo é lido ao carregar o projeto,
-// as operações novas (add_blank_image, create_marking com annotation, move_marking) e o
+// Container com componentes do Material 3 no MCP: o catálogo é lido ao carregar o projeto,
+// as operações novas (add_container, create_marking com annotation, move_marking) e o
 // `minSize` valem no lote, e get_marking_image recorta o desenho simplificado.
 
 const LIBRARY = resolve('examples/libraries/material3');
@@ -51,12 +51,12 @@ function project(): Project {
     now: NOW,
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
-  p = addImage(p, { id: PHOTO, file: 'images/foto.png', width: 200, height: 100 });
+  p = addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 200, height: 100 });
   return applySpecialization(p, spec, { packageSpecName: 'material3.spec.json' });
 }
 
 beforeAll(async () => {
-  base = mkdtempSync(join(tmpdir(), 'mapping-blank-'));
+  base = mkdtempSync(join(tmpdir(), 'mapping-container-'));
   const dir = join(base, 'telas');
   mkdirSync(join(dir, 'specs'), { recursive: true });
   cpSync(LIBRARY, join(dir, 'specs', 'material3'), { recursive: true });
@@ -84,7 +84,7 @@ function run(
 }
 
 const SCREEN: Operation = {
-  op: 'add_blank_image',
+  op: 'add_container',
   as: '$tela',
   name: 'Entrar',
   width: 390,
@@ -101,19 +101,19 @@ describe('catálogo ao carregar o projeto', () => {
   });
 });
 
-describe('add_blank_image e update_image', () => {
-  it('cria a tela e edita fundo e tamanho; na foto, not-blank', async () => {
+describe('add_container e update_container', () => {
+  it('cria o container e edita fundo e tamanho; na foto, container-has-file', async () => {
     const result = await run([
       SCREEN,
-      { op: 'update_image', image: '$tela', background: '#000000', height: 900 },
-      { op: 'update_image', image: PHOTO, background: '#000000' },
-      { op: 'update_image', image: PHOTO, width: 300 },
+      { op: 'update_container', container: '$tela', background: '#000000', height: 900 },
+      { op: 'update_container', container: PHOTO, background: '#000000' },
+      { op: 'update_container', container: PHOTO, width: 300 },
     ]);
     expect(result.errors.map((e) => [e.index, e.code])).toEqual([
-      [2, 'not-blank'],
-      [3, 'not-blank'],
+      [2, 'container-has-file'],
+      [3, 'container-has-file'],
     ]);
-    const screen = result.project.images.find((i) => i.name === 'Entrar');
+    const screen = result.project.containers.find((i) => i.name === 'Entrar');
     expect(screen).toMatchObject({
       file: null,
       width: 390,
@@ -121,7 +121,26 @@ describe('add_blank_image e update_image', () => {
       background: '#000000',
     });
     expect(result.created[0]).toMatchObject({ kind: 'i', alias: '$tela' });
-    expect(result.steps[0]?.description).toMatch(/tela em branco "Entrar".*390×844/);
+    expect(result.steps[0]?.description).toMatch(/container "Entrar".*390×844/);
+  });
+});
+
+describe('add_blank_image (antiga)', () => {
+  it('ainda cria o container, com aviso para usar add_container', async () => {
+    const result = await run([{ ...SCREEN, op: 'add_blank_image' } as Operation]);
+    expect(result.errors).toEqual([]);
+    expect(result.project.containers.find((i) => i.name === 'Entrar')).toMatchObject({
+      file: null,
+      width: 390,
+      height: 844,
+    });
+    expect(result.deprecations).toEqual([
+      {
+        index: 0,
+        op: 'add_blank_image',
+        message: expect.stringContaining('add_container'),
+      },
+    ]);
   });
 });
 
@@ -130,13 +149,13 @@ describe('create_marking com annotation', () => {
     op: 'create_marking',
     as: '$row',
     annotationAs: '$rowNote',
-    image: '$tela',
+    container: '$tela',
     annotation: { type: 'material3/m3-row' },
   } as const;
   const BUTTON = {
     op: 'create_marking',
     as: '$btn',
-    image: '$tela',
+    container: '$tela',
     parent: '$row',
     annotation: { type: 'material3/m3-button', values: { label: 'Entrar' } },
   } as const;
@@ -177,7 +196,7 @@ describe('create_marking com annotation', () => {
       SCREEN,
       {
         op: 'create_marking',
-        image: '$tela',
+        container: '$tela',
         rect: { x: 10, y: 10, width: 20, height: 20 },
         annotation: { type: 'material3/m3-button' },
       },
@@ -193,10 +212,10 @@ describe('create_marking com annotation', () => {
   it('sem componente (ou sem annotation) o rect continua obrigatório', async () => {
     const noRect = await run([
       SCREEN,
-      { op: 'create_marking', image: '$tela' },
+      { op: 'create_marking', container: '$tela' },
       {
         op: 'create_marking',
-        image: '$tela',
+        container: '$tela',
         annotation: { type: 'material3/m3-button' },
         rect: { x: 0, y: 0, width: 100, height: 50 },
         annotationAs: '$a',
@@ -207,7 +226,7 @@ describe('create_marking com annotation', () => {
       SCREEN,
       {
         op: 'create_marking',
-        image: '$tela',
+        container: '$tela',
         rect: { x: 0, y: 0, width: 100, height: 50 },
         annotationAs: '$a',
       },
@@ -233,7 +252,7 @@ describe('create_marking com annotation', () => {
 const BUTTON_ON_SCREEN: Operation = {
   op: 'create_marking',
   as: '$btn',
-  image: '$tela',
+  container: '$tela',
   annotation: { type: 'material3/m3-button' },
 };
 
@@ -269,14 +288,14 @@ describe('leitura: ordem, componente e minSize', () => {
   });
 });
 
-describe('get_marking_image numa tela em branco com componentes', () => {
+describe('get_marking_image num container com componentes', () => {
   it('recorta o desenho simplificado: fundo, botão preenchido e texto em barras', async () => {
     const result = await run([
       SCREEN,
       {
         op: 'create_marking',
         as: '$btn',
-        image: '$tela',
+        container: '$tela',
         rect: { x: 100, y: 200, width: 160, height: 56 },
         annotation: { type: 'material3/m3-button', values: { label: 'Entrar' } },
       },
@@ -290,7 +309,7 @@ describe('get_marking_image numa tela em branco com componentes', () => {
     expect(out.json).toMatchObject({
       drawing: 'simplified',
       drawingNote: expect.stringContaining('barras'),
-      image: { file: null, blank: true, background: '#FFEBEE' },
+      container: { file: null, background: '#FFEBEE' },
       width: 180,
       height: 76,
     });

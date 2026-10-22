@@ -103,7 +103,7 @@ describe('confirmar exclusão da imagem', () => {
     const harness = createHarness(sampleProject());
     const { dialog } = open(harness, {
       kind: 'deleteImage',
-      image: harness.project().images[0]!,
+      image: harness.project().containers[0]!,
     });
     expect(dialog.queryByRole('alert', { hidden: true })).toBeNull();
   });
@@ -113,7 +113,7 @@ describe('confirmar exclusão da imagem', () => {
     harness.actions.setImageMarkingsLocked('I1', true);
     const { dialog } = open(harness, {
       kind: 'deleteImage',
-      image: harness.project().images[0]!,
+      image: harness.project().containers[0]!,
     });
     expect(dialog.getByRole('alert', { hidden: true }).textContent).toBe(
       t('lock.deleteWarning', { locked: 3 }),
@@ -123,7 +123,7 @@ describe('confirmar exclusão da imagem', () => {
   it('a imagem trancada em si não chega a pedir confirmação, mas a ação seguiria recusada', async () => {
     const harness = createHarness(sampleProject());
     harness.actions.setImageLocked('I2', true);
-    expect(harness.actions.removeImage('I2')).toEqual({ ok: false, error: 'locked' });
+    expect(harness.actions.removeContainer('I2')).toEqual({ ok: false, error: 'locked' });
   });
 });
 

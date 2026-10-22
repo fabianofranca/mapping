@@ -10,6 +10,7 @@ import {
   type Project,
 } from '../../src/model';
 import { sampleProject } from './fixtures';
+import { legacyJson } from './legacyShape';
 import {
   LEGACY_CODE_VALUE,
   codeProject,
@@ -29,7 +30,7 @@ function load(text: string, specs: ReadonlyMap<string, string>) {
 
 /** Um mapping.json v8 do projeto, sem nada além da versão diferente. */
 function v8Text(p: Project): string {
-  return JSON.stringify({ ...JSON.parse(serialize(p)), schemaVersion: 8 });
+  return JSON.stringify({ ...legacyJson(p), schemaVersion: 8 });
 }
 
 const screenValues = (p: Project) => p.annotations.find((a) => a.id === 'AS')?.values;
@@ -41,7 +42,7 @@ describe('migração v8 → v9 (campo de código removido)', () => {
     expect(result.migratedFrom).toBe(8);
     expect(result.readOnly).toBe(false);
     expect(result.specWarnings).toEqual([]);
-    expect(result.project.schemaVersion).toBe(11);
+    expect(result.project.schemaVersion).toBe(12);
     expect(screenValues(result.project)).toEqual({ nome: 'Cadastro', rota: '/cadastro' });
     // O mesmo projeto de antes do campo, com a cópia lida sem ele.
     expect(result.project).toEqual(codeProject());
@@ -51,7 +52,7 @@ describe('migração v8 → v9 (campo de código removido)', () => {
   it('grava a versão atual sem os valores, e a releitura é estável (com a cópia antiga em specs/)', () => {
     const { text, specs } = legacyCodeFiles();
     const saved = serialize(load(text, specs).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(11);
+    expect(JSON.parse(saved).schemaVersion).toBe(12);
     expect(saved).not.toContain('implementacao');
     expect(saved).not.toContain('CadastroScreen');
     const again = load(saved, specs);

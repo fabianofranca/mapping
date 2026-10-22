@@ -57,7 +57,7 @@ describe('cursor do canvas na revisão de uma importação nova', () => {
     });
     flush();
     // A área das imagens à vista é a da imagem proposta (a prévia dá a posição dela).
-    const image = review.derived.shownProject.value?.images[0];
+    const image = review.derived.shownProject.value?.containers[0];
     if (!image) throw new Error('a prévia não tem a imagem proposta');
     const rect = imageCanvasRect(image, image.placement);
     expect(view.bounds.value).toEqual(rect);
@@ -75,7 +75,7 @@ describe('cursor do canvas na revisão de uma importação nova', () => {
       flush();
     };
     move();
-    expect(view.cursor.value).toMatchObject({ imageId: 'I1' });
+    expect(view.cursor.value).toMatchObject({ containerId: 'I1' });
     expect(controller.imageIdAt(190, 350)).toBe('I1');
 
     // Visão Atual: o projeto confirmado não tem a imagem.

@@ -5,7 +5,7 @@ import {
   type Layer,
   type Marking,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../model';
 
 /** Item selecionado no editor. */
@@ -244,11 +244,11 @@ export function showAllLayers(ui: EditorUi): void {
 }
 
 export type ResolvedSelection =
-  | { readonly kind: 'image'; readonly image: ProjectImage }
+  | { readonly kind: 'image'; readonly image: ProjectContainer }
   | {
       readonly kind: 'marking';
       readonly marking: Marking;
-      readonly image: ProjectImage;
+      readonly image: ProjectContainer;
     }
   | null;
 
@@ -259,11 +259,11 @@ export function resolveSelection(
 ): ResolvedSelection {
   if (!project || !selection) return null;
   if (selection.kind === 'image') {
-    const image = project.images.find((i) => i.id === selection.id);
+    const image = project.containers.find((i) => i.id === selection.id);
     return image ? { kind: 'image', image } : null;
   }
   const marking = project.markings.find((m) => m.id === selection.id);
-  const image = marking && project.images.find((i) => i.id === marking.imageId);
+  const image = marking && project.containers.find((i) => i.id === marking.containerId);
   return marking && image ? { kind: 'marking', marking, image } : null;
 }
 
@@ -288,7 +288,7 @@ export function collapseTree(ui: EditorUi, project: Project | null): void {
   const next = new Set<string>();
   const parents = new Set<string>();
   for (const m of project.markings) {
-    next.add(treeKey('image', m.imageId));
+    next.add(treeKey('image', m.containerId));
     if (m.parentId !== null) parents.add(m.parentId);
   }
   for (const id of parents) next.add(treeKey('marking', id));
@@ -312,7 +312,7 @@ export function revealInTree(
   const next = new Set(collapsed);
   let current = byId.get(selection.id);
   if (!current) return false;
-  next.delete(treeKey('image', current.imageId));
+  next.delete(treeKey('image', current.containerId));
   // O limite evita laço em dados corrompidos (a hierarquia é validada no modelo).
   for (let guard = byId.size; current?.parentId != null && guard > 0; guard--) {
     next.delete(treeKey('marking', current.parentId));

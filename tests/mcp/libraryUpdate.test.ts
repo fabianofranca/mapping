@@ -12,8 +12,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  addBlankImage,
-  addImage,
+  addBackgroundContainer,
+  addContainer,
   addTypedAnnotation,
   applyAccepted,
   applySpecialization,
@@ -114,14 +114,19 @@ function projectWithLibrary(): Project {
     now: NOW,
     firstLayer: { id: ids.layer, name: 'Livre', color: '#D32F2F' },
   });
-  p = addImage(p, { id: ids.image, file: 'images/foto.png', width: 400, height: 400 });
+  p = addContainer(p, {
+    id: ids.image,
+    file: 'images/foto.png',
+    width: 400,
+    height: 400,
+  });
   p = applySpecialization(p, material3(), {
     newId,
     packageSpecName: 'material3.spec.json',
   });
   p = createMarking(p, {
     id: ids.marking,
-    imageId: ids.image,
+    containerId: ids.image,
     rect: { x: 10, y: 10, width: 200, height: 60 },
     name: 'Campo',
   });
@@ -296,13 +301,13 @@ beforeAll(async () => {
   }
 
   writeProject(join(root, 'projetos', 'telas'), projectWithLibrary(), true);
-  // Projeto sem a biblioteca, com uma tela em branco.
+  // Projeto sem a biblioteca, com um container.
   let empty = createProject({
     name: 'Vazio',
     now: NOW,
     firstLayer: { id: ids.layer, name: 'Livre', color: '#D32F2F' },
   });
-  empty = addBlankImage(empty, {
+  empty = addBackgroundContainer(empty, {
     id: ids.image,
     width: 390,
     height: 844,

@@ -1,18 +1,20 @@
 import { z } from 'zod';
 import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
+import { MAX_CONTAINER_SIZE } from './containers';
 import { parseOrigins, parsePath, type Origin } from './components/origin';
 import { isPackagePath, packagePathProblem } from './packagePaths';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 5), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
+// Formato da especialização (`formatVersion` 1 a 6), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
 // etapas 3b e 4 e etapa Biblioteca do plano. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
 // tipos, `fonts`, `origins` (origens executáveis, com `slot`, `ignore` e `path` nas `sources`)
 // e `migrations` (o contrato de versão); a versão 5 é a 4 mais `repo` em `platforms[]` (o
-// repositório da biblioteca na plataforma, onde estão os arquivos citados nos `path` do `code`).
+// repositório da biblioteca na plataforma, onde estão os arquivos citados nos `path` do `code`);
+// a versão 6 é a 5 mais `containers` (presets de tamanho do diálogo Novo container).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -25,9 +27,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 5;
+export const SPEC_FORMAT_VERSION = 6;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -197,6 +199,18 @@ export interface SpecAnnotationType {
   examples?: SpecExample[];
 }
 
+/** Preset de container da especialização (só `formatVersion` 6): tamanho e fundo iniciais. */
+export interface SpecContainer {
+  /** `[a-z0-9-]+`, único na especialização. */
+  id: string;
+  name: string;
+  /** Pixels, inteiro de 1 a `MAX_CONTAINER_SIZE`. */
+  width: number;
+  height: number;
+  /** `#RRGGBB`; ausente = branco. */
+  background?: string;
+}
+
 export interface SpecLayer {
   id: string;
   name: string;
@@ -212,6 +226,8 @@ export interface Spec {
   version: number;
   description?: string;
   platforms?: SpecPlatform[];
+  /** Presets do diálogo Novo container (só `formatVersion` 6). */
+  containers?: SpecContainer[];
   layers: SpecLayer[];
   /** Fontes do pacote (só `formatVersion` 4). */
   fonts?: SpecFont[];
@@ -696,6 +712,22 @@ const platformShape = z
     name: nonEmpty,
     language: nonEmpty.optional(),
     repo: repoShape.optional(),
+  })
+  .strict();
+
+const containerSide = z
+  .number({ error: 'deve ser um número' })
+  .int('deve ser inteiro')
+  .min(1, 'deve ser >= 1')
+  .max(MAX_CONTAINER_SIZE, `deve ser <= ${MAX_CONTAINER_SIZE}`);
+
+const containerShape = z
+  .object({
+    id: z.string().regex(TAG_RE, 'id de container inválido; use [a-z0-9-]+'),
+    name: nonEmpty,
+    width: containerSide,
+    height: containerSide,
+    background: color.optional(),
   })
   .strict();
 
@@ -1271,7 +1303,14 @@ export const specSchema = z
       error: `deve ser "${SPEC_FORMAT}"`,
     }),
     formatVersion: z.union(
-      [z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)],
+      [
+        z.literal(1),
+        z.literal(2),
+        z.literal(3),
+        z.literal(4),
+        z.literal(5),
+        z.literal(6),
+      ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
       },
@@ -1281,6 +1320,7 @@ export const specSchema = z
     version: z.number().int('deve ser inteiro').min(1, 'deve ser >= 1'),
     description: z.string().optional(),
     platforms: z.array(platformShape).optional(),
+    containers: z.array(containerShape).optional(),
     layers: z.array(layerShape),
     fonts: z.array(fontShape).optional(),
     // Validado por `parseOrigins` (a fonte da verdade da declaração de origem), no superRefine.
@@ -1318,6 +1358,25 @@ export const specSchema = z
         });
       });
     }
+    // v6: `containers`. Antes dela, é erro no caminho exato.
+    if (spec.containers !== undefined && spec.formatVersion < 6) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['containers'],
+        message: 'só é permitido com formatVersion 6',
+      });
+    }
+    const containerIds = new Set<string>();
+    (spec.containers ?? []).forEach((container, ci) => {
+      if (containerIds.has(container.id)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['containers', ci, 'id'],
+          message: `id "${container.id}" repetido`,
+        });
+      }
+      containerIds.add(container.id);
+    });
     const hasPlatforms = platformIds.size > 0;
     if (spec.formatVersion < 3) checkNoSources(spec.layers, ctx);
 

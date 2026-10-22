@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   addEntry,
-  addImage,
+  addContainer,
   addLayer,
   createMarking,
   setEntries,
@@ -17,7 +17,7 @@ describe('operações recusam id explícito já existente', () => {
     expect(() =>
       createMarking(sampleProject(), {
         id: 'M4',
-        imageId: 'I2',
+        containerId: 'I2',
         rect: { x: 500, y: 500, width: 100, height: 100 },
       }),
     ).toThrow('duplicate-id');
@@ -25,7 +25,7 @@ describe('operações recusam id explícito já existente', () => {
 
   it('imagem', () => {
     expect(() =>
-      addImage(sampleProject(), {
+      addContainer(sampleProject(), {
         id: 'I1',
         file: 'images/outra.jpg',
         width: 100,

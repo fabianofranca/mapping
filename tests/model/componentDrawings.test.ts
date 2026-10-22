@@ -32,7 +32,7 @@ function add(
     {
       markingId: id,
       annotationId: `A_${id}`,
-      imageId: 'I1',
+      containerId: 'I1',
       parentId: null,
       specId: SPEC_ID,
       typeId,
@@ -49,7 +49,7 @@ function screen(): Project {
   p = add(p, 'T3', 'text', { center: { x: 700, y: 500 } });
   p = createMarking(p, {
     id: 'P',
-    imageId: 'I1',
+    containerId: 'I1',
     rect: { x: 600, y: 600, width: 50, height: 50 },
   });
   p = add(p, 'T1', 'text', { parentId: 'C' });
@@ -66,7 +66,7 @@ describe('createDrawingCache: o que desenha e em que ordem', () => {
     const c = drawings.get('C')!;
     expect(c).toMatchObject({
       markingId: 'C',
-      imageId: 'I1',
+      containerId: 'I1',
       annotationId: 'A_C',
       overflow: false,
       warnings: [],

@@ -17,7 +17,7 @@ import {
 } from '../../src/model/components/library';
 import type { Instance } from '../../src/model/components/screen';
 import {
-  addBlankImage,
+  addBackgroundContainer,
   addComponentMarking,
   applySpecialization,
   loadSpecComponents,
@@ -193,7 +193,7 @@ describe('desenho de componentes (Material 3)', () => {
         measure: approximateMeasurer,
         idPrefix: instance.id,
       });
-      drawings.set(instance.id, { markingId: instance.id, imageId: 'screen', root });
+      drawings.set(instance.id, { markingId: instance.id, containerId: 'screen', root });
     }
     return drawings;
   }
@@ -278,7 +278,7 @@ describe('desenho de componentes (Material 3)', () => {
           target.box,
           { measure: approximateMeasurer, idPrefix: target.id },
         );
-        next.set(target.id, { markingId: target.id, imageId: 'screen', root });
+        next.set(target.id, { markingId: target.id, containerId: 'screen', root });
         const start = performance.now();
         expect(layer.render(next, () => true, placements)).toBe(true);
         times.push(performance.now() - start);
@@ -291,7 +291,7 @@ describe('desenho de componentes (Material 3)', () => {
   );
 });
 
-// A tela de configurações do Material 3 (21 instâncias) numa tela em branco, dentro do
+// A tela de configurações do Material 3 (21 instâncias) num container, dentro do
 // `CanvasController`: o quadro inteiro (todos os desenhos reinstanciados e refeitos), editar um
 // campo (só uma marcação) e o zoom (a camada não se refaz). Medido (jsdom, máquina de
 // desenvolvimento, medidor aproximado): quadro inteiro ~11 ms (10 a 13; até ~20 com a máquina
@@ -348,7 +348,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
       })(),
       packageSpecName: 'material3.spec.json',
     });
-    p = addBlankImage(p, {
+    p = addBackgroundContainer(p, {
       id: 'screen',
       width: M3_SCREEN.width,
       height: M3_SCREEN.height,
@@ -361,7 +361,7 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
         {
           markingId: instance.id,
           annotationId: `A_${instance.id}`,
-          imageId: 'screen',
+          containerId: 'screen',
           parentId: instance.parentId ?? null,
           specId: 'material3',
           typeId: instance.typeId,

@@ -1,12 +1,12 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje a etapa Container e, depois dela, a etapa Marcações espaciais, notas e setas, ambas abaixo; a Canvas limpo foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje a etapa Marcações espaciais, notas e setas, abaixo; a Container foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
 Aplicação web para mapear áreas de imagens com **marcações retangulares**, organizar informações em **camadas** e registrar **anotações** (pares chave-valor livres ou anotações **tipadas** definidas por uma **especialização**). Tudo é salvo num `mapping.json` ao lado das imagens (pasta ou zip), num formato pensado para ser lido por um agente de IA, que deve conseguir recortar, na imagem original, a área exata de cada marcação.
 
-Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código), 4 (propostas de alteração com revisão), 5 (pré-voo para uso real), 6 (correções da primeira rodada de testes), 7 (correções da rodada dirigida), 8 (consolidação por subsistema), 9 (ajustes do teste manual avançado; schema v9 e servidor MCP 0.4.0) e 10 (correções da rodada dirigida da etapa 9) concluídas**, além do laboratório de componentes e da etapa **Biblioteca** (schema v10; servidor MCP 0.5.0). O dono fez uso real grande e considerou o marco "Uso real" **alcançado em 2026-10-16**: a ferramenta já serve e a prioridade passou à biblioteca de componentes, hoje entregue. O **laboratório de componentes** está concluído (épico `epic/lab` mesclado em 2026-10-17; descrição em [`lab/README.md`](lab/README.md), histórico em [`docs/history/PLAN-etapa-lab.md`](docs/history/PLAN-etapa-lab.md)). A etapa **Biblioteca** (épico `epic/biblioteca`, fases B1 a B5 e Fechamento) está concluída, testada pelo Cowork e mesclada na `main` (PR #180, tag `mcp-v0.5.0`; histórico em [`docs/history/PLAN-etapa-biblioteca.md`](docs/history/PLAN-etapa-biblioteca.md)). A etapa **Código de instanciação** (épico `epic/instanciacao`, fases C1 a C4; especialização `formatVersion` 5, schema v11, MCP 0.6.0) está concluída e testada pelo Cowork e pelo dono no Claude Code; épico mesclado na `main`, com a tag estável `mcp-v0.6.0` (histórico em [`docs/history/PLAN-etapa-instanciacao.md`](docs/history/PLAN-etapa-instanciacao.md)). A etapa **Canvas limpo** (épico `epic/canvas-limpo`, fases V1 e V2; sem schema, formato nem MCP novos) está concluída: o cartão de texto do zoom semântico saiu do canvas e o **Ver limpo** (`Alt+H`) mostra só as imagens e os componentes (histórico em [`docs/history/PLAN-etapa-canvas-limpo.md`](docs/history/PLAN-etapa-canvas-limpo.md)). A etapa **Container** (épico `epic/container`, fases CN1 e CN2; schema v12, especialização `formatVersion` 6, proposta `formatVersion` 2 e MCP 0.8.0 ao fim) está em andamento: o objeto de topo do canvas passa a se chamar container e os presets de dispositivo saem do núcleo para a especialização. A etapa **Marcações espaciais, notas e setas** (épico `epic/marcacoes-espaciais`, fases ME0 a ME5; schema v13, especialização `formatVersion` 7, proposta `formatVersion` 3 e MCP 0.9.0 ao fim) está detalhada abaixo e começa depois do merge do épico Container: marcações que pertencem ao canvas e envolvem containers, pertencimento resolvido pela geometria e gravado, seleção múltipla e arrasto conjunto, biblioteca de notas embutida e setas e anexos. O `index.html` é um único arquivo autocontido (funciona em `file://` e no GitHub Pages), **só desktop** (largura mínima de 900 px), com tema claro/escuro e pt-BR/en-US.
+Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código), 4 (propostas de alteração com revisão), 5 (pré-voo para uso real), 6 (correções da primeira rodada de testes), 7 (correções da rodada dirigida), 8 (consolidação por subsistema), 9 (ajustes do teste manual avançado; schema v9 e servidor MCP 0.4.0) e 10 (correções da rodada dirigida da etapa 9) concluídas**, além do laboratório de componentes e da etapa **Biblioteca** (schema v10; servidor MCP 0.5.0). O dono fez uso real grande e considerou o marco "Uso real" **alcançado em 2026-10-16**: a ferramenta já serve e a prioridade passou à biblioteca de componentes, hoje entregue. O **laboratório de componentes** está concluído (épico `epic/lab` mesclado em 2026-10-17; descrição em [`lab/README.md`](lab/README.md), histórico em [`docs/history/PLAN-etapa-lab.md`](docs/history/PLAN-etapa-lab.md)). A etapa **Biblioteca** (épico `epic/biblioteca`, fases B1 a B5 e Fechamento) está concluída, testada pelo Cowork e mesclada na `main` (PR #180, tag `mcp-v0.5.0`; histórico em [`docs/history/PLAN-etapa-biblioteca.md`](docs/history/PLAN-etapa-biblioteca.md)). A etapa **Código de instanciação** (épico `epic/instanciacao`, fases C1 a C4; especialização `formatVersion` 5, schema v11, MCP 0.6.0) está concluída e testada pelo Cowork e pelo dono no Claude Code; épico mesclado na `main`, com a tag estável `mcp-v0.6.0` (histórico em [`docs/history/PLAN-etapa-instanciacao.md`](docs/history/PLAN-etapa-instanciacao.md)). A etapa **Canvas limpo** (épico `epic/canvas-limpo`, fases V1 e V2; sem schema, formato nem MCP novos) está concluída: o cartão de texto do zoom semântico saiu do canvas e o **Ver limpo** (`Alt+H`) mostra só as imagens e os componentes (histórico em [`docs/history/PLAN-etapa-canvas-limpo.md`](docs/history/PLAN-etapa-canvas-limpo.md)). A etapa **Container** (épico `epic/container`, fases CN1 e CN2; schema v12, especialização `formatVersion` 6, proposta `formatVersion` 2 e MCP 0.8.0) está concluída: o objeto de topo do canvas passou a se chamar container (interface, MCP, propostas e `mapping.json`, com `containers` e `containerId`) e os presets de dispositivo saíram do núcleo para a especialização (histórico em [`docs/history/PLAN-etapa-container.md`](docs/history/PLAN-etapa-container.md)). A etapa **Marcações espaciais, notas e setas** (épico `epic/marcacoes-espaciais`, fases ME0 a ME5; schema v13, especialização `formatVersion` 7, proposta `formatVersion` 3 e MCP 0.9.0 ao fim) está detalhada abaixo e começa depois do merge do épico Container na `main`: marcações que pertencem ao canvas e envolvem containers, pertencimento resolvido pela geometria e gravado, seleção múltipla e arrasto conjunto, biblioteca de notas embutida e setas e anexos. O `index.html` é um único arquivo autocontido (funciona em `file://` e no GitHub Pages), **só desktop** (largura mínima de 900 px), com tema claro/escuro e pt-BR/en-US.
 
 ## Documentação
 
@@ -16,7 +16,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`CLAUDE.md`](CLAUDE.md)                                 | Regras de trabalho e de arquitetura para o Claude Code                         |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)           | Camadas, fluxo de dados, regras (com o porquê) e onde fica cada coisa          |
 | [`docs/GUIDE.md`](docs/GUIDE.md)                         | Guia interativo (`guia/`) e projeto de exemplo: geração, o que gravam, como mudar |
-| [`docs/FORMAT.md`](docs/FORMAT.md)                       | Referência do `mapping.json` (schema v11)                                      |
+| [`docs/FORMAT.md`](docs/FORMAT.md)                       | Referência do `mapping.json` (schema v12)                                      |
 | [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md)     | Formato da proposta de alteração e regras da revisão (etapa 4)                 |
 | [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md)             | Formato do arquivo de especialização, `formatVersion` 1 a 5 (e `docs/spec.schema.json`): biblioteca, contrato de versão e validação |
 | [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md)   | Formato do arquivo de componente (`mapping-component`): nós, dimensionamento, expressões, avisos do motor |
@@ -43,6 +43,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/PLAN-etapa-biblioteca.md`](docs/history/PLAN-etapa-biblioteca.md) | Histórico: etapa Biblioteca, fases B1 a B5 e Fechamento concluídas; decisões consolidadas dos PRs, rodada do Cowork do Fechamento (e reteste) e o que ficou para depois |
 | [`docs/history/PLAN-etapa-instanciacao.md`](docs/history/PLAN-etapa-instanciacao.md) | Histórico: etapa Código de instanciação, fases C1 a C4 concluídas; decisões consolidadas dos PRs, rodada do Cowork e reteste, e o que ficou para depois |
 | [`docs/history/PLAN-etapa-canvas-limpo.md`](docs/history/PLAN-etapa-canvas-limpo.md) | Histórico: etapa Canvas limpo, fases V1 e V2 concluídas; decisões consolidadas dos PRs |
+| [`docs/history/PLAN-etapa-container.md`](docs/history/PLAN-etapa-container.md) | Histórico: etapa Container, fases CN1 e CN2 concluídas; decisões consolidadas dos PRs e o que ficou para depois |
 | [`docs/history/relato-2026-10-12-dirigida.md`](docs/history/relato-2026-10-12-dirigida.md) | Relato da rodada 2 (dirigida) do Cowork sobre o build `db5060d`; origem da etapa 7 |
 | [`docs/history/relato-2026-10-12-dirigida-r3.md`](docs/history/relato-2026-10-12-dirigida-r3.md) | Relato da rodada 3 (dirigida) do Cowork sobre o build `2bdb662`; confirma a etapa 7 sem achados |
 | [`docs/history/relato-2026-10-12-dirigida-r4.md`](docs/history/relato-2026-10-12-dirigida-r4.md) | Relato da rodada 4 (dirigida) do Cowork sobre o build `48f8e32`; observações O1 a O9, citadas no aceite das fases 8.2 e 8.4 |
@@ -53,85 +54,11 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/relato-2026-10-20-instanciacao-reteste.md`](docs/history/relato-2026-10-20-instanciacao-reteste.md) | Reteste do R3.6a no Claude Code com a `mcp-v0.6.0-rc.2`: passou |
 | [`docs/history/relato-2026-10-21-recorte-url.md`](docs/history/relato-2026-10-21-recorte-url.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/recorte-url` (build `564b1e7`, MCP 0.7.0-rc.1): 35 ✅, nenhum achado |
 | [`docs/history/revisao-tecnica-2026-10-12.md`](docs/history/revisao-tecnica-2026-10-12.md) | Revisão técnica dirigida (síntese e seis relatórios, 71 achados); origem da etapa 8 |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das próximas etapas (etapa Container em andamento; Marcações espaciais, notas e setas detalhada neste plano), marco de uso real e evoluções |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das próximas etapas (etapa Container concluída; Marcações espaciais, notas e setas detalhada neste plano), marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3, concluída; referência): componentes, tokens, mudanças B#, propostas P# e decisões |
 | [`docs/redesign/HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) | Design das propostas de alteração (fase 4.0): telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto |
 | [`docs/redesign/BRIEF-REVIEW-DETAILS.md`](docs/redesign/BRIEF-REVIEW-DETAILS.md) | Briefing para o Claude Design dos Detalhes na revisão (fase 9.1, concluída; referência): problema, estado atual, requisitos, restrições e os estados E1 a E17 |
 | [`docs/redesign/HANDOFF-REVIEW-DETAILS.md`](docs/redesign/HANDOFF-REVIEW-DETAILS.md) | Design dos Detalhes na revisão (etapa 9, aprovado; referência): marcador e popover por campo, cabeçalho do item, “Outras mudanças”, comportamento, textos e decisões |
-
----
-
-## Etapa — Container (épico `epic/container`)
-
-### Objetivo
-
-A ferramenta não é só para telas de app. O objeto de topo do canvas (id, nome, tamanho, `placement` e um conteúdo, que é um arquivo de imagem ou uma cor de fundo) passa a se chamar **container** em tudo o que a pessoa e o agente leem: interface, MCP, propostas, formato e documentação. O nome "tela" e os presets de dispositivo saem do núcleo; os presets passam a vir da especialização. Origem: pedido do dono em 2026-10-21 (item "Container no lugar de tela" do [`docs/ROADMAP.md`](docs/ROADMAP.md)), com a regra do núcleo genérico do [`CLAUDE.md`](CLAUDE.md).
-
-### Decisões
-
-Todas confirmadas pelo dono em 2026-10-21.
-
-- **Termo: `container`** nos identificadores e "Container" na interface (pt-BR e en-US). O único conflito era de prosa: o `docs/COMPONENT-FORMAT.md` e comentários de `src/model/components/` chamam de "container" o componente com slot; passam a "componente com slot", e as funções `isContainer` de `src/model/components/arrange.ts` e `isContainerComponent` de `src/model/componentCatalog.ts` passam a `hasSlot` e `hasSlotComponent`. "Tela" continua só como caso de uso ("tela de app mapeada") e na chave `screen` de `origins`, que descreve o documento do sistema externo e está no formato v4: não muda.
-- **A fase 2 entra no mesmo épico.** O vocabulário é lido pelo agente em toda chamada; interface dizendo "container" e JSON dizendo `images` custaria confusão para sempre, e a migração custa uma vez.
-- **A letra `i` das referências `mapping://<projeto>/i/<código>` fica**, por compatibilidade com referências já coladas em conversas e documentos. `ItemKind` (`src/model/itemRef.ts`) não muda; a documentação diz que `i` é o container.
-- **Presets vêm da especialização.** Chave `containers` na raiz, lista de `{ id, name, width, height, background? }`: `id` `[a-z0-9-]+` único na especialização, `name` não vazio, `width` e `height` inteiros de 1 a `MAX_BLANK_SIZE` (20000), `background` cor `#RRGGBB` (padrão branco). Entra na **`formatVersion` 6** da especialização (a 5 continua aceita; a mudança é aditiva). O núcleo fica só com dois presets que não são de domínio: **Personalizado** e **Tamanho da seleção** (o retângulo da marcação selecionada; desabilitado sem seleção). O diálogo agrupa os presets por especialização aplicada. A biblioteca Material 3 (`scripts/libraryExamples.ts`, que gera `examples/libraries/material3/`) passa a trazer Celular 360×800, Celular grande 412×915, Tablet 800×1280 e Desktop 1440×900, que hoje estão em `src/ui/blankScreen.ts`.
-- **Operações e tools.** A CN1 cria `add_container { name, width, height, background }` nas propostas e no lote do MCP e aceita `add_blank_image` com aviso ("use add_container") no `PROPOSAL_FORMAT_VERSION` **2** (a 1 continua lida). A CN2 amplia `add_container` para aceitar `file` (largura e altura vêm do arquivo) e passa `add_image` a aceito com aviso; `update_image`, `replace_image` e `delete_image` viram `update_container`, `replace_container` e `delete_container` (as antigas aceitas com aviso por uma versão); as tools `get_image` e `get_image_file` viram `get_container` e `get_container_file`. `get_marking_image` **fica** (devolve um recorte de imagem), e a pasta `images/` **fica** (guarda arquivos de imagem).
-- **Schema v12 (CN2).** `images` vira `containers` no `mapping.json`; cada container tem `file` (string ou `null`) e `background` (cor ou `null`), com a invariante atual (`file === null` se, e somente se, `background !== null`) renomeada de `blank-background` para `container-content`. Migração v11 → v12 com backup, só renomeando a chave; nada apagado. O `docs/FORMAT.md` ganha "Campos da v12 (container)".
-- **Identificadores internos.** O tipo da imagem em `src/model/types.ts`, `Project.images`, `projectIndex`, stores, canvas e interface são renomeados para container no fim da CN2, de forma mecânica (Haiku), depois de o JSON novo passar nos testes. São 83 arquivos em `src/` e `mcp/`, então a renomeação pode ser um PR próprio dentro do épico. Ela não muda comportamento e não gera teste novo além dos existentes verdes.
-- **MCP 0.8.0** (`mcp/version.ts`, uma versão por épico). O PR da CN2 leva o rótulo `mcp-rc`; a estável `mcp-v0.8.0` é tag do dono depois do merge do épico na `main`.
-- **Rodada do Cowork.** Dirigida, no fim da CN2, nos roteiros que a etapa toca (os que criam tela em branco e os do MCP), com o build do preview do épico; o dono decide no PR se roda.
-- **Coordenador e esforço por fase** (regra da seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md); a sessão confere o modelo antes de começar): CN1 **Sonnet**, medium (subagentes Sonnet medium; mecânicos Haiku low); CN2 **Sonnet**, medium (subagentes medium, **high** no briefing da migração v11 → v12 e do lote do MCP; mecânicos Haiku low). A especificação está fechada neste plano: não há decisão de formato nova além das registradas.
-- **Fluxo:** épico `epic/container` a partir da `main`; um branch e um PR por fase (ou por parte) com base no épico; gates antes do PR (`npm run lint && npm run typecheck && npm test && npm run build`, mais `npm run build:mcp`, `npm run build:examples` e `npm run build:example` onde tocar); descrição do PR com Resumo, Como testar e Decisões tomadas; checkboxes marcados no mesmo PR; a CN2 faz o fechamento (histórico em `docs/history/PLAN-etapa-container.md`, `PLAN.md`, `docs/ROADMAP.md`, `CLAUDE.md`).
-
-### Fases
-
-A CN1 vem primeiro porque fixa o vocabulário que a CN2 leva ao formato.
-
-#### CN1 — Superfície, operação e presets
-
-**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium; mecânicos Haiku low.
-
-**Toca em:**
-
-- Interface: `src/ui/BlankScreenDialog.tsx` → `ContainerDialog.tsx`; `src/ui/blankScreen.ts` sem os presets de dispositivo (`phone`, `phoneLarge`, `tablet`, `desktop` em `BLANK_PRESETS`), com `CUSTOM_PRESET` e o preset "Tamanho da seleção"; chaves i18n `blank.*` → `container.*` e `image.blankUntitled` → "Container", nos dois idiomas; quem abre o diálogo em `src/app/EditorDialogs.tsx`, `useEditorDialogs.ts`, `EditorMainBar.tsx` e `EditorTools.tsx`; `src/ui/labels.ts`, `SelectionPanel.tsx` e `review/changeText.ts`.
-- Especialização: `src/model/spec.ts` com `containers` e `formatVersion` 6, `docs/spec.schema.json`, validador da biblioteca com os erros de `id` repetido e tamanho fora do limite, `get_specialization` expondo `containers`; `scripts/libraryExamples.ts` com os quatro presets e `npm run build:examples`; skill `spec-author` e `docs/SPEC-FORMAT.md`.
-- Propostas e MCP: `src/model/proposal.ts` (`PROPOSAL_FORMAT_VERSION` 2, com `add_container` e `add_blank_image` aceito com aviso); `mcp/operations.ts`, `mcp/batch.ts` e `mcp/items.ts` (`BLANK_IMAGE_LABEL` → `CONTAINER_LABEL`, "Container"); `mcp/imageTools.ts` (mensagem "tela em branco").
-- Prosa: `docs/COMPONENT-FORMAT.md` ("componente com slot"; `isContainer` → `hasSlot`, `isContainerComponent` → `hasSlotComponent`), `docs/FORMAT.md`, `docs/MCP.md`, `docs/AGENT-GUIDE.md`, `docs/PROPOSAL-FORMAT.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md` e `scripts/guia/` sem "tela em branco", com "container".
-- Testes: `tests/model/proposalBlank.test.ts`, `tests/mcp/blankComponents.test.ts`, `tests/mcp/imageFixtures.ts`, `tests/e2e/blankScreen.spec.ts`, testes de i18n e do validador.
-
-- [ ] Diálogo renomeado para Container, com Personalizado, Tamanho da seleção e os presets das especializações aplicadas agrupados pelo nome delas, com teste
-- [ ] `containers` na especialização `formatVersion` 6, com validação e `docs/spec.schema.json`; Material 3 regenerada (`npm run build:examples`); teste do validador (`id` repetido, tamanho fora do limite)
-- [ ] `add_container` nas propostas e no lote do MCP, `add_blank_image` aceito com aviso, formato da proposta 2 (a 1 continua lida), com testes
-- [ ] Textos da interface e do MCP sem "tela" (i18n nos dois idiomas, `CONTAINER_LABEL`, mensagem de `mcp/imageTools.ts`)
-- [ ] Prosa dos documentos e da skill `spec-author` com "container" e "componente com slot"; `isContainer` → `hasSlot`, `isContainerComponent` → `hasSlotComponent`
-- [ ] Roteiros do `docs/TESTING.md` atualizados: criar um container por preset da especialização, por Personalizado e por Tamanho da seleção; o agente cria um por `add_container`
-- [ ] `grep -rn -i "tela em branco\|blank" src mcp docs/*.md scripts tests` só encontra `docs/history/`, a aceitação de `add_blank_image` e o que for nome de arquivo de imagem
-
-**Aceite:** num projeto com a Material 3 aplicada, o diálogo Novo container lista os quatro presets dela sob o nome da biblioteca, mais Personalizado e Tamanho da seleção; sem especialização só os dois; o agente cria um container por `add_container` e uma proposta antiga com `add_blank_image` ainda aplica, com aviso; gates verdes.
-
-#### CN2 — O conceito no formato e fechamento
-
-**Coordenador:** Sonnet. **Esforço:** medium; subagentes medium, **high** no briefing da migração v11 → v12 e do lote do MCP; mecânicos Haiku low.
-
-**Toca em:**
-
-- Modelo: `src/model/types.ts` (`SCHEMA_VERSION` 12), `src/model/schema.ts` (com `containers`), `src/model/migrations.ts` (v11 → v12 com backup), `src/model/invariants.ts` (`container-content`), `src/model/itemRef.ts` (só a documentação do `i`).
-- MCP: `mcp/tools.ts` (`get_container` e `get_container_file`), `mcp/operations.ts` e `mcp/batch.ts` (`add_container` aceitando `file`, `update_container`, `replace_container`, `delete_container`, as antigas aceitas com aviso), `mcp/version.ts` (0.8.0), `mcp/items.ts` e `mcp/markingList.ts`.
-- Exemplos e guia: `scripts/exampleProject.mjs` e `npm run build:example` (o zip em v12); `scripts/guia/` e `npm run build:guia`; `examples/workspace/`; skill `spec-author`.
-- Documentação: `docs/FORMAT.md` ("Campos da v12 (container)"), `docs/MCP.md`, `docs/AGENT-GUIDE.md`, `docs/PROPOSAL-FORMAT.md`, `docs/ARCHITECTURE.md` e `docs/TESTING.md`.
-- Identificadores internos: renomeação mecânica, por Haiku, de imagem para container em `src/` e `mcp/` (83 arquivos), possivelmente num PR próprio.
-- Fechamento: `docs/history/PLAN-etapa-container.md`, `PLAN.md`, `docs/ROADMAP.md` e `CLAUDE.md`.
-
-- [ ] Schema v12 com migração v11 → v12 e backup; testes de migração (v11 com imagem e com tela em branco → v12) e de abertura de v12
-- [ ] Tools e operações renomeadas, com as antigas aceitas com aviso; testes por stdio
-- [ ] MCP 0.8.0 (`mcp/version.ts`) e rótulo `mcp-rc` no PR
-- [ ] Zip do exemplo e guia regenerados e conferidos pelos testes (`npm run build:example`, `npm run build:guia`)
-- [ ] Documentação e skill `spec-author` com o vocabulário e o formato novos
-- [ ] Identificadores internos renomeados para container, com os testes existentes verdes
-- [ ] Roteiros do `docs/TESTING.md`: abrir um projeto v11 e ver a faixa da migração; o agente lê e cria containers pelas tools novas
-- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-container.md` (com as decisões consolidadas dos PRs), `PLAN.md` sem etapa em andamento, `docs/ROADMAP.md` e `CLAUDE.md` atualizados
-
-**Aceite:** um projeto v11 abre, migra para v12 com backup e mostra os mesmos containers; o agente usa `get_container`, `add_container` com arquivo e com fundo, e uma proposta antiga com `add_image` ou `add_blank_image` ainda aplica, com aviso; `grep -rn "images\b" src mcp` só encontra a pasta `images/` e a migração; gates verdes; rodada dirigida do Cowork sem achado alto ou médio, se o dono pedir.
 
 ---
 
@@ -326,7 +253,7 @@ O dono quer que as fases sejam desenvolvidas **em sequência, sem ele, durante a
   3. Ao ver PR aberto, CI (verde ou vermelho), rodada de correção da própria sessão (`fixing`), entrega (`delivered`, `endedAt`): o campo correspondente na fase; evento.
   4. Enquanto a fase roda, **a cada 15 minutos no máximo**: `note` da fase com o que a sessão está fazendo (lido de `list_events`) e `updatedAt` da execução; evento só se algo mudou. Se a execução ficar mais de 30 minutos sem `updatedAt`, o painel mostra "sem sinal do gerente".
   5. Ao parar ou terminar: `status` da execução (`stopped` ou `done`), `endedAt`, `stopReason` ou `summary` (uma frase: fases entregues e onde parou); a fase interrompida em `stopped`; evento `stop`.
-  6. De manhã, o agente de apoio marca cada fase mesclada no épico como `merged` (opcional; o resto o dono vê no GitHub).
+  6. De manhã, o gerente da manhã marca cada fase mesclada no épico como `merged` e grava eventos com o prefixo "manhã:" (o resto o dono vê no GitHub).
 - **Custo e falha:** nunca mais de uma escrita por acontecimento e uma por 15 minutos; nada de reescrever a página. Se a ferramenta não existir na sessão ou a escrita for recusada, o gerente avisa no relato da manhã e segue sem o painel: o painel nunca para a cascata.
 
 **Prompt da sessão de uma fase** (o gerente preenche os colchetes):
@@ -349,13 +276,63 @@ resolve: registre no PR e siga a leitura mais simples; se ela bloquear a fase,
 pare com o que está verde e relate no PR. Não mescle nada.
 ```
 
-**A manhã** (o dono, o Cowork e um agente de apoio), fase a fase, na ordem:
+**A manhã** (o dono, o Cowork e o gerente da manhã, descrito abaixo), fase a fase ou por grupo de fases, na ordem:
 
 1. Publicar o branch da fase N no preview (Deploy › `workflow_dispatch` com o branch) e rodar o Cowork nos roteiros que a fase lista (R12 e os que ela toca). Para o MCP, usar o `mcp-snapshot-pr<N>` quando existir (ME0 de saída; as outras depois do primeiro merge-forward).
 2. Achados viram correções no próprio branch da fase, por uma sessão com o modelo da fase; o Cowork reconfere o que mudou.
 3. O dono mescla o PR N no épico e apaga o branch (o GitHub muda a base do PR N+1 para o épico).
-4. **Merge-forward:** o agente de apoio mescla o épico no branch da fase N+1 (`git merge`, nunca rebase), resolve conflitos no branch que recebe, roda os gates, publica; depois mescla N+1 em N+2, e assim até o último branch da cascata. Assim cada PR continua mostrando só a própria fase, e as correções da manhã chegam a todas as fases seguintes. Se um merge quebrar os testes de uma fase seguinte (a correção mudou um comportamento de que ela dependia), a correção é feita naquele branch, dentro do escopo daquela fase.
+4. **Merge-forward:** o gerente da manhã mescla o épico no branch da fase N+1 (`git merge`, nunca rebase), resolve conflitos no branch que recebe, roda os gates, publica; depois mescla N+1 em N+2, e assim até o último branch da cascata. Assim cada PR continua mostrando só a própria fase, e as correções da manhã chegam a todas as fases seguintes. Se um merge quebrar os testes de uma fase seguinte (a correção mudou um comportamento de que ela dependia), a correção é feita naquele branch, dentro do escopo daquela fase.
 5. Repetir com a fase N+1. No fim, a ME5 (quando existir) leva o rótulo `mcp-rc`, e o épico vai para a `main` pelo PR do épico, como sempre.
+
+**O gerente da manhã** (pedido do dono em 2026-10-22): uma sessão que conduz o dono pela manhã, passo a passo, e faz sozinha tudo o que é git, GitHub e painel. **Sonnet, esforço high**, modo de permissão sem perguntas, no mesmo ambiente; o dono conversa com ela e faz só o que é dele: mesclar, rotular, decidir e rodar o Cowork no computador. As correções que as rodadas pedirem **não** são feitas por ela: ela escreve o briefing e abre a sessão no modelo e no esforço da fase (`create_session`), ou entrega o briefing ao dono.
+
+Ao abrir, ela lê o `CLAUDE.md`, esta seção inteira, o painel (`ArtifactData`: `cascade/state`, a execução, as fases e os eventos), os PRs abertos com as bases deles e os branches; monta o **quadro da manhã** (fases entregues com PR e base, fase em andamento, ordem das rodadas) e o mostra ao dono antes do primeiro passo. A cada passo, diz **quem faz** (ela ou o dono), **o que conferir** antes de seguir e, quando for a vez do Cowork, entrega o **prompt pronto**, com o build id (`<sha7 da ponta do branch> · AAAA-MM-DD`) e o MCP a usar.
+
+Regras fixas, por cima de qualquer atalho:
+
+- Ela **nunca** mescla PR, nunca muda a `main` ou um épico fora dos merges previstos aqui, nunca faz rebase ou force-push e nunca apaga branch. Apagar branch é do dono, e **só** quando o PR seguinte já existe: o branch da fase em andamento, e o da última fase entregue até a seguinte abrir o PR dela, não podem sumir, porque são a base da próxima sessão e do próximo PR.
+- Ela **nunca** empurra no branch da fase em andamento (a sessão da noite está empurrando nele). Merge-forward só para branches de fases já entregues.
+- **Agrupamento:** uma rodada por grupo, não por fase: **Container** (CN1 + CN2, no épico, como o plano daquela etapa manda), **ME0 + ME1** (no branch da ME1), **ME2**, **ME3**, **ME4**, **ME5**; o dono pode juntar ou separar.
+- O preview é um só e muda a cada PR atualizado: ela dispara o Deploy (`workflow_dispatch`, input `branch`) para o branch da rodada **depois** de qualquer push da manhã e confirma o build id publicado antes de entregar o prompt.
+- O MCP a testar: o snapshot `mcp-snapshot-pr<N>` quando o PR tem base num `epic/**` (ele nasce no primeiro push depois de a base virar o épico), a release candidate `mcp-v<versão>-rc.<n>` quando um PR com o rótulo `mcp-rc` foi mesclado, ou nenhum, quando a rodada não toca o MCP (ME0 a ME4). Sem MCP compatível com o schema do branch, os passos de MCP ficam "não executado".
+- Painel: ela marca `merged` as fases mescladas e grava eventos `info` com o prefixo "manhã:" (rodada iniciada, relato recebido, correção aberta, PR mesclado).
+
+**Rodada do Container** (quando CN1 e CN2 chegam juntas, como nesta cascata):
+
+1. Dono: mescla o PR da CN1 no `epic/container`; põe o rótulo `mcp-rc` no PR da CN2 e o mescla (o GitHub já mudou a base dele para o épico). O rótulo faz o workflow publicar a `mcp-v0.8.0-rc.1`.
+2. Gerente: abre o PR `epic/container` → `main` (Resumo, Como testar e Decisões, apontando os PRs das fases); dispara o Deploy com `branch=epic/container`; espera o Deploy e a rc; entrega o prompt (modelo abaixo).
+3. Dono: roda o Cowork. Gerente: lê o relato; achados alto e médio viram um briefing de correção, executado por uma sessão Sonnet medium (o modelo da CN2) num branch `cn3/correcoes-cowork` com PR para o `epic/container`; achados baixos entram no mesmo PR se forem baratos, senão ficam registrados no PR do épico.
+4. Dono: roda o Cowork de reconferência (dirigido pelos achados do relato); mescla a correção no épico; mescla o épico na `main` e cria a tag `mcp-v0.8.0` (ela apaga as rc).
+5. Gerente: mescla a `main` no `epic/marcacoes-espaciais` (merge, nunca rebase); muda a base do PR da ME0 para `epic/marcacoes-espaciais` (o GitHub o teria deixado no `epic/container` ao apagar o branch da CN2); confere que o diff do PR mostra só a ME0.
+
+**Rodada de fases do ME** (grupo de uma ou duas fases, no branch da última do grupo):
+
+1. Gerente: confere CI verde no PR; dispara o Deploy com `branch=<branch da fase>`; espera; entrega o prompt (modelo abaixo) com o build id da ponta do branch e os passos do guia que as fases listam.
+2. Dono: roda o Cowork. Gerente: triagem do relato como acima; a correção vai **no branch da fase** (sessão no modelo e no esforço da fase, pela tabela da etapa; num grupo, a fase que o achado toca); depois do push, ela faz o merge-forward para os branches das fases seguintes **já entregues** (`git merge`, conflito resolvido no branch que recebe, gates, push) e dispara o Deploy de novo para a reconferência.
+3. Dono: reconfere pelo Cowork; mescla os PRs do grupo no épico, na ordem (o GitHub muda a base do PR seguinte sozinho); apaga os branches só se o PR seguinte já existe.
+4. Gerente: confere as bases, marca `merged` no painel e repete com o grupo seguinte. A fase que a cascata entregar entra na fila; se a sessão da noite ainda estiver na fase seguinte à do grupo, o merge-forward para o branch dela espera a entrega.
+
+**Prompts do Cowork que ela entrega** (o `docs/TESTING-COWORK.md` do branch testado é a referência; "sem interação" sai se o dono quiser acompanhar e confirmar a lista):
+
+- Container: `Leia docs/TESTING-COWORK.md e execute sem interação, no modo dirigido: as fases CN1 e CN2 de docs/history/PLAN-etapa-container.md (branch epic/container, PR #<n>): R0 inteiro e, com as dependências do guia, R9.2, R9.13 a R9.20, R10.9 e R3.8c. Build id esperado: <sha7> · <data>. MCP: mcp-v0.8.0-rc.1 (seção 6 do guia). Passada visual: Novo container, Árvore, Detalhes, Propostas.`
+- Fases do ME: `Leia docs/TESTING-COWORK.md e execute sem interação, no modo dirigido: as fases <ME_a e ME_b> do PLAN.md (branch <branch>, PR #<n>): R0 inteiro e <passos R12 que as fases listam>, com as dependências do guia. Build id esperado: <sha7> · <data>. Sem MCP nesta rodada (os passos de MCP ficam "não executado"). Passada visual: <janelas que as fases tocam>.`
+- Reconferência: `Leia docs/TESTING-COWORK.md e execute sem interação, no modo dirigido: os achados <lista> do relato <caminho, ou colado abaixo>, no branch <branch> (PR #<n>). Build id esperado: <sha7> · <data>.`
+
+**O que o dono avisa ao gerente da madrugada** (na sessão dele, como dono): **uma vez**, que a manhã começou (as bases dos PRs mudam sozinhas; correções entram em branches entregues com merge-forward, nunca no branch em andamento; se a base de um PR tiver sumido, abrir o PR com base no épico; continuar alimentando o painel); e **só mais isto**, quando acontecer: "pare depois da fase X", quando uma rodada achar algo que muda as fases seguintes ou quando o dono quiser parar, e "retome", se tiver mandado parar. Nada mais precisa de aviso: a próxima fase nasce da ponta atual do branch anterior, com as correções que já estiverem lá.
+
+**Prompt de abertura do gerente da manhã** (o dono cola numa sessão nova, **Sonnet, esforço high**, modo sem perguntas):
+
+```
+Você é o gerente da manhã da cascata noturna do Mapping. Leia o CLAUDE.md e,
+no PLAN.md, a seção "Execução em cascata" inteira, em especial "O gerente da
+manhã" e "Painel da noite". Levante o estado (painel, PRs abertos e as bases
+deles, branches, fase em andamento), mostre o quadro da manhã e me conduza
+passo a passo: diga o que você faz e o que eu faço, confira cada passo antes
+do seguinte e me entregue os prompts do Cowork prontos, com build id e MCP.
+Faça você mesmo o que é git, GitHub e painel. Nunca mescle PR, nunca apague
+branch, nunca empurre no branch da fase em andamento, nunca faça rebase ou
+force-push. Correções vão para sessões no modelo e no esforço da fase.
+```
 
 **O que a cascata troca:** tempo por risco. As fases da noite são construídas sobre fases ainda não testadas; um achado da manhã na ME1 pode exigir retrabalho na ME2 e na ME3 além do merge-forward. Por isso o gerente para na primeira fase que não fecha verde, em vez de empilhar sobre ela, e a manhã segue a ordem.
 

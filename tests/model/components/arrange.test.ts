@@ -4,7 +4,7 @@ import {
   arrange,
   dropIndex,
   findSlot,
-  isContainer,
+  hasSlot,
   resolveSlotLayout,
   slotBox,
 } from '../../../src/model/components/arrange';
@@ -191,7 +191,7 @@ function xs(screen: Screen): number[] {
 
 // --- testes -----------------------------------------------------------------------------------
 
-describe('findSlot / isContainer / resolveSlotLayout', () => {
+describe('findSlot / hasSlot / resolveSlotLayout', () => {
   it('a biblioteca de teste carrega sem problemas', () => {
     expect(library.problems).toEqual([]);
   });
@@ -199,10 +199,10 @@ describe('findSlot / isContainer / resolveSlotLayout', () => {
   it('acha o slot em profundidade e reconhece containers', () => {
     expect(findSlot(typeOf('row-start').component)?.type).toBe('slot');
     expect(findSlot(typeOf('leaf').component)).toBeUndefined();
-    expect(isContainer(typeOf('row-start').type)).toBe(true);
-    expect(isContainer(typeOf('box').type)).toBe(true);
-    expect(isContainer(typeOf('leaf').type)).toBe(false);
-    expect(isContainer(undefined)).toBe(false);
+    expect(hasSlot(typeOf('row-start').type)).toBe(true);
+    expect(hasSlot(typeOf('box').type)).toBe(true);
+    expect(hasSlot(typeOf('leaf').type)).toBe(false);
+    expect(hasSlot(undefined)).toBe(false);
 
     const nested = component('nested', [
       {

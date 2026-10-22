@@ -1,5 +1,4 @@
 import {
-  isBlankImage,
   markingComponent,
   siblingPosition,
   annotationShortLabel,
@@ -23,7 +22,7 @@ import {
   type Layer,
   type Marking,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
   type ResolvedRef,
 } from '../src/model';
 import { annotationCode, assertPlatform, CODE_HINT, type CodeContext } from './codeViews';
@@ -84,7 +83,7 @@ export function markingRow(refs: Refs, marking: Marking): Json {
   return {
     ref: refs.ref('m', marking.id),
     name: marking.name,
-    image: refs.imageLabel(marking.imageId),
+    container: refs.imageLabel(marking.containerId),
     parent: marking.parentId === null ? null : refs.bare('m', marking.parentId),
     rect: rectOf(marking),
     // Posição entre as irmãs (0 = primeira, desenhada por baixo).
@@ -220,7 +219,7 @@ export async function markingView(
   if (platform !== undefined) assertPlatform(refs, platform);
   const p = refs.project;
   const index = projectIndex(p);
-  const image = index.images.get(marking.imageId);
+  const image = index.containers.get(marking.containerId);
   const own = index.annotationsByMarking.get(marking.id) ?? [];
   const ancestors = ancestorsOf(p, marking.id).reverse();
   const lockState = markingLockStates(p).get(marking.id) ?? null;
@@ -278,9 +277,9 @@ export async function markingView(
         name: refs.markingName(m.id),
       })),
     ].filter((segment) => segment !== null),
-    image: image ? imageSummary(refs, image) : null,
+    container: image ? containerSummary(refs, image) : null,
     rect: rectOf(marking),
-    // Ordem entre as irmãs (mesma imagem e mesmo pai): 0 = primeira, desenhada por baixo.
+    // Ordem entre as irmãs (mesmo container e mesmo pai): 0 = primeira, desenhada por baixo.
     order: siblingPosition(p, marking.id),
     ...componentInfo(refs, marking),
     lock: {
@@ -303,23 +302,24 @@ export async function markingView(
   };
 }
 
-function imageSummary(refs: Refs, image: ProjectImage): Json {
+function containerSummary(refs: Refs, image: ProjectContainer): Json {
   return {
     ref: refs.ref('i', image.id),
     name: image.name,
     file: image.file,
-    ...(isBlankImage(image) ? { blank: true, background: image.background } : {}),
+    // Container só com fundo: `file` é `null` e `background` traz a cor.
+    background: image.background,
     width: image.width,
     height: image.height,
     locked: image.locked,
   };
 }
 
-/** Dados da imagem (`get_image`); confere se o arquivo existe dentro das raízes. */
-export async function imageView(
+/** Dados do container (`get_container`); confere se o arquivo existe dentro das raízes. */
+export async function containerView(
   roots: Roots,
   refs: Refs,
-  image: ProjectImage,
+  image: ProjectContainer,
 ): Promise<Json> {
   const p = refs.project;
   const index = projectIndex(p);
@@ -327,15 +327,17 @@ export async function imageView(
     image.file === null
       ? null
       : await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
-  const topLevel = (index.children.get(null) ?? []).filter((m) => m.imageId === image.id);
+  const topLevel = (index.children.get(null) ?? []).filter(
+    (m) => m.containerId === image.id,
+  );
   return {
-    ...imageSummary(refs, image),
-    // Tela em branco não tem arquivo: nada a conferir.
+    ...containerSummary(refs, image),
+    // Container sem arquivo não tem arquivo: nada a conferir.
     exists: image.file === null ? true : absolute !== null,
     path: absolute,
     placement: image.placement,
     markingColor: image.markingColor,
-    markings: p.markings.filter((m) => m.imageId === image.id).length,
+    markings: p.markings.filter((m) => m.containerId === image.id).length,
     topLevelMarkings: topLevel.slice(0, LIST_LIMIT).map((m) => markingRow(refs, m)),
     ...(topLevel.length > LIST_LIMIT ? { topLevelMarkingsTotal: topLevel.length } : {}),
   };
@@ -366,7 +368,7 @@ export function projectSummary(loaded: LoadedProject): Json {
     ...(loaded.readOnly ? { readOnly: true } : {}),
     updatedAt: project.project.updatedAt,
     counts: {
-      images: project.images.length,
+      containers: project.containers.length,
       markings: project.markings.length,
       annotations: project.annotations.length,
       layers: project.layers.length,
@@ -410,9 +412,12 @@ export function projectDetail(refs: Refs): Json {
       );
     }
   }
-  const markingsByImage = new Map<string, number>();
+  const markingsByContainer = new Map<string, number>();
   for (const m of p.markings) {
-    markingsByImage.set(m.imageId, (markingsByImage.get(m.imageId) ?? 0) + 1);
+    markingsByContainer.set(
+      m.containerId,
+      (markingsByContainer.get(m.containerId) ?? 0) + 1,
+    );
   }
   const warnings = new Map(loaded.specWarnings.map((w) => [w.specId, w]));
 
@@ -429,9 +434,9 @@ export function projectDetail(refs: Refs): Json {
     ...projectSummary(loaded),
     createdAt: p.project.createdAt,
     ...(loaded.migratedFrom !== null ? { migratedFrom: loaded.migratedFrom } : {}),
-    images: p.images.map((image) => ({
-      ...imageSummary(refs, image),
-      markings: markingsByImage.get(image.id) ?? 0,
+    containers: p.containers.map((image) => ({
+      ...containerSummary(refs, image),
+      markings: markingsByContainer.get(image.id) ?? 0,
     })),
     layers: p.layers.map((layer) => ({
       ...layerView(p, layer),

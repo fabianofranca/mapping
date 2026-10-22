@@ -20,7 +20,7 @@ function setup() {
     return found;
   };
   const image = (id: string) => {
-    const found = harness.project().images.find((x) => x.id === id);
+    const found = harness.project().containers.find((x) => x.id === id);
     if (!found) throw new Error(id);
     return found;
   };

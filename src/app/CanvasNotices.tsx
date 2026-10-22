@@ -22,7 +22,7 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
   const locked = store.locked.value;
   // O projeto à vista (na visão Proposto da revisão, o "como ficaria").
   const hasImagesSignal = useComputed(
-    () => (review.derived.shownProject.value?.images.length ?? 0) > 0,
+    () => (review.derived.shownProject.value?.containers.length ?? 0) > 0,
   );
   const hasImages = hasImagesSignal.value;
   const { message, progress } = notices;

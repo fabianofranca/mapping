@@ -76,7 +76,7 @@ describe('janela Catálogo', () => {
     const project = harness.project();
     expect(project.markings).toHaveLength(before + 1);
     const created = project.markings.at(-1);
-    expect(created?.imageId).toBe('I1');
+    expect(created?.containerId).toBe('I1');
     expect(project.annotations.find((a) => a.markingId === created?.id)?.type).toEqual({
       specId: 'material3',
       typeId: 'm3-button',

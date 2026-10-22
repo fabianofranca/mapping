@@ -61,8 +61,8 @@ function expectIssueStarting(spec: Json, path: string, start: string): void {
 }
 
 describe('o exemplo da biblioteca (formatVersion 4)', () => {
-  it('as versões aceitas vão de 1 a 5', () => {
-    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5]);
+  it('as versões aceitas vão de 1 a 6', () => {
+    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('valida no zod e no JSON Schema, sem erros nem avisos escondidos', () => {

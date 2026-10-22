@@ -3,7 +3,7 @@ import {
   type Annotation,
   type Marking,
   type Project,
-  type ProjectImage,
+  type ProjectContainer,
 } from '../../src/model';
 
 interface LargeProjectOptions {
@@ -35,13 +35,13 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
   const cell = 1000 + 50;
   const groups = Math.floor(markingsPerImage / 5);
 
-  const imageList: ProjectImage[] = [];
+  const imageList: ProjectContainer[] = [];
   const markings: Marking[] = [];
   const annotations: Annotation[] = [];
   for (let i = 0; i < images; i++) {
-    const imageId = `I${i}`;
+    const containerId = `I${i}`;
     imageList.push({
-      id: imageId,
+      id: containerId,
       name: null,
       markingColor: null,
       locked: false,
@@ -63,7 +63,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
       const parentId = `M${i}-${g}`;
       markings.push({
         id: parentId,
-        imageId,
+        containerId: containerId,
         parentId: null,
         name: `Marcação ${i}-${g}`,
         rect: parent,
@@ -74,7 +74,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
       for (let c = 0; c < 4; c++) {
         markings.push({
           id: `${parentId}-${c}`,
-          imageId,
+          containerId: containerId,
           parentId,
           name: null,
           rect: {
@@ -112,7 +112,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
   return {
     ...base,
     layers: [...base.layers, { id: 'L2', name: 'Vidros', color: '#1E88E5', spec: null }],
-    images: imageList,
+    containers: imageList,
     markings,
     annotations,
   };

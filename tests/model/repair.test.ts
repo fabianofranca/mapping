@@ -92,7 +92,7 @@ describe('repairProject', () => {
     const p = sampleProject();
     const broken: Project = {
       ...p,
-      markings: p.markings.map((m) => (m.id === 'M2' ? { ...m, imageId: 'I9' } : m)),
+      markings: p.markings.map((m) => (m.id === 'M2' ? { ...m, containerId: 'I9' } : m)),
     };
     const result = repair(broken);
     expect(result.unrepaired).toEqual([]);
@@ -186,7 +186,7 @@ describe('repairProject', () => {
     const first = image(p, 'I1');
     const broken: Project = {
       ...p,
-      images: p.images.map((i) =>
+      containers: p.containers.map((i) =>
         i.id === 'I2' ? { ...i, placement: { ...i.placement, x: first.placement.x } } : i,
       ),
     };

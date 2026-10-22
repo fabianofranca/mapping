@@ -81,7 +81,7 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
   const index = projectIndex(refs.project);
   const byKind = {
     layer: index.layers,
-    i: index.images,
+    i: index.containers,
     m: index.markings,
     a: index.annotations,
   };
@@ -96,7 +96,7 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
       const kind = item.kind as ItemKind;
       return {
         ...base,
-        kind: { m: 'marking', i: 'image', a: 'annotation' }[kind],
+        kind: { m: 'marking', i: 'container', a: 'annotation' }[kind],
         ref: refs.ref(kind, item.id),
       };
     });
@@ -190,7 +190,14 @@ function libraryWarningViews(result: BatchResult): Record<string, unknown>[] {
 export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const { result, location, loaded, refs } = prepared;
   // Avisos (não impedem nada): os da biblioteca.
-  const warnings: unknown[] = [...libraryWarningViews(result)];
+  const warnings: unknown[] = [
+    ...libraryWarningViews(result),
+    ...result.deprecations.map((d) => ({
+      code: 'deprecated-op',
+      op: d.index,
+      message: d.message,
+    })),
+  ];
   return {
     valid: prepared.valid,
     project: { name: location.name, path: location.path },

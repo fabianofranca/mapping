@@ -123,7 +123,7 @@ export class MarkingRenderer {
     const headers = new Map<string, HeaderBand>();
     let index = 0;
     for (const marking of ordered) {
-      const placement = placements.get(marking.imageId);
+      const placement = placements.get(marking.containerId);
       if (!placement) continue;
       seen.add(marking.id);
       const node = this.nodes.get(marking.id) ?? this.createNode(marking.id);
@@ -139,7 +139,7 @@ export class MarkingRenderer {
       if (!onScreen) continue;
       const selected = selection?.kind === 'marking' && selection.id === marking.id;
       // Cor da borda escolhida para a imagem (sem escolha, `cv-line`).
-      const lineColor = lookup?.images.get(marking.imageId)?.markingColor ?? null;
+      const lineColor = lookup?.containers.get(marking.containerId)?.markingColor ?? null;
       const markingDots = dots.get(marking.id) ?? NO_LAYER_DOTS;
       const markingIncomplete = incomplete.has(marking.id);
       const reviewMark = review?.markings.get(marking.id) ?? null;

@@ -115,9 +115,9 @@ export class OverlayRenderer {
   private renderDropTarget(frame: OverlayFrame): void {
     const { project, dropTarget: target, tokens } = frame;
     const zoom = frame.viewport.scale;
-    this.container.classList.toggle('canvas-host--drop', target?.imageId === null);
-    const image = target?.imageId
-      ? project && projectIndex(project).images.get(target.imageId)
+    this.container.classList.toggle('canvas-host--drop', target?.containerId === null);
+    const image = target?.containerId
+      ? project && projectIndex(project).containers.get(target.containerId)
       : undefined;
     if (!image) {
       this.dropRect.visible(false);
@@ -138,7 +138,7 @@ export class OverlayRenderer {
   ): void {
     const { draft, tokens } = frame;
     const zoom = frame.viewport.scale;
-    const placement = draft && placements.get(draft.imageId);
+    const placement = draft && placements.get(draft.containerId);
     if (!draft || !placement) {
       this.draftRect.visible(false);
       return;
@@ -175,7 +175,7 @@ export class OverlayRenderer {
     let color = tokens.select;
     if (selected.kind === 'image') {
       const { image } = selected;
-      const invalid = preview?.imageId === image.id && !preview.valid;
+      const invalid = preview?.containerId === image.id && !preview.valid;
       if (invalid) color = tokens.invalid;
       rect = imageCanvasRect(image, placements.get(image.id) ?? image.placement);
       this.selectionOutline.setAttrs({
@@ -315,7 +315,7 @@ function lockedRect(
 ): { readonly rect: Rect; readonly inherited: boolean } | null {
   const index = projectIndex(project);
   if (item.kind === 'image') {
-    const image = index.images.get(item.id);
+    const image = index.containers.get(item.id);
     if (!image || canEditImagePlacement(project, image.id)) return null;
     return {
       rect: imageCanvasRect(image, placements.get(image.id) ?? image.placement),
@@ -323,7 +323,7 @@ function lockedRect(
     };
   }
   const marking = index.markings.get(item.id);
-  const image = marking && index.images.get(marking.imageId);
+  const image = marking && index.containers.get(marking.containerId);
   if (!marking || !image || canEditMarkingGeometry(project, marking.id)) return null;
   return {
     rect: markingCanvasRect(placements.get(image.id) ?? image.placement, marking.rect),
