@@ -82,10 +82,43 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
   const newId = deps.newId ?? (() => crypto.randomUUID());
   const catalog = deps.components ?? (() => model.EMPTY_CATALOG);
   const measure = deps.measure ?? (() => textMeasurer.peek());
-  /** Tamanho mínimo do componente que desenha a marcação (nada para uma marcação comum). */
-  const rectOptions = (p: Project, markingId: string): model.RectOptions | undefined => {
+  /** Mínimo do componente de cada marcação de `p`: vale ao converter o `rect` para outro espaço. */
+  const minSizeOf = (p: Project) => (id: string) =>
+    model.componentMinSize(p, catalog(), id);
+  /** Opções do assentar das operações de geometria que não são prévia de gesto. */
+  const settleOptions = (p: Project): model.SettleOptions => ({
+    settle: true,
+    minSizeOf: minSizeOf(p),
+  });
+  /**
+   * Opções das operações que mudam o retângulo da marcação: o tamanho mínimo do componente que
+   * a desenha (nada para uma marcação comum) e o mínimo das demais, para a troca de espaço.
+   */
+  const rectOptions = (p: Project, markingId: string): model.RectOptions => {
     const minSize = model.componentMinSize(p, catalog(), markingId);
-    return minSize === null ? undefined : { minSize };
+    return minSize === null
+      ? { minSizeOf: minSizeOf(p) }
+      : { minSize, minSizeOf: minSizeOf(p) };
+  };
+  /** O retângulo pedido preso ao tamanho mínimo do componente (o gesto não trava no meio). */
+  const wantedRect = (p: Project, markingId: string, rect: Rect): Rect => {
+    const min = model.componentMinSize(p, catalog(), markingId);
+    const base = p.markings.find((m) => m.id === markingId);
+    return min && base ? clampToMinSize(rect, base.rect, min) : rect;
+  };
+  /**
+   * Operação final de um gesto: repete a operação com os valores finais e `settle: true` sobre o
+   * projeto do início do gesto (`updateGesture` sempre parte dele). A final nunca pode falhar:
+   * se falhar, o `commitGesture` gravaria a prévia sem assentar; então assenta a última prévia
+   * válida. `op` recebe o projeto do início e a última prévia.
+   */
+  const finishGesture = (op: (base: Project, last: Project) => Project): ActionResult => {
+    const last = store.project.peek();
+    if (!last) return { ok: false, error: 'no-project' };
+    const result = store.updateGesture((base) => op(base, last));
+    if (result.ok) return result;
+    store.updateGesture((base) => model.settleHierarchy(last, settleOptions(base)));
+    return result;
   };
 
   const create = (op: (id: string) => (p: Project) => Project): ActionResult<string> => {
@@ -129,16 +162,25 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     addContainer: (
       file: model.ImageFile,
       center?: { readonly x: number; readonly y: number },
-    ) => create((id) => (p) => model.addContainer(p, { ...file, id, center })),
+    ) =>
+      create(
+        (id) => (p) =>
+          model.addContainer(p, { ...file, id, center }, settleOptions(p)),
+      ),
     setContainerPlacement: (containerId: string, placement: Placement) =>
-      store.apply((p) => model.setContainerPlacement(p, containerId, placement)),
+      store.apply((p) =>
+        model.setContainerPlacement(p, containerId, placement, settleOptions(p)),
+      ),
     replaceContainer: (
       containerId: string,
       file: model.ImageFile,
       options?: model.ReplaceContainerOptions,
-    ) => store.apply((p) => model.replaceContainer(p, containerId, file, options)),
+    ) =>
+      store.apply((p) =>
+        model.replaceContainer(p, containerId, file, { ...options, ...settleOptions(p) }),
+      ),
     removeContainer: (containerId: string) =>
-      store.apply((p) => model.removeContainer(p, containerId)),
+      store.apply((p) => model.removeContainer(p, containerId, settleOptions(p))),
     /** Container sem arquivo: imagem sem arquivo, com tamanho e cor de fundo. */
     addBackgroundContainer: (args: {
       readonly name: string | null;
@@ -146,43 +188,101 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly height: number;
       readonly background: string;
       readonly center?: Point;
-    }) => create((id) => (p) => model.addBackgroundContainer(p, { ...args, id })),
+    }) =>
+      create(
+        (id) => (p) =>
+          model.addBackgroundContainer(p, { ...args, id }, settleOptions(p)),
+      ),
     setBackgroundContainer: (
       containerId: string,
       patch: model.BackgroundContainerChanges,
-    ) => store.apply((p) => model.setBackgroundContainer(p, containerId, patch)),
+    ) =>
+      store.apply((p) =>
+        model.setBackgroundContainer(p, containerId, patch, settleOptions(p)),
+      ),
 
     // Gestos: prévias sem histórico e uma única entrada no fim (ver `ProjectStore`).
+    // As prévias rodam com `settle: false` (pertencimento congelado enquanto o ponteiro se
+    // move); ao soltar, o canvas chama a ação `finish…` da mesma operação, com os valores
+    // finais (encaixe e absorção já aplicados) e `settle: true`, dentro do MESMO gesto, e só
+    // então `commitGesture`: uma entrada de desfazer com geometria, espaço e pertencimento.
     beginGesture: () => store.beginGesture(),
     /** Prévia de mover/redimensionar. Se sobrepuser, fica na última posição válida. */
     previewImagePlacement: (containerId: string, placement: Placement) =>
-      store.updateGesture((p) => model.setContainerPlacement(p, containerId, placement)),
-    /** Prévia de mover a marcação (com os descendentes), limitada ao pai ou à imagem. */
-    previewMarkingMove: (markingId: string, dx: number, dy: number) =>
-      store.updateGesture((p) => {
-        const d = model.clampMarkingDelta(p, markingId, dx, dy);
-        return model.moveMarking(p, markingId, d.dx, d.dy);
+      store.updateGesture((p) =>
+        model.setContainerPlacement(p, containerId, placement, { settle: false }),
+      ),
+    /**
+     * Final de mover/redimensionar o container: repete a operação com a posição da última
+     * prévia válida e assenta (ele entra ou sai de uma marcação do canvas). Nunca falha.
+     */
+    finishImagePlacement: (containerId: string): ActionResult =>
+      finishGesture((base, last) => {
+        const placement = last.containers.find((c) => c.id === containerId)?.placement;
+        return placement === undefined
+          ? last
+          : model.setContainerPlacement(base, containerId, placement, settleOptions(base));
       }),
+    /**
+     * Prévia de mover a marcação pelo deslocamento `dx`, `dy` (inteiros, no espaço da marcação).
+     * Nada prende a marcação ao container: ela pode sair dele; o espaço novo é decidido ao soltar.
+     */
+    previewMarkingMove: (markingId: string, dx: number, dy: number) =>
+      store.updateGesture((p) =>
+        model.moveMarking(p, markingId, Math.round(dx), Math.round(dy), {
+          settle: false,
+        }),
+      ),
+    /**
+     * Final de mover a marcação: `dx`, `dy` são o deslocamento final no espaço de origem da
+     * marcação (o do ponteiro, mais o encaixe que o canvas calculou). Assenta o espaço (converte o
+     * `rect` dela e o das descendentes, com o `minSize` dos componentes) e o pertencimento.
+     */
+    finishMarkingMove: (markingId: string, dx: number, dy: number): ActionResult =>
+      finishGesture((base) =>
+        model.moveMarking(
+          base,
+          markingId,
+          Math.round(dx),
+          Math.round(dy),
+          rectOptions(base, markingId),
+        ),
+      ),
     /** Prévia de redimensionar a marcação. */
     previewMarkingRect: (markingId: string, rect: Rect) =>
-      store.updateGesture((p) => {
-        const min = model.componentMinSize(p, catalog(), markingId);
-        const base = p.markings.find((m) => m.id === markingId);
-        const wanted = min && base ? clampToMinSize(rect, base.rect, min) : rect;
-        return model.setMarkingRect(p, markingId, wanted, rectOptions(p, markingId));
-      }),
+      store.updateGesture((p) =>
+        model.setMarkingRect(p, markingId, wantedRect(p, markingId, rect), {
+          ...rectOptions(p, markingId),
+          settle: false,
+        }),
+      ),
+    /**
+     * Final de redimensionar a marcação: `rect` é o retângulo final (com a absorção que o canvas
+     * calculou). Assenta o pertencimento: o que deixou de caber sai do pai, o que passou a caber
+     * entra.
+     */
+    finishMarkingRect: (markingId: string, rect: Rect): ActionResult =>
+      finishGesture((base) =>
+        model.setMarkingRect(
+          base,
+          markingId,
+          wantedRect(base, markingId, rect),
+          rectOptions(base, markingId),
+        ),
+      ),
     commitGesture: () => store.commitGesture(),
     cancelGesture: () => store.cancelGesture(),
 
     // Marcações
-    createMarking: (containerId: string, rect: Rect, name?: string | null) =>
+    /**
+     * Cria a marcação. `containerId` nulo = marcação do canvas (`rect` em unidades do canvas);
+     * senão, `rect` em pixels do container. O espaço e o pai saem do assentar (a marcação do
+     * canvas que cabe inteira num container passa a ser dele).
+     */
+    createMarking: (containerId: string | null, rect: Rect, name?: string | null) =>
       create(
         (id) => (p) =>
-          model.createMarking(
-            p,
-            { id, containerId: containerId, rect, name },
-            rectOptions(p, id),
-          ),
+          model.createMarking(p, { id, containerId, rect, name }, rectOptions(p, id)),
       ),
     renameMarking: (markingId: string, name: string | null) =>
       store.apply((p) => model.renameMarking(p, markingId, name)),
@@ -196,13 +296,20 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         model.adjustMarkingRect(p, markingId, field, value, rectOptions(p, markingId)),
       ),
     moveMarking: (markingId: string, dx: number, dy: number) =>
-      store.apply((p) => model.moveMarking(p, markingId, dx, dy)),
-    setMarkingParent: (markingId: string, parentId: string | null) =>
-      store.apply((p) => model.setMarkingParent(p, markingId, parentId)),
+      store.apply((p) => model.moveMarking(p, markingId, dx, dy, rectOptions(p, markingId))),
+    /**
+     * Liga ou desliga a marcação flutuante (comentário sobre o canvas, fora do pertencimento).
+     * Ligar a tira do container e a leva ao canvas, convertida; desligar a devolve ao container
+     * que a contém inteira, se houver. É geometria: a trava impede nos dois sentidos.
+     */
+    setMarkingFloating: (markingId: string, floating: boolean) =>
+      store.apply((p) =>
+        model.setMarkingFloating(p, markingId, floating, rectOptions(p, markingId)),
+      ),
     confirmMarkingReview: (markingId: string) =>
       store.apply((p) => model.confirmMarkingReview(p, markingId)),
     removeMarking: (markingId: string) =>
-      store.apply((p) => model.removeMarking(p, markingId)),
+      store.apply((p) => model.removeMarking(p, markingId, settleOptions(p))),
     /** Posição entre as irmãs (0 = por baixo). Não é geometria: a trava não impede. */
     reorderMarking: (markingId: string, index: number) =>
       store.apply((p) => model.reorderMarking(p, markingId, index)),
@@ -210,7 +317,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     // Componentes (etapa Biblioteca, B3): cada action é uma entrada de desfazer.
     /** Cria a marcação e a anotação tipada que a desenha; devolve o id da marcação. */
     addComponent: (args: {
-      readonly containerId: string;
+      /** Container da instância; `null` = o canvas (`center` em unidades do canvas). */
+      readonly containerId: string | null;
       readonly parentId: string | null;
       readonly specId: string;
       readonly typeId: string;

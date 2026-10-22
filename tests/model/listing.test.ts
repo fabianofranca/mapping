@@ -4,6 +4,7 @@ import {
   annotationsByMarking,
   buildIncompleteList,
   buildListing,
+  createMarking,
   layerSections,
   removeMarking,
 } from '../../src/model';
@@ -15,7 +16,7 @@ describe('visão de lista', () => {
 
   it('agrupa Imagem → Marcação → Camada, com o caminho completo', () => {
     const listing = buildListing(p, both, { showEmpty: false });
-    expect(listing.map((i) => i.image.id)).toEqual(['I1', 'I2']);
+    expect(listing.map((i) => i.image?.id)).toEqual(['I1', 'I2']);
     const [i1] = listing;
     // M3 não tem anotação: fica de fora. M2 tem, e o caminho passa pelo pai.
     expect(i1?.markings.map((m) => m.marking.id)).toEqual(['M1', 'M2']);
@@ -53,10 +54,10 @@ describe('visão de lista', () => {
 
   it('imagem sem marcações só aparece com "mostrar vazias"', () => {
     const q = removeMarking(p, 'M4');
-    expect(buildListing(q, both, { showEmpty: false }).map((i) => i.image.id)).toEqual([
+    expect(buildListing(q, both, { showEmpty: false }).map((i) => i.image?.id)).toEqual([
       'I1',
     ]);
-    expect(buildListing(q, both, { showEmpty: true }).map((i) => i.image.id)).toEqual([
+    expect(buildListing(q, both, { showEmpty: true }).map((i) => i.image?.id)).toEqual([
       'I1',
       'I2',
     ]);
@@ -72,6 +73,20 @@ describe('visão de lista', () => {
     expect(inOnlyL1[0]?.markings.map((m) => m.marking.id)).toEqual(['M1', 'M2', 'M3']);
     const m3 = inOnlyL1[0]?.markings[2];
     expect(m3?.path.map((m) => m.id)).toEqual(['M1', 'M2', 'M3']);
+  });
+
+  it('o grupo Canvas vem primeiro, com as marcações do canvas e as anotações delas', () => {
+    let q = createMarking(p, {
+      id: 'C1',
+      containerId: null,
+      rect: { x: -50, y: -50, width: 900, height: 700 },
+    });
+    q = addAnnotation(q, { id: 'AC', markingId: 'C1', layerId: 'L1' });
+    const listing = buildListing(q, both, { showEmpty: false });
+    expect(listing.map((i) => i.image?.id ?? null)).toEqual([null, 'I1', 'I2']);
+    expect(listing[0]?.markings.map((m) => m.marking.id)).toEqual(['C1']);
+    // Sem marcação do canvas, o grupo não aparece, nem com "mostrar vazias".
+    expect(buildListing(p, both, { showEmpty: true })[0]?.image?.id).toBe('I1');
   });
 
   it('layerSections segue a ordem das camadas dadas', () => {
@@ -96,7 +111,7 @@ describe('lista de incompletas', () => {
 
   it('agrupa por imagem, em profundidade, com camada e motivos', () => {
     const list = buildIncompleteList(p, issues);
-    expect(list.map((i) => i.image.id)).toEqual(['I1', 'I2']);
+    expect(list.map((i) => i.image?.id)).toEqual(['I1', 'I2']);
     expect(
       list[0]?.items.map((i) => [i.marking.id, i.annotation.id, i.layer.id]),
     ).toEqual([
@@ -112,6 +127,21 @@ describe('lista de incompletas', () => {
     const list = buildIncompleteList(p, issues, l1);
     expect(list.map((i) => i.items.map((x) => x.annotation.id))).toEqual([['A3']]);
     expect(buildIncompleteList(p, issues, [])).toEqual([]);
+  });
+
+  it('pendência de marcação do canvas entra no grupo Canvas', () => {
+    let q = createMarking(p, {
+      id: 'C1',
+      containerId: null,
+      rect: { x: 0, y: 0, width: 900, height: 700 },
+    });
+    q = addAnnotation(q, { id: 'AC', markingId: 'C1', layerId: 'L1' });
+    const list = buildIncompleteList(
+      q,
+      new Map([['AC', [{ code: 'unknown-type' as const }]]]),
+    );
+    expect(list.map((i) => i.image?.id ?? null)).toEqual([null]);
+    expect(list[0]?.items[0]?.marking.id).toBe('C1');
   });
 
   it('sem pendências a lista é vazia', () => {

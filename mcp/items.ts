@@ -22,6 +22,7 @@ import type { Roots } from './paths';
 
 /** Nome do container sem nome (o MCP não usa `t()`). */
 export const CONTAINER_LABEL = 'Container';
+export const CANVAS_LABEL = 'Canvas';
 
 /** Nomes dos tipos de item. A letra `i` das referências é o container (não mudou por compatibilidade). */
 export const KIND_NAMES: Record<ItemKind, string> = {
@@ -58,7 +59,9 @@ export class Refs {
     return this.loaded.location.name;
   }
 
-  imageLabel(containerId: string): string {
+  /** Rótulo do container; marcação do canvas (`null`) é "Canvas". */
+  imageLabel(containerId: string | null): string {
+    if (containerId === null) return CANVAS_LABEL;
     const image = projectIndex(this.project).containers.get(containerId);
     if (!image) return containerId;
     return refImageLabel(image) ?? CONTAINER_LABEL;
@@ -71,7 +74,7 @@ export class Refs {
     return marking.name ?? `Marcação ${shortCode(this.project, 'm', markingId)}`;
   }
 
-  /** `Container › Pai › Marcação`: o mesmo texto entre parênteses das referências copiadas. */
+  /** `Container › Pai › Marcação` (`Canvas › Pai › Marcação` no canvas): o mesmo texto entre parênteses das referências copiadas. */
   markingPath(markingId: string): string[] {
     const marking = projectIndex(this.project).markings.get(markingId);
     if (!marking) return [markingId];

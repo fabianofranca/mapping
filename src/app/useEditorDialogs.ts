@@ -70,7 +70,7 @@ export function useEditorDialogs(): EditorDialogs {
       const project = store.project.peek();
       if (!project || !canDeleteMarking(project, marking.id)) return;
       const impact = markingDeletionImpact(project, marking.id);
-      if (impact.descendants > 0 || impact.annotations > 0) {
+      if (impact.descendants > 0 || impact.annotations > 0 || impact.containers > 0) {
         show({ kind: 'deleteMarking', marking });
       } else if (actions.removeMarking(marking.id).ok) {
         ui.selection.value = null;

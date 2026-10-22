@@ -90,7 +90,10 @@ export async function findBySourceResult(
           kind: 'marking',
           ref: refs.ref('m', match.marking.id),
           name: match.marking.name,
-          container: refs.ref('i', match.marking.containerId),
+          container:
+            match.marking.containerId === null
+              ? null
+              : refs.ref('i', match.marking.containerId),
           rect: match.marking.rect,
           source: match.marking.source,
         });

@@ -113,8 +113,14 @@ export const enUS: Dictionary = {
   'marking.y': 'Y',
   'marking.width': 'Width',
   'marking.height': 'Height',
-  'marking.parent': 'Parent marking',
+  'marking.parent': 'Belongs to',
   'marking.noParent': 'None',
+  'marking.container': 'Container',
+  'marking.floating': 'Floating',
+  'marking.floatingHint': 'Stays above everything and belongs to nothing',
+  'marking.deleteContainersStay':
+    '{containers} container(s) inside it stay on the canvas.',
+  'canvas.name': 'Canvas',
   'marking.needsReview': 'Position needs review',
   'marking.reviewMessage':
     'The image was replaced by one with a different aspect ratio and this marking was rescaled. Check its position.',
@@ -230,6 +236,7 @@ export const enUS: Dictionary = {
   'crumbs.label': 'Selection path',
   'crumbs.image': 'Image {name}',
   'crumbs.marking': 'Marking {name}',
+  'crumbs.canvas': 'Canvas',
 
   'zoom.value': '{percent}%',
   'zoom.reset': 'Zoom at {percent}%; click to go back to 100%',
@@ -822,6 +829,9 @@ export const enUS: Dictionary = {
   'library.typeSize': '{width} × {height}',
   'library.add': 'Add',
   'library.addType': 'Add {name}',
+  'library.addInside': 'Add inside {name}',
+  'library.addToScreen': 'Add to screen {name}',
+  'library.addToCanvas': 'Add to canvas',
   'library.noScreen': 'Select or center a screen',
   'library.readOnly': 'The project is read-only.',
   'library.error.generic': 'Could not add the component.',

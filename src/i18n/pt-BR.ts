@@ -112,8 +112,14 @@ export const ptBR = {
   'marking.y': 'Y',
   'marking.width': 'Largura',
   'marking.height': 'Altura',
-  'marking.parent': 'Marcação pai',
+  'marking.parent': 'Pertence a',
   'marking.noParent': 'Nenhuma',
+  'marking.container': 'Container',
+  'marking.floating': 'Flutuante',
+  'marking.floatingHint': 'Fica acima de tudo e não pertence a ninguém',
+  'marking.deleteContainersStay':
+    '{containers} container(s) dentro dela ficam no canvas.',
+  'canvas.name': 'Canvas',
   'marking.needsReview': 'Posição a revisar',
   'marking.reviewMessage':
     'A imagem foi trocada por outra com proporção diferente e esta marcação foi reescalada. Confira a posição.',
@@ -229,6 +235,7 @@ export const ptBR = {
   'crumbs.label': 'Caminho da seleção',
   'crumbs.image': 'Imagem {name}',
   'crumbs.marking': 'Marcação {name}',
+  'crumbs.canvas': 'Canvas',
 
   'zoom.value': '{percent}%',
   'zoom.reset': 'Zoom em {percent}%; clique para voltar a 100%',
@@ -826,6 +833,9 @@ export const ptBR = {
   'library.typeSize': '{width} × {height}',
   'library.add': 'Adicionar',
   'library.addType': 'Adicionar {name}',
+  'library.addInside': 'Adicionar dentro de {name}',
+  'library.addToScreen': 'Adicionar na tela {name}',
+  'library.addToCanvas': 'Adicionar no canvas',
   'library.noScreen': 'Selecione ou centralize uma tela',
   'library.readOnly': 'O projeto está somente leitura.',
   'library.error.generic': 'Não foi possível adicionar o componente.',

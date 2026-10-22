@@ -345,7 +345,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     container: item('Container')
       .optional()
       .describe(
-        'Container onde a marcação nasce (obrigatório, a menos que a antiga `image` seja dada).',
+        'Container onde a marcação nasce. Omitido (e sem a antiga `image`): marcação do canvas, com `rect` em unidades do canvas.',
       ),
     image: item('Container')
       .optional()
@@ -353,7 +353,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     rect: rect
       .optional()
       .describe(
-        'Retângulo em pixels do container. Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (dentro do slot do `parent`, se dado; senão no centro do container). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
+        'Retângulo em pixels do container (sem `container`: unidades do canvas, podendo ser negativo). Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (no centro do container). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
       ),
     name: name.optional(),
     source: externalSource.optional(),
@@ -361,7 +361,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       .nullable()
       .optional()
       .describe(
-        'Pai: referência, id ou apelido; `null` = primeiro nível. Omitido: a marcação mais interna que contém o retângulo, como na app (sem `rect`, o primeiro nível).',
+        'Antigo: aceito com aviso e ignorado. O pai sai da geometria (a marcação mais interna que contém o retângulo).',
       ),
     annotation: z
       .object({
@@ -409,7 +409,9 @@ export const operationSchema = z.discriminatedUnion('op', [
     parent: item('Marcação pai')
       .nullable()
       .optional()
-      .describe('Novo pai (precisa conter o retângulo) ou `null` (primeiro nível).'),
+      .describe(
+        'Antigo: aceito com aviso e ignorado. O pai sai da geometria (mova ou redimensione para mudá-lo).',
+      ),
     locked: z.boolean().optional(),
     confirmReview: z
       .boolean()

@@ -10,7 +10,8 @@ import { imageLabel, markingLabel } from './labels';
 // nível seleciona aquele item; Alt+↑ e Alt+↓ andam no caminho (ver `app/shortcuts.ts`).
 
 interface Crumb {
-  readonly selection: NonNullable<Selection>;
+  /** O que o clique seleciona; `null` no nível Canvas, que só rotula. */
+  readonly selection: Selection;
   readonly label: string;
   readonly name: string;
 }
@@ -33,16 +34,44 @@ function markingCrumb(marking: Marking): Crumb {
   };
 }
 
-/** Caminho da seleção, da imagem até o item selecionado. */
+function canvasCrumb(): Crumb {
+  return { selection: null, name: t('canvas.name'), label: t('crumbs.canvas') };
+}
+
+/** Marcações do canvas que contêm o container, da mais externa à mais interna. */
+function canvasChain(project: Project, parentId: string | null): Marking[] {
+  if (parentId === null) return [];
+  return [
+    ...ancestorsOf(project, parentId).reverse(),
+    project.markings.find((m) => m.id === parentId),
+  ].filter((m): m is Marking => m !== undefined);
+}
+
+/**
+ * Caminho da seleção: Canvas › marcações do canvas › container › marcações. O primeiro nível
+ * (Canvas) só rotula: não há item do canvas para selecionar.
+ */
 export function crumbsOf(project: Project | null, selection: Selection): Crumb[] {
   const resolved = resolveSelection(project, selection);
   if (!project || !resolved) return [];
-  if (resolved.kind === 'image') return [imageCrumb(resolved.image)];
+  if (resolved.kind === 'image') {
+    return [
+      canvasCrumb(),
+      ...canvasChain(project, resolved.image.parentId).map(markingCrumb),
+      imageCrumb(resolved.image),
+    ];
+  }
   const chain = [
     ...ancestorsOf(project, resolved.marking.id).reverse(),
     resolved.marking,
   ];
-  return [imageCrumb(resolved.image), ...chain.map(markingCrumb)];
+  if (resolved.image === null) return [canvasCrumb(), ...chain.map(markingCrumb)];
+  return [
+    canvasCrumb(),
+    ...canvasChain(project, resolved.image.parentId).map(markingCrumb),
+    imageCrumb(resolved.image),
+    ...chain.map(markingCrumb),
+  ];
 }
 
 export function Breadcrumbs({
@@ -60,25 +89,37 @@ export function Breadcrumbs({
       {crumbs.length === 0 && (
         <span class="crumbs-empty">{t('panel.nothingSelected')}</span>
       )}
-      {crumbs.map((crumb, i) => (
-        <span class="crumb-item" key={`${crumb.selection.kind}:${crumb.selection.id}`}>
-          {i > 0 && (
-            <span class="crumb-sep" aria-hidden="true">
-              ›
-            </span>
-          )}
-          <button
-            type="button"
-            class="crumb"
-            aria-label={crumb.label}
-            aria-current={i === crumbs.length - 1 ? 'location' : undefined}
-            onClick={() => onSelect(crumb.selection)}
+      {crumbs.map((crumb, i) => {
+        const { selection: target } = crumb;
+        return (
+          <span
+            class="crumb-item"
+            key={target ? `${target.kind}:${target.id}` : 'canvas'}
           >
-            <Icon name={crumb.selection.kind === 'image' ? 'image' : 'marking'} />
-            <span class="crumb-name">{crumb.name}</span>
-          </button>
-        </span>
-      ))}
+            {i > 0 && (
+              <span class="crumb-sep" aria-hidden="true">
+                ›
+              </span>
+            )}
+            {target ? (
+              <button
+                type="button"
+                class="crumb"
+                aria-label={crumb.label}
+                aria-current={i === crumbs.length - 1 ? 'location' : undefined}
+                onClick={() => onSelect(target)}
+              >
+                <Icon name={target.kind === 'image' ? 'image' : 'marking'} />
+                <span class="crumb-name">{crumb.name}</span>
+              </button>
+            ) : (
+              <span class="crumb crumb-static" aria-label={crumb.label}>
+                <span class="crumb-name">{crumb.name}</span>
+              </span>
+            )}
+          </span>
+        );
+      })}
     </nav>
   );
 }

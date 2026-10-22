@@ -469,7 +469,8 @@ export function registerTools(
           return {
             ...base,
             name: marking.name,
-            container: refs.ref('i', marking.containerId),
+            container:
+              marking.containerId === null ? null : refs.ref('i', marking.containerId),
             rect: marking.rect,
           };
         }

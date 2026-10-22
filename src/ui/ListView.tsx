@@ -126,7 +126,7 @@ export function ListView({ onSelect }: ListViewProps) {
         />
       </div>
 
-      {project.containers.length === 0 ? (
+      {project.containers.length === 0 && project.markings.length === 0 ? (
         <p class="muted list-message">{t('list.emptyNoImages')}</p>
       ) : listing.length === 0 ? (
         <p class="muted list-message">
@@ -150,10 +150,10 @@ export function ListView({ onSelect }: ListViewProps) {
               </tr>
             </thead>
             {listing.map(({ image, markings }) => (
-              <tbody key={image.id}>
+              <tbody key={image?.id ?? 'canvas'}>
                 <tr class="list-image-row">
                   <th scope="colgroup" colSpan={4}>
-                    {imageLabel(image)}
+                    {image ? imageLabel(image) : t('canvas.name')}
                   </th>
                 </tr>
                 {markings.flatMap((listed) => {

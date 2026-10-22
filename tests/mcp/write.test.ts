@@ -176,7 +176,6 @@ const CADASTRO_OPERATIONS = [
     container: '$tela',
     name: 'Cadastrar',
     rect: { x: 100, y: 700, width: 800, height: 100 },
-    parent: '$form',
   },
   {
     op: 'create_annotation',

@@ -117,17 +117,22 @@ export function useEditorShortcuts(
       const index = projectIndex(project);
       let next: Selection = null;
       if (current.kind === 'marking') {
-        const { parentId, containerId: containerId, id } = current.marking;
+        const { parentId, containerId, id } = current.marking;
         if (up) {
-          next =
-            parentId === null
-              ? { kind: 'image', id: containerId }
-              : { kind: 'marking', id: parentId };
+          if (parentId !== null) next = { kind: 'marking', id: parentId };
+          else if (containerId !== null) next = { kind: 'image', id: containerId };
         } else {
           const child = index.children.get(id)?.[0];
-          next = child ? { kind: 'marking', id: child.id } : null;
+          const member = index.containersByParent.get(id)?.[0];
+          if (child) next = { kind: 'marking', id: child.id };
+          else if (member) next = { kind: 'image', id: member.id };
         }
-      } else if (!up) {
+      } else if (up) {
+        // Container dentro de uma marcação do canvas: sobe para ela.
+        if (current.image.parentId !== null) {
+          next = { kind: 'marking', id: current.image.parentId };
+        }
+      } else {
         const first = index.children
           .get(null)
           ?.find((m) => m.containerId === current.image.id);

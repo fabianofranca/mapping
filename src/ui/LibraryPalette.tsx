@@ -55,7 +55,7 @@ interface LibraryPaletteProps {
 
 export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
   const { derived, review } = useEditor();
-  const { add, disabledReason, error } = useAddComponent();
+  const { add, label, disabledReason, error } = useAddComponent();
   const project = review.derived.shownProject.value;
   const types = derived.componentTypes.value;
   if (!project) return null;
@@ -96,10 +96,10 @@ export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
                           size="sm"
                           aria-label={t('library.addType', { name: type.name })}
                           disabled={disabledReason !== undefined}
-                          title={disabledReason}
+                          title={disabledReason ?? label}
                           onClick={() => add(type.specId, type.typeId)}
                         >
-                          {t('library.add')}
+                          {label}
                         </Button>
                       </li>
                     ))}

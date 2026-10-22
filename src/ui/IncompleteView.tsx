@@ -56,10 +56,10 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
               </tr>
             </thead>
             {list.map(({ image, items }) => (
-              <tbody key={image.id}>
+              <tbody key={image?.id ?? 'canvas'}>
                 <tr class="list-image-row">
                   <th scope="colgroup" colSpan={4}>
-                    {imageLabel(image)}
+                    {image ? imageLabel(image) : t('canvas.name')}
                   </th>
                 </tr>
                 {items.map(({ annotation, path, layer, issues }) => {
