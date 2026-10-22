@@ -103,8 +103,8 @@ A CN1 vem primeiro porque fixa o vocabulário que a CN2 leva ao formato.
 - [ ] `containers` na especialização `formatVersion` 6, com validação e `docs/spec.schema.json`; Material 3 regenerada (`npm run build:examples`); teste do validador (`id` repetido, tamanho fora do limite)
 - [ ] `add_container` nas propostas e no lote do MCP, `add_blank_image` aceito com aviso, formato da proposta 2 (a 1 continua lida), com testes
 - [ ] Textos da interface e do MCP sem "tela" (i18n nos dois idiomas, `CONTAINER_LABEL`, mensagem de `mcp/imageTools.ts`)
-- [ ] Prosa dos documentos e da skill `spec-author` com "container" e "componente com slot"; `isContainer` → `hasSlot`, `isContainerComponent` → `hasSlotComponent`
-- [ ] Roteiros do `docs/TESTING.md` atualizados: criar um container por preset da especialização, por Personalizado e por Tamanho da seleção; o agente cria um por `add_container`
+- [x] Prosa dos documentos e da skill `spec-author` com "container" e "componente com slot"; `isContainer` → `hasSlot`, `isContainerComponent` → `hasSlotComponent`
+- [x] Roteiros do `docs/TESTING.md` atualizados: criar um container por preset da especialização, por Personalizado e por Tamanho da seleção; o agente cria um por `add_container`
 - [ ] `grep -rn -i "tela em branco\|blank" src mcp docs/*.md scripts tests` só encontra `docs/history/`, a aceitação de `add_blank_image` e o que for nome de arquivo de imagem
 
 **Aceite:** num projeto com a Material 3 aplicada, o diálogo Novo container lista os quatro presets dela sob o nome da biblioteca, mais Personalizado e Tamanho da seleção; sem especialização só os dois; o agente cria um container por `add_container` e uma proposta antiga com `add_blank_image` ainda aplica, com aviso; gates verdes.

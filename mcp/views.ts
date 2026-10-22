@@ -330,7 +330,7 @@ export async function imageView(
   const topLevel = (index.children.get(null) ?? []).filter((m) => m.imageId === image.id);
   return {
     ...imageSummary(refs, image),
-    // Tela em branco não tem arquivo: nada a conferir.
+    // Container sem arquivo não tem arquivo: nada a conferir.
     exists: image.file === null ? true : absolute !== null,
     path: absolute,
     placement: image.placement,

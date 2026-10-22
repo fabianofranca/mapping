@@ -1019,6 +1019,43 @@ describe('find_types_by_source (especialização v3 aplicada)', () => {
   });
 });
 
+describe('add_container e a antiga add_blank_image', () => {
+  const box = { name: 'Cartão', width: 300, height: 200, background: '#FFFFFF' };
+
+  it('add_container planeja sem aviso e vira proposta formatVersion 2', async () => {
+    const operations = [{ op: 'add_container', ...box }];
+    const plan = ok(
+      await mcp.call<{ valid: boolean; summary: string[]; warnings?: unknown[] }>(
+        'plan_changes',
+        { project: 'loja', operations },
+      ),
+    );
+    expect(plan.valid).toBe(true);
+    expect(plan.summary[0]).toContain('container "Cartão"');
+    expect(plan.warnings).toBeUndefined();
+
+    const proposed = await propose(mcp, 'loja', operations, { title: 'Container' });
+    const proposal = readProposal(dir(), proposed.proposal.id);
+    expect(proposal.formatVersion).toBe(2);
+    expect(
+      proposal.changes.some((c) => c.entity === 'image' && c.kind === 'create'),
+    ).toBe(true);
+  });
+
+  it('add_blank_image continua aplicando, com aviso deprecated-op', async () => {
+    const plan = ok(
+      await mcp.call<{ valid: boolean; warnings?: { code: string; op: number }[] }>(
+        'plan_changes',
+        { project: 'loja', operations: [{ op: 'add_blank_image', ...box }] },
+      ),
+    );
+    expect(plan.valid).toBe(true);
+    expect(plan.warnings).toEqual([
+      expect.objectContaining({ code: 'deprecated-op', op: 0 }),
+    ]);
+  });
+});
+
 describe('source nas operações de imagens e marcações', () => {
   const refBySource = async (id: string) =>
     ok(

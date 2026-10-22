@@ -43,7 +43,7 @@ export function focusedAnnotationTarget(): CopyTarget | null {
 
 /** Nome da imagem na referência: o dado ou o do arquivo; tela em branco sem nome, o texto da interface. */
 function imageRefLabel(image: Parameters<typeof refImageLabel>[0]): string {
-  return refImageLabel(image) ?? t('image.blankUntitled');
+  return refImageLabel(image) ?? t('image.containerUntitled');
 }
 
 /** "Copiar recorte" só existe para marcação de imagem com arquivo (não de tela em branco). */

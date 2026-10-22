@@ -2,7 +2,7 @@
  * Motor dos componentes (etapa Biblioteca): arrumação por tamanhos (fase L2). Recebe uma tela **sem
  * geometria** (uma árvore de nós com tipo, valores e filhos, mais as raízes ancoradas) e
  * calcula o retângulo de cada instância a partir do dimensionamento dos componentes
- * (`sizing`: px, `fill` ou `hug`). A tela é o container raiz, em coluna. A saída é a descrição
+ * (`sizing`: px, `fill` ou `hug`). A tela é o componente raiz, em coluna. A saída é a descrição
  * neutra de tela (`Screen`), a mesma que o visualizador e o editor desenham. Puro, sem DOM: o
  * texto é medido pelo `TextMeasurer` injetado.
  *
@@ -10,8 +10,8 @@
  * - Spec por eixo: `component.sizing?.[eixo] ?? component.size[eixo]` (px, `fill` ou `hug`);
  *   todo tamanho final respeita `minSize`; o `hug` medido sobe para o inteiro seguinte
  *   (`Math.ceil`), para o texto não quebrar por arredondamento. O resto fica exato.
- * - Um container é um componente com `slot`; o layout do slot (row/column/none, gap, padding,
- *   align, justify) vem de `resolveSlotLayout`. O `hug` de um container mede os filhos
+ * - Um componente com slot tem um `slot`; o layout do slot (row/column/none, gap, padding,
+ *   align, justify) vem de `resolveSlotLayout`. O `hug` de um componente com slot mede os filhos
  *   arrumados (`slotContent` em `measureComponent`), então a altura do cartão cresce com o texto.
  * - `fill` no eixo principal de um pai `hug` não tem de onde tirar tamanho: cai em `hug`, com aviso.
  * - A tela é uma coluna sem padding nem gap; as raízes sem `anchor` entram nela, as ancoradas
@@ -101,7 +101,7 @@ const EPS = 0.001;
 
 type Axis = 'width' | 'height';
 
-/** Nó resolvido: componente, slot (se container), layout do slot e filhos já preparados. */
+/** Nó resolvido: componente, slot (se componente com slot), layout do slot e filhos já preparados. */
 interface Prepared {
   readonly node: LayoutNode;
   readonly component: ComponentFile;
@@ -286,7 +286,7 @@ export function layoutScreen(
       return inner + padW(p);
     });
 
-  /** Largura `hug`: o template medido (com `slotContent` nos containers). */
+  /** Largura `hug`: o template medido (com `slotContent` nos componentes com slot). */
   function intrinsicWidth(p: Prepared): number {
     return cached(p, 'iw', () => {
       const options = p.slot

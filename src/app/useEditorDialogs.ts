@@ -17,7 +17,7 @@ export type EditorDialog =
   | { readonly kind: 'help'; readonly section?: string }
   | { readonly kind: 'specs' }
   /** Nova tela em branco (etapa Biblioteca, B3). */
-  | { readonly kind: 'blank' }
+  | { readonly kind: 'container' }
   | { readonly kind: 'settings' }
   | { readonly kind: 'deleteImage'; readonly image: ProjectImage }
   | { readonly kind: 'deleteMarking'; readonly marking: Marking }

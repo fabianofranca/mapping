@@ -41,6 +41,7 @@ export function summary(spec: Spec): Json {
     version: spec.version,
     formatVersion: spec.formatVersion,
     platforms: (spec.platforms ?? []).map((p) => p.id),
+    ...(spec.containers !== undefined ? { containers: spec.containers.length } : {}),
     layers: spec.layers.length,
     types: types.length,
     typesWithSources: types.filter((t) => (t.sources ?? []).length > 0).length,

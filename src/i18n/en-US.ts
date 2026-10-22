@@ -134,7 +134,7 @@ export const enUS: Dictionary = {
   'marking.error.generic': 'Could not change the marking.',
 
   'image.name': 'Name',
-  'image.blankUntitled': 'Blank screen',
+  'image.containerUntitled': 'Container',
   'image.markingColor': 'Marking line color',
   'image.markingColorTheme': 'Theme color',
   'image.markingColorHint':
@@ -505,7 +505,7 @@ export const enUS: Dictionary = {
   'help.search': 'Search help',
   'help.guide.title': 'Interactive guide',
   'help.guide.intro':
-    'A 12-step tour of the example project: screens, markings, layers, typed annotations, blank screens with Material 3 and reviewing a proposal. It works offline and opens in a new tab. The guide is in Portuguese only.',
+    'A 12-step tour of the example project: screens, markings, layers, typed annotations, containers with Material 3 and reviewing a proposal. It works offline and opens in a new tab. The guide is in Portuguese only.',
   'help.guide.example':
     'To see the same project in the app, use Open example project on the home screen (it creates a copy on this device and does not touch any folder).',
   'help.guide.fileProtocol':
@@ -824,28 +824,26 @@ export const enUS: Dictionary = {
   'library.readOnly': 'The project is read-only.',
   'library.error.generic': 'Could not add the component.',
   'library.error.rect-out-of-image': 'The component does not fit on this screen.',
-  'library.error.locked': 'The screen or the container is locked.',
-  'blank.new': 'New blank screen',
-  'blank.name': 'Name',
-  'blank.width': 'Width',
-  'blank.height': 'Height',
-  'blank.background': 'Background color',
-  'blank.backgroundHint': 'In the #RRGGBB format.',
-  'blank.preset': 'Preset size',
-  'blank.preset.custom': 'Custom',
-  'blank.preset.phone': 'Phone',
-  'blank.preset.phoneLarge': 'Large phone',
-  'blank.preset.tablet': 'Tablet',
-  'blank.preset.desktop': 'Desktop',
-  'blank.create': 'Create screen',
-  'blank.intro':
-    'A screen without a photo: use it to compose screens with the library components. Width and height in pixels.',
-  'blank.error.name': 'Give the screen a name.',
-  'blank.error.size': 'Width and height are whole numbers from 1 to {max}.',
-  'blank.error.color': 'Use a color in the #RRGGBB format.',
-  'blank.error.generic': 'Could not change the screen.',
-  'blank.error.locked': 'The screen is locked.',
-  'blank.error.rect-out-of-image': 'Some marking would no longer fit on the screen.',
+  'library.error.locked': 'The container or the slot component is locked.',
+  'container.new': 'New container',
+  'container.name': 'Name',
+  'container.width': 'Width',
+  'container.height': 'Height',
+  'container.background': 'Background color',
+  'container.backgroundHint': 'In the #RRGGBB format.',
+  'container.preset': 'Preset size',
+  'container.preset.custom': 'Custom',
+  'container.preset.selection': 'Selection size',
+  'container.create': 'Create container',
+  'container.intro':
+    'A container without an image file: use it to compose screens, panels or cards with the library components. Width and height in pixels; the applied specializations offer ready-made sizes.',
+  'container.error.name': 'Give the container a name.',
+  'container.error.size': 'Width and height are whole numbers from 1 to {max}.',
+  'container.error.color': 'Use a color in the #RRGGBB format.',
+  'container.error.generic': 'Could not change the container.',
+  'container.error.locked': 'The container is locked.',
+  'container.error.rect-out-of-image':
+    'Some marking would no longer fit in the container.',
   'marking.order': 'Order',
   'marking.orderValue': '{index} of {count}',
   'marking.orderHint':
@@ -860,7 +858,7 @@ export const enUS: Dictionary = {
   'shortcuts.arrange': 'Arrange the selected container',
   'view.componentsOnPhotos': 'Show components over photos',
   'view.componentsOnPhotosHint':
-    'Draws the component over the photo. On blank screens it always shows.',
+    'Draws the component over the photo. On containers without a file it always shows.',
   'diagnostics.components': 'Components',
   'diagnostics.componentsHint':
     'Fonts that did not load, components that could not be read and drawing warnings.',

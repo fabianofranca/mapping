@@ -11,7 +11,7 @@ import {
 } from '../../src/model';
 import { emptyProject, sampleProject } from './fixtures';
 
-// Schema v10 (etapa Biblioteca, B3): a imagem pode não ter arquivo (tela em branco: `file`
+// Schema v10 (etapa Biblioteca, B3): a imagem pode não ter arquivo (container: `file`
 // nulo, `background` com a cor). A migração v9 → v10 só dá `background: null` às imagens.
 
 function load(text: string) {
@@ -44,7 +44,7 @@ function withImage(p: Project, id: string, patch: Record<string, unknown>): stri
   return JSON.stringify(data);
 }
 
-describe('migração v9 → v10 (tela em branco)', () => {
+describe('migração v9 → v10 (container)', () => {
   it('todas as imagens ganham `background: null`, sem perder mais nada', () => {
     const p = sampleProject();
     const result = load(v9Text(p));
@@ -82,7 +82,7 @@ describe('migração v9 → v10 (tela em branco)', () => {
 });
 
 describe('schema v10', () => {
-  it('um projeto v10 com tela em branco é lido sem mudança', () => {
+  it('um projeto v10 com container é lido sem mudança', () => {
     const p = blankProject();
     const text = serialize(p);
     const result = load(text);

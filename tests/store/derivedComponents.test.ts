@@ -206,7 +206,7 @@ describe('derivado: desenhos dos componentes', () => {
 });
 
 describe('derivado: marcações desenhadas', () => {
-  it('na foto só com a opção ligada; na tela em branco, sempre', () => {
+  it('na foto só com a opção ligada; no container, sempre', () => {
     const { derived, actions, store } = setup();
     expect(derived.drawnMarkings.value.size).toBe(0);
     setShowComponentsOnPhotos(true);
@@ -233,7 +233,7 @@ describe('derivado: marcações desenhadas', () => {
   });
 
   it('o filtro "sem anotação" não esconde marcação que desenha; a comum segue a regra', () => {
-    // Container com filha, mais uma marcação comum sem anotação, na tela em branco... e na foto.
+    // Container com filha, mais uma marcação comum sem anotação, no container... e na foto.
     let p = add(screen(), 'C', 'row', box(100, 300, 300, 100));
     p = add(p, 'K', 'text', box(100, 300, 100, 40), { parentId: 'C' });
     p = createMarking(p, { id: 'P', imageId: 'I1', rect: box(500, 500, 50, 50) });
@@ -274,7 +274,7 @@ describe('derivado: marcações desenhadas', () => {
     expect(derived.markingVisibility.value.get('T1')).toBe('hidden');
   });
 
-  it('na tela em branco o componente aparece mesmo com a opção de fotos desligada', () => {
+  it('no container o componente aparece mesmo com a opção de fotos desligada', () => {
     const { derived, actions, ui, store } = setup();
     const blank = actions.addBlankImage({
       name: null,

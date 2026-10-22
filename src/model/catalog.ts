@@ -1,4 +1,4 @@
-import { isContainerComponent } from './componentCatalog';
+import { hasSlotComponent } from './componentCatalog';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import {
   type TextMeasurer,
@@ -272,7 +272,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
         layerId: layer.id,
         component,
         ...(componentProblem === undefined ? {} : { componentProblem }),
-        container: component !== null && isContainerComponent(component),
+        container: component !== null && hasSlotComponent(component),
         docText: type.doc === undefined ? null : (texts.get(resolve(type.doc)) ?? null),
         fields: type.fields.map(fieldOf),
         code: codeOf(spec, type),

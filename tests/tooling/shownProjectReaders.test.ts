@@ -54,6 +54,8 @@ const ALLOWLIST = [
   'src/app/useImageIntake.tsx',
   // Diagnóstico do projeto real.
   'src/ui/DiagnosticsView.tsx',
+  // Novo container: lê as especializações aplicadas e a seleção do projeto real, para criar nele.
+  'src/ui/ContainerDialog.tsx',
   // Detalhes na revisão (fase 9.5): o painel lê o projeto à vista; o atual é o outro lado
   // de um item que não existe na visão Proposto (removido) e a origem dos fantasmas
   // (anotações e pares que saem, desenhados no lugar onde estavam).

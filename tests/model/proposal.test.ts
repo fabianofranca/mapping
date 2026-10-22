@@ -52,6 +52,14 @@ function errorsOf(data: unknown): string[] {
 }
 
 describe('formato da proposta', () => {
+  it('lê a formatVersion 1 e a 2', () => {
+    for (const formatVersion of [1, 2]) {
+      const result = parseProposal({ ...sample(), formatVersion });
+      if (!result.ok) throw new Error(result.errors.join('\n'));
+      expect(result.proposal.formatVersion).toBe(formatVersion);
+    }
+  });
+
   it('o exemplo é válido e volta igual', () => {
     const json = sample();
     const result = parseProposal(json);
@@ -77,7 +85,11 @@ describe('formato da proposta', () => {
       (p) => (p.format = 'mapping-spec'),
       'format: deve ser "mapping-proposal"',
     ],
-    ['formatVersion errado', (p) => (p.formatVersion = 2), 'formatVersion: deve ser 1'],
+    [
+      'formatVersion errado',
+      (p) => (p.formatVersion = 3),
+      'formatVersion: deve ser 1 ou 2',
+    ],
     ['id com barra', (p) => (p.id = '../fora'), 'id: id inválido'],
     ['título vazio', (p) => (p.title = '  '), 'title: não pode ser vazio'],
     ['data inválida', (p) => (p.createdAt = 'ontem'), 'createdAt: data inválida'],

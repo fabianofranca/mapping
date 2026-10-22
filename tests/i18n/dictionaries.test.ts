@@ -84,8 +84,7 @@ describe('dicionários', () => {
       // Palavras iguais nos dois idiomas (biblioteca de componentes, B3).
       'library.container',
       'library.typeSize',
-      'blank.preset.tablet',
-      'blank.preset.desktop',
+      'image.containerUntitled',
       'diagnostics.fontStyle.normal',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',

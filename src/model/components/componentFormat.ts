@@ -196,7 +196,7 @@ export interface SlotTemplate extends TemplateNodeBase {
   readonly type: 'slot';
   readonly label?: Expr<string>;
   /**
-   * Como as instâncias filhas se organizam dentro do slot (container): `row`/`column`
+   * Como as instâncias filhas se organizam dentro do slot (componente com slot): `row`/`column`
    * posicionam os filhos pela ordem entre irmãos e gravam os retângulos deles; `none` (ou
    * ausente) deixa cada filho no próprio retângulo. `gap` e `padding` podem vir de campos.
    */

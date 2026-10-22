@@ -159,10 +159,10 @@ test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um c
   await createProject(page, 'Telas');
   const host = page.locator('.canvas-host');
 
-  await page.getByRole('button', { name: 'Nova tela em branco' }).first().click();
+  await page.getByRole('button', { name: 'Novo container' }).first().click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome', { exact: true }).fill('Configurações');
-  await dialog.getByRole('button', { name: 'Criar tela' }).click();
+  await dialog.getByRole('button', { name: 'Criar container' }).click();
   await expect(dialog).toBeHidden();
 
   // Sem pacote aplicado: estado vazio com o atalho para Especializações.

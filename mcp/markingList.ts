@@ -10,7 +10,7 @@ import {
   type ProjectImage,
 } from '../src/model';
 import { ToolError } from './errors';
-import { BLANK_IMAGE_LABEL, type Refs } from './items';
+import { CONTAINER_LABEL, type Refs } from './items';
 import { markingRow } from './views';
 
 export interface MarkingFilters {
@@ -80,7 +80,7 @@ function findImage(p: Project, query: string): ProjectImage {
   throw new ToolError(
     byName.length > 1 || coded.length > 1 ? 'ambiguous-image' : 'not-found',
     `imagem não encontrada ou ambígua: ${query}`,
-    { images: p.images.map((i) => i.name ?? i.file ?? BLANK_IMAGE_LABEL) },
+    { images: p.images.map((i) => i.name ?? i.file ?? CONTAINER_LABEL) },
   );
 }
 

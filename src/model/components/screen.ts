@@ -16,10 +16,10 @@ export interface Instance {
   readonly id: string;
   /** Id do tipo de anotação na especialização (que aponta para o componente). */
   readonly typeId: string;
-  /** Retângulo absoluto na tela (também para filhos de containers). */
+  /** Retângulo absoluto na tela (também para filhos de componentes com slot). */
   readonly box: Box;
   readonly values: FieldValues;
-  /** Container (instância) a que pertence; ausente = nível da tela. A ordem entre irmãos é a ordem na lista. */
+  /** Componente com slot (instância) a que pertence; ausente = nível da tela. A ordem entre irmãos é a ordem na lista. */
   readonly parentId?: string;
 }
 
@@ -139,7 +139,7 @@ export function renderOrder(screen: Screen): Instance[] {
 }
 
 /**
- * Põe a instância dentro de um container (ou no nível da tela, com `undefined`) numa
+ * Põe a instância dentro de um componente com slot (ou no nível da tela, com `undefined`) numa
  * posição entre os irmãos. Recusa ciclos (um ancestral não pode virar filho do descendente).
  */
 export function setParent(

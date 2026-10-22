@@ -66,7 +66,7 @@ export function markingName(names: ReviewNames, id: string): string {
 /** Tela em branco criada pela proposta (imagem sem arquivo): o nome padrão dela. */
 function blankName(record: Record<string, JsonValue> | null | undefined): string | null {
   return record && record.file === null && typeof record.background === 'string'
-    ? t('image.blankUntitled')
+    ? t('image.containerUntitled')
     : null;
 }
 

@@ -838,21 +838,21 @@ button.tree-toggle:hover {
 }
 
 /* Diálogo da tela em branco: largura e altura lado a lado. */
-.blank-size {
+.container-size {
   display: flex;
   gap: var(--space-2);
 }
 
-.blank-size > * {
+.container-size > * {
   flex: 1;
 }
 
-.blank-form {
+.container-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.blank-form p {
+.container-form p {
   margin: 0;
 }

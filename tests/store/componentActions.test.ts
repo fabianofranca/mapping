@@ -68,7 +68,7 @@ function undoDepth(store: ProjectStore): number {
 
 const current = (store: ProjectStore): Project => store.project.value as Project;
 
-describe('actions da tela em branco', () => {
+describe('actions do container', () => {
   let ctx: ReturnType<typeof setup>;
   beforeEach(() => {
     ctx = setup();
@@ -113,7 +113,7 @@ describe('actions da tela em branco', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
-  it('setBlankImage muda cor e tamanho numa entrada; só vale para tela em branco', () => {
+  it('setBlankImage muda cor e tamanho numa entrada; só vale paro container', () => {
     const { store, actions } = ctx;
     const created = actions.addBlankImage({
       name: null,

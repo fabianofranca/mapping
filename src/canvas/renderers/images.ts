@@ -195,7 +195,7 @@ function updateTitle(
   const { size, line, weight } = tokens.type.image;
   node.title.setAttrs({
     visible: true,
-    text: image.name ?? image.file ?? t('image.blankUntitled'),
+    text: image.name ?? image.file ?? t('image.containerUntitled'),
     x: 0,
     y: -(line + IMAGE_TITLE_GAP) / zoom,
     width,

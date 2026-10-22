@@ -97,7 +97,7 @@ export const IDS = {
   text: imageId('7'),
   bomb: imageId('8'),
   escape: imageId('9'),
-  // Tela em branco (sem arquivo): não está em IMAGE_FILES.
+  // Container (sem arquivo): não está em IMAGE_FILES.
   blank: imageId('d'),
   // As marcações de cada imagem trocam o primeiro caractere do id da imagem (códigos distintos).
   parent: (image: string) => `a${image.slice(1)}`,
@@ -106,7 +106,7 @@ export const IDS = {
 } as const;
 
 /** O código das referências (8 primeiros caracteres hexadecimais do id). */
-/** Cor de fundo da tela em branco da fixture. */
+/** Cor de fundo do container da fixture. */
 export const BLANK_BACKGROUND = '#1060A0';
 
 export const codeOf = (id: string) => id.replaceAll('-', '').slice(0, 8);

@@ -1,6 +1,6 @@
 /**
- * Motor dos componentes (etapa Biblioteca): organização dos filhos de um container. Um container é uma
- * instância cujo componente tem um nó `slot`; as instâncias filhas (`parentId`) ficam na ordem
+ * Motor dos componentes (etapa Biblioteca): organização dos filhos de um componente com slot. Um componente
+ * com slot é uma instância cujo componente tem um nó `slot`; as instâncias filhas (`parentId`) ficam na ordem
  * em que aparecem em `screen.instances`. Quando o slot declara `layout` `row`/`column`, o
  * editor calcula os retângulos dos filhos e os **grava** (o arquivo guarda só retângulos
  * absolutos; o layout é uma ferramenta de edição). Slot sem layout (ou `none`) deixa os filhos
@@ -55,8 +55,8 @@ export function findSlot(component: ComponentFile): SlotTemplate | undefined {
   return search(component.template);
 }
 
-/** Um tipo é container quando o componente dele tem um slot. */
-export function isContainer(type: TypeDef | undefined): boolean {
+/** Um tipo é um componente com slot quando o componente dele tem um slot. */
+export function hasSlot(type: TypeDef | undefined): boolean {
   return type?.component !== undefined && findSlot(type.component) !== undefined;
 }
 
@@ -190,12 +190,12 @@ function sameBox(a: Box, b: Box): boolean {
   );
 }
 
-/** Recalcula e grava os retângulos dos filhos de todos os containers com layout row/column. Puro; devolve o MESMO objeto quando nada muda. */
+/** Recalcula e grava os retângulos dos filhos de todos os componentes com slot com layout row/column. Puro; devolve o MESMO objeto quando nada muda. */
 export function arrange(screen: Screen, library: Library, measure: TextMeasurer): Screen {
   const types = new Map(library.types.map((t) => [t.id, t]));
   let current = screen;
   // Pais antes dos filhos; a ordem é fixada no início, as instâncias são relidas a cada passo
-  // (o pai pode ter movido o container ao organizar os filhos dele).
+  // (o pai pode ter movido o componente com slot ao organizar os filhos dele).
   const ids = renderOrder(screen).map((i) => i.id);
   for (const id of ids) {
     const instance = current.instances.find((i) => i.id === id);

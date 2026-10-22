@@ -19,7 +19,7 @@ A app traz um **guia interativo** (uma página à parte, `guia/`) e um **projeto
 2. troca no template o marcador `/*__TOKENS_CSS__*/` pelos **tokens da app** (`renderTokensCss()`: o tema claro e o escuro, os mesmos nomes `--color-*`, `--space-*`, `--t-*`) e o marcador `/*__DATA__*/ null` pelo subconjunto do projeto que a página desenha;
 3. aplica a **CSP** do `index.html` (`applyCsp`, `pwa/csp.ts`): sem `style=""`, sem handler inline, sem fonte nem script de fora, sem rede. A cor da camada entra pelo CSSOM (`el.style.setProperty`), nunca por atributo.
 
-O desenho dos componentes Material 3 nas telas em branco usa os **valores da própria anotação** (título, rótulos, variante, selecionado…): se o exemplo muda, o guia muda junto. Os termos do roteiro seguem a interface (Árvore, Camadas, Detalhes, Incompletas, Diagnóstico, Propostas, Catálogo, "trancada", "posição a revisar"); os atalhos citados saem de `SHORTCUT_LABELS` e `WINDOW_NUMBER`, e `tests/examples/guia.test.ts` falha se algum deixar de existir na app.
+O desenho dos componentes Material 3 nos containers sem foto usa os **valores da própria anotação** (título, rótulos, variante, selecionado…): se o exemplo muda, o guia muda junto. Os termos do roteiro seguem a interface (Árvore, Camadas, Detalhes, Incompletas, Diagnóstico, Propostas, Catálogo, "trancada", "posição a revisar"); os atalhos citados saem de `SHORTCUT_LABELS` e `WINDOW_NUMBER`, e `tests/examples/guia.test.ts` falha se algum deixar de existir na app.
 
 O guia segue o **tema da app**: lê `mapping.theme` do `localStorage` (mesma origem; `light` ou `dark`, senão o tema do sistema).
 

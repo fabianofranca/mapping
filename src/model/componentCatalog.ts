@@ -125,8 +125,8 @@ export function markingComponent(
   return null;
 }
 
-/** Container: o componente tem um slot que recebe marcações filhas. */
-export function isContainerComponent(component: ComponentFile): boolean {
+/** Componente com slot: o componente tem um slot que recebe marcações filhas. */
+export function hasSlotComponent(component: ComponentFile): boolean {
   return findSlot(component) !== undefined;
 }
 

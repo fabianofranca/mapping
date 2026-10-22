@@ -130,7 +130,7 @@ Escala diferente nos dois eixos (caixa do nó com outra proporção que o `viewB
 
 ### `slot`
 
-O espaço reservado para outras instâncias: a **marcação filha** de uma marcação com este tipo é desenhada dentro do slot. Um componente com slot é um **container**.
+O espaço reservado para outras instâncias: a **marcação filha** de uma marcação com este tipo é desenhada dentro do slot. Um componente com slot recebe marcações filhas dentro do slot.
 
 | Chave    | Descrição                                                                                                                                                                       |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -141,7 +141,7 @@ O slot é o espaço; quem é desenhado dentro dele são as filhas. `width`, `hei
 
 ## Dimensionamento
 
-Há três perguntas diferentes: **quanto mede a instância** (a raiz), **quanto mede cada nó dentro do template** e **como as filhas de um container se arrumam**.
+Há três perguntas diferentes: **quanto mede a instância** (a raiz), **quanto mede cada nó dentro do template** e **como as filhas de um componente com slot se arrumam**.
 
 ### A instância: `size`, `minSize` e `sizing`
 
@@ -150,7 +150,7 @@ Há três perguntas diferentes: **quanto mede a instância** (a raiz), **quanto 
 - `sizing` só vale quando a instância chega **sem retângulo**, isto é, numa tela vinda de um JSON externo (origem, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Origens") ou arrumada por `layoutScreen`. Cada eixo é:
   - **px**: tamanho fixo;
   - **`"fill"`**: ocupa o espaço que o pai dá naquele eixo;
-  - **`"hug"`**: o tamanho do conteúdo (o template medido e, num container, os filhos já arrumados);
+  - **`"hug"`**: o tamanho do conteúdo (o template medido e, num componente com slot, os filhos já arrumados);
   - **eixo ausente** (ou `sizing` ausente): os px de `size` naquele eixo.
 
 ```json
@@ -212,11 +212,11 @@ Num quadro `none` os filhos não se empilham: cada um parte do canto de cima à 
 
 Quando a tela chega **sem geometria** (um JSON de backend, por exemplo), `layoutScreen` calcula **tamanhos e posições** a partir do `sizing` de cada componente. A entrada é uma árvore de nós (tipo, valores, filhos) mais as raízes da tela; a saída é a tela com o retângulo de cada instância.
 
-A tela é o **container raiz**, em coluna, sem padding nem gap. As regras:
+A tela é o **componente raiz**, em coluna, sem padding nem gap. As regras:
 
 - **Spec por eixo**: `sizing[eixo]`, ou `size[eixo]` se ausente. Todo tamanho final respeita `minSize`.
 - **`hug` é arredondado para cima** (o inteiro seguinte), para o texto não quebrar por arredondamento. O resto fica exato.
-- **Container** é um componente com `slot`; o layout do slot (`row`, `column` ou `none`, com `gap`, `padding`, `align` e `justify`) arruma os filhos. O `hug` de um container mede os **filhos já arrumados**, então a altura do cartão cresce com o texto que ele carrega.
+- **Componente com slot** (um componente com `slot`) tem o layout do slot (`row`, `column` ou `none`, com `gap`, `padding`, `align` e `justify`), que arruma os filhos. O `hug` de um componente com slot mede os **filhos já arrumados**, então a altura do cartão cresce com o texto que ele carrega.
 - **`fill` no eixo principal dentro de pai `hug`** não tem de onde tirar tamanho: o filho **cai em `hug`**. Numa `column` `hug` isso gera o aviso `<id>: fill dentro de hug: usando hug`; numa `row` `hug`, a largura `fill` também cai em `hug`, **sem aviso**. No eixo cruzado de uma `row` `hug`, os filhos `fill` recebem a maior altura dos outros filhos.
 - **`stretch` só afeta filhos `hug`** (um filho de tamanho fixo mantém o seu). Um filho `hug` numa `column` é limitado à largura do conteúdo.
 - **Slot invisível** (`visible` falso) **ignora os filhos**, com o aviso `<id>: slot invisível: filhos ignorados`.
