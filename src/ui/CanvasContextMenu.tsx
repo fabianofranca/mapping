@@ -1,19 +1,81 @@
 import { useLayoutEffect, useRef } from 'preact/hooks';
 import { captureFocusOrigin, restoreFocusAfterRender, type FocusOrigin } from './focus';
 import { t } from '../i18n';
-import { canCopyItems } from '../app/itemClipboard';
+import { canCopyItems, type CopyTarget } from '../app/itemClipboard';
+import { ARROW_STYLES, canEditArrow, projectIndex, type ArrowStyle } from '../model';
 import { arrangeMarking, canArrangeMarking } from './arrange';
 import { CopyMenuItems } from './CopyActions';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
+import { Icon } from './icons';
 
 /** Folga mínima entre o menu e a borda da janela do navegador. */
 const EDGE = 8;
 
+const ARROW_STYLE_LABELS: Readonly<
+  Record<
+    ArrowStyle,
+    'arrow.canvasMenu.straight' | 'arrow.canvasMenu.curve' | 'arrow.canvasMenu.elbow'
+  >
+> = {
+  straight: 'arrow.canvasMenu.straight',
+  curve: 'arrow.canvasMenu.curve',
+  elbow: 'arrow.canvasMenu.elbow',
+};
+
+/**
+ * Itens do menu de uma seta (ME4): o estilo do traço (Reta, Curva, Canto; o atual marcado) e
+ * Excluir. Cada escolha é uma entrada do histórico. Trancada (ou o projeto somente leitura), os
+ * itens ficam desabilitados.
+ */
+function ArrowMenuItems({
+  arrowId,
+  close,
+}: {
+  readonly arrowId: string;
+  readonly close: () => void;
+}) {
+  const { actions, store, review } = useEditor();
+  const project = review.derived.shownProject.value;
+  const arrow = project ? projectIndex(project).arrows.get(arrowId) : undefined;
+  if (!project || !arrow) return null;
+  const editable = !store.locked.value && canEditArrow(project, arrowId);
+  return (
+    <div class="menu-items">
+      {ARROW_STYLES.map((style) => (
+        <Button
+          key={style}
+          role="menuitemradio"
+          aria-checked={arrow.style === style}
+          disabled={!editable}
+          onClick={() => {
+            close();
+            actions.setArrowStyle(arrowId, style);
+          }}
+        >
+          {arrow.style === style && <Icon name="check" />}
+          {t(ARROW_STYLE_LABELS[style])}
+        </Button>
+      ))}
+      <Button
+        role="menuitem"
+        variant="danger"
+        disabled={!editable}
+        onClick={() => {
+          close();
+          actions.removeArrow(arrowId);
+        }}
+      >
+        {t('arrow.canvasMenu.delete')}
+      </Button>
+    </div>
+  );
+}
+
 /**
  * Menu de contexto do canvas (botão direito do mouse): copiar a referência e o recorte do
- * item sob o cursor, que o clique direito seleciona. Aberto por `ui.canvasMenu`; fecha com
- * Esc, clique fora, rolagem ou ao escolher um item.
+ * item sob o cursor, que o clique direito seleciona; numa seta, o estilo e Excluir. Aberto por
+ * `ui.canvasMenu`; fecha com Esc, clique fora, rolagem ou ao escolher um item.
  */
 export function CanvasContextMenu() {
   const editor = useEditor();
@@ -79,6 +141,9 @@ export function CanvasContextMenu() {
 
   const copyable = canCopyItems(editor);
   const target = menu?.target;
+  const arrowId = target?.kind === 'arrow' ? target.id : null;
+  const copyTarget: CopyTarget | null =
+    target && target.kind !== 'arrow' ? { kind: target.kind, id: target.id } : null;
   const arrangeId =
     target?.kind === 'm' &&
     !editor.store.locked.value &&
@@ -86,7 +151,9 @@ export function CanvasContextMenu() {
       ? target.id
       : null;
   const selectable = target?.kind === 'm';
-  if (!menu || !(copyable || arrangeId !== null || selectable)) return null;
+  if (!menu || !(copyable || arrangeId !== null || selectable || arrowId !== null)) {
+    return null;
+  }
   return (
     <div
       class="popover"
@@ -95,9 +162,10 @@ export function CanvasContextMenu() {
       ref={panel}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {(copyable || selectable) && (
-        <CopyMenuItems target={menu.target} close={close} copyable={copyable} />
+      {copyTarget && (copyable || selectable) && (
+        <CopyMenuItems target={copyTarget} close={close} copyable={copyable} />
       )}
+      {arrowId !== null && <ArrowMenuItems arrowId={arrowId} close={close} />}
       {arrangeId !== null && (
         <div class="menu-items">
           <Button

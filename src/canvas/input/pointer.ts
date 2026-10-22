@@ -3,11 +3,15 @@
 // prévia dos gestos vai para o `InteractionState`, que as sobreposições desenham.
 import {
   IDENTITY_PLACEMENT,
+  canEditArrow,
+  fromCanvasPoint,
   imagePixelRect,
+  markingCanvasRectOf,
   projectIndex,
   selectionWithContents,
   spaceOf,
   toCanvasRect,
+  type ArrowSide,
   type Placement,
   type Project,
   type Rect,
@@ -15,6 +19,7 @@ import {
 import type { EditorDerived } from '../../store/derived';
 import type { ProjectStore } from '../../store/history';
 import type { ProjectActions } from '../../store/project';
+import { showArrows } from '../../store/settings';
 import {
   existingItems,
   isItemSelected,
@@ -32,6 +37,13 @@ import {
   type AbsorbCandidate,
   type SnapTarget,
 } from '../containment';
+import {
+  arrowHandleAt,
+  arrowShape,
+  nearestSide,
+  visibleArrowShapes,
+  type ArrowShape,
+} from '../arrowGeometry';
 import type { InteractionState } from '../frame';
 import { IDLE, stepGesture, type GestureState } from '../gestureMachine';
 import { resizeFromCorner } from '../imageGeometry';
@@ -56,6 +68,7 @@ import {
   intentAt,
   isRepeatTap,
   tapSelection,
+  type ArrowHit,
   type Intent,
   type IntentContext,
 } from './intents';
@@ -81,7 +94,11 @@ const MOVE_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
   'move-image',
   'move-marking',
   'move-items',
+  'arrow-route',
 ]);
+
+/** Gestos de seta que puxam uma linha até uma marcação: o cursor é o de mirar. */
+const AIM_GESTURES: ReadonlySet<Gesture['kind']> = new Set(['arrow-link', 'arrow-end']);
 
 function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
@@ -145,7 +162,8 @@ export class PointerInput {
   /** Cancela o gesto de mover/redimensionar/desenhar em andamento. `true` se havia um. */
   cancelInteraction(): boolean {
     const g = this.gesture;
-    if (!isStoreGesture(g) && g?.kind !== 'draw') return false;
+    if (!isStoreGesture(g) && g?.kind !== 'draw' && g?.kind !== 'arrow-link')
+      return false;
     if (isStoreGesture(g)) this.o.actions.cancelGesture();
     this.clearTransient();
     this.gesture = { kind: 'pinch' }; // Ignora o resto do arrasto até soltar.
@@ -159,6 +177,7 @@ export class PointerInput {
     state.preview.value = null;
     state.draft.value = null;
     state.moveTarget.value = null;
+    if (state.arrowDraft.peek() !== null) state.arrowDraft.value = null;
     if (state.absorb.peek().length > 0) state.absorb.value = [];
   }
 
@@ -173,7 +192,7 @@ export class PointerInput {
     let cursor = '';
     if (g?.kind === 'pan') cursor = 'grabbing';
     else if (g && MOVE_GESTURES.has(g.kind)) cursor = 'move';
-    else if (g?.kind === 'draw') cursor = 'crosshair';
+    else if (g?.kind === 'draw' || (g && AIM_GESTURES.has(g.kind))) cursor = 'crosshair';
     else if (g?.kind === 'blocked') cursor = 'not-allowed';
     else if (this.o.spaceDown()) cursor = 'grab';
     else if (p) cursor = cursorFor(this.intentAt(p));
@@ -191,9 +210,21 @@ export class PointerInput {
       selection: ui.selection.peek(),
       items: existingItems(project, peekSelectedItems(ui)),
       visibility: derived.markingVisibility.peek(),
+      arrows: this.arrowShapes(project),
       zoom: this.o.viewport.scale,
       spaceDown: this.o.spaceDown(),
     };
+  }
+
+  /** As setas que o toque alcança: as desenhadas ("Mostrar setas" ligado, fora do Ver limpo). */
+  private arrowShapes(project: Project | null): readonly ArrowShape[] {
+    if (this.o.ui.cleanView.peek() || !showArrows.peek()) return [];
+    return visibleArrowShapes(project, this.o.derived.markingVisibility.peek());
+  }
+
+  /** As setas e o zoom para a cadeia do toque (`hitChain`). */
+  private arrowHit(project: Project | null): ArrowHit {
+    return { shapes: this.arrowShapes(project), zoom: this.o.viewport.scale };
   }
 
   /** Intenção de um arrasto começando em `p` (tela). */
@@ -339,6 +370,30 @@ export class PointerInput {
         }
         return;
       }
+      case 'arrow-link': {
+        const c = viewport.toCanvas(p);
+        this.o.state.arrowDraft.value = {
+          line: { from: g.origin, to: c },
+          target: this.markingUnder(c, g.markingId),
+        };
+        return;
+      }
+      case 'arrow-route': {
+        // O ponto vai para onde o ponteiro está, no espaço dos pontos (pixels do container
+        // arredondados, ou unidades do canvas): um ponto novo (`mid`) entra na posição `index`.
+        const at = fromCanvasPoint(g.placement, viewport.toCanvas(p));
+        const point = { x: Math.round(at.x), y: Math.round(at.y) };
+        actions.previewArrowRoute(
+          g.arrowId,
+          g.mode === 'mid'
+            ? [...g.base.slice(0, g.index), point, ...g.base.slice(g.index)]
+            : g.base.map((q, i) => (i === g.index ? point : q)),
+        );
+        return;
+      }
+      case 'arrow-end':
+        this.moveArrowEnd(g, viewport.toCanvas(p));
+        return;
       case 'draw': {
         const c = viewport.toCanvas(p);
         const pixel = g.image ? canvasToImagePixel(g.image.placement, c) : c;
@@ -353,6 +408,52 @@ export class PointerInput {
         return;
       }
     }
+  }
+
+  /**
+   * A marcação sob o ponto do canvas que receberia a ponta de uma seta: a primeira da cadeia do
+   * toque (flutuantes antes, as ocultas de fora), sem a própria `except`. `null` no vazio.
+   */
+  private markingUnder(c: Point, except: string | null): string | null {
+    const project = this.project();
+    if (!project) return null;
+    const first = hitChain(project, this.o.derived.markingVisibility.peek(), c).find(
+      (item) => item.kind === 'marking',
+    );
+    return first && first.id !== except ? first.id : null;
+  }
+
+  /**
+   * Arrastar uma ponta da seta: sobre outra marcação (que não a outra ponta) a prévia a liga nela
+   * (lado automático); sobre a mesma, no lado mais perto do ponteiro; no vazio, a seta volta ao que
+   * era, mostra a linha provisória e soltar cancela.
+   */
+  private moveArrowEnd(g: Extract<Gesture, { kind: 'arrow-end' }>, c: Point): void {
+    const { actions, state } = this.o;
+    const project = this.o.store.project.peek();
+    const target = this.markingUnder(c, g.fixed);
+    const marking =
+      target && project ? projectIndex(project).markings.get(target) : undefined;
+    if (!target || !project || !marking) {
+      actions.previewArrowEndpoint(
+        g.arrowId,
+        g.end,
+        g.original.markingId,
+        g.original.side,
+      );
+      g.valid = false;
+      state.arrowDraft.value = { line: { from: g.fixedAnchor, to: c }, target: null };
+      return;
+    }
+    let side: ArrowSide | null = null;
+    if (target === g.original.markingId) {
+      // Perto de outro lado da mesma marcação troca o lado; no mesmo, não muda nada (o lado
+      // automático fica automático).
+      const nearest = nearestSide(markingCanvasRectOf(project, marking), c);
+      side = nearest === g.currentSide ? g.original.side : nearest;
+    }
+    g.valid = actions.previewArrowEndpoint(g.arrowId, g.end, target, side).ok;
+    state.arrowDraft.value = { line: null, target };
   }
 
   /** A marcação no projeto atual do store (com a prévia do gesto). */
@@ -468,7 +569,8 @@ export class PointerInput {
       // Cancelado: volta ao projeto de antes do gesto. Senão, a operação final repete a mesma
       // operação com os valores finais (encaixe, absorção) e assenta o pertencimento; só então
       // grava uma entrada.
-      if (cancelled) actions.cancelGesture();
+      // Uma ponta solta fora de uma marcação cancela, como Esc.
+      if (cancelled || (g.kind === 'arrow-end' && !g.valid)) actions.cancelGesture();
       else {
         this.finishStoreGesture(g);
         actions.commitGesture();
@@ -476,6 +578,7 @@ export class PointerInput {
       this.clearTransient();
     }
     if (g.kind === 'draw') this.finishDraw(g, cancelled);
+    if (g.kind === 'arrow-link') this.finishArrowLink(g, cancelled);
     if (e.pointerType === 'mouse') this.updateCursor(this.o.viewport.screenPoint(e));
   }
 
@@ -502,6 +605,10 @@ export class PointerInput {
         );
         return;
       }
+      case 'arrow-route':
+      case 'arrow-end':
+        // A prévia já é o resultado: o ponto ou a ponta fica onde o ponteiro foi solto.
+        return;
       case 'resize-marking': {
         // Absorção: o retângulo cresce até envolver o que cruza dentro da tolerância.
         const marking = this.markingNow(g.markingId);
@@ -522,6 +629,18 @@ export class PointerInput {
         return;
       }
     }
+  }
+
+  /** Soltou a alça de ligação: sobre uma marcação, cria a seta (uma entrada) e a seleciona. */
+  private finishArrowLink(
+    g: Extract<Gesture, { kind: 'arrow-link' }>,
+    cancelled: boolean,
+  ): void {
+    const target = this.o.state.arrowDraft.peek()?.target ?? null;
+    this.clearTransient();
+    if (cancelled || target === null) return;
+    const result = this.o.actions.addArrow(g.markingId, target);
+    if (result.ok) this.o.ui.selection.value = { kind: 'arrow', id: result.value };
   }
 
   private finishDraw(g: Extract<Gesture, { kind: 'draw' }>, cancelled: boolean): void {
@@ -552,10 +671,20 @@ export class PointerInput {
     const { ui, derived, viewport } = this.o;
     const c = viewport.toCanvas(p);
     this.selectionBeforeTap = ui.selection.peek();
+    // Um clique numa alça (de ligação ou da seta selecionada) não troca a seleção: o clique
+    // duplo num ponto de passagem o remove, e o primeiro clique não pode tirar a seta da seleção.
+    // Com Shift o clique é da seleção múltipla, mesmo sobre uma alça.
+    const onHandle = this.intentAt(p).kind;
+    if (!shift && (onHandle === 'arrow-link' || onHandle === 'arrow-handle')) {
+      this.lastTap = null;
+      return;
+    }
     if (shift && !(this.o.reviewing?.() ?? false)) {
       this.lastTap = null; // Um clique simples depois não continua o ciclo.
       const project = this.project();
-      const first = project && hitChain(project, derived.markingVisibility.peek(), c)[0];
+      const first =
+        project &&
+        hitChain(project, derived.markingVisibility.peek(), c, this.arrowHit(project))[0];
       if (first) toggleSelectedItem(ui, first);
       return;
     }
@@ -567,6 +696,7 @@ export class PointerInput {
       derived.markingVisibility.peek(),
       c,
       repeat,
+      this.arrowHit(this.project()),
     );
   }
 
@@ -585,6 +715,10 @@ export class PointerInput {
     if (this.o.reviewing?.()) return;
     if (!ui.cleanView.peek() && ui.mode.peek() !== 'navigate') return;
     const index = projectIndex(project);
+    if (target.kind === 'arrow') {
+      this.removeWaypointAt(e, project, target.id);
+      return;
+    }
     if (target.kind === 'marking') {
       if (index.markings.has(target.id)) {
         selectItems(ui, selectionWithContents(project, target.id));
@@ -592,6 +726,30 @@ export class PointerInput {
     } else if (index.containers.has(target.id)) {
       ui.selection.value = { kind: 'image', id: target.id };
     }
+  }
+
+  /**
+   * Clique duplo num ponto de passagem da seta `arrowId`: remove o ponto (uma entrada) e deixa a
+   * seta selecionada (o segundo toque pode tê-la trocado). Fora de um ponto, ou com a seta
+   * trancada ou o projeto somente leitura, não faz nada.
+   */
+  private removeWaypointAt(e: MouseEvent, project: Project, arrowId: string): void {
+    const { viewport, actions, store, ui } = this.o;
+    const arrow = projectIndex(project).arrows.get(arrowId);
+    const shape = arrow && arrowShape(project, arrow);
+    if (!arrow || !shape || store.readOnly.peek() || !canEditArrow(project, arrowId))
+      return;
+    const handle = arrowHandleAt(
+      shape,
+      viewport.toCanvas(viewport.screenPoint(e)),
+      viewport.scale,
+    );
+    if (handle?.kind !== 'point') return;
+    const result = actions.setArrowRoute(
+      arrowId,
+      arrow.points.filter((_, i) => i !== handle.index),
+    );
+    if (result.ok) ui.selection.value = { kind: 'arrow', id: arrowId };
   }
 
   /**
@@ -612,13 +770,17 @@ export class PointerInput {
       derived.markingVisibility.peek(),
       viewport.toCanvas(viewport.screenPoint(e)),
       false,
+      this.arrowHit(this.project()),
     );
     if (!picked) return;
     if (!isItemSelected(peekSelectedItems(ui), picked)) ui.selection.value = picked;
     ui.canvasMenu.value = {
       x: e.clientX,
       y: e.clientY,
-      target: { kind: picked.kind === 'image' ? 'i' : 'm', id: picked.id },
+      target: {
+        kind: picked.kind === 'image' ? 'i' : picked.kind === 'arrow' ? 'arrow' : 'm',
+        id: picked.id,
+      },
     };
   }
 

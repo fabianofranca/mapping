@@ -14,6 +14,7 @@ import {
   setContainerPlacement,
   type Project,
 } from '../../src/model';
+import { visibleArrowShapes } from '../../src/canvas/arrowGeometry';
 import type { Frame } from '../../src/canvas/frame';
 import type { CanvasTokens } from '../../src/canvas/theme';
 import { createCanvasViewState } from '../../src/canvas/viewState';
@@ -95,6 +96,15 @@ export const TOKENS: CanvasTokens = {
     image: { size: 12, line: 16, weight: 600 },
   },
   handleSize: 10,
+  arrow: {
+    stroke: '#0f766f',
+    select: '#0057bb',
+    label: '#111112',
+    labelBg: 'rgba(250, 250, 251, 0.9)',
+    width: 2,
+    widthSelected: 3,
+    head: 10,
+  },
   lock: { fill: '#0057ba', glyph: '#010204', size: 20 },
   radius: { sm: 4, md: 6 },
 };
@@ -198,6 +208,8 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     drawn: derived.drawnMarkings.peek(),
     floating: derived.floatingMarkings.peek(),
     review: null,
+    arrows: visibleArrowShapes(store.project.peek(), derived.markingVisibility.peek()),
+    arrowDraft: null,
     ...overrides,
   };
 }

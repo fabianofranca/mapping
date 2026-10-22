@@ -96,7 +96,8 @@ export interface CanvasMenu {
   /** Posição do cursor na janela (`clientX`/`clientY`). */
   readonly x: number;
   readonly y: number;
-  readonly target: { readonly kind: 'i' | 'm'; readonly id: string };
+  /** `i` = container, `m` = marcação, `arrow` = seta (v13). */
+  readonly target: { readonly kind: 'i' | 'm' | 'arrow'; readonly id: string };
 }
 
 export function createEditorUi(): EditorUi {

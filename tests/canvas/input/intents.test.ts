@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cursorFor,
   dragModeOf,
+  hitChain,
   intentAt,
   isRepeatTap,
   tapSelection,
@@ -9,12 +10,16 @@ import {
 } from '../../../src/canvas/input/intents';
 import {
   createMarking,
+  setArrowRoute,
+  setArrowStyle,
   setImageLocked,
   setMarkingFloating,
   setMarkingLocked,
   type Project,
 } from '../../../src/model';
 import type { SelectionItem } from '../../../src/store/ui';
+import { visibleArrowShapes } from '../../../src/canvas/arrowGeometry';
+import { arrowProject, withArrow } from '../../model/arrowFixtures';
 import { canvasProject } from '../harness';
 
 const project = canvasProject();
@@ -472,5 +477,192 @@ describe('intentAt: seleção múltipla', () => {
     const intent = { kind: 'move-items', items: [im('I1'), mk('M1')] } as const;
     expect(cursorFor(intent)).toBe('move');
     expect(dragModeOf(intent)).toBe('move');
+  });
+});
+
+// Setas (ME4): o toque pega o traço (entre as flutuantes e o resto) e a seta selecionada tem
+// alças; a marcação selecionada tem a alça de ligação.
+describe('setas no toque e nas alças', () => {
+  const base = (): Project => setArrowStyle(arrowProject(), 'r1', 'straight');
+  const arrowCtx = (p: Project, overrides: Partial<IntentContext> = {}): IntentContext =>
+    ctx({
+      project: p,
+      arrows: visibleArrowShapes(p, NONE),
+      ...overrides,
+    });
+  // r1 reta: de (400,250) a (600,700); o meio (500,475).
+  const ON_STROKE = { x: 500, y: 475 };
+  const arrowHit = (p: Project) => ({ shapes: visibleArrowShapes(p, NONE), zoom: 1 });
+
+  it('o toque perto do traço seleciona a seta, acima do container e das marcações', () => {
+    const p = base();
+    expect(hitChain(p, NONE, ON_STROKE)[0]).toEqual({ kind: 'image', id: 'A' });
+    expect(hitChain(p, NONE, ON_STROKE, arrowHit(p))[0]).toEqual({
+      kind: 'arrow',
+      id: 'r1',
+    });
+    expect(tapSelection(p, null, NONE, ON_STROKE, false, arrowHit(p))).toEqual({
+      kind: 'arrow',
+      id: 'r1',
+    });
+    // Longe do traço (mais de 7 px de tela), o toque é do container.
+    expect(tapSelection(p, null, NONE, { x: 520, y: 475 }, false, arrowHit(p))).toEqual({
+      kind: 'image',
+      id: 'A',
+    });
+  });
+
+  it('a flutuante tem a vez antes da seta; clicar de novo sobe pela cadeia', () => {
+    const p = createMarking(base(), {
+      id: 'F1',
+      containerId: null,
+      rect: { x: 450, y: 425, width: 100, height: 100 },
+      floating: true,
+    });
+    const chain = hitChain(p, NONE, ON_STROKE, arrowHit(p));
+    expect(chain.slice(0, 2)).toEqual([
+      { kind: 'marking', id: 'F1' },
+      { kind: 'arrow', id: 'r1' },
+    ]);
+    const q = base();
+    const first = tapSelection(q, null, NONE, ON_STROKE, false, arrowHit(q));
+    expect(tapSelection(q, first, NONE, ON_STROKE, true, arrowHit(q))).not.toEqual(first);
+  });
+
+  it('seta de ponta oculta ou sem `arrows` no contexto não recebe o toque', () => {
+    const p = base();
+    const hidden = new Map([['a3', 'hidden' as const]]);
+    expect(
+      hitChain(p, hidden, ON_STROKE, {
+        shapes: visibleArrowShapes(p, hidden),
+        zoom: 1,
+      }).some((item) => item.kind === 'arrow'),
+    ).toBe(false);
+    expect(hitChain(p, NONE, ON_STROKE).some((item) => item.kind === 'arrow')).toBe(
+      false,
+    );
+  });
+
+  it('seta selecionada: as pontas, os pontos de passagem e o meio do trecho são alças', () => {
+    const p = setArrowRoute(base(), 'r1', [{ x: 700, y: 300 }]);
+    const context = arrowCtx(p, { selection: { kind: 'arrow', id: 'r1' } });
+    expect(intentAt(context, { x: 402, y: 251 })).toMatchObject({
+      kind: 'arrow-handle',
+      arrowId: 'r1',
+      handle: { kind: 'end', end: 'from' },
+    });
+    expect(intentAt(context, { x: 700, y: 598 })).toMatchObject({
+      handle: { kind: 'end', end: 'to' },
+    });
+    expect(intentAt(context, { x: 701, y: 301 })).toMatchObject({
+      handle: { kind: 'point', index: 0 },
+    });
+    expect(intentAt(context, { x: 550, y: 276 })).toMatchObject({
+      handle: { kind: 'mid', index: 0 },
+    });
+    // Fora das alças, arrastar a seta faz pan.
+    expect(intentAt(context, { x: 560, y: 285 })).toEqual({ kind: 'pan' });
+  });
+
+  it('seta trancada: arrastar o traço é `locked`, sem alças; fora do traço, pan', () => {
+    const p = withArrow(base(), 'r2', 'a3', 'b2', { locked: true });
+    const context = arrowCtx(p, { selection: { kind: 'arrow', id: 'r2' } });
+    // r2 sai de a3 (800,700) por onde a curva sair; a âncora está sobre o traço.
+    expect(intentAt(context, { x: 800, y: 700 })).toEqual({ kind: 'locked' });
+    expect(intentAt(context, { x: 0, y: 0 })).toEqual({ kind: 'pan' });
+  });
+
+  it('somente leitura, Desenhar, espaço e Ver limpo (sem `arrows`): sem alças', () => {
+    const p = base();
+    const select = { selection: { kind: 'arrow', id: 'r1' } } as const;
+    expect(
+      intentAt(arrowCtx(p, { ...select, readOnly: true }), { x: 400, y: 250 }),
+    ).toEqual({
+      kind: 'pan',
+    });
+    expect(
+      intentAt(arrowCtx(p, { ...select, mode: 'draw' }), { x: 400, y: 250 }).kind,
+    ).toBe('draw');
+    expect(
+      intentAt(arrowCtx(p, { ...select, spaceDown: true }), { x: 400, y: 250 }),
+    ).toEqual({
+      kind: 'pan',
+    });
+    expect(intentAt(ctx({ project: p, ...select }), { x: 400, y: 250 })).toEqual({
+      kind: 'pan',
+    });
+  });
+
+  it('com vários itens, as alças da seta primária continuam valendo', () => {
+    const p = base();
+    const items: SelectionItem[] = [
+      { kind: 'marking', id: 'a3' },
+      { kind: 'arrow', id: 'r1' },
+    ];
+    const context = arrowCtx(p, { selection: { kind: 'arrow', id: 'r1' }, items });
+    expect(intentAt(context, { x: 402, y: 251 })).toMatchObject({ kind: 'arrow-handle' });
+    // Fora da alça, dentro de a3 (selecionada): arrasto conjunto (a seta não anda).
+    expect(intentAt(context, { x: 700, y: 650 }).kind).toBe('move-items');
+  });
+
+  it('marcação selecionada: a alça de ligação cria seta, também trancada', () => {
+    const p = base();
+    // a1 (100,100,300,300): a alça em (414, 250).
+    const context = arrowCtx(p, { selection: { kind: 'marking', id: 'a1' } });
+    expect(intentAt(context, { x: 414, y: 250 })).toEqual({
+      kind: 'arrow-link',
+      markingId: 'a1',
+    });
+    expect(intentAt(context, { x: 416, y: 254 })).toMatchObject({ kind: 'arrow-link' });
+    // Dentro da marcação continua sendo mover.
+    expect(intentAt(context, { x: 250, y: 250 }).kind).toBe('move-marking');
+    const locked = setMarkingLocked(p, 'a1', true);
+    expect(
+      intentAt(arrowCtx(locked, { selection: { kind: 'marking', id: 'a1' } }), {
+        x: 414,
+        y: 250,
+      }),
+    ).toEqual({ kind: 'arrow-link', markingId: 'a1' });
+    // Somente leitura e Desenhar: sem a alça.
+    expect(
+      intentAt(
+        arrowCtx(p, { selection: { kind: 'marking', id: 'a1' }, readOnly: true }),
+        {
+          x: 414,
+          y: 250,
+        },
+      ),
+    ).toEqual({ kind: 'pan' });
+    // Com vários itens, não há alça de ligação.
+    const many: SelectionItem[] = [
+      { kind: 'marking', id: 'a1' },
+      { kind: 'marking', id: 'a3' },
+    ];
+    expect(
+      intentAt(arrowCtx(p, { selection: many[0] as SelectionItem, items: many }), {
+        x: 414,
+        y: 250,
+      }).kind,
+    ).not.toBe('arrow-link');
+  });
+
+  it('cursor e modo de arrasto das intenções de seta', () => {
+    const link = { kind: 'arrow-link', markingId: 'a1' } as const;
+    const end = {
+      kind: 'arrow-handle',
+      arrowId: 'r1',
+      handle: { kind: 'end', end: 'to', at: { x: 0, y: 0 } },
+    } as const;
+    const point = {
+      kind: 'arrow-handle',
+      arrowId: 'r1',
+      handle: { kind: 'point', index: 0, at: { x: 0, y: 0 } },
+    } as const;
+    expect(cursorFor(link)).toBe('crosshair');
+    expect(cursorFor(end)).toBe('crosshair');
+    expect(cursorFor(point)).toBe('move');
+    expect(cursorFor({ kind: 'locked' })).toBe('not-allowed');
+    expect(dragModeOf(link)).toBe('resize');
+    expect(dragModeOf(point)).toBe('resize');
   });
 });

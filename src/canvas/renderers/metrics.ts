@@ -2,6 +2,8 @@
 import type { Rect } from '../../model';
 
 export const SELECTION_STROKE = 2;
+/** Opacidade total (sem esmaecer): não é valor de design, só o oposto das opacidades do tema. */
+export const OPAQUE = 1;
 /** Largura do halo de cada lado de uma linha (px de tela). */
 export const HALO_WIDTH = 1;
 export const REVIEW_BADGE_SIZE = 14;

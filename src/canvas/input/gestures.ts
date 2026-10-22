@@ -2,15 +2,22 @@
 // Konva: o `PointerInput` guarda o gesto e o alimenta com os eventos.
 import {
   ancestorsOf,
+  arrowPointsSpace,
+  canEditArrow,
   canMoveItems,
+  markingCanvasRectOf,
   projectIndex,
   spaceOf,
+  type ArrowEnd,
+  type ArrowPoint,
+  type ArrowSide,
   type Placement,
   type Project,
   type ProjectContainer,
   type Rect,
 } from '../../model';
 import { existingItems, type SelectionItem } from '../../store/ui';
+import { arrowShape, type ArrowShape } from '../arrowGeometry';
 import { absorbCandidates, type AbsorbCandidate } from '../containment';
 import type { Draft } from '../frame';
 import type { Corner } from '../imageGeometry';
@@ -88,6 +95,53 @@ export type Gesture =
       /** Itens do espaço que o desenho pode absorver ao soltar. */
       readonly candidates: readonly AbsorbCandidate[];
     }
+  /**
+   * Criar uma seta puxando a alça de ligação da marcação `markingId` (ME4): sem gesto do store; a
+   * seta provisória e o destino ficam em `state.arrowDraft`, e soltar sobre uma marcação cria a
+   * seta (`addArrow`).
+   */
+  | {
+      readonly kind: 'arrow-link';
+      readonly pointerId: number;
+      readonly markingId: string;
+      /** Onde a seta provisória sai (canvas): o meio do lado direito da marcação. */
+      readonly origin: Point;
+    }
+  /**
+   * Mover um ponto de passagem (`mode` `point`, `index` em `points`) ou criar um no meio de um
+   * trecho (`mode` `mid`, `index` = onde entra), no espaço dos pontos (`placement`).
+   */
+  | {
+      readonly kind: 'arrow-route';
+      readonly pointerId: number;
+      readonly arrowId: string;
+      readonly mode: 'point' | 'mid';
+      readonly index: number;
+      /** Os pontos de passagem de antes do gesto. */
+      readonly base: readonly ArrowPoint[];
+      /** Posição do espaço dos pontos: a do container ou a identidade, no canvas. */
+      readonly placement: Placement;
+    }
+  /**
+   * Arrastar uma ponta da seta até outra marcação (troca `from`/`to`) ou, sobre a mesma, até outro
+   * lado (troca `fromSide`/`toSide`). `valid` diz se o ponteiro está sobre um destino (soltar fora
+   * cancela).
+   */
+  | {
+      readonly kind: 'arrow-end';
+      readonly pointerId: number;
+      readonly arrowId: string;
+      readonly end: ArrowEnd;
+      /** A marcação da outra ponta: não pode ser o destino. */
+      readonly fixed: string;
+      /** Onde a outra ponta prende (canvas): a seta provisória sai dali. */
+      readonly fixedAnchor: Point;
+      /** A marcação e o lado que a ponta tinha (`side` nulo = automático). */
+      readonly original: { readonly markingId: string; readonly side: ArrowSide | null };
+      /** O lado em que a ponta prende hoje (o efetivo, mesmo com o lado automático). */
+      readonly currentSide: ArrowSide;
+      valid: boolean;
+    }
   /** Arrasto do mouse sobre o item trancado: não faz nada até soltar (cursor "não permitido"). */
   | { readonly kind: 'blocked'; readonly pointerId: number }
   /** Dois dedos. Termina quando todos saem da tela. */
@@ -98,7 +152,13 @@ export type StoreGesture = Extract<
   Gesture,
   {
     kind:
-      'move-image' | 'resize-image' | 'move-marking' | 'move-items' | 'resize-marking';
+      | 'move-image'
+      | 'resize-image'
+      | 'move-marking'
+      | 'move-items'
+      | 'resize-marking'
+      | 'arrow-route'
+      | 'arrow-end';
   }
 >;
 
@@ -108,7 +168,9 @@ export function isStoreGesture(g: Gesture | null): g is StoreGesture {
     g?.kind === 'resize-image' ||
     g?.kind === 'move-marking' ||
     g?.kind === 'move-items' ||
-    g?.kind === 'resize-marking'
+    g?.kind === 'resize-marking' ||
+    g?.kind === 'arrow-route' ||
+    g?.kind === 'arrow-end'
   );
 }
 
@@ -160,6 +222,45 @@ export function startGesture(
     };
   }
 
+  if (intent.kind === 'arrow-link') {
+    const origin = index.markings.get(intent.markingId);
+    if (!origin) return null;
+    const rect = markingCanvasRectOf(project, origin);
+    return {
+      gesture: {
+        kind: 'arrow-link',
+        pointerId,
+        markingId: origin.id,
+        origin: { x: rect.x + rect.width, y: rect.y + rect.height / 2 },
+      },
+      draft: null,
+    };
+  }
+
+  if (intent.kind === 'arrow-handle') {
+    const arrow = index.arrows.get(intent.arrowId);
+    if (!arrow || !canEditArrow(project, arrow.id)) return null;
+    const { handle } = intent;
+    if (handle.kind === 'end') {
+      const shape = arrowShape(project, arrow);
+      if (!shape || !beginGesture()) return null;
+      return { gesture: arrowEndGesture(pointerId, shape, handle.end), draft: null };
+    }
+    if (!beginGesture()) return null;
+    return {
+      gesture: {
+        kind: 'arrow-route',
+        pointerId,
+        arrowId: arrow.id,
+        mode: handle.kind,
+        index: handle.index,
+        base: arrow.points,
+        placement: arrowPointsSpace(project, arrow).placement,
+      },
+      draft: null,
+    };
+  }
+
   if (intent.kind === 'move-items') {
     // Os itens que sumiram desde o toque (desfazer) ficam de fora; sem nada a mover, pan.
     const items = existingItems(project, intent.items);
@@ -192,6 +293,7 @@ export function startGesture(
     return { gesture, draft: null };
   }
 
+  if (intent.kind !== 'move-marking' && intent.kind !== 'resize-marking') return null;
   const marking = index.markings.get(intent.markingId);
   if (!marking) return null;
   if (marking.containerId !== null && !index.containers.has(marking.containerId)) {
@@ -232,4 +334,26 @@ export function startGesture(
               ),
         };
   return { gesture, draft: null };
+}
+
+/** O gesto de arrastar a ponta `end` da seta de `shape`. */
+function arrowEndGesture(pointerId: number, shape: ArrowShape, end: ArrowEnd): Gesture {
+  const { arrow, route } = shape;
+  const isFrom = end === 'from';
+  const first = route.points[0] as Point;
+  const last = route.points[route.points.length - 1] as Point;
+  return {
+    kind: 'arrow-end',
+    pointerId,
+    arrowId: arrow.id,
+    end,
+    fixed: isFrom ? arrow.to : arrow.from,
+    fixedAnchor: isFrom ? last : first,
+    original: {
+      markingId: isFrom ? arrow.from : arrow.to,
+      side: isFrom ? arrow.fromSide : arrow.toSide,
+    },
+    currentSide: isFrom ? route.fromSide : route.toSide,
+    valid: true,
+  };
 }

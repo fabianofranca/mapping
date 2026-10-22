@@ -16,7 +16,7 @@ import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
-import { locale } from '../store/settings';
+import { locale, showArrows } from '../store/settings';
 import { textMeasurer } from '../store/textMeasure';
 import {
   itemsOf,
@@ -25,6 +25,7 @@ import {
   type SelectionItem,
 } from '../store/ui';
 import {
+  ARROW_KEYS,
   COMPONENT_KEYS,
   IMAGE_KEYS,
   OVERLAY_KEYS,
@@ -37,6 +38,7 @@ import {
   type HoverLock,
   type InteractionState,
 } from './frame';
+import { arrowShape, visibleArrowShapes, type ArrowShape } from './arrowGeometry';
 import { ComponentLayerRenderer } from './components/componentLayer';
 import { konvaMeasurer } from './components/konvaMeasurer';
 import { imageAt, imagesBounds } from './imageGeometry';
@@ -44,6 +46,7 @@ import { watchSpaceKey } from './input/keyboard';
 import { PointerInput } from './input/pointer';
 import { hitChain } from './input/intents';
 import { canvasToImagePixel, markingCanvasRect } from './markingGeometry';
+import { ArrowRenderer } from './renderers/arrows';
 import { ImageRenderer } from './renderers/images';
 import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
@@ -82,6 +85,9 @@ export interface CanvasControllerOptions {
   readonly review?: ReviewState;
 }
 
+/** Sem setas à vista ("Mostrar setas" desligado, Ver limpo): sempre o mesmo array. */
+const NO_ARROWS: readonly ArrowShape[] = [];
+
 /** Seleção vazia (Ver limpo): sempre o mesmo objeto, o quadro compara por referência. */
 const NO_ITEMS: readonly SelectionItem[] = [];
 
@@ -119,6 +125,8 @@ export class CanvasController {
   /** Cores com que `componentLayer` foi criado: mudou o tema, ele é refeito. */
   private componentPalette: CanvasTokens['component'];
   private readonly markings: MarkingRenderer;
+  /** Camada das setas, entre os desenhos dos componentes e as marcações. */
+  private readonly arrows: ArrowRenderer;
   private readonly overlay: OverlayRenderer;
   private readonly reviewLayer: ReviewRenderer;
 
@@ -187,6 +195,23 @@ export class CanvasController {
     return id === null ? null : { containerId: id };
   });
 
+  /** Marcação que receberia a ponta da seta (criar ou trocar a ponta) como alvo de soltar. */
+  private readonly arrowTargetFrame = computed((): DropTarget => {
+    const id = this.state.arrowDraft.value?.target ?? null;
+    return id === null ? null : { containerId: null, markingId: id };
+  });
+
+  /**
+   * Setas desenhadas: as do projeto desenhado (com a prévia do gesto) cujas duas pontas aparecem,
+   * se "Mostrar setas" está ligado e fora do Ver limpo. As rotas são guardadas por seta e por
+   * projeto/visibilidade (`visibleArrowShapes`): pan e zoom não as recalculam.
+   */
+  private readonly arrowShapes = computed((): readonly ArrowShape[] =>
+    this.ui.cleanView.value || !showArrows.value
+      ? NO_ARROWS
+      : visibleArrowShapes(this.drawnProject.value, this.derived.markingVisibility.value),
+  );
+
   /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
   private readonly frame = computed((): Frame => {
     // Ver limpo: nada de seleção, trava, hover ou marcas da revisão por cima da imagem.
@@ -198,7 +223,10 @@ export class CanvasController {
       preview: this.state.preview.value,
       draft: this.state.draft.value,
       // O alvo de soltar um arquivo ou, ao arrastar uma marcação, o container que a receberia.
-      dropTarget: this.dropTarget.value ?? this.moveTargetFrame.value,
+      dropTarget:
+        this.dropTarget.value ??
+        this.moveTargetFrame.value ??
+        this.arrowTargetFrame.value,
       absorb: this.state.absorb.value,
       hoverLock: clean ? null : this.state.hoverLock.value,
       hoverMarking: clean ? null : this.state.hoverMarking.value,
@@ -217,6 +245,8 @@ export class CanvasController {
       drawn: this.derived.drawnMarkings.value,
       floating: this.derived.floatingMarkings.value,
       review: clean ? null : this.reviewCanvas.value,
+      arrows: this.arrowShapes.value,
+      arrowDraft: clean ? null : this.state.arrowDraft.value,
     };
   });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
@@ -228,6 +258,7 @@ export class CanvasController {
   /** Imagens com bitmap pronto no último quadro e o que já foi publicado no container. */
   private readyImages = 0;
   private drawnComponents = 0;
+  private drawnArrows = 0;
   private countedProject: Project | null = null;
   private canvasMarkingCount = 0;
   private published = '';
@@ -249,12 +280,14 @@ export class CanvasController {
     this.stage = new Konva.Stage({ container, width: 1, height: 1 });
     const imageLayer = new Konva.Layer({ listening: false });
     this.componentGroup = new Konva.Layer({ listening: false });
+    const arrowLayer = new Konva.Layer({ listening: false });
     const markingLayer = new Konva.Layer({ listening: false });
     const overlayLayer = new Konva.Layer({ listening: false });
     const floatingTop = new Konva.Layer({ listening: false });
     this.stage.add(
       imageLayer,
       this.componentGroup,
+      arrowLayer,
       markingLayer,
       floatingTop,
       overlayLayer,
@@ -267,6 +300,7 @@ export class CanvasController {
     floatingTop.add(this.floatingDrawings, floatingMarkings);
     this.floatingLayer = this.newComponentLayer(this.floatingDrawings);
     this.markings = new MarkingRenderer(markingLayer, floatingMarkings);
+    this.arrows = new ArrowRenderer(arrowLayer);
     this.overlay = new OverlayRenderer(overlayLayer, container);
     // As marcas da revisão ficam por baixo das sobreposições (seleção, alças).
     const reviewGroup = new Konva.Group({ listening: false });
@@ -350,10 +384,15 @@ export class CanvasController {
   /** Centraliza o canvas no item selecionado (ajustando o zoom se ele for grande ou pequeno demais). */
   centerSelection(): void {
     this.view.measure(); // O canvas pode ter acabado de reaparecer (aba Lista → Canvas).
-    const selected = resolveSelection(this.drawnProject.peek(), this.ui.selection.peek());
-    if (!selected) return;
-    // ME4: centralizar a seta (canvas)
-    if (selected.kind === 'arrow') return;
+    const project = this.drawnProject.peek();
+    const selected = resolveSelection(project, this.ui.selection.peek());
+    if (!project || !selected) return;
+    if (selected.kind === 'arrow') {
+      // A seta é enquadrada pela caixa do traço (a curva inclusive).
+      const shape = arrowShape(project, selected.arrow);
+      if (shape) this.view.centerOn(shape.bounds);
+      return;
+    }
     this.view.centerOn(
       selected.kind === 'marking'
         ? markingCanvasRect(selected.space.placement, selected.marking.rect)
@@ -364,7 +403,13 @@ export class CanvasController {
   /** Se a seleção está fora da área visível, faz o pan mínimo até ela (sem mudar o zoom). */
   revealSelection(): void {
     this.view.measure();
-    const selected = resolveSelection(this.drawnProject.peek(), this.ui.selection.peek());
+    const project = this.drawnProject.peek();
+    const selected = resolveSelection(project, this.ui.selection.peek());
+    if (project && selected?.kind === 'arrow') {
+      const shape = arrowShape(project, selected.arrow);
+      if (shape) this.view.reveal(shape.bounds);
+      return;
+    }
     if (selected?.kind !== 'marking') return;
     this.view.reveal(markingCanvasRect(selected.space.placement, selected.marking.rect));
   }
@@ -401,6 +446,7 @@ export class CanvasController {
     for (const cleanup of this.cleanups.splice(0)) cleanup();
     this.componentLayer.destroy();
     this.floatingLayer.destroy();
+    this.arrows.destroy();
     this.stage.destroy();
   }
 
@@ -543,6 +589,11 @@ export class CanvasController {
     if (placementsChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
       this.renderComponents(frame);
     }
+    // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela).
+    if (scaleChanged || !sameFrame(last, frame, ARROW_KEYS)) {
+      this.arrows.render(frame);
+      this.drawnArrows = this.arrows.size;
+    }
     this.markings.render(frame, this.placements);
     this.reviewLayer.render(frame, this.placements);
     // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela;
@@ -560,7 +611,7 @@ export class CanvasController {
     // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
     // imagens com bitmap já desenhados (o DOM só é tocado quando eles mudam).
     const canvasMarkings = this.countCanvasMarkings(frame.project);
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}`;
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
@@ -568,6 +619,7 @@ export class CanvasController {
       host.dataset.images = String(this.readyImages);
       host.dataset.components = String(this.drawnComponents);
       host.dataset.canvasMarkings = String(canvasMarkings);
+      host.dataset.arrows = String(this.drawnArrows);
     }
   }
 
