@@ -720,7 +720,7 @@ ao adicionar uma instância do tipo, a app grava a marcação com `containerId: 
 - projeto **já v13** sem ela (removida pela pessoa, ou criado sem) fica como está.
 
 Ela se remove como qualquer especialização (**Especializações › Remover**, apagando ou convertendo as notas) e
-não volta ao reabrir o projeto. Quem lê o arquivo não precisa saber disso: a nota é uma anotação tipada
+não volta ao reabrir o projeto. Remover (apagando ou convertendo) não apaga marcações: a marcação flutuante da nota fica no canvas, sem anotação. Quem lê o arquivo não precisa saber disso: a nota é uma anotação tipada
 (`specId` `notas`, `typeId` `nota`) numa marcação com `floating: true`.
 
 ## Campos da v13 (setas)
