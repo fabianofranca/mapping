@@ -8,7 +8,7 @@
  */
 import {
   COMPONENT_FORMAT,
-  COMPONENT_FORMAT_VERSION,
+  COMPONENT_FORMAT_VERSIONS,
   type ComponentFile,
 } from './componentFormat';
 import { referencedFields } from './expressions';
@@ -24,13 +24,24 @@ type Rec = Record<string, unknown>;
 /** Confere um literal (valor que não é expressão) e acrescenta os problemas a `out`. */
 type Check = (value: unknown, path: string, out: ComponentIssue[]) => void;
 
-const NODE_TYPES = ['frame', 'rect', 'ellipse', 'text', 'path', 'slot'] as const;
+const NODE_TYPES = [
+  'frame',
+  'rect',
+  'ellipse',
+  'text',
+  'path',
+  'slot',
+  'repeat',
+] as const;
 const EXPR_OPS = ['$field', '$if', '$switch', '$concat'] as const;
 const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
 /** Operadores que só existem em condição (`$field` é ambíguo e fica como expressão). */
 const DIRECT_CONDITION_OPS: readonly string[] = ['$eq', '$has', '$not', '$and', '$or'];
 const ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 const PERCENT_PATTERN = /^\d+(\.\d+)?%$/;
+
+/** Chaves de estilo que o `repeat` não tem: o desenho é do `template` de cada linha. */
+const REPEAT_REJECTED_KEYS = ['fill', 'stroke', 'shadow', 'cornerRadius'];
 
 const BASE_KEYS = [
   'type',
@@ -393,6 +404,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     text: ['text', 'font', 'color'],
     path: ['d', 'viewBox', 'fillRule'],
     slot: ['label', 'layout'],
+    repeat: ['field', 'direction', 'gap', 'template'],
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
   for (const key of ['children', 'layout']) {
@@ -403,6 +415,10 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
   for (const key of Object.keys(value)) {
     if (type === 'slot' && key === 'layout') continue;
     if (type !== 'frame' && (key === 'children' || key === 'layout')) continue;
+    if (type === 'repeat' && REPEAT_REJECTED_KEYS.includes(key)) {
+      add(out, join(path, key), `não vale em repeat; o desenho é do template (${key})`);
+      continue;
+    }
     if (!BASE_KEYS.includes(key) && !extra[type]?.includes(key))
       add(out, join(path, key), `chave desconhecida: ${key}`);
   }
@@ -451,7 +467,50 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
       if ('label' in value) checkExpr(value.label, join(path, 'label'), checkString, out);
       if ('layout' in value) checkLayout(value.layout, join(path, 'layout'), out);
       return;
+    case 'repeat':
+      checkRepeat(value, path, out);
+      return;
   }
+}
+
+/** `repeat`: o campo `table`, a direção, o espaço e o `template` (um quadro, sem `repeat` nem `slot`). */
+function checkRepeat(value: Rec, path: string, out: ComponentIssue[]): void {
+  if (!('field' in value)) add(out, join(path, 'field'), 'campo obrigatório');
+  else checkFieldKey(value.field, join(path, 'field'), out);
+  if ('direction' in value)
+    oneOf(['column', 'row'])(value.direction, join(path, 'direction'), out);
+  if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
+  const at = join(path, 'template');
+  if (!('template' in value)) return add(out, at, 'campo obrigatório');
+  const template = value.template;
+  if (isRecord(template) && template.type !== 'frame') {
+    add(out, join(at, 'type'), 'o template de uma linha deve ser do tipo "frame"');
+  }
+  checkNode(template, at, out);
+  for (const nested of nodesOfTypes(template, at, ['repeat', 'slot'])) {
+    add(out, nested.path, `${nested.type} não é permitido dentro de um repeat`);
+  }
+}
+
+/** Caminhos dos nós dos tipos dados na árvore (pelos `children` dos quadros e `template` dos repeat). */
+function nodesOfTypes(
+  node: unknown,
+  path: string,
+  types: readonly string[],
+  found: { path: string; type: string }[] = [],
+): { path: string; type: string }[] {
+  if (!isRecord(node)) return found;
+  if (typeof node.type === 'string' && types.includes(node.type)) {
+    found.push({ path: join(path, 'type'), type: node.type });
+  }
+  if (Array.isArray(node.children)) {
+    node.children.forEach((child: unknown, i) =>
+      nodesOfTypes(child, `${join(path, 'children')}[${i}]`, types, found),
+    );
+  }
+  if (node.type === 'repeat')
+    nodesOfTypes(node.template, join(path, 'template'), types, found);
+  return found;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -516,8 +575,9 @@ function collectIssues(input: unknown): ComponentIssue[] {
 
   if (input.format !== COMPONENT_FORMAT)
     add(out, 'format', `esperava "${COMPONENT_FORMAT}"`);
-  if (input.formatVersion !== COMPONENT_FORMAT_VERSION)
-    add(out, 'formatVersion', `esperava ${COMPONENT_FORMAT_VERSION}`);
+  const version = input.formatVersion;
+  if (!(COMPONENT_FORMAT_VERSIONS as readonly unknown[]).includes(version))
+    add(out, 'formatVersion', `esperava ${COMPONENT_FORMAT_VERSIONS.join(' ou ')}`);
 
   if (typeof input.id !== 'string' || !ID_PATTERN.test(input.id))
     add(out, 'id', 'esperava texto no padrão ^[a-z0-9][a-z0-9-_]*$');
@@ -541,8 +601,13 @@ function collectIssues(input: unknown): ComponentIssue[] {
     if (!isRecord(input.preview)) add(out, 'preview', 'esperava objeto');
     else
       for (const [key, v] of Object.entries(input.preview)) {
-        if (v !== null && typeof v !== 'string' && !isFiniteNumber(v))
-          add(out, join('preview', key), 'esperava texto, número ou null');
+        if (Array.isArray(v)) checkPreviewRows(v, join('preview', key), out);
+        else if (v !== null && typeof v !== 'string' && !isFiniteNumber(v))
+          add(
+            out,
+            join('preview', key),
+            'esperava texto, número ou null (ou uma lista de linhas, num campo table)',
+          );
       }
   }
 
@@ -553,8 +618,25 @@ function collectIssues(input: unknown): ComponentIssue[] {
     if (type !== 'frame' && (NODE_TYPES as readonly unknown[]).includes(type))
       add(out, 'template.type', 'a raiz do template deve ser do tipo "frame"');
     checkNode(input.template, 'template', out);
+    if (version !== 2) {
+      for (const node of nodesOfTypes(input.template, 'template', ['repeat'])) {
+        add(out, node.path, 'o nó repeat só existe na formatVersion 2');
+      }
+    }
   }
   return out;
+}
+
+/** Linhas do `preview` de um campo `table`: objetos com valores texto, número ou null. */
+function checkPreviewRows(rows: unknown[], path: string, out: ComponentIssue[]): void {
+  rows.forEach((row, i) => {
+    const at = `${path}[${i}]`;
+    if (!isRecord(row)) return add(out, at, 'esperava objeto (uma linha)');
+    for (const [column, v] of Object.entries(row)) {
+      if (v !== null && typeof v !== 'string' && !isFiniteNumber(v))
+        add(out, join(at, column), 'esperava texto, número ou null');
+    }
+  });
 }
 
 function formatIssue(issue: ComponentIssue): string {

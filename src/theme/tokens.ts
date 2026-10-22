@@ -229,6 +229,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-home-main': '960px',
   /** Seletor de referência (popup no topo, B14). */
   'size-picker': '600px',
+  /** Seletor de referência da célula de uma tabela (versão compacta). */
+  'size-picker-compact': '420px',
   /**
    * Popover de uma mudança nos Detalhes da revisão (`ChangePopover`, HANDOFF-REVIEW-DETAILS
    * 3.1): cabe na janela Detalhes na largura inicial e dá para as três linhas do conflito.

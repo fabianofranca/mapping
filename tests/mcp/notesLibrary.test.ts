@@ -98,7 +98,7 @@ describe('create_project com a biblioteca de notas', () => {
     expect(data).toMatchObject({ id: 'notas', file: 'specs/notas/notas.spec.json' });
     expect(data.spec.formatVersion).toBe(7);
     const types = data.spec.layers.flatMap((l) => l.annotationTypes);
-    expect(types.map((t) => t.id)).toEqual(['nota']);
+    expect(types.map((t) => t.id)).toEqual(['nota', 'tabela']);
     expect(types[0]).toMatchObject({
       floating: true,
       component: 'components/nota.json',

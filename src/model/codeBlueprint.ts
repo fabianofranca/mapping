@@ -92,6 +92,13 @@ export interface CodeBlueprint {
 }
 
 /** Valor do campo no blueprint: `ref` pelo rótulo, `table` sem `_id`, vazio `null`. */
+/** O rótulo do alvo de uma referência (campo ou célula); `null` se vazia ou quebrada. */
+function refText(p: Project, value: JsonValue | undefined): JsonValue {
+  if (value === undefined || isEmptyValue(value)) return null;
+  const ref = parseRefValue(value);
+  return ref && resolveRef(p, ref) ? refLabel(p, ref) : null;
+}
+
 function mappingValue(
   p: Project,
   field: SpecField,
@@ -99,13 +106,16 @@ function mappingValue(
 ): JsonValue {
   if (value === undefined || isEmptyValue(value)) return null;
   switch (field.type) {
-    case 'ref': {
-      const ref = parseRefValue(value);
-      return ref && resolveRef(p, ref) ? refLabel(p, ref) : null;
-    }
+    case 'ref':
+      return refText(p, value);
     case 'table':
       return tableRows(value).map((row) =>
-        Object.fromEntries(field.columns.map((c) => [c.key, row[c.key] ?? null])),
+        Object.fromEntries(
+          field.columns.map((c) => [
+            c.key,
+            c.type === 'ref' ? refText(p, row[c.key]) : (row[c.key] ?? null),
+          ]),
+        ),
       );
     default:
       return value;

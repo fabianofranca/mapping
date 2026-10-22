@@ -102,3 +102,46 @@ describe('TypedForm: texto longo', () => {
     expect(screen.getByLabelText(/^nome \(/).tagName).toBe('INPUT');
   });
 });
+
+describe('TypedForm: coluna ref de uma tabela (sem projeto)', () => {
+  it('a célula ref mostra o seletor indisponível, e as outras colunas continuam editáveis', async () => {
+    const onChange = vi.fn();
+    const withRef: SpecField[] = [
+      {
+        key: 'alvos',
+        label: 'Alvos',
+        type: 'table',
+        columns: [
+          { key: 'nota', type: 'string' },
+          { key: 'alvo', label: 'Alvo', type: 'ref', accepts: { free: true } },
+        ],
+      },
+    ];
+    render(<TypedForm fields={withRef} values={{}} onChange={onChange} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: '+ Linha' }));
+    expect(onChange).toHaveBeenLastCalledWith('alvos', [
+      expect.objectContaining({ nota: null, alvo: null }),
+    ]);
+  });
+
+  it('com a linha na tabela, o botão da célula ref fica desabilitado e explica por quê', () => {
+    const withRef: SpecField[] = [
+      {
+        key: 'alvos',
+        type: 'table',
+        columns: [{ key: 'alvo', label: 'Alvo', type: 'ref', accepts: { free: true } }],
+      },
+    ];
+    render(
+      <TypedForm
+        fields={withRef}
+        values={{ alvos: [{ _id: 'R1', alvo: null }] }}
+        onChange={vi.fn()}
+      />,
+    );
+    const button = screen.getByRole('button', { name: /^Alvo \(Linha 1\): / });
+    expect(button).toHaveProperty('disabled', true);
+    expect(button.title).toBe('Escolher referência só funciona dentro de um projeto.');
+  });
+});
