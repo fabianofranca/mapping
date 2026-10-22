@@ -1,4 +1,4 @@
-# Formato do componente (`mapping-component`, `formatVersion` 1)
+# Formato do componente (`mapping-component`, `formatVersion` 1 e 2)
 
 O formato do arquivo que desenha um tipo de anotação: um **componente**. É para quem escreve um à mão ou gera um (a skill `spec-author` e os agentes). O componente vive dentro do pacote de uma biblioteca (ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Biblioteca: o pacote"); este documento descreve só o arquivo dele.
 
@@ -10,7 +10,7 @@ Arquivos de apoio:
 
 ## O que é um componente
 
-Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho e slot) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
+Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho, slot e, na `formatVersion` 2, `repeat`) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
 
 - **Um arquivo por componente.** O tipo da especialização só o referencia, com a chave `component` (`"component": "components/m3-button.json"`).
 - O caminho é **relativo ao arquivo da especialização**, com `/`, sem `..`, sem `/` no começo e sem unidade de disco, e termina em `.json`.
@@ -63,24 +63,24 @@ Um componente é o **desenho genérico** de um tipo de anotação: uma árvore d
 }
 ```
 
-| Propriedade     | Obrigatória | Descrição                                                                                                                                                 |
-| --------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `format`        | sim         | Sempre `"mapping-component"`.                                                                                                                             |
-| `formatVersion` | sim         | Sempre `1`. É a única versão do formato de componente.                                                                                                    |
-| `id`            | sim         | Texto no padrão `^[a-z0-9][a-z0-9-_]*$`.                                                                                                                  |
-| `name`          | sim         | Nome exibido, não vazio.                                                                                                                                  |
-| `description`   | não         | Texto de ajuda.                                                                                                                                           |
-| `size`          | sim         | `{ width, height }`, números positivos (px). Tamanho **inicial** da instância e, sem `sizing`, o tamanho dos dois eixos na arrumação por tamanhos.        |
-| `minSize`       | não         | `{ width, height }`, positivos e **não maiores** que `size`. Piso do redimensionamento e de todo tamanho calculado.                                       |
-| `sizing`        | não         | `{ width?, height? }`: dimensionamento de uma instância **sem retângulo** (ver "Dimensionamento").                                                        |
-| `preview`       | não         | Valores de exemplo dos campos (`chave` → texto, número ou `null`), usados ao criar uma instância e na prova de desenho. Os campos vêm do tipo, não daqui. |
-| `template`      | sim         | A raiz do desenho. Precisa ser um nó `frame`; ocupa o retângulo inteiro da instância.                                                                     |
+| Propriedade     | Obrigatória | Descrição                                                                                                                                                                                                     |
+| --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`        | sim         | Sempre `"mapping-component"`.                                                                                                                                                                                 |
+| `formatVersion` | sim         | `1` ou `2`. A `2` é a `1` mais o nó `repeat` (a tabela desenhada); `repeat` numa `1` é erro. As duas são aceitas.                                                                                             |
+| `id`            | sim         | Texto no padrão `^[a-z0-9][a-z0-9-_]*$`.                                                                                                                                                                      |
+| `name`          | sim         | Nome exibido, não vazio.                                                                                                                                                                                      |
+| `description`   | não         | Texto de ajuda.                                                                                                                                                                                               |
+| `size`          | sim         | `{ width, height }`, números positivos (px). Tamanho **inicial** da instância e, sem `sizing`, o tamanho dos dois eixos na arrumação por tamanhos.                                                            |
+| `minSize`       | não         | `{ width, height }`, positivos e **não maiores** que `size`. Piso do redimensionamento e de todo tamanho calculado.                                                                                           |
+| `sizing`        | não         | `{ width?, height? }`: dimensionamento de uma instância **sem retângulo** (ver "Dimensionamento").                                                                                                            |
+| `preview`       | não         | Valores de exemplo dos campos (`chave` → texto, número ou `null`; num campo `table`, a lista das linhas), usados ao criar uma instância, no Catálogo e na prova de desenho. Os campos vêm do tipo, não daqui. |
+| `template`      | sim         | A raiz do desenho. Precisa ser um nó `frame`; ocupa o retângulo inteiro da instância.                                                                                                                         |
 
 Qualquer outra chave na raiz é problema (o formato é estrito).
 
 ## Nós do template
 
-Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path` ou `slot`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
+Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path`, `slot` ou, na `formatVersion` 2, `repeat`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
 
 | Chave             | Descrição                                                                                                                                                                                                                                                                       |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -138,6 +138,45 @@ O espaço reservado para outras instâncias: a **marcação filha** de uma marca
 | `layout` | Como as filhas se organizam: `row` ou `column` (com `gap`, `padding`, `align`, `justify`) ou `none`/ausente (cada filha fica onde está). `gap` e `padding` podem vir de campos. |
 
 O slot é o espaço; quem é desenhado dentro dele são as filhas. `width`, `height` e `anchors` dele funcionam como em qualquer nó. Um slot invisível (`visible` falso) ignora as filhas.
+
+### `repeat` (a tabela desenhada, `formatVersion` 2)
+
+Repete o desenho de **uma linha** por linha de um campo `table` do tipo: é como uma tabela de dados (os eventos de uma tela, as propriedades de uma chamada) vira desenho, sem campos numerados (`label1`, `label2`…).
+
+```json
+{
+  "type": "repeat",
+  "name": "linhas",
+  "field": "linhas",
+  "direction": "column",
+  "gap": 4,
+  "template": {
+    "type": "frame",
+    "name": "linha",
+    "layout": { "type": "row", "gap": 12 },
+    "children": [
+      { "type": "text", "text": { "$field": "chave" }, "width": "hug" },
+      { "type": "text", "text": { "$field": "valor" }, "width": "fill" }
+    ]
+  }
+}
+```
+
+| Chave       | Descrição                                                                                                                                                      |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field`     | Obrigatório. A `key` do campo `table` do tipo cujas linhas se repetem.                                                                                         |
+| `template`  | Obrigatório. Um nó `frame`: o desenho de **uma** linha. Não pode ter `repeat` nem `slot` dentro.                                                               |
+| `direction` | `column` (padrão: as linhas se empilham) ou `row` (lado a lado).                                                                                               |
+| `gap`       | Espaço entre as linhas em px (aceita expressão sobre os campos do tipo). Padrão 0.                                                                             |
+| comuns      | Só `name`, `visible`, `opacity`, `width`, `height` e `anchors`. `fill`, `stroke`, `shadow` e `cornerRadius` não valem no `repeat` (o desenho é do `template`). |
+
+Como o `template` lê a linha:
+
+- Dentro do `template`, `{ "$field": "<coluna>" }` (e `$has`, `$eq`, `$switch`, em qualquer expressão ou condição) lê a **coluna da linha**. Uma coluna **sombreia** o campo do tipo de mesmo nome; o que não é coluna segue lendo o campo do tipo (um `{ "$field": "titulo" }` dentro do `template` mostra o título da anotação em cada linha). O que vale como coluna é o que as linhas trazem, e o validador da biblioteca confere que cada chave citada é coluna da `table` ou campo do tipo.
+- Os valores da linha chegam como texto, número ou vazio. Numa coluna `ref` (ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Tipos de valor"), a célula chega como o **texto do alvo**, resolvido um nível como o campo `ref`: o rótulo da linha (`rowLabel`) quando o alvo é uma linha de tabela, o valor da tupla livre, o valor do campo simples; alvo quebrado, em ciclo ou em mais de um nível vira vazio e avisa (`referência quebrada: tabela[2].coluna`). A coluna `ref` **não** desenha seta: é dado.
+- A tabela sem linhas (ou nula) desenha um quadro vazio. A ordem das linhas é a do campo.
+
+Como o `repeat` se dimensiona (é um quadro por baixo): `hug` no **eixo das linhas** (a altura em `column`, a largura em `row`) e `fill` no outro, a menos que `width` ou `height` digam outra coisa; e o `template` também é `hug` no eixo das linhas se não disser o contrário. Por isso a altura do componente acompanha o número de linhas **medido**, mas a caixa da marcação não cresce sozinha: linhas demais para a caixa saem cortadas (a raiz recorta) e o desenho avisa `conteúdo maior que a caixa` (a marcação ganha a pendência de que o componente não cabe). O `preview` do componente traz algumas linhas de exemplo, que o Catálogo e a prova de desenho usam.
 
 ## Dimensionamento
 
@@ -331,16 +370,17 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 ```
 
 - `errors[i]` é `"caminho: mensagem"` (ou só a mensagem quando o caminho é vazio), com o caminho JSON do problema: `template.children[1].text: esperava texto ou número`.
-- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
+- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1 ou 2`), `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
 - `parseComponentText(texto)` lê o texto JSON (JSON inválido vira um problema de caminho vazio) e `validateComponent(json)` devolve só a lista `string[]`.
 - `docs/component.schema.json` espelha a estrutura (para editores e geradores); ele **não** substitui o parser, e o código é a fonte da verdade.
-- O **validador da biblioteca** (`src/model/library.ts`, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Validação da biblioteca") roda o `parseComponent` em cada componente do pacote e confere o que depende de mais de um arquivo (o campo citado pelo desenho existe no tipo, o `slot` declarado existe no template).
+- O **validador da biblioteca** (`src/model/library.ts`, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Validação da biblioteca") roda o `parseComponent` em cada componente do pacote e confere o que depende de mais de um arquivo (o campo citado pelo desenho existe no tipo, o `slot` declarado existe no template; num `repeat`, o `field` é uma `table` do tipo e cada chave citada no `template` é coluna dela ou campo do tipo; o `preview` de uma `table` é uma lista de linhas com colunas que existem).
 
 ## Limites conhecidos
 
 - **Um slot por componente.** Os filhos de uma instância vão sempre para o primeiro slot do template (busca em profundidade). Vários slots ficam para depois.
 - **Imagem não é primitiva.** O desenho é feito de quadro, retângulo, elipse, texto e caminho; fotos e bitmaps não entram.
-- **`formatVersion` 1 é a única.** Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
+- **`formatVersion` 1 e 2.** A 2 acrescenta só o `repeat` e a 1 continua aceita sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
 - Gradiente só `linear`; sombra só uma por nó; borda uma por nó.
-- Listas que viram campos numerados (`label1`, `label2`…) são frágeis; o desenho de uma barra de navegação ou de uma folha com N itens ainda usa esses campos (campo de tabela no desenho é uma evolução).
+- Listas que viram campos numerados (`label1`, `label2`…) são frágeis: para um dado em forma de tabela (os eventos de uma tela, as propriedades de uma chamada), declare um campo `table` e desenhe-o com `repeat`. Os componentes do Material 3 (a barra de navegação, a folha com N itens) ainda usam campos numerados.
+- O `repeat` não aninha (uma `table` não tem `table` dentro) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte.
 - A medida do texto no Node é aproximada (ver acima).

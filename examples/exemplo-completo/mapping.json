@@ -26,7 +26,7 @@
     },
     {
       "id": "notas",
-      "version": 1,
+      "version": 2,
       "file": "specs/notas/notas.spec.json"
     }
   ],

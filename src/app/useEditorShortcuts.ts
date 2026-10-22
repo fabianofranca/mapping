@@ -122,7 +122,7 @@ export function useEditorShortcuts(
       const project = shown.peek();
       const current = resolveSelection(project, ui.selection.peek());
       if (!project || !current) return;
-      // ME4: caminho da seta (UI) — a seta não tem pai nem filhas a percorrer.
+      // A seta não tem pai nem filhas a percorrer.
       if (current.kind === 'arrow') return;
       const index = projectIndex(project);
       let next: Selection = null;
@@ -215,8 +215,9 @@ export function useEditorShortcuts(
             dialogsRef.current.requestDeleteImage(current.image);
           } else if (current?.kind === 'marking') {
             dialogsRef.current.requestDeleteMarking(current.marking);
+          } else if (current?.kind === 'arrow') {
+            dialogsRef.current.requestDeleteArrow(current.arrow);
           }
-          // ME4: excluir a seta selecionada (UI) — a confirmação com as anotações dela.
           return;
         }
         case 'toggle-lock': {

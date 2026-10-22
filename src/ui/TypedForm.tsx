@@ -1,6 +1,7 @@
 import { useId } from 'preact/hooks';
 import { t } from '../i18n';
 import {
+  defaultColumnValue,
   fieldLabel,
   tableRows,
   type JsonValue,
@@ -123,7 +124,7 @@ function FormTable({
       onAddRow={() => {
         const row: TableRow = {
           _id: crypto.randomUUID(),
-          ...Object.fromEntries(field.columns.map((c) => [c.key, c.default ?? null])),
+          ...Object.fromEntries(field.columns.map((c) => [c.key, defaultColumnValue(c)])),
         };
         emit([...rows, row]);
         return true;

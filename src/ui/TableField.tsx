@@ -10,6 +10,7 @@ import {
   tableRows,
   type JsonValue,
   type SpecField,
+  type SpecRefColumn,
   type TableRow,
 } from '../model';
 import { ActionMenu } from './ActionMenu';
@@ -22,6 +23,7 @@ import { gripAt, isGrip, isNewRowKey } from './KeyValueGrid';
 import { useFocusRequest } from './focus';
 import { moveKeyDelta, useRowDrag } from './rowDrag';
 import { BacklinkList, SimpleEditor, type FieldContext } from './FieldEditors';
+import { RefCell } from './RefCell';
 import type { ActionResult } from '../store/history';
 import { issueMessage, issuesOf } from './typedText';
 
@@ -76,8 +78,36 @@ export function TableField({
         );
       }}
       annotationId={annotation.id}
+      renderRefCell={({ row, column, label, invalid, title }) => (
+        <RefCell
+          project={project}
+          annotation={annotation}
+          tableKey={field.key}
+          rowId={row._id}
+          column={column}
+          value={row[column.key]}
+          label={label}
+          readOnly={readOnly}
+          invalid={invalid}
+          title={title}
+          onSet={(next) =>
+            actions.setTableCell(annotation.id, field.key, row._id, column.key, next)
+          }
+          onGoToAnnotation={ctx.onGoToAnnotation}
+        />
+      )}
     />
   );
+}
+
+/** O que a tabela entrega para desenhar uma célula de coluna `ref` (só nos Detalhes). */
+export interface RefCellContext {
+  readonly row: TableRow;
+  readonly column: SpecRefColumn;
+  /** Nome acessível: a coluna e a linha. */
+  readonly label: string;
+  readonly invalid: boolean;
+  readonly title: string | undefined;
 }
 
 export interface TableEditorProps {
@@ -97,6 +127,11 @@ export interface TableEditorProps {
   readonly rowNote?: (row: TableRow) => ComponentChildren;
   /** Anotação dos Detalhes: liga o ponto de extensão da revisão (ausente fora deles). */
   readonly annotationId?: string;
+  /**
+   * Desenha a célula de uma coluna `ref` (precisa do projeto, que o editor não tem). Sem ele
+   * (o formulário de criação), a célula mostra o seletor indisponível.
+   */
+  readonly renderRefCell?: (cell: RefCellContext) => ComponentChildren;
 }
 
 /**
@@ -115,6 +150,7 @@ export function TableEditor({
   cellIssue,
   rowNote,
   annotationId,
+  renderRefCell,
 }: TableEditorProps) {
   const inherited = useDetailsExtension();
   const ext = annotationId !== undefined ? inherited : null;
@@ -324,15 +360,43 @@ export function TableEditor({
                         {fieldLabel(column)}
                         {column.required ? ' *' : ''}
                       </span>
-                      <SimpleEditor
-                        field={column}
-                        value={row[column.key]}
-                        label={`${fieldLabel(column)} (${name})`}
-                        readOnly={readOnly}
-                        invalid={issue !== undefined}
-                        title={issue}
-                        onSet={(next) => onSetCell(row._id, column.key, next)}
-                      />
+                      {column.type === 'ref' ? (
+                        renderRefCell ? (
+                          renderRefCell({
+                            row,
+                            column,
+                            label: `${fieldLabel(column)} (${name})`,
+                            invalid: issue !== undefined,
+                            title: issue,
+                          })
+                        ) : (
+                          <button
+                            type="button"
+                            class="ref-control is-empty"
+                            disabled
+                            title={t('typedForm.refUnavailable')}
+                            aria-label={t('ref.fieldButton', {
+                              field: `${fieldLabel(column)} (${name})`,
+                              value: t('ref.choosePlaceholder'),
+                            })}
+                          >
+                            <Icon name="search" />
+                            <span class="ref-control-text">
+                              {t('ref.choosePlaceholder')}
+                            </span>
+                          </button>
+                        )
+                      ) : (
+                        <SimpleEditor
+                          field={column}
+                          value={row[column.key]}
+                          label={`${fieldLabel(column)} (${name})`}
+                          readOnly={readOnly}
+                          invalid={issue !== undefined}
+                          title={issue}
+                          onSet={(next) => onSetCell(row._id, column.key, next)}
+                        />
+                      )}
                     </span>
                   );
                 })}

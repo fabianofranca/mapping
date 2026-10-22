@@ -9,7 +9,7 @@ import {
   tableRows,
   type LabelTexts,
 } from './refs';
-import type { SpecAnnotationType, SpecColumn, SpecField } from './spec';
+import type { SpecAnnotationType, SpecColumn, SpecField, SpecSimpleColumn } from './spec';
 import { getSpec, typeOfAnnotation } from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
 import type { Annotation, AnnotationTypeRef, JsonValue, Project } from './types';
@@ -109,12 +109,33 @@ export interface DisplayOptions {
   readonly texts?: DisplayTexts;
 }
 
-function simpleAlert(field: SpecColumn, value: JsonValue): boolean {
+function simpleAlert(field: SpecSimpleColumn, value: JsonValue): boolean {
   return checkSimpleValue(field, value) !== null;
+}
+
+/** Texto de uma célula: `→ User.name` na coluna `ref` (quebrada: `→ (referência quebrada)`). */
+function cellDisplay(
+  p: Project,
+  column: SpecColumn,
+  value: JsonValue | undefined,
+  texts: DisplayTexts,
+): string {
+  if (column.type !== 'ref' || value === undefined || isEmptyValue(value)) {
+    return cellText(value);
+  }
+  const ref = parseRefValue(value);
+  return `→ ${ref && resolveRef(p, ref) ? refLabel(p, ref, texts) : texts.broken}`;
+}
+
+/** Alerta de uma célula `ref` preenchida: formato inválido ou alvo que não existe mais. */
+function refCellAlert(p: Project, value: JsonValue): boolean {
+  const ref = parseRefValue(value);
+  return !ref || !resolveRef(p, ref);
 }
 
 /** `true` se alguma linha tem coluna obrigatória vazia ou valor inválido. */
 function tableAlert(
+  p: Project,
   columns: readonly SpecColumn[],
   value: JsonValue | undefined,
 ): boolean {
@@ -124,7 +145,7 @@ function tableAlert(
     columns.some((c) => {
       const cell = row[c.key];
       if (cell === undefined || isEmptyValue(cell)) return c.required === true;
-      return simpleAlert(c, cell);
+      return c.type === 'ref' ? refCellAlert(p, cell) : simpleAlert(c, cell);
     }),
   );
 }
@@ -152,7 +173,7 @@ export function typedDisplayLines(
     const value = values[key];
     if (field.type === 'table') {
       const rows = tableRows(value);
-      const alert = tableAlert(field.columns, value);
+      const alert = tableAlert(p, field.columns, value);
       if (rows.length === 0) {
         if (field.required) {
           lines.push({ kind: 'value', key, label, text: texts.empty, alert: true });
@@ -172,7 +193,7 @@ export function typedDisplayLines(
         columns: field.columns.map((c) => ({ key: c.key, label: fieldLabel(c) })),
         rows: rows.map((row) => ({
           id: row._id,
-          cells: field.columns.map((c) => cellText(row[c.key])),
+          cells: field.columns.map((c) => cellDisplay(p, c, row[c.key], texts)),
         })),
         alert,
       });

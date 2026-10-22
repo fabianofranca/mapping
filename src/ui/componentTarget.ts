@@ -13,6 +13,7 @@ import {
   projectIndex,
   type ComponentCatalog,
   type ComponentType,
+  type FloatingNearTarget,
   type MarkingVisibility,
   type Project,
   type ProjectContainer,
@@ -34,6 +35,8 @@ export interface ComponentTarget {
   readonly containerId: string | null;
   readonly parentId: string | null;
   readonly center?: { readonly x: number; readonly y: number };
+  /** Tipo flutuante com container ou marcação selecionado: nasce perto dele (`placeFloatingNear`). */
+  readonly near?: FloatingNearTarget;
   /** Como o rótulo do botão descreve o destino. */
   readonly destination:
     | { readonly kind: 'slot' | 'container'; readonly name: string }
@@ -50,7 +53,8 @@ export interface ComponentTarget {
  * 4. Sem seleção: o container sob o centro do viewport; sem container, o canvas, no centro.
  *
  * Um tipo flutuante (`floating`, decisão 10) vive só no canvas: o alvo é sempre o canvas, no
- * centro da vista, qualquer que seja a seleção.
+ * centro da vista; com um container ou uma marcação selecionado, leva também `near` (ME4) e
+ * nasce perto dele.
  */
 export function componentTarget(
   editor: EditorContextValue,
@@ -95,7 +99,16 @@ export function componentTarget(
     destination: { kind: 'canvas' },
   });
 
-  if (options.floating === true) return onCanvas();
+  if (options.floating === true) {
+    // ME4: com um container ou uma marcação selecionado, a flutuante nasce perto dele.
+    if (selected?.kind === 'image') {
+      return { ...onCanvas(), near: { kind: 'container', id: selected.image.id } };
+    }
+    if (selected?.kind === 'marking') {
+      return { ...onCanvas(), near: { kind: 'marking', id: selected.marking.id } };
+    }
+    return onCanvas();
+  }
   // ME4: a seta selecionada não é destino de componente (UI): cai no centro da vista.
   if (selected && selected.kind !== 'arrow') {
     if (selected.image) return inContainer(selected.image);

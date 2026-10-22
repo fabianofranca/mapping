@@ -42,6 +42,7 @@ import type {
   TextTemplate,
 } from './componentFormat';
 import { evaluate, evaluateBoolean, evaluateText, referencedFields } from './expressions';
+import { expandRepeats } from './repeat';
 import {
   type CornerRadius,
   type FrameNode,
@@ -229,11 +230,17 @@ function anchorsOf(
  * `instantiate` e `measureComponent` compartilham este fechamento (e o cache dos planos).
  */
 function createEngine(
-  component: ComponentFile,
-  values: FieldValues,
+  source: ComponentFile,
+  sourceValues: FieldValues,
   options: InstantiateOptions,
 ) {
-  const warnings = new Set<string>();
+  // O `repeat` vira quadros com os valores de cada linha antes de o motor começar.
+  const {
+    component,
+    values,
+    warnings: expansionWarnings,
+  } = expandRepeats(source, sourceValues);
+  const warnings = new Set<string>(expansionWarnings);
   const warn = (message: string) => warnings.add(message);
   const prefix = options.idPrefix ?? 'c';
 
@@ -767,13 +774,16 @@ function createEngine(
           type: 'ellipse',
         };
       }
+      case 'repeat':
+        // `expandRepeats` já trocou todo `repeat` por um quadro: nunca chega aqui.
+        throw new Error('repeat não expandido');
     }
   };
 
   const buildRoot = (box: Box): FrameNode =>
     buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true);
 
-  return { warnings, planFrame, buildRoot };
+  return { warnings, planFrame, buildRoot, template: component.template };
 }
 
 export function instantiate(
@@ -798,6 +808,6 @@ export function measureComponent(
   options: InstantiateOptions,
 ): { width: number; height: number; warnings: readonly string[] } {
   const engine = createEngine(component, values, options);
-  const plan = engine.planFrame(component.template, size.width, size.height);
+  const plan = engine.planFrame(engine.template, size.width, size.height);
   return { width: plan.w, height: plan.h, warnings: [...engine.warnings] };
 }

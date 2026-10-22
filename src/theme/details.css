@@ -880,6 +880,10 @@ button.layer-group-label:hover {
   box-shadow: var(--shadow-popup);
 }
 
+.picker.picker-compact {
+  width: min(var(--size-picker-compact), calc(100vw - 2 * var(--space-4)));
+}
+
 .picker::backdrop {
   background: transparent;
 }

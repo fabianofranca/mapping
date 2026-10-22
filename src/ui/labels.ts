@@ -4,7 +4,9 @@ import {
   MAX_CONTAINER_SIZE,
   MIN_MARKING_SIZE,
   ancestorsOf,
+  projectIndex,
   type Annotation,
+  type Arrow,
   type Marking,
   type Project,
   type ProjectContainer,
@@ -20,6 +22,43 @@ export function imageLabel(image: Pick<ProjectContainer, 'name' | 'file'>): stri
 
 export function markingLabel(marking: Pick<Marking, 'name'>): string {
   return marking.name ?? t('marking.unnamed');
+}
+
+/** Nome de uma ponta da seta; a marcação que não existe mais vira um texto neutro. */
+export function arrowEndLabel(marking: Pick<Marking, 'name'> | null | undefined): string {
+  return marking ? markingLabel(marking) : t('arrow.missingEnd');
+}
+
+/** "Origem → Destino" de uma seta (sempre as pontas, sem o nome dela). */
+export function arrowEnds(
+  project: Project,
+  arrow: Pick<Arrow, 'from' | 'to'>,
+): { readonly from: string; readonly to: string; readonly text: string } {
+  const markings = projectIndex(project).markings;
+  const from = arrowEndLabel(markings.get(arrow.from));
+  const to = arrowEndLabel(markings.get(arrow.to));
+  return { from, to, text: t('arrow.label', { from, to }) };
+}
+
+/** Rótulo da seta: o nome dela; sem nome, "Origem → Destino". */
+export function arrowText(
+  project: Project,
+  arrow: Pick<Arrow, 'name' | 'from' | 'to'>,
+): string {
+  return arrow.name ?? arrowEnds(project, arrow).text;
+}
+
+/**
+ * Texto curto da seta sob a marcação de origem (Árvore e Lista): o nome dela; sem nome,
+ * "→ Destino".
+ */
+export function arrowShort(
+  project: Project,
+  arrow: Pick<Arrow, 'name' | 'from' | 'to'>,
+): string {
+  if (arrow.name !== null) return arrow.name;
+  const to = arrowEndLabel(projectIndex(project).markings.get(arrow.to));
+  return t('arrow.label', { from: '', to }).trim();
 }
 
 /** Caminho completo da marcação, da raiz até ela (ex.: "Porta › Maçaneta"). */

@@ -248,7 +248,9 @@ export function showToast(ui: EditorUi, text: string, duration = TOAST_MS): void
 
 /** Seções recolhíveis de Detalhes. */
 export type DetailsSection =
-  | { readonly kind: 'marking' | 'image' | 'annotations' | 'others' | 'images' }
+  | {
+      readonly kind: 'marking' | 'image' | 'arrow' | 'annotations' | 'others' | 'images';
+    }
   | { readonly kind: 'layer' | 'annotation'; readonly id: string };
 
 /** Chave da seção no conjunto `collapsed`. */
@@ -417,7 +419,10 @@ export function resolveSelection(
 // desfazer. As chaves levam o tipo do nó porque ids de imagem e de marcação vêm de
 // geradores diferentes. A raiz Canvas (v13) é `treeKey('canvas', '')`.
 
-export function treeKey(kind: 'image' | 'marking' | 'canvas', id: string): string {
+export function treeKey(
+  kind: 'image' | 'marking' | 'arrow' | 'canvas',
+  id: string,
+): string {
   return `${kind}:${id}`;
 }
 
@@ -447,6 +452,8 @@ export function collapseTree(ui: EditorUi, project: Project | null): void {
   for (const c of project.containers) {
     if (c.parentId !== null && !floating.has(c.parentId)) parents.add(c.parentId);
   }
+  // As setas aparecem sob a marcação de origem.
+  for (const a of project.arrows) parents.add(a.from);
   for (const id of parents) next.add(treeKey('marking', id));
   ui.collapsedTree.value = next;
 }

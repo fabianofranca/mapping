@@ -4,7 +4,7 @@ import { resolveSelection, type Selection } from '../store/ui';
 import { selectionProject } from '../store/shownSelection';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
-import { imageLabel, markingLabel } from './labels';
+import { arrowText, imageLabel, markingLabel } from './labels';
 
 // Caminho da seleção acima do canvas (B11): Imagem › Marcação › Marcação. Clicar num
 // nível seleciona aquele item; Alt+↑ e Alt+↓ andam no caminho (ver `app/shortcuts.ts`).
@@ -54,8 +54,18 @@ function canvasChain(project: Project, parentId: string | null): Marking[] {
 export function crumbsOf(project: Project | null, selection: Selection): Crumb[] {
   const resolved = resolveSelection(project, selection);
   if (!project || !resolved) return [];
-  // ME4: caminho da seta (UI)
-  if (resolved.kind === 'arrow') return [];
+  // A seta é uma folha: o caminho dela é "Origem → Destino" (o nome, se houver).
+  if (resolved.kind === 'arrow') {
+    const name = arrowText(project, resolved.arrow);
+    return [
+      canvasCrumb(),
+      {
+        selection: { kind: 'arrow', id: resolved.arrow.id },
+        name,
+        label: t('crumbs.arrow', { name }),
+      },
+    ];
+  }
   if (resolved.kind === 'image') {
     return [
       canvasCrumb(),
@@ -111,7 +121,15 @@ export function Breadcrumbs({
                 aria-current={i === crumbs.length - 1 ? 'location' : undefined}
                 onClick={() => onSelect(target)}
               >
-                <Icon name={target.kind === 'image' ? 'image' : 'marking'} />
+                <Icon
+                  name={
+                    target.kind === 'image'
+                      ? 'image'
+                      : target.kind === 'arrow'
+                        ? 'arrow'
+                        : 'marking'
+                  }
+                />
                 <span class="crumb-name">{crumb.name}</span>
               </button>
             ) : (

@@ -95,7 +95,13 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
 
     const onDisk = await opened.storage.listSpecDir(DIR);
     expect(onDisk.sort()).toEqual(
-      [SPEC_FILE, `${DIR}/components/nota.json`, `${DIR}/docs/nota.md`].sort(),
+      [
+        SPEC_FILE,
+        `${DIR}/components/nota.json`,
+        `${DIR}/components/tabela.json`,
+        `${DIR}/docs/nota.md`,
+        `${DIR}/docs/tabela.md`,
+      ].sort(),
     );
     // Os arquivos do pacote entram antes do mapping.json que os cita.
     const mappingAt = calls.indexOf('mapping');
@@ -150,7 +156,7 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
     session = opened.session;
     session.actions.renameProject('Renomeado');
     await session.flush();
-    expect((await opened.storage.listSpecDir(DIR)).length).toBe(3);
+    expect((await opened.storage.listSpecDir(DIR)).length).toBe(5);
 
     expect(session.actions.removeSpecialization('notas', 'convert').ok).toBe(true);
     await settle();
@@ -164,7 +170,7 @@ describe('sessão com pacotes aplicados em memória (stagedPackages)', () => {
     session.store.undo();
     await vi.advanceTimersByTimeAsync(300);
     await settle();
-    expect((await opened.storage.listSpecDir(DIR)).length).toBe(3);
+    expect((await opened.storage.listSpecDir(DIR)).length).toBe(5);
   });
 
   it('remover antes da primeira gravação não deixa pasta nem especialização no disco', async () => {

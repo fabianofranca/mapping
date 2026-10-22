@@ -3,6 +3,7 @@ import { memoByProject, projectIndex } from './projectIndex';
 import { isTargetAccepted, parseRefValue, resolveRef, tableRows } from './refs';
 import { fieldOf, isAllowedOwner, specLayerOf, typeOfAnnotation } from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
+import type { SpecRefAccepts } from './spec';
 import type { Annotation, JsonValue, Project } from './types';
 
 // Pendências ("incompletas", docs/history/PLAN-etapas-1-2.md 13.5): calculadas a partir do projeto e das
@@ -43,6 +44,22 @@ export interface AnnotationIssue {
   readonly rowId?: string;
   /** Coluna da tabela envolvida. */
   readonly column?: string;
+}
+
+/** Pendência de uma referência (campo `ref` ou célula de coluna `ref`); `null` se está boa. */
+function refProblem(
+  p: Project,
+  a: Annotation,
+  accepts: SpecRefAccepts,
+  value: JsonValue,
+): 'invalid-value' | 'broken-ref' | 'ref-not-accepted' | null {
+  const ref = parseRefValue(value);
+  if (!ref) return 'invalid-value';
+  const target = resolveRef(p, ref);
+  if (!target) return 'broken-ref';
+  return ref.annotationId === a.id || !isTargetAccepted(target, accepts)
+    ? 'ref-not-accepted'
+    : null;
 }
 
 function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
@@ -98,7 +115,10 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
             }
             continue;
           }
-          const problem = checkSimpleValue(col, cell);
+          const problem =
+            col.type === 'ref'
+              ? refProblem(p, a, col.accepts, cell)
+              : checkSimpleValue(col, cell);
           if (problem) issues.push({ code: problem, key, rowId, column: col.key });
         }
       }
@@ -109,13 +129,8 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
       continue;
     }
     if (field.type === 'ref') {
-      const ref = parseRefValue(value);
-      const target = ref && resolveRef(p, ref);
-      if (!ref) issues.push({ code: 'invalid-value', key });
-      else if (!target) issues.push({ code: 'broken-ref', key });
-      else if (ref.annotationId === a.id || !isTargetAccepted(target, field.accepts)) {
-        issues.push({ code: 'ref-not-accepted', key });
-      }
+      const problem = refProblem(p, a, field.accepts, value);
+      if (problem) issues.push({ code: problem, key });
       continue;
     }
     const problem = checkSimpleValue(field, value);
