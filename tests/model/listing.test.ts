@@ -4,6 +4,7 @@ import {
   annotationsByMarking,
   buildIncompleteList,
   buildListing,
+  createArrow,
   createMarking,
   layerSections,
   removeMarking,
@@ -146,5 +147,50 @@ describe('lista de incompletas', () => {
 
   it('sem pendências a lista é vazia', () => {
     expect(buildIncompleteList(p, new Map())).toEqual([]);
+  });
+});
+
+describe('setas na lista (ME4)', () => {
+  function withArrow() {
+    let q = createArrow(sampleProject(), { id: 'AR1', from: 'M1', to: 'M4' });
+    q = addAnnotation(q, { id: 'AA', markingId: 'AR1', layerId: 'L1' });
+    return q;
+  }
+
+  it('a seta com anotação aparece logo depois da marcação de origem', () => {
+    const q = withArrow();
+    const listing = buildListing(q, q.layers, { showEmpty: false });
+    const rows = listing[0]?.markings.map((m) => [m.marking.id, m.arrow?.id ?? null]);
+    expect(rows).toEqual([
+      ['M1', null],
+      ['M1', 'AR1'],
+      ['M2', null],
+    ]);
+    const arrowRow = listing[0]?.markings[1];
+    expect(arrowRow?.sections.map((s) => s.annotations.map((a) => a.id))).toEqual([
+      ['AA'],
+    ]);
+  });
+
+  it('a seta sem anotação só entra com "mostrar sem anotação"', () => {
+    const q = createArrow(sampleProject(), { id: 'AR1', from: 'M1', to: 'M4' });
+    const plain = buildListing(q, q.layers, { showEmpty: false });
+    expect(plain.flatMap((i) => i.markings).some((m) => m.arrow)).toBe(false);
+    const empty = buildListing(q, q.layers, { showEmpty: true });
+    expect(empty.flatMap((i) => i.markings).some((m) => m.arrow?.id === 'AR1')).toBe(
+      true,
+    );
+  });
+
+  it('a pendência da anotação da seta vem com a origem e a seta', () => {
+    const q = withArrow();
+    const list = buildIncompleteList(
+      q,
+      new Map([['AA', [{ code: 'unknown-type' as const }]]]),
+    );
+    expect(list[0]?.items[0]).toMatchObject({
+      arrow: { id: 'AR1' },
+      marking: { id: 'M1' },
+    });
   });
 });

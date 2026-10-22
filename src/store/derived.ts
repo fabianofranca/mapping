@@ -571,6 +571,7 @@ export interface FieldChangeIndex {
 
 const PANEL_ENTITIES: ReadonlySet<ChangeEntity> = new Set([
   'marking',
+  'arrow',
   'image',
   'annotation',
   'layer',

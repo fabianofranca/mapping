@@ -50,6 +50,7 @@ describe('dicionários', () => {
       'language.en-US',
       'image.dimensions',
       'marking.pathSeparator',
+      'arrow.label',
       'marking.x',
       'marking.y',
       'layer.deleteCount',

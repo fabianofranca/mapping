@@ -3,7 +3,6 @@ import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationsOf,
-  layerAnnotationTypes,
   validTypedOwners,
   type Annotation,
   type AnnotationTypeRef,
@@ -35,10 +34,14 @@ import {
   ownerTypeNames,
 } from './typedText';
 import { Button, IconButton } from './controls';
+import { offeredTypes, type AnnotationOwnerKind } from './offeredTypes';
 
 interface AnnotationsPanelProps {
   readonly project: Project;
-  readonly marking: Marking;
+  /** A dona das anotações: uma marcação ou uma seta (só o id importa). */
+  readonly marking: Pick<Marking, 'id'>;
+  /** Padrão: marcação. A seta oferece os tipos que valem para ela (`offeredTypes`). */
+  readonly ownerKind?: AnnotationOwnerKind;
   /** Camadas visíveis (uma seção para cada). */
   readonly layers: readonly Layer[];
   /** Destino do botão principal "+ Anotação". */
@@ -79,6 +82,7 @@ export const ADD_ANNOTATION_ACTION = 'add-annotation';
 export function AnnotationsPanel({
   project,
   marking,
+  ownerKind = 'marking',
   layers: visible,
   activeLayer,
   readOnly,
@@ -240,7 +244,7 @@ export function AnnotationsPanel({
             actions={<Button onClick={() => steps.close()}>{t('common.cancel')}</Button>}
           >
             <TypeList
-              types={layerAnnotationTypes(project, step.layer.id)}
+              types={offeredTypes(project, step.layer.id, ownerKind)}
               onChoose={(definition) => chooseType(step.layer, definition)}
             />
           </Dialog>

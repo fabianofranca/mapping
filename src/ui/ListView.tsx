@@ -5,7 +5,8 @@ import { toggleLayerVisible, type Selection } from '../store/ui';
 import { AnnotationLines, AnnotationTitle, IssueBadge } from './AnnotationSummary';
 import { Choice } from './controls';
 import { useEditor } from './EditorContext';
-import { imageLabel, markingLabel } from './labels';
+import { Icon } from './icons';
+import { arrowShort, arrowText, imageLabel, markingLabel } from './labels';
 import { annotationDisplayName } from './typedText';
 
 interface ListViewProps {
@@ -83,7 +84,9 @@ export function ListView({ onSelect }: ListViewProps) {
   const layers = derived.visibleLayers.value;
   const listing = derived.listing.value;
   const activeId = derived.activeLayerId.value;
-  const selectedId = selection?.kind === 'marking' ? selection.id : null;
+  // A seta selecionada destaca a linha dela (os ids de setas e marcações não se repetem).
+  const selectedId =
+    selection?.kind === 'marking' || selection?.kind === 'arrow' ? selection.id : null;
   const root = useRef<HTMLDivElement>(null);
 
   // Seleção feita no canvas (ou na árvore): mantém a linha da lista à vista.
@@ -157,15 +160,21 @@ export function ListView({ onSelect }: ListViewProps) {
                   </th>
                 </tr>
                 {markings.flatMap((listed) => {
-                  const { marking, path } = listed;
-                  const label = path.map(markingLabel).join(t('marking.pathSeparator'));
+                  const { marking, path, arrow } = listed;
+                  // Linha de seta: o dono é a seta ("→ Destino", ou o nome dela).
+                  const ownerId = arrow?.id ?? marking.id;
+                  const label = arrow
+                    ? arrowShort(project, arrow)
+                    : path.map(markingLabel).join(t('marking.pathSeparator'));
                   return rowsOf(listed).map((row, i) => (
                     <tr
-                      key={`${marking.id}:${row.kind === 'empty' ? '' : `${row.kind}:${row.annotation.id}`}`}
+                      key={`${ownerId}:${row.kind === 'empty' ? '' : `${row.kind}:${row.annotation.id}`}`}
                       class={i === 0 ? 'list-row list-row-first' : 'list-row'}
-                      data-marking={i === 0 ? marking.id : undefined}
-                      data-selected={selectedId === marking.id || undefined}
-                      onClick={() => onSelect({ kind: 'marking', id: marking.id })}
+                      data-marking={i === 0 ? ownerId : undefined}
+                      data-selected={selectedId === ownerId || undefined}
+                      onClick={() =>
+                        onSelect({ kind: arrow ? 'arrow' : 'marking', id: ownerId })
+                      }
                     >
                       <td
                         class="list-cell list-cell-marking"
@@ -175,9 +184,12 @@ export function ListView({ onSelect }: ListViewProps) {
                           <button
                             type="button"
                             class="list-marking"
-                            aria-current={selectedId === marking.id || undefined}
-                            aria-label={t('list.select', { name: label })}
+                            aria-current={selectedId === ownerId || undefined}
+                            aria-label={t('list.select', {
+                              name: arrow ? arrowText(project, arrow) : label,
+                            })}
                           >
+                            {arrow && <Icon name="arrow" />}
                             {marking.needsReview && (
                               <span class="tree-warning" title={t('marking.needsReview')}>
                                 ⚠{' '}

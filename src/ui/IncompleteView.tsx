@@ -3,7 +3,8 @@ import type { AnnotationLocation } from '../store/ui';
 import { AnnotationTitle } from './AnnotationSummary';
 import { Choice } from './controls';
 import { useEditor } from './EditorContext';
-import { imageLabel, markingLabel } from './labels';
+import { Icon } from './icons';
+import { arrowShort, arrowText, imageLabel, markingLabel } from './labels';
 import { issueMessage } from './typedText';
 
 interface IncompleteViewProps {
@@ -62,8 +63,12 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
                     {image ? imageLabel(image) : t('canvas.name')}
                   </th>
                 </tr>
-                {items.map(({ annotation, path, layer, issues }) => {
-                  const label = path.map(markingLabel).join(t('marking.pathSeparator'));
+                {items.map(({ annotation, path, layer, issues, arrow }) => {
+                  // Anotação de seta: a origem e a seta ("Origem › → Destino").
+                  const label = [
+                    ...path.map(markingLabel),
+                    ...(arrow ? [arrowShort(project, arrow)] : []),
+                  ].join(t('marking.pathSeparator'));
                   return (
                     <tr
                       key={annotation.id}
@@ -77,8 +82,11 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
                         <button
                           type="button"
                           class="list-marking"
-                          aria-label={t('incomplete.go', { name: label })}
+                          aria-label={t('incomplete.go', {
+                            name: arrow ? arrowText(project, arrow) : label,
+                          })}
                         >
+                          {arrow && <Icon name="arrow" />}
                           {label}
                         </button>
                       </td>
