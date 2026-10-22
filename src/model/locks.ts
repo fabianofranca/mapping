@@ -76,7 +76,9 @@ export function canReplaceImage(
 ): boolean {
   const image = findById(p.containers, containerId);
   if (image.width === next.width && image.height === next.height) return true;
-  return !image.locked && !p.markings.some((m) => m.containerId === containerId && m.locked);
+  return (
+    !image.locked && !p.markings.some((m) => m.containerId === containerId && m.locked)
+  );
 }
 
 export function setMarkingLocked(
@@ -91,7 +93,11 @@ export function setMarkingLocked(
   };
 }
 
-export function setImageLocked(p: Project, containerId: string, locked: boolean): Project {
+export function setImageLocked(
+  p: Project,
+  containerId: string,
+  locked: boolean,
+): Project {
   if (findById(p.containers, containerId).locked === locked) return p;
   return {
     ...p,
@@ -106,7 +112,8 @@ export function setImageMarkingsLocked(
   locked: boolean,
 ): Project {
   findById(p.containers, containerId);
-  if (!p.markings.some((m) => m.containerId === containerId && m.locked !== locked)) return p;
+  if (!p.markings.some((m) => m.containerId === containerId && m.locked !== locked))
+    return p;
   return {
     ...p,
     markings: p.markings.map((m) =>

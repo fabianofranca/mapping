@@ -39,6 +39,7 @@ interface RowList {
   offset: number;
   truncated?: boolean;
   nextOffset?: number;
+  warnings?: { code: string; message: string }[];
   markings: Row[];
 }
 interface AnnotationData {
@@ -609,8 +610,7 @@ describe('get_annotation, get_container e resolve', () => {
         message: expect.stringContaining('get_container'),
       }),
     ]);
-    const { warnings: _warnings, ...rest } = old;
-    expect(rest).toEqual(current);
+    expect({ ...old, warnings: undefined }).toEqual({ ...current, warnings: undefined });
   });
 
   it('get_container avisa quando o arquivo não existe', async () => {

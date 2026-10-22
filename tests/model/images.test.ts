@@ -152,7 +152,9 @@ describe('imagens: trocar', () => {
     const p = sampleProject();
     const file = { file: 'images/nova.jpg', width: 4000, height: 4000 };
     expect(() => replaceContainer(p, 'I1', file)).toThrow('aspect-change-not-confirmed');
-    const next = expectValid(replaceContainer(p, 'I1', file, { confirmAspectChange: true }));
+    const next = expectValid(
+      replaceContainer(p, 'I1', file, { confirmAspectChange: true }),
+    );
     expect(marking(next, 'M1').rect).toEqual({
       x: 1000,
       y: 1333,
@@ -214,7 +216,7 @@ describe('arquivos da pasta do projeto', () => {
 });
 
 describe('container (imagem sem arquivo)', () => {
-  const blank = (p = sampleProject()) =>
+  const bgContainer = (p = sampleProject()) =>
     addBackgroundContainer(p, {
       id: 'B1',
       width: 390,
@@ -224,7 +226,7 @@ describe('container (imagem sem arquivo)', () => {
     });
 
   it('addBackgroundContainer: cor em maiúsculas, nome normalizado, lado maior = 1000', () => {
-    const p = blank();
+    const p = bgContainer();
     const b = image(p, 'B1');
     expect(isBackgroundContainer(b)).toBe(true);
     expect(isBackgroundContainer(image(p, 'I1'))).toBe(false);
@@ -259,25 +261,34 @@ describe('container (imagem sem arquivo)', () => {
   it('addBackgroundContainer: valida id, cor e dimensões (1 a MAX_CONTAINER_SIZE)', () => {
     const p = sampleProject();
     const args = { id: 'B1', width: 10, height: 10, background: '#000000' };
-    expect(() => addBackgroundContainer(p, { ...args, id: 'I1' })).toThrow('duplicate-id');
+    expect(() => addBackgroundContainer(p, { ...args, id: 'I1' })).toThrow(
+      'duplicate-id',
+    );
     expect(() => addBackgroundContainer(p, { ...args, background: 'preto' })).toThrow(
       'invalid-color',
     );
-    expect(() => addBackgroundContainer(p, { ...args, width: 0 })).toThrow('invalid-dimensions');
+    expect(() => addBackgroundContainer(p, { ...args, width: 0 })).toThrow(
+      'invalid-dimensions',
+    );
     expect(() => addBackgroundContainer(p, { ...args, height: 1.5 })).toThrow(
       'invalid-dimensions',
     );
-    expect(() => addBackgroundContainer(p, { ...args, width: MAX_CONTAINER_SIZE + 1 })).toThrow(
-      'invalid-dimensions',
-    );
+    expect(() =>
+      addBackgroundContainer(p, { ...args, width: MAX_CONTAINER_SIZE + 1 }),
+    ).toThrow('invalid-dimensions');
     expectValid(addBackgroundContainer(p, { ...args, width: MAX_CONTAINER_SIZE }));
   });
 
   it('as imagens sem arquivo não ocupam nomes de arquivo', () => {
-    const p = blank();
+    const p = bgContainer();
     expect(uniqueImageFile(p, 'frente.jpg')).toBe('images/frente-2.jpg');
     expect(uniqueImageFile(p, 'nova.jpg')).toBe('images/nova.jpg');
-    const q = addContainer(p, { id: 'I3', file: 'images/nova.jpg', width: 10, height: 10 });
+    const q = addContainer(p, {
+      id: 'I3',
+      file: 'images/nova.jpg',
+      width: 10,
+      height: 10,
+    });
     expectValid(q);
     expect(() =>
       addContainer(q, { id: 'I4', file: 'images/nova.jpg', width: 10, height: 10 }),
@@ -286,13 +297,17 @@ describe('container (imagem sem arquivo)', () => {
 
   it('replaceImage recusa o container', () => {
     expect(() =>
-      replaceContainer(blank(), 'B1', { file: 'images/x.png', width: 390, height: 844 }),
+      replaceContainer(bgContainer(), 'B1', {
+        file: 'images/x.png',
+        width: 390,
+        height: 844,
+      }),
     ).toThrow('container-without-file');
   });
 
   describe('setBackgroundContainer', () => {
     it('muda a cor sem mexer na geometria (nem com a imagem trancada)', () => {
-      const p = setImageLocked(blank(), 'B1', true);
+      const p = setImageLocked(bgContainer(), 'B1', true);
       const q = setBackgroundContainer(p, 'B1', { background: '#abcdef' });
       expect(image(q, 'B1')).toMatchObject({
         background: '#ABCDEF',
@@ -300,11 +315,13 @@ describe('container (imagem sem arquivo)', () => {
         height: 844,
       });
       expect(setBackgroundContainer(q, 'B1', { background: '#ABCDEF' })).toBe(q);
-      expect(() => setBackgroundContainer(p, 'B1', { background: 'x' })).toThrow('invalid-color');
+      expect(() => setBackgroundContainer(p, 'B1', { background: 'x' })).toThrow(
+        'invalid-color',
+      );
     });
 
     it('muda o tamanho mantendo a escala do placement', () => {
-      const p = blank();
+      const p = bgContainer();
       const scale = image(p, 'B1').placement.scale;
       const q = setBackgroundContainer(p, 'B1', { width: 200, height: 300 });
       expect(image(q, 'B1')).toMatchObject({ width: 200, height: 300, file: null });
@@ -314,11 +331,13 @@ describe('container (imagem sem arquivo)', () => {
     });
 
     it('recusa dimensões inválidas, imagem com arquivo e tamanho em imagem trancada', () => {
-      const p = blank();
-      expect(() => setBackgroundContainer(p, 'B1', { width: 0 })).toThrow('invalid-dimensions');
-      expect(() => setBackgroundContainer(p, 'B1', { height: MAX_CONTAINER_SIZE + 1 })).toThrow(
+      const p = bgContainer();
+      expect(() => setBackgroundContainer(p, 'B1', { width: 0 })).toThrow(
         'invalid-dimensions',
       );
+      expect(() =>
+        setBackgroundContainer(p, 'B1', { height: MAX_CONTAINER_SIZE + 1 }),
+      ).toThrow('invalid-dimensions');
       expect(() => setBackgroundContainer(p, 'I1', { background: '#000000' })).toThrow(
         'container-has-file',
       );
@@ -328,13 +347,15 @@ describe('container (imagem sem arquivo)', () => {
     });
 
     it('recusa o tamanho que deixaria uma marcação de fora', () => {
-      let p = blank();
+      let p = bgContainer();
       p = createMarking(p, {
         id: 'MB',
         containerId: 'B1',
         rect: { x: 100, y: 600, width: 200, height: 200 },
       });
-      expect(() => setBackgroundContainer(p, 'B1', { height: 700 })).toThrow('rect-out-of-image');
+      expect(() => setBackgroundContainer(p, 'B1', { height: 700 })).toThrow(
+        'rect-out-of-image',
+      );
       // Marcação trancada não muda nada: a regra é a mesma.
       const locked = setMarkingLocked(p, 'MB', true);
       expect(() => setBackgroundContainer(locked, 'B1', { width: 250 })).toThrow(
@@ -346,7 +367,7 @@ describe('container (imagem sem arquivo)', () => {
     });
 
     it('recusa o tamanho que faria a imagem sobrepor outra', () => {
-      const p = blank();
+      const p = bgContainer();
       const next = addBackgroundContainer(p, {
         id: 'B2',
         width: 100,
@@ -354,7 +375,9 @@ describe('container (imagem sem arquivo)', () => {
         background: '#000000',
       });
       // B1 e B2 lado a lado: aumentar B1 (mesma escala) invade B2.
-      expect(() => setBackgroundContainer(next, 'B1', { width: 2000 })).toThrow('image-overlap');
+      expect(() => setBackgroundContainer(next, 'B1', { width: 2000 })).toThrow(
+        'image-overlap',
+      );
       expectValid(setBackgroundContainer(next, 'B1', { width: 400 }));
     });
   });

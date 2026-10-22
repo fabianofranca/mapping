@@ -29,7 +29,11 @@ export const HANDLE_HIT_RADIUS = 22;
 export type Intent =
   | { readonly kind: 'pan' }
   | { readonly kind: 'move-image'; readonly containerId: string }
-  | { readonly kind: 'resize-image'; readonly containerId: string; readonly corner: Corner }
+  | {
+      readonly kind: 'resize-image';
+      readonly containerId: string;
+      readonly corner: Corner;
+    }
   | { readonly kind: 'move-marking'; readonly markingId: string }
   | {
       readonly kind: 'resize-marking';

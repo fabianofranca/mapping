@@ -249,7 +249,9 @@ describe('CanvasController: componentes', () => {
     function hoverSetup() {
       const made = setup();
       const { controller, container, store } = made;
-      const placement = store.project.value?.containers.find((i) => i.id === 'B1')?.placement;
+      const placement = store.project.value?.containers.find(
+        (i) => i.id === 'B1',
+      )?.placement;
       const t1 = store.project.value?.markings.find((m) => m.id === 'T1');
       if (!placement || !t1) throw new Error('fixture');
       controller.zoomTo(1);

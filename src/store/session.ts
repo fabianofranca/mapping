@@ -1009,7 +1009,11 @@ export function openSession(options: SessionOptions): ProjectSession {
         return 'failed';
       }
       // Container sem arquivo não tem arquivo para trocar.
-      if (currentProject(store).containers.some((i) => i.id === containerId && i.file === null)) {
+      if (
+        currentProject(store).containers.some(
+          (i) => i.id === containerId && i.file === null,
+        )
+      ) {
         return 'failed';
       }
       let path: string | null = null;

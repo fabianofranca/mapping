@@ -29,7 +29,10 @@ export function setImageSource(
   const normalized = normalizeSource(source);
   return {
     ...p,
-    containers: updateById(p.containers, containerId, (i) => ({ ...i, source: normalized })),
+    containers: updateById(p.containers, containerId, (i) => ({
+      ...i,
+      source: normalized,
+    })),
   };
 }
 

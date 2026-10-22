@@ -659,7 +659,9 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
 
     expect(await h.review.apply()).toEqual({ ok: false, error: 'write-failed' });
     // Em memória, o projeto de antes; no disco, ainda o aplicado, que cita a cópia: ela fica.
-    expect(h.session.store.project.value?.containers.map((i) => i.id)).not.toContain('I3');
+    expect(h.session.store.project.value?.containers.map((i) => i.id)).not.toContain(
+      'I3',
+    );
     expect(h.session.store.canUndo.value).toBe(false);
     expect((await diskProject(h)).containers.map((i) => i.id)).toContain('I3');
     expect(await h.root.read('images/nova.webp')).toBe('WEBP');

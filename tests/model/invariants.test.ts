@@ -183,7 +183,7 @@ describe('validador de invariantes', () => {
 });
 
 describe('validador de invariantes: container', () => {
-  const blank = () =>
+  const bgContainer = () =>
     addBackgroundContainer(sampleProject(), {
       id: 'B1',
       width: 390,
@@ -192,7 +192,7 @@ describe('validador de invariantes: container', () => {
     });
 
   it('container com cor é válida e não conta como arquivo repetido', () => {
-    const p = blank();
+    const p = bgContainer();
     const two = addBackgroundContainer(p, {
       id: 'B2',
       width: 100,
@@ -204,7 +204,7 @@ describe('validador de invariantes: container', () => {
   });
 
   it('container-content: sem arquivo e sem cor, ou com arquivo e com cor', () => {
-    const p = blank();
+    const p = bgContainer();
     const patch = (id: string, change: object): Project => ({
       ...p,
       containers: p.containers.map((i) => (i.id === id ? { ...i, ...change } : i)),

@@ -28,7 +28,7 @@ function v9Text(p: Project): string {
   return JSON.stringify({ ...data, schemaVersion: 9 });
 }
 
-function blankProject(): Project {
+function backgroundProject(): Project {
   return addBackgroundContainer(sampleProject(), {
     id: 'B1',
     name: 'Login',
@@ -84,14 +84,14 @@ describe('migração v9 → v10 (container)', () => {
 
 describe('schema v10', () => {
   it('um projeto v10 com container é lido sem mudança', () => {
-    const p = blankProject();
+    const p = backgroundProject();
     const text = serialize(p);
     const result = load(text);
     expect(result.migratedFrom).toBeNull();
     expect(result.project).toEqual(p);
     expect(serialize(result.project)).toBe(text);
-    const blank = result.project.containers.find((i) => i.id === 'B1');
-    expect(blank).toMatchObject({
+    const bgContainer = result.project.containers.find((i) => i.id === 'B1');
+    expect(bgContainer).toMatchObject({
       file: null,
       background: '#FFFFFF',
       width: 390,
@@ -106,7 +106,7 @@ describe('schema v10', () => {
   });
 
   it('cor, dimensões e `file` malformados são recusados pelo schema', () => {
-    const p = blankProject();
+    const p = backgroundProject();
     const bad = (patch: Record<string, unknown>) =>
       deserialize(withImage(p, 'B1', patch), migrations, new Map()).ok;
     expect(bad({ background: 'branco' })).toBe(false);
@@ -118,7 +118,7 @@ describe('schema v10', () => {
   });
 
   it('arquivo e cor juntos (ou nenhum dos dois) violam o invariante container-content', () => {
-    const p = blankProject();
+    const p = backgroundProject();
     const issues = (id: string, patch: Record<string, unknown>) => {
       const result = deserialize(withImage(p, id, patch), migrations, new Map());
       if (result.ok || result.error.code !== 'invariant-violation') {

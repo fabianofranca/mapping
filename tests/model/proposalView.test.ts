@@ -65,7 +65,11 @@ describe('tipo e alvo das mudanças', () => {
 
     const replaced = propose(
       base,
-      replaceContainer(base, 'I2', { file: 'images/outra.jpg', width: 1000, height: 1000 }),
+      replaceContainer(base, 'I2', {
+        file: 'images/outra.jpg',
+        width: 1000,
+        height: 1000,
+      }),
     );
     expect(changeType(changeOf(replaced, 'image', 'I2', 'file'))).toBe('replaced');
     expect(changeImageFile(changeOf(replaced, 'image', 'I2', 'file'))).toBe(

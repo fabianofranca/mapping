@@ -50,7 +50,7 @@ A CN1 vem primeiro porque fixa o vocabulário que a CN2 leva ao formato.
 - [x] Textos da interface e do MCP sem "tela" (i18n nos dois idiomas, `CONTAINER_LABEL`, mensagem de `mcp/imageTools.ts`)
 - [x] Prosa dos documentos e da skill `spec-author` com "container" e "componente com slot"; `isContainer` → `hasSlot`, `isContainerComponent` → `hasSlotComponent`
 - [x] Roteiros do `docs/TESTING.md` atualizados: criar um container por preset da especialização, por Personalizado e por Tamanho da seleção; o agente cria um por `add_container`
-- [ ] (parcial: os identificadores internos `addBlankImage`/`isBlankImage` e os códigos `blank-image`/`not-blank` ficam para a CN2) `grep -rn -i "tela em branco\|blank" src mcp docs/*.md scripts tests` só encontra `docs/history/`, a aceitação de `add_blank_image` e o que for nome de arquivo de imagem
+- [x] `grep -rn -i "tela em branco\|blank" src mcp docs/*.md scripts tests` só encontra `docs/history/`, a aceitação de `add_blank_image` e o que for nome de arquivo de imagem
 
 **Aceite:** num projeto com a Material 3 aplicada, o diálogo Novo container lista os quatro presets dela sob o nome da biblioteca, mais Personalizado e Tamanho da seleção; sem especialização só os dois; o agente cria um container por `add_container` e uma proposta antiga com `add_blank_image` ainda aplica, com aviso; gates verdes.
 
@@ -67,13 +67,26 @@ A CN1 vem primeiro porque fixa o vocabulário que a CN2 leva ao formato.
 - Identificadores internos: renomeação mecânica, por Haiku, de imagem para container em `src/` e `mcp/` (83 arquivos), possivelmente num PR próprio.
 - Fechamento: `docs/history/PLAN-etapa-container.md`, `PLAN.md`, `docs/ROADMAP.md` e `CLAUDE.md`.
 
-- [ ] Schema v12 com migração v11 → v12 e backup; testes de migração (v11 com imagem e com tela em branco → v12) e de abertura de v12
-- [ ] Tools e operações renomeadas, com as antigas aceitas com aviso; testes por stdio
-- [ ] MCP 0.8.0 (`mcp/version.ts`) e rótulo `mcp-rc` no PR
-- [ ] Zip do exemplo e guia regenerados e conferidos pelos testes (`npm run build:example`, `npm run build:guia`)
-- [ ] Documentação e skill `spec-author` com o vocabulário e o formato novos
-- [ ] Identificadores internos renomeados para container, com os testes existentes verdes
-- [ ] Roteiros do `docs/TESTING.md`: abrir um projeto v11 e ver a faixa da migração; o agente lê e cria containers pelas tools novas
-- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-container.md` (com as decisões consolidadas dos PRs), `PLAN.md` sem etapa em andamento, `docs/ROADMAP.md` e `CLAUDE.md` atualizados
+- [x] Schema v12 com migração v11 → v12 e backup; testes de migração (v11 com imagem e com tela em branco → v12) e de abertura de v12
+- [x] Tools e operações renomeadas, com as antigas aceitas com aviso; testes por stdio
+- [x] MCP 0.8.0 (`mcp/version.ts`); o rótulo `mcp-rc` **não** foi posto na CN2 (cascata noturna: o rótulo vai no PR da ME5; decisão do dono)
+- [x] Zip do exemplo e guia regenerados e conferidos pelos testes (`npm run build:example`, `npm run build:guia`)
+- [x] Documentação e skill `spec-author` com o vocabulário e o formato novos
+- [x] Identificadores internos renomeados para container, com os testes existentes verdes
+- [x] Roteiros do `docs/TESTING.md`: abrir um projeto v11 e ver a faixa da migração; o agente lê e cria containers pelas tools novas
+- [x] Fechamento: histórico em `docs/history/PLAN-etapa-container.md` (com as decisões consolidadas dos PRs), `PLAN.md` sem etapa em andamento, `docs/ROADMAP.md` e `CLAUDE.md` atualizados
 
 **Aceite:** um projeto v11 abre, migra para v12 com backup e mostra os mesmos containers; o agente usa `get_container`, `add_container` com arquivo e com fundo, e uma proposta antiga com `add_image` ou `add_blank_image` ainda aplica, com aviso; `grep -rn "images\b" src mcp` só encontra a pasta `images/` e a migração; gates verdes; rodada dirigida do Cowork sem achado alto ou médio, se o dono pedir.
+
+---
+
+## Decisões consolidadas dos PRs
+
+- **CN1 (PR #206):** diálogo Novo container (Personalizado, Tamanho da seleção e presets das especializações agrupados pelo nome delas); `containers` na especialização `formatVersion` 6; `PROPOSAL_FORMAT_VERSION` 2 com `add_container` e `add_blank_image` aceito com aviso `deprecated-op`; `isContainer` → `hasSlot` e `isContainerComponent` → `hasSlotComponent`. Sem especialização o diálogo abre em Personalizado 360×800 branco.
+- **CN2:**
+  - **Schema v12:** `images` → `containers` e, na marcação, `imageId` → `containerId` (o plano só citava a coleção; o plano da etapa seguinte já assume `containerId`). Migração `migrateFrom11To12` só renomeia chaves, com o backup genérico de migração; invariante `blank-background` → `container-content`.
+  - **Proposta:** `PROPOSAL_FORMAT_VERSION` continua 2. O cabeçalho da mudança (`Change.imageId`, `entity: 'image'`, níveis de revisão `image`) não mudou; os campos da *marcação* dentro da proposta passam a `containerId`, e `parseProposal` lê propostas antigas convertendo `imageId` → `containerId` nesses pontos.
+  - **MCP 0.8.0:** `get_container`/`get_container_file` (as antigas respondem com `deprecated-tool`); `add_container` aceita arquivo (`file`/`base64`/`fileName`) ou `width`/`height`/`background`, e a combinação ambígua é recusada; `update_container`, `replace_container`, `delete_container`; `add_image`, `add_blank_image`, `update_image`, `replace_image`, `delete_image` e o argumento `image` aceitos com aviso (`deprecated-op`, `deprecated-argument`). Nas saídas, `image(s)` → `container(s)` e o campo `blank: true` saiu (container sem arquivo mostra `file: null` e `background`). Referências `mapping://…/i/…` não mudam.
+  - **Identificadores:** `ProjectContainer`, `Project.containers`, `src/model/containers.ts`, funções `*Container*`, `addBackgroundContainer`/`isBackgroundContainer`/`MAX_CONTAINER_SIZE`; códigos de erro `blank-image` → `container-without-file` e `not-blank` → `container-has-file`. Códigos de invariante `missing-image`, `rect-out-of-image`, `images-overlap` e `parent-other-image` ficaram.
+  - **Rótulo `mcp-rc` e rodada do Cowork:** não postos na CN2 (cascata noturna); ficam para decisão do dono.
+  - Roteiros novos: R3.8c (abrir um v11), R9.19 e R9.20 (tools novas e depreciações).

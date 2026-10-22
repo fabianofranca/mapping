@@ -95,7 +95,7 @@ const MAX_BACKGROUND_PIXELS = 4096 * 4096;
  * Container sem arquivo: um raster liso com a cor `background`, no tamanho da imagem
  * (o desenho dos componentes é pintado por cima depois, só na região pedida) (reduzido se for enorme: `scaleX`/`scaleY` ≠ 1 já são tratados).
  */
-function blankImage(image: ProjectContainer): LoadedImage {
+function backgroundImage(image: ProjectContainer): LoadedImage {
   const shrink = Math.min(
     1,
     Math.sqrt(MAX_BACKGROUND_PIXELS / (image.width * image.height)),
@@ -126,7 +126,7 @@ async function loadImage(
   refs: Refs,
   image: ProjectContainer,
 ): Promise<LoadedImage> {
-  if (image.file === null) return blankImage(image);
+  if (image.file === null) return backgroundImage(image);
   const absolute = await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
   if (absolute === null) {
     throw new ToolError(
@@ -217,8 +217,8 @@ export async function markingImage(
 
   // Container sem arquivo: pinta o desenho simplificado dos componentes (cena instanciada com o
   // medidor aproximado; o servidor não tem fontes) na região que a saída mostra.
-  const blank = isBackgroundContainer(image);
-  if (blank) {
+  const bgContainer = isBackgroundContainer(image);
+  if (bgContainer) {
     const drawings = createDrawingCache()(
       refs.project,
       refs.loaded.catalog,
@@ -281,7 +281,7 @@ export async function markingImage(
         file: image.file,
         background: image.background,
       },
-      ...(blank
+      ...(bgContainer
         ? {
             drawing: 'simplified',
             drawingNote:

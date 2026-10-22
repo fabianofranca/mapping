@@ -285,7 +285,11 @@ export class PointerInput {
 
   private previewPlacement(containerId: string, placement: Placement): void {
     const result = this.o.actions.previewImagePlacement(containerId, placement);
-    this.o.state.preview.value = { containerId: containerId, placement, valid: result.ok };
+    this.o.state.preview.value = {
+      containerId: containerId,
+      placement,
+      valid: result.ok,
+    };
   }
 
   private onPointerUp(e: PointerEvent, cancelled: boolean): void {

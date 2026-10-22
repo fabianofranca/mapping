@@ -280,7 +280,12 @@ describe('aplicar só as aceitas', () => {
       width: 500,
       height: 500,
     });
-    after = addContainer(after, { id: 'T2', file: 'images/t2.png', width: 500, height: 500 });
+    after = addContainer(after, {
+      id: 'T2',
+      file: 'images/t2.png',
+      width: 500,
+      height: 500,
+    });
     after = createMarking(after, {
       id: 'X1',
       containerId: 'T1',

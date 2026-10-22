@@ -106,7 +106,12 @@ describe('placementNear', () => {
       firstLayer: { id: 'L', name: 'L', color: '#000' },
     });
   const withImage = () =>
-    addContainer(project(), { id: 'I1', file: 'images/a.png', width: 1000, height: 1000 });
+    addContainer(project(), {
+      id: 'I1',
+      file: 'images/a.png',
+      width: 1000,
+      height: 1000,
+    });
 
   it('usa o ponto pedido quando está livre', () => {
     const p = withImage();

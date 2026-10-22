@@ -403,7 +403,11 @@ describe('aviso de item trancado', () => {
     const replaced = propose(
       base,
       setImageLocked(
-        replaceContainer(free, 'I2', { file: 'images/f2.jpg', width: 2000, height: 2000 }),
+        replaceContainer(free, 'I2', {
+          file: 'images/f2.jpg',
+          width: 2000,
+          height: 2000,
+        }),
         'I2',
         true,
       ),

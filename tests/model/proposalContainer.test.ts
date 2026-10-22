@@ -23,7 +23,7 @@ import { AT, changeOf, decided, propose } from './proposalFixtures';
 // (nada para mover de `proposals/<id>/`); `update` ganha `background` e `size`, só na tela em
 // branco; na foto o tamanho continua vindo da troca de arquivo (campo `file`).
 
-const blank = (p: Project) =>
+const bgContainer = (p: Project) =>
   addBackgroundContainer(p, {
     id: 'B1',
     name: 'Login',
@@ -39,7 +39,7 @@ function accept(base: Project, p: Proposal): Proposal {
 describe('proposta: container', () => {
   it('criação: a entidade inteira com file nulo, sem arquivo para mover', () => {
     const base = sampleProject();
-    const after = createMarking(blank(base), {
+    const after = createMarking(bgContainer(base), {
       id: 'MB',
       containerId: 'B1',
       rect: { x: 10, y: 10, width: 100, height: 100 },
@@ -72,7 +72,7 @@ describe('proposta: container', () => {
   });
 
   it('alteração: cor e tamanho viram `background` e `size`, e aplicam', () => {
-    const base = blank(sampleProject());
+    const base = bgContainer(sampleProject());
     const after = setBackgroundContainer(base, 'B1', {
       background: '#101010',
       width: 400,
@@ -102,13 +102,16 @@ describe('proposta: container', () => {
   });
 
   it('só a cor: um `background` e nenhum `size`', () => {
-    const base = blank(sampleProject());
-    const p = propose(base, setBackgroundContainer(base, 'B1', { background: '#000000' }));
+    const base = bgContainer(sampleProject());
+    const p = propose(
+      base,
+      setBackgroundContainer(base, 'B1', { background: '#000000' }),
+    );
     expect(p.changes.map((c) => c.field)).toEqual(['background']);
   });
 
   it('o tamanho que deixa marcação de fora não é aplicado (rect-out-of-image)', () => {
-    const base = createMarking(blank(sampleProject()), {
+    const base = createMarking(bgContainer(sampleProject()), {
       id: 'MB',
       containerId: 'B1',
       rect: { x: 100, y: 600, width: 200, height: 200 },
@@ -125,7 +128,7 @@ describe('proposta: container', () => {
   });
 
   it('imagem trancada: o tamanho avisa trava; a cor não', () => {
-    const open = blank(sampleProject());
+    const open = bgContainer(sampleProject());
     const base = setImageLocked(open, 'B1', true);
     const after = setImageLocked(
       setBackgroundContainer(open, 'B1', { background: '#000000', width: 400 }),
@@ -168,7 +171,7 @@ describe('proposta: container', () => {
   });
 
   it('o formato valida os campos novos', () => {
-    const base = blank(sampleProject());
+    const base = bgContainer(sampleProject());
     const p = propose(
       base,
       setBackgroundContainer(base, 'B1', { background: '#000000', width: 400 }),

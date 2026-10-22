@@ -139,7 +139,9 @@ export function canPlaceContainer(
 }
 
 /** Arquivos das imagens (o container sem arquivo não tem), na ordem das imagens. */
-export function imageFileNames(images: readonly Pick<ProjectContainer, 'file'>[]): string[] {
+export function imageFileNames(
+  images: readonly Pick<ProjectContainer, 'file'>[],
+): string[] {
   const files: string[] = [];
   for (const image of images) if (image.file !== null) files.push(image.file);
   return files;
@@ -282,7 +284,14 @@ export function setBackgroundContainer(
     }
     if (
       !canPlaceContainer(
-        { ...p, containers: updateById(p.containers, containerId, (i) => ({ ...i, width, height })) },
+        {
+          ...p,
+          containers: updateById(p.containers, containerId, (i) => ({
+            ...i,
+            width,
+            height,
+          })),
+        },
         containerId,
         image.placement,
       )
@@ -293,16 +302,28 @@ export function setBackgroundContainer(
   if (!resized && background === image.background) return p;
   return {
     ...p,
-    containers: updateById(p.containers, containerId, (i) => ({ ...i, width, height, background })),
+    containers: updateById(p.containers, containerId, (i) => ({
+      ...i,
+      width,
+      height,
+      background,
+    })),
   };
 }
 
 /** Nome de exibição da imagem; vazio vira `null` (a app mostra o nome do arquivo). */
-export function renameContainer(p: Project, containerId: string, name: string | null): Project {
+export function renameContainer(
+  p: Project,
+  containerId: string,
+  name: string | null,
+): Project {
   const normalized = normalizeOptionalName(name);
   return {
     ...p,
-    containers: updateById(p.containers, containerId, (i) => ({ ...i, name: normalized })),
+    containers: updateById(p.containers, containerId, (i) => ({
+      ...i,
+      name: normalized,
+    })),
   };
 }
 
@@ -328,7 +349,10 @@ export function setContainerMarkingColor(
   const normalized = color === null ? null : color.toUpperCase();
   return {
     ...p,
-    containers: updateById(p.containers, containerId, (i) => ({ ...i, markingColor: normalized })),
+    containers: updateById(p.containers, containerId, (i) => ({
+      ...i,
+      markingColor: normalized,
+    })),
   };
 }
 
@@ -348,13 +372,22 @@ export function setContainerPlacement(
   };
 }
 
-export function moveContainer(p: Project, containerId: string, x: number, y: number): Project {
+export function moveContainer(
+  p: Project,
+  containerId: string,
+  x: number,
+  y: number,
+): Project {
   const { placement } = findById(p.containers, containerId);
   return setContainerPlacement(p, containerId, { ...placement, x, y });
 }
 
 /** Redimensionamento proporcional: nova escala com o canto (`x`, `y`) informado. */
-export function resizeContainer(p: Project, containerId: string, placement: Placement): Project {
+export function resizeContainer(
+  p: Project,
+  containerId: string,
+  placement: Placement,
+): Project {
   return setContainerPlacement(p, containerId, placement);
 }
 
@@ -388,7 +421,9 @@ export function removeContainer(p: Project, containerId: string): Project {
 
 /** A exclusão em si, sem a trava: também serve para contar o impacto. */
 function cascadeRemoveImage(p: Project, containerId: string): Project {
-  const ids = new Set(p.markings.filter((m) => m.containerId === containerId).map((m) => m.id));
+  const ids = new Set(
+    p.markings.filter((m) => m.containerId === containerId).map((m) => m.id),
+  );
   return {
     ...p,
     containers: p.containers.filter((i) => i.id !== containerId),
@@ -483,7 +518,11 @@ export function replaceContainer(
   const image = findById(p.containers, containerId);
   if (isBackgroundContainer(image)) fail('container-without-file');
   requireUnlocked(canReplaceImage(p, containerId, next));
-  if (p.containers.some((i) => i.id !== containerId && i.file !== null && i.file === next.file))
+  if (
+    p.containers.some(
+      (i) => i.id !== containerId && i.file !== null && i.file === next.file,
+    )
+  )
     fail('duplicate-file');
   const sameAspect = isSameAspect(image, next);
   if (!sameAspect && !options.confirmAspectChange) fail('aspect-change-not-confirmed');
@@ -501,7 +540,8 @@ export function replaceContainer(
   let placement: Placement = { ...image.placement, scale };
   const candidate = imageCanvasRect(next, placement);
   const overlaps = p.containers.some(
-    (o) => o.id !== containerId && rectsOverlap(candidate, imageCanvasRect(o, o.placement)),
+    (o) =>
+      o.id !== containerId && rectsOverlap(candidate, imageCanvasRect(o, o.placement)),
   );
   if (overlaps) {
     placement = placementAtRight(p, scale, containerId);

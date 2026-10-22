@@ -24,7 +24,12 @@ function bigScenario(n: number) {
     now: '2026-09-30T12:00:00.000Z',
     firstLayer: { id: 'L1', name: 'Camada', color: '#D32F2F' },
   });
-  base = addContainer(base, { id: 'I1', file: 'images/a.png', width: 20000, height: 20000 });
+  base = addContainer(base, {
+    id: 'I1',
+    file: 'images/a.png',
+    width: 20000,
+    height: 20000,
+  });
   for (let i = 0; i < n; i++) {
     base = createMarking(base, {
       id: `M${i}`,

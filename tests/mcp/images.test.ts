@@ -447,7 +447,7 @@ describe('container (sem arquivo)', () => {
     const r = await call<{ error: { code: string; message: string } }>(
       'get_container_file',
       {
-        ref: imageRef(IDS.blank),
+        ref: imageRef(IDS.bgContainer),
       },
     );
     expect(errorCode(r)).toBe('container-without-file');
@@ -457,7 +457,7 @@ describe('container (sem arquivo)', () => {
   });
 
   it('get_marking_image: recorte liso com a cor de fundo, no tamanho da marcação', async () => {
-    const r = ok(await crop(IDS.blank));
+    const r = ok(await crop(IDS.bgContainer));
     expect(r.data).toMatchObject({
       mode: 'crop',
       width: PARENT.width,
@@ -478,25 +478,25 @@ describe('container (sem arquivo)', () => {
   });
 
   it('get_marking_image no modo contexto: a imagem inteira com a marcação contornada', async () => {
-    const r = ok(await crop(IDS.blank, { mode: 'context' }));
+    const r = ok(await crop(IDS.bgContainer, { mode: 'context' }));
     expect(r.data).toMatchObject({ mode: 'context', width: 400, height: 300 });
     expect(pixel(r.raster, 5, 5)).toEqual([0x10, 0x60, 0xa0, 255]);
   });
 
-  it('get_container traz file nulo e background, sem o campo blank', async () => {
+  it('get_container traz file nulo e background, sem o campo bgContainer', async () => {
     const container = await call<{
       file: string | null;
-      blank?: boolean;
+      bgContainer?: boolean;
       background: string;
       exists: boolean;
-    }>('get_container', { ref: imageRef(IDS.blank) });
+    }>('get_container', { ref: imageRef(IDS.bgContainer) });
     expect(container.isError).toBe(false);
     expect(container.data).toMatchObject({
       file: null,
       background: BLANK_BACKGROUND,
       exists: true,
     });
-    expect(container.data.blank).toBeUndefined();
+    expect(container.data.bgContainer).toBeUndefined();
   });
 });
 
@@ -623,7 +623,7 @@ describe('url: servidor HTTP local de imagens', () => {
   });
 
   it('o container também tem url', async () => {
-    const r = ok(await crop(IDS.blank));
+    const r = ok(await crop(IDS.bgContainer));
     expect(r.data.url).toMatch(URL_FORMAT);
     const got = await fetched(r.data.url!);
     expect(Buffer.from(got.bytes).equals(Buffer.from(r.bytes!))).toBe(true);

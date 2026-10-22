@@ -17,7 +17,13 @@ describe('startGesture', () => {
 
   it('desenhar: rascunho no ponto inicial, sem abrir gesto no store', () => {
     const begin = vi.fn(() => true);
-    const started = startGesture(project, 1, at, { kind: 'draw', containerId: 'I1' }, begin);
+    const started = startGesture(
+      project,
+      1,
+      at,
+      { kind: 'draw', containerId: 'I1' },
+      begin,
+    );
     expect(started?.gesture).toMatchObject({ kind: 'draw', startPixel: at });
     expect(started?.draft?.containerId).toBe('I1');
     expect(isStoreGesture(started?.gesture ?? null)).toBe(false);

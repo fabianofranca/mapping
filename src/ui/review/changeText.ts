@@ -64,7 +64,9 @@ export function markingName(names: ReviewNames, id: string): string {
 }
 
 /** Container sem arquivo criada pela proposta (imagem sem arquivo): o nome padrão dela. */
-function backgroundName(record: Record<string, JsonValue> | null | undefined): string | null {
+function backgroundName(
+  record: Record<string, JsonValue> | null | undefined,
+): string | null {
   return record && record.file === null && typeof record.background === 'string'
     ? t('image.containerUntitled')
     : null;

@@ -214,15 +214,15 @@ describe('derivado: marcações desenhadas', () => {
     setShowComponentsOnPhotos(false);
     expect(derived.drawnMarkings.value.size).toBe(0);
 
-    const blank = actions.addBackgroundContainer({
+    const bgContainer = actions.addBackgroundContainer({
       name: null,
       width: 400,
       height: 600,
       background: '#FFFFFF',
     });
-    if (!blank.ok) throw new Error('addBackgroundContainer');
+    if (!bgContainer.ok) throw new Error('addBackgroundContainer');
     const created = actions.addComponent({
-      containerId: blank.value,
+      containerId: bgContainer.value,
       parentId: null,
       specId: SPEC_ID,
       typeId: 'text',
@@ -276,15 +276,15 @@ describe('derivado: marcações desenhadas', () => {
 
   it('no container o componente aparece mesmo com a opção de fotos desligada', () => {
     const { derived, actions, ui, store } = setup();
-    const blank = actions.addBackgroundContainer({
+    const bgContainer = actions.addBackgroundContainer({
       name: null,
       width: 400,
       height: 600,
       background: '#FFFFFF',
     });
-    if (!blank.ok) throw new Error('addBackgroundContainer');
+    if (!bgContainer.ok) throw new Error('addBackgroundContainer');
     const created = actions.addComponent({
-      containerId: blank.value,
+      containerId: bgContainer.value,
       parentId: null,
       specId: SPEC_ID,
       typeId: 'row',

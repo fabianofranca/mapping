@@ -37,7 +37,7 @@ interface ContainerData {
   width: number;
   height: number;
   exists: boolean;
-  blank?: boolean;
+  bgContainer?: boolean;
   warnings?: { code: string; tool: string; message: string }[];
 }
 
@@ -70,7 +70,7 @@ async function newProject(): Promise<{ name: string; dir: string }> {
 const plan = async (project: string, operations: unknown[]) =>
   ok(await mcp.call<Plan>('plan_changes', { project, operations }));
 
-const warningOps = (data: { warnings?: { code: string; op: number }[] }) =>
+const warningOps = (data: { warnings?: Record<string, unknown>[] }) =>
   (data.warnings ?? []).map((w) => [w.op, w.code]);
 
 describe('add_container: com arquivo e com fundo', () => {
@@ -157,7 +157,7 @@ describe('add_container: com arquivo e com fundo', () => {
       width: 320,
       height: 200,
     });
-    expect(box.blank).toBeUndefined();
+    expect(box.bgContainer).toBeUndefined();
     const file = await mcp.call('get_container_file', { ref: photoRef });
     expect(file.isError).toBe(false);
     expect(errorOf(await mcp.call('get_container_file', { ref: boxRef })).code).toBe(

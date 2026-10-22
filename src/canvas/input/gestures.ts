@@ -111,7 +111,10 @@ export function startGesture(
     const startPixel = canvasToImagePixel(image.placement, startCanvas);
     return {
       gesture: { kind: 'draw', pointerId, image, startPixel },
-      draft: { containerId: image.id, rect: rectFromPoints(startPixel, startPixel, image) },
+      draft: {
+        containerId: image.id,
+        rect: rectFromPoints(startPixel, startPixel, image),
+      },
     };
   }
 

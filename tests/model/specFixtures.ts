@@ -116,7 +116,12 @@ function typed(
  */
 export function cadastroProject(): Project {
   let p = specProject();
-  p = addContainer(p, { id: 'I1', file: 'images/cadastro.png', width: 1000, height: 2000 });
+  p = addContainer(p, {
+    id: 'I1',
+    file: 'images/cadastro.png',
+    width: 1000,
+    height: 2000,
+  });
   const rect = (x: number, y: number, width: number, height: number) => ({
     x,
     y,

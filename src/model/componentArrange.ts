@@ -294,7 +294,9 @@ export function arrangeMarking(
     const isRoot = id === markingId;
     const outer =
       marking.parentId === null
-        ? imagePixelRect(index.containers.get(marking.containerId) ?? { width: 0, height: 0 })
+        ? imagePixelRect(
+            index.containers.get(marking.containerId) ?? { width: 0, height: 0 },
+          )
         : isRoot
           ? (index.markings.get(marking.parentId) as Marking).rect
           : (rects.get(marking.parentId) as Rect);

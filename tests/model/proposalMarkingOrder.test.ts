@@ -33,7 +33,9 @@ function withSiblings(): Project {
 }
 
 const order = (p: Project, imageId: string) =>
-  p.markings.filter((m) => m.containerId === imageId && m.parentId === null).map((m) => m.id);
+  p.markings
+    .filter((m) => m.containerId === imageId && m.parentId === null)
+    .map((m) => m.id);
 
 describe('proposta: ordem entre marcações irmãs', () => {
   it('reordenar gera position só em quem sai da ordem relativa', () => {

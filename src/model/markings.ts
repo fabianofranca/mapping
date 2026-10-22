@@ -36,7 +36,10 @@ function checkRectShape(rect: Rect, options?: RectOptions): void {
 }
 
 /** Área onde a marcação pode ficar: o `rect` do pai ou a imagem inteira. */
-function containerOf(p: Project, marking: Pick<Marking, 'containerId' | 'parentId'>): Rect {
+function containerOf(
+  p: Project,
+  marking: Pick<Marking, 'containerId' | 'parentId'>,
+): Rect {
   if (marking.parentId !== null) return findById(p.markings, marking.parentId).rect;
   return imagePixelRect(findById(p.containers, marking.containerId));
 }

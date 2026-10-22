@@ -26,7 +26,12 @@ export function emptyProject(): Project {
 export function sampleProject(): Project {
   let p = emptyProject();
   p = addLayer(p, { id: 'L2', name: 'Vidros', color: '#1E88E5' });
-  p = addContainer(p, { id: 'I1', file: 'images/lateral.jpg', width: 4000, height: 3000 });
+  p = addContainer(p, {
+    id: 'I1',
+    file: 'images/lateral.jpg',
+    width: 4000,
+    height: 3000,
+  });
   p = addContainer(p, { id: 'I2', file: 'images/frente.jpg', width: 1000, height: 1000 });
   p = createMarking(p, {
     id: 'M1',

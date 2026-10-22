@@ -98,7 +98,7 @@ export const IDS = {
   bomb: containerId('8'),
   escape: containerId('9'),
   // Container (sem arquivo): não está em IMAGE_FILES.
-  blank: containerId('d'),
+  bgContainer: containerId('d'),
   // As marcações de cada imagem trocam o primeiro caractere do id da imagem (códigos distintos).
   parent: (image: string) => `a${image.slice(1)}`,
   childA: (image: string) => `b${image.slice(1)}`,
@@ -145,7 +145,7 @@ function imageProject(): Project {
     p = addContainer(p, { id: IDS[key], file: IMAGE_FILES[key], ...sizes[key] });
   }
   p = addBackgroundContainer(p, {
-    id: IDS.blank,
+    id: IDS.bgContainer,
     width: IMAGE_SIZE.width,
     height: IMAGE_SIZE.height,
     background: BLANK_BACKGROUND,
@@ -164,7 +164,7 @@ function imageProject(): Project {
     'missing',
     'text',
     'bomb',
-    'blank',
+    'bgContainer',
   ] as const) {
     const image = IDS[key];
     p = createMarking(p, named(IDS.parent(image), image, PARENT, 'Formulário'));

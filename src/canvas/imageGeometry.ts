@@ -32,7 +32,10 @@ function opposite(corner: Corner): Corner {
 }
 
 /** Imagem sob o ponto (a última da lista, que é desenhada por cima). */
-export function imageAt(images: readonly ProjectContainer[], p: Point): ProjectContainer | null {
+export function imageAt(
+  images: readonly ProjectContainer[],
+  p: Point,
+): ProjectContainer | null {
   for (let i = images.length - 1; i >= 0; i--) {
     const image = images[i];
     if (image && pointInRect(p, imageCanvasRect(image, image.placement))) return image;

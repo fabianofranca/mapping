@@ -2,7 +2,11 @@ import Konva from 'konva/lib/Core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ImageRenderer } from '../../../src/canvas/renderers/images';
 import { t } from '../../../src/i18n';
-import { addBackgroundContainer, removeContainer, renameContainer } from '../../../src/model';
+import {
+  addBackgroundContainer,
+  removeContainer,
+  renameContainer,
+} from '../../../src/model';
 import { canvasProject, editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
 
 beforeAll(installFakeCanvas);

@@ -102,12 +102,20 @@ describe('actions do container', () => {
     const { store, actions } = ctx;
     const before = current(store);
     expect(
-      actions.addBackgroundContainer({ name: null, width: 0, height: 640, background: '#FFFFFF' })
-        .ok,
+      actions.addBackgroundContainer({
+        name: null,
+        width: 0,
+        height: 640,
+        background: '#FFFFFF',
+      }).ok,
     ).toBe(false);
     expect(
-      actions.addBackgroundContainer({ name: null, width: 100, height: 100, background: 'branco' })
-        .ok,
+      actions.addBackgroundContainer({
+        name: null,
+        width: 100,
+        height: 100,
+        background: 'branco',
+      }).ok,
     ).toBe(false);
     expect(current(store)).toBe(before);
     expect(store.canUndo.value).toBe(false);
@@ -123,9 +131,9 @@ describe('actions do container', () => {
     });
     if (!created.ok) throw new Error('addBackgroundContainer');
     const id = created.value;
-    expect(actions.setBackgroundContainer(id, { background: '#000000', width: 400 }).ok).toBe(
-      true,
-    );
+    expect(
+      actions.setBackgroundContainer(id, { background: '#000000', width: 400 }).ok,
+    ).toBe(true);
     expect(current(store).containers.find((i) => i.id === id)).toMatchObject({
       background: '#000000',
       width: 400,

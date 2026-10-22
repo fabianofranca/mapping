@@ -126,7 +126,12 @@ describe('componentPlacement: sem container', () => {
 
   it('nem o mínimo cabe na imagem: rect-out-of-image', () => {
     let p = componentProject();
-    p = addContainer(p, { id: 'I2', file: 'images/minuscula.png', width: 50, height: 50 });
+    p = addContainer(p, {
+      id: 'I2',
+      file: 'images/minuscula.png',
+      width: 50,
+      height: 50,
+    });
     expect(() =>
       componentPlacement(
         p,

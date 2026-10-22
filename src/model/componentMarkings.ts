@@ -162,13 +162,17 @@ function slotArea(
 export function componentPlacement(
   p: Project,
   catalog: ComponentCatalog,
-  args: Pick<NewComponentArgs, 'containerId' | 'parentId' | 'specId' | 'typeId' | 'center'>,
+  args: Pick<
+    NewComponentArgs,
+    'containerId' | 'parentId' | 'specId' | 'typeId' | 'center'
+  >,
   measure: TextMeasurer,
 ): Rect {
   const { component } = resolveType(p, catalog, args.specId, args.typeId);
   const image = findById(p.containers, args.containerId);
   const parent = args.parentId === null ? null : findById(p.markings, args.parentId);
-  if (parent !== null && parent.containerId !== image.id) fail('invalid-parent', parent.id);
+  if (parent !== null && parent.containerId !== image.id)
+    fail('invalid-parent', parent.id);
 
   const slot = parent === null ? null : slotArea(p, catalog, parent.id, measure);
   const area = slot?.area ?? imagePixelRect(image);

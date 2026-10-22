@@ -247,7 +247,9 @@ describe('OverlayRenderer', () => {
     render({ draft: { containerId: 'I1', rect: { x: 10, y: 10, width: 2, height: 2 } } });
     expect(overlay.draftRect.visible()).toBe(true);
     expect(overlay.draftRect.stroke()).toBe(TOKENS.invalid);
-    render({ draft: { containerId: 'I1', rect: { x: 10, y: 10, width: 80, height: 60 } } });
+    render({
+      draft: { containerId: 'I1', rect: { x: 10, y: 10, width: 80, height: 60 } },
+    });
     expect(overlay.draftRect.stroke()).toBe(TOKENS.select);
     expect(overlay.draftRect.dash()).toEqual([6, 4]);
     render();

@@ -137,7 +137,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       file: model.ImageFile,
       options?: model.ReplaceContainerOptions,
     ) => store.apply((p) => model.replaceContainer(p, containerId, file, options)),
-    removeContainer: (containerId: string) => store.apply((p) => model.removeContainer(p, containerId)),
+    removeContainer: (containerId: string) =>
+      store.apply((p) => model.removeContainer(p, containerId)),
     /** Container sem arquivo: imagem sem arquivo, com tamanho e cor de fundo. */
     addBackgroundContainer: (args: {
       readonly name: string | null;
@@ -146,8 +147,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly background: string;
       readonly center?: Point;
     }) => create((id) => (p) => model.addBackgroundContainer(p, { ...args, id })),
-    setBackgroundContainer: (containerId: string, patch: model.BackgroundContainerChanges) =>
-      store.apply((p) => model.setBackgroundContainer(p, containerId, patch)),
+    setBackgroundContainer: (
+      containerId: string,
+      patch: model.BackgroundContainerChanges,
+    ) => store.apply((p) => model.setBackgroundContainer(p, containerId, patch)),
 
     // Gestos: prévias sem histórico e uma única entrada no fim (ver `ProjectStore`).
     beginGesture: () => store.beginGesture(),
@@ -175,7 +178,11 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     createMarking: (containerId: string, rect: Rect, name?: string | null) =>
       create(
         (id) => (p) =>
-          model.createMarking(p, { id, containerId: containerId, rect, name }, rectOptions(p, id)),
+          model.createMarking(
+            p,
+            { id, containerId: containerId, rect, name },
+            rectOptions(p, id),
+          ),
       ),
     renameMarking: (markingId: string, name: string | null) =>
       store.apply((p) => model.renameMarking(p, markingId, name)),

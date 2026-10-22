@@ -19,7 +19,11 @@ function withSiblings(): Project {
     ['S3', 200],
     ['S4', 300],
   ] as const) {
-    p = createMarking(p, { id, containerId: 'I1', rect: { x, y: 0, width: 50, height: 50 } });
+    p = createMarking(p, {
+      id,
+      containerId: 'I1',
+      rect: { x, y: 0, width: 50, height: 50 },
+    });
   }
   return p;
 }

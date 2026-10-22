@@ -63,7 +63,9 @@ const CONTAINER_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
 
 /** Erro de editar o container sem arquivo (tamanho e cor de fundo). */
 export function containerErrorMessage(code: StoreErrorCode): string {
-  return t(CONTAINER_ERRORS[code] ?? 'container.error.generic', { max: MAX_CONTAINER_SIZE });
+  return t(CONTAINER_ERRORS[code] ?? 'container.error.generic', {
+    max: MAX_CONTAINER_SIZE,
+  });
 }
 
 export function markingErrorMessage(code: StoreErrorCode): string {

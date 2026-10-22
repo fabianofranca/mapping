@@ -99,7 +99,7 @@ import {
 import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
-import { KIND_NAMES, KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
+import { KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
 import { MODEL_ERROR_MESSAGES } from './modelErrors';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
