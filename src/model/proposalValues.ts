@@ -74,7 +74,6 @@ export function annotationValue(a: Annotation): JsonValue {
     markingId: a.markingId,
     layerId: a.layerId,
     name: a.name,
-    inherit: a.inherit,
     parentAnnotationId: a.parentAnnotationId,
     type: a.type,
     values: a.values,
@@ -107,7 +106,7 @@ export const COMPARED_FIELDS = {
     'source',
   ],
   marking: ['name', 'rect', 'parentId', 'containerId', 'locked', 'source'],
-  annotation: ['name', 'inherit', 'parentAnnotationId', 'markingId', 'layerId'],
+  annotation: ['name', 'parentAnnotationId', 'markingId', 'layerId'],
   layer: ['name', 'color', 'spec'],
 } as const;
 
@@ -182,8 +181,6 @@ export function annotationField(a: Annotation, field: string): JsonValue | undef
   switch (field) {
     case 'name':
       return a.name;
-    case 'inherit':
-      return a.inherit;
     case 'parentAnnotationId':
       return a.parentAnnotationId;
     case 'markingId':

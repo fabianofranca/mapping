@@ -105,7 +105,7 @@ describe('MarkingRenderer', () => {
     expect(node(renderer, 'M2').group.opacity()).toBe(TOKENS.opacity.dimmed);
   });
 
-  it('uma bolinha por camada; depois de quatro, "+N"; vazada se só herdada', () => {
+  it('uma bolinha por camada; depois de quatro, "+N"', () => {
     const { renderer, render, editor } = setup();
     render();
     const m1 = node(renderer, 'M1');
@@ -117,12 +117,11 @@ describe('MarkingRenderer', () => {
     if (!layer) throw new Error('fixture');
     const dots: LayerDot[] = Array.from({ length: 6 }, (_, i) => ({
       layer: { ...layer, id: `L${i}` },
-      inheritedOnly: i === 0,
     }));
     render({ dots: new Map([['M1', dots]]) });
     expect(m1.dots.filter((d) => d.visible())).toHaveLength(4);
-    expect(m1.dots[0]?.fill()).toBe(TOKENS.halo);
-    expect(m1.dots[0]?.stroke()).toBe('#E53935');
+    expect(m1.dots[0]?.fill()).toBe('#E53935');
+    expect(m1.dots[0]?.stroke()).toBe(TOKENS.halo);
     expect(m1.more.visible()).toBe(true);
     expect(m1.more.text()).toBe('+2');
     expect(m1.more.getAttrs()).toMatchObject({

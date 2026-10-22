@@ -60,7 +60,7 @@ test('container com um componente da Biblioteca, sem desenho gravado', async ({
 
   // O mapping.json guarda a marcação e a anotação, nada do desenho.
   const { mapping } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(12);
+  expect(mapping.schemaVersion).toBe(13);
   expect(mapping.containers).toHaveLength(1);
   expect(mapping.containers[0]).toMatchObject({ file: null, background: '#FFFFFF' });
   expect(mapping.markings).toHaveLength(1);

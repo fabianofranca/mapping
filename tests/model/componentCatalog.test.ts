@@ -191,26 +191,6 @@ describe('markingComponent e componentMinSize', () => {
     expect(markingComponent(p, testCatalog(), 'M1')?.annotation.id).toBe('A2');
   });
 
-  it('anotação herdada de um pai não desenha a filha', () => {
-    let p = withMarking();
-    p = createMarking(p, {
-      id: 'M2',
-      containerId: 'I1',
-      rect: { x: 20, y: 20, width: 100, height: 40 },
-    });
-    p = addTypedAnnotation(p, {
-      id: 'A1',
-      markingId: 'M1',
-      layerId: 'LS1',
-      type: { specId: SPEC_ID, typeId: 'text' },
-    });
-    p = {
-      ...p,
-      annotations: p.annotations.map((a) => ({ ...a, inherit: true })),
-    };
-    expect(markingComponent(p, testCatalog(), 'M2')).toBeNull();
-  });
-
   it('versão do catálogo diferente da aplicada, ou catálogo vazio: marcação comum', () => {
     let p = withMarking();
     p = addTypedAnnotation(p, {

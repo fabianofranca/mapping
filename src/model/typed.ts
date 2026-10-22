@@ -167,7 +167,6 @@ export function addTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Pr
     markingId: args.markingId,
     layerId: args.layerId,
     name: normalizeOptionalName(args.name ?? null),
-    inherit: false,
     parentAnnotationId: ownerId,
     type: { specId: args.type.specId, typeId: args.type.typeId },
     values: defaultValues(resolved.type),
@@ -379,7 +378,7 @@ export function typedValuesToPairs(
 
 /**
  * Versão livre da anotação tipada: pares a partir dos valores, `name` vazio
- * preenchido com o rótulo da instância ou o nome do tipo; vínculo e `inherit` mantidos.
+ * preenchido com o rótulo da instância ou o nome do tipo; vínculo mantido.
  */
 export function freeVersionOf(
   p: Project,

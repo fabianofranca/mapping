@@ -23,7 +23,7 @@ import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
-import { Button, Choice, IconButton, Select } from './controls';
+import { Button, IconButton, Select } from './controls';
 import { KeyValueGrid } from './KeyValueGrid';
 import { annotationLabel } from './labels';
 import { Property, PropertyGrid } from './PropertyGrid';
@@ -285,20 +285,6 @@ export function AnnotationEditor({
           )}
 
           <PropertyGrid>
-            <Property
-              label={t('annotation.inheritLabel')}
-              mark={ext?.mark(annotation.id, 'inherit')}
-              below={ext?.below(annotation.id, 'inherit')}
-            >
-              <Choice
-                label={t('annotation.inherit')}
-                checked={annotation.inherit}
-                disabled={readOnly}
-                onChange={(e) =>
-                  actions.setAnnotationInherit(annotation.id, e.currentTarget.checked)
-                }
-              />
-            </Property>
             <Property
               label={t('annotation.owner')}
               for={ownerId}

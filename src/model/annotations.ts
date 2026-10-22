@@ -58,7 +58,6 @@ export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
     markingId: args.markingId,
     layerId: args.layerId,
     name: normalizeOptionalName(args.name ?? null),
-    inherit: false,
     parentAnnotationId: null,
     type: null,
     values: null,

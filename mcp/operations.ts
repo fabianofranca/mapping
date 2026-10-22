@@ -440,7 +440,9 @@ export const operationSchema = z.discriminatedUnion('op', [
     inherit: z
       .boolean()
       .optional()
-      .describe('`true`: a anotação vale também para as marcações descendentes.'),
+      .describe(
+        'Antigo, ignorado (a herança de anotações saiu do formato na v13): aceito com aviso por uma versão.',
+      ),
   }),
   z.object({
     op: z.literal('update_annotation'),
@@ -451,7 +453,10 @@ export const operationSchema = z.discriminatedUnion('op', [
       .optional()
       .describe('Só os campos informados mudam (veja `values` em create_annotation).'),
     owner,
-    inherit: z.boolean().optional(),
+    inherit: z
+      .boolean()
+      .optional()
+      .describe('Antigo, ignorado (veja create_annotation).'),
   }),
   z.object({
     op: z.literal('delete_annotation'),

@@ -1,12 +1,10 @@
 import { fail } from './errors';
-import { ancestorsOf } from './hierarchy';
 import { findById, updateById } from './project';
 import { projectIndex } from './projectIndex';
 import { isAllowedOwner, typeOfAnnotation } from './specLookup';
 import type { Annotation, Project } from './types';
 
-// Herança (marcação → descendentes) e vínculos (anotação → anotação dona).
-// A herança nunca é materializada no JSON: é sempre calculada aqui.
+// Vínculos (anotação → anotação dona).
 
 /** Anotações vinculadas diretamente à dona, na ordem do array. */
 function directLinked(p: Project, annotationId: string): Annotation[] {
@@ -43,19 +41,6 @@ export function annotationWithLinked(p: Project, annotationId: string): Set<stri
 }
 
 /**
- * Anotações herdadas pela marcação: as `inherit: true` de todos os ancestrais
- * (seguindo `parentId`), da raiz até o pai; dentro de cada ancestral, na ordem do array.
- */
-export function getInheritedAnnotations(p: Project, markingId: string): Annotation[] {
-  findById(p.markings, markingId);
-  const ancestors = ancestorsOf(p, markingId).reverse();
-  const byMarking = projectIndex(p).annotationsByMarking;
-  return ancestors.flatMap((ancestor) =>
-    (byMarking.get(ancestor.id) ?? []).filter((a) => a.inherit),
-  );
-}
-
-/**
  * Donas possíveis para a anotação: mesma marcação, outra camada e sem ciclo
  * (a anotação e suas vinculadas ficam de fora). Anotação tipada: só donas cujo
  * tipo a liste em `allowedChildren`.
@@ -70,17 +55,6 @@ export function validAnnotationOwners(p: Project, annotationId: string): Annotat
       !descendants.has(a.id) &&
       (type === null || isAllowedOwner(p, type, a)),
   );
-}
-
-export function setAnnotationInherit(
-  p: Project,
-  annotationId: string,
-  inherit: boolean,
-): Project {
-  return {
-    ...p,
-    annotations: updateById(p.annotations, annotationId, (a) => ({ ...a, inherit })),
-  };
 }
 
 /** Define (ou, com `null`, remove) a dona da anotação, respeitando os invariantes. */

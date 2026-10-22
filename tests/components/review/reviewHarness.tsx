@@ -83,7 +83,7 @@ export function PanelWithShortcuts() {
   const dialogs = { current: null, show() {}, close() {} } as unknown as EditorDialogs;
   const commands = { exportProject: async () => {} } as unknown as ProjectCommands;
   useEditorShortcuts(dialogs, commands);
-  return <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />;
+  return <ReviewPanel onGoToAnnotation={() => {}} />;
 }
 
 /** Abre a proposta `P1`, seleciona o nível e monta os Detalhes da revisão com os atalhos. */

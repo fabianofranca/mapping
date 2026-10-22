@@ -397,18 +397,15 @@ function updateIndicators(
       dot.visible(false);
       return;
     }
-    // Só por herança: bolinha vazada (contorno na cor da camada).
-    const item = layers[i];
-    const hollow = item?.inheritedOnly ?? false;
-    const color = item?.layer.color ?? tokens.line;
+    const color = layers[i]?.layer.color ?? tokens.line;
     dot.setAttrs({
       visible: true,
       x: x0 + i * step,
       y: cy,
-      radius: hollow ? radius - 0.5 / zoom : radius,
-      fill: hollow ? tokens.halo : color,
-      stroke: hollow ? color : tokens.halo,
-      strokeWidth: (hollow ? 2 : 1) / zoom,
+      radius,
+      fill: color,
+      stroke: tokens.halo,
+      strokeWidth: 1 / zoom,
     });
   });
   const extra = layers.length - MAX_DOTS;

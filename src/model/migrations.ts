@@ -211,6 +211,61 @@ export const migrateFrom11To12: Migration = (data) => {
   };
 };
 
+/** Uma anotação que tinha `inherit: true` e perdeu a herança na migração para o schema 13. */
+export interface DiscardedInherit {
+  readonly annotationId: string;
+  readonly markingId: string;
+  /** Nome da marcação, quando ela tem e o JSON a traz (a app mostra o id sem nome). */
+  readonly markingName: string | null;
+}
+
+/**
+ * As anotações com `inherit: true` de um JSON v12 ou anterior, na ordem do array: o que a
+ * migração v12 → v13 deixa de herdar (a herança saiu do formato; a anotação continua na
+ * própria marcação). Lê o JSON cru, sem validar; sem `annotations` válido, lista vazia.
+ */
+export function discardedOnMigrationTo13(
+  data: Record<string, unknown>,
+): readonly DiscardedInherit[] {
+  if (!Array.isArray(data.annotations)) return [];
+  const names = new Map<string, string | null>();
+  if (Array.isArray(data.markings)) {
+    for (const m of data.markings as unknown[]) {
+      if (isObject(m) && typeof m.id === 'string') {
+        names.set(m.id, typeof m.name === 'string' && m.name !== '' ? m.name : null);
+      }
+    }
+  }
+  return (data.annotations as unknown[]).flatMap((a) =>
+    isObject(a) &&
+    a.inherit === true &&
+    typeof a.id === 'string' &&
+    typeof a.markingId === 'string'
+      ? [
+          {
+            annotationId: a.id,
+            markingId: a.markingId,
+            markingName: names.get(a.markingId) ?? null,
+          },
+        ]
+      : [],
+  );
+}
+
+/**
+ * v12 → v13 (sem herança): a anotação perde `inherit` ("vale para todos os descendentes da
+ * marcação"). Nenhuma anotação é apagada; cada uma continua na própria marcação. Quais tinham
+ * a herança ligada vai para o Diagnóstico (`discardedOnMigrationTo13`).
+ */
+export const migrateFrom12To13: Migration = (data) => ({
+  ...data,
+  annotations: mapItems(data.annotations, (a) => {
+    const { inherit, ...annotation } = a;
+    void inherit;
+    return annotation;
+  }),
+});
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -224,6 +279,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [9, migrateFrom9To10],
   [10, migrateFrom10To11],
   [11, migrateFrom11To12],
+  [12, migrateFrom12To13],
 ]);
 
 export type MigrationResult =

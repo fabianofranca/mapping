@@ -51,7 +51,6 @@ const PAGE_STEP = 20;
 /** Campos da anotação que o painel mostra (uma parte de criação ou remoção leva marcador). */
 function isAnnotationPanelField(field: string): boolean {
   return (
-    field === 'inherit' ||
     field === 'parentAnnotationId' ||
     field.startsWith(VALUES_FIELD_PREFIX) ||
     field.startsWith(ENTRIES_FIELD_PREFIX)

@@ -31,7 +31,6 @@ function renderMarking(markingId: string, project: Project = cadastroProject()) 
         image={image}
         readOnly={false}
         onDelete={() => undefined}
-        onSelectMarking={() => undefined}
         onGoToAnnotation={(a) => goToAnnotation(harness.ui, a)}
       />
     );
@@ -374,7 +373,6 @@ describe('Detalhes — escolher e ir até o alvo (F2)', () => {
           image={image}
           readOnly={false}
           onDelete={() => undefined}
-          onSelectMarking={() => undefined}
           onGoToAnnotation={(a) => goToAnnotation(harness.ui, a)}
         />
       );

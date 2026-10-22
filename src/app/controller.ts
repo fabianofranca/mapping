@@ -11,6 +11,7 @@ import {
   migrations,
   serialize,
   SCHEMA_VERSION,
+  type DiscardedInherit,
   type DiscardedUrlTemplate,
   type Project,
   type RepairRecord,
@@ -154,6 +155,8 @@ async function openLoaded(
     readonly migratedFrom: number | null;
     /** `urlTemplate` que a migração para o schema 11 descartou; vão para o Diagnóstico. */
     readonly discardedUrlTemplates?: readonly DiscardedUrlTemplate[];
+    /** Anotações que perderam a herança na migração para o schema 13; vão para o Diagnóstico. */
+    readonly discardedInherit?: readonly DiscardedInherit[];
     readonly repaired?: readonly RepairRecord[];
     /** Problemas do pacote da biblioteca (Diagnóstico); sem o campo, a sessão começa sem. */
     readonly libraryIssues?: LibraryIssues;
@@ -161,6 +164,7 @@ async function openLoaded(
 ): Promise<AppResult> {
   const { localId } = target;
   reportDiscardedUrlTemplates(loaded.discardedUrlTemplates ?? []);
+  reportDiscardedInherit(loaded.discardedInherit ?? []);
   const meta = localId ? await localLibrary()?.get(localId) : undefined;
   const { storage, folderId } = target.bind
     ? await target.bind(project)
@@ -229,6 +233,21 @@ function reportDiscardedUrlTemplates(discarded: readonly DiscardedUrlTemplate[])
   );
 }
 
+/**
+ * Registra no Diagnóstico o que a migração para o schema 13 deixou de herdar: a anotação não
+ * vale mais para as marcações descendentes. Uma entrada só, com a quantidade e as marcações.
+ */
+function reportDiscardedInherit(discarded: readonly DiscardedInherit[]): void {
+  if (discarded.length === 0) return;
+  const markings = [...new Set(discarded.map((d) => d.markingName ?? d.markingId))].join(
+    ', ',
+  );
+  reportError(
+    'open.migration',
+    t('migration.v13.discardedInherit', { count: discarded.length, markings }),
+  );
+}
+
 /** Uma linha por reparo, para o Diagnóstico (ex.: `made-root marking MN "Nome" (missing-parent)`). */
 function describeRepairs(records: readonly RepairRecord[]): string {
   return records
@@ -253,6 +272,7 @@ async function openRepaired(target: OpenTarget, { repair, text }: InconsistentLo
     text,
     migratedFrom: repair.migratedFrom ?? SCHEMA_VERSION,
     discardedUrlTemplates: repair.discardedUrlTemplates,
+    discardedInherit: repair.discardedInherit,
     repaired: repair.repaired,
     libraryIssues: await loadLibraryIssues(target.storage, repair.project),
   });

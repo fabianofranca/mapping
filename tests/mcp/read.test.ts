@@ -49,7 +49,6 @@ interface AnnotationData {
   title: string;
   layer: { id: string; name: string };
   marking?: string;
-  inherit: boolean;
   owner: string | null;
   linked?: string[];
   type?: { specId: string; typeId: string; name: string | null };
@@ -82,7 +81,6 @@ interface MarkingData {
   layers: {
     layer: { id: string; name: string };
     annotations: AnnotationData[];
-    inherited?: { from: string; annotation: AnnotationData }[];
   }[];
   linkTree?: { ref: string; title: string; layer: string; linked?: unknown[] }[];
   incompleteAnnotations: number;
@@ -158,7 +156,7 @@ describe('list_projects e descoberta', () => {
     expect(cadastro).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
-      schemaVersion: 12,
+      schemaVersion: 13,
       revision: 0,
       counts: { containers: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
@@ -249,7 +247,7 @@ describe('get_project', () => {
       }),
     ]);
     const legado = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legado).toMatchObject({ schemaVersion: 12, revision: 0, migratedFrom: 5 });
+    expect(legado).toMatchObject({ schemaVersion: 13, revision: 0, migratedFrom: 5 });
   });
 
   it('ler nunca regrava o mapping.json (nem o de schema antigo)', () => {
@@ -442,29 +440,6 @@ describe('get_marking', () => {
     ]);
   });
 
-  it('mostra as anotações herdadas, com a marcação de origem', async () => {
-    const data = ok(
-      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MN', 'Nome') }),
-    );
-    const model = data.layers.find((l) => l.layer.name === 'Model')!;
-    expect(model.annotations).toEqual([]);
-    expect(model.inherited).toEqual([
-      {
-        from: markingRef('MF', 'Formulário'),
-        annotation: expect.objectContaining({
-          kind: 'free',
-          name: 'User',
-          entries: [
-            { id: ws.ids.EN, key: 'name', value: 'string' },
-            { id: ws.ids.EA, key: 'age', value: 'number' },
-          ],
-        }),
-      },
-    ]);
-    // Só a camada com anotação própria ou herdada aparece.
-    expect(data.layers.map((l) => l.layer.name)).toEqual(['Model', 'Componentes']);
-  });
-
   it('resolve as referências de saída do Nome e os backlinks da User', async () => {
     const nome = ok(
       await mcp.call<MarkingData>('get_marking', { ref: markingRef('MN', 'Nome') }),
@@ -573,7 +548,6 @@ describe('get_annotation, get_container e resolve', () => {
     expect(data).toMatchObject({
       kind: 'free',
       name: 'User',
-      inherit: true,
       layer: { name: 'Model' },
     });
     expect(data.entries?.map((e) => e.key)).toEqual(['name', 'age']);
@@ -852,7 +826,7 @@ describe('create_project', () => {
       name: 'loja',
       path: 'novos/loja',
       projectName: 'Loja',
-      schemaVersion: 12,
+      schemaVersion: 13,
       revision: 0,
       counts: { containers: 0, markings: 0, annotations: 0, layers: 1 },
     });

@@ -361,12 +361,12 @@ mescle nada.
 - Documentação: `docs/FORMAT.md` ("Campos da v13" começa pela remoção; "Como um agente lê" perde o passo das herdadas; "Campos da v2 e v3" vira histórico), `docs/PROPOSAL-FORMAT.md`, `docs/MCP.md`, `docs/AGENT-GUIDE.md`, `docs/ARCHITECTURE.md`. O guia e o exemplo não usam herança: só a versão do zip muda (`npm run build:example`, `npm run build:guia`).
 - Testes: `tests/model/schemaV13.test.ts` (novo: a migração apaga `inherit` e lista as anotações que o tinham ligado), fixtures de `tests/model/`, `tests/store/`, `tests/components/` e `tests/mcp/` sem `inherit` (Haiku), `tests/i18n`, `tests/theme`.
 
-- [ ] Schema v13 aberto: `inherit` fora de `Annotation`, do zod e da serialização; migração v12 → v13 com backup, apagando o campo e devolvendo as anotações que o tinham ligado; o Diagnóstico registra quantas eram e em que marcações; teste
-- [ ] Modelo e derivado sem herança: `getInheritedAnnotations`, `LayerInherited`, `setAnnotationInherit` e `inheritedOnly` removidos; `layerDotsByMarking` e `markingVisibility` só com anotações próprias; testes ajustados
-- [ ] Interface sem herança: a caixa do editor, as seções "herdadas" dos Detalhes e da Lista, as bolinhas esmaecidas da Árvore e do canvas, os tokens e as chaves i18n só delas; `tests/i18n` e `tests/theme` verdes
-- [ ] Propostas e MCP: `inherit` fora da comparação; proposta antiga com `inherit` lida com o campo ignorado e aviso (`PROPOSAL_FORMAT_VERSION` 3; a 2 continua lida); `inherit` nas operações aceito com aviso e ignorado; testes por stdio
-- [ ] Documentação sem herança; zip do exemplo e guia regenerados em v13 e conferidos pelos testes
-- [ ] `grep -rn "inherit" src mcp tests docs/*.md` só encontra o `inherit` do CSS (`font: inherit`), a migração e a aceitação com aviso
+- [x] Schema v13 aberto: `inherit` fora de `Annotation`, do zod e da serialização; migração v12 → v13 com backup, apagando o campo e devolvendo as anotações que o tinham ligado; o Diagnóstico registra quantas eram e em que marcações; teste
+- [x] Modelo e derivado sem herança: `getInheritedAnnotations`, `LayerInherited`, `setAnnotationInherit` e `inheritedOnly` removidos; `layerDotsByMarking` e `markingVisibility` só com anotações próprias; testes ajustados
+- [x] Interface sem herança: a caixa do editor, as seções "herdadas" dos Detalhes e da Lista, as bolinhas esmaecidas da Árvore e do canvas, os tokens e as chaves i18n só delas; `tests/i18n` e `tests/theme` verdes
+- [x] Propostas e MCP: `inherit` fora da comparação; proposta antiga com `inherit` lida com o campo ignorado e aviso (`PROPOSAL_FORMAT_VERSION` 3; a 2 continua lida); `inherit` nas operações aceito com aviso e ignorado; testes por stdio
+- [x] Documentação sem herança; zip do exemplo e guia regenerados em v13 e conferidos pelos testes
+- [x] `grep -rn "inherit" src mcp tests docs/*.md` só encontra o `inherit` do CSS (`font: inherit`), a migração e a aceitação com aviso
 
 **Aceite:** um projeto v12 com anotações herdadas abre, migra para v13 com backup e mostra no Diagnóstico quais anotações tinham herança; cada anotação continua na própria marcação; o editor não oferece mais a caixa; a Árvore e a Lista não mostram herdadas; uma proposta antiga com `inherit` ainda aplica, com aviso; gates verdes.
 

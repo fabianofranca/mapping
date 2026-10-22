@@ -40,7 +40,7 @@ export interface DetailsExtension {
   /**
    * O que acompanha o campo `field` da entidade `entityId` (o marcador), ou `null`. Os
    * campos são os de `Change.field` (`name`, `rect`, `parentId`, `file`, `markingColor`,
-   * `inherit`, `parentAnnotationId`, `markingId`, `layerId`, `type`, `values.<chave>`,
+   * `parentAnnotationId`, `markingId`, `layerId`, `type`, `values.<chave>`,
    * `entries.<id>`); `''` é a entidade inteira (o cabeçalho da anotação).
    */
   readonly mark: (entityId: string, field: string) => ComponentChildren;

@@ -97,7 +97,6 @@ export const annotationSchema = z
     markingId: id,
     layerId: id,
     name: z.string().nullable(),
-    inherit: z.boolean(),
     parentAnnotationId: id.nullable(),
     type: z.object({ specId: id, typeId: id }).nullable(),
     values: z.record(z.string(), jsonValue).nullable(),

@@ -1,42 +1,28 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
-import type { Annotation, Layer, ListedMarking, Marking, Project } from '../model';
+import type { Annotation, Layer, ListedMarking, Project } from '../model';
 import { toggleLayerVisible, type Selection } from '../store/ui';
 import { AnnotationLines, AnnotationTitle, IssueBadge } from './AnnotationSummary';
 import { Choice } from './controls';
 import { useEditor } from './EditorContext';
-import { imageLabel, markingLabel, markingPath } from './labels';
+import { imageLabel, markingLabel } from './labels';
 import { annotationDisplayName } from './typedText';
 
 interface ListViewProps {
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }
 
-/** Uma linha da tabela: uma anotação (própria ou herdada) de uma marcação. */
+/** Uma linha da tabela: uma anotação de uma marcação. */
 type ListRow =
   | { readonly kind: 'own'; readonly layer: Layer; readonly annotation: Annotation }
-  | {
-      readonly kind: 'inherited';
-      readonly layer: Layer;
-      readonly annotation: Annotation;
-      readonly source: Marking;
-    }
   /** Marcação sem anotação nas camadas visíveis (só com "mostrar sem anotação"). */
   | { readonly kind: 'empty' };
 
-/** Linhas da marcação: próprias primeiro, herdadas depois, na ordem das camadas. */
-function rowsOf({ sections, inherited }: ListedMarking): readonly ListRow[] {
+/** Linhas da marcação, na ordem das camadas. */
+function rowsOf({ sections }: ListedMarking): readonly ListRow[] {
   const rows: ListRow[] = [
     ...sections.flatMap(({ layer, annotations }) =>
       annotations.map((annotation): ListRow => ({ kind: 'own', layer, annotation })),
-    ),
-    ...inherited.flatMap(({ layer, items }) =>
-      items.map(({ annotation, source }): ListRow => ({
-        kind: 'inherited',
-        layer,
-        annotation,
-        source,
-      })),
     ),
   ];
   return rows.length > 0 ? rows : [{ kind: 'empty' }];
@@ -62,23 +48,18 @@ function AnnotationCell({
   const owner = a.parentAnnotationId
     ? project.annotations.find((other) => other.id === a.parentAnnotationId)
     : undefined;
-  // Herdada sempre mostra o título; própria sem nome mostra só o selo de pendência.
-  const named = a.type !== null || a.name !== null || row.kind === 'inherited';
+  // Sem nome nem tipo, mostra só o selo de pendência.
+  const named = a.type !== null || a.name !== null;
   return (
     <>
       {named ? (
         <AnnotationTitle project={project} annotation={a} class="list-annotation-name" />
       ) : (
-        row.kind === 'own' && <IssueBadge project={project} annotation={a} />
+        <IssueBadge project={project} annotation={a} />
       )}
-      {row.kind === 'own' && owner && (
+      {owner && (
         <span class="muted list-linked">
           {t('annotation.linkedTo', { name: annotationDisplayName(project, owner) })}
-        </span>
-      )}
-      {row.kind === 'inherited' && (
-        <span class="muted list-linked">
-          {t('annotation.inheritedFrom', { name: markingPath(project, row.source) })}
         </span>
       )}
     </>
@@ -222,23 +203,15 @@ export function ListView({ onSelect }: ListViewProps) {
                             <AnnotationCell project={project} row={row} />
                           </td>
                           <td
-                            class={
-                              row.kind === 'inherited'
-                                ? 'list-cell list-cell-content list-inherited'
-                                : 'list-cell list-cell-content'
-                            }
+                            class="list-cell list-cell-content"
                             data-label={t('list.col.content')}
                           >
-                            {(row.kind === 'own' ||
-                              row.annotation.type !== null ||
-                              row.annotation.name !== null) && (
-                              <AnnotationLines
-                                project={project}
-                                annotation={row.annotation}
-                                lineClass="list-entry"
-                                keyClass="list-key"
-                              />
-                            )}
+                            <AnnotationLines
+                              project={project}
+                              annotation={row.annotation}
+                              lineClass="list-entry"
+                              keyClass="list-key"
+                            />
                           </td>
                         </>
                       )}

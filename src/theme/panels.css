@@ -195,10 +195,6 @@ button.tree-toggle:hover {
   border-radius: var(--radius-full);
 }
 
-.tree-dot-inherited {
-  opacity: var(--opacity-inherited);
-}
-
 .layer-chip-name {
   min-width: 0;
   overflow: hidden;
@@ -646,32 +642,6 @@ button.tree-toggle:hover {
   cursor: pointer;
 }
 
-.inherited {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  font-style: italic;
-  color: var(--color-text-muted);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-.inherited-heading {
-  margin: 0;
-  font: var(--t-text-small);
-}
-
-.inherited-item {
-  display: flex;
-  flex-direction: column;
-  overflow-wrap: anywhere;
-}
-
-.inherited-source {
-  font: var(--t-text-small);
-}
-
 .display-mode {
   display: flex;
   flex-direction: column;
@@ -680,11 +650,6 @@ button.tree-toggle:hover {
   padding: var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-}
-
-.list-inherited {
-  font-style: italic;
-  opacity: var(--opacity-inherited);
 }
 
 .list-linked {

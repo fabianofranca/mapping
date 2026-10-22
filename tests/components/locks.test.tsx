@@ -44,7 +44,6 @@ function renderMarkingPanel(
         image={image}
         readOnly={readOnly}
         onDelete={onDelete}
-        onSelectMarking={() => undefined}
         onGoToAnnotation={() => undefined}
       />
     );

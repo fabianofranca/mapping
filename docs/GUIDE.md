@@ -6,7 +6,7 @@ A app traz um **guia interativo** (uma página à parte, `guia/`) e um **projeto
 
 | Peça                         | Onde                                      | Como entra na app                                                                                                                                                             |
 | ---------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Projeto de exemplo (a fonte) | `examples/exemplo-completo/`              | Uma pasta de projeto comum: `mapping.json` (schema v12), `images/`, `specs/` (SDUI, Modelo de dados e o pacote Material 3) e `proposals/` com uma proposta aberta.            |
+| Projeto de exemplo (a fonte) | `examples/exemplo-completo/`              | Uma pasta de projeto comum: `mapping.json` (schema v13), `images/`, `specs/` (SDUI, Modelo de dados e o pacote Material 3) e `proposals/` com uma proposta aberta.            |
 | Zip do exemplo               | `examples/exemplo-completo.zip`           | Gerado da pasta (`npm run build:example`). A app o embute como data URI (`src/app/exampleProject.ts`, `?inline`) e o entrega ao mesmo `importZip` do **Abrir zip**.           |
 | Guia                         | `public/guia/index.html`                  | Gerado do template `scripts/guia/template.html` e do `mapping.json` do exemplo (`npm run build:guia`). O Vite o copia para `dist/guia/`, ao lado do `dist/index.html` único.  |
 | Pontos de entrada            | Tela inicial, **Ajuda**, botão do exemplo | Link **Guia interativo** na lateral da tela inicial e primeira seção da **Ajuda** (os dois abrem outra aba, `rel="noopener noreferrer"`); botão **Abrir projeto de exemplo**. |
@@ -49,7 +49,7 @@ O mesmo que o **Abrir zip** (é o mesmo `importZip`): uma cópia nova do projeto
 
 ## Testes
 
-- `tests/examples/exampleProject.test.ts`: o zip tem o conteúdo da pasta; abre pelo leitor de zip da app; schema v12 sem migração; 4 imagens, 31 marcações, 41 anotações, 8 camadas e 3 especializações; toda anotação tipada usa um tipo declarado; o pacote Material 3 valida; as cópias de `specs/` batem com as fontes; a proposta é válida e aceitar tudo dá um projeto válido.
+- `tests/examples/exampleProject.test.ts`: o zip tem o conteúdo da pasta; abre pelo leitor de zip da app; schema v13 sem migração; 4 imagens, 31 marcações, 41 anotações, 8 camadas e 3 especializações; toda anotação tipada usa um tipo declarado; o pacote Material 3 valida; as cópias de `specs/` batem com as fontes; a proposta é válida e aceitar tudo dá um projeto válido.
 - `tests/examples/guia.test.ts`: `public/guia/index.html` em dia, CSP, nada de fora, CSS só com tokens, atalhos da app, dados do exemplo.
 - `tests/app/serviceWorker.test.ts`, `tests/e2e/cspServiceWorker.spec.ts`: o guia no cache e offline (principal e preview).
 - `tests/e2e/guia.spec.ts`: a página carrega sem erro de console nem violação da CSP, o **Próximo** percorre os 12 passos, os links da tela inicial e da Ajuda, o exemplo abre com a proposta para revisar.

@@ -24,7 +24,6 @@ import {
   renameMarking,
   replaceContainer,
   serializeProposal,
-  setAnnotationInherit,
   setAnnotationParent,
   setFieldValue,
   setImageLocked,
@@ -204,7 +203,7 @@ describe('cálculo das mudanças: imagens', () => {
 });
 
 describe('cálculo das mudanças: anotações', () => {
-  it('criação, nome, herança, dona e remoção com as vinculadas', () => {
+  it('criação, nome, dona e remoção com as vinculadas', () => {
     const base = sampleProject();
     let after = addAnnotation(base, {
       id: 'A9',
@@ -213,7 +212,6 @@ describe('cálculo das mudanças: anotações', () => {
       entries: [{ id: 'E9', key: 'cor', value: 'azul' }],
     });
     after = renameAnnotation(after, 'A3', 'Trinco');
-    after = setAnnotationInherit(after, 'A1', true);
     after = setAnnotationParent(after, 'A2', 'A1');
     const p = propose(base, after);
     expect(changeOf(p, 'annotation', 'A9')).toMatchObject({
@@ -223,7 +221,6 @@ describe('cálculo das mudanças: anotações', () => {
       to: { id: 'A9', entries: [{ id: 'E9', key: 'cor', value: 'azul' }] },
     });
     expect(changeOf(p, 'annotation', 'A3', 'name').to).toBe('Trinco');
-    expect(changeOf(p, 'annotation', 'A1', 'inherit').to).toBe(true);
     expect(changeOf(p, 'annotation', 'A2', 'parentAnnotationId')).toMatchObject({
       from: null,
       to: 'A1',
@@ -397,7 +394,7 @@ describe('proposta', () => {
     });
     expect(p).toMatchObject({
       format: 'mapping-proposal',
-      formatVersion: 2,
+      formatVersion: 3,
       id: 'P1',
       title: 'Checkout a partir do Figma',
       createdAt: AT,

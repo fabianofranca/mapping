@@ -51,14 +51,14 @@ describe('migração v9 → v10 (container)', () => {
     const result = load(v9Text(p));
     expect(result.migratedFrom).toBe(9);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(12);
+    expect(result.project.schemaVersion).toBe(13);
     expect(result.project.containers.every((i) => i.background === null)).toBe(true);
     expect(result.project).toEqual(p);
   });
 
   it('grava v10 e a releitura é estável', () => {
     const saved = serialize(load(v9Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(12);
+    expect(JSON.parse(saved).schemaVersion).toBe(13);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
@@ -101,7 +101,7 @@ describe('schema v10', () => {
   });
 
   it('o projeto novo e a imagem com arquivo têm `background: null`', () => {
-    expect(emptyProject().schemaVersion).toBe(12);
+    expect(emptyProject().schemaVersion).toBe(13);
     expect(sampleProject().containers.every((i) => i.background === null)).toBe(true);
   });
 

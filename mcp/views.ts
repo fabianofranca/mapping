@@ -158,7 +158,6 @@ export function annotationView(
     title: annotationShortLabel(p, annotation),
     layer: layer ? { id: layer.id, name: layer.name } : { id: annotation.layerId },
     ...(options.withMarking ? { marking: refs.ref('m', annotation.markingId) } : {}),
-    inherit: annotation.inherit,
     owner:
       annotation.parentAnnotationId === null
         ? null
@@ -224,19 +223,9 @@ export async function markingView(
   const ancestors = ancestorsOf(p, marking.id).reverse();
   const lockState = markingLockStates(p).get(marking.id) ?? null;
 
-  const inheritedBy = new Map<string, { source: Marking; annotation: Annotation }[]>();
-  for (const source of ancestors) {
-    for (const annotation of index.annotationsByMarking.get(source.id) ?? []) {
-      if (!annotation.inherit) continue;
-      const list = inheritedBy.get(annotation.layerId) ?? [];
-      list.push({ source, annotation });
-      inheritedBy.set(annotation.layerId, list);
-    }
-  }
-  const shown = [...own, ...[...inheritedBy.values()].flat().map((i) => i.annotation)];
   const codes = new Map<string, Json | null>(
     await Promise.all(
-      shown.map(async (a) => [a.id, await annotationCode(ctx, a, platform)] as const),
+      own.map(async (a) => [a.id, await annotationCode(ctx, a, platform)] as const),
     ),
   );
   const view = (a: Annotation) =>
@@ -245,22 +234,8 @@ export async function markingView(
     });
   const layers = p.layers.flatMap((layer) => {
     const mine = own.filter((a) => a.layerId === layer.id);
-    const inherited = inheritedBy.get(layer.id) ?? [];
-    if (mine.length === 0 && inherited.length === 0) return [];
-    return [
-      {
-        layer: { id: layer.id, name: layer.name },
-        annotations: mine.map(view),
-        ...(inherited.length > 0
-          ? {
-              inherited: inherited.map((i) => ({
-                from: refs.ref('m', i.source.id),
-                annotation: view(i.annotation),
-              })),
-            }
-          : {}),
-      },
-    ];
+    if (mine.length === 0) return [];
+    return [{ layer: { id: layer.id, name: layer.name }, annotations: mine.map(view) }];
   });
 
   const issues = projectIssues(p);
