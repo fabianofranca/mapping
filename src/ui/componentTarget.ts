@@ -96,7 +96,8 @@ export function componentTarget(
   });
 
   if (options.floating === true) return onCanvas();
-  if (selected) {
+  // ME4: a seta selecionada não é destino de componente (UI): cai no centro da vista.
+  if (selected && selected.kind !== 'arrow') {
     if (selected.image) return inContainer(selected.image);
     return onCanvas();
   }

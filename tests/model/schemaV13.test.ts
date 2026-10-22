@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
+  createArrow,
   deserialize,
   discardedOnMigrationTo13,
   migrateFrom12To13,
   migrations,
   serialize,
+  setArrowRoute,
 } from '../../src/model';
 import { marking, sampleProject } from './fixtures';
 
 // Schema v13 (etapa Marcações espaciais). ME0: a anotação perde `inherit` ("vale para todos os
 // descendentes da marcação"); a migração v12 → v13 apaga o campo e não remove nenhuma anotação.
+// ME4: o projeto ganha a coleção `arrows` (setas); a migração grava `arrows: []` e nunca cria
+// uma seta, e um v13 gravado antes das setas abre com `[]`.
 // ME1: a marcação ganha `floating` e `containerId` nulo (marcação do canvas, `rect` em unidades
 // do canvas, `x`/`y` negativos), o container ganha `parentId`; a migração grava `floating:
 // false` e `parentId: null` sem assentar, e um v13 gravado antes desses campos abre como está.
@@ -28,6 +32,8 @@ function v12Raw(): Raw {
   const data = JSON.parse(serialize(sampleProject())) as Raw;
   const inherit: Record<string, boolean> = { A1: true, A2: false, A3: true, A4: false };
   data.schemaVersion = 12;
+  // Um v12 não tinha a coleção de setas.
+  delete data.arrows;
   data.annotations = data.annotations.map((a: Raw) => ({
     ...a,
     inherit: inherit[a.id] ?? false,
@@ -323,5 +329,148 @@ describe('v13 cru com `inherit` extra', () => {
     expect(result.discardedInherit).toEqual([]);
     for (const a of result.project.annotations) expect(a).not.toHaveProperty('inherit');
     expect(serialize(result.project)).not.toContain('"inherit"');
+  });
+});
+
+describe('setas (ME4)', () => {
+  type Mutable = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  /** O sampleProject com duas setas, uma delas com rota. */
+  function withArrows() {
+    let p = createArrow(sampleProject(), {
+      id: 'R1',
+      from: 'M1',
+      to: 'M4',
+      style: 'elbow',
+      name: 'abre',
+      fromSide: 'bottom',
+    });
+    p = createArrow(p, { id: 'R2', from: 'M2', to: 'M3' });
+    return setArrowRoute(p, 'R2', [{ x: 1250, y: 1500.5 }]);
+  }
+
+  it('a migração v12 → v13 grava `arrows: []` e nunca cria seta', () => {
+    const raw = v12Raw();
+    expect(raw).not.toHaveProperty('arrows');
+    const out = migrateFrom12To13(raw, { specs: new Map() }) as Raw;
+    expect(out.arrows).toEqual([]);
+    const result = load(JSON.stringify(raw));
+    expect(result.migratedFrom).toBe(12);
+    expect(result.project.arrows).toEqual([]);
+    expect(JSON.parse(serialize(result.project)).arrows).toEqual([]);
+  });
+
+  it('a migração preserva as setas que já existem (um v13 reaberto)', () => {
+    const arrows = [{ id: 'R1', from: 'M1', to: 'M2' }];
+    expect(migrateFrom12To13({ arrows }).arrows).toBe(arrows);
+  });
+
+  it('um v13 sem `arrows` (anterior às setas) abre com [], sem migrar', () => {
+    const data = JSON.parse(serialize(sampleProject())) as Raw;
+    delete data.arrows;
+    const result = load(JSON.stringify(data));
+    expect(result.migratedFrom).toBeNull();
+    expect(result.project.arrows).toEqual([]);
+    expect(result.project).toEqual(sampleProject());
+    // A próxima gravação já traz a coleção.
+    expect(JSON.parse(serialize(result.project)).arrows).toEqual([]);
+  });
+
+  it('serializa as setas na ordem fixa, entre as marcações e as anotações, e a releitura é estável', () => {
+    const p = withArrows();
+    const text = serialize(p);
+    const data = JSON.parse(text) as Raw;
+    const keys = Object.keys(data);
+    expect(keys.indexOf('arrows')).toBe(keys.indexOf('markings') + 1);
+    expect(keys.indexOf('annotations')).toBe(keys.indexOf('arrows') + 1);
+    expect(Object.keys(data.arrows[0])).toEqual([
+      'id',
+      'from',
+      'to',
+      'fromSide',
+      'toSide',
+      'points',
+      'style',
+      'name',
+      'locked',
+    ]);
+    expect(data.arrows[0]).toMatchObject({
+      id: 'R1',
+      fromSide: 'bottom',
+      toSide: null,
+      style: 'elbow',
+      name: 'abre',
+      locked: false,
+      points: [],
+    });
+    expect(data.arrows[1].points).toEqual([{ x: 1250, y: 1500.5 }]);
+    const again = load(text);
+    expect(again.migratedFrom).toBeNull();
+    expect(again.project).toEqual(p);
+    expect(serialize(again.project)).toBe(text);
+  });
+
+  it('os opcionais da seta que faltam entram com o padrão', () => {
+    const data = JSON.parse(serialize(sampleProject())) as Raw;
+    data.arrows = [{ id: 'R1', from: 'M1', to: 'M4' }];
+    const result = load(JSON.stringify(data));
+    expect(result.project.arrows).toEqual([
+      {
+        id: 'R1',
+        from: 'M1',
+        to: 'M4',
+        fromSide: null,
+        toSide: null,
+        points: [],
+        style: 'curve',
+        name: null,
+        locked: false,
+      },
+    ]);
+  });
+
+  it('estilo, lado ou ponto fora do formato são erro de schema', () => {
+    const base = { id: 'R1', from: 'M1', to: 'M4' };
+    const bad: Mutable[] = [
+      { ...base, style: 'zigzag' },
+      { ...base, fromSide: 'middle' },
+      { ...base, toSide: 7 },
+      { ...base, points: [{ x: 1 }] },
+      { ...base, points: [{ x: 'a', y: 2 }] },
+      { ...base, locked: 'sim' },
+      { id: 'R1', from: 'M1' },
+    ];
+    for (const arrow of bad) {
+      const data = JSON.parse(serialize(sampleProject())) as Raw;
+      data.arrows = [arrow];
+      expect(deserialize(JSON.stringify(data), migrations, new Map())).toMatchObject({
+        ok: false,
+        error: { code: 'invalid-schema' },
+      });
+    }
+  });
+
+  it('seta sem ponta é violação de invariante, reparável: a seta e as anotações saem', () => {
+    const data = JSON.parse(serialize(sampleProject())) as Raw;
+    data.arrows = [{ id: 'R1', from: 'M1', to: 'M9' }];
+    data.annotations.push({
+      id: 'AR',
+      markingId: 'R1',
+      layerId: 'L1',
+      name: null,
+      parentAnnotationId: null,
+      type: null,
+      values: null,
+      entries: [],
+    });
+    const result = deserialize(JSON.stringify(data), migrations, new Map());
+    expect(result.ok).toBe(false);
+    if (result.ok || result.error.code !== 'invariant-violation') {
+      throw new Error('esperava invariant-violation');
+    }
+    expect(result.error.issues.map((i) => i.code)).toEqual(['arrow-endpoint-missing']);
+    expect(result.repair?.unrepaired).toEqual([]);
+    expect(result.repair?.project.arrows).toEqual([]);
+    expect(result.repair?.project.annotations.map((a) => a.id)).not.toContain('AR');
   });
 });

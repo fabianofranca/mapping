@@ -24,6 +24,10 @@ export type ModelErrorCode =
   // Espaço da marcação (etapa Marcações espaciais): a flutuante vive só no canvas
   | 'invalid-space'
   | 'invalid-annotation-parent'
+  // Setas (v13, ME4): ligam marcações, nunca outra seta nem container
+  | 'arrow-endpoint'
+  | 'arrow-self'
+  | 'invalid-arrow-route'
   | 'empty-key'
   | 'duplicate-key'
   | 'duplicate-id'

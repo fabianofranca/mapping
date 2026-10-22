@@ -14,8 +14,8 @@ export interface LayerDot {
 }
 
 /**
- * Camadas visíveis com anotação própria em cada marcação, na ordem de `layers`.
- * Marcações sem nenhuma não aparecem no mapa.
+ * Camadas visíveis com anotação própria em cada marcação, na ordem de `layers`. Marcações sem
+ * nenhuma não aparecem no mapa. As setas (v13) entram como as marcações, pelo id delas.
  */
 export function layerDotsByMarking(
   p: Project,
@@ -32,12 +32,12 @@ export function layerDotsByMarking(
   }
 
   const result = new Map<string, LayerDot[]>();
-  for (const m of p.markings) {
-    const ownSet = own.get(m.id);
+  for (const owner of [...p.markings, ...p.arrows]) {
+    const ownSet = own.get(owner.id);
     if (!ownSet) continue;
     const indexes = [...ownSet].sort((a, b) => a - b);
     result.set(
-      m.id,
+      owner.id,
       indexes.map((i) => ({ layer: layers[i] as Layer })),
     );
   }

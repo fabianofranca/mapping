@@ -4,9 +4,11 @@ import {
   adjustMarkingRect,
   canDeleteImage,
   canDeleteMarking,
+  canEditArrow,
   canEditMarkingGeometry,
   canEditImagePlacement,
   canReplaceImage,
+  createArrow,
   createMarking,
   containerDeletionImpact,
   containerLockStates,
@@ -20,6 +22,7 @@ import {
   renameMarking,
   replaceContainer,
   resizeContainer,
+  setArrowLocked,
   setImageLocked,
   setImageMarkingsLocked,
   setMarkingLocked,
@@ -555,5 +558,20 @@ describe('trava: marcação do canvas trava o placement dos containers dentro de
     const p = setMarkingLocked(lockedK(), 'K', false);
     expect(canEditImagePlacement(p, 'I1')).toBe(true);
     expect(codeOf(() => moveContainer(p, 'I1', 0, 5000))).toBeNull();
+  });
+});
+
+describe('trava: seta', () => {
+  const withArrow = () =>
+    createArrow(sampleProject(), { id: 'R1', from: 'M1', to: 'M4' });
+
+  it('a seta nasce destrancada e a trava é só dela', () => {
+    const p = withArrow();
+    expect(canEditArrow(p, 'R1')).toBe(true);
+    expect(canEditArrow(setArrowLocked(p, 'R1', true), 'R1')).toBe(false);
+    // Marcações das pontas trancadas não trancam a seta.
+    const ends = setMarkingLocked(setMarkingLocked(p, 'M1', true), 'M4', true);
+    expect(canEditArrow(ends, 'R1')).toBe(true);
+    expect(codeOf(() => canEditArrow(p, 'R9'))).toBe('not-found');
   });
 });

@@ -1,4 +1,4 @@
-import { settleHierarchy } from './hierarchySettle';
+import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
 import { validateProject, type InvariantCode } from './invariants';
 import { packageDirOf } from './libraryPackage';
 import {
@@ -14,9 +14,11 @@ import { proposalIndex } from './proposalReview';
 import { isRecord } from './refs';
 import type { Spec } from './spec';
 import { fieldOf, findTypeInSpec } from './specLookup';
+import { projectIndex } from './projectIndex';
 import type {
   Annotation,
   AnnotationTypeRef,
+  Arrow,
   Entry,
   ExternalSource,
   JsonValue,
@@ -53,7 +55,13 @@ export interface PatchProblem {
 }
 
 type Entity =
-  ProjectSpecialization | PlatformRepo | Layer | ProjectContainer | Marking | Annotation;
+  | ProjectSpecialization
+  | PlatformRepo
+  | Layer
+  | ProjectContainer
+  | Marking
+  | Arrow
+  | Annotation;
 
 /** Ordem de aplicação: criações e alterações de cima para baixo, remoções de baixo para cima. */
 const UPSERT_PHASE: Record<ChangeEntity, number> = {
@@ -62,18 +70,42 @@ const UPSERT_PHASE: Record<ChangeEntity, number> = {
   layer: 2,
   image: 3,
   marking: 4,
-  annotation: 5,
+  arrow: 5,
+  annotation: 6,
 };
 const REMOVE_PHASE: Record<ChangeEntity, number> = {
-  annotation: 6,
-  marking: 7,
-  image: 8,
-  layer: 9,
-  specialization: 10,
-  platformRepo: 11,
+  annotation: 7,
+  arrow: 8,
+  marking: 9,
+  image: 10,
+  layer: 11,
+  specialization: 12,
+  platformRepo: 13,
 };
 
+/**
+ * A seta de uma criação: o que a proposta traz, com os padrões do formato e `points` sempre
+ * vazio (a rota é só da pessoa e nunca vem de proposta; um `points` no valor é descartado).
+ */
+function decodeArrow(value: JsonValue): Arrow {
+  const v = isRecord(value) ? value : {};
+  const side = (x: JsonValue | undefined): Arrow['fromSide'] =>
+    x === 'top' || x === 'right' || x === 'bottom' || x === 'left' ? x : null;
+  return {
+    id: v.id as string,
+    from: v.from as string,
+    to: v.to as string,
+    fromSide: side(v.fromSide),
+    toSide: side(v.toSide),
+    points: [],
+    style: v.style === 'straight' || v.style === 'elbow' ? v.style : 'curve',
+    name: typeof v.name === 'string' ? v.name : null,
+    locked: v.locked === true,
+  };
+}
+
 function decode(entity: ChangeEntity, value: JsonValue): Entity {
+  if (entity === 'arrow') return decodeArrow(value);
   if (entity === 'specialization' && isRecord(value)) {
     return {
       id: value.id as string,
@@ -154,6 +186,9 @@ function withField(
       if (field === 'spec') return { ...l, spec: to as unknown as LayerSpecRef | null };
       return { ...l, [field]: to };
     }
+    case 'arrow':
+      // A seta só se cria e se remove (nenhum campo dela é proposto): não cabe.
+      return null;
     case 'annotation': {
       const a = current as Annotation;
       if (field === 'type' && isRecord(to)) {
@@ -234,7 +269,8 @@ export interface PatchResult {
  * para o índice proposto (em ordem crescente). O que não pôde ser aplicado volta em
  * `problems` e fica de fora. Mexer em marcação ou container assenta o pertencimento
  * (`settleHierarchy`) antes das posições: o pai sempre sai da geometria, nunca da proposta, e
- * as irmãs são as do espaço e do pai já assentados.
+ * as irmãs são as do espaço e do pai já assentados. A seta criada entra com `points: []`, e a
+ * seta que já existia perde os pontos de passagem se uma ponta troca de espaço.
  */
 export function patchProject(p: Project, changes: readonly Change[]): PatchResult {
   const maps: Record<ChangeEntity, Map<string, Entity>> = {
@@ -243,6 +279,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     layer: new Map(p.layers.map((l) => [l.id, l])),
     image: new Map(p.containers.map((i) => [i.id, i])),
     marking: new Map(p.markings.map((m) => [m.id, m])),
+    arrow: new Map(p.arrows.map((a) => [a.id, a])),
     annotation: new Map(p.annotations.map((a) => [a.id, a])),
   };
   const problems: PatchProblem[] = [];
@@ -287,10 +324,21 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
 
   let markings = [...maps.marking.values()] as Marking[];
   let containers = [...maps.image.values()] as ProjectContainer[];
+  let arrows = [...maps.arrow.values()] as Arrow[];
   if (changes.some((c) => c.entity === 'marking' || c.entity === 'image')) {
-    const settled = settleHierarchy({ ...p, containers, markings });
+    const settled = settleHierarchy({ ...p, containers, markings, arrows });
     markings = [...settled.markings];
     containers = [...settled.containers];
+    arrows = [...settled.arrows];
+    // Uma ponta que trocou de espaço (por `space` da proposta ou pelo assentar) leva a seta
+    // de volta à rota padrão: os `points` ficam no espaço das duas pontas.
+    const before = projectIndex(p).markings;
+    const moved = new Set<string>();
+    for (const m of markings) {
+      const old = before.get(m.id);
+      if (old && old.containerId !== m.containerId) moved.add(m.id);
+    }
+    arrows = [...clearArrowRoutes({ ...p, arrows }, moved).arrows];
   }
   for (const c of [...markingPositions].sort(
     (a, b) => (a.to as number) - (b.to as number),
@@ -309,6 +357,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       layers,
       containers,
       markings,
+      arrows,
       annotations: [...maps.annotation.values()] as Annotation[],
     },
     problems,

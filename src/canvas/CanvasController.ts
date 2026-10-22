@@ -352,6 +352,8 @@ export class CanvasController {
     this.view.measure(); // O canvas pode ter acabado de reaparecer (aba Lista → Canvas).
     const selected = resolveSelection(this.drawnProject.peek(), this.ui.selection.peek());
     if (!selected) return;
+    // ME4: centralizar a seta (canvas)
+    if (selected.kind === 'arrow') return;
     this.view.centerOn(
       selected.kind === 'marking'
         ? markingCanvasRect(selected.space.placement, selected.marking.rect)

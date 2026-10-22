@@ -2,6 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect } from 'preact/hooks';
 import { t } from '../../i18n';
 import {
+  arrowContainerId,
   changeImageFile,
   projectIndex,
   proposalImagePath,
@@ -44,10 +45,14 @@ function useComparable(): string | null {
   // O projeto à vista: a marcação que só existe na proposta resolve pela prévia.
   const project = review.derived.shownProject.value;
   if (!p || !selection || !project) return null;
+  const resolved =
+    selection.kind === 'image' ? null : resolveSelection(project, selection);
   const imageId =
     selection.kind === 'image'
       ? selection.id
-      : (resolveSelection(project, selection)?.image?.id ??
+      : ((resolved?.kind === 'arrow'
+          ? arrowContainerId(project, resolved.arrow)
+          : resolved?.image?.id) ??
         p.changes.find((c) => c.markingId === selection.id)?.imageId ??
         null);
   return imageId && replaceChangeOf(p, imageId) ? imageId : null;

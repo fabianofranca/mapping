@@ -122,6 +122,8 @@ export function useEditorShortcuts(
       const project = shown.peek();
       const current = resolveSelection(project, ui.selection.peek());
       if (!project || !current) return;
+      // ME4: caminho da seta (UI) — a seta não tem pai nem filhas a percorrer.
+      if (current.kind === 'arrow') return;
       const index = projectIndex(project);
       let next: Selection = null;
       if (current.kind === 'marking') {
@@ -214,6 +216,7 @@ export function useEditorShortcuts(
           } else if (current?.kind === 'marking') {
             dialogsRef.current.requestDeleteMarking(current.marking);
           }
+          // ME4: excluir a seta selecionada (UI) — a confirmação com as anotações dela.
           return;
         }
         case 'toggle-lock': {
@@ -227,7 +230,9 @@ export function useEditorShortcuts(
             const allLocked = many.every((i) =>
               i.kind === 'image'
                 ? index?.containers.get(i.id)?.locked
-                : index?.markings.get(i.id)?.locked,
+                : i.kind === 'arrow'
+                  ? index?.arrows.get(i.id)?.locked
+                  : index?.markings.get(i.id)?.locked,
             );
             actions.setItemsLocked(many, !allLocked);
             return;
@@ -237,6 +242,8 @@ export function useEditorShortcuts(
             actions.setImageLocked(current.image.id, !current.image.locked);
           } else if (current?.kind === 'marking') {
             actions.setMarkingLocked(current.marking.id, !current.marking.locked);
+          } else if (current?.kind === 'arrow') {
+            actions.setArrowLocked(current.arrow.id, !current.arrow.locked);
           }
           return;
         }

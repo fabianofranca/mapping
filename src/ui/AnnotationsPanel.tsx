@@ -461,7 +461,9 @@ function IssuesNotice({
             <button
               type="button"
               class="issue-link"
-              onClick={() => goToAnnotation(ui, annotation, issueFocusKey(issue))}
+              onClick={() =>
+                goToAnnotation(ui, annotation, issueFocusKey(issue), project)
+              }
             >
               <span class="layer-dot" aria-hidden="true" />
               {t('issue.item', {

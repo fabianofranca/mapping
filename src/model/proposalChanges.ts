@@ -11,6 +11,7 @@ import {
   COMPARED_FIELDS,
   annotationField,
   annotationValue,
+  arrowValue,
   imageField,
   imageValue,
   jsonEqual,
@@ -182,7 +183,7 @@ function annotationChanges(
 /**
  * Compara o projeto antes e depois das operações e devolve as mudanças, com ids
  * `c1`, `c2`… na ordem: grupo Projeto (especializações, repositórios, camadas), imagens,
- * marcações e anotações; em cada coleção, a ordem de depois e, no fim, as removidas. A
+ * marcações, setas e anotações; em cada coleção, a ordem de depois e, no fim, as removidas. A
  * revisão agrupa por imagem e item (`reviewTree`), então essa ordem só garante que
  * aplicar tudo acrescenta as entidades criadas na mesma ordem do projeto proposto.
  * A ordem dos pares dentro da lista não vira mudança; a das camadas e a das marcações irmãs
@@ -318,6 +319,8 @@ export function computeChanges(base: Project, after: Project): Change[] {
   const afterImages = byId(after.containers);
   const baseMarkings = byId(base.markings);
   const afterMarkings = byId(after.markings);
+  const baseArrows = byId(base.arrows);
+  const afterArrows = byId(after.arrows);
   const baseAnnotations = byId(base.annotations);
   const afterAnnotations = byId(after.annotations);
   const union = <T extends { readonly id: string }>(
@@ -354,11 +357,34 @@ export function computeChanges(base: Project, after: Project): Change[] {
     );
   }
   markingPositions(diff, base, after);
+
+  // A seta aparece na revisão sob a marcação de origem: o container dela (ou o canvas). Criar e
+  // remover são as únicas mudanças (nenhum campo de uma seta que já existe é proposto, e a rota
+  // nunca vem de proposta); a anotação numa seta leva o mesmo container.
+  const containerOfMarking = (markingId: string): string | null =>
+    (afterMarkings.get(markingId) ?? baseMarkings.get(markingId))?.containerId ?? null;
+  const containerOfOwner = (ownerId: string): string | null => {
+    const marking = afterMarkings.get(ownerId) ?? baseMarkings.get(ownerId);
+    if (marking) return marking.containerId;
+    const arrow = afterArrows.get(ownerId) ?? baseArrows.get(ownerId);
+    return arrow ? containerOfMarking(arrow.from) : null;
+  };
+  for (const a of union(after.arrows, base.arrows, afterArrows)) {
+    diff.entity(
+      'arrow',
+      a.id,
+      { imageId: containerOfMarking(a.from), markingId: a.id },
+      baseArrows.get(a.id),
+      afterArrows.get(a.id),
+      arrowValue,
+      COMPARED_FIELDS.arrow,
+      () => undefined,
+    );
+  }
   for (const a of union(after.annotations, base.annotations, afterAnnotations)) {
-    const marking = afterMarkings.get(a.markingId) ?? baseMarkings.get(a.markingId);
     annotationChanges(
       diff,
-      { imageId: marking?.containerId ?? null, markingId: a.markingId },
+      { imageId: containerOfOwner(a.markingId), markingId: a.markingId },
       baseAnnotations.get(a.id),
       afterAnnotations.get(a.id),
     );

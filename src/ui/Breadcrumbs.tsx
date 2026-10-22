@@ -54,6 +54,8 @@ function canvasChain(project: Project, parentId: string | null): Marking[] {
 export function crumbsOf(project: Project | null, selection: Selection): Crumb[] {
   const resolved = resolveSelection(project, selection);
   if (!project || !resolved) return [];
+  // ME4: caminho da seta (UI)
+  if (resolved.kind === 'arrow') return [];
   if (resolved.kind === 'image') {
     return [
       canvasCrumb(),

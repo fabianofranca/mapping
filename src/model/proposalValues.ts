@@ -9,6 +9,7 @@ import { projectIndex } from './projectIndex';
 import { isRecord, parseRefValue } from './refs';
 import type {
   Annotation,
+  Arrow,
   JsonValue,
   Layer,
   Marking,
@@ -69,6 +70,23 @@ export function markingValue(m: Marking): JsonValue {
   });
 }
 
+/**
+ * A seta numa proposta: sem a rota (`points`), que é só da pessoa. Por isso a rota que a pessoa
+ * traçar depois não faz a remoção da seta entrar em conflito, e criar uma seta nunca a traz.
+ */
+export function arrowValue(a: Arrow): JsonValue {
+  return toJson({
+    id: a.id,
+    from: a.from,
+    to: a.to,
+    fromSide: a.fromSide,
+    toSide: a.toSide,
+    style: a.style,
+    name: a.name,
+    locked: a.locked,
+  });
+}
+
 export function annotationValue(a: Annotation): JsonValue {
   return toJson({
     id: a.id,
@@ -111,6 +129,8 @@ export const COMPARED_FIELDS = {
     'source',
   ],
   marking: ['name', 'space', 'rect', 'floating', 'locked', 'source'],
+  // A seta só se cria e se remove: nenhum campo dela é comparado (ver `ARROW_FIELDS`).
+  arrow: [],
   annotation: ['name', 'parentAnnotationId', 'markingId', 'layerId'],
   layer: ['name', 'color', 'spec'],
 } as const;
@@ -262,6 +282,11 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
       if (!m) return undefined;
       return whole ? markingValue(m) : markingField(p, m, c.field ?? '');
     }
+    case 'arrow': {
+      // Só criação e remoção (entidade inteira): não há campo de seta.
+      const a = index.arrows.get(c.entityId);
+      return a && whole ? arrowValue(a) : undefined;
+    }
     case 'annotation': {
       const a = index.annotations.get(c.entityId);
       if (!a) return undefined;
@@ -270,9 +295,13 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
   }
 }
 
-/** Chave de uma entidade (`marking:3f2a…`) nos mapas das propostas. */
+/**
+ * Chave de uma entidade (`marking:3f2a…`) nos mapas das propostas. A seta usa a chave da
+ * marcação: os ids dividem o espaço e a anotação cita a dona (marcação ou seta) pelo mesmo
+ * `markingId`, então criar a seta e anotá-la, ou apagá-la, se ligam como numa marcação.
+ */
 export function entityKey(entity: ChangeEntity, entityId: string): string {
-  return `${entity}:${entityId}`;
+  return `${entity === 'arrow' ? 'marking' : entity}:${entityId}`;
 }
 
 /** Referência de uma mudança a outra entidade. `strong`: as invariantes exigem o alvo. */
@@ -310,6 +339,10 @@ function entityRefs(entity: ChangeEntity, value: JsonValue): ValueRef[] {
   if (entity === 'marking') {
     push(out, 'image', str(field(value, 'containerId')));
     push(out, 'marking', str(field(value, 'parentId')));
+  } else if (entity === 'arrow') {
+    // As duas pontas são marcações que precisam existir (invariante `arrow-endpoint-missing`).
+    push(out, 'marking', str(field(value, 'from')));
+    push(out, 'marking', str(field(value, 'to')));
   } else if (entity === 'annotation') {
     push(out, 'marking', str(field(value, 'markingId')));
     push(out, 'layer', str(field(value, 'layerId')));

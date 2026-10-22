@@ -1,3 +1,4 @@
+import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { fail } from './errors';
 import {
   MIN_MARKING_SIZE,
@@ -422,23 +423,31 @@ export function containerDeletionImpact(
   markings: number;
   /** Quantas das marcações estão trancadas (serão excluídas junto). */
   lockedMarkings: number;
+  /** Anotações que saem: as das marcações do container e as das setas presas a elas. */
   annotations: number;
+  /** Setas presas a alguma marcação do container (como origem ou destino): saem junto. */
+  arrows: number;
   brokenRefs: number;
 } {
   findById(p.containers, containerId);
   const own = p.markings.filter((m) => m.containerId === containerId);
   const ids = new Set(own.map((m) => m.id));
+  const arrowIds = arrowIdsAttachedTo(p, ids);
   return {
     markings: ids.size,
     lockedMarkings: own.filter((m) => m.locked).length,
-    annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
+    annotations: p.annotations.filter(
+      (a) => ids.has(a.markingId) || arrowIds.has(a.markingId),
+    ).length,
+    arrows: arrowIds.size,
     brokenRefs: countBrokenRefs(p, cascadeRemoveImage(p, containerId)),
   };
 }
 
 /**
- * Exclui a imagem com as marcações (trancadas ou não) e anotações dela. Falha só se a própria
- * imagem estiver trancada. As marcações do canvas ficam e o assentar refaz o pertencimento.
+ * Exclui a imagem com as marcações (trancadas ou não), as setas presas a elas e as anotações de
+ * tudo isso. Falha só se a própria imagem estiver trancada. As marcações do canvas ficam e o
+ * assentar refaz o pertencimento.
  */
 export function removeContainer(
   p: Project,
@@ -455,12 +464,15 @@ function cascadeRemoveImage(p: Project, containerId: string): Project {
   const ids = new Set(
     p.markings.filter((m) => m.containerId === containerId).map((m) => m.id),
   );
-  return {
-    ...p,
-    containers: p.containers.filter((i) => i.id !== containerId),
-    markings: p.markings.filter((m) => !ids.has(m.id)),
-    annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
-  };
+  return withoutArrows(
+    {
+      ...p,
+      containers: p.containers.filter((i) => i.id !== containerId),
+      markings: p.markings.filter((m) => !ids.has(m.id)),
+      annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
+    },
+    arrowIdsAttachedTo(p, ids),
+  );
 }
 
 /** `true` se a troca mantém a proporção (diferença ≤ 1%). */
@@ -581,6 +593,23 @@ export function replaceContainer(
     placement = placementAtRight(p, scale, containerId);
   }
 
+  const ownIds = new Set(own.map((m) => m.id));
+  const sx = next.width / image.width;
+  const sy = next.height / image.height;
+  // Seta com as duas pontas neste container: os pontos de passagem estão em pixels dele e
+  // acompanham a imagem nova (a rota sobrevive à troca; com a mesma resolução nada muda).
+  const arrows =
+    sx === 1 && sy === 1
+      ? p.arrows
+      : p.arrows.map((a) =>
+          a.points.length > 0 && ownIds.has(a.from) && ownIds.has(a.to)
+            ? {
+                ...a,
+                points: a.points.map((pt) => ({ x: pt.x * sx, y: pt.y * sy })),
+              }
+            : a,
+        );
+
   const updated: ProjectContainer = {
     id: image.id,
     name: image.name,
@@ -599,6 +628,7 @@ export function replaceContainer(
       ...p,
       containers: p.containers.map((i) => (i.id === containerId ? updated : i)),
       markings: p.markings.map((m) => rescaled.get(m.id) ?? m),
+      arrows,
     },
     options,
   );

@@ -76,6 +76,8 @@ describe('dicionários', () => {
       // Só parâmetros e pontuação (o marcador e o popover dos Detalhes na revisão).
       'review.mark.label',
       'review.pop.title',
+      // Só parâmetros e a seta ("{from} → {to}", o rótulo de uma seta sem nome na revisão).
+      'review.arrow.label',
       // Eixos da posição na revisão de propostas.
       'review.rect.x',
       'review.rect.y',

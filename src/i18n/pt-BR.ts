@@ -340,6 +340,7 @@ export const ptBR = {
   'inconsistent.other': '{problem} ({other})',
   'inconsistent.entity.image': 'Imagem',
   'inconsistent.entity.marking': 'Marcação',
+  'inconsistent.entity.arrow': 'Seta',
   'inconsistent.entity.annotation': 'Anotação',
   'inconsistent.entity.layer': 'Camada',
   'inconsistent.entity.spec': 'Especialização',
@@ -364,6 +365,8 @@ export const ptBR = {
   'invariant.floating-in-container':
     'marcação flutuante dentro de um container ou de outra marcação',
   'invariant.parent-floating': 'pai é uma marcação flutuante',
+  'invariant.arrow-endpoint-missing': 'ponta da seta inexistente (não é uma marcação)',
+  'invariant.arrow-self': 'seta ligada a ela mesma',
   'invariant.missing-parent-annotation': 'anotação dona inexistente',
   'invariant.annotation-parent-other-marking': 'dona em outra marcação',
   'invariant.annotation-parent-same-layer': 'dona na mesma camada',

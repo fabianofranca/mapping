@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addAnnotation,
   addBackgroundContainer,
   createMarking,
   validateProject,
+  type Arrow,
   type Marking,
   type Project,
 } from '../../src/model';
@@ -380,5 +382,93 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     // Bordas esquerda e direita coincidem com as da I1 (0–1000).
     expect(p.containers.find((c) => c.id === 'I1')?.parentId).toBe('K');
     expect(validateProject(p)).toEqual([]);
+  });
+});
+
+// Setas (ME4): liga duas marcações existentes e diferentes; nada mais é invariante.
+describe('invariantes das setas', () => {
+  const arrowOf = (id: string, from: string, to: string): Arrow => ({
+    id,
+    from,
+    to,
+    fromSide: null,
+    toSide: null,
+    points: [],
+    style: 'curve',
+    name: 'Seta',
+    locked: false,
+  });
+  const withArrows = (...arrows: Arrow[]): Project => ({ ...sampleProject(), arrows });
+
+  it('uma seta entre duas marcações existentes, de qualquer container, é válida', () => {
+    expect(validateProject(withArrows(arrowOf('R1', 'M1', 'M4')))).toEqual([]);
+    // Duas setas iguais também.
+    expect(
+      validateProject(withArrows(arrowOf('R1', 'M1', 'M2'), arrowOf('R2', 'M1', 'M2'))),
+    ).toEqual([]);
+  });
+
+  it('ponta inexistente: arrow-endpoint-missing, com o id da ponta e o nome da seta', () => {
+    expect(validateProject(withArrows(arrowOf('R1', 'M9', 'M1')))).toEqual([
+      {
+        code: 'arrow-endpoint-missing',
+        entity: 'arrow',
+        id: 'R1',
+        name: 'Seta',
+        otherId: 'M9',
+      },
+    ]);
+    expect(codes(withArrows(arrowOf('R1', 'M1', 'M9')))).toEqual([
+      'arrow-endpoint-missing:R1',
+    ]);
+    // As duas pontas faltando: um problema por ponta.
+    expect(codes(withArrows(arrowOf('R1', 'M8', 'M9')))).toEqual([
+      'arrow-endpoint-missing:R1',
+      'arrow-endpoint-missing:R1',
+    ]);
+  });
+
+  it('a ponta que é outra seta ou um container não é marcação', () => {
+    expect(
+      codes(withArrows(arrowOf('R1', 'M1', 'M2'), arrowOf('R2', 'R1', 'M1'))),
+    ).toEqual(['arrow-endpoint-missing:R2']);
+    expect(codes(withArrows(arrowOf('R1', 'M1', 'I1')))).toEqual([
+      'arrow-endpoint-missing:R1',
+    ]);
+  });
+
+  it('seta ligada a ela mesma: arrow-self', () => {
+    expect(validateProject(withArrows(arrowOf('R1', 'M1', 'M1')))).toEqual([
+      { code: 'arrow-self', entity: 'arrow', id: 'R1', name: 'Seta', otherId: 'M1' },
+    ]);
+  });
+
+  it('id repetido entre seta e marcação, ou entre duas setas: duplicate-id na seta', () => {
+    expect(codes(withArrows(arrowOf('M2', 'M1', 'M4')))).toEqual(['duplicate-id:M2']);
+    expect(validateProject(withArrows(arrowOf('M2', 'M1', 'M4')))[0]?.entity).toBe(
+      'arrow',
+    );
+    expect(
+      codes(withArrows(arrowOf('R1', 'M1', 'M2'), arrowOf('R1', 'M2', 'M1'))),
+    ).toEqual(['duplicate-id:R1']);
+  });
+
+  it('a anotação de uma seta é válida; a de um id que não é marcação nem seta, não', () => {
+    const p = addAnnotation(withArrows(arrowOf('R1', 'M1', 'M4')), {
+      id: 'AR',
+      markingId: 'R1',
+      layerId: 'L1',
+    });
+    expect(validateProject(p)).toEqual([]);
+    expect(
+      codes({
+        ...p,
+        annotations: p.annotations.map((a) =>
+          a.id === 'AR' ? { ...a, markingId: 'R9' } : a,
+        ),
+      }),
+    ).toEqual(['missing-marking:AR']);
+    // A anotação de uma seta que sai fica sem dona: missing-marking.
+    expect(codes({ ...p, arrows: [] })).toEqual(['missing-marking:AR']);
   });
 });

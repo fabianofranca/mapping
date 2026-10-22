@@ -340,6 +340,7 @@ export const enUS: Dictionary = {
   'inconsistent.other': '{problem} ({other})',
   'inconsistent.entity.image': 'Image',
   'inconsistent.entity.marking': 'Marking',
+  'inconsistent.entity.arrow': 'Arrow',
   'inconsistent.entity.annotation': 'Annotation',
   'inconsistent.entity.layer': 'Layer',
   'inconsistent.entity.spec': 'Specialization',
@@ -363,6 +364,8 @@ export const enUS: Dictionary = {
   'invariant.floating-in-container':
     'floating marking inside a container or another marking',
   'invariant.parent-floating': 'parent is a floating marking',
+  'invariant.arrow-endpoint-missing': 'arrow end does not exist (not a marking)',
+  'invariant.arrow-self': 'arrow connected to itself',
   'invariant.missing-parent-annotation': 'owner annotation does not exist',
   'invariant.annotation-parent-other-marking': 'owner in another marking',
   'invariant.annotation-parent-same-layer': 'owner in the same layer',

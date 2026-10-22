@@ -33,6 +33,7 @@ function text(value: JsonValue | undefined): string {
 /**
  * As criações de uma proposta vistas pelo caminho legível, que não depende dos ids gerados a
  * cada `propose_changes`: imagem pelo nome (ou arquivo); marcação por imagem (ou Canvas) › pai › nome;
+ * seta pelas pontas (origem → destino) e nome;
  * anotação por marcação › camada › tipo › nome; camada pelo nome. Entidades que já existem
  * no projeto entram pelo id (é o mesmo nas duas propostas).
  */
@@ -72,22 +73,27 @@ class Created {
     // Entidade existente (ou ciclo, que uma proposta válida não tem): pelo id.
     if (!c || seen.has(key)) return `#${key}`;
     seen.add(key);
+    // A chave da seta é a da marcação (os ids dividem o espaço): vale a entidade da criação.
+    const kind = c.entity;
     const to = isRecord(c.to) ? c.to : {};
     const ref = (e: ChangeEntity, value: JsonValue | undefined) =>
       typeof value === 'string' && value !== '' ? this.path(e, value, seen) : '-';
     let path: string;
-    if (entity === 'image') {
+    if (kind === 'image') {
       path = `image(${text(to.name) || text(to.file) || `${text(to.background)} ${String(to.width)}x${String(to.height)}`})`;
-    } else if (entity === 'marking') {
+    } else if (kind === 'marking') {
       // Container nulo: a marcação do canvas ("Canvas › pai › nome").
       const space = to.containerId === null ? 'Canvas' : ref('image', to.containerId);
       path = `marking(${space} › ${ref('marking', to.parentId)} › ${text(to.name)})`;
-    } else if (entity === 'annotation') {
+    } else if (kind === 'arrow') {
+      // A seta pelas pontas (origem → destino) e pelo nome, que não dependem do id gerado.
+      path = `arrow(${ref('marking', to.from)} → ${ref('marking', to.to)} › ${text(to.name)})`;
+    } else if (kind === 'annotation') {
       const type = isRecord(to.type)
         ? `${text(to.type.specId)}/${text(to.type.typeId)}`
         : '-';
       path = `annotation(${ref('marking', to.markingId)} › ${ref('layer', to.layerId)} › ${type} › ${text(to.name)})`;
-    } else if (entity === 'layer') {
+    } else if (kind === 'layer') {
       path = `layer(${text(to.name)})`;
     } else {
       path = `#${key}`;

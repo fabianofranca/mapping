@@ -274,7 +274,8 @@ export class OverlayRenderer {
     const selected = resolveSelection(frame.project, frame.selection);
     // Alças só no modo Navegar (em Desenhar, arrastar sempre desenha) e se o item pode mudar.
     const handlesAllowed = !frame.readOnly && frame.mode === 'navigate';
-    if (!selected) {
+    // ME4: seleção da seta (canvas) — por ora a seta selecionada não tem contorno nem alças.
+    if (!selected || selected.kind === 'arrow') {
       this.selectionLock.hide();
       this.selectionOutline.visible(false);
       this.nameTag.visible(false);

@@ -123,14 +123,20 @@ function settleSpace(
  * a flutuante vai sempre para o canvas. Depois recalcula o `parentId` de toda marcação (a
  * menor do mesmo espaço que a contém; empate de área: a que vem antes no array é a de fora)
  * e de todo container (a menor marcação do canvas que contém o retângulo dele), com as
- * flutuantes fora da relação nos dois sentidos. Não muda a ordem dos arrays. Determinística e
- * idempotente: nada a mudar devolve `p` como está (o mesmo objeto).
+ * flutuantes fora da relação nos dois sentidos. Não muda a ordem dos arrays. As setas não
+ * entram na relação; só perdem os `points` quando uma das pontas troca de espaço. Determinística
+ * e idempotente: nada a mudar devolve `p` como está (o mesmo objeto).
  */
 export function settleHierarchy(p: Project, options?: SettleOptions): Project {
   let changed = false;
+  // Marcações que trocaram de espaço: a seta presa a elas perde os pontos de passagem.
+  const movedSpace = new Set<string>();
   const placed = p.markings.map((m) => {
     const next = settleSpace(p, m, options);
-    if (next !== m) changed = true;
+    if (next !== m) {
+      changed = true;
+      if (next.containerId !== m.containerId) movedSpace.add(m.id);
+    }
     return next;
   });
 
@@ -196,7 +202,27 @@ export function settleHierarchy(p: Project, options?: SettleOptions): Project {
     return { ...c, parentId };
   });
 
-  return changed ? { ...p, markings, containers } : p;
+  // Seta (v13): fora da árvore de pertencimento, o assentar a ignora, salvo numa coisa: se uma
+  // ponta mudou de espaço, os `points` (que ficam no espaço das pontas) voltam à rota padrão.
+  return changed ? clearArrowRoutes({ ...p, markings, containers }, movedSpace) : p;
+}
+
+/**
+ * Apaga os pontos de passagem das setas presas a alguma das marcações de `markingIds`, que
+ * trocaram de espaço (decisão (d): os `points` ficam no espaço das duas pontas, e a conversão
+ * da rota não existe; a seta volta ao padrão borda a borda). Sem nada a apagar devolve `p`.
+ */
+export function clearArrowRoutes(p: Project, markingIds: ReadonlySet<string>): Project {
+  if (markingIds.size === 0) return p;
+  let cleared = false;
+  const arrows = p.arrows.map((a) => {
+    if (a.points.length === 0 || !(markingIds.has(a.from) || markingIds.has(a.to))) {
+      return a;
+    }
+    cleared = true;
+    return { ...a, points: [] };
+  });
+  return cleared ? { ...p, arrows } : p;
 }
 
 /** Assenta, a menos que a operação seja uma prévia de gesto (`settle: false`). */

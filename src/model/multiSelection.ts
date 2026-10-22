@@ -1,3 +1,4 @@
+import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { fail } from './errors';
 import { containsRect, imageCanvasRect, rectsOverlap, translateRect } from './geometry';
 import { ancestorsOf, descendantsOf } from './hierarchy';
@@ -5,6 +6,7 @@ import { settleIf, spaceOf, type SettleOptions } from './hierarchySettle';
 import {
   canDeleteImage,
   canDeleteMarking,
+  canEditArrow,
   canEditImagePlacement,
   canEditMarkingGeometry,
   requireUnlocked,
@@ -12,16 +14,20 @@ import {
 import { findById } from './project';
 import { projectIndex } from './projectIndex';
 import { countBrokenRefs } from './refs';
-import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
+import type { Arrow, Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
 // Seleção múltipla (etapa Marcações espaciais, ME2; regras no PLAN.md, "Regras do arrasto
 // conjunto"). Operações puras sobre uma lista de itens: mover junto, selecionar com o
 // conteúdo, excluir e trancar. A interface guarda a seleção como `{ kind, id }`; o modelo só
 // conhece esta forma mínima, sem depender do estado da UI.
 
-/** Um item da seleção: `image` = container (o nome da UI), `marking` = marcação. */
+/**
+ * Um item da seleção: `image` = container (o nome da UI), `marking` = marcação, `arrow` = seta
+ * (v13). A seta entra para excluir e trancar; mover não se aplica a ela (a rota é da pessoa e
+ * acompanha as pontas), então `moveItems` a ignora.
+ */
 export interface ItemRef {
-  readonly kind: 'image' | 'marking';
+  readonly kind: 'image' | 'marking' | 'arrow';
   readonly id: string;
 }
 
@@ -30,6 +36,7 @@ interface ResolvedItems {
   readonly list: readonly ItemRef[];
   readonly markings: ReadonlyMap<string, Marking>;
   readonly containers: ReadonlyMap<string, ProjectContainer>;
+  readonly arrows: ReadonlyMap<string, Arrow>;
 }
 
 function resolveItems(p: Project, items: readonly ItemRef[]): ResolvedItems {
@@ -37,11 +44,16 @@ function resolveItems(p: Project, items: readonly ItemRef[]): ResolvedItems {
   const list: ItemRef[] = [];
   const markings = new Map<string, Marking>();
   const containers = new Map<string, ProjectContainer>();
+  const arrows = new Map<string, Arrow>();
   for (const item of items) {
     if (item.kind === 'image') {
       const container = index.containers.get(item.id);
       if (!container || containers.has(item.id)) continue;
       containers.set(item.id, container);
+    } else if (item.kind === 'arrow') {
+      const arrow = index.arrows.get(item.id);
+      if (!arrow || arrows.has(item.id)) continue;
+      arrows.set(item.id, arrow);
     } else {
       const marking = index.markings.get(item.id);
       if (!marking || markings.has(item.id)) continue;
@@ -49,7 +61,7 @@ function resolveItems(p: Project, items: readonly ItemRef[]): ResolvedItems {
     }
     list.push(item);
   }
-  return { list, markings, containers };
+  return { list, markings, containers, arrows };
 }
 
 // ---------------------------------------------------------------------------
@@ -61,11 +73,13 @@ function resolveItems(p: Project, items: readonly ItemRef[]): ResolvedItems {
  * vai com o container selecionado dela (as coordenadas são relativas a ele) e com uma
  * ancestral selecionada (`moveMarking` dentro do container leva as descendentes). No canvas
  * nada se descarta: mover uma marcação do canvas (flutuante inclusive) não leva nada
- * (decisão 2), então ela sempre se move por conta própria. Ordem: a dos itens.
+ * (decisão 2), então ela sempre se move por conta própria. A seta nunca se move (a rota é da
+ * pessoa e acompanha as pontas). Ordem: a dos itens.
  */
 export function movingItems(p: Project, items: readonly ItemRef[]): ItemRef[] {
   const selected = resolveItems(p, items);
   return selected.list.filter((item) => {
+    if (item.kind === 'arrow') return false;
     if (item.kind === 'image') return true;
     const marking = selected.markings.get(item.id);
     if (!marking || marking.containerId === null) return true;
@@ -76,6 +90,7 @@ export function movingItems(p: Project, items: readonly ItemRef[]): ItemRef[] {
 
 /** A geometria do item pode mudar (trava própria ou herdada dos ancestrais). */
 function canEditItemGeometry(p: Project, item: ItemRef): boolean {
+  if (item.kind === 'arrow') return canEditArrow(p, item.id);
   return item.kind === 'image'
     ? canEditImagePlacement(p, item.id)
     : canEditMarkingGeometry(p, item.id);
@@ -273,18 +288,32 @@ function removedMarkingIds(p: Project, selected: ResolvedItems): Set<string> {
   return ids;
 }
 
+/** Setas que saem: as selecionadas e as presas a qualquer marcação que sai. */
+function removedArrowIds(
+  p: Project,
+  selected: ResolvedItems,
+  markingIds: ReadonlySet<string>,
+): Set<string> {
+  const ids = arrowIdsAttachedTo(p, markingIds);
+  for (const id of selected.arrows.keys()) ids.add(id);
+  return ids;
+}
+
 /** A exclusão em si, sem a trava nem o assentar: também serve para contar o impacto. */
 function cascadeRemoveItems(p: Project, selected: ResolvedItems): Project {
   const markingIds = removedMarkingIds(p, selected);
-  return {
-    ...p,
-    containers:
-      selected.containers.size === 0
-        ? p.containers
-        : p.containers.filter((c) => !selected.containers.has(c.id)),
-    markings: p.markings.filter((m) => !markingIds.has(m.id)),
-    annotations: p.annotations.filter((a) => !markingIds.has(a.markingId)),
-  };
+  return withoutArrows(
+    {
+      ...p,
+      containers:
+        selected.containers.size === 0
+          ? p.containers
+          : p.containers.filter((c) => !selected.containers.has(c.id)),
+      markings: p.markings.filter((m) => !markingIds.has(m.id)),
+      annotations: p.annotations.filter((a) => !markingIds.has(a.markingId)),
+    },
+    removedArrowIds(p, selected, markingIds),
+  );
 }
 
 export interface ItemsDeletionImpact {
@@ -292,7 +321,9 @@ export interface ItemsDeletionImpact {
   readonly markings: number;
   /** Containers selecionados, que saem. */
   readonly containers: number;
-  /** Anotações que saem, as de todas as marcações que saem. */
+  /** Setas que saem: as selecionadas e as presas a qualquer marcação que sai. */
+  readonly arrows: number;
+  /** Anotações que saem, as de todas as marcações e setas que saem. */
   readonly annotations: number;
   /** Das marcações que saem junto (descendentes e as dos containers), quantas estão trancadas. */
   readonly lockedMarkings: number;
@@ -306,7 +337,8 @@ export interface ItemsDeletionImpact {
  * Impacto de excluir a seleção inteira, sem contar nada duas vezes (uma marcação e a filha dela
  * selecionadas, um container e uma marcação dele selecionados). `lockedMarkings` conta só as
  * trancadas que saem junto: uma marcação selecionada e trancada bloqueia a exclusão
- * (`canDeleteItems`) e não entra na conta. Itens inexistentes são ignorados.
+ * (`canDeleteItems`) e não entra na conta. Itens inexistentes são ignorados. As setas presas a
+ * uma marcação que sai entram na conta e levam as anotações delas.
  */
 export function itemsDeletionImpact(
   p: Project,
@@ -314,9 +346,12 @@ export function itemsDeletionImpact(
 ): ItemsDeletionImpact {
   const selected = resolveItems(p, items);
   const removed = removedMarkingIds(p, selected);
+  const arrowIds = removedArrowIds(p, selected, removed);
   const index = projectIndex(p);
   let annotations = 0;
-  for (const a of p.annotations) if (removed.has(a.markingId)) annotations++;
+  for (const a of p.annotations) {
+    if (removed.has(a.markingId) || arrowIds.has(a.markingId)) annotations++;
+  }
   let lockedMarkings = 0;
   let containersStay = 0;
   for (const id of removed) {
@@ -328,6 +363,7 @@ export function itemsDeletionImpact(
   return {
     markings: removed.size,
     containers: selected.containers.size,
+    arrows: arrowIds.size,
     annotations,
     lockedMarkings,
     containersStay,
@@ -338,14 +374,22 @@ export function itemsDeletionImpact(
 /**
  * O item selecionado sai junto com outro item selecionado (e, por isso, a trava própria dele
  * não impede a exclusão): uma marcação de container cujo container está selecionado ou que
- * tem uma ancestral selecionada. Marcações do canvas e containers não levam ninguém.
+ * tem uma ancestral selecionada, e uma seta presa a uma marcação que sai. Marcações do canvas
+ * e containers não levam ninguém.
  */
 function leavesWithSelection(
   p: Project,
   item: ItemRef,
   selected: ResolvedItems,
+  removedMarkings: () => ReadonlySet<string>,
 ): boolean {
   if (item.kind === 'image') return false;
+  if (item.kind === 'arrow') {
+    const arrow = selected.arrows.get(item.id);
+    if (!arrow) return false;
+    const removed = removedMarkings();
+    return removed.has(arrow.from) || removed.has(arrow.to);
+  }
   const marking = selected.markings.get(item.id);
   if (!marking || marking.containerId === null) return false;
   if (selected.containers.has(marking.containerId)) return true;
@@ -356,26 +400,32 @@ function leavesWithSelection(
  * Excluir é permitido: há o que excluir e nenhum item selecionado trancado fica de fora da
  * cascata (a trava de um ancestral é de geometria e não impede; as marcações trancadas que
  * saem junto não bloqueiam, como em `canDeleteMarking`/`canDeleteImage`; uma selecionada e
- * trancada que sai junto com a mãe ou com o container selecionados também não).
+ * trancada que sai junto com a mãe ou com o container selecionados também não; a seta
+ * selecionada e trancada só impede se nenhuma das pontas sai).
  */
 export function canDeleteItems(p: Project, items: readonly ItemRef[]): boolean {
   const selected = resolveItems(p, items);
+  let removed: ReadonlySet<string> | null = null;
+  const removedMarkings = () => (removed ??= removedMarkingIds(p, selected));
   return (
     selected.list.length > 0 &&
     selected.list.every(
       (item) =>
-        leavesWithSelection(p, item, selected) ||
+        leavesWithSelection(p, item, selected, removedMarkings) ||
         (item.kind === 'image'
           ? canDeleteImage(p, item.id)
-          : canDeleteMarking(p, item.id)),
+          : item.kind === 'arrow'
+            ? canEditArrow(p, item.id)
+            : canDeleteMarking(p, item.id)),
     )
   );
 }
 
 /**
  * Exclui a seleção inteira numa operação: as marcações selecionadas (com as descendentes e as
- * anotações, como `removeMarking`) e os containers selecionados (com as marcações e anotações
- * deles, como `removeContainer`). Nunca exclui um container não selecionado: os que estavam
+ * anotações, como `removeMarking`), os containers selecionados (com as marcações e anotações
+ * deles, como `removeContainer`) e as setas selecionadas; toda seta presa a uma marcação que sai
+ * sai junto, com as anotações dela. Nunca exclui um container não selecionado: os que estavam
  * dentro de uma marcação que sai passam ao pai dela, ou a nenhum (o assentar refaz). Algum item
  * selecionado trancado que não sai junto com outro selecionado (`canDeleteItems`) falha com `locked`, sem excluir nada; itens inexistentes são ignorados.
  * Assenta uma vez, no fim (salvo `settle: false`).
@@ -395,7 +445,7 @@ export function removeItems(
 // Trancar
 
 /**
- * Tranca ou destranca todos os itens selecionados (marcações e containers) numa operação.
+ * Tranca ou destranca todos os itens selecionados (marcações, containers e setas) numa operação.
  * Itens inexistentes são ignorados; nada a mudar devolve `p` como está.
  */
 export function setItemsLocked(
@@ -408,7 +458,8 @@ export function setItemsLocked(
   const containerChanges = [...selected.containers.values()].some(
     (c) => c.locked !== locked,
   );
-  if (!markingChanges && !containerChanges) return p;
+  const arrowChanges = [...selected.arrows.values()].some((a) => a.locked !== locked);
+  if (!markingChanges && !containerChanges && !arrowChanges) return p;
   return {
     ...p,
     containers: containerChanges
@@ -421,5 +472,10 @@ export function setItemsLocked(
           selected.markings.has(m.id) && m.locked !== locked ? { ...m, locked } : m,
         )
       : p.markings,
+    arrows: arrowChanges
+      ? p.arrows.map((a) =>
+          selected.arrows.has(a.id) && a.locked !== locked ? { ...a, locked } : a,
+        )
+      : p.arrows,
   };
 }

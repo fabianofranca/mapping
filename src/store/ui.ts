@@ -3,6 +3,7 @@ import {
   projectIndex,
   spaceOf,
   type Annotation,
+  type Arrow,
   type Layer,
   type Marking,
   type Project,
@@ -18,9 +19,10 @@ import {
 export type Selection =
   | { readonly kind: 'image'; readonly id: string }
   | { readonly kind: 'marking'; readonly id: string }
+  | { readonly kind: 'arrow'; readonly id: string }
   | null;
 
-/** Um item da seleção: um container (`image`) ou uma marcação. */
+/** Um item da seleção: um container (`image`), uma marcação ou uma seta (v13). */
 export type SelectionItem = NonNullable<Selection>;
 
 /**
@@ -211,7 +213,11 @@ export function existingItems(
   if (!project) return [];
   const index = projectIndex(project);
   return items.filter((i) =>
-    i.kind === 'image' ? index.containers.has(i.id) : index.markings.has(i.id),
+    i.kind === 'image'
+      ? index.containers.has(i.id)
+      : i.kind === 'arrow'
+        ? index.arrows.has(i.id)
+        : index.markings.has(i.id),
   );
 }
 
@@ -340,13 +346,15 @@ export type AnnotationLocation = Pick<Annotation, 'id' | 'markingId' | 'layerId'
 
 /**
  * Vai até a anotação (backlinks, "Ir para o alvo", vinculadas, pendências): mostra a
- * camada dela, abre as seções recolhidas que a escondem, seleciona a marcação e pede
- * ao painel para rolar até ela (e focar `field`, se houver).
+ * camada dela, abre as seções recolhidas que a escondem, seleciona a marcação (ou a seta, se a
+ * dona é uma seta do `project` dado) e pede ao painel para rolar até ela (e focar `field`, se
+ * houver).
  */
 export function goToAnnotation(
   ui: EditorUi,
   annotation: AnnotationLocation,
   field: string | null = null,
+  project: Project | null = null,
 ): void {
   showLayer(ui, annotation.layerId);
   expandSections(ui, [
@@ -354,7 +362,9 @@ export function goToAnnotation(
     { kind: 'layer', id: annotation.layerId },
     { kind: 'annotation', id: annotation.id },
   ]);
-  ui.selection.value = { kind: 'marking', id: annotation.markingId };
+  const onArrow =
+    project !== null && projectIndex(project).arrows.has(annotation.markingId);
+  ui.selection.value = { kind: onArrow ? 'arrow' : 'marking', id: annotation.markingId };
   ui.focusField.value = field;
   ui.focusAnnotation.value = annotation.id;
 }
@@ -373,6 +383,7 @@ export type ResolvedSelection =
       /** Espaço do `rect`: o container (pixels dele) ou o canvas (`placement` identidade). */
       readonly space: Space;
     }
+  | { readonly kind: 'arrow'; readonly arrow: Arrow }
   | null;
 
 /** Item selecionado no projeto atual (`null` se ele não existe mais, ex.: após desfazer). */
@@ -386,6 +397,10 @@ export function resolveSelection(
     return image ? { kind: 'image', image } : null;
   }
   const index = projectIndex(project);
+  if (selection.kind === 'arrow') {
+    const arrow = index.arrows.get(selection.id);
+    return arrow ? { kind: 'arrow', arrow } : null;
+  }
   const marking = index.markings.get(selection.id);
   if (!marking) return null;
   if (marking.containerId === null) {
@@ -476,8 +491,12 @@ export function revealInTree(
       next.delete(treeKey('canvas', ''));
     }
   } else {
-    const marking = byId.get(selection.id);
+    // A seta aparece sob a marcação de origem (ME4: a Árvore é de outro agente): abre a origem.
+    const arrow = selection.kind === 'arrow' ? index.arrows.get(selection.id) : undefined;
+    if (selection.kind === 'arrow' && !arrow) return false;
+    const marking = byId.get(arrow ? arrow.from : selection.id);
     if (!marking) return false;
+    if (arrow) next.delete(treeKey('marking', marking.id));
     openMarkings(marking.parentId);
     if (marking.containerId === null) {
       next.delete(treeKey('canvas', ''));

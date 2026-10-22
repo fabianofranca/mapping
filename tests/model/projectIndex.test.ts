@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
+  createArrow,
   getBacklinks,
   getProjectIssues,
   projectIndex,
@@ -43,6 +44,25 @@ describe('projectIndex', () => {
     expect(index.children.get('MF')?.map((m) => m.id)).toEqual(['MN', 'MI', 'ME', 'MC']);
     expect(index.types.get(typeKey('sdui', 'button'))?.type.name).toBe('Button');
     expect(index.specLayers.get(typeKey('sdui', 'componentes'))?.id).toBe('componentes');
+  });
+
+  it('indexa as setas por id e sob a origem e o destino, na ordem do array', () => {
+    let q = createArrow(p, { id: 'R1', from: 'MT', to: 'MN' });
+    q = createArrow(q, { id: 'R2', from: 'MN', to: 'MT' });
+    q = createArrow(q, { id: 'R3', from: 'MN', to: 'MF' });
+    const index = projectIndex(q);
+    expect(index.arrows.get('R2')?.to).toBe('MT');
+    expect(index.arrows.size).toBe(3);
+    expect(index.arrowsByMarking.get('MN')?.map((a) => a.id)).toEqual(['R1', 'R2', 'R3']);
+    expect(index.arrowsByMarking.get('MT')?.map((a) => a.id)).toEqual(['R1', 'R2']);
+    expect(index.arrowsByMarking.get('MF')?.map((a) => a.id)).toEqual(['R3']);
+    expect(index.arrowsByMarking.has('MC')).toBe(false);
+    // Sem setas, os mapas existem e estão vazios.
+    expect(projectIndex(p).arrows.size).toBe(0);
+    expect(projectIndex(p).arrowsByMarking.size).toBe(0);
+    // Uma seta de uma marcação a ela mesma (projeto inválido) aparece uma vez só.
+    const self: Project = { ...q, arrows: [{ ...q.arrows[0]!, to: 'MT' }] };
+    expect(projectIndex(self).arrowsByMarking.get('MT')?.length).toBe(1);
   });
 
   it('com ids repetidos, vale o primeiro (como find)', () => {

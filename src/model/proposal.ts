@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   annotationSchema,
+  arrowSchema,
   entrySchema,
   containerSchema,
   jsonValue,
@@ -23,7 +24,8 @@ export const PROPOSAL_FORMAT_VERSION = 3;
 /**
  * Versões lidas: a 3 não tem `inherit` na anotação nem `parentId` comparado na marcação (a
  * mudança de uma proposta antiga é ignorada, com aviso), e traz o nível `canvas`, a mudança
- * composta `space` e `floating`; a 2 acrescenta `add_container` às `operations`; a 1 continua válida.
+ * composta `space` e `floating`, e as mudanças `create-arrow` e `delete-arrow` (entidade `arrow`,
+ * ME4); a 2 acrescenta `add_container` às `operations`; a 1 continua válida.
  */
 export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3] as const;
 /** Pasta das propostas, relativa à raiz do projeto. */
@@ -48,7 +50,13 @@ export type ChangeKind = 'create' | 'update' | 'remove';
 
 /** Entidades que uma mudança pode alterar. As três primeiras formam o grupo "Projeto". */
 export type ChangeEntity =
-  'specialization' | 'platformRepo' | 'layer' | 'image' | 'marking' | 'annotation';
+  | 'specialization'
+  | 'platformRepo'
+  | 'layer'
+  | 'image'
+  | 'marking'
+  | 'arrow'
+  | 'annotation';
 
 export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'specialization',
@@ -56,6 +64,7 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'layer',
   'image',
   'marking',
+  'arrow',
   'annotation',
 ];
 
@@ -92,6 +101,13 @@ export const MARKING_FIELDS = [
   'position',
 ] as const;
 /**
+ * A seta (v13, ME4) só tem criação e remoção (`create-arrow`, `delete-arrow`): nenhum campo é
+ * comparado. A rota (`points`) é só da pessoa e nunca vem de proposta; o estilo, o nome, a
+ * trava e as pontas de uma seta que já existe também não são propostos (uma mudança dessas é
+ * ignorada na leitura, com aviso). A anotação numa seta usa as mudanças de anotação de sempre.
+ */
+export const ARROW_FIELDS = [] as const;
+/**
  * Campos fixos de uma anotação. Além deles: `values.<key>` (um campo da tipada) e
  * `entries.<id>` (um par da livre). `type` é a troca de tipo, que leva `type`, `values`
  * e `entries` juntos (ex: a conversão para livre ao remover uma especialização).
@@ -116,6 +132,8 @@ export const ENTRIES_FIELD_PREFIX = 'entries.';
  * `field` é `null` e os valores são a entidade inteira). `imageId` e `markingId` dizem
  * em que imagem e item (marcação) a mudança aparece na revisão: ambos `null` é o grupo
  * Projeto; `imageId` nulo com `markingId` é uma marcação do canvas (e as anotações dela).
+ * A seta (`entity: "arrow"`) é um item como a marcação: `markingId` é o id dela e `imageId` o
+ * container da marcação de origem (ou `null`, o canvas); as anotações dela levam o mesmo par.
  */
 export interface Change {
   readonly id: string;
@@ -285,12 +303,16 @@ const specializationValue = z
     }
   });
 
+/** A seta numa proposta: sem `points` (a rota é só da pessoa; um `points` que venha é ignorado). */
+const arrowValue = arrowSchema.omit({ points: true });
+
 const entitySchemas: Record<ChangeEntity, z.ZodType> = {
   specialization: specializationValue,
   platformRepo: platformRepoSchema,
   layer: layerSchema,
   image: containerSchema,
   marking: markingSchema,
+  arrow: arrowValue,
   annotation: annotationSchema,
 };
 
@@ -423,10 +445,17 @@ const changeSchema = z
     }
     // Marcação (e anotação) sem container é da marcação do canvas; só a imagem exige o id.
     if (c.entity === 'image' && c.imageId === null) add(['imageId'], 'obrigatório');
-    if ((c.entity === 'marking' || c.entity === 'annotation') && c.markingId === null) {
+    if (
+      (c.entity === 'marking' || c.entity === 'arrow' || c.entity === 'annotation') &&
+      c.markingId === null
+    ) {
       add(['markingId'], 'obrigatório');
     }
-    if (c.entity === 'marking' && c.markingId !== null && c.markingId !== c.entityId) {
+    if (
+      (c.entity === 'marking' || c.entity === 'arrow') &&
+      c.markingId !== null &&
+      c.markingId !== c.entityId
+    ) {
       add(['markingId'], `deve ser "${c.entityId}"`);
     }
     if (c.entity === 'image' && c.imageId !== null && c.imageId !== c.entityId) {
@@ -728,11 +757,33 @@ function withDerivedParent(data: unknown): { data: unknown; ignored: number } {
   };
 }
 
+/**
+ * Mudança de campo de uma seta que já existe (estilo, nome, pontas, trava): a proposta só cria
+ * e remove setas (ME4, decisão 14), então essas mudanças são ignoradas na leitura, com a
+ * decisão e a aplicação delas (uma nota presa a uma passa para a proposta). `ignored` conta o
+ * que foi ignorado, para o aviso.
+ */
+function withoutArrowUpdates(data: unknown): { data: unknown; ignored: number } {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return { data, ignored: 0 };
+  const dropped = new Set<string>();
+  const changes: unknown[] = [];
+  for (const c of data.changes as unknown[]) {
+    if (isPlainRecord(c) && c.entity === 'arrow' && c.kind === 'update') {
+      if (typeof c.id === 'string') dropped.add(c.id);
+    } else {
+      changes.push(c);
+    }
+  }
+  if (dropped.size === 0) return { data, ignored: 0 };
+  return { data: pruneChanges(data, changes, dropped), ignored: dropped.size };
+}
+
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseProposal(data: unknown): ProposalParseResult {
   const noInherit = withoutInherit(withContainerIdOnMarkings(data));
   const noParent = withDerivedParent(noInherit.data);
-  const result = proposalSchema.safeParse(noParent.data);
+  const noArrowUpdate = withoutArrowUpdates(noParent.data);
+  const result = proposalSchema.safeParse(noArrowUpdate.data);
   if (result.success) {
     const warnings: string[] = [];
     if (noInherit.ignored > 0) {
@@ -743,6 +794,11 @@ export function parseProposal(data: unknown): ProposalParseResult {
     if (noParent.ignored > 0) {
       warnings.push(
         `"parentId" da marcação é derivado da geometria (schema 13): ${noParent.ignored} mudança(s) de pai na proposta ignorada(s); o pai é recalculado ao aplicar`,
+      );
+    }
+    if (noArrowUpdate.ignored > 0) {
+      warnings.push(
+        `A seta só tem criação e remoção na proposta (ME4): ${noArrowUpdate.ignored} mudança(s) de campo de seta ignorada(s); o estilo, o nome, as pontas e a rota são da pessoa`,
       );
     }
     return {

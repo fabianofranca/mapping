@@ -1,3 +1,4 @@
+import { requireAnnotationOwner } from './arrows';
 import { fail } from './errors';
 import { annotationWithLinked } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
@@ -142,7 +143,7 @@ export interface NewTypedAnnotationArgs {
 /** Cria a anotação tipada com os `default` dos campos. */
 export function addTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Project {
   if (p.annotations.some((a) => a.id === args.id)) fail('duplicate-id', args.id);
-  findById(p.markings, args.markingId);
+  requireAnnotationOwner(p, args.markingId);
   const layer = findById(p.layers, args.layerId);
   const resolved =
     findSpecType(p, args.type) ??

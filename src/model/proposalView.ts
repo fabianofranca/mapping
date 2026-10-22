@@ -61,8 +61,9 @@ export function dominantChangeType(types: Iterable<ChangeType>): ChangeType | nu
  * ele agrupa (`ReviewTree.changeIdsOf`). Item e imagem: o tipo da própria entidade (a
  * marcação, a imagem), na ordem criada > removida > trocada > alterada; "movida" só se a
  * posição é a única coisa que muda. Sem mudança na própria entidade, o que muda dentro
- * (uma anotação criada, uma marcação da imagem) faz o nível "alterado". Proposta,
- * Projeto e Canvas: o dominante de tudo. `null` sem mudanças.
+ * (uma anotação criada, uma marcação da imagem) faz o nível "alterado". O item pode ser uma
+ * seta (ME4): a criação e a remoção dela são a própria entidade. Proposta, Projeto e Canvas: o
+ * dominante de tudo. `null` sem mudanças.
  */
 export function levelType(
   level: ReviewLevel,
@@ -72,7 +73,11 @@ export function levelType(
   if (changes.length === 0) return null;
   const entity = level === 'item' ? 'marking' : level === 'image' ? 'image' : null;
   if (entity === null) return dominantChangeType(changes.map(changeType));
-  const own = changes.filter((c) => c.entity === entity && c.entityId === id);
+  const own = changes.filter(
+    (c) =>
+      (c.entity === entity || (entity === 'marking' && c.entity === 'arrow')) &&
+      c.entityId === id,
+  );
   const type = dominantChangeType(own.map(changeType));
   return type === null || (type === 'moved' && own.length < changes.length)
     ? 'changed'

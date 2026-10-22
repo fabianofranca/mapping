@@ -87,9 +87,11 @@ export function EditorScreen() {
   /** Backlinks, "Ir para o alvo", vinculadas e Incompletas: em qualquer marcação. */
   const onGoToAnnotation = (annotation: AnnotationLocation) => {
     const selection = ui.selection.peek();
+    // A dona da anotação é uma marcação ou uma seta (v13): `goToAnnotation` escolhe pelo projeto.
     const sameMarking =
-      selection?.kind === 'marking' && selection.id === annotation.markingId;
-    goToAnnotation(ui, annotation);
+      (selection?.kind === 'marking' || selection?.kind === 'arrow') &&
+      selection.id === annotation.markingId;
+    goToAnnotation(ui, annotation, null, store.committed.peek());
     if (!sameMarking) canvas.current?.centerSelection();
   };
 

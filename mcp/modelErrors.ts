@@ -32,6 +32,10 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
     'pai inválido: precisa ser do mesmo container, conter o retângulo e não ser descendente',
   'invalid-annotation-parent':
     'dona inválida: precisa ser da mesma marcação, de outra camada, sem ciclo e (na tipada) de um tipo que aceite este vínculo',
+  'arrow-endpoint':
+    'ponta de seta inválida: precisa ser uma marcação (nem outra seta, nem um container)',
+  'arrow-self': 'a seta precisa ligar duas marcações diferentes',
+  'invalid-arrow-route': 'rota da seta inválida: pontos com x e y finitos',
   'empty-key': 'par com chave vazia',
   'duplicate-key': 'chave repetida na anotação',
   'duplicate-id': 'id repetido',

@@ -10,7 +10,8 @@ import type { Marking, Project } from './types';
 // nunca impede o pai: mover o pai leva os descendentes trancados junto (a posição relativa
 // se mantém) e excluir o pai exclui os descendentes trancados (a confirmação informa quantos).
 // Na v13 a trava também desce da marcação do canvas para os containers dentro dela: o
-// `placement` deles não muda (`canEditImagePlacement`, `containerLockStates`).
+// `placement` deles não muda (`canEditImagePlacement`, `containerLockStates`). A seta (v13) tem
+// trava só dela: não herda das pontas (`canEditArrow`).
 
 /** A marcação ou algum ancestral está trancado: a geometria dela não pode mudar. */
 export function isMarkingGeometryLocked(p: Project, markingId: string): boolean {
@@ -70,6 +71,14 @@ export function canEditMarkingGeometry(p: Project, markingId: string): boolean {
  */
 export function canDeleteMarking(p: Project, markingId: string): boolean {
   return !findById(p.markings, markingId).locked;
+}
+
+/**
+ * Mexer na rota, nas pontas, nos lados ou no estilo da seta, ou excluí-la: só a trava da própria
+ * seta impede. A trava das marcações das pontas não conta, e renomear e anotar seguem livres.
+ */
+export function canEditArrow(p: Project, arrowId: string): boolean {
+  return !findById(p.arrows, arrowId).locked;
 }
 
 /**

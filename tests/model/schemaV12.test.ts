@@ -170,6 +170,7 @@ describe('schema v12', () => {
       'layers',
       'containers',
       'markings',
+      'arrows',
       'annotations',
     ]);
     expect(Object.keys(data.markings[0] ?? {}).slice(0, 3)).toEqual([

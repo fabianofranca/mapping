@@ -68,6 +68,8 @@ function shownItem(
   other: () => Project | null,
   full: () => Project | null,
 ): ShownItem | null {
+  // ME4: Detalhes da seta na revisão (UI)
+  if (sel.kind === 'arrow') return null;
   const at = (project: Project | null, away: ShownItem['away']): ShownItem | null =>
     project && has(project, sel) ? { ...sel, project, away } : null;
   return (

@@ -12,8 +12,10 @@ import {
   translateRect,
   type Size,
 } from './geometry';
+import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { descendantIds, descendantsOf } from './hierarchy';
 import {
+  clearArrowRoutes,
   markingCanvasRectOf,
   settleIf,
   spaceOf,
@@ -89,7 +91,13 @@ export function createMarking(
   args: NewMarkingArgs,
   options?: RectOptions,
 ): Project {
-  if (p.markings.some((m) => m.id === args.id)) fail('duplicate-id', args.id);
+  // Marcações e setas dividem o espaço de ids.
+  if (
+    p.markings.some((m) => m.id === args.id) ||
+    p.arrows.some((a) => a.id === args.id)
+  ) {
+    fail('duplicate-id', args.id);
+  }
   const floating = args.floating ?? false;
   if (floating && args.containerId !== null) fail('invalid-space', args.id);
   const container =
@@ -275,8 +283,11 @@ export function setMarkingFloating(
   } else {
     next = { ...marking, floating: false };
   }
+  // Ligar a flutuante tira a marcação do container: as setas presas perdem os pontos de passagem.
+  const moved = floating && marking.containerId !== null;
+  const base = { ...p, markings: updateById(p.markings, markingId, () => next) };
   return settled(
-    { ...p, markings: updateById(p.markings, markingId, () => next) },
+    moved ? clearArrowRoutes(base, new Set([markingId])) : base,
     markingId,
     options,
   );
@@ -297,9 +308,12 @@ export function markingDeletionImpact(
   descendants: number;
   /** Quantos dos descendentes estão trancados (serão excluídos junto). */
   lockedDescendants: number;
+  /** Anotações que saem: as das marcações que saem e as das setas presas a elas. */
   annotations: number;
   /** Containers que têm a marcação (ou uma descendente) como pai: ficam, passam ao pai dela. */
   containers: number;
+  /** Setas presas a alguma marcação que sai (como origem ou destino): saem junto. */
+  arrows: number;
   brokenRefs: number;
 } {
   findById(p.markings, markingId);
@@ -310,19 +324,24 @@ export function markingDeletionImpact(
   const byParent = projectIndex(p).containersByParent;
   let containers = 0;
   for (const id of ids) containers += byParent.get(id)?.length ?? 0;
+  const arrowIds = arrowIdsAttachedTo(p, ids);
   return {
     descendants,
     lockedDescendants,
-    annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
+    annotations: p.annotations.filter(
+      (a) => ids.has(a.markingId) || arrowIds.has(a.markingId),
+    ).length,
     containers,
+    arrows: arrowIds.size,
     brokenRefs: countBrokenRefs(p, cascadeRemove(p, markingId)),
   };
 }
 
 /**
- * Exclui a marcação, os descendentes (trancados ou não) e as anotações de todos eles; nunca um
- * container: os que estavam dentro dela passam ao pai dela, ou a nenhum (o assentar refaz).
- * Falha só se a própria marcação estiver trancada.
+ * Exclui a marcação, os descendentes (trancados ou não), as setas presas a qualquer uma delas e
+ * as anotações de todos eles (setas inclusive); nunca um container: os que estavam dentro dela
+ * passam ao pai dela, ou a nenhum (o assentar refaz). Falha só se a própria marcação estiver
+ * trancada (a trava de uma seta presa não impede).
  */
 export function removeMarking(
   p: Project,
@@ -337,11 +356,14 @@ export function removeMarking(
 /** A exclusão em si, sem a trava nem o assentar: também serve para contar o impacto. */
 function cascadeRemove(p: Project, markingId: string): Project {
   const ids = descendantIds(p, markingId).add(markingId);
-  return {
-    ...p,
-    markings: p.markings.filter((m) => !ids.has(m.id)),
-    annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
-  };
+  return withoutArrows(
+    {
+      ...p,
+      markings: p.markings.filter((m) => !ids.has(m.id)),
+      annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
+    },
+    arrowIdsAttachedTo(p, ids),
+  );
 }
 
 // ---------------------------------------------------------------------------
