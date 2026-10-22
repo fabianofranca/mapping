@@ -85,6 +85,17 @@ export function serialize(p: Project): string {
       floating: m.floating,
       source: m.source && { system: m.source.system, id: m.source.id, url: m.source.url },
     })),
+    arrows: p.arrows.map((a) => ({
+      id: a.id,
+      from: a.from,
+      to: a.to,
+      fromSide: a.fromSide,
+      toSide: a.toSide,
+      points: a.points.map((pt) => ({ x: pt.x, y: pt.y })),
+      style: a.style,
+      name: a.name,
+      locked: a.locked,
+    })),
     annotations: p.annotations.map((a) => ({
       id: a.id,
       markingId: a.markingId,
