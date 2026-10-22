@@ -321,7 +321,15 @@ function field(value: JsonValue, key: string): JsonValue | undefined {
 /** Referências fracas (campos `ref`) dentro dos valores de uma anotação tipada. */
 function valueRefs(values: JsonValue | undefined, out: ValueRef[]): void {
   if (!isRecord(values)) return;
-  for (const value of Object.values(values)) refOfValue(value, out);
+  for (const value of Object.values(values)) {
+    refOfValue(value, out);
+    // Coluna `ref` de `table` (decisão (e)): cada célula da linha pode ser uma referência.
+    if (Array.isArray(value)) {
+      for (const row of value as readonly JsonValue[]) {
+        if (isRecord(row)) for (const cell of Object.values(row)) refOfValue(cell, out);
+      }
+    }
+  }
 }
 
 function refOfValue(value: JsonValue | undefined, out: ValueRef[]): void {

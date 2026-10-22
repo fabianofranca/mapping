@@ -1,18 +1,21 @@
-import { layerAnnotationTypes, type Project, type SpecAnnotationType } from '../model';
+import {
+  layerAnnotationTypes,
+  typeAppliesTo,
+  type Project,
+  type SpecAnnotationType,
+} from '../model';
 
 /** Quem recebe a anotação: uma marcação ou uma seta (os dois guardam anotações por camada). */
 export type AnnotationOwnerKind = 'marking' | 'arrow';
 
 /**
- * Os tipos de anotação que a camada oferece para a dona. Ponto único da escolha: hoje todos os
- * tipos valem para as duas.
+ * Os tipos de anotação que a camada oferece para a dona: só os que se aplicam a ela
+ * (`appliesTo` do tipo; padrão, marcação).
  */
 export function offeredTypes(
   project: Project,
   layerId: string,
   kind: AnnotationOwnerKind,
 ): readonly SpecAnnotationType[] {
-  // ME4: filtrar por typeAppliesTo(type, kind) quando o `appliesTo` da especialização chegar.
-  void kind;
-  return layerAnnotationTypes(project, layerId);
+  return layerAnnotationTypes(project, layerId).filter((type) => typeAppliesTo(type, kind));
 }
