@@ -66,7 +66,7 @@ export interface ProjectImage {
   /** Rótulo editável; `null` = a app mostra o nome do arquivo. Não renomeia o arquivo. */
   readonly name: string | null;
   /**
-   * Arquivo em `images/`; `null` = tela em branco (v10): sem arquivo, só `width`, `height` e
+   * Arquivo em `images/`; `null` = container sem arquivo (v10): sem arquivo, só `width`, `height` e
    * `background`.
    */
   readonly file: string | null;
@@ -79,7 +79,7 @@ export interface ProjectImage {
   readonly locked: boolean;
   /** Identidade no sistema de origem (v8); `null` = sem origem. */
   readonly source: ExternalSource | null;
-  /** Cor de fundo (`#RRGGBB`) da tela em branco (v10); `null` na imagem com arquivo. */
+  /** Cor de fundo (`#RRGGBB`) do container sem arquivo (v10); `null` na imagem com arquivo. */
   readonly background: string | null;
 }
 

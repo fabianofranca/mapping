@@ -837,7 +837,7 @@ button.tree-toggle:hover {
   overflow-wrap: anywhere;
 }
 
-/* Diálogo da tela em branco: largura e altura lado a lado. */
+/* Diálogo do container sem arquivo: largura e altura lado a lado. */
 .container-size {
   display: flex;
   gap: var(--space-2);

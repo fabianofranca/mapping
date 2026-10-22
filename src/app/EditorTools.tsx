@@ -45,7 +45,7 @@ export function AddImagesButton({
   );
 }
 
-/** Nova tela em branco: ao lado de "Adicionar imagens". */
+/** Novo container: ao lado de "Adicionar imagens". */
 export function AddContainerButton({ onAdd }: { readonly onAdd: () => void }) {
   const { store } = useEditor();
   return (

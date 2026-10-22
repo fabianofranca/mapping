@@ -1008,7 +1008,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       if (store.readOnly.value || store.reviewing.value || !store.project.value) {
         return 'failed';
       }
-      // Tela em branco não tem arquivo para trocar.
+      // Container sem arquivo não tem arquivo para trocar.
       if (currentProject(store).images.some((i) => i.id === imageId && i.file === null)) {
         return 'failed';
       }

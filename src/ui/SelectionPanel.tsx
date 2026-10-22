@@ -213,7 +213,7 @@ interface ContainerFieldsProps {
   readonly setError: (message: string | null) => void;
 }
 
-/** Largura, altura e cor de fundo da tela em branco (no lugar de Arquivo e Tamanho). */
+/** Largura, altura e cor de fundo do container sem arquivo (no lugar de Arquivo e Tamanho). */
 function ContainerFields({
   image,
   ids,

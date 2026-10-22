@@ -31,7 +31,7 @@ Quando o agente roda fora do repositório do Mapping (o caso normal: ele roda no
 | A origem: repositório, pasta, design system, documento | Pergunte. Sem origem não há o que modelar.                                                             |
 | O que ler na origem e o que ignorar                    | Leia o catálogo público (componentes exportados, entidades, eventos); ignore internos e testes.        |
 | `formatVersion` desejada                               | Use a mínima para o que a especialização usa (ver "Versão"); biblioteca pede a 4.                      |
-| (opcional) Tamanhos prontos de container               | Só declare `containers` se a origem evidenciar tamanhos (breakpoints, dispositivos); pede a 6.          |
+| (opcional) Tamanhos prontos de container               | Só declare `containers` se a origem evidenciar tamanhos (breakpoints, dispositivos); pede a 6.         |
 | Plataformas e linguagens                               | Só declare plataformas que o material de origem evidencie. Nenhuma, se for `formatVersion` 1.          |
 | Onde gravar o arquivo                                  | `<id>.json` na pasta de trabalho; diga onde ficou.                                                     |
 | (biblioteca) A pasta de saída                          | `<id>/` na pasta de trabalho, com `<id>/<id>.spec.json` dentro; diga onde ficou.                       |

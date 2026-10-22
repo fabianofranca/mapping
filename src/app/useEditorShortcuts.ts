@@ -146,7 +146,7 @@ export function useEditorShortcuts(
       if (!canCopyItems(editor)) return null;
       if (shortcut.kind === 'copy-crop') {
         const target = copyShortcutTarget(editor);
-        // Tela em branco não tem recorte: o atalho não assume a tecla.
+        // Container sem arquivo não tem recorte: o atalho não assume a tecla.
         return target?.kind === 'm' && canCopyCrop(shown.peek(), target.id)
           ? target
           : null;

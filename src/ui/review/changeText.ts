@@ -63,7 +63,7 @@ export function markingName(names: ReviewNames, id: string): string {
   return t('marking.unnamed');
 }
 
-/** Tela em branco criada pela proposta (imagem sem arquivo): o nome padrão dela. */
+/** Container sem arquivo criada pela proposta (imagem sem arquivo): o nome padrão dela. */
 function blankName(record: Record<string, JsonValue> | null | undefined): string | null {
   return record && record.file === null && typeof record.background === 'string'
     ? t('image.containerUntitled')

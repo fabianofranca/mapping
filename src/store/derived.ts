@@ -105,7 +105,7 @@ export interface EditorDerived {
    */
   drawingsOf(p: Project | null): ComponentDrawings;
   /**
-   * Marcações cujo desenho está visível: têm desenho, a imagem é uma tela em branco ou a pessoa
+   * Marcações cujo desenho está visível: têm desenho, a imagem é um container sem arquivo ou a pessoa
    * ligou "desenhar sobre fotos", e a visibilidade delas não é `hidden`.
    */
   readonly drawnMarkings: ReadonlySignal<ReadonlySet<string>>;
@@ -287,7 +287,7 @@ export function createEditorDerived(
     return p && layer ? layerDotsByMarking(p, [layer]) : NO_DOTS;
   });
 
-  // Marcações cujo desenho pode aparecer: tela em branco, ou foto com a opção ligada. Não depende
+  // Marcações cujo desenho pode aparecer: container sem arquivo, ou foto com a opção ligada. Não depende
   // da visibilidade: ao contrário, o filtro "sem anotação" não esconde o que desenha.
   const drawn = computed((): ReadonlySet<string> => {
     const all = scenes.value;

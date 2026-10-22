@@ -94,7 +94,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
 
   // ---- Arrastar e soltar arquivos ----
 
-  /** Imagem sob o ponto que um arquivo solto trocaria; a tela em branco não tem arquivo para trocar. */
+  /** Imagem sob o ponto que um arquivo solto trocaria; o container sem arquivo não tem arquivo para trocar. */
   const replaceableImageAt = (e: DragEvent): string | null => {
     const imageId = canvas.current?.imageIdAt(e.clientX, e.clientY) ?? null;
     const image = imageId && store.project.peek()?.images.find((i) => i.id === imageId);

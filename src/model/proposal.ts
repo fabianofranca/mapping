@@ -58,7 +58,7 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
 
 /**
  * Campos alterados de uma imagem (`file` é a troca: `{ file, width, height }`). `background` e
- * `size` (`{ width, height }`) só existem na tela em branco (v10).
+ * `size` (`{ width, height }`) só existem no container sem arquivo (v10).
  */
 export const IMAGE_FIELDS = [
   'name',

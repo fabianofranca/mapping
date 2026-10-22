@@ -116,7 +116,7 @@ function updateNode(
   node.group.position({ x: rect.x, y: rect.y });
   const box = { width: rect.width, height: rect.height };
 
-  // Tela em branco (sem arquivo): um retângulo cheio com a cor de fundo, sempre pronto. Nunca o
+  // Container sem arquivo (sem arquivo): um retângulo cheio com a cor de fundo, sempre pronto. Nunca o
   // reservado de "carregando": não há bitmap para esperar.
   if (isBlankImage(image)) {
     node.bitmap.setAttrs({ ...box, visible: false, image: undefined });

@@ -138,7 +138,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       options?: model.ReplaceImageOptions,
     ) => store.apply((p) => model.replaceImage(p, imageId, file, options)),
     removeImage: (imageId: string) => store.apply((p) => model.removeImage(p, imageId)),
-    /** Tela em branco: imagem sem arquivo, com tamanho e cor de fundo. */
+    /** Container sem arquivo: imagem sem arquivo, com tamanho e cor de fundo. */
     addBlankImage: (args: {
       readonly name: string | null;
       readonly width: number;

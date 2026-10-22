@@ -470,7 +470,7 @@ export class CanvasController {
     // Na revisão, também as imagens novas ou trocadas que esperam em `proposals/`.
     const drawn = this.drawnProject.value?.images ?? [];
     untracked(() => {
-      // Tela em branco (sem arquivo) não tem bitmap.
+      // Container sem arquivo (sem arquivo) não tem bitmap.
       const files = new Set<string>();
       for (const image of [...images, ...drawn]) {
         if (image.file !== null) files.add(image.file);

@@ -13,7 +13,7 @@ import type { StoreErrorCode } from '../store/history';
 import type { ProposalActionError } from '../store/proposalActions';
 import type { ProposalNotice } from '../store/proposals';
 
-/** Nome da imagem; sem nome, o nome do arquivo (tela em branco: "Tela em branco"). */
+/** Nome da imagem; sem nome, o nome do arquivo (container sem arquivo: "Container"). */
 export function imageLabel(image: Pick<ProjectImage, 'name' | 'file'>): string {
   return image.name ?? image.file ?? t('image.containerUntitled');
 }
@@ -61,7 +61,7 @@ const CONTAINER_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   reviewing: 'review.readOnly',
 };
 
-/** Erro de editar a tela em branco (tamanho e cor de fundo). */
+/** Erro de editar o container sem arquivo (tamanho e cor de fundo). */
 export function containerErrorMessage(code: StoreErrorCode): string {
   return t(CONTAINER_ERRORS[code] ?? 'container.error.generic', { max: MAX_BLANK_SIZE });
 }

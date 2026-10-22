@@ -113,7 +113,7 @@ function withField(
   switch (entity) {
     case 'image': {
       const i = current as ProjectImage;
-      // Tela em branco não troca de arquivo; cor e tamanho só existem nela.
+      // Container sem arquivo não troca de arquivo; cor e tamanho só existem nela.
       const blank = i.file === null;
       if (blank && field === 'file') return null;
       if (!blank && (field === 'background' || field === 'size')) return null;

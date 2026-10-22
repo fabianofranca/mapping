@@ -26,7 +26,7 @@ export const IMAGE_GAP = 50;
 /** Diferença máxima de proporção considerada "a mesma" na troca de imagem. */
 export const ASPECT_TOLERANCE = 0.01;
 
-/** Maior lado (largura ou altura) de uma tela em branco, em pixels. */
+/** Maior lado (largura ou altura) de um container sem arquivo, em pixels. */
 export const MAX_BLANK_SIZE = 20000;
 
 export interface ImageFile {
@@ -54,7 +54,7 @@ function checkBackground(color: string): string {
   return color.toUpperCase();
 }
 
-/** Dimensões de uma tela em branco: inteiros de 1 a `MAX_BLANK_SIZE`. */
+/** Dimensões de um container sem arquivo: inteiros de 1 a `MAX_BLANK_SIZE`. */
 function checkBlankDimensions(size: {
   readonly width: number;
   readonly height: number;
@@ -65,7 +65,7 @@ function checkBlankDimensions(size: {
   }
 }
 
-/** `true` se a imagem é uma tela em branco (sem arquivo, só com cor de fundo). */
+/** `true` se a imagem é um container sem arquivo (sem arquivo, só com cor de fundo). */
 export function isBlankImage(image: Pick<ProjectImage, 'file'>): boolean {
   return image.file === null;
 }
@@ -138,7 +138,7 @@ export function canPlaceImage(
   );
 }
 
-/** Arquivos das imagens (a tela em branco não tem), na ordem das imagens. */
+/** Arquivos das imagens (o container sem arquivo não tem), na ordem das imagens. */
 export function imageFileNames(images: readonly Pick<ProjectImage, 'file'>[]): string[] {
   const files: string[] = [];
   for (const image of images) if (image.file !== null) files.push(image.file);
@@ -207,7 +207,7 @@ export function addImage(
 }
 
 /**
- * Adiciona uma tela em branco (imagem sem arquivo, só com cor de fundo), com a mesma
+ * Adiciona um container sem arquivo (imagem sem arquivo, só com cor de fundo), com a mesma
  * colocação de `addImage`: lado maior de `INITIAL_IMAGE_SIZE` unidades do canvas.
  */
 export function addBlankImage(
@@ -252,10 +252,10 @@ export interface BlankImageChanges {
 }
 
 /**
- * Edita a tela em branco: tamanho e/ou cor de fundo. Mudar o tamanho é geometria
+ * Edita o container sem arquivo: tamanho e/ou cor de fundo. Mudar o tamanho é geometria
  * (imagem trancada recusa com `locked`), mantém a escala do `placement` e recusa se alguma
  * marcação deixar de caber (`rect-out-of-image`) ou se a imagem passar a sobrepor outra
- * (`image-overlap`). Só vale para tela em branco (`not-blank`).
+ * (`image-overlap`). Só vale para container sem arquivo (`not-blank`).
  */
 export function setBlankImage(
   p: Project,
