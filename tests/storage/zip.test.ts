@@ -47,7 +47,7 @@ describe('zip do projeto', () => {
     expect(read.files.specs).toEqual(specs);
   });
 
-  it('round-trip v12: SDUI v5 (com repo) e Modelo de dados v1 juntos, com platformRepos', async () => {
+  it('round-trip v13: SDUI v5 (com repo) e Modelo de dados v1 juntos, com platformRepos', async () => {
     const project = codeProject();
     const mapping = serialize(project);
     const images = new Map([

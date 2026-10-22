@@ -600,8 +600,15 @@ describe('regras do modelo no lote', () => {
       join(dir, 'proposals', proposed.data.proposal.id, 'proposal.json'),
       'utf8',
     );
-    expect(JSON.parse(text).formatVersion).toBe(3);
-    expect(text).not.toContain('"inherit"');
+    const saved = JSON.parse(text) as {
+      formatVersion: number;
+      changes: { entity: string; field: string | null; to: unknown }[];
+    };
+    expect(saved.formatVersion).toBe(3);
+    // A anotação a criar e as mudanças não levam `inherit` (a operação crua fica como o agente a enviou).
+    expect(saved.changes.some((c) => c.field === 'inherit')).toBe(false);
+    const created = saved.changes.find((c) => c.entity === 'annotation');
+    expect(created?.to).not.toHaveProperty('inherit');
   });
 
   it('caminhos fora das raízes são recusados', async () => {

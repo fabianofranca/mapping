@@ -797,7 +797,7 @@ describe('projeto com dados inconsistentes', () => {
 
     const [backup, ...rest] = await backupsOf(root);
     expect(rest).toEqual([]);
-    expect(backup).toMatch(/^mapping\.v12\.\d{8}-\d{6}\.json$/);
+    expect(backup).toMatch(/^mapping\.v13\.\d{8}-\d{6}\.json$/);
     expect(
       await root.dirs
         .get('backups')

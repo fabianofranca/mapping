@@ -730,7 +730,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     );
   });
 
-  it('o lote do roteiro (clone local do ios) é aplicado e grava v12 com revision + 1', async () => {
+  it('o lote do roteiro (clone local do ios) é aplicado e grava v13 com revision + 1', async () => {
     const dir = ws.projectDir('escrita');
     const operations = [
       {
