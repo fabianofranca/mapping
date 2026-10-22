@@ -1,6 +1,7 @@
 import {
   MIN_MARKING_SIZE,
   containsRect,
+  containsRectApprox,
   imageCanvasRect,
   imagePixelRect,
   isIntegerRect,
@@ -24,6 +25,11 @@ export type InvariantCode =
   | 'parent-other-image'
   | 'rect-outside-parent'
   | 'hierarchy-cycle'
+  | 'container-parent-missing'
+  | 'container-parent-not-canvas'
+  | 'container-outside-parent'
+  | 'floating-in-container'
+  | 'parent-floating'
   | 'missing-parent-annotation'
   | 'annotation-parent-other-marking'
   | 'annotation-parent-same-layer'
@@ -163,8 +169,9 @@ export function validateProject(p: Project): InvariantIssue[] {
   const annotations = new Map(p.annotations.map((a) => [a.id, a]));
 
   for (const m of p.markings) {
-    const image = containers.get(m.containerId);
-    if (!image) marking('missing-image', m, m.containerId);
+    // Marcação do canvas (v13): `containerId` nulo, `rect` em unidades do canvas, sem limite.
+    const image = m.containerId === null ? undefined : containers.get(m.containerId);
+    if (m.containerId !== null && !image) marking('missing-image', m, m.containerId);
     if (!isIntegerRect(m.rect)) marking('rect-not-integer', m);
     if (m.rect.width < MIN_MARKING_SIZE || m.rect.height < MIN_MARKING_SIZE) {
       marking('rect-too-small', m);
@@ -172,15 +179,32 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (image && !containsRect(imagePixelRect(image), m.rect)) {
       marking('rect-out-of-image', m);
     }
+    // A flutuante vive no canvas, fora da árvore de pertencimento.
+    if (m.floating && (m.containerId !== null || m.parentId !== null)) {
+      marking('floating-in-container', m);
+    }
     if (m.parentId === null) continue;
     const parent = markings.get(m.parentId);
     if (!parent) {
       marking('missing-parent', m, m.parentId);
       continue;
     }
-    if (parent.containerId !== m.containerId) marking('parent-other-image', m, parent.id);
+    if (parent.floating) marking('parent-floating', m, parent.id);
+    else if (parent.containerId !== m.containerId) marking('parent-other-image', m, parent.id);
     else if (!containsRect(parent.rect, m.rect))
       marking('rect-outside-parent', m, parent.id);
+  }
+
+  // Pai de um container (v13): uma marcação do canvas, não flutuante, que o contém inteiro.
+  for (const c of p.containers) {
+    if (c.parentId === null) continue;
+    const parent = markings.get(c.parentId);
+    if (!parent) imageIssue('container-parent-missing', c, c.parentId);
+    else if (parent.containerId !== null || parent.floating) {
+      imageIssue('container-parent-not-canvas', c, parent.id);
+    } else if (!containsRectApprox(parent.rect, imageCanvasRect(c, c.placement))) {
+      imageIssue('container-outside-parent', c, parent.id);
+    }
   }
 
   for (const m of p.markings) {

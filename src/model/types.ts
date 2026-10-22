@@ -73,6 +73,11 @@ export interface ProjectContainer {
   readonly width: number;
   readonly height: number;
   readonly placement: Placement;
+  /**
+   * Marcação do canvas que contém o container (v13), derivada da geometria pelo assentar
+   * (`settleHierarchy`); `null` = nenhuma. Nunca é escolhida à mão.
+   */
+  readonly parentId: string | null;
   /** Cor da borda das marcações desta imagem (`#RRGGBB`); `null` = cor neutra do tema. */
   readonly markingColor: string | null;
   /** Trancada (v5): não pode ser movida, redimensionada nem excluída. A seleção segue livre. */
@@ -85,7 +90,16 @@ export interface ProjectContainer {
 
 export interface Marking {
   readonly id: string;
-  readonly containerId: string;
+  /**
+   * Espaço da marcação (v13): o container (`rect` em pixels inteiros dele) ou `null`, a
+   * marcação do canvas (`rect` em unidades inteiras do canvas, coordenadas podem ser negativas).
+   * Decidido pela geometria ao assentar (`settleHierarchy`).
+   */
+  readonly containerId: string | null;
+  /**
+   * A menor marcação do mesmo espaço que a contém inteira (v13: derivada pelo assentar, nunca
+   * escolhida à mão); `null` = nenhuma.
+   */
   readonly parentId: string | null;
   readonly name: string | null;
   readonly rect: Rect;
@@ -95,6 +109,12 @@ export interface Marking {
    * trava a geometria dos descendentes. A seleção e as anotações seguem livres.
    */
   readonly locked: boolean;
+  /**
+   * Flutuante (v13): comentário sobre o canvas (uma nota), fora da árvore de pertencimento nos
+   * dois sentidos. Vive sempre no canvas (`containerId` e `parentId` nulos) e é desenhada acima
+   * de tudo.
+   */
+  readonly floating: boolean;
   /** Identidade no sistema de origem (v8); `null` = sem origem. */
   readonly source: ExternalSource | null;
 }
