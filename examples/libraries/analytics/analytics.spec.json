@@ -1,0 +1,95 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 7,
+  "id": "analytics",
+  "name": "Analytics",
+  "version": 1,
+  "description": "Eventos de analytics no canvas: a tabela de um evento (nome e propriedades), ligada por uma seta ao elemento que o dispara, e a transição anotada na seta entre a origem e o destino de um fluxo.",
+  "layers": [
+    {
+      "id": "analytics",
+      "name": "Analytics",
+      "color": "#7B3FE4",
+      "annotationTypes": [
+        {
+          "id": "evento",
+          "name": "Evento",
+          "description": "Evento de analytics disparado por um elemento da interface. É uma tabela solta no canvas (nome do evento e uma linha por propriedade); a ligação com o elemento que o dispara é uma seta, não um campo.",
+          "labelField": "nome",
+          "floating": true,
+          "component": "components/evento.json",
+          "doc": "docs/evento.md",
+          "fields": [
+            {
+              "key": "nome",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "description": "O nome do evento como o SDK de analytics o recebe (checkout_started, button_click)."
+            },
+            {
+              "key": "propriedades",
+              "label": "Propriedades",
+              "type": "table",
+              "description": "Uma linha por propriedade enviada com o evento: o nome dela e o valor ou a descrição do valor.",
+              "columns": [
+                {
+                  "key": "propriedade",
+                  "label": "Propriedade",
+                  "type": "string",
+                  "required": true,
+                  "description": "O nome da propriedade (origem, itens, total)."
+                },
+                {
+                  "key": "valor",
+                  "label": "Valor",
+                  "type": "string",
+                  "description": "O valor fixo ou de onde ele vem (carrinho, tamanho da lista, soma dos preços)."
+                }
+              ]
+            }
+          ],
+          "examples": [
+            {
+              "name": "Início do checkout",
+              "description": "Só o nome entra num exemplo; as propriedades (origem, itens, total) vêm do preview do componente.",
+              "values": {
+                "nome": "checkout_started"
+              }
+            }
+          ]
+        },
+        {
+          "id": "transicao",
+          "name": "Transição",
+          "description": "Anotação de uma seta: a passagem da tela de origem para a de destino de um fluxo, com a condição em que ela acontece e, se houver, o evento que a acompanha.",
+          "appliesTo": ["arrow"],
+          "doc": "docs/transicao.md",
+          "fields": [
+            {
+              "key": "condicao",
+              "label": "Condição",
+              "type": "string",
+              "description": "Quando a transição acontece (toque em Contratar, pagamento aprovado, sessão expirada)."
+            },
+            {
+              "key": "evento",
+              "label": "Evento",
+              "type": "string",
+              "description": "O nome do evento de analytics disparado nesta transição, se houver."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Pagamento aprovado",
+              "values": {
+                "condicao": "Pagamento aprovado",
+                "evento": "purchase_completed"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

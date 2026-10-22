@@ -115,6 +115,9 @@ function previewValues(type: RawType, component: ComponentFile): ExampleValues {
   const values: ExampleValues = {};
   for (const [key, value] of Object.entries(component.preview ?? {})) {
     if (!keys.has(key) || value === undefined || value === '') continue;
+    // As linhas de uma tabela não cabem num exemplo de valores.
+    if (typeof value !== 'string' && typeof value !== 'number' && value !== null)
+      continue;
     values[key] = value;
   }
   return values;

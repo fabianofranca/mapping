@@ -147,9 +147,14 @@ function fieldReferences(
     return out;
   }
   if (!isRecord(node)) return out;
+  const isRepeat = node.type === 'repeat';
   for (const [key, value] of Object.entries(node)) {
     const at = `${path}.${key}`;
-    if (
+    // `repeat`: o `template` lê colunas da linha (ver `repeatChecks`), não campos do tipo.
+    if (isRepeat && key === 'template') continue;
+    if (isRepeat && key === 'field' && typeof value === 'string') {
+      if (!out.has(value)) out.set(value, at);
+    } else if (
       (key === '$field' || key === '$has' || key === '$switch') &&
       typeof value === 'string'
     ) {
@@ -160,6 +165,26 @@ function fieldReferences(
       fieldReferences(value, at, out);
     }
   }
+  return out;
+}
+
+/** Os nós `repeat` do JSON do template, com o caminho de cada um (os aninhados não existem). */
+function repeatNodes(
+  node: unknown,
+  path: string,
+  out: { path: string; node: Record<string, unknown> }[] = [],
+): { path: string; node: Record<string, unknown> }[] {
+  if (Array.isArray(node)) {
+    node.forEach((item, i) => repeatNodes(item, `${path}[${i}]`, out));
+    return out;
+  }
+  if (!isRecord(node)) return out;
+  if (node.type === 'repeat') {
+    out.push({ path, node });
+    return out;
+  }
+  for (const [key, value] of Object.entries(node))
+    repeatNodes(value, `${path}.${key}`, out);
   return out;
 }
 
@@ -389,7 +414,8 @@ function typeCoherence(
 
   const keys = new Set(type.fields.map((f) => f.key));
   const raw = pkg.componentJson.get(path);
-  const where = fieldReferences(isRecord(raw) ? raw.template : undefined, 'template');
+  const rawTemplate = isRecord(raw) ? raw.template : undefined;
+  const where = fieldReferences(rawTemplate, 'template');
   const used2 = collectFieldKeys(component);
   for (const key of used2) {
     if (keys.has(key)) continue;
@@ -399,11 +425,22 @@ function typeCoherence(
       `o desenho usa o campo "${key}", que o tipo "${type.id}" não declara`,
     );
   }
-  for (const key of Object.keys(component.preview ?? {})) {
-    if (keys.has(key)) continue;
-    out.warning(path, `preview.${key}`, `o tipo "${type.id}" não tem o campo "${key}"`);
+  const innerUsed = repeatChecks(type, path, rawTemplate, out);
+  for (const [key, value] of Object.entries(component.preview ?? {})) {
+    const field = type.fields.find((f) => f.key === key);
+    if (field === undefined) {
+      out.warning(path, `preview.${key}`, `o tipo "${type.id}" não tem o campo "${key}"`);
+    } else if (field.type === 'table') {
+      previewRows(type, field, key, value, path, out);
+    } else if (Array.isArray(value)) {
+      out.warning(
+        path,
+        `preview.${key}`,
+        `"${key}" não é uma table do tipo "${type.id}"; o preview dele deve ser um valor simples`,
+      );
+    }
   }
-  const drawn = new Set(used2);
+  const drawn = new Set([...used2, ...innerUsed]);
   type.fields.forEach((field, index) => {
     if (drawn.has(field.key)) return;
     out.warning(
@@ -412,6 +449,86 @@ function typeCoherence(
       `o campo "${field.key}" do tipo "${type.id}" não é usado pelo desenho do componente ${path}`,
     );
   });
+}
+
+/** O `preview` de um campo `table` é uma lista de linhas, e as colunas das linhas existem. */
+function previewRows(
+  type: SpecAnnotationType,
+  field: Extract<SpecField, { type: 'table' }>,
+  key: string,
+  value: unknown,
+  path: string,
+  out: Collector,
+): void {
+  if (value === null) return;
+  if (!Array.isArray(value)) {
+    out.warning(
+      path,
+      `preview.${key}`,
+      `"${key}" é uma table do tipo "${type.id}"; o preview dele deve ser uma lista de linhas`,
+    );
+    return;
+  }
+  const columns = new Set(field.columns.map((c) => c.key));
+  value.forEach((row: unknown, i) => {
+    if (!isRecord(row)) return;
+    for (const column of Object.keys(row)) {
+      if (column === '_id' || columns.has(column)) continue;
+      out.warning(
+        path,
+        `preview.${key}[${i}].${column}`,
+        `"${column}" não é coluna da table "${key}" do tipo "${type.id}"`,
+      );
+    }
+  });
+}
+
+/**
+ * Os `repeat` do desenho: o campo citado é uma `table` do tipo (erro se existe e não é) e o
+ * `template` da linha só lê colunas dessa tabela ou campos do tipo (erro nos demais). Devolve
+ * as chaves de campo do tipo (que não são colunas) lidas dentro dos `template`, para o aviso de
+ * campo sem uso.
+ */
+function repeatChecks(
+  type: SpecAnnotationType,
+  path: string,
+  rawTemplate: unknown,
+  out: Collector,
+): Set<string> {
+  const fields = new Map(type.fields.map((f) => [f.key, f]));
+  const innerUsed = new Set<string>();
+  for (const { path: at, node } of repeatNodes(rawTemplate, 'template')) {
+    const key = typeof node.field === 'string' ? node.field : undefined;
+    const table = key === undefined ? undefined : fields.get(key);
+    // Campo inexistente já foi apontado ("o desenho usa o campo ..., que o tipo não declara").
+    if (table !== undefined && table.type !== 'table') {
+      out.error(
+        path,
+        `${at}.field`,
+        `o repeat repete as linhas de "${key}", que é um campo ${table.type} do tipo "${type.id}", não uma table`,
+      );
+    }
+    const columns = new Set(
+      table?.type === 'table' ? table.columns.map((c) => c.key) : [],
+    );
+    const inner = fieldReferences(node.template, `${at}.template`);
+    for (const [name, where] of inner) {
+      if (columns.has(name)) continue;
+      const own = fields.get(name);
+      if (own === undefined) {
+        out.error(
+          path,
+          where,
+          table?.type === 'table'
+            ? `o desenho da linha usa "${name}", que não é coluna da table "${key}" nem campo do tipo "${type.id}"`
+            : `o desenho da linha usa "${name}", que o tipo "${type.id}" não declara`,
+        );
+      } else {
+        innerUsed.add(name);
+      }
+    }
+  }
+  return innerUsed;
 }
 
 /** Passos da migração que sai da versão anterior e citam o que não existia nela (aviso). */

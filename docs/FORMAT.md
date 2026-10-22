@@ -711,7 +711,7 @@ nasce na migração.
 `floating: true` (especialização `formatVersion` 7, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Tipo flutuante"):
 ao adicionar uma instância do tipo, a app grava a marcação com `containerId: null`, `parentId: null` e
 `floating: true`, no canvas. A app traz uma biblioteca assim embutida, a de **notas** (`libraries/notas/`, id
-`notas`: camada "Notas", tipo `nota` com os campos `titulo` e `texto`), e a **aplica por padrão**:
+`notas`, versão 2: camada "Notas", tipo `nota` com os campos `titulo` e `texto` e tipo `tabela` com `titulo` e `linhas`, uma lista de chave e valor desenhada por um `repeat`), e a **aplica por padrão**:
 
 - projeto **novo** (pasta ou neste dispositivo) nasce com ela, com a cópia em `specs/notas/` e a entrada em
   `specializations[]`;

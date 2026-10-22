@@ -1,6 +1,6 @@
 import { fail, ModelError } from './errors';
 import { memoByProject, projectIndex } from './projectIndex';
-import type { SpecField, SpecRefAccepts } from './spec';
+import type { SpecField, SpecRefAccepts, SpecRefColumn } from './spec';
 import { fieldOf, sharesTag, typeOfAnnotation } from './specLookup';
 import type { Annotation, Entry, JsonValue, Project, RefValue, TableRow } from './types';
 
@@ -190,6 +190,22 @@ export function refFieldOf(
   return field?.type === 'ref' ? field : null;
 }
 
+/** Coluna `ref` da tabela `tableKey` do tipo da anotação; `null` se não existir. */
+export function refColumnOf(
+  p: Project,
+  annotationId: string,
+  tableKey: string,
+  column: string,
+): SpecRefColumn | null {
+  const source =
+    projectIndex(p).annotations.get(annotationId) ?? fail('not-found', annotationId);
+  const type = typeOfAnnotation(p, source)?.type;
+  const field = type ? fieldOf(type, tableKey) : null;
+  if (field?.type !== 'table') return null;
+  const col = field.columns.find((c) => c.key === column);
+  return col?.type === 'ref' ? col : null;
+}
+
 export interface RefTarget {
   readonly ref: RefValue;
   /** Anotação que contém o alvo (para agrupar e mostrar imagem › marcação). */
@@ -202,19 +218,13 @@ export interface RefTarget {
   readonly tags: readonly string[];
 }
 
-/**
- * Alvos aceitos pelo campo `ref` `key` da anotação, na ordem do projeto: em
- * qualquer marcação e imagem, nunca a própria anotação. Vazio se o campo não é `ref`.
- */
-export function findRefTargets(
+/** Alvos aceitos por `accepts`, na ordem do projeto, nunca a anotação de origem. */
+function targetsAccepted(
   p: Project,
   sourceAnnotationId: string,
-  key: string,
-  texts: LabelTexts = DEFAULT_LABEL_TEXTS,
+  accepts: SpecRefAccepts,
+  texts: LabelTexts,
 ): RefTarget[] {
-  const field = refFieldOf(p, sourceAnnotationId, key);
-  if (!field) return [];
-  const { accepts } = field;
   const targets: RefTarget[] = [];
   const push = (ref: RefValue, annotation: Annotation, tags: readonly string[] = []) =>
     targets.push({ ref, annotation, label: refLabel(p, ref, texts), tags });
@@ -243,29 +253,86 @@ export function findRefTargets(
   return targets;
 }
 
-export interface AnnotationRef {
-  /** Chave do campo `ref`. */
-  readonly key: string;
-  readonly ref: RefValue;
+/**
+ * Alvos aceitos pelo campo `ref` `key` da anotação, na ordem do projeto: em
+ * qualquer marcação e imagem, nunca a própria anotação. Vazio se o campo não é `ref`.
+ */
+export function findRefTargets(
+  p: Project,
+  sourceAnnotationId: string,
+  key: string,
+  texts: LabelTexts = DEFAULT_LABEL_TEXTS,
+): RefTarget[] {
+  const field = refFieldOf(p, sourceAnnotationId, key);
+  return field ? targetsAccepted(p, sourceAnnotationId, field.accepts, texts) : [];
 }
 
 /**
- * Referências feitas pela anotação: os campos `ref` preenchidos do tipo. Se o tipo
- * não existe mais, qualquer valor no formato de referência conta.
+ * Alvos aceitos pela coluna `ref` `column` da tabela `tableKey` da anotação (o mesmo `accepts`
+ * de um campo `ref`). Vazio se a coluna não existe ou não é `ref`.
+ */
+export function findCellRefTargets(
+  p: Project,
+  sourceAnnotationId: string,
+  tableKey: string,
+  column: string,
+  texts: LabelTexts = DEFAULT_LABEL_TEXTS,
+): RefTarget[] {
+  const col = refColumnOf(p, sourceAnnotationId, tableKey, column);
+  return col ? targetsAccepted(p, sourceAnnotationId, col.accepts, texts) : [];
+}
+
+export interface AnnotationRef {
+  /** Chave do campo `ref`, ou da `table` quando a referência está numa célula. */
+  readonly key: string;
+  readonly ref: RefValue;
+  /** Célula de coluna `ref`: o `_id` da linha, a coluna e a posição dela (a partir de 0). */
+  readonly rowId?: string;
+  readonly column?: string;
+  readonly rowIndex?: number;
+}
+
+/**
+ * Referências feitas pela anotação: os campos `ref` preenchidos do tipo e as células
+ * preenchidas das colunas `ref` das tabelas. Se o tipo não existe mais, qualquer valor (ou
+ * célula) no formato de referência conta.
  */
 export function refsOf(p: Project, a: Annotation): AnnotationRef[] {
   if (!a.values) return [];
   const values = a.values;
   const type = typeOfAnnotation(p, a)?.type;
-  const keys = type
-    ? type.fields.filter((f) => f.type === 'ref').map((f) => f.key)
-    : Object.keys(values);
   const result: AnnotationRef[] = [];
+  const keys = type ? type.fields.map((f) => f.key) : Object.keys(values);
   for (const key of keys) {
-    const ref = parseRefValue(values[key]);
-    if (ref) result.push({ key, ref });
+    const field = type ? fieldOf(type, key) : null;
+    if (type && !field) continue;
+    if (field ? field.type === 'table' : Array.isArray(values[key])) {
+      const refColumns =
+        field?.type === 'table'
+          ? new Set(field.columns.filter((c) => c.type === 'ref').map((c) => c.key))
+          : null;
+      tableRows(values[key]).forEach((row, rowIndex) => {
+        for (const [column, cell] of Object.entries(row)) {
+          if (column === '_id' || (refColumns && !refColumns.has(column))) continue;
+          const ref = parseRefValue(cell);
+          if (ref) result.push({ key, ref, rowId: row._id, column, rowIndex });
+        }
+      });
+    } else if (!field || field.type === 'ref') {
+      const ref = parseRefValue(values[key]);
+      if (ref) result.push({ key, ref });
+    }
   }
   return result;
+}
+
+/** O campo da referência como se lê no texto: `campo`, ou `tabela[2].coluna` numa célula. */
+export function refPathText(
+  r: Pick<AnnotationRef, 'key' | 'column' | 'rowIndex'>,
+): string {
+  return r.column === undefined || r.rowIndex === undefined
+    ? r.key
+    : `${r.key}[${r.rowIndex + 1}].${r.column}`;
 }
 
 export interface Backlink extends AnnotationRef {

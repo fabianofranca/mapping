@@ -17,6 +17,8 @@ import {
   type SpecAnnotationType,
   type SpecColumn,
   type SpecField,
+  type SpecRefAccepts,
+  type SpecSimpleColumn,
 } from './spec';
 import {
   fieldOf,
@@ -50,7 +52,7 @@ export type ValueProblem = 'invalid-value' | 'unknown-option';
 
 /** Confere um valor não vazio contra um campo simples (ou coluna). */
 export function checkSimpleValue(
-  field: SpecColumn,
+  field: SpecSimpleColumn,
   value: JsonValue,
 ): ValueProblem | null {
   switch (field.type) {
@@ -78,10 +80,15 @@ export function defaultValues(type: SpecAnnotationType): TypedValues {
   return Object.fromEntries(type.fields.map((f) => [f.key, defaultFieldValue(f)]));
 }
 
+/** Valor inicial de uma célula: o `default` da coluna; `null` na coluna `ref` e sem default. */
+export function defaultColumnValue(column: SpecColumn): JsonValue {
+  return column.type === 'ref' ? null : (column.default ?? null);
+}
+
 function newRow(columns: readonly SpecColumn[], rowId: string): TableRow {
   return {
     _id: rowId,
-    ...Object.fromEntries(columns.map((c) => [c.key, c.default ?? null])),
+    ...Object.fromEntries(columns.map((c) => [c.key, defaultColumnValue(c)])),
   };
 }
 
@@ -196,11 +203,29 @@ function updateValues(
 }
 
 /** Normaliza (texto vazio → `null`) e valida o valor de um campo simples. */
-function checkedSimple(field: SpecColumn, value: JsonValue): JsonValue {
+function checkedSimple(field: SpecSimpleColumn, value: JsonValue): JsonValue {
   if (isEmptyValue(value)) return null;
   const problem = checkSimpleValue(field, value);
   if (problem) fail(problem, field.key);
   return value;
+}
+
+/**
+ * Valor de uma referência (campo `ref` ou célula de coluna `ref`): `null` limpa; senão precisa
+ * ser uma referência existente, que não seja a própria anotação, aceita pelo `accepts`.
+ */
+function checkedRef(
+  p: Project,
+  annotationId: string,
+  accepts: SpecRefAccepts,
+  key: string,
+  value: JsonValue,
+): JsonValue {
+  if (isEmptyValue(value)) return null;
+  const ref = parseRefValue(value) ?? fail('invalid-value', key);
+  if (ref.annotationId === annotationId) fail('self-ref', key);
+  if (!isRefAccepted(p, annotationId, accepts, ref)) fail('ref-not-accepted', key);
+  return { ...ref };
 }
 
 /**
@@ -220,14 +245,7 @@ export function setFieldValue(
     if (field.type === 'table') {
       fail('invalid-value', key);
     } else if (field.type === 'ref') {
-      if (isEmptyValue(value)) {
-        next = null;
-      } else {
-        const ref = parseRefValue(value) ?? fail('invalid-value', key);
-        if (ref.annotationId === a.id) fail('self-ref', key);
-        if (!isRefAccepted(p, a.id, field.accepts, ref)) fail('ref-not-accepted', key);
-        next = { ...ref };
-      }
+      next = checkedRef(p, a.id, field.accepts, key, value);
     } else {
       next = checkedSimple(field, value);
     }
@@ -277,11 +295,14 @@ export function setTableCell(
   column: string,
   value: JsonValue,
 ): Project {
-  return updateValues(p, annotationId, (values, type) => {
+  return updateValues(p, annotationId, (values, type, a) => {
     const field = tableField(type, key);
     const col =
       field.columns.find((c) => c.key === column) ?? fail('unknown-field', column);
-    const cell = checkedSimple(col, value);
+    const cell =
+      col.type === 'ref'
+        ? checkedRef(p, a.id, col.accepts, column, value)
+        : checkedSimple(col, value);
     const rows = rawRows(values, key);
     const index = rowIndex(rows, rowId);
     const next = rows.map((r, i) =>
@@ -361,13 +382,26 @@ export function typedValuesToPairs(
       pairs.push({ key, value: `→ ${ref ? refLabel(p, ref, texts) : texts.broken}` });
     } else if (Array.isArray(value)) {
       const columns = field?.type === 'table' ? field.columns.map((c) => c.key) : null;
+      const refColumns = new Set(
+        field?.type === 'table'
+          ? field.columns.filter((c) => c.type === 'ref').map((c) => c.key)
+          : [],
+      );
       value.forEach((row, i) => {
         if (!isRecord(row)) return;
         const cols = columns ?? Object.keys(row).filter((k) => k !== '_id');
         for (const col of cols) {
           const cell = row[col];
           if (cell === undefined || isEmptyValue(cell)) continue;
-          pairs.push({ key: `${key}[${i + 1}].${col}`, value: valueText(cell) });
+          // Célula `ref` (ou, sem tipo, no formato de referência): `→ User.name`, como o campo.
+          const cellRef =
+            refColumns.has(col) || columns === null ? parseRefValue(cell) : null;
+          const text = cellRef
+            ? `→ ${refLabel(p, cellRef, texts)}`
+            : refColumns.has(col)
+              ? `→ ${texts.broken}`
+              : valueText(cell);
+          pairs.push({ key: `${key}[${i + 1}].${col}`, value: text });
         }
       });
     } else {

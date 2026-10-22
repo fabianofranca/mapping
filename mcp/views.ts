@@ -12,6 +12,7 @@ import {
   platformRepoOf,
   projectPlatforms,
   refLabel,
+  refPathText,
   refsOf,
   resolveRef,
   specLayerOf,
@@ -135,17 +136,20 @@ export function annotationView(
   const resolvedType = typeOfAnnotation(p, annotation);
   const issues = projectIssues(p).get(annotation.id) ?? [];
 
-  const outgoing = refsOf(p, annotation).map(({ key, ref }) => {
+  const outgoing = refsOf(p, annotation).map((link) => {
+    const { ref } = link;
+    // Numa célula de coluna `ref`, o campo é `tabela[2].coluna`.
+    const field = refPathText(link);
     const target = resolveRef(p, ref);
     return target
-      ? { field: key, to: refLabel(p, ref), target: refTarget(refs, target) }
-      : { field: key, broken: true, ref };
+      ? { field, to: refLabel(p, ref), target: refTarget(refs, target) }
+      : { field, broken: true, ref };
   });
   const backlinks = getBacklinks(p, annotation.id).map((link) => ({
     from: refs.ref('a', link.source.id),
     fromLabel: annotationShortLabel(p, link.source),
     fromMarking: refs.bare('m', link.source.markingId),
-    field: link.key,
+    field: refPathText(link),
     to: refLabel(p, link.ref),
   }));
   const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.bare('a', a.id));

@@ -12,14 +12,16 @@ import type {
 
 const FALSY_TEXT = new Set(['', 'não', 'nao', 'false', '0', 'off', 'no']);
 
-/** Vazio: `null`, `undefined` ou texto só com espaços. */
+/** Vazio: `null`, `undefined`, texto só com espaços ou uma tabela sem linhas. */
 export function isEmpty(value: FieldValue): boolean {
+  if (Array.isArray(value)) return value.length === 0;
   return value === null || value === undefined || String(value).trim() === '';
 }
 
 /** "Verdadeiro" para campos booleanos gravados como enum (`sim`/`não`) ou texto. */
 export function truthy(value: FieldValue): boolean {
   if (isEmpty(value)) return false;
+  if (Array.isArray(value)) return true;
   if (typeof value === 'number') return value !== 0;
   return !FALSY_TEXT.has(String(value).trim().toLowerCase());
 }
@@ -123,6 +125,28 @@ export function evaluateText(
   return isEmpty(value) ? fallback : String(value);
 }
 
+/**
+ * Chaves citadas dentro do `template` dos nós `repeat` (colunas da linha ou campos do tipo),
+ * ordenadas na ordem em que aparecem, sem repetição. `referencedFields` não as inclui.
+ */
+export function repeatInnerFields(
+  node: unknown,
+  out: Set<string> = new Set(),
+): Set<string> {
+  if (Array.isArray(node)) {
+    for (const item of node) repeatInnerFields(item, out);
+    return out;
+  }
+  if (typeof node !== 'object' || node === null) return out;
+  const record = node as Record<string, unknown>;
+  if (record.type === 'repeat') {
+    referencedFields(record.template, out);
+    return out;
+  }
+  for (const value of Object.values(record)) repeatInnerFields(value, out);
+  return out;
+}
+
 /** Campos citados pela expressão ou condição (para saber o que redesenha o quê). */
 export function referencedFields(
   expr: unknown,
@@ -134,8 +158,14 @@ export function referencedFields(
   }
   if (typeof expr !== 'object' || expr === null) return out;
   const record = expr as Record<string, unknown>;
+  const isRepeat = record.type === 'repeat';
   for (const [key, value] of Object.entries(record)) {
-    if (
+    // `repeat`: conta o campo `table` e as expressões do próprio nó; o `template` lê as colunas
+    // da linha (`repeatInnerFields`), não os campos do tipo.
+    if (isRepeat && key === 'template') continue;
+    if (isRepeat && key === 'field' && typeof value === 'string') {
+      out.add(value);
+    } else if (
       (key === '$field' || key === '$has' || key === '$switch') &&
       typeof value === 'string'
     ) {

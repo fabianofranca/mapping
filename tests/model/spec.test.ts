@@ -204,14 +204,23 @@ const semantic: [string, (s: Json) => void, string][] = [
     'layers[0].annotationTypes[0].fields[2].options:',
   ],
   [
-    'ref dentro de table',
+    'ref de coluna sem accepts',
+    (s) =>
+      (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
+        key: 'r',
+        type: 'ref',
+      }),
+    'layers[1].annotationTypes[0].fields[2].columns[0].accepts:',
+  ],
+  [
+    'ref de coluna na formatVersion 2 (só existe a partir da 7)',
     (s) =>
       (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
         key: 'r',
         type: 'ref',
         accepts: { free: true },
       }),
-    'layers[1].annotationTypes[0].fields[2].columns[0].type:',
+    'layers[1].annotationTypes[0].fields[2].columns[0].type: só é permitido com formatVersion 7',
   ],
   [
     'table dentro de table',
@@ -333,12 +342,11 @@ const structural: [string, (s: Json) => void][] = [
   ],
   ['enum sem options', (s) => delete s.layers[0].annotationTypes[0].fields[2].options],
   [
-    'ref dentro de table',
+    'ref de coluna sem accepts',
     (s) =>
       (s.layers[1].annotationTypes[0].fields[2].columns[0] = {
         key: 'r',
         type: 'ref',
-        accepts: { free: true },
       }),
   ],
   ['table sem columns', (s) => delete s.layers[1].annotationTypes[0].fields[2].columns],

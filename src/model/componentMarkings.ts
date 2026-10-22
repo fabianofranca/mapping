@@ -310,6 +310,10 @@ export function addComponentMarking(
     if (field.type === 'table' || field.type === 'ref') continue;
     const preview = component.preview?.[field.key];
     if (preview === undefined) continue;
+    // As linhas de uma tabela não passam por aqui (o campo `table` já foi pulado).
+    if (typeof preview !== 'string' && typeof preview !== 'number' && preview !== null) {
+      continue;
+    }
     try {
       next = setFieldValue(next, args.annotationId, field.key, preview);
     } catch (error) {

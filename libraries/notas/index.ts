@@ -2,7 +2,9 @@
 // os arquivos são importados como texto (`?raw`), sem cópia. `tests/model/notesLibrary.test.ts`
 // confere que o pacote é válido e que esta lista tem todo arquivo da pasta.
 import notaComponent from './components/nota.json?raw';
+import tabelaComponent from './components/tabela.json?raw';
 import notaDoc from './docs/nota.md?raw';
+import tabelaDoc from './docs/tabela.md?raw';
 import notasSpec from './notas.spec.json?raw';
 
 /** Identificador da especialização (`notas.spec.json`). */
@@ -15,6 +17,8 @@ export const NOTES_FILES: ReadonlyMap<string, string> = new Map([
   [NOTES_SPEC_FILE, notasSpec],
   ['components/nota.json', notaComponent],
   ['docs/nota.md', notaDoc],
+  ['components/tabela.json', tabelaComponent],
+  ['docs/tabela.md', tabelaDoc],
 ]);
 
 /** O pacote como `applyBundledLibrary` o lê (`src/model/bundledLibrary.ts`). */

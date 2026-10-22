@@ -114,6 +114,20 @@ export interface Catalog {
   readonly library: Library | null;
 }
 
+/**
+ * As linhas do `preview` de uma tabela ganham `_id` (o formulário do playground edita linhas
+ * por `_id`); o desenho ignora o `_id`.
+ */
+function withRowIds(values: FieldValues): FieldValues {
+  const out: Record<string, FieldValues[string]> = {};
+  for (const [key, value] of Object.entries(values)) {
+    out[key] = Array.isArray(value)
+      ? value.map((row, i) => ({ _id: `preview-${i + 1}`, ...row }))
+      : value;
+  }
+  return out;
+}
+
 function fieldOf(field: SpecField | SpecColumn): CatalogField {
   const base = {
     key: field.key,
@@ -282,7 +296,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
         previewValues:
           component === null
             ? null
-            : { ...defaultValues(type), ...(component.preview ?? {}) },
+            : withRowIds({ ...defaultValues(type), ...(component.preview ?? {}) }),
       };
     }),
   }));
