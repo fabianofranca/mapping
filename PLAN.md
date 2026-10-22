@@ -306,12 +306,28 @@ O dono quer que as fases sejam desenvolvidas **em sequência, sem ele, durante a
 
 **O gerente da madrugada** (uma sessão em **Sonnet, esforço high**, decidido pelo dono em 2026-10-22: ele segue um protocolo fechado e **não executa fase nenhuma**, só cria uma sessão por fase, com o modelo certo, e acompanha; um modelo mais caro ali gastaria cota lendo log, e o esforço alto fica para as poucas decisões que salvam a noite, como distinguir uma CI vermelha da fase de uma falha de infraestrutura).
 
-1. Lê o `CLAUDE.md`, esta seção e as fases; confere os pré-requisitos.
+1. Lê o `CLAUDE.md`, esta seção e as fases; confere os pré-requisitos; abre a noite no **painel** (abaixo): a execução, as fases que a noite vai cobrir e o primeiro evento.
 2. Para cada fase, em ordem: cria a sessão da fase com `create_session` do servidor `claude-code-remote`, com o **modelo coordenador da fase** (tabela acima), `source_url` do repositório, `source_revision` no branch da fase anterior, `outcome_branch` no branch da fase e o modo de permissão sem perguntas que o dono configurar; o prompt é o modelo abaixo. O esforço do coordenador vai **no prompt** (a ferramenta não o fixa) e a sessão o repassa aos briefings dos subagentes, lidos da tabela da fase.
-3. Acompanha a sessão (`get_session`, `list_events`) sem interferir; quando ela termina, confere a entrega: branch publicado, PR aberto com a base certa, CI verde (ou o relato do que ficou vermelho e por quê), checkboxes da fase marcados no `PLAN.md`, descrição com Resumo, Como testar e Decisões tomadas. Dúvida que o plano não resolve aparece na descrição do PR, nunca vira comportamento inventado.
+3. Acompanha a sessão (`get_session`, `list_events`) sem interferir; quando ela termina, confere a entrega: branch publicado, PR aberto com a base certa, CI verde (ou o relato do que ficou vermelho e por quê), checkboxes da fase marcados no `PLAN.md`, descrição com Resumo, Como testar e Decisões tomadas. Dúvida que o plano não resolve aparece na descrição do PR, nunca vira comportamento inventado. Cada acontecimento (sessão criada, PR aberto, CI, rodada de correção, entrega) vira uma escrita no painel; enquanto a fase roda, a cada 15 minutos no máximo, o gerente atualiza a nota da fase com o que a sessão está fazendo.
 4. Só então começa a fase seguinte, da ponta do branch recém-entregue.
-5. **Para a cascata**, sem iniciar a próxima fase, quando: a fase passa do tempo (sugestão: 3 h; a ME1, 4 h); os gates continuam vermelhos depois de duas rodadas de correção da própria sessão; a sessão pede uma decisão que não está no plano; a próxima fase tem decisão aberta. A fase interrompida fica como está (branch publicado, PR em rascunho se não terminou), e o gerente deixa para a manhã um comentário no PR da última fase entregue (ou no PR #205, se nenhuma) com: fases entregues e seus PRs, o que parou e por quê, e o que a manhã precisa decidir.
+5. **Para a cascata**, sem iniciar a próxima fase, quando: a fase passa do tempo (sugestão: 3 h; a ME1, 4 h); os gates continuam vermelhos depois de duas rodadas de correção da própria sessão; a sessão pede uma decisão que não está no plano; a próxima fase tem decisão aberta. A fase interrompida fica como está (branch publicado, PR em rascunho se não terminou), e o gerente deixa para a manhã um comentário no PR da última fase entregue (ou no PR #205, se nenhuma) com: fases entregues e seus PRs, o que parou e por quê, e o que a manhã precisa decidir. Registra a parada no painel (estado da execução, motivo e um evento).
 6. **Nunca:** mesclar PR, mexer na `main` ou no épico além de criá-lo, apagar branch, rebase ou force-push, pular gate, pôr `mcp-rc` fora da ME5, implementar além da fase.
+
+**Painel da noite** (pedido do dono em 2026-10-22): um painel ao vivo, aberto a qualquer hora pelo celular, que diz em que fase a noite está, quanto tempo cada fase levou, há quanto tempo a atual roda, os PRs e um diário. É o artefato **[Cascata noturna do Mapping](https://claude.ai/artifact/BWeCqicAbAouMKWHRVxq5t)** (privado do dono; a página já existe e o gerente **não a republica**). O gerente só **grava dados** no banco do artefato, com a ferramenta `ArtifactData` (`url` do painel; carregue-a com `ToolSearch` se não estiver na lista), e a página se atualiza sozinha para quem a tem aberta; os tempos "há X" são calculados na página a partir dos horários gravados.
+
+- **Documentos** (horários em ISO 8601 com fuso, o `toISOString()` de JavaScript):
+  - `cascade/state`: `{ currentRunId, updatedAt }`. Lido antes de escrever (`get`, para o `if_version`); `currentRunId` aponta a execução da noite.
+  - `runs/<runId>` (`runId` = data da noite, `AAAA-MM-DD`, com sufixo `-2` se houver outra no mesmo dia): `{ id, status: "running" | "stopped" | "done", startedAt, endedAt?, startBranch, managerSessionId?, currentPhase?, stopReason?, summary?, note?, updatedAt }`.
+  - `runs/<runId>/phases/<FASE>` (`CN1`, `CN2`, `ME0` … `ME5`): `{ id, order, title, model, effort, status: "pending" | "running" | "fixing" | "delivered" | "stopped" | "skipped" | "merged", startedAt?, endedAt?, branch?, prNumber?, prUrl?, sessionId?, ci?: "pending" | "green" | "red" | "none", note?, updatedAt }`. `note` é uma frase sobre o que a sessão está fazendo agora.
+  - `runs/<runId>/events/<id>` (`id` = horário ISO com `:` e `.` trocados por `-`, mais um sufixo curto): `{ at, phase?, kind: "info" | "ok" | "warn" | "stop", text }`. Uma frase por acontecimento; nunca o log inteiro.
+- **Quando gravar** (um `batch` por acontecimento, com `if_version` nos documentos já lidos):
+  1. Ao começar: `runs/<runId>` em `running`, todas as fases que a noite vai cobrir em `pending` (com `order`, `title`, `model` e `effort` da tabela da etapa), `cascade/state` apontando para a execução, e um evento "Noite começou a partir de <branch>".
+  2. Ao criar a sessão de uma fase: a fase em `running` com `startedAt`, `sessionId` e `branch`; `currentPhase` na execução; evento.
+  3. Ao ver PR aberto, CI (verde ou vermelho), rodada de correção da própria sessão (`fixing`), entrega (`delivered`, `endedAt`): o campo correspondente na fase; evento.
+  4. Enquanto a fase roda, **a cada 15 minutos no máximo**: `note` da fase com o que a sessão está fazendo (lido de `list_events`) e `updatedAt` da execução; evento só se algo mudou. Se a execução ficar mais de 30 minutos sem `updatedAt`, o painel mostra "sem sinal do gerente".
+  5. Ao parar ou terminar: `status` da execução (`stopped` ou `done`), `endedAt`, `stopReason` ou `summary` (uma frase: fases entregues e onde parou); a fase interrompida em `stopped`; evento `stop`.
+  6. De manhã, o agente de apoio marca cada fase mesclada no épico como `merged` (opcional; o resto o dono vê no GitHub).
+- **Custo e falha:** nunca mais de uma escrita por acontecimento e uma por 15 minutos; nada de reescrever a página. Se a ferramenta não existir na sessão ou a escrita for recusada, o gerente avisa no relato da manhã e segue sem o painel: o painel nunca para a cascata.
 
 **Prompt da sessão de uma fase** (o gerente preenche os colchetes):
 
@@ -349,7 +365,9 @@ pare com o que está verde e relate no PR. Não mescle nada.
 Gerencie a cascata noturna da etapa Marcações espaciais, notas e setas:
 leia o CLAUDE.md e a seção "Execução em cascata" do PLAN.md e siga o
 protocolo do gerente da madrugada, fase a fase, a partir de [branch de
-partida], parando onde o protocolo manda parar. Não mescle nada.
+partida], parando onde o protocolo manda parar. Alimente o painel da
+noite a cada acontecimento, como manda a seção "Painel da noite". Não
+mescle nada.
 ```
 
 ### Fases
