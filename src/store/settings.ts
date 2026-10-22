@@ -74,3 +74,13 @@ export function setShowComponentsOnPhotos(value: boolean): void {
   showComponentsOnPhotos.value = value;
   writeSetting(COMPONENTS_ON_PHOTOS_KEY, value ? 'on' : 'off');
 }
+
+const ARROWS_KEY = 'mapping.showArrows';
+
+/** Mostrar as setas no canvas (padrão ligado; ME4). Por dispositivo, não vai para o projeto. */
+export const showArrows = signal<boolean>(readSetting(ARROWS_KEY) !== 'off');
+
+export function setShowArrows(value: boolean): void {
+  showArrows.value = value;
+  writeSetting(ARROWS_KEY, value ? 'on' : 'off');
+}
