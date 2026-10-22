@@ -30,7 +30,11 @@ describe('componentTarget: tipo flutuante', () => {
   it('sem seleção, com o centro da vista sobre um container: canvas, no centro da vista', async () => {
     const h = await notesHarness();
     h.ui.selection.value = null;
-    const point = h.canvas.viewportCenter() as { x: number; y: number };
+    const image = h.project().containers[0];
+    const point = {
+      x: (image?.placement.x ?? 0) + 200,
+      y: (image?.placement.y ?? 0) + 150,
+    };
     const target = componentTarget(h.context, { floating: true });
     expect(target).toMatchObject({
       containerId: null,

@@ -268,6 +268,9 @@ describe('abrir projeto existente', () => {
     expect(opened12.specializations).toHaveLength(1);
     expect(notesLayers(opened12)).toHaveLength(1);
     expect(opened12.layers).toHaveLength(project.layers.length);
+    // Nem tentou aplicar de novo (o erro de "já aplicada" iria para o Diagnóstico).
+    const report = await import('../../src/utils/report');
+    expect(report.reportedErrors.value.map((e) => e.context)).not.toContain('open.notes');
     expect(opened.session.store.canUndo.value).toBe(false);
 
     // A cópia da pessoa continua a que está no disco, sem regravar o pacote por cima.
