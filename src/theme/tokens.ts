@@ -67,6 +67,12 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-line': '#ffffff',
   'cv-halo': 'rgba(10, 12, 16, 0.72)',
   'cv-select': '#4d8dff',
+  /**
+   * Contorno dos itens selecionados que não são o primário (seleção múltipla, ME2): o mesmo azul
+   * da seleção, mais discreto que ela. Fica sobre o fundo do canvas e sobre as fotos: passa de
+   * 3:1 sobre `color-canvas-bg` nos dois temas.
+   */
+  'cv-select-secondary': { light: '#2b6ad9', dark: '#8fb4ff' },
   'cv-invalid': '#ff6b6b',
   'cv-warning': '#ffc247',
   /**

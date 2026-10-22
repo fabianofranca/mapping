@@ -12,7 +12,7 @@ import type {
 } from '../model';
 import type { DisplayImage } from '../store/displayImages';
 import type { Locale } from '../store/settings';
-import type { EditorMode, Selection } from '../store/ui';
+import type { EditorMode, Selection, SelectionItem } from '../store/ui';
 import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
 import type { Size, Viewport } from './viewport';
@@ -98,6 +98,13 @@ export interface Frame {
   readonly size: Size;
   readonly viewport: Viewport;
   readonly selection: Selection;
+  /**
+   * Todos os itens selecionados (seleção múltipla), o primário (`selection`) por último; vazio no
+   * Ver limpo, como a seleção. As alças, o cadeado e a etiqueta de nome são só do primário; os
+   * demais recebem o contorno de seleção secundário (`overlay.ts`). Mesmo objeto enquanto a
+   * seleção não muda: o quadro compara por referência.
+   */
+  readonly items: readonly SelectionItem[];
   readonly mode: EditorMode;
   readonly locale: Locale;
   readonly shown: readonly Layer[];
@@ -141,6 +148,7 @@ export const OVERLAY_KEYS = [
   'hoverLock',
   'tokens',
   'selection',
+  'items',
   'mode',
 ] as const;
 

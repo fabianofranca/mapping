@@ -25,6 +25,8 @@ describe('canvasTokensFrom', () => {
     expect(t.line).toBe('#ffffff');
     expect(t.halo).toBe('rgba(10, 12, 16, 0.72)');
     expect(t.select).toBe('#4d8dff');
+    expect(t.selectSecondary).toBe('#2b6ad9');
+    expect(canvasTokensFrom(reader('dark')).selectSecondary).toBe('#8fb4ff');
     expect(t.nameTag).toBe(t.select);
     expect(t.badge).toBe('rgba(10, 12, 16, 0.9)');
     expect(t.card).toBe('rgba(255, 255, 255, 0.92)');

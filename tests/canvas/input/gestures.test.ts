@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { isStoreGesture, startGesture } from '../../../src/canvas/input/gestures';
-import { createMarking, setContainerPlacement } from '../../../src/model';
+import { createMarking, setContainerPlacement, setImageLocked } from '../../../src/model';
 import { canvasProject } from '../harness';
 
 const project = canvasProject();
@@ -238,5 +238,64 @@ describe('startGesture: item trancado', () => {
     expect(started).toEqual({ gesture: { kind: 'blocked', pointerId: 7 }, draft: null });
     expect(isStoreGesture(started?.gesture ?? null)).toBe(false);
     expect(begin).not.toHaveBeenCalled();
+  });
+});
+
+describe('startGesture: arrasto conjunto (ME2)', () => {
+  const items = [
+    { kind: 'image', id: 'I2' },
+    { kind: 'marking', id: 'M1' },
+  ] as const;
+
+  it('abre um gesto no store com os itens e o deslocamento zerado', () => {
+    const begin = vi.fn(() => true);
+    const started = startGesture(project, 3, at, { kind: 'move-items', items }, begin);
+    expect(started).toEqual({
+      gesture: {
+        kind: 'move-items',
+        pointerId: 3,
+        items,
+        startCanvas: at,
+        dx: 0,
+        dy: 0,
+      },
+      draft: null,
+    });
+    expect(begin).toHaveBeenCalledTimes(1);
+    expect(isStoreGesture(started?.gesture ?? null)).toBe(true);
+  });
+
+  it('item travado entre os que se movem: o gesto não começa (vira pan)', () => {
+    const begin = vi.fn(() => true);
+    const locked = setImageLocked(project, 'I2', true);
+    expect(startGesture(locked, 1, at, { kind: 'move-items', items }, begin)).toBeNull();
+    expect(begin).not.toHaveBeenCalled();
+  });
+
+  it('os itens que sumiram saem do gesto; sem nenhum, ou com o store recusando, é pan', () => {
+    const begin = vi.fn(() => true);
+    const partial = startGesture(
+      project,
+      1,
+      at,
+      {
+        kind: 'move-items',
+        items: [{ kind: 'marking', id: 'X' }, ...items],
+      },
+      begin,
+    );
+    expect(partial?.gesture).toMatchObject({ kind: 'move-items', items });
+    expect(
+      startGesture(
+        project,
+        1,
+        at,
+        { kind: 'move-items', items: [{ kind: 'image', id: 'X' }] },
+        begin,
+      ),
+    ).toBeNull();
+    expect(startGesture(project, 1, at, { kind: 'move-items', items }, () => false)).toBe(
+      null,
+    );
   });
 });

@@ -14,6 +14,7 @@ import {
   setMarkingLocked,
   type Project,
 } from '../../../src/model';
+import type { SelectionItem } from '../../../src/store/ui';
 import { canvasProject } from '../harness';
 
 const project = canvasProject();
@@ -47,6 +48,8 @@ const ctx = (overrides: Partial<IntentContext> = {}): IntentContext => ({
   readOnly: false,
   mode: 'navigate',
   selection: null,
+  // Sem `items` explícito, a seleção é só o primário (o caso de um item).
+  items: overrides.selection ? [overrides.selection] : [],
   zoom: 1,
   spaceDown: false,
   ...overrides,
@@ -368,5 +371,106 @@ describe('trava (etapa 2.5)', () => {
       kind: 'marking',
       id: 'M2',
     });
+  });
+});
+
+// Seleção múltipla (etapa Marcações espaciais, ME2): as alças continuam só no primário e
+// arrastar dentro de qualquer item selecionado move a seleção toda.
+describe('intentAt: seleção múltipla', () => {
+  const p = spatialProject();
+  const mk = (id: string): SelectionItem => ({ kind: 'marking', id });
+  const im = (id: string): SelectionItem => ({ kind: 'image', id });
+  /** O primário é o último dos itens, como em `selectedItems`. */
+  const multi = (
+    items: readonly SelectionItem[],
+    overrides: Partial<IntentContext> = {},
+  ) => ctx({ project: p, items, selection: items.at(-1) ?? null, ...overrides });
+
+  it('dentro de qualquer item selecionado (container ou marcação) começa o arrasto conjunto', () => {
+    const items = [im('I2'), mk('C2'), mk('M2')];
+    const c = multi(items);
+    const expected = { kind: 'move-items', items };
+    expect(intentAt(c, { x: 1300, y: 300 })).toEqual(expected); // dentro de I2
+    expect(intentAt(c, { x: 2100, y: 200 })).toEqual(expected); // dentro de C2
+    expect(intentAt(c, { x: 250, y: 250 })).toEqual(expected); // dentro de M2 (o primário)
+  });
+
+  it('fora de todos os itens selecionados, pan', () => {
+    const c = multi([im('I2'), mk('M2')]);
+    expect(intentAt(c, { x: 900, y: 700 })).toEqual({ kind: 'pan' }); // I1, não selecionado
+    expect(intentAt(c, { x: 1050, y: 300 })).toEqual({ kind: 'pan' }); // entre as telas
+  });
+
+  it('as alças são só do primário: as dos outros itens movem a seleção', () => {
+    const c = multi([im('I2'), mk('M2')]);
+    // Canto SE de M2 (o primário): redimensiona M2.
+    expect(intentAt(c, { x: 300, y: 300 })).toEqual({
+      kind: 'resize-marking',
+      markingId: 'M2',
+      corner: 'se',
+    });
+    // Canto SE de I2 (secundário): é só "dentro de um item selecionado".
+    expect(intentAt(c, { x: 1598, y: 498 })).toMatchObject({ kind: 'move-items' });
+  });
+
+  it('o primário pode ser um container: as alças dele redimensionam', () => {
+    const c = multi([mk('C2'), im('I2')]);
+    expect(intentAt(c, { x: 1600, y: 500 })).toEqual({
+      kind: 'resize-image',
+      containerId: 'I2',
+      corner: 'se',
+    });
+    expect(intentAt(c, { x: 2002, y: 102 })).toMatchObject({ kind: 'move-items' });
+  });
+
+  it('algum item travado bloqueia o arrasto inteiro (cursor "não permitido")', () => {
+    const locked = setImageLocked(p, 'I2', true);
+    const c = multi([im('I2'), mk('C2')], { project: locked });
+    expect(intentAt(c, { x: 1300, y: 300 })).toEqual({ kind: 'locked' }); // sobre o travado
+    expect(intentAt(c, { x: 2100, y: 200 })).toEqual({ kind: 'locked' }); // sobre o livre
+    expect(intentAt(c, { x: 900, y: 700 })).toEqual({ kind: 'pan' }); // fora de todos
+  });
+
+  it('o primário travado não tem alças, mas o arrasto conjunto continua bloqueado', () => {
+    const locked = setMarkingLocked(p, 'C2', true);
+    const c = multi([im('I2'), mk('C2')], { project: locked });
+    expect(intentAt(c, { x: 2002, y: 102 })).toEqual({ kind: 'locked' });
+  });
+
+  it('uma marcação oculta pelo modo de exibição não conta como "dentro", mas é movida com a seleção', () => {
+    const items = [mk('M2'), im('I2')];
+    const visibility = new Map([['M2', 'hidden' as const]]);
+    const c = multi(items, { visibility });
+    expect(intentAt(c, { x: 250, y: 250 })).toEqual({ kind: 'pan' });
+    expect(intentAt(c, { x: 1300, y: 300 })).toEqual({ kind: 'move-items', items });
+  });
+
+  it('só um item (ou nenhum): nada muda, vale o primário', () => {
+    const one = multi([mk('M1')]);
+    expect(intentAt(one, { x: 400, y: 400 })).toEqual({
+      kind: 'move-marking',
+      markingId: 'M1',
+    });
+    expect(intentAt(multi([]), { x: 400, y: 400 })).toEqual({ kind: 'pan' });
+  });
+
+  it('modo Desenhar, Espaço e só leitura ignoram a seleção múltipla', () => {
+    const items = [im('I2'), mk('M2')];
+    expect(intentAt(multi(items, { mode: 'draw' }), { x: 1300, y: 300 })).toEqual({
+      kind: 'draw',
+      containerId: 'I2',
+    });
+    expect(intentAt(multi(items, { spaceDown: true }), { x: 1300, y: 300 })).toEqual({
+      kind: 'pan',
+    });
+    expect(intentAt(multi(items, { readOnly: true }), { x: 1300, y: 300 })).toEqual({
+      kind: 'pan',
+    });
+  });
+
+  it('o arrasto conjunto é um "mover": cursor de mover e classificação do gesto', () => {
+    const intent = { kind: 'move-items', items: [im('I1'), mk('M1')] } as const;
+    expect(cursorFor(intent)).toBe('move');
+    expect(dragModeOf(intent)).toBe('move');
   });
 });

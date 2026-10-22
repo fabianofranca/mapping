@@ -353,13 +353,13 @@ mescle nada.
 
 Regras do arrasto conjunto: o deslocamento é em unidades do canvas e cada item recebe o seu no próprio espaço (container e marcação do canvas: o deslocamento; marcação de container: dividido pela escala do container e arredondado, preso ao container); um item selecionado que já vai com outro item selecionado (a marcação de um container selecionado, a descendente de uma marcação de container selecionada) **não recebe deslocamento à parte**; **tudo ou nada**: se algum item não pode ir (container sobrepondo um não selecionado, marcação saindo do container), a prévia inteira fica na última posição válida; algum item com a geometria travada bloqueia o arrasto inteiro (cursor "não permitido"); o pertencimento fica congelado durante o arrasto e é assentado ao soltar, numa só entrada de desfazer.
 
-- [ ] Arrastar da Paleta até o destino (decisão 11): a instância nasce onde cai (slot de um componente com slot, tela ou canvas; tipo flutuante sempre flutuante), com o destino aceso durante o arrasto, encaixe e sem absorção, numa entrada de desfazer; Adicionar com o destino no rótulo; e2e com o arraste do Playwright; teste
-- [ ] `Selection` como conjunto com primário; Shift+clique no canvas e na Árvore; Esc volta ao primário; os leitores da seleção (Detalhes, trilha, barra de status, atalhos, revisão) ajustados, com teste
-- [ ] "Selecionar com o conteúdo" por duplo clique e pelo menu de contexto (`selectionWithContents`, recursivo: marcações do canvas, containers e as marcações deles), com teste
-- [ ] `moveItems` pura (cada item no seu espaço, tudo ou nada, trava bloqueia) e o gesto conjunto com uma entrada de desfazer e assentar ao soltar; teste no modelo, no store e no canvas
-- [ ] Excluir a seleção inteira numa entrada (`removeItems`), com a confirmação somando o impacto; Trancar e Destrancar a seleção
-- [ ] Painel com mais de um item (resumo), alças só no primário, contorno nos demais; tokens novos; i18n
-- [ ] R12.8 a R12.12 no `docs/TESTING.md` (Shift+clique, duplo clique na marcação do canvas, arrastar três telas e a marcação juntas, Ctrl+Z uma vez; arrastar da Paleta para um Card, uma tela e o vazio como passo **[pessoa]**, com o Adicionar como caminho do agente); atalhos na Ajuda
+- [x] Arrastar da Paleta até o destino (decisão 11): a instância nasce onde cai (slot de um componente com slot, tela ou canvas; tipo flutuante sempre flutuante), com o destino aceso durante o arrasto, encaixe e sem absorção, numa entrada de desfazer; Adicionar com o destino no rótulo; e2e com o arraste do Playwright; teste
+- [x] `Selection` como conjunto com primário; Shift+clique no canvas e na Árvore; Esc volta ao primário; os leitores da seleção (Detalhes, trilha, barra de status, atalhos, revisão) ajustados, com teste
+- [x] "Selecionar com o conteúdo" por duplo clique e pelo menu de contexto (`selectionWithContents`, recursivo: marcações do canvas, containers e as marcações deles), com teste
+- [x] `moveItems` pura (cada item no seu espaço, tudo ou nada, trava bloqueia) e o gesto conjunto com uma entrada de desfazer e assentar ao soltar; teste no modelo, no store e no canvas
+- [x] Excluir a seleção inteira numa entrada (`removeItems`), com a confirmação somando o impacto; Trancar e Destrancar a seleção
+- [x] Painel com mais de um item (resumo), alças só no primário, contorno nos demais; tokens novos; i18n
+- [x] R12.8 a R12.12 no `docs/TESTING.md` (Shift+clique, duplo clique na marcação do canvas, arrastar três telas e a marcação juntas, Ctrl+Z uma vez; arrastar da Paleta para um Card, uma tela e o vazio como passo **[pessoa]**, com o Adicionar como caminho do agente); atalhos na Ajuda
 
 **Aceite:** arrastar Button da Paleta para dentro de um Card o adota no slot, para uma tela cria nela e para o vazio cria no canvas, com o destino aceso durante o arrasto; duplo clique numa marcação do canvas seleciona ela e os três containers dentro; arrastar move tudo mantendo as posições relativas; um Ctrl+Z desfaz; se um dos containers estiver trancado, o arrasto não começa; Shift+clique tira um container da seleção e o arrasto move o resto; Delete exclui a seleção numa confirmação só; gates verdes.
 

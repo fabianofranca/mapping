@@ -18,7 +18,12 @@ import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
 import { locale } from '../store/settings';
 import { textMeasurer } from '../store/textMeasure';
-import { resolveSelection, type EditorUi } from '../store/ui';
+import {
+  itemsOf,
+  resolveSelection,
+  type EditorUi,
+  type SelectionItem,
+} from '../store/ui';
 import {
   COMPONENT_KEYS,
   IMAGE_KEYS,
@@ -76,6 +81,9 @@ export interface CanvasControllerOptions {
    */
   readonly review?: ReviewState;
 }
+
+/** Seleção vazia (Ver limpo): sempre o mesmo objeto, o quadro compara por referência. */
+const NO_ITEMS: readonly SelectionItem[] = [];
 
 /** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
 const LABEL_KEYS = ['visibility', 'dots', 'incomplete'] as const;
@@ -163,6 +171,16 @@ export class CanvasController {
     this.derived.drawingsOf(this.drawnProject.value),
   );
 
+  /**
+   * Itens selecionados (o primário por último). Um `computed` guarda o array até a seleção mudar:
+   * refazer o quadro por causa de pan ou zoom não pode redesenhar a sobreposição à toa.
+   */
+  private readonly selectedItems = computed(() =>
+    this.ui.cleanView.value
+      ? NO_ITEMS
+      : itemsOf(this.ui.selection.value, this.ui.selectionGroup.value),
+  );
+
   /** Container que receberia a marcação arrastada, como alvo de soltar. */
   private readonly moveTargetFrame = computed((): DropTarget => {
     const id = this.state.moveTarget.value;
@@ -188,6 +206,7 @@ export class CanvasController {
       size: this.view.size.value,
       viewport: this.view.viewport.value,
       selection: clean ? null : this.ui.selection.value,
+      items: this.selectedItems.value,
       mode: this.ui.mode.value,
       locale: locale.value,
       shown: this.derived.visibleLayers.value,

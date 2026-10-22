@@ -2,6 +2,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import { createDisplayImages } from '../../src/store/displayImages';
 import type { InteractionState } from '../../src/canvas/frame';
+import type { OverlayRenderer } from '../../src/canvas/renderers/overlay';
+import { selectItems, setCleanView, type SelectionItem } from '../../src/store/ui';
 import { editorFor, installFakeCanvas } from './harness';
 
 describe('CanvasController', () => {
@@ -63,6 +65,50 @@ describe('CanvasController', () => {
     expect(controller.imageIdAt(190, 350)).toBe('I2');
     const p = controller.canvasPointAt(190, 350);
     expect(p.x).toBeCloseTo(1350);
+    controller.destroy();
+  });
+
+  it('seleção múltipla: contorno secundário nos não primários, vazio no Ver limpo, e o pan não refaz a lista', () => {
+    const { controller, ui } = setup();
+    const internals = controller as unknown as {
+      overlay: OverlayRenderer;
+      frame: { peek(): { items: readonly SelectionItem[] } };
+    };
+    const lit = () =>
+      internals.overlay
+        .secondaryHighlights()
+        .filter((r) => r.visible())
+        .map((r) => r.getAttrs());
+    flush();
+    expect(lit()).toHaveLength(0);
+
+    selectItems(ui, [
+      { kind: 'image', id: 'I2' },
+      { kind: 'marking', id: 'M3' },
+      { kind: 'marking', id: 'M2' },
+    ]);
+    flush();
+    expect(lit()).toHaveLength(2);
+    const items = internals.frame.peek().items;
+    expect(items.map((i) => i.id)).toEqual(['I2', 'M3', 'M2']);
+
+    // Pan e zoom refazem o quadro, mas a lista de itens é o mesmo objeto.
+    controller.zoomBy(1.5);
+    flush();
+    expect(internals.frame.peek().items).toBe(items);
+
+    // Ver limpo esconde a seleção inteira, como esconde a primária.
+    setCleanView(ui, true);
+    flush();
+    expect(lit()).toHaveLength(0);
+    setCleanView(ui, false);
+    flush();
+    expect(lit()).toHaveLength(2);
+
+    // Um clique simples volta a um item só.
+    ui.selection.value = { kind: 'marking', id: 'M1' };
+    flush();
+    expect(lit()).toHaveLength(0);
     controller.destroy();
   });
 
