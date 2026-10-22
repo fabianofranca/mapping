@@ -1,6 +1,10 @@
 import { Fragment, type ComponentChildren } from 'preact';
 import { t } from '../i18n';
-import { containerDeletionImpact, markingDeletionImpact } from '../model';
+import {
+  containerDeletionImpact,
+  itemsDeletionImpact,
+  markingDeletionImpact,
+} from '../model';
 import { ContainerDialog } from '../ui/ContainerDialog';
 import { Dialog } from '../ui/Dialog';
 import { DialogSlotContext } from '../ui/focus';
@@ -9,6 +13,7 @@ import { imageLabel, markingLabel } from '../ui/labels';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
 import { SettingsDialog } from '../ui/SettingsDialog';
 import { SpecsDialog } from '../ui/SpecsDialog';
+import { selectItems } from '../store/ui';
 import { closeProject } from './controller';
 import { ExportDialog } from './ExportDialog';
 import type { EditorDialog, EditorDialogs as Dialogs } from './useEditorDialogs';
@@ -142,6 +147,36 @@ function renderDialog(
             <p role="alert">
               <strong>
                 {t('lock.deleteWarning', { locked: impact.lockedDescendants })}
+              </strong>
+            </p>
+          )}
+        </ConfirmDialog>
+      );
+    }
+    case 'deleteItems': {
+      const { items } = dialog;
+      const impact = itemsDeletionImpact(project, items);
+      return (
+        <ConfirmDialog
+          title={t('multi.deleteTitle', { count: items.length })}
+          confirmLabel={t('common.delete')}
+          tone="danger"
+          onCancel={close}
+          onConfirm={() => {
+            close();
+            if (actions.removeItems(items).ok) selectItems(ui, []);
+          }}
+        >
+          <p>{t('multi.deleteMessage', { ...impact })}</p>
+          {impact.containersStay > 0 && (
+            <p>
+              {t('marking.deleteContainersStay', { containers: impact.containersStay })}
+            </p>
+          )}
+          {impact.lockedMarkings > 0 && (
+            <p role="alert">
+              <strong>
+                {t('lock.deleteWarning', { locked: impact.lockedMarkings })}
               </strong>
             </p>
           )}

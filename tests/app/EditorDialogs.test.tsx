@@ -7,6 +7,7 @@ import type {
   EditorDialogs as Dialogs,
 } from '../../src/app/useEditorDialogs';
 import { t } from '../../src/i18n';
+import { selectItems } from '../../src/store/ui';
 import { locale } from '../../src/store/settings';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { createHarness, type Harness } from '../components/harness';
@@ -151,5 +152,35 @@ describe('papel das confirmações', () => {
       resolve: () => undefined,
     } as EditorDialog);
     expect(document.querySelector('dialog')?.hasAttribute('role')).toBe(false);
+  });
+});
+
+describe('confirmar exclusão da seleção', () => {
+  it('mostra o impacto somado e exclui tudo numa entrada de desfazer', async () => {
+    const harness = createHarness(sampleProject());
+    harness.actions.setMarkingLocked('M3', true);
+    const items = [
+      { kind: 'marking', id: 'M1' },
+      { kind: 'image', id: 'I2' },
+    ] as const;
+    selectItems(harness.ui, items);
+    const { dialog, close } = open(harness, { kind: 'deleteItems', items });
+    expect(
+      dialog.getByText(
+        t('multi.deleteMessage', { markings: 4, containers: 1, annotations: 4 }),
+      ),
+    ).toBeTruthy();
+    expect(dialog.getByRole('alert', { hidden: true }).textContent).toBe(
+      t('lock.deleteWarning', { locked: 1 }),
+    );
+    await userEvent.click(
+      dialog.getByRole('button', { name: t('common.delete'), hidden: true }),
+    );
+    expect(close).toHaveBeenCalled();
+    expect(harness.project().markings).toHaveLength(0);
+    expect(harness.project().containers.map((c) => c.id)).toEqual(['I1']);
+    expect(harness.ui.selection.value).toBeNull();
+    harness.store.undo();
+    expect(harness.project().markings).toHaveLength(4);
   });
 });

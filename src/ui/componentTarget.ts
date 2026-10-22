@@ -1,10 +1,22 @@
+import type { DropTarget } from '../canvas/frame';
+import { ABSORB_TOLERANCE, snapTarget } from '../canvas/containment';
 import { imageAt, pointInRect } from '../canvas/imageGeometry';
+import { hitChain } from '../canvas/input/intents';
 import { canvasToImagePixel } from '../canvas/markingGeometry';
+import type { Point } from '../canvas/viewport';
 import { t } from '../i18n';
 import {
+  IDENTITY_PLACEMENT,
   imageCanvasRect,
   hasSlotComponent,
   markingComponent,
+  projectIndex,
+  type ComponentCatalog,
+  type ComponentType,
+  type Marking,
+  type MarkingComponent,
+  type MarkingVisibility,
+  type Project,
   type ProjectContainer,
 } from '../model';
 import { resolveSelection } from '../store/ui';
@@ -51,7 +63,7 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
       return {
         containerId: selected.marking.containerId,
         parentId: selected.marking.id,
-        destination: { kind: 'slot', name: markingLabel(selected.marking) },
+        destination: { kind: 'slot', name: slotTargetName(selected.marking, drawn) },
       };
     }
   }
@@ -88,6 +100,17 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
   return image ? inContainer(image) : onCanvas();
 }
 
+/**
+ * Nome do componente com slot no rótulo do Adicionar: o nome da marcação; sem nome (uma
+ * instância nasce sem), o do tipo que ela desenha ("Card"); sem tipo, o padrão.
+ */
+export function slotTargetName(
+  marking: Pick<Marking, 'name'>,
+  drawn: Pick<MarkingComponent, 'type'> | null,
+): string {
+  return marking.name ?? drawn?.type.name ?? markingLabel(marking);
+}
+
 /** Rótulo do botão Adicionar com o destino ("Adicionar dentro de Lista"). */
 export function addLabel(target: ComponentTarget | null): string {
   const destination = target?.destination;
@@ -99,4 +122,77 @@ export function addLabel(target: ComponentTarget | null): string {
     return t('library.addToScreen', { name: destination.name });
   }
   return t('library.addToCanvas');
+}
+
+// ---------------------------------------------------------------------------
+// Soltar um tipo da paleta no canvas (etapa Marcações espaciais, ME2)
+
+/** Destino de um tipo da paleta solto no canvas, mais o que acender enquanto se arrasta. */
+export interface ComponentDropTarget {
+  readonly containerId: string | null;
+  readonly parentId: string | null;
+  readonly center?: { readonly x: number; readonly y: number };
+  readonly highlight: NonNullable<DropTarget>;
+}
+
+export interface ComponentDropInput {
+  readonly project: Project;
+  readonly catalog: ComponentCatalog;
+  readonly visibility: ReadonlyMap<string, MarkingVisibility>;
+  /** Ponteiro, em unidades do canvas. */
+  readonly point: Point;
+  readonly zoom: number;
+  readonly type: ComponentType;
+}
+
+/**
+ * Onde um componente solto em `point` nasce: no slot da marcação mais interna sob o ponteiro
+ * que desenha um componente com slot; senão no container sob o ponteiro (centrado nele); senão,
+ * no vazio, no container em que o retângulo do componente centrado no ponteiro fica quase
+ * inteiro (encaixe); senão no canvas. Sem absorção.
+ */
+export function componentDropTarget(input: ComponentDropInput): ComponentDropTarget {
+  const { project, catalog, visibility, point, zoom, type } = input;
+  const byId = projectIndex(project).markings;
+
+  for (const hit of hitChain(project, visibility, point)) {
+    if (hit.kind === 'image') break; // o container vence os ancestrais dele
+    const marking = byId.get(hit.id);
+    if (!marking) continue;
+    const drawn = markingComponent(project, catalog, marking.id);
+    if (drawn && hasSlotComponent(drawn.component)) {
+      return {
+        containerId: marking.containerId,
+        parentId: marking.id,
+        highlight: { containerId: marking.containerId, markingId: marking.id },
+      };
+    }
+  }
+
+  const inside = (container: ProjectContainer): ComponentDropTarget => ({
+    containerId: container.id,
+    parentId: null,
+    center: canvasToImagePixel(container.placement, point),
+    highlight: { containerId: container.id },
+  });
+  const over = imageAt(project.containers, point);
+  if (over) return inside(over);
+
+  const { width, height } = type.component.size;
+  const rect = { x: point.x - width / 2, y: point.y - height / 2, width, height };
+  const snap = snapTarget(
+    rect,
+    IDENTITY_PLACEMENT,
+    project.containers,
+    ABSORB_TOLERANCE / zoom,
+  );
+  const snapped = snap && projectIndex(project).containers.get(snap.containerId);
+  if (snapped) return inside(snapped);
+
+  return {
+    containerId: null,
+    parentId: null,
+    center: { x: Math.round(point.x), y: Math.round(point.y) },
+    highlight: { containerId: null },
+  };
 }

@@ -85,7 +85,8 @@ export function CanvasContextMenu() {
     canArrangeMarking(editor, target.id)
       ? target.id
       : null;
-  if (!menu || !(copyable || arrangeId !== null)) return null;
+  const selectable = target?.kind === 'm';
+  if (!menu || !(copyable || arrangeId !== null || selectable)) return null;
   return (
     <div
       class="popover"
@@ -94,7 +95,9 @@ export function CanvasContextMenu() {
       ref={panel}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {copyable && <CopyMenuItems target={menu.target} close={close} />}
+      {(copyable || selectable) && (
+        <CopyMenuItems target={menu.target} close={close} copyable={copyable} />
+      )}
       {arrangeId !== null && (
         <div class="menu-items">
           <Button

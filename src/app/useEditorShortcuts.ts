@@ -15,7 +15,15 @@ import {
   type ToolWindowId,
   type ToolWindowSide,
 } from '../store/toolWindows';
-import { resolveSelection, setCleanView, type Selection } from '../store/ui';
+import {
+  collapseToPrimary,
+  existingItems,
+  peekSelectedItems,
+  resolveSelection,
+  selectItems,
+  setCleanView,
+  type Selection,
+} from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
 import { showAndFocusToolWindow, spaceFor } from '../ui/toolWindowLayout';
 import { isStandalone } from '../utils/platform';
@@ -189,10 +197,17 @@ export function useEditorShortcuts(
         case 'redo':
           return store.redo();
         case 'escape':
-          if (!canvas.current?.cancelInteraction()) ui.selection.value = null;
+          // Gesto em andamento: cancela. Senão, com vários itens volta ao primário; por fim limpa.
+          if (canvas.current?.cancelInteraction()) return;
+          if (!collapseToPrimary(ui)) selectItems(ui, []);
           return;
         case 'delete': {
           if (store.locked.peek()) return;
+          const many = existingItems(shown.peek(), peekSelectedItems(ui));
+          if (many.length > 1) {
+            dialogsRef.current.requestDeleteItems(many);
+            return;
+          }
           const current = resolveSelection(shown.peek(), ui.selection.peek());
           if (current?.kind === 'image') {
             dialogsRef.current.requestDeleteImage(current.image);
@@ -204,6 +219,19 @@ export function useEditorShortcuts(
         case 'toggle-lock': {
           // Só a trava muda: seleção e anotações seguem livres, mas o somente leitura vale.
           if (store.locked.peek()) return;
+          const many = existingItems(shown.peek(), peekSelectedItems(ui));
+          if (many.length > 1) {
+            // Todos trancados: destranca todos; senão tranca todos.
+            const project = shown.peek();
+            const index = project ? projectIndex(project) : null;
+            const allLocked = many.every((i) =>
+              i.kind === 'image'
+                ? index?.containers.get(i.id)?.locked
+                : index?.markings.get(i.id)?.locked,
+            );
+            actions.setItemsLocked(many, !allLocked);
+            return;
+          }
           const current = resolveSelection(shown.peek(), ui.selection.peek());
           if (current?.kind === 'image') {
             actions.setImageLocked(current.image.id, !current.image.locked);

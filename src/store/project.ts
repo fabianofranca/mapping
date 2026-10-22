@@ -273,6 +273,24 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
           rectOptions(base, markingId),
         ),
       ),
+    /**
+     * Prévia do arrasto conjunto: todos os itens pelo deslocamento `dx`, `dy` em unidades do
+     * canvas, cada um no próprio espaço (`moveItems`). Tudo ou nada: se algum item não pode ir
+     * (container sobrepondo um que não se move, marcação saindo do container, item travado), a
+     * prévia inteira fica na última posição válida.
+     */
+    previewItemsMove: (items: readonly model.ItemRef[], dx: number, dy: number) =>
+      store.updateGesture((p) => model.moveItems(p, items, dx, dy, { settle: false })),
+    /**
+     * Final do arrasto conjunto: repete a operação com o último deslocamento válido (`dx`, `dy`,
+     * guardado pelo canvas) e assenta uma vez sobre o resultado inteiro. Nunca falha.
+     */
+    finishItemsMove: (
+      items: readonly model.ItemRef[],
+      dx: number,
+      dy: number,
+    ): ActionResult =>
+      finishGesture((base) => model.moveItems(base, items, dx, dy, settleOptions(base))),
     commitGesture: () => store.commitGesture(),
     cancelGesture: () => store.cancelGesture(),
 
@@ -318,6 +336,14 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Posição entre as irmãs (0 = por baixo). Não é geometria: a trava não impede. */
     reorderMarking: (markingId: string, index: number) =>
       store.apply((p) => model.reorderMarking(p, markingId, index)),
+
+    // Seleção múltipla (ME2): a seleção inteira numa operação, uma entrada de desfazer.
+    /** Exclui os itens (marcações com o que cobrem, containers com as marcações). */
+    removeItems: (items: readonly model.ItemRef[]) =>
+      store.apply((p) => model.removeItems(p, items, settleOptions(p))),
+    /** Tranca ou destranca todos os itens. */
+    setItemsLocked: (items: readonly model.ItemRef[], locked: boolean) =>
+      store.apply((p) => model.setItemsLocked(p, items, locked)),
 
     // Componentes (etapa Biblioteca, B3): cada action é uma entrada de desfazer.
     /** Cria a marcação e a anotação tipada que a desenha; devolve o id da marcação. */

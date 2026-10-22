@@ -24,6 +24,12 @@
   color: var(--color-text-muted);
 }
 
+.multi-actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
 .details-empty strong {
   color: var(--color-text);
 }

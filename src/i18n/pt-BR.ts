@@ -836,6 +836,7 @@ export const ptBR = {
   'library.addInside': 'Adicionar dentro de {name}',
   'library.addToScreen': 'Adicionar na tela {name}',
   'library.addToCanvas': 'Adicionar no canvas',
+  'library.dragHint': 'Arraste até o canvas para criar onde soltar',
   'library.noScreen': 'Selecione ou centralize uma tela',
   'library.readOnly': 'O projeto está somente leitura.',
   'library.error.generic': 'Não foi possível adicionar o componente.',
@@ -887,6 +888,23 @@ export const ptBR = {
   'diagnostics.drawWarnings': 'Avisos do desenho',
   'diagnostics.overflowCount': '{count} marcação(ões) com componente que não cabe',
   'diagnostics.selectMarking': 'Selecionar {name}',
+  'multi.title': '{count} itens selecionados',
+  'multi.containers': '{count} container(s)',
+  'multi.markings': '{count} marcação(ões)',
+  'multi.delete': 'Excluir',
+  'multi.lock': 'Trancar',
+  'multi.unlock': 'Destrancar',
+  'multi.deleteTitle': 'Excluir {count} itens?',
+  'multi.deleteMessage':
+    '{markings} marcação(ões), {containers} container(s) e {annotations} anotação(ões) serão excluídos. Dá para desfazer.',
+  'multi.deleteBlocked': 'Destranque os itens trancados para excluir',
+  'multi.selectWithContents': 'Selecionar com o conteúdo',
+  'shortcuts.shiftClick':
+    'Acrescentar ou tirar da seleção (Shift+clique no canvas e na Árvore)',
+  'shortcuts.doubleClick': 'Selecionar a marcação com o conteúdo (duplo clique)',
+  'shortcuts.escapeToPrimary': 'Com vários itens selecionados, voltar ao item principal',
+  'shortcuts.key.click': 'clique',
+  'shortcuts.key.doubleClick': 'duplo clique',
 } as const;
 
 export type Dictionary = Record<keyof typeof ptBR, string>;

@@ -1,6 +1,7 @@
 import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
 import { SCHEMA_VERSION } from '../model';
+import { existingItems, selectedItems } from '../store/ui';
 import { resolveShownSelection } from '../store/shownSelection';
 import { BUILD_ID } from '../utils/build';
 import { CHANNEL } from '../utils/channel';
@@ -51,6 +52,11 @@ function SelectionItem() {
   const { review, ui } = useEditor();
   const name = useComputed(() => {
     // O projeto à vista (prévia na visão Proposto da revisão), nunca o confirmado direto.
+    const count = existingItems(
+      review.derived.shownProject.value,
+      selectedItems(ui),
+    ).length;
+    if (count > 1) return t('multi.title', { count });
     const selected = resolveShownSelection(review, ui.selection.value);
     if (selected?.kind === 'marking') return markingLabel(selected.marking);
     return selected?.kind === 'image' ? imageLabel(selected.image) : null;

@@ -22,7 +22,7 @@ import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { locale } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
-import { createEditorUi } from '../../src/store/ui';
+import { createEditorUi, itemsOf } from '../../src/store/ui';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 
 /** Contexto 2D que aceita qualquer chamada; `measureText` estima pela quantidade de letras. */
@@ -68,6 +68,7 @@ export const TOKENS: CanvasTokens = {
   line: '#fefefe',
   halo: 'rgba(1, 2, 3, 0.7)',
   select: '#0057b8',
+  selectSecondary: '#3b7ad8',
   invalid: '#cc0000',
   canvasMarking: '#5a3fc1',
   absorb: '#0a8a5d',
@@ -186,6 +187,7 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     size: { width: 380, height: 700 },
     viewport: { x: 0, y: 0, scale: 1 },
     selection: ui.selection.peek(),
+    items: itemsOf(ui.selection.peek(), ui.selectionGroup.peek()),
     mode: ui.mode.peek(),
     locale: locale.peek(),
     shown: derived.visibleLayers.peek(),

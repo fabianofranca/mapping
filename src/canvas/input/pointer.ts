@@ -5,6 +5,7 @@ import {
   IDENTITY_PLACEMENT,
   imagePixelRect,
   projectIndex,
+  selectionWithContents,
   spaceOf,
   toCanvasRect,
   type Placement,
@@ -14,7 +15,15 @@ import {
 import type { EditorDerived } from '../../store/derived';
 import type { ProjectStore } from '../../store/history';
 import type { ProjectActions } from '../../store/project';
-import type { EditorUi } from '../../store/ui';
+import {
+  existingItems,
+  isItemSelected,
+  peekSelectedItems,
+  selectItems,
+  toggleSelectedItem,
+  type EditorUi,
+  type Selection,
+} from '../../store/ui';
 import {
   ABSORB_TOLERANCE,
   absorbInto,
@@ -43,6 +52,7 @@ import {
 import {
   cursorFor,
   dragModeOf,
+  hitChain,
   intentAt,
   isRepeatTap,
   tapSelection,
@@ -66,6 +76,13 @@ export interface PointerInputOptions {
   readonly reviewing?: () => boolean;
 }
 
+/** Gestos que arrastam itens: o cursor é o de mover. */
+const MOVE_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
+  'move-image',
+  'move-marking',
+  'move-items',
+]);
+
 function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
@@ -80,6 +97,14 @@ export class PointerInput {
   private lastTap: Point | null = null;
   /** Tipo do último ponteiro apertado: o `contextmenu` de um toque demorado não é do mouse. */
   private lastPointerType = 'mouse';
+  /** Shift estava apertado quando o ponteiro desceu: o toque (sem arrasto) alterna o item. */
+  private pressShift = false;
+  /**
+   * Seleção primária de antes do último toque. O segundo toque de um duplo clique, por cair no
+   * mesmo ponto, já subiu um degrau na cadeia; o alvo do duplo clique é o que o primeiro toque
+   * selecionou, ou seja, a seleção de antes do segundo.
+   */
+  private selectionBeforeTap: Selection = null;
 
   constructor(options: PointerInputOptions) {
     this.o = options;
@@ -106,6 +131,7 @@ export class PointerInput {
     on('pointermove', (e) => this.onPointerMove(e));
     on('pointerup', (e) => this.onPointerUp(e, false));
     on('pointercancel', (e) => this.onPointerUp(e, true));
+    on('dblclick', (e) => this.onDoubleClick(e));
     on('wheel', (e) => this.onWheel(e), { passive: false });
     on('contextmenu', (e) => {
       e.preventDefault();
@@ -146,7 +172,7 @@ export class PointerInput {
     const g = this.gesture;
     let cursor = '';
     if (g?.kind === 'pan') cursor = 'grabbing';
-    else if (g?.kind === 'move-image' || g?.kind === 'move-marking') cursor = 'move';
+    else if (g && MOVE_GESTURES.has(g.kind)) cursor = 'move';
     else if (g?.kind === 'draw') cursor = 'crosshair';
     else if (g?.kind === 'blocked') cursor = 'not-allowed';
     else if (this.o.spaceDown()) cursor = 'grab';
@@ -155,13 +181,16 @@ export class PointerInput {
   }
 
   private context(): IntentContext {
-    const { store, ui } = this.o;
+    const { store, ui, derived } = this.o;
+    const project = this.project();
     return {
-      project: this.project(),
+      project,
       readOnly: store.readOnly.peek() || (this.o.reviewing?.() ?? false),
       // Ver limpo nunca desenha, mesmo que o modo ainda seja Desenhar.
       mode: ui.cleanView.peek() ? 'navigate' : ui.mode.peek(),
       selection: ui.selection.peek(),
+      items: existingItems(project, peekSelectedItems(ui)),
+      visibility: derived.markingVisibility.peek(),
       zoom: this.o.viewport.scale,
       spaceDown: this.o.spaceDown(),
     };
@@ -174,6 +203,7 @@ export class PointerInput {
 
   private onPointerDown(e: PointerEvent): void {
     this.lastPointerType = e.pointerType;
+    this.pressShift = e.shiftKey;
     if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
     const p = this.o.viewport.screenPoint(e);
     this.pointers.set(e.pointerId, p);
@@ -198,7 +228,8 @@ export class PointerInput {
       e.pointerType === 'touch' &&
       (intent.kind === 'locked' ||
         intent.kind === 'move-marking' ||
-        intent.kind === 'move-image')
+        intent.kind === 'move-image' ||
+        intent.kind === 'move-items')
     ) {
       intent = { kind: 'pan' };
     }
@@ -258,6 +289,19 @@ export class PointerInput {
           y: s.y + c.y - startCanvas.y,
           scale: s.scale,
         });
+        return;
+      }
+      case 'move-items': {
+        // Deslocamento em unidades do canvas, sem arredondar (o modelo arredonda o que precisa).
+        // Tudo ou nada: se algum item não pode ir, a prévia fica na última posição válida e é
+        // essa posição que `dx`, `dy` guardam para o soltar.
+        const c = viewport.toCanvas(p);
+        const dx = c.x - g.startCanvas.x;
+        const dy = c.y - g.startCanvas.y;
+        if (actions.previewItemsMove(g.items, dx, dy).ok) {
+          g.dx = dx;
+          g.dy = dy;
+        }
         return;
       }
       case 'resize-image': {
@@ -414,7 +458,12 @@ export class PointerInput {
     this.gesture = null;
     const step = stepGesture(this.gestureState, { type: cancelled ? 'cancel' : 'up' });
     this.gestureState = step.state;
-    if (g.kind === 'pending' && step.effect.kind === 'tap') this.tap(step.effect.at);
+    if (g.kind === 'pending' && step.effect.kind === 'tap') {
+      this.tap(step.effect.at, this.pressShift);
+    } else {
+      // Um arrasto (ou cancelamento) no meio de um duplo clique o desfaz.
+      this.selectionBeforeTap = null;
+    }
     if (isStoreGesture(g)) {
       // Cancelado: volta ao projeto de antes do gesto. Senão, a operação final repete a mesma
       // operação com os valores finais (encaixe, absorção) e assenta o pertencimento; só então
@@ -437,6 +486,11 @@ export class PointerInput {
       case 'move-image':
       case 'resize-image':
         actions.finishImagePlacement(g.containerId);
+        return;
+      case 'move-items':
+        // Sem encaixe e sem absorção: cada item vai pelo mesmo deslocamento da última prévia
+        // válida, e o pertencimento é assentado uma vez sobre o resultado inteiro.
+        actions.finishItemsMove(g.items, g.dx, g.dy);
         return;
       case 'move-marking': {
         // Encaixe: quase inteira num container, a marcação é levada para dentro dele.
@@ -489,10 +543,22 @@ export class PointerInput {
     if (result.ok) this.o.ui.selection.value = { kind: 'marking', id: result.value };
   }
 
-  /** Seleciona pelo clique em `p` (tela); clicar de novo no mesmo ponto sobe para o pai. */
-  private tap(p: Point): void {
+  /**
+   * Seleciona pelo clique em `p` (tela); clicar de novo no mesmo ponto sobe para o pai. Com Shift
+   * (`shift`), alterna o primeiro item sob o ponto na seleção (sem o ciclo de subir para o pai);
+   * no vazio, Shift não muda nada. Na revisão, Shift+clique é um clique simples.
+   */
+  private tap(p: Point, shift: boolean): void {
     const { ui, derived, viewport } = this.o;
     const c = viewport.toCanvas(p);
+    this.selectionBeforeTap = ui.selection.peek();
+    if (shift && !(this.o.reviewing?.() ?? false)) {
+      this.lastTap = null; // Um clique simples depois não continua o ciclo.
+      const project = this.project();
+      const first = project && hitChain(project, derived.markingVisibility.peek(), c)[0];
+      if (first) toggleSelectedItem(ui, first);
+      return;
+    }
     const repeat = isRepeatTap(this.lastTap, c, viewport.scale);
     this.lastTap = c;
     ui.selection.value = tapSelection(
@@ -505,8 +571,33 @@ export class PointerInput {
   }
 
   /**
+   * Duplo clique (Navegar, mouse): seleciona a marcação com o conteúdo dela (as marcações que a
+   * cobrem e, numa marcação do canvas, os containers membros com as marcações deles), com a
+   * marcação como primária. Num container, só devolve a seleção a ele (o segundo toque do duplo
+   * clique já tinha subido um degrau na cadeia). O próximo clique recomeça o ciclo.
+   */
+  private onDoubleClick(e: MouseEvent): void {
+    const { ui } = this.o;
+    this.lastTap = null;
+    const project = this.project();
+    const target = this.selectionBeforeTap;
+    if (e.shiftKey || this.lastPointerType === 'touch' || !project || !target) return;
+    if (this.o.reviewing?.()) return;
+    if (!ui.cleanView.peek() && ui.mode.peek() !== 'navigate') return;
+    const index = projectIndex(project);
+    if (target.kind === 'marking') {
+      if (index.markings.has(target.id)) {
+        selectItems(ui, selectionWithContents(project, target.id));
+      }
+    } else if (index.containers.has(target.id)) {
+      ui.selection.value = { kind: 'image', id: target.id };
+    }
+  }
+
+  /**
    * Botão direito do mouse: seleciona o item sob o cursor (a marcação mais interna, ou a
-   * imagem) e abre o menu de contexto dele. Numa tela de toque, um toque demorado também
+   * imagem) e abre o menu de contexto dele. Um item que já está na seleção múltipla não a
+   * desfaz: o menu abre para ele e a seleção fica. Numa tela de toque, um toque demorado também
    * dispara `contextmenu`; ele não abre o menu (as ações ficam na Árvore e em Detalhes).
    */
   private openContextMenu(e: MouseEvent): void {
@@ -523,7 +614,7 @@ export class PointerInput {
       false,
     );
     if (!picked) return;
-    ui.selection.value = picked;
+    if (!isItemSelected(peekSelectedItems(ui), picked)) ui.selection.value = picked;
     ui.canvasMenu.value = {
       x: e.clientX,
       y: e.clientY,

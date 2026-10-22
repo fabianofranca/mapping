@@ -270,6 +270,13 @@ describe('OverlayRenderer', () => {
     render();
     expect(container.classList.contains('canvas-host--drop')).toBe(false);
   });
+
+  it('alvo de soltar com marcação: acende o retângulo dela, sem o fundo', () => {
+    const { container, overlay, render } = setup();
+    render({ dropTarget: { containerId: null, markingId: 'M1' } });
+    expect(overlay.dropRect.visible()).toBe(true);
+    expect(container.classList.contains('canvas-host--drop')).toBe(false);
+  });
 });
 
 describe('OverlayRenderer: trava (etapa 2.5)', () => {
@@ -527,5 +534,150 @@ describe('OverlayRenderer: marcações do canvas', () => {
     render({ selection: { kind: 'marking', id: innerId } });
     expect(overlay.selectionLock.group.visible()).toBe(true);
     expect(overlay.selectionLock.group.opacity()).toBe(TOKENS.opacity.inherited);
+  });
+});
+
+// Seleção múltipla (etapa Marcações espaciais, ME2): alças, cadeado e etiqueta só no primário;
+// contorno secundário nos demais.
+describe('OverlayRenderer: seleção múltipla', () => {
+  const im = (id: string) => ({ kind: 'image', id }) as const;
+  const mk = (id: string) => ({ kind: 'marking', id }) as const;
+
+  function multiSetup() {
+    const container = document.createElement('div');
+    const overlay = new OverlayRenderer(new Konva.Layer(), container);
+    const editor = editorFor();
+    const render = (overrides: Partial<Frame> = {}, placements = PLACEMENTS) =>
+      overlay.render(frameOf(editor, overrides), placements);
+    const lit = () =>
+      overlay
+        .secondaryHighlights()
+        .filter((r) => r.visible())
+        .map((r) => r.getAttrs());
+    return { overlay, editor, render, lit };
+  }
+
+  it('sem seleção múltipla, nenhum contorno secundário', () => {
+    const { overlay, render } = multiSetup();
+    render({ selection: mk('M2'), items: [mk('M2')] });
+    expect(overlay.secondaryHighlights().filter((r) => r.visible())).toHaveLength(0);
+    render();
+    expect(overlay.secondaryHighlights().filter((r) => r.visible())).toHaveLength(0);
+  });
+
+  it('os não primários ganham contorno no retângulo deles, com o token novo', () => {
+    const { render, lit } = multiSetup();
+    render({
+      selection: mk('M2'),
+      items: [im('I2'), mk('M3'), mk('M1'), mk('M2')],
+      viewport: { x: 0, y: 0, scale: 2 },
+    });
+    const attrs = lit();
+    expect(attrs).toHaveLength(3);
+    // Container: o retângulo dele no canvas.
+    expect(attrs[0]).toMatchObject({
+      x: 1100,
+      y: 0,
+      width: 500,
+      height: 500,
+      stroke: TOKENS.selectSecondary,
+      strokeWidth: 1, // 2 px de tela com zoom 2
+    });
+    // Marcação de container: o retângulo dela pelo espaço do container.
+    expect(attrs[1]).toMatchObject({
+      x: 1150,
+      y: 50,
+      width: 200,
+      height: 200,
+      stroke: TOKENS.selectSecondary,
+    });
+    expect(attrs[2]).toMatchObject({ x: 100, y: 100, width: 600, height: 500 });
+    // O primário não ganha contorno secundário.
+    expect(attrs.some((a) => a.x === 200 && a.y === 200)).toBe(false);
+  });
+
+  it('marcação do canvas e container dentro do espaço do canvas', () => {
+    const { editor, overlay, render, lit } = multiSetup();
+    const created = editor.actions.createMarking(null, {
+      x: -100,
+      y: -100,
+      width: 1800,
+      height: 1000,
+    });
+    const id = created.ok ? created.value : '';
+    render({ selection: im('I1'), items: [mk(id), im('I1')] });
+    expect(lit()).toEqual([
+      expect.objectContaining({ x: -100, y: -100, width: 1800, height: 1000 }),
+    ]);
+    expect(overlay.selectionOutline.visible()).toBe(true); // o contorno do primário (container)
+  });
+
+  it('alças só no primário (marcação), sem alças nos demais', () => {
+    const { overlay, render } = multiSetup();
+    render({ selection: mk('M2'), items: [im('I2'), mk('M2')] });
+    const visible = [...overlay.handles.values()].filter((h) => h.visible());
+    expect(visible).toHaveLength(4);
+    // Em volta de M2 (200, 200, 100×100); nenhuma nos cantos de I2.
+    expect(overlay.handles.get('nw')?.getAttrs()).toMatchObject({ x: 195, y: 195 });
+    expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 295, y: 295 });
+  });
+
+  it('alças só no primário (container): o contorno de seleção é o dele', () => {
+    const { overlay, render, lit } = multiSetup();
+    render({ selection: im('I2'), items: [mk('M2'), im('I2')] });
+    expect(overlay.selectionOutline.getAttrs()).toMatchObject({
+      visible: true,
+      x: 1100,
+      stroke: TOKENS.select,
+    });
+    expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 1595, y: 495 });
+    expect(lit()).toHaveLength(1);
+    expect(lit()[0]).toMatchObject({ x: 200, y: 200 });
+  });
+
+  it('a etiqueta de nome e o cadeado são só do primário', () => {
+    const { editor, overlay, render } = multiSetup();
+    expect(editor.actions.setMarkingLocked('M3', true).ok).toBe(true);
+    render({ selection: mk('M2'), items: [mk('M3'), mk('M1'), mk('M2')] });
+    expect(overlay.nameTag.visible()).toBe(true);
+    expect(overlay.nameTagText.text()).toBe('Maçaneta');
+    // M3 (secundário) está trancada, mas o cadeado da seleção é do primário, que é livre.
+    expect(overlay.selectionLock.group.visible()).toBe(false);
+    render({ selection: mk('M3'), items: [mk('M2'), mk('M3')] });
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(overlay.nameTag.visible()).toBe(false); // M3 não tem nome
+  });
+
+  it('o contorno acompanha a prévia do arrasto (posições do quadro) e o pool é reaproveitado', () => {
+    const { overlay, render, lit } = multiSetup();
+    const moved = new Map<string, Placement>([
+      ['I1', { x: 0, y: 0, scale: 1 }],
+      ['I2', { x: 1200, y: 40, scale: 1 }],
+    ]);
+    render({ selection: mk('M2'), items: [im('I2'), mk('M3'), mk('M2')] }, moved);
+    expect(lit()).toEqual([
+      expect.objectContaining({ x: 1200, y: 40, width: 500, height: 500 }),
+      // M3 anda com o container: x = 1200 + 50, y = 40 + 50.
+      expect.objectContaining({ x: 1250, y: 90, width: 200, height: 200 }),
+    ]);
+    const nodes = overlay.secondaryHighlights().slice();
+    render({ selection: mk('M2'), items: [im('I2'), mk('M2')] }, moved);
+    expect(lit()).toHaveLength(1);
+    expect(overlay.secondaryHighlights()).toHaveLength(2); // o segundo nó só some
+    expect(overlay.secondaryHighlights()[0]).toBe(nodes[0]);
+    render({ selection: mk('M2'), items: [mk('M2')] });
+    expect(lit()).toHaveLength(0);
+  });
+
+  it('item que deixou de existir (depois de desfazer) não deixa contorno', () => {
+    const { render, lit } = multiSetup();
+    render({ selection: mk('M2'), items: [mk('Fantasma'), im('I9'), mk('M2')] });
+    expect(lit()).toHaveLength(0);
+  });
+
+  it('sem projeto, nada aparece', () => {
+    const { render, lit } = multiSetup();
+    render({ project: null, selection: mk('M2'), items: [im('I2'), mk('M2')] });
+    expect(lit()).toHaveLength(0);
   });
 });

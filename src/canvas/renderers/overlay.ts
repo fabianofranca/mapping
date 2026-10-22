@@ -7,11 +7,12 @@ import {
   canEditImagePlacement,
   canEditMarkingGeometry,
   imageCanvasRect,
+  markingCanvasRectOf,
   projectIndex,
   type Placement,
   type Rect,
 } from '../../model';
-import { resolveSelection } from '../../store/ui';
+import { resolveSelection, sameItem } from '../../store/ui';
 import { visibleArea, type Frame } from '../frame';
 import { CORNERS, cornerPoint, type Corner } from '../imageGeometry';
 import { isDrawableRect, markingCanvasRect, placementOfSpace } from '../markingGeometry';
@@ -38,6 +39,7 @@ export type OverlayFrame = Pick<
   | 'hoverLock'
   | 'tokens'
   | 'selection'
+  | 'items'
   | 'mode'
   | 'viewport'
   | 'size'
@@ -51,6 +53,8 @@ export class OverlayRenderer {
   readonly dropRect = new KonvaRect({ visible: false });
   /** Destaques dos itens que o desenho ou o redimensionamento absorveria ao soltar (um reaproveitado por item). */
   private readonly absorbRects: KonvaRect[] = [];
+  /** Contornos dos itens selecionados que não são o primário (um reaproveitado por item). */
+  private readonly secondaryRects: KonvaRect[] = [];
   private readonly layer: Konva.Layer;
   readonly handles = new Map<Corner, KonvaRect>();
   /** Etiqueta com o nome da marcação selecionada, acima do canto superior esquerdo. */
@@ -79,6 +83,11 @@ export class OverlayRenderer {
     return this.absorbRects;
   }
 
+  /** Os nós dos contornos de seleção secundários (reaproveitados; os que não servem ficam invisíveis). */
+  secondaryHighlights(): readonly KonvaRect[] {
+    return this.secondaryRects;
+  }
+
   /** Há algo ancorado na parte visível da tela (a etiqueta do nome, o cadeado): pan precisa redesenhar. */
   get followsView(): boolean {
     return (
@@ -96,6 +105,7 @@ export class OverlayRenderer {
   ): void {
     this.renderDraft(frame, placements);
     this.renderAbsorb(frame);
+    this.renderSecondarySelection(frame, placements);
     this.renderSelection(frame, placements, headers);
     this.renderHoverLock(frame, placements);
     this.renderDropTarget(frame);
@@ -126,16 +136,25 @@ export class OverlayRenderer {
   private renderDropTarget(frame: OverlayFrame): void {
     const { project, dropTarget: target, tokens } = frame;
     const zoom = frame.viewport.scale;
-    this.container.classList.toggle('canvas-host--drop', target?.containerId === null);
+    this.container.classList.toggle(
+      'canvas-host--drop',
+      target?.containerId === null && target.markingId === undefined,
+    );
+    const index = project && projectIndex(project);
+    const marking = target?.markingId ? index?.markings.get(target.markingId) : undefined;
     const image = target?.containerId
-      ? project && projectIndex(project).containers.get(target.containerId)
+      ? index?.containers.get(target.containerId)
       : undefined;
-    if (!image) {
+    const rect =
+      marking && project
+        ? markingCanvasRectOf(project, marking)
+        : image && imageCanvasRect(image, image.placement);
+    if (!rect) {
       this.dropRect.visible(false);
       return;
     }
     this.dropRect.setAttrs({
-      ...imageCanvasRect(image, image.placement),
+      ...rect,
       visible: true,
       stroke: tokens.select,
       strokeWidth: (3 * SELECTION_STROKE) / zoom,
@@ -168,6 +187,58 @@ export class OverlayRenderer {
         stroke: tokens.absorb,
         strokeWidth: (2 * SELECTION_STROKE) / zoom,
         fill: tokens.absorbFill,
+      });
+    });
+  }
+
+  /**
+   * Seleção múltipla: os itens selecionados que não são o primário ganham um contorno no
+   * retângulo deles (container ou marcação), sem alças, cadeado nem etiqueta de nome, que são
+   * só do primário. Usa o projeto do quadro (que já tem a prévia do gesto) e as posições dos
+   * containers do quadro, então acompanha o arrasto conjunto.
+   */
+  private renderSecondarySelection(
+    frame: OverlayFrame,
+    placements: ReadonlyMap<string, Placement>,
+  ): void {
+    const { project, items, selection, tokens } = frame;
+    const zoom = frame.viewport.scale;
+    const rects: Rect[] = [];
+    if (project && items.length > 0) {
+      const index = projectIndex(project);
+      for (const item of items) {
+        if (sameItem(item, selection)) continue;
+        if (item.kind === 'image') {
+          const image = index.containers.get(item.id);
+          if (image) {
+            rects.push(
+              imageCanvasRect(image, placements.get(image.id) ?? image.placement),
+            );
+          }
+          continue;
+        }
+        const marking = index.markings.get(item.id);
+        const placement = marking && placementOfSpace(placements, marking.containerId);
+        if (marking && placement) rects.push(markingCanvasRect(placement, marking.rect));
+      }
+    }
+    while (this.secondaryRects.length < rects.length) {
+      const rect = new KonvaRect({ visible: false, listening: false });
+      this.layer.add(rect);
+      rect.moveToBottom(); // Abaixo do rascunho, da seleção e das alças.
+      this.secondaryRects.push(rect);
+    }
+    this.secondaryRects.forEach((node, i) => {
+      const rect = rects[i];
+      if (!rect) {
+        node.visible(false);
+        return;
+      }
+      node.setAttrs({
+        ...rect,
+        visible: true,
+        stroke: tokens.selectSecondary,
+        strokeWidth: SELECTION_STROKE / zoom,
       });
     });
   }

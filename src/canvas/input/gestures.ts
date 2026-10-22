@@ -2,6 +2,7 @@
 // Konva: o `PointerInput` guarda o gesto e o alimenta com os eventos.
 import {
   ancestorsOf,
+  canMoveItems,
   projectIndex,
   spaceOf,
   type Placement,
@@ -9,6 +10,7 @@ import {
   type ProjectContainer,
   type Rect,
 } from '../../model';
+import { existingItems, type SelectionItem } from '../../store/ui';
 import { absorbCandidates, type AbsorbCandidate } from '../containment';
 import type { Draft } from '../frame';
 import type { Corner } from '../imageGeometry';
@@ -51,6 +53,19 @@ export type Gesture =
       dx: number;
       dy: number;
     }
+  /**
+   * Arrasto conjunto (ME2): a seleção inteira se move junto. `dx`, `dy` guardam o último
+   * deslocamento **válido** da prévia (unidades do canvas, sem arredondar): quando um movimento é
+   * recusado (tudo ou nada), a prévia fica nele e é ele que o soltar grava.
+   */
+  | {
+      readonly kind: 'move-items';
+      readonly pointerId: number;
+      readonly items: readonly SelectionItem[];
+      readonly startCanvas: Point;
+      dx: number;
+      dy: number;
+    }
   | {
       readonly kind: 'resize-marking';
       readonly pointerId: number;
@@ -81,7 +96,10 @@ export type Gesture =
 /** Gestos que usam `beginGesture/commitGesture` do store. */
 export type StoreGesture = Extract<
   Gesture,
-  { kind: 'move-image' | 'resize-image' | 'move-marking' | 'resize-marking' }
+  {
+    kind:
+      'move-image' | 'resize-image' | 'move-marking' | 'move-items' | 'resize-marking';
+  }
 >;
 
 export function isStoreGesture(g: Gesture | null): g is StoreGesture {
@@ -89,6 +107,7 @@ export function isStoreGesture(g: Gesture | null): g is StoreGesture {
     g?.kind === 'move-image' ||
     g?.kind === 'resize-image' ||
     g?.kind === 'move-marking' ||
+    g?.kind === 'move-items' ||
     g?.kind === 'resize-marking'
   );
 }
@@ -138,6 +157,16 @@ export function startGesture(
         containerId: image?.id ?? null,
         rect: rectFromPoints(startPixel, startPixel, image),
       },
+    };
+  }
+
+  if (intent.kind === 'move-items') {
+    // Os itens que sumiram desde o toque (desfazer) ficam de fora; sem nada a mover, pan.
+    const items = existingItems(project, intent.items);
+    if (!canMoveItems(project, items) || !beginGesture()) return null;
+    return {
+      gesture: { kind: 'move-items', pointerId, items, startCanvas, dx: 0, dy: 0 },
+      draft: null,
     };
   }
 

@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { COMPONENT_DRAG_MIME, draggedComponent } from '../../src/app/componentDrag';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { EditorContext } from '../../src/ui/EditorContext';
@@ -207,5 +208,42 @@ describe('paleta da Biblioteca', () => {
     expect(screen.getByText(t('library.empty'))).toBeTruthy();
     await user.click(screen.getByRole('button', { name: t('library.openSpecs') }));
     expect(onOpenSpecs).toHaveBeenCalledOnce();
+  });
+});
+
+describe('arrastar da paleta', () => {
+  const li = (name: string) =>
+    screen
+      .getByText(name, { selector: '.library-type-name' })
+      .closest('li') as HTMLElement;
+
+  it('o item é arrastável e grava o MIME e o tipo em arrasto', async () => {
+    const harness = await libraryHarness();
+    Object.assign(harness.canvas, { setDropTarget: vi.fn() });
+    renderLibrary(harness);
+    const item = li('Button');
+    expect(item.getAttribute('draggable')).toBe('true');
+    const data = new Map<string, string>();
+    const event = new Event('dragstart', { bubbles: true }) as DragEvent;
+    Object.defineProperty(event, 'dataTransfer', {
+      value: {
+        setData: (k: string, v: string) => data.set(k, v),
+        effectAllowed: 'none',
+      },
+    });
+    item.dispatchEvent(event);
+    expect(JSON.parse(data.get(COMPONENT_DRAG_MIME) ?? '{}')).toEqual({
+      specId: 'material3',
+      typeId: 'm3-button',
+    });
+    expect(draggedComponent()).toEqual({ specId: 'material3', typeId: 'm3-button' });
+    item.dispatchEvent(new Event('dragend', { bubbles: true }));
+    expect(draggedComponent()).toBeNull();
+  });
+
+  it('somente leitura: o item não arrasta', async () => {
+    const harness = await libraryHarness({ readOnly: true });
+    renderLibrary(harness);
+    expect(li('Button').getAttribute('draggable')).toBe('false');
   });
 });

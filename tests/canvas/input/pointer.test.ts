@@ -9,6 +9,11 @@ import {
   setContainerPlacement,
   type Project,
 } from '../../../src/model';
+import {
+  peekSelectedItems,
+  selectItems,
+  type SelectionItem,
+} from '../../../src/store/ui';
 import { canvasProject, editorFor } from '../harness';
 
 // Viewport 1:1 em (0, 0) e container em (0, 0) na página: tela = canvas.
@@ -19,19 +24,21 @@ function setup(readOnly = false, project: Project = canvasProject()) {
   const viewport = new ViewportController(container, () => editor.store.project.peek());
   const state = createInteractionState();
   let spaceDown = false;
+  let reviewing = false;
   const input = new PointerInput({
     container,
     ...editor,
     viewport,
     state,
     spaceDown: () => spaceDown,
+    reviewing: () => reviewing,
   });
   const unbind = input.bind();
   const fire = (
     type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel',
     x: number,
     y: number,
-    { id = 1, kind = 'mouse', button = 0 } = {},
+    { id = 1, kind = 'mouse', button = 0, shift = false } = {},
   ) =>
     container.dispatchEvent(
       new PointerEvent(type, {
@@ -40,9 +47,40 @@ function setup(readOnly = false, project: Project = canvasProject()) {
         button,
         clientX: x,
         clientY: y,
+        shiftKey: shift,
         bubbles: true,
       }),
     );
+  /** Toque sem arrastar. */
+  const click = (
+    x: number,
+    y: number,
+    options: { shift?: boolean; kind?: string } = {},
+  ) => {
+    fire('pointerdown', x, y, options);
+    fire('pointerup', x, y, options);
+  };
+  /** Duplo clique do mouse: dois toques no mesmo ponto e o evento `dblclick`. */
+  const doubleClick = (x: number, y: number) => {
+    click(x, y);
+    click(x, y);
+    container.dispatchEvent(
+      new MouseEvent('dblclick', { clientX: x, clientY: y, bubbles: true }),
+    );
+  };
+  /** Botão direito: o `pointerdown` do botão 2 e o `contextmenu`. */
+  const rightClick = (x: number, y: number) => {
+    fire('pointerdown', x, y, { button: 2 });
+    container.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        clientX: x,
+        clientY: y,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    fire('pointerup', x, y, { button: 2 });
+  };
   /** Arrasta de `from` até `to` em alguns passos e solta. */
   const drag = (
     from: [number, number],
@@ -79,11 +117,15 @@ function setup(readOnly = false, project: Project = canvasProject()) {
     state,
     input,
     fire,
+    click,
+    doubleClick,
+    rightClick,
     drag,
     markingRect,
     markingOf,
     containerOf,
     setSpace: (down: boolean) => (spaceDown = down),
+    setReviewing: (on: boolean) => (reviewing = on),
     cleanup: () => {
       unbind();
       input.destroy();
@@ -861,5 +903,450 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     s.fire('pointerup', 251, 251);
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
     s.cleanup();
+  });
+});
+
+// Seleção múltipla (etapa Marcações espaciais, ME2): arrasto conjunto, Shift+clique, duplo clique
+// com o conteúdo e o botão direito sobre a seleção.
+describe('PointerInput: seleção múltipla', () => {
+  const im = (id: string): SelectionItem => ({ kind: 'image', id });
+  const mk = (id: string): SelectionItem => ({ kind: 'marking', id });
+  const ids = (s: ReturnType<typeof setup>) =>
+    peekSelectedItems(s.ui).map((i) => `${i.kind}:${i.id}`);
+
+  /**
+   * `canvasProject` com um terceiro container I3 (400×400) em (1800, 0) e a marcação do canvas
+   * `C` (-100, -100, 2400×1000) em volta dos três: os três são membros dela.
+   */
+  function withGroup(): Project {
+    let p = canvasProject();
+    p = addContainer(p, { id: 'I3', file: 'images/c.jpg', width: 400, height: 400 });
+    p = setContainerPlacement(p, 'I3', { x: 1800, y: 0, scale: 1 });
+    return createMarking(p, {
+      id: 'C',
+      containerId: null,
+      rect: { x: -100, y: -100, width: 2400, height: 1000 },
+      name: 'Grupo',
+    });
+  }
+
+  function groupSetup() {
+    const s = setup(false, withGroup());
+    expect(s.containerOf('I1')?.parentId).toBe('C');
+    expect(s.containerOf('I3')?.parentId).toBe('C');
+    return s;
+  }
+
+  describe('arrasto conjunto', () => {
+    it('arrastar os três containers e a marcação do canvas move tudo junto, numa entrada só', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I1'), im('I2'), im('I3'), mk('C')]);
+      s.drag([1300, 300], [1400, 350]); // dentro de I2, que não é o primário
+      expect(s.containerOf('I1')?.placement).toEqual({ x: 100, y: 50, scale: 1 });
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1200, y: 50, scale: 1 });
+      expect(s.containerOf('I3')?.placement).toEqual({ x: 1900, y: 50, scale: 1 });
+      expect(s.markingRect('C')).toEqual({ x: 0, y: -50, width: 2400, height: 1000 });
+      // As marcações dos containers vão com eles (coordenadas relativas) e o pertencimento fica.
+      expect(s.markingRect('M1')).toEqual({ x: 100, y: 100, width: 600, height: 500 });
+      expect(s.markingRect('M3')).toEqual({ x: 50, y: 50, width: 200, height: 200 });
+      for (const id of ['I1', 'I2', 'I3']) expect(s.containerOf(id)?.parentId).toBe('C');
+      // A seleção continua inteira, com o primário de antes.
+      expect(ids(s)).toEqual(['image:I1', 'image:I2', 'image:I3', 'marking:C']);
+      expect(s.ui.selection.value).toEqual(mk('C'));
+      // Um Ctrl+Z desfaz tudo.
+      expect(s.store.undo()).toBe(true);
+      expect(s.containerOf('I1')?.placement).toEqual({ x: 0, y: 0, scale: 1 });
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
+      expect(s.containerOf('I3')?.placement).toEqual({ x: 1800, y: 0, scale: 1 });
+      expect(s.markingRect('C')).toEqual({ x: -100, y: -100, width: 2400, height: 1000 });
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('arrastar dentro do primário (a marcação do canvas) também move a seleção toda', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I1'), im('I2'), mk('C')]);
+      s.drag([1050, 300], [1050, 350]); // no vazio entre as telas, dentro de C
+      expect(s.containerOf('I1')?.placement).toEqual({ x: 0, y: 50, scale: 1 });
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 50, scale: 1 });
+      expect(s.containerOf('I3')?.placement).toEqual({ x: 1800, y: 0, scale: 1 }); // fora da seleção
+      expect(s.markingRect('C')).toEqual({ x: -100, y: -50, width: 2400, height: 1000 });
+      s.cleanup();
+    });
+
+    it('um movimento inválido no meio mantém a prévia na última posição válida, e soltar grava essa posição', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I1'), im('I2')]); // I3 fica de fora
+      s.fire('pointerdown', 1300, 300);
+      s.fire('pointermove', 1400, 300);
+      s.fire('pointermove', 1450, 300); // +150: I2 vai a 1250..1750, antes de I3 (1800)
+      expect(s.containerOf('I2')?.placement.x).toBe(1250);
+      expect(s.containerOf('I1')?.placement.x).toBe(150);
+      s.fire('pointermove', 1700, 300); // +400: I2 passaria por cima de I3
+      expect(s.containerOf('I2')?.placement.x).toBe(1250); // a prévia inteira não saiu do lugar
+      expect(s.containerOf('I1')?.placement.x).toBe(150);
+      s.fire('pointermove', 1460, 300); // volta a uma posição válida: a prévia a segue
+      expect(s.containerOf('I2')?.placement.x).toBe(1260);
+      expect(s.containerOf('I1')?.placement.x).toBe(160);
+      s.fire('pointermove', 1800, 300); // inválida de novo
+      s.fire('pointerup', 1800, 300); // solta numa posição inválida
+      expect(s.containerOf('I2')?.placement.x).toBe(1260);
+      expect(s.containerOf('I1')?.placement.x).toBe(160);
+      expect(s.containerOf('I3')?.placement.x).toBe(1800);
+      expect(s.store.gestureActive.value).toBe(false);
+      expect(s.store.undo()).toBe(true);
+      expect(s.containerOf('I2')?.placement.x).toBe(1100);
+      expect(s.containerOf('I1')?.placement.x).toBe(0);
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('uma marcação de container que sairia do container fica na última posição válida', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [mk('M3'), mk('C')]);
+      s.fire('pointerdown', 1050, 300); // dentro de C
+      s.fire('pointermove', 1100, 300);
+      s.fire('pointermove', 1150, 300); // +100: M3 (50..250) vai a 150..350 em I2 (500 de largura)
+      expect(s.markingRect('M3')).toEqual({ x: 150, y: 50, width: 200, height: 200 });
+      s.fire('pointermove', 1450, 300); // +400: M3 passaria da borda de I2
+      expect(s.markingRect('M3')?.x).toBe(150);
+      expect(s.markingRect('C')?.x).toBe(0);
+      s.fire('pointerup', 1450, 300);
+      expect(s.markingRect('M3')).toEqual({ x: 150, y: 50, width: 200, height: 200 });
+      expect(s.markingOf('M3')?.containerId).toBe('I2'); // não trocou de espaço
+      expect(s.markingRect('C')).toEqual({ x: 0, y: -100, width: 2400, height: 1000 });
+      expect(s.store.undo()).toBe(true);
+      expect(s.markingRect('M3')?.x).toBe(50);
+      expect(s.markingRect('C')?.x).toBe(-100);
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('o pertencimento fica congelado durante o arrasto e é assentado ao soltar', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I1'), im('I2')]);
+      s.fire('pointerdown', 1300, 300);
+      s.fire('pointermove', 1300, 800);
+      s.fire('pointermove', 1300, 1300); // +1000 para baixo: as duas telas saem de C
+      expect(s.containerOf('I1')?.placement.y).toBe(1000);
+      expect(s.containerOf('I1')?.parentId).toBe('C');
+      expect(s.containerOf('I2')?.parentId).toBe('C');
+      s.fire('pointerup', 1300, 1300);
+      expect(s.containerOf('I1')?.parentId).toBeNull();
+      expect(s.containerOf('I2')?.parentId).toBeNull();
+      expect(s.containerOf('I3')?.parentId).toBe('C');
+      expect(s.store.undo()).toBe(true);
+      expect(s.containerOf('I1')?.parentId).toBe('C');
+      expect(s.containerOf('I1')?.placement.y).toBe(0);
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('Esc cancela o arrasto conjunto: nada muda e não há entrada no desfazer', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I1'), im('I2'), mk('C')]);
+      s.fire('pointerdown', 1300, 300);
+      s.fire('pointermove', 1400, 350);
+      expect(s.containerOf('I2')?.placement.x).toBe(1200);
+      expect(s.input.cancelInteraction()).toBe(true);
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
+      expect(s.markingRect('C')?.x).toBe(-100);
+      s.fire('pointermove', 1500, 400); // o resto do arrasto é ignorado
+      s.fire('pointerup', 1500, 400);
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
+      expect(s.store.canUndo.value).toBe(false);
+      expect(s.store.gestureActive.value).toBe(false);
+      expect(ids(s)).toEqual(['image:I1', 'image:I2', 'marking:C']); // a seleção fica
+      s.cleanup();
+    });
+
+    it('pointercancel também cancela', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I1'), im('I2')]);
+      s.fire('pointerdown', 1300, 300);
+      s.fire('pointermove', 1400, 350);
+      s.fire('pointercancel', 1400, 350);
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('um segundo dedo cancela o arrasto conjunto', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I1'), im('I2')]);
+      s.fire('pointerdown', 1300, 300);
+      s.fire('pointermove', 1400, 350);
+      expect(s.containerOf('I2')?.placement.x).toBe(1200);
+      s.fire('pointerdown', 100, 100, { id: 2, kind: 'touch' });
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
+      expect(s.store.gestureActive.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('com um item travado o arrasto não começa: cursor "não permitido", sem pan nem entrada', () => {
+      const s = groupSetup();
+      expect(s.actions.setImageLocked('I3', true).ok).toBe(true);
+      const revision = s.store.revision.value;
+      selectItems(s.ui, [im('I1'), im('I2'), im('I3'), mk('C')]);
+      s.fire('pointermove', 1300, 300);
+      expect(s.container.style.cursor).toBe('not-allowed');
+      s.drag([1300, 300], [1400, 350]);
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
+      expect(s.containerOf('I1')?.placement).toEqual({ x: 0, y: 0, scale: 1 });
+      expect(s.viewport.viewport.value).toMatchObject({ x: 0, y: 0 });
+      expect(s.store.revision.value).toBe(revision);
+      expect(s.store.gestureActive.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('as alças do primário continuam redimensionando só o primário', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I2'), mk('M2')]);
+      s.drag([300, 300], [340, 360]); // canto SE de M2
+      expect(s.markingRect('M2')).toEqual({ x: 200, y: 200, width: 140, height: 160 });
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
+      s.cleanup();
+    });
+
+    it('cursor: "mover" sobre qualquer item selecionado, nada fora deles', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I2'), mk('M2')]);
+      s.fire('pointermove', 1300, 300); // dentro de I2
+      expect(s.container.style.cursor).toBe('move');
+      s.fire('pointermove', 250, 250); // dentro de M2
+      expect(s.container.style.cursor).toBe('move');
+      s.fire('pointermove', 900, 700); // I1, não selecionado
+      expect(s.container.style.cursor).toBe('');
+      s.cleanup();
+    });
+
+    it('toque: arrastar sobre a seleção múltipla faz pan, sem mover nada', () => {
+      const s = groupSetup();
+      selectItems(s.ui, [im('I1'), im('I2')]);
+      s.drag([1300, 300], [1350, 330], { kind: 'touch' });
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1100, y: 0, scale: 1 });
+      expect(s.viewport.viewport.value).toMatchObject({ x: 50, y: 30, scale: 1 });
+      s.cleanup();
+    });
+
+    it('um arrasto de zoom diferente de 1 usa o deslocamento no canvas', () => {
+      const s = groupSetup();
+      s.viewport.viewport.value = { x: 0, y: 0, scale: 2 };
+      selectItems(s.ui, [im('I1'), im('I2'), mk('C')]);
+      s.drag([2600, 600], [2800, 700]); // (1300, 300) -> (1400, 350) no canvas
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1200, y: 50, scale: 1 });
+      expect(s.markingRect('C')).toEqual({ x: 0, y: -50, width: 2400, height: 1000 });
+      s.cleanup();
+    });
+  });
+
+  describe('Shift+clique', () => {
+    it('acrescenta o item à seleção e, clicando de novo, tira', () => {
+      const s = setup();
+      s.click(250, 250); // M2
+      expect(ids(s)).toEqual(['marking:M2']);
+      s.click(1300, 300, { shift: true }); // I2 (fora de M3)
+      expect(ids(s)).toEqual(['marking:M2', 'image:I2']);
+      expect(s.ui.selection.value).toEqual(im('I2')); // o último clicado é o primário
+      s.click(1200, 100, { shift: true }); // M3, dentro de I2
+      expect(ids(s)).toEqual(['marking:M2', 'image:I2', 'marking:M3']);
+      expect(s.ui.selection.value).toEqual(mk('M3'));
+      s.click(1300, 300, { shift: true }); // I2 sai
+      expect(ids(s)).toEqual(['marking:M2', 'marking:M3']);
+      expect(s.ui.selection.value).toEqual(mk('M3'));
+      s.click(1200, 100, { shift: true }); // o primário sai: o último dos que ficam o substitui
+      expect(ids(s)).toEqual(['marking:M2']);
+      expect(s.ui.selection.value).toEqual(mk('M2'));
+      expect(s.ui.selectionGroup.value).toBeNull();
+      s.cleanup();
+    });
+
+    it('é o primeiro item sob o ponto, sem o ciclo de subir para o pai', () => {
+      const s = setup();
+      s.click(250, 250, { shift: true });
+      s.click(252, 251, { shift: true }); // no mesmo ponto: não sobe para a Porta (M1)
+      // O primeiro da cadeia (M2) entrou e saiu; a Porta e a imagem nunca foram escolhidas.
+      expect(ids(s)).toEqual([]);
+      s.click(250, 250, { shift: true });
+      s.click(250, 250, { shift: true });
+      s.click(250, 250, { shift: true });
+      expect(ids(s)).toEqual(['marking:M2']);
+      s.cleanup();
+    });
+
+    it('Shift no vazio não muda nada', () => {
+      const s = setup();
+      selectItems(s.ui, [im('I2'), mk('M2')]);
+      const before = s.ui.selection.value;
+      s.click(1050, 900, { shift: true });
+      expect(ids(s)).toEqual(['image:I2', 'marking:M2']);
+      expect(s.ui.selection.value).toBe(before);
+      s.cleanup();
+    });
+
+    it('sem Shift, o toque seleciona um item só e desfaz o grupo', () => {
+      const s = setup();
+      selectItems(s.ui, [im('I2'), mk('M2')]);
+      s.click(1200, 100); // M3
+      expect(ids(s)).toEqual(['marking:M3']);
+      s.cleanup();
+    });
+
+    it('arrastar com Shift apertado move; só o toque sem arrasto alterna', () => {
+      const s = setup();
+      selectItems(s.ui, [mk('M1')]);
+      s.fire('pointerdown', 400, 400, { shift: true });
+      s.fire('pointermove', 450, 430, { shift: true });
+      s.fire('pointermove', 500, 450, { shift: true });
+      s.fire('pointerup', 500, 450, { shift: true });
+      expect(s.markingRect('M1')).toEqual({ x: 200, y: 150, width: 600, height: 500 });
+      expect(ids(s)).toEqual(['marking:M1']);
+      s.cleanup();
+    });
+
+    it('na revisão, Shift+clique é um clique simples', () => {
+      const s = setup();
+      s.click(250, 250); // M2
+      s.setReviewing(true);
+      s.click(1200, 100, { shift: true });
+      expect(ids(s)).toEqual(['marking:M3']);
+      expect(s.ui.selectionGroup.value).toBeNull();
+      s.cleanup();
+    });
+
+    it('um clique simples depois do Shift+clique não continua o ciclo de subir', () => {
+      const s = setup();
+      s.click(250, 250, { shift: true }); // M2 entra
+      s.click(250, 250); // clique simples no mesmo ponto: o primeiro da cadeia, não o pai
+      expect(ids(s)).toEqual(['marking:M2']);
+      s.cleanup();
+    });
+  });
+
+  describe('duplo clique seleciona com o conteúdo', () => {
+    it('numa marcação do canvas: ela e os containers dentro, com as marcações deles; ela é a primária', () => {
+      const s = groupSetup();
+      s.doubleClick(1050, 300); // vazio entre as telas, dentro de C
+      expect(ids(s)).toEqual([
+        'image:I1',
+        'marking:M1',
+        'marking:M2',
+        'image:I2',
+        'marking:M3',
+        'image:I3',
+        'marking:C',
+      ]);
+      expect(s.ui.selection.value).toEqual(mk('C'));
+      s.cleanup();
+    });
+
+    it('o arrasto seguinte move o conjunto: as posições relativas ficam e é um Ctrl+Z', () => {
+      const s = groupSetup();
+      s.doubleClick(1050, 300);
+      s.drag([1300, 300], [1350, 340]);
+      expect(s.containerOf('I1')?.placement).toEqual({ x: 50, y: 40, scale: 1 });
+      expect(s.containerOf('I2')?.placement).toEqual({ x: 1150, y: 40, scale: 1 });
+      expect(s.containerOf('I3')?.placement).toEqual({ x: 1850, y: 40, scale: 1 });
+      expect(s.markingRect('C')).toEqual({ x: -50, y: -60, width: 2400, height: 1000 });
+      expect(s.store.undo()).toBe(true);
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('o alvo é o que o primeiro clique selecionou (a mais interna), não o degrau seguinte', () => {
+      const s = setup();
+      s.doubleClick(400, 400); // dentro da Porta (M1, com a filha M2), fora da Maçaneta
+      expect(ids(s)).toEqual(['marking:M2', 'marking:M1']);
+      expect(s.ui.selection.value).toEqual(mk('M1'));
+      s.cleanup();
+    });
+
+    it('numa marcação sem conteúdo seleciona só ela', () => {
+      const s = setup();
+      s.doubleClick(250, 250); // Maçaneta, a mais interna
+      expect(ids(s)).toEqual(['marking:M2']);
+      expect(s.ui.selectionGroup.value).toBeNull();
+      s.cleanup();
+    });
+
+    it('num container só devolve a seleção a ele', () => {
+      const s = groupSetup();
+      // Entre as marcações de I1: a cadeia é [I1, C]; o segundo toque subiria para C.
+      s.doubleClick(900, 700);
+      expect(ids(s)).toEqual(['image:I1']);
+      expect(s.ui.selection.value).toEqual(im('I1'));
+      s.cleanup();
+    });
+
+    it('zera o ciclo: o clique seguinte no mesmo ponto recomeça pelo primeiro da cadeia', () => {
+      const s = setup();
+      s.doubleClick(400, 400);
+      s.click(402, 401); // perto do duplo clique
+      expect(ids(s)).toEqual(['marking:M1']); // o primeiro da cadeia, não o degrau seguinte
+      s.cleanup();
+    });
+
+    it('no vazio não faz nada', () => {
+      const s = setup();
+      s.doubleClick(1050, 900);
+      expect(ids(s)).toEqual([]);
+      s.cleanup();
+    });
+
+    it('só no modo Navegar', () => {
+      const s = groupSetup();
+      s.ui.mode.value = 'draw';
+      s.doubleClick(1050, 300);
+      expect(ids(s)).toEqual(['marking:C']);
+      s.cleanup();
+    });
+
+    it('um toque de dedo (não é mouse) ou a revisão não selecionam o conteúdo', () => {
+      const s = groupSetup();
+      s.click(1050, 300, { kind: 'touch' });
+      s.click(1050, 300, { kind: 'touch' });
+      s.container.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      expect(ids(s)).toEqual(['marking:C']);
+      const t = groupSetup();
+      t.setReviewing(true);
+      t.doubleClick(1050, 300);
+      expect(ids(t)).toEqual(['marking:C']);
+      s.cleanup();
+      t.cleanup();
+    });
+
+    it('um arrasto no meio do duplo clique o desfaz', () => {
+      const s = groupSetup();
+      s.click(1050, 300); // C
+      s.drag([1050, 300], [1100, 300]); // o segundo "clique" foi um arrasto (pan, sem seleção)
+      s.container.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      expect(ids(s)).toEqual(['marking:C']);
+      s.cleanup();
+    });
+  });
+
+  describe('botão direito', () => {
+    it('sobre um item que já está na seleção múltipla não desfaz a seleção', () => {
+      const s = setup();
+      selectItems(s.ui, [mk('M3'), mk('M2')]);
+      const primary = s.ui.selection.value;
+      s.rightClick(1200, 100); // M3, na seleção mas não primário
+      expect(ids(s)).toEqual(['marking:M3', 'marking:M2']);
+      expect(s.ui.selection.value).toBe(primary);
+      expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M3' });
+      s.rightClick(250, 250); // M2, o primário
+      expect(ids(s)).toEqual(['marking:M3', 'marking:M2']);
+      expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M2' });
+      s.cleanup();
+    });
+
+    it('sobre outro item o comportamento é o de sempre: seleciona só ele', () => {
+      const s = setup();
+      selectItems(s.ui, [mk('M3'), mk('M2')]);
+      s.rightClick(400, 400); // M1, fora da seleção
+      expect(ids(s)).toEqual(['marking:M1']);
+      expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M1' });
+      s.cleanup();
+    });
   });
 });

@@ -4,13 +4,20 @@
 import {
   canEditImagePlacement,
   canEditMarkingGeometry,
+  canMoveItems,
   imageCanvasRect,
+  markingCanvasRectOf,
   projectIndex,
   type Marking,
   type MarkingVisibility,
   type Project,
 } from '../../model';
-import { resolveSelection, type EditorMode, type Selection } from '../../store/ui';
+import {
+  resolveSelection,
+  type EditorMode,
+  type Selection,
+  type SelectionItem,
+} from '../../store/ui';
 import type { DragMode } from '../gestureMachine';
 import { cornerAt, imageAt, pointInRect, type Corner } from '../imageGeometry';
 import {
@@ -46,6 +53,11 @@ export type Intent =
     }
   /** Desenhar: `containerId` nulo = no vazio do canvas (marcação do canvas). */
   | { readonly kind: 'draw'; readonly containerId: string | null }
+  /**
+   * Seleção múltipla (ME2): arrastar qualquer item selecionado leva a seleção inteira, cada
+   * item no próprio espaço (`moveItems`). Leva os itens que existiam ao apertar o ponteiro.
+   */
+  | { readonly kind: 'move-items'; readonly items: readonly SelectionItem[] }
   /** Sobre o item selecionado e trancado: arrastar não faz nada (cursor "não permitido"). */
   | { readonly kind: 'locked' };
 
@@ -57,7 +69,18 @@ export interface IntentContext {
   readonly project: Project | null;
   readonly readOnly: boolean;
   readonly mode: EditorMode;
+  /** Item primário da seleção (o último clicado): é o das alças. */
   readonly selection: Selection;
+  /**
+   * Todos os itens selecionados que existem no projeto, o primário por último. Com dois ou mais,
+   * arrastar dentro de qualquer um deles move a seleção toda; com um só, vale `selection`.
+   */
+  readonly items: readonly SelectionItem[];
+  /**
+   * Visibilidade das marcações no modo de exibição: uma marcação oculta não conta como "dentro"
+   * (não aparece na tela), mas continua sendo movida com a seleção. Sem o mapa, todas contam.
+   */
+  readonly visibility?: ReadonlyMap<string, MarkingVisibility>;
   /** Pixels de tela por unidade do canvas. */
   readonly zoom: number;
   /** Espaço pressionado: arrastar sempre faz pan. */
@@ -66,7 +89,9 @@ export interface IntentContext {
 
 /**
  * O que um arrasto começando em `c` (canvas) faria. Em Navegar, as alças do
- * item selecionado redimensionam e arrastar o item o move. Em Desenhar,
+ * item selecionado redimensionam e arrastar o item o move; com vários itens selecionados, as alças
+ * continuam sendo só do primário e arrastar dentro de qualquer item selecionado move todos
+ * (`move-items`, ou `locked` se algum não pode ir). Em Desenhar,
  * arrastar sempre cria uma marcação (sem alças, para não atrapalhar o desenho de filhas perto
  * dos cantos do pai): sobre uma imagem, preso a ela; no vazio, uma marcação do canvas. O pan
  * no modo Desenhar fica com a barra de espaço, o botão do meio e a roda.
@@ -78,6 +103,7 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
     const image = imageAt(project.containers, c);
     return { kind: 'draw', containerId: image?.id ?? null };
   }
+  if (ctx.items.length >= 2) return multiIntentAt(ctx, project, c);
   const selected = resolveSelection(project, ctx.selection);
   if (selected?.kind === 'marking') {
     const rect = markingCanvasRect(selected.space.placement, selected.marking.rect);
@@ -103,6 +129,46 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
     if (pointInRect(c, rect)) return { kind: 'move-image', containerId: image.id };
   }
   return PAN;
+}
+
+/**
+ * Seleção múltipla: as alças do primário redimensionam o primário; fora delas, o ponto dentro do
+ * retângulo (no canvas) de qualquer item selecionado começa o arrasto conjunto, se todos podem ir
+ * (tudo ou nada), ou é `locked`; fora de todos, pan.
+ */
+function multiIntentAt(ctx: IntentContext, project: Project, c: Point): Intent {
+  const { items, zoom } = ctx;
+  const selected = resolveSelection(project, ctx.selection);
+  if (selected?.kind === 'marking') {
+    const rect = markingCanvasRect(selected.space.placement, selected.marking.rect);
+    const radius = handleHitRadius(Math.min(rect.width, rect.height) * zoom) / zoom;
+    const markingId = selected.marking.id;
+    const corner = canEditMarkingGeometry(project, markingId)
+      ? cornerAt(rect, c, radius)
+      : null;
+    if (corner) return { kind: 'resize-marking', markingId, corner };
+  } else if (selected?.kind === 'image') {
+    const { image } = selected;
+    const corner = canEditImagePlacement(project, image.id)
+      ? cornerAt(imageCanvasRect(image, image.placement), c, HANDLE_HIT_RADIUS / zoom)
+      : null;
+    if (corner) return { kind: 'resize-image', containerId: image.id, corner };
+  }
+  const index = projectIndex(project);
+  const inside = items.some((item) => {
+    if (item.kind === 'image') {
+      const container = index.containers.get(item.id);
+      return (
+        container !== undefined &&
+        pointInRect(c, imageCanvasRect(container, container.placement))
+      );
+    }
+    const marking = index.markings.get(item.id);
+    if (!marking || ctx.visibility?.get(item.id) === 'hidden') return false;
+    return pointInRect(c, markingCanvasRectOf(project, marking));
+  });
+  if (!inside) return PAN;
+  return canMoveItems(project, items) ? { kind: 'move-items', items } : LOCKED;
 }
 
 /** Marcações que aceitam toque: as ocultas pelo modo de exibição ficam de fora. */
@@ -195,6 +261,7 @@ export function dragModeOf(intent: Intent): DragMode {
   if (intent.kind === 'pan' || intent.kind === 'draw') return intent.kind;
   return intent.kind === 'move-image' ||
     intent.kind === 'move-marking' ||
+    intent.kind === 'move-items' ||
     intent.kind === 'locked'
     ? 'move'
     : 'resize';
@@ -205,6 +272,7 @@ export function cursorFor(intent: Intent): string {
   switch (intent.kind) {
     case 'move-image':
     case 'move-marking':
+    case 'move-items':
       return 'move';
     case 'resize-image':
     case 'resize-marking':

@@ -18,6 +18,8 @@ export interface CanvasTokens {
   readonly halo: string;
   /** Seleção, alças, rascunho e alvo de soltar. */
   readonly select: string;
+  /** Contorno dos itens selecionados que não são o primário (seleção múltipla). */
+  readonly selectSecondary: string;
   /** Gesto inválido. */
   readonly invalid: string;
   /** Borda tracejada da marcação do canvas (sem container, sem cor de container). */
@@ -91,6 +93,7 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     line: read('--cv-line'),
     halo: read('--cv-halo'),
     select: read('--cv-select'),
+    selectSecondary: read('--cv-select-secondary'),
     invalid: read('--cv-invalid'),
     canvasMarking: read('--cv-canvas-marking'),
     absorb: read('--cv-absorb'),

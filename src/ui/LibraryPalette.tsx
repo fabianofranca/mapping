@@ -1,3 +1,4 @@
+import { COMPONENT_DRAG_MIME, setDraggedComponent } from '../app/componentDrag';
 import { t } from '../i18n';
 import type { ComponentType, Project } from '../model';
 import { useEditor } from './EditorContext';
@@ -54,7 +55,8 @@ interface LibraryPaletteProps {
 }
 
 export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
-  const { derived, review } = useEditor();
+  const { derived, review, store, canvas } = useEditor();
+  const draggable = !store.locked.value && review.proposalId.value === null;
   const { add, label, disabledReason, error } = useAddComponent();
   const project = review.derived.shownProject.value;
   const types = derived.componentTypes.value;
@@ -82,7 +84,26 @@ export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
                   <h4 class="library-layer-name">{layer.layerName}</h4>
                   <ul class="library-types">
                     {layer.types.map((type) => (
-                      <li key={type.typeId} class="library-type">
+                      <li
+                        key={type.typeId}
+                        class="library-type"
+                        draggable={draggable}
+                        title={draggable ? t('library.dragHint') : undefined}
+                        onDragStart={(e) => {
+                          if (!e.dataTransfer) return;
+                          const dragged = { specId: type.specId, typeId: type.typeId };
+                          e.dataTransfer.setData(
+                            COMPONENT_DRAG_MIME,
+                            JSON.stringify(dragged),
+                          );
+                          e.dataTransfer.effectAllowed = 'copy';
+                          setDraggedComponent(dragged);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedComponent(null);
+                          canvas.current?.setDropTarget(null);
+                        }}
+                      >
                         <span class="library-type-main">
                           <span class="library-type-name">{type.name}</span>
                           {type.container && (
