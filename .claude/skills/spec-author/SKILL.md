@@ -113,9 +113,13 @@ Só quando a origem evidencia **tamanhos prontos** para o objeto de topo do canv
 - Copie os números da origem, não os invente. Sem evidência, omita `containers` (e fique na `formatVersion` que o resto pede): é opcional e a 5 continua aceita.
 - Numa versão anterior à 6, `containers` é erro (`só é permitido com formatVersion 6`). A lista está fora do contrato de versão: mudar tamanhos não é quebra.
 
-### 10. Versão
+### 10. Tipo flutuante (`formatVersion` 7)
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+`floating: true` no tipo de anotação faz a instância ser uma **marcação flutuante**: um comentário solto que vive só no canvas, acima de tudo, fora do pertencimento (nunca filha nem mãe de container ou marcação; arrastá-la move só ela). Use **só** quando o tipo é um comentário ou anotação solta que não pertence a uma tela (nota, recado, regra de negócio); **nunca** para componentes de interface, que pertencem à tela onde estão. O exemplo é a biblioteca de notas do repositório (`libraries/notas/`, aplicada por padrão pela app). Numa versão anterior à 7, `floating` é erro (`só é permitido com formatVersion 7`). Um tipo flutuante costuma ter um campo `string` de texto livre (aceita várias linhas na interface).
+
+### 11. Versão
+
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` em algum tipo. A versão atual do formato é a 7. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
@@ -221,7 +225,7 @@ O prompt só precisa especificar. Modelo:
 
 > /spec-author
 >
-> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6>.
+> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7>.
 >
 > **Origem:** <repositório, pasta ou design system>, lendo <o que ler: pasta dos componentes, catálogo exportado, documento>. Ignore <o que ignorar>.
 >
@@ -230,6 +234,8 @@ O prompt só precisa especificar. Modelo:
 > **Origem externa:** `system` = <nome exato>, ids/nomes em <onde pegar>. (Só na `formatVersion` 3.)
 >
 > **Containers:** <tamanhos prontos (nome, largura × altura, cor de fundo) e de onde saem>. (Só na `formatVersion` 6; omitir sem evidência.)
+>
+> **Tipos flutuantes:** <tipos que são comentários soltos, fora de qualquer tela>. (Só na `formatVersion` 7; omitir sem evidência.)
 >
 > **Fora:** <o que não modelar>.
 >

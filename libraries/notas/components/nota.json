@@ -1,0 +1,73 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "nota",
+  "name": "Nota",
+  "description": "Post-it amarelo com título opcional em negrito e o texto, que quebra linha.",
+  "size": {
+    "width": 240,
+    "height": 120
+  },
+  "minSize": {
+    "width": 96,
+    "height": 48
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "titulo": "Título",
+    "texto": "Escreva aqui o comentário."
+  },
+  "template": {
+    "type": "frame",
+    "name": "post-it",
+    "layout": {
+      "type": "column",
+      "gap": 6,
+      "padding": 12
+    },
+    "cornerRadius": 2,
+    "fill": "#FFF1A8",
+    "shadow": {
+      "color": "rgba(0, 0, 0, 0.25)",
+      "x": 0,
+      "y": 2,
+      "blur": 6
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "título",
+        "text": {
+          "$field": "titulo"
+        },
+        "font": {
+          "size": 14,
+          "weight": 700,
+          "lineHeight": 20
+        },
+        "color": "#3B3200",
+        "visible": {
+          "$has": "titulo"
+        },
+        "width": "fill"
+      },
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto"
+        },
+        "font": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 18
+        },
+        "color": "#3B3200",
+        "width": "fill"
+      }
+    ]
+  }
+}

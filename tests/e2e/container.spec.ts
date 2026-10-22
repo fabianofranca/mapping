@@ -123,3 +123,40 @@ test('arrastar um tipo da Paleta até o canvas cria a instância onde cai', asyn
   expect(mapping.markings[0]?.containerId).toBe(mapping.containers[0]?.id);
   expect(mapping.markings[1]?.containerId).toBeNull();
 });
+
+test('projeto novo traz a biblioteca de notas: Adicionar › Nota cria um post-it flutuante no canvas', async ({
+  page,
+}) => {
+  await createProject(page, 'Notas');
+  const host = page.locator('.canvas-host');
+  await page.getByRole('button', { name: 'Novo container' }).first().click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome', { exact: true }).fill('Home');
+  await dialog.getByRole('button', { name: 'Criar container' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(host).toHaveAttribute('data-images', '1');
+
+  // Com o container selecionado, um tipo comum entraria nele; a nota (flutuante) vai sempre
+  // para o canvas, e o rótulo do botão já diz isso.
+  await page.keyboard.press('Control+Shift+9');
+  await page.getByRole('tab', { name: 'Paleta' }).click();
+  const add = page.getByRole('button', { name: 'Adicionar Nota', exact: true });
+  await expect(add).toHaveText('Adicionar no canvas');
+  await add.click();
+  await expect(host).toHaveAttribute('data-components', '1');
+
+  // O mapping.json guarda a nota como marcação flutuante do canvas, fora da tela, com a
+  // anotação tipada e a camada Notas aplicada por padrão.
+  const { mapping } = await exportMapping(page);
+  expect(mapping.specializations).toEqual([expect.objectContaining({ id: 'notas' })]);
+  expect(mapping.layers.some((l) => l.spec?.specId === 'notas')).toBe(true);
+  expect(mapping.markings).toHaveLength(1);
+  expect(mapping.markings[0]).toMatchObject({
+    containerId: null,
+    parentId: null,
+    floating: true,
+  });
+  expect(mapping.annotations).toHaveLength(1);
+  expect(mapping.annotations[0]?.type).toEqual({ specId: 'notas', typeId: 'nota' });
+  expect(mapping.containers[0]?.parentId).toBeNull();
+});

@@ -828,14 +828,26 @@ describe('create_project', () => {
       projectName: 'Loja',
       schemaVersion: 13,
       revision: 0,
-      counts: { containers: 0, markings: 0, annotations: 0, layers: 1 },
+      // A "Camada 1" e a camada Notas da biblioteca embutida (aplicada por padrão).
+      counts: { containers: 0, markings: 0, annotations: 0, layers: 2 },
     });
     const dir = ws.projectDir('novos/loja');
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('backups/\n');
     // A app só cria `images/` ao gravar a primeira imagem; o servidor faz o mesmo (M2).
     expect(existsSync(join(dir, 'images'))).toBe(false);
     const parsed = deserialize(readFileSync(join(dir, 'mapping.json'), 'utf8'));
-    expect(parsed.ok && parsed.project.layers[0]!.name).toBe('Camada 1');
+    expect(parsed.ok && parsed.project.layers.map((l) => l.name)).toEqual([
+      'Camada 1',
+      'Notas',
+    ]);
+    // O pacote da biblioteca de notas, gravado junto com o mapping.json.
+    for (const file of [
+      'notas.spec.json',
+      join('components', 'nota.json'),
+      join('docs', 'nota.md'),
+    ]) {
+      expect(existsSync(join(dir, 'specs', 'notas', file)), file).toBe(true);
+    }
 
     const project = ok(await mcp.call('get_project', { project: 'loja' }));
     expect(project).toMatchObject({ projectName: 'Loja', containers: [] });

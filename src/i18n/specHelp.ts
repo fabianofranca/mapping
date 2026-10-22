@@ -191,6 +191,26 @@ const CONTAINERS_EXCERPT = `{
   ]
 }`;
 
+/** Trecho de uma especialização v7: o tipo flutuante (`floating`). */
+const FLOATING_EXCERPT = `{
+  "formatVersion": 7,
+  "layers": [
+    {
+      "id": "notas",
+      "name": "Notas",
+      "color": "#F5C400",
+      "annotationTypes": [
+        {
+          "id": "nota",
+          "name": "Nota",
+          "floating": true,
+          "fields": [{ "key": "texto", "label": "Texto", "type": "string", "required": true }]
+        }
+      ]
+    }
+  ]
+}`;
+
 /** Trecho de uma especialização v5: as plataformas com `repo` e o `code` de um tipo. */
 const CODE_EXCERPT = `{
   "format": "mapping-spec",
@@ -394,6 +414,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
+          'A formatVersion 7 é a 6 mais floating no tipo de anotação: o tipo cuja instância é uma marcação flutuante, um comentário solto sobre o canvas (seção "Tipo flutuante"). As versões 1 a 6 continuam aceitas.',
         ],
       },
     ],
@@ -404,7 +425,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 6), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 7), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -441,6 +462,10 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'examples',
             text: 'Opcional (formatVersion 4). Exemplos nomeados: valores dos campos do tipo ou o JSON de um sistema externo.',
+          },
+          {
+            term: 'floating',
+            text: 'Opcional (formatVersion 7). Padrão false. A instância é uma marcação flutuante (seção "Tipo flutuante").',
           },
         ],
       },
@@ -691,6 +716,34 @@ const ptBR: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'floating',
+    title: 'Tipo flutuante',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A formatVersion 7 deixa um tipo de anotação ser flutuante (floating: true). A instância de um tipo flutuante é uma marcação flutuante: um comentário solto, como um post-it, que vive só no canvas e fica fora do pertencimento nos dois sentidos: nunca é filha de um container ou de uma marcação e nunca é mãe. É desenhada acima de tudo, inclusive sobre fotos mesmo com Mostrar componentes sobre fotos desligado, e arrastá-la move só ela. Adicionar (botão da Paleta) cria sempre no canvas, no centro da vista; arrastar da Paleta solta onde cair. A relação com uma tela ou um elemento é uma seta, não o pertencimento.',
+      },
+      {
+        kind: 'p',
+        text: 'Use floating só para o que é comentário ou anotação solta que não pertence a uma tela (uma nota, um recado, uma regra de negócio); nunca para componentes de interface.',
+      },
+      { kind: 'code', code: FLOATING_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'floating',
+            text: 'Booleano, opcional; o padrão é false. Só a partir da formatVersion 7: numa versão anterior o erro é só é permitido com formatVersion 7, no caminho do tipo.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'A biblioteca de notas do repositório (camada Notas, tipo nota com titulo e texto, componente post-it) é um pacote comum, embutido na app e aplicado por padrão: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por Especializações › Remover, como qualquer outra, e não volta. Campos string do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter).',
+      },
+    ],
+  },
+  {
     id: 'sources',
     title: 'Origens (sources)',
     blocks: [
@@ -875,7 +928,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 6), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 7), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
@@ -884,6 +937,7 @@ const ptBR: readonly HelpSection[] = [
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
+          'formatVersion 7, floating: só na versão 7 (antes dela o erro é só é permitido com formatVersion 7); booleano;',
           'formatVersion 6, containers: só na versão 6 (antes dela o erro é só é permitido com formatVersion 6); id no formato [a-z0-9-]+ e único na lista; name não vazio; width e height inteiros de 1 a 20000; background opcional, #RRGGBB; qualquer outra propriedade é recusada;',
           'formatVersion 5, repo: só na versão 5, dentro de uma entrada de platforms (antes dela o erro é só é permitido com formatVersion 5); url obrigatória, começando com http:// ou https://; urlTemplate opcional, http(s):// e com {path}; ref opcional, texto não vazio; qualquer outra propriedade é recusada. Plataforma com path em algum tipo e sem repo é só aviso (path-without-repo);',
           'code só em especializações com platforms; os ids de code precisam existir em platforms;',
@@ -935,6 +989,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
+          'formatVersion 7 is 6 plus floating on the annotation type: the type whose instance is a floating marking, a loose comment over the canvas (section "Floating type"). Versions 1 to 6 are still accepted.',
         ],
       },
     ],
@@ -945,7 +1000,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 6), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 7), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -985,6 +1040,10 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'examples',
             text: 'Optional (formatVersion 4). Named examples: values of the type’s fields or the JSON of an external system.',
+          },
+          {
+            term: 'floating',
+            text: 'Optional (formatVersion 7). Defaults to false. The instance is a floating marking (section "Floating type").',
           },
         ],
       },
@@ -1235,6 +1294,34 @@ const enUS: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'floating',
+    title: 'Floating type',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'formatVersion 7 lets an annotation type be floating (floating: true). The instance of a floating type is a floating marking: a loose comment, like a sticky note, that lives only on the canvas and stays out of containment in both directions: it is never a child of a container or of a marking and never a parent. It is drawn above everything, even over photos with Show components over photos turned off, and dragging it moves only it. Add (the Palette button) always creates it on the canvas, at the center of the view; dragging from the Palette drops it where it lands. The relation with a screen or an element is an arrow, not containment.',
+      },
+      {
+        kind: 'p',
+        text: 'Use floating only for what is a comment or loose annotation that does not belong to a screen (a note, a message, a business rule); never for interface components.',
+      },
+      { kind: 'code', code: FLOATING_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'floating',
+            text: 'Boolean, optional; defaults to false. From formatVersion 7 on only: in an earlier version the error is only allowed with formatVersion 7, at the type path.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The repository notes library (Notes layer, nota type with titulo and texto, sticky-note component) is a regular package, embedded in the app and applied by default: a new project is born with it, and a project opened from a schema older than 13 gains it on opening. It is removed through Specializations › Remove, like any other, and does not come back. String fields of the type accept several lines in the interface (the editor opens in several lines when the text has a break or goes past 60 characters, or with Shift+Enter).',
+      },
+    ],
+  },
+  {
     id: 'sources',
     title: 'Sources (sources)',
     blocks: [
@@ -1419,7 +1506,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 6), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 7), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
@@ -1428,6 +1515,7 @@ const enUS: readonly HelpSection[] = [
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
+          'formatVersion 7, floating: version 7 only (before it the error is only allowed with formatVersion 7); boolean;',
           'formatVersion 6, containers: version 6 only (before it the error is only allowed with formatVersion 6); id in the [a-z0-9-]+ format and unique in the list; name non-empty; width and height integers from 1 to 20000; background optional, #RRGGBB; any other property is rejected;',
           'formatVersion 5, repo: version 5 only, inside a platforms entry (before it the error is only allowed with formatVersion 5); url required, starting with http:// or https://; urlTemplate optional, http(s):// and containing {path}; ref optional, non-empty text; any other property is rejected. A platform with a path on some type and no repo is only a warning (path-without-repo);',
           'code only in specializations with platforms; the ids in code must exist in platforms;',

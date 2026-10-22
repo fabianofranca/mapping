@@ -50,14 +50,20 @@ export interface ComponentTarget {
  *    cai nele, o componente nasce centrado nesse ponto; senão, no centro do próprio container.
  * 3. A seleção é uma marcação do canvas sem slot: no canvas.
  * 4. Sem seleção: o container sob o centro do viewport; sem container, o canvas, no centro.
+ *
+ * Um tipo flutuante (`floating`, decisão 10) vive só no canvas: o alvo é sempre o canvas, no
+ * centro da vista, qualquer que seja a seleção.
  */
-export function componentTarget(editor: EditorContextValue): ComponentTarget | null {
+export function componentTarget(
+  editor: EditorContextValue,
+  options: { readonly floating?: boolean } = {},
+): ComponentTarget | null {
   const { review, ui, derived, canvas, view } = editor;
   const project = review.derived.shownProject.value;
   if (!project) return null;
   const selected = resolveSelection(project, ui.selection.value);
 
-  if (selected?.kind === 'marking') {
+  if (options.floating !== true && selected?.kind === 'marking') {
     const drawn = markingComponent(project, derived.catalog.value, selected.marking.id);
     if (drawn && hasSlotComponent(drawn.component)) {
       return {
@@ -91,6 +97,7 @@ export function componentTarget(editor: EditorContextValue): ComponentTarget | n
     destination: { kind: 'canvas' },
   });
 
+  if (options.floating === true) return onCanvas();
   if (selected) {
     if (selected.image) return inContainer(selected.image);
     return onCanvas();
@@ -149,11 +156,21 @@ export interface ComponentDropInput {
  * Onde um componente solto em `point` nasce: no slot da marcação mais interna sob o ponteiro
  * que desenha um componente com slot; senão no container sob o ponteiro (centrado nele); senão,
  * no vazio, no container em que o retângulo do componente centrado no ponteiro fica quase
- * inteiro (encaixe); senão no canvas. Sem absorção.
+ * inteiro (encaixe); senão no canvas. Sem absorção. Um tipo flutuante nasce sempre no canvas,
+ * onde cai, sem slot, container nem encaixe (decisão 10).
  */
 export function componentDropTarget(input: ComponentDropInput): ComponentDropTarget {
   const { project, catalog, visibility, point, zoom, type } = input;
   const byId = projectIndex(project).markings;
+
+  if (type.floating) {
+    return {
+      containerId: null,
+      parentId: null,
+      center: { x: Math.round(point.x), y: Math.round(point.y) },
+      highlight: { containerId: null },
+    };
+  }
 
   for (const hit of hitChain(project, visibility, point)) {
     if (hit.kind === 'image') break; // o container vence os ancestrais dele

@@ -103,7 +103,11 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
 
   const { mapping } = await exportMapping(page);
   expect(mapping.specializations).toEqual(
-    [{ id: 'sdui', version: 3 }].map((s) => expect.objectContaining(s)),
+    // A biblioteca de notas já vem aplicada em todo projeto novo (ME3).
+    [
+      { id: 'notas', version: 1 },
+      { id: 'sdui', version: 3 },
+    ].map((s) => expect.objectContaining(s)),
   );
   const free = mapping.annotations.find((a) => a.type === null);
   const input = mapping.annotations.find((a) => a.type?.typeId === 'input');
@@ -199,13 +203,14 @@ test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page })
   expect(l.width).toBe(t.width);
   expect(l.y).toBeGreaterThanOrEqual(t.y + t.height - 1);
 
-  // Nova camada pelo cabeçalho; renomear na própria linha.
+  // Nova camada pelo cabeçalho; renomear na própria linha. O projeto novo já tem a camada
+  // Notas (biblioteca de notas aplicada por padrão): a nova é a terceira.
   await layers.getByRole('button', { name: 'Nova camada' }).click();
   const names = layers.getByLabel('Nome da camada');
-  await expect(names).toHaveCount(2);
-  await names.nth(1).fill('Pintura');
-  await names.nth(1).press('Enter');
-  await expect(names.nth(1)).toHaveValue('Pintura');
+  await expect(names).toHaveCount(3);
+  await names.nth(2).fill('Pintura');
+  await names.nth(2).press('Enter');
+  await expect(names.nth(2)).toHaveValue('Pintura');
 
   // A paleta abre em popover, troca a cor e fecha.
   await layers.getByRole('button', { name: 'Cor da camada Pintura' }).click();
@@ -215,7 +220,7 @@ test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page })
   await expect(palette).toBeHidden();
 
   // A camada ativa muda pelo botão da linha; o chip da barra acompanha.
-  await layers.getByRole('button', { name: 'Tornar ativa' }).click();
+  await layers.getByRole('button', { name: 'Tornar ativa' }).last().click();
   await expect(
     page.getByRole('button', { name: 'Camadas (ativa: Pintura)' }),
   ).toBeVisible();
@@ -224,7 +229,7 @@ test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page })
   await layers.getByRole('button', { name: 'Mais ações da camada Pintura' }).click();
   await page.getByRole('button', { name: 'Excluir camada' }).click();
   await page.getByRole('button', { name: 'Excluir', exact: true }).click();
-  await expect(names).toHaveCount(1);
+  await expect(names).toHaveCount(2);
 
   // O modo "sem anotação" fica no rodapé da janela.
   const mode = layers.getByLabel('Marcações sem anotação');
@@ -527,7 +532,8 @@ test('selo da especialização dentro da linha com a janela Camadas baixa', asyn
 
   const layers = page.getByRole('region', { name: 'Camadas', exact: true });
   const rows = layers.locator('.layer-row');
-  await expect(rows).toHaveCount(6);
+  // As seis de antes mais a Notas (biblioteca de notas aplicada por padrão).
+  await expect(rows).toHaveCount(7);
   for (const row of await rows.all()) {
     const badge = row.locator('.layer-badge');
     if ((await badge.count()) === 0) continue;

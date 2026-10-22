@@ -165,12 +165,16 @@ test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um c
   await dialog.getByRole('button', { name: 'Criar container' }).click();
   await expect(dialog).toBeHidden();
 
-  // Sem pacote aplicado: estado vazio com o atalho para Especializações.
+  // Só a biblioteca de notas, aplicada por padrão: o Catálogo lista a Nota e ainda não há
+  // componente de tela. Na Paleta, a Nota (flutuante) é adicionada no canvas.
   await page.keyboard.press('Control+Shift+9');
-  await expect(
-    page.getByText('Nenhuma biblioteca com componentes aplicada.'),
-  ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Abrir Especializações' })).toBeVisible();
+  await expect(page.locator('button[data-type-id="nota"]')).toBeVisible();
+  await expect(page.locator('button[data-type-id="m3-button"]')).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Paleta' }).click();
+  await expect(page.getByRole('button', { name: 'Adicionar Nota' })).toHaveText(
+    'Adicionar no canvas',
+  );
+  await page.getByRole('tab', { name: 'Componentes' }).click();
 
   await projectAction(page, 'Especializações');
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
@@ -187,7 +191,11 @@ test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um c
     .getByRole('button', { name: 'Fechar', exact: true })
     .click();
 
-  // Aba Componentes: escolher o Button abre a página num diálogo com Adicionar à tela.
+  // Aba Componentes, agora com duas bibliotecas: escolhe a Material 3, e o Button abre a
+  // página num diálogo com Adicionar à tela.
+  await page
+    .locator('.catalog-window select')
+    .selectOption({ label: 'Material Design 3 (baseline)' });
   const entry = page.locator('button[data-type-id="m3-button"]');
   await expect(entry).toBeVisible();
   await entry.click();

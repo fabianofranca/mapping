@@ -3,10 +3,14 @@
 // gravar ao sair da página em `pageLifecycle.ts` e os tipos de resultado em `appResult.ts`
 // (fase 8.4); este módulo re-exporta o que a `Home` e os testes usam deles.
 import { signal, type Signal } from '@preact/signals';
+import { NOTES_LIBRARY } from '../../libraries/notas';
 import { t } from '../i18n';
 import {
   DEFAULT_LAYER_COLOR,
+  applyBundledLibrary,
+  bundledLibraryDiskFiles,
   createProject,
+  hasBundledLibrary,
   deserialize,
   migrations,
   serialize,
@@ -90,8 +94,13 @@ export interface OpenProject {
 export const features = signal<Features | null>(null);
 export const openProject = signal<OpenProject | null>(null);
 
+/**
+ * O projeto novo já nasce com a biblioteca de notas aplicada (como qualquer biblioteca, removível
+ * pela pessoa). Os arquivos do pacote vão para o armazenamento junto com o `mapping.json`
+ * (`newProjectSpecFiles`).
+ */
 function newProject(name: string): Project {
-  return createProject({
+  const blank = createProject({
     name,
     now: new Date().toISOString(),
     firstLayer: {
@@ -100,6 +109,12 @@ function newProject(name: string): Project {
       color: DEFAULT_LAYER_COLOR,
     },
   });
+  return applyBundledLibrary(blank, NOTES_LIBRARY).project;
+}
+
+/** Arquivos de `specs/` de um projeto novo (`specs/notas/…`), para gravar junto com ele. */
+function newProjectSpecFiles(project: Project): Map<string, string> {
+  return bundledLibraryDiskFiles(project, NOTES_LIBRARY);
 }
 
 /** Detecta os recursos e carrega as listas dos recentes. Chamar uma vez. */
@@ -148,7 +163,7 @@ async function openFromStorage(target: OpenTarget): Promise<AppResult> {
  */
 async function openLoaded(
   target: OpenTarget,
-  project: Project,
+  loadedProject: Project,
   loaded: {
     readonly readOnly: boolean;
     readonly text: string;
@@ -163,6 +178,8 @@ async function openLoaded(
   },
 ): Promise<AppResult> {
   const { localId } = target;
+  const notes = withDefaultNotes(loadedProject, loaded);
+  const project = notes.project;
   reportDiscardedUrlTemplates(loaded.discardedUrlTemplates ?? []);
   reportDiscardedInherit(loaded.discardedInherit ?? []);
   const meta = localId ? await localLibrary()?.get(localId) : undefined;
@@ -175,6 +192,7 @@ async function openLoaded(
     project,
     readOnly: loaded.readOnly,
     loadedText: loaded.text,
+    ...(notes.staged.length === 0 ? {} : { stagedPackages: notes.staged }),
     ...(loaded.migratedFrom === null
       ? {}
       : { migratedFrom: { version: loaded.migratedFrom, text: loaded.text } }),
@@ -215,6 +233,45 @@ async function openLoaded(
     repaired: loaded.repaired ?? [],
   };
   return ok(undefined);
+}
+
+/** A versão do schema a partir da qual a biblioteca de notas existe (v13). */
+const NOTES_SINCE_SCHEMA = 13;
+
+/**
+ * Um projeto aberto de um schema anterior ao 13 ganha a biblioteca de notas ao abrir, antes de
+ * entrar no store (sem entrada de desfazer): o pacote vai para o cache da sessão e a primeira
+ * gravação escreve `specs/notas/` junto com o `mapping.json` e o backup da migração. Projeto já
+ * na v13 (sem a biblioteca porque a pessoa a removeu, ou criado sem ela) fica como está; o
+ * somente leitura também.
+ */
+function withDefaultNotes(
+  project: Project,
+  loaded: { readonly readOnly: boolean; readonly migratedFrom: number | null },
+): {
+  readonly project: Project;
+  readonly staged: readonly {
+    readonly spec: { readonly id: string; readonly version: number };
+    readonly files: ReadonlyMap<string, string>;
+  }[];
+} {
+  const eligible =
+    !loaded.readOnly &&
+    loaded.migratedFrom !== null &&
+    loaded.migratedFrom < NOTES_SINCE_SCHEMA &&
+    !hasBundledLibrary(project, NOTES_LIBRARY);
+  if (!eligible) return { project, staged: [] };
+  try {
+    const applied = applyBundledLibrary(project, NOTES_LIBRARY);
+    return {
+      project: applied.project,
+      staged: [{ spec: applied.spec, files: applied.packageFiles }],
+    };
+  } catch (e) {
+    // A biblioteca de notas não pode impedir a abertura do projeto.
+    reportError('open.notes', e);
+    return { project, staged: [] };
+  }
 }
 
 /**
@@ -289,7 +346,7 @@ export function createLocalProject(name: string): Promise<AppResult> {
     await library.create(id, {
       mapping: serialize(project),
       images: new Map(),
-      specs: new Map(),
+      specs: newProjectSpecFiles(project),
       proposals: new Map(),
       proposalImages: new Map(),
     });
@@ -420,6 +477,10 @@ export function createFolderProject(
       { readSize: readImageSize, newId: () => crypto.randomUUID() },
     );
     const mappingText = serialize(imported.project);
+    // O pacote da biblioteca de notas antes do `mapping.json` que o cita.
+    for (const [path, text] of newProjectSpecFiles(imported.project)) {
+      await storage.writeSpecFile(path, text);
+    }
     await storage.saveMapping(mappingText);
     // Para quem versiona a pasta com git: os backups de migração não entram no repositório.
     await ensureGitignore(handle).catch((e: unknown) =>

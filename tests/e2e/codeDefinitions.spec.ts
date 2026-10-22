@@ -97,7 +97,10 @@ async function updateSduiToV2(page: Page): Promise<void> {
   await expect(page.getByText('Plataformas', { exact: true })).toHaveCount(0);
 
   // O arquivo vai direto ao seletor (sem abrir o escolhedor nativo do navegador).
-  await expect(page.getByRole('button', { name: 'Atualizar versão…' })).toBeVisible();
+  // Uma linha por especialização (a biblioteca de notas já vem aplicada): a SDUI é a última.
+  await expect(
+    page.getByRole('button', { name: 'Atualizar versão…' }).last(),
+  ).toBeVisible();
   await specInput(page).setInputFiles({
     name: 'sdui.json',
     mimeType: 'application/json',
