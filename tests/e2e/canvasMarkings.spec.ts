@@ -89,7 +89,15 @@ const union = (a: Rect, b: Rect): Rect => {
   };
 };
 
-test('desenhar no vazio em volta de dois containers cria uma marcação do canvas; Ctrl+Z desfaz em uma vez', async ({
+/**
+ * Botão Desfazer/Refazer da barra: um clique é um passo do histórico, como o atalho, sem depender
+ * de onde o foco ficou depois de exportar o zip.
+ */
+function historyButton(page: Page, name: 'Desfazer' | 'Refazer') {
+  return page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
+}
+
+test('desenhar no vazio em volta de dois containers cria uma marcação do canvas; desfazer volta tudo em uma vez', async ({
   page,
 }) => {
   await createProject(page, 'Canvas');
@@ -150,14 +158,14 @@ test('desenhar no vazio em volta de dois containers cria uma marcação do canva
   );
 
   // Ctrl+Z desfaz tudo de uma vez: a marcação e o pertencimento.
-  await page.keyboard.press('Control+z');
+  await historyButton(page, 'Desfazer').click();
   await expect(host).toHaveAttribute('data-canvas-markings', '0');
   const undone = (await exportMapping(page)).mapping;
   expect(undone.markings).toHaveLength(0);
   expect(undone.containers.every((c) => c.parentId === null)).toBe(true);
 
   // E refazer traz as duas coisas de volta.
-  await page.keyboard.press('Control+Shift+z');
+  await historyButton(page, 'Refazer').click();
   await expect(host).toHaveAttribute('data-canvas-markings', '1');
   const redone = (await exportMapping(page)).mapping;
   expect(redone.containers.filter((c) => c.parentId === canvasMarking.id)).toHaveLength(
@@ -213,7 +221,7 @@ test('arrastar uma marcação de uma tela para a outra a torna marcação da out
   expect(mapping.containers.every((c) => c.parentId === null)).toBe(true);
 
   // Um Ctrl+Z devolve a marcação ao primeiro quadro.
-  await page.keyboard.press('Control+z');
+  await historyButton(page, 'Desfazer').click();
   const undone = (await exportMapping(page)).mapping;
   expect(undone.markings[0]?.containerId).toBe(first);
 });
