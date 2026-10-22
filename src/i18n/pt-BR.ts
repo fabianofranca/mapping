@@ -657,6 +657,7 @@ export const ptBR = {
   'issue.layer-mismatch': 'fora da camada do seu tipo',
   'issue.missing-owner': 'sem dono (precisa pertencer a {owners})',
   'issue.owner-not-allowed': 'dono de tipo não permitido',
+  'issue.type-not-applicable': 'o tipo não se aplica a este item (marcação ou seta)',
   'issue.broken-ref': 'referência quebrada',
   'issue.ref-not-accepted': 'alvo não aceito (perdeu a etiqueta ou deixou de ser livre)',
   'issue.component-overflow': 'O componente não cabe',

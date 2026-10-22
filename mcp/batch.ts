@@ -105,7 +105,7 @@ import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
 import { KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
-import { MODEL_ERROR_MESSAGES } from './modelErrors';
+import { MODEL_ERROR_HINTS, MODEL_ERROR_MESSAGES } from './modelErrors';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
 
@@ -448,6 +448,7 @@ class Batch {
         code: error.code,
         message: MODEL_ERROR_MESSAGES[error.code],
         ...(detail ? { detail } : {}),
+        ...(MODEL_ERROR_HINTS[error.code] ? { hint: MODEL_ERROR_HINTS[error.code] } : {}),
       };
     }
     if (error instanceof ToolError) {
@@ -1066,6 +1067,7 @@ class Batch {
       }
       case 'update_marking': {
         const id = this.item(op.marking, 'm');
+        this.requireNotArrow(id, 'update_arrow');
         const label = this.markingLabel(p, id);
         let project = p;
         const changes: string[] = [];
@@ -1109,6 +1111,7 @@ class Batch {
       }
       case 'delete_marking': {
         const id = this.item(op.marking, 'm');
+        this.requireNotArrow(id, 'delete_arrow');
         const impact = markingDeletionImpact(p, id);
         return {
           project: removeMarking(p, id),
@@ -1362,6 +1365,19 @@ class Batch {
       throw new ToolError('wrong-kind', 'a referência não é de uma seta', {
         hint: 'use o id ou a referência de uma seta (`arrows` de get_marking)',
       });
+    }
+  }
+
+  /** O id é de uma seta numa tool de marcação: erro amigável apontando a tool certa. */
+  private requireNotArrow(id: string, tool: 'update_arrow' | 'delete_arrow'): void {
+    if (projectIndex(this.p).arrows.has(id)) {
+      throw new ToolError(
+        'wrong-kind',
+        'a referência é de uma seta, não de uma marcação',
+        {
+          hint: `use ${tool} para a seta`,
+        },
+      );
     }
   }
 

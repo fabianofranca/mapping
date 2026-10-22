@@ -177,9 +177,77 @@ describe('anotações numa seta', () => {
   });
 });
 
+/** O tipo `text` da SDUI com o `appliesTo` dado (a SDUI de exemplo só o aplica à marcação). */
+function withTextOn(p: Project, appliesTo: ('marking' | 'arrow')[]): Project {
+  return {
+    ...p,
+    specializations: p.specializations.map((s) => ({
+      ...s,
+      spec: s.spec && {
+        ...s.spec,
+        layers: s.spec.layers.map((l) => ({
+          ...l,
+          annotationTypes: l.annotationTypes.map((t) =>
+            t.id === 'text' ? { ...t, appliesTo } : t,
+          ),
+        })),
+      },
+    })),
+  };
+}
+
 describe('anotação tipada numa seta', () => {
+  it('appliesTo imposto: tipo só de marcação não entra na seta, e o de seta não entra na marcação', () => {
+    const base = createArrow(cadastroProject(), { id: 'R1', from: 'MN', to: 'MC' });
+    const layerId = base.layers.find((l) => l.spec?.layerId === 'componentes')!.id;
+    const args = (markingId: string) => ({
+      id: 'AX',
+      markingId,
+      layerId,
+      type: { specId: 'sdui', typeId: 'text' },
+    });
+    expect(() => addTypedAnnotation(base, args('R1'))).toThrow('type-not-applicable');
+    expect(() => addTypedAnnotation(base, args('MN'))).not.toThrow();
+    const onlyArrow = createArrow(withTextOn(cadastroProject(), ['arrow']), {
+      id: 'R1',
+      from: 'MN',
+      to: 'MC',
+    });
+    expect(() => addTypedAnnotation(onlyArrow, args('MN'))).toThrow(
+      'type-not-applicable',
+    );
+    expect(() => addTypedAnnotation(onlyArrow, args('R1'))).not.toThrow();
+  });
+
+  it('anotação existente que deixou de se aplicar vira pendência, não erro', () => {
+    let p = createArrow(withTextOn(cadastroProject(), ['marking', 'arrow']), {
+      id: 'R1',
+      from: 'MN',
+      to: 'MC',
+    });
+    const layerId = p.layers.find((l) => l.spec?.layerId === 'componentes')!.id;
+    p = addTypedAnnotation(p, {
+      id: 'AX',
+      markingId: 'R1',
+      layerId,
+      type: { specId: 'sdui', typeId: 'text' },
+    });
+    expect(getProjectIssues(p).get('AX')).not.toContainEqual({
+      code: 'type-not-applicable',
+    });
+    const narrowed = withTextOn(p, ['marking']);
+    expect(validateProject(narrowed)).toEqual([]);
+    expect(getProjectIssues(narrowed).get('AX')).toContainEqual({
+      code: 'type-not-applicable',
+    });
+  });
+
   it('é criada na camada do tipo e entra nas pendências como a de uma marcação', () => {
-    let p = createArrow(cadastroProject(), { id: 'R1', from: 'MN', to: 'MC' });
+    let p = createArrow(withTextOn(cadastroProject(), ['marking', 'arrow']), {
+      id: 'R1',
+      from: 'MN',
+      to: 'MC',
+    });
     const layer = p.layers.find(
       (l) => l.spec?.specId === 'sdui' && l.spec.layerId === 'componentes',
     );

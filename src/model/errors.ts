@@ -40,6 +40,8 @@ export type ModelErrorCode =
   | 'not-typed'
   | 'unknown-type'
   | 'type-not-in-layer'
+  // O tipo não se aplica à dona (appliesTo: marcação ou seta, ME4)
+  | 'type-not-applicable'
   | 'owner-required'
   | 'unknown-field'
   | 'invalid-value'
