@@ -2,18 +2,23 @@ import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   buildListing,
+  canMoveItems,
   deserialize,
   getAnnotationIssues,
   getBacklinks,
+  itemsDeletionImpact,
   layerDotsByMarking,
   markingVisibility,
+  moveItems,
   moveMarking,
   projectIndex,
   projectIssues,
   refsOf,
+  removeItems,
   serialize,
   settleHierarchy,
   validateProject,
+  type ItemRef,
   type Project,
 } from '../../src/model';
 import { buildLargeProject } from './largeProject';
@@ -85,6 +90,36 @@ describe('projeto grande (20 imagens, 500 marcações)', () => {
     expect(settled.value.markings.map((m) => m.parentId)).toEqual(
       dense.markings.map((m) => m.parentId),
     );
+  });
+
+  it('seleção múltipla: mover 20 containers e 500 marcações, e excluir a seleção, cabe no orçamento', () => {
+    const everything: ItemRef[] = [
+      ...project.containers.map((c) => ({ kind: 'image' as const, id: c.id })),
+      ...project.markings.map((m) => ({ kind: 'marking' as const, id: m.id })),
+    ];
+    expect(time(() => canMoveItems(project, everything)).ms).toBeLessThan(BUDGET_MS);
+    // As marcações vão com o container: só os 20 containers recebem deslocamento.
+    const movedAll = time(() => moveItems(project, everything, 7.5, 3.25));
+    expect(movedAll.ms).toBeLessThan(BUDGET_MS);
+    expect(movedAll.value.containers[0]?.placement.x).toBe(7.5);
+    expect(movedAll.value.markings).toEqual(project.markings);
+
+    // Só as 500 marcações (100 mães, as filhas vão com elas): 12 e 8 pixels da imagem.
+    const onlyMarkings = everything.filter((i) => i.kind === 'marking');
+    const movedMarkings = time(() => moveItems(project, onlyMarkings, 3, 2));
+    expect(movedMarkings.ms).toBeLessThan(BUDGET_MS);
+    expect(movedMarkings.value.markings[0]?.rect.x).toBe(
+      (project.markings[0]?.rect.x ?? 0) + 12,
+    );
+
+    const impact = time(() => itemsDeletionImpact(project, everything));
+    expect(impact.ms).toBeLessThan(BUDGET_MS);
+    expect(impact.value).toMatchObject({ markings: 500, containers: 20 });
+    const removed = time(() => removeItems(project, everything));
+    expect(removed.ms).toBeLessThan(BUDGET_MS);
+    expect(removed.value.markings).toEqual([]);
+    expect(removed.value.annotations).toEqual([]);
+    expect(removed.value.containers).toEqual([]);
   });
 
   it('operações de edição continuam rápidas', () => {
