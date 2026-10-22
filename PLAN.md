@@ -300,7 +300,7 @@ O dono quer que as fases sejam desenvolvidas **em sequência, sem ele, durante a
 - Fase N no branch `me<N>/<nome>` (`me0/sem-heranca`, `me1/marcacao-do-canvas`, `me2/selecao-e-arrasto`, `me3/notas`, `me4/setas-e-anexos`, `me5/mcp-e-fechamento`), criado da **ponta do branch da fase N-1** (a ME0, do épico). O PR da fase N tem **base no branch da fase N-1** (o da ME0, no épico), então mostra só a própria fase. Quando a fase N-1 é mesclada no épico e o branch dela apagado, o GitHub muda a base do PR N para o épico sozinho.
 - O que isso custa: o `ci.yml` roda em todo PR, qualquer que seja a base, e em todo push fora da `main`, então cada PR da cascata tem CI; o preview é o do último PR atualizado, então de manhã cada fase é publicada à mão pelo Deploy (`workflow_dispatch` com o branch); o snapshot do MCP (`mcp-snapshot-pr<N>`) só nasce em PR com base num `epic/**`, logo a ME0 já o tem e as outras o ganham no primeiro push depois de a base virar o épico (o merge-forward da manhã, abaixo).
 
-**O gerente da madrugada** (uma sessão, que **não executa fase nenhuma**: cria uma sessão por fase, com o modelo certo, e acompanha).
+**O gerente da madrugada** (uma sessão em **Sonnet, esforço high**, decidido pelo dono em 2026-10-22: ele segue um protocolo fechado e **não executa fase nenhuma**, só cria uma sessão por fase, com o modelo certo, e acompanha; um modelo mais caro ali gastaria cota lendo log, e o esforço alto fica para as poucas decisões que salvam a noite, como distinguir uma CI vermelha da fase de uma falha de infraestrutura).
 
 1. Lê o `CLAUDE.md`, esta seção e as fases; confere os pré-requisitos.
 2. Para cada fase, em ordem: cria a sessão da fase com `create_session` do servidor `claude-code-remote`, com o **modelo coordenador da fase** (tabela acima), `source_url` do repositório, `source_revision` no branch da fase anterior, `outcome_branch` no branch da fase e o modo de permissão sem perguntas que o dono configurar; o prompt é o modelo abaixo. O esforço do coordenador vai **no prompt** (a ferramenta não o fixa) e a sessão o repassa aos briefings dos subagentes, lidos da tabela da fase.
@@ -339,7 +339,7 @@ pare com o que está verde e relate no PR. Não mescle nada.
 
 **O que a cascata troca:** tempo por risco. As fases da noite são construídas sobre fases ainda não testadas; um achado da manhã na ME1 pode exigir retrabalho na ME2 e na ME3 além do merge-forward. Por isso o gerente para na primeira fase que não fecha verde, em vez de empilhar sobre ela, e a manhã segue a ordem.
 
-**Prompt de abertura do gerente** (o dono cola numa sessão nova, no modelo que preferir; o gerente não executa fases, só as cria com o modelo de cada uma):
+**Prompt de abertura do gerente** (o dono cola numa sessão nova em Sonnet, esforço high; o gerente não executa fases, só as cria com o modelo de cada uma):
 
 ```
 Gerencie a cascata noturna da etapa Marcações espaciais, notas e setas:
