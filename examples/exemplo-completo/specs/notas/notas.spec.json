@@ -1,0 +1,50 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 7,
+  "id": "notas",
+  "name": "Notas",
+  "version": 1,
+  "description": "Notas no canvas: post-its flutuantes com um título e um texto livre, para comentar uma tela, registrar uma regra de negócio ou deixar um recado para quem lê o mapeamento.",
+  "layers": [
+    {
+      "id": "notas",
+      "name": "Notas",
+      "color": "#F5C400",
+      "annotationTypes": [
+        {
+          "id": "nota",
+          "name": "Nota",
+          "description": "Comentário solto no canvas (esta tela serve para X, uma regra de negócio). Não pertence a nenhuma tela: fica por cima de tudo e não carrega nem é carregada pelo que está embaixo dela. A relação com uma tela ou um elemento é uma seta.",
+          "labelField": "titulo",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "Título",
+              "type": "string",
+              "description": "Resumo curto da nota; aparece em negrito no topo do post-it. Pode ficar vazio."
+            },
+            {
+              "key": "texto",
+              "label": "Texto",
+              "type": "string",
+              "required": true,
+              "description": "O comentário em si. Aceita várias linhas."
+            }
+          ],
+          "component": "components/nota.json",
+          "doc": "docs/nota.md",
+          "examples": [
+            {
+              "name": "Regra de negócio",
+              "values": {
+                "titulo": "Limite de crédito",
+                "texto": "O botão Contratar só habilita para clientes com limite aprovado."
+              }
+            }
+          ],
+          "floating": true
+        }
+      ]
+    }
+  ]
+}

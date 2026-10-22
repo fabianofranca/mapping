@@ -37,6 +37,8 @@ export interface ComponentType {
   readonly layerId: string;
   /** O componente tem um slot que adota marcações filhas. */
   readonly container: boolean;
+  /** O tipo declara `floating`: a instância nasce flutuante, no canvas (`formatVersion` 7). */
+  readonly floating: boolean;
   readonly component: ComponentFile;
 }
 
@@ -59,6 +61,7 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
           name: type.name,
           layerId: layer.id,
           container: hasSlotComponent(component),
+          floating: type.floating === true,
           component,
         });
       }
@@ -82,7 +85,8 @@ export interface NewComponentArgs {
   readonly typeId: string;
   /**
    * Centro desejado sem componente com slot, no espaço da instância: pixels do container
-   * (ausente = centro dele) ou unidades do canvas (ausente = `{ x: 0, y: 0 }`).
+   * (ausente = centro dele) ou unidades do canvas (ausente = `{ x: 0, y: 0 }`). Um tipo
+   * flutuante só existe no canvas: `containerId` e `parentId` nulos, senão `invalid-space`.
    */
   readonly center?: { readonly x: number; readonly y: number };
   /** Retângulo explícito (MCP), no espaço da instância; ausente = `componentPlacement`. */
@@ -253,6 +257,11 @@ export function addComponentMarking(
   const { component, type, layerId } = resolveType(p, catalog, args.specId, args.typeId);
   const layer =
     projectLayerFor(p, args.specId, layerId) ?? fail('type-not-in-layer', args.typeId);
+  // Tipo flutuante (decisão 10): nasce marcação flutuante no canvas, fora do pertencimento.
+  const floating = type.floating === true;
+  if (floating && (args.containerId !== null || args.parentId !== null)) {
+    fail('invalid-space', args.typeId);
+  }
   const rect =
     args.rect ??
     componentPlacement(
@@ -280,6 +289,7 @@ export function addComponentMarking(
       containerId: args.containerId,
       rect,
       ...(args.name !== undefined ? { name: args.name } : {}),
+      ...(floating ? { floating: true } : {}),
     },
     component.minSize ? { minSize: component.minSize } : undefined,
   );

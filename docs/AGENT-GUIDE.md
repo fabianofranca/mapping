@@ -249,6 +249,7 @@ Regras:
 - Anotação **livre**: `entries` é a lista de pares `{id, key, value}` (os valores são texto).
 - Anotação **tipada**: `type` (`specId`, `typeId`, `name`) e `values`, com os valores nativos de JSON (números como número, datas em ISO, tabelas como lista de linhas com `_id`). Os campos `ref` aparecem em `values` como objetos com o id do alvo; o campo `refs` da resposta os resolve em texto (`to: "User.name"`) e na referência da anotação alvo.
 - `title` é o rótulo que a app mostra (ex: `Classe · Contato`, `Input · input_nome`).
+- **Nota** (anotação do tipo `nota`, da biblioteca de notas): `titulo` (opcional) e `texto`, escritos por uma pessoa num post-it **flutuante** (`floating: true` na marcação: vive no canvas, sem container e sem pai). É **comentário humano**: contexto (por que a tela existe, uma regra de negócio, um recado), não especificação de interface; leia-a para entender, não a transforme em componente nem em código. `create_project` já traz a camada Notas (`notes: false` dispensa).
 
 ## Do mapeamento ao código de instanciação
 

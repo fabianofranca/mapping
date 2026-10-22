@@ -285,6 +285,8 @@ describe('roteiro 13.9 criado pelo MCP', () => {
       path: 'novo/cadastro-mcp',
       name: 'Cadastro',
       firstLayerName: 'Lataria',
+      // O roteiro não é sobre notas: o projeto de partida é só a camada "Lataria".
+      notes: false,
     });
     expect(created.isError).toBe(false);
     dir = join(ws.root, 'novo', 'cadastro-mcp');

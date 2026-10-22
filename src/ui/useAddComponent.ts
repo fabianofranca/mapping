@@ -14,6 +14,8 @@ export interface AddComponent {
   readonly add: (specId: string, typeId: string) => boolean;
   /** Rótulo do botão com o destino: "Adicionar dentro de X", "Adicionar na tela X", "Adicionar no canvas". */
   readonly label: string;
+  /** O rótulo para um tipo: um tipo flutuante é sempre "Adicionar no canvas". */
+  readonly labelFor: (type: { readonly floating: boolean }) => string;
   /** Por que Adicionar está desabilitado; `undefined` se pode. */
   readonly disabledReason: string | undefined;
   readonly error: string | null;
@@ -32,7 +34,10 @@ export function useAddComponent(): AddComponent {
   const hasTarget = label !== null;
 
   const add = (specId: string, typeId: string): boolean => {
-    const target = componentTarget(editor);
+    const floating = editor.derived.componentTypes
+      .peek()
+      .some((c) => c.specId === specId && c.typeId === typeId && c.floating);
+    const target = componentTarget(editor, { floating });
     if (!target) return false;
     const result = actions.addComponent({
       containerId: target.containerId,
@@ -57,5 +62,8 @@ export function useAddComponent(): AddComponent {
     : hasTarget
       ? undefined
       : t('library.noScreen');
-  return { add, label: label ?? t('library.add'), disabledReason, error };
+  const generic = label ?? t('library.add');
+  const labelFor = (type: { readonly floating: boolean }) =>
+    type.floating ? t('library.addToCanvas') : generic;
+  return { add, label: generic, labelFor, disabledReason, error };
 }

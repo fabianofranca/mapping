@@ -40,6 +40,7 @@ export * from './spec';
 export * from './specLookup';
 export * from './specializations';
 export * from './libraryPackage';
+export * from './bundledLibrary';
 export * from './catalog';
 export * from './specVersions';
 export * from './libraryMigrations';

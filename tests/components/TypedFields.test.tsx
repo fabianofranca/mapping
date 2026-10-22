@@ -1,8 +1,9 @@
 import { cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { typeOfAnnotation, type Project } from '../../src/model';
+import { setFieldValue, typeOfAnnotation, type Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
+import { MULTILINE_MIN_LENGTH } from '../../src/ui/FieldEditors';
 import { TypedField } from '../../src/ui/TypedFields';
 import { cadastroProject } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
@@ -389,5 +390,75 @@ describe('TypedFields — tabela', () => {
   it('mostra quem referencia a linha', () => {
     setup('AC', 'atributos');
     expect(screen.getByRole('button', { name: /^← Input input_email/ })).toBeTruthy();
+  });
+});
+
+describe('TypedFields: campo de texto (StringEditor)', () => {
+  const LONG = 'x'.repeat(MULTILINE_MIN_LENGTH + 1);
+  const withText = (text: string | null): Project => {
+    const base = cadastroProject();
+    const p = setFieldValue(base, 'AB', 'texto', text);
+    return p;
+  };
+
+  it('texto curto: campo de uma linha', () => {
+    setup('AB', 'texto');
+    const field = screen.getByLabelText('texto');
+    expect(field.tagName).toBe('INPUT');
+  });
+
+  it('texto com quebra de linha: editor de várias linhas', () => {
+    setup('AB', 'texto', withText('um\ndois'));
+    const field = screen.getByLabelText('texto');
+    expect(field.tagName).toBe('TEXTAREA');
+    expect((field as HTMLTextAreaElement).value).toBe('um\ndois');
+  });
+
+  it('texto com mais de 60 caracteres: editor de várias linhas; com exatamente 60, uma linha', () => {
+    setup('AB', 'texto', withText(LONG));
+    expect(screen.getByLabelText('texto').tagName).toBe('TEXTAREA');
+    cleanup();
+    setup('AB', 'texto', withText('x'.repeat(MULTILINE_MIN_LENGTH)));
+    expect(screen.getByLabelText('texto').tagName).toBe('INPUT');
+  });
+
+  it('Shift+Enter troca por várias linhas, com o digitado mais a quebra, foco e cursor no fim', async () => {
+    const { harness, user } = setup('AB', 'texto');
+    const input = screen.getByLabelText('texto');
+    await user.clear(input);
+    await user.type(input, 'abc');
+    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    expect(area.tagName).toBe('TEXTAREA');
+    expect(area.value).toBe('abc\n');
+    expect(document.activeElement).toBe(area);
+    expect(area.selectionStart).toBe(4);
+    // Nada foi gravado ainda: sair do campo grava.
+    expect(valueOf(harness, 'AB', 'texto')).toBe('Cadastrar');
+    await user.type(area, 'def');
+    await user.tab();
+    expect(valueOf(harness, 'AB', 'texto')).toBe('abc\ndef');
+  });
+
+  it('Enter simples continua gravando no campo de uma linha', async () => {
+    const { harness, user } = setup('AB', 'texto');
+    const input = screen.getByLabelText('texto');
+    await user.clear(input);
+    await user.type(input, 'novo{Enter}');
+    expect(valueOf(harness, 'AB', 'texto')).toBe('novo');
+    expect(screen.getByLabelText('texto').tagName).toBe('INPUT');
+  });
+
+  it('sair do editor de várias linhas grava; vazio grava null', async () => {
+    const { harness, user } = setup('AB', 'texto', withText('a\nb'));
+    const area = screen.getByLabelText('texto');
+    await user.clear(area);
+    await user.type(area, 'l1\nl2');
+    await user.tab();
+    expect(valueOf(harness, 'AB', 'texto')).toBe('l1\nl2');
+
+    await user.clear(screen.getByLabelText('texto'));
+    await user.tab();
+    expect(valueOf(harness, 'AB', 'texto')).toBeNull();
   });
 });

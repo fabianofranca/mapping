@@ -6,6 +6,7 @@ import {
   componentPlacement,
   componentTypes,
   setFieldValue,
+  settleHierarchy,
   approximateMeasurer,
   type ComponentCatalog,
   type NewComponentArgs,
@@ -14,6 +15,7 @@ import {
 } from '../../src/model';
 import { COMPONENTS, SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 import { expectValid, marking } from './fixtures';
+import { NOTES_SPEC_ID, notesCatalog, notesProject } from './notesFixtures';
 
 const catalog = testCatalog();
 
@@ -491,5 +493,80 @@ describe('no canvas (containerId nulo)', () => {
     expect(() => add(p, 'T1', 'text', { containerId: null, parentId: 'C' })).toThrow(
       'invalid-parent',
     );
+  });
+});
+
+describe('tipo flutuante (biblioteca de notas)', () => {
+  const notes = notesCatalog();
+  const addNote = (
+    p: Project,
+    id: string,
+    extra: Partial<NewComponentArgs> = {},
+  ): Project =>
+    addComponentMarking(
+      p,
+      notes,
+      {
+        markingId: id,
+        annotationId: `A_${id}`,
+        containerId: null,
+        parentId: null,
+        specId: NOTES_SPEC_ID,
+        typeId: 'nota',
+        ...extra,
+      },
+      approximateMeasurer,
+    );
+
+  it('componentTypes expõe floating', () => {
+    const types = componentTypes(notesProject(), notes);
+    expect(types.map((t) => [t.typeId, t.floating])).toEqual([['nota', true]]);
+    expect(componentTypes(componentProject(), catalog).every((t) => !t.floating)).toBe(
+      true,
+    );
+  });
+
+  it('cria a marcação flutuante no canvas, centrada em center, com o preview', () => {
+    const p = addNote(notesProject(), 'N1', { center: { x: 3000, y: 500 } });
+    const m = marking(p, 'N1');
+    expect(m).toMatchObject({ floating: true, containerId: null, parentId: null });
+    // Tamanho do componente da nota: 240 x 120, centrado em (3000, 500).
+    expect(m.rect).toEqual({ x: 2880, y: 440, width: 240, height: 120 });
+    const annotation = p.annotations.find((a) => a.id === 'A_N1')!;
+    expect(annotation.type).toEqual({ specId: NOTES_SPEC_ID, typeId: 'nota' });
+    expect(annotation.layerId).toBe(p.layers.find((l) => l.spec !== null)?.id);
+    expect(annotation.values).toMatchObject({
+      titulo: 'Título',
+      texto: 'Escreva aqui o comentário.',
+    });
+    expectValid(p);
+  });
+
+  it('com containerId ou parentId falha com invalid-space', () => {
+    const base = notesProject();
+    expect(() => addNote(base, 'N1', { containerId: 'I1' })).toThrow('invalid-space');
+    const withNote = addNote(base, 'N1');
+    expect(() => addNote(withNote, 'N2', { parentId: 'N1' })).toThrow('invalid-space');
+  });
+
+  it('criada sobre um container, não vira filha e settleHierarchy a deixa em paz', () => {
+    const base = addContainer(notesProject(), {
+      id: 'I2',
+      file: 'images/outra.png',
+      width: 500,
+      height: 500,
+    });
+    const container = base.containers.find((c) => c.id === 'I1')!;
+    const center = {
+      x: container.placement.x + 200,
+      y: container.placement.y + 200,
+    };
+    const p = addNote(base, 'N1', { center });
+    expect(marking(p, 'N1')).toMatchObject({
+      floating: true,
+      containerId: null,
+      parentId: null,
+    });
+    expect(settleHierarchy(p)).toBe(p);
   });
 });

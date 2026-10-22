@@ -216,7 +216,7 @@ export function registerTools(
     'create_project',
     {
       description:
-        'Cria um projeto Mapping vazio (mapping.json e .gitignore; images/ nasce com a primeira imagem aplicada) numa pasta dentro de uma raiz. O nome da pasta vira o <projeto> das referências.',
+        'Cria um projeto Mapping vazio (mapping.json e .gitignore; images/ nasce com a primeira imagem aplicada) numa pasta dentro de uma raiz, já com a biblioteca de notas aplicada (camada Notas e specs/notas/; `notes: false` dispensa). O nome da pasta vira o <projeto> das referências.',
       inputSchema: {
         path: z
           .string()
@@ -234,6 +234,12 @@ export function registerTools(
           .string()
           .optional()
           .describe('Nome da primeira camada (padrão: "Camada 1").'),
+        notes: z
+          .boolean()
+          .optional()
+          .describe(
+            'Aplica a biblioteca de notas embutida (post-its flutuantes: camada Notas e a pasta specs/notas/). Padrão: true; false cria o projeto sem ela.',
+          ),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },

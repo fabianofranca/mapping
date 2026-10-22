@@ -698,6 +698,22 @@ nasce na migração.
 **Ordem das chaves na gravação:** `parentId` vem depois de `placement` no container; `floating` vem depois de
 `locked` na marcação.
 
+**De onde vem o `floating`: a biblioteca de notas.** A marcação flutuante nasce de um tipo de anotação com
+`floating: true` (especialização `formatVersion` 7, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Tipo flutuante"):
+ao adicionar uma instância do tipo, a app grava a marcação com `containerId: null`, `parentId: null` e
+`floating: true`, no canvas. A app traz uma biblioteca assim embutida, a de **notas** (`libraries/notas/`, id
+`notas`: camada "Notas", tipo `nota` com os campos `titulo` e `texto`), e a **aplica por padrão**:
+
+- projeto **novo** (pasta ou neste dispositivo) nasce com ela, com a cópia em `specs/notas/` e a entrada em
+  `specializations[]`;
+- projeto aberto de um schema **anterior ao 13** ganha a biblioteca ao abrir, em memória e sem entrada de
+  desfazer; `specs/notas/` é gravada junto com o backup da migração, na primeira gravação;
+- projeto **já v13** sem ela (removida pela pessoa, ou criado sem) fica como está.
+
+Ela se remove como qualquer especialização (**Especializações › Remover**, apagando ou convertendo as notas) e
+não volta ao reabrir o projeto. Quem lê o arquivo não precisa saber disso: a nota é uma anotação tipada
+(`specId` `notas`, `typeId` `nota`) numa marcação com `floating: true`.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe

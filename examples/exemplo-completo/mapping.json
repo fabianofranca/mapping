@@ -23,13 +23,18 @@
       "id": "material3",
       "version": 1,
       "file": "specs/material3/material3.spec.json"
+    },
+    {
+      "id": "notas",
+      "version": 1,
+      "file": "specs/notas/notas.spec.json"
     }
   ],
   "platformRepos": {},
   "layers": [
     {
       "id": "cad1cc53-4610-48e5-9411-5405a34bce39",
-      "name": "Notas",
+      "name": "Dúvidas",
       "color": "#D32F2F",
       "spec": null
     },
@@ -91,6 +96,15 @@
       "spec": {
         "specId": "material3",
         "layerId": "componentes"
+      }
+    },
+    {
+      "id": "5e299d69-feba-479d-b923-1e67b775d9d2",
+      "name": "Notas",
+      "color": "#F5C400",
+      "spec": {
+        "specId": "notas",
+        "layerId": "notas"
       }
     }
   ],
@@ -659,6 +673,22 @@
       "needsReview": false,
       "locked": false,
       "floating": false,
+      "source": null
+    },
+    {
+      "id": "b71eeec9-148d-405c-aeb3-60606857702a",
+      "containerId": null,
+      "parentId": null,
+      "name": null,
+      "rect": {
+        "x": 0,
+        "y": 1000,
+        "width": 440,
+        "height": 260
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": true,
       "source": null
     }
   ],
@@ -1450,6 +1480,22 @@
         "icon": "add",
         "label": null,
         "color": "primary"
+      },
+      "entries": []
+    },
+    {
+      "id": "cec4ea19-5a2f-49f6-bc37-a6b8ab2f554a",
+      "markingId": "b71eeec9-148d-405c-aeb3-60606857702a",
+      "layerId": "5e299d69-feba-479d-b923-1e67b775d9d2",
+      "name": null,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "notas",
+        "typeId": "nota"
+      },
+      "values": {
+        "titulo": "Cadastro",
+        "texto": "O botão Cadastrar só deve habilitar quando nome, idade e e-mail estiverem preenchidos e o e-mail for válido. Depois do envio, a app leva a pessoa para a tela de Login."
       },
       "entries": []
     }

@@ -7,6 +7,7 @@ import { locale } from '../../src/store/settings';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { LibraryPalette } from '../../src/ui/LibraryPalette';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
+import { notesHarness } from './notesHarness';
 
 // B3/P7: a paleta da Biblioteca (paleta de componentes).
 
@@ -245,5 +246,31 @@ describe('arrastar da paleta', () => {
     const harness = await libraryHarness({ readOnly: true });
     renderLibrary(harness);
     expect(li('Button').getAttribute('draggable')).toBe('false');
+  });
+});
+
+describe('paleta da Biblioteca: tipo flutuante (notas)', () => {
+  it('a linha da nota diz "Adicionar no canvas" mesmo com um container selecionado, e cria a flutuante', async () => {
+    const harness = await notesHarness();
+    harness.ui.selection.value = { kind: 'image', id: 'I1' };
+    const { user } = renderLibrary(harness);
+    const note = addButton('Nota');
+    expect(note.textContent).toBe(t('library.addToCanvas'));
+    // O tipo comum continua apontando para o container selecionado.
+    expect(addButton('Button').textContent).toBe(
+      t('library.addToScreen', { name: 'images/lateral.jpg' }),
+    );
+
+    const before = harness.project().markings.length;
+    await user.click(note);
+    const project = harness.project();
+    expect(project.markings).toHaveLength(before + 1);
+    const created = project.markings.at(-1);
+    expect(created).toMatchObject({ floating: true, containerId: null, parentId: null });
+    expect(project.annotations.find((a) => a.markingId === created?.id)?.type).toEqual({
+      specId: 'notas',
+      typeId: 'nota',
+    });
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
   });
 });

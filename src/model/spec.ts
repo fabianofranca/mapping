@@ -6,7 +6,7 @@ import { isPackagePath, packagePathProblem } from './packagePaths';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 6), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
+// Formato da especialização (`formatVersion` 1 a 7), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
 // etapas 3b e 4 e etapa Biblioteca do plano. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
@@ -14,7 +14,8 @@ export { isPackagePath };
 // tipos, `fonts`, `origins` (origens executáveis, com `slot`, `ignore` e `path` nas `sources`)
 // e `migrations` (o contrato de versão); a versão 5 é a 4 mais `repo` em `platforms[]` (o
 // repositório da biblioteca na plataforma, onde estão os arquivos citados nos `path` do `code`);
-// a versão 6 é a 5 mais `containers` (presets de tamanho do diálogo Novo container).
+// a versão 6 é a 5 mais `containers` (presets de tamanho do diálogo Novo container); a versão 7
+// é a 6 mais `floating` no tipo (a instância é uma marcação flutuante, como uma nota).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -27,9 +28,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 6;
+export const SPEC_FORMAT_VERSION = 7;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -197,6 +198,11 @@ export interface SpecAnnotationType {
   doc?: string;
   /** Exemplos do tipo (só `formatVersion` 4). */
   examples?: SpecExample[];
+  /**
+   * A instância do tipo é uma marcação **flutuante** (só `formatVersion` 7): vive no canvas,
+   * fora da árvore de pertencimento, e é desenhada acima de tudo. Ausente = `false`.
+   */
+  floating?: boolean;
 }
 
 /** Preset de container da especialização (só `formatVersion` 6): tamanho e fundo iniciais. */
@@ -657,6 +663,7 @@ const annotationTypeShape = z
     component: packagePath('.json').optional(),
     doc: packagePath('.md').optional(),
     examples: z.array(exampleShape).optional(),
+    floating: z.boolean().optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
@@ -1310,6 +1317,7 @@ export const specSchema = z
         z.literal(4),
         z.literal(5),
         z.literal(6),
+        z.literal(7),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -1355,6 +1363,19 @@ export const specSchema = z
           code: 'custom',
           path: ['platforms', pi, 'repo'],
           message: 'só é permitido com formatVersion 5',
+        });
+      });
+    }
+    // v7: `floating` no tipo. Antes dela, é erro no caminho exato.
+    if (spec.formatVersion < 7) {
+      spec.layers.forEach((layer, li) => {
+        layer.annotationTypes.forEach((type, ti) => {
+          if (type.floating === undefined) return;
+          ctx.addIssue({
+            code: 'custom',
+            path: ['layers', li, 'annotationTypes', ti, 'floating'],
+            message: 'só é permitido com formatVersion 7',
+          });
         });
       });
     }

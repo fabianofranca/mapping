@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SpecField } from '../../src/model';
 import { locale } from '../../src/store/settings';
+import { MULTILINE_MIN_LENGTH } from '../../src/ui/FieldEditors';
 import { TypedForm } from '../../src/ui/TypedForm';
 
 beforeEach(() => {
@@ -91,5 +92,13 @@ describe('TypedForm (sem projeto nem EditorProvider)', () => {
     const button = screen.getByRole('button', { name: /destino/ }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect(button.title).toContain('projeto');
+  });
+});
+
+describe('TypedForm: texto longo', () => {
+  it('a célula de tabela com texto longo continua de uma linha', () => {
+    const long = 'y'.repeat(MULTILINE_MIN_LENGTH + 20);
+    setup({ itens: [{ _id: 'r1', nome: long }] });
+    expect(screen.getByLabelText(/^nome \(/).tagName).toBe('INPUT');
   });
 });

@@ -124,7 +124,7 @@ describe('exemplos de especialização', () => {
 /** Cada caso: a mutação e o caminho (e trecho) esperado na mensagem. */
 const semantic: [string, (s: Json) => void, string][] = [
   ['format errado', (s) => (s.format = 'x'), 'format:'],
-  ['formatVersion errado', (s) => (s.formatVersion = 7), 'formatVersion:'],
+  ['formatVersion errado', (s) => (s.formatVersion = 8), 'formatVersion:'],
   ['id ausente', (s) => delete s.id, 'id:'],
   ['name ausente', (s) => delete s.name, 'name:'],
   ['version zero', (s) => (s.version = 0), 'version:'],
@@ -322,7 +322,7 @@ describe('validação do formato (13.2)', () => {
 /** Erros puramente estruturais: o JSON Schema também precisa rejeitar. */
 const structural: [string, (s: Json) => void][] = [
   ['format errado', (s) => (s.format = 'x')],
-  ['formatVersion errado', (s) => (s.formatVersion = 7)],
+  ['formatVersion errado', (s) => (s.formatVersion = 8)],
   ['id ausente', (s) => delete s.id],
   ['version zero', (s) => (s.version = 0)],
   ['key com espaço', (s) => (s.layers[0].annotationTypes[0].fields[0].key = 'a b')],
@@ -420,12 +420,12 @@ describe('formatVersion 1 e 2', () => {
     expect(parseSpec(withoutPlatforms(base())).ok).toBe(true);
   });
 
-  it('formatVersion fora de 1 a 6 é rejeitado, com a lista válida na mensagem', () => {
-    for (const bad of [0, 7, '2', null]) {
+  it('formatVersion fora de 1 a 7 é rejeitado, com a lista válida na mensagem', () => {
+    for (const bad of [0, 8, '2', null]) {
       const spec = { ...base(), formatVersion: bad };
       const errors = errorsOf(parseSpec(spec));
       expect(
-        errors.some((e) => e.startsWith('formatVersion: deve ser 1, 2, 3, 4, 5 ou 6')),
+        errors.some((e) => e.startsWith('formatVersion: deve ser 1, 2, 3, 4, 5, 6 ou 7')),
       ).toBe(true);
     }
   });
@@ -687,7 +687,7 @@ describe('validação do formatVersion 2 (plataformas e code)', () => {
 
 /** Erros estruturais do v2 que o JSON Schema também precisa rejeitar. */
 const structuralV2: [string, (s: Json) => void][] = [
-  ['formatVersion 7', (s) => (s.formatVersion = 7)],
+  ['formatVersion 8', (s) => (s.formatVersion = 8)],
   ['platforms[].id fora do formato', (s) => (s.platforms[0].id = 'Android')],
   ['platforms[].name ausente', (s) => delete s.platforms[0].name],
   ['platforms[] com propriedade desconhecida', (s) => (s.platforms[0].extra = 1)],
@@ -732,7 +732,7 @@ describe('consistência zod × JSON Schema (formatVersion 2)', () => {
 
   it('o JSON Schema declara as mesmas versões, tipos de campo e propriedades do zod', () => {
     const schema = jsonSchema as Json;
-    expect(schema.properties.formatVersion.enum).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(schema.properties.formatVersion.enum).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(Object.keys(schema.$defs.annotationType.properties)).toContain('sources');
     expect(Object.keys(schema.$defs.tableField.properties)).toContain('sources');
     expect(Object.keys(schema.properties)).toContain('platforms');
