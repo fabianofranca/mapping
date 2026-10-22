@@ -96,6 +96,46 @@ Transições: `schedule()` → `dirty`, `saving`, reinicia o timer → `flush()`
 
 **Nomes internos antigos.** O produto se chama "Mapping", mas dois nomes invisíveis ao usuário mantêm o antigo `mapeador`, para não exigir migração dos dados já guardados nos navegadores: o banco IndexedDB dos projetos locais (`mapeador-imagens`, em `storage/local.ts`; o dos recentes de pasta, criado depois, já é `mapping-folders`) e os caches do service worker (`mapeador-…`, em `pwa/sw.js`). As chaves do `localStorage` já usam o prefixo `mapping.`. Nos arquivos, `app: "mapeador-imagens"` e `format: "mapeador-spec"` ainda são lidos; o `app` é normalizado para `"mapping"` ao ler, então a próxima gravação já usa o valor novo.
 
+## Espaços, pertencimento e gestos (etapa Marcações espaciais, ME1)
+
+**Dois espaços de coordenadas.** Uma marcação vive no espaço do **container** (`containerId` preenchido; `rect` em pixels
+da imagem original, dentro dela) ou no do **canvas** (`containerId: null`, a marcação do canvas; `rect` em unidades do
+canvas, inteiras, até negativas). `spaceOf(p, marking)` (`src/model/hierarchySettle.ts`) devolve o espaço (`placement` e
+limites); `toCanvasRect`/`fromCanvasRect` (`geometry.ts`) convertem de um para o outro. As conversões de tela ficam em
+`src/canvas/`, como sempre; as de espaço, que mudam o dado gravado, ficam no modelo.
+
+**O pertencimento é derivado e gravado.** `parentId` da marcação e do container nunca é escolhido: `settleHierarchy(p)` (puro,
+idempotente, devolve o mesmo objeto se nada muda) o recalcula pela geometria e, antes, decide o espaço de cada marcação
+não flutuante (o container que a contém inteira, senão o canvas; se mudou, converte o `rect` e as descendentes vão junto).
+As regras estão em [`FORMAT.md`](FORMAT.md), "Campos da v13 (pertencimento)": dentro é totalmente contido, o pai é a menor do
+mesmo espaço (empate de área pelo array), o pai do container é a menor marcação do canvas que o contém, e as flutuantes ficam
+fora da árvore. Os membros (`membersOf`, `projectIndex.members`/`canvasRoots`) saem do `parentId` e nunca são gravados.
+
+**Quando assenta.** No fim de **toda** operação do modelo que mexe na geometria (desenhar, mover, redimensionar marcação,
+mover/redimensionar/trocar/excluir container, aplicar proposta: `applyAccepted` assenta depois do patch). **Não** assenta na
+leitura, na migração nem na abertura (ler nunca grava e nunca muda dado), e a operação aceita `settle: false`, usado **só**
+nas prévias de gesto. Sem a tolerância: o modelo só conhece "totalmente contido"; a ferramenta (a interação) é que ajuda a pessoa
+a chegar lá.
+
+**O gesto.** Ao arrastar ou redimensionar, o canvas chama `beginGesture`, e cada movimento do ponteiro vira uma prévia com
+`settle: false`: o pertencimento fica **congelado** enquanto o ponteiro se move e o canvas desenha o resultado sem recalcular a
+árvore. Ao soltar, o canvas calcula o **encaixe** e a **absorção** e chama a ação `finish…` da mesma operação (`finishMarkingMove`,
+`finishMarkingRect`, `finishImagePlacement`), que repete a operação com os valores finais e `settle: true` sobre o projeto do início
+do gesto; só então `commitGesture`: **uma** entrada de desfazer com geometria, espaço e pertencimento juntos. A operação final
+nunca falha (se falhar, assenta a última prévia válida).
+
+- **Encaixe:** ao mover, o container de destino acende e a marcação solta quase toda dentro dele é puxada para dentro, para a
+  pessoa não ter de acertar o pixel.
+- **Absorção:** ao redimensionar uma marcação, o que ficou **quase** inteiro dentro dela acende e, ao soltar, a
+  marcação cresce até cobri-lo; o item passa a ser membro. A tolerância é `ABSORB_TOLERANCE` (em pixels de tela, em `src/canvas/`):
+  é regra de **interação**, nunca do modelo, e por isso nunca é gravada nem aplicada por uma proposta ou pelo MCP.
+- Mover uma marcação **dentro de um container** leva as descendentes; no **canvas** mexe só nela (os membros ficam onde estão e o
+  pertencimento é refeito). Nada prende a marcação ao container: ela pode sair dele e virar marcação do canvas, ou entrar em
+  outro container com o `rect` convertido.
+
+**Trava.** Trancar uma marcação do canvas trava o `placement` dos containers dentro dela (`canEditImagePlacement`); a
+herança continua em `markingLockStates`, que o cadeado da Árvore e do canvas leem.
+
 ## Regras e o porquê
 
 | Regra                                                                                                                                                                                                                                                                                                                                                                                 | Por quê                                                                                                                                                                                                                 |
@@ -110,7 +150,7 @@ Transições: `schedule()` → `dirty`, `saving`, reinicia o timer → `flush()`
 | Consultas por id e agrupamentos usam `projectIndex(p)`, nunca `find`/`filter` em laços.                                                                                                                                                                                                                                                                                               | Mantém os orçamentos por quadro (projetos com centenas de marcações).                                                                                                                                                   |
 | O canvas desenha no máximo uma vez por quadro (`requestAnimationFrame`); o `effect` só marca "sujo".                                                                                                                                                                                                                                                                                  | Pan/zoom fluidos.                                                                                                                                                                                                       |
 | Konva só em `src/canvas/` (e `CanvasHost`). Sem `react-konva`.                                                                                                                                                                                                                                                                                                                        | O canvas é imperativo e testável sem a árvore de componentes.                                                                                                                                                           |
-| Coordenadas das marcações **sempre** em pixels da imagem original; conversões de tela/canvas só em `src/canvas/`.                                                                                                                                                                                                                                                                     | O agente que lê o JSON recorta a imagem original, sem conhecer a tela.                                                                                                                                                  |
+| Coordenadas das marcações de container **sempre** em pixels da imagem original (a marcação do canvas, v13, é a exceção: unidades do canvas); conversões de tela/canvas só em `src/canvas/`.                                                                                                                                                                                           | O agente que lê o JSON recorta a imagem original, sem conhecer a tela.                                                                                                                                                  |
 | Nenhuma string de UI hardcoded: tudo via `t()` com chaves em `src/i18n/pt-BR.ts` e `en-US.ts` (um teste exige as mesmas chaves e `{parâmetros}`).                                                                                                                                                                                                                                     | Dois idiomas sem divergência.                                                                                                                                                                                           |
 | Nenhum valor de design fixo (cor, espaço, raio, fonte, opacidade, duração, z-index) fora dos tokens: `src/theme/tokens.ts` é a fonte única, e o canvas lê os mesmos tokens.                                                                                                                                                                                                           | Tema claro e escuro, densidade e paleta mudam em um lugar só; `tests/theme/tokenLiterals.test.ts` procura literais no CSS.                                                                                              |
 | `index.html` funciona em `file://`: sem módulos externos nem rede em runtime; service worker só em `https:`; recursos (`showDirectoryPicker`, IndexedDB, `navigator.canShare`) detectados em runtime.                                                                                                                                                                                 | Uso offline, em arquivo avulso e no GitHub Pages.                                                                                                                                                                       |
@@ -126,6 +166,7 @@ Transições: `schedule()` → `dirty`, `saving`, reinicia o timer → `flush()`
 
 - `types.ts`, `schema.ts`, `serialization.ts`, `migrations.ts`: tipos do `mapping.json` v13, validação (zod), (de)serialização e migração de versões antigas (a v8 → v9 recebe as cópias de `specs/` no contexto da migração, para saber quais campos eram `codeRef`; ver `FORMAT.md`, "Campos da v9"; a v10 → v11 descarta o `urlTemplate` de `platformRepos` e a leitura devolve o descartado para o Diagnóstico; ver "Campos da v11"; a v11 → v12 renomeia `images` para `containers` e `imageId` para `containerId`, sem apagar nada, ver "Campos da v12").
 - `invariants.ts`: `validateProject` (regras entre coleções: ids únicos, contenção, hierarquia sem ciclos, vínculos).
+- `hierarchySettle.ts` (ME1): `settleHierarchy`, `spaceOf`, `membersOf` e `SettleOptions` (`settle: false` só nas prévias de gesto); ver "Espaços, pertencimento e gestos". `invariants.ts` e `repair.ts` têm as regras e o reparo do `parentId` de container e da marcação flutuante.
 - `layers.ts`, `containers.ts` (container = o objeto de topo do canvas, com arquivo de imagem ou só com cor de fundo; `addContainer`, `addBackgroundContainer`, `replaceContainer`…), `markings.ts`, `annotations.ts`, `hierarchy.ts`, `geometry.ts`: operações puras por entidade.
 - `locks.ts`: a trava (etapa 2.5). `setMarkingLocked`, `setImageLocked` e `setImageMarkingsLocked` (uma operação só para "trancar todas"); as consultas `canEditMarkingGeometry`, `canDeleteMarking`, `canEditImagePlacement`, `canDeleteImage` e `canReplaceImage`, que a interface usa para desabilitar controles e as operações de `markings.ts`/`images.ts` usam para lançar o erro `locked`; e `markingLockStates` (trava própria ou herdada do pai, de cada marcação, numa passada).
 - `spec.ts`, `specLookup.ts`, `specializations.ts`: formato e validação da especialização, resolução de tipos e ciclo de vida no projeto (aplicar, atualizar, remover). O tipo de campo removido na etapa 9 (`REMOVED_FIELD_TYPE`, `codeRef`) é lido e ignorado por `parseSpec`, que o devolve em `ignored` para o aviso (`specWarnings.ts`, `ignoredFieldWarnings`); `removedFieldKeys` lê do JSON cru as chaves desses campos, para a migração. A `formatVersion` 6 acrescenta `containers` (tamanhos prontos de container, `containerShape`), lidos pelo diálogo Novo container e expostos por `get_specialization`.

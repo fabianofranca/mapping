@@ -340,7 +340,13 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     arrange: (markingId: string): ActionResult<readonly string[]> => {
       let warnings: readonly string[] = [];
       const result = store.apply((p) => {
-        const arranged = model.arrangeMarking(p, catalog(), markingId, measure());
+        const arranged = model.arrangeMarking(
+          p,
+          catalog(),
+          markingId,
+          measure(),
+          settleOptions(p),
+        );
         warnings = arranged.warnings;
         return arranged.project;
       });

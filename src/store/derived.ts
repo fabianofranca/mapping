@@ -297,6 +297,12 @@ export function createEditorDerived(
     const onPhotos = showComponentsOnPhotos.value;
     const result = new Set<string>();
     for (const [id, drawing] of all) {
+      // Marcação do canvas (v13): sem foto por baixo do espaço dela, o desenho aparece sempre
+      // (a flutuante, em especial, "sobre tudo, inclusive sobre fotos").
+      if (drawing.containerId === null) {
+        result.add(id);
+        continue;
+      }
       const image = images.get(drawing.containerId);
       if (!image || (image.file !== null && !onPhotos)) continue;
       result.add(id);
