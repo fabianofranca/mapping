@@ -83,8 +83,11 @@ async function containerRects(page: Page, host: Locator): Promise<Map<string, Re
   );
 }
 
+/** As setas do `mapping.json`, pelo Exportar; fecha o diálogo, que senão cobre o canvas. */
 async function arrowsOf(page: Page): Promise<readonly ArrowJson[]> {
   const { mapping } = await exportMapping(page);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toBeHidden();
   return (mapping as MappingWithArrows).arrows;
 }
 
