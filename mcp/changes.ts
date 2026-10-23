@@ -86,7 +86,11 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
     a: index.annotations,
   };
   return result.created
-    .filter((item) => byKind[item.kind].has(item.id))
+    .filter(
+      (item) =>
+        byKind[item.kind].has(item.id) ||
+        (item.kind === 'm' && index.arrows.has(item.id)),
+    )
     .map((item) => {
       const base = { op: item.index, ...(item.alias ? { alias: item.alias } : {}) };
       if (item.kind === 'layer') {
@@ -96,7 +100,9 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
       const kind = item.kind as ItemKind;
       return {
         ...base,
-        kind: { m: 'marking', i: 'container', a: 'annotation' }[kind],
+        kind: index.arrows.has(item.id)
+          ? 'arrow'
+          : { m: 'marking', i: 'container', a: 'annotation' }[kind],
         ref: refs.ref(kind, item.id),
       };
     });
@@ -193,7 +199,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const warnings: unknown[] = [
     ...libraryWarningViews(result),
     ...result.deprecations.map((d) => ({
-      code: 'deprecated-op',
+      code: d.code ?? 'deprecated-op',
       op: d.index,
       message: d.message,
     })),

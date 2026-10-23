@@ -13,9 +13,10 @@ import type {
 import type { DisplayImage } from '../store/displayImages';
 import type { Locale } from '../store/settings';
 import type { EditorMode, Selection, SelectionItem } from '../store/ui';
+import type { ArrowShape } from './arrowGeometry';
 import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
-import type { Size, Viewport } from './viewport';
+import type { Point, Size, Viewport } from './viewport';
 
 /** Posição exibida durante um gesto de imagem (segue o dedo, mesmo se inválida). */
 export interface ImagePreview {
@@ -46,6 +47,16 @@ export interface Draft {
   readonly rect: Rect;
 }
 
+/**
+ * Gesto de seta em andamento (ME4): a linha provisória (criar pela alça de ligação, ou arrastar uma
+ * ponta que ainda não está sobre uma marcação, em unidades do canvas) e a marcação que receberia a
+ * ponta se o ponteiro fosse solto agora (acende como o alvo de soltar).
+ */
+export interface ArrowDraft {
+  readonly line: { readonly from: Point; readonly to: Point } | null;
+  readonly target: string | null;
+}
+
 /** Estado passageiro dos gestos: escrito pela entrada, desenhado nas sobreposições. */
 export interface InteractionState {
   readonly preview: Signal<ImagePreview | null>;
@@ -67,6 +78,8 @@ export interface InteractionState {
    * em unidades do canvas. Escrito só quando muda.
    */
   readonly absorb: Signal<readonly Rect[]>;
+  /** Gesto de seta em andamento (criar ou trocar uma ponta); `null` fora dele. */
+  readonly arrowDraft: Signal<ArrowDraft | null>;
 }
 
 /** Sinais de interação vazios (o canvas e os testes montam o estado por aqui). */
@@ -78,6 +91,7 @@ export function createInteractionState(): InteractionState {
     hoverMarking: signal<string | null>(null),
     moveTarget: signal<string | null>(null),
     absorb: signal<readonly Rect[]>([]),
+    arrowDraft: signal<ArrowDraft | null>(null),
   };
 }
 
@@ -122,6 +136,13 @@ export interface Frame {
   readonly floating: ReadonlySet<string>;
   /** Marcas da revisão de uma proposta (etapa 4); `null` fora da revisão. */
   readonly review: ReviewCanvas | null;
+  /**
+   * Setas desenhadas (v13): as do projeto desenhado com as duas pontas visíveis; vazio com
+   * "Mostrar setas" desligado e no Ver limpo. O mesmo array enquanto elas não mudam.
+   */
+  readonly arrows: readonly ArrowShape[];
+  /** Gesto de seta em andamento (linha provisória e marcação de destino). */
+  readonly arrowDraft: ArrowDraft | null;
 }
 
 /** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */
@@ -137,6 +158,8 @@ export function sameFrame(
 export const IMAGE_KEYS = ['project', 'bitmaps', 'preview', 'tokens', 'locale'] as const;
 /** O que muda a camada de componentes (as posições das imagens também, comparadas à parte). */
 export const COMPONENT_KEYS = ['drawings', 'drawn', 'floating', 'tokens'] as const;
+/** O que muda a camada das setas (o zoom, que muda a espessura, é comparado à parte). */
+export const ARROW_KEYS = ['arrows', 'tokens'] as const;
 /** O que muda as sobreposições (seleção, alças, rascunho, alvo de soltar). */
 export const OVERLAY_KEYS = [
   'project',
@@ -150,6 +173,8 @@ export const OVERLAY_KEYS = [
   'selection',
   'items',
   'mode',
+  'arrows',
+  'arrowDraft',
 ] as const;
 
 /** Parte do canvas visível na tela, em coordenadas do canvas. */

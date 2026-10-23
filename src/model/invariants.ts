@@ -30,6 +30,8 @@ export type InvariantCode =
   | 'container-outside-parent'
   | 'floating-in-container'
   | 'parent-floating'
+  | 'arrow-endpoint-missing'
+  | 'arrow-self'
   | 'missing-parent-annotation'
   | 'annotation-parent-other-marking'
   | 'annotation-parent-same-layer'
@@ -41,7 +43,8 @@ export type InvariantCode =
   | 'duplicate-row-id';
 
 /** Tipo do item com problema. */
-export type InvariantEntity = 'image' | 'marking' | 'annotation' | 'layer' | 'spec';
+export type InvariantEntity =
+  'image' | 'marking' | 'arrow' | 'annotation' | 'layer' | 'spec';
 
 export interface InvariantIssue {
   readonly code: InvariantCode;
@@ -86,7 +89,8 @@ export function validateEntries<T extends Pick<Entry, 'key'>>(
 
 /**
  * Checa os invariantes que o schema zod não expressa. Lista vazia = projeto válido.
- * Ver "Regras do modelo" no docs/history/PLAN-etapas-1-2.md. As regras das especializações (camada × tipo,
+ * Ver "Regras do modelo" no docs/history/PLAN-etapas-1-2.md. A seta (v13) tem as suas:
+ * `arrow-endpoint-missing` (ponta que não é uma marcação existente) e `arrow-self`. As regras das especializações (camada × tipo,
  * `allowedChildren`, referências) não bloqueiam a abertura: viram pendências
  * (`getAnnotationIssues`). Só a unicidade dos ids de tupla e de linha fica aqui.
  */
@@ -108,6 +112,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   const layer = issue('layer');
   const imageIssue = issue('image');
   const marking = issue('marking');
+  const arrow = issue('arrow');
   const annotation = issue('annotation');
 
   const lists = [
@@ -123,6 +128,14 @@ export function validateProject(p: Project): InvariantIssue[] {
       if (ids.has(item.id)) push('duplicate-id', item);
       ids.add(item.id);
     }
+  }
+
+  // Marcações e setas dividem o espaço de ids (a anotação aponta para qualquer das duas): a
+  // seta que repete o id de uma marcação, ou de outra seta, é a duplicada.
+  const ownerIds = new Set(p.markings.map((m) => m.id));
+  for (const a of p.arrows) {
+    if (ownerIds.has(a.id)) arrow('duplicate-id', a);
+    ownerIds.add(a.id);
   }
 
   const specFiles = new Set<string>();
@@ -196,6 +209,13 @@ export function validateProject(p: Project): InvariantIssue[] {
       marking('rect-outside-parent', m, parent.id);
   }
 
+  // Seta (v13): liga duas marcações existentes e diferentes (nem outra seta, nem container).
+  for (const a of p.arrows) {
+    if (!markings.has(a.from)) arrow('arrow-endpoint-missing', a, a.from);
+    if (!markings.has(a.to)) arrow('arrow-endpoint-missing', a, a.to);
+    if (a.from === a.to) arrow('arrow-self', a, a.from);
+  }
+
   // Pai de um container (v13): uma marcação do canvas, não flutuante, que o contém inteiro.
   for (const c of p.containers) {
     if (c.parentId === null) continue;
@@ -224,7 +244,8 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const layerIds = new Set(p.layers.map((l) => l.id));
   for (const a of p.annotations) {
-    if (!markings.has(a.markingId)) annotation('missing-marking', a, a.markingId);
+    // A dona da anotação é uma marcação ou uma seta (v13).
+    if (!ownerIds.has(a.markingId)) annotation('missing-marking', a, a.markingId);
     if (!layerIds.has(a.layerId)) annotation('missing-layer', a, a.layerId);
     for (const entryIssue of validateEntries(a.entries)) {
       if (entryIssue) annotation(entryIssue, a);

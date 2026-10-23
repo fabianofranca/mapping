@@ -4,6 +4,7 @@ import {
   imageCanvasRect,
   right,
   type Annotation,
+  type Arrow,
   type InvariantCode,
   type Marking,
   type Project,
@@ -73,6 +74,30 @@ const freeAnnotation = (p: Project, annotation: Partial<Annotation>): Project =>
     },
   ],
 });
+
+/** Seta `AR` do Título (MT) para o Nome (MN), com uma anotação livre dela, e `arrow` por cima. */
+const arrowWithNote = (p: Project, arrow: Partial<Arrow>): Project =>
+  freeAnnotation(
+    {
+      ...p,
+      arrows: [
+        ...p.arrows,
+        {
+          id: 'AR',
+          from: 'MT',
+          to: 'MN',
+          fromSide: null,
+          toSide: null,
+          points: [],
+          style: 'curve',
+          name: null,
+          locked: false,
+          ...arrow,
+        },
+      ],
+    },
+    { markingId: 'AR' },
+  );
 
 /** Segunda imagem (500×500); sem `at`, à direita da primeira e sem sobrepor. */
 const secondImage = (p: Project, at?: { x: number; y: number }): Project => {
@@ -147,6 +172,20 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     code: 'missing-parent',
     repairable: true,
     build: (p) => markings(p, (m) => (m.id === 'MN' ? { ...m, parentId: 'M9' } : m)),
+  },
+  {
+    name: 'arrow-endpoint-missing',
+    code: 'arrow-endpoint-missing',
+    repairable: true,
+    // Seta para uma marcação que não existe: removida, com a anotação dela.
+    build: (p) => arrowWithNote(p, { to: 'M9' }),
+  },
+  {
+    name: 'arrow-self',
+    code: 'arrow-self',
+    repairable: true,
+    // Seta ligada a ela mesma: removida, com a anotação dela.
+    build: (p) => arrowWithNote(p, { from: 'MN', to: 'MN' }),
   },
   {
     name: 'hierarchy-cycle',

@@ -184,9 +184,9 @@ describe('parseComponent: raiz', () => {
 
   it('formatVersion errada', () => {
     expectProblem(
-      problemsAfter((c) => (c.formatVersion = 2)),
+      problemsAfter((c) => (c.formatVersion = 3)),
       'formatVersion',
-      'esperava 1',
+      'esperava 1 ou 2',
     );
   });
 

@@ -65,7 +65,7 @@ describe('library', () => {
       lib.problems.some((p) => p.includes('avatar') && p.includes('não encontrado')),
     ).toBe(true);
     expect(
-      lib.problems.some((p) => p.endsWith('card.json: formatVersion: esperava 1')),
+      lib.problems.some((p) => p.endsWith('card.json: formatVersion: esperava 1 ou 2')),
     ).toBe(true);
     // um problema por issue, cada um com o caminho do arquivo
     expect(lib.problems.filter((p) => p.includes('card.json: ')).length).toBeGreaterThan(

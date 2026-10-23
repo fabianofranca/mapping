@@ -2,9 +2,11 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import {
+  arrowsOf,
   containerLockStates,
   projectIndex,
   type LayerDot,
+  type Arrow,
   type Marking,
   type Project,
   type ProjectContainer,
@@ -22,7 +24,7 @@ import {
 import { ItemMenu } from './CopyActions';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
-import { imageLabel, markingLabel } from './labels';
+import { arrowEndLabel, arrowShort, arrowText, imageLabel, markingLabel } from './labels';
 
 interface MarkingTreeProps {
   readonly project: Project;
@@ -77,11 +79,11 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
   const projectIdx = projectIndex(project);
   const index = projectIdx.children;
   const containerLocks = useMemo(() => containerLockStates(project), [project]);
-  const isSelected = (kind: 'image' | 'marking', id: string) =>
+  const isSelected = (kind: SelectionItem['kind'], id: string) =>
     selection?.kind === kind && selection.id === id;
   // Seleção múltipla: as outras linhas selecionadas (o primário tem o destaque de sempre).
   const items = selectedItems(ui);
-  const isGrouped = (kind: 'image' | 'marking', id: string) =>
+  const isGrouped = (kind: SelectionItem['kind'], id: string) =>
     items.length > 1 && isItemSelected(items, { kind, id });
   /** Shift+clique acrescenta ou tira o item da seleção; o clique simples seleciona. */
   const pick = (e: MouseEvent, item: SelectionItem) => {
@@ -213,6 +215,43 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     );
   };
 
+  /** A seta sob a marcação de origem: "→ destino" (ou o nome dela), com o cadeado própria. */
+  const arrowNode = (arrow: Arrow, depth: number) => {
+    const current = isSelected('arrow', arrow.id);
+    const to = arrowEndLabel(project, projectIdx.markings.get(arrow.to));
+    const text = arrowShort(project, arrow);
+    return (
+      <li key={arrow.id}>
+        {row(
+          treeKey('arrow', arrow.id),
+          depth,
+          false,
+          arrowText(project, arrow),
+          current,
+          isGrouped('arrow', arrow.id),
+          <button
+            type="button"
+            class="tree-item tree-arrow"
+            aria-current={current || undefined}
+            aria-label={t('arrow.treeItem', { name: to })}
+            title={arrowText(project, arrow)}
+            onClick={(e) => pick(e, { kind: 'arrow', id: arrow.id })}
+          >
+            <Icon name="arrow" />
+            <span class={arrow.name === null ? 'tree-label muted' : 'tree-label'}>
+              {text}
+            </span>
+            <LayerDots dots={dots.get(arrow.id) ?? []} />
+          </button>,
+          lockControl(t('arrow.treeItem', { name: to }), arrow.locked, false, () =>
+            actions.setArrowLocked(arrow.id, !arrow.locked),
+          ),
+          null,
+        )}
+      </li>
+    );
+  };
+
   const branch = (markings: readonly Marking[], depth: number): ComponentChildren =>
     markings.length > 0 && (
       <ul>
@@ -220,6 +259,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
           // Filhas da marcação e, na marcação do canvas, os containers que ela contém.
           const children = index.get(m.id) ?? [];
           const members = membersOfMarking(m);
+          const arrows = arrowsOf(project, m.id).outgoing;
           const key = treeKey('marking', m.id);
           const current = isSelected('marking', m.id);
           return (
@@ -227,8 +267,8 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
               {row(
                 key,
                 depth,
-                children.length > 0 || members.length > 0,
-                markingLabel(m),
+                children.length > 0 || members.length > 0 || arrows.length > 0,
+                markingLabel(project, m),
                 current,
                 isGrouped('marking', m.id),
                 <button
@@ -243,23 +283,29 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                     </span>
                   )}
                   <span class={m.name === null ? 'tree-label muted' : 'tree-label'}>
-                    {markingLabel(m)}
+                    {markingLabel(project, m)}
                   </span>
                   <LayerDots dots={dots.get(m.id) ?? []} />
                 </button>,
                 lockControl(
-                  markingLabel(m),
+                  markingLabel(project, m),
                   m.locked,
                   locks.get(m.id) === 'inherited',
                   () => actions.setMarkingLocked(m.id, !m.locked),
                 ),
-                <ItemMenu target={{ kind: 'm', id: m.id }} name={markingLabel(m)} />,
+                <ItemMenu
+                  target={{ kind: 'm', id: m.id }}
+                  name={markingLabel(project, m)}
+                />,
               )}
               {!collapsed.has(key) && (
                 <>
                   {branch(children, depth + 1)}
                   {members.length > 0 && (
                     <ul>{members.map((image) => containerNode(image, depth + 1))}</ul>
+                  )}
+                  {arrows.length > 0 && (
+                    <ul>{arrows.map((arrow) => arrowNode(arrow, depth + 1))}</ul>
                   )}
                 </>
               )}

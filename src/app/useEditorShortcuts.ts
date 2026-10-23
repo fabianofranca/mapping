@@ -122,6 +122,8 @@ export function useEditorShortcuts(
       const project = shown.peek();
       const current = resolveSelection(project, ui.selection.peek());
       if (!project || !current) return;
+      // A seta não tem pai nem filhas a percorrer.
+      if (current.kind === 'arrow') return;
       const index = projectIndex(project);
       let next: Selection = null;
       if (current.kind === 'marking') {
@@ -213,6 +215,8 @@ export function useEditorShortcuts(
             dialogsRef.current.requestDeleteImage(current.image);
           } else if (current?.kind === 'marking') {
             dialogsRef.current.requestDeleteMarking(current.marking);
+          } else if (current?.kind === 'arrow') {
+            dialogsRef.current.requestDeleteArrow(current.arrow);
           }
           return;
         }
@@ -227,7 +231,9 @@ export function useEditorShortcuts(
             const allLocked = many.every((i) =>
               i.kind === 'image'
                 ? index?.containers.get(i.id)?.locked
-                : index?.markings.get(i.id)?.locked,
+                : i.kind === 'arrow'
+                  ? index?.arrows.get(i.id)?.locked
+                  : index?.markings.get(i.id)?.locked,
             );
             actions.setItemsLocked(many, !allLocked);
             return;
@@ -237,6 +243,8 @@ export function useEditorShortcuts(
             actions.setImageLocked(current.image.id, !current.image.locked);
           } else if (current?.kind === 'marking') {
             actions.setMarkingLocked(current.marking.id, !current.marking.locked);
+          } else if (current?.kind === 'arrow') {
+            actions.setArrowLocked(current.arrow.id, !current.arrow.locked);
           }
           return;
         }

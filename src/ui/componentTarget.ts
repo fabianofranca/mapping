@@ -13,8 +13,8 @@ import {
   projectIndex,
   type ComponentCatalog,
   type ComponentType,
+  type FloatingNearTarget,
   type Marking,
-  type MarkingComponent,
   type MarkingVisibility,
   type Project,
   type ProjectContainer,
@@ -36,6 +36,8 @@ export interface ComponentTarget {
   readonly containerId: string | null;
   readonly parentId: string | null;
   readonly center?: { readonly x: number; readonly y: number };
+  /** Tipo flutuante com container ou marcação selecionado: nasce perto dele (`placeFloatingNear`). */
+  readonly near?: FloatingNearTarget;
   /** Como o rótulo do botão descreve o destino. */
   readonly destination:
     | { readonly kind: 'slot' | 'container'; readonly name: string }
@@ -52,7 +54,8 @@ export interface ComponentTarget {
  * 4. Sem seleção: o container sob o centro do viewport; sem container, o canvas, no centro.
  *
  * Um tipo flutuante (`floating`, decisão 10) vive só no canvas: o alvo é sempre o canvas, no
- * centro da vista, qualquer que seja a seleção.
+ * centro da vista; com um container ou uma marcação selecionado, leva também `near` (ME4) e
+ * nasce perto dele.
  */
 export function componentTarget(
   editor: EditorContextValue,
@@ -69,7 +72,7 @@ export function componentTarget(
       return {
         containerId: selected.marking.containerId,
         parentId: selected.marking.id,
-        destination: { kind: 'slot', name: slotTargetName(selected.marking, drawn) },
+        destination: { kind: 'slot', name: slotTargetName(project, selected.marking) },
       };
     }
   }
@@ -97,8 +100,18 @@ export function componentTarget(
     destination: { kind: 'canvas' },
   });
 
-  if (options.floating === true) return onCanvas();
-  if (selected) {
+  if (options.floating === true) {
+    // ME4: com um container ou uma marcação selecionado, a flutuante nasce perto dele.
+    if (selected?.kind === 'image') {
+      return { ...onCanvas(), near: { kind: 'container', id: selected.image.id } };
+    }
+    if (selected?.kind === 'marking') {
+      return { ...onCanvas(), near: { kind: 'marking', id: selected.marking.id } };
+    }
+    return onCanvas();
+  }
+  // ME4: a seta selecionada não é destino de componente (UI): cai no centro da vista.
+  if (selected && selected.kind !== 'arrow') {
     if (selected.image) return inContainer(selected.image);
     return onCanvas();
   }
@@ -108,14 +121,14 @@ export function componentTarget(
 }
 
 /**
- * Nome do componente com slot no rótulo do Adicionar: o nome da marcação; sem nome (uma
- * instância nasce sem), o do tipo que ela desenha ("Card"); sem tipo, o padrão.
+ * Nome do componente com slot no rótulo do Adicionar: o rótulo da marcação (o nome; sem nome,
+ * o do tipo que ela desenha, "Card"; sem tipo, o padrão).
  */
 export function slotTargetName(
-  marking: Pick<Marking, 'name'>,
-  drawn: Pick<MarkingComponent, 'type'> | null,
+  project: Project,
+  marking: Pick<Marking, 'id' | 'name'>,
 ): string {
-  return marking.name ?? drawn?.type.name ?? markingLabel(marking);
+  return markingLabel(project, marking);
 }
 
 /** Rótulo do botão Adicionar com o destino ("Adicionar dentro de Lista"). */

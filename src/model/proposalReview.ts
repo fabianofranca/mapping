@@ -1,6 +1,7 @@
 import {
   canDeleteImage,
   canDeleteMarking,
+  canEditArrow,
   canEditImagePlacement,
   canEditMarkingGeometry,
   canReplaceImage,
@@ -162,7 +163,8 @@ function nodeKey(level: ReviewLevel, id: string | null): string {
 /**
  * Pai de cada marcação citada pela proposta, para aninhar os itens: o proposto (criação;
  * o `parentId` de uma alteração é derivado e não vem na proposta), senão o atual, senão o
- * anterior (marcação removida).
+ * anterior (marcação removida). O "pai" de uma seta é a marcação de origem (ME4): a seta fica
+ * sob ela quando a origem também tem mudanças, senão sob o container (ou o Canvas).
  */
 function parentLookup(
   p: Proposal,
@@ -170,7 +172,15 @@ function parentLookup(
 ): (markingId: string) => string | null {
   const proposed = new Map<string, string | null>();
   const removed = new Map<string, string | null>();
+  const arrowOrigin = new Map<string, string>();
   for (const c of p.changes) {
+    if (c.entity === 'arrow') {
+      const value = c.kind === 'create' ? c.to : c.kind === 'remove' ? c.from : null;
+      if (isRecord(value) && typeof value.from === 'string') {
+        arrowOrigin.set(c.entityId, value.from);
+      }
+      continue;
+    }
     if (c.entity !== 'marking') continue;
     if (c.kind === 'create' && isRecord(c.to)) {
       proposed.set(c.entityId, typeof c.to.parentId === 'string' ? c.to.parentId : null);
@@ -181,11 +191,13 @@ function parentLookup(
       );
     }
   }
-  const markings = projectIndex(project).markings;
+  const index = projectIndex(project);
   return (id) => {
     if (proposed.has(id)) return proposed.get(id) ?? null;
-    const current = markings.get(id);
+    const current = index.markings.get(id);
     if (current) return current.parentId;
+    const origin = arrowOrigin.get(id) ?? index.arrows.get(id)?.from;
+    if (origin !== undefined) return origin;
     return removed.get(id) ?? null;
   };
 }
@@ -446,13 +458,23 @@ export interface ChangeStatus {
   readonly locked: boolean;
 }
 
-/** Remoção: compara a entidade sem o que não vira mudança (`needsReview`). */
+/**
+ * Remoção: compara a entidade sem o que não vira mudança (`needsReview`; a rota da seta, que é
+ * da pessoa e pode ter mudado depois da proposta).
+ */
 function sameRemoved(c: Change, current: JsonValue): boolean {
   if (c.entity === 'marking' && isRecord(current) && isRecord(c.from)) {
     return jsonEqual(
       { ...current, needsReview: false },
       { ...c.from, needsReview: false },
     );
+  }
+  if (c.entity === 'arrow' && isRecord(current) && isRecord(c.from)) {
+    const { points: ignoredCurrent, ...ownCurrent } = current;
+    const { points: ignoredFrom, ...ownFrom } = c.from;
+    void ignoredCurrent;
+    void ignoredFrom;
+    return jsonEqual(ownCurrent, ownFrom);
   }
   return jsonEqual(current, c.from);
 }
@@ -464,6 +486,9 @@ function lockWarning(c: Change, project: Project): boolean {
     if (c.kind === 'update' && (c.field === 'rect' || c.field === 'space')) {
       return !canEditMarkingGeometry(project, c.entityId);
     }
+  }
+  if (c.entity === 'arrow' && c.kind === 'remove' && index.arrows.has(c.entityId)) {
+    return !canEditArrow(project, c.entityId);
   }
   if (c.entity === 'image' && index.containers.has(c.entityId)) {
     if (c.kind === 'remove') return !canDeleteImage(project, c.entityId);

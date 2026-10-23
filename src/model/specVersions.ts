@@ -15,7 +15,7 @@ import type {
 // obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo.
 // Todo o resto é aditivo. Ficam FORA do contrato, de propósito: camadas, `labelField`,
 // `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`
-// (e a troca de camada de um tipo), além de remover `component`/`doc`/exemplo/fonte: nada disso
+// (e a troca de camada de um tipo; `appliesTo` gera só o aviso aditivo `changed-applies-to`), além de remover `component`/`doc`/exemplo/fonte: nada disso
 // gera `SpecChange`. Renome é indistinguível de remover + acrescentar; quem renomeia o declara
 // num passo `rename-*`, e é isso que o diferencia de uma remoção.
 //
@@ -49,6 +49,7 @@ export type SpecChangeCode =
   | 'added-example'
   | 'added-font'
   | 'changed-component'
+  | 'changed-applies-to'
   | 'removed-type'
   | 'removed-field'
   | 'removed-option'
@@ -292,6 +293,17 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
           message: `o componente do tipo "${id}" passou de "${old.type.component}" para "${type.component}"`,
         });
       }
+    }
+    const oldApplies = [...(old.type.appliesTo ?? ['marking'])].sort().join(', ');
+    const newApplies = [...(type.appliesTo ?? ['marking'])].sort().join(', ');
+    if (oldApplies !== newApplies) {
+      out.push({
+        kind: 'additive',
+        code: 'changed-applies-to',
+        path: `${path}.appliesTo`,
+        typeId: id,
+        message: `o tipo "${id}" passou a se aplicar a: ${newApplies} (antes: ${oldApplies}); anotações que deixaram de se aplicar viram pendência`,
+      });
     }
     if (type.doc !== undefined && old.type.doc === undefined) {
       out.push({

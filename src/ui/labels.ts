@@ -4,7 +4,10 @@ import {
   MAX_CONTAINER_SIZE,
   MIN_MARKING_SIZE,
   ancestorsOf,
+  markingTypeName,
+  projectIndex,
   type Annotation,
+  type Arrow,
   type Marking,
   type Project,
   type ProjectContainer,
@@ -18,14 +21,58 @@ export function imageLabel(image: Pick<ProjectContainer, 'name' | 'file'>): stri
   return image.name ?? image.file ?? t('image.containerUntitled');
 }
 
-export function markingLabel(marking: Pick<Marking, 'name'>): string {
-  return marking.name ?? t('marking.unnamed');
+/** Nome da marcação; sem nome, o do tipo que ela desenha (uma instância nasce sem nome). */
+export function markingLabel(
+  project: Project,
+  marking: Pick<Marking, 'id' | 'name'>,
+): string {
+  return marking.name ?? markingTypeName(project, marking.id) ?? t('marking.unnamed');
+}
+
+/** Nome de uma ponta da seta; a marcação que não existe mais vira um texto neutro. */
+export function arrowEndLabel(
+  project: Project,
+  marking: Pick<Marking, 'id' | 'name'> | null | undefined,
+): string {
+  return marking ? markingLabel(project, marking) : t('arrow.missingEnd');
+}
+
+/** "Origem → Destino" de uma seta (sempre as pontas, sem o nome dela). */
+export function arrowEnds(
+  project: Project,
+  arrow: Pick<Arrow, 'from' | 'to'>,
+): { readonly from: string; readonly to: string; readonly text: string } {
+  const markings = projectIndex(project).markings;
+  const from = arrowEndLabel(project, markings.get(arrow.from));
+  const to = arrowEndLabel(project, markings.get(arrow.to));
+  return { from, to, text: t('arrow.label', { from, to }) };
+}
+
+/** Rótulo da seta: o nome dela; sem nome, "Origem → Destino". */
+export function arrowText(
+  project: Project,
+  arrow: Pick<Arrow, 'name' | 'from' | 'to'>,
+): string {
+  return arrow.name ?? arrowEnds(project, arrow).text;
+}
+
+/**
+ * Texto curto da seta sob a marcação de origem (Árvore e Lista): o nome dela; sem nome,
+ * "→ Destino".
+ */
+export function arrowShort(
+  project: Project,
+  arrow: Pick<Arrow, 'name' | 'from' | 'to'>,
+): string {
+  if (arrow.name !== null) return arrow.name;
+  const to = arrowEndLabel(project, projectIndex(project).markings.get(arrow.to));
+  return t('arrow.label', { from: '', to }).trim();
 }
 
 /** Caminho completo da marcação, da raiz até ela (ex.: "Porta › Maçaneta"). */
 export function markingPath(project: Project, marking: Marking): string {
   return [...ancestorsOf(project, marking.id).reverse(), marking]
-    .map(markingLabel)
+    .map((m) => markingLabel(project, m))
     .join(t('marking.pathSeparator'));
 }
 

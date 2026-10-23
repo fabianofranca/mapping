@@ -104,6 +104,7 @@ describe('imagens: excluir em cascata', () => {
       markings: 3,
       lockedMarkings: 0,
       annotations: 3,
+      arrows: 0,
       brokenRefs: 0,
     });
     const next = expectValid(removeContainer(p, 'I1'));

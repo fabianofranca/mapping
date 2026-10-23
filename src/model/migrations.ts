@@ -255,7 +255,8 @@ export function discardedOnMigrationTo13(
 /**
  * v12 → v13 (sem herança e com pertencimento por geometria): a anotação perde `inherit` ("vale
  * para todos os descendentes da marcação"); cada marcação ganha `floating: false` e cada
- * container `parentId: null`. Nenhuma anotação é apagada; cada uma continua na própria
+ * container `parentId: null`, e o projeto ganha `arrows: []` (a coleção de setas, ME4: a migração
+ * nunca cria setas). Nenhuma anotação é apagada; cada uma continua na própria
  * marcação (quais tinham a herança ligada vai para o Diagnóstico, `discardedOnMigrationTo13`).
  * Não assenta: o `parentId` da marcação fica como está e o dos containers, `null` (nenhuma
  * marcação do canvas existe na v12); o pertencimento só se refaz na próxima operação de
@@ -263,6 +264,7 @@ export function discardedOnMigrationTo13(
  */
 export const migrateFrom12To13: Migration = (data) => ({
   ...data,
+  arrows: data.arrows ?? [],
   containers: mapItems(data.containers, (c) => ({ parentId: null, ...c })),
   markings: mapItems(data.markings, (m) => ({ floating: false, ...m })),
   annotations: mapItems(data.annotations, (a) => {

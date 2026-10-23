@@ -27,6 +27,7 @@ export function createProject({ name, now, firstLayer }: NewProjectArgs): Projec
     layers: [{ ...firstLayer, spec: null }],
     containers: [],
     markings: [],
+    arrows: [],
     annotations: [],
   };
 }

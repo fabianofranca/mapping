@@ -6,14 +6,18 @@ import {
   clamp,
   containsRect,
   fromCanvasRect,
+  imageCanvasRect,
   imagePixelRect,
   isIntegerRect,
+  rectsOverlap,
   right,
   translateRect,
   type Size,
 } from './geometry';
+import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { descendantIds, descendantsOf } from './hierarchy';
 import {
+  clearArrowRoutes,
   markingCanvasRectOf,
   settleIf,
   spaceOf,
@@ -89,7 +93,13 @@ export function createMarking(
   args: NewMarkingArgs,
   options?: RectOptions,
 ): Project {
-  if (p.markings.some((m) => m.id === args.id)) fail('duplicate-id', args.id);
+  // Marcações e setas dividem o espaço de ids.
+  if (
+    p.markings.some((m) => m.id === args.id) ||
+    p.arrows.some((a) => a.id === args.id)
+  ) {
+    fail('duplicate-id', args.id);
+  }
   const floating = args.floating ?? false;
   if (floating && args.containerId !== null) fail('invalid-space', args.id);
   const container =
@@ -275,8 +285,11 @@ export function setMarkingFloating(
   } else {
     next = { ...marking, floating: false };
   }
+  // Ligar a flutuante tira a marcação do container: as setas presas perdem os pontos de passagem.
+  const moved = floating && marking.containerId !== null;
+  const base = { ...p, markings: updateById(p.markings, markingId, () => next) };
   return settled(
-    { ...p, markings: updateById(p.markings, markingId, () => next) },
+    moved ? clearArrowRoutes(base, new Set([markingId])) : base,
     markingId,
     options,
   );
@@ -297,9 +310,12 @@ export function markingDeletionImpact(
   descendants: number;
   /** Quantos dos descendentes estão trancados (serão excluídos junto). */
   lockedDescendants: number;
+  /** Anotações que saem: as das marcações que saem e as das setas presas a elas. */
   annotations: number;
   /** Containers que têm a marcação (ou uma descendente) como pai: ficam, passam ao pai dela. */
   containers: number;
+  /** Setas presas a alguma marcação que sai (como origem ou destino): saem junto. */
+  arrows: number;
   brokenRefs: number;
 } {
   findById(p.markings, markingId);
@@ -310,19 +326,24 @@ export function markingDeletionImpact(
   const byParent = projectIndex(p).containersByParent;
   let containers = 0;
   for (const id of ids) containers += byParent.get(id)?.length ?? 0;
+  const arrowIds = arrowIdsAttachedTo(p, ids);
   return {
     descendants,
     lockedDescendants,
-    annotations: p.annotations.filter((a) => ids.has(a.markingId)).length,
+    annotations: p.annotations.filter(
+      (a) => ids.has(a.markingId) || arrowIds.has(a.markingId),
+    ).length,
     containers,
+    arrows: arrowIds.size,
     brokenRefs: countBrokenRefs(p, cascadeRemove(p, markingId)),
   };
 }
 
 /**
- * Exclui a marcação, os descendentes (trancados ou não) e as anotações de todos eles; nunca um
- * container: os que estavam dentro dela passam ao pai dela, ou a nenhum (o assentar refaz).
- * Falha só se a própria marcação estiver trancada.
+ * Exclui a marcação, os descendentes (trancados ou não), as setas presas a qualquer uma delas e
+ * as anotações de todos eles (setas inclusive); nunca um container: os que estavam dentro dela
+ * passam ao pai dela, ou a nenhum (o assentar refaz). Falha só se a própria marcação estiver
+ * trancada (a trava de uma seta presa não impede).
  */
 export function removeMarking(
   p: Project,
@@ -337,11 +358,14 @@ export function removeMarking(
 /** A exclusão em si, sem a trava nem o assentar: também serve para contar o impacto. */
 function cascadeRemove(p: Project, markingId: string): Project {
   const ids = descendantIds(p, markingId).add(markingId);
-  return {
-    ...p,
-    markings: p.markings.filter((m) => !ids.has(m.id)),
-    annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
-  };
+  return withoutArrows(
+    {
+      ...p,
+      markings: p.markings.filter((m) => !ids.has(m.id)),
+      annotations: p.annotations.filter((a) => !ids.has(a.markingId)),
+    },
+    arrowIdsAttachedTo(p, ids),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -391,4 +415,81 @@ export function reorderMarking(p: Project, markingId: string, index: number): Pr
     ...p,
     markings: p.markings.map((m) => (slots.has(m.id) ? (order[next++] as Marking) : m)),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Lugar de uma flutuante perto de um alvo (etapa Marcações espaciais, ME4)
+
+/** Vão constante, em unidades do canvas, entre a flutuante, o alvo e as outras flutuantes. */
+export const FLOATING_GAP = 24;
+
+/** Alvo do `near`: um container ou uma marcação. */
+export interface FloatingNearTarget {
+  readonly kind: 'container' | 'marking';
+  readonly id: string;
+}
+
+/**
+ * Retângulo (unidades do canvas) para uma marcação flutuante de `size` perto de `target`, num
+ * lugar livre da margem. Determinístico: tenta a **direita** do alvo (na marcação de container,
+ * a margem é a do container dela, começando na altura da marcação), empilhando de cima para
+ * baixo com `FLOATING_GAP` sem sobrepor containers nem outras flutuantes; se o empilhamento
+ * passaria da altura do alvo, tenta a **esquerda**, depois **embaixo** (empilhando para a
+ * direita) e **em cima**; se nenhum lado couber, fica na direita, empilhada até achar vão.
+ * Alvo inexistente falha com `not-found`.
+ */
+export function placeFloatingNear(
+  p: Project,
+  target: FloatingNearTarget,
+  size: Size,
+): Rect {
+  const index = projectIndex(p);
+  let anchor: Rect;
+  let start: Rect;
+  if (target.kind === 'container') {
+    const container = index.containers.get(target.id) ?? fail('not-found', target.id);
+    anchor = imageCanvasRect(container, container.placement);
+    start = anchor;
+  } else {
+    const marking = index.markings.get(target.id) ?? fail('not-found', target.id);
+    start = markingCanvasRectOf(p, marking);
+    const container =
+      marking.containerId === null
+        ? undefined
+        : index.containers.get(marking.containerId);
+    anchor = container ? imageCanvasRect(container, container.placement) : start;
+  }
+  const obstacles: Rect[] = p.containers.map((c) => imageCanvasRect(c, c.placement));
+  for (const m of p.markings) {
+    if (m.floating && m.containerId === null && m.id !== target.id) {
+      obstacles.push(markingCanvasRectOf(p, m));
+    }
+  }
+  const { width, height } = size;
+  const hit = (rect: Rect): Rect | undefined =>
+    obstacles.find((o) => rectsOverlap(rect, o));
+
+  // Empilha para baixo (x fixo) ou para a direita (y fixo) até achar vão.
+  const stackDown = (x: number, y: number): Rect => {
+    let rect: Rect = { x, y, width, height };
+    for (let o = hit(rect); o; o = hit(rect))
+      rect = { ...rect, y: bottom(o) + FLOATING_GAP };
+    return rect;
+  };
+  const stackRight = (x: number, y: number): Rect => {
+    let rect: Rect = { x, y, width, height };
+    for (let o = hit(rect); o; o = hit(rect))
+      rect = { ...rect, x: right(o) + FLOATING_GAP };
+    return rect;
+  };
+
+  const onRight = stackDown(right(anchor) + FLOATING_GAP, start.y);
+  if (onRight.y <= bottom(anchor)) return onRight;
+  const onLeft = stackDown(anchor.x - FLOATING_GAP - width, start.y);
+  if (onLeft.y <= bottom(anchor)) return onLeft;
+  const below = stackRight(start.x, bottom(anchor) + FLOATING_GAP);
+  if (below.x <= right(anchor)) return below;
+  const above = stackRight(start.x, anchor.y - FLOATING_GAP - height);
+  if (above.x <= right(anchor)) return above;
+  return onRight;
 }

@@ -8,6 +8,7 @@ import {
   right,
   serialize,
   validateProject,
+  type Arrow,
   type Marking,
   type Project,
 } from '../../src/model';
@@ -401,5 +402,126 @@ describe('repairProject: canvas e pertencimento', () => {
     const result = repair(broken);
     expect(validateProject(result.project)).toEqual([]);
     expect(deserialize(serialize(result.project)).ok).toBe(true);
+  });
+});
+
+// Setas (ME4): a seta sem ponta ou ligada a si mesma não tem o que ligar; é removida, e as
+// anotações dela saem na rodada seguinte, como as de qualquer dona que deixou de existir.
+describe('repairProject: setas', () => {
+  const arrowOf = (id: string, from: string, to: string): Arrow => ({
+    id,
+    from,
+    to,
+    fromSide: null,
+    toSide: null,
+    points: [],
+    style: 'curve',
+    name: 'Seta',
+    locked: false,
+  });
+  const base = (...arrows: Arrow[]): Project => {
+    let p: Project = { ...sampleProject(), arrows };
+    for (const a of arrows) {
+      p = {
+        ...p,
+        annotations: [
+          ...p.annotations,
+          {
+            id: `N${a.id}`,
+            markingId: a.id,
+            layerId: 'L1',
+            name: null,
+            parentAnnotationId: null,
+            type: null,
+            values: null,
+            entries: [],
+          },
+        ],
+      };
+    }
+    return p;
+  };
+
+  it('ponta inexistente: a seta e as anotações dela são removidas; as outras ficam', () => {
+    const broken = base(arrowOf('R1', 'M1', 'M9'), arrowOf('R2', 'M1', 'M4'));
+    const result = repair(broken);
+    expect(result.unrepaired).toEqual([]);
+    expect(result.project.arrows.map((a) => a.id)).toEqual(['R2']);
+    expect(result.project.annotations.map((a) => a.id)).toEqual([
+      'A1',
+      'A2',
+      'A3',
+      'A4',
+      'NR2',
+    ]);
+    expect(result.repaired).toEqual([
+      {
+        action: 'removed',
+        code: 'arrow-endpoint-missing',
+        entity: 'arrow',
+        id: 'R1',
+        name: 'Seta',
+      },
+      { action: 'removed', code: 'missing-marking', entity: 'annotation', id: 'NR1' },
+    ]);
+    expect(validateProject(result.project)).toEqual([]);
+  });
+
+  it('seta ligada a ela mesma e seta cuja ponta é outra seta são removidas', () => {
+    const broken = base(
+      arrowOf('R1', 'M1', 'M1'),
+      arrowOf('R2', 'M1', 'M4'),
+      arrowOf('R3', 'R2', 'M1'),
+    );
+    const result = repair(broken);
+    expect(result.unrepaired).toEqual([]);
+    expect(result.project.arrows.map((a) => a.id)).toEqual(['R2']);
+    expect(result.repaired.filter((r) => r.entity === 'arrow')).toEqual([
+      {
+        action: 'removed',
+        code: 'arrow-self',
+        entity: 'arrow',
+        id: 'R1',
+        name: 'Seta',
+      },
+      {
+        action: 'removed',
+        code: 'arrow-endpoint-missing',
+        entity: 'arrow',
+        id: 'R3',
+        name: 'Seta',
+      },
+    ]);
+  });
+
+  it('a marcação removida pelo reparo leva a seta presa a ela, numa rodada seguinte', () => {
+    // M4 aponta para um container inexistente: removida; a seta M1 → M4 fica sem ponta.
+    const broken: Project = {
+      ...base(arrowOf('R1', 'M1', 'M4')),
+      markings: sampleProject().markings.map((m) =>
+        m.id === 'M4' ? { ...m, containerId: 'I9' } : m,
+      ),
+    };
+    const result = repair(broken);
+    expect(result.unrepaired).toEqual([]);
+    expect(result.project.arrows).toEqual([]);
+    expect(result.project.annotations.map((a) => a.id)).toEqual(['A1', 'A2', 'A3']);
+    expect(validateProject(result.project)).toEqual([]);
+  });
+
+  it('id de seta repetido não tem reparo mecânico: fica em unrepaired', () => {
+    const broken = base(arrowOf('M2', 'M1', 'M4'));
+    const result = repair(broken);
+    expect(result.unrepaired.map((i) => `${i.code}:${i.entity}:${i.id}`)).toEqual([
+      'duplicate-id:arrow:M2',
+    ]);
+    expect(result.repaired).toEqual([]);
+  });
+
+  it('uma seta válida passa intacta e o reparado grava e relê', () => {
+    const p = base(arrowOf('R1', 'M1', 'M4'));
+    expect(repair(p)).toEqual({ project: p, repaired: [], unrepaired: [] });
+    const fixed = repair(base(arrowOf('R1', 'M1', 'M9'), arrowOf('R2', 'M1', 'M4')));
+    expect(deserialize(serialize(fixed.project)).ok).toBe(true);
   });
 });

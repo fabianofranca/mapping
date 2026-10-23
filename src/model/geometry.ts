@@ -1,4 +1,4 @@
-import type { Placement, ProjectContainer, Rect } from './types';
+import type { ArrowPoint, Placement, ProjectContainer, Rect } from './types';
 
 /** Tamanho mínimo de cada lado de uma marcação, em pixels da imagem. */
 export const MIN_MARKING_SIZE = 8;
@@ -104,6 +104,22 @@ export function toCanvasRect(placement: Placement, rect: Rect): Rect {
     y: placement.y + rect.y * placement.scale,
     width: rect.width * placement.scale,
     height: rect.height * placement.scale,
+  };
+}
+
+/** Ponto de um espaço (pixels do container, ou o canvas com `placement` identidade) em unidades do canvas. */
+export function toCanvasPoint(placement: Placement, point: ArrowPoint): ArrowPoint {
+  return {
+    x: placement.x + point.x * placement.scale,
+    y: placement.y + point.y * placement.scale,
+  };
+}
+
+/** Ponto do canvas no espaço de `placement`: o inverso de `toCanvasPoint` (sem arredondar). */
+export function fromCanvasPoint(placement: Placement, point: ArrowPoint): ArrowPoint {
+  return {
+    x: (point.x - placement.x) / placement.scale,
+    y: (point.y - placement.y) / placement.scale,
   };
 }
 

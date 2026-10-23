@@ -117,9 +117,24 @@ Só quando a origem evidencia **tamanhos prontos** para o objeto de topo do canv
 
 `floating: true` no tipo de anotação faz a instância ser uma **marcação flutuante**: um comentário solto que vive só no canvas, acima de tudo, fora do pertencimento (nunca filha nem mãe de container ou marcação; arrastá-la move só ela). Use **só** quando o tipo é um comentário ou anotação solta que não pertence a uma tela (nota, recado, regra de negócio); **nunca** para componentes de interface, que pertencem à tela onde estão. O exemplo é a biblioteca de notas do repositório (`libraries/notas/`, aplicada por padrão pela app). Numa versão anterior à 7, `floating` é erro (`só é permitido com formatVersion 7`). Um tipo flutuante costuma ter um campo `string` de texto livre (aceita várias linhas na interface).
 
+#### Onde o tipo se aplica: `appliesTo` (`formatVersion` 7)
+
+`appliesTo` no tipo diz a que a anotação se aplica: `["marking"]` (o padrão: uma marcação), `["arrow"]` (uma **seta**, que liga duas marcações e pode ter anotações por camada, como a marcação) ou `["marking", "arrow"]`. O painel de anotações oferece à seta selecionada só os tipos que se aplicam a setas, e à marcação só os que se aplicam a marcações. Regras do validador: a lista é não vazia, sem repetição e só com `marking` e `arrow`; um tipo **só de seta** não tem `component` nem `floating` (a seta não tem desenho de componente). Numa versão anterior à 7, `appliesTo` é erro (`só é permitido com formatVersion 7`). Use `["arrow"]` para o dado que descreve a **relação** (o deep link que uma transição abre, o evento que ela dispara); não para o que descreve um elemento. Restrições de origem e destino por tipo não existem no formato: não as invente.
+
+#### O padrão "flutuante que aponta" (tabelas de dados ligadas por seta)
+
+Um dado em forma de tabela que descreve um elemento de uma tela (os eventos de analytics de um botão, as propriedades de uma chamada) **não** é uma anotação do botão: é um tipo **flutuante** cujo componente desenha a tabela, posto ao lado da tela e **ligado ao botão por uma seta**. O dado mora na anotação da tabela flutuante; quem lê o mapeamento chega a ela pelas setas que saem do botão. Escreva assim:
+
+1. O tipo: `floating: true`, `component` e `doc`, e um campo `table` com as colunas que o domínio pede (evento, propriedade, valor…). Uma coluna pode ser `ref` (`accepts` como o campo `ref`; formatVersion 7) quando a linha aponta para um dado do projeto (um campo de modelo de dados, outra tela): é **dado**, não desenha seta.
+2. O componente (`formatVersion` 2 do componente): um nó `repeat` com `field` = a chave do campo `table` e `template` = o desenho de **uma** linha; dentro do `template`, `{ "$field": "<coluna>" }` lê a coluna da linha. Copie o molde de `libraries/notas/components/tabela.json` (título, uma linha por registro, chave à esquerda e valor à direita) e troque as colunas. O `preview` traz 2 ou 3 linhas de exemplo (lista de objetos, uma chave por coluna). A altura da marcação **não** cresce com as linhas: dimensione o `size` e o `minSize` para o `preview` caber (a prova de desenho avisa `conteúdo maior que a caixa`).
+3. Se a **relação** tem dado próprio, um segundo tipo com `appliesTo: ["arrow"]`.
+4. No documento do tipo (`doc`), diga que a ligação com o alvo é uma seta e como o agente a encontra (`arrows` em `get_marking`).
+
+Uma especialização **não cita outra**: a biblioteca de notas já traz a **Tabela** genérica (título e linhas chave/valor), mas uma especialização com colunas tipadas escreve o próprio tipo e o próprio componente do mesmo molde.
+
 ### 11. Versão
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` em algum tipo. A versão atual do formato é a 7. Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`. A versão atual do formato é a 7. O **componente** tem a própria versão: `formatVersion` 1, ou 2 quando usa `repeat` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
@@ -235,7 +250,9 @@ O prompt só precisa especificar. Modelo:
 >
 > **Containers:** <tamanhos prontos (nome, largura × altura, cor de fundo) e de onde saem>. (Só na `formatVersion` 6; omitir sem evidência.)
 >
-> **Tipos flutuantes:** <tipos que são comentários soltos, fora de qualquer tela>. (Só na `formatVersion` 7; omitir sem evidência.)
+> **Tipos flutuantes:** <tipos que são comentários soltos, fora de qualquer tela, e as tabelas de dados ligadas ao elemento por uma seta>. (Só na `formatVersion` 7; omitir sem evidência.)
+>
+> **Tipos de seta:** <tipos de anotação que descrevem a relação entre duas marcações (`appliesTo: ["arrow"]`)>. (Só na `formatVersion` 7; omitir sem evidência.)
 >
 > **Fora:** <o que não modelar>.
 >

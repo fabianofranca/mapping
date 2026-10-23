@@ -5,7 +5,10 @@ import type { Project } from './types';
 // (<caminho legível>)`. A app copia, o agente (MCP) cola. Funções puras, sem DOM nem Node.
 // Não confundir com `refs.ts`, que trata das referências fortes entre anotações.
 
-/** `m` = marcação, `i` = imagem, `a` = anotação. */
+/**
+ * `m` = marcação (e seta: os ids das setas e os das marcações dividem o espaço, ME4), `i` =
+ * container, `a` = anotação.
+ */
 export type ItemKind = 'm' | 'i' | 'a';
 
 export const ITEM_KINDS: readonly ItemKind[] = ['m', 'i', 'a'];
@@ -23,7 +26,8 @@ export function normalizeId(id: string): string {
 }
 
 function idsOf(p: Project, kind: ItemKind): readonly string[] {
-  const items = kind === 'm' ? p.markings : kind === 'i' ? p.containers : p.annotations;
+  if (kind === 'm') return [...p.markings, ...p.arrows].map((item) => item.id);
+  const items = kind === 'i' ? p.containers : p.annotations;
   return items.map((item) => item.id);
 }
 

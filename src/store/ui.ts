@@ -3,6 +3,7 @@ import {
   projectIndex,
   spaceOf,
   type Annotation,
+  type Arrow,
   type Layer,
   type Marking,
   type Project,
@@ -18,9 +19,10 @@ import {
 export type Selection =
   | { readonly kind: 'image'; readonly id: string }
   | { readonly kind: 'marking'; readonly id: string }
+  | { readonly kind: 'arrow'; readonly id: string }
   | null;
 
-/** Um item da seleção: um container (`image`) ou uma marcação. */
+/** Um item da seleção: um container (`image`), uma marcação ou uma seta (v13). */
 export type SelectionItem = NonNullable<Selection>;
 
 /**
@@ -94,7 +96,8 @@ export interface CanvasMenu {
   /** Posição do cursor na janela (`clientX`/`clientY`). */
   readonly x: number;
   readonly y: number;
-  readonly target: { readonly kind: 'i' | 'm'; readonly id: string };
+  /** `i` = container, `m` = marcação, `arrow` = seta (v13). */
+  readonly target: { readonly kind: 'i' | 'm' | 'arrow'; readonly id: string };
 }
 
 export function createEditorUi(): EditorUi {
@@ -211,7 +214,11 @@ export function existingItems(
   if (!project) return [];
   const index = projectIndex(project);
   return items.filter((i) =>
-    i.kind === 'image' ? index.containers.has(i.id) : index.markings.has(i.id),
+    i.kind === 'image'
+      ? index.containers.has(i.id)
+      : i.kind === 'arrow'
+        ? index.arrows.has(i.id)
+        : index.markings.has(i.id),
   );
 }
 
@@ -241,7 +248,9 @@ export function showToast(ui: EditorUi, text: string, duration = TOAST_MS): void
 
 /** Seções recolhíveis de Detalhes. */
 export type DetailsSection =
-  | { readonly kind: 'marking' | 'image' | 'annotations' | 'others' | 'images' }
+  | {
+      readonly kind: 'marking' | 'image' | 'arrow' | 'annotations' | 'others' | 'images';
+    }
   | { readonly kind: 'layer' | 'annotation'; readonly id: string };
 
 /** Chave da seção no conjunto `collapsed`. */
@@ -340,13 +349,15 @@ export type AnnotationLocation = Pick<Annotation, 'id' | 'markingId' | 'layerId'
 
 /**
  * Vai até a anotação (backlinks, "Ir para o alvo", vinculadas, pendências): mostra a
- * camada dela, abre as seções recolhidas que a escondem, seleciona a marcação e pede
- * ao painel para rolar até ela (e focar `field`, se houver).
+ * camada dela, abre as seções recolhidas que a escondem, seleciona a marcação (ou a seta, se a
+ * dona é uma seta do `project` dado) e pede ao painel para rolar até ela (e focar `field`, se
+ * houver).
  */
 export function goToAnnotation(
   ui: EditorUi,
   annotation: AnnotationLocation,
   field: string | null = null,
+  project: Project | null = null,
 ): void {
   showLayer(ui, annotation.layerId);
   expandSections(ui, [
@@ -354,7 +365,9 @@ export function goToAnnotation(
     { kind: 'layer', id: annotation.layerId },
     { kind: 'annotation', id: annotation.id },
   ]);
-  ui.selection.value = { kind: 'marking', id: annotation.markingId };
+  const onArrow =
+    project !== null && projectIndex(project).arrows.has(annotation.markingId);
+  ui.selection.value = { kind: onArrow ? 'arrow' : 'marking', id: annotation.markingId };
   ui.focusField.value = field;
   ui.focusAnnotation.value = annotation.id;
 }
@@ -373,6 +386,7 @@ export type ResolvedSelection =
       /** Espaço do `rect`: o container (pixels dele) ou o canvas (`placement` identidade). */
       readonly space: Space;
     }
+  | { readonly kind: 'arrow'; readonly arrow: Arrow }
   | null;
 
 /** Item selecionado no projeto atual (`null` se ele não existe mais, ex.: após desfazer). */
@@ -386,6 +400,10 @@ export function resolveSelection(
     return image ? { kind: 'image', image } : null;
   }
   const index = projectIndex(project);
+  if (selection.kind === 'arrow') {
+    const arrow = index.arrows.get(selection.id);
+    return arrow ? { kind: 'arrow', arrow } : null;
+  }
   const marking = index.markings.get(selection.id);
   if (!marking) return null;
   if (marking.containerId === null) {
@@ -401,7 +419,10 @@ export function resolveSelection(
 // desfazer. As chaves levam o tipo do nó porque ids de imagem e de marcação vêm de
 // geradores diferentes. A raiz Canvas (v13) é `treeKey('canvas', '')`.
 
-export function treeKey(kind: 'image' | 'marking' | 'canvas', id: string): string {
+export function treeKey(
+  kind: 'image' | 'marking' | 'arrow' | 'canvas',
+  id: string,
+): string {
   return `${kind}:${id}`;
 }
 
@@ -431,6 +452,8 @@ export function collapseTree(ui: EditorUi, project: Project | null): void {
   for (const c of project.containers) {
     if (c.parentId !== null && !floating.has(c.parentId)) parents.add(c.parentId);
   }
+  // As setas aparecem sob a marcação de origem.
+  for (const a of project.arrows) parents.add(a.from);
   for (const id of parents) next.add(treeKey('marking', id));
   ui.collapsedTree.value = next;
 }
@@ -476,8 +499,12 @@ export function revealInTree(
       next.delete(treeKey('canvas', ''));
     }
   } else {
-    const marking = byId.get(selection.id);
+    // A seta aparece sob a marcação de origem (ME4: a Árvore é de outro agente): abre a origem.
+    const arrow = selection.kind === 'arrow' ? index.arrows.get(selection.id) : undefined;
+    if (selection.kind === 'arrow' && !arrow) return false;
+    const marking = byId.get(arrow ? arrow.from : selection.id);
     if (!marking) return false;
+    if (arrow) next.delete(treeKey('marking', marking.id));
     openMarkings(marking.parentId);
     if (marking.containerId === null) {
       next.delete(treeKey('canvas', ''));

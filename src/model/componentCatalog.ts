@@ -125,6 +125,22 @@ export function markingComponent(
   return null;
 }
 
+/**
+ * Nome do tipo que a marcação desenha: o da primeira anotação própria cujo tipo declara
+ * componente, ou `null`. Não usa o catálogo de componentes (é deliberado): o rótulo da
+ * instância sem nome funciona em qualquer lugar que tenha o projeto, sem ler arquivos.
+ */
+export function markingTypeName(p: Project, markingId: string): string | null {
+  for (const annotation of projectIndex(p).annotationsByMarking.get(markingId) ?? []) {
+    if (annotation.type === null || annotation.values === null) continue;
+    const resolved = findSpecType(p, annotation.type);
+    if (resolved !== null && resolved.type.component !== undefined) {
+      return resolved.type.name;
+    }
+  }
+  return null;
+}
+
 /** Componente com slot: o componente tem um slot que recebe marcações filhas. */
 export function hasSlotComponent(component: ComponentFile): boolean {
   return findSlot(component) !== undefined;

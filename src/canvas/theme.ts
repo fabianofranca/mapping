@@ -64,6 +64,16 @@ export interface CanvasTokens {
   readonly handleSize: number;
   /** Raios (px de tela): `sm` na etiqueta do nome, `md` nos demais cantos arredondados. */
   readonly radius: { readonly sm: number; readonly md: number };
+  /** Seta (v13): cores do traço, da seleção e do rótulo; espessuras e ponta (px de tela). */
+  readonly arrow: {
+    readonly stroke: string;
+    readonly select: string;
+    readonly label: string;
+    readonly labelBg: string;
+    readonly width: number;
+    readonly widthSelected: number;
+    readonly head: number;
+  };
   /** Emblema do cadeado: fundo, traço e lado (px de tela). */
   readonly lock: {
     readonly fill: string;
@@ -125,6 +135,15 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     },
     handleSize: number(read, '--size-handle'),
     radius: { sm: number(read, '--radius-sm'), md: number(read, '--radius-md') },
+    arrow: {
+      stroke: read('--cv-arrow'),
+      select: read('--cv-arrow-select'),
+      label: read('--cv-arrow-label'),
+      labelBg: read('--cv-arrow-label-bg'),
+      width: number(read, '--size-arrow-stroke'),
+      widthSelected: number(read, '--size-arrow-stroke-selected'),
+      head: number(read, '--size-arrow-head'),
+    },
     lock: {
       fill: read('--cv-lock'),
       glyph: read('--cv-lock-glyph'),

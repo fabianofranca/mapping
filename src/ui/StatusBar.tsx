@@ -2,12 +2,12 @@ import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
 import { SCHEMA_VERSION } from '../model';
 import { existingItems, selectedItems } from '../store/ui';
-import { resolveShownSelection } from '../store/shownSelection';
+import { resolveShownSelection, selectionProject } from '../store/shownSelection';
 import { BUILD_ID } from '../utils/build';
 import { CHANNEL } from '../utils/channel';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
-import { imageLabel, markingLabel } from './labels';
+import { arrowText, imageLabel, markingLabel } from './labels';
 import { ZoomField } from './ZoomField';
 import { showAndFocusToolWindow } from './toolWindowLayout';
 import { awaitingText } from './review/ProposalRow';
@@ -58,7 +58,13 @@ function SelectionItem() {
     ).length;
     if (count > 1) return t('multi.title', { count });
     const selected = resolveShownSelection(review, ui.selection.value);
-    if (selected?.kind === 'marking') return markingLabel(selected.marking);
+    if (selected?.kind === 'marking' || selected?.kind === 'arrow') {
+      const project = selectionProject(review, ui.selection.value);
+      if (!project) return null;
+      return selected.kind === 'marking'
+        ? markingLabel(project, selected.marking)
+        : arrowText(project, selected.arrow);
+    }
     return selected?.kind === 'image' ? imageLabel(selected.image) : null;
   });
   const label = name.value ?? t('panel.nothingSelected');

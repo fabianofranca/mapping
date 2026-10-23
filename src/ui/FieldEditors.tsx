@@ -5,7 +5,8 @@ import {
   type Backlink,
   type JsonValue,
   type Project,
-  type SpecColumn,
+  type SpecSimpleColumn,
+  refPathText,
 } from '../model';
 import type { ActionResult } from '../store/history';
 import type { AnnotationLocation } from '../store/ui';
@@ -144,7 +145,7 @@ export function StringEditor(props: SimpleEditorProps) {
 }
 
 interface SimpleEditorProps {
-  readonly field: SpecColumn;
+  readonly field: SpecSimpleColumn;
   readonly value: JsonValue | undefined;
   /** Nome acessível do controle. */
   readonly label: string;
@@ -311,7 +312,7 @@ export function BacklinkList({
         const source = annotationSourceLabel(project, b.source);
         const marking = project.markings.find((m) => m.id === b.source.markingId);
         return (
-          <li key={`${b.source.id}:${b.key}`}>
+          <li key={`${b.source.id}:${refPathText(b)}`}>
             <button
               type="button"
               class="link-button"
@@ -320,7 +321,7 @@ export function BacklinkList({
             >
               {t('ref.backlink', {
                 source,
-                marking: marking ? markingLabel(marking) : '',
+                marking: marking ? markingLabel(project, marking) : '',
               })}
             </button>
           </li>

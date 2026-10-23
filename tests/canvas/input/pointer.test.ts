@@ -4,16 +4,23 @@ import { PointerInput } from '../../../src/canvas/input/pointer';
 import { ViewportController } from '../../../src/canvas/viewportController';
 import {
   addContainer,
+  arrowRoute,
   createMarking,
   projectIndex,
+  setArrowRoute,
+  setArrowStyle,
   setContainerPlacement,
+  setMarkingLocked,
   type Project,
 } from '../../../src/model';
+import { setShowArrows } from '../../../src/store/settings';
 import {
   peekSelectedItems,
   selectItems,
+  type Selection,
   type SelectionItem,
 } from '../../../src/store/ui';
+import { arrowProject, withArrow } from '../../model/arrowFixtures';
 import { canvasProject, editorFor } from '../harness';
 
 // Viewport 1:1 em (0, 0) e container em (0, 0) na página: tela = canvas.
@@ -1346,6 +1353,485 @@ describe('PointerInput: seleção múltipla', () => {
       s.rightClick(400, 400); // M1, fora da seleção
       expect(ids(s)).toEqual(['marking:M1']);
       expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M1' });
+      s.cleanup();
+    });
+  });
+});
+
+// Setas (ME4): selecionar pelo traço, criar pela alça de ligação, pontos de passagem, trocar a
+// ponta e o lado. Projeto das setas: r1 de a1 (100,100,300,300) a a3 (600,600,200,200), no
+// container A (escala 1, em 0,0); a curva sai por (400,250) e chega por (600,700). Cada gesto é
+// uma entrada de desfazer.
+describe('PointerInput: setas (ME4)', () => {
+  const arrowsOf = (s: ReturnType<typeof setup>) => s.store.project.peek()?.arrows ?? [];
+  const r1 = (s: ReturnType<typeof setup>) => arrowsOf(s).find((a) => a.id === 'r1');
+  const straightProject = () => setArrowStyle(arrowProject(), 'r1', 'straight');
+  const select = (s: ReturnType<typeof setup>, selection: Selection) => {
+    s.ui.selection.value = selection;
+  };
+  const undoAll = (s: ReturnType<typeof setup>) => {
+    let n = 0;
+    while (s.store.canUndo.value && s.store.undo()) n++;
+    return n;
+  };
+
+  afterEach(() => setShowArrows(true));
+
+  describe('seleção pelo traço', () => {
+    it('clicar perto do traço seleciona a seta; longe, o container; Shift alterna', () => {
+      const s = setup(false, straightProject());
+      s.click(500, 475);
+      expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
+      s.click(900, 100); // dentro de A, longe de tudo
+      expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'A' });
+      // Shift+clique soma a seta à seleção e de novo a tira.
+      s.click(500, 475, { shift: true });
+      expect(peekSelectedItems(s.ui)).toEqual([
+        { kind: 'image', id: 'A' },
+        { kind: 'arrow', id: 'r1' },
+      ]);
+      s.click(500, 475, { shift: true });
+      expect(peekSelectedItems(s.ui)).toEqual([{ kind: 'image', id: 'A' }]);
+      s.cleanup();
+    });
+
+    it('"Mostrar setas" desligado ou Ver limpo: o traço não recebe o toque', () => {
+      const s = setup(false, straightProject());
+      setShowArrows(false);
+      s.click(500, 475);
+      expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'A' });
+      setShowArrows(true);
+      s.ui.cleanView.value = true;
+      s.click(500, 475);
+      expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'A' });
+      s.cleanup();
+    });
+
+    it('a seta de ponta oculta pelo modo de exibição não recebe o toque', () => {
+      const s = setup(false, straightProject());
+      s.derived.markingVisibility.peek(); // mapa de visibilidade do modo atual
+      const hidden = vi
+        .spyOn(s.derived.markingVisibility, 'peek')
+        .mockReturnValue(new Map([['a3', 'hidden' as const]]));
+      s.click(500, 475);
+      expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'A' });
+      hidden.mockRestore();
+      s.cleanup();
+    });
+
+    it('botão direito no traço seleciona a seta e abre o menu dela', () => {
+      const s = setup(false, straightProject());
+      s.rightClick(500, 475);
+      expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
+      expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'arrow', id: 'r1' });
+      s.cleanup();
+    });
+
+    it('clicar numa alça não troca a seleção (nem sobe pela cadeia)', () => {
+      const s = setup(false, straightProject());
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.click(400, 250);
+      s.click(400, 250);
+      expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
+      select(s, { kind: 'marking', id: 'a1' });
+      s.click(414, 250); // alça de ligação
+      expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'a1' });
+      s.cleanup();
+    });
+
+    it('cursor: alça da ponta mira, ponto de passagem move, traço trancado não permite', () => {
+      const s = setup(false, straightProject());
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.input.updateCursor({ x: 400, y: 250 });
+      expect(s.container.style.cursor).toBe('crosshair');
+      s.input.updateCursor({ x: 500, y: 475 });
+      expect(s.container.style.cursor).toBe('move');
+      s.input.updateCursor({ x: 900, y: 100 });
+      expect(s.container.style.cursor).toBe('');
+      select(s, { kind: 'marking', id: 'a1' });
+      s.input.updateCursor({ x: 414, y: 250 });
+      expect(s.container.style.cursor).toBe('crosshair');
+      s.cleanup();
+    });
+  });
+
+  describe('criar pela alça de ligação', () => {
+    it('puxar até outra marcação acende o destino, cria a seta e a seleciona (uma entrada)', () => {
+      const s = setup(false, arrowProject());
+      select(s, { kind: 'marking', id: 'a1' });
+      s.fire('pointerdown', 414, 250);
+      s.fire('pointermove', 440, 300);
+      s.fire('pointermove', 700, 700);
+      expect(s.state.arrowDraft.value).toEqual({
+        line: { from: { x: 400, y: 250 }, to: { x: 700, y: 700 } },
+        target: 'a3',
+      });
+      // Nada foi criado nem entrou no histórico ainda.
+      expect(arrowsOf(s)).toHaveLength(1);
+      s.fire('pointerup', 700, 700);
+      const created = arrowsOf(s)[1];
+      expect(created).toMatchObject({ from: 'a1', to: 'a3', style: 'curve', points: [] });
+      expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: created?.id });
+      expect(s.state.arrowDraft.value).toBeNull();
+      // O marcação de origem não mudou, e desfazer tira só a seta.
+      expect(s.markingRect('a1')).toEqual({ x: 100, y: 100, width: 300, height: 300 });
+      expect(s.store.undo()).toBe(true);
+      expect(arrowsOf(s)).toHaveLength(1);
+      s.cleanup();
+    });
+
+    it('soltar fora de uma marcação ou sobre a origem cancela, sem entrada', () => {
+      const s = setup(false, arrowProject());
+      select(s, { kind: 'marking', id: 'a1' });
+      const before = s.store.canUndo.value;
+      s.drag([414, 250], [3000, 3000]);
+      expect(arrowsOf(s)).toHaveLength(1);
+      s.fire('pointerdown', 414, 250);
+      s.fire('pointermove', 450, 280);
+      s.fire('pointermove', 350, 350); // sobre a própria origem: não é destino
+      expect(s.state.arrowDraft.value?.target).toBeNull();
+      s.fire('pointerup', 350, 350);
+      expect(arrowsOf(s)).toHaveLength(1);
+      expect(s.store.canUndo.value).toBe(before);
+      expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'a1' });
+      s.cleanup();
+    });
+
+    it('Esc no meio do gesto cancela e apaga a seta provisória', () => {
+      const s = setup(false, arrowProject());
+      select(s, { kind: 'marking', id: 'a1' });
+      s.fire('pointerdown', 414, 250);
+      s.fire('pointermove', 450, 280);
+      s.fire('pointermove', 700, 700);
+      expect(s.state.arrowDraft.value).not.toBeNull();
+      expect(s.input.cancelInteraction()).toBe(true);
+      expect(s.state.arrowDraft.value).toBeNull();
+      s.fire('pointerup', 700, 700);
+      expect(arrowsOf(s)).toHaveLength(1);
+      s.cleanup();
+    });
+
+    it('vale para a marcação trancada (a marcação não muda) e não para o somente leitura', () => {
+      const locked = setMarkingLocked(arrowProject(), 'a1', true);
+      const s = setup(false, locked);
+      select(s, { kind: 'marking', id: 'a1' });
+      s.drag([414, 250], [700, 700]);
+      expect(arrowsOf(s)).toHaveLength(2);
+      s.cleanup();
+      const ro = setup(true, arrowProject());
+      select(ro, { kind: 'marking', id: 'a1' });
+      ro.drag([414, 250], [700, 700]);
+      expect(arrowsOf(ro)).toHaveLength(1);
+      ro.cleanup();
+    });
+
+    it('o destino é a primeira marcação sob o ponteiro: a flutuante, sobre as demais', () => {
+      const project = createMarking(arrowProject(), {
+        id: 'F1',
+        containerId: null,
+        rect: { x: 650, y: 650, width: 100, height: 100 },
+        floating: true,
+      });
+      const s = setup(false, project);
+      select(s, { kind: 'marking', id: 'a1' });
+      s.drag([414, 250], [700, 700]);
+      expect(arrowsOf(s)[1]).toMatchObject({ from: 'a1', to: 'F1' });
+      s.cleanup();
+    });
+  });
+
+  describe('pontos de passagem', () => {
+    it('arrastar o meio de um trecho cria um ponto ali (uma entrada)', () => {
+      const s = setup(false, straightProject());
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.drag([500, 475], [560, 420]);
+      expect(r1(s)?.points).toEqual([{ x: 560, y: 420 }]);
+      expect(r1(s)?.fromSide).toBeNull();
+      expect(undoAll(s)).toBe(1);
+      expect(r1(s)?.points).toEqual([]);
+      s.cleanup();
+    });
+
+    it('mover um ponto de passagem; o ponto cai nos pixels inteiros do container', () => {
+      const project = setArrowRoute(straightProject(), 'r1', [{ x: 700, y: 300 }]);
+      const s = setup(false, project);
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.fire('pointerdown', 700, 300);
+      s.fire('pointermove', 710, 310);
+      s.fire('pointermove', 720.4, 330.6);
+      // Durante o gesto a prévia já mostra o ponto novo, mas não há entrada no histórico.
+      expect(r1(s)?.points).toEqual([{ x: 720, y: 331 }]);
+      expect(s.store.canUndo.value).toBe(false);
+      s.fire('pointerup', 720.4, 330.6);
+      expect(r1(s)?.points).toEqual([{ x: 720, y: 331 }]);
+      expect(undoAll(s)).toBe(1);
+      expect(r1(s)?.points).toEqual([{ x: 700, y: 300 }]);
+      s.cleanup();
+    });
+
+    describe('canto (elbow): arrastar um segmento', () => {
+      // r1 em canto: (400,250) → (500,250) → (500,700) → (600,700); a pista é o x = 500.
+      const elbowProject = (points: { x: number; y: number }[] = []) =>
+        setArrowStyle(setArrowRoute(arrowProject(), 'r1', points), 'r1', 'elbow');
+      const route = (s: ReturnType<typeof setup>) => {
+        const project = s.store.project.peek();
+        const arrow = r1(s);
+        if (!project || !arrow) throw new Error('seta');
+        return arrowRoute(project, arrow)?.points;
+      };
+
+      it('move o segmento em paralelo, mantém os ângulos retos e grava uma entrada', () => {
+        const s = setup(false, elbowProject());
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.fire('pointerdown', 500, 475);
+        s.fire('pointermove', 520, 470);
+        s.fire('pointermove', 560.4, 300);
+        // A prévia: só o x acompanha o ponteiro; o y do ponto fica no meio do segmento.
+        expect(r1(s)?.points).toEqual([{ x: 560, y: 475 }]);
+        expect(route(s)).toEqual([
+          { x: 400, y: 250 },
+          { x: 560, y: 250 },
+          { x: 560, y: 700 },
+          { x: 600, y: 700 },
+        ]);
+        expect(s.store.canUndo.value).toBe(false);
+        s.fire('pointerup', 560.4, 300);
+        expect(r1(s)?.points).toEqual([{ x: 560, y: 475 }]);
+        expect(undoAll(s)).toBe(1);
+        expect(r1(s)?.points).toEqual([]);
+        s.cleanup();
+      });
+
+      it('o segmento inteiro pega o arrasto, não só a alça do meio', () => {
+        const s = setup(false, elbowProject([{ x: 500, y: 475 }]));
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.drag([498, 640], [450, 640]);
+        expect(r1(s)?.points).toEqual([{ x: 450, y: 475 }]);
+        s.cleanup();
+      });
+
+      it('um primeiro trecho (que não é do meio) faz pan, sem mexer na rota', () => {
+        const s = setup(false, elbowProject());
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.drag([450, 250], [470, 280]);
+        expect(r1(s)?.points).toEqual([]);
+        expect(s.store.canUndo.value).toBe(false);
+        s.cleanup();
+      });
+
+      it('cursor de redimensionar no eixo do arrasto', () => {
+        const s = setup(false, elbowProject());
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.input.updateCursor({ x: 500, y: 600 });
+        expect(s.container.style.cursor).toBe('ew-resize');
+        s.cleanup();
+      });
+
+      it('clique duplo no segmento volta à rota padrão (uma entrada)', () => {
+        const s = setup(false, elbowProject([{ x: 560, y: 475 }]));
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.doubleClick(560, 600);
+        expect(r1(s)?.points).toEqual([]);
+        expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
+        expect(undoAll(s)).toBe(1);
+        expect(r1(s)?.points).toEqual([{ x: 560, y: 475 }]);
+        s.cleanup();
+      });
+
+      it('seta trancada e somente leitura: o segmento não se move', () => {
+        const ro = setup(true, elbowProject());
+        select(ro, { kind: 'arrow', id: 'r1' });
+        ro.drag([500, 600], [560, 600]);
+        expect(r1(ro)?.points).toEqual([]);
+        ro.cleanup();
+        const locked = setup(false, {
+          ...elbowProject(),
+          arrows: elbowProject().arrows.map((a) => ({ ...a, locked: true })),
+        });
+        select(locked, { kind: 'arrow', id: 'r1' });
+        locked.drag([500, 600], [560, 600]);
+        expect(r1(locked)?.points).toEqual([]);
+        expect(locked.store.canUndo.value).toBe(false);
+        locked.cleanup();
+      });
+
+      it('cancelar (Esc) volta os pontos', () => {
+        const s = setup(false, elbowProject());
+        select(s, { kind: 'arrow', id: 'r1' });
+        s.fire('pointerdown', 500, 600);
+        s.fire('pointermove', 520, 600);
+        s.fire('pointermove', 580, 600);
+        expect(r1(s)?.points).toHaveLength(1);
+        expect(s.input.cancelInteraction()).toBe(true);
+        expect(r1(s)?.points).toEqual([]);
+        s.fire('pointerup', 580, 600);
+        expect(s.store.canUndo.value).toBe(false);
+        s.cleanup();
+      });
+    });
+
+    it('o ponto novo vai para a posição certa entre os pontos que já existem', () => {
+      const project = setArrowRoute(straightProject(), 'r1', [
+        { x: 700, y: 300 },
+        { x: 700, y: 500 },
+      ]);
+      const s = setup(false, project);
+      select(s, { kind: 'arrow', id: 'r1' });
+      // Meio do segundo trecho: entre (700,300) e (700,500) = (700,400), posição 1.
+      s.drag([700, 400], [760, 400]);
+      expect(r1(s)?.points).toEqual([
+        { x: 700, y: 300 },
+        { x: 760, y: 400 },
+        { x: 700, y: 500 },
+      ]);
+      s.cleanup();
+    });
+
+    it('clique duplo num ponto de passagem o remove e mantém a seta selecionada', () => {
+      const project = setArrowRoute(straightProject(), 'r1', [
+        { x: 700, y: 300 },
+        { x: 700, y: 500 },
+      ]);
+      const s = setup(false, project);
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.doubleClick(700, 300);
+      expect(r1(s)?.points).toEqual([{ x: 700, y: 500 }]);
+      expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
+      expect(undoAll(s)).toBe(1);
+      expect(r1(s)?.points).toHaveLength(2);
+      s.cleanup();
+    });
+
+    it('clique duplo fora de um ponto de passagem não remove nada', () => {
+      const project = setArrowRoute(straightProject(), 'r1', [{ x: 700, y: 300 }]);
+      const s = setup(false, project);
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.doubleClick(550, 276); // o meio do trecho, não um ponto
+      expect(r1(s)?.points).toHaveLength(1);
+      s.cleanup();
+    });
+
+    it('seta trancada: arrastar o traço não faz nada (nem pan); só leitura: pan', () => {
+      const locked = withArrow(straightProject(), 'r2', 'a3', 'b2', {
+        style: 'straight',
+        locked: true,
+      });
+      const s = setup(false, locked);
+      select(s, { kind: 'arrow', id: 'r2' });
+      s.input.updateCursor({ x: 800, y: 700 });
+      expect(s.container.style.cursor).toBe('not-allowed');
+      s.fire('pointerdown', 800, 700);
+      s.fire('pointermove', 830, 720);
+      s.fire('pointermove', 900, 760);
+      s.fire('pointerup', 900, 760);
+      expect(arrowsOf(s).find((a) => a.id === 'r2')?.points).toEqual([]);
+      expect(s.viewport.viewport.value).toMatchObject({ x: 0, y: 0 });
+      expect(s.store.canUndo.value).toBe(false);
+      s.doubleClick(800, 700);
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+      const ro = setup(true, straightProject());
+      select(ro, { kind: 'arrow', id: 'r1' });
+      ro.drag([500, 475], [560, 420]);
+      expect(r1(ro)?.points).toEqual([]);
+      ro.cleanup();
+    });
+
+    it('cancelar (Esc) o gesto volta os pontos', () => {
+      const project = setArrowRoute(straightProject(), 'r1', [{ x: 700, y: 300 }]);
+      const s = setup(false, project);
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.fire('pointerdown', 700, 300);
+      s.fire('pointermove', 720, 330);
+      s.fire('pointermove', 740, 360);
+      expect(r1(s)?.points).toEqual([{ x: 740, y: 360 }]);
+      expect(s.input.cancelInteraction()).toBe(true);
+      expect(r1(s)?.points).toEqual([{ x: 700, y: 300 }]);
+      s.fire('pointerup', 740, 360);
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+  });
+
+  describe('trocar a ponta e o lado', () => {
+    it('arrastar a ponta até outra marcação troca o destino (uma entrada) e acende o alvo', () => {
+      const s = setup(false, arrowProject());
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.fire('pointerdown', 600, 700);
+      s.fire('pointermove', 650, 720);
+      s.fire('pointermove', 2700, 700); // sobre b2 (2600,600,200,200)
+      expect(s.state.arrowDraft.value).toEqual({ line: null, target: 'b2' });
+      expect(r1(s)?.to).toBe('b2');
+      s.fire('pointerup', 2700, 700);
+      expect(r1(s)).toMatchObject({ from: 'a1', to: 'b2', toSide: null });
+      // Os containers das pontas mudaram: o espaço dos pontos mudou e a rota voltou ao padrão.
+      expect(r1(s)?.points).toEqual([]);
+      expect(s.state.arrowDraft.value).toBeNull();
+      expect(undoAll(s)).toBe(1);
+      expect(r1(s)).toMatchObject({ to: 'a3' });
+      s.cleanup();
+    });
+
+    it('arrastar a origem troca o `from`', () => {
+      const s = setup(false, arrowProject());
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.drag([400, 250], [2700, 700]);
+      expect(r1(s)).toMatchObject({ from: 'b2', to: 'a3' });
+      s.cleanup();
+    });
+
+    it('sobre a mesma marcação, perto de outro lado, troca o lado', () => {
+      const s = setup(false, arrowProject());
+      select(s, { kind: 'arrow', id: 'r1' });
+      // a3 (600,600,200,200): perto do lado de cima.
+      s.drag([600, 700], [700, 610]);
+      expect(r1(s)).toMatchObject({ to: 'a3', toSide: 'top', fromSide: null });
+      expect(undoAll(s)).toBe(1);
+      s.cleanup();
+    });
+
+    it('sobre a mesma marcação, no lado em que já está: nada muda (o automático segue automático)', () => {
+      const s = setup(false, arrowProject());
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.drag([600, 700], [610, 700]);
+      expect(r1(s)).toMatchObject({ to: 'a3', toSide: null });
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+
+    it('soltar no vazio ou sobre a outra ponta cancela e mostra a linha provisória no caminho', () => {
+      const s = setup(false, arrowProject());
+      select(s, { kind: 'arrow', id: 'r1' });
+      s.fire('pointerdown', 600, 700);
+      s.fire('pointermove', 650, 720);
+      s.fire('pointermove', 3000, 3000);
+      expect(s.state.arrowDraft.value).toEqual({
+        line: { from: { x: 400, y: 250 }, to: { x: 3000, y: 3000 } },
+        target: null,
+      });
+      expect(r1(s)?.to).toBe('a3');
+      s.fire('pointerup', 3000, 3000);
+      expect(r1(s)?.to).toBe('a3');
+      expect(s.store.canUndo.value).toBe(false);
+      expect(s.state.arrowDraft.value).toBeNull();
+      // Sobre a marcação da outra ponta (a1): também cancela (seria uma seta ligada a ela mesma).
+      s.drag([600, 700], [350, 350]);
+      expect(r1(s)).toMatchObject({ from: 'a1', to: 'a3' });
+      expect(s.store.canUndo.value).toBe(false);
+      s.cleanup();
+    });
+  });
+
+  describe('Ver limpo e revisão', () => {
+    it('na revisão (somente leitura) as setas não se editam, mas o traço ainda seleciona', () => {
+      const s = setup(false, straightProject());
+      s.setReviewing(true);
+      s.click(500, 475);
+      expect(s.ui.selection.value).toEqual({ kind: 'arrow', id: 'r1' });
+      s.drag([500, 475], [560, 420]);
+      expect(r1(s)?.points).toEqual([]);
+      s.rightClick(500, 475);
+      expect(s.ui.canvasMenu.value).toBeNull();
       s.cleanup();
     });
   });

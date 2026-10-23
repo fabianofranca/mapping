@@ -520,7 +520,10 @@ describe('tipo flutuante (biblioteca de notas)', () => {
 
   it('componentTypes expõe floating', () => {
     const types = componentTypes(notesProject(), notes);
-    expect(types.map((t) => [t.typeId, t.floating])).toEqual([['nota', true]]);
+    expect(types.map((t) => [t.typeId, t.floating])).toEqual([
+      ['nota', true],
+      ['tabela', true],
+    ]);
     expect(componentTypes(componentProject(), catalog).every((t) => !t.floating)).toBe(
       true,
     );

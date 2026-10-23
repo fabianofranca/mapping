@@ -39,6 +39,7 @@ describe('serialização', () => {
       'layers',
       'containers',
       'markings',
+      'arrows',
       'annotations',
     ]);
   });

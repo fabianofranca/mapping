@@ -6,6 +6,7 @@ import {
   type AnnotationLocation,
 } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
+import { ArrowPanel } from '../ui/ArrowPanel';
 import { MarkingPanel } from '../ui/MarkingPanel';
 import { MultiSelectionPanel } from '../ui/MultiSelectionPanel';
 import { SelectionPanel } from '../ui/SelectionPanel';
@@ -68,6 +69,15 @@ export function EditorPanel({
           image={selected.image}
           readOnly={readOnly || busy}
           onDelete={dialogs.requestDeleteMarking}
+          onGoToAnnotation={onGoToAnnotation}
+        />
+      ) : selected?.kind === 'arrow' ? (
+        <ArrowPanel
+          key={selected.arrow.id}
+          project={project}
+          arrow={selected.arrow}
+          readOnly={readOnly || busy}
+          onDelete={dialogs.requestDeleteArrow}
           onGoToAnnotation={onGoToAnnotation}
         />
       ) : (

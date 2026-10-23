@@ -51,9 +51,42 @@ function entityRecord(c: Change): Record<string, JsonValue> | null {
 const text = (v: JsonValue | undefined): string | null =>
   typeof v === 'string' && v !== '' ? v : null;
 
+/**
+ * Nome de uma seta: o `name` dela, senão "Origem → Destino" (as pontas pelos nomes das
+ * marcações). `null` se a seta não está no projeto nem em uma criação ou remoção da proposta.
+ */
+function arrowName(names: ReviewNames, id: string): string | null {
+  let source: { readonly name: string | null; from: string; to: string } | null =
+    lookup(names, (p) => projectIndex(p).arrows.get(id)) ?? null;
+  if (!source) {
+    for (const c of names.proposal.changes) {
+      if (c.entity !== 'arrow' || c.entityId !== id || c.field !== null) continue;
+      const record = entityRecord(c);
+      if (record && typeof record.from === 'string' && typeof record.to === 'string') {
+        source = { name: text(record.name), from: record.from, to: record.to };
+        break;
+      }
+    }
+  }
+  if (!source) return null;
+  return (
+    source.name ??
+    t('review.arrow.label', {
+      from: markingName(names, source.from),
+      to: markingName(names, source.to),
+    })
+  );
+}
+
+/** Nome do item da revisão: a marcação, ou a seta (os ids dividem o espaço, ME4). */
 export function markingName(names: ReviewNames, id: string): string {
-  const found = lookup(names, (p) => projectIndex(p).markings.get(id));
-  if (found) return markingLabel(found);
+  // O rótulo usa o projeto em que a marcação foi encontrada (o tipo vem das anotações dele).
+  for (const p of [names.current, names.preview]) {
+    const found = p ? projectIndex(p).markings.get(id) : undefined;
+    if (found && p) return markingLabel(p, found);
+  }
+  const arrow = arrowName(names, id);
+  if (arrow !== null) return arrow;
   for (const c of names.proposal.changes) {
     if (c.entity === 'marking' && c.entityId === id && c.field === null) {
       const name = text(entityRecord(c)?.name);
@@ -204,6 +237,7 @@ const ENTITY_KEYS = {
   layer: 'review.entity.layer',
   image: 'review.entity.image',
   marking: 'review.entity.marking',
+  arrow: 'review.entity.arrow',
   annotation: 'review.entity.annotation',
 } as const satisfies Record<Change['entity'], TranslationKey>;
 
@@ -227,6 +261,7 @@ export function entityName(names: ReviewNames, id: string): string | null {
   for (const p of names.preview ? [names.preview, names.current] : [names.current]) {
     const index = projectIndex(p);
     if (index.markings.has(id)) return markingName(names, id);
+    if (index.arrows.has(id)) return arrowName(names, id);
     if (index.containers.has(id)) return imageName(names, id);
     if (index.layers.has(id)) return layerName(names, id);
     if (index.annotations.has(id)) return annotationName(names, id);
@@ -238,6 +273,7 @@ export function entityName(names: ReviewNames, id: string): string | null {
     if (c.entityId !== id || c.field !== null) continue;
     const record = entityRecord(c);
     if (c.entity === 'annotation') return annotationName(names, id);
+    if (c.entity === 'arrow') return arrowName(names, id);
     if (c.entity === 'specialization') {
       const name = text(record && isRecord(record.spec) ? record.spec.name : undefined);
       if (name) return name;
@@ -277,6 +313,8 @@ function subjectName(names: ReviewNames, c: Change): string | null {
       return imageName(names, c.entityId);
     case 'marking':
       return markingName(names, c.entityId);
+    case 'arrow':
+      return arrowName(names, c.entityId);
   }
 }
 
@@ -390,6 +428,8 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
           : '';
       return [name, size].filter(Boolean).join(' · ');
     }
+    case 'arrow':
+      return arrowName(names, c.entityId) ?? '';
     case 'annotation': {
       const layer =
         typeof value.layerId === 'string' ? layerName(names, value.layerId) : '';

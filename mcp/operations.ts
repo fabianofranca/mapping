@@ -102,6 +102,15 @@ const owner = item('Anotação dona (mesma marcação, outra camada)')
     'Anotação dona (vínculo, ex: o onClick de um Button): referência, id ou apelido; `null` remove o vínculo.',
   );
 
+const arrowStyle = z.enum(['straight', 'curve', 'elbow']);
+
+// A rota da seta (`points`) nunca é escrita pelo servidor: o campo existe só para a operação
+// recusá-lo com um erro claro (sem ele o zod o descartaria em silêncio).
+const noPoints = z
+  .unknown()
+  .optional()
+  .describe('Não use: a rota é da pessoa (recusado com `invalid-arguments`).');
+
 /** Campos de `update_container` (e da antiga `update_image`). */
 const updateContainerFields = {
   name: name.optional(),
@@ -350,6 +359,11 @@ export const operationSchema = z.discriminatedUnion('op', [
     image: item('Container')
       .optional()
       .describe('Antiga: use `container`. Aceita com aviso.'),
+    near: item('Container ou marcação')
+      .optional()
+      .describe(
+        'Só para um tipo de anotação flutuante: a marcação nasce num lugar livre na margem deste container ou desta marcação, empilhada de cima para baixo (referência, id ou apelido). Posiciona e o `rect`, se vier, dá só o tamanho (x e y são ignorados). Para um tipo ou marcação não flutuante, é ignorado com aviso.',
+      ),
     rect: rect
       .optional()
       .describe(
@@ -419,6 +433,27 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe('`true` confirma a posição de uma marcação "a revisar".'),
   }),
   z.object({ op: z.literal('delete_marking'), marking: item('Marcação') }),
+  // Setas (ME4): uma marcação que aponta; a rota (`points`) é sempre da pessoa.
+  z.object({
+    op: z.literal('create_arrow'),
+    as: alias,
+    from: item('Marcação de origem'),
+    to: item('Marcação de destino'),
+    style: arrowStyle
+      .optional()
+      .describe('Traço: `straight`, `curve` (padrão) ou `elbow`.'),
+    name: name.optional(),
+    points: noPoints,
+  }),
+  z.object({
+    op: z.literal('update_arrow'),
+    arrow: item('Seta'),
+    name: name.optional(),
+    style: arrowStyle.optional(),
+    locked: z.boolean().optional(),
+    points: noPoints,
+  }),
+  z.object({ op: z.literal('delete_arrow'), arrow: item('Seta') }),
   // Anotações
   z.object({
     op: z.literal('create_annotation'),

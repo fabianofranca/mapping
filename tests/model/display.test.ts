@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { layerDotsByMarking, markingVisibility } from '../../src/model';
+import {
+  addAnnotation,
+  createArrow,
+  layerDotsByMarking,
+  markingVisibility,
+} from '../../src/model';
 import { sampleProject } from './fixtures';
 
 // Porta (M1) › Maçaneta (M2) › Fechadura (M3); A1 (M1/L1) e A3 (M2/L1) são próprias.
@@ -12,6 +17,19 @@ describe('bolinhas por camada', () => {
     const dots = layerDotsByMarking(p, [l2 as NonNullable<typeof l2>]);
     expect(dots.has('M3')).toBe(false);
     expect(dots.get('M1')?.map((d) => d.layer.id)).toEqual(['L2']);
+  });
+});
+
+describe('bolinhas por camada: setas', () => {
+  it('a seta com anotação entra pelo id dela, como as marcações', () => {
+    let q = createArrow(p, { id: 'R1', from: 'M1', to: 'M4' });
+    q = createArrow(q, { id: 'R2', from: 'M2', to: 'M3' });
+    q = addAnnotation(q, { id: 'AR', markingId: 'R1', layerId: 'L2' });
+    const dots = layerDotsByMarking(q, both);
+    expect(dots.get('R1')?.map((d) => d.layer.id)).toEqual(['L2']);
+    expect(dots.has('R2')).toBe(false);
+    // As marcações seguem como antes.
+    expect(dots.get('M1')?.map((d) => d.layer.id)).toEqual(['L1', 'L2']);
   });
 });
 

@@ -15,7 +15,7 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
 - A `formatVersion` 6 é a 5 mais `containers`: a lista de **tamanhos prontos de container** que o diálogo **Novo container** oferece quando a especialização está aplicada (ver "Containers (tamanhos prontos)"). A 6 é aditiva: as versões 1 a 5 continuam aceitas sem mudança, e `containers` numa versão anterior é o erro `só é permitido com formatVersion 6`, no caminho exato. O núcleo da app não traz tamanhos de dispositivo; só **Personalizado** e **Tamanho da seleção**.
-- A `formatVersion` 7 é a 6 mais `floating` no tipo de anotação: o tipo cuja instância é uma **marcação flutuante**, um comentário solto sobre o canvas (ver "Tipo flutuante"). A 7 é aditiva: as versões 1 a 6 continuam aceitas sem mudança, e `floating` numa versão anterior é o erro `só é permitido com formatVersion 7`, no caminho exato.
+- A `formatVersion` 7 é a 6 mais `floating` no tipo de anotação (o tipo cuja instância é uma **marcação flutuante**, um comentário solto sobre o canvas: ver "Tipo flutuante"), `appliesTo` no tipo (a que a anotação se aplica: marcação, seta ou ambas: ver "Onde o tipo se aplica") e `ref` como tipo de coluna de `table` (uma lista de referências como dado: ver "Tipos de valor"). A 7 é aditiva: as versões 1 a 6 continuam aceitas sem mudança, e cada chave da 7 numa versão anterior é o erro `só é permitido com formatVersion 7`, no caminho exato.
 
 Arquivos de apoio:
 
@@ -72,38 +72,39 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `7`), `id`, 
 
 ### Tipo de anotação
 
-| Propriedade       | Obrigatória | Descrição                                                                                                                |
-| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `id`              | sim         | Único **na especialização inteira**.                                                                                     |
-| `name`            | sim         | Nome exibido (ex: "Button").                                                                                             |
-| `description`     | não         | Texto de ajuda.                                                                                                          |
-| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.                |
-| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                              |
-| `allowedChildren` | não         | Ids dos tipos que podem ser **vinculados** a este.                                                                       |
-| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                                        |
-| `code`            | não         | A partir da `formatVersion` 2. Como se cria uma instância do tipo, por plataforma declarada (ver "Plataformas e code").  |
-| `sources`         | não         | A partir da `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").                   |
-| `component`       | não         | A partir da `formatVersion` 4. Caminho do arquivo `.json` do componente que desenha o tipo (ver "Biblioteca: o pacote"). |
-| `doc`             | não         | A partir da `formatVersion` 4. Caminho do documento `.md` do tipo (ver "Biblioteca: o pacote").                          |
-| `examples`        | não         | A partir da `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.            |
-| `floating`        | não         | A partir da `formatVersion` 7. Padrão `false`. A instância é uma marcação flutuante (ver "Tipo flutuante").              |
+| Propriedade       | Obrigatória | Descrição                                                                                                                 |
+| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | sim         | Único **na especialização inteira**.                                                                                      |
+| `name`            | sim         | Nome exibido (ex: "Button").                                                                                              |
+| `description`     | não         | Texto de ajuda.                                                                                                           |
+| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.                 |
+| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                               |
+| `allowedChildren` | não         | Ids dos tipos que podem ser **vinculados** a este.                                                                        |
+| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                                         |
+| `code`            | não         | A partir da `formatVersion` 2. Como se cria uma instância do tipo, por plataforma declarada (ver "Plataformas e code").   |
+| `sources`         | não         | A partir da `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").                    |
+| `component`       | não         | A partir da `formatVersion` 4. Caminho do arquivo `.json` do componente que desenha o tipo (ver "Biblioteca: o pacote").  |
+| `doc`             | não         | A partir da `formatVersion` 4. Caminho do documento `.md` do tipo (ver "Biblioteca: o pacote").                           |
+| `examples`        | não         | A partir da `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.             |
+| `floating`        | não         | A partir da `formatVersion` 7. Padrão `false`. A instância é uma marcação flutuante (ver "Tipo flutuante").               |
+| `appliesTo`       | não         | A partir da `formatVersion` 7. `["marking"]`, `["arrow"]` ou os dois; padrão `["marking"]` (ver "Onde o tipo se aplica"). |
 
 ### Campo
 
-| Propriedade   | Obrigatória        | Descrição                                                                                                                                                        |
-| ------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`         | sim                | Chave gravada no JSON. `[A-Za-z0-9_]`, **não pode começar com `_`** (reservado). Única dentro do tipo.                                                           |
-| `label`       | não                | Rótulo exibido (pode ter acentos). Padrão: `key`.                                                                                                                |
-| `type`        | sim                | `string`, `number`, `date`, `enum`, `table` ou `ref`.                                                                                                            |
-| `required`    | não                | Padrão `false`. Vazio é permitido ao salvar, mas a anotação fica **incompleta**.                                                                                 |
-| `default`     | não                | Valor inicial. Precisa ser válido para o tipo. Não existe para `table` nem `ref`.                                                                                |
-| `options`     | só `enum`          | Lista não vazia de strings únicas.                                                                                                                               |
-| `columns`     | só `table`         | Campos com a mesma estrutura, **apenas** `string`, `number`, `date` ou `enum`.                                                                                   |
-| `tags`        | não                | Etiquetas que tornam o campo **alvo de referências** (`[a-z0-9-]+`). Em `table`, cada **linha** vira um alvo.                                                    |
-| `rowLabel`    | `table` com `tags` | Chave de uma coluna `string` que nomeia cada linha como alvo.                                                                                                    |
-| `accepts`     | só `ref`           | `{ "tags": [...], "free": true\|false }`. Precisa de pelo menos uma etiqueta ou `free: true`.                                                                    |
-| `description` | não                | Texto de ajuda exibido no editor.                                                                                                                                |
-| `sources`     | não                | A partir da `formatVersion` 3. Propriedades de origem do campo, inclusive em colunas; na v4, `path` em sistema declarado em `origins` (ver "Origens (sources)"). |
+| Propriedade   | Obrigatória        | Descrição                                                                                                                                                                    |
+| ------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`         | sim                | Chave gravada no JSON. `[A-Za-z0-9_]`, **não pode começar com `_`** (reservado). Única dentro do tipo.                                                                       |
+| `label`       | não                | Rótulo exibido (pode ter acentos). Padrão: `key`.                                                                                                                            |
+| `type`        | sim                | `string`, `number`, `date`, `enum`, `table` ou `ref`.                                                                                                                        |
+| `required`    | não                | Padrão `false`. Vazio é permitido ao salvar, mas a anotação fica **incompleta**.                                                                                             |
+| `default`     | não                | Valor inicial. Precisa ser válido para o tipo. Não existe para `table` nem `ref`.                                                                                            |
+| `options`     | só `enum`          | Lista não vazia de strings únicas.                                                                                                                                           |
+| `columns`     | só `table`         | Campos com a mesma estrutura, **apenas** `string`, `number`, `date` ou `enum` e, a partir da `formatVersion` 7, `ref` (com `accepts`). `table` dentro de `table` não existe. |
+| `tags`        | não                | Etiquetas que tornam o campo **alvo de referências** (`[a-z0-9-]+`). Em `table`, cada **linha** vira um alvo.                                                                |
+| `rowLabel`    | `table` com `tags` | Chave de uma coluna `string` que nomeia cada linha como alvo.                                                                                                                |
+| `accepts`     | só `ref`           | `{ "tags": [...], "free": true\|false }`. Precisa de pelo menos uma etiqueta ou `free: true`.                                                                                |
+| `description` | não                | Texto de ajuda exibido no editor.                                                                                                                                            |
+| `sources`     | não                | A partir da `formatVersion` 3. Propriedades de origem do campo, inclusive em colunas; na v4, `path` em sistema declarado em `origins` (ver "Origens (sources)").             |
 
 ## Tipos de valor
 
@@ -113,6 +114,8 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `7`), `id`, 
 - `enum`: uma das `options`. Booleanos são `enum` (ex: `["sim", "não"]`).
 - `table`: lista de linhas; cada linha é um objeto com as chaves das `columns` (mais o id interno `_id`).
 - `ref`: **referência forte** a uma tupla de outra anotação. O valor do campo é a referência.
+
+**Lista de referências: coluna `ref` numa `table`.** Quando o tipo precisa apontar para vários alvos (ou levar dado junto com cada alvo), declare uma `table` com uma coluna `ref` (a partir da `formatVersion` 7; o `accepts` é o mesmo de um campo `ref`). Cada linha é uma referência e pode ter outras colunas ao lado; a linha tem `_id`, é alvo de referências como qualquer linha e entra nas migrações da biblioteca (`tabela.coluna`) e na comparação por linha das propostas. A coluna `ref` é **dado**: não desenha seta nem liga marcações (quem liga uma marcação a outra é a seta). Uma célula vazia é `null`; numa coluna obrigatória, vazia é pendência; alvo que sumiu é `broken-ref`; alvo que a coluna não aceita é `ref-not-accepted`. O componente do tipo lê a célula pelo rótulo do alvo (ver `repeat` em `docs/COMPONENT-FORMAT.md`).
 
 **Tipo de campo removido: `codeRef`.** Até a etapa 9 existia o tipo `codeRef` (o lugar da solução em que a instância foi escrita, por plataforma). Ele saiu do formato: a especialização guarda só o que ajuda a **instanciar** o tipo (o `code` dos tipos, com `symbol` e `path`), nunca onde a instância ficou. Um arquivo antigo com um campo `"type": "codeRef"` continua válido: a importação da app e o `validate_specialization` **leem e ignoram** o campo (ele sai do tipo, junto com as chaves de `params` do `code` que o citam) e dão um aviso com o caminho (`ignored-field`). Nenhuma `formatVersion` nova; as cópias em `specs/` dos projetos existentes continuam abrindo. O JSON Schema ([`spec.schema.json`](spec.schema.json)) descreve só o formato atual e recusa o campo. Ao encontrar um, remova-o do arquivo.
 
@@ -311,8 +314,45 @@ Use `floating` só para o que é comentário ou anotação solta que não perten
 ```
 
 - `floating`: booleano, opcional; o padrão é `false`. Só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho `layers[0].annotationTypes[0].floating`).
-- A biblioteca de **notas** do repositório (`libraries/notas/`: camada **Notas**, tipo `nota` com `titulo` e `texto`, componente post-it) é um pacote comum, embutido na app e **aplicado por padrão**: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por **Especializações › Remover**, como qualquer outra, e não volta.
+- A biblioteca de **notas** do repositório (`libraries/notas/`: camada **Notas**, tipos `nota` com `titulo` e `texto` e `tabela` com `titulo` e `linhas` chave/valor, componentes no estilo post-it) é um pacote comum, embutido na app e **aplicado por padrão**: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por **Especializações › Remover**, como qualquer outra, e não volta.
 - Campos `string` do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter).
+
+## Onde o tipo se aplica
+
+A `formatVersion` 7 diz a que uma anotação se aplica com `appliesTo` no tipo: `"marking"` (uma marcação, o padrão), `"arrow"` (uma **seta**, que liga duas marcações e pode ter anotações por camada, como uma marcação) ou os dois. O painel de anotações oferece, para a marcação selecionada, só os tipos que se aplicam a marcações e, para a seta, só os que se aplicam a setas. Um tipo **só de seta** (`appliesTo: ["arrow"]`) não tem `component` nem `floating`: a seta não tem desenho de componente. Restrições de origem e destino por tipo (por exemplo, "só liga uma marcação Tela a um Botão") ficam fora do formato.
+
+```json
+{
+  "id": "deep-link",
+  "name": "Deep link",
+  "appliesTo": ["arrow"],
+  "fields": [{ "key": "uri", "label": "URI", "type": "string", "required": true }]
+}
+```
+
+- `appliesTo`: lista de `"marking"` e/ou `"arrow"`, opcional; não vazia e sem repetição. Só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho `layers[0].annotationTypes[0].appliesTo`).
+- Pela API do modelo, `typeAppliesTo(tipo, 'marking' | 'arrow')` responde se o tipo se aplica ao item.
+
+**O padrão "flutuante que aponta".** Uma tabela de dados (eventos disparados, propriedades) que descreve um elemento de uma tela é um tipo **flutuante** cujo componente desenha a tabela (`repeat`, ver `docs/COMPONENT-FORMAT.md`). Ela fica ao lado da tela e é ligada ao elemento (um botão) por uma **seta**; o dado mora na anotação da tabela flutuante, e quem lê o mapeamento chega a ela pelas setas que saem do elemento. Se a relação em si tem dado (o deep link que a transição abre, o evento que ela dispara), é um tipo aplicado à seta. A biblioteca de **notas** traz a **Tabela** genérica (título e linhas chave/valor) para isso, sem especialização.
+
+```json
+{
+  "id": "tabela-eventos",
+  "name": "Tabela de eventos",
+  "floating": true,
+  "component": "components/tabela-eventos.json",
+  "fields": [
+    {
+      "key": "eventos",
+      "type": "table",
+      "columns": [
+        { "key": "evento", "type": "string" },
+        { "key": "tela", "type": "ref", "accepts": { "tags": ["screen"] } }
+      ]
+    }
+  ]
+}
+```
 
 ## Origens (sources)
 
@@ -759,12 +799,12 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo;
 - `default` compatível com o tipo (e presente em `options` no `enum`); `ref` sem `default`;
-- `columns` só com tipos simples; `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
+- `columns` só com tipos simples ou, na `formatVersion` 7, `ref` (com `accepts`); `table` dentro de `table` é recusado; `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
 - `labelField` aponta para um campo `string` do tipo;
 - `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
-- **v7, `floating`:** só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho do tipo, `…annotationTypes[n].floating`); booleano;
+- **v7, `floating`, `appliesTo` e coluna `ref`:** só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho exato: `…annotationTypes[n].floating`, `…annotationTypes[n].appliesTo`, `…fields[n].columns[m].type`); `floating` booleano; `appliesTo` não vazio, sem repetição, só com `marking` e `arrow`, e um tipo que não se aplica a marcações (só `arrow`) não pode ter `component` nem `floating`;
 - **v6, `containers`:** só a partir da `formatVersion` 6 (numa versão anterior o erro é `só é permitido com formatVersion 6`, no caminho `containers`); `id` no formato `[a-z0-9-]+` e único na lista; `name` não vazio; `width` e `height` inteiros de 1 a 20000; `background` opcional no formato `#RRGGBB`; qualquer outra propriedade é recusada;
 - `sources` a partir da `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name` (ou `path`, na v4, em sistema de `origins`); `values` só em campos `enum` e com destinos que existam em `options`;
 - **v4, chaves novas:** `fonts`, `origins`, `migrations` (raiz), `component`, `doc` e `examples` (tipo) só a partir da `formatVersion` 4: numa versão anterior o erro é `só é permitido com formatVersion 4`, no caminho da chave;

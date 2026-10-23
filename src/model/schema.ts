@@ -92,6 +92,24 @@ export const markingSchema = z.object({
   source: sourceSchema.nullable(),
 });
 
+const pointSchema = z.object({ x: finite, y: finite });
+
+/**
+ * Seta (v13, ME4). Os opcionais podem faltar no arquivo (escrito à mão ou por um v13 anterior
+ * às setas) e entram com o padrão.
+ */
+export const arrowSchema = z.object({
+  id,
+  from: id,
+  to: id,
+  fromSide: z.enum(['top', 'right', 'bottom', 'left']).nullable().default(null),
+  toSide: z.enum(['top', 'right', 'bottom', 'left']).nullable().default(null),
+  points: z.array(pointSchema).default([]),
+  style: z.enum(['straight', 'curve', 'elbow']).default('curve'),
+  name: z.string().nullable().default(null),
+  locked: z.boolean().default(false),
+});
+
 export const entrySchema = z.object({ id, key: z.string(), value: z.string() });
 
 /** Qualquer valor JSON. A conferência contra o tipo vira pendência (`issues.ts`), não erro. */
@@ -164,5 +182,7 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   layers: z.array(layerSchema),
   containers: z.array(containerSchema),
   markings: z.array(markingSchema),
+  /** Ausente num v13 anterior às setas (previews da ME0 a ME3): `[]`. */
+  arrows: z.array(arrowSchema).default([]),
   annotations: z.array(annotationSchema),
 });

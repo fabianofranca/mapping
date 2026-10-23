@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
   "title": "Mapping — especialização (formatVersion 1, 2, 3, 4, 5, 6 e 7)",
-  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; na formatVersion 6, containers (a 6 é a 5 mais containers; em versão anterior é erro, e o id repetido é verificado pelo validador da app); na formatVersion 7, floating no tipo (a 7 é a 6 mais floating; em versão anterior é erro, verificado pelo validador da app); veja SPEC-FORMAT.md.",
+  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; na formatVersion 6, containers (a 6 é a 5 mais containers; em versão anterior é erro, e o id repetido é verificado pelo validador da app); na formatVersion 7, floating e appliesTo no tipo e ref como tipo de coluna de table (a 7 é a 6 mais floating, appliesTo e a coluna ref; em versão anterior é erro, verificado pelo validador da app; appliesTo não vazio, sem repetição, e um tipo só de seta não tem component nem floating); veja SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -168,6 +168,15 @@
         "floating": {
           "type": "boolean",
           "description": "formatVersion 7: a instância do tipo é uma marcação flutuante (vive no canvas, fora do pertencimento, desenhada acima de tudo). Em versão anterior é erro."
+        },
+        "appliesTo": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["marking", "arrow"]
+          },
+          "description": "formatVersion 7: a que a anotação se aplica, marking (uma marcação), arrow (uma seta) ou os dois; padrão [\"marking\"]. Um tipo só de seta não tem component nem floating. Em versão anterior é erro."
         }
       }
     },
@@ -347,6 +356,10 @@
               }
             }
           }
+        },
+        {
+          "$ref": "#/$defs/refField",
+          "description": "formatVersion 7: coluna de referência; a célula guarda uma referência (dado, não seta)."
         }
       ]
     },

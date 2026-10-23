@@ -2,6 +2,9 @@ import {
   canDeleteImage,
   canDeleteItems,
   canDeleteMarking,
+  arrowDeletionImpact,
+  canEditArrow,
+  type Arrow,
   type ItemRef,
   markingDeletionImpact,
   type Marking,
@@ -23,6 +26,7 @@ export type EditorDialog =
   | { readonly kind: 'settings' }
   | { readonly kind: 'deleteImage'; readonly image: ProjectContainer }
   | { readonly kind: 'deleteMarking'; readonly marking: Marking }
+  | { readonly kind: 'deleteArrow'; readonly arrow: Arrow }
   /** Excluir a seleção inteira (vários itens). */
   | { readonly kind: 'deleteItems'; readonly items: readonly ItemRef[] }
   | {
@@ -50,6 +54,8 @@ export interface EditorDialogs {
   requestDeleteImage(image: ProjectContainer): void;
   /** Em cascata pede confirmação; simples, não (o desfazer cobre). Item trancado: não faz nada. */
   requestDeleteMarking(marking: Marking): void;
+  /** Com anotações pede confirmação; sem, exclui direto (o desfazer cobre). Trancada: nada. */
+  requestDeleteArrow(arrow: Arrow): void;
   /** Vários itens: uma confirmação só; se algum trancado impede, não faz nada. */
   requestDeleteItems(items: readonly ItemRef[]): void;
 }
@@ -76,9 +82,23 @@ export function useEditorDialogs(): EditorDialogs {
       const project = store.project.peek();
       if (!project || !canDeleteMarking(project, marking.id)) return;
       const impact = markingDeletionImpact(project, marking.id);
-      if (impact.descendants > 0 || impact.annotations > 0 || impact.containers > 0) {
+      if (
+        impact.descendants > 0 ||
+        impact.annotations > 0 ||
+        impact.containers > 0 ||
+        impact.arrows > 0
+      ) {
         show({ kind: 'deleteMarking', marking });
       } else if (actions.removeMarking(marking.id).ok) {
+        ui.selection.value = null;
+      }
+    },
+    requestDeleteArrow: (arrow) => {
+      const project = store.project.peek();
+      if (!project || !canEditArrow(project, arrow.id)) return;
+      if (arrowDeletionImpact(project, arrow.id).annotations > 0) {
+        show({ kind: 'deleteArrow', arrow });
+      } else if (actions.removeArrow(arrow.id).ok) {
         ui.selection.value = null;
       }
     },

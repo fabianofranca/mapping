@@ -16,7 +16,14 @@ import {
   type InvariantEntity,
   type InvariantIssue,
 } from './invariants';
-import type { Annotation, Marking, Project, ProjectContainer, Rect } from './types';
+import type {
+  Annotation,
+  Arrow,
+  Marking,
+  Project,
+  ProjectContainer,
+  Rect,
+} from './types';
 
 /** O que o reparo fez com o item. */
 export type RepairAction = 'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved';
@@ -55,6 +62,8 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'container-outside-parent',
   'floating-in-container',
   'parent-floating',
+  'arrow-endpoint-missing',
+  'arrow-self',
 ]);
 
 /**
@@ -70,7 +79,9 @@ const MAX_ROUNDS = 8;
  * as que ela possui); pai inexistente, flutuante ou ciclo na hierarquia → a marcação vira
  * raiz; pai de container ausente, que não é do canvas ou que não o contém → o container fica
  * sem pai; flutuante com container ou pai → vai para o canvas, com o `rect` convertido;
- * imagens sobrepostas → a de maior índice vai para a direita das anteriores. Só torna o
+ * imagens sobrepostas → a de maior índice vai para a direita das anteriores; seta com ponta
+ * inexistente (ou que não é uma marcação) ou ligada a ela mesma → removida, e as anotações dela
+ * saem na rodada seguinte (a dona deixou de existir). Só torna o
  * projeto válido: não assenta (quem assenta é a próxima operação de geometria). O que sobra
  * depois dos reparos (`validateProject` de novo) é `unrepaired`.
  */
@@ -184,6 +195,17 @@ function repairRound(
     markings.push(next);
   }
 
+  // Setas: sem uma das pontas ou ligadas a si mesmas, não há o que ligar. As anotações delas
+  // saem na rodada seguinte, como as de qualquer dona que deixou de existir.
+  const arrows: Arrow[] = [];
+  for (const a of p.arrows) {
+    const code = (['arrow-endpoint-missing', 'arrow-self'] as const).find((c) =>
+      has('arrow', a.id, c),
+    );
+    if (code) record(out, 'removed', code, 'arrow', a);
+    else arrows.push(a);
+  }
+
   // Anotações: as de marcação ou camada inexistente saem, com as que elas possuem.
   const removed = new Set<string>();
   const kept: Annotation[] = [];
@@ -266,5 +288,5 @@ function repairRound(
     return { ...image, parentId: null };
   });
 
-  return { ...p, containers: projectImages, markings, annotations: kept };
+  return { ...p, containers: projectImages, markings, arrows, annotations: kept };
 }

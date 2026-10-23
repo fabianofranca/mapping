@@ -4,6 +4,7 @@ import {
   projectIndex,
   settleHierarchy,
   validateProject,
+  type Arrow,
   type Marking,
   type Placement,
   type Project,
@@ -392,5 +393,123 @@ describe('assentar é determinístico e idempotente', () => {
       expect(validateProject(once)).toEqual([]);
       expect(settleHierarchy(once)).toBe(once);
     }
+  });
+});
+
+// Setas (ME4): fora da árvore de pertencimento. O assentar as ignora, salvo numa coisa: se uma
+// ponta muda de espaço, os pontos de passagem (que ficam no espaço das pontas) são apagados.
+describe('setas', () => {
+  const arrowOf = (
+    id: string,
+    from: string,
+    to: string,
+    points: Arrow['points'] = [],
+  ): Arrow => ({
+    id,
+    from,
+    to,
+    fromSide: null,
+    toSide: null,
+    points,
+    style: 'curve',
+    name: null,
+    locked: false,
+  });
+  const withArrows = (p: Project, arrows: Arrow[]): Project => ({ ...p, arrows });
+  const via = [{ x: 400, y: 50 }];
+
+  it('são ignoradas: nada a mudar devolve o mesmo objeto, com as setas como estão', () => {
+    const settled = withArrows(
+      settleHierarchy(
+        project(
+          [A, B],
+          [
+            mk('x', 'A', rect(10, 10, 100, 100)),
+            mk('y', 'A', rect(300, 10, 100, 100)),
+            mk('z', 'B', rect(0, 0, 100, 100)),
+            mk('h', null, rect(0, 1500, 100, 100)),
+          ],
+        ),
+      ),
+      [arrowOf('r1', 'x', 'y', via), arrowOf('r2', 'x', 'z'), arrowOf('r3', 'h', 'x')],
+    );
+    const again = settleHierarchy(settled);
+    expect(again).toBe(settled);
+    expect(again.arrows).toBe(settled.arrows);
+    // Ser pai ou filho não depende das setas: elas não entram na árvore.
+    expect(parents(again)).toEqual({ x: null, y: null, z: null, h: null });
+  });
+
+  it('uma ponta que muda de espaço apaga os pontos (do canvas para o container)', () => {
+    // `y` é do canvas, mas cabe inteira em A: o assentar a passa para A.
+    const p = withArrows(
+      project(
+        [A, B],
+        [
+          mk('x', 'A', rect(10, 10, 100, 100)),
+          mk('y', null, rect(300, 10, 100, 100)),
+          mk('w', 'A', rect(600, 600, 100, 100)),
+        ],
+      ),
+      [arrowOf('r1', 'x', 'y', via), arrowOf('r2', 'x', 'w', via)],
+    );
+    const settled = settleHierarchy(p);
+    expect(get(settled, 'y').containerId).toBe('A');
+    expect(settled.arrows[0]?.points).toEqual([]);
+    // A seta que não toca marcação nenhuma que mudou fica como está.
+    expect(settled.arrows[1]).toBe(p.arrows[1]);
+    expect(settled.arrows[0]).toMatchObject({ from: 'x', to: 'y', style: 'curve' });
+    // E assentar de novo devolve o mesmo objeto.
+    expect(settleHierarchy(settled)).toBe(settled);
+  });
+
+  it('uma ponta que sai do container para o canvas apaga os pontos', () => {
+    // `x` passa da borda de A: vira marcação do canvas.
+    const p = withArrows(
+      project(
+        [A, B],
+        [mk('x', 'A', rect(950, 10, 100, 100)), mk('y', 'A', rect(300, 10, 100, 100))],
+      ),
+      [arrowOf('r1', 'x', 'y', via)],
+    );
+    const settled = settleHierarchy(p);
+    expect(get(settled, 'x').containerId).toBeNull();
+    expect(settled.arrows[0]?.points).toEqual([]);
+  });
+
+  it('uma ponta que troca de container apaga os pontos, mesmo que o espaço derivado seja o canvas', () => {
+    // x (A) e z (B) já têm os pontos no canvas; x passa para B: troca de espaço da ponta.
+    const p = withArrows(
+      project(
+        [A, B],
+        [mk('x', 'A', rect(2100, 100, 100, 100)), mk('z', 'B', rect(0, 0, 100, 100))],
+      ),
+      [arrowOf('r1', 'x', 'z', via)],
+    );
+    expect(get(settleHierarchy(p), 'x').containerId).toBe('B');
+    expect(settleHierarchy(p).arrows[0]?.points).toEqual([]);
+  });
+
+  it('seta sem pontos nunca é reescrita', () => {
+    const p = withArrows(
+      project(
+        [A, B],
+        [mk('x', 'A', rect(10, 10, 100, 100)), mk('y', null, rect(300, 10, 100, 100))],
+      ),
+      [arrowOf('r1', 'x', 'y')],
+    );
+    expect(settleHierarchy(p).arrows).toBe(p.arrows);
+  });
+
+  it('o assentar não cria, apaga nem reordena setas', () => {
+    const p = withArrows(
+      project(
+        [A, B],
+        [mk('x', 'A', rect(950, 10, 100, 100)), mk('y', 'A', rect(300, 10, 100, 100))],
+      ),
+      [arrowOf('r2', 'y', 'x', via), arrowOf('r1', 'x', 'y', via)],
+    );
+    expect(settleHierarchy(p).arrows.map((a) => a.id)).toEqual(['r2', 'r1']);
+    expect(validateProject(settleHierarchy(p))).toEqual([]);
   });
 });

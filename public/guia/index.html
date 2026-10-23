@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ZhqcUhJI8UyvcSN+OrZouHicQBSP07o5Jbz1ZjGbPWs=' 'sha256-zsg9/DQPRld2JnR2RLF2RSD648EzKsqUB7B6d5AfIqs='; style-src 'sha256-/WzZ3h1o6gPlKXNTHLFlyhWNtkOJMNHRZAhTm6NEdk8='; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ZhqcUhJI8UyvcSN+OrZouHicQBSP07o5Jbz1ZjGbPWs=' 'sha256-zsg9/DQPRld2JnR2RLF2RSD648EzKsqUB7B6d5AfIqs='; style-src 'sha256-sUeXvX4ofj77w4whKqpoNoA8NqhkR2vQL4o+S6asmeo='; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Guia do Mapping</title>
     <link rel="icon" type="image/svg+xml" href="../icons/icon.svg" />
@@ -61,6 +61,10 @@
   --cv-canvas-marking: #5a3fc0;
   --cv-absorb: #0a8a5c;
   --cv-absorb-fill: rgba(10, 138, 92, 0.2);
+  --cv-arrow: #0f766e;
+  --cv-arrow-select: var(--cv-select);
+  --cv-arrow-label: var(--color-text);
+  --cv-arrow-label-bg: var(--color-card);
   --cv-name-tag: var(--cv-select);
   --cv-name-tag-text: #0b1220;
   --cv-lock: var(--cv-name-tag);
@@ -137,6 +141,9 @@
   --size-icon: 16px;
   --size-handle: 10px;
   --size-lock-badge: 20px;
+  --size-arrow-stroke: 2px;
+  --size-arrow-stroke-selected: 3px;
+  --size-arrow-head: 10px;
   --size-tw-left: 264px;
   --size-tw-right: 360px;
   --size-tw-bottom: 208px;
@@ -157,6 +164,7 @@
   --size-home-side: 240px;
   --size-home-main: 960px;
   --size-picker: 600px;
+  --size-picker-compact: 420px;
   --size-change-popover: 320px;
   --opacity-disabled: 0.45;
   --opacity-dimmed: 0.35;
@@ -214,6 +222,7 @@
     --color-card: rgba(28, 32, 39, 0.92);
     --cv-select-secondary: #8fb4ff;
     --cv-canvas-marking: #b9a8ff;
+    --cv-arrow: #5eead4;
     --shadow-popup: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 }
@@ -247,6 +256,7 @@
   --color-card: rgba(28, 32, 39, 0.92);
   --cv-select-secondary: #8fb4ff;
   --cv-canvas-marking: #b9a8ff;
+  --cv-arrow: #5eead4;
   --shadow-popup: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 

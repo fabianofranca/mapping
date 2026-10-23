@@ -93,8 +93,8 @@ describe('CanvasController: componentes', () => {
 
   it('a camada de componentes fica entre as imagens e as marcações, e o container desenha', () => {
     const { controller, internals, componentLayer, drawing, container } = setup();
-    expect(internals.stage.getLayers()).toHaveLength(5);
-    expect(container.querySelectorAll('canvas')).toHaveLength(5);
+    expect(internals.stage.getLayers()).toHaveLength(6);
+    expect(container.querySelectorAll('canvas')).toHaveLength(6);
     expect(componentLayer()?.listening()).toBe(false);
     // Os dois textos do container; o da foto só com a opção ligada.
     expect(drawing('T1')).toBeDefined();
@@ -270,20 +270,20 @@ describe('CanvasController: componentes', () => {
       if (!regular.ok || !note.ok) throw new Error('addComponent');
       expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
       flush();
-      // Imagens, componentes, marcações, flutuantes, sobreposições.
+      // Imagens, componentes, setas, marcações, flutuantes, sobreposições.
       expect(markingNodes(layers[1], regular.value)).toHaveLength(1);
       expect(markingNodes(layers[1], note.value)).toHaveLength(0);
-      expect(markingNodes(layers[3], note.value)).toHaveLength(1);
-      expect(markingNodes(layers[3], regular.value)).toHaveLength(0);
+      expect(markingNodes(layers[4], note.value)).toHaveLength(1);
+      expect(markingNodes(layers[4], regular.value)).toHaveLength(0);
       // T1, T2 e as duas do canvas (a do canvas desenha sempre: não há foto por baixo).
       expect(container.dataset.components).toBe('4');
       // As bordas da flutuante ficam no grupo de cima, depois do desenho dela.
-      const floatingLayer = layers[3] as Konva.Layer;
+      const floatingLayer = layers[4] as Konva.Layer;
       expect(floatingLayer.getChildren()).toHaveLength(2);
       expect(internals.markings.node(note.value)?.group.getParent()).toBe(
         floatingLayer.getChildren()[1],
       );
-      expect(internals.markings.node(regular.value)?.group.getParent()).toBe(layers[2]);
+      expect(internals.markings.node(regular.value)?.group.getParent()).toBe(layers[3]);
       controller.destroy();
     });
 
@@ -299,7 +299,7 @@ describe('CanvasController: componentes', () => {
       if (!note.ok) throw new Error('addComponent');
       actions.setMarkingFloating(note.value, true);
       flush();
-      expect(markingNodes(internals.stage.getLayers()[3], note.value)).toHaveLength(1);
+      expect(markingNodes(internals.stage.getLayers()[4], note.value)).toHaveLength(1);
       // Os componentes de dentro da foto (TP) continuam escondidos.
       expect(markingNodes(internals.stage.getLayers()[1], 'TP')).toHaveLength(0);
       controller.destroy();

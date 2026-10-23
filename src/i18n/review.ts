@@ -172,6 +172,8 @@ export const reviewPtBR = {
   'review.entity.layer': 'Camada',
   'review.entity.image': 'Imagem',
   'review.entity.marking': 'Marcação',
+  'review.entity.arrow': 'Seta',
+  'review.arrow.label': '{from} → {to}',
   'review.entity.annotation': 'Anotação',
   'review.title.created': '{entity} {name} criada',
   'review.title.removed': '{entity} {name} removida',
@@ -344,6 +346,7 @@ export const reviewPtBR = {
   'review.panel.levelSub': 'Mudança sem painel no projeto mostrado',
   'review.panel.createdCount': '+ {count} anotação(ões) criada(s)',
   'review.panel.createdMarkings': '+ {count} marcação(ões) criada(s)',
+  'review.panel.createdArrows': '+ {count} seta(s) criada(s)',
   'review.panel.createHint':
     'A criação é uma mudança só: os campos marcados com + entram juntos.',
   'review.panel.removesWith': 'Aceitar remove junto:',
@@ -618,6 +621,8 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.entity.layer': 'Layer',
   'review.entity.image': 'Image',
   'review.entity.marking': 'Marking',
+  'review.entity.arrow': 'Arrow',
+  'review.arrow.label': '{from} → {to}',
   'review.entity.annotation': 'Annotation',
   'review.title.created': '{entity} {name} created',
   'review.title.removed': '{entity} {name} removed',
@@ -789,6 +794,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.panel.levelSub': 'Change with no panel in the shown project',
   'review.panel.createdCount': '+ {count} annotation(s) created',
   'review.panel.createdMarkings': '+ {count} marking(s) created',
+  'review.panel.createdArrows': '+ {count} arrow(s) created',
   'review.panel.createHint':
     'Creating is one change: the fields marked + come in together.',
   'review.panel.removesWith': 'Accepting also removes:',

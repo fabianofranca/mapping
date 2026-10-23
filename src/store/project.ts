@@ -1,6 +1,10 @@
 import * as model from '../model';
 import type {
   AnnotationTypeRef,
+  ArrowEnd,
+  ArrowPoint,
+  ArrowSide,
+  ArrowStyle,
   ComponentCatalog,
   EntryInput,
   JsonValue,
@@ -191,6 +195,29 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       create(
         (id) => (p) => model.addBackgroundContainer(p, { ...args, id }, settleOptions(p)),
       ),
+    /**
+     * Container destacado (ME4): a marcação vira um container sem arquivo ao lado do de origem;
+     * com componente na marcação, a cópia dela e as anotações ocupam o container novo. Uma
+     * entrada de desfazer; devolve o id do container novo.
+     */
+    detachMarking: (markingId: string): ActionResult<string> => {
+      const containerId = newId();
+      const copyId = newId();
+      const result = store.apply((p) =>
+        model.detachMarking(
+          p,
+          markingId,
+          {
+            containerId,
+            markingId: copyId,
+            newId,
+            copyContent: model.markingComponent(p, catalog(), markingId) !== null,
+          },
+          settleOptions(p),
+        ),
+      );
+      return result.ok ? { ok: true, value: containerId } : result;
+    },
     setBackgroundContainer: (
       containerId: string,
       patch: model.BackgroundContainerChanges,
@@ -337,6 +364,47 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     reorderMarking: (markingId: string, index: number) =>
       store.apply((p) => model.reorderMarking(p, markingId, index)),
 
+    // Setas (ME4, decisão 14): cada action é uma entrada de desfazer. A rota e a ponta também
+    // têm prévia de gesto (`preview…`, dentro de `beginGesture`/`commitGesture`): um gesto de
+    // arrastar um ponto ou uma ponta é uma entrada só. Seta não tem pertencimento: sem assentar.
+    /** Liga duas marcações; devolve o id da seta. A rota nasce no padrão (`points` vazio). */
+    addArrow: (
+      from: string,
+      to: string,
+      options: Omit<model.NewArrowArgs, 'id' | 'from' | 'to'> = {},
+    ) => create((id) => (p) => model.createArrow(p, { ...options, id, from, to })),
+    /** Exclui a seta e as anotações dela. */
+    removeArrow: (arrowId: string) => store.apply((p) => model.removeArrow(p, arrowId)),
+    /** Troca a marcação de uma ponta e/ou o lado (`null` = automático). */
+    setArrowEndpoint: (
+      arrowId: string,
+      end: ArrowEnd,
+      markingId: string,
+      side: ArrowSide | null,
+    ) => store.apply((p) => model.setArrowEndpoint(p, arrowId, end, markingId, side)),
+    /** Pontos de passagem (no espaço das pontas, `arrowPointsSpace`); `[]` volta à rota padrão. */
+    setArrowRoute: (arrowId: string, points: readonly ArrowPoint[]) =>
+      store.apply((p) => model.setArrowRoute(p, arrowId, points)),
+    setArrowStyle: (arrowId: string, style: ArrowStyle) =>
+      store.apply((p) => model.setArrowStyle(p, arrowId, style)),
+    setArrowName: (arrowId: string, name: string | null) =>
+      store.apply((p) => model.setArrowName(p, arrowId, name)),
+    setArrowLocked: (arrowId: string, locked: boolean) =>
+      store.apply((p) => model.setArrowLocked(p, arrowId, locked)),
+    /** Prévia do gesto de arrastar pontos de passagem; se falhar, fica na última prévia válida. */
+    previewArrowRoute: (arrowId: string, points: readonly ArrowPoint[]) =>
+      store.updateGesture((p) => model.setArrowRoute(p, arrowId, points)),
+    /** Prévia do gesto de arrastar uma ponta até outra marcação ou outro lado. */
+    previewArrowEndpoint: (
+      arrowId: string,
+      end: ArrowEnd,
+      markingId: string,
+      side: ArrowSide | null,
+    ) =>
+      store.updateGesture((p) =>
+        model.setArrowEndpoint(p, arrowId, end, markingId, side),
+      ),
+
     // Seleção múltipla (ME2): a seleção inteira numa operação, uma entrada de desfazer.
     /** Exclui os itens (marcações com o que cobrem, containers com as marcações). */
     removeItems: (items: readonly model.ItemRef[]) =>
@@ -354,6 +422,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly specId: string;
       readonly typeId: string;
       readonly center?: Point;
+      /** Só tipo flutuante: perto deste alvo (`placeFloatingNear`), no lugar de `center`. */
+      readonly near?: model.FloatingNearTarget;
     }): ActionResult<string> => {
       const markingId = newId();
       const annotationId = newId();

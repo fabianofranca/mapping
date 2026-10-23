@@ -1,4 +1,4 @@
-import { useId, useState } from 'preact/hooks';
+import { useId, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   ancestorsOf,
@@ -23,6 +23,7 @@ import { Section } from './DetailsSection';
 import { arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
 import { imageLabel, markingErrorMessage, markingLabel } from './labels';
+import { MarkingPicker } from './MarkingPicker';
 import { Property, PropertyGrid } from './PropertyGrid';
 
 interface MarkingPanelProps {
@@ -63,10 +64,25 @@ export function MarkingPanel({
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
   const nameId = useId();
+  // "Ligar a…": o seletor de marcações; escolher cria a seta e a seleciona.
+  const [linking, setLinking] = useState(false);
+  const linkButton = useRef<HTMLButtonElement>(null);
 
   const report = (result: ActionResult): boolean => {
     setError(result.ok ? null : markingErrorMessage(result.error));
     return result.ok;
+  };
+
+  // Container destacado (ME4): cria o container sem arquivo e seleciona o novo.
+  const detach = (markingId: string) => {
+    const result = actions.detachMarking(markingId);
+    if (!result.ok) {
+      setError(markingErrorMessage(result.error));
+      return;
+    }
+    setError(null);
+    ui.selection.value = { kind: 'image', id: result.value };
+    editor.canvas.current?.revealSelection();
   };
 
   const commitRect = (key: keyof Rect, text: string): boolean => {
@@ -88,7 +104,7 @@ export function MarkingPanel({
   const lockNotice = marking.locked
     ? t('lock.markingNotice')
     : lockedAncestor
-      ? t('lock.inheritedNotice', { parent: markingLabel(lockedAncestor) })
+      ? t('lock.inheritedNotice', { parent: markingLabel(project, lockedAncestor) })
       : null;
 
   const rectField = (key: keyof Rect, short: string, label: string) => (
@@ -138,14 +154,16 @@ export function MarkingPanel({
   );
   const where = [
     containerName,
-    ...ancestorsOf(project, marking.id).reverse().map(markingLabel),
+    ...ancestorsOf(project, marking.id)
+      .reverse()
+      .map((m) => markingLabel(project, m)),
   ].join(t('marking.pathSeparator'));
 
   return (
     <div class="panel-details">
       <DetailsIdentity
         icon="marking"
-        name={markingLabel(marking)}
+        name={markingLabel(project, marking)}
         sub={t('marking.inImage', { file: where })}
         id={marking.id}
         flags={identity?.flags}
@@ -220,7 +238,7 @@ export function MarkingPanel({
           </Property>
           <Property label={t('marking.parent')}>
             <span class="props-text">
-              {parent ? markingLabel(parent) : t('marking.noParent')}
+              {parent ? markingLabel(project, parent) : t('marking.noParent')}
             </span>
           </Property>
           {/* Qualquer marcação pode virar flutuante: sai do container e passa ao canvas (decisão 10). */}
@@ -325,6 +343,21 @@ export function MarkingPanel({
           />
         )}
         <Button
+          buttonRef={linkButton}
+          title={t('arrow.linkToHint')}
+          disabled={readOnly}
+          onClick={() => setLinking(true)}
+        >
+          {t('arrow.linkTo')}
+        </Button>
+        <Button
+          disabled={readOnly}
+          title={t('marking.detachHint')}
+          onClick={() => detach(marking.id)}
+        >
+          {t('marking.detach')}
+        </Button>
+        <Button
           variant="danger"
           disabled={readOnly || !deletable}
           title={deletable ? undefined : t('lock.deleteBlocked')}
@@ -333,6 +366,21 @@ export function MarkingPanel({
           {t('marking.delete')}
         </Button>
       </div>
+
+      {linking && (
+        <MarkingPicker
+          project={project}
+          source={marking}
+          returnFocus={() => linkButton.current}
+          onClose={() => setLinking(false)}
+          onPick={(target) => {
+            setLinking(false);
+            const result = actions.addArrow(marking.id, target.id);
+            if (result.ok) ui.selection.value = { kind: 'arrow', id: result.value };
+            else report(result);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -553,6 +553,7 @@ describe('marcações: excluir e revisão', () => {
       lockedDescendants: 0,
       annotations: 3,
       containers: 0,
+      arrows: 0,
       brokenRefs: 0,
     });
     expect(markingDeletionImpact(p, 'M2')).toEqual({
@@ -560,6 +561,7 @@ describe('marcações: excluir e revisão', () => {
       lockedDescendants: 0,
       annotations: 1,
       containers: 0,
+      arrows: 0,
       brokenRefs: 0,
     });
     const q = expectValid(removeMarking(p, 'M2'));

@@ -119,6 +119,51 @@ export interface Marking {
   readonly source: ExternalSource | null;
 }
 
+/** Lado de uma marcação onde a seta se prende (v13). */
+export type ArrowSide = 'top' | 'right' | 'bottom' | 'left';
+
+/** Estilo do traço da seta (v13): `curve` é o padrão. */
+export type ArrowStyle = 'straight' | 'curve' | 'elbow';
+
+export const ARROW_SIDES: readonly ArrowSide[] = ['top', 'right', 'bottom', 'left'];
+export const ARROW_STYLES: readonly ArrowStyle[] = ['straight', 'curve', 'elbow'];
+export const DEFAULT_ARROW_STYLE: ArrowStyle = 'curve';
+
+/**
+ * Seta (v13, decisão 14): uma marcação que aponta. Liga duas marcações (`from`, `to`), tem
+ * rota e estilo próprios e pode ter anotações por camada (`annotations[].markingId` = id da
+ * seta; ids no mesmo espaço das marcações). Fica fora da árvore de pertencimento: não tem
+ * `rect`, container nem pai.
+ */
+export interface Arrow {
+  readonly id: string;
+  /** Marcação de origem. */
+  readonly from: string;
+  /** Marcação de destino (diferente de `from`). */
+  readonly to: string;
+  /** Lado da origem; `null` = o padrão borda a borda. */
+  readonly fromSide: ArrowSide | null;
+  /** Lado do destino; `null` = o padrão borda a borda. */
+  readonly toSide: ArrowSide | null;
+  /**
+   * Pontos de passagem, só da pessoa. Espaço derivado das duas pontas, nunca gravado
+   * (decisão (d)): pixels do container quando as duas estão no mesmo container; senão,
+   * unidades do canvas. `[]` = rota padrão.
+   */
+  readonly points: readonly ArrowPoint[];
+  readonly style: ArrowStyle;
+  /** Rótulo sobre a seta; `null` = sem rótulo. */
+  readonly name: string | null;
+  /** Trancada: a rota e as pontas não mudam; a seleção e as anotações seguem livres. */
+  readonly locked: boolean;
+}
+
+/** Ponto (pixels do container ou unidades do canvas, conforme quem o usa). */
+export interface ArrowPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface Entry {
   /** Id estável da tupla: as referências (`ref`) sobrevivem a renomear a chave. */
   readonly id: string;
@@ -174,6 +219,7 @@ export type PlatformRepos = { readonly [platformId: string]: PlatformRepo };
 
 export interface Annotation {
   readonly id: string;
+  /** Marcação (ou seta, v13) dona da anotação. */
   readonly markingId: string;
   readonly layerId: string;
   readonly name: string | null;
@@ -231,6 +277,8 @@ export interface Project {
   readonly layers: readonly Layer[];
   readonly containers: readonly ProjectContainer[];
   readonly markings: readonly Marking[];
+  /** Setas (v13, ME4): marcações que apontam. */
+  readonly arrows: readonly Arrow[];
   readonly annotations: readonly Annotation[];
 }
 

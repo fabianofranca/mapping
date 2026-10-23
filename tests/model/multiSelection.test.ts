@@ -439,6 +439,7 @@ describe('itemsDeletionImpact', () => {
   const empty = {
     markings: 0,
     containers: 0,
+    arrows: 0,
     annotations: 0,
     lockedMarkings: 0,
     containersStay: 0,

@@ -63,7 +63,7 @@ const annotation = (p: Project, id: string) => p.annotations.find((a) => a.id ==
 const valuesOf = (p: Project, id = 'A1') => drawingValues(p, annotation(p, id), TEXT);
 
 describe('drawingValues: tipos simples', () => {
-  it('string, number, enum e date; vazio vira null; table é sempre null', () => {
+  it('string, number, enum e date; vazio vira null; table vira a lista das linhas', () => {
     let p = base();
     p = setFieldValue(p, 'A1', 'label', 'Olá');
     p = setFieldValue(p, 'A1', 'count', 7);
@@ -78,7 +78,7 @@ describe('drawingValues: tipos simples', () => {
       kind: 'b',
       when: '2026-10-17',
       target: null,
-      items: null,
+      items: [{ name: 'x' }],
     });
     expect(warnings).toEqual([]);
   });

@@ -45,6 +45,7 @@ export function useAddComponent(): AddComponent {
       specId,
       typeId,
       ...(target.center ? { center: target.center } : {}),
+      ...(target.near ? { near: target.near } : {}),
     });
     if (!result.ok) {
       setError(libraryErrorMessage(result.error));

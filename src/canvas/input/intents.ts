@@ -2,6 +2,7 @@
 // o item selecionado, desenhar, pegar um item ou selecionar pelo toque.
 // Funções puras (sem DOM nem Konva), testadas em `tests/canvas/input/`.
 import {
+  canEditArrow,
   canEditImagePlacement,
   canEditMarkingGeometry,
   canMoveItems,
@@ -18,6 +19,13 @@ import {
   type Selection,
   type SelectionItem,
 } from '../../store/ui';
+import {
+  arrowHandleAt,
+  arrowsAt,
+  isOnLinkHandle,
+  type ArrowHandle,
+  type ArrowShape,
+} from '../arrowGeometry';
 import type { DragMode } from '../gestureMachine';
 import { cornerAt, imageAt, pointInRect, type Corner } from '../imageGeometry';
 import {
@@ -58,6 +66,20 @@ export type Intent =
    * item no próprio espaço (`moveItems`). Leva os itens que existiam ao apertar o ponteiro.
    */
   | { readonly kind: 'move-items'; readonly items: readonly SelectionItem[] }
+  /**
+   * Alça de ligação da marcação selecionada (ME4): puxar dela até outra marcação cria uma seta
+   * que sai da selecionada.
+   */
+  | { readonly kind: 'arrow-link'; readonly markingId: string }
+  /**
+   * Alça da seta selecionada (ME4): a ponta (trocar de marcação ou de lado), um ponto de passagem
+   * (mover) ou o meio de um trecho (arrastar cria um ponto de passagem).
+   */
+  | {
+      readonly kind: 'arrow-handle';
+      readonly arrowId: string;
+      readonly handle: ArrowHandle;
+    }
   /** Sobre o item selecionado e trancado: arrastar não faz nada (cursor "não permitido"). */
   | { readonly kind: 'locked' };
 
@@ -81,6 +103,11 @@ export interface IntentContext {
    * (não aparece na tela), mas continua sendo movida com a seleção. Sem o mapa, todas contam.
    */
   readonly visibility?: ReadonlyMap<string, MarkingVisibility>;
+  /**
+   * Setas desenhadas (as duas pontas à vista, "Mostrar setas" ligado, fora do Ver limpo): o que o
+   * toque alcança e onde ficam as alças da seta selecionada. Sem o campo, não há seta no toque.
+   */
+  readonly arrows?: readonly ArrowShape[];
   /** Pixels de tela por unidade do canvas. */
   readonly zoom: number;
   /** Espaço pressionado: arrastar sempre faz pan. */
@@ -105,8 +132,15 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
   }
   if (ctx.items.length >= 2) return multiIntentAt(ctx, project, c);
   const selected = resolveSelection(project, ctx.selection);
+  if (selected?.kind === 'arrow')
+    return arrowIntentAt(ctx, project, selected.arrow.id, c) ?? PAN;
   if (selected?.kind === 'marking') {
     const rect = markingCanvasRect(selected.space.placement, selected.marking.rect);
+    // A alça de ligação fica fora do retângulo e vale também trancada: criar a seta não muda a
+    // marcação.
+    if (isOnLinkHandle(rect, c, zoom)) {
+      return { kind: 'arrow-link', markingId: selected.marking.id };
+    }
     const radius = handleHitRadius(Math.min(rect.width, rect.height) * zoom) / zoom;
     const markingId = selected.marking.id;
     // Trancada (ela ou um ancestral): sem alças e sem mover. Descendentes trancados não
@@ -139,6 +173,11 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
 function multiIntentAt(ctx: IntentContext, project: Project, c: Point): Intent {
   const { items, zoom } = ctx;
   const selected = resolveSelection(project, ctx.selection);
+  if (selected?.kind === 'arrow') {
+    // As alças da seta primária valem com vários itens; fora delas, o resto do arrasto conjunto.
+    const arrowIntent = arrowIntentAt(ctx, project, selected.arrow.id, c);
+    if (arrowIntent) return arrowIntent;
+  }
   if (selected?.kind === 'marking') {
     const rect = markingCanvasRect(selected.space.placement, selected.marking.rect);
     const radius = handleHitRadius(Math.min(rect.width, rect.height) * zoom) / zoom;
@@ -171,6 +210,26 @@ function multiIntentAt(ctx: IntentContext, project: Project, c: Point): Intent {
   return canMoveItems(project, items) ? { kind: 'move-items', items } : LOCKED;
 }
 
+/**
+ * A intenção de um ponto sobre a seta selecionada (a primária): uma alça dela, ou `locked` sobre o
+ * traço de uma seta trancada (sem alças); `null` fora das alças. Uma seta que não está
+ * desenhada (ponta oculta, "Mostrar setas" desligado) não tem alças.
+ */
+function arrowIntentAt(
+  ctx: IntentContext,
+  project: Project,
+  arrowId: string,
+  c: Point,
+): Intent | null {
+  const shape = ctx.arrows?.find((s) => s.arrow.id === arrowId);
+  if (!shape) return null;
+  if (!canEditArrow(project, arrowId)) {
+    return arrowsAt([shape], c, ctx.zoom).length > 0 ? LOCKED : null;
+  }
+  const handle = arrowHandleAt(shape, c, ctx.zoom);
+  return handle ? { kind: 'arrow-handle', arrowId, handle } : null;
+}
+
 /** Marcações que aceitam toque: as ocultas pelo modo de exibição ficam de fora. */
 export function selectableMarkings(
   project: Project,
@@ -189,11 +248,18 @@ export function isRepeatTap(last: Point | null, c: Point, zoom: number): boolean
 /** Item que um toque pode selecionar. */
 export type HitItem = NonNullable<Selection>;
 
+/** As setas que o toque alcança: as desenhadas e o zoom (o alcance é em px de tela). */
+export interface ArrowHit {
+  readonly shapes: readonly ArrowShape[];
+  readonly zoom: number;
+}
+
 /**
  * Tudo o que um toque em `c` (canvas) alcança, do primeiro a receber o toque ao último (a cadeia
  * do "clicar de novo sobe"):
  *
  * 1. as marcações flutuantes sob o ponto, onde estiverem (a de cima primeiro);
+ * 1b. as setas a até `ARROW_HIT_TOLERANCE` px de tela do ponto (`arrows`; a mais perto primeiro);
  * 2. dentro de um container: a marcação mais interna → os ancestrais → o container → as marcações
  *    do canvas que o contêm (pela cadeia de `parentId` do container) → as demais marcações do
  *    canvas sobrepostas ao ponto;
@@ -206,6 +272,7 @@ export function hitChain(
   project: Project,
   visibility: ReadonlyMap<string, MarkingVisibility>,
   c: Point,
+  arrows?: ArrowHit,
 ): HitItem[] {
   const markings = selectableMarkings(project, visibility);
   const selectable = new Set(markings.map((m) => m.id));
@@ -218,6 +285,12 @@ export function hitChain(
     chain.push(pick);
   };
   for (const m of floatingAt(markings, c)) add({ kind: 'marking', id: m.id });
+  // As setas ficam acima das marcações e dos containers, e abaixo das flutuantes.
+  if (arrows) {
+    for (const shape of arrowsAt(arrows.shapes, c, arrows.zoom)) {
+      add({ kind: 'arrow', id: shape.arrow.id });
+    }
+  }
   const image = imageAt(project.containers, c);
   if (image) {
     const pixel = canvasToImagePixel(image.placement, c);
@@ -249,9 +322,10 @@ export function tapSelection(
   visibility: ReadonlyMap<string, MarkingVisibility>,
   c: Point,
   repeat: boolean,
+  arrows?: ArrowHit,
 ): Selection {
   if (!project) return null;
-  const chain = hitChain(project, visibility, c);
+  const chain = hitChain(project, visibility, c, arrows);
   const keyOf = (pick: HitItem) => `${pick.kind}:${pick.id}`;
   const next = nextInChain(chain.map(keyOf), selection ? keyOf(selection) : null, repeat);
   return chain.find((pick) => keyOf(pick) === next) ?? null;
@@ -283,6 +357,13 @@ export function cursorFor(intent: Intent): string {
       return 'crosshair';
     case 'locked':
       return 'not-allowed';
+    case 'arrow-link':
+      return 'crosshair';
+    case 'arrow-handle':
+      if (intent.handle.kind === 'segment') {
+        return intent.handle.axis === 'x' ? 'ew-resize' : 'ns-resize';
+      }
+      return intent.handle.kind === 'end' ? 'crosshair' : 'move';
     case 'pan':
       return '';
   }

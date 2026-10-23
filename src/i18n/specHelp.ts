@@ -211,6 +211,32 @@ const FLOATING_EXCERPT = `{
   ]
 }`;
 
+/** Trecho de uma especialização v7: o tipo aplicado à seta (`appliesTo`). */
+const APPLIES_TO_EXCERPT = `{
+  "id": "deep-link",
+  "name": "Deep link",
+  "appliesTo": ["arrow"],
+  "fields": [{ "key": "uri", "label": "URI", "type": "string", "required": true }]
+}`;
+
+/** Trecho de uma especialização v7: o "flutuante que aponta" (tabela flutuante com coluna `ref`). */
+const POINTING_EXCERPT = `{
+  "id": "tabela-eventos",
+  "name": "Tabela de eventos",
+  "floating": true,
+  "component": "components/tabela-eventos.json",
+  "fields": [
+    {
+      "key": "eventos",
+      "type": "table",
+      "columns": [
+        { "key": "evento", "type": "string" },
+        { "key": "tela", "type": "ref", "accepts": { "tags": ["screen"] } }
+      ]
+    }
+  ]
+}`;
+
 /** Trecho de uma especialização v5: as plataformas com `repo` e o `code` de um tipo. */
 const CODE_EXCERPT = `{
   "format": "mapping-spec",
@@ -414,7 +440,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
-          'A formatVersion 7 é a 6 mais floating no tipo de anotação: o tipo cuja instância é uma marcação flutuante, um comentário solto sobre o canvas (seção "Tipo flutuante"). As versões 1 a 6 continuam aceitas.',
+          'A formatVersion 7 é a 6 mais floating no tipo de anotação (o tipo cuja instância é uma marcação flutuante, um comentário solto sobre o canvas: seção "Tipo flutuante"), appliesTo no tipo (onde a anotação se aplica: marcação, seta ou ambas: seção "Onde o tipo se aplica") e ref como tipo de coluna de table (uma lista de referências como dado). As versões 1 a 6 continuam aceitas.',
         ],
       },
     ],
@@ -467,6 +493,10 @@ const ptBR: readonly HelpSection[] = [
             term: 'floating',
             text: 'Opcional (formatVersion 7). Padrão false. A instância é uma marcação flutuante (seção "Tipo flutuante").',
           },
+          {
+            term: 'appliesTo',
+            text: 'Opcional (formatVersion 7). Lista de "marking" e/ou "arrow"; o padrão é ["marking"]. Diz a que a anotação se aplica (seção "Onde o tipo se aplica").',
+          },
         ],
       },
       { kind: 'p', text: 'Campo (fields):' },
@@ -493,7 +523,7 @@ const ptBR: readonly HelpSection[] = [
           { term: 'options', text: 'Só enum: lista não vazia de strings únicas.' },
           {
             term: 'columns',
-            text: 'Só table: campos simples (string, number, date ou enum).',
+            text: 'Só table: campos simples (string, number, date ou enum) e, a partir da formatVersion 7, ref (com accepts, como um campo ref; a célula é uma referência e não desenha seta).',
           },
           {
             term: 'tags',
@@ -739,7 +769,32 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'A biblioteca de notas do repositório (camada Notas, tipo nota com titulo e texto, componente post-it) é um pacote comum, embutido na app e aplicado por padrão: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por Especializações › Remover, como qualquer outra, e não volta. Campos string do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter).',
+        text: 'A biblioteca de notas do repositório (camada Notas, tipos nota e tabela, componentes post-it) é um pacote comum, embutido na app e aplicado por padrão: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por Especializações › Remover, como qualquer outra, e não volta. Campos string do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter).',
+      },
+    ],
+  },
+  {
+    id: 'applies-to',
+    title: 'Onde o tipo se aplica',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A formatVersion 7 diz a que uma anotação se aplica com appliesTo no tipo: "marking" (uma marcação, o padrão), "arrow" (uma seta, que liga duas marcações e pode ter anotações por camada como qualquer marcação) ou os dois. O painel de anotações oferece, para a marcação selecionada, só os tipos que se aplicam a marcações, e, para a seta, só os que se aplicam a setas. Um tipo só de seta (appliesTo: ["arrow"]) não tem component nem floating: a seta não tem desenho de componente.',
+      },
+      { kind: 'code', code: APPLIES_TO_EXCERPT },
+      {
+        kind: 'p',
+        text: 'O padrão "flutuante que aponta": uma tabela flutuante (floating: true, com o componente da tabela) fica ao lado de uma tela e é ligada ao elemento que ela descreve por uma seta. O dado (os eventos, as propriedades) mora na anotação da tabela flutuante; o agente chega a ela pelas setas que saem do elemento. A coluna ref de uma table é dado, não seta: guarda uma lista de referências a tuplas (linhas de tabela, campos, tuplas livres) e nenhuma ligação é desenhada.',
+      },
+      { kind: 'code', code: POINTING_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'appliesTo',
+            text: 'Lista de "marking" e/ou "arrow", opcional; não vazia, sem repetição. O padrão é ["marking"]. Só a partir da formatVersion 7: numa versão anterior o erro é só é permitido com formatVersion 7, no caminho do tipo.',
+          },
+        ],
       },
     ],
   },
@@ -933,11 +988,11 @@ const ptBR: readonly HelpSection[] = [
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
           'default compatível com o tipo (e presente em options no enum); ref sem default;',
-          'columns só com tipos simples; rowLabel obrigatório em table com tags e apontando para uma coluna string;',
+          'columns só com tipos simples ou, na formatVersion 7, ref (com accepts; table dentro de table não existe); rowLabel obrigatório em table com tags e apontando para uma coluna string;',
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
-          'formatVersion 7, floating: só na versão 7 (antes dela o erro é só é permitido com formatVersion 7); booleano;',
+          'formatVersion 7, floating, appliesTo e coluna ref: só na versão 7 (antes dela o erro é só é permitido com formatVersion 7); floating booleano; appliesTo não vazio, sem repetição, só com "marking" e "arrow", e sem component nem floating num tipo só de seta;',
           'formatVersion 6, containers: só na versão 6 (antes dela o erro é só é permitido com formatVersion 6); id no formato [a-z0-9-]+ e único na lista; name não vazio; width e height inteiros de 1 a 20000; background opcional, #RRGGBB; qualquer outra propriedade é recusada;',
           'formatVersion 5, repo: só na versão 5, dentro de uma entrada de platforms (antes dela o erro é só é permitido com formatVersion 5); url obrigatória, começando com http:// ou https://; urlTemplate opcional, http(s):// e com {path}; ref opcional, texto não vazio; qualquer outra propriedade é recusada. Plataforma com path em algum tipo e sem repo é só aviso (path-without-repo);',
           'code só em especializações com platforms; os ids de code precisam existir em platforms;',
@@ -989,7 +1044,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
-          'formatVersion 7 is 6 plus floating on the annotation type: the type whose instance is a floating marking, a loose comment over the canvas (section "Floating type"). Versions 1 to 6 are still accepted.',
+          'formatVersion 7 is 6 plus floating on the annotation type (the type whose instance is a floating marking, a loose comment over the canvas: section "Floating type"), appliesTo on the type (what the annotation applies to: marking, arrow or both: section "What the type applies to") and ref as a column type of table (a list of references as data). Versions 1 to 6 are still accepted.',
         ],
       },
     ],
@@ -1045,6 +1100,10 @@ const enUS: readonly HelpSection[] = [
             term: 'floating',
             text: 'Optional (formatVersion 7). Defaults to false. The instance is a floating marking (section "Floating type").',
           },
+          {
+            term: 'appliesTo',
+            text: 'Optional (formatVersion 7). List of "marking" and/or "arrow"; defaults to ["marking"]. Says what the annotation applies to (section "What the type applies to").',
+          },
         ],
       },
       { kind: 'p', text: 'Field (fields):' },
@@ -1071,7 +1130,7 @@ const enUS: readonly HelpSection[] = [
           { term: 'options', text: 'enum only: non-empty list of unique strings.' },
           {
             term: 'columns',
-            text: 'table only: simple fields (string, number, date or enum).',
+            text: 'table only: simple fields (string, number, date or enum) and, from formatVersion 7 on, ref (with accepts, like a ref field; the cell is a reference and draws no arrow).',
           },
           {
             term: 'tags',
@@ -1317,7 +1376,32 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'The repository notes library (Notes layer, nota type with titulo and texto, sticky-note component) is a regular package, embedded in the app and applied by default: a new project is born with it, and a project opened from a schema older than 13 gains it on opening. It is removed through Specializations › Remove, like any other, and does not come back. String fields of the type accept several lines in the interface (the editor opens in several lines when the text has a break or goes past 60 characters, or with Shift+Enter).',
+        text: 'The repository notes library (Notes layer, nota and tabela types, sticky-note components) is a regular package, embedded in the app and applied by default: a new project is born with it, and a project opened from a schema older than 13 gains it on opening. It is removed through Specializations › Remove, like any other, and does not come back. String fields of the type accept several lines in the interface (the editor opens in several lines when the text has a break or goes past 60 characters, or with Shift+Enter).',
+      },
+    ],
+  },
+  {
+    id: 'applies-to',
+    title: 'What the type applies to',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'formatVersion 7 says what an annotation applies to with appliesTo on the type: "marking" (a marking, the default), "arrow" (an arrow, which links two markings and can have annotations per layer like any marking) or both. The annotations panel offers, for the selected marking, only the types that apply to markings, and, for the arrow, only those that apply to arrows. An arrow-only type (appliesTo: ["arrow"]) has no component or floating: an arrow has no component drawing.',
+      },
+      { kind: 'code', code: APPLIES_TO_EXCERPT },
+      {
+        kind: 'p',
+        text: 'The "floating that points" pattern: a floating table (floating: true, with the table component) sits beside a screen and is linked to the element it describes by an arrow. The data (the events, the properties) lives in the annotation of the floating table; the agent reaches it through the arrows leaving the element. The ref column of a table is data, not an arrow: it holds a list of references to tuples (table rows, fields, free tuples) and no link is drawn.',
+      },
+      { kind: 'code', code: POINTING_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'appliesTo',
+            text: 'List of "marking" and/or "arrow", optional; non-empty, without repetition. Defaults to ["marking"]. From formatVersion 7 on only: in an earlier version the error is only allowed with formatVersion 7, at the type path.',
+          },
+        ],
       },
     ],
   },
@@ -1511,11 +1595,11 @@ const enUS: readonly HelpSection[] = [
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
           'default compatible with the type (and present in options for enum); ref without default;',
-          'columns with simple types only; rowLabel required on a table with tags and pointing to a string column;',
+          'columns with simple types only or, in formatVersion 7, ref (with accepts; a table inside a table does not exist); rowLabel required on a table with tags and pointing to a string column;',
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
-          'formatVersion 7, floating: version 7 only (before it the error is only allowed with formatVersion 7); boolean;',
+          'formatVersion 7, floating, appliesTo and ref column: version 7 only (before it the error is only allowed with formatVersion 7); floating is boolean; appliesTo is non-empty, without repetition, with "marking" and "arrow" only, and an arrow-only type has no component or floating;',
           'formatVersion 6, containers: version 6 only (before it the error is only allowed with formatVersion 6); id in the [a-z0-9-]+ format and unique in the list; name non-empty; width and height integers from 1 to 20000; background optional, #RRGGBB; any other property is rejected;',
           'formatVersion 5, repo: version 5 only, inside a platforms entry (before it the error is only allowed with formatVersion 5); url required, starting with http:// or https://; urlTemplate optional, http(s):// and containing {path}; ref optional, non-empty text; any other property is rejected. A platform with a path on some type and no repo is only a warning (path-without-repo);',
           'code only in specializations with platforms; the ids in code must exist in platforms;',
