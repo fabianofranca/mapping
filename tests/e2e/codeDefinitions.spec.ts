@@ -97,7 +97,10 @@ async function updateSduiToV2(page: Page): Promise<void> {
   await expect(page.getByText('Plataformas', { exact: true })).toHaveCount(0);
 
   // O arquivo vai direto ao seletor (sem abrir o escolhedor nativo do navegador).
-  await expect(page.getByRole('button', { name: 'Atualizar versão…' })).toBeVisible();
+  // Uma linha por especialização (a biblioteca de notas já vem aplicada): a SDUI é a última.
+  await expect(
+    page.getByRole('button', { name: 'Atualizar versão…' }).last(),
+  ).toBeVisible();
   await specInput(page).setInputFiles({
     name: 'sdui.json',
     mimeType: 'application/json',
@@ -190,7 +193,7 @@ test('passo 1: atualizar a SDUI para a v2 mostra a camada Telas e as plataformas
   ).toBeVisible();
   const { mapping } = await exportMapping(page);
   expect(mapping.layers.map((l) => l.name)).toContain('Telas');
-  expect(mapping.schemaVersion).toBe(12);
+  expect(mapping.schemaVersion).toBe(13);
 });
 
 test('passo 2: o repo da especialização em leitura e só o caminho local editável', async ({
@@ -280,7 +283,7 @@ test('passo 3: "Definição" do Button ("Abrir no repositório" e "Copiar caminh
   await expect(page.getByText('implementação')).toHaveCount(0);
   const { mapping } = await exportMapping(page);
   expect(mapping).toMatchObject({
-    schemaVersion: 12,
+    schemaVersion: 13,
     platformRepos: {},
   });
   const screen = mapping.annotations.find((a) => a.type?.typeId === 'screen');

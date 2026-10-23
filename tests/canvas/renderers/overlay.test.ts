@@ -3,7 +3,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Frame } from '../../../src/canvas/frame';
 import { MarkingRenderer } from '../../../src/canvas/renderers/markings';
 import { OverlayRenderer } from '../../../src/canvas/renderers/overlay';
+import { visibleArrowShapes } from '../../../src/canvas/arrowGeometry';
 import type { Placement } from '../../../src/model';
+import { arrowProject, withArrow } from '../../model/arrowFixtures';
 import { editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
 
 beforeAll(installFakeCanvas);
@@ -270,6 +272,13 @@ describe('OverlayRenderer', () => {
     render();
     expect(container.classList.contains('canvas-host--drop')).toBe(false);
   });
+
+  it('alvo de soltar com marcação: acende o retângulo dela, sem o fundo', () => {
+    const { container, overlay, render } = setup();
+    render({ dropTarget: { containerId: null, markingId: 'M1' } });
+    expect(overlay.dropRect.visible()).toBe(true);
+    expect(container.classList.contains('canvas-host--drop')).toBe(false);
+  });
 });
 
 describe('OverlayRenderer: trava (etapa 2.5)', () => {
@@ -421,5 +430,440 @@ describe('OverlayRenderer: trava (etapa 2.5)', () => {
       viewport: { x: 0, y: -100, scale: 1 },
     });
     expect(overlay.selectionLock.group.y()).toBe(100 + 2);
+  });
+});
+
+// Marcações do canvas, absorção e trava herdada (etapa Marcações espaciais, ME1).
+describe('OverlayRenderer: marcações do canvas', () => {
+  function spatialSetup() {
+    const container = document.createElement('div');
+    const overlay = new OverlayRenderer(new Konva.Layer(), container);
+    const editor = editorFor();
+    const created = editor.actions.createMarking(null, {
+      x: -100,
+      y: -100,
+      width: 1800,
+      height: 1000,
+    });
+    const id = created.ok ? created.value : '';
+    const render = (overrides: Partial<Frame> = {}, placements = PLACEMENTS) =>
+      overlay.render(frameOf(editor, overrides), placements);
+    return { overlay, editor, render, id };
+  }
+
+  it('rascunho no vazio (sem imagem): no espaço identidade do canvas', () => {
+    const { overlay, render } = spatialSetup();
+    render({
+      draft: { containerId: null, rect: { x: 1050, y: 600, width: 300, height: 200 } },
+    });
+    expect(overlay.draftRect.getAttrs()).toMatchObject({
+      visible: true,
+      x: 1050,
+      y: 600,
+      width: 300,
+      height: 200,
+      stroke: TOKENS.select,
+    });
+  });
+
+  it('marcação do canvas selecionada: alças nos cantos dela e sem etiqueta de título de imagem', () => {
+    const { overlay, render, id } = spatialSetup();
+    render({
+      selection: { kind: 'marking', id },
+      viewport: { x: 100, y: 100, scale: 1 },
+    });
+    expect(overlay.handles.get('nw')?.getAttrs()).toMatchObject({
+      visible: true,
+      x: -105,
+      y: -105,
+    });
+    expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 1695, y: 895 });
+  });
+
+  it('itens a absorver acendem com o token novo e somem quando a lista esvazia', () => {
+    const { overlay, render } = spatialSetup();
+    render({ absorb: [{ x: 10, y: 20, width: 30, height: 40 }] });
+    const lit = overlay.absorbHighlights();
+    expect(lit).toHaveLength(1);
+    expect(lit[0]?.getAttrs()).toMatchObject({
+      visible: true,
+      x: 10,
+      y: 20,
+      width: 30,
+      height: 40,
+      stroke: TOKENS.absorb,
+      fill: TOKENS.absorbFill,
+    });
+    render({ absorb: [] });
+    expect(overlay.absorbHighlights().every((r) => !r.visible())).toBe(true);
+    // Dois itens, depois um: o segundo nó some, o primeiro é reaproveitado.
+    render({
+      absorb: [
+        { x: 1, y: 1, width: 5, height: 5 },
+        { x: 9, y: 9, width: 5, height: 5 },
+      ],
+    });
+    expect(overlay.absorbHighlights().filter((r) => r.visible())).toHaveLength(2);
+    render({ absorb: [{ x: 1, y: 1, width: 5, height: 5 }] });
+    expect(overlay.absorbHighlights().filter((r) => r.visible())).toHaveLength(1);
+  });
+
+  it('container dentro de uma marcação do canvas trancada: cadeado esmaecido (trava herdada)', () => {
+    const { overlay, editor, render, id } = spatialSetup();
+    expect(editor.actions.setMarkingLocked(id, true).ok).toBe(true);
+    render({ selection: { kind: 'image', id: 'I2' } });
+    expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(overlay.selectionLock.group.opacity()).toBe(TOKENS.opacity.inherited);
+    // O cadeado sob o mouse também mostra a herança.
+    render({ hoverLock: { kind: 'image', id: 'I1' } });
+    expect(overlay.hoverLockBadge.group.visible()).toBe(true);
+    expect(overlay.hoverLockBadge.group.opacity()).toBe(TOKENS.opacity.inherited);
+  });
+
+  it('a marcação do canvas trancada tem o cadeado cheio e as filhas do espaço dela, o esmaecido', () => {
+    const { overlay, editor, render, id } = spatialSetup();
+    const inner = editor.actions.createMarking(null, {
+      x: -50,
+      y: -50,
+      width: 60,
+      height: 60,
+    });
+    const innerId = inner.ok ? inner.value : '';
+    expect(editor.actions.setMarkingLocked(id, true).ok).toBe(true);
+    render({ selection: { kind: 'marking', id } });
+    expect(overlay.selectionLock.group.opacity()).toBe(1);
+    render({ selection: { kind: 'marking', id: innerId } });
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(overlay.selectionLock.group.opacity()).toBe(TOKENS.opacity.inherited);
+  });
+});
+
+// Seleção múltipla (etapa Marcações espaciais, ME2): alças, cadeado e etiqueta só no primário;
+// contorno secundário nos demais.
+describe('OverlayRenderer: seleção múltipla', () => {
+  const im = (id: string) => ({ kind: 'image', id }) as const;
+  const mk = (id: string) => ({ kind: 'marking', id }) as const;
+
+  function multiSetup() {
+    const container = document.createElement('div');
+    const overlay = new OverlayRenderer(new Konva.Layer(), container);
+    const editor = editorFor();
+    const render = (overrides: Partial<Frame> = {}, placements = PLACEMENTS) =>
+      overlay.render(frameOf(editor, overrides), placements);
+    const lit = () =>
+      overlay
+        .secondaryHighlights()
+        .filter((r) => r.visible())
+        .map((r) => r.getAttrs());
+    return { overlay, editor, render, lit };
+  }
+
+  it('sem seleção múltipla, nenhum contorno secundário', () => {
+    const { overlay, render } = multiSetup();
+    render({ selection: mk('M2'), items: [mk('M2')] });
+    expect(overlay.secondaryHighlights().filter((r) => r.visible())).toHaveLength(0);
+    render();
+    expect(overlay.secondaryHighlights().filter((r) => r.visible())).toHaveLength(0);
+  });
+
+  it('os não primários ganham contorno no retângulo deles, com o token novo', () => {
+    const { render, lit } = multiSetup();
+    render({
+      selection: mk('M2'),
+      items: [im('I2'), mk('M3'), mk('M1'), mk('M2')],
+      viewport: { x: 0, y: 0, scale: 2 },
+    });
+    const attrs = lit();
+    expect(attrs).toHaveLength(3);
+    // Container: o retângulo dele no canvas.
+    expect(attrs[0]).toMatchObject({
+      x: 1100,
+      y: 0,
+      width: 500,
+      height: 500,
+      stroke: TOKENS.selectSecondary,
+      strokeWidth: 1, // 2 px de tela com zoom 2
+    });
+    // Marcação de container: o retângulo dela pelo espaço do container.
+    expect(attrs[1]).toMatchObject({
+      x: 1150,
+      y: 50,
+      width: 200,
+      height: 200,
+      stroke: TOKENS.selectSecondary,
+    });
+    expect(attrs[2]).toMatchObject({ x: 100, y: 100, width: 600, height: 500 });
+    // O primário não ganha contorno secundário.
+    expect(attrs.some((a) => a.x === 200 && a.y === 200)).toBe(false);
+  });
+
+  it('marcação do canvas e container dentro do espaço do canvas', () => {
+    const { editor, overlay, render, lit } = multiSetup();
+    const created = editor.actions.createMarking(null, {
+      x: -100,
+      y: -100,
+      width: 1800,
+      height: 1000,
+    });
+    const id = created.ok ? created.value : '';
+    render({ selection: im('I1'), items: [mk(id), im('I1')] });
+    expect(lit()).toEqual([
+      expect.objectContaining({ x: -100, y: -100, width: 1800, height: 1000 }),
+    ]);
+    expect(overlay.selectionOutline.visible()).toBe(true); // o contorno do primário (container)
+  });
+
+  it('alças só no primário (marcação), sem alças nos demais', () => {
+    const { overlay, render } = multiSetup();
+    render({ selection: mk('M2'), items: [im('I2'), mk('M2')] });
+    const visible = [...overlay.handles.values()].filter((h) => h.visible());
+    expect(visible).toHaveLength(4);
+    // Em volta de M2 (200, 200, 100×100); nenhuma nos cantos de I2.
+    expect(overlay.handles.get('nw')?.getAttrs()).toMatchObject({ x: 195, y: 195 });
+    expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 295, y: 295 });
+  });
+
+  it('alças só no primário (container): o contorno de seleção é o dele', () => {
+    const { overlay, render, lit } = multiSetup();
+    render({ selection: im('I2'), items: [mk('M2'), im('I2')] });
+    expect(overlay.selectionOutline.getAttrs()).toMatchObject({
+      visible: true,
+      x: 1100,
+      stroke: TOKENS.select,
+    });
+    expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 1595, y: 495 });
+    expect(lit()).toHaveLength(1);
+    expect(lit()[0]).toMatchObject({ x: 200, y: 200 });
+  });
+
+  it('a etiqueta de nome e o cadeado são só do primário', () => {
+    const { editor, overlay, render } = multiSetup();
+    expect(editor.actions.setMarkingLocked('M3', true).ok).toBe(true);
+    render({ selection: mk('M2'), items: [mk('M3'), mk('M1'), mk('M2')] });
+    expect(overlay.nameTag.visible()).toBe(true);
+    expect(overlay.nameTagText.text()).toBe('Maçaneta');
+    // M3 (secundário) está trancada, mas o cadeado da seleção é do primário, que é livre.
+    expect(overlay.selectionLock.group.visible()).toBe(false);
+    render({ selection: mk('M3'), items: [mk('M2'), mk('M3')] });
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(overlay.nameTag.visible()).toBe(false); // M3 não tem nome
+  });
+
+  it('o contorno acompanha a prévia do arrasto (posições do quadro) e o pool é reaproveitado', () => {
+    const { overlay, render, lit } = multiSetup();
+    const moved = new Map<string, Placement>([
+      ['I1', { x: 0, y: 0, scale: 1 }],
+      ['I2', { x: 1200, y: 40, scale: 1 }],
+    ]);
+    render({ selection: mk('M2'), items: [im('I2'), mk('M3'), mk('M2')] }, moved);
+    expect(lit()).toEqual([
+      expect.objectContaining({ x: 1200, y: 40, width: 500, height: 500 }),
+      // M3 anda com o container: x = 1200 + 50, y = 40 + 50.
+      expect.objectContaining({ x: 1250, y: 90, width: 200, height: 200 }),
+    ]);
+    const nodes = overlay.secondaryHighlights().slice();
+    render({ selection: mk('M2'), items: [im('I2'), mk('M2')] }, moved);
+    expect(lit()).toHaveLength(1);
+    expect(overlay.secondaryHighlights()).toHaveLength(2); // o segundo nó só some
+    expect(overlay.secondaryHighlights()[0]).toBe(nodes[0]);
+    render({ selection: mk('M2'), items: [mk('M2')] });
+    expect(lit()).toHaveLength(0);
+  });
+
+  it('item que deixou de existir (depois de desfazer) não deixa contorno', () => {
+    const { render, lit } = multiSetup();
+    render({ selection: mk('M2'), items: [mk('Fantasma'), im('I9'), mk('M2')] });
+    expect(lit()).toHaveLength(0);
+  });
+
+  it('sem projeto, nada aparece', () => {
+    const { render, lit } = multiSetup();
+    render({ project: null, selection: mk('M2'), items: [im('I2'), mk('M2')] });
+    expect(lit()).toHaveLength(0);
+  });
+});
+
+// Setas (ME4): realce da selecionada, alças da primária, alça de ligação da marcação e a seta
+// provisória do gesto.
+describe('OverlayRenderer: setas', () => {
+  function arrowSetup(project = arrowProject()) {
+    const container = document.createElement('div');
+    const overlay = new OverlayRenderer(new Konva.Layer(), container);
+    const editor = editorFor(project);
+    const placements: ReadonlyMap<string, Placement> = new Map([
+      ['A', { x: 0, y: 0, scale: 1 }],
+      ['B', { x: 2000, y: 0, scale: 2 }],
+    ]);
+    const render = (overrides: Partial<Frame> = {}) =>
+      overlay.render(frameOf(editor, overrides), placements);
+    const visible = <T extends { visible(): boolean }>(nodes: readonly T[]) =>
+      nodes.filter((n) => n.visible());
+    return { overlay, editor, render, visible };
+  }
+
+  it('seta selecionada: realce na cor da seleção, ponta e uma alça por ponta e por meio', () => {
+    const { overlay, render, visible } = arrowSetup();
+    render({
+      selection: { kind: 'arrow', id: 'r1' },
+      items: [{ kind: 'arrow', id: 'r1' }],
+    });
+    const [highlight] = visible(overlay.arrowHighlightNodes().map((h) => h.line));
+    expect(highlight?.getAttrs()).toMatchObject({
+      stroke: TOKENS.arrow.select,
+      strokeWidth: TOKENS.arrow.widthSelected,
+    });
+    expect(visible(overlay.arrowHighlightNodes().map((h) => h.head))).toHaveLength(1);
+    // Curva sem pontos de passagem: as duas pontas e o meio do único trecho.
+    const circles = visible(overlay.arrowHandleCircles());
+    expect(circles).toHaveLength(3);
+    expect(circles[0]?.getAttrs()).toMatchObject({
+      x: 400,
+      y: 250,
+      fill: TOKENS.arrow.select,
+    });
+    expect(circles[1]?.getAttrs()).toMatchObject({ x: 600, y: 700 });
+    // O meio é menor e esmaecido; a ponta, maior que o ponto de passagem.
+    expect(circles[2]?.opacity()).toBe(TOKENS.opacity.inherited);
+    expect(circles[2]?.radius()).toBeLessThan(circles[0]?.radius() ?? 0);
+    // Nada de contorno, alças de canto nem etiqueta de marcação.
+    expect(overlay.selectionOutline.visible()).toBe(false);
+    expect([...overlay.handles.values()].every((h) => !h.visible())).toBe(true);
+    expect(overlay.linkHandle.visible()).toBe(false);
+  });
+
+  it('alças e realce em tamanho de tela: dividem pelo zoom', () => {
+    const { overlay, render, visible } = arrowSetup();
+    render({
+      selection: { kind: 'arrow', id: 'r1' },
+      viewport: { x: 0, y: 0, scale: 2 },
+    });
+    const [line] = visible(overlay.arrowHighlightNodes().map((h) => h.line));
+    expect(line?.strokeWidth()).toBe(TOKENS.arrow.widthSelected / 2);
+    expect(visible(overlay.arrowHandleCircles())[0]?.radius()).toBeCloseTo(
+      (TOKENS.handleSize / 2 / 2) * 1.2,
+    );
+  });
+
+  it('seta secundária: realce na cor da seleção múltipla, sem alças', () => {
+    const { overlay, render, visible } = arrowSetup(
+      withArrow(arrowProject(), 'r2', 'a3', 'b2'),
+    );
+    render({
+      selection: { kind: 'arrow', id: 'r2' },
+      items: [
+        { kind: 'arrow', id: 'r1' },
+        { kind: 'arrow', id: 'r2' },
+      ],
+    });
+    const lines = visible(overlay.arrowHighlightNodes().map((h) => h.line));
+    expect(lines.map((l) => l.stroke())).toEqual([
+      TOKENS.selectSecondary,
+      TOKENS.arrow.select,
+    ]);
+    // Só a primária tem alças: a ponta e o meio do trecho dela (2 pontas e 1 meio).
+    const circles = visible(overlay.arrowHandleCircles());
+    expect(circles).toHaveLength(3);
+    expect(circles[0]?.x()).toBe(800);
+  });
+
+  it('seta trancada: sem alças e com o cadeado; somente leitura e modo Desenhar também', () => {
+    const locked = withArrow(arrowProject(), 'r2', 'a3', 'b2', { locked: true });
+    const { overlay, render, visible } = arrowSetup(locked);
+    render({ selection: { kind: 'arrow', id: 'r2' } });
+    expect(visible(overlay.arrowHandleCircles())).toHaveLength(0);
+    expect(overlay.selectionLock.group.visible()).toBe(true);
+    expect(visible(overlay.arrowHighlightNodes().map((h) => h.line))).toHaveLength(1);
+
+    render({ selection: { kind: 'arrow', id: 'r1' }, readOnly: true });
+    expect(visible(overlay.arrowHandleCircles())).toHaveLength(0);
+    expect(overlay.selectionLock.group.visible()).toBe(false);
+    render({ selection: { kind: 'arrow', id: 'r1' }, mode: 'draw' });
+    expect(visible(overlay.arrowHandleCircles())).toHaveLength(0);
+  });
+
+  it('seta que não está desenhada (ponta oculta) não tem realce nem alças', () => {
+    const { overlay, render, visible, editor } = arrowSetup();
+    render({
+      selection: { kind: 'arrow', id: 'r1' },
+      arrows: visibleArrowShapes(
+        editor.store.project.peek(),
+        new Map([['a3', 'hidden' as const]]),
+      ),
+    });
+    expect(visible(overlay.arrowHighlightNodes().map((h) => h.line))).toHaveLength(0);
+    expect(visible(overlay.arrowHandleCircles())).toHaveLength(0);
+  });
+
+  it('marcação selecionada: alça de ligação fora da borda direita; vários itens, não', () => {
+    const { overlay, render } = arrowSetup();
+    // a1 (100,100,300,300): a alça em (400 + 14, 250).
+    render({ selection: { kind: 'marking', id: 'a1' } });
+    expect(overlay.linkHandle.getAttrs()).toMatchObject({
+      visible: true,
+      x: 414,
+      y: 250,
+      fill: TOKENS.arrow.select,
+    });
+    expect(overlay.linkHandle.radius()).toBe(TOKENS.handleSize / 2);
+    render({
+      selection: { kind: 'marking', id: 'a1' },
+      viewport: { x: 0, y: 0, scale: 2 },
+    });
+    expect(overlay.linkHandle.x()).toBe(407);
+    render({
+      selection: { kind: 'marking', id: 'a1' },
+      items: [
+        { kind: 'marking', id: 'a1' },
+        { kind: 'marking', id: 'a3' },
+      ],
+    });
+    expect(overlay.linkHandle.visible()).toBe(false);
+    render({ selection: { kind: 'marking', id: 'a1' }, readOnly: true });
+    expect(overlay.linkHandle.visible()).toBe(false);
+    render({ selection: { kind: 'marking', id: 'a1' }, mode: 'draw' });
+    expect(overlay.linkHandle.visible()).toBe(false);
+    render({ selection: { kind: 'image', id: 'A' } });
+    expect(overlay.linkHandle.visible()).toBe(false);
+  });
+
+  it('alça de ligação também na marcação trancada (criar a seta não a altera)', () => {
+    const { overlay, render, editor } = arrowSetup();
+    editor.actions.setMarkingLocked('a1', true);
+    render({ selection: { kind: 'marking', id: 'a1' } });
+    expect(overlay.linkHandle.visible()).toBe(true);
+  });
+
+  it('seta provisória: tracejada, com a ponta, até o ponteiro', () => {
+    const { overlay, render } = arrowSetup();
+    render({
+      arrowDraft: {
+        line: { from: { x: 400, y: 250 }, to: { x: 700, y: 250 } },
+        target: null,
+      },
+    });
+    expect(overlay.arrowDraftLine.getAttrs()).toMatchObject({
+      visible: true,
+      points: [400, 250, 700, 250],
+      stroke: TOKENS.arrow.select,
+    });
+    expect(overlay.arrowDraftLine.dash()).toHaveLength(2);
+    expect(overlay.arrowDraftHead.points().slice(0, 2)).toEqual([700, 250]);
+    render({ arrowDraft: { line: null, target: 'a3' } });
+    expect(overlay.arrowDraftLine.visible()).toBe(false);
+    expect(overlay.arrowDraftHead.visible()).toBe(false);
+  });
+
+  it('a marcação de destino acende com o destaque do alvo de soltar', () => {
+    const { overlay, render } = arrowSetup();
+    render({ dropTarget: { containerId: null, markingId: 'a3' } });
+    expect(overlay.dropRect.getAttrs()).toMatchObject({
+      visible: true,
+      x: 600,
+      y: 600,
+      width: 200,
+      height: 200,
+      stroke: TOKENS.select,
+    });
   });
 });

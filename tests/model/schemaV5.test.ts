@@ -23,17 +23,17 @@ describe('migração v4 → v5 (trava)', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(4);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(12);
+    expect(result.project.schemaVersion).toBe(13);
     expect(result.project.containers.every((i) => i.locked === false)).toBe(true);
     expect(result.project.markings.every((m) => m.locked === false)).toBe(true);
     expect(result.project).toEqual(sampleProject());
   });
 
-  it('o v4 migrado salva como v12 estável (round-trip)', () => {
+  it('o v4 migrado salva como v13 estável (round-trip)', () => {
     const first = deserialize(v4Text());
     if (!first.ok) throw new Error('falhou');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(12);
+    expect(JSON.parse(saved).schemaVersion).toBe(13);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('falhou');
     expect(serialize(again.project)).toBe(saved);
@@ -55,7 +55,12 @@ describe('migração v4 → v5 (trava)', () => {
       'source',
       'background',
     ]);
-    expect(Object.keys(data.markings[0]).slice(-2)).toEqual(['locked', 'source']);
+    // `floating` (v13) vem entre `locked` e `source`.
+    expect(Object.keys(data.markings[0]).slice(-3)).toEqual([
+      'locked',
+      'floating',
+      'source',
+    ]);
   });
 
   it('recusa um arquivo v5 sem locked', () => {

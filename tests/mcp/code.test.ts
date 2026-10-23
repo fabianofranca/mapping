@@ -480,7 +480,7 @@ describe('get_marking, get_annotation e get_project', () => {
 
   it('get_project traz as plataformas e o clone local; plataforma sem caminho local não gera aviso', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
-    expect(data.schemaVersion).toBe(12);
+    expect(data.schemaVersion).toBe(13);
     expect(data.platforms).toEqual([
       expect.objectContaining({
         id: 'android',
@@ -509,7 +509,7 @@ describe('get_marking, get_annotation e get_project', () => {
 
   it('um projeto v8 com o campo de código removido abre migrado, sem os valores dele', async () => {
     const data = ok(await mcp.call('get_project', { project: 'antigo' }));
-    expect(data.schemaVersion).toBe(12);
+    expect(data.schemaVersion).toBe(13);
     expect(data.migratedFrom).toBe(8);
     const screen = ok(
       await mcp.call<Annotation>('get_annotation', { ref: refOf('antigo', 'a', 'AS') }),
@@ -730,7 +730,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     );
   });
 
-  it('o lote do roteiro (clone local do ios) é aplicado e grava v12 com revision + 1', async () => {
+  it('o lote do roteiro (clone local do ios) é aplicado e grava v13 com revision + 1', async () => {
     const dir = ws.projectDir('escrita');
     const operations = [
       {
@@ -767,7 +767,7 @@ describe('plan_changes: repositórios por plataforma e campo inexistente', () =>
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     const saved = parsed.project;
-    expect(saved.schemaVersion).toBe(12);
+    expect(saved.schemaVersion).toBe(13);
     expect(saved.revision).toBe(1);
     expect(saved.platformRepos).toEqual({
       android: { localPath: '../../..' },

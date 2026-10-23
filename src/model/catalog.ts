@@ -10,6 +10,7 @@ import { screenFromSource } from './components/origin';
 import { parseComponentText } from './components/parseComponent';
 import { type FrameNode, baseNode, translate } from './components/scene';
 import { renderOrder } from './components/screen';
+import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
 import { defaultValues, nodeProbeLibrary, withoutNodePrefix } from './libraryDrawing';
 import { packageSpecNameOf } from './libraryPackage';
@@ -111,6 +112,20 @@ export interface Catalog {
   readonly layers: readonly CatalogLayer[];
   /** Biblioteca do motor (origens para os exemplos de sistema externo); `null` se não montou. */
   readonly library: Library | null;
+}
+
+/**
+ * As linhas do `preview` de uma tabela ganham `_id` (o formulário do playground edita linhas
+ * por `_id`); o desenho ignora o `_id`.
+ */
+function withRowIds(values: FieldValues): FieldValues {
+  const out: Record<string, FieldValues[string]> = {};
+  for (const [key, value] of Object.entries(values)) {
+    out[key] = Array.isArray(value)
+      ? value.map((row, i) => ({ _id: `preview-${i + 1}`, ...row }))
+      : value;
+  }
+  return out;
 }
 
 function fieldOf(field: SpecField | SpecColumn): CatalogField {
@@ -281,7 +296,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
         previewValues:
           component === null
             ? null
-            : { ...defaultValues(type), ...(component.preview ?? {}) },
+            : withRowIds({ ...defaultValues(type), ...(component.preview ?? {}) }),
       };
     }),
   }));
@@ -300,11 +315,6 @@ export function findEntry(catalog: Catalog, typeId: string): CatalogEntry | unde
 // ---------------------------------------------------------------------------------------
 // Desenho
 // ---------------------------------------------------------------------------------------
-
-export interface Size {
-  readonly width: number;
-  readonly height: number;
-}
 
 export interface CatalogDrawing {
   readonly root: FrameNode;

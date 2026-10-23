@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 13,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -92,6 +92,7 @@
         "y": 0,
         "scale": 0.5
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -112,6 +113,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -127,6 +129,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -142,6 +145,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -157,6 +161,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -172,6 +177,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -187,16 +193,17 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     }
   ],
+  "arrows": [],
   "annotations": [
     {
       "id": "AU",
       "markingId": "MF",
       "layerId": "LM",
       "name": "User",
-      "inherit": false,
       "parentAnnotationId": null,
       "type": null,
       "values": null,
@@ -218,7 +225,6 @@
       "markingId": "MF",
       "layerId": "LD1",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "modelo-dados",
@@ -246,7 +252,6 @@
       "markingId": "MN",
       "layerId": "LS1",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -270,7 +275,6 @@
       "markingId": "MI",
       "layerId": "LS1",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -294,7 +298,6 @@
       "markingId": "ME",
       "layerId": "LS1",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -319,7 +322,6 @@
       "markingId": "MC",
       "layerId": "LS1",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -338,7 +340,6 @@
       "markingId": "MT",
       "layerId": "LS1",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -357,7 +358,6 @@
       "markingId": "MC",
       "layerId": "LS2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": "AIN",
       "type": {
         "specId": "sdui",
@@ -381,7 +381,6 @@
       "markingId": "MC",
       "layerId": "LS2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": "AB",
       "type": {
         "specId": "sdui",
@@ -398,7 +397,6 @@
       "markingId": "ME",
       "layerId": "LS2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": "AIE",
       "type": {
         "specId": "sdui",
@@ -415,7 +413,6 @@
       "markingId": "MF",
       "layerId": "LD2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "modelo-dados",

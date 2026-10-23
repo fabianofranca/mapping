@@ -3,6 +3,7 @@ export * from './types';
 export * from './errors';
 export * from './geometry';
 export * from './hierarchy';
+export * from './hierarchySettle';
 export * from './projectIndex';
 export * from './invariants';
 export * from './migrations';
@@ -17,9 +18,12 @@ export {
 } from './project';
 export * from './layers';
 export * from './containers';
+export * from './detach';
 export * from './imageOptimization';
 export * from './exif';
 export * from './markings';
+export * from './arrows';
+export * from './multiSelection';
 // Motor dos componentes: só o que quem desenha ou mede precisa pelo índice do modelo.
 export { approximateMeasurer, type TextMeasurer } from './components/instantiate';
 export type { ComponentFile, FieldValues } from './components/componentFormat';
@@ -38,6 +42,7 @@ export * from './spec';
 export * from './specLookup';
 export * from './specializations';
 export * from './libraryPackage';
+export * from './bundledLibrary';
 export * from './catalog';
 export * from './specVersions';
 export * from './libraryMigrations';

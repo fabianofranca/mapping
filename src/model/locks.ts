@@ -9,6 +9,9 @@ import type { Marking, Project } from './types';
 // trava a geometria dos descendentes sem mexer no `locked` deles. Um descendente trancado
 // nunca impede o pai: mover o pai leva os descendentes trancados junto (a posição relativa
 // se mantém) e excluir o pai exclui os descendentes trancados (a confirmação informa quantos).
+// Na v13 a trava também desce da marcação do canvas para os containers dentro dela: o
+// `placement` deles não muda (`canEditImagePlacement`, `containerLockStates`). A seta (v13) tem
+// trava só dela: não herda das pontas (`canEditArrow`).
 
 /** A marcação ou algum ancestral está trancado: a geometria dela não pode mudar. */
 export function isMarkingGeometryLocked(p: Project, markingId: string): boolean {
@@ -38,6 +41,23 @@ export function markingLockStates(p: Project): Map<string, MarkingLockState> {
 }
 
 /**
+ * Estado de trava de cada container com o `placement` travado (os livres não aparecem), numa
+ * passada só: `self` = o próprio container trancado; `inherited` = uma marcação do canvas que o
+ * contém (o pai dele, ou um ancestral dela) está trancada.
+ */
+export function containerLockStates(p: Project): Map<string, MarkingLockState> {
+  const markingStates = markingLockStates(p);
+  const states = new Map<string, MarkingLockState>();
+  for (const c of p.containers) {
+    if (c.locked) states.set(c.id, 'self');
+    else if (c.parentId !== null && markingStates.has(c.parentId)) {
+      states.set(c.id, 'inherited');
+    }
+  }
+  return states;
+}
+
+/**
  * Mover ou redimensionar a marcação: só o item ou um ancestral trancado bloqueia. Descendentes
  * trancados não contam: mover o pai os leva junto, e redimensionar o pai não os move.
  */
@@ -53,9 +73,27 @@ export function canDeleteMarking(p: Project, markingId: string): boolean {
   return !findById(p.markings, markingId).locked;
 }
 
-/** Mover ou redimensionar a imagem no canvas. */
+/**
+ * Mexer na rota, nas pontas, nos lados ou no estilo da seta, ou excluí-la: só a trava da própria
+ * seta impede. A trava das marcações das pontas não conta, e renomear e anotar seguem livres.
+ */
+export function canEditArrow(p: Project, arrowId: string): boolean {
+  return !findById(p.arrows, arrowId).locked;
+}
+
+/**
+ * Mover ou redimensionar a imagem no canvas: trava a própria imagem trancada e, subindo a
+ * cadeia (o `parentId` do container e depois o das marcações), alguma marcação do canvas que
+ * a contém, trancada ou com ancestral trancado. Entrar numa marcação trancada não é editar o
+ * `placement` dela, mas mover o que está dentro é.
+ */
 export function canEditImagePlacement(p: Project, containerId: string): boolean {
-  return !findById(p.containers, containerId).locked;
+  const container = findById(p.containers, containerId);
+  if (container.locked) return false;
+  if (container.parentId === null) return true;
+  // Pai inexistente (projeto inválido): o reparo resolve; aqui não trava.
+  if (!projectIndex(p).markings.has(container.parentId)) return true;
+  return !isMarkingGeometryLocked(p, container.parentId);
 }
 
 /** Excluir a imagem leva as marcações, trancadas ou não: só a imagem trancada bloqueia. */

@@ -18,7 +18,7 @@ import {
 import { visibleArea, type Frame } from '../frame';
 import { semanticMode } from '../semanticText';
 import type { MarkingReviewMark } from '../reviewMarks';
-import { markingCanvasRect } from '../markingGeometry';
+import { markingCanvasRect, placementOfSpace } from '../markingGeometry';
 import type { CanvasTokens } from '../theme';
 import {
   ALERT_GLYPH,
@@ -46,6 +46,8 @@ const MARKING_STROKE = 1;
 const MARKING_SELECTED_STROKE = 2;
 /** Linha dupla da marcação alterada na revisão (px de tela). */
 const REVIEW_DOUBLE_STROKE = 3;
+/** Traço da borda da marcação do canvas (px de tela): traço longo e vão, para não lembrar a "a revisar". */
+const CANVAS_DASH: readonly [number, number] = [10, 6];
 
 export interface MarkingNode {
   readonly group: Konva.Group;
@@ -91,13 +93,18 @@ const NO_LAYER_DOTS: readonly LayerDot[] = [];
 /** Marcações de cima para baixo na hierarquia, uma vez por versão do projeto. */
 const topDownMarkings = memoByProject((p: Project) => topDown(p.markings));
 
-/** Nós das marcações, reaproveitados entre quadros (um grupo por marcação). */
+/**
+ * Nós das marcações, reaproveitados entre quadros (um grupo por marcação). As flutuantes vão para
+ * `floatingParent`, acima de tudo (containers, componentes e as bordas das demais marcações).
+ */
 export class MarkingRenderer {
   private readonly layer: Konva.Layer;
+  private readonly floatingParent: Konva.Container;
   private readonly nodes = new Map<string, MarkingNode>();
 
-  constructor(layer: Konva.Layer) {
+  constructor(layer: Konva.Layer, floatingParent: Konva.Container = layer) {
     this.layer = layer;
+    this.floatingParent = floatingParent;
   }
 
   /**
@@ -121,12 +128,16 @@ export class MarkingRenderer {
     const seen = new Set<string>();
     // Cabeçalho de cada marcação já desenhada (pais antes das filhas).
     const headers = new Map<string, HeaderBand>();
+    // A ordem de desenho é por pai: cada pilha (a normal e a das flutuantes) conta a sua.
     let index = 0;
+    let floatingIndex = 0;
     for (const marking of ordered) {
-      const placement = placements.get(marking.containerId);
+      const placement = placementOfSpace(placements, marking.containerId);
       if (!placement) continue;
       seen.add(marking.id);
       const node = this.nodes.get(marking.id) ?? this.createNode(marking.id);
+      const parent = marking.floating ? this.floatingParent : this.layer;
+      if (node.group.getParent() !== parent) node.group.moveTo(parent);
       const markingRect = markingCanvasRect(placement, marking.rect);
       // Fora da tela: nem atualiza nem desenha (a camada não recebe toques, então é seguro).
       const visibility = frame.visibility.get(marking.id) ?? 'full';
@@ -134,12 +145,16 @@ export class MarkingRenderer {
         visibility !== 'hidden' && intersectRects(markingRect, view) !== null;
       node.group.visible(onScreen);
       // Reordenar custa caro no Konva: só quando a posição na pilha mudou.
-      if (node.group.zIndex() !== index) node.group.zIndex(index);
-      index++;
+      const position = marking.floating ? floatingIndex++ : index++;
+      if (node.group.zIndex() !== position) node.group.zIndex(position);
       if (!onScreen) continue;
       const selected = selection?.kind === 'marking' && selection.id === marking.id;
-      // Cor da borda escolhida para a imagem (sem escolha, `cv-line`).
-      const lineColor = lookup?.containers.get(marking.containerId)?.markingColor ?? null;
+      // Cor da borda escolhida para a imagem (sem escolha, `cv-line`); a marcação do canvas não
+      // tem container: usa o token dela e a borda tracejada.
+      const canvasMarking = marking.containerId === null;
+      const lineColor = canvasMarking
+        ? tokens.canvasMarking
+        : (lookup?.containers.get(marking.containerId ?? '')?.markingColor ?? null);
       const markingDots = dots.get(marking.id) ?? NO_LAYER_DOTS;
       const markingIncomplete = incomplete.has(marking.id);
       const reviewMark = review?.markings.get(marking.id) ?? null;
@@ -180,6 +195,7 @@ export class MarkingRenderer {
           tokens,
           zoom,
           reviewMark,
+          canvasMarking,
         );
       }
       // Ancestral de contexto (modo Ocultar): só a borda, sem nome. O desenho ocupa o
@@ -278,6 +294,7 @@ function updateMarkingNode(
   tokens: CanvasTokens,
   zoom: number,
   review: MarkingReviewMark | null = null,
+  canvasMarking = false,
 ): void {
   const rect = markingCanvasRect(placement, marking.rect);
   // Sem anotação (própria ou herdada) nas camadas visíveis: esmaecida (a selecionada, nunca).
@@ -298,13 +315,16 @@ function updateMarkingNode(
         ? MARKING_SELECTED_STROKE
         : MARKING_STROKE;
   const stroke = base / zoom;
-  // Tracejada: "a revisar" (reescalada) e, na revisão, criada e inválida; pontilhada: rejeitada.
+  // Tracejada: "a revisar" (reescalada) e, na revisão, criada e inválida; pontilhada: rejeitada;
+  // traço longo: a marcação do canvas (sem container).
   const dash =
     line === 'rejected'
       ? [1.5 / zoom, 2.5 / zoom]
       : marking.needsReview || line === 'created' || line === 'invalid'
         ? [6 / zoom, 4 / zoom]
-        : [];
+        : canvasMarking
+          ? CANVAS_DASH.map((d) => d / zoom)
+          : [];
   // Halo por fora e por dentro da linha (um traço mais largo por baixo), em toda marcação:
   // a linha aparece sobre fotos claras e escuras.
   node.halo.setAttrs({
@@ -397,18 +417,15 @@ function updateIndicators(
       dot.visible(false);
       return;
     }
-    // Só por herança: bolinha vazada (contorno na cor da camada).
-    const item = layers[i];
-    const hollow = item?.inheritedOnly ?? false;
-    const color = item?.layer.color ?? tokens.line;
+    const color = layers[i]?.layer.color ?? tokens.line;
     dot.setAttrs({
       visible: true,
       x: x0 + i * step,
       y: cy,
-      radius: hollow ? radius - 0.5 / zoom : radius,
-      fill: hollow ? tokens.halo : color,
-      stroke: hollow ? color : tokens.halo,
-      strokeWidth: (hollow ? 2 : 1) / zoom,
+      radius,
+      fill: color,
+      stroke: tokens.halo,
+      strokeWidth: 1 / zoom,
     });
   });
   const extra = layers.length - MAX_DOTS;

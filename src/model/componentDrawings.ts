@@ -19,9 +19,10 @@ import type { Project, Rect } from './types';
 
 export interface ComponentDrawing {
   readonly markingId: string;
-  readonly containerId: string;
+  /** Container da marcação; `null` = marcação do canvas (retângulo em unidades do canvas). */
+  readonly containerId: string | null;
   readonly annotationId: string;
-  /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem). */
+  /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem ou unidades do canvas). */
   readonly root: FrameNode;
   readonly warnings: readonly string[];
   /** Não cabe: aviso "conteúdo maior que a caixa" do motor ou filha fora da caixa do slot. */
@@ -47,7 +48,7 @@ export type DrawingCache = (
 
 interface Entry {
   readonly markingId: string;
-  readonly containerId: string;
+  readonly containerId: string | null;
   readonly annotationId: string;
   readonly rect: Rect;
   readonly component: ComponentFile;
@@ -68,10 +69,26 @@ function sameRects(a: readonly Rect[], b: readonly Rect[]): boolean {
   return a.length === b.length && a.every((r, i) => sameRect(r, b[i] as Rect));
 }
 
+/** Mesmo valor; as linhas de uma tabela (listas recriadas a cada leitura) comparam célula a célula. */
+function sameFieldValue(a: FieldValues[string], b: FieldValues[string]): boolean {
+  if (Object.is(a, b)) return true;
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  return a.every((row, i) => {
+    const other = b[i];
+    if (row === other) return true;
+    if (other === undefined) return false;
+    const keys = Object.keys(row);
+    return (
+      keys.length === Object.keys(other).length &&
+      keys.every((key) => key in other && Object.is(row[key], other[key]))
+    );
+  });
+}
+
 function shallowEqual(a: FieldValues, b: FieldValues): boolean {
   const keysA = Object.keys(a);
   if (keysA.length !== Object.keys(b).length) return false;
-  return keysA.every((key) => key in b && Object.is(a[key], b[key]));
+  return keysA.every((key) => key in b && sameFieldValue(a[key], b[key]));
 }
 
 /** Alguma filha com o retângulo fora da caixa do slot (com a tolerância do arredondamento). */
@@ -90,7 +107,7 @@ function childOutsideSlot(root: FrameNode, childRects: readonly Rect[]): boolean
 function draw(
   mc: MarkingComponent,
   markingId: string,
-  containerId: string,
+  containerId: string | null,
   rect: Rect,
   values: FieldValues,
   valueWarnings: readonly string[],
@@ -106,7 +123,7 @@ function draw(
     (childRects.length > 0 && childOutsideSlot(root, childRects));
   return {
     markingId,
-    containerId: containerId,
+    containerId,
     annotationId: mc.annotation.id,
     root,
     warnings: [...warnings, ...valueWarnings],

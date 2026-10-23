@@ -1,8 +1,9 @@
-# Formato do `mapping.json` (schema v12)
+# Formato do `mapping.json` (schema v13)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
-**pixels inteiros da imagem original** do container (`containers[].file`, com a orientação EXIF já aplicada).
+**pixels inteiros da imagem original** do container (`containers[].file`, com a orientação EXIF já aplicada), com uma exceção
+desde a v13: a **marcação do canvas** (`containerId` nulo), cujo `rect` é em unidades do canvas (ver "Campos da v13 (pertencimento)").
 
 ```
 meu-projeto/
@@ -32,7 +33,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 12,
+  "schemaVersion": 13,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -48,6 +49,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "width": 1182,
       "height": 2560,
       "placement": { "x": 0, "y": 0, "scale": 0.4 },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -63,6 +65,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "rect": { "x": 10, "y": 20, "width": 300, "height": 80 },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": { "system": "figma", "id": "12:34", "url": null }
     }
   ],
@@ -72,7 +75,6 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "markingId": "M1",
       "layerId": "L1",
       "name": "Button",
-      "inherit": false,
       "parentAnnotationId": null,
       "type": null,
       "values": null,
@@ -92,7 +94,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                    |
 | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| `schemaVersion`    | `12`    | Versão do schema.                                                            |
+| `schemaVersion`    | `13`    | Versão do schema.                                                            |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                      |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).           |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.      |
@@ -101,7 +103,8 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 | `platformRepos`    | objeto  | Clone local de cada plataforma (v7; só `localPath` desde a v11, ver abaixo). |
 | `layers`           | array   | Camadas, **globais** (valem para todos os containers), na ordem de exibição. |
 | `containers`       | array   | Containers do projeto (v12; antes `images`).                                 |
-| `markings`         | array   | Marcações retangulares.                                                      |
+| `markings`         | array   | Marcações retangulares (de um container ou do canvas, v13).                  |
+| `arrows`           | array   | Setas (v13): marcações que apontam, ligam duas marcações.                    |
 | `annotations`      | array   | Anotações (livres ou tipadas).                                               |
 
 **`layers[]`**: `id`; `name` (não vazio); `color`; `spec` (`null` ou `{ specId, layerId }`).
@@ -109,15 +112,22 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 **`containers[]`** (v12; até a v11 a coleção se chamava `images`): `id`; `name` (`string` ou `null`); `file` (caminho relativo, ex: `images/home.webp`, único
 no projeto; `null` no container sem arquivo, v10: ver abaixo); `width` e `height` (pixels inteiros, com a orientação EXIF já aplicada);
 `placement` (`{ x, y, scale }` — posição e escala da imagem no canvas, só para a interface);
+`parentId` (v13: `null` ou a marcação do canvas que envolve o container, calculado pela app; ver abaixo);
 `markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo); `source` (`null` ou origem, v8:
 ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo do container sem arquivo).
 
-**`markings[]`**: `id`; `containerId` (v12; antes `imageId`); `parentId` (marcação-pai ou `null`); `name` (`string` ou `null`);
-`rect` (`{ x, y, width, height }`, **inteiros em pixels da imagem original**, `x`/`y` ≥ 0);
-`needsReview` (booleano, só para a interface); `locked` (booleano, v5: ver abaixo); `source` (`null`
-ou origem, v8: ver abaixo).
+**`markings[]`**: `id`; `containerId` (v12; antes `imageId`; `null` na marcação do canvas, v13); `parentId` (marcação-pai ou `null`,
+calculado pela app desde a v13); `name` (`string` ou `null`);
+`rect` (`{ x, y, width, height }`, **inteiros em pixels da imagem original** do container, `x`/`y` ≥ 0; na marcação do canvas,
+**inteiros em unidades do canvas**, `x`/`y` podem ser negativos);
+`needsReview` (booleano, só para a interface); `locked` (booleano, v5: ver abaixo); `floating` (booleano, v13: ver abaixo);
+`source` (`null` ou origem, v8: ver abaixo).
 
-**`annotations[]`**: `id`; `markingId`; `layerId`; `name` (`string` ou `null`); `inherit`;
+**`arrows[]`** (v13): `id` (no mesmo espaço dos ids das marcações); `from` e `to` (ids de marcações, diferentes); `fromSide` e `toSide`
+(`top`, `right`, `bottom`, `left` ou `null`); `points` (pontos de passagem da rota); `style` (`straight`, `curve` ou `elbow`);
+`name` (`string` ou `null`); `locked` (booleano). Ver "Campos da v13 (setas)".
+
+**`annotations[]`**: `id`; `markingId` (o id de uma marcação **ou de uma seta**, v13); `layerId`; `name` (`string` ou `null`);
 `parentAnnotationId`; `type`, `values` e `entries` (ver v4). Livre: `type` e `values` são `null`.
 Tipada: os dois preenchidos e `entries` vazio.
 
@@ -129,12 +139,16 @@ arquivo ao ler.
 
 - Ids únicos em cada coleção; `file` único entre as imagens que têm arquivo; `file` das especializações único.
 - Container (v12): `file` é `null` se, e somente se, `background` é uma cor (`container-content`).
-- Toda marcação aponta para um container existente; `parentId`, se houver, é uma marcação existente.
-- `rect`: inteiros, largura e altura **≥ 8 px**, e **inteiramente dentro** da imagem (`0 ≤ x`,
-  `x + width ≤ width da imagem`; idem para `y`).
-- A marcação-pai está **na mesma imagem** e **contém** o `rect` da filha. Não há ciclos.
+- Toda marcação tem `containerId` nulo (marcação do canvas, v13) ou de um container existente; `parentId`, se houver, é uma marcação existente.
+- `rect`: inteiros, largura e altura **≥ 8 px**; na marcação de container, **inteiramente dentro** da imagem (`0 ≤ x`,
+  `x + width ≤ width da imagem`; idem para `y`); na marcação do canvas, sem limite de posição.
+- A marcação-pai está **no mesmo espaço** (o mesmo container, ou o canvas) e **contém** o `rect` da filha. Não há ciclos.
+- Pertencimento (v13): ver "Campos da v13 (pertencimento)"; o `parentId` do container e a marcação flutuante têm regras próprias.
 - As imagens **não se sobrepõem** no canvas (`placement` × tamanho × escala).
-- Toda anotação aponta para uma marcação e uma camada existentes.
+- Toda anotação aponta para uma marcação (ou uma seta, v13) e uma camada existentes.
+- Seta (v13): `from` e `to` são marcações existentes (nem outra seta, nem um container) e diferentes
+  (`arrow-endpoint-missing`, `arrow-self`); o id dela não repete o de uma marcação nem o de outra seta
+  (`duplicate-id`). Nada mais é invariante: duas setas iguais são permitidas.
 - Pares (`entries`): chave não vazia (após `trim`) e única dentro da anotação; ids de par únicos no projeto.
 - Linhas de `table`: `_id` único dentro da lista.
 - `source` (v8): `null` ou `{ system, id, url }`, com `system` e `id` textos não vazios e `url` texto ou
@@ -156,14 +170,17 @@ mostra a **lista exata** dos problemas (regra, tipo do item, id e nome), com **C
 Quando todos os problemas têm reparo mecânico e inequívoco (`repairProject` em `src/model/repair.ts`), o
 diálogo oferece **Reparar e abrir**:
 
-| Problema                                                   | Reparo                                                                     |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Par com `id` já usado (em outra anotação ou na mesma)      | O primeiro fica com o id; os outros ganham um id novo.                     |
-| `rect` fora da imagem                                      | Recortado aos limites da imagem; se não sobra área, a marcação é removida. |
-| Marcação de imagem inexistente                             | Removida.                                                                  |
-| Anotação de marcação ou camada inexistente                 | Removida, com as anotações que ela possui (`parentAnnotationId`).          |
-| `parentId` inexistente ou ciclo na hierarquia de marcações | A marcação (no ciclo, cada uma do ciclo) vira raiz da imagem.              |
-| Imagens sobrepostas                                        | A de maior índice vai para a direita da caixa das anteriores.              |
+| Problema                                                                                               | Reparo                                                                     |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Par com `id` já usado (em outra anotação ou na mesma)                                                  | O primeiro fica com o id; os outros ganham um id novo.                     |
+| `rect` fora da imagem                                                                                  | Recortado aos limites da imagem; se não sobra área, a marcação é removida. |
+| Marcação de imagem inexistente                                                                         | Removida.                                                                  |
+| Seta com ponta inexistente (ou que é outra seta) ou ligada a ela mesma (v13)                           | Removida, com as anotações dela (na rodada seguinte).                      |
+| Anotação de marcação ou camada inexistente                                                             | Removida, com as anotações que ela possui (`parentAnnotationId`).          |
+| `parentId` inexistente ou ciclo na hierarquia de marcações                                             | A marcação (no ciclo, cada uma do ciclo) vira raiz do espaço dela.         |
+| Marcação flutuante dentro de um container ou com pai (v13)                                             | Vai para o canvas, com o `rect` convertido, e fica sem pai.                |
+| Pai de marcação flutuante; pai de container inexistente, que não é do canvas ou que não o contém (v13) | O `parentId` vira `null`.                                                  |
+| Imagens sobrepostas                                                                                    | A de maior índice vai para a direita da caixa das anteriores.              |
 
 Um reparo pode expor outro (a marcação removida deixa as anotações dela sem marcação e os filhos sem pai):
 cada rodada resolve o que a anterior expôs. Qualquer outro problema (id repetido de imagem, marcação,
@@ -182,19 +199,20 @@ continua recusando o arquivo (ler nunca grava), com a mesma lista de problemas n
 Datas (`createdAt`, `updatedAt`) com fuso (`2026-10-01T09:30:00-03:00`, de outra ferramenta) são aceitas
 e gravadas em UTC (`2026-10-01T12:30:00.000Z`).
 
-## Campos da v2 e v3
+## Campos da v2 e v3 (registro histórico)
+
+O campo `annotations[].inherit` (v2) saiu na v13 (ver "Campos da v13"); abaixo, o que a v2 e a v3 introduziram.
 
 - `containers[].name`: rótulo opcional (`null` = use o nome do arquivo). Mudá-lo não renomeia o arquivo.
 - `containers[].markingColor` (v3): cor `#RRGGBB` da borda das marcações da imagem, ou `null` (cor neutra do tema). Só afeta a interface, não o recorte.
-- `annotations[].inherit`: se `true`, a anotação também vale para **todos os descendentes** da marcação.
+- `annotations[].inherit` (v2, **removido na v13**): marcava a anotação como válida para os descendentes da marcação.
 - `annotations[].parentAnnotationId`: anotação "dona" (ou `null`).
   - a dona está na **mesma marcação** e em **outra camada**;
   - não há ciclos (a cadeia pode atravessar várias camadas).
 - `placement` e `needsReview` só importam para a interface; `placement` não afeta o recorte.
 
-A herança **não é materializada** no JSON: é sempre calculada a partir de `parentId` e `inherit`.
-Herança e vínculo são independentes: se a dona tem `inherit: true`, suas vinculadas só descem
-para as marcações filhas se também tiverem `inherit: true`.
+Uma anotação vale só para a própria marcação; o contexto de uma marcação filha vem do caminho (`parentId`),
+não de anotações herdadas.
 
 ## Campos da v4 (especializações)
 
@@ -237,7 +255,6 @@ Anotação tipada (Classe da especialização `modelo-dados`):
   "markingId": "M-form",
   "layerId": "L3",
   "name": null,
-  "inherit": false,
   "parentAnnotationId": null,
   "type": { "specId": "modelo-dados", "typeId": "classe" },
   "values": {
@@ -380,18 +397,66 @@ novo de uma ferramenta de design) e proponha só o que mudou.
   devolve todas as imagens e marcações com a mesma origem, imagens primeiro.
 - Quem atribui a origem é quem importa (um agente, por uma proposta); a app a mostra e a preserva.
 
+Em código TypeScript, `src/model/` oferece `resolveRef`, `refLabel`, `findRefTargets` (alvos aceitos
+por um campo) e `getBacklinks` (quem aponta para uma anotação).
+
+### Pendências
+
+O estado "incompleta" **não é gravado**: é calculado a partir do projeto e das cópias em `specs/`
+(`getAnnotationIssues` em `src/model/`). Motivos: campo obrigatório vazio (inclusive coluna
+obrigatória numa linha), valor incompatível com o tipo, opção inexistente, chave fora do tipo,
+tipo inexistente, anotação fora da camada do seu tipo, dono ausente (`requiresOwner`), dono de
+tipo não permitido (`allowedChildren`), referência quebrada e alvo não aceito. Nenhum deles impede a
+abertura do projeto.
+
+## Campos da v7 (repositórios por plataforma)
+
+> **Histórico:** na v11 o `urlTemplate` saiu do projeto: o endereço do repositório passou para a
+> especialização e o projeto guarda só o `localPath`. Ver "Campos da v11".
+
+A v7 ligou o mapeamento ao código das plataformas que as especializações declaram
+([`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas e code"): a especialização diz como se cria uma
+instância de cada tipo (`code`, com o `symbol` e o arquivo que o define, `path`) e o projeto guardava
+**onde ficava o repositório** de cada plataforma (`platformRepos`), com um `urlTemplate` e um `localPath`.
+Até a v8 havia também o campo `codeRef` (o lugar da solução em que a instância foi escrita), que saiu
+na v9 (ver "Campos da v9").
+
+## Campos da v8 (origem externa)
+
+`containers[].source` e `markings[].source` guardam a **identidade do item num sistema externo**, para que
+uma reexportação reconheça os mesmos elementos (ex: o mesmo container ou o mesmo componente exportados de
+novo de uma ferramenta de design) e proponha só o que mudou.
+
+```json
+"source": { "system": "figma", "id": "12:34", "url": "https://www.figma.com/design/abc?node-id=12-34" }
+```
+
+| Campo    | Tipo             | Descrição                                                              |
+| -------- | ---------------- | ---------------------------------------------------------------------- |
+| `system` | string           | Sistema de origem (texto livre, não vazio). O núcleo não o interpreta. |
+| `id`     | string           | Id do elemento no sistema de origem (não vazio).                       |
+| `url`    | string ou `null` | Endereço do elemento na origem, se houver.                             |
+
+- `null` = item sem origem (criado à mão). A origem não muda o significado dos dados nem a trava.
+- O formato não exige origens únicas: a busca (`findBySource(project, system, id)` em `src/model/`)
+  devolve todas as imagens e marcações com a mesma origem, imagens primeiro.
+- Quem atribui a origem é quem importa (um agente, por uma proposta); a app a mostra e a preserva.
+
 ## Como um agente lê o `mapping.json`
 
 1. **Recorte da marcação**: `rect` em pixels da imagem em `containers[].file` (orientação EXIF aplicada).
+   A marcação do canvas (`containerId` nulo) não tem recorte: o `rect` dela é em unidades do canvas.
+   **Pertencimento**: quem está dentro de quem já vem gravado em `parentId` (da marcação e do container).
+   Agrupe por `parentId`; **não calcule interseções nem escolha pai por geometria**, e não grave `parentId`
+   à mão: a app o recalcula a partir dos retângulos (ver "Campos da v13 (pertencimento)").
 2. **Anotações próprias**: `annotations` com o `markingId` da marcação, agrupadas por `layerId`.
-3. **Herdadas**: subir por `parentId` e pegar as anotações dos ancestrais com `inherit: true`.
-4. **Estrutura**: anotações com `parentAnnotationId` formam uma árvore; o nome da camada da
+3. **Estrutura**: anotações com `parentAnnotationId` formam uma árvore; o nome da camada da
    vinculada é o nome da propriedade na dona. Ex.: `Button.Eventos = [onClick, onLongPress]`.
-5. **Significado**: numa anotação tipada, leia o tipo em `specs/<arquivo>.json` (camada
+4. **Significado**: numa anotação tipada, leia o tipo em `specs/<arquivo>.json` (camada
    `layers[].id == layer.spec.layerId`, tipo `annotationTypes[].id == type.typeId`). Os campos
    (`fields`) dizem o `label`, o tipo e a descrição de cada chave de `values`.
-6. **Referências**: campos `ref` em `values` apontam para outras anotações (ver acima).
-7. **Código de instanciação**: o `code` do tipo diz como se cria uma instância dele em cada plataforma
+5. **Referências**: campos `ref` em `values` apontam para outras anotações (ver acima).
+6. **Código de instanciação**: o `code` do tipo diz como se cria uma instância dele em cada plataforma
    (`symbol` é o que se chama, `path` é o arquivo que o define, `params`, `values` e `notes` dizem como
    passar os campos; [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Plataformas e code"). O arquivo de cada `symbol`
    está no `repo` da plataforma, **na especialização do tipo**: monte a URL com o `urlTemplate` do `repo`
@@ -402,8 +467,7 @@ novo de uma ferramenta de design) e proponha só o que mudou.
    `Button.kt` não) ou cujo `symbol` é igual, e depois as anotações desses tipos. O mapeamento não guarda
    nada sobre a solução.
 
-Em código TypeScript, `src/model/` oferece `getInheritedAnnotations(project, markingId)`,
-`getLinkedAnnotations(project, annotationId)` e, para o código, `codeLink`, `codeLocalPath`,
+Em código TypeScript, `src/model/` oferece `getLinkedAnnotations(project, annotationId)` e, para o código, `codeLink`, `codeLocalPath`,
 `findByCode` e `codeBlueprint`.
 
 ## Campos da v9 (sem o campo de código)
@@ -553,12 +617,194 @@ com ou sem arquivo de imagem). Só o vocabulário do `mapping.json` muda; os dad
   migração, o original vai para `backups/mapping.v11.<AAAAMMDD-HHMMSS>.json` antes do primeiro salvamento
   (no modo pasta) e a faixa da migração aparece no topo.
 
-| Versão | O que mudou                                                      |
-| ------ | ---------------------------------------------------------------- |
-| v9     | Sem o campo de código (`codeRef`)                                |
-| v10    | Container sem arquivo (`file: null`, `background`)               |
-| v11    | `platformRepos` guarda só o `localPath`                          |
-| v12    | `images` → `containers`, `imageId` → `containerId` (só os nomes) |
+| Versão | O que mudou                                                                                                                                                |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v9     | Sem o campo de código (`codeRef`)                                                                                                                          |
+| v10    | Container sem arquivo (`file: null`, `background`)                                                                                                         |
+| v11    | `platformRepos` guarda só o `localPath`                                                                                                                    |
+| v12    | `images` → `containers`, `imageId` → `containerId` (só os nomes)                                                                                           |
+| v13    | Sem herança de anotações (`annotations[].inherit` saiu); marcação do canvas (`containerId` nulo), `floating`, `containers[].parentId` e a coleção `arrows` |
+
+## Campos da v13 (sem herança)
+
+A v13 tira do formato a herança de anotações: o campo `annotations[].inherit` ("a anotação vale para todos os
+descendentes da marcação") não existe mais. Uma anotação vale **só para a própria marcação**. O que fica:
+
+- O vínculo entre anotações (`parentAnnotationId`, `allowedChildren`, `requiresOwner`): é relação de dados na
+  mesma marcação.
+- A herança da **trava** (`lock.inherited`: a trava de um pai alcança os descendentes), que é outra coisa.
+- **Migração v12 → v13**: ao abrir, a app apaga `inherit` de cada anotação e muda `schemaVersion` para 13.
+  Nenhuma anotação é perdida; só deixa de valer para as marcações filhas. Como toda migração, o original vai
+  para `backups/mapping.v12.<AAAAMMDD-HHMMSS>.json` antes do primeiro salvamento (no modo pasta) e a faixa da
+  migração aparece no topo.
+- O **Diagnóstico** registra quais anotações tinham a herança ligada (quantas e em que marcações), para quem
+  quiser repetir a informação à mão (por exemplo, copiando a anotação para as filhas).
+- A mesma v13 traz também o pertencimento por geometria (a seção seguinte) e será estendida pelas fases
+  seguintes da etapa.
+
+## Campos da v13 (pertencimento)
+
+A v13 acrescenta ao formato a **marcação do canvas** e o **pertencimento por geometria**: quem contém quem é
+decidido pela ferramenta, a partir dos retângulos, e gravado no JSON. Quem lê o arquivo agrupa por
+`parentId`; nunca calcula interseção nem escolhe o pai.
+
+**Campos novos**
+
+| Onde           | Campo         | Tipo             | Descrição                                                                                                                          |
+| -------------- | ------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `markings[]`   | `containerId` | string ou `null` | `null` = **marcação do canvas**: não pertence a nenhum container e envolve containers e outras marcações do canvas.                |
+| `markings[]`   | `floating`    | booleano         | Marcação **flutuante** (uma nota solta sobre telas): vive no canvas, fica por cima de tudo e está fora da árvore de pertencimento. |
+| `containers[]` | `parentId`    | string ou `null` | A marcação do canvas que envolve o container (ver as regras abaixo), ou `null`. Calculado pela app.                                |
+
+- **Espaço da marcação.** A marcação de container (`containerId` preenchido) tem `rect` em **pixels da imagem
+  original** do container, dentro da imagem, como sempre. A marcação do canvas (`containerId: null`) tem `rect`
+  em **unidades do canvas** (as mesmas do `placement` dos containers), inteiros, com `x` e `y` possivelmente
+  **negativos** e sem limite de tamanho. O `coordinateSystem` do arquivo continua `image-pixels-exif-oriented`:
+  a marcação do canvas é a **exceção**, e o recorte da imagem não se aplica a ela.
+- **`floating`.** A marcação flutuante tem sempre `containerId: null` e `parentId: null`, e nenhuma outra marcação
+  ou container tem uma flutuante como pai. Ela pode ficar por cima de uma tela sem virar filha dela.
+- **`parentId` é derivado.** Nenhuma pessoa nem agente o escolhe: a app o recalcula ao fim de toda operação
+  que mexe na geometria (desenhar, mover, redimensionar, mover ou redimensionar a imagem, excluir, aplicar uma
+  proposta). Ler o arquivo, migrar e abrir **não** o recalculam.
+- **Membros não são gravados.** Os membros de uma marcação são as marcações e os containers cujo `parentId` é o
+  `id` dela; derive-os agrupando por `parentId`. Não existe lista de filhos no JSON.
+
+**Regras de contenção** (todas sobre os retângulos gravados, em um espaço de cada vez)
+
+1. **Dentro = totalmente contido.** Um retângulo está dentro de outro quando está inteiro nele (borda
+   encostando conta). Sobreposição parcial não é relação nenhuma; não há tolerância no formato (a interação
+   da app tem, ver `docs/ARCHITECTURE.md`).
+2. **Pai da marcação** = a **menor** marcação do **mesmo espaço** (o mesmo container, ou o canvas) que a
+   contém. Empate de área: a que vem **antes no array `markings`** é a de fora (o pai). Duas marcações iguais,
+   portanto, formam uma cadeia pela ordem do array.
+3. **Pai do container** = a **menor** marcação do **canvas** (não flutuante) que contém o retângulo dele no
+   canvas (`placement` × tamanho × escala; como esse retângulo pode ser decimal, a comparação tem uma folga ínfima de arredondamento). Container dentro de container não existe.
+4. **Troca de espaço.** Uma marcação de container cujo retângulo, no canvas, deixa de caber no container passa
+   a marcação do canvas (e o contrário, ao caber inteira num container): o `containerId` muda e o `rect` é
+   convertido de um espaço para o outro, sem mudar o tamanho que a pessoa vê. As descendentes dela vão junto.
+5. **Flutuantes fora da árvore.** A flutuante nunca é pai nem filha, de marcação ou de container.
+6. Uma marcação tem **um pai só**; grupos que se cruzam sem conter um ao outro não geram relação.
+
+**Invariantes novas** (viram erros da abertura, ver "Regras de validade"; os códigos aparecem na lista de
+problemas): `container-parent-missing` (pai de container inexistente), `container-parent-not-canvas` (o pai
+do container não é uma marcação do canvas, ou é flutuante), `container-outside-parent` (o pai do container
+não o contém), `floating-in-container` (flutuante com container ou pai) e `parent-floating` (pai flutuante).
+As antigas continuam, agora por espaço: `parent-other-image` (pai em outro espaço) e `rect-outside-parent`.
+O arquivo é validado só pela **consistência** do `parentId` declarado (existe, é do espaço certo e contém); a
+escolha da menor marcação não é invariante, e é a app quem a refaz na próxima operação de geometria.
+
+**Reparo** (`Reparar e abrir`): uma flutuante dentro de um container vai para o canvas com o `rect`
+convertido; um pai de marcação flutuante, ou um pai de container inexistente, que não seja do canvas ou que
+não o contenha, vira `null`. O que o reparo não resolve continua recusando o arquivo.
+
+**Migração v12 → v13 e v13 da ME0.** A migração acrescenta `floating: false` a cada marcação e
+`parentId: null` a cada container (além de apagar `inherit`). Ela **não assenta**: os `parentId` de
+marcação ficam como estavam e os de container ficam `null` até a primeira operação de geometria. Um
+`mapping.json` v13 gravado antes dos campos novos (sem `floating` nem `containers[].parentId`) abre sem
+migração, com esses padrões. Todo projeto v12 tem marcações só em containers, então nenhuma marcação do canvas
+nasce na migração.
+
+**Ordem das chaves na gravação:** `parentId` vem depois de `placement` no container; `floating` vem depois de
+`locked` na marcação; `arrows` vem entre `markings` e `annotations`.
+
+**De onde vem o `floating`: a biblioteca de notas.** A marcação flutuante nasce de um tipo de anotação com
+`floating: true` (especialização `formatVersion` 7, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Tipo flutuante"):
+ao adicionar uma instância do tipo, a app grava a marcação com `containerId: null`, `parentId: null` e
+`floating: true`, no canvas. A app traz uma biblioteca assim embutida, a de **notas** (`libraries/notas/`, id
+`notas`, versão 2: camada "Notas", tipo `nota` com os campos `titulo` e `texto` e tipo `tabela` com `titulo` e `linhas`, uma lista de chave e valor desenhada por um `repeat`), e a **aplica por padrão**:
+
+- projeto **novo** (pasta ou neste dispositivo) nasce com ela, com a cópia em `specs/notas/` e a entrada em
+  `specializations[]`;
+- projeto aberto de um schema **anterior ao 13** ganha a biblioteca ao abrir, em memória e sem entrada de
+  desfazer; `specs/notas/` é gravada junto com o backup da migração, na primeira gravação;
+- projeto **já v13** sem ela (removida pela pessoa, ou criado sem) fica como está.
+
+Ela se remove como qualquer especialização (**Especializações › Remover**, apagando ou convertendo as notas) e
+não volta ao reabrir o projeto. Remover (apagando ou convertendo) não apaga marcações: a marcação flutuante da nota fica no canvas, sem anotação. Quem lê o arquivo não precisa saber disso: a nota é uma anotação tipada
+(`specId` `notas`, `typeId` `nota`) numa marcação com `floating: true`.
+
+## Campos da v13 (setas)
+
+A v13 traz a **seta**: uma marcação que **aponta**. Em vez de cobrir uma área, liga duas marcações e descreve a
+relação entre elas (um deep link, um evento disparado). O traço é do mundo visual; a relação e os dados dela são
+da marcação, então a seta **pode ter anotações por camada**, como qualquer marcação, e pode existir sem nenhuma.
+Ela fica numa coleção própria, `arrows`, entre `markings` e `annotations`.
+
+```json
+{
+  "id": "5d1c…",
+  "from": "3f2a…",
+  "to": "9b7e…",
+  "fromSide": null,
+  "toSide": "left",
+  "points": [{ "x": 480, "y": 120 }],
+  "style": "curve",
+  "name": "abre o perfil",
+  "locked": false
+}
+```
+
+| Campo      | Tipo                | Descrição                                                                                                                                                     |
+| ---------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | string              | Único **entre as marcações e as setas**: o `markingId` de uma anotação aponta para qualquer das duas.                                                         |
+| `from`     | string              | Marcação de origem. Nunca outra seta nem um container (para apontar para uma tela, aponte para uma marcação dela).                                            |
+| `to`       | string              | Marcação de destino, diferente de `from`.                                                                                                                     |
+| `fromSide` | lado ou `null`      | `top`, `right`, `bottom` ou `left`: o lado da origem onde a seta se prende. `null` = automático (o lado voltado para o ponto seguinte).                       |
+| `toSide`   | lado ou `null`      | O mesmo, no destino.                                                                                                                                          |
+| `points`   | array de `{ x, y }` | Pontos de passagem, **só da pessoa** (nenhum agente nem proposta os escreve). `[]` = a rota padrão, de lado a lado. Espaço derivado das duas pontas (abaixo). |
+| `style`    | string              | `straight` (reta), `curve` (curva, o padrão) ou `elbow` (canto). Reta e curva usam os mesmos pontos; a curva é só a suavização do desenho.                    |
+| `name`     | string ou `null`    | Rótulo sobre a seta, opcional, como o nome de uma marcação.                                                                                                   |
+| `locked`   | booleano            | Trancada: a rota, as pontas, os lados e o estilo não mudam. Selecionar, renomear e anotar seguem livres. A trava é **só da seta**: não vem das pontas.        |
+
+Os campos `fromSide`, `toSide`, `points`, `style`, `name` e `locked` podem faltar no arquivo escrito à mão: entram com
+`null`, `[]`, `curve`, `null` e `false`, e a próxima gravação os traz.
+
+**O espaço dos `points` não é gravado: deriva das duas pontas.**
+
+- As duas marcações do **mesmo container** (`containerId` igual e não nulo): os `points` estão em **pixels do container**.
+  A rota acompanha o container movido ou redimensionado no canvas sem recálculo, e sobrevive à troca de imagem de
+  mesma resolução (se a resolução muda, os pontos são reescalados junto com as marcações).
+- Em **qualquer outro caso** (containers diferentes, uma ponta do canvas ou flutuante): os `points` estão em
+  **unidades do canvas**.
+- Se uma ponta **muda de espaço** (a marcação é solta fora do container, entra em outro, vira flutuante, ou a
+  proposta aplicada a move), os `points` são **apagados** e a seta volta à rota padrão. Mover uma ponta dentro do
+  espaço dela deixa a rota parada: só o primeiro e o último trecho esticam.
+
+**Âncoras.** Cada ponta prende no **ponto médio** de um lado da marcação (`fromSide`/`toSide`); com o lado `null`, o
+lado é o da caixa voltado para o ponto seguinte (o primeiro ponto de passagem, ou o centro da outra ponta; na chegada,
+o último ponto de passagem ou o centro da origem), escolhido pelo eixo dominante do vetor do centro ao alvo (empate:
+horizontal). A rota desenhada é âncora de saída, pontos de passagem e âncora de chegada, em unidades do canvas.
+
+**Os `points` no canto (`elbow`).** O traço do canto só tem trechos horizontais e verticais, sai perpendicular ao
+lado da origem e chega perpendicular ao lado do destino (sem desvio de obstáculos). Ali **cada ponto de `points`
+fixa um segmento do meio** do traço, na ordem do traço, e só conta a coordenada perpendicular ao segmento (o `x` de
+um segmento vertical, o `y` de um horizontal; a outra é ignorada, e a app grava nela o meio do segmento). Mover uma
+marcação estica só o primeiro e o último segmento; os do meio ficam parados. Os `points` só valem se a quantidade
+casa com os lados: ímpar quando o primeiro e o último segmento são paralelos (os dois horizontais ou os dois
+verticais), par quando são perpendiculares; do contrário, e com `points` vazio, vale a rota padrão (a mais curta, com
+um trecho mínimo de saída e de chegada), que segue as marcações. O lado automático do canto olha o centro da outra
+marcação, nunca os pontos. Arrastar um segmento do meio o move em paralelo (uma entrada no histórico) e clicar duas
+vezes nele volta à rota padrão.
+
+**Fora da árvore de pertencimento.** A seta não tem `rect`, container nem pai, não é pai nem filha, nenhum arrasto
+a carrega e `get_marking_image` não a recorta. O assentar só mexe nela para apagar os `points` de uma ponta que
+trocou de espaço.
+
+**Cascata.** Apagar uma marcação apaga as setas presas a ela (como origem ou destino) e as anotações dessas setas;
+apagar um container apaga as setas das marcações dele. A confirmação conta as setas, e as anotações delas entram na
+contagem de anotações. A trava de uma seta não impede apagar a marcação a que ela está presa.
+
+**Anotações na seta.** `annotations[].markingId` pode ser o id de uma seta; o vínculo entre anotações
+(`parentAnnotationId`) continua dentro da mesma dona. O `appliesTo` do tipo na especialização (`marking`, `arrow` ou
+ambos) diz onde cada tipo vale; ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md).
+
+**Invariantes novas:** `arrow-endpoint-missing` (a origem ou o destino não é uma marcação existente), `arrow-self`
+(origem igual ao destino) e o `duplicate-id` entre seta e marcação ou entre duas setas. A anotação de um id que não é
+marcação nem seta continua sendo `missing-marking`. **Reparo:** a seta com ponta inexistente ou ligada a ela mesma é
+removida, e as anotações dela saem na rodada seguinte; o id repetido não tem reparo mecânico (o arquivo é recusado).
+
+**Migração v12 → v13.** A migração grava `arrows: []` e **nunca cria uma seta**. Um `mapping.json` v13 gravado antes
+das setas (sem `arrows`) abre sem migração, com `[]`.
 
 ## Migração
 
@@ -570,7 +816,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Ao salvar, o
-arquivo passa a ser v12 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Ao salvar, o
+arquivo passa a ser v13 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

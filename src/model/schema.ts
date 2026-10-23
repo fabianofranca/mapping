@@ -9,7 +9,7 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v10. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json v13. Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
 // anotações tipadas são JSON livre aqui: a conferência contra o tipo vira pendência
 // (`issues.ts`).
@@ -26,9 +26,16 @@ export function normalizeIsoDate(value: string): string {
 /** Data ISO 8601, com `Z` ou com fuso (escrita por ferramenta externa); sai em UTC `Z`. */
 export const isoDateTime = z.iso.datetime({ offset: true }).transform(normalizeIsoDate);
 
+/**
+ * Retângulo de inteiros. `x` e `y` aceitam negativos porque a marcação do canvas (v13,
+ * `containerId` nulo) vive em unidades do canvas, onde não há borda. Quem é marcação de
+ * container continua dentro da imagem: o schema não sabe de qual espaço o retângulo é, então
+ * a recusa fica na invariante `rect-out-of-image` (que só vale com `containerId` não nulo, e
+ * tem reparo: o recorte).
+ */
 export const rectSchema = z.object({
-  x: z.number().int().min(0),
-  y: z.number().int().min(0),
+  x: z.number().int(),
+  y: z.number().int(),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
 });
@@ -60,6 +67,11 @@ export const containerSchema = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
   placement: placementSchema,
+  /**
+   * Marcação do canvas que contém o container (v13). Um `mapping.json` v13 gravado antes
+   * deste campo (preview da ME0) não o tem e abre sem migração, como `null`.
+   */
+  parentId: id.nullable().default(null),
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
   source: sourceSchema.nullable(),
@@ -68,13 +80,34 @@ export const containerSchema = z.object({
 
 export const markingSchema = z.object({
   id,
-  containerId: id,
+  /** `null` = marcação do canvas (v13): `rect` em unidades do canvas. */
+  containerId: id.nullable(),
   parentId: id.nullable(),
   name: z.string().nullable(),
   rect: rectSchema,
   needsReview: z.boolean(),
   locked: z.boolean(),
+  /** Flutuante (v13). Ausente num v13 anterior a este campo: `false`. */
+  floating: z.boolean().default(false),
   source: sourceSchema.nullable(),
+});
+
+const pointSchema = z.object({ x: finite, y: finite });
+
+/**
+ * Seta (v13, ME4). Os opcionais podem faltar no arquivo (escrito à mão ou por um v13 anterior
+ * às setas) e entram com o padrão.
+ */
+export const arrowSchema = z.object({
+  id,
+  from: id,
+  to: id,
+  fromSide: z.enum(['top', 'right', 'bottom', 'left']).nullable().default(null),
+  toSide: z.enum(['top', 'right', 'bottom', 'left']).nullable().default(null),
+  points: z.array(pointSchema).default([]),
+  style: z.enum(['straight', 'curve', 'elbow']).default('curve'),
+  name: z.string().nullable().default(null),
+  locked: z.boolean().default(false),
 });
 
 export const entrySchema = z.object({ id, key: z.string(), value: z.string() });
@@ -97,7 +130,6 @@ export const annotationSchema = z
     markingId: id,
     layerId: id,
     name: z.string().nullable(),
-    inherit: z.boolean(),
     parentAnnotationId: id.nullable(),
     type: z.object({ specId: id, typeId: id }).nullable(),
     values: z.record(z.string(), jsonValue).nullable(),
@@ -150,5 +182,7 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   layers: z.array(layerSchema),
   containers: z.array(containerSchema),
   markings: z.array(markingSchema),
+  /** Ausente num v13 anterior às setas (previews da ME0 a ME3): `[]`. */
+  arrows: z.array(arrowSchema).default([]),
   annotations: z.array(annotationSchema),
 });

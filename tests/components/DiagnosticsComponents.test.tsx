@@ -129,7 +129,8 @@ describe('Diagnóstico: Componentes', () => {
 
     await userEvent.click(
       view.getByRole('button', {
-        name: t('diagnostics.selectMarking', { name: t('marking.unnamed') }),
+        // Instância sem nome: o rótulo é o nome do tipo que ela desenha.
+        name: t('diagnostics.selectMarking', { name: 'Button' }),
       }),
     );
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id });

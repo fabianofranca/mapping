@@ -5,14 +5,12 @@ import {
   addAnnotation,
   annotationDeletionImpact,
   deserialize,
-  getInheritedAnnotations,
   getLinkedAnnotations,
   layerDeletionImpact,
   removeAnnotation,
   removeLayer,
   renameContainer,
   serialize,
-  setAnnotationInherit,
   setAnnotationParent,
   validAnnotationOwners,
   validateProject,
@@ -37,47 +35,46 @@ function load(text: string): Project {
 }
 
 describe('migração v1 → v2', () => {
-  it('abre um v1 real como v12 sem perder nada', () => {
+  it('abre um v1 real como v13 sem perder nada', () => {
     const result = deserialize(v1Text);
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(12);
+    expect(p.schemaVersion).toBe(13);
     expect(p.containers.every((i) => i.name === null)).toBe(true);
-    expect(p.annotations.every((a) => !a.inherit && a.parentAnnotationId === null)).toBe(
-      true,
-    );
+    expect(p.annotations.every((a) => a.parentAnnotationId === null)).toBe(true);
     // Os dados originais continuam idênticos.
     // O v1 usa `images` e `imageId`; o projeto de hoje, `containers` e `containerId`.
     const original = JSON.parse(v1Text) as Record<string, unknown>;
     expect(p.layers.map((l) => omit(l, ['spec']))).toEqual(original.layers);
     expect(
       p.markings.map((m) => {
-        const { containerId, ...rest } = omit(m, ['locked', 'source']) as Record<
-          string,
-          unknown
-        >;
+        const { containerId, ...rest } = omit(m, [
+          'locked',
+          'floating',
+          'source',
+        ]) as Record<string, unknown>;
         return { ...rest, imageId: containerId };
       }),
     ).toEqual(original.markings);
     expect(p.project).toEqual(original.project);
     expect(
       p.containers.map((i) =>
-        omit(i, ['name', 'markingColor', 'locked', 'source', 'background']),
+        omit(i, ['name', 'parentId', 'markingColor', 'locked', 'source', 'background']),
       ),
     ).toEqual(original.images);
     expect(
       p.annotations.map((a) => ({
-        ...omit(a, ['inherit', 'parentAnnotationId', 'type', 'values']),
+        ...omit(a, ['parentAnnotationId', 'type', 'values']),
         entries: a.entries.map((e) => omit(e, ['id'])),
       })),
     ).toEqual(original.annotations);
   });
 
-  it('salvar o v1 migrado gera v12 estável (round-trip)', () => {
+  it('salvar o v1 migrado gera v13 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(12);
+    expect(JSON.parse(saved).schemaVersion).toBe(13);
     expect(serialize(load(saved))).toBe(saved);
   });
 
@@ -91,6 +88,7 @@ describe('migração v1 → v2', () => {
       'width',
       'height',
       'placement',
+      'parentId',
       'markingColor',
       'locked',
       'source',
@@ -101,7 +99,6 @@ describe('migração v1 → v2', () => {
       'markingId',
       'layerId',
       'name',
-      'inherit',
       'parentAnnotationId',
       'type',
       'values',
@@ -133,39 +130,6 @@ function linked(): Project {
   return expectValid(p);
 }
 
-describe('herança', () => {
-  it('desce em cascata: Porta › Maçaneta › Fechadura', () => {
-    let p = sampleProject();
-    expect(getInheritedAnnotations(p, 'M3')).toEqual([]);
-    p = setAnnotationInherit(p, 'A1', true); // da Porta
-    p = addAnnotation(p, { id: 'A9', markingId: 'M2', layerId: 'L2' });
-    p = setAnnotationInherit(p, 'A9', true); // da Maçaneta
-    expect(getInheritedAnnotations(p, 'M1')).toEqual([]);
-    expect(getInheritedAnnotations(p, 'M2').map((a) => a.id)).toEqual(['A1']);
-    expect(getInheritedAnnotations(p, 'M3').map((a) => a.id)).toEqual(['A1', 'A9']);
-    // A2 (Porta) não tem inherit; outra imagem não herda nada.
-    expect(getInheritedAnnotations(p, 'M4')).toEqual([]);
-    expect(() => getInheritedAnnotations(p, 'nada')).toThrow(ModelError);
-  });
-
-  it('desligar remove a herança e não é materializada no JSON', () => {
-    let p = setAnnotationInherit(sampleProject(), 'A1', true);
-    expect(JSON.parse(serialize(p)).annotations).toHaveLength(4);
-    p = setAnnotationInherit(p, 'A1', false);
-    expect(getInheritedAnnotations(p, 'M2')).toEqual([]);
-  });
-
-  it('mudar o pai da marcação muda o que ela herda', () => {
-    let p = setAnnotationInherit(sampleProject(), 'A1', true);
-    expect(getInheritedAnnotations(p, 'M3').map((a) => a.id)).toEqual(['A1']);
-    p = {
-      ...p,
-      markings: p.markings.map((m) => (m.id === 'M3' ? { ...m, parentId: null } : m)),
-    };
-    expect(getInheritedAnnotations(p, 'M3')).toEqual([]);
-  });
-});
-
 describe('vínculos', () => {
   it('lista vinculadas diretas e em profundidade', () => {
     const p = linked();
@@ -175,12 +139,6 @@ describe('vínculos', () => {
       'P1',
     ]);
     expect(getLinkedAnnotations(p, 'P1')).toEqual([]);
-  });
-
-  it('herança e vínculo são independentes', () => {
-    let p = linked();
-    p = setAnnotationInherit(p, 'A1', true);
-    expect(getInheritedAnnotations(p, 'M2').map((a) => a.id)).toEqual(['A1']);
   });
 
   it('só oferece donas válidas (mesma marcação, outra camada, sem ciclo)', () => {

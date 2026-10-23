@@ -1,6 +1,6 @@
 // Entradas de um quadro do canvas e o estado de interação que a entrada de
 // ponteiro escreve e os renderers leem. Sem Konva: só tipos e funções puras.
-import type { Signal } from '@preact/signals';
+import { signal, type Signal } from '@preact/signals';
 import type {
   ComponentDrawings,
   Layer,
@@ -12,10 +12,11 @@ import type {
 } from '../model';
 import type { DisplayImage } from '../store/displayImages';
 import type { Locale } from '../store/settings';
-import type { EditorMode, Selection } from '../store/ui';
+import type { EditorMode, Selection, SelectionItem } from '../store/ui';
+import type { ArrowShape } from './arrowGeometry';
 import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
-import type { Size, Viewport } from './viewport';
+import type { Point, Size, Viewport } from './viewport';
 
 /** Posição exibida durante um gesto de imagem (segue o dedo, mesmo se inválida). */
 export interface ImagePreview {
@@ -25,7 +26,11 @@ export interface ImagePreview {
 }
 
 /** Alvo de um arrastar-e-soltar de arquivos: área vazia ou uma imagem (será trocada). */
-export type DropTarget = { readonly containerId: string | null } | null;
+export type DropTarget = {
+  readonly containerId: string | null;
+  /** Marcação (componente com slot) que receberia o item: acende o retângulo dela. */
+  readonly markingId?: string;
+} | null;
 
 /** Item trancado sob o mouse: recebe o emblema do cadeado enquanto o cursor está nele. */
 export interface HoverLock {
@@ -33,10 +38,23 @@ export interface HoverLock {
   readonly id: string;
 }
 
-/** Retângulo sendo desenhado (modo Desenhar), em pixels da imagem. */
+/**
+ * Retângulo sendo desenhado (modo Desenhar): em pixels do container, ou em unidades do canvas
+ * (`containerId` nulo) quando o desenho começou no vazio.
+ */
 export interface Draft {
-  readonly containerId: string;
+  readonly containerId: string | null;
   readonly rect: Rect;
+}
+
+/**
+ * Gesto de seta em andamento (ME4): a linha provisória (criar pela alça de ligação, ou arrastar uma
+ * ponta que ainda não está sobre uma marcação, em unidades do canvas) e a marcação que receberia a
+ * ponta se o ponteiro fosse solto agora (acende como o alvo de soltar).
+ */
+export interface ArrowDraft {
+  readonly line: { readonly from: Point; readonly to: Point } | null;
+  readonly target: string | null;
 }
 
 /** Estado passageiro dos gestos: escrito pela entrada, desenhado nas sobreposições. */
@@ -50,6 +68,31 @@ export interface InteractionState {
    * mouse está fora delas. Só é escrito quando muda e só enquanto há marcações desenhadas.
    */
   readonly hoverMarking: Signal<string | null>;
+  /**
+   * Container que fica com a marcação arrastada se ela fosse solta agora (a contém ou a recebe
+   * pelo encaixe), quando é outro que o de origem: acende como o alvo de soltar um arquivo.
+   */
+  readonly moveTarget: Signal<string | null>;
+  /**
+   * Itens que seriam absorvidos se o desenho ou o redimensionamento terminasse agora (acendem),
+   * em unidades do canvas. Escrito só quando muda.
+   */
+  readonly absorb: Signal<readonly Rect[]>;
+  /** Gesto de seta em andamento (criar ou trocar uma ponta); `null` fora dele. */
+  readonly arrowDraft: Signal<ArrowDraft | null>;
+}
+
+/** Sinais de interação vazios (o canvas e os testes montam o estado por aqui). */
+export function createInteractionState(): InteractionState {
+  return {
+    preview: signal<ImagePreview | null>(null),
+    draft: signal<Draft | null>(null),
+    hoverLock: signal<HoverLock | null>(null),
+    hoverMarking: signal<string | null>(null),
+    moveTarget: signal<string | null>(null),
+    absorb: signal<readonly Rect[]>([]),
+    arrowDraft: signal<ArrowDraft | null>(null),
+  };
 }
 
 /** Tudo o que um quadro desenha. Mudar qualquer item agenda um novo quadro. */
@@ -60,6 +103,8 @@ export interface Frame {
   readonly preview: ImagePreview | null;
   readonly draft: Draft | null;
   readonly dropTarget: DropTarget;
+  /** Itens que o desenho ou o redimensionamento em andamento absorveria (canvas). */
+  readonly absorb: readonly Rect[];
   readonly hoverLock: HoverLock | null;
   /** Marcação desenhada sob o mouse (a borda dela aparece); `null` se nenhuma. */
   readonly hoverMarking: string | null;
@@ -67,6 +112,13 @@ export interface Frame {
   readonly size: Size;
   readonly viewport: Viewport;
   readonly selection: Selection;
+  /**
+   * Todos os itens selecionados (seleção múltipla), o primário (`selection`) por último; vazio no
+   * Ver limpo, como a seleção. As alças, o cadeado e a etiqueta de nome são só do primário; os
+   * demais recebem o contorno de seleção secundário (`overlay.ts`). Mesmo objeto enquanto a
+   * seleção não muda: o quadro compara por referência.
+   */
+  readonly items: readonly SelectionItem[];
   readonly mode: EditorMode;
   readonly locale: Locale;
   readonly shown: readonly Layer[];
@@ -80,8 +132,17 @@ export interface Frame {
   readonly drawings: ComponentDrawings;
   /** Marcações cujo desenho está visível (têm borda só em hover e seleção, e sem cartão de texto). */
   readonly drawn: ReadonlySet<string>;
+  /** Marcações flutuantes do projeto à vista: o desenho delas fica acima de tudo. */
+  readonly floating: ReadonlySet<string>;
   /** Marcas da revisão de uma proposta (etapa 4); `null` fora da revisão. */
   readonly review: ReviewCanvas | null;
+  /**
+   * Setas desenhadas (v13): as do projeto desenhado com as duas pontas visíveis; vazio com
+   * "Mostrar setas" desligado e no Ver limpo. O mesmo array enquanto elas não mudam.
+   */
+  readonly arrows: readonly ArrowShape[];
+  /** Gesto de seta em andamento (linha provisória e marcação de destino). */
+  readonly arrowDraft: ArrowDraft | null;
 }
 
 /** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */
@@ -96,7 +157,9 @@ export function sameFrame(
 /** O que muda o desenho das imagens (o deslocamento do viewport não muda). */
 export const IMAGE_KEYS = ['project', 'bitmaps', 'preview', 'tokens', 'locale'] as const;
 /** O que muda a camada de componentes (as posições das imagens também, comparadas à parte). */
-export const COMPONENT_KEYS = ['drawings', 'drawn', 'tokens'] as const;
+export const COMPONENT_KEYS = ['drawings', 'drawn', 'floating', 'tokens'] as const;
+/** O que muda a camada das setas (o zoom, que muda a espessura, é comparado à parte). */
+export const ARROW_KEYS = ['arrows', 'tokens'] as const;
 /** O que muda as sobreposições (seleção, alças, rascunho, alvo de soltar). */
 export const OVERLAY_KEYS = [
   'project',
@@ -104,10 +167,14 @@ export const OVERLAY_KEYS = [
   'preview',
   'draft',
   'dropTarget',
+  'absorb',
   'hoverLock',
   'tokens',
   'selection',
+  'items',
   'mode',
+  'arrows',
+  'arrowDraft',
 ] as const;
 
 /** Parte do canvas visível na tela, em coordenadas do canvas. */

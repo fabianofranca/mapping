@@ -1,7 +1,14 @@
 import type { ProjectContainer } from '../model';
-import { resolveSelection, type AnnotationLocation, type Selection } from '../store/ui';
+import {
+  existingItems,
+  resolveSelection,
+  selectedItems,
+  type AnnotationLocation,
+} from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
+import { ArrowPanel } from '../ui/ArrowPanel';
 import { MarkingPanel } from '../ui/MarkingPanel';
+import { MultiSelectionPanel } from '../ui/MultiSelectionPanel';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import { ReviewPanel } from '../ui/review/ReviewPanel';
 import type { EditorDialogs } from './useEditorDialogs';
@@ -20,31 +27,35 @@ export function EditorPanel({
   onReplace,
   onGoToAnnotation,
 }: EditorPanelProps) {
-  const { store, ui, display, canvas, review } = useEditor();
+  const { store, ui, display, review } = useEditor();
   // O projeto à vista: fora da revisão, o confirmado (os campos do painel atualizam ao
   // soltar o gesto, não durante); na revisão, o que a visão Atual/Proposto mostra.
   const project = review.derived.shownProject.value;
   if (!project) return null;
-
-  const onSelectMarking = (id: string) => {
-    const next: NonNullable<Selection> = { kind: 'marking', id };
-    ui.selection.value = next;
-    canvas.current?.centerSelection();
-  };
 
   // Revisão de uma proposta: o painel normal do item, somente leitura, com os marcadores
   // (ou o nível selecionado com as mudanças, na proposta e no grupo Projeto).
   if (review.proposalId.value !== null) {
     return (
       <div class="tab-panel">
-        <ReviewPanel
-          onGoToAnnotation={onGoToAnnotation}
-          onSelectMarking={onSelectMarking}
-        />
+        <ReviewPanel onGoToAnnotation={onGoToAnnotation} />
       </div>
     );
   }
   const readOnly = store.locked.value;
+  const items = existingItems(project, selectedItems(ui));
+  if (items.length > 1) {
+    return (
+      <div class="tab-panel">
+        <MultiSelectionPanel
+          project={project}
+          items={items}
+          readOnly={readOnly || busy}
+          onDelete={dialogs.requestDeleteItems}
+        />
+      </div>
+    );
+  }
   const selected = resolveSelection(project, ui.selection.value);
   const selectedImage = selected?.kind === 'image' ? selected.image : null;
 
@@ -58,7 +69,15 @@ export function EditorPanel({
           image={selected.image}
           readOnly={readOnly || busy}
           onDelete={dialogs.requestDeleteMarking}
-          onSelectMarking={onSelectMarking}
+          onGoToAnnotation={onGoToAnnotation}
+        />
+      ) : selected?.kind === 'arrow' ? (
+        <ArrowPanel
+          key={selected.arrow.id}
+          project={project}
+          arrow={selected.arrow}
+          readOnly={readOnly || busy}
+          onDelete={dialogs.requestDeleteArrow}
           onGoToAnnotation={onGoToAnnotation}
         />
       ) : (

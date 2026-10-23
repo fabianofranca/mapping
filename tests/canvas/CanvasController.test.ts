@@ -2,6 +2,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import { createDisplayImages } from '../../src/store/displayImages';
 import type { InteractionState } from '../../src/canvas/frame';
+import type { OverlayRenderer } from '../../src/canvas/renderers/overlay';
+import { selectItems, setCleanView, type SelectionItem } from '../../src/store/ui';
 import { editorFor, installFakeCanvas } from './harness';
 
 describe('CanvasController', () => {
@@ -38,11 +40,11 @@ describe('CanvasController', () => {
     return { ...editor, container, controller, ensure };
   }
 
-  it('monta o stage com as quatro camadas (imagens, componentes, marcações, sobreposições) e pede os bitmaps das imagens', () => {
+  it('monta o stage com as seis camadas (imagens, componentes, setas, marcações, flutuantes, sobreposições) e pede os bitmaps das imagens', () => {
     const { container, controller, ensure } = setup();
     flush();
     const canvases = container.querySelectorAll('canvas');
-    expect(canvases).toHaveLength(4);
+    expect(canvases).toHaveLength(6);
     expect(ensure.mock.calls.map(([file]) => file)).toEqual([
       'images/a.jpg',
       'images/b.jpg',
@@ -63,6 +65,50 @@ describe('CanvasController', () => {
     expect(controller.imageIdAt(190, 350)).toBe('I2');
     const p = controller.canvasPointAt(190, 350);
     expect(p.x).toBeCloseTo(1350);
+    controller.destroy();
+  });
+
+  it('seleção múltipla: contorno secundário nos não primários, vazio no Ver limpo, e o pan não refaz a lista', () => {
+    const { controller, ui } = setup();
+    const internals = controller as unknown as {
+      overlay: OverlayRenderer;
+      frame: { peek(): { items: readonly SelectionItem[] } };
+    };
+    const lit = () =>
+      internals.overlay
+        .secondaryHighlights()
+        .filter((r) => r.visible())
+        .map((r) => r.getAttrs());
+    flush();
+    expect(lit()).toHaveLength(0);
+
+    selectItems(ui, [
+      { kind: 'image', id: 'I2' },
+      { kind: 'marking', id: 'M3' },
+      { kind: 'marking', id: 'M2' },
+    ]);
+    flush();
+    expect(lit()).toHaveLength(2);
+    const items = internals.frame.peek().items;
+    expect(items.map((i) => i.id)).toEqual(['I2', 'M3', 'M2']);
+
+    // Pan e zoom refazem o quadro, mas a lista de itens é o mesmo objeto.
+    controller.zoomBy(1.5);
+    flush();
+    expect(internals.frame.peek().items).toBe(items);
+
+    // Ver limpo esconde a seleção inteira, como esconde a primária.
+    setCleanView(ui, true);
+    flush();
+    expect(lit()).toHaveLength(0);
+    setCleanView(ui, false);
+    flush();
+    expect(lit()).toHaveLength(2);
+
+    // Um clique simples volta a um item só.
+    ui.selection.value = { kind: 'marking', id: 'M1' };
+    flush();
+    expect(lit()).toHaveLength(0);
     controller.destroy();
   });
 
@@ -250,5 +296,148 @@ describe('CanvasController', () => {
     flush();
     expect(hover()).toBeNull();
     controller.destroy();
+  });
+
+  describe('marcações do canvas (ME1)', () => {
+    /** Uma marcação do canvas em volta das duas imagens e uma flutuante sobre a Porta. */
+    function spatial() {
+      const ctx = setup();
+      const created = ctx.actions.createMarking(null, {
+        x: -100,
+        y: -100,
+        width: 1800,
+        height: 1000,
+      });
+      const id = created.ok ? created.value : '';
+      return { ...ctx, id };
+    }
+
+    it('publica no container quantas marcações do canvas há (e2e)', () => {
+      const { container, controller, actions } = setup();
+      flush();
+      expect(container.dataset.canvasMarkings).toBe('0');
+      actions.createMarking(null, { x: 2000, y: 0, width: 100, height: 100 });
+      flush();
+      expect(container.dataset.canvasMarkings).toBe('1');
+      // As de container não contam, e a flutuante conta (vive no canvas).
+      actions.createMarking('I1', { x: 10, y: 10, width: 20, height: 20 });
+      const note = actions.createMarking(null, { x: 2300, y: 0, width: 50, height: 50 });
+      if (note.ok) actions.setMarkingFloating(note.value, true);
+      flush();
+      expect(container.dataset.canvasMarkings).toBe('2');
+      controller.destroy();
+    });
+
+    it('Enquadrar tudo e o minimapa incluem as marcações do canvas', () => {
+      const { controller, view, actions } = setup();
+      flush();
+      expect(view.bounds.value).toEqual({ x: 0, y: 0, width: 1600, height: 800 });
+      actions.createMarking(null, { x: -500, y: -300, width: 200, height: 100 });
+      flush();
+      expect(view.bounds.value).toEqual({ x: -500, y: -300, width: 2100, height: 1100 });
+      controller.fitAll();
+      const center = controller.viewportCenter();
+      expect(center.x).toBeCloseTo(550);
+      expect(center.y).toBeCloseTo(250);
+      controller.destroy();
+    });
+
+    it('centraliza na marcação do canvas selecionada (espaço identidade)', () => {
+      const { controller, ui, id } = spatial();
+      flush();
+      ui.selection.value = { kind: 'marking', id };
+      controller.centerSelection();
+      const center = controller.viewportCenter();
+      expect(center.x).toBeCloseTo(800);
+      expect(center.y).toBeCloseTo(400);
+      controller.destroy();
+    });
+
+    it('o container que receberia a marcação arrastada acende como alvo de soltar', () => {
+      const { container, controller } = setup();
+      const internals = controller as unknown as {
+        state: InteractionState;
+        overlay: { dropRect: { visible(): boolean; width(): number } };
+      };
+      flush();
+      internals.state.moveTarget.value = 'I2';
+      flush();
+      expect(internals.overlay.dropRect.visible()).toBe(true);
+      expect(internals.overlay.dropRect.width()).toBe(500);
+      // O alvo de soltar um arquivo tem a vez enquanto existir.
+      controller.setDropTarget({ containerId: 'I1' });
+      flush();
+      expect(internals.overlay.dropRect.width()).toBe(1000);
+      controller.setDropTarget(null);
+      internals.state.moveTarget.value = null;
+      flush();
+      expect(internals.overlay.dropRect.visible()).toBe(false);
+      expect(container.classList.contains('canvas-host--drop')).toBe(false);
+      controller.destroy();
+    });
+
+    it('os itens a absorver acendem no overlay e apagam quando o gesto acaba', () => {
+      const { controller } = setup();
+      const internals = controller as unknown as {
+        state: InteractionState;
+        overlay: { absorbHighlights(): readonly { visible(): boolean }[] };
+      };
+      flush();
+      internals.state.absorb.value = [{ x: 10, y: 10, width: 50, height: 50 }];
+      flush();
+      expect(
+        internals.overlay.absorbHighlights().filter((r) => r.visible()),
+      ).toHaveLength(1);
+      internals.state.absorb.value = [];
+      flush();
+      expect(
+        internals.overlay.absorbHighlights().filter((r) => r.visible()),
+      ).toHaveLength(0);
+      controller.destroy();
+    });
+
+    it('cadeado sob o mouse: a flutuante tem a vez; o container herda a trava da marcação do canvas', () => {
+      const { container, controller, actions, id } = spatial();
+      const hover = () =>
+        (controller as unknown as { state: InteractionState }).state.hoverLock.value;
+      const move = (x: number, y: number) => {
+        container.dispatchEvent(
+          new PointerEvent('pointermove', {
+            pointerId: 1,
+            pointerType: 'mouse',
+            clientX: x,
+            clientY: y,
+          }),
+        );
+        flush();
+      };
+      flush();
+      controller.zoomTo(1);
+      controller.centerOnPoint({ x: 900, y: 700 });
+      const [x, y] = [190, 350]; // o ponto do canvas (900, 700), dentro de I1 e sem marcação de I1
+
+      // A flutuante nasce antes de trancar (virar flutuante é geometria e a trava impede).
+      const note = actions.createMarking(null, {
+        x: 1000,
+        y: 250,
+        width: 100,
+        height: 100,
+      });
+      if (note.ok) actions.setMarkingFloating(note.value, true);
+
+      // Marcação do canvas trancada: o container dentro dela herda (e a área entre as imagens também).
+      actions.setMarkingLocked(id, true);
+      move(x, y);
+      expect(hover()).toEqual({ kind: 'image', id: 'I1' });
+      controller.centerOnPoint({ x: 1050, y: 100 }); // entre as imagens, fora da flutuante
+      move(x, y);
+      expect(hover()).toEqual({ kind: 'marking', id });
+
+      // A flutuante livre sobre a área trancada tem a vez e não mostra o cadeado.
+      controller.centerOnPoint({ x: 1050, y: 300 });
+      move(x, y);
+      expect(hover()).toBeNull();
+      controller.destroy();
+    });
   });
 });

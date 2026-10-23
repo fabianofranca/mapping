@@ -9,6 +9,7 @@ import { projectIndex } from './projectIndex';
 import { isRecord, parseRefValue } from './refs';
 import type {
   Annotation,
+  Arrow,
   JsonValue,
   Layer,
   Marking,
@@ -60,11 +61,29 @@ export function markingValue(m: Marking): JsonValue {
     id: m.id,
     containerId: m.containerId,
     parentId: m.parentId,
+    floating: m.floating,
     name: m.name,
     rect: m.rect,
     needsReview: m.needsReview,
     locked: m.locked,
     source: m.source,
+  });
+}
+
+/**
+ * A seta numa proposta: sem a rota (`points`), que é só da pessoa. Por isso a rota que a pessoa
+ * traçar depois não faz a remoção da seta entrar em conflito, e criar uma seta nunca a traz.
+ */
+export function arrowValue(a: Arrow): JsonValue {
+  return toJson({
+    id: a.id,
+    from: a.from,
+    to: a.to,
+    fromSide: a.fromSide,
+    toSide: a.toSide,
+    style: a.style,
+    name: a.name,
+    locked: a.locked,
   });
 }
 
@@ -74,7 +93,6 @@ export function annotationValue(a: Annotation): JsonValue {
     markingId: a.markingId,
     layerId: a.layerId,
     name: a.name,
-    inherit: a.inherit,
     parentAnnotationId: a.parentAnnotationId,
     type: a.type,
     values: a.values,
@@ -94,7 +112,11 @@ export function platformRepoValue(r: PlatformRepo): JsonValue {
   return toJson({ localPath: r.localPath });
 }
 
-/** Campos que a revisão compara em cada entidade (os de `annotation` são os fixos). */
+/**
+ * Campos que a revisão compara em cada entidade (os de `annotation` são os fixos). Na marcação,
+ * `space` (`{ containerId, rect }`) substitui o `rect` quando ela troca de espaço
+ * (`markingFieldsFor`); `parentId` é derivado do assentar e não entra.
+ */
 export const COMPARED_FIELDS = {
   image: [
     'name',
@@ -106,10 +128,24 @@ export const COMPARED_FIELDS = {
     'locked',
     'source',
   ],
-  marking: ['name', 'rect', 'parentId', 'containerId', 'locked', 'source'],
-  annotation: ['name', 'inherit', 'parentAnnotationId', 'markingId', 'layerId'],
+  marking: ['name', 'space', 'rect', 'floating', 'locked', 'source'],
+  // A seta só se cria e se remove: nenhum campo dela é comparado (ver `ARROW_FIELDS`).
+  arrow: [],
+  annotation: ['name', 'parentAnnotationId', 'markingId', 'layerId'],
   layer: ['name', 'color', 'spec'],
 } as const;
+
+/**
+ * Campos comparados de uma marcação que existe antes e depois: a troca de espaço é a mudança
+ * composta `space` (o `rect` vai dentro dela); sem troca, o `rect` é um campo à parte.
+ */
+export function markingFieldsFor(
+  before: Pick<Marking, 'containerId'>,
+  after: Pick<Marking, 'containerId'>,
+): readonly string[] {
+  const moved = before.containerId !== after.containerId;
+  return COMPARED_FIELDS.marking.filter((f) => f !== (moved ? 'rect' : 'space'));
+}
 
 export function imageField(i: ProjectContainer, field: string): JsonValue | undefined {
   switch (field) {
@@ -149,10 +185,12 @@ export function markingField(
       return m.name;
     case 'rect':
       return toJson(m.rect);
-    case 'parentId':
-      return m.parentId;
+    case 'space':
+      return toJson({ containerId: m.containerId, rect: m.rect });
     case 'containerId':
       return m.containerId;
+    case 'floating':
+      return m.floating;
     case 'locked':
       return m.locked;
     case 'source':
@@ -182,8 +220,6 @@ export function annotationField(a: Annotation, field: string): JsonValue | undef
   switch (field) {
     case 'name':
       return a.name;
-    case 'inherit':
-      return a.inherit;
     case 'parentAnnotationId':
       return a.parentAnnotationId;
     case 'markingId':
@@ -246,6 +282,11 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
       if (!m) return undefined;
       return whole ? markingValue(m) : markingField(p, m, c.field ?? '');
     }
+    case 'arrow': {
+      // Só criação e remoção (entidade inteira): não há campo de seta.
+      const a = index.arrows.get(c.entityId);
+      return a && whole ? arrowValue(a) : undefined;
+    }
     case 'annotation': {
       const a = index.annotations.get(c.entityId);
       if (!a) return undefined;
@@ -254,9 +295,13 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
   }
 }
 
-/** Chave de uma entidade (`marking:3f2a…`) nos mapas das propostas. */
+/**
+ * Chave de uma entidade (`marking:3f2a…`) nos mapas das propostas. A seta usa a chave da
+ * marcação: os ids dividem o espaço e a anotação cita a dona (marcação ou seta) pelo mesmo
+ * `markingId`, então criar a seta e anotá-la, ou apagá-la, se ligam como numa marcação.
+ */
 export function entityKey(entity: ChangeEntity, entityId: string): string {
-  return `${entity}:${entityId}`;
+  return `${entity === 'arrow' ? 'marking' : entity}:${entityId}`;
 }
 
 /** Referência de uma mudança a outra entidade. `strong`: as invariantes exigem o alvo. */
@@ -276,7 +321,15 @@ function field(value: JsonValue, key: string): JsonValue | undefined {
 /** Referências fracas (campos `ref`) dentro dos valores de uma anotação tipada. */
 function valueRefs(values: JsonValue | undefined, out: ValueRef[]): void {
   if (!isRecord(values)) return;
-  for (const value of Object.values(values)) refOfValue(value, out);
+  for (const value of Object.values(values)) {
+    refOfValue(value, out);
+    // Coluna `ref` de `table` (decisão (e)): cada célula da linha pode ser uma referência.
+    if (Array.isArray(value)) {
+      for (const row of value as readonly JsonValue[]) {
+        if (isRecord(row)) for (const cell of Object.values(row)) refOfValue(cell, out);
+      }
+    }
+  }
 }
 
 function refOfValue(value: JsonValue | undefined, out: ValueRef[]): void {
@@ -294,6 +347,10 @@ function entityRefs(entity: ChangeEntity, value: JsonValue): ValueRef[] {
   if (entity === 'marking') {
     push(out, 'image', str(field(value, 'containerId')));
     push(out, 'marking', str(field(value, 'parentId')));
+  } else if (entity === 'arrow') {
+    // As duas pontas são marcações que precisam existir (invariante `arrow-endpoint-missing`).
+    push(out, 'marking', str(field(value, 'from')));
+    push(out, 'marking', str(field(value, 'to')));
   } else if (entity === 'annotation') {
     push(out, 'marking', str(field(value, 'markingId')));
     push(out, 'layer', str(field(value, 'layerId')));
@@ -310,8 +367,9 @@ function entityRefs(entity: ChangeEntity, value: JsonValue): ValueRef[] {
 function fieldRefs(entity: ChangeEntity, name: string, value: JsonValue): ValueRef[] {
   const out: ValueRef[] = [];
   if (entity === 'marking') {
-    if (name === 'parentId') push(out, 'marking', str(value));
+    // `parentId` é derivado (não é campo): só o espaço cita um container.
     if (name === 'containerId') push(out, 'image', str(value));
+    if (name === 'space') push(out, 'image', str(field(value, 'containerId')));
   } else if (entity === 'annotation') {
     if (name === 'parentAnnotationId') push(out, 'annotation', str(value));
     if (name === 'markingId') push(out, 'marking', str(value));

@@ -78,6 +78,16 @@ export interface SessionOptions {
    * (alguém editou o JSON à mão). Sem ele, só a `revision` é conferida.
    */
   readonly loadedText?: string;
+  /**
+   * Pacotes de biblioteca aplicados ao projeto **em memória** ao abrir (a biblioteca de notas dos
+   * projetos migrados, ME3): `options.project` já os cita, mas o disco ainda não os tem. Entram
+   * no cache da sessão e a primeira gravação escreve `specs/<id>/` junto com o `mapping.json`
+   * (e com o backup da migração). Os arquivos vêm sem o da especialização, que vive no projeto.
+   */
+  readonly stagedPackages?: readonly {
+    readonly spec: { readonly id: string; readonly version: number };
+    readonly files: ReadonlyMap<string, string | Blob>;
+  }[];
   /** As propostas de alteração lidas do armazenamento ao abrir (ver `loadProposals`). */
   readonly proposals?: LoadedProposals;
   /** Problemas da biblioteca lidos ao abrir (ver `loadProject`); sem eles, nenhum. */
@@ -395,6 +405,17 @@ export function openSession(options: SessionOptions): ProjectSession {
     for (const [path, data] of files) if (path !== specName) copy.set(path, data);
     packageCache.set(packageKey(spec), copy);
   };
+  // Pacotes que só existem em memória: no cache e fora de `writtenPackages`, para a primeira
+  // gravação escrevê-los (o `trackPackages` acima os tomaria por gravados).
+  for (const staged of options.stagedPackages ?? []) {
+    cachePackage(staged.spec, staged.files);
+    for (const s of options.project.specializations) {
+      const dir = packageDirOf(s.file);
+      if (s.id !== staged.spec.id) continue;
+      writtenSpecs.delete(s.file);
+      if (dir !== null) writtenPackages.delete(dir);
+    }
+  }
   /** Lê a pasta do disco para o cache (uma vez por `id@versão`), antes de ela ser regravada ou apagada. */
   const snapshotPackage = async (dir: string, written: WrittenPackage) => {
     if (packageCache.has(written.key)) return;

@@ -71,17 +71,17 @@ test('abas da janela inferior não passam sob as ações', async ({ page }) => {
   await shot(page, 'diagnostico');
   const tablist = win.getByRole('tablist');
   const strip = (await boxes(tablist))[0]!;
-  // O que não cabe rola dentro das abas (nada é desenhado fora da faixa delas).
+  // Janela estreita demais até para as abas: só elas rolam (nada é desenhado fora da faixa).
   await expect(tablist).toHaveCSS('overflow-x', 'auto');
   const actions = await boxes(win.locator('.tool-window-head > :not(.tool-window-tabs)'));
   expect(actions.length).toBeGreaterThan(0);
   for (const a of actions) {
+    // Ao lado das abas ou, sem largura, numa linha abaixo (bottomTabs.spec.ts).
     expect(overlaps(a, strip)).toBe(false);
-    expect(strip.x + strip.width).toBeLessThanOrEqual(a.x + 0.5);
   }
 });
 
-test('aba escolhida da janela inferior fica visível na faixa que rola', async ({
+test('janela inferior a 900 px: abas inteiras, ações sem cobrir nenhuma', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 900, height: 607 });
@@ -90,14 +90,10 @@ test('aba escolhida da janela inferior fica visível na faixa que rola', async (
   const win = page.locator('[data-window="diagnostics"]');
   await expect(win).toBeVisible();
   const tablist = win.getByRole('tablist');
-  // Faixa estreita de propósito: nem todas as abas cabem.
-  expect(await tablist.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
-  const strip = (await boxes(tablist))[0]!;
-  const tab = (await boxes(win.getByRole('tab', { selected: true })))[0]!;
-  expect(tab.x).toBeGreaterThanOrEqual(strip.x - 0.5);
-  expect(tab.x + tab.width).toBeLessThanOrEqual(strip.x + strip.width + 0.5);
+  expect(await tablist.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(false);
+  const tabs = await boxes(win.getByRole('tab'));
   for (const a of await boxes(win.locator('.tool-window-head > :not(.tool-window-tabs)')))
-    expect(overlaps(a, tab)).toBe(false);
+    for (const tab of tabs) expect(overlaps(a, tab)).toBe(false);
 });
 
 test('aba escolhida continua visível quando a lista de abas é estreitada depois', async ({
@@ -117,7 +113,9 @@ test('aba escolhida continua visível quando a lista de abas é estreitada depoi
   // a CSSOM (folha adotada) é permitida.
   await page.evaluate(() => {
     const sheet = new CSSStyleSheet();
-    sheet.replaceSync('.tool-window-tabs { flex: none; width: 150px }');
+    sheet.replaceSync(
+      '.tool-window-bottom .tool-window-tabs { flex: none; width: 150px }',
+    );
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
   });
   await expect

@@ -1,6 +1,7 @@
 import {
   MIN_MARKING_SIZE,
   containsRect,
+  containsRectApprox,
   imageCanvasRect,
   imagePixelRect,
   isIntegerRect,
@@ -24,6 +25,13 @@ export type InvariantCode =
   | 'parent-other-image'
   | 'rect-outside-parent'
   | 'hierarchy-cycle'
+  | 'container-parent-missing'
+  | 'container-parent-not-canvas'
+  | 'container-outside-parent'
+  | 'floating-in-container'
+  | 'parent-floating'
+  | 'arrow-endpoint-missing'
+  | 'arrow-self'
   | 'missing-parent-annotation'
   | 'annotation-parent-other-marking'
   | 'annotation-parent-same-layer'
@@ -35,7 +43,8 @@ export type InvariantCode =
   | 'duplicate-row-id';
 
 /** Tipo do item com problema. */
-export type InvariantEntity = 'image' | 'marking' | 'annotation' | 'layer' | 'spec';
+export type InvariantEntity =
+  'image' | 'marking' | 'arrow' | 'annotation' | 'layer' | 'spec';
 
 export interface InvariantIssue {
   readonly code: InvariantCode;
@@ -80,7 +89,8 @@ export function validateEntries<T extends Pick<Entry, 'key'>>(
 
 /**
  * Checa os invariantes que o schema zod não expressa. Lista vazia = projeto válido.
- * Ver "Regras do modelo" no docs/history/PLAN-etapas-1-2.md. As regras das especializações (camada × tipo,
+ * Ver "Regras do modelo" no docs/history/PLAN-etapas-1-2.md. A seta (v13) tem as suas:
+ * `arrow-endpoint-missing` (ponta que não é uma marcação existente) e `arrow-self`. As regras das especializações (camada × tipo,
  * `allowedChildren`, referências) não bloqueiam a abertura: viram pendências
  * (`getAnnotationIssues`). Só a unicidade dos ids de tupla e de linha fica aqui.
  */
@@ -102,6 +112,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   const layer = issue('layer');
   const imageIssue = issue('image');
   const marking = issue('marking');
+  const arrow = issue('arrow');
   const annotation = issue('annotation');
 
   const lists = [
@@ -117,6 +128,14 @@ export function validateProject(p: Project): InvariantIssue[] {
       if (ids.has(item.id)) push('duplicate-id', item);
       ids.add(item.id);
     }
+  }
+
+  // Marcações e setas dividem o espaço de ids (a anotação aponta para qualquer das duas): a
+  // seta que repete o id de uma marcação, ou de outra seta, é a duplicada.
+  const ownerIds = new Set(p.markings.map((m) => m.id));
+  for (const a of p.arrows) {
+    if (ownerIds.has(a.id)) arrow('duplicate-id', a);
+    ownerIds.add(a.id);
   }
 
   const specFiles = new Set<string>();
@@ -163,8 +182,9 @@ export function validateProject(p: Project): InvariantIssue[] {
   const annotations = new Map(p.annotations.map((a) => [a.id, a]));
 
   for (const m of p.markings) {
-    const image = containers.get(m.containerId);
-    if (!image) marking('missing-image', m, m.containerId);
+    // Marcação do canvas (v13): `containerId` nulo, `rect` em unidades do canvas, sem limite.
+    const image = m.containerId === null ? undefined : containers.get(m.containerId);
+    if (m.containerId !== null && !image) marking('missing-image', m, m.containerId);
     if (!isIntegerRect(m.rect)) marking('rect-not-integer', m);
     if (m.rect.width < MIN_MARKING_SIZE || m.rect.height < MIN_MARKING_SIZE) {
       marking('rect-too-small', m);
@@ -172,15 +192,40 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (image && !containsRect(imagePixelRect(image), m.rect)) {
       marking('rect-out-of-image', m);
     }
+    // A flutuante vive no canvas, fora da árvore de pertencimento.
+    if (m.floating && (m.containerId !== null || m.parentId !== null)) {
+      marking('floating-in-container', m);
+    }
     if (m.parentId === null) continue;
     const parent = markings.get(m.parentId);
     if (!parent) {
       marking('missing-parent', m, m.parentId);
       continue;
     }
-    if (parent.containerId !== m.containerId) marking('parent-other-image', m, parent.id);
+    if (parent.floating) marking('parent-floating', m, parent.id);
+    else if (parent.containerId !== m.containerId)
+      marking('parent-other-image', m, parent.id);
     else if (!containsRect(parent.rect, m.rect))
       marking('rect-outside-parent', m, parent.id);
+  }
+
+  // Seta (v13): liga duas marcações existentes e diferentes (nem outra seta, nem container).
+  for (const a of p.arrows) {
+    if (!markings.has(a.from)) arrow('arrow-endpoint-missing', a, a.from);
+    if (!markings.has(a.to)) arrow('arrow-endpoint-missing', a, a.to);
+    if (a.from === a.to) arrow('arrow-self', a, a.from);
+  }
+
+  // Pai de um container (v13): uma marcação do canvas, não flutuante, que o contém inteiro.
+  for (const c of p.containers) {
+    if (c.parentId === null) continue;
+    const parent = markings.get(c.parentId);
+    if (!parent) imageIssue('container-parent-missing', c, c.parentId);
+    else if (parent.containerId !== null || parent.floating) {
+      imageIssue('container-parent-not-canvas', c, parent.id);
+    } else if (!containsRectApprox(parent.rect, imageCanvasRect(c, c.placement))) {
+      imageIssue('container-outside-parent', c, parent.id);
+    }
   }
 
   for (const m of p.markings) {
@@ -199,7 +244,8 @@ export function validateProject(p: Project): InvariantIssue[] {
 
   const layerIds = new Set(p.layers.map((l) => l.id));
   for (const a of p.annotations) {
-    if (!markings.has(a.markingId)) annotation('missing-marking', a, a.markingId);
+    // A dona da anotação é uma marcação ou uma seta (v13).
+    if (!ownerIds.has(a.markingId)) annotation('missing-marking', a, a.markingId);
     if (!layerIds.has(a.layerId)) annotation('missing-layer', a, a.layerId);
     for (const entryIssue of validateEntries(a.entries)) {
       if (entryIssue) annotation(entryIssue, a);

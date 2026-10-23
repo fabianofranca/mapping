@@ -3,7 +3,7 @@ import {
   addAnnotation,
   addLayer,
   deserialize,
-  moveMarking,
+  moveContainer,
   removeAnnotation,
   removeEntry,
   removeContainer,
@@ -1161,24 +1161,24 @@ describe('aplicar aceitas', () => {
   });
 
   it('conjunto inválido bloqueia o Aplicar e aponta as mudanças envolvidas', async () => {
-    // Mover o pai (e as filhas com ele): aceitar só a posição do pai deixa a filha fora dele.
+    // Um placement que põe I2 sobre I1 (a proposta adulterada) deixa as imagens sobrepostas.
     const base = sampleProject();
-    const after = moveMarking(base, 'M1', 1000, 0);
-    const proposal = propose(base, after, { id: 'P1' });
-    const parent = must(
-      proposal.changes.find((c) => c.entityId === 'M1' && c.field === 'rect'),
-    );
-    const child = must(
-      proposal.changes.find((c) => c.entityId === 'M2' && c.field === 'rect'),
-    );
+    const honest = propose(base, moveContainer(base, 'I2', 5000, 5000), { id: 'P1' });
+    const overlap = must(honest.changes.find((c) => c.field === 'placement'));
+    const i1 = must(base.containers.find((c) => c.id === 'I1'));
+    const proposal: Proposal = {
+      ...honest,
+      changes: honest.changes.map((c) =>
+        c.id === overlap.id ? { ...c, to: { ...i1.placement } } : c,
+      ),
+    };
     const { review, session, root } = await openHarness({ proposals: [proposal] });
     review.open('P1');
-    await review.decide({ level: 'change', id: parent.id }, 'accepted');
-    await review.decide({ level: 'change', id: child.id }, 'rejected');
+    await review.decide({ level: 'change', id: overlap.id }, 'accepted');
 
     expect(review.derived.canApply.value).toBe(false);
     expect(review.derived.validation.value?.ok).toBe(false);
-    expect(review.derived.invalid.value.changeIds.has(parent.id)).toBe(true);
+    expect(review.derived.invalid.value.changeIds.has(overlap.id)).toBe(true);
     const projectBefore = session.store.project.value;
     const result = await review.apply();
     expect(result).toMatchObject({ ok: false, error: 'blocked' });
@@ -1186,12 +1186,9 @@ describe('aplicar aceitas', () => {
     expect(session.store.project.value).toBe(projectBefore);
     expect((await diskProposal(root)).applied).toEqual({});
 
-    // Aceitar também a da filha resolve.
-    await review.decide({ level: 'change', id: child.id }, 'accepted');
-    const m3 = proposal.changes.filter((c) => c.field === 'rect' && c.entityId === 'M3');
-    for (const c of m3) await review.decide({ level: 'change', id: c.id }, 'accepted');
-    expect(review.derived.canApply.value).toBe(true);
-    expect(await review.apply()).toMatchObject({ ok: true });
+    // Rejeitar a que causa o problema resolve.
+    await review.decide({ level: 'change', id: overlap.id }, 'rejected');
+    expect(review.derived.validation.value?.ok).toBe(true);
   });
 
   it('imagem que não está em proposals/<id>/ não é aplicada, e nada muda', async () => {

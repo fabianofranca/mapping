@@ -7,6 +7,14 @@ import {
   addLayer,
   addTableRow,
   addTypedAnnotation,
+  arrowDeletionImpact,
+  createArrow,
+  placeFloatingNear,
+  removeArrow,
+  setArrowLocked,
+  setArrowName,
+  setArrowStyle,
+  type FloatingNearTarget,
   annotationDeletionImpact,
   annotationShortLabel,
   applySpecialization,
@@ -17,7 +25,6 @@ import {
   approximateMeasurer,
   confirmMarkingReview,
   createMarking,
-  innermostContaining,
   reorderMarking,
   setBackgroundContainer,
   siblingPosition,
@@ -50,7 +57,6 @@ import {
   renameLayer,
   renameMarking,
   replaceContainer,
-  setAnnotationInherit,
   setAnnotationParent,
   setEntries,
   setFieldValue,
@@ -61,8 +67,9 @@ import {
   setImageSource,
   setLayerColor,
   setMarkingLocked,
-  setMarkingParent,
+  setMarkingFloating,
   setMarkingRect,
+  setMarkingSpace,
   setMarkingSource,
   setPlatformRepo,
   setTableCell,
@@ -100,7 +107,8 @@ import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
 import { KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
-import { MODEL_ERROR_MESSAGES } from './modelErrors';
+import { containersNamed } from './markingList';
+import { MODEL_ERROR_HINTS, MODEL_ERROR_MESSAGES } from './modelErrors';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
 
@@ -171,6 +179,8 @@ export interface BatchResult {
     readonly index: number;
     readonly op: string;
     readonly message: string;
+    /** Código do aviso no relatório; ausente = `deprecated-op`. */
+    readonly code?: string;
   }[];
   /** Regras entre coleções violadas pelo resultado (não deveria acontecer). */
   readonly invariantIssues: readonly string[];
@@ -199,6 +209,8 @@ interface LoadedSpec {
 
 interface Step {
   readonly project: Project;
+  /** Avisos da operação (argumento ignorado…): vão para `warnings` da resposta. */
+  readonly notes?: readonly string[];
   /** Pacote da biblioteca levado pela operação: pasta definitiva e arquivos dela. */
   readonly packageFiles?: readonly [string, Uint8Array][];
   readonly warnings?: readonly LibraryIssue[];
@@ -285,7 +297,12 @@ class Batch {
   private readonly imageFiles = new Map<string, Uint8Array>();
   private readonly packageFiles = new Map<string, Uint8Array>();
   private readonly libraryWarnings: LibraryWarning[] = [];
-  private readonly deprecations: { index: number; op: string; message: string }[] = [];
+  private readonly deprecations: {
+    index: number;
+    op: string;
+    message: string;
+    code?: string;
+  }[] = [];
   private readonly errors: OperationError[] = [];
   private readonly steps: { index: number; description: string }[] = [];
   private readonly created: CreatedItem[] = [];
@@ -330,6 +347,37 @@ class Batch {
             index,
             op: op.op,
             message: 'o argumento `image` de create_marking é antigo: use `container`',
+          });
+        }
+        if (
+          (op.op === 'create_marking' || op.op === 'update_marking') &&
+          op.parent !== undefined
+        ) {
+          this.deprecations.push({
+            index,
+            op: op.op,
+            code: 'ignored-argument',
+            message:
+              'o argumento `parent` foi ignorado: o pai da marcação sai da geometria (a mais interna que a contém)',
+          });
+        }
+        if (
+          (op.op === 'create_annotation' || op.op === 'update_annotation') &&
+          op.inherit !== undefined
+        ) {
+          this.deprecations.push({
+            index,
+            op: op.op,
+            message:
+              'o argumento `inherit` saiu do formato (v13) e foi ignorado: a anotação vale só para a própria marcação',
+          });
+        }
+        for (const note of step.notes ?? []) {
+          this.deprecations.push({
+            index,
+            op: op.op,
+            message: note,
+            code: 'ignored-argument',
           });
         }
         for (const [file, data] of step.imageFiles ?? []) this.imageFiles.set(file, data);
@@ -404,6 +452,7 @@ class Batch {
         code: error.code,
         message: MODEL_ERROR_MESSAGES[error.code],
         ...(detail ? { detail } : {}),
+        ...(MODEL_ERROR_HINTS[error.code] ? { hint: MODEL_ERROR_HINTS[error.code] } : {}),
       };
     }
     if (error instanceof ToolError) {
@@ -443,6 +492,34 @@ class Batch {
   }
 
   /** Id de uma marcação, container ou anotação deste projeto: apelido, referência ou id. */
+  /**
+   * Container por referência/id ou, se não achar, pelo nome ou arquivo (como `list_markings`);
+   * nome em mais de um container → `ambiguous-image`.
+   */
+  private containerItem(text: string, p: Project = this.p): string {
+    try {
+      return this.item(text, 'i', p);
+    } catch (error) {
+      if (
+        !(error instanceof ToolError) ||
+        (error.code !== 'not-found' && error.code !== 'invalid-ref') ||
+        text.trim().startsWith('$')
+      ) {
+        throw error;
+      }
+      const named = containersNamed(p, text.trim());
+      if (named.length === 1) return named[0]!.id;
+      if (named.length > 1) {
+        throw new ToolError(
+          'ambiguous-image',
+          `mais de um container se chama "${text}": use a referência`,
+          { candidates: named.map((c) => this.refs(p).ref('i', c.id)) },
+        );
+      }
+      throw error;
+    }
+  }
+
   private item(text: string, kind: ItemKind, p: Project = this.p): string {
     const wanted = text.trim();
     if (wanted.startsWith('$')) {
@@ -999,17 +1076,17 @@ class Batch {
       case 'add_blank_image':
         return this.addContainerWithBackground(op, p);
       case 'update_container':
-        return this.updateContainerOp(op, this.item(op.container, 'i'), p);
+        return this.updateContainerOp(op, this.containerItem(op.container, p), p);
       case 'update_image':
-        return this.updateContainerOp(op, this.item(op.image, 'i'), p);
+        return this.updateContainerOp(op, this.containerItem(op.image, p), p);
       case 'replace_container':
-        return this.replaceContainerOp(op, this.item(op.container, 'i'), p);
+        return this.replaceContainerOp(op, this.containerItem(op.container, p), p);
       case 'replace_image':
-        return this.replaceContainerOp(op, this.item(op.image, 'i'), p);
+        return this.replaceContainerOp(op, this.containerItem(op.image, p), p);
       case 'delete_container':
-        return this.deleteContainerOp(this.item(op.container, 'i'), p);
+        return this.deleteContainerOp(this.containerItem(op.container, p), p);
       case 'delete_image':
-        return this.deleteContainerOp(this.item(op.image, 'i'), p);
+        return this.deleteContainerOp(this.containerItem(op.image, p), p);
       case 'create_marking':
         return this.createMarkingOp(op);
       case 'move_marking': {
@@ -1022,6 +1099,7 @@ class Batch {
       }
       case 'update_marking': {
         const id = this.item(op.marking, 'm');
+        this.requireNotArrow(id, 'update_arrow');
         const label = this.markingLabel(p, id);
         let project = p;
         const changes: string[] = [];
@@ -1037,20 +1115,38 @@ class Batch {
           project = setMarkingSource(project, id, toSource(op.source));
           changes.push(sourceLabel(projectIndex(project).markings.get(id)!.source));
         }
-        if (op.parent !== undefined) {
-          const parentId = op.parent === null ? null : this.item(op.parent, 'm', project);
-          project = setMarkingParent(project, id, parentId);
-          changes.push(
-            parentId === null
-              ? 'primeiro nível'
-              : `pai "${this.markingLabel(project, parentId)}"`,
-          );
-        }
         if (op.move !== undefined) {
           project = moveMarking(project, id, op.move.dx, op.move.dy);
           changes.push(`mover (${op.move.dx}, ${op.move.dy}) com as filhas`);
         }
-        if (op.rect !== undefined) {
+        if (op.floating !== undefined) {
+          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          project = setMarkingFloating(
+            project,
+            id,
+            op.floating,
+            minSize ? { minSize } : undefined,
+          );
+          changes.push(op.floating ? 'flutuante' : 'deixar de ser flutuante');
+        }
+        if (op.container !== undefined) {
+          if (op.rect === undefined) {
+            throw new ToolError(
+              'invalid-arguments',
+              'trocar de `container` exige o `rect` nos pixels do container novo (no canvas, em unidades do canvas)',
+            );
+          }
+          const target =
+            op.container === null ? null : this.containerItem(op.container, project);
+          const { rect } = op;
+          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          project = this.checkMinSize(minSize, `"${label}"`, () =>
+            setMarkingSpace(project, id, target, rect, minSize ? { minSize } : undefined),
+          );
+          changes.push(
+            `${target === null ? 'ir para o canvas' : `ir para o container "${this.refs(project).imageLabel(target)}"`}, retângulo x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}`,
+          );
+        } else if (op.rect !== undefined) {
           const { rect } = op;
           const minSize = componentMinSize(project, this.loaded.catalog, id);
           project = this.checkMinSize(minSize, `"${label}"`, () =>
@@ -1074,10 +1170,29 @@ class Batch {
       }
       case 'delete_marking': {
         const id = this.item(op.marking, 'm');
+        this.requireNotArrow(id, 'delete_arrow');
         const impact = markingDeletionImpact(p, id);
         return {
           project: removeMarking(p, id),
           description: `Excluir a marcação "${this.markingLabel(p, id)}" (${impact.descendants} descendente(s), ${impact.annotations} anotação(ões)${
+            impact.brokenRefs > 0
+              ? `, ${impact.brokenRefs} referência(s) quebrada(s)`
+              : ''
+          })`,
+        };
+      }
+      case 'create_arrow':
+        return this.createArrowOp(op);
+      case 'update_arrow':
+        return this.updateArrowOp(op);
+      case 'delete_arrow': {
+        const id = this.item(op.arrow, 'm');
+        this.requireArrow(id);
+        const label = this.markingLabel(p, id);
+        const impact = arrowDeletionImpact(p, id);
+        return {
+          project: removeArrow(p, id),
+          description: `Excluir a seta "${label}" (${impact.annotations} anotação(ões)${
             impact.brokenRefs > 0
               ? `, ${impact.brokenRefs} referência(s) quebrada(s)`
               : ''
@@ -1303,6 +1418,122 @@ class Batch {
     };
   }
 
+  /** O id é de uma seta (as setas dividem o espaço de ids das marcações). */
+  private requireArrow(id: string): void {
+    if (!projectIndex(this.p).arrows.has(id)) {
+      throw new ToolError('wrong-kind', 'a referência não é de uma seta', {
+        hint: 'use o id ou a referência de uma seta (`arrows` de get_marking)',
+      });
+    }
+  }
+
+  /** O id é de uma seta numa tool de marcação: erro amigável apontando a tool certa. */
+  private requireNotArrow(id: string, tool: 'update_arrow' | 'delete_arrow'): void {
+    if (projectIndex(this.p).arrows.has(id)) {
+      throw new ToolError(
+        'wrong-kind',
+        'a referência é de uma seta, não de uma marcação',
+        {
+          hint: `use ${tool} para a seta`,
+        },
+      );
+    }
+  }
+
+  private noPoints(op: { readonly points?: unknown }): void {
+    if (op.points !== undefined) {
+      throw new ToolError(
+        'invalid-arguments',
+        '`points` não é aceito: a rota da seta é da pessoa (o servidor só informa as pontas e o estilo)',
+      );
+    }
+  }
+
+  private createArrowOp(op: Extract<Operation, { op: 'create_arrow' }>): Step {
+    this.noPoints(op);
+    const from = this.item(op.from, 'm');
+    const to = this.item(op.to, 'm');
+    const id = crypto.randomUUID();
+    const project = createArrow(this.p, {
+      id,
+      from,
+      to,
+      ...(op.style !== undefined ? { style: op.style } : {}),
+      ...(op.name !== undefined ? { name: op.name } : {}),
+    });
+    return {
+      project,
+      description: `Criar a seta "${this.markingLabel(project, from)}" → "${this.markingLabel(project, to)}" (${projectIndex(project).arrows.get(id)!.style})`,
+      created: [{ kind: 'm', id }],
+    };
+  }
+
+  private updateArrowOp(op: Extract<Operation, { op: 'update_arrow' }>): Step {
+    this.noPoints(op);
+    const id = this.item(op.arrow, 'm');
+    this.requireArrow(id);
+    let project = this.p;
+    const label = this.markingLabel(project, id);
+    const changes: string[] = [];
+    if (op.locked === false) {
+      project = setArrowLocked(project, id, false);
+      changes.push('destrancar');
+    }
+    if (op.name !== undefined) {
+      project = setArrowName(project, id, op.name);
+      changes.push(`nome ${quoted(projectIndex(project).arrows.get(id)!.name)}`);
+    }
+    if (op.style !== undefined) {
+      project = setArrowStyle(project, id, op.style);
+      changes.push(`estilo ${op.style}`);
+    }
+    if (op.locked === true) {
+      project = setArrowLocked(project, id, true);
+      changes.push('trancar');
+    }
+    // A proposta só leva a criação e a remoção da seta: nome, estilo e trava de uma seta que já
+    // existe no projeto são da pessoa e não viram mudança.
+    const existing = this.loaded.project.arrows.some((a) => a.id === id);
+    return {
+      project,
+      description: `Alterar a seta "${label}": ${changes.join(', ') || 'nada'}`,
+      ...(existing && changes.length > 0
+        ? {
+            notes: [
+              'a proposta só leva a criação e a remoção de setas: a mudança de nome, estilo ou trava de uma seta que já existe não entra na proposta (vale na prévia deste lote e numa seta criada nele)',
+            ],
+          }
+        : {}),
+    };
+  }
+
+  /**
+   * Alvo do `near`: um container ou uma marcação (nunca uma seta), por apelido, referência ou id.
+   */
+  private nearTarget(text: string): FloatingNearTarget {
+    const wanted = text.trim();
+    const index = projectIndex(this.p);
+    if (wanted.startsWith('$')) {
+      const target = this.aliases.get(wanted);
+      if (target && 'id' in target && target.kind === 'i') {
+        return { kind: 'container', id: target.id };
+      }
+    } else {
+      const parsed = parseRef(wanted);
+      if (parsed?.kind === 'i') return { kind: 'container', id: this.item(wanted, 'i') };
+      if (parsed?.kind === null || parsed === null) {
+        if (index.containers.has(wanted)) return { kind: 'container', id: wanted };
+      }
+    }
+    const id = this.item(wanted, 'm');
+    if (index.arrows.has(id)) {
+      throw new ToolError('invalid-arguments', '`near` não aceita uma seta', {
+        hint: 'informe um container ou uma marcação',
+      });
+    }
+    return { kind: 'marking', id };
+  }
+
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
     const p = this.p;
     const catalog = this.loaded.catalog;
@@ -1320,18 +1551,10 @@ class Batch {
       );
     }
     const containerRef = op.container ?? op.image;
-    if (containerRef === undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`container` é obrigatório em create_marking',
-      );
-    }
-    const containerId = this.item(containerRef, 'i');
+    // Sem `container`: marcação do canvas (rect em unidades do canvas, podendo ser negativo).
+    const containerId =
+      containerRef === undefined ? null : this.containerItem(containerRef, p);
     const markingId = crypto.randomUUID();
-    const parentGiven = op.parent !== undefined;
-    const parentId =
-      op.parent === undefined || op.parent === null ? null : this.item(op.parent, 'm');
-
     const typeRef = annotation ? this.type(annotation.type) : null;
     const component =
       typeRef === null
@@ -1346,6 +1569,28 @@ class Batch {
       );
     }
     const minSize = component?.component.minSize ?? null;
+    // `near` (ME4): só um tipo flutuante; o lugar sai de `placeFloatingNear` e o `rect`, se vier,
+    // dá só o tamanho. Nos outros casos o argumento é ignorado, com aviso.
+    const notes: string[] = [];
+    let nearRect: { x: number; y: number; width: number; height: number } | null = null;
+    if (op.near !== undefined) {
+      if (component?.floating === true && containerId === null) {
+        const target = this.nearTarget(op.near);
+        const size =
+          op.rect ??
+          componentPlacement(
+            p,
+            catalog,
+            { containerId: null, parentId: null, ...typeRef! },
+            approximateMeasurer,
+          );
+        nearRect = placeFloatingNear(p, target, size);
+      } else {
+        notes.push(
+          '`near` só vale para um tipo de anotação flutuante, sem `container`: foi ignorado (para colocar a marcação num container, use `container` e `rect`)',
+        );
+      }
+    }
     const rowAliases: [string, AliasTarget][] = [];
     let project: Project;
     let annotationId: string | null = null;
@@ -1353,19 +1598,14 @@ class Batch {
     if (annotation && typeRef !== null && component !== null) {
       const newAnnotationId = crypto.randomUUID();
       annotationId = newAnnotationId;
-      // Sem `rect` e sem `parent`: primeiro nível, no centro do container; com `rect`, a mais
-      // interna que o contém (como na app).
-      const effectiveParent = parentGiven
-        ? parentId
-        : op.rect === undefined
-          ? null
-          : (innermostContaining(p, containerId, op.rect)?.id ?? null);
+      // O pai sai da geometria (o modelo assenta ao criar): sem `rect`, no centro do container.
       const rect =
+        nearRect ??
         op.rect ??
         componentPlacement(
           p,
           catalog,
-          { containerId: containerId, parentId: effectiveParent, ...typeRef },
+          { containerId, parentId: null, ...typeRef },
           approximateMeasurer,
         );
       if (annotation.layer !== undefined) {
@@ -1385,7 +1625,7 @@ class Batch {
             markingId,
             annotationId: newAnnotationId,
             containerId: containerId,
-            parentId: effectiveParent,
+            parentId: null,
             ...typeRef,
             rect,
             name: op.name ?? null,
@@ -1406,12 +1646,6 @@ class Batch {
         rect: op.rect!,
         name: op.name ?? null,
       });
-      if (
-        parentGiven &&
-        projectIndex(project).markings.get(markingId)!.parentId !== parentId
-      ) {
-        project = setMarkingParent(project, markingId, parentId);
-      }
       if (annotation && typeRef !== null) {
         annotationId = crypto.randomUUID();
         project = this.typedAnnotation(project, annotationId, markingId, {
@@ -1430,6 +1664,7 @@ class Batch {
     const { rect } = projectIndex(project).markings.get(markingId)!;
     return {
       project,
+      ...(notes.length > 0 ? { notes } : {}),
       description: `Criar a marcação "${this.markingLabel(project, markingId)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
         op.rect === undefined ? ', tamanho inicial do componente' : ''
       }${op.source ? `, ${sourceLabel(toSource(op.source))}` : ''})${
@@ -1519,7 +1754,6 @@ class Batch {
       });
       if (ownerId !== null) project = setAnnotationParent(project, id, ownerId);
     }
-    if (op.inherit !== undefined) project = setAnnotationInherit(project, id, op.inherit);
     const owner = ownerId
       ? `, vinculada a ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`
       : '';
@@ -1528,9 +1762,7 @@ class Batch {
     )!.name;
     return {
       project,
-      description: `Criar a anotação ${this.annotationLabel(project, id)} na camada "${layerName}"${owner}${
-        op.inherit ? ', herdada pelas descendentes' : ''
-      }`,
+      description: `Criar a anotação ${this.annotationLabel(project, id)} na camada "${layerName}"${owner}`,
       created: [{ kind: 'a', id }],
       rowAliases,
     };
@@ -1563,10 +1795,6 @@ class Batch {
           ? 'sem dona'
           : `dona ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`,
       );
-    }
-    if (op.inherit !== undefined) {
-      project = setAnnotationInherit(project, id, op.inherit);
-      changes.push(op.inherit ? 'herdada pelas descendentes' : 'não herdada');
     }
     return {
       project,
@@ -1617,6 +1845,7 @@ export function changeCounts(before: Project, after: Project): Record<string, un
     layers: count(before.layers, after.layers),
     containers: count(before.containers, after.containers),
     markings: count(before.markings, after.markings),
+    arrows: count(before.arrows, after.arrows),
     annotations: count(before.annotations, after.annotations),
     platformRepos: count(repos(before), repos(after)),
   };

@@ -5,40 +5,48 @@
 import { computed, effect, signal, untracked } from '@preact/signals';
 import Konva from 'konva/lib/Core';
 import {
+  canEditImagePlacement,
   imageCanvasRect,
   isMarkingGeometryLocked,
-  projectIndex,
   type Placement,
+  type Project,
 } from '../model';
 import type { EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
-import { locale } from '../store/settings';
+import { locale, showArrows } from '../store/settings';
 import { textMeasurer } from '../store/textMeasure';
-import { resolveSelection, type EditorUi } from '../store/ui';
 import {
+  itemsOf,
+  resolveSelection,
+  type EditorUi,
+  type SelectionItem,
+} from '../store/ui';
+import {
+  ARROW_KEYS,
   COMPONENT_KEYS,
   IMAGE_KEYS,
   OVERLAY_KEYS,
   cancelFrame,
+  createInteractionState,
   requestFrame,
   sameFrame,
-  type Draft,
   type DropTarget,
   type Frame,
   type HoverLock,
-  type ImagePreview,
   type InteractionState,
 } from './frame';
+import { arrowShape, visibleArrowShapes, type ArrowShape } from './arrowGeometry';
 import { ComponentLayerRenderer } from './components/componentLayer';
 import { konvaMeasurer } from './components/konvaMeasurer';
 import { imageAt, imagesBounds } from './imageGeometry';
 import { watchSpaceKey } from './input/keyboard';
 import { PointerInput } from './input/pointer';
-import { selectableMarkings } from './input/intents';
-import { canvasToImagePixel, markingCanvasRect, markingChainAt } from './markingGeometry';
+import { hitChain } from './input/intents';
+import { canvasToImagePixel, markingCanvasRect } from './markingGeometry';
+import { ArrowRenderer } from './renderers/arrows';
 import { ImageRenderer } from './renderers/images';
 import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
@@ -77,6 +85,12 @@ export interface CanvasControllerOptions {
   readonly review?: ReviewState;
 }
 
+/** Sem setas à vista ("Mostrar setas" desligado, Ver limpo): sempre o mesmo array. */
+const NO_ARROWS: readonly ArrowShape[] = [];
+
+/** Seleção vazia (Ver limpo): sempre o mesmo objeto, o quadro compara por referência. */
+const NO_ITEMS: readonly SelectionItem[] = [];
+
 /** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
 const LABEL_KEYS = ['visibility', 'dots', 'incomplete'] as const;
 
@@ -91,12 +105,7 @@ export class CanvasController {
   private cursorPoint: Point | null = null;
   private cursorRequest: number | null = null;
 
-  private readonly state: InteractionState = {
-    preview: signal<ImagePreview | null>(null),
-    draft: signal<Draft | null>(null),
-    hoverLock: signal<HoverLock | null>(null),
-    hoverMarking: signal<string | null>(null),
-  };
+  private readonly state: InteractionState = createInteractionState();
   private readonly dropTarget = signal<DropTarget>(null);
   private readonly tokens = signal<CanvasTokens>(readCanvasTokens());
 
@@ -107,9 +116,17 @@ export class CanvasController {
   /** Camada dos desenhos de componentes, entre as imagens e as marcações. */
   private readonly componentGroup: Konva.Layer;
   private componentLayer: ComponentLayerRenderer;
+  /**
+   * Desenhos das marcações flutuantes (v13): camada acima das marcações, para ficarem sobre
+   * containers, componentes e bordas. Suas bordas ficam no grupo seguinte da mesma camada.
+   */
+  private readonly floatingDrawings: Konva.Group;
+  private floatingLayer: ComponentLayerRenderer;
   /** Cores com que `componentLayer` foi criado: mudou o tema, ele é refeito. */
   private componentPalette: CanvasTokens['component'];
   private readonly markings: MarkingRenderer;
+  /** Camada das setas, entre os desenhos dos componentes e as marcações. */
+  private readonly arrows: ArrowRenderer;
   private readonly overlay: OverlayRenderer;
   private readonly reviewLayer: ReviewRenderer;
 
@@ -162,6 +179,39 @@ export class CanvasController {
     this.derived.drawingsOf(this.drawnProject.value),
   );
 
+  /**
+   * Itens selecionados (o primário por último). Um `computed` guarda o array até a seleção mudar:
+   * refazer o quadro por causa de pan ou zoom não pode redesenhar a sobreposição à toa.
+   */
+  private readonly selectedItems = computed(() =>
+    this.ui.cleanView.value
+      ? NO_ITEMS
+      : itemsOf(this.ui.selection.value, this.ui.selectionGroup.value),
+  );
+
+  /** Container que receberia a marcação arrastada, como alvo de soltar. */
+  private readonly moveTargetFrame = computed((): DropTarget => {
+    const id = this.state.moveTarget.value;
+    return id === null ? null : { containerId: id };
+  });
+
+  /** Marcação que receberia a ponta da seta (criar ou trocar a ponta) como alvo de soltar. */
+  private readonly arrowTargetFrame = computed((): DropTarget => {
+    const id = this.state.arrowDraft.value?.target ?? null;
+    return id === null ? null : { containerId: null, markingId: id };
+  });
+
+  /**
+   * Setas desenhadas: as do projeto desenhado (com a prévia do gesto) cujas duas pontas aparecem,
+   * se "Mostrar setas" está ligado e fora do Ver limpo. As rotas são guardadas por seta e por
+   * projeto/visibilidade (`visibleArrowShapes`): pan e zoom não as recalculam.
+   */
+  private readonly arrowShapes = computed((): readonly ArrowShape[] =>
+    this.ui.cleanView.value || !showArrows.value
+      ? NO_ARROWS
+      : visibleArrowShapes(this.drawnProject.value, this.derived.markingVisibility.value),
+  );
+
   /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
   private readonly frame = computed((): Frame => {
     // Ver limpo: nada de seleção, trava, hover ou marcas da revisão por cima da imagem.
@@ -172,13 +222,19 @@ export class CanvasController {
       bitmaps: this.display.images.value,
       preview: this.state.preview.value,
       draft: this.state.draft.value,
-      dropTarget: this.dropTarget.value,
+      // O alvo de soltar um arquivo ou, ao arrastar uma marcação, o container que a receberia.
+      dropTarget:
+        this.dropTarget.value ??
+        this.moveTargetFrame.value ??
+        this.arrowTargetFrame.value,
+      absorb: this.state.absorb.value,
       hoverLock: clean ? null : this.state.hoverLock.value,
       hoverMarking: clean ? null : this.state.hoverMarking.value,
       tokens: this.tokens.value,
       size: this.view.size.value,
       viewport: this.view.viewport.value,
       selection: clean ? null : this.ui.selection.value,
+      items: this.selectedItems.value,
       mode: this.ui.mode.value,
       locale: locale.value,
       shown: this.derived.visibleLayers.value,
@@ -187,7 +243,10 @@ export class CanvasController {
       visibility: this.derived.markingVisibility.value,
       drawings: this.drawings.value,
       drawn: this.derived.drawnMarkings.value,
+      floating: this.derived.floatingMarkings.value,
       review: clean ? null : this.reviewCanvas.value,
+      arrows: this.arrowShapes.value,
+      arrowDraft: clean ? null : this.state.arrowDraft.value,
     };
   });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
@@ -199,6 +258,9 @@ export class CanvasController {
   /** Imagens com bitmap pronto no último quadro e o que já foi publicado no container. */
   private readyImages = 0;
   private drawnComponents = 0;
+  private drawnArrows = 0;
+  private countedProject: Project | null = null;
+  private canvasMarkingCount = 0;
   private published = '';
   private readonly cleanups: (() => void)[] = [];
 
@@ -218,13 +280,27 @@ export class CanvasController {
     this.stage = new Konva.Stage({ container, width: 1, height: 1 });
     const imageLayer = new Konva.Layer({ listening: false });
     this.componentGroup = new Konva.Layer({ listening: false });
+    const arrowLayer = new Konva.Layer({ listening: false });
     const markingLayer = new Konva.Layer({ listening: false });
     const overlayLayer = new Konva.Layer({ listening: false });
-    this.stage.add(imageLayer, this.componentGroup, markingLayer, overlayLayer);
+    const floatingTop = new Konva.Layer({ listening: false });
+    this.stage.add(
+      imageLayer,
+      this.componentGroup,
+      arrowLayer,
+      markingLayer,
+      floatingTop,
+      overlayLayer,
+    );
     this.images = new ImageRenderer(imageLayer);
     this.componentPalette = this.tokens.peek().component;
-    this.componentLayer = this.newComponentLayer(this.componentPalette);
-    this.markings = new MarkingRenderer(markingLayer);
+    this.componentLayer = this.newComponentLayer(this.componentGroup);
+    this.floatingDrawings = new Konva.Group({ listening: false });
+    const floatingMarkings = new Konva.Group({ listening: false });
+    floatingTop.add(this.floatingDrawings, floatingMarkings);
+    this.floatingLayer = this.newComponentLayer(this.floatingDrawings);
+    this.markings = new MarkingRenderer(markingLayer, floatingMarkings);
+    this.arrows = new ArrowRenderer(arrowLayer);
     this.overlay = new OverlayRenderer(overlayLayer, container);
     // As marcas da revisão ficam por baixo das sobreposições (seleção, alças).
     const reviewGroup = new Konva.Group({ listening: false });
@@ -232,10 +308,7 @@ export class CanvasController {
     reviewGroup.moveToBottom();
     this.reviewLayer = new ReviewRenderer(reviewGroup);
 
-    this.view = new ViewportController(
-      container,
-      () => this.drawnProject.peek()?.containers ?? [],
-    );
+    this.view = new ViewportController(container, () => this.drawnProject.peek());
     const space = watchSpaceKey(() => this.pointer.updateCursor(null));
     this.pointer = new PointerInput({
       container,
@@ -271,7 +344,10 @@ export class CanvasController {
         // minimapa a cada quadro; na visão Proposto, as imagens da prévia.
         const shown =
           this.review?.derived.shownProject.value ?? this.store.committed.value;
-        this.viewState.bounds.value = imagesBounds(shown?.containers ?? []);
+        this.viewState.bounds.value = imagesBounds(
+          shown?.containers ?? [],
+          shown?.markings,
+        );
       }),
       this.watchCursor(),
       () => {
@@ -308,22 +384,34 @@ export class CanvasController {
   /** Centraliza o canvas no item selecionado (ajustando o zoom se ele for grande ou pequeno demais). */
   centerSelection(): void {
     this.view.measure(); // O canvas pode ter acabado de reaparecer (aba Lista → Canvas).
-    const selected = resolveSelection(this.drawnProject.peek(), this.ui.selection.peek());
-    if (!selected) return;
-    const { image } = selected;
+    const project = this.drawnProject.peek();
+    const selected = resolveSelection(project, this.ui.selection.peek());
+    if (!project || !selected) return;
+    if (selected.kind === 'arrow') {
+      // A seta é enquadrada pela caixa do traço (a curva inclusive).
+      const shape = arrowShape(project, selected.arrow);
+      if (shape) this.view.centerOn(shape.bounds);
+      return;
+    }
     this.view.centerOn(
       selected.kind === 'marking'
-        ? markingCanvasRect(image.placement, selected.marking.rect)
-        : imageCanvasRect(image, image.placement),
+        ? markingCanvasRect(selected.space.placement, selected.marking.rect)
+        : imageCanvasRect(selected.image, selected.image.placement),
     );
   }
 
   /** Se a seleção está fora da área visível, faz o pan mínimo até ela (sem mudar o zoom). */
   revealSelection(): void {
     this.view.measure();
-    const selected = resolveSelection(this.drawnProject.peek(), this.ui.selection.peek());
+    const project = this.drawnProject.peek();
+    const selected = resolveSelection(project, this.ui.selection.peek());
+    if (project && selected?.kind === 'arrow') {
+      const shape = arrowShape(project, selected.arrow);
+      if (shape) this.view.reveal(shape.bounds);
+      return;
+    }
     if (selected?.kind !== 'marking') return;
-    this.view.reveal(markingCanvasRect(selected.image.placement, selected.marking.rect));
+    this.view.reveal(markingCanvasRect(selected.space.placement, selected.marking.rect));
   }
 
   /** Ponto do canvas (unidades do canvas) sob uma coordenada de tela da página. */
@@ -357,12 +445,14 @@ export class CanvasController {
     this.pointer.destroy();
     for (const cleanup of this.cleanups.splice(0)) cleanup();
     this.componentLayer.destroy();
+    this.floatingLayer.destroy();
+    this.arrows.destroy();
     this.stage.destroy();
   }
 
-  private newComponentLayer(palette: CanvasTokens['component']): ComponentLayerRenderer {
-    return new ComponentLayerRenderer(this.componentGroup, {
-      placeholder: palette,
+  private newComponentLayer(parent: Konva.Group | Konva.Layer): ComponentLayerRenderer {
+    return new ComponentLayerRenderer(parent, {
+      placeholder: this.componentPalette,
       // Uma imagem embutida terminou de carregar: pede um quadro (o nó já está atualizado).
       onImageLoaded: () => {
         if (!this.destroyed) this.requestRender();
@@ -400,9 +490,9 @@ export class CanvasController {
       const point = this.cursorPoint;
       // O projeto desenhado: na visão Proposto, a imagem que só existe na proposta também
       // dá coordenadas (fase 8.2, P1).
-      const images = this.drawnProject.peek()?.containers ?? [];
+      const project = this.drawnProject.peek();
       const canvas = point && this.canvasPointAt(point.x, point.y);
-      const image = canvas && imageAt(images, canvas);
+      const image = canvas && imageAt(project?.containers ?? [], canvas);
       const pixel = image && canvasToImagePixel(image.placement, canvas);
       const next =
         image && pixel
@@ -411,58 +501,38 @@ export class CanvasController {
       if (!sameCursor(this.viewState.cursor.peek(), next)) {
         this.viewState.cursor.value = next;
       }
-      this.updateHoverLock(image ? image.id : null, pixel);
-      this.updateHoverMarking(image ? image.id : null, pixel);
+      this.updateHover(project, canvas);
     });
   }
 
   /**
-   * Item travado sob o mouse (para o emblema do cadeado): a marcação mais interna sob o
-   * ponto, ou a imagem se não houver marcação. Só escreve o signal quando o item muda, e
-   * nada é calculado em projetos sem itens trancados.
+   * Item sob o mouse para o cadeado e para a borda das marcações desenhadas: o primeiro da cadeia
+   * do toque (a flutuante, a marcação mais interna, o container, as marcações do canvas). Só
+   * escreve os signals quando o resultado muda, e nada é calculado sem itens trancados nem
+   * marcações desenhadas.
    */
-  private updateHoverLock(containerId: string | null, pixel: Point | null): void {
-    const project = this.drawnProject.peek();
-    let next: HoverLock | null = null;
-    if (project && containerId !== null && pixel && this.derived.hasLocks.peek()) {
-      const visibility = this.derived.markingVisibility.peek();
-      const chain = markingChainAt(
-        selectableMarkings(project, visibility),
-        containerId,
-        pixel,
-      );
-      const top = chain[0];
-      if (top) {
-        if (isMarkingGeometryLocked(project, top.id))
-          next = { kind: 'marking', id: top.id };
-      } else if (projectIndex(project).containers.get(containerId)?.locked) {
-        next = { kind: 'image', id: containerId };
+  private updateHover(project: Project | null, canvas: Point | null): void {
+    const locks = this.derived.hasLocks.peek();
+    const drawn = this.derived.drawnMarkings.peek();
+    let lock: HoverLock | null = null;
+    let marking: string | null = null;
+    if (project && canvas && (locks || drawn.size > 0)) {
+      const top = hitChain(project, this.derived.markingVisibility.peek(), canvas)[0];
+      if (top?.kind === 'marking') {
+        if (locks && isMarkingGeometryLocked(project, top.id)) {
+          lock = { kind: 'marking', id: top.id };
+        }
+        if (drawn.has(top.id)) marking = top.id;
+      } else if (top && locks && !canEditImagePlacement(project, top.id)) {
+        lock = { kind: 'image', id: top.id };
       }
     }
     const current = this.state.hoverLock.peek();
-    if (current?.id !== next?.id || current?.kind !== next?.kind) {
-      this.state.hoverLock.value = next;
+    if (current?.id !== lock?.id || current?.kind !== lock?.kind) {
+      this.state.hoverLock.value = lock;
     }
-  }
-
-  /**
-   * Marcação desenhada sob o mouse (a borda dela aparece): a mais interna sob o ponto entre as
-   * selecionáveis, se for uma das desenhadas. Nada é calculado sem marcações desenhadas, e o
-   * signal só é escrito quando o resultado muda.
-   */
-  private updateHoverMarking(containerId: string | null, pixel: Point | null): void {
-    const project = this.drawnProject.peek();
-    const drawn = this.derived.drawnMarkings.peek();
-    let next: string | null = null;
-    if (project && containerId !== null && pixel && drawn.size > 0) {
-      const top = markingChainAt(
-        selectableMarkings(project, this.derived.markingVisibility.peek()),
-        containerId,
-        pixel,
-      )[0];
-      if (top && drawn.has(top.id)) next = top.id;
-    }
-    if (this.state.hoverMarking.peek() !== next) this.state.hoverMarking.value = next;
+    if (this.state.hoverMarking.peek() !== marking)
+      this.state.hoverMarking.value = marking;
   }
 
   private loadBitmaps(): void {
@@ -519,6 +589,11 @@ export class CanvasController {
     if (placementsChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
       this.renderComponents(frame);
     }
+    // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela).
+    if (scaleChanged || !sameFrame(last, frame, ARROW_KEYS)) {
+      this.arrows.render(frame);
+      this.drawnArrows = this.arrows.size;
+    }
     this.markings.render(frame, this.placements);
     this.reviewLayer.render(frame, this.placements);
     // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela;
@@ -535,29 +610,53 @@ export class CanvasController {
     this.stage.batchDraw();
     // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
     // imagens com bitmap já desenhados (o DOM só é tocado quando eles mudam).
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}`;
+    const canvasMarkings = this.countCanvasMarkings(frame.project);
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
       host.dataset.fits = String(this.view.fits);
       host.dataset.images = String(this.readyImages);
       host.dataset.components = String(this.drawnComponents);
+      host.dataset.canvasMarkings = String(canvasMarkings);
+      host.dataset.arrows = String(this.drawnArrows);
     }
   }
 
-  /** Desenha os componentes das marcações à vista (um nó por marcação; só o mudado é refeito). */
+  /** Quantas marcações do canvas (sem container) o quadro tem; recontado só quando o projeto muda. */
+  private countCanvasMarkings(project: Project | null): number {
+    if (this.countedProject !== project) {
+      this.countedProject = project;
+      this.canvasMarkingCount =
+        project?.markings.filter((m) => m.containerId === null).length ?? 0;
+    }
+    return this.canvasMarkingCount;
+  }
+
+  /**
+   * Desenha os componentes das marcações à vista (um nó por marcação; só o mudado é refeito).
+   * As flutuantes vão para a camada de cima, acima das bordas das demais marcações.
+   */
   private renderComponents(frame: Frame): void {
     if (frame.tokens.component !== this.componentPalette) {
       // As cores do reservado são fixadas ao montar o desenho: tema novo, desenhos novos.
       this.componentLayer.destroy();
+      this.floatingLayer.destroy();
       this.componentPalette = frame.tokens.component;
-      this.componentLayer = this.newComponentLayer(this.componentPalette);
+      this.componentLayer = this.newComponentLayer(this.componentGroup);
+      this.floatingLayer = this.newComponentLayer(this.floatingDrawings);
     }
+    const { drawn, floating } = frame;
     this.componentLayer.render(
       frame.drawings,
-      (drawing) => frame.drawn.has(drawing.markingId),
+      (drawing) => drawn.has(drawing.markingId) && !floating.has(drawing.markingId),
       this.placements,
     );
-    this.drawnComponents = this.componentLayer.size;
+    this.floatingLayer.render(
+      frame.drawings,
+      (drawing) => drawn.has(drawing.markingId) && floating.has(drawing.markingId),
+      this.placements,
+    );
+    this.drawnComponents = this.componentLayer.size + this.floatingLayer.size;
   }
 }

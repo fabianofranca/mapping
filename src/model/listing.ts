@@ -1,6 +1,13 @@
 import type { AnnotationIssue } from './issues';
 import { projectIndex } from './projectIndex';
-import type { Annotation, Layer, Marking, Project, ProjectContainer } from './types';
+import type {
+  Annotation,
+  Arrow,
+  Layer,
+  Marking,
+  Project,
+  ProjectContainer,
+} from './types';
 
 /** Anotações de uma marcação numa camada. */
 export interface LayerAnnotations {
@@ -38,52 +45,22 @@ export function layerSections(
   return sections;
 }
 
-/** Anotação herdada, com a marcação de onde vem. */
-export interface InheritedAnnotation {
-  readonly annotation: Annotation;
-  readonly source: Marking;
-}
-
-export interface LayerInherited {
-  readonly layer: Layer;
-  readonly items: readonly InheritedAnnotation[];
-}
-
 export interface ListedMarking {
+  /** A marcação; numa linha de seta (`arrow`), a marcação de origem dela. */
   readonly marking: Marking;
   /** Da marcação raiz até ela mesma (o último item é `marking`). */
   readonly path: readonly Marking[];
   readonly sections: readonly LayerAnnotations[];
-  /** Herdadas por camada visível (da raiz para baixo dentro de cada camada). */
-  readonly inherited: readonly LayerInherited[];
-}
-
-/**
- * Anotações herdadas pela marcação, por camada, só nas `layers` dadas (as visíveis).
- * `path` é da raiz até a marcação; cada ancestral contribui com as `inherit: true` dele.
- */
-export function inheritedSections(
-  byMarking: ReadonlyMap<string, readonly Annotation[]>,
-  path: readonly Marking[],
-  layers: readonly Layer[],
-): LayerInherited[] {
-  const all: InheritedAnnotation[] = [];
-  for (const source of path.slice(0, -1)) {
-    for (const annotation of byMarking.get(source.id) ?? []) {
-      if (annotation.inherit) all.push({ annotation, source });
-    }
-  }
-  if (all.length === 0) return [];
-  const sections: LayerInherited[] = [];
-  for (const layer of layers) {
-    const items = all.filter((i) => i.annotation.layerId === layer.id);
-    if (items.length > 0) sections.push({ layer, items });
-  }
-  return sections;
+  /**
+   * Linha de uma seta (ME4): fica logo depois da marcação de origem, com as anotações da
+   * própria seta em `sections`.
+   */
+  readonly arrow?: Arrow;
 }
 
 export interface ListedImage {
-  readonly image: ProjectContainer;
+  /** Container do grupo; `null` = o grupo Canvas (marcações do canvas, v13). */
+  readonly image: ProjectContainer | null;
   readonly markings: readonly ListedMarking[];
 }
 
@@ -91,7 +68,7 @@ export interface ListingOptions {
   /** Inclui marcações (e imagens) sem anotação nas camadas visíveis. */
   readonly showEmpty: boolean;
   /**
-   * Só as anotações com estes ids (filtro "Incompletas"): herdadas e marcações
+   * Só as anotações com estes ids (filtro "Incompletas"): as marcações
    * sem nenhuma delas ficam de fora, e `showEmpty` é ignorado.
    */
   readonly onlyAnnotations?: ReadonlySet<string>;
@@ -101,7 +78,7 @@ export interface ListingOptions {
  * Dados da Visão de Lista: Imagem → Marcação → Camada → Anotações.
  * As marcações de cada imagem vêm em profundidade (o pai antes das filhas).
  * Respeita as camadas visíveis: sem `showEmpty`, só entram marcações com
- * anotação própria ou herdada nelas, e imagens sem nenhuma marcação assim ficam de fora.
+ * anotação nelas, e imagens sem nenhuma marcação assim ficam de fora.
  */
 export function buildListing(
   p: Project,
@@ -121,19 +98,32 @@ export function buildListing(
   const roots = children.get(null) ?? [];
   const result: ListedImage[] = [];
 
-  for (const image of p.containers) {
+  // O grupo Canvas vem primeiro (como a raiz da Árvore), depois um grupo por container.
+  for (const image of [null, ...p.containers]) {
     const markings: ListedMarking[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
       const sections = layerSections(byMarking, marking.id, layers);
-      const inherited = only ? [] : inheritedSections(byMarking, path, layers);
-      if (showEmpty || sections.length > 0 || inherited.length > 0) {
-        markings.push({ marking, path, sections, inherited });
+      if (showEmpty || sections.length > 0) {
+        markings.push({ marking, path, sections });
+      }
+      // As setas que saem da marcação, logo depois dela (as anotações são da seta).
+      for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
+        if (arrow.from !== marking.id) continue;
+        const arrowSections = layerSections(byMarking, arrow.id, layers);
+        if (showEmpty || arrowSections.length > 0) {
+          markings.push({ marking, path, sections: arrowSections, arrow });
+        }
       }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };
-    for (const root of roots) if (root.containerId === image.id) visit(root, []);
-    if (showEmpty || markings.length > 0) result.push({ image, markings });
+    for (const root of roots) {
+      if (root.containerId === (image?.id ?? null)) visit(root, []);
+    }
+    // O grupo Canvas sem marcação nenhuma não aparece, nem com `showEmpty`.
+    if (markings.length > 0 || (showEmpty && image !== null)) {
+      result.push({ image, markings });
+    }
   }
   return result;
 }
@@ -141,15 +131,19 @@ export function buildListing(
 /** Anotação incompleta com o contexto para achá-la: onde está e por quê. */
 export interface IncompleteItem {
   readonly annotation: Annotation;
+  /** A marcação; numa anotação de seta (`arrow`), a marcação de origem dela. */
   readonly marking: Marking;
   /** Da marcação raiz até ela mesma (o último item é `marking`). */
   readonly path: readonly Marking[];
   readonly layer: Layer;
   readonly issues: readonly AnnotationIssue[];
+  /** A anotação é desta seta (ME4), não da marcação. */
+  readonly arrow?: Arrow;
 }
 
 export interface IncompleteImage {
-  readonly image: ProjectContainer;
+  /** Container do grupo; `null` = o grupo Canvas (marcações do canvas, v13). */
+  readonly image: ProjectContainer | null;
   readonly items: readonly IncompleteItem[];
 }
 
@@ -169,7 +163,7 @@ export function buildIncompleteList(
   const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
   const result: IncompleteImage[] = [];
 
-  for (const image of p.containers) {
+  for (const image of [null, ...p.containers]) {
     const items: IncompleteItem[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
@@ -179,10 +173,19 @@ export function buildIncompleteList(
         if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
         items.push({ annotation, marking, path, layer, issues: found });
       }
+      for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
+        if (arrow.from !== marking.id) continue;
+        for (const annotation of index.annotationsByMarking.get(arrow.id) ?? []) {
+          const found = issues.get(annotation.id);
+          const layer = index.layers.get(annotation.layerId);
+          if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
+          items.push({ annotation, marking, path, layer, issues: found, arrow });
+        }
+      }
       for (const child of index.children.get(marking.id) ?? []) visit(child, path);
     };
     for (const root of index.children.get(null) ?? []) {
-      if (root.containerId === image.id) visit(root, []);
+      if (root.containerId === (image?.id ?? null)) visit(root, []);
     }
     if (items.length > 0) result.push({ image, items });
   }

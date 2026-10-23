@@ -5,7 +5,7 @@
  * fica no **próprio arquivo**; o tipo da especialização só o referencia
  * (`"component": "components/button.json"`, caminho relativo ao arquivo da especialização).
  * O desenho é um `template`: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto,
- * caminho, slot) cujos atributos podem ser **ligados aos campos** do tipo por expressões
+ * caminho, slot e, na `formatVersion` 2, `repeat`) cujos atributos podem ser **ligados aos campos** do tipo por expressões
  * (`{"$field": "label"}`, `{"$if": …}`, `{"$switch": …}`). Trocar o valor de um campo na
  * anotação redesenha o componente.
  *
@@ -15,14 +15,29 @@
  */
 
 export const COMPONENT_FORMAT = 'mapping-component';
+/** Versão em que os componentes sem `repeat` são escritos (os geradores do repositório a gravam). */
 export const COMPONENT_FORMAT_VERSION = 1;
+/** A versão 2 acrescenta o nó `repeat` (a tabela desenhada); a 1 continua aceita e vale sem ele. */
+export const COMPONENT_FORMAT_VERSION_REPEAT = 2;
+/** Versões aceitas. */
+export const COMPONENT_FORMAT_VERSIONS = [1, 2] as const;
+export type ComponentFormatVersion = (typeof COMPONENT_FORMAT_VERSIONS)[number];
 
 // ---------------------------------------------------------------------------------------
 // Expressões: um valor literal ou uma ligação a campos da anotação
 // ---------------------------------------------------------------------------------------
 
-/** Valor de campo como a anotação grava: texto, número ou vazio (enum e data são texto). */
-export type FieldValue = string | number | null | undefined;
+/**
+ * Uma linha de um campo `table`, como o `repeat` a lê: o valor de cada coluna (texto, número ou
+ * vazio; a célula `ref` chega como o rótulo do alvo).
+ */
+export type FieldRow = Readonly<Record<string, string | number | null | undefined>>;
+
+/**
+ * Valor de campo como a anotação grava: texto, número ou vazio (enum e data são texto). Um
+ * campo `table` chega como a lista das linhas, que só o nó `repeat` lê.
+ */
+export type FieldValue = string | number | null | undefined | readonly FieldRow[];
 
 /** Valores dos campos da instância, pela `key` do campo. */
 export type FieldValues = Readonly<Record<string, FieldValue>>;
@@ -203,13 +218,36 @@ export interface SlotTemplate extends TemplateNodeBase {
   readonly layout?: LayoutSpec;
 }
 
+/**
+ * Tabela desenhada (`formatVersion` 2): repete o `template` (o desenho de **uma** linha) por
+ * linha do campo `table` do tipo. Dentro do `template`, `{ "$field": "<coluna>" }` (e `$has`,
+ * `$eq`, `$switch`) lê a coluna da linha; uma coluna **sombreia** o campo do tipo de mesmo nome
+ * (o campo continua valendo para o que não é coluna). As linhas se empilham em `direction`
+ * (`column`, o padrão, ou `row`) com `gap`. O nó se comporta como um quadro `hug` no eixo das
+ * linhas e `fill` no outro, e o `template` é `hug` no eixo das linhas, se não disser o contrário.
+ * Sem linhas, o nó fica vazio. Não pode ter `repeat` nem `slot` dentro. Só `name`, `visible`,
+ * `opacity`, `width`, `height` e `anchors` valem no nó: o desenho (fundo, borda, cantos) é do
+ * `template` de cada linha ou do quadro que envolve o `repeat`.
+ */
+export interface RepeatTemplate extends TemplateNodeBase {
+  readonly type: 'repeat';
+  /** Chave do campo `table` do tipo cujas linhas se repetem. */
+  readonly field: string;
+  readonly direction?: 'column' | 'row';
+  /** Espaço entre as linhas (px). */
+  readonly gap?: Expr<number>;
+  /** O desenho de uma linha. */
+  readonly template: FrameTemplate;
+}
+
 export type TemplateNode =
   | FrameTemplate
   | RectTemplate
   | EllipseTemplate
   | TextTemplate
   | PathTemplate
-  | SlotTemplate;
+  | SlotTemplate
+  | RepeatTemplate;
 
 // ---------------------------------------------------------------------------------------
 // Arquivo
@@ -230,7 +268,7 @@ export interface ComponentSizing {
 
 export interface ComponentFile {
   readonly format: typeof COMPONENT_FORMAT;
-  readonly formatVersion: typeof COMPONENT_FORMAT_VERSION;
+  readonly formatVersion: ComponentFormatVersion;
   /** Id do componente (único na especialização); o tipo da especialização aponta para o arquivo. */
   readonly id: string;
   readonly name: string;

@@ -3,6 +3,7 @@ import {
   addComponentMarking,
   approximateMeasurer,
   createMarking,
+  setContainerPlacement,
   type NewComponentArgs,
   type Project,
   type Rect,
@@ -227,6 +228,80 @@ describe('addComponent', () => {
         typeId: 'text',
       }).ok,
     ).toBe(false);
+  });
+});
+
+describe('componentes no canvas e entre espaços (ME1)', () => {
+  it('addComponent com containerId nulo cria a instância no canvas, centrada em `center`', () => {
+    const { store, actions } = setup();
+    const result = actions.addComponent({
+      containerId: null,
+      parentId: null,
+      specId: SPEC_ID,
+      typeId: 'text',
+      center: { x: -2000, y: -1500 },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const created = marking(current(store), result.value);
+    expect(created).toMatchObject({ containerId: null, parentId: null, floating: false });
+    // Em unidades do canvas, sem limite, e centrada no ponto pedido.
+    expect(created.rect.x + created.rect.width / 2).toBeCloseTo(-2000, -1);
+    expect(created.rect.y + created.rect.height / 2).toBeCloseTo(-1500, -1);
+    const annotation = current(store).annotations.find(
+      (a) => a.markingId === result.value,
+    );
+    expect(annotation?.type).toEqual({ specId: SPEC_ID, typeId: 'text' });
+    expect(undoDepth(store)).toBe(1);
+  });
+
+  it('a instância no canvas vira flutuante por uma action, numa entrada', () => {
+    const { store, actions } = setup();
+    const result = actions.addComponent({
+      containerId: null,
+      parentId: null,
+      specId: SPEC_ID,
+      typeId: 'text',
+      center: { x: -2000, y: -1500 },
+    });
+    if (!result.ok) throw new Error('addComponent');
+    expect(actions.setMarkingFloating(result.value, true).ok).toBe(true);
+    expect(marking(current(store), result.value).floating).toBe(true);
+    expect(undoDepth(store)).toBe(2);
+    store.undo();
+    expect(marking(current(store), result.value).floating).toBe(false);
+  });
+
+  /** I1 reduzida a um quarto: um texto de 100×40 pixels mede 25×10 no canvas (o mínimo é 60×24). */
+  function smallImage() {
+    let p = setContainerPlacement(componentProject(), 'I1', { x: 0, y: 0, scale: 0.25 });
+    p = add(p, 'T', 'text', box(100, 100, 100, 40));
+    return setup(p);
+  }
+
+  it('mover o componente para o canvas respeita o tamanho mínimo dele na conversão do rect', () => {
+    const { store, actions } = smallImage();
+    // 2000 pixels de I1 = 500 unidades do canvas: sai da imagem (0..250).
+    expect(actions.moveMarking('T', 2000, 0).ok).toBe(true);
+    expect(marking(current(store), 'T')).toMatchObject({
+      containerId: null,
+      rect: { x: 525, y: 25, width: 60, height: 24 },
+    });
+  });
+
+  it('o gesto de mover também: a final assenta com o mínimo do componente', () => {
+    const { store, actions } = smallImage();
+    expect(actions.beginGesture().ok).toBe(true);
+    actions.previewMarkingMove('T', 2000, 0);
+    // Na prévia o rect ainda é o de I1 (sem assentar): 100×40 pixels.
+    expect(marking(current(store), 'T').rect).toMatchObject({ width: 100, height: 40 });
+    expect(actions.finishMarkingMove('T', 2000, 0).ok).toBe(true);
+    actions.commitGesture();
+    expect(marking(current(store), 'T')).toMatchObject({
+      containerId: null,
+      rect: { x: 525, y: 25, width: 60, height: 24 },
+    });
+    expect(undoDepth(store)).toBe(1);
   });
 });
 

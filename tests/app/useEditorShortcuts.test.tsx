@@ -20,6 +20,7 @@ import {
 } from '../../src/store/toolWindows';
 import { ADD_ANNOTATION_ACTION } from '../../src/ui/AnnotationsPanel';
 import { EditorContext } from '../../src/ui/EditorContext';
+import { selectItems } from '../../src/store/ui';
 import { createHarness, type Harness } from '../components/harness';
 import { sampleProject } from '../model/fixtures';
 
@@ -78,6 +79,7 @@ function setup({ enabled = true, readOnly = false } = {}): Fake {
     close: vi.fn(),
     requestDeleteImage: vi.fn(),
     requestDeleteMarking: vi.fn(),
+    requestDeleteItems: vi.fn(),
   } as unknown as Fake['dialogs'];
   const commands = {
     exportProject: vi.fn(() => Promise.resolve()),
@@ -758,5 +760,62 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.press('c', { ctrl: true });
     await vi.waitFor(() => expect(s.harness.ui.toast.value).toBe(t('copy.failed')));
+  });
+});
+
+describe('useEditorShortcuts: seleção múltipla', () => {
+  const two = [
+    { kind: 'marking', id: 'M1' },
+    { kind: 'marking', id: 'M2' },
+  ] as const;
+
+  it('Esc volta ao item principal e, de novo, limpa a seleção', () => {
+    const s = setup();
+    selectItems(s.harness.ui, two);
+    s.press('Escape');
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+    expect(s.harness.ui.selectionGroup.value).toBeNull();
+    s.press('Escape');
+    expect(s.harness.ui.selection.value).toBeNull();
+  });
+
+  it('Esc com um gesto em andamento só cancela o gesto', () => {
+    const s = setup();
+    selectItems(s.harness.ui, two);
+    s.canvas.cancelInteraction.mockReturnValueOnce(true);
+    s.press('Escape');
+    expect(s.harness.ui.selectionGroup.value).not.toBeNull();
+  });
+
+  it('Delete pede UMA exclusão da seleção inteira', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [...two, { kind: 'image', id: 'I2' }]);
+    s.press('Delete');
+    expect(s.dialogs.requestDeleteItems).toHaveBeenCalledTimes(1);
+    expect(s.dialogs.requestDeleteItems.mock.calls[0]?.[0]).toHaveLength(3);
+    expect(s.dialogs.requestDeleteMarking).not.toHaveBeenCalled();
+  });
+
+  it('Alt+L tranca todos; com todos trancados, destranca todos (uma entrada de desfazer)', () => {
+    const s = setup();
+    s.harness.actions.setMarkingLocked('M1', true);
+    selectItems(s.harness.ui, two);
+    s.press('l', { alt: true });
+    expect(marking(s.harness, 'M1').locked).toBe(true);
+    expect(marking(s.harness, 'M2').locked).toBe(true);
+    s.press('l', { alt: true });
+    expect(marking(s.harness, 'M1').locked).toBe(false);
+    expect(marking(s.harness, 'M2').locked).toBe(false);
+    s.harness.store.undo();
+    expect(marking(s.harness, 'M2').locked).toBe(true);
+  });
+
+  it('somente leitura: Delete e Alt+L não fazem nada', () => {
+    const s = setup({ readOnly: true });
+    selectItems(s.harness.ui, two);
+    s.press('Delete');
+    s.press('l', { alt: true });
+    expect(s.dialogs.requestDeleteItems).not.toHaveBeenCalled();
+    expect(marking(s.harness, 'M1').locked).toBe(false);
   });
 });

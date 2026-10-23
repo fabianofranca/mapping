@@ -20,9 +20,14 @@ export type ModelErrorCode =
   | 'rect-too-small'
   | 'rect-out-of-image'
   | 'rect-outside-parent'
-  | 'rect-excludes-children'
   | 'invalid-parent'
+  // Espaço da marcação (etapa Marcações espaciais): a flutuante vive só no canvas
+  | 'invalid-space'
   | 'invalid-annotation-parent'
+  // Setas (v13, ME4): ligam marcações, nunca outra seta nem container
+  | 'arrow-endpoint'
+  | 'arrow-self'
+  | 'invalid-arrow-route'
   | 'empty-key'
   | 'duplicate-key'
   | 'duplicate-id'
@@ -35,6 +40,8 @@ export type ModelErrorCode =
   | 'not-typed'
   | 'unknown-type'
   | 'type-not-in-layer'
+  // O tipo não se aplica à dona (appliesTo: marcação ou seta, ME4)
+  | 'type-not-applicable'
   | 'owner-required'
   | 'unknown-field'
   | 'invalid-value'

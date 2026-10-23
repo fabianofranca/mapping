@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   annotationSchema,
+  arrowSchema,
   entrySchema,
   containerSchema,
   jsonValue,
@@ -9,20 +10,24 @@ import {
   normalizeIsoDate,
   placementSchema,
   platformRepoSchema,
-  rectSchema,
   sourceSchema,
 } from './schema';
 import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './spec';
 import type { JsonValue } from './types';
 
 // Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
-// `formatVersion` 2 (a 1 continua lida). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
+// `formatVersion` 3 (a 1 e a 2 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
 // leitura devolve os erros com o caminho exato (`changes[3].to.rect.width: …`).
 
 export const PROPOSAL_FORMAT = 'mapping-proposal';
-export const PROPOSAL_FORMAT_VERSION = 2;
-/** Versões lidas: a 2 acrescenta `add_container` às `operations`; a 1 continua válida. */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2] as const;
+export const PROPOSAL_FORMAT_VERSION = 3;
+/**
+ * Versões lidas: a 3 não tem `inherit` na anotação nem `parentId` comparado na marcação (a
+ * mudança de uma proposta antiga é ignorada, com aviso), e traz o nível `canvas`, a mudança
+ * composta `space` e `floating`, e as mudanças `create-arrow` e `delete-arrow` (entidade `arrow`,
+ * ME4); a 2 acrescenta `add_container` às `operations`; a 1 continua válida.
+ */
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3] as const;
 /** Pasta das propostas, relativa à raiz do projeto. */
 export const PROPOSALS_DIR = 'proposals';
 /** Nome do arquivo da proposta dentro de `proposals/<id>/`. */
@@ -45,7 +50,13 @@ export type ChangeKind = 'create' | 'update' | 'remove';
 
 /** Entidades que uma mudança pode alterar. As três primeiras formam o grupo "Projeto". */
 export type ChangeEntity =
-  'specialization' | 'platformRepo' | 'layer' | 'image' | 'marking' | 'annotation';
+  | 'specialization'
+  | 'platformRepo'
+  | 'layer'
+  | 'image'
+  | 'marking'
+  | 'arrow'
+  | 'annotation';
 
 export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'specialization',
@@ -53,6 +64,7 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'layer',
   'image',
   'marking',
+  'arrow',
   'annotation',
 ];
 
@@ -70,16 +82,31 @@ export const IMAGE_FIELDS = [
   'locked',
   'source',
 ] as const;
-/** `position` de marcação: índice entre as irmãs (mesma imagem e mesmo pai), só quando a ordem relativa muda. */
+/**
+ * Campos alterados de uma marcação. `space` é a troca de espaço (`{ containerId, rect }`, o
+ * `containerId` nulo é o canvas): vira uma mudança só para o revisor não aceitar metade; o
+ * `rect` só é um campo à parte quando o espaço não muda. `floating` é comparado; `parentId` é
+ * derivado (o assentar recalcula) e não é comparado. `containerId` sozinho é o formato de
+ * antes da v13, ainda aceito na leitura. `position`: índice entre as irmãs (mesmo espaço e
+ * mesmo pai), só quando a ordem relativa muda.
+ */
 export const MARKING_FIELDS = [
   'name',
+  'space',
   'rect',
-  'parentId',
   'containerId',
+  'floating',
   'locked',
   'source',
   'position',
 ] as const;
+/**
+ * A seta (v13, ME4) só tem criação e remoção (`create-arrow`, `delete-arrow`): nenhum campo é
+ * comparado. A rota (`points`) é só da pessoa e nunca vem de proposta; o estilo, o nome, a
+ * trava e as pontas de uma seta que já existe também não são propostos (uma mudança dessas é
+ * ignorada na leitura, com aviso). A anotação numa seta usa as mudanças de anotação de sempre.
+ */
+export const ARROW_FIELDS = [] as const;
 /**
  * Campos fixos de uma anotação. Além deles: `values.<key>` (um campo da tipada) e
  * `entries.<id>` (um par da livre). `type` é a troca de tipo, que leva `type`, `values`
@@ -87,7 +114,6 @@ export const MARKING_FIELDS = [
  */
 export const ANNOTATION_FIELDS = [
   'name',
-  'inherit',
   'parentAnnotationId',
   'markingId',
   'layerId',
@@ -104,7 +130,10 @@ export const ENTRIES_FIELD_PREFIX = 'entries.';
  * na criação, `from` é `null` e `to` a entidade inteira; na remoção, o contrário; na
  * alteração, os valores do campo `field` (especialização e repositório não têm campo:
  * `field` é `null` e os valores são a entidade inteira). `imageId` e `markingId` dizem
- * em que imagem e item (marcação) a mudança aparece na revisão (`null` no grupo Projeto).
+ * em que imagem e item (marcação) a mudança aparece na revisão: ambos `null` é o grupo
+ * Projeto; `imageId` nulo com `markingId` é uma marcação do canvas (e as anotações dela).
+ * A seta (`entity: "arrow"`) é um item como a marcação: `markingId` é o id dela e `imageId` o
+ * container da marcação de origem (ou `null`, o canvas); as anotações dela levam o mesmo par.
  */
 export interface Change {
   readonly id: string;
@@ -132,12 +161,12 @@ export type ProposalDecisions = { readonly [changeId: string]: Decision };
 /** Mudanças já efetivadas no projeto (por id), com a data. */
 export type ProposalApplied = { readonly [changeId: string]: { readonly at: string } };
 
-/** Níveis da revisão. */
-export type ReviewLevel = 'proposal' | 'project' | 'image' | 'item' | 'change';
+/** Níveis da revisão. `canvas` é o grupo das marcações do canvas, irmão dos containers. */
+export type ReviewLevel = 'proposal' | 'project' | 'canvas' | 'image' | 'item' | 'change';
 
 /**
- * Alvo de uma decisão ou nota. `id` é `null` em `proposal` e `project`; nos demais, o
- * id da imagem, da marcação (item) ou da mudança.
+ * Alvo de uma decisão ou nota. `id` é `null` em `proposal`, `project` e `canvas`; nos
+ * demais, o id da imagem, da marcação (item) ou da mudança.
  */
 export interface ReviewTarget {
   readonly level: ReviewLevel;
@@ -274,12 +303,16 @@ const specializationValue = z
     }
   });
 
+/** A seta numa proposta: sem `points` (a rota é só da pessoa; um `points` que venha é ignorado). */
+const arrowValue = arrowSchema.omit({ points: true });
+
 const entitySchemas: Record<ChangeEntity, z.ZodType> = {
   specialization: specializationValue,
   platformRepo: platformRepoSchema,
   layer: layerSchema,
   image: containerSchema,
   marking: markingSchema,
+  arrow: arrowValue,
   annotation: annotationSchema,
 };
 
@@ -294,11 +327,23 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   source: sourceSchema.nullable(),
 };
 
+/**
+ * Retângulo de uma mudança de marcação: inteiros, sem o limite `≥ 0` (a marcação do canvas
+ * aceita coordenadas negativas); o limite de cada espaço é das invariantes.
+ */
+const looseRect = z.object({
+  x: z.number().int(),
+  y: z.number().int(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+
 const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = {
   name: z.string().nullable(),
-  rect: rectSchema,
-  parentId: id.nullable(),
+  rect: looseRect,
+  space: z.object({ containerId: id.nullable(), rect: looseRect }),
   containerId: id,
+  floating: z.boolean(),
   locked: z.boolean(),
   source: sourceSchema.nullable(),
   position: z.number().int().min(0),
@@ -306,7 +351,6 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
 
 const annotationFieldSchemas: Record<(typeof ANNOTATION_FIELDS)[number], z.ZodType> = {
   name: z.string().nullable(),
-  inherit: z.boolean(),
   parentAnnotationId: id.nullable(),
   markingId: id,
   layerId: id,
@@ -399,11 +443,19 @@ const changeSchema = z
     if (projectLevel && (c.imageId !== null || c.markingId !== null)) {
       add(['imageId'], 'mudanças do projeto não têm imageId nem markingId');
     }
-    if (!projectLevel && c.imageId === null) add(['imageId'], 'obrigatório');
-    if ((c.entity === 'marking' || c.entity === 'annotation') && c.markingId === null) {
+    // Marcação (e anotação) sem container é da marcação do canvas; só a imagem exige o id.
+    if (c.entity === 'image' && c.imageId === null) add(['imageId'], 'obrigatório');
+    if (
+      (c.entity === 'marking' || c.entity === 'arrow' || c.entity === 'annotation') &&
+      c.markingId === null
+    ) {
       add(['markingId'], 'obrigatório');
     }
-    if (c.entity === 'marking' && c.markingId !== null && c.markingId !== c.entityId) {
+    if (
+      (c.entity === 'marking' || c.entity === 'arrow') &&
+      c.markingId !== null &&
+      c.markingId !== c.entityId
+    ) {
       add(['markingId'], `deve ser "${c.entityId}"`);
     }
     if (c.entity === 'image' && c.imageId !== null && c.imageId !== c.entityId) {
@@ -451,13 +503,14 @@ const changeSchema = z
 
 const targetSchema = z
   .object({
-    level: z.enum(['proposal', 'project', 'image', 'item', 'change'], {
-      error: 'deve ser "proposal", "project", "image", "item" ou "change"',
+    level: z.enum(['proposal', 'project', 'canvas', 'image', 'item', 'change'], {
+      error: 'deve ser "proposal", "project", "canvas", "image", "item" ou "change"',
     }),
     id: id.nullable(),
   })
   .superRefine((t, ctx) => {
-    const global = t.level === 'proposal' || t.level === 'project';
+    const global =
+      t.level === 'proposal' || t.level === 'project' || t.level === 'canvas';
     if (global && t.id !== null) {
       ctx.addIssue({
         code: 'custom',
@@ -473,7 +526,9 @@ const targetSchema = z
 export const proposalSchema = z
   .object({
     format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
-    formatVersion: z.union([z.literal(1), z.literal(2)], { error: 'deve ser 1 ou 2' }),
+    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3)], {
+      error: 'deve ser 1, 2 ou 3',
+    }),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),
     description: optionalText,
@@ -533,7 +588,12 @@ export const proposalSchema = z
   });
 
 export type ProposalParseResult =
-  | { readonly ok: true; readonly proposal: Proposal }
+  | {
+      readonly ok: true;
+      readonly proposal: Proposal;
+      /** Avisos da leitura (ex.: campo que saiu do formato e foi ignorado). */
+      readonly warnings: readonly string[];
+    }
   | { readonly ok: false; readonly issues: SpecIssue[]; readonly errors: string[] };
 
 /**
@@ -588,11 +648,164 @@ function withContainerIdOnMarkings(data: unknown): unknown {
   };
 }
 
+/**
+ * Tira de `data` as mudanças de id em `dropped` e as decisões e aplicações delas; uma nota
+ * presa a uma mudança descartada passa para a proposta.
+ */
+function pruneChanges(
+  data: Record<string, unknown>,
+  changes: readonly unknown[],
+  dropped: ReadonlySet<string>,
+): unknown {
+  const without = (record: unknown): unknown =>
+    isPlainRecord(record)
+      ? Object.fromEntries(Object.entries(record).filter(([key]) => !dropped.has(key)))
+      : record;
+  const notes = Array.isArray(data.notes)
+    ? (data.notes as unknown[]).map((n) => {
+        if (!isPlainRecord(n) || !isPlainRecord(n.target)) return n;
+        const { level, id: targetId } = n.target;
+        return level === 'change' && typeof targetId === 'string' && dropped.has(targetId)
+          ? { ...n, target: { level: 'proposal', id: null } }
+          : n;
+      })
+    : data.notes;
+  return {
+    ...data,
+    changes,
+    decisions: without(data.decisions),
+    applied: without(data.applied),
+    notes,
+  };
+}
+
+/**
+ * Proposta escrita antes do schema 13: a anotação tinha `inherit` (a herança para as marcações
+ * descendentes saiu do formato). Na leitura, a mudança do campo `inherit` é descartada (com a
+ * decisão e a aplicação dela; uma nota presa a ela passa para a proposta) e o campo some das
+ * anotações inteiras de criação e remoção. `ignored` conta o que foi ignorado, para o aviso.
+ */
+function withoutInherit(data: unknown): { data: unknown; ignored: number } {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return { data, ignored: 0 };
+  let ignored = 0;
+  const dropped = new Set<string>();
+  const strip = (value: unknown): unknown => {
+    if (!isPlainRecord(value) || !Object.hasOwn(value, 'inherit')) return value;
+    const { inherit, ...rest } = value;
+    void inherit;
+    ignored += 1;
+    return rest;
+  };
+  const changes: unknown[] = [];
+  for (const c of data.changes as unknown[]) {
+    if (!isPlainRecord(c) || c.entity !== 'annotation') {
+      changes.push(c);
+    } else if (c.field === 'inherit') {
+      ignored += 1;
+      if (typeof c.id === 'string') dropped.add(c.id);
+    } else if (c.field === null) {
+      changes.push({ ...c, from: strip(c.from), to: strip(c.to) });
+    } else {
+      changes.push(c);
+    }
+  }
+  if (ignored === 0) return { data, ignored };
+  return { data: pruneChanges(data, changes, dropped), ignored };
+}
+
+/**
+ * Proposta escrita antes do pertencimento por geometria (schema 13): a marcação tinha o
+ * `parentId` como campo comparado, e agora o pai é sempre derivado (o assentar o recalcula ao
+ * aplicar). Na leitura, a mudança do campo `parentId` é descartada, como a de `inherit`.
+ * Também completa o que o schema 13 exige nas entidades inteiras: `floating: false` na
+ * marcação e `parentId: null` no container. `ignored` conta as mudanças de `parentId`.
+ */
+function withDerivedParent(data: unknown): { data: unknown; ignored: number } {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return { data, ignored: 0 };
+  let ignored = 0;
+  const dropped = new Set<string>();
+  const complete = (entity: unknown, value: unknown): unknown => {
+    if (!isPlainRecord(value)) return value;
+    if (entity === 'marking' && !Object.hasOwn(value, 'floating')) {
+      return { ...value, floating: false };
+    }
+    if (entity === 'image' && !Object.hasOwn(value, 'parentId')) {
+      return { ...value, parentId: null };
+    }
+    return value;
+  };
+  const changes: unknown[] = [];
+  for (const c of data.changes as unknown[]) {
+    if (!isPlainRecord(c)) {
+      changes.push(c);
+    } else if (c.entity === 'marking' && c.field === 'parentId') {
+      ignored += 1;
+      if (typeof c.id === 'string') dropped.add(c.id);
+    } else if (c.field === null && (c.entity === 'marking' || c.entity === 'image')) {
+      changes.push({
+        ...c,
+        from: complete(c.entity, c.from),
+        to: complete(c.entity, c.to),
+      });
+    } else {
+      changes.push(c);
+    }
+  }
+  return {
+    data: ignored === 0 ? { ...data, changes } : pruneChanges(data, changes, dropped),
+    ignored,
+  };
+}
+
+/**
+ * Mudança de campo de uma seta que já existe (estilo, nome, pontas, trava): a proposta só cria
+ * e remove setas (ME4, decisão 14), então essas mudanças são ignoradas na leitura, com a
+ * decisão e a aplicação delas (uma nota presa a uma passa para a proposta). `ignored` conta o
+ * que foi ignorado, para o aviso.
+ */
+function withoutArrowUpdates(data: unknown): { data: unknown; ignored: number } {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return { data, ignored: 0 };
+  const dropped = new Set<string>();
+  const changes: unknown[] = [];
+  for (const c of data.changes as unknown[]) {
+    if (isPlainRecord(c) && c.entity === 'arrow' && c.kind === 'update') {
+      if (typeof c.id === 'string') dropped.add(c.id);
+    } else {
+      changes.push(c);
+    }
+  }
+  if (dropped.size === 0) return { data, ignored: 0 };
+  return { data: pruneChanges(data, changes, dropped), ignored: dropped.size };
+}
+
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseProposal(data: unknown): ProposalParseResult {
-  const result = proposalSchema.safeParse(withContainerIdOnMarkings(data));
+  const noInherit = withoutInherit(withContainerIdOnMarkings(data));
+  const noParent = withDerivedParent(noInherit.data);
+  const noArrowUpdate = withoutArrowUpdates(noParent.data);
+  const result = proposalSchema.safeParse(noArrowUpdate.data);
   if (result.success) {
-    return { ok: true, proposal: withoutLegacyUrlTemplate(result.data as Proposal) };
+    const warnings: string[] = [];
+    if (noInherit.ignored > 0) {
+      warnings.push(
+        `"inherit" saiu do formato (schema 13): ${noInherit.ignored} ocorrência(s) na proposta ignorada(s); a anotação vale só para a própria marcação`,
+      );
+    }
+    if (noParent.ignored > 0) {
+      warnings.push(
+        `"parentId" da marcação é derivado da geometria (schema 13): ${noParent.ignored} mudança(s) de pai na proposta ignorada(s); o pai é recalculado ao aplicar`,
+      );
+    }
+    if (noArrowUpdate.ignored > 0) {
+      warnings.push(
+        `A seta só tem criação e remoção na proposta (ME4): ${noArrowUpdate.ignored} mudança(s) de campo de seta ignorada(s); o estilo, o nome, as pontas e a rota são da pessoa`,
+      );
+    }
+    return {
+      ok: true,
+      proposal: withoutLegacyUrlTemplate(result.data as Proposal),
+      warnings,
+    };
   }
   const issues = result.error.issues.map((i) => ({
     path: formatSpecPath(i.path),

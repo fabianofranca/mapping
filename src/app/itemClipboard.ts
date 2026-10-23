@@ -49,7 +49,9 @@ function imageRefLabel(image: Parameters<typeof refImageLabel>[0]): string {
 /** "Copiar recorte" só existe para marcação de imagem com arquivo (não de container sem arquivo). */
 export function canCopyCrop(project: Project | null, markingId: string): boolean {
   const marking = project?.markings.find((m) => m.id === markingId);
-  const image = marking && project?.containers.find((i) => i.id === marking.containerId);
+  // Marcação do canvas (`containerId` nulo): não há imagem para recortar.
+  if (!marking || marking.containerId === null) return false;
+  const image = project?.containers.find((i) => i.id === marking.containerId);
   return image !== undefined && !isBackgroundContainer(image);
 }
 
@@ -57,6 +59,12 @@ export function canCopyCrop(project: Project | null, markingId: string): boolean
 function readablePath(project: Project, target: CopyTarget): string | null {
   const separator = t('marking.pathSeparator');
   const imageOf = (id: string) => project.containers.find((i) => i.id === id);
+  /** Container da marcação; `null` = canvas; `null` no retorno = container sumiu. */
+  const placeLabel = (containerId: string | null): string | null => {
+    if (containerId === null) return t('canvas.name');
+    const image = imageOf(containerId);
+    return image ? imageRefLabel(image) : null;
+  };
   const markingOf = (id: string) => project.markings.find((m) => m.id === id);
   if (target.kind === 'i') {
     const image = imageOf(target.id);
@@ -64,19 +72,18 @@ function readablePath(project: Project, target: CopyTarget): string | null {
   }
   if (target.kind === 'm') {
     const marking = markingOf(target.id);
-    const image = marking && imageOf(marking.containerId);
-    if (!marking || !image) return null;
-    return [imageRefLabel(image), markingPath(project, marking)].join(separator);
+    if (!marking) return null;
+    const place = placeLabel(marking.containerId);
+    if (place === null) return null;
+    return [place, markingPath(project, marking)].join(separator);
   }
   const annotation = project.annotations.find((a) => a.id === target.id);
   const owner = annotation && markingOf(annotation.markingId);
-  const image = owner && imageOf(owner.containerId);
-  if (!annotation || !owner || !image) return null;
-  return [
-    imageRefLabel(image),
-    markingPath(project, owner),
-    annotationLabel(annotation),
-  ].join(separator);
+  const place = owner ? placeLabel(owner.containerId) : null;
+  if (!annotation || !owner || place === null) return null;
+  return [place, markingPath(project, owner), annotationLabel(annotation)].join(
+    separator,
+  );
 }
 
 /** Texto da referência e os dados do item no formato próprio da app; `null` se o item sumiu. */

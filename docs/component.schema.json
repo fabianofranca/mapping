@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
-  "title": "Mapping — componente (mapping-component, formatVersion 1)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md.",
+  "title": "Mapping — componente (mapping-component, formatVersion 1 e 2)",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) só existe na formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -11,7 +11,7 @@
       "const": "mapping-component"
     },
     "formatVersion": {
-      "const": 1
+      "enum": [1, 2]
     },
     "id": {
       "type": "string",
@@ -36,7 +36,21 @@
     "preview": {
       "type": "object",
       "additionalProperties": {
-        "type": ["string", "number", "null"]
+        "anyOf": [
+          {
+            "type": ["string", "number", "null"]
+          },
+          {
+            "type": "array",
+            "description": "Linhas de um campo table (formatVersion 2, nó repeat): uma coluna por chave.",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": ["string", "number", "null"]
+              }
+            }
+          }
+        ]
       }
     },
     "template": {
@@ -1866,8 +1880,52 @@
         },
         {
           "$ref": "#/$defs/node_slot"
+        },
+        {
+          "$ref": "#/$defs/node_repeat"
         }
       ]
+    },
+    "node_repeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "formatVersion 2. Repete o template (o desenho de uma linha) por linha do campo table do tipo. Dentro do template, $field/$has/$eq/$switch leem a coluna da linha, que sombreia o campo do tipo de mesmo nome. Quadro hug no eixo das linhas e fill no outro.",
+      "required": ["type", "field", "template"],
+      "properties": {
+        "type": {
+          "const": "repeat"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/size"
+        },
+        "height": {
+          "$ref": "#/$defs/size"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "field": {
+          "$ref": "#/$defs/fieldKey"
+        },
+        "direction": {
+          "enum": ["column", "row"]
+        },
+        "gap": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "template": {
+          "$ref": "#/$defs/node_frame"
+        }
+      }
     }
   }
 }

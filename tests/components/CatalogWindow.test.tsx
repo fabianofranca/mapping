@@ -84,7 +84,7 @@ describe('janela Catálogo', () => {
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
   });
 
-  it('sem tela possível, Adicionar à tela fica desabilitado com a dica', async () => {
+  it('sem container sob o centro, Adicionar fica habilitado (vai para o canvas)', async () => {
     const harness = await libraryHarness();
     harness.canvas.viewportCenter.mockReturnValue({ x: -5000, y: -5000 });
     const { user } = renderWindow(harness);
@@ -92,8 +92,7 @@ describe('janela Catálogo', () => {
     const add = within(dialog).getByRole<HTMLButtonElement>('button', {
       name: t('catalog.page.addToScreen'),
     });
-    expect(add.disabled).toBe(true);
-    expect(add.title).toBe(t('library.noScreen'));
+    expect(add.disabled).toBe(false);
   });
 
   it('somente leitura: Adicionar à tela desabilitado', async () => {

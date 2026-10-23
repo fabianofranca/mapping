@@ -1,6 +1,6 @@
 import { annotationWithLinked } from './links';
 import { isRecord, parseRefValue } from './refs';
-import type { Spec, SpecColumn, SpecMigrationStep } from './spec';
+import type { Spec, SpecMigrationStep, SpecSimpleColumn } from './spec';
 import { findTypeInSpec } from './specLookup';
 import { migrationChain } from './specVersions';
 import {
@@ -34,7 +34,8 @@ import type { Annotation, JsonValue, Project, TypedValues } from './types';
 // - `rename-field` de campo de nível superior reescreve as referências (`ref`) do projeto inteiro
 //   (de qualquer especialização) que apontam para o campo ou para uma linha da tabela dele, nas
 //   anotações do tipo renomeado: o formato do valor é o que identifica uma `ref`, sem depender
-//   da especialização (a aplicada ainda é a antiga). `refs` conta as reescritas.
+//   da especialização (a aplicada ainda é a antiga). Vale para o campo `ref` e para a célula
+//   de uma coluna `ref` de tabela. `refs` conta as reescritas.
 // - `remove-type` com `delete` apaga a anotação e as vinculadas a ela (`annotationWithLinked`),
 //   também as de outros tipos e as livres. Cada anotação apagada gera uma perda `removed-type`,
 //   com o `typeId` dela (`''` se for livre). `annotations` conta só as do tipo do passo;
@@ -261,7 +262,24 @@ function removeType(
   };
 }
 
-/** Reescreve a `key` das referências de campo e de linha que apontam para `ids`. */
+/** A referência com a `key` trocada, se ela aponta para um campo ou linha de `ids` com `from`. */
+function rewrittenRef(
+  value: JsonValue | undefined,
+  ids: ReadonlySet<string>,
+  from: string,
+  to: string,
+): JsonValue | null {
+  const ref = parseRefValue(value);
+  if (!ref || !('key' in ref) || ref.key !== from || !ids.has(ref.annotationId)) {
+    return null;
+  }
+  return { ...ref, key: to };
+}
+
+/**
+ * Reescreve a `key` das referências de campo e de linha que apontam para `ids`: as dos
+ * campos `ref` e as das células de colunas `ref` das tabelas.
+ */
 function rewriteRefs(
   values: TypedValues,
   ids: ReadonlySet<string>,
@@ -271,13 +289,33 @@ function rewriteRefs(
   let refs = 0;
   let next: { [key: string]: JsonValue } | null = null;
   for (const [key, value] of Object.entries(values)) {
-    const ref = parseRefValue(value);
-    if (!ref || !('key' in ref) || ref.key !== from || !ids.has(ref.annotationId)) {
+    const rewritten = rewrittenRef(value, ids, from, to);
+    if (rewritten) {
+      next ??= { ...values };
+      next[key] = rewritten;
+      refs++;
       continue;
     }
-    next ??= { ...values };
-    next[key] = { ...ref, key: to };
-    refs++;
+    if (!Array.isArray(value)) continue;
+    let changedRows = false;
+    const rows = value.map((row): JsonValue => {
+      if (!isRecord(row)) return row;
+      let newRow: { [key: string]: JsonValue } | null = null;
+      for (const [column, cell] of Object.entries(row)) {
+        const cellRewritten = column === '_id' ? null : rewrittenRef(cell, ids, from, to);
+        if (!cellRewritten) continue;
+        newRow ??= { ...row };
+        newRow[column] = cellRewritten;
+        refs++;
+      }
+      if (!newRow) return row;
+      changedRows = true;
+      return newRow;
+    });
+    if (changedRows) {
+      next ??= { ...values };
+      next[key] = rows;
+    }
   }
   return { values: next ?? values, refs };
 }
@@ -437,7 +475,11 @@ function mapValues(
 }
 
 /** A coluna ou o campo simples `target` do tipo na versão nova, se existir e for simples. */
-function simpleFieldIn(next: Spec, typeId: string, target: Target): SpecColumn | null {
+function simpleFieldIn(
+  next: Spec,
+  typeId: string,
+  target: Target,
+): SpecSimpleColumn | null {
   const type = findTypeInSpec(next, typeId)?.type;
   if (!type) return null;
   if (target.kind === 'field') {
@@ -446,7 +488,8 @@ function simpleFieldIn(next: Spec, typeId: string, target: Target): SpecColumn |
   }
   const table = type.fields.find((f) => f.key === target.table);
   if (table?.type !== 'table') return null;
-  return table.columns.find((c) => c.key === target.column) ?? null;
+  const column = table.columns.find((c) => c.key === target.column);
+  return column && column.type !== 'ref' ? column : null;
 }
 
 function fillField(

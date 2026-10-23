@@ -329,7 +329,9 @@ export function CatalogPage({
               title={addDisabledReason}
               onClick={() => onAddToScreen(entry.type.id)}
             >
-              {t('catalog.page.addToScreen')}
+              {entry.type.floating === true
+                ? t('library.addToCanvas')
+                : t('catalog.page.addToScreen')}
             </Button>
           )}
         </div>

@@ -6,7 +6,7 @@ import { isPackagePath, packagePathProblem } from './packagePaths';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 6), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
+// Formato da especialização (`formatVersion` 1 a 7), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
 // etapas 3b e 4 e etapa Biblioteca do plano. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
@@ -14,7 +14,10 @@ export { isPackagePath };
 // tipos, `fonts`, `origins` (origens executáveis, com `slot`, `ignore` e `path` nas `sources`)
 // e `migrations` (o contrato de versão); a versão 5 é a 4 mais `repo` em `platforms[]` (o
 // repositório da biblioteca na plataforma, onde estão os arquivos citados nos `path` do `code`);
-// a versão 6 é a 5 mais `containers` (presets de tamanho do diálogo Novo container).
+// a versão 6 é a 5 mais `containers` (presets de tamanho do diálogo Novo container); a versão 7
+// é a 6 mais `floating` no tipo (a instância é uma marcação flutuante, como uma nota),
+// `appliesTo` no tipo (onde a anotação se aplica: marcação, seta ou ambas) e `ref` como tipo
+// de coluna de `table` (a lista de referências como dado, ME4).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -27,9 +30,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 6;
+export const SPEC_FORMAT_VERSION = 7;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -169,16 +172,25 @@ interface SpecFieldBase {
   sources?: SpecFieldSource[];
 }
 
-export type SpecColumn =
+/** Campo simples (e coluna simples): texto, número, data ou enum. */
+export type SpecSimpleColumn =
   | (SpecFieldBase & { type: 'string'; default?: string })
   | (SpecFieldBase & { type: 'number'; default?: number })
   | (SpecFieldBase & { type: 'date'; default?: string })
   | (SpecFieldBase & { type: 'enum'; options: string[]; default?: string });
 
+/**
+ * Coluna `ref` de uma `table` (`formatVersion` 7): a célula guarda uma referência a um alvo,
+ * com o mesmo `accepts` de um campo `ref`. É dado: não desenha seta.
+ */
+export type SpecRefColumn = SpecFieldBase & { type: 'ref'; accepts: SpecRefAccepts };
+
+export type SpecColumn = SpecSimpleColumn | SpecRefColumn;
+
 export type SpecField =
-  | SpecColumn
+  | SpecSimpleColumn
   | (SpecFieldBase & { type: 'table'; columns: SpecColumn[]; rowLabel?: string })
-  | (SpecFieldBase & { type: 'ref'; accepts: SpecRefAccepts });
+  | SpecRefColumn;
 
 export interface SpecAnnotationType {
   id: string;
@@ -197,6 +209,31 @@ export interface SpecAnnotationType {
   doc?: string;
   /** Exemplos do tipo (só `formatVersion` 4). */
   examples?: SpecExample[];
+  /**
+   * A instância do tipo é uma marcação **flutuante** (só `formatVersion` 7): vive no canvas,
+   * fora da árvore de pertencimento, e é desenhada acima de tudo. Ausente = `false`.
+   */
+  floating?: boolean;
+  /**
+   * Onde a anotação se aplica (só `formatVersion` 7): `marking` (padrão), `arrow` ou ambos.
+   * Um tipo só de seta não tem `component` nem `floating`: a seta não tem desenho de componente.
+   */
+  appliesTo?: SpecAppliesTo[];
+}
+
+/** Itens a que um tipo de anotação se aplica (ME4, decisão 14). */
+export type SpecAppliesTo = 'marking' | 'arrow';
+export const SPEC_APPLIES_TO: readonly SpecAppliesTo[] = ['marking', 'arrow'];
+
+/**
+ * O tipo se aplica a esse item? Sem `appliesTo` (ou na especialização antiga), só a
+ * marcação; um tipo declarado só para a seta não se aplica à marcação.
+ */
+export function typeAppliesTo(
+  type: Pick<SpecAnnotationType, 'appliesTo'>,
+  kind: SpecAppliesTo,
+): boolean {
+  return (type.appliesTo ?? ['marking']).includes(kind);
 }
 
 /** Preset de container da especialização (só `formatVersion` 6): tamanho e fundo iniciais. */
@@ -374,7 +411,7 @@ function valueProblem(
   }
 }
 
-/** Valida um campo; `column` = dentro de `table` (só tipos simples). */
+/** Valida um campo; `column` = dentro de `table` (tipos simples e `ref`, nunca `table`). */
 function checkField(
   field: RawField,
   ctx: z.RefinementCtx,
@@ -387,10 +424,10 @@ function checkField(
     ctx.addIssue({ code: 'custom', path: [...path, ...sub], message });
 
   const { type } = field;
-  if (column && (type === 'table' || type === 'ref' || type === REMOVED_FIELD_TYPE)) {
+  if (column && (type === 'table' || type === REMOVED_FIELD_TYPE)) {
     add(
       'type',
-      `"${type}" não é permitido dentro de table; use "string", "number", "date" ou "enum"`,
+      `"${type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"`,
     );
     return;
   }
@@ -643,6 +680,32 @@ function checkExamples(
   });
 }
 
+/** `appliesTo`: não vazio, sem repetição; um tipo só de seta não tem `component` nem `floating`. */
+function checkAppliesTo(
+  type: { appliesTo?: SpecAppliesTo[]; component?: string; floating?: boolean },
+  ctx: z.RefinementCtx,
+): void {
+  const { appliesTo } = type;
+  if (appliesTo === undefined) return;
+  const add = (path: (string | number)[], message: string) =>
+    ctx.addIssue({ code: 'custom', path, message });
+  if (appliesTo.length === 0) {
+    add(['appliesTo'], 'não pode ser vazio; use "marking", "arrow" ou os dois');
+    return;
+  }
+  if (new Set(appliesTo).size !== appliesTo.length) {
+    add(['appliesTo'], 'valores repetidos');
+  }
+  if (!appliesTo.includes('marking')) {
+    if (type.component !== undefined) {
+      add(['component'], 'um tipo só de seta não pode ter component');
+    }
+    if (type.floating !== undefined) {
+      add(['floating'], 'um tipo só de seta não pode ter floating');
+    }
+  }
+}
+
 const annotationTypeShape = z
   .object({
     id: nonEmpty,
@@ -657,10 +720,22 @@ const annotationTypeShape = z
     component: packagePath('.json').optional(),
     doc: packagePath('.md').optional(),
     examples: z.array(exampleShape).optional(),
+    floating: z.boolean().optional(),
+    appliesTo: z
+      .array(
+        z.enum(SPEC_APPLIES_TO as [SpecAppliesTo, ...SpecAppliesTo[]], {
+          error: (issue) =>
+            typeof issue.input === 'string'
+              ? `"${issue.input}" inválido; use "marking" ou "arrow"`
+              : 'deve ser "marking" ou "arrow"',
+        }),
+      )
+      .optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
     checkFields(type.fields, ctx, ['fields']);
+    checkAppliesTo(type, ctx);
     checkCode(type, ctx);
     checkExamples(type, ctx);
     if (type.labelField != null) {
@@ -1310,6 +1385,7 @@ export const specSchema = z
         z.literal(4),
         z.literal(5),
         z.literal(6),
+        z.literal(7),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -1355,6 +1431,30 @@ export const specSchema = z
           code: 'custom',
           path: ['platforms', pi, 'repo'],
           message: 'só é permitido com formatVersion 5',
+        });
+      });
+    }
+    // v7: `floating` e `appliesTo` no tipo e `ref` como coluna de `table`. Antes dela, é erro
+    // no caminho exato.
+    if (spec.formatVersion < 7) {
+      spec.layers.forEach((layer, li) => {
+        layer.annotationTypes.forEach((type, ti) => {
+          const typePath = ['layers', li, 'annotationTypes', ti];
+          const only7 = (sub: (string | number)[]) =>
+            ctx.addIssue({
+              code: 'custom',
+              path: [...typePath, ...sub],
+              message: 'só é permitido com formatVersion 7',
+            });
+          if (type.floating !== undefined) only7(['floating']);
+          if (type.appliesTo !== undefined) only7(['appliesTo']);
+          type.fields.forEach((field, fi) => {
+            (field.columns ?? []).forEach((column, ci) => {
+              if (isRecord(column) && column.type === 'ref') {
+                only7(['fields', fi, 'columns', ci, 'type']);
+              }
+            });
+          });
         });
       });
     }

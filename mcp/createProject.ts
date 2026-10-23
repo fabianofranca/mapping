@@ -1,10 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, realpath, stat } from 'node:fs/promises';
 import { basename, dirname, join, relative } from 'node:path';
+import { NOTES_LIBRARY } from '../libraries/notas';
 import {
   DEFAULT_LAYER_COLOR,
   GITIGNORE_FILE,
   MAPPING_FILE,
+  applyBundledLibrary,
+  bundledLibraryDiskFiles,
   createProject,
   gitignoreWithBackups,
   serialize,
@@ -49,6 +52,11 @@ export interface CreateProjectArgs {
   readonly name: string;
   readonly root?: string;
   readonly firstLayerName?: string;
+  /**
+   * Aplica a biblioteca de notas embutida (camada Notas, `specs/notas/`). Padrão `true`; `false`
+   * cria o projeto sem ela.
+   */
+  readonly notes?: boolean;
 }
 
 export interface CreatedProject {
@@ -81,7 +89,7 @@ export async function createProjectFolder(
     );
   }
 
-  const project = createProject({
+  let project = createProject({
     name,
     now: new Date().toISOString(),
     firstLayer: {
@@ -90,11 +98,23 @@ export async function createProjectFolder(
       color: DEFAULT_LAYER_COLOR,
     },
   });
+  // Como a app: a biblioteca de notas entra por padrão, pelo caminho de qualquer biblioteca.
+  let packageFiles = new Map<string, string>();
+  if (args.notes !== false) {
+    project = applyBundledLibrary(project, NOTES_LIBRARY, { newId: randomUUID }).project;
+    packageFiles = bundledLibraryDiskFiles(project, NOTES_LIBRARY);
+  }
   // Sem `images/`: como a app, a pasta só nasce com a primeira imagem (ao aplicar uma proposta).
   await mkdir(dir, { recursive: true });
   // Confere de novo com a pasta já criada: um link simbólico no caminho só aparece agora.
   const inside = await roots.assertInside(await realpath(dir), args.path);
   await ensureGitignore(dir);
+  // O pacote antes do `mapping.json` que o cita.
+  for (const [path, text] of packageFiles) {
+    const target = join(dir, ...path.split('/'));
+    await mkdir(dirname(target), { recursive: true });
+    await writeFileAtomic(target, text);
+  }
   await writeFileAtomic(join(dir, MAPPING_FILE), serialize(project));
   return {
     name: basename(dir),

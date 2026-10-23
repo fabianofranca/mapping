@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { showToolWindow } from '../../src/store/toolWindows';
-import { collapseTree, treeKey } from '../../src/store/ui';
+import { collapseTree, selectItems, selectedItems, treeKey } from '../../src/store/ui';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { MarkingTree } from '../../src/ui/MarkingTree';
 import { TreeWindow } from '../../src/ui/TreeWindow';
@@ -169,5 +169,48 @@ describe('bolinhas das camadas na linha', () => {
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);
     const image = screen.getAllByRole('button', { name: /lateral/ })[0];
     expect(image?.querySelectorAll('.tree-dot')).toHaveLength(0);
+  });
+});
+
+describe('Árvore: seleção múltipla', () => {
+  it('Shift+clique acrescenta e tira itens, com as linhas selecionadas à vista', async () => {
+    const harness = createHarness(sampleProject());
+    const onSelect = vi.fn();
+    withContext(harness, <TreeWindow onSelect={onSelect} />);
+    selectItems(harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    const user = userEvent.setup();
+    await user.keyboard('{Shift>}');
+    await user.click(rowOf('Fechadura'));
+    await user.click(rowOf('Maçaneta'));
+    await user.keyboard('{/Shift}');
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(selectedItems(harness.ui).map((i) => i.id)).toEqual(['M1', 'M3', 'M2']);
+    expect(
+      rowOf('Maçaneta').closest('.tree-row')?.classList.contains('tree-row-current'),
+    ).toBe(true);
+    expect(
+      rowOf('Porta').closest('.tree-row')?.classList.contains('tree-row-selected'),
+    ).toBe(true);
+    await user.keyboard('{Shift>}');
+    await user.click(rowOf('Fechadura'));
+    await user.keyboard('{/Shift}');
+    expect(selectedItems(harness.ui).map((i) => i.id)).toEqual(['M1', 'M2']);
+    // Clique simples: um item só.
+    await user.click(rowOf('Porta'));
+    expect(onSelect).toHaveBeenCalledWith({ kind: 'marking', id: 'M1' });
+  });
+
+  it('o menu da linha tem "Selecionar com o conteúdo" e fecha ao escolher', async () => {
+    const harness = createHarness(sampleProject());
+    withContext(harness, <TreeWindow onSelect={vi.fn()} />);
+    await userEvent.click(
+      screen.getByRole('button', { name: t('copy.itemActions', { name: 'Porta' }) }),
+    );
+    await userEvent.click(
+      screen.getByRole('menuitem', { name: t('multi.selectWithContents') }),
+    );
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(selectedItems(harness.ui).map((i) => i.id)).toEqual(['M2', 'M3', 'M1']);
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
   });
 });

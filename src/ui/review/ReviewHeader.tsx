@@ -63,6 +63,7 @@ export type HeaderVariant =
   | 'imageRemove'
   | 'proposal'
   | 'project'
+  | 'canvas'
   | 'change';
 
 export function headerVariant(
@@ -71,6 +72,7 @@ export function headerVariant(
 ): HeaderVariant {
   if (target.level === 'proposal') return 'proposal';
   if (target.level === 'project') return 'project';
+  if (target.level === 'canvas') return 'canvas';
   if (target.level === 'change') return 'change';
   const base = target.level === 'image' ? 'image' : 'marking';
   if (whole?.kind === 'create') return `${base}Create`;
@@ -242,8 +244,10 @@ function CreationInfo({
   const inLevel = new Set(ids);
   let annotations = 0;
   let markings = 0;
+  let arrows = 0;
   for (const c of names.proposal.changes) {
     if (c.kind !== 'create' || !inLevel.has(c.id)) continue;
+    if (target.level === 'image' && c.entity === 'arrow') arrows++;
     if (
       target.level === 'item' &&
       c.entity === 'annotation' &&
@@ -258,6 +262,7 @@ function CreationInfo({
     <div class="review-header-info">
       {annotations > 0 && <b>{t('review.panel.createdCount', { count: annotations })}</b>}
       {markings > 0 && <b>{t('review.panel.createdMarkings', { count: markings })}</b>}
+      {arrows > 0 && <b>{t('review.panel.createdArrows', { count: arrows })}</b>}
       <span class="muted">{t('review.panel.createHint')}</span>
     </div>
   );
@@ -276,10 +281,12 @@ function RemovalList({
   const { review } = useEditor();
   const inLevel = new Set(ids);
   const markings: string[] = [];
+  const arrows: string[] = [];
   const byLayer = new Map<string, string[]>();
   for (const c of names.proposal.changes) {
     if (c.kind !== 'remove' || !inLevel.has(c.id)) continue;
     if (c.entity === 'marking' && c.entityId !== target.id) markings.push(c.entityId);
+    else if (c.entity === 'arrow' && c.entityId !== target.id) arrows.push(c.entityId);
     else if (c.entity === 'annotation') {
       const layer = changeLayerId(c, names.current) ?? '';
       const list = byLayer.get(layer);
@@ -288,7 +295,7 @@ function RemovalList({
       else byLayer.set(layer, [name]);
     }
   }
-  if (markings.length === 0 && byLayer.size === 0) return null;
+  if (markings.length === 0 && arrows.length === 0 && byLayer.size === 0) return null;
   const layerName = (id: string) =>
     projectIndex(names.current).layers.get(id)?.name ?? t('review.level.project');
   return (
@@ -298,6 +305,18 @@ function RemovalList({
         {markings.slice(0, LIST_MAX * 3).map((id) => (
           <li key={id}>
             <Icon name="marking" />
+            <Button
+              size="sm"
+              class="button-link"
+              onClick={() => review.select({ level: 'item', id })}
+            >
+              {markingName(names, id)}
+            </Button>
+          </li>
+        ))}
+        {arrows.slice(0, LIST_MAX * 3).map((id) => (
+          <li key={id}>
+            <Icon name="arrow" />
             <Button
               size="sm"
               class="button-link"

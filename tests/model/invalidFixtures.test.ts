@@ -37,7 +37,7 @@ describe('fixtures inconsistentes (tests/fixtures/invalid)', () => {
     if (result.error.code !== 'invariant-violation') return;
     expect(result.error.issues.map((i) => i.code)).toContain(c.code);
     for (const issue of result.error.issues) {
-      expect(issue.entity).toMatch(/^(image|marking|annotation|layer|spec)$/);
+      expect(issue.entity).toMatch(/^(image|marking|arrow|annotation|layer|spec)$/);
       expect(issue.id).not.toBe('');
     }
   });

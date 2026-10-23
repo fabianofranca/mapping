@@ -1,0 +1,117 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 2,
+  "id": "evento",
+  "name": "Evento",
+  "description": "Tabela de um evento de analytics: um cabeçalho roxo com o nome do evento e uma linha por propriedade, o nome à esquerda e o valor à direita.",
+  "size": {
+    "width": 260,
+    "height": 140
+  },
+  "minSize": {
+    "width": 200,
+    "height": 136
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "nome": "checkout_started",
+    "propriedades": [
+      { "propriedade": "origem", "valor": "carrinho" },
+      { "propriedade": "itens", "valor": "3" },
+      { "propriedade": "total", "valor": "149,90" }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "evento",
+    "layout": {
+      "type": "column",
+      "gap": 0
+    },
+    "cornerRadius": 6,
+    "fill": "#FFFFFF",
+    "stroke": {
+      "color": "#7B3FE4",
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "layout": {
+          "type": "row",
+          "padding": 10
+        },
+        "fill": "#7B3FE4",
+        "width": "fill",
+        "children": [
+          {
+            "type": "text",
+            "name": "nome",
+            "text": {
+              "$field": "nome"
+            },
+            "font": {
+              "size": 14,
+              "weight": 700,
+              "lineHeight": 20
+            },
+            "color": "#FFFFFF",
+            "width": "fill"
+          }
+        ]
+      },
+      {
+        "type": "repeat",
+        "name": "propriedades",
+        "field": "propriedades",
+        "direction": "column",
+        "gap": 4,
+        "template": {
+          "type": "frame",
+          "name": "propriedade",
+          "layout": {
+            "type": "row",
+            "gap": 12,
+            "padding": 6
+          },
+          "width": "fill",
+          "children": [
+            {
+              "type": "text",
+              "name": "propriedade",
+              "text": {
+                "$field": "propriedade"
+              },
+              "font": {
+                "size": 12,
+                "weight": 600,
+                "lineHeight": 16
+              },
+              "color": "#2A1457",
+              "width": "hug"
+            },
+            {
+              "type": "text",
+              "name": "valor",
+              "text": {
+                "$field": "valor"
+              },
+              "font": {
+                "size": 12,
+                "weight": 400,
+                "lineHeight": 16,
+                "align": "right"
+              },
+              "color": "#2A1457",
+              "width": "fill"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

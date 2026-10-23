@@ -13,11 +13,13 @@ import {
   setMarkingLocked,
   canPlaceContainer,
   containerDeletionImpact,
+  containerLockStates,
   isSameAspect,
   moveContainer,
   removeContainer,
   replaceContainer,
   resizeContainer,
+  settleHierarchy,
   uniqueImageFile,
 } from '../../src/model';
 import { emptyProject, expectValid, image, marking, sampleProject } from './fixtures';
@@ -102,6 +104,7 @@ describe('imagens: excluir em cascata', () => {
       markings: 3,
       lockedMarkings: 0,
       annotations: 3,
+      arrows: 0,
       brokenRefs: 0,
     });
     const next = expectValid(removeContainer(p, 'I1'));
@@ -132,6 +135,7 @@ describe('imagens: trocar', () => {
     expect(image(next, 'I1')).toEqual({
       id: 'I1',
       name: null,
+      parentId: null,
       markingColor: null,
       locked: false,
       source: null,
@@ -380,5 +384,151 @@ describe('container (imagem sem arquivo)', () => {
       );
       expectValid(setBackgroundContainer(next, 'B1', { width: 400 }));
     });
+  });
+});
+
+// Pertencimento (v13): o container nasce sem pai e o assentar decide qual marcação do canvas o
+// contém; mover, redimensionar, trocar o arquivo e excluir assentam; `settle: false` congela.
+describe('containers: pertencimento a marcações do canvas', () => {
+  /** sampleProject: I1 ocupa (0,0)–(1000,750) e I2 (1050,0)–(2050,1000); K cerca só a I1. */
+  function withCanvasMarking() {
+    return createMarking(sampleProject(), {
+      id: 'K',
+      containerId: null,
+      rect: { x: -100, y: -100, width: 1200, height: 1000 },
+    });
+  }
+
+  it('o container nasce sem pai; o projeto de exemplo não tem marcação do canvas', () => {
+    const p = addContainer(sampleProject(), {
+      id: 'I3',
+      file: 'images/c.jpg',
+      width: 100,
+      height: 100,
+    });
+    expect(image(p, 'I3').parentId).toBeNull();
+    expect(p.containers.every((c) => c.parentId === null)).toBe(true);
+  });
+
+  it('criar a marcação do canvas assenta: só a I1 cabe nela', () => {
+    const p = expectValid(withCanvasMarking());
+    expect(image(p, 'I1').parentId).toBe('K');
+    expect(image(p, 'I2').parentId).toBeNull();
+    expect(marking(p, 'K')).toMatchObject({ containerId: null, parentId: null });
+    // As marcações das imagens ficam como estavam.
+    expect(marking(p, 'M1').containerId).toBe('I1');
+  });
+
+  it('mover o container para fora da marcação o tira; para dentro o põe', () => {
+    let p = withCanvasMarking();
+    p = expectValid(moveContainer(p, 'I1', 0, 2000));
+    expect(image(p, 'I1').parentId).toBeNull();
+    // Volta: I1 (1000×750) cabe de novo em K.
+    p = expectValid(moveContainer(p, 'I1', 0, 0));
+    expect(image(p, 'I1').parentId).toBe('K');
+  });
+
+  it('o container que passa a caber inteiro em outra marcação do canvas vira membro dela', () => {
+    let p = createMarking(sampleProject(), {
+      id: 'K2',
+      containerId: null,
+      rect: { x: -50, y: 1500, width: 1200, height: 900 },
+    });
+    expect(image(p, 'I2').parentId).toBeNull();
+    // I2 (1000×1000 na escala 1) não cabe em 900 de altura: reduz a escala e depois move.
+    p = resizeContainer(p, 'I2', { x: 1050, y: 0, scale: 0.8 });
+    p = moveContainer(p, 'I2', 0, 1600);
+    expect(image(expectValid(p), 'I2').parentId).toBe('K2');
+  });
+
+  it('redimensionar o container também assenta', () => {
+    // Longe da I2: a I1 pode crescer sem sobrepor. K vai de -100 a 1100 em x e de -100 a 900 em y.
+    let p = moveContainer(withCanvasMarking(), 'I2', 1050, 2000);
+    p = resizeContainer(p, 'I1', { x: 0, y: 0, scale: 0.26 }); // 1040×780: cabe em K
+    expect(image(p, 'I1').parentId).toBe('K');
+    p = expectValid(resizeContainer(p, 'I1', { x: 0, y: 0, scale: 0.28 })); // 1120×840
+    expect(image(p, 'I1').parentId).toBeNull();
+  });
+
+  it('settle: false congela o pertencimento (prévia de gesto); assentar depois decide', () => {
+    const p = withCanvasMarking();
+    const preview = moveContainer(p, 'I1', 0, 2000, { settle: false });
+    expect(image(preview, 'I1').placement.y).toBe(2000);
+    expect(image(preview, 'I1').parentId).toBe('K');
+    expect(image(settleHierarchy(preview), 'I1').parentId).toBeNull();
+  });
+
+  it('a trava da marcação do canvas trava o placement do container dentro dela', () => {
+    let p = withCanvasMarking();
+    p = setMarkingLocked(p, 'K', true);
+    expect(containerLockStates(p)).toEqual(new Map([['I1', 'inherited']]));
+    expect(() => moveContainer(p, 'I1', 0, 2000)).toThrow('locked');
+    expect(() => resizeContainer(p, 'I1', { x: 0, y: 0, scale: 0.2 })).toThrow('locked');
+    // Fora da marcação, livre; o container trancado aparece como `self`.
+    expect(image(moveContainer(p, 'I2', 1050, 1200), 'I2').placement.y).toBe(1200);
+    p = setImageLocked(p, 'I2', true);
+    expect(containerLockStates(p)).toEqual(
+      new Map([
+        ['I1', 'inherited'],
+        ['I2', 'self'],
+      ]),
+    );
+  });
+
+  it('excluir o container assenta e não leva a marcação do canvas', () => {
+    const p = withCanvasMarking();
+    const next = expectValid(removeContainer(p, 'I1'));
+    expect(next.containers.map((c) => c.id)).toEqual(['I2']);
+    expect(marking(next, 'K').containerId).toBeNull();
+    expect(next.markings.map((m) => m.id)).toEqual(['M4', 'K']);
+  });
+
+  it('um container novo dentro de uma marcação do canvas é membro dela', () => {
+    let p = createMarking(emptyProject(), {
+      id: 'K',
+      containerId: null,
+      rect: { x: -100, y: -100, width: 1300, height: 1300 },
+    });
+    p = addContainer(p, { id: 'I1', file: 'images/a.jpg', width: 1000, height: 1000 });
+    expect(image(expectValid(p), 'I1').parentId).toBe('K');
+  });
+
+  it('a marcação do canvas que passa a caber inteira num container novo vira dele', () => {
+    let p = createMarking(emptyProject(), {
+      id: 'N',
+      containerId: null,
+      rect: { x: 100, y: 100, width: 50, height: 50 },
+    });
+    p = addBackgroundContainer(p, {
+      id: 'W',
+      width: 1000,
+      height: 1000,
+      background: '#FFFFFF',
+      center: { x: 500, y: 500 },
+    });
+    expect(marking(expectValid(p), 'N')).toMatchObject({
+      containerId: 'W',
+      rect: { x: 100, y: 100, width: 50, height: 50 },
+    });
+  });
+
+  it('trocar o arquivo reescala cada marcação sozinha; o pai é refeito pela geometria', () => {
+    // M3 (50×50) encostada no canto de M2: a 10% ela cresce para 8×8 e passa da borda de M2,
+    // que já não a contém. Reescalar não a prende ao pai; quem decide o pai é o assentar.
+    let p = sampleProject();
+    p = {
+      ...p,
+      markings: p.markings.map((m) =>
+        m.id === 'M3' ? { ...m, rect: { x: 1550, y: 1350, width: 50, height: 50 } } : m,
+      ),
+    };
+    expect(marking(expectValid(p), 'M3').parentId).toBe('M2');
+    const next = expectValid(
+      replaceContainer(p, 'I1', { file: 'images/mini.jpg', width: 400, height: 300 }),
+    );
+    expect(marking(next, 'M2').rect).toEqual({ x: 120, y: 120, width: 40, height: 20 });
+    expect(marking(next, 'M3').rect).toEqual({ x: 154, y: 134, width: 8, height: 8 });
+    // M2 (120..160 × 120..140) não contém mais M3; a menor que contém é M1 (100..200 × 100..200).
+    expect(marking(next, 'M3').parentId).toBe('M1');
   });
 });

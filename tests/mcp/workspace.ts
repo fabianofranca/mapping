@@ -162,12 +162,10 @@ export function createWorkspace(): Workspace {
     }
   };
 
-  // O projeto principal: a User (livre) passa a ser herdada pelas filhas do Formulário e o
-  // Formulário fica trancado (as filhas herdam a trava de geometria).
+  // O projeto principal: o Formulário fica trancado (as filhas herdam a trava de geometria).
   write(
     join(root, 'apps', 'cadastro'),
     mappingText((doc) => {
-      for (const a of items(doc, 'annotations')) if (a.id === ids.AU) a.inherit = true;
       for (const m of items(doc, 'markings')) if (m.id === ids.MF) m.locked = true;
     }),
     {},

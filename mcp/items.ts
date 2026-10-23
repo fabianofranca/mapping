@@ -2,6 +2,7 @@ import {
   ancestorsOf,
   annotationShortLabel,
   formatRef,
+  markingTypeName,
   matchShortCode,
   parseRef,
   projectIndex,
@@ -22,6 +23,9 @@ import type { Roots } from './paths';
 
 /** Nome do container sem nome (o MCP não usa `t()`). */
 export const CONTAINER_LABEL = 'Container';
+export const CANVAS_LABEL = 'Canvas';
+/** Primeiro trecho do caminho legível de uma seta. */
+export const ARROW_LABEL = 'Seta';
 
 /** Nomes dos tipos de item. A letra `i` das referências é o container (não mudou por compatibilidade). */
 export const KIND_NAMES: Record<ItemKind, string> = {
@@ -58,21 +62,46 @@ export class Refs {
     return this.loaded.location.name;
   }
 
-  imageLabel(containerId: string): string {
+  /** Rótulo do container; marcação do canvas (`null`) é "Canvas". */
+  imageLabel(containerId: string | null): string {
+    if (containerId === null) return CANVAS_LABEL;
     const image = projectIndex(this.project).containers.get(containerId);
     if (!image) return containerId;
     return refImageLabel(image) ?? CONTAINER_LABEL;
   }
 
-  /** Nome da marcação; sem nome, "Marcação <código>" (único no projeto). */
-  markingName(markingId: string): string {
-    const marking = projectIndex(this.project).markings.get(markingId);
-    if (!marking) return markingId;
-    return marking.name ?? `Marcação ${shortCode(this.project, 'm', markingId)}`;
+  /** Texto da seta: o nome dela ou "Origem → Destino" ("Seta <código>" se uma ponta sumiu). */
+  arrowName(arrowId: string): string {
+    const arrow = projectIndex(this.project).arrows.get(arrowId);
+    if (!arrow) return arrowId;
+    if (arrow.name !== null) return arrow.name;
+    const markings = projectIndex(this.project).markings;
+    if (!markings.has(arrow.from) || !markings.has(arrow.to)) {
+      return `Seta ${shortCode(this.project, 'm', arrowId)}`;
+    }
+    return `${this.markingName(arrow.from)} → ${this.markingName(arrow.to)}`;
   }
 
-  /** `Container › Pai › Marcação`: o mesmo texto entre parênteses das referências copiadas. */
+  /**
+   * Nome da marcação; sem nome, "<Tipo> <código>" se ela desenha um tipo de componente (uma
+   * instância nasce sem nome), senão "Marcação <código>". O código mantém o nome único.
+   */
+  markingName(markingId: string): string {
+    if (projectIndex(this.project).arrows.has(markingId))
+      return this.arrowName(markingId);
+    const marking = projectIndex(this.project).markings.get(markingId);
+    if (!marking) return markingId;
+    if (marking.name !== null) return marking.name;
+    const code = shortCode(this.project, 'm', markingId);
+    return `${markingTypeName(this.project, markingId) ?? 'Marcação'} ${code}`;
+  }
+
+  /** `Container › Pai › Marcação` (`Canvas › Pai › Marcação` no canvas): o mesmo texto entre parênteses das referências copiadas. */
   markingPath(markingId: string): string[] {
+    // A seta (ME4) divide o espaço de ids das marcações e não tem container nem pai.
+    if (projectIndex(this.project).arrows.has(markingId)) {
+      return [ARROW_LABEL, this.arrowName(markingId)];
+    }
     const marking = projectIndex(this.project).markings.get(markingId);
     if (!marking) return [markingId];
     const chain = [...ancestorsOf(this.project, markingId).reverse(), marking];

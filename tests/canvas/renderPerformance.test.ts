@@ -20,6 +20,7 @@ import {
   addBackgroundContainer,
   addComponentMarking,
   applySpecialization,
+  createArrow,
   loadSpecComponents,
   projectIndex,
   projectIssues,
@@ -71,8 +72,18 @@ describe('renderização do canvas com o projeto grande', () => {
     vi.unstubAllGlobals();
   });
 
+  /** Setas entre marcações vizinhas do projeto grande: cada uma é desenhada (ME4). */
+  const ARROW_COUNT = 200;
+
   function setup() {
-    const project = buildLargeTypedProject();
+    const typed = buildLargeTypedProject();
+    // 200 setas do projeto grande: da marcação `i` à `i + 3` (containers diferentes, canvas).
+    const project = Array.from({ length: ARROW_COUNT }).reduce<Project>((acc, _, i) => {
+      const from = acc.markings[i];
+      const to = acc.markings[i + 3];
+      if (!from || !to) throw new Error('fixture');
+      return createArrow(acc, { id: `R${i}`, from: from.id, to: to.id });
+    }, typed);
     const store = createProjectStore({ now: () => '2026-10-02T12:00:00.000Z' });
     store.load(project, { readOnly: false });
     const actions = createProjectActions(store);
@@ -98,8 +109,15 @@ describe('renderização do canvas com o projeto grande', () => {
     return { project, store, actions, ui, controller, container };
   }
 
+  it('desenha as 200 setas do projeto grande', () => {
+    const { controller, container } = setup();
+    flush();
+    expect(container.dataset.arrows).toBe(String(ARROW_COUNT));
+    controller.destroy();
+  });
+
   budgetIt(
-    `pan, zoom e edição desenham em menos de ${RENDER_BUDGET_MS} ms`,
+    `pan, zoom e edição desenham em menos de ${RENDER_BUDGET_MS} ms (com ${ARROW_COUNT} setas)`,
     BUDGET_OPTIONS,
     () => {
       const { project, actions, ui, controller, container } = setup();

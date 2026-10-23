@@ -102,6 +102,15 @@ const owner = item('Anotação dona (mesma marcação, outra camada)')
     'Anotação dona (vínculo, ex: o onClick de um Button): referência, id ou apelido; `null` remove o vínculo.',
   );
 
+const arrowStyle = z.enum(['straight', 'curve', 'elbow']);
+
+// A rota da seta (`points`) nunca é escrita pelo servidor: o campo existe só para a operação
+// recusá-lo com um erro claro (sem ele o zod o descartaria em silêncio).
+const noPoints = z
+  .unknown()
+  .optional()
+  .describe('Não use: a rota é da pessoa (recusado com `invalid-arguments`).');
+
 /** Campos de `update_container` (e da antiga `update_image`). */
 const updateContainerFields = {
   name: name.optional(),
@@ -345,15 +354,20 @@ export const operationSchema = z.discriminatedUnion('op', [
     container: item('Container')
       .optional()
       .describe(
-        'Container onde a marcação nasce (obrigatório, a menos que a antiga `image` seja dada).',
+        'Container onde a marcação nasce. Omitido (e sem a antiga `image`): marcação do canvas, com `rect` em unidades do canvas.',
       ),
     image: item('Container')
       .optional()
       .describe('Antiga: use `container`. Aceita com aviso.'),
+    near: item('Container ou marcação')
+      .optional()
+      .describe(
+        'Só para um tipo de anotação flutuante: a marcação nasce num lugar livre na margem deste container ou desta marcação, empilhada de cima para baixo (referência, id ou apelido). Posiciona e o `rect`, se vier, dá só o tamanho (x e y são ignorados). Para um tipo ou marcação não flutuante, é ignorado com aviso.',
+      ),
     rect: rect
       .optional()
       .describe(
-        'Retângulo em pixels do container. Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (dentro do slot do `parent`, se dado; senão no centro do container). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
+        'Retângulo em pixels do container (sem `container`: unidades do canvas, podendo ser negativo). Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (no centro do container). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
       ),
     name: name.optional(),
     source: externalSource.optional(),
@@ -361,7 +375,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       .nullable()
       .optional()
       .describe(
-        'Pai: referência, id ou apelido; `null` = primeiro nível. Omitido: a marcação mais interna que contém o retângulo, como na app (sem `rect`, o primeiro nível).',
+        'Antigo: aceito com aviso e ignorado. O pai sai da geometria (a marcação mais interna que contém o retângulo).',
       ),
     annotation: z
       .object({
@@ -400,7 +414,19 @@ export const operationSchema = z.discriminatedUnion('op', [
     rect: rect
       .optional()
       .describe(
-        'Novo retângulo (as filhas não se movem e precisam continuar dentro; numa marcação que desenha um componente, respeita o `minSize` dele).',
+        'Novo retângulo (as filhas não se movem e precisam continuar dentro; numa marcação que desenha um componente, respeita o `minSize` dele). Sem `container`, vale no espaço atual da marcação; com `container`, nos pixels do container novo (no canvas, em unidades do canvas).',
+      ),
+    container: item('Container novo')
+      .nullable()
+      .optional()
+      .describe(
+        'Troca o espaço da marcação: o container novo, ou `null` para o canvas. Exige `rect` nos pixels dele (no canvas, em unidades do canvas). O pai e o espaço das demais saem da geometria (um retângulo do canvas que cabe inteiro num container passa a ser dele). A marcação flutuante só vive no canvas. Geometria trancada falha com `locked`.',
+      ),
+    floating: z
+      .boolean()
+      .optional()
+      .describe(
+        '`true` torna a marcação flutuante (comentário sobre o canvas): ela sai do container e passa ao canvas, com o `rect` convertido. `false` deixa de ser flutuante (o container que a contém inteira a recebe). Exige a geometria destrancada.',
       ),
     move: z
       .object({ dx: int, dy: int })
@@ -409,7 +435,9 @@ export const operationSchema = z.discriminatedUnion('op', [
     parent: item('Marcação pai')
       .nullable()
       .optional()
-      .describe('Novo pai (precisa conter o retângulo) ou `null` (primeiro nível).'),
+      .describe(
+        'Antigo: aceito com aviso e ignorado. O pai sai da geometria (mova ou redimensione para mudá-lo).',
+      ),
     locked: z.boolean().optional(),
     confirmReview: z
       .boolean()
@@ -417,6 +445,27 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe('`true` confirma a posição de uma marcação "a revisar".'),
   }),
   z.object({ op: z.literal('delete_marking'), marking: item('Marcação') }),
+  // Setas (ME4): uma marcação que aponta; a rota (`points`) é sempre da pessoa.
+  z.object({
+    op: z.literal('create_arrow'),
+    as: alias,
+    from: item('Marcação de origem'),
+    to: item('Marcação de destino'),
+    style: arrowStyle
+      .optional()
+      .describe('Traço: `straight`, `curve` (padrão) ou `elbow`.'),
+    name: name.optional(),
+    points: noPoints,
+  }),
+  z.object({
+    op: z.literal('update_arrow'),
+    arrow: item('Seta'),
+    name: name.optional(),
+    style: arrowStyle.optional(),
+    locked: z.boolean().optional(),
+    points: noPoints,
+  }),
+  z.object({ op: z.literal('delete_arrow'), arrow: item('Seta') }),
   // Anotações
   z.object({
     op: z.literal('create_annotation'),
@@ -440,7 +489,9 @@ export const operationSchema = z.discriminatedUnion('op', [
     inherit: z
       .boolean()
       .optional()
-      .describe('`true`: a anotação vale também para as marcações descendentes.'),
+      .describe(
+        'Antigo, ignorado (a herança de anotações saiu do formato na v13): aceito com aviso por uma versão.',
+      ),
   }),
   z.object({
     op: z.literal('update_annotation'),
@@ -451,7 +502,10 @@ export const operationSchema = z.discriminatedUnion('op', [
       .optional()
       .describe('Só os campos informados mudam (veja `values` em create_annotation).'),
     owner,
-    inherit: z.boolean().optional(),
+    inherit: z
+      .boolean()
+      .optional()
+      .describe('Antigo, ignorado (veja create_annotation).'),
   }),
   z.object({
     op: z.literal('delete_annotation'),

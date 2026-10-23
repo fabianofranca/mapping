@@ -1,3 +1,4 @@
+import { requireAnnotationOwner } from './arrows';
 import { fail } from './errors';
 import { validateEntries } from './invariants';
 import { annotationWithLinked } from './links';
@@ -47,10 +48,13 @@ export interface NewAnnotationArgs {
   readonly entries?: readonly EntryInput[];
 }
 
-/** Cria uma anotação livre. Camadas de especialização só aceitam tipadas (`addTypedAnnotation`). */
+/**
+ * Cria uma anotação livre na marcação ou na seta (`markingId`: os ids dividem o espaço).
+ * Camadas de especialização só aceitam tipadas (`addTypedAnnotation`).
+ */
 export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
   if (p.annotations.some((a) => a.id === args.id)) fail('duplicate-id', args.id);
-  findById(p.markings, args.markingId);
+  requireAnnotationOwner(p, args.markingId);
   const layer = findById(p.layers, args.layerId);
   if (layer.spec) fail('typed-layer', layer.id);
   const annotation: Annotation = {
@@ -58,7 +62,6 @@ export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
     markingId: args.markingId,
     layerId: args.layerId,
     name: normalizeOptionalName(args.name ?? null),
-    inherit: false,
     parentAnnotationId: null,
     type: null,
     values: null,

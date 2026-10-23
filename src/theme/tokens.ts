@@ -67,8 +67,37 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-line': '#ffffff',
   'cv-halo': 'rgba(10, 12, 16, 0.72)',
   'cv-select': '#4d8dff',
+  /**
+   * Contorno dos itens selecionados que não são o primário (seleção múltipla, ME2): o mesmo azul
+   * da seleção, mais discreto que ela. Fica sobre o fundo do canvas e sobre as fotos: passa de
+   * 3:1 sobre `color-canvas-bg` nos dois temas.
+   */
+  'cv-select-secondary': { light: '#2b6ad9', dark: '#8fb4ff' },
   'cv-invalid': '#ff6b6b',
   'cv-warning': '#ffc247',
+  /**
+   * Borda tracejada da marcação do canvas (v13). Fica sobre o fundo do canvas e sobre as
+   * fotos: um violeta que passa de 3:1 sobre `color-canvas-bg` nos dois temas.
+   */
+  'cv-canvas-marking': { light: '#5a3fc0', dark: '#b9a8ff' },
+  /**
+   * Destaque da absorção (ao desenhar ou redimensionar, o que será envolvido ao soltar):
+   * traço e preenchimento translúcido, iguais nos dois temas (o verde passa de 3:1 sobre
+   * `color-canvas-bg` claro e escuro).
+   */
+  'cv-absorb': '#0a8a5c',
+  'cv-absorb-fill': 'rgba(10, 138, 92, 0.2)',
+  /**
+   * Seta (v13, ME4): o traço, sobre o fundo do canvas e as fotos (com o halo `cv-halo` por fora).
+   * Um teal que passa de 3:1 sobre `color-canvas-bg` nos dois temas e não se confunde com a
+   * seleção (azul) nem com a borda da marcação do canvas (violeta).
+   */
+  'cv-arrow': { light: '#0f766e', dark: '#5eead4' },
+  /** Seta selecionada: o azul da seleção. */
+  'cv-arrow-select': 'var(--cv-select)',
+  /** Rótulo da seta (o `name`): texto e fundo, os do cartão do tema. */
+  'cv-arrow-label': 'var(--color-text)',
+  'cv-arrow-label-bg': 'var(--color-card)',
   'cv-name-tag': 'var(--cv-select)',
   /** Texto da etiqueta do nome (≥ 4,5:1 sobre `cv-name-tag`); não está no DS 2.0. */
   'cv-name-tag-text': '#0b1220',
@@ -183,6 +212,10 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-handle': '10px',
   /** Emblema do cadeado no canvas (px de tela). */
   'size-lock-badge': '20px',
+  /** Seta no canvas (px de tela, constantes com o zoom): traço, traço selecionado e ponta. */
+  'size-arrow-stroke': '2px',
+  'size-arrow-stroke-selected': '3px',
+  'size-arrow-head': '10px',
   'size-tw-left': '264px',
   'size-tw-right': '360px',
   'size-tw-bottom': '208px',
@@ -211,6 +244,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-home-main': '960px',
   /** Seletor de referência (popup no topo, B14). */
   'size-picker': '600px',
+  /** Seletor de referência da célula de uma tabela (versão compacta). */
+  'size-picker-compact': '420px',
   /**
    * Popover de uma mudança nos Detalhes da revisão (`ChangePopover`, HANDOFF-REVIEW-DETAILS
    * 3.1): cabe na janela Detalhes na largura inicial e dá para as três linhas do conflito.

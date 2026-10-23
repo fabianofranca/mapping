@@ -1,10 +1,10 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v12). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
+// Tipos do `mapping.json` (schema v13). Ver docs/FORMAT.md e docs/history/PLAN-etapas-1-2.md,
 // seções 4, 12.1 e 13.3. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -73,6 +73,11 @@ export interface ProjectContainer {
   readonly width: number;
   readonly height: number;
   readonly placement: Placement;
+  /**
+   * Marcação do canvas que contém o container (v13), derivada da geometria pelo assentar
+   * (`settleHierarchy`); `null` = nenhuma. Nunca é escolhida à mão.
+   */
+  readonly parentId: string | null;
   /** Cor da borda das marcações desta imagem (`#RRGGBB`); `null` = cor neutra do tema. */
   readonly markingColor: string | null;
   /** Trancada (v5): não pode ser movida, redimensionada nem excluída. A seleção segue livre. */
@@ -85,7 +90,16 @@ export interface ProjectContainer {
 
 export interface Marking {
   readonly id: string;
-  readonly containerId: string;
+  /**
+   * Espaço da marcação (v13): o container (`rect` em pixels inteiros dele) ou `null`, a
+   * marcação do canvas (`rect` em unidades inteiras do canvas, coordenadas podem ser negativas).
+   * Decidido pela geometria ao assentar (`settleHierarchy`).
+   */
+  readonly containerId: string | null;
+  /**
+   * A menor marcação do mesmo espaço que a contém inteira (v13: derivada pelo assentar, nunca
+   * escolhida à mão); `null` = nenhuma.
+   */
   readonly parentId: string | null;
   readonly name: string | null;
   readonly rect: Rect;
@@ -95,8 +109,59 @@ export interface Marking {
    * trava a geometria dos descendentes. A seleção e as anotações seguem livres.
    */
   readonly locked: boolean;
+  /**
+   * Flutuante (v13): comentário sobre o canvas (uma nota), fora da árvore de pertencimento nos
+   * dois sentidos. Vive sempre no canvas (`containerId` e `parentId` nulos) e é desenhada acima
+   * de tudo.
+   */
+  readonly floating: boolean;
   /** Identidade no sistema de origem (v8); `null` = sem origem. */
   readonly source: ExternalSource | null;
+}
+
+/** Lado de uma marcação onde a seta se prende (v13). */
+export type ArrowSide = 'top' | 'right' | 'bottom' | 'left';
+
+/** Estilo do traço da seta (v13): `curve` é o padrão. */
+export type ArrowStyle = 'straight' | 'curve' | 'elbow';
+
+export const ARROW_SIDES: readonly ArrowSide[] = ['top', 'right', 'bottom', 'left'];
+export const ARROW_STYLES: readonly ArrowStyle[] = ['straight', 'curve', 'elbow'];
+export const DEFAULT_ARROW_STYLE: ArrowStyle = 'curve';
+
+/**
+ * Seta (v13, decisão 14): uma marcação que aponta. Liga duas marcações (`from`, `to`), tem
+ * rota e estilo próprios e pode ter anotações por camada (`annotations[].markingId` = id da
+ * seta; ids no mesmo espaço das marcações). Fica fora da árvore de pertencimento: não tem
+ * `rect`, container nem pai.
+ */
+export interface Arrow {
+  readonly id: string;
+  /** Marcação de origem. */
+  readonly from: string;
+  /** Marcação de destino (diferente de `from`). */
+  readonly to: string;
+  /** Lado da origem; `null` = o padrão borda a borda. */
+  readonly fromSide: ArrowSide | null;
+  /** Lado do destino; `null` = o padrão borda a borda. */
+  readonly toSide: ArrowSide | null;
+  /**
+   * Pontos de passagem, só da pessoa. Espaço derivado das duas pontas, nunca gravado
+   * (decisão (d)): pixels do container quando as duas estão no mesmo container; senão,
+   * unidades do canvas. `[]` = rota padrão.
+   */
+  readonly points: readonly ArrowPoint[];
+  readonly style: ArrowStyle;
+  /** Rótulo sobre a seta; `null` = sem rótulo. */
+  readonly name: string | null;
+  /** Trancada: a rota e as pontas não mudam; a seleção e as anotações seguem livres. */
+  readonly locked: boolean;
+}
+
+/** Ponto (pixels do container ou unidades do canvas, conforme quem o usa). */
+export interface ArrowPoint {
+  readonly x: number;
+  readonly y: number;
 }
 
 export interface Entry {
@@ -154,11 +219,10 @@ export type PlatformRepos = { readonly [platformId: string]: PlatformRepo };
 
 export interface Annotation {
   readonly id: string;
+  /** Marcação (ou seta, v13) dona da anotação. */
   readonly markingId: string;
   readonly layerId: string;
   readonly name: string | null;
-  /** `true`: a anotação também vale para todos os descendentes da marcação. */
-  readonly inherit: boolean;
   /** Anotação "dona" (mesma marcação, outra camada, sem ciclos) ou `null`. */
   readonly parentAnnotationId: string | null;
   /** `null` = anotação livre (pares em `entries`). */
@@ -213,6 +277,8 @@ export interface Project {
   readonly layers: readonly Layer[];
   readonly containers: readonly ProjectContainer[];
   readonly markings: readonly Marking[];
+  /** Setas (v13, ME4): marcações que apontam. */
+  readonly arrows: readonly Arrow[];
   readonly annotations: readonly Annotation[];
 }
 

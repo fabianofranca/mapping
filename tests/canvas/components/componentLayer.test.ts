@@ -18,7 +18,7 @@ beforeAll(() => installFakeCanvas());
 
 function drawing(
   markingId: string,
-  containerId = 'img-1',
+  containerId: string | null = 'img-1',
   x = 0,
   color = '#ffffff',
 ): LayerDrawing {
@@ -238,5 +238,67 @@ describe('ComponentLayerRenderer', () => {
     layer.render(toMap({ markingId: 'm', containerId: 'img-1', root }), all, PLACEMENTS);
     const rects = parent.find('Rect') as Konva.Rect[];
     expect(rects.some((r) => r.stroke() === '#00aa00')).toBe(true);
+  });
+});
+
+// Marcação do canvas (v13): `containerId` nulo, o grupo dela usa a posição identidade.
+describe('ComponentLayerRenderer: espaço do canvas', () => {
+  it('desenha no grupo do canvas com a posição identidade, sem precisar de `placements`', () => {
+    const { parent, layer } = setup();
+    const canvasGroup = () =>
+      parent.getChildren().find((n: Konva.Node) => n.getAttr('containerId') === '') as
+        Konva.Group | undefined;
+    const note = drawing('note', null, 30);
+    expect(layer.render(toMap(note), all, new Map())).toBe(true);
+    const group = canvasGroup();
+    expect(group).toBeDefined();
+    expect(group?.getChildren()).toHaveLength(1);
+    expect(group?.x()).toBe(0);
+    expect(group?.y()).toBe(0);
+    expect(group?.scaleX()).toBe(1);
+    // Os containers continuam com o placement deles, e o diff por identidade vale nos dois.
+    const inImage = drawing('m1');
+    layer.render(toMap(note, inImage), all, PLACEMENTS);
+    expect(layer.size).toBe(2);
+    expect(layer.render(toMap(note, inImage), all, PLACEMENTS)).toBe(false);
+    expect(canvasGroup()?.getChildren()).toHaveLength(1);
+  });
+
+  it('o grupo do canvas some quando não há mais desenho dele', () => {
+    const { parent, layer } = setup();
+    layer.render(toMap(drawing('note', null), drawing('m1')), all, PLACEMENTS);
+    expect(parent.getChildren()).toHaveLength(2);
+    layer.render(toMap(drawing('m1')), all, PLACEMENTS);
+    expect(parent.getChildren()).toHaveLength(1);
+    expect(layer.size).toBe(1);
+  });
+
+  it('a mesma marcação que passa do container ao canvas é redesenhada no grupo novo', () => {
+    const { parent, layer } = setup();
+    layer.render(toMap(drawing('m1')), all, PLACEMENTS);
+    layer.render(toMap(drawing('m1', null)), all, PLACEMENTS);
+    expect(layer.size).toBe(1);
+    const groups = parent.getChildren() as Konva.Group[];
+    const owner = groups.find((g) => g.getChildren().length > 0);
+    expect(owner?.getAttr('containerId')).toBe('');
+  });
+
+  it('o filtro de visibilidade separa as flutuantes das demais (duas camadas)', () => {
+    const lower = new Konva.Group();
+    const upper = new Konva.Group();
+    const below = new ComponentLayerRenderer(lower);
+    const above = new ComponentLayerRenderer(upper);
+    const floating = new Set(['note']);
+    const drawings = toMap(drawing('m1'), drawing('note', null));
+    below.render(drawings, (d) => !floating.has(d.markingId), PLACEMENTS);
+    above.render(drawings, (d) => floating.has(d.markingId), PLACEMENTS);
+    expect(below.size).toBe(1);
+    expect(above.size).toBe(1);
+    // A flutuante deixa de ser: o desenho muda de camada.
+    floating.clear();
+    below.render(drawings, (d) => !floating.has(d.markingId), PLACEMENTS);
+    above.render(drawings, (d) => floating.has(d.markingId), PLACEMENTS);
+    expect(below.size).toBe(2);
+    expect(above.size).toBe(0);
   });
 });

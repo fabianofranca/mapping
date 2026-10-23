@@ -10,7 +10,12 @@ import {
   resolveRef,
   type SpecField,
 } from '../model';
-import { BacklinkList, SimpleEditor, type FieldContext } from './FieldEditors';
+import {
+  BacklinkList,
+  SimpleEditor,
+  StringEditor,
+  type FieldContext,
+} from './FieldEditors';
 import { IconButton } from './controls';
 import { classes } from './controls/classes';
 import { useDetailsExtension } from './DetailsExtension';
@@ -46,6 +51,8 @@ export function TypedField({
     (i) => i.key === field.key && i.rowId === undefined && i.code !== 'unknown-field',
   );
   const label = fieldLabel(field);
+  // Texto livre: o campo da anotação aceita várias linhas; a célula de tabela, não.
+  const Editor = field.type === 'string' ? StringEditor : SimpleEditor;
 
   return (
     <Property
@@ -62,7 +69,7 @@ export function TypedField({
       {field.type === 'ref' ? (
         <RefField id={id} field={field} invalid={issue !== undefined} {...ctx} />
       ) : (
-        <SimpleEditor
+        <Editor
           id={id}
           field={field}
           value={value}

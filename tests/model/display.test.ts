@@ -1,42 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildListing,
+  addAnnotation,
+  createArrow,
   layerDotsByMarking,
   markingVisibility,
-  setAnnotationInherit,
 } from '../../src/model';
 import { sampleProject } from './fixtures';
 
-// Porta (M1) › Maçaneta (M2) › Fechadura (M3); A1 (M1/L1) herda; A3 (M2/L1) é própria.
-const p = setAnnotationInherit(sampleProject(), 'A1', true);
+// Porta (M1) › Maçaneta (M2) › Fechadura (M3); A1 (M1/L1) e A3 (M2/L1) são próprias.
+const p = sampleProject();
 const [l1, l2] = p.layers;
 const both = p.layers;
 
 describe('bolinhas por camada', () => {
-  it('marca como vazada a camada que chega só por herança', () => {
-    const dots = layerDotsByMarking(p, both);
-    expect(dots.get('M1')?.map((d) => [d.layer.id, d.inheritedOnly])).toEqual([
-      ['L1', false],
-      ['L2', false],
-    ]);
-    // Maçaneta tem anotação própria em L1 (cheia); a herdada da mesma camada não a esvazia.
-    expect(dots.get('M2')?.map((d) => [d.layer.id, d.inheritedOnly])).toEqual([
-      ['L1', false],
-    ]);
-    // Fechadura herda de Porta em qualquer profundidade.
-    expect(dots.get('M3')?.map((d) => [d.layer.id, d.inheritedOnly])).toEqual([
-      ['L1', true],
-    ]);
-  });
-
   it('só considera as camadas visíveis', () => {
     const dots = layerDotsByMarking(p, [l2 as NonNullable<typeof l2>]);
     expect(dots.has('M3')).toBe(false);
     expect(dots.get('M1')?.map((d) => d.layer.id)).toEqual(['L2']);
   });
+});
 
-  it('sem herança, a Fechadura não tem indicadores', () => {
-    expect(layerDotsByMarking(sampleProject(), both).has('M3')).toBe(false);
+describe('bolinhas por camada: setas', () => {
+  it('a seta com anotação entra pelo id dela, como as marcações', () => {
+    let q = createArrow(p, { id: 'R1', from: 'M1', to: 'M4' });
+    q = createArrow(q, { id: 'R2', from: 'M2', to: 'M3' });
+    q = addAnnotation(q, { id: 'AR', markingId: 'R1', layerId: 'L2' });
+    const dots = layerDotsByMarking(q, both);
+    expect(dots.get('R1')?.map((d) => d.layer.id)).toEqual(['L2']);
+    expect(dots.has('R2')).toBe(false);
+    // As marcações seguem como antes.
+    expect(dots.get('M1')?.map((d) => d.layer.id)).toEqual(['L1', 'L2']);
   });
 });
 
@@ -48,9 +41,8 @@ describe('modos de exibição', () => {
     expect([...v.values()].every((x) => x === 'full')).toBe(true);
   });
 
-  it('esmaecer: só esmaece quem não tem anotação própria nem herdada', () => {
+  it('esmaecer: só esmaece quem não tem anotação própria', () => {
     const v = markingVisibility(p, dots, 'dim', null);
-    expect(v.get('M3')).toBe('full'); // herdada
     expect(v.get('M4')).toBe('full'); // própria em L2
     const v1 = markingVisibility(
       sampleProject(),
@@ -131,22 +123,5 @@ describe('modos de exibição pela camada ativa', () => {
     expect(v.get('M4')).toBe('full');
     expect(v.get('M2')).toBe('hidden');
     expect(markingVisibility(base, active, 'dim', null).get('M2')).toBe('dim');
-  });
-});
-
-describe('lista com herdadas', () => {
-  it('mostra as herdadas sob a marcação, com a origem', () => {
-    const listing = buildListing(p, both, { showEmpty: false });
-    const m3 = listing[0]?.markings.find((m) => m.marking.id === 'M3');
-    expect(m3).toBeDefined();
-    expect(m3?.sections).toEqual([]);
-    expect(
-      m3?.inherited.map((s) => [s.layer.id, s.items.map((i) => i.source.id)]),
-    ).toEqual([['L1', ['M1']]]);
-  });
-
-  it('herdada de um ancestral de qualquer profundidade só aparece nas camadas visíveis', () => {
-    const listing = buildListing(p, [l2 as NonNullable<typeof l2>], { showEmpty: false });
-    expect(listing[0]?.markings.map((m) => m.marking.id)).toEqual(['M1']);
   });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
 import {
+  CANVAS_FILTER,
   CHANGE_TYPES,
   hasActiveFilters,
   reviewKey,
@@ -103,6 +104,7 @@ export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
   const active = hasActiveFilters(filters);
   const shown = d.visibleIds.value.length;
   const images = (tree?.root.children ?? []).filter((n) => n.level === 'image');
+  const hasCanvas = (tree?.changeIdsOf({ level: 'canvas', id: null }).length ?? 0) > 0;
   const layers = names.preview?.layers ?? names.current.layers;
   const toggleType = (type: ChangeType) => {
     const set = new Set(filters.types);
@@ -152,6 +154,9 @@ export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
           onChange={(e) => review.setFilters({ imageId: e.currentTarget.value || null })}
         >
           <option value="">{t('review.filter.allImages')}</option>
+          {hasCanvas && (
+            <option value={CANVAS_FILTER}>{t('review.filter.canvas')}</option>
+          )}
           {images.map((n) => (
             <option key={n.id} value={n.id ?? ''}>
               {targetName(names, { level: 'image', id: n.id })}
@@ -505,7 +510,8 @@ export function ReviewLevels() {
       navigate(
         {
           level: level as ReviewTarget['level'],
-          id: level === 'proposal' || level === 'project' ? null : id,
+          id:
+            level === 'proposal' || level === 'project' || level === 'canvas' ? null : id,
         },
         false,
       );

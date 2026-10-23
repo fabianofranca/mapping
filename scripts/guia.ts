@@ -37,6 +37,11 @@ function guiaData(root: string): unknown {
     const bytes = readFileSync(join(root, EXAMPLE_DIR, image.file));
     files[image.file] = `data:${mime};base64,${bytes.toString('base64')}`;
   }
+  // O guia desenha só o que está dentro de um container; as notas (marcações soltas no canvas)
+  // ficam de fora, com as anotações delas.
+  const inContainer = new Set(
+    project.markings.filter((m) => m.containerId !== null).map((m) => m.id),
+  );
   return {
     layers: project.layers.map(({ id, name, color, spec }) => ({
       id,
@@ -52,24 +57,28 @@ function guiaData(root: string): unknown {
       height: image.height,
       background: image.background,
     })),
-    markings: project.markings.map((m) => ({
-      id: m.id,
-      containerId: m.containerId,
-      parentId: m.parentId,
-      name: m.name ?? '',
-      rect: m.rect,
-      needsReview: m.needsReview,
-      locked: m.locked,
-    })),
-    annotations: project.annotations.map((a) => ({
-      id: a.id,
-      markingId: a.markingId,
-      layerId: a.layerId,
-      name: a.name,
-      type: a.type,
-      values: a.values,
-      entries: a.entries,
-    })),
+    markings: project.markings
+      .filter((m) => inContainer.has(m.id))
+      .map((m) => ({
+        id: m.id,
+        containerId: m.containerId,
+        parentId: m.parentId,
+        name: m.name ?? '',
+        rect: m.rect,
+        needsReview: m.needsReview,
+        locked: m.locked,
+      })),
+    annotations: project.annotations
+      .filter((a) => inContainer.has(a.markingId))
+      .map((a) => ({
+        id: a.id,
+        markingId: a.markingId,
+        layerId: a.layerId,
+        name: a.name,
+        type: a.type,
+        values: a.values,
+        entries: a.entries,
+      })),
     files,
   };
 }

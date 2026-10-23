@@ -1,11 +1,13 @@
 import { cleanup, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { COMPONENT_DRAG_MIME, draggedComponent } from '../../src/app/componentDrag';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { LibraryPalette } from '../../src/ui/LibraryPalette';
 import { libraryHarness, type LibraryHarness } from './libraryHarness';
+import { notesHarness } from './notesHarness';
 
 // B3/P7: a paleta da Biblioteca (paleta de componentes).
 
@@ -130,13 +132,43 @@ describe('paleta da Biblioteca', () => {
     expect(harness.project().markings.at(-1)?.containerId).toBe('I1');
   });
 
-  it('sem tela sob o centro nem seleção, o botão fica desabilitado com a dica', async () => {
+  it('sem tela sob o centro nem seleção, Adicionar cria no canvas e o rótulo diz o destino', async () => {
     const harness = await libraryHarness();
     harness.canvas.viewportCenter.mockReturnValue({ x: -5000, y: -5000 });
-    renderLibrary(harness);
+    harness.ui.selection.value = null;
+    const { user } = renderLibrary(harness);
     const button = addButton('Button');
-    expect(button.disabled).toBe(true);
-    expect(button.title).toBe(t('library.noScreen'));
+    expect(button.disabled).toBe(false);
+    expect(button.textContent).toBe(t('library.addToCanvas'));
+    await user.click(button);
+    const created = harness.project().markings.at(-1);
+    expect(created?.containerId).toBeNull();
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
+  });
+
+  it('o rótulo mostra a tela de destino quando há container sob o centro', async () => {
+    const harness = await libraryHarness();
+    harness.ui.selection.value = null;
+    renderLibrary(harness);
+    const image = harness.project().containers.find((i) => i.id === 'I1');
+    expect(addButton('Button').textContent).toBe(
+      t('library.addToScreen', { name: image?.name ?? image?.file ?? '' }),
+    );
+  });
+
+  it('seleção numa marcação do canvas sem slot: adiciona no canvas', async () => {
+    const harness = await libraryHarness();
+    const placed = harness.actions.createMarking(null, {
+      x: -400,
+      y: -400,
+      width: 300,
+      height: 200,
+    });
+    expect(placed.ok).toBe(true);
+    if (!placed.ok) return;
+    harness.ui.selection.value = { kind: 'marking', id: placed.value };
+    renderLibrary(harness);
+    expect(addButton('Button').textContent).toBe(t('library.addToCanvas'));
   });
 
   it('com a tela do centro fora de vista, a imagem selecionada serve (sem centro)', async () => {
@@ -177,5 +209,68 @@ describe('paleta da Biblioteca', () => {
     expect(screen.getByText(t('library.empty'))).toBeTruthy();
     await user.click(screen.getByRole('button', { name: t('library.openSpecs') }));
     expect(onOpenSpecs).toHaveBeenCalledOnce();
+  });
+});
+
+describe('arrastar da paleta', () => {
+  const li = (name: string) =>
+    screen
+      .getByText(name, { selector: '.library-type-name' })
+      .closest('li') as HTMLElement;
+
+  it('o item é arrastável e grava o MIME e o tipo em arrasto', async () => {
+    const harness = await libraryHarness();
+    Object.assign(harness.canvas, { setDropTarget: vi.fn() });
+    renderLibrary(harness);
+    const item = li('Button');
+    expect(item.getAttribute('draggable')).toBe('true');
+    const data = new Map<string, string>();
+    const event = new Event('dragstart', { bubbles: true }) as DragEvent;
+    Object.defineProperty(event, 'dataTransfer', {
+      value: {
+        setData: (k: string, v: string) => data.set(k, v),
+        effectAllowed: 'none',
+      },
+    });
+    item.dispatchEvent(event);
+    expect(JSON.parse(data.get(COMPONENT_DRAG_MIME) ?? '{}')).toEqual({
+      specId: 'material3',
+      typeId: 'm3-button',
+    });
+    expect(draggedComponent()).toEqual({ specId: 'material3', typeId: 'm3-button' });
+    item.dispatchEvent(new Event('dragend', { bubbles: true }));
+    expect(draggedComponent()).toBeNull();
+  });
+
+  it('somente leitura: o item não arrasta', async () => {
+    const harness = await libraryHarness({ readOnly: true });
+    renderLibrary(harness);
+    expect(li('Button').getAttribute('draggable')).toBe('false');
+  });
+});
+
+describe('paleta da Biblioteca: tipo flutuante (notas)', () => {
+  it('a linha da nota diz "Adicionar no canvas" mesmo com um container selecionado, e cria a flutuante', async () => {
+    const harness = await notesHarness();
+    harness.ui.selection.value = { kind: 'image', id: 'I1' };
+    const { user } = renderLibrary(harness);
+    const note = addButton('Nota');
+    expect(note.textContent).toBe(t('library.addToCanvas'));
+    // O tipo comum continua apontando para o container selecionado.
+    expect(addButton('Button').textContent).toBe(
+      t('library.addToScreen', { name: 'images/lateral.jpg' }),
+    );
+
+    const before = harness.project().markings.length;
+    await user.click(note);
+    const project = harness.project();
+    expect(project.markings).toHaveLength(before + 1);
+    const created = project.markings.at(-1);
+    expect(created).toMatchObject({ floating: true, containerId: null, parentId: null });
+    expect(project.annotations.find((a) => a.markingId === created?.id)?.type).toEqual({
+      specId: 'notas',
+      typeId: 'nota',
+    });
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: created?.id });
   });
 });

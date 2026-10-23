@@ -17,6 +17,7 @@ import { setMarkingDisplay, setShowComponentsOnPhotos } from '../../src/store/se
 import { textMeasurer } from '../../src/store/textMeasure';
 import { createEditorUi, setActiveLayer } from '../../src/store/ui';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
+import { NOTES_SPEC_ID, notesCatalog, notesProject } from '../model/notesFixtures';
 
 const catalog = testCatalog();
 
@@ -305,6 +306,48 @@ describe('derivado: marcações desenhadas', () => {
     actions.renameProject('Outro nome');
     expect(derived.drawnMarkings.value).toBe(before);
   });
+
+  it('a marcação do canvas desenha sempre, sem depender da opção das fotos', () => {
+    const { derived, actions } = setup();
+    setShowComponentsOnPhotos(false);
+    const created = actions.addComponent({
+      containerId: null,
+      parentId: null,
+      specId: SPEC_ID,
+      typeId: 'text',
+      center: { x: 3000, y: 100 },
+    });
+    if (!created.ok) throw new Error('addComponent');
+    // T1 e T2 estão na foto I1 (escondidos); a do canvas aparece.
+    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
+    expect(derived.componentScenes.value.get(created.value)?.containerId).toBeNull();
+  });
+});
+
+describe('derivado: marcações flutuantes', () => {
+  it('lista as flutuantes e mantém o mesmo conjunto enquanto nenhuma muda', () => {
+    const { derived, actions } = setup();
+    const empty = derived.floatingMarkings.value;
+    expect(empty.size).toBe(0);
+    actions.renameProject('Outro nome');
+    expect(derived.floatingMarkings.value).toBe(empty);
+
+    const note = actions.addComponent({
+      containerId: null,
+      parentId: null,
+      specId: SPEC_ID,
+      typeId: 'text',
+      center: { x: 3000, y: 100 },
+    });
+    if (!note.ok) throw new Error('addComponent');
+    // Comum no canvas: ainda não é flutuante.
+    expect(derived.floatingMarkings.value.size).toBe(0);
+    expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
+    const floating = derived.floatingMarkings.value;
+    expect([...floating]).toEqual([note.value]);
+    actions.renameProject('Mais outro');
+    expect(derived.floatingMarkings.value).toBe(floating);
+  });
 });
 
 describe('derivado: pendência "componente não cabe"', () => {
@@ -377,5 +420,33 @@ describe('derivado: tamanho mínimo, paleta e avisos', () => {
     const warnings = derived.componentWarnings.value;
     expect(warnings.map((w) => w.markingId)).toEqual(['W']);
     expect(warnings[0]?.warnings.join(' ')).toContain('conteúdo maior que a caixa');
+  });
+});
+
+describe('derivado: nota flutuante sobre uma foto', () => {
+  it('desenha mesmo com "Mostrar componentes sobre fotos" desligado, com a foto embaixo', () => {
+    const { derived, actions, store } = setup(notesProject(), {
+      catalog: notesCatalog(),
+    });
+    setShowComponentsOnPhotos(false);
+    const photo = store.project.value?.containers.find((c) => c.id === 'I1');
+    if (!photo) throw new Error('I1');
+    const created = actions.addComponent({
+      containerId: null,
+      parentId: null,
+      specId: NOTES_SPEC_ID,
+      typeId: 'nota',
+      // Sobre a foto I1.
+      center: { x: photo.placement.x + 100, y: photo.placement.y + 100 },
+    });
+    if (!created.ok) throw new Error('addComponent');
+    const note = store.project.value?.markings.find((m) => m.id === created.value);
+    expect(note).toMatchObject({ floating: true, containerId: null });
+    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
+    expect(derived.componentScenes.value.get(created.value)).toBeDefined();
+    expect(derived.floatingMarkings.value.has(created.value)).toBe(true);
+    // Ligar a opção não muda nada para a flutuante.
+    setShowComponentsOnPhotos(true);
+    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
   });
 });

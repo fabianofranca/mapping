@@ -1,6 +1,12 @@
 import { effect } from '@preact/signals';
 import { describe, expect, it } from 'vitest';
-import { moveContainer, moveMarking, renameLayer, renameProject } from '../../src/model';
+import {
+  moveContainer,
+  moveMarking,
+  renameLayer,
+  renameProject,
+  validateProject,
+} from '../../src/model';
 import { HISTORY_LIMIT, createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { NOW, emptyProject, sampleProject } from '../model/fixtures';
@@ -61,10 +67,9 @@ describe('store: actions e histórico', () => {
     const { store, actions } = setup();
     const before = project(store);
     expect(actions.removeLayer('L9')).toEqual({ ok: false, error: 'not-found' });
-    expect(actions.moveMarking('M3', 999, 0)).toEqual({
-      ok: false,
-      error: 'rect-outside-parent',
-    });
+    expect(
+      actions.setMarkingRect('M3', { x: 1300, y: 1250, width: 5, height: 50 }),
+    ).toEqual({ ok: false, error: 'rect-too-small' });
     expect(project(store)).toBe(before);
     expect(store.canUndo.value).toBe(false);
   });
@@ -246,7 +251,7 @@ describe('store: gestos', () => {
     store.cancelGesture();
     expect(store.undo()).toBe(true);
   });
-  it('actions de gesto: mover a marcação com as filhas, limitada ao pai, uma entrada', () => {
+  it('actions de gesto: mover a marcação com as filhas, sem prender, e assentar ao soltar numa entrada', () => {
     const { store, actions } = setup();
     const before = project(store);
     const rectOf = (id: string) => project(store).markings.find((m) => m.id === id)?.rect;
@@ -255,15 +260,23 @@ describe('store: gestos', () => {
     actions.previewMarkingMove('M1', 100.4, -50.6);
     expect(rectOf('M1')).toMatchObject({ x: 1100, y: 949 });
     expect(rectOf('M3')).toMatchObject({ x: 1400, y: 1199 });
-    // M3 não sai de M2 (agora em x 1300..1700): o deslocamento é limitado.
+    expect(actions.finishMarkingMove('M1', 100, -51).ok).toBe(true);
     actions.commitGesture();
+    expect(rectOf('M1')).toMatchObject({ x: 1100, y: 949 });
+
+    // Nada prende a marcação: ela sai do container (o `rect` passa de 4000 de largura) e o
+    // assentar a leva ao canvas, onde é uma marcação sem pai.
     expect(actions.beginGesture().ok).toBe(true);
-    actions.previewMarkingMove('M3', 10_000, 0);
+    expect(actions.previewMarkingMove('M3', 10_000, 0).ok).toBe(true);
+    expect(rectOf('M3')).toMatchObject({ x: 11_400 });
+    expect(actions.finishMarkingMove('M3', 10_000, 0).ok).toBe(true);
     actions.commitGesture();
-    expect(rectOf('M3')).toMatchObject({ x: 1650, y: 1199 });
+    const m3 = project(store).markings.find((m) => m.id === 'M3');
+    expect(m3).toMatchObject({ containerId: null, parentId: null });
     expect(store.undo()).toBe(true);
     expect(store.undo()).toBe(true);
     expect(project(store).markings).toBe(before.markings);
+    expect(store.canUndo.value).toBe(false);
   });
 
   it('actions de gesto: redimensionar marcação inválido fica na última prévia válida', () => {
@@ -271,15 +284,200 @@ describe('store: gestos', () => {
     actions.beginGesture();
     const ok = { x: 1000, y: 1000, width: 900, height: 900 };
     expect(actions.previewMarkingRect('M1', ok).ok).toBe(true);
-    const bad = { x: 1300, y: 1000, width: 100, height: 100 };
+    // Fora do container: recusado, fica a última válida.
+    const bad = { x: 3900, y: 1000, width: 500, height: 100 };
     expect(actions.previewMarkingRect('M1', bad)).toEqual({
       ok: false,
-      error: 'rect-excludes-children',
+      error: 'rect-out-of-image',
     });
+    expect(actions.finishMarkingRect('M1', ok).ok).toBe(true);
     actions.commitGesture();
     expect(project(store).markings.find((m) => m.id === 'M1')?.rect).toEqual(ok);
     expect(store.undo()).toBe(true);
     expect(store.canUndo.value).toBe(false);
+  });
+});
+
+// Etapa Marcações espaciais (ME1): as prévias não assentam e a operação final, dentro do mesmo
+// gesto, decide espaço e pai; desfazer volta tudo de uma vez.
+describe('store: gestos com assentar (ME1)', () => {
+  // sampleProject: I1 (4000×3000, escala 0,25: 1000×750 no canvas) em (0, 0); I2 (1000×1000,
+  // escala 1) à direita, em (1050, 0). M1 › M2 › M3 em I1; M4 em I2.
+  const find = (store: ReturnType<typeof createProjectStore>, id: string) =>
+    project(store).markings.find((m) => m.id === id);
+  const container = (store: ReturnType<typeof createProjectStore>, id: string) =>
+    project(store).containers.find((c) => c.id === id);
+
+  it('mover uma marcação de A para B leva as filhas, converte o rect e desfaz tudo de uma vez', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    // M2 (1200,1200,400×200 em I1) está em (300, 300) no canvas; levada para (1500, 400) cai
+    // inteira em I2: 1200 unidades do canvas = 4800 pixels de I1; 100 = 400.
+    expect(actions.beginGesture().ok).toBe(true);
+    expect(actions.previewMarkingMove('M2', 2400, 200).ok).toBe(true);
+    // Durante o gesto o pertencimento está congelado.
+    expect(find(store, 'M2')).toMatchObject({ containerId: 'I1', parentId: 'M1' });
+    expect(find(store, 'M3')).toMatchObject({ containerId: 'I1', parentId: 'M2' });
+    expect(actions.previewMarkingMove('M2', 4800, 400).ok).toBe(true);
+    expect(actions.finishMarkingMove('M2', 4800, 400).ok).toBe(true);
+    // O confirmado só muda no commit.
+    expect(store.committed.value).toBe(before);
+    actions.commitGesture();
+
+    expect(find(store, 'M2')).toMatchObject({
+      containerId: 'I2',
+      parentId: null,
+      rect: { x: 450, y: 400, width: 100, height: 50 },
+    });
+    // M3 foi junto (descendente) e continua filha de M2, agora em pixels de I2.
+    expect(find(store, 'M3')).toMatchObject({ containerId: 'I2', parentId: 'M2' });
+    expect(validateProject(project(store))).toEqual([]);
+
+    expect(store.undo()).toBe(true);
+    expect(project(store).markings).toBe(before.markings);
+    expect(store.canUndo.value).toBe(false);
+    // Refazer volta ao resultado do gesto inteiro.
+    expect(store.redo()).toBe(true);
+    expect(find(store, 'M2')?.containerId).toBe('I2');
+  });
+
+  it('a prévia de redimensionar não assenta; soltar tira do pai o que deixou de caber', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    expect(actions.beginGesture().ok).toBe(true);
+    // M1 encolhe para a ponta de cima à esquerda: M2 (1200..1600) deixa de caber.
+    const smaller = { x: 1000, y: 1000, width: 300, height: 300 };
+    expect(actions.previewMarkingRect('M1', smaller).ok).toBe(true);
+    expect(find(store, 'M2')?.parentId).toBe('M1'); // congelado na prévia
+    expect(actions.finishMarkingRect('M1', smaller).ok).toBe(true);
+    actions.commitGesture();
+    expect(find(store, 'M1')?.rect).toEqual(smaller);
+    expect(find(store, 'M2')?.parentId).toBeNull();
+    expect(find(store, 'M3')?.parentId).toBe('M2');
+    expect(store.undo()).toBe(true);
+    expect(project(store).markings).toBe(before.markings);
+  });
+
+  it('mover um container para fora e para dentro de uma marcação do canvas, uma entrada cada', () => {
+    const { store, actions } = setup();
+    // Marcação do canvas em volta só de I1 (0..1000 × 0..750); I2 (a partir de 1050) fica fora.
+    const created = actions.createMarking(null, {
+      x: -50,
+      y: -50,
+      width: 1100,
+      height: 850,
+    });
+    expect(created.ok).toBe(true);
+    const id = created.ok ? created.value : '';
+    expect(container(store, 'I1')?.parentId).toBe(id);
+    expect(container(store, 'I2')?.parentId).toBeNull();
+    const afterCreate = project(store);
+
+    // I1 sai para longe: congelado durante o gesto, solto ao soltar.
+    expect(actions.beginGesture().ok).toBe(true);
+    expect(actions.previewImagePlacement('I1', { x: 4000, y: 0, scale: 0.25 }).ok).toBe(
+      true,
+    );
+    expect(container(store, 'I1')?.parentId).toBe(id);
+    expect(actions.finishImagePlacement('I1').ok).toBe(true);
+    actions.commitGesture();
+    expect(container(store, 'I1')?.parentId).toBeNull();
+
+    // E volta: passa a ser membro de novo.
+    expect(actions.beginGesture().ok).toBe(true);
+    expect(actions.previewImagePlacement('I1', { x: 0, y: 0, scale: 0.25 }).ok).toBe(
+      true,
+    );
+    expect(actions.finishImagePlacement('I1').ok).toBe(true);
+    actions.commitGesture();
+    expect(container(store, 'I1')?.parentId).toBe(id);
+
+    expect(store.undo()).toBe(true);
+    expect(container(store, 'I1')?.parentId).toBeNull();
+    expect(store.undo()).toBe(true);
+    expect(project(store).containers).toBe(afterCreate.containers);
+  });
+
+  it('a final de mover o container usa a última posição válida', () => {
+    const { store, actions } = setup();
+    const start = container(store, 'I2')?.placement;
+    if (!start) throw new Error('sem I2');
+    expect(actions.beginGesture().ok).toBe(true);
+    expect(actions.previewImagePlacement('I2', { ...start, y: 900 }).ok).toBe(true);
+    // Por cima da I1: recusada; a final assenta a última válida (y = 900).
+    expect(actions.previewImagePlacement('I2', { ...start, x: 100, y: 100 }).ok).toBe(
+      false,
+    );
+    expect(actions.finishImagePlacement('I2').ok).toBe(true);
+    actions.commitGesture();
+    expect(container(store, 'I2')?.placement).toEqual({ ...start, y: 900 });
+  });
+
+  it('a operação final nunca falha: se falhar, assenta a última prévia válida', () => {
+    const { store, actions } = setup();
+    expect(actions.beginGesture().ok).toBe(true);
+    const smaller = { x: 1000, y: 1000, width: 300, height: 300 };
+    expect(actions.previewMarkingRect('M1', smaller).ok).toBe(true);
+    // Um retângulo fora do container faria a final falhar...
+    const bad = { x: 3900, y: 1000, width: 500, height: 100 };
+    expect(actions.finishMarkingRect('M1', bad)).toEqual({
+      ok: false,
+      error: 'rect-out-of-image',
+    });
+    // ...mas a prévia gravada já está assentada (M2 saiu do pai que encolheu).
+    actions.commitGesture();
+    expect(find(store, 'M1')?.rect).toEqual(smaller);
+    expect(find(store, 'M2')?.parentId).toBeNull();
+    expect(validateProject(project(store))).toEqual([]);
+  });
+
+  it('sem mudança de verdade, o gesto não entra no histórico', () => {
+    const { store, actions } = setup();
+    expect(actions.beginGesture().ok).toBe(true);
+    actions.previewMarkingMove('M2', 40, 40);
+    // A final volta ao ponto de partida.
+    expect(actions.finishMarkingMove('M2', 0, 0).ok).toBe(true);
+    actions.commitGesture();
+    expect(store.canUndo.value).toBe(false);
+  });
+
+  it('as actions fora de gesto assentam (mover e redimensionar são geometria)', () => {
+    const { store, actions } = setup();
+    expect(actions.moveMarking('M2', 4800, 400).ok).toBe(true);
+    expect(find(store, 'M2')?.containerId).toBe('I2');
+    expect(store.undo()).toBe(true);
+    expect(find(store, 'M2')?.containerId).toBe('I1');
+    // Encolher o pai por cima da filha é aceito e a filha sai do pertencimento.
+    expect(
+      actions.setMarkingRect('M1', { x: 1000, y: 1000, width: 100, height: 100 }).ok,
+    ).toBe(true);
+    expect(find(store, 'M2')?.parentId).toBeNull();
+  });
+
+  it('setMarkingFloating: a flutuante vai ao canvas e o desfazer a devolve', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    expect(actions.setMarkingFloating('M4', true).ok).toBe(true);
+    expect(find(store, 'M4')).toMatchObject({
+      floating: true,
+      containerId: null,
+      parentId: null,
+    });
+    expect(actions.setMarkingFloating('M4', false).ok).toBe(true);
+    // Desligar a devolve ao container que a contém inteira (M4 está sobre I2).
+    expect(find(store, 'M4')).toMatchObject({ floating: false, containerId: 'I2' });
+    expect(store.undo()).toBe(true);
+    expect(store.undo()).toBe(true);
+    expect(project(store).markings).toBe(before.markings);
+  });
+
+  it('marcação flutuante trancada não vira comum nem o contrário', () => {
+    const { actions } = setup();
+    expect(actions.setMarkingLocked('M4', true).ok).toBe(true);
+    expect(actions.setMarkingFloating('M4', true)).toEqual({
+      ok: false,
+      error: 'locked',
+    });
   });
 });
 

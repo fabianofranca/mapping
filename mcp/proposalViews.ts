@@ -80,6 +80,8 @@ export class ProposalLabels {
         return this.ref('i', c.entityId) ?? `container ${c.entityId}`;
       case 'marking':
         return this.ref('m', c.entityId) ?? `marcação ${c.entityId}`;
+      case 'arrow':
+        return `seta ${c.entityId}`;
       case 'annotation':
         return this.ref('a', c.entityId) ?? `anotação ${c.entityId}`;
       case 'layer':

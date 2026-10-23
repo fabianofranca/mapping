@@ -23,10 +23,21 @@ export interface MappingJson {
     readonly width: number;
     readonly height: number;
     readonly locked: boolean;
+    /** A marcação do canvas que contém o container (v13); `null` = nenhuma. */
+    readonly parentId: string | null;
+    readonly placement: {
+      readonly x: number;
+      readonly y: number;
+      readonly scale: number;
+    };
   }[];
   readonly markings: readonly {
     readonly id: string;
-    readonly containerId: string;
+    /** `null` = marcação do canvas (v13): `rect` em unidades do canvas. */
+    readonly containerId: string | null;
+    /** Quem contém a marcação no mesmo espaço (derivado da geometria pela app); `null` = ninguém. */
+    readonly parentId: string | null;
+    readonly floating: boolean;
     readonly name: string;
     readonly rect: Rect;
     readonly locked: boolean;

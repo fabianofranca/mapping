@@ -2,13 +2,16 @@ import { useId, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   fieldLabel,
+  findCellRefTargets,
   findRefTargets,
   parseRefValue,
   projectIndex,
+  tableRows,
   type Annotation,
   type Project,
   type RefTarget,
   type SpecField,
+  type SpecRefColumn,
 } from '../model';
 import { IconButton, Tabs, type TabItem } from './controls';
 import { useFocusOrigin, useModal, type FocusReturn } from './focus';
@@ -22,7 +25,14 @@ import { annotationSourceLabel, labelTexts } from './typedText';
 // Esc fecha. Ao fechar (Esc, clique fora ou escolha), o foco volta a quem abriu, como no
 // `Dialog`: depois de o seletor sair da tela, porque com ele aberto o resto é inerte.
 
-export type RefFieldDef = Extract<SpecField, { type: 'ref' }>;
+/** Campo `ref` da anotação ou coluna `ref` de uma tabela: o seletor lê `key`, `label` e `accepts`. */
+export type RefFieldDef = Extract<SpecField, { type: 'ref' }> | SpecRefColumn;
+
+/** A célula que o seletor edita: a tabela do tipo e a linha (o `field` é a coluna). */
+export interface RefCellTarget {
+  readonly tableKey: string;
+  readonly rowId: string;
+}
 
 /** Aba do filtro: todos, uma etiqueta aceita ou só as tuplas livres. */
 type Filter =
@@ -45,9 +55,12 @@ function groupTargets(project: Project, targets: readonly RefTarget[]): TargetGr
     let group = groups.get(id);
     if (!group) {
       const marking = index.markings.get(target.annotation.markingId);
-      const image = marking ? index.containers.get(marking.containerId) : undefined;
+      const image =
+        marking?.containerId != null
+          ? index.containers.get(marking.containerId)
+          : undefined;
       const context = [
-        image ? imageLabel(image) : '',
+        image ? imageLabel(image) : marking ? t('canvas.name') : '',
         marking ? markingPath(project, marking) : '',
       ]
         .filter((s) => s !== '')
@@ -99,7 +112,15 @@ function Highlight({ text, needle }: { readonly text: string; readonly needle: s
 interface RefPickerProps {
   readonly project: Project;
   readonly annotation: Annotation;
+  /** O campo `ref`; com `cell`, a coluna `ref` da tabela. */
   readonly field: RefFieldDef;
+  /** Célula de uma coluna `ref` (variante da tabela): os alvos e o valor atual vêm da linha. */
+  readonly cell?: RefCellTarget;
+  /**
+   * Versão compacta, para a célula de uma tabela: popup mais estreito e sem a barra de
+   * atalhos (o teclado é o mesmo).
+   */
+  readonly compact?: boolean;
   /** Esc, clique fora ou escolha feita. */
   readonly onClose: () => void;
   /** Alvo escolhido; `goTo` = Ctrl+Enter (ou Ctrl+clique): também vai até ele. */
@@ -112,6 +133,8 @@ export function RefPicker({
   project,
   annotation,
   field,
+  cell,
+  compact = false,
   onClose,
   onPick,
   returnFocus,
@@ -122,8 +145,15 @@ export function RefPicker({
   const listId = useId();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>({ kind: 'all' });
-  const targets = findRefTargets(project, annotation.id, field.key, labelTexts());
-  const current = parseRefValue(annotation.values?.[field.key]);
+  const targets = cell
+    ? findCellRefTargets(project, annotation.id, cell.tableKey, field.key, labelTexts())
+    : findRefTargets(project, annotation.id, field.key, labelTexts());
+  const currentValue = cell
+    ? tableRows(annotation.values?.[cell.tableKey]).find((r) => r._id === cell.rowId)?.[
+        field.key
+      ]
+    : annotation.values?.[field.key];
+  const current = parseRefValue(currentValue);
   const isCurrent = (target: RefTarget) =>
     current !== null && JSON.stringify(current) === JSON.stringify(target.ref);
   const [active, setActive] = useState(() => Math.max(0, targets.findIndex(isCurrent)));
@@ -191,7 +221,7 @@ export function RefPicker({
   return (
     <dialog
       ref={dialog}
-      class="picker"
+      class={compact ? 'picker picker-compact' : 'picker'}
       aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault();
@@ -297,20 +327,22 @@ export function RefPicker({
             </div>
           </>
         )}
-        <div class="picker-foot" aria-hidden="true">
-          <span>
-            <kbd class="kbd">↑</kbd> <kbd class="kbd">↓</kbd> {t('ref.keyNavigate')}
-          </span>
-          <span>
-            <kbd class="kbd">Enter</kbd> {t('ref.keyChoose')}
-          </span>
-          <span>
-            <kbd class="kbd">Ctrl+Enter</kbd> {t('ref.keyGoTo')}
-          </span>
-          <span>
-            <kbd class="kbd">Esc</kbd> {t('ref.keyClose')}
-          </span>
-        </div>
+        {!compact && (
+          <div class="picker-foot" aria-hidden="true">
+            <span>
+              <kbd class="kbd">↑</kbd> <kbd class="kbd">↓</kbd> {t('ref.keyNavigate')}
+            </span>
+            <span>
+              <kbd class="kbd">Enter</kbd> {t('ref.keyChoose')}
+            </span>
+            <span>
+              <kbd class="kbd">Ctrl+Enter</kbd> {t('ref.keyGoTo')}
+            </span>
+            <span>
+              <kbd class="kbd">Esc</kbd> {t('ref.keyClose')}
+            </span>
+          </div>
+        )}
       </div>
     </dialog>
   );

@@ -50,6 +50,11 @@
   background: var(--color-accent);
 }
 
+.tree-row-selected,
+.tree-row-selected:hover {
+  background: var(--color-pressed);
+}
+
 .tree-toggle {
   flex: none;
   display: flex;
@@ -195,10 +200,6 @@ button.tree-toggle:hover {
   border-radius: var(--radius-full);
 }
 
-.tree-dot-inherited {
-  opacity: var(--opacity-inherited);
-}
-
 .layer-chip-name {
   min-width: 0;
   overflow: hidden;
@@ -312,6 +313,8 @@ button.tree-toggle:hover {
 .layer-row > .tooltip-anchor:has(> .layer-badge) {
   grid-column: 3 / -1;
   justify-self: start;
+  min-width: 0;
+  max-width: 100%;
   margin: 0 0 var(--space-1);
 }
 
@@ -646,32 +649,6 @@ button.tree-toggle:hover {
   cursor: pointer;
 }
 
-.inherited {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  font-style: italic;
-  color: var(--color-text-muted);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-.inherited-heading {
-  margin: 0;
-  font: var(--t-text-small);
-}
-
-.inherited-item {
-  display: flex;
-  flex-direction: column;
-  overflow-wrap: anywhere;
-}
-
-.inherited-source {
-  font: var(--t-text-small);
-}
-
 .display-mode {
   display: flex;
   flex-direction: column;
@@ -682,18 +659,13 @@ button.tree-toggle:hover {
   border-radius: var(--radius-lg);
 }
 
-.list-inherited {
-  font-style: italic;
-  opacity: var(--opacity-inherited);
-}
-
 .list-linked {
   font: var(--t-text-small);
 }
 
 .layer-badge {
-  flex: none;
-  max-width: 8em;
+  display: block;
+  max-width: 100%;
   overflow: hidden;
   padding: var(--space-0-5) var(--space-2);
   color: var(--color-text-muted);

@@ -22,6 +22,7 @@ import { useEditorDialogs } from './useEditorDialogs';
 import { useEditorNotices } from './useEditorNotices';
 import { useEditorShortcuts } from './useEditorShortcuts';
 import { useExternalChanges } from './useExternalChanges';
+import { useComponentDrop } from './useComponentDrop';
 import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
 import { useReviewSync } from './useReviewSync';
@@ -57,6 +58,7 @@ export function EditorScreen() {
   const dialogs = useEditorDialogs();
   const notices = useEditorNotices();
   const intake = useImageIntake({ dialogs, notices });
+  const componentDrop = useComponentDrop(notices);
   const commands = useProjectCommands(dialogs, notices);
   // Com o editor escondido atrás do aviso, o teclado não age sobre o que não se vê.
   useEditorShortcuts(dialogs, commands, !narrow);
@@ -85,9 +87,11 @@ export function EditorScreen() {
   /** Backlinks, "Ir para o alvo", vinculadas e Incompletas: em qualquer marcação. */
   const onGoToAnnotation = (annotation: AnnotationLocation) => {
     const selection = ui.selection.peek();
+    // A dona da anotação é uma marcação ou uma seta (v13): `goToAnnotation` escolhe pelo projeto.
     const sameMarking =
-      selection?.kind === 'marking' && selection.id === annotation.markingId;
-    goToAnnotation(ui, annotation);
+      (selection?.kind === 'marking' || selection?.kind === 'arrow') &&
+      selection.id === annotation.markingId;
+    goToAnnotation(ui, annotation, null, store.committed.peek());
     if (!sameMarking) canvas.current?.centerSelection();
   };
 
@@ -121,7 +125,18 @@ export function EditorScreen() {
             <main
               class="canvas-area"
               aria-label={t('editor.canvasLabel')}
-              {...intake.dropHandlers}
+              onDragOver={(e) => {
+                intake.dropHandlers.onDragOver(e);
+                componentDrop.onDragOver(e);
+              }}
+              onDragLeave={(e) => {
+                intake.dropHandlers.onDragLeave(e);
+                componentDrop.onDragLeave(e);
+              }}
+              onDrop={(e) => {
+                intake.dropHandlers.onDrop(e);
+                componentDrop.onDrop(e);
+              }}
             >
               <CanvasHost />
               <CanvasNotices notices={notices} />

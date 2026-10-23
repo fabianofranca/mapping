@@ -561,3 +561,8 @@ a.button {
     display: none;
   }
 }
+
+/* Com um menu ou popover aberto, a dica das barras laterais não o cobre. */
+body:has(.popover, .menu-list, .action-menu-list) .tool-strip .tooltip-anchor .tooltip {
+  display: none;
+}

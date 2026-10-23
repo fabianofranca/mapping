@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 13,
   "revision": 1,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -23,13 +23,18 @@
       "id": "material3",
       "version": 1,
       "file": "specs/material3/material3.spec.json"
+    },
+    {
+      "id": "notas",
+      "version": 2,
+      "file": "specs/notas/notas.spec.json"
     }
   ],
   "platformRepos": {},
   "layers": [
     {
       "id": "cad1cc53-4610-48e5-9411-5405a34bce39",
-      "name": "Notas",
+      "name": "Dúvidas",
       "color": "#D32F2F",
       "spec": null
     },
@@ -92,6 +97,15 @@
         "specId": "material3",
         "layerId": "componentes"
       }
+    },
+    {
+      "id": "5e299d69-feba-479d-b923-1e67b775d9d2",
+      "name": "Notas",
+      "color": "#F5C400",
+      "spec": {
+        "specId": "notas",
+        "layerId": "notas"
+      }
     }
   ],
   "containers": [
@@ -106,6 +120,7 @@
         "y": 0,
         "scale": 2.0661157024793386
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -120,8 +135,9 @@
       "placement": {
         "x": 1100,
         "y": 0,
-        "scale": 2.0
+        "scale": 2
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -138,6 +154,7 @@
         "y": 0,
         "scale": 1.25
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -154,6 +171,7 @@
         "y": 0,
         "scale": 1.25
       },
+      "parentId": null,
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -174,6 +192,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -189,6 +208,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -204,6 +224,7 @@
       },
       "needsReview": true,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -219,6 +240,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -234,6 +256,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -249,6 +272,7 @@
       },
       "needsReview": false,
       "locked": true,
+      "floating": false,
       "source": null
     },
     {
@@ -264,6 +288,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -279,6 +304,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -294,6 +320,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -309,6 +336,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -324,6 +352,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -339,6 +368,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -354,6 +384,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -369,6 +400,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -384,6 +416,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -399,6 +432,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -414,6 +448,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -429,6 +464,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -444,6 +480,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -459,6 +496,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -474,6 +512,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -489,6 +528,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -504,6 +544,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -519,6 +560,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -534,6 +576,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -549,6 +592,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -564,6 +608,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -579,6 +624,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -594,6 +640,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -609,6 +656,7 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
       "source": null
     },
     {
@@ -624,6 +672,23 @@
       },
       "needsReview": false,
       "locked": false,
+      "floating": false,
+      "source": null
+    },
+    {
+      "id": "b71eeec9-148d-405c-aeb3-60606857702a",
+      "containerId": null,
+      "parentId": null,
+      "name": null,
+      "rect": {
+        "x": 0,
+        "y": 1000,
+        "width": 440,
+        "height": 260
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": true,
       "source": null
     }
   ],
@@ -633,7 +698,6 @@
       "markingId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "layerId": "4ce345f4-26dc-47ee-8966-41700458ae9b",
       "name": "Usuário",
-      "inherit": false,
       "parentAnnotationId": null,
       "type": null,
       "values": null,
@@ -660,7 +724,6 @@
       "markingId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "layerId": "dd571b7f-00e1-400e-8be5-f4a8f24d208e",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "modelo-dados",
@@ -688,7 +751,6 @@
       "markingId": "4ece99b6-20dd-4b92-9a3e-0c5cc2b88636",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -712,7 +774,6 @@
       "markingId": "bb9d7d83-f19b-4139-b3b4-39a10ab14dd0",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -736,7 +797,6 @@
       "markingId": "9fe1fd67-7669-4c8a-89f8-8754cfd6a254",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -760,7 +820,6 @@
       "markingId": "8f9464dd-8756-4027-83df-02a9038a4d47",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -779,7 +838,6 @@
       "markingId": "74c52a78-68c7-4b5c-8ebf-097957e1b532",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -798,7 +856,6 @@
       "markingId": "8f9464dd-8756-4027-83df-02a9038a4d47",
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": "2db84c4b-ac59-40d1-9163-1e73d85aeda3",
       "type": {
         "specId": "sdui",
@@ -822,7 +879,6 @@
       "markingId": "8f9464dd-8756-4027-83df-02a9038a4d47",
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": "2db84c4b-ac59-40d1-9163-1e73d85aeda3",
       "type": {
         "specId": "sdui",
@@ -839,7 +895,6 @@
       "markingId": "9fe1fd67-7669-4c8a-89f8-8754cfd6a254",
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": "e938c1dc-98a4-4a6c-8d78-255bbef46f38",
       "type": {
         "specId": "sdui",
@@ -856,7 +911,6 @@
       "markingId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "layerId": "4fbfc25c-db0c-4c38-b984-387782a306c3",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "modelo-dados",
@@ -876,7 +930,6 @@
       "markingId": "6a948fb4-7e74-48b4-9c21-4a5756727559",
       "layerId": "5d9375dc-fede-471d-853a-e4a0e6473112",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -893,7 +946,6 @@
       "markingId": "8f9464dd-8756-4027-83df-02a9038a4d47",
       "layerId": "cad1cc53-4610-48e5-9411-5405a34bce39",
       "name": "Dúvida",
-      "inherit": false,
       "parentAnnotationId": null,
       "type": null,
       "values": null,
@@ -915,7 +967,6 @@
       "markingId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
       "layerId": "4ce345f4-26dc-47ee-8966-41700458ae9b",
       "name": "Credenciais",
-      "inherit": false,
       "parentAnnotationId": null,
       "type": null,
       "values": null,
@@ -937,7 +988,6 @@
       "markingId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
       "layerId": "5d9375dc-fede-471d-853a-e4a0e6473112",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -954,7 +1004,6 @@
       "markingId": "ca31dc4a-7068-41b6-9b58-a481dff584e1",
       "layerId": "4fbfc25c-db0c-4c38-b984-387782a306c3",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "modelo-dados",
@@ -974,7 +1023,6 @@
       "markingId": "058aa9cd-b5ea-4aea-b4d0-53a800d9a131",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -993,7 +1041,6 @@
       "markingId": "ca9ebac1-cb65-4ff7-8698-c46ed22d9a9e",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -1017,7 +1064,6 @@
       "markingId": "671b7e2a-8064-4d2a-98d3-9bf34bff1492",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -1041,7 +1087,6 @@
       "markingId": "0ce8b079-f32c-45b7-b4b5-9840dfac0ae4",
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "sdui",
@@ -1060,7 +1105,6 @@
       "markingId": "0ce8b079-f32c-45b7-b4b5-9840dfac0ae4",
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": "fd80b227-48f0-4e75-afba-af85c4eb4509",
       "type": {
         "specId": "sdui",
@@ -1084,7 +1128,6 @@
       "markingId": "29f6699b-499c-4ac8-8514-242a06290b7c",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1103,7 +1146,6 @@
       "markingId": "21af251a-72ae-44d7-a7de-50948b3b4ce2",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1122,7 +1164,6 @@
       "markingId": "8990769e-ec0d-4e80-b836-ae92f74c991a",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1140,7 +1181,6 @@
       "markingId": "c20a3cc2-14f9-422a-8fbc-db9da1ee0498",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1158,7 +1198,6 @@
       "markingId": "729919a6-779f-4dce-9dce-a6057d294886",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1176,7 +1215,6 @@
       "markingId": "2d5cacea-d724-455f-b51c-8a8c8b6919a2",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1197,7 +1235,6 @@
       "markingId": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1216,7 +1253,6 @@
       "markingId": "bb5ff089-d924-4337-a3f6-2327d5a98840",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1234,7 +1270,6 @@
       "markingId": "82c5e51d-80ba-411d-9cb6-64050f804ff4",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1252,7 +1287,6 @@
       "markingId": "89ae4fc7-8e64-4f2c-a28d-8f1d19085a14",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1270,7 +1304,6 @@
       "markingId": "99dc1828-02bd-4976-a1f2-907a05f1eaea",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1289,7 +1322,6 @@
       "markingId": "1d73d841-f973-4f45-8b51-b03f414afd03",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1308,7 +1340,6 @@
       "markingId": "e5a1a106-cc83-4d95-8239-666b95af7c8b",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1327,7 +1358,6 @@
       "markingId": "8f92eca4-7a1d-4797-9c6b-0e4b97bb0770",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1349,7 +1379,6 @@
       "markingId": "4daee06e-146d-4ecc-9b36-59682c4347f0",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1368,7 +1397,6 @@
       "markingId": "e4df851e-d6f7-4ed0-a849-717f8ebcb092",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1387,7 +1415,6 @@
       "markingId": "51dcefc9-bc80-4b9f-825d-6ece25c70c9a",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1407,7 +1434,6 @@
       "markingId": "8f75ed2b-cde5-4b96-b6b3-0c09f5595e59",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1427,7 +1453,6 @@
       "markingId": "93418690-bc11-46e6-9452-f7f707380f00",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1446,7 +1471,6 @@
       "markingId": "568acb90-25f6-4e19-bed2-fb22b85a0642",
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
-      "inherit": false,
       "parentAnnotationId": null,
       "type": {
         "specId": "material3",
@@ -1456,6 +1480,22 @@
         "icon": "add",
         "label": null,
         "color": "primary"
+      },
+      "entries": []
+    },
+    {
+      "id": "cec4ea19-5a2f-49f6-bc37-a6b8ab2f554a",
+      "markingId": "b71eeec9-148d-405c-aeb3-60606857702a",
+      "layerId": "5e299d69-feba-479d-b923-1e67b775d9d2",
+      "name": null,
+      "parentAnnotationId": null,
+      "type": {
+        "specId": "notas",
+        "typeId": "nota"
+      },
+      "values": {
+        "titulo": "Cadastro",
+        "texto": "O botão Cadastrar só deve habilitar quando nome, idade e e-mail estiverem preenchidos e o e-mail for válido. Depois do envio, a app leva a pessoa para a tela de Login."
       },
       "entries": []
     }

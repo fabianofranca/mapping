@@ -19,7 +19,7 @@ afterEach(cleanup);
 
 function Wired() {
   useReviewSync();
-  return <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />;
+  return <ReviewPanel onGoToAnnotation={() => {}} />;
 }
 
 describe('Detalhes da revisão sem seleção', () => {

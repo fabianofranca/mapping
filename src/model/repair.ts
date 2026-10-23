@@ -1,6 +1,14 @@
 // Reparo mecânico de um projeto que viola invariantes (docs/FORMAT.md, "Arquivos
 // inconsistentes"). Função pura: quem grava o reparado (e o backup do original) é a sessão.
-import { imageCanvasRect, imagePixelRect, rectsOverlap, right } from './geometry';
+import {
+  IDENTITY_PLACEMENT,
+  fromCanvasRect,
+  imageCanvasRect,
+  imagePixelRect,
+  rectsOverlap,
+  right,
+  toCanvasRect,
+} from './geometry';
 import { IMAGE_GAP } from './containers';
 import {
   validateProject,
@@ -8,7 +16,14 @@ import {
   type InvariantEntity,
   type InvariantIssue,
 } from './invariants';
-import type { Annotation, Marking, Project, ProjectContainer, Rect } from './types';
+import type {
+  Annotation,
+  Arrow,
+  Marking,
+  Project,
+  ProjectContainer,
+  Rect,
+} from './types';
 
 /** O que o reparo fez com o item. */
 export type RepairAction = 'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved';
@@ -42,6 +57,13 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'missing-parent',
   'hierarchy-cycle',
   'images-overlap',
+  'container-parent-missing',
+  'container-parent-not-canvas',
+  'container-outside-parent',
+  'floating-in-container',
+  'parent-floating',
+  'arrow-endpoint-missing',
+  'arrow-self',
 ]);
 
 /**
@@ -51,12 +73,17 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
 const MAX_ROUNDS = 8;
 
 /**
- * Repara o que é mecânico e inequívoco: par com id repetido → id novo; `rect` fora da
- * imagem → recortado aos limites (sem área → marcação removida); marcação de imagem
- * inexistente e anotação de marcação ou camada inexistente → removidas (a anotação leva as
- * que ela possui); pai inexistente ou ciclo na hierarquia → a marcação vira raiz; imagens
- * sobrepostas → a de maior índice vai para a direita das anteriores. O que sobra depois
- * dos reparos (`validateProject` de novo) é `unrepaired`.
+ * Repara o que é mecânico e inequívoco: par com id repetido → id novo; `rect` de marcação de
+ * container fora da imagem → recortado aos limites (sem área → marcação removida); marcação de
+ * imagem inexistente e anotação de marcação ou camada inexistente → removidas (a anotação leva
+ * as que ela possui); pai inexistente, flutuante ou ciclo na hierarquia → a marcação vira
+ * raiz; pai de container ausente, que não é do canvas ou que não o contém → o container fica
+ * sem pai; flutuante com container ou pai → vai para o canvas, com o `rect` convertido;
+ * imagens sobrepostas → a de maior índice vai para a direita das anteriores; seta com ponta
+ * inexistente (ou que não é uma marcação) ou ligada a ela mesma → removida, e as anotações dela
+ * saem na rodada seguinte (a dona deixou de existir). Só torna o
+ * projeto válido: não assenta (quem assenta é a próxima operação de geometria). O que sobra
+ * depois dos reparos (`validateProject` de novo) é `unrepaired`.
  */
 export function repairProject(
   project: Project,
@@ -128,6 +155,7 @@ function repairRound(
     codesOf.get(`${entity}:${id}`)?.has(code) ?? false;
 
   // Marcações: removidas (imagem inexistente, recorte sem área), recortadas ou viradas raiz.
+  // A marcação do canvas (`containerId` nulo) não tem imagem: nunca é órfã nem é recortada.
   const containers = new Map(p.containers.map((i) => [i.id, i]));
   const byId = new Map(p.markings.map((m) => [m.id, m]));
   const markings: Marking[] = [];
@@ -137,8 +165,15 @@ function repairRound(
       continue;
     }
     let next = m;
-    const image = containers.get(m.containerId);
-    if (image && has('marking', m.id, 'rect-out-of-image')) {
+    const image = m.containerId === null ? undefined : containers.get(m.containerId);
+    if (has('marking', m.id, 'floating-in-container')) {
+      // A flutuante vive só no canvas: sai do container, com o `rect` como a pessoa o vê.
+      const rect = image
+        ? fromCanvasRect(IDENTITY_PLACEMENT, toCanvasRect(image.placement, m.rect), null)
+        : m.rect;
+      next = { ...next, containerId: null, parentId: null, rect };
+      record(out, 'made-root', 'floating-in-container', 'marking', m);
+    } else if (image && has('marking', m.id, 'rect-out-of-image')) {
       const rect = clipToImage(m.rect, image);
       if (!rect) {
         record(out, 'removed', 'rect-out-of-image', 'marking', m);
@@ -147,14 +182,28 @@ function repairRound(
       next = { ...next, rect };
       record(out, 'clipped', 'rect-out-of-image', 'marking', m);
     }
-    if (has('marking', m.id, 'missing-parent')) {
+    if (next.parentId !== null && has('marking', m.id, 'missing-parent')) {
       next = { ...next, parentId: null };
       record(out, 'made-root', 'missing-parent', 'marking', m);
+    } else if (next.parentId !== null && has('marking', m.id, 'parent-floating')) {
+      next = { ...next, parentId: null };
+      record(out, 'made-root', 'parent-floating', 'marking', m);
     } else if (has('marking', m.id, 'hierarchy-cycle') && inCycle(m, byId)) {
       next = { ...next, parentId: null };
       record(out, 'made-root', 'hierarchy-cycle', 'marking', m);
     }
     markings.push(next);
+  }
+
+  // Setas: sem uma das pontas ou ligadas a si mesmas, não há o que ligar. As anotações delas
+  // saem na rodada seguinte, como as de qualquer dona que deixou de existir.
+  const arrows: Arrow[] = [];
+  for (const a of p.arrows) {
+    const code = (['arrow-endpoint-missing', 'arrow-self'] as const).find((c) =>
+      has('arrow', a.id, c),
+    );
+    if (code) record(out, 'removed', code, 'arrow', a);
+    else arrows.push(a);
   }
 
   // Anotações: as de marcação ou camada inexistente saem, com as que elas possuem.
@@ -226,5 +275,18 @@ function repairRound(
     });
   }
 
-  return { ...p, containers: projectImages, markings, annotations: kept };
+  // Pai de container ausente, que não é uma marcação do canvas ou que não o contém: sem pai.
+  const orphanCodes: readonly InvariantCode[] = [
+    'container-parent-missing',
+    'container-parent-not-canvas',
+    'container-outside-parent',
+  ];
+  projectImages = projectImages.map((image) => {
+    const code = orphanCodes.find((c) => has('image', image.id, c));
+    if (code === undefined || image.parentId === null) return image;
+    record(out, 'made-root', code, 'image', image);
+    return { ...image, parentId: null };
+  });
+
+  return { ...p, containers: projectImages, markings, arrows, annotations: kept };
 }

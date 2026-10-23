@@ -2,6 +2,7 @@ import type { Spec, SpecLayer } from './spec';
 import type { ResolvedType } from './specLookup';
 import type {
   Annotation,
+  Arrow,
   Entry,
   Layer,
   Marking,
@@ -19,11 +20,25 @@ export interface ProjectIndex {
   readonly layers: ReadonlyMap<string, Layer>;
   readonly containers: ReadonlyMap<string, ProjectContainer>;
   readonly markings: ReadonlyMap<string, Marking>;
+  /** Setas por id (v13). Ids no mesmo espaço das marcações. */
+  readonly arrows: ReadonlyMap<string, Arrow>;
+  /**
+   * Setas presas a cada marcação, na ordem do array: cada seta aparece sob a origem (`from`) e
+   * sob o destino (`to`); uma seta de uma marcação a ela mesma (projeto inválido) aparece uma vez.
+   */
+  readonly arrowsByMarking: ReadonlyMap<string, readonly Arrow[]>;
   readonly annotations: ReadonlyMap<string, Annotation>;
   /** Tuplas de cada anotação, por id. */
   readonly entries: ReadonlyMap<string, ReadonlyMap<string, Entry>>;
   /** Filhas diretas de cada marcação (chave `null` = sem pai), na ordem do array. */
   readonly children: ReadonlyMap<string | null, readonly Marking[]>;
+  /**
+   * Containers de cada marcação do canvas (v13; chave `null` = containers sem pai), na ordem
+   * do array. Com `children`, são os membros de uma marcação (`membersOf`).
+   */
+  readonly containersByParent: ReadonlyMap<string | null, readonly ProjectContainer[]>;
+  /** Marcações do canvas sem pai (flutuantes inclusive), na ordem do array. */
+  readonly canvasRoots: readonly Marking[];
   /** Anotações de cada marcação, na ordem do projeto. */
   readonly annotationsByMarking: ReadonlyMap<string, readonly Annotation[]>;
   /** Anotações vinculadas diretamente a cada dona, na ordem do projeto. */
@@ -73,12 +88,23 @@ function indexSpec(
 function buildIndex(p: Project): ProjectIndex {
   const entries = new Map<string, ReadonlyMap<string, Entry>>();
   const children = new Map<string | null, Marking[]>();
+  const containersByParent = new Map<string | null, ProjectContainer[]>();
+  const canvasRoots: Marking[] = [];
+  const arrowsByMarking = new Map<string, Arrow[]>();
   const annotationsByMarking = new Map<string, Annotation[]>();
   const annotationsByOwner = new Map<string, Annotation[]>();
   const types = new Map<string, ResolvedType>();
   const specLayers = new Map<string, SpecLayer>();
 
-  for (const m of p.markings) push(children, m.parentId, m);
+  for (const m of p.markings) {
+    push(children, m.parentId, m);
+    if (m.containerId === null && m.parentId === null) canvasRoots.push(m);
+  }
+  for (const c of p.containers) push(containersByParent, c.parentId, c);
+  for (const a of p.arrows) {
+    push(arrowsByMarking, a.from, a);
+    if (a.to !== a.from) push(arrowsByMarking, a.to, a);
+  }
   for (const a of p.annotations) {
     if (!entries.has(a.id)) entries.set(a.id, byId(a.entries));
     push(annotationsByMarking, a.markingId, a);
@@ -92,9 +118,13 @@ function buildIndex(p: Project): ProjectIndex {
     layers: byId(p.layers),
     containers: byId(p.containers),
     markings: byId(p.markings),
+    arrows: byId(p.arrows),
+    arrowsByMarking,
     annotations: byId(p.annotations),
     entries,
     children,
+    containersByParent,
+    canvasRoots,
     annotationsByMarking,
     annotationsByOwner,
     specializations: byId(p.specializations),

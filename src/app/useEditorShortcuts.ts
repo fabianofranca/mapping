@@ -15,7 +15,15 @@ import {
   type ToolWindowId,
   type ToolWindowSide,
 } from '../store/toolWindows';
-import { resolveSelection, setCleanView, type Selection } from '../store/ui';
+import {
+  collapseToPrimary,
+  existingItems,
+  peekSelectedItems,
+  resolveSelection,
+  selectItems,
+  setCleanView,
+  type Selection,
+} from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
 import { showAndFocusToolWindow, spaceFor } from '../ui/toolWindowLayout';
 import { isStandalone } from '../utils/platform';
@@ -114,20 +122,27 @@ export function useEditorShortcuts(
       const project = shown.peek();
       const current = resolveSelection(project, ui.selection.peek());
       if (!project || !current) return;
+      // A seta não tem pai nem filhas a percorrer.
+      if (current.kind === 'arrow') return;
       const index = projectIndex(project);
       let next: Selection = null;
       if (current.kind === 'marking') {
-        const { parentId, containerId: containerId, id } = current.marking;
+        const { parentId, containerId, id } = current.marking;
         if (up) {
-          next =
-            parentId === null
-              ? { kind: 'image', id: containerId }
-              : { kind: 'marking', id: parentId };
+          if (parentId !== null) next = { kind: 'marking', id: parentId };
+          else if (containerId !== null) next = { kind: 'image', id: containerId };
         } else {
           const child = index.children.get(id)?.[0];
-          next = child ? { kind: 'marking', id: child.id } : null;
+          const member = index.containersByParent.get(id)?.[0];
+          if (child) next = { kind: 'marking', id: child.id };
+          else if (member) next = { kind: 'image', id: member.id };
         }
-      } else if (!up) {
+      } else if (up) {
+        // Container dentro de uma marcação do canvas: sobe para ela.
+        if (current.image.parentId !== null) {
+          next = { kind: 'marking', id: current.image.parentId };
+        }
+      } else {
         const first = index.children
           .get(null)
           ?.find((m) => m.containerId === current.image.id);
@@ -184,26 +199,52 @@ export function useEditorShortcuts(
         case 'redo':
           return store.redo();
         case 'escape':
-          if (!canvas.current?.cancelInteraction()) ui.selection.value = null;
+          // Gesto em andamento: cancela. Senão, com vários itens volta ao primário; por fim limpa.
+          if (canvas.current?.cancelInteraction()) return;
+          if (!collapseToPrimary(ui)) selectItems(ui, []);
           return;
         case 'delete': {
           if (store.locked.peek()) return;
+          const many = existingItems(shown.peek(), peekSelectedItems(ui));
+          if (many.length > 1) {
+            dialogsRef.current.requestDeleteItems(many);
+            return;
+          }
           const current = resolveSelection(shown.peek(), ui.selection.peek());
           if (current?.kind === 'image') {
             dialogsRef.current.requestDeleteImage(current.image);
           } else if (current?.kind === 'marking') {
             dialogsRef.current.requestDeleteMarking(current.marking);
+          } else if (current?.kind === 'arrow') {
+            dialogsRef.current.requestDeleteArrow(current.arrow);
           }
           return;
         }
         case 'toggle-lock': {
           // Só a trava muda: seleção e anotações seguem livres, mas o somente leitura vale.
           if (store.locked.peek()) return;
+          const many = existingItems(shown.peek(), peekSelectedItems(ui));
+          if (many.length > 1) {
+            // Todos trancados: destranca todos; senão tranca todos.
+            const project = shown.peek();
+            const index = project ? projectIndex(project) : null;
+            const allLocked = many.every((i) =>
+              i.kind === 'image'
+                ? index?.containers.get(i.id)?.locked
+                : i.kind === 'arrow'
+                  ? index?.arrows.get(i.id)?.locked
+                  : index?.markings.get(i.id)?.locked,
+            );
+            actions.setItemsLocked(many, !allLocked);
+            return;
+          }
           const current = resolveSelection(shown.peek(), ui.selection.peek());
           if (current?.kind === 'image') {
             actions.setImageLocked(current.image.id, !current.image.locked);
           } else if (current?.kind === 'marking') {
             actions.setMarkingLocked(current.marking.id, !current.marking.locked);
+          } else if (current?.kind === 'arrow') {
+            actions.setArrowLocked(current.arrow.id, !current.arrow.locked);
           }
           return;
         }

@@ -61,10 +61,7 @@ async function showLevel(
   const h = await openReviewHarness(options);
   expect(h.review.open('P1').ok).toBe(true);
   act(() => h.review.select(target));
-  renderInEditor(
-    h,
-    <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />,
-  );
+  renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
   return h;
 }
 
@@ -355,10 +352,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     h.ui.collapsed.value = new Set(['marking', 'annotations']);
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M1' }));
-    renderInEditor(
-      h,
-      <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />,
-    );
+    renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
     // A seção Marcação (com a mudança) abriu; as Anotações (sem mudanças) ficaram.
     expect(h.ui.collapsed.value.has('marking')).toBe(false);
     expect(h.ui.collapsed.value.has('annotations')).toBe(true);
@@ -380,10 +374,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     h.ui.activeLayer.value = 'L1';
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M1' }));
-    renderInEditor(
-      h,
-      <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />,
-    );
+    renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
     expect(screen.getByText('1 mudança(s) em camada escondida: Vidros')).toBeTruthy();
     expect(document.querySelector('[data-layer="L2"]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar aqui' }));
@@ -477,10 +468,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     // A imagem I3 fica parcial: a marcação (e, junto, a imagem) aceita, a anotação pendente.
     await h.review.decide({ level: 'change', id: ids.marking }, 'accepted');
     act(() => h.review.select({ level: 'image', id: 'I3' }));
-    renderInEditor(
-      h,
-      <ReviewPanel onGoToAnnotation={() => {}} onSelectMarking={() => {}} />,
-    );
+    renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
     expect(h.review.derived.levels.value.get('image:I3')?.state).toBe('partial');
     // O painel da imagem nova, com o arquivo marcado como parte da criação.
     expect(
@@ -511,7 +499,6 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
         image={image}
         readOnly={false}
         onDelete={() => {}}
-        onSelectMarking={() => {}}
         onGoToAnnotation={() => {}}
       />,
     );

@@ -43,7 +43,7 @@ describe('zip do projeto de exemplo', () => {
 
   it('abre como o "Abrir zip": mapping.json válido no schema atual, sem migração', async () => {
     const { project } = await readExample();
-    expect(project.schemaVersion).toBe(12);
+    expect(project.schemaVersion).toBe(13);
     expect(project.revision).toBe(1);
     const read = await readProjectZip(new Blob([readFileSync(EXAMPLE_ZIP)]));
     const parsed = read.ok
@@ -52,13 +52,13 @@ describe('zip do projeto de exemplo', () => {
     expect(parsed?.ok && parsed.migratedFrom).toBeNull();
   });
 
-  it('tem 4 imagens, 31 marcações, 41 anotações, 8 camadas e 3 especializações', async () => {
+  it('tem 4 imagens, 32 marcações, 42 anotações, 9 camadas e 4 especializações', async () => {
     const { project } = await readExample();
     expect(project.containers).toHaveLength(4);
-    expect(project.markings).toHaveLength(31);
-    expect(project.annotations).toHaveLength(41);
-    expect(project.layers).toHaveLength(8);
-    expect(project.specializations).toHaveLength(3);
+    expect(project.markings).toHaveLength(32); // 31 nas telas + a nota flutuante da biblioteca de notas
+    expect(project.annotations).toHaveLength(42);
+    expect(project.layers).toHaveLength(9); // + a camada Notas (a livre virou Dúvidas)
+    expect(project.specializations).toHaveLength(4);
   });
 
   it('duas telas são fotos e duas são telas em branco; cada foto está no zip', async () => {
@@ -177,6 +177,14 @@ describe('cópias do exemplo × fontes', () => {
       sameFile(join(copy, rel), join(source, rel), rel);
   });
 
+  it('specs/notas/ tem os mesmos arquivos e o mesmo conteúdo de libraries/notas/ (sem o index.ts)', () => {
+    const copy = join(EXAMPLE_DIR, 'specs/notas');
+    const source = 'libraries/notas';
+    const wanted = listFiles(source).filter((rel) => rel !== 'index.ts');
+    expect(listFiles(copy), `lista de arquivos diferente. ${SYNC_HINT}`).toEqual(wanted);
+    for (const rel of wanted) sameFile(join(copy, rel), join(source, rel), rel);
+  });
+
   it.each([
     ['sdui.json', 'examples/specs/sdui.json'],
     ['modelo-dados.json', 'examples/specs/modelo-de-dados.json'],
@@ -194,6 +202,7 @@ describe('cópias do exemplo × fontes', () => {
       sdui: 'examples/specs/sdui.json',
       'modelo-dados': 'examples/specs/modelo-de-dados.json',
       material3: 'examples/libraries/material3/material3.spec.json',
+      notas: 'libraries/notas/notas.spec.json',
     };
     expect(mapping.specializations.map((s) => s.id).sort()).toEqual(
       Object.keys(sources).sort(),

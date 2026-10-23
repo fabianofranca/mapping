@@ -50,6 +50,7 @@ describe('dicionários', () => {
       'language.en-US',
       'image.dimensions',
       'marking.pathSeparator',
+      'arrow.label',
       'marking.x',
       'marking.y',
       'layer.deleteCount',
@@ -76,11 +77,21 @@ describe('dicionários', () => {
       // Só parâmetros e pontuação (o marcador e o popover dos Detalhes na revisão).
       'review.mark.label',
       'review.pop.title',
+      // Só parâmetros e a seta ("{from} → {to}", o rótulo de uma seta sem nome na revisão).
+      'review.arrow.label',
       // Eixos da posição na revisão de propostas.
       'review.rect.x',
       'review.rect.y',
       'review.placement.x',
       'review.placement.y',
+      // "Canvas" é o mesmo nos dois idiomas (o grupo Canvas da revisão).
+      'review.level.canvas',
+      'review.filter.canvas',
+      // O nome do canvas e o rótulo "Container" são iguais nos dois idiomas.
+      'canvas.name',
+      'crumbs.canvas',
+      'marking.container',
+      'multi.containers',
       // Palavras iguais nos dois idiomas (biblioteca de componentes, B3).
       'library.container',
       'library.typeSize',

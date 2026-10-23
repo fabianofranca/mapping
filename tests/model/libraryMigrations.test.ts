@@ -93,7 +93,6 @@ describe('remove-type', () => {
       markingId: 'M1',
       layerId: 'L1',
       name: null,
-      inherit: false,
       parentAnnotationId: 'B1',
       type: null,
       values: null,

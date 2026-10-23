@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   addContainer,
-  createMarking,
   createProject,
   renameMarking,
+  settleHierarchy,
+  type Marking,
   type Project,
 } from '../../src/model';
 import { propose } from '../model/proposalFixtures';
@@ -30,14 +31,23 @@ function bigScenario(n: number) {
     width: 20000,
     height: 20000,
   });
+  // Cada `createMarking` assenta o pertencimento do projeto inteiro (O(n²) no total para n
+  // marcações): o cenário é montado à mão e assentado uma vez, como um arquivo já gravado.
+  const markings: Marking[] = [];
   for (let i = 0; i < n; i++) {
-    base = createMarking(base, {
+    markings.push({
       id: `M${i}`,
       containerId: 'I1',
-      rect: { x: (i % 100) * 150, y: Math.floor(i / 100) * 150, width: 100, height: 100 },
+      parentId: null,
       name: `m${i}`,
+      rect: { x: (i % 100) * 150, y: Math.floor(i / 100) * 150, width: 100, height: 100 },
+      needsReview: false,
+      locked: false,
+      floating: false,
+      source: null,
     });
   }
+  base = settleHierarchy({ ...base, markings });
   let after = base;
   for (let i = 0; i < n; i++) {
     after = renameMarking(after, `M${i}`, `novo ${i}`);

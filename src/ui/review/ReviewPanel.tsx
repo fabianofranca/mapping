@@ -18,6 +18,7 @@ import {
 import { Button } from '../controls';
 import { DetailsExtensionContext } from '../DetailsExtension';
 import { useEditor } from '../EditorContext';
+import { ArrowPanel } from '../ArrowPanel';
 import { MarkingPanel } from '../MarkingPanel';
 import { Notice } from '../Notice';
 import { SelectionPanel } from '../SelectionPanel';
@@ -42,6 +43,8 @@ import {
 interface ShownItem {
   readonly kind: 'marking' | 'image';
   readonly id: string;
+  /** O item é uma seta (v13): `kind` fica `marking` (os ids dividem o espaço e o nível é o item). */
+  readonly arrow: boolean;
   readonly project: Project;
   /**
    * Por que o item vem de outro projeto: não existe na visão Proposto (removido), ainda
@@ -54,7 +57,9 @@ const has = (project: Project | null, sel: NonNullable<Selection>): boolean =>
   project !== null &&
   (sel.kind === 'image'
     ? projectIndex(project).containers.has(sel.id)
-    : projectIndex(project).markings.has(sel.id));
+    : sel.kind === 'arrow'
+      ? projectIndex(project).arrows.has(sel.id)
+      : projectIndex(project).markings.has(sel.id));
 
 /**
  * Onde o item está: no projeto à vista; senão, na visão Proposto, no atual (removido) e,
@@ -69,7 +74,15 @@ function shownItem(
   full: () => Project | null,
 ): ShownItem | null {
   const at = (project: Project | null, away: ShownItem['away']): ShownItem | null =>
-    project && has(project, sel) ? { ...sel, project, away } : null;
+    project && has(project, sel)
+      ? {
+          kind: sel.kind === 'image' ? 'image' : 'marking',
+          id: sel.id,
+          arrow: sel.kind === 'arrow',
+          project,
+          away,
+        }
+      : null;
   return (
     at(shown, null) ??
     at(other(), view === 'proposed' ? 'proposed' : 'current') ??
@@ -91,11 +104,10 @@ function itemOfTarget(
 
 interface ReviewPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
-  readonly onSelectMarking: (markingId: string) => void;
 }
 
 /** Detalhes na revisão: escolhe entre o painel do item e o painel do nível. */
-export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelProps) {
+export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
   const { review, ui, store } = useEditor();
   const host = useRef<HTMLDivElement>(null);
   const hadFocus = useRef(false);
@@ -111,11 +123,12 @@ export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelPr
     if (c?.imageId) return { kind: 'image', id: c.imageId };
     return null;
   };
-  // Proposta e Projeto não têm painel normal; uma mudança sem item (camada,
+  // Proposta, Projeto e Canvas não têm painel normal; uma mudança sem item (camada,
   // especialização, repositório) também não.
   const levelOnly =
     target?.level === 'proposal' ||
     target?.level === 'project' ||
+    target?.level === 'canvas' ||
     (target?.level === 'change' && changeItem(target.id ?? '') === null);
   // A seleção do canvas acompanha o nível (`useReviewSync`) e também pode ser um item sem
   // mudanças, que o nível não segue: ela é quem diz o item.
@@ -140,6 +153,7 @@ export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelPr
     last.current !== null &&
     last.current.kind === item.kind &&
     last.current.id === item.id &&
+    last.current.arrow === item.arrow &&
     last.current.project === item.project &&
     last.current.away === item.away;
   const stable = same ? last.current : item;
@@ -151,10 +165,9 @@ export function ReviewPanel({ onGoToAnnotation, onSelectMarking }: ReviewPanelPr
           key={`${stable.kind}:${stable.id}`}
           item={stable}
           onGoToAnnotation={onGoToAnnotation}
-          onSelectMarking={onSelectMarking}
         />
       ) : null,
-    [stable, onGoToAnnotation, onSelectMarking],
+    [stable, onGoToAnnotation],
   );
 
   // Trocar de item desmonta o painel: se o foco estava nele (um marcador, o popover), fica
@@ -229,7 +242,6 @@ function FollowTarget({
 function ReviewItemPanel({
   item,
   onGoToAnnotation,
-  onSelectMarking,
 }: ReviewPanelProps & { readonly item: ShownItem }) {
   const { review, ui, store, display, derived } = useEditor();
   const d = review.derived;
@@ -300,7 +312,10 @@ function ReviewItemPanel({
 
   if (!current || !ext) return null;
 
-  const resolved = resolveSelection(project, { kind, id } as NonNullable<Selection>);
+  const resolved = resolveSelection(project, {
+    kind: item.arrow ? 'arrow' : kind,
+    id,
+  } as NonNullable<Selection>);
   const away =
     item.away === 'proposed' ? (
       <Notice
@@ -342,14 +357,21 @@ function ReviewItemPanel({
         <OpenMarkContext.Provider value={openMark}>
           {away}
           <div class="review-panel">
-            {resolved?.kind === 'marking' ? (
+            {resolved?.kind === 'arrow' ? (
+              <ArrowPanel
+                project={project}
+                arrow={resolved.arrow}
+                readOnly
+                onDelete={noop}
+                onGoToAnnotation={onGoToAnnotation}
+              />
+            ) : resolved?.kind === 'marking' ? (
               <MarkingPanel
                 project={project}
                 marking={resolved.marking}
                 image={resolved.image}
                 readOnly
                 onDelete={noop}
-                onSelectMarking={onSelectMarking}
                 onGoToAnnotation={onGoToAnnotation}
               />
             ) : (

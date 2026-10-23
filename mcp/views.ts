@@ -1,4 +1,5 @@
 import {
+  arrowsOf,
   markingComponent,
   siblingPosition,
   annotationShortLabel,
@@ -12,12 +13,14 @@ import {
   platformRepoOf,
   projectPlatforms,
   refLabel,
+  refPathText,
   refsOf,
   resolveRef,
   specLayerOf,
   typeOfAnnotation,
   ancestorsOf,
   type Annotation,
+  type Arrow,
   type AnnotationIssue,
   type Layer,
   type Marking,
@@ -84,6 +87,8 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     ref: refs.ref('m', marking.id),
     name: marking.name,
     container: refs.imageLabel(marking.containerId),
+    space: marking.containerId === null ? 'canvas' : 'container',
+    floating: marking.floating,
     parent: marking.parentId === null ? null : refs.bare('m', marking.parentId),
     rect: rectOf(marking),
     // Posição entre as irmãs (0 = primeira, desenhada por baixo).
@@ -135,17 +140,20 @@ export function annotationView(
   const resolvedType = typeOfAnnotation(p, annotation);
   const issues = projectIssues(p).get(annotation.id) ?? [];
 
-  const outgoing = refsOf(p, annotation).map(({ key, ref }) => {
+  const outgoing = refsOf(p, annotation).map((link) => {
+    const { ref } = link;
+    // Numa célula de coluna `ref`, o campo é `tabela[2].coluna`.
+    const field = refPathText(link);
     const target = resolveRef(p, ref);
     return target
-      ? { field: key, to: refLabel(p, ref), target: refTarget(refs, target) }
-      : { field: key, broken: true, ref };
+      ? { field, to: refLabel(p, ref), target: refTarget(refs, target) }
+      : { field, broken: true, ref };
   });
   const backlinks = getBacklinks(p, annotation.id).map((link) => ({
     from: refs.ref('a', link.source.id),
     fromLabel: annotationShortLabel(p, link.source),
     fromMarking: refs.bare('m', link.source.markingId),
-    field: link.key,
+    field: refPathText(link),
     to: refLabel(p, link.ref),
   }));
   const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.bare('a', a.id));
@@ -158,7 +166,6 @@ export function annotationView(
     title: annotationShortLabel(p, annotation),
     layer: layer ? { id: layer.id, name: layer.name } : { id: annotation.layerId },
     ...(options.withMarking ? { marking: refs.ref('m', annotation.markingId) } : {}),
-    inherit: annotation.inherit,
     owner:
       annotation.parentAnnotationId === null
         ? null
@@ -219,24 +226,15 @@ export async function markingView(
   if (platform !== undefined) assertPlatform(refs, platform);
   const p = refs.project;
   const index = projectIndex(p);
-  const image = index.containers.get(marking.containerId);
+  const image =
+    marking.containerId === null ? null : index.containers.get(marking.containerId);
   const own = index.annotationsByMarking.get(marking.id) ?? [];
   const ancestors = ancestorsOf(p, marking.id).reverse();
   const lockState = markingLockStates(p).get(marking.id) ?? null;
 
-  const inheritedBy = new Map<string, { source: Marking; annotation: Annotation }[]>();
-  for (const source of ancestors) {
-    for (const annotation of index.annotationsByMarking.get(source.id) ?? []) {
-      if (!annotation.inherit) continue;
-      const list = inheritedBy.get(annotation.layerId) ?? [];
-      list.push({ source, annotation });
-      inheritedBy.set(annotation.layerId, list);
-    }
-  }
-  const shown = [...own, ...[...inheritedBy.values()].flat().map((i) => i.annotation)];
   const codes = new Map<string, Json | null>(
     await Promise.all(
-      shown.map(async (a) => [a.id, await annotationCode(ctx, a, platform)] as const),
+      own.map(async (a) => [a.id, await annotationCode(ctx, a, platform)] as const),
     ),
   );
   const view = (a: Annotation) =>
@@ -245,39 +243,32 @@ export async function markingView(
     });
   const layers = p.layers.flatMap((layer) => {
     const mine = own.filter((a) => a.layerId === layer.id);
-    const inherited = inheritedBy.get(layer.id) ?? [];
-    if (mine.length === 0 && inherited.length === 0) return [];
-    return [
-      {
-        layer: { id: layer.id, name: layer.name },
-        annotations: mine.map(view),
-        ...(inherited.length > 0
-          ? {
-              inherited: inherited.map((i) => ({
-                from: refs.ref('m', i.source.id),
-                annotation: view(i.annotation),
-              })),
-            }
-          : {}),
-      },
-    ];
+    if (mine.length === 0) return [];
+    return [{ layer: { id: layer.id, name: layer.name }, annotations: mine.map(view) }];
   });
 
   const issues = projectIssues(p);
   const tree = linkTree(refs, own);
   const children = index.children.get(marking.id) ?? [];
+  const memberContainers = index.containersByParent.get(marking.id) ?? [];
+  const attachedArrows = arrowsOf(p, marking.id);
   return {
     ref: refs.ref('m', marking.id),
     id: marking.id,
     name: marking.name,
     path: [
-      image ? { ref: refs.bare('i', image.id), name: refs.imageLabel(image.id) } : null,
+      image
+        ? { ref: refs.bare('i', image.id), name: refs.imageLabel(image.id) }
+        : // Marcação do canvas: o segmento do espaço é "Canvas", sem referência.
+          { ref: null, name: refs.imageLabel(null) },
       ...[...ancestors, marking].map((m) => ({
         ref: refs.bare('m', m.id),
         name: refs.markingName(m.id),
       })),
-    ].filter((segment) => segment !== null),
+    ],
     container: image ? containerSummary(refs, image) : null,
+    space: marking.containerId === null ? 'canvas' : 'container',
+    floating: marking.floating,
     rect: rectOf(marking),
     // Ordem entre as irmãs (mesmo container e mesmo pai): 0 = primeira, desenhada por baixo.
     order: siblingPosition(p, marking.id),
@@ -295,6 +286,103 @@ export async function markingView(
       rect: rectOf(c),
     })),
     ...(children.length > LIST_LIMIT ? { childrenTotal: children.length } : {}),
+    // Quem tem esta marcação como pai (derivado da geometria): marcações do mesmo espaço e,
+    // numa marcação do canvas, os containers que ela contém.
+    members: {
+      markings: children.slice(0, LIST_LIMIT).map((c) => ({
+        ref: refs.ref('m', c.id),
+        name: c.name,
+        rect: rectOf(c),
+      })),
+      containers: memberContainers.slice(0, LIST_LIMIT).map((c) => ({
+        ref: refs.ref('i', c.id),
+        name: c.name,
+      })),
+      ...(children.length > LIST_LIMIT ? { markingsTotal: children.length } : {}),
+      ...(memberContainers.length > LIST_LIMIT
+        ? { containersTotal: memberContainers.length }
+        : {}),
+    },
+    ...(platform !== undefined ? { platform } : {}),
+    layers,
+    ...(attachedArrows.outgoing.length + attachedArrows.incoming.length > 0
+      ? {
+          arrows: {
+            outgoing: attachedArrows.outgoing.map((a) => arrowRow(refs, a, 'to')),
+            incoming: attachedArrows.incoming.map((a) => arrowRow(refs, a, 'from')),
+          },
+        }
+      : {}),
+    ...(tree ? { linkTree: tree } : {}),
+    incompleteAnnotations: own.filter((a) => issues.has(a.id)).length,
+  };
+}
+
+/** A outra ponta de uma seta: referência, nome e caminho legível. */
+function arrowEnd(refs: Refs, markingId: string): Json {
+  const exists = projectIndex(refs.project).markings.has(markingId);
+  return {
+    ref: refs.bare('m', markingId),
+    name: exists ? refs.markingName(markingId) : null,
+    path: exists ? refs.markingPath(markingId) : [],
+  };
+}
+
+/** Seta numa linha, vista de uma das pontas: `other` diz qual é a outra (`to` nas que saem). */
+function arrowRow(refs: Refs, arrow: Arrow, other: 'from' | 'to'): Json {
+  return {
+    ref: refs.ref('m', arrow.id),
+    id: arrow.id,
+    [other]: arrowEnd(refs, arrow[other]),
+    name: arrow.name,
+    style: arrow.style,
+    locked: arrow.locked,
+  };
+}
+
+/**
+ * Tudo sobre a seta (`get_marking` com o id dela): `kind: "arrow"`, as duas pontas, estilo,
+ * trava e as anotações por camada, como numa marcação. Não traz `points` (a rota é da pessoa).
+ */
+export async function arrowView(
+  ctx: CodeContext,
+  arrow: Arrow,
+  platform?: string,
+): Promise<Json> {
+  const { refs } = ctx;
+  if (platform !== undefined) assertPlatform(refs, platform);
+  const p = refs.project;
+  const index = projectIndex(p);
+  const own = index.annotationsByMarking.get(arrow.id) ?? [];
+  const codes = new Map<string, Json | null>(
+    await Promise.all(
+      own.map(async (a) => [a.id, await annotationCode(ctx, a, platform)] as const),
+    ),
+  );
+  const layers = p.layers.flatMap((layer) => {
+    const mine = own.filter((a) => a.layerId === layer.id);
+    if (mine.length === 0) return [];
+    return [
+      {
+        layer: { id: layer.id, name: layer.name },
+        annotations: mine.map((a) =>
+          annotationView(refs, a, { code: codes.get(a.id) ?? null }),
+        ),
+      },
+    ];
+  });
+  const issues = projectIssues(p);
+  const tree = linkTree(refs, own);
+  return {
+    kind: 'arrow',
+    ref: refs.ref('m', arrow.id),
+    id: arrow.id,
+    name: arrow.name,
+    path: [{ ref: refs.bare('m', arrow.id), name: refs.arrowName(arrow.id) }],
+    from: arrowEnd(refs, arrow.from),
+    to: arrowEnd(refs, arrow.to),
+    style: arrow.style,
+    lock: { locked: arrow.locked },
     ...(platform !== undefined ? { platform } : {}),
     layers,
     ...(tree ? { linkTree: tree } : {}),
@@ -312,6 +400,8 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     width: image.width,
     height: image.height,
     locked: image.locked,
+    // Marcação do canvas que contém o container (derivado da geometria), ou `null`.
+    parent: image.parentId === null ? null : refs.bare('m', image.parentId),
   };
 }
 
@@ -370,6 +460,9 @@ export function projectSummary(loaded: LoadedProject): Json {
     counts: {
       containers: project.containers.length,
       markings: project.markings.length,
+      canvasMarkings: project.markings.filter((m) => m.containerId === null).length,
+      floatingMarkings: project.markings.filter((m) => m.floating).length,
+      arrows: project.arrows.length,
       annotations: project.annotations.length,
       layers: project.layers.length,
     },
@@ -414,6 +507,7 @@ export function projectDetail(refs: Refs): Json {
   }
   const markingsByContainer = new Map<string, number>();
   for (const m of p.markings) {
+    if (m.containerId === null) continue;
     markingsByContainer.set(
       m.containerId,
       (markingsByContainer.get(m.containerId) ?? 0) + 1,

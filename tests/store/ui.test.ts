@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { removeLayer, removeMarking } from '../../src/model';
+import { addAnnotation, createArrow, removeLayer, removeMarking } from '../../src/model';
 import {
   collapseTree,
   createEditorUi,
+  existingItems,
   expandSections,
   goToAnnotation,
+  peekSelectedItems,
   isSectionCollapsed,
   sectionKey,
   toggleSection,
   resolveActiveLayerId,
   resolveSelection,
   revealInTree,
+  selectItems,
   setActiveLayer,
   setCleanView,
   showAllLayers,
@@ -204,5 +207,66 @@ describe('estado da UI do editor', () => {
     expect(ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
     expect(ui.focusAnnotation.value).toBe('A1');
     expect(ui.focusField.value).toBe('owner');
+  });
+});
+
+describe('estado da UI: setas (ME4)', () => {
+  const withArrow = () =>
+    createArrow(sampleProject(), { id: 'R1', from: 'M2', to: 'M4' });
+
+  it('resolve a seta selecionada; a que sumiu resolve para nada', () => {
+    const p = withArrow();
+    expect(resolveSelection(p, { kind: 'arrow', id: 'R1' })).toMatchObject({
+      kind: 'arrow',
+      arrow: { id: 'R1', from: 'M2', to: 'M4' },
+    });
+    expect(resolveSelection(p, { kind: 'arrow', id: 'R9' })).toBeNull();
+    // O id de uma seta não resolve como marcação.
+    expect(resolveSelection(p, { kind: 'marking', id: 'R1' })).toBeNull();
+  });
+
+  it('a seleção múltipla aceita setas e existingItems tira as que sumiram', () => {
+    const p = withArrow();
+    const ui = createEditorUi();
+    selectItems(ui, [
+      { kind: 'marking', id: 'M1' },
+      { kind: 'arrow', id: 'R1' },
+    ]);
+    expect(ui.selection.value).toEqual({ kind: 'arrow', id: 'R1' });
+    const items = peekSelectedItems(ui);
+    expect(items).toEqual([
+      { kind: 'marking', id: 'M1' },
+      { kind: 'arrow', id: 'R1' },
+    ]);
+    expect(existingItems(p, items)).toEqual(items);
+    expect(existingItems({ ...p, arrows: [] }, items)).toEqual([
+      { kind: 'marking', id: 'M1' },
+    ]);
+  });
+
+  it('ir até a anotação de uma seta seleciona a seta (com o projeto), não a marcação', () => {
+    const p = addAnnotation(withArrow(), { id: 'AR1', markingId: 'R1', layerId: 'L1' });
+    const note = { id: 'AR1', markingId: 'R1', layerId: 'L1' };
+    const ui = createEditorUi();
+    goToAnnotation(ui, note, null, p);
+    expect(ui.selection.value).toEqual({ kind: 'arrow', id: 'R1' });
+    expect(ui.focusAnnotation.value).toBe('AR1');
+    // Anotação de marcação: segue marcação, com ou sem o projeto.
+    goToAnnotation(ui, { id: 'A1', markingId: 'M1', layerId: 'L1' }, null, p);
+    expect(ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    goToAnnotation(ui, note);
+    expect(ui.selection.value).toEqual({ kind: 'marking', id: 'R1' });
+  });
+
+  it('revelar a seta na Árvore abre a marcação de origem e os ancestrais dela', () => {
+    const p = withArrow();
+    const ui = createEditorUi();
+    collapseTree(ui, p);
+    expect(ui.collapsedTree.value.has(treeKey('marking', 'M2'))).toBe(true);
+    expect(revealInTree(ui, p, { kind: 'arrow', id: 'R1' })).toBe(true);
+    expect(ui.collapsedTree.value.has(treeKey('marking', 'M2'))).toBe(false);
+    expect(ui.collapsedTree.value.has(treeKey('marking', 'M1'))).toBe(false);
+    expect(ui.collapsedTree.value.has(treeKey('image', 'I1'))).toBe(false);
+    expect(revealInTree(ui, p, { kind: 'arrow', id: 'R9' })).toBe(false);
   });
 });

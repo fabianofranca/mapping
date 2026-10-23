@@ -14,6 +14,7 @@ import {
   setContainerPlacement,
   type Project,
 } from '../../src/model';
+import { visibleArrowShapes } from '../../src/canvas/arrowGeometry';
 import type { Frame } from '../../src/canvas/frame';
 import type { CanvasTokens } from '../../src/canvas/theme';
 import { createCanvasViewState } from '../../src/canvas/viewState';
@@ -22,7 +23,7 @@ import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { locale } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
-import { createEditorUi } from '../../src/store/ui';
+import { createEditorUi, itemsOf } from '../../src/store/ui';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 
 /** Contexto 2D que aceita qualquer chamada; `measureText` estima pela quantidade de letras. */
@@ -68,7 +69,11 @@ export const TOKENS: CanvasTokens = {
   line: '#fefefe',
   halo: 'rgba(1, 2, 3, 0.7)',
   select: '#0057b8',
+  selectSecondary: '#3b7ad8',
   invalid: '#cc0000',
+  canvasMarking: '#5a3fc1',
+  absorb: '#0a8a5d',
+  absorbFill: 'rgba(10, 138, 93, 0.2)',
   warning: '#ffc247',
   nameTag: '#0057b9',
   nameTagText: '#010203',
@@ -91,6 +96,15 @@ export const TOKENS: CanvasTokens = {
     image: { size: 12, line: 16, weight: 600 },
   },
   handleSize: 10,
+  arrow: {
+    stroke: '#0f766f',
+    select: '#0057bb',
+    label: '#111112',
+    labelBg: 'rgba(250, 250, 251, 0.9)',
+    width: 2,
+    widthSelected: 3,
+    head: 10,
+  },
   lock: { fill: '#0057ba', glyph: '#010204', size: 20 },
   radius: { sm: 4, md: 6 },
 };
@@ -176,12 +190,14 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     preview: null,
     draft: null,
     dropTarget: null,
+    absorb: [],
     hoverLock: null,
     hoverMarking: null,
     tokens: TOKENS,
     size: { width: 380, height: 700 },
     viewport: { x: 0, y: 0, scale: 1 },
     selection: ui.selection.peek(),
+    items: itemsOf(ui.selection.peek(), ui.selectionGroup.peek()),
     mode: ui.mode.peek(),
     locale: locale.peek(),
     shown: derived.visibleLayers.peek(),
@@ -190,7 +206,10 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     visibility: derived.markingVisibility.peek(),
     drawings: derived.drawingsOf(store.project.peek()),
     drawn: derived.drawnMarkings.peek(),
+    floating: derived.floatingMarkings.peek(),
     review: null,
+    arrows: visibleArrowShapes(store.project.peek(), derived.markingVisibility.peek()),
+    arrowDraft: null,
     ...overrides,
   };
 }

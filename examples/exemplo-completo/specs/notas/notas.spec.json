@@ -1,0 +1,97 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 7,
+  "id": "notas",
+  "name": "Notas",
+  "version": 2,
+  "description": "Notas no canvas: post-its flutuantes, um com título e texto livre e outro em forma de tabela (chave e valor), para comentar uma tela, registrar uma regra de negócio, listar os dados de um evento ou deixar um recado para quem lê o mapeamento.",
+  "layers": [
+    {
+      "id": "notas",
+      "name": "Notas",
+      "color": "#F5C400",
+      "annotationTypes": [
+        {
+          "id": "nota",
+          "name": "Nota",
+          "description": "Comentário solto no canvas (esta tela serve para X, uma regra de negócio). Não pertence a nenhuma tela: fica por cima de tudo e não carrega nem é carregada pelo que está embaixo dela. A relação com uma tela ou um elemento é uma seta.",
+          "labelField": "titulo",
+          "floating": true,
+          "component": "components/nota.json",
+          "doc": "docs/nota.md",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "Título",
+              "type": "string",
+              "description": "Resumo curto da nota; aparece em negrito no topo do post-it. Pode ficar vazio."
+            },
+            {
+              "key": "texto",
+              "label": "Texto",
+              "type": "string",
+              "required": true,
+              "description": "O comentário em si. Aceita várias linhas: Shift+Enter quebra a linha (Enter confirma enquanto o campo é de uma linha; na área de várias linhas, Enter também insere linha)."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Regra de negócio",
+              "values": {
+                "titulo": "Limite de crédito",
+                "texto": "O botão Contratar só habilita para clientes com limite aprovado."
+              }
+            }
+          ]
+        },
+        {
+          "id": "tabela",
+          "name": "Tabela",
+          "description": "Tabela de chave e valor solta no canvas (as propriedades de um evento, os parâmetros de uma chamada). Não pertence a nenhuma tela: fica por cima de tudo e não carrega nem é carregada pelo que está embaixo dela. A relação com uma tela ou um elemento é uma seta.",
+          "labelField": "titulo",
+          "floating": true,
+          "component": "components/tabela.json",
+          "doc": "docs/tabela.md",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "Título",
+              "type": "string",
+              "description": "Resumo curto da tabela; aparece em negrito no topo. Pode ficar vazio."
+            },
+            {
+              "key": "linhas",
+              "label": "Linhas",
+              "type": "table",
+              "description": "Uma linha por registro: a chave à esquerda e o valor à direita.",
+              "columns": [
+                {
+                  "key": "chave",
+                  "label": "Chave",
+                  "type": "string",
+                  "required": true,
+                  "description": "O nome do dado (uma propriedade, um parâmetro)."
+                },
+                {
+                  "key": "valor",
+                  "label": "Valor",
+                  "type": "string",
+                  "description": "O valor ou a descrição dele."
+                }
+              ]
+            }
+          ],
+          "examples": [
+            {
+              "name": "Evento de analytics",
+              "description": "Só o título entra num exemplo; as linhas (origem, itens, total) vêm do preview do componente.",
+              "values": {
+                "titulo": "checkout_started"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

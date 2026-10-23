@@ -6,14 +6,16 @@ import {
   isTheme,
   locale,
   setLocale,
+  setShowArrows,
   setShowComponentsOnPhotos,
+  showArrows,
   showComponentsOnPhotos,
   setTheme,
   theme,
 } from '../store/settings';
 import { Choice, Segmented, Select } from './controls';
 
-/** Idioma, tema (segmentado) e componentes sobre fotos. Vive no diálogo Configurações. */
+/** Idioma, tema (segmentado) componentes sobre fotos e setas. Vive no diálogo Configurações. */
 export function SettingsBar() {
   return (
     <div class="settings" role="group" aria-label={t('settings.title')}>
@@ -50,6 +52,12 @@ export function SettingsBar() {
         hint={t('view.componentsOnPhotosHint')}
         checked={showComponentsOnPhotos.value}
         onChange={(e) => setShowComponentsOnPhotos(e.currentTarget.checked)}
+      />
+      <Choice
+        label={t('view.arrows')}
+        hint={t('view.arrowsHint')}
+        checked={showArrows.value}
+        onChange={(e) => setShowArrows(e.currentTarget.checked)}
       />
     </div>
   );

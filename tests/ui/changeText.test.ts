@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { Change, JsonValue, Proposal } from '../../src/model';
-import { changeTitle } from '../../src/ui/review/changeText';
-import { emptyProject } from '../model/fixtures';
+import { t } from '../../src/i18n';
+import { createArrow, type Change, type JsonValue, type Proposal } from '../../src/model';
+import { changeTitle, markingName } from '../../src/ui/review/changeText';
+import { emptyProject, sampleProject } from '../model/fixtures';
+import { propose } from '../model/proposalFixtures';
 import { cadastroProject, loadExample } from '../model/specFixtures';
 
 // Etapa 6 (6.4), achado 6: o nome do tipo de uma anotação criada tem a mesma caixa na
@@ -55,5 +57,48 @@ describe('changeTitle: nome do tipo', () => {
     };
     expect(changeTitle(names, button)).toContain('Button');
     expect(changeTitle(names, button)).not.toContain('button');
+  });
+});
+
+// Seta (ME4): o nome dela, senão "Origem → Destino" pelos nomes das marcações das pontas.
+describe('changeTitle: seta', () => {
+  const base = sampleProject();
+  const named = createArrow(base, { id: 'R1', from: 'M1', to: 'M2', name: 'abre' });
+  const plain = createArrow(base, { id: 'R2', from: 'M1', to: 'M2' });
+
+  it('usa o nome da seta', () => {
+    const proposal = propose(base, named);
+    const c = proposal.changes[0]!;
+    const title = changeTitle({ current: base, preview: named, proposal }, c);
+    expect(title).toContain('abre');
+    expect(title).toContain(t('review.entity.arrow'));
+  });
+
+  it('sem nome, usa as marcações das pontas, com a seta ainda só na proposta', () => {
+    const proposal = propose(base, plain);
+    const c = proposal.changes[0]!;
+    // Sem a prévia, o nome sai do registro da criação (`to`) e dos nomes das marcações.
+    const title = changeTitle({ current: base, preview: null, proposal }, c);
+    expect(title).toContain('Porta → Maçaneta');
+  });
+
+  it('o item da revisão que é uma seta tem o nome dela', () => {
+    const proposal = propose(base, plain);
+    expect(markingName({ current: base, preview: plain, proposal }, 'R2')).toBe(
+      'Porta → Maçaneta',
+    );
+    expect(markingName({ current: base, preview: null, proposal }, 'R2')).toBe(
+      'Porta → Maçaneta',
+    );
+    // A marcação segue pelo nome dela.
+    expect(markingName({ current: base, preview: null, proposal }, 'M1')).toBe('Porta');
+  });
+
+  it('a remoção da seta usa o registro de antes', () => {
+    const proposal = propose(plain, base);
+    const c = proposal.changes[0]!;
+    expect(changeTitle({ current: plain, preview: base, proposal }, c)).toContain(
+      'Porta → Maçaneta',
+    );
   });
 });

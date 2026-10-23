@@ -1,4 +1,4 @@
-import type { Placement, ProjectContainer, Rect } from './types';
+import type { ArrowPoint, Placement, ProjectContainer, Rect } from './types';
 
 /** Tamanho mínimo de cada lado de uma marcação, em pixels da imagem. */
 export const MIN_MARKING_SIZE = 8;
@@ -82,4 +82,97 @@ export function imageCanvasRect(
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+// ---------------------------------------------------------------------------
+// Espaços de coordenadas (v13): o de cada container (pixels inteiros dele) e o do canvas
+// (unidades inteiras do canvas). Uma marcação vive num só espaço; o assentar
+// (`hierarchySettle.ts`) decide qual e converte o `rect`.
+
+/** `placement` do espaço do canvas: unidades do canvas são os "pixels" dele. */
+export const IDENTITY_PLACEMENT: Placement = { x: 0, y: 0, scale: 1 };
+
+export interface Size {
+  readonly width: number;
+  readonly height: number;
+}
+
+/** Retângulo de um espaço (`placement` do container ou identidade) em unidades do canvas (decimal). */
+export function toCanvasRect(placement: Placement, rect: Rect): Rect {
+  return {
+    x: placement.x + rect.x * placement.scale,
+    y: placement.y + rect.y * placement.scale,
+    width: rect.width * placement.scale,
+    height: rect.height * placement.scale,
+  };
+}
+
+/** Ponto de um espaço (pixels do container, ou o canvas com `placement` identidade) em unidades do canvas. */
+export function toCanvasPoint(placement: Placement, point: ArrowPoint): ArrowPoint {
+  return {
+    x: placement.x + point.x * placement.scale,
+    y: placement.y + point.y * placement.scale,
+  };
+}
+
+/** Ponto do canvas no espaço de `placement`: o inverso de `toCanvasPoint` (sem arredondar). */
+export function fromCanvasPoint(placement: Placement, point: ArrowPoint): ArrowPoint {
+  return {
+    x: (point.x - placement.x) / placement.scale,
+    y: (point.y - placement.y) / placement.scale,
+  };
+}
+
+/** `containsRect` com folga de ponto flutuante (coordenadas do canvas, decimais). */
+export function containsRectApprox(outer: Rect, inner: Rect): boolean {
+  return (
+    inner.x >= outer.x - EPSILON &&
+    inner.y >= outer.y - EPSILON &&
+    right(inner) <= right(outer) + EPSILON &&
+    bottom(inner) <= bottom(outer) + EPSILON
+  );
+}
+
+/** Arredonda um intervalo pelas bordas e garante o mínimo, preso a [min, max) se houver. */
+function roundSpan(
+  start: number,
+  size: number,
+  minimum: number,
+  lo: number,
+  hi: number,
+): [number, number] {
+  const a = Math.round(start);
+  const width = Math.max(Math.round(start + size) - a, minimum);
+  if (width >= hi - lo) return [lo, Math.min(width, hi - lo)];
+  return [clamp(a, lo, hi - width), width];
+}
+
+/**
+ * Converte um retângulo do canvas (decimal) para o espaço de `placement`, em inteiros:
+ * as bordas são arredondadas (o tamanho é o que a pessoa via na tela), cada lado fica com
+ * pelo menos `MIN_MARKING_SIZE` (e `min`, o mínimo do componente) e, com `bounds`, o
+ * retângulo fica dentro dele (o container; o canvas não tem limite).
+ */
+export function fromCanvasRect(
+  placement: Placement,
+  canvas: Rect,
+  bounds: Rect | null,
+  min?: Size | null,
+): Rect {
+  const s = placement.scale;
+  const [x, width] = roundSpan(
+    (canvas.x - placement.x) / s,
+    canvas.width / s,
+    Math.max(MIN_MARKING_SIZE, min?.width ?? 0),
+    bounds ? bounds.x : -Infinity,
+    bounds ? right(bounds) : Infinity,
+  );
+  const [y, height] = roundSpan(
+    (canvas.y - placement.y) / s,
+    canvas.height / s,
+    Math.max(MIN_MARKING_SIZE, min?.height ?? 0),
+    bounds ? bounds.y : -Infinity,
+    bounds ? bottom(bounds) : Infinity,
+  );
+  return { x, y, width, height };
 }

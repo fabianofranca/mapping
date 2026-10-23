@@ -5,11 +5,12 @@ import {
   type Backlink,
   type JsonValue,
   type Project,
-  type SpecColumn,
+  type SpecSimpleColumn,
+  refPathText,
 } from '../model';
 import type { ActionResult } from '../store/history';
 import type { AnnotationLocation } from '../store/ui';
-import { Segmented, Select, TextField } from './controls';
+import { Segmented, Select, TextArea, TextField } from './controls';
 import { markingLabel } from './labels';
 import { annotationSourceLabel } from './typedText';
 
@@ -41,8 +42,110 @@ export function parseNumberInput(text: string): number | null | undefined {
   return Number.isFinite(value) ? value : undefined;
 }
 
+/** Um texto com quebra de linha, ou mais comprido que isto, abre no editor de várias linhas. */
+export const MULTILINE_MIN_LENGTH = 60;
+const MULTILINE_ROWS = 4;
+
+interface MultilineProps {
+  readonly id: string | undefined;
+  readonly label: string;
+  readonly initial: string;
+  readonly readOnly: boolean;
+  readonly invalid: boolean;
+  readonly required: boolean;
+  /** Foca ao montar, com o cursor no fim (a troca por Shift+Enter). */
+  readonly autoFocus: boolean;
+  readonly onCommit: (text: string) => void;
+}
+
+/** Texto em várias linhas: Enter quebra a linha, sair do campo grava. */
+function MultilineEditor({
+  id,
+  label,
+  initial,
+  readOnly,
+  invalid,
+  required,
+  autoFocus,
+  onCommit,
+}: MultilineProps) {
+  const [current, setCurrent] = useState(initial);
+  return (
+    <TextArea
+      id={id}
+      aria-label={label}
+      aria-required={required}
+      rows={MULTILINE_ROWS}
+      disabled={readOnly}
+      invalid={invalid}
+      value={current}
+      onInput={setCurrent}
+      onCommit={onCommit}
+      textAreaRef={(el) => {
+        if (el === null || !autoFocus) return;
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+      }}
+    />
+  );
+}
+
+/**
+ * Editor de um campo `string` da anotação: uma linha; abre em várias linhas quando o texto já
+ * tem quebra ou passa de `MULTILINE_MIN_LENGTH`, ou quando a pessoa aperta Shift+Enter (o que
+ * foi digitado segue, com a quebra). Só nos campos da anotação: a célula de tabela continua
+ * de uma linha.
+ */
+export function StringEditor(props: SimpleEditorProps) {
+  const { field, value, label, readOnly, id, invalid = false, onSet } = props;
+  const text = valueText(value);
+  const [draft, setDraft] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const multiline =
+    draft !== null || text.includes('\n') || text.length > MULTILINE_MIN_LENGTH;
+  if (!multiline) {
+    return (
+      <div
+        onKeyDownCapture={(e) => {
+          const input = e.target;
+          if (e.key !== 'Enter' || !e.shiftKey || readOnly) return;
+          if (!(input instanceof HTMLInputElement)) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDraft(`${input.value}\n`);
+        }}
+      >
+        <SimpleEditor {...props} />
+      </div>
+    );
+  }
+  return (
+    <>
+      <MultilineEditor
+        id={id}
+        label={label}
+        initial={draft ?? text}
+        readOnly={readOnly}
+        invalid={invalid || error !== null}
+        required={field.required === true}
+        autoFocus={draft !== null}
+        onCommit={(next) => {
+          const result = onSet(next === '' ? null : next);
+          setError(result.ok ? null : t('typed.invalidValue'));
+          if (result.ok) setDraft(null);
+        }}
+      />
+      {error !== null && (
+        <p class="field-error" role="alert">
+          {error}
+        </p>
+      )}
+    </>
+  );
+}
+
 interface SimpleEditorProps {
-  readonly field: SpecColumn;
+  readonly field: SpecSimpleColumn;
   readonly value: JsonValue | undefined;
   /** Nome acessível do controle. */
   readonly label: string;
@@ -209,7 +312,7 @@ export function BacklinkList({
         const source = annotationSourceLabel(project, b.source);
         const marking = project.markings.find((m) => m.id === b.source.markingId);
         return (
-          <li key={`${b.source.id}:${b.key}`}>
+          <li key={`${b.source.id}:${refPathText(b)}`}>
             <button
               type="button"
               class="link-button"
@@ -218,7 +321,7 @@ export function BacklinkList({
             >
               {t('ref.backlink', {
                 source,
-                marking: marking ? markingLabel(marking) : '',
+                marking: marking ? markingLabel(project, marking) : '',
               })}
             </button>
           </li>

@@ -1,12 +1,30 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useMemo, useRef } from 'preact/hooks';
 import { t } from '../i18n';
-import { projectIndex, type LayerDot, type Marking, type Project } from '../model';
-import { revealInTree, toggleTreeNode, treeKey, type Selection } from '../store/ui';
+import {
+  arrowsOf,
+  containerLockStates,
+  projectIndex,
+  type LayerDot,
+  type Arrow,
+  type Marking,
+  type Project,
+  type ProjectContainer,
+} from '../model';
+import {
+  isItemSelected,
+  revealInTree,
+  selectedItems,
+  toggleSelectedItem,
+  toggleTreeNode,
+  treeKey,
+  type Selection,
+  type SelectionItem,
+} from '../store/ui';
 import { ItemMenu } from './CopyActions';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
-import { imageLabel, markingLabel } from './labels';
+import { arrowEndLabel, arrowShort, arrowText, imageLabel, markingLabel } from './labels';
 
 interface MarkingTreeProps {
   readonly project: Project;
@@ -31,18 +49,16 @@ export function afterPaint(callback: () => void): void {
   else setTimeout(callback, 0);
 }
 
-/** Bolinhas das camadas visíveis que chegam à marcação; as herdadas ficam esmaecidas. */
+/** Bolinhas das camadas visíveis com anotação na marcação. */
 export function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
   return (
     <span class="tree-dots" aria-hidden="true">
-      {dots.map(({ layer, inheritedOnly }) => (
+      {dots.map(({ layer }) => (
         <span
           key={layer.id}
-          class={inheritedOnly ? 'tree-dot tree-dot-inherited' : 'tree-dot'}
+          class="tree-dot"
           style={{ '--layer-color': layer.color }}
-          title={t(inheritedOnly ? 'tree.layerDotInherited' : 'tree.layerDot', {
-            name: layer.name,
-          })}
+          title={t('tree.layerDot', { name: layer.name })}
         />
       ))}
     </span>
@@ -60,9 +76,20 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
   const locks = derived.markingLocks.value;
   const collapsed = ui.collapsedTree.value;
   const dots = derived.layerDots.value;
-  const index = projectIndex(project).children;
-  const isSelected = (kind: 'image' | 'marking', id: string) =>
+  const projectIdx = projectIndex(project);
+  const index = projectIdx.children;
+  const containerLocks = useMemo(() => containerLockStates(project), [project]);
+  const isSelected = (kind: SelectionItem['kind'], id: string) =>
     selection?.kind === kind && selection.id === id;
+  // Seleção múltipla: as outras linhas selecionadas (o primário tem o destaque de sempre).
+  const items = selectedItems(ui);
+  const isGrouped = (kind: SelectionItem['kind'], id: string) =>
+    items.length > 1 && isItemSelected(items, { kind, id });
+  /** Shift+clique acrescenta ou tira o item da seleção; o clique simples seleciona. */
+  const pick = (e: MouseEvent, item: SelectionItem) => {
+    if (e.shiftKey) toggleSelectedItem(ui, item);
+    else onSelect(item);
+  };
 
   const list = useRef<HTMLUListElement>(null);
   const latest = useRef({ project, selection });
@@ -108,12 +135,19 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     expandable: boolean,
     name: string,
     current: boolean,
+    grouped: boolean,
     item: ComponentChildren,
     lock: ComponentChildren,
     menu: ComponentChildren,
   ) => (
     <div
-      class={current ? 'tree-row tree-row-current' : 'tree-row'}
+      class={
+        current
+          ? 'tree-row tree-row-current'
+          : grouped
+            ? 'tree-row tree-row-selected'
+            : 'tree-row'
+      }
       style={{ '--depth': depth }}
     >
       {expandable ? (
@@ -135,11 +169,97 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
     </div>
   );
 
-  const branch = (markings: readonly Marking[], depth: number) =>
+  /** Containers membros de uma marcação do canvas (os que têm a marcação como pai). */
+  const membersOfMarking = (m: Marking): readonly ProjectContainer[] =>
+    m.floating ? [] : (projectIdx.containersByParent.get(m.id) ?? []);
+
+  /** Marcações da raiz de cada container, agrupadas uma vez por desenho. */
+  const rootsByContainer = new Map<string | null, Marking[]>();
+  for (const m of index.get(null) ?? []) {
+    const list = rootsByContainer.get(m.containerId);
+    if (list) list.push(m);
+    else rootsByContainer.set(m.containerId, [m]);
+  }
+
+  const containerNode = (image: ProjectContainer, depth: number) => {
+    const key = treeKey('image', image.id);
+    const roots = rootsByContainer.get(image.id) ?? [];
+    const current = isSelected('image', image.id);
+    return (
+      <li key={image.id}>
+        {row(
+          key,
+          depth,
+          roots.length > 0,
+          imageLabel(image),
+          current,
+          isGrouped('image', image.id),
+          <button
+            type="button"
+            class="tree-item tree-image"
+            aria-current={current || undefined}
+            onClick={(e) => pick(e, { kind: 'image', id: image.id })}
+          >
+            <span class="tree-label">{imageLabel(image)}</span>
+          </button>,
+          lockControl(
+            imageLabel(image),
+            image.locked,
+            containerLocks.get(image.id) === 'inherited',
+            () => actions.setImageLocked(image.id, !image.locked),
+          ),
+          <ItemMenu target={{ kind: 'i', id: image.id }} name={imageLabel(image)} />,
+        )}
+        {!collapsed.has(key) && branch(roots, depth + 1)}
+      </li>
+    );
+  };
+
+  /** A seta sob a marcação de origem: "→ destino" (ou o nome dela), com o cadeado própria. */
+  const arrowNode = (arrow: Arrow, depth: number) => {
+    const current = isSelected('arrow', arrow.id);
+    const to = arrowEndLabel(project, projectIdx.markings.get(arrow.to));
+    const text = arrowShort(project, arrow);
+    return (
+      <li key={arrow.id}>
+        {row(
+          treeKey('arrow', arrow.id),
+          depth,
+          false,
+          arrowText(project, arrow),
+          current,
+          isGrouped('arrow', arrow.id),
+          <button
+            type="button"
+            class="tree-item tree-arrow"
+            aria-current={current || undefined}
+            aria-label={t('arrow.treeItem', { name: to })}
+            title={arrowText(project, arrow)}
+            onClick={(e) => pick(e, { kind: 'arrow', id: arrow.id })}
+          >
+            <Icon name="arrow" />
+            <span class={arrow.name === null ? 'tree-label muted' : 'tree-label'}>
+              {text}
+            </span>
+            <LayerDots dots={dots.get(arrow.id) ?? []} />
+          </button>,
+          lockControl(t('arrow.treeItem', { name: to }), arrow.locked, false, () =>
+            actions.setArrowLocked(arrow.id, !arrow.locked),
+          ),
+          null,
+        )}
+      </li>
+    );
+  };
+
+  const branch = (markings: readonly Marking[], depth: number): ComponentChildren =>
     markings.length > 0 && (
       <ul>
         {markings.map((m) => {
+          // Filhas da marcação e, na marcação do canvas, os containers que ela contém.
           const children = index.get(m.id) ?? [];
+          const members = membersOfMarking(m);
+          const arrows = arrowsOf(project, m.id).outgoing;
           const key = treeKey('marking', m.id);
           const current = isSelected('marking', m.id);
           return (
@@ -147,14 +267,15 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
               {row(
                 key,
                 depth,
-                children.length > 0,
-                markingLabel(m),
+                children.length > 0 || members.length > 0 || arrows.length > 0,
+                markingLabel(project, m),
                 current,
+                isGrouped('marking', m.id),
                 <button
                   type="button"
                   class="tree-item"
                   aria-current={current || undefined}
-                  onClick={() => onSelect({ kind: 'marking', id: m.id })}
+                  onClick={(e) => pick(e, { kind: 'marking', id: m.id })}
                 >
                   {m.needsReview && (
                     <span class="tree-warning" title={t('marking.needsReview')}>
@@ -162,57 +283,71 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                     </span>
                   )}
                   <span class={m.name === null ? 'tree-label muted' : 'tree-label'}>
-                    {markingLabel(m)}
+                    {markingLabel(project, m)}
                   </span>
                   <LayerDots dots={dots.get(m.id) ?? []} />
                 </button>,
                 lockControl(
-                  markingLabel(m),
+                  markingLabel(project, m),
                   m.locked,
                   locks.get(m.id) === 'inherited',
                   () => actions.setMarkingLocked(m.id, !m.locked),
                 ),
-                <ItemMenu target={{ kind: 'm', id: m.id }} name={markingLabel(m)} />,
+                <ItemMenu
+                  target={{ kind: 'm', id: m.id }}
+                  name={markingLabel(project, m)}
+                />,
               )}
-              {!collapsed.has(key) && branch(children, depth + 1)}
+              {!collapsed.has(key) && (
+                <>
+                  {branch(children, depth + 1)}
+                  {members.length > 0 && (
+                    <ul>{members.map((image) => containerNode(image, depth + 1))}</ul>
+                  )}
+                  {arrows.length > 0 && (
+                    <ul>{arrows.map((arrow) => arrowNode(arrow, depth + 1))}</ul>
+                  )}
+                </>
+              )}
             </li>
           );
         })}
       </ul>
     );
 
-  if (project.containers.length === 0) return <p class="muted">{t('panel.treeEmpty')}</p>;
+  const canvasRoots = rootsByContainer.get(null) ?? [];
+  const topContainers = projectIdx.containersByParent.get(null) ?? [];
+  const canvasKey = treeKey('canvas', '');
+  const canvasName = t('canvas.name');
+
+  if (project.containers.length === 0 && canvasRoots.length === 0) {
+    return <p class="muted">{t('panel.treeEmpty')}</p>;
+  }
   return (
     <ul class="tree" aria-label={t('panel.treeTitle')} ref={list}>
-      {project.containers.map((image) => {
-        const key = treeKey('image', image.id);
-        const roots = (index.get(null) ?? []).filter((m) => m.containerId === image.id);
-        const current = isSelected('image', image.id);
-        return (
-          <li key={image.id}>
-            {row(
-              key,
-              0,
-              roots.length > 0,
-              imageLabel(image),
-              current,
-              <button
-                type="button"
-                class="tree-item tree-image"
-                aria-current={current || undefined}
-                onClick={() => onSelect({ kind: 'image', id: image.id })}
-              >
-                <span class="tree-label">{imageLabel(image)}</span>
-              </button>,
-              lockControl(imageLabel(image), image.locked, false, () =>
-                actions.setImageLocked(image.id, !image.locked),
-              ),
-              <ItemMenu target={{ kind: 'i', id: image.id }} name={imageLabel(image)} />,
-            )}
-            {!collapsed.has(key) && branch(roots, 1)}
-          </li>
-        );
-      })}
+      {canvasRoots.length > 0 && (
+        <li key="canvas">
+          {row(
+            canvasKey,
+            0,
+            true,
+            canvasName,
+            false,
+            false,
+            <button
+              type="button"
+              class="tree-item tree-canvas"
+              onClick={() => toggleTreeNode(ui, canvasKey)}
+            >
+              <span class="tree-label">{canvasName}</span>
+            </button>,
+            null,
+            null,
+          )}
+          {!collapsed.has(canvasKey) && branch(canvasRoots, 1)}
+        </li>
+      )}
+      {topContainers.map((image) => containerNode(image, 0))}
     </ul>
   );
 }

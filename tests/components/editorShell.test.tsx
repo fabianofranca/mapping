@@ -55,6 +55,8 @@ function fakeDialogs(): EditorDialogs {
     close: vi.fn(),
     requestDeleteImage: vi.fn(),
     requestDeleteMarking: vi.fn(),
+    requestDeleteArrow: vi.fn(),
+    requestDeleteItems: vi.fn(),
   };
 }
 
