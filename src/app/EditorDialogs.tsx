@@ -140,7 +140,7 @@ function renderDialog(
         >
           <p>
             {t('marking.deleteMessage', {
-              name: markingLabel(marking),
+              name: markingLabel(project, marking),
               ...impact,
             })}
           </p>

@@ -58,10 +58,12 @@ function SelectionItem() {
     ).length;
     if (count > 1) return t('multi.title', { count });
     const selected = resolveShownSelection(review, ui.selection.value);
-    if (selected?.kind === 'marking') return markingLabel(selected.marking);
-    if (selected?.kind === 'arrow') {
+    if (selected?.kind === 'marking' || selected?.kind === 'arrow') {
       const project = selectionProject(review, ui.selection.value);
-      return project ? arrowText(project, selected.arrow) : null;
+      if (!project) return null;
+      return selected.kind === 'marking'
+        ? markingLabel(project, selected.marking)
+        : arrowText(project, selected.arrow);
     }
     return selected?.kind === 'image' ? imageLabel(selected.image) : null;
   });

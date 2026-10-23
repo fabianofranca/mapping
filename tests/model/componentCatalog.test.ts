@@ -3,12 +3,15 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   EMPTY_CATALOG,
+  addAnnotation,
+  addLayer,
   addTypedAnnotation,
   componentMinSize,
   componentPaths,
   createMarking,
   loadSpecComponents,
   markingComponent,
+  markingTypeName,
   parseSpecText,
   setFieldValue,
   type ComponentCatalog,
@@ -220,5 +223,56 @@ describe('markingComponent e componentMinSize', () => {
     expect(markingComponent(p, testCatalog(), 'M1')?.annotation.values?.label).toBe(
       'Novo',
     );
+  });
+});
+
+describe('markingTypeName', () => {
+  function withMarking() {
+    return createMarking(componentProject(), {
+      id: 'M1',
+      containerId: 'I1',
+      rect: { x: 10, y: 10, width: 200, height: 100 },
+    });
+  }
+  const typed = (
+    p: ReturnType<typeof withMarking>,
+    id: string,
+    typeId: string,
+    layerId = 'LS1',
+  ) =>
+    addTypedAnnotation(p, {
+      id,
+      markingId: 'M1',
+      layerId,
+      type: { specId: SPEC_ID, typeId },
+    });
+
+  it('marcação sem anotação, ou com anotação comum, não tem nome de tipo', () => {
+    const p = withMarking();
+    expect(markingTypeName(p, 'M1')).toBeNull();
+    expect(markingTypeName(p, 'inexistente')).toBeNull();
+    const free = addLayer(p, { id: 'LF', name: 'Livre', color: '#336699' });
+    const common = addAnnotation(free, { id: 'A0', markingId: 'M1', layerId: 'LF' });
+    expect(markingTypeName(common, 'M1')).toBeNull();
+  });
+
+  it('o tipo com componente dá o nome, sem precisar do catálogo', () => {
+    const p = typed(withMarking(), 'A1', 'text');
+    expect(markingTypeName(p, 'M1')).toBe('Tipo text');
+  });
+
+  it('a primeira anotação com componente vence, na ordem de annotations', () => {
+    let p = withMarking();
+    p = typed(p, 'A1', 'row');
+    p = typed(p, 'A2', 'text');
+    expect(markingTypeName(p, 'M1')).toBe('Tipo row');
+  });
+
+  it('o tipo sem component não dá nome; pula para a seguinte', () => {
+    let p = withMarking();
+    p = typed(p, 'A1', 'plain', 'LS2');
+    expect(markingTypeName(p, 'M1')).toBeNull();
+    p = typed(p, 'A2', 'text');
+    expect(markingTypeName(p, 'M1')).toBe('Tipo text');
   });
 });

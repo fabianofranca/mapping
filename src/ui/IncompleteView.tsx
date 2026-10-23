@@ -66,7 +66,7 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
                 {items.map(({ annotation, path, layer, issues, arrow }) => {
                   // Anotação de seta: a origem e a seta ("Origem › → Destino").
                   const label = [
-                    ...path.map(markingLabel),
+                    ...path.map((m) => markingLabel(project, m)),
                     ...(arrow ? [arrowShort(project, arrow)] : []),
                   ].join(t('marking.pathSeparator'));
                   return (

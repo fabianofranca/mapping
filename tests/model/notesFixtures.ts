@@ -1,7 +1,9 @@
 import { NOTES_FILES, NOTES_LIBRARY, NOTES_SPEC_FILE } from '../../libraries/notas';
 import {
   addContainer,
+  addTypedAnnotation,
   applyBundledLibrary,
+  createMarking,
   loadSpecComponents,
   parseSpecText,
   type ComponentCatalog,
@@ -39,4 +41,24 @@ export function notesCatalog(): ComponentCatalog {
   );
   if (loaded.problems.length > 0) throw new Error(loaded.problems.join('\n'));
   return new Map([[NOTES_SPEC_ID, loaded]]);
+}
+
+/**
+ * `base` com a biblioteca de notas aplicada e uma instância de Nota `id` sem nome (flutuante,
+ * como a Paleta cria): o rótulo dela é o nome do tipo, "Nota".
+ */
+export function withNoteInstance(base: Project, id = 'N1'): Project {
+  const applied = applyBundledLibrary(base, NOTES_LIBRARY, { newId: () => 'LN' });
+  const marked = createMarking(applied.project, {
+    id,
+    containerId: null,
+    rect: { x: 0, y: 0, width: 240, height: 120 },
+    floating: true,
+  });
+  return addTypedAnnotation(marked, {
+    id: `A-${id}`,
+    markingId: id,
+    layerId: 'LN',
+    type: { specId: NOTES_SPEC_ID, typeId: 'nota' },
+  });
 }

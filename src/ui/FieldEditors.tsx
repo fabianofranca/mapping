@@ -321,7 +321,7 @@ export function BacklinkList({
             >
               {t('ref.backlink', {
                 source,
-                marking: marking ? markingLabel(marking) : '',
+                marking: marking ? markingLabel(project, marking) : '',
               })}
             </button>
           </li>

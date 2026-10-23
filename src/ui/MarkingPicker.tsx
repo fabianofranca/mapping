@@ -29,7 +29,7 @@ export function markingOptions(project: Project, excludeId: string): MarkingOpti
         container ? imageLabel(container) : t('canvas.name'),
         markingPath(project, marking),
       ].join(t('marking.pathSeparator'));
-      return { marking, label: markingLabel(marking), context };
+      return { marking, label: markingLabel(project, marking), context };
     });
 }
 
@@ -101,7 +101,9 @@ export function MarkingPicker({
     >
       <div class="picker-body">
         <div class="picker-head">
-          <h2 id={titleId}>{t('arrow.pickerTitle', { name: markingLabel(source) })}</h2>
+          <h2 id={titleId}>
+            {t('arrow.pickerTitle', { name: markingLabel(project, source) })}
+          </h2>
           <IconButton icon="close" label={t('common.close')} onClick={onClose} />
         </div>
         {all.length === 0 ? (

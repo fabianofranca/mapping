@@ -204,7 +204,7 @@ export function DiagnosticsComponents() {
   const shown = editor.review.derived.shownProject.value;
   const nameOf = (markingId: string) => {
     const marking = shown?.markings.find((m) => m.id === markingId);
-    return marking ? markingLabel(marking) : markingId;
+    return marking && shown ? markingLabel(shown, marking) : markingId;
   };
   const overflow = [...derived.componentScenes.value.values()].filter(
     (d) => d.overflow,

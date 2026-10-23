@@ -78,7 +78,7 @@ export function SelectionPanel({
     project && image.parentId !== null
       ? projectIndex(project).markings.get(image.parentId)
       : undefined;
-  const parentName = parent ? markingLabel(parent) : null;
+  const parentName = parent && project ? markingLabel(project, parent) : null;
 
   return (
     <div class="panel-details">

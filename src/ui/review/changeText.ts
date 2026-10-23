@@ -80,8 +80,11 @@ function arrowName(names: ReviewNames, id: string): string | null {
 
 /** Nome do item da revisão: a marcação, ou a seta (os ids dividem o espaço, ME4). */
 export function markingName(names: ReviewNames, id: string): string {
-  const found = lookup(names, (p) => projectIndex(p).markings.get(id));
-  if (found) return markingLabel(found);
+  // O rótulo usa o projeto em que a marcação foi encontrada (o tipo vem das anotações dele).
+  for (const p of [names.current, names.preview]) {
+    const found = p ? projectIndex(p).markings.get(id) : undefined;
+    if (found && p) return markingLabel(p, found);
+  }
   const arrow = arrowName(names, id);
   if (arrow !== null) return arrow;
   for (const c of names.proposal.changes) {

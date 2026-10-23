@@ -218,7 +218,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
   /** A seta sob a marcação de origem: "→ destino" (ou o nome dela), com o cadeado própria. */
   const arrowNode = (arrow: Arrow, depth: number) => {
     const current = isSelected('arrow', arrow.id);
-    const to = arrowEndLabel(projectIdx.markings.get(arrow.to));
+    const to = arrowEndLabel(project, projectIdx.markings.get(arrow.to));
     const text = arrowShort(project, arrow);
     return (
       <li key={arrow.id}>
@@ -268,7 +268,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                 key,
                 depth,
                 children.length > 0 || members.length > 0 || arrows.length > 0,
-                markingLabel(m),
+                markingLabel(project, m),
                 current,
                 isGrouped('marking', m.id),
                 <button
@@ -283,17 +283,20 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                     </span>
                   )}
                   <span class={m.name === null ? 'tree-label muted' : 'tree-label'}>
-                    {markingLabel(m)}
+                    {markingLabel(project, m)}
                   </span>
                   <LayerDots dots={dots.get(m.id) ?? []} />
                 </button>,
                 lockControl(
-                  markingLabel(m),
+                  markingLabel(project, m),
                   m.locked,
                   locks.get(m.id) === 'inherited',
                   () => actions.setMarkingLocked(m.id, !m.locked),
                 ),
-                <ItemMenu target={{ kind: 'm', id: m.id }} name={markingLabel(m)} />,
+                <ItemMenu
+                  target={{ kind: 'm', id: m.id }}
+                  name={markingLabel(project, m)}
+                />,
               )}
               {!collapsed.has(key) && (
                 <>

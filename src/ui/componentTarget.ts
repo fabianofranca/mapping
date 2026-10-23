@@ -14,6 +14,7 @@ import {
   type ComponentCatalog,
   type ComponentType,
   type FloatingNearTarget,
+  type Marking,
   type MarkingVisibility,
   type Project,
   type ProjectContainer,
@@ -71,7 +72,7 @@ export function componentTarget(
       return {
         containerId: selected.marking.containerId,
         parentId: selected.marking.id,
-        destination: { kind: 'slot', name: markingLabel(selected.marking) },
+        destination: { kind: 'slot', name: slotTargetName(project, selected.marking) },
       };
     }
   }
@@ -117,6 +118,17 @@ export function componentTarget(
 
   const image = point ? imageAt(project.containers, point) : undefined;
   return image ? inContainer(image) : onCanvas();
+}
+
+/**
+ * Nome do componente com slot no rótulo do Adicionar: o rótulo da marcação (o nome; sem nome,
+ * o do tipo que ela desenha, "Card"; sem tipo, o padrão).
+ */
+export function slotTargetName(
+  project: Project,
+  marking: Pick<Marking, 'id' | 'name'>,
+): string {
+  return markingLabel(project, marking);
 }
 
 /** Rótulo do botão Adicionar com o destino ("Adicionar dentro de Lista"). */

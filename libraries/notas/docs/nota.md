@@ -5,7 +5,7 @@ Um post-it no canvas, para o que não cabe numa anotação de camada: um coment�
 ## Campos
 
 - **Título** (opcional): o resumo, em negrito no topo do post-it.
-- **Texto** (obrigatório): o comentário. Aceita várias linhas.
+- **Texto** (obrigatório): o comentário. Aceita várias linhas: Shift+Enter quebra a linha (Enter confirma enquanto o campo é de uma linha; na área de várias linhas, Enter também insere linha).
 
 ## Como a nota se comporta
 

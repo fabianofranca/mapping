@@ -25,8 +25,8 @@ function imageCrumb(image: ProjectContainer): Crumb {
   };
 }
 
-function markingCrumb(marking: Marking): Crumb {
-  const name = markingLabel(marking);
+function markingCrumb(project: Project, marking: Marking): Crumb {
+  const name = markingLabel(project, marking);
   return {
     selection: { kind: 'marking', id: marking.id },
     name,
@@ -69,7 +69,9 @@ export function crumbsOf(project: Project | null, selection: Selection): Crumb[]
   if (resolved.kind === 'image') {
     return [
       canvasCrumb(),
-      ...canvasChain(project, resolved.image.parentId).map(markingCrumb),
+      ...canvasChain(project, resolved.image.parentId).map((m) =>
+        markingCrumb(project, m),
+      ),
       imageCrumb(resolved.image),
     ];
   }
@@ -77,12 +79,13 @@ export function crumbsOf(project: Project | null, selection: Selection): Crumb[]
     ...ancestorsOf(project, resolved.marking.id).reverse(),
     resolved.marking,
   ];
-  if (resolved.image === null) return [canvasCrumb(), ...chain.map(markingCrumb)];
+  if (resolved.image === null)
+    return [canvasCrumb(), ...chain.map((m) => markingCrumb(project, m))];
   return [
     canvasCrumb(),
-    ...canvasChain(project, resolved.image.parentId).map(markingCrumb),
+    ...canvasChain(project, resolved.image.parentId).map((m) => markingCrumb(project, m)),
     imageCrumb(resolved.image),
-    ...chain.map(markingCrumb),
+    ...chain.map((m) => markingCrumb(project, m)),
   ];
 }
 
