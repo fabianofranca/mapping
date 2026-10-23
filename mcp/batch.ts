@@ -107,6 +107,7 @@ import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
 import { KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
+import { containersNamed } from './markingList';
 import { MODEL_ERROR_HINTS, MODEL_ERROR_MESSAGES } from './modelErrors';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
@@ -355,6 +356,7 @@ class Batch {
           this.deprecations.push({
             index,
             op: op.op,
+            code: 'ignored-argument',
             message:
               'o argumento `parent` foi ignorado: o pai da marcação sai da geometria (a mais interna que a contém)',
           });
@@ -490,6 +492,34 @@ class Batch {
   }
 
   /** Id de uma marcação, container ou anotação deste projeto: apelido, referência ou id. */
+  /**
+   * Container por referência/id ou, se não achar, pelo nome ou arquivo (como `list_markings`);
+   * nome em mais de um container → `ambiguous-image`.
+   */
+  private containerItem(text: string, p: Project = this.p): string {
+    try {
+      return this.item(text, 'i', p);
+    } catch (error) {
+      if (
+        !(error instanceof ToolError) ||
+        (error.code !== 'not-found' && error.code !== 'invalid-ref') ||
+        text.trim().startsWith('$')
+      ) {
+        throw error;
+      }
+      const named = containersNamed(p, text.trim());
+      if (named.length === 1) return named[0]!.id;
+      if (named.length > 1) {
+        throw new ToolError(
+          'ambiguous-image',
+          `mais de um container se chama "${text}": use a referência`,
+          { candidates: named.map((c) => this.refs(p).ref('i', c.id)) },
+        );
+      }
+      throw error;
+    }
+  }
+
   private item(text: string, kind: ItemKind, p: Project = this.p): string {
     const wanted = text.trim();
     if (wanted.startsWith('$')) {
@@ -1046,17 +1076,17 @@ class Batch {
       case 'add_blank_image':
         return this.addContainerWithBackground(op, p);
       case 'update_container':
-        return this.updateContainerOp(op, this.item(op.container, 'i'), p);
+        return this.updateContainerOp(op, this.containerItem(op.container, p), p);
       case 'update_image':
-        return this.updateContainerOp(op, this.item(op.image, 'i'), p);
+        return this.updateContainerOp(op, this.containerItem(op.image, p), p);
       case 'replace_container':
-        return this.replaceContainerOp(op, this.item(op.container, 'i'), p);
+        return this.replaceContainerOp(op, this.containerItem(op.container, p), p);
       case 'replace_image':
-        return this.replaceContainerOp(op, this.item(op.image, 'i'), p);
+        return this.replaceContainerOp(op, this.containerItem(op.image, p), p);
       case 'delete_container':
-        return this.deleteContainerOp(this.item(op.container, 'i'), p);
+        return this.deleteContainerOp(this.containerItem(op.container, p), p);
       case 'delete_image':
-        return this.deleteContainerOp(this.item(op.image, 'i'), p);
+        return this.deleteContainerOp(this.containerItem(op.image, p), p);
       case 'create_marking':
         return this.createMarkingOp(op);
       case 'move_marking': {
@@ -1106,7 +1136,8 @@ class Batch {
               'trocar de `container` exige o `rect` nos pixels do container novo (no canvas, em unidades do canvas)',
             );
           }
-          const target = op.container === null ? null : this.item(op.container, 'i');
+          const target =
+            op.container === null ? null : this.containerItem(op.container, project);
           const { rect } = op;
           const minSize = componentMinSize(project, this.loaded.catalog, id);
           project = this.checkMinSize(minSize, `"${label}"`, () =>
@@ -1521,7 +1552,8 @@ class Batch {
     }
     const containerRef = op.container ?? op.image;
     // Sem `container`: marcação do canvas (rect em unidades do canvas, podendo ser negativo).
-    const containerId = containerRef === undefined ? null : this.item(containerRef, 'i');
+    const containerId =
+      containerRef === undefined ? null : this.containerItem(containerRef, p);
     const markingId = crypto.randomUUID();
     const typeRef = annotation ? this.type(annotation.type) : null;
     const component =

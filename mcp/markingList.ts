@@ -69,17 +69,22 @@ function annotationTexts(p: Project, a: Annotation): string[] {
   return out;
 }
 
-function findContainer(p: Project, query: string): ProjectContainer {
-  const index = projectIndex(p);
-  const direct = index.containers.get(query);
-  if (direct) return direct;
+/** Containers cujo nome ou arquivo é `query` (sem acento nem caixa). */
+export function containersNamed(p: Project, query: string): ProjectContainer[] {
   const folded = fold(query);
-  const byName = p.containers.filter(
+  return p.containers.filter(
     (i) =>
       (i.name !== null && fold(i.name) === folded) ||
       (i.file !== null &&
         (fold(i.file) === folded || fold(i.file.split('/').pop() ?? '') === folded)),
   );
+}
+
+function findContainer(p: Project, query: string): ProjectContainer {
+  const index = projectIndex(p);
+  const direct = index.containers.get(query);
+  if (direct) return direct;
+  const byName = containersNamed(p, query);
   if (byName.length === 1) return byName[0]!;
   const coded = matchShortCode(p, 'i', query.replace(/^i\//, ''));
   if (coded.length === 1) return index.containers.get(coded[0]!.id)!;
