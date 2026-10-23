@@ -313,6 +313,8 @@ button.tree-toggle:hover {
 .layer-row > .tooltip-anchor:has(> .layer-badge) {
   grid-column: 3 / -1;
   justify-self: start;
+  min-width: 0;
+  max-width: 100%;
   margin: 0 0 var(--space-1);
 }
 
@@ -662,8 +664,8 @@ button.tree-toggle:hover {
 }
 
 .layer-badge {
-  flex: none;
-  max-width: 8em;
+  display: block;
+  max-width: 100%;
   overflow: hidden;
   padding: var(--space-0-5) var(--space-2);
   color: var(--color-text-muted);
