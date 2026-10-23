@@ -201,11 +201,14 @@
 
 .decision-control-text {
   display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
   gap: var(--space-1-5);
 }
 
 .decision-control-text .button {
-  flex: 1;
+  flex: 1 0 auto;
 }
 
 /* ---------- Contagens (○ ✓ ✕ ⚠) ---------- */
@@ -779,12 +782,11 @@
   flex: none;
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
   min-height: var(--size-row);
-  padding: 0 var(--space-3);
-  overflow: hidden;
+  padding: var(--space-1) var(--space-3);
   font: var(--t-text-small);
-  white-space: nowrap;
   color: var(--color-text-muted);
   background: var(--color-bg);
   border-top: 1px solid var(--color-border);
@@ -792,6 +794,7 @@
 
 .review-footer span {
   display: inline-flex;
+  white-space: nowrap;
   align-items: center;
   gap: var(--space-1);
 }
