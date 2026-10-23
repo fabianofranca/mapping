@@ -174,6 +174,48 @@ export function setMarkingRect(
 }
 
 /**
+ * Troca o espaço da marcação: `containerId` (container novo, ou `null` = o canvas) e o `rect`
+ * nele, juntos (a mesma troca da mudança composta `space` das propostas). O `rect` está nos
+ * pixels do container novo (no canvas, em unidades do canvas) e precisa caber nele. A marcação
+ * flutuante só vive no canvas. Assenta ao fim (o pai e o espaço das demais saem da geometria;
+ * um retângulo do canvas que cabe inteiro num container passa a ser dele). A seta presa perde
+ * os pontos de passagem quando o espaço muda. É geometria: a trava impede.
+ */
+export function setMarkingSpace(
+  p: Project,
+  markingId: string,
+  containerId: string | null,
+  rect: Rect,
+  options?: RectOptions,
+): Project {
+  const marking = findById(p.markings, markingId);
+  if (marking.floating && containerId !== null) fail('invalid-space', markingId);
+  const container = containerId === null ? null : findById(p.containers, containerId);
+  checkRectShape(rect, options);
+  requireUnlocked(canEditMarkingGeometry(p, markingId));
+  if (container && !containsRect(imagePixelRect(container), rect)) {
+    fail('rect-out-of-image');
+  }
+  const copy: Rect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+  const base = {
+    ...p,
+    markings: updateById(p.markings, markingId, (m) => ({
+      ...m,
+      containerId,
+      parentId: null,
+      rect: copy,
+    })),
+  };
+  return settled(
+    marking.containerId !== containerId
+      ? clearArrowRoutes(base, new Set([markingId]))
+      : base,
+    markingId,
+    options,
+  );
+}
+
+/**
  * Move a marcação pelo deslocamento (inteiro). Dentro de um container, leva também todos os
  * descendentes (trancados inclusive: a posição relativa entre eles e a marcação não muda); no
  * canvas, a marcação é uma lente e se move sozinha (flutuante inclusive). Nada prende a
@@ -436,7 +478,12 @@ export interface FloatingNearTarget {
  * baixo com `FLOATING_GAP` sem sobrepor containers nem outras flutuantes; se o empilhamento
  * passaria da altura do alvo, tenta a **esquerda**, depois **embaixo** (empilhando para a
  * direita) e **em cima**; se nenhum lado couber, fica na direita, empilhada até achar vão.
- * Alvo inexistente falha com `not-found`.
+ * O retângulo devolvido tem sempre valores inteiros (containers com `placement` fracionário dão
+ * posições fracionárias): `size` sobe para o inteiro seguinte e a posição é arredondada para
+ * longe do alvo (`ceil` à direita/embaixo, `floor` à esquerda/em cima) antes da checagem de
+ * obstáculos, que roda sobre o retângulo já inteiro; assim o arredondamento nunca encolhe o vão
+ * nem sobrepõe um obstáculo. Alvo inexistente falha com
+ * `not-found`.
  */
 export function placeFloatingNear(
   p: Project,
@@ -465,7 +512,8 @@ export function placeFloatingNear(
       obstacles.push(markingCanvasRectOf(p, m));
     }
   }
-  const { width, height } = size;
+  const width = Math.ceil(size.width);
+  const height = Math.ceil(size.height);
   const hit = (rect: Rect): Rect | undefined =>
     obstacles.find((o) => rectsOverlap(rect, o));
 
@@ -473,23 +521,31 @@ export function placeFloatingNear(
   const stackDown = (x: number, y: number): Rect => {
     let rect: Rect = { x, y, width, height };
     for (let o = hit(rect); o; o = hit(rect))
-      rect = { ...rect, y: bottom(o) + FLOATING_GAP };
+      rect = { ...rect, y: Math.ceil(bottom(o) + FLOATING_GAP) };
     return rect;
   };
   const stackRight = (x: number, y: number): Rect => {
     let rect: Rect = { x, y, width, height };
     for (let o = hit(rect); o; o = hit(rect))
-      rect = { ...rect, x: right(o) + FLOATING_GAP };
+      rect = { ...rect, x: Math.ceil(right(o) + FLOATING_GAP) };
     return rect;
   };
 
-  const onRight = stackDown(right(anchor) + FLOATING_GAP, start.y);
+  // Arredonda para longe do alvo (direita/embaixo: `ceil`; esquerda/em cima: `floor`) para o
+  // vão nunca encolher; ao longo do lado, `ceil`.
+  const onRight = stackDown(Math.ceil(right(anchor) + FLOATING_GAP), Math.ceil(start.y));
   if (onRight.y <= bottom(anchor)) return onRight;
-  const onLeft = stackDown(anchor.x - FLOATING_GAP - width, start.y);
+  const onLeft = stackDown(
+    Math.floor(anchor.x - FLOATING_GAP - width),
+    Math.ceil(start.y),
+  );
   if (onLeft.y <= bottom(anchor)) return onLeft;
-  const below = stackRight(start.x, bottom(anchor) + FLOATING_GAP);
+  const below = stackRight(Math.ceil(start.x), Math.ceil(bottom(anchor) + FLOATING_GAP));
   if (below.x <= right(anchor)) return below;
-  const above = stackRight(start.x, anchor.y - FLOATING_GAP - height);
+  const above = stackRight(
+    Math.ceil(start.x),
+    Math.floor(anchor.y - FLOATING_GAP - height),
+  );
   if (above.x <= right(anchor)) return above;
   return onRight;
 }

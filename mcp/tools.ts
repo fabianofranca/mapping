@@ -256,7 +256,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        'Resumo do projeto: containers (com `file` e `background`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) e o clone local por plataforma (`platformRepos`), contagens e pendências (anotações incompletas).',
+        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) e o clone local por plataforma (`platformRepos`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -271,7 +271,7 @@ export function registerTools(
     'list_markings',
     {
       description:
-        'Lista marcações em linhas compactas (referência, caminho, retângulo em pixels do container, trava, anotações). Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
+        'Lista marcações em linhas compactas (referência, caminho, `space` (`container` ou `canvas`), `floating`, retângulo em pixels do container (no canvas, em unidades do canvas), trava, anotações). Sem `container` nem `canvas`, lista as marcações dos containers. Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
       inputSchema: {
         project: projectArg,
         container: z
@@ -282,6 +282,18 @@ export function registerTools(
           .string()
           .optional()
           .describe('Antigo: use `container`. Aceito com aviso.'),
+        canvas: z
+          .boolean()
+          .optional()
+          .describe(
+            '`true`: só as marcações do canvas (sem container; `space: "canvas"`), em profundidade. Não combina com `container`.',
+          ),
+        floating: z
+          .boolean()
+          .optional()
+          .describe(
+            'Só as flutuantes (`true`, que vivem no canvas) ou só as não flutuantes (`false`).',
+          ),
         layer: z
           .string()
           .optional()
@@ -331,7 +343,7 @@ export function registerTools(
     'get_marking',
     {
       description:
-        'Tudo sobre uma marcação: caminho, container, retângulo em pixels do container, trava, filhas, anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências. ' +
+        'Tudo sobre uma marcação (ou uma seta): caminho (numa marcação do canvas começa em "Canvas"), container (`null` no canvas), `space` (`container` ou `canvas`), `floating`, retângulo (pixels do container; no canvas, unidades do canvas), trava, filhas, `members` (as marcações e os containers que têm esta marcação como pai, pela geometria), `arrows` (as setas presas a ela), anotações por camada (próprias e herdadas, com a origem), árvore de vínculos, referências de saída resolvidas, backlinks e pendências. ' +
         'Nas anotações tipadas, `code` traz o código de instanciação do tipo por plataforma: `symbol` (o que se chama para criar uma instância), `definition` (o arquivo que define o `symbol`, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` relativo ao diretório de trabalho do cliente e `exists` pelo clone local do projeto; `null` sem `path`), `params`, `values` e `notes`. O servidor só confere se o arquivo existe: nunca lê código.',
       inputSchema: {
         ref: refArg,
@@ -425,7 +437,7 @@ export function registerTools(
     'get_container',
     {
       description:
-        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, e as marcações de primeiro nível.',
+        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, `parent` (a marcação do canvas que contém o container, ou `null`) e as marcações de primeiro nível.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -540,7 +552,7 @@ export function registerTools(
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação (mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
+        'Devolve, como imagem, o recorte de uma marcação de container (a marcação do canvas e a seta falham com `canvas-marking` e `arrow`) (mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -584,6 +596,15 @@ export function registerTools(
         }
         const marking = projectIndex(item.refs.project).markings.get(item.id);
         if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
+        if (marking.containerId === null) {
+          throw new ToolError(
+            'canvas-marking',
+            'a marcação do canvas não tem imagem: ela não pertence a um container',
+            {
+              hint: 'use get_container_file dos containers sob ela (`members` de get_marking), ou get_marking_image de uma marcação de dentro de um container',
+            },
+          );
+        }
         return markingImage(roots, item.refs, marking, options, images);
       }),
   );

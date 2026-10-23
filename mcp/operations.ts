@@ -414,7 +414,19 @@ export const operationSchema = z.discriminatedUnion('op', [
     rect: rect
       .optional()
       .describe(
-        'Novo retângulo (as filhas não se movem e precisam continuar dentro; numa marcação que desenha um componente, respeita o `minSize` dele).',
+        'Novo retângulo (as filhas não se movem e precisam continuar dentro; numa marcação que desenha um componente, respeita o `minSize` dele). Sem `container`, vale no espaço atual da marcação; com `container`, nos pixels do container novo (no canvas, em unidades do canvas).',
+      ),
+    container: item('Container novo')
+      .nullable()
+      .optional()
+      .describe(
+        'Troca o espaço da marcação: o container novo, ou `null` para o canvas. Exige `rect` nos pixels dele (no canvas, em unidades do canvas). O pai e o espaço das demais saem da geometria (um retângulo do canvas que cabe inteiro num container passa a ser dele). A marcação flutuante só vive no canvas. Geometria trancada falha com `locked`.',
+      ),
+    floating: z
+      .boolean()
+      .optional()
+      .describe(
+        '`true` torna a marcação flutuante (comentário sobre o canvas): ela sai do container e passa ao canvas, com o `rect` convertido. `false` deixa de ser flutuante (o container que a contém inteira a recebe). Exige a geometria destrancada.',
       ),
     move: z
       .object({ dx: int, dy: int })
