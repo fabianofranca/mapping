@@ -2,6 +2,7 @@ import {
   ancestorsOf,
   annotationShortLabel,
   formatRef,
+  markingTypeName,
   matchShortCode,
   parseRef,
   projectIndex,
@@ -81,13 +82,18 @@ export class Refs {
     return `${this.markingName(arrow.from)} → ${this.markingName(arrow.to)}`;
   }
 
-  /** Nome da marcação; sem nome, "Marcação <código>" (único no projeto). */
+  /**
+   * Nome da marcação; sem nome, "<Tipo> <código>" se ela desenha um tipo de componente (uma
+   * instância nasce sem nome), senão "Marcação <código>". O código mantém o nome único.
+   */
   markingName(markingId: string): string {
     if (projectIndex(this.project).arrows.has(markingId))
       return this.arrowName(markingId);
     const marking = projectIndex(this.project).markings.get(markingId);
     if (!marking) return markingId;
-    return marking.name ?? `Marcação ${shortCode(this.project, 'm', markingId)}`;
+    if (marking.name !== null) return marking.name;
+    const code = shortCode(this.project, 'm', markingId);
+    return `${markingTypeName(this.project, markingId) ?? 'Marcação'} ${code}`;
   }
 
   /** `Container › Pai › Marcação` (`Canvas › Pai › Marcação` no canvas): o mesmo texto entre parênteses das referências copiadas. */

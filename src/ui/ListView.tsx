@@ -165,7 +165,9 @@ export function ListView({ onSelect }: ListViewProps) {
                   const ownerId = arrow?.id ?? marking.id;
                   const label = arrow
                     ? arrowShort(project, arrow)
-                    : path.map(markingLabel).join(t('marking.pathSeparator'));
+                    : path
+                        .map((m) => markingLabel(project, m))
+                        .join(t('marking.pathSeparator'));
                   return rowsOf(listed).map((row, i) => (
                     <tr
                       key={`${ownerId}:${row.kind === 'empty' ? '' : `${row.kind}:${row.annotation.id}`}`}

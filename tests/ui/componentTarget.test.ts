@@ -1,10 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { MarkingComponent } from '../../src/model';
+import type { Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { addLabel, slotTargetName } from '../../src/ui/componentTarget';
+import { marking, sampleProject } from '../model/fixtures';
+import { withNoteInstance } from '../model/notesFixtures';
 
-// Rótulo do Adicionar com destino num componente com slot (rodada do Cowork da ME2, R12.12).
-const card = { type: { name: 'Card' } } as Pick<MarkingComponent, 'type'>;
+// Rótulo do Adicionar com destino num componente com slot (rodada do Cowork da ME2, R12.12):
+// reaproveita o rótulo da marcação (nome; sem nome, o do tipo que ela desenha).
+function project(): Project {
+  return withNoteInstance(sampleProject());
+}
 
 describe('rótulo do Adicionar dentro de um componente com slot', () => {
   afterEach(() => {
@@ -12,24 +17,29 @@ describe('rótulo do Adicionar dentro de um componente com slot', () => {
   });
 
   it('usa o nome da marcação quando ela tem nome', () => {
-    expect(slotTargetName({ name: 'Lista de produtos' }, card)).toBe('Lista de produtos');
+    const p = project();
+    expect(slotTargetName(p, { id: 'N1', name: 'Lista de produtos' })).toBe(
+      'Lista de produtos',
+    );
   });
 
   it('sem nome, usa o nome do tipo que a instância desenha', () => {
     locale.value = 'pt-BR';
-    const name = slotTargetName({ name: null }, card);
-    expect(name).toBe('Card');
+    const p = project();
+    const name = slotTargetName(p, marking(p, 'N1'));
+    expect(name).toBe('Nota');
     expect(
       addLabel({ containerId: 'A', parentId: 'M', destination: { kind: 'slot', name } }),
-    ).toBe('Adicionar dentro de Card');
+    ).toBe('Adicionar dentro de Nota');
     locale.value = 'en-US';
     expect(
       addLabel({ containerId: 'A', parentId: 'M', destination: { kind: 'slot', name } }),
-    ).toBe('Add inside Card');
+    ).toBe('Add inside Nota');
   });
 
-  it('sem nome e sem componente, mantém o nome padrão', () => {
+  it('sem nome e sem tipo de componente, mantém o nome padrão', () => {
     locale.value = 'pt-BR';
-    expect(slotTargetName({ name: null }, null)).toBe('Marcação sem nome');
+    const p = project();
+    expect(slotTargetName(p, marking(p, 'M4'))).toBe('Marcação sem nome');
   });
 });

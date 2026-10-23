@@ -104,7 +104,7 @@ export function MarkingPanel({
   const lockNotice = marking.locked
     ? t('lock.markingNotice')
     : lockedAncestor
-      ? t('lock.inheritedNotice', { parent: markingLabel(lockedAncestor) })
+      ? t('lock.inheritedNotice', { parent: markingLabel(project, lockedAncestor) })
       : null;
 
   const rectField = (key: keyof Rect, short: string, label: string) => (
@@ -154,14 +154,16 @@ export function MarkingPanel({
   );
   const where = [
     containerName,
-    ...ancestorsOf(project, marking.id).reverse().map(markingLabel),
+    ...ancestorsOf(project, marking.id)
+      .reverse()
+      .map((m) => markingLabel(project, m)),
   ].join(t('marking.pathSeparator'));
 
   return (
     <div class="panel-details">
       <DetailsIdentity
         icon="marking"
-        name={markingLabel(marking)}
+        name={markingLabel(project, marking)}
         sub={t('marking.inImage', { file: where })}
         id={marking.id}
         flags={identity?.flags}
@@ -236,7 +238,7 @@ export function MarkingPanel({
           </Property>
           <Property label={t('marking.parent')}>
             <span class="props-text">
-              {parent ? markingLabel(parent) : t('marking.noParent')}
+              {parent ? markingLabel(project, parent) : t('marking.noParent')}
             </span>
           </Property>
           {/* Qualquer marcação pode virar flutuante: sai do container e passa ao canvas (decisão 10). */}
