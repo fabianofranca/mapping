@@ -1587,7 +1587,7 @@ class Batch {
         nearRect = placeFloatingNear(p, target, size);
       } else {
         notes.push(
-          '`near` só vale para um tipo de anotação flutuante, sem `container`: foi ignorado',
+          '`near` só vale para um tipo de anotação flutuante, sem `container`: foi ignorado (para colocar a marcação num container, use `container` e `rect`)',
         );
       }
     }

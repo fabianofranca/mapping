@@ -540,6 +540,10 @@ test('selo da especialização dentro da linha com a janela Camadas baixa', asyn
     const [r, b] = await Promise.all([row.boundingBox(), badge.boundingBox()]);
     if (!r || !b) continue; // fora da área visível da lista (que rola)
     expect(b.y + b.height).toBeLessThanOrEqual(r.y + r.height + 0.5);
+    // O nome da especialização aparece inteiro (a dica só cobre o que não couber no painel).
+    expect(
+      await badge.evaluate((e) => e.scrollWidth - e.clientWidth),
+    ).toBeLessThanOrEqual(1);
   }
 });
 

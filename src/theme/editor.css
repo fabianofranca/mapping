@@ -337,6 +337,40 @@
   padding: 0 var(--space-3) var(--space-3);
 }
 
+/*
+ * Janela inferior: as abas nunca encolhem nem rolam; quando as ações do cabeçalho não
+ * cabem ao lado, quebram para uma linha própria, à direita, sem cobrir nenhuma aba.
+ */
+.tool-window-bottom .tool-window-head {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  height: auto;
+  min-height: var(--size-tw-header);
+  padding: 0 var(--space-1) 0 0;
+}
+
+.tool-window-bottom .tool-window-tabs {
+  flex: 1 0 auto;
+  max-width: 100%;
+  min-height: var(--size-tw-header);
+}
+
+/* Largura menor que as abas: a faixa rola (herdado), mas nunca encolhe abaixo do conteúdo no layout. */
+.tool-window-bottom .tool-window-tabs .tabs {
+  flex: 1 1 auto;
+  gap: 0;
+}
+
+/* Abas mais justas: as quatro cabem na largura mínima do canvas (`--size-canvas-min`). */
+.tool-window-bottom .tool-window-tabs .tab {
+  padding: 0 var(--space-1);
+}
+
+.tool-window-bottom .tool-window-tabs .tab-badge,
+.tool-window-bottom .tool-window-tabs .tab-alert {
+  margin-left: var(--space-1);
+}
+
 /* As tabelas da janela inferior ocupam a largura toda. */
 .tool-window-bottom .tool-window-body {
   padding: 0;
