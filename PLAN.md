@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje nenhuma etapa em andamento; a Marcações espaciais, notas e setas foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje em andamento a etapa **Proposto com componentes**, épico `epic/proposto-componentes`; a Marcações espaciais, notas e setas foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -63,7 +63,81 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 ---
 
-## Etapa — Marcações espaciais, notas e setas (concluída, épico `epic/marcacoes-espaciais`)
+## Etapa — Marcações espaciais, notas e setas (concluída)
 
-> Fases ME0 a ME5 entregues no épico (schema v13, especialização `formatVersion` 7, proposta `formatVersion` 3, componente `formatVersion` 2 e MCP 0.9.0). O objetivo, os conceitos, as 14 decisões, as regras de contenção, a revisão adversarial, as fases ME0 a ME4, as decisões consolidadas dos PRs e o que ficou para depois estão em [`docs/history/PLAN-etapa-marcacoes-espaciais.md`](docs/history/PLAN-etapa-marcacoes-espaciais.md). O protocolo da cascata noturna e do gerente da manhã está em `docs/history/PLAN-etapa-marcacoes-espaciais.md`, seção "Execução em cascata"; uma nova cascata o copia para o `PLAN.md` ao detalhar a etapa.
+Histórico completo (fases ME0 a ME5, decisões, regras de contenção, cascata noturna e o que ficou para depois) em [`docs/history/PLAN-etapa-marcacoes-espaciais.md`](docs/history/PLAN-etapa-marcacoes-espaciais.md).
 
+## Etapa — Proposto com componentes (épico `epic/proposto-componentes`)
+
+### Objetivo
+
+Na revisão de propostas, a visão **Proposto** desenha os componentes que a proposta cria, com as marcas de revisão aprovadas pelo dono em 2026-10-24 (design system Mapping, seção "Revisão de propostas" › "Componentes novos na visão Proposto"; referência visual no canvas "Mapping — Proposto com componentes"). Nada de schema, formato de proposta nem MCP muda: é só desenho na app (o MCP fica 0.9.0, sem snapshot de versão nova e sem rótulo `mcp-rc`).
+
+### Diagnóstico (2026-10-24)
+
+- O derivado já desenha no Proposto as marcações novas de tipos que o catálogo conhece: `componentScenes` (`src/store/derived.ts`) lê o projeto à vista (`review.derived.shownProject`, o `previewProject` da proposta) e um teste descartável confirmou a cena da marcação criada. O canvas recebe `drawingsOf(drawnProject)` (`src/canvas/CanvasController.ts`).
+- A limitação registrada na B4 (PR #174, "Visão Proposto não desenha os componentes novos") é o **catálogo**: `createComponentLibrary` (`src/store/componentLibrary.ts`, criado em `src/store/session.ts` por volta da linha 355) carrega os componentes das especializações do projeto **confirmado** (`store.committed`), lidos de `specs/<id>/`. Os tipos e versões que a proposta traz no pacote dela (`proposals/<id>/<dir>/`, mudança `specialization` de criar ou atualizar; ver `proposalPackageDir` e o trecho de `packages` em `src/model/proposalApply.ts`) não entram no catálogo, então as marcações desses tipos ficam sem desenho até aplicar.
+- O cache por marcação (`createDrawingCache`, `src/model/componentDrawings.ts`) compara o `component` por identidade: um catálogo do Proposto que reaproveita os mesmos objetos de componente das especializações que a proposta não muda mantém as cenas das demais marcações.
+- A regra do fantasma da criação rejeitada está em `src/canvas/reviewMarks.ts` (hoje só na visão Atual); o desenho da linha tracejada 6/4, da pontilhada e dos selos está em `src/canvas/renderers/review.ts`; a legenda usa a chave `review.legend.rejected` em `src/i18n/pt-BR.ts` e `src/i18n/en-US.ts`.
+
+### Regras (aprovadas pelo dono em 2026-10-24)
+
+- **Pendente, visão Proposto:** desenho inteiro, com os valores propostos, e a marca de criada por cima (linha tracejada 6/4 e selo "+" sobre `cv-badge`, como hoje).
+- **Aceita, visão Proposto:** igual à pendente; a decisão aparece só no `DecisionMark` (Detalhes, Árvore, janela Propostas), não no canvas.
+- **Rejeitada, visão Proposto:** sem desenho; só o fantasma pontilhado 1,5/2,5 com o nome e o selo ✕.
+- **Inválida** (no conjunto que bloqueia Aplicar): desenho com a linha `cv-invalid` e o selo de inválida.
+- **Visão Atual:** o componente criado não aparece (como hoje).
+- **Componente existente alterado:** continua desenhado com os valores propostos e a linha dupla de alterada.
+- **Campo obrigatório faltando num componente novo:** o desenho mostra o reservado/nó desconhecido como o canvas já faz, e a marcação leva a pendência de incompleta de sempre.
+
+### Decisões do plano (do coordenador, a confirmar pelo dono)
+
+1. **Catálogo do Proposto.** Na visão Proposto, com uma proposta aberta que cria ou atualiza especializações (mudança não rejeitada e não aplicada), o catálogo lido pelo derivado é o do projeto confirmado mais os componentes dos pacotes da proposta, lidos de `proposals/<id>/<dir>/` pelo mesmo carregador (`loadSpecComponents`), sem gravar nada. Na visão Atual e fora da revisão, o catálogo é o de hoje. Os componentes das especializações que a proposta não muda são os mesmos objetos (o cache por marcação vale). Enquanto o pacote proposto carrega, as marcações dele ficam sem desenho, como no carregamento do catálogo hoje. As fontes do pacote proposto entram pelo mesmo registro de fontes.
+2. **Fantasma da criação rejeitada nas duas visões.** O fantasma pontilhado com nome e ✕ passa a aparecer na visão Proposto e continua na Atual (que já o mostra); a legenda `review.legend.rejected` deixa de dizer "(só em Atual)". A regra vale para toda marcação criada e rejeitada, com ou sem componente (`reviewMarks` não distingue).
+3. **Tipo de especialização rejeitada.** Se a mudança da especialização for rejeitada e a da marcação não, a marcação aparece no Proposto sem desenho (o tipo não está no catálogo), com a pendência que o modelo já dá; não há regra nova.
+4. A visão Proposto continua somente leitura e sem gesto: o desenho só reinstancia quando a proposta, a decisão ou a visão mudam, nunca a cada quadro.
+
+### Fluxo, coordenador e esforço
+
+- **Fluxo:** épico `epic/proposto-componentes` a partir da `main`; cada fase é um branch curto com PR com base no épico, na ordem PC1 → PC2; o PR do épico para a `main` fica aberto até o fim. Gates antes de cada PR: `npm run lint && npm run typecheck && npm test && npm run build`. Descrição do PR com Resumo, Como testar e Decisões tomadas; checkboxes marcados no mesmo PR. Sem mudança de MCP: nenhum rótulo `mcp-rc`.
+- **Coordenador e esforço por fase** (regra da seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md); a sessão confere o modelo antes de começar a fase). Os subagentes são sempre Sonnet (produção) e Haiku (mecânico):
+
+| Fase | Coordenador | Esforço do coordenador | Subagentes                                                              |
+| ---- | ----------- | ---------------------- | ----------------------------------------------------------------------- |
+| PC1  | Opus        | high                   | Sonnet medium (high no briefing do catálogo do Proposto); mecânicos Haiku low |
+| PC2  | Opus        | medium                 | Sonnet medium; mecânicos Haiku low                                      |
+
+### Fases
+
+#### PC1 — Catálogo do Proposto e desenho dos componentes novos (pendente, aceita, inválida, alterada)
+
+**Coordenador:** Opus. **Esforço:** high; subagentes Sonnet medium (high no briefing do catálogo do Proposto); mecânicos Haiku low.
+
+**Toca em (aproximado):** `src/store/componentLibrary.ts`, `src/store/session.ts`, `src/store/derived.ts` (o derivado recebe o catálogo da visão), `src/store/review.ts` se precisar, `src/canvas/CanvasController.ts` só se precisar, `src/storage/` (ler o pacote em `proposals/<id>/`, pasta e zip), `tests/store/`, `tests/canvas/`, `tests/canvas/renderPerformance.test.ts`, `tests/e2e/`, `docs/ARCHITECTURE.md` (uma linha sobre o catálogo do Proposto).
+
+- [ ] Proposta que cria marcações de um tipo já aplicado: o Proposto desenha cada uma com os valores propostos, a linha tracejada e o selo "+" (teste de canvas)
+- [ ] Proposta que traz um pacote novo ou atualizado: os componentes dos tipos novos ou da versão nova aparecem no Proposto e não na Atual; nada é gravado em `specs/` antes de aplicar (testes de store e de canvas)
+- [ ] Aceita igual à pendente no canvas (teste); inválida com a linha `cv-invalid` e o selo de inválida, com desenho (teste)
+- [ ] Componente existente alterado desenhado com os valores propostos e a linha dupla (teste que garante o que já funciona)
+- [ ] Campo obrigatório faltando num componente novo: reservado/nó desconhecido no desenho e a pendência de incompleta (teste)
+- [ ] Visão Atual não desenha o componente criado (teste)
+- [ ] Cache: trocar de visão ou decidir uma mudança não reinstancia as marcações que não mudaram (identidade da cena), e pan/zoom não reinstanciam nada (teste)
+- [ ] Orçamento de desempenho: uma proposta com dezenas de componentes novos (por exemplo, 60) dentro do orçamento de quadro, no padrão de `tests/canvas/renderPerformance.test.ts` (roda no `npm run test:perf`)
+- [ ] E2E: no padrão dos testes da revisão em `tests/e2e/` (o host do canvas publica `data-components`), abrir uma proposta com componentes novos e conferir a contagem no Proposto e na Atual
+- [ ] `npm run lint && npm run typecheck && npm test && npm run build` passam
+
+#### PC2 — Fantasma da criação rejeitada no Proposto, legenda, roteiro e fechamento
+
+**Coordenador:** Opus. **Esforço:** medium; subagentes Sonnet medium; mecânicos Haiku low.
+
+**Toca em:** `src/canvas/reviewMarks.ts`, `src/i18n/pt-BR.ts`, `src/i18n/en-US.ts`, `tests/canvas/reviewMarks.test.ts`, `tests/canvas/renderers/review.test.ts`, `docs/PROPOSAL-FORMAT.md` ou `docs/ARCHITECTURE.md` se citarem a regra antiga, `docs/TESTING.md` (seção 8), `docs/history/`, `PLAN.md`, `docs/ROADMAP.md`, `CLAUDE.md`.
+
+- [ ] Criação rejeitada: no Proposto, sem desenho e com o fantasma pontilhado 1,5/2,5, o nome e o selo ✕; na Atual, o fantasma continua (testes unitários de `reviewMarks` por estado e visão: pendente, aceita, rejeitada, inválida, alterada, nas duas visões)
+- [ ] `review.legend.rejected` em pt-BR e en-US sem "(só em Atual)"
+- [ ] Roteiro novo no `docs/TESTING.md`, seção 8, executável pelo Cowork sozinho (extensão do navegador e shell; proposta preparada com um componente novo pendente, um aceito, um rejeitado, um inválido e um existente alterado), seguindo as convenções da seção 8
+- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-proposto-componentes.md` com as decisões consolidadas dos PRs; `PLAN.md` sem etapa em andamento; `docs/ROADMAP.md` (tira "a visão Proposto desenhar componentes novos" de "o que a Biblioteca deixou" e registra a etapa concluída) e `CLAUDE.md` (etapa atual) atualizados
+- [ ] `npm run lint && npm run typecheck && npm test && npm run build` passam
+
+### Fora do escopo
+
+Mudança de schema, de formato de proposta ou do MCP; desenhar componentes na visão Atual; regras novas para imagens criadas ou removidas.
