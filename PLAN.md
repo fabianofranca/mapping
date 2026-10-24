@@ -132,9 +132,9 @@ Na revisão de propostas, a visão **Proposto** desenha os componentes que a pro
 
 **Toca em:** `src/canvas/reviewMarks.ts`, `src/i18n/pt-BR.ts`, `src/i18n/en-US.ts`, `tests/canvas/reviewMarks.test.ts`, `tests/canvas/renderers/review.test.ts`, `docs/PROPOSAL-FORMAT.md` ou `docs/ARCHITECTURE.md` se citarem a regra antiga, `docs/TESTING.md` (seção 8), `docs/history/`, `PLAN.md`, `docs/ROADMAP.md`, `CLAUDE.md`.
 
-- [ ] Criação rejeitada: no Proposto, sem desenho e com o fantasma pontilhado 1,5/2,5, o nome e o selo ✕; na Atual, o fantasma continua (testes unitários de `reviewMarks` por estado e visão: pendente, aceita, rejeitada, inválida, alterada, nas duas visões)
-- [ ] `review.legend.rejected` em pt-BR e en-US sem "(só em Atual)"
-- [ ] Roteiro novo no `docs/TESTING.md`, seção 8, executável pelo Cowork sozinho (extensão do navegador e shell; proposta preparada com um componente novo pendente, um aceito, um rejeitado, um inválido e um existente alterado), seguindo as convenções da seção 8
+- [x] Criação rejeitada: no Proposto, sem desenho e com o fantasma pontilhado 1,5/2,5, o nome e o selo ✕; na Atual, o fantasma continua (testes unitários de `reviewMarks` por estado e visão: pendente, aceita, rejeitada, inválida, alterada, nas duas visões)
+- [x] `review.legend.rejected` em pt-BR e en-US sem "(só em Atual)"
+- [x] Roteiro novo no `docs/TESTING.md`, seção 8, executável pelo Cowork sozinho (extensão do navegador e shell; proposta preparada com um componente novo pendente, um aceito, um rejeitado, um inválido e um existente alterado), seguindo as convenções da seção 8
 - [ ] Rodada dirigida do Cowork só com o desenvolvimento completo (PC1 mesclada e a PC2 pronta, no preview do PR da PC2), com o prompt de `docs/TESTING-COWORK.md` apontando para o roteiro novo (e os roteiros da revisão que a etapa toca); relato em `docs/history/relato-<data>-proposto-componentes.md` e achados corrigidos antes do fechamento
 - [ ] Fechamento (depois da rodada do Cowork): histórico em `docs/history/PLAN-etapa-proposto-componentes.md` com as decisões consolidadas dos PRs; `PLAN.md` sem etapa em andamento; `docs/ROADMAP.md` (tira "a visão Proposto desenhar componentes novos" de "o que a Biblioteca deixou" e registra a etapa concluída) e `CLAUDE.md` (etapa atual) atualizados
 - [ ] `npm run lint && npm run typecheck && npm test && npm run build` passam

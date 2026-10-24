@@ -24,6 +24,7 @@ import {
   type ComponentCatalog,
   type Project,
   type Proposal,
+  markingTypeName,
 } from '../../src/model';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
@@ -302,6 +303,27 @@ describe('CanvasController: visão Proposto com componentes', () => {
     expect(t.drawing('N1')).toBeUndefined();
     expect(t.container.dataset.components).toBe('1');
     expect(t.marks()?.markings.has('N1')).toBe(false);
+    t.controller.destroy();
+  });
+
+  it('criação rejeitada: sem desenho do componente e com o fantasma nas duas visões', async () => {
+    const { base, catalog, proposal } = scenario();
+    const changeId = changeOf(proposal, 'marking', 'N1').id;
+    // O nome do fantasma é o do tipo do componente, como a Árvore mostra a instância sem nome.
+    const typeName = markingTypeName(base, 'T1');
+    expect(typeName).toBeTruthy();
+    const t = await setup(base, catalog, proposal, async (review) => {
+      await review.decide({ level: 'change', id: changeId }, 'rejected');
+    });
+    for (const view of ['proposed', 'current'] as const) {
+      t.show(view);
+      expect(t.drawing('N1')).toBeUndefined();
+      expect(t.container.dataset.components).toBe('1');
+      expect(t.marks()?.markings.has('N1')).toBe(false);
+      expect(t.marks()?.ghosts.map((g) => [g.key, g.name, g.badges])).toEqual([
+        ['rejected:N1', typeName, ['rejected']],
+      ]);
+    }
     t.controller.destroy();
   });
 

@@ -143,4 +143,33 @@ describe('ReviewRenderer', () => {
     renderer.render(frame(null), PLACEMENTS);
     expect(layer.getChildren()).toHaveLength(0);
   });
+
+  it('fantasma da criação rejeitada na visão Proposto: pontilhado 1,5/2,5, nome e selo ✕', () => {
+    const { frame } = setup();
+    const layer = new Konva.Layer();
+    const renderer = new ReviewRenderer(layer);
+    renderer.render(
+      frame(
+        review({
+          view: 'proposed',
+          ghosts: [
+            {
+              key: 'rejected:M7',
+              placement: { x: 0, y: 0, scale: 1 },
+              rect: { x: 20, y: 30, width: 120, height: 80 },
+              name: 'Novo',
+              badges: ['rejected'],
+            },
+          ],
+        }),
+      ),
+      PLACEMENTS,
+    );
+    const ghost = layer
+      .find('Rect')
+      .find((r) => r.getAttr('x') === 20 && r.getAttr('stroke') === TOKENS.line);
+    expect(ghost?.getAttr('dash')).toEqual([1.5, 2.5]);
+    expect(layer.find('Text').map((t) => t.getAttr('text'))).toContain('Novo');
+    expect(layer.find('Rect').some((r) => r.getAttr('fill') === TOKENS.badge)).toBe(true);
+  });
 });

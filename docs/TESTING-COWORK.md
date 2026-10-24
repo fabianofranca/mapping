@@ -27,8 +27,9 @@ Se a mensagem do dono for só um link de PR do Mapping ("Teste <link>"), trate c
 > - **Rodada dirigida por achados de um relato:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: os achados 2 a 15 de `docs/history/relato-2026-10-11.md`." (vale número de achado ou código, como "A1 a A3 e G1 a G4")
 > - **Rodada dirigida por lista de passos:** "… no modo dirigido: R0, R4.1 a R4.5 e R6.8a a R6.11."
 > - **Rodada dirigida pelas fases de um plano:** "… no modo dirigido: as fases 7.1 e 7.2 de `docs/history/PLAN-etapa-7.md`."
-> - **Rodada dirigida da etapa 9 (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da etapa 9 (seção 9 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
-> - **Rodada dirigida da etapa Código de instanciação (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da instanciação (seção 10 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Configurações."
+> - **Rodada dirigida da etapa 9:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da etapa 9 (seção 9 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
+> - **Rodada dirigida da etapa Código de instanciação:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da instanciação (seção 10 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Configurações."
+> - **Rodada dirigida da etapa Proposto com componentes (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida do Proposto com componentes (seção 11 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
 > - **Sessão sob demanda (roteiro manual):** "Leia `docs/TESTING-COWORK.md` e execute a **sessão sob demanda: RP**. Build id esperado: `abc1234 · AAAA-MM-DD`." (seção 5; só quando o dono pedir, citando o roteiro)
 
 - **Rodada sem interação (o dono só deixa a janela do Chrome na frente):** "Leia `docs/TESTING-COWORK.md` e execute **sem interação**: rodada completa. Build id esperado: `abc1234 · AAAA-MM-DD`." (vale também no modo dirigido, com o alvo)
@@ -55,7 +56,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 
 ## 2. Antes de começar
 
-0. **Disco primeiro.** Chame `get_device_info`. Se `connectedFolders` não tiver `mapping-testes`, chame `device_request_folder_access` com `["~/mapping-testes"]` e o motivo "criar a pasta da rodada com o pacote e as cópias que os roteiros pedem". Guarde o caminho concedido: ele já vem no formato do Windows (`C:\Users\<usuário>\mapping-testes`) e é a base de todo `select_folder` e `open_file`. Na shell (`device_bash`, em `$HOME/mnt/mapping-testes`), crie `<AAAA-MM-DD>-<alvo>/` e traga o repositório do branch em teste: `git init repo && cd repo && git fetch --depth 1 https://github.com/fabianofranca/mapping pull/<n>/head && git checkout FETCH_HEAD` (a VM tem rede para o GitHub). Copie para a pasta da rodada só o que os roteiros pedem (`examples/libraries/material3`, `examples/specs/*.json`, `examples/proposta-exemplo.zip`). Nunca peça ao dono o caminho de um arquivo do repositório.
+0. **Disco primeiro.** Chame `get_device_info`. Se `connectedFolders` não tiver `mapping-testes`, chame `device_request_folder_access` com `["~/mapping-testes"]` e o motivo "criar a pasta da rodada com o pacote e as cópias que os roteiros pedem". Guarde o caminho concedido: ele já vem no formato do Windows (`C:\Users\<usuário>\mapping-testes`) e é a base de todo `select_folder` e `open_file`. Na shell (`device_bash`, em `$HOME/mnt/mapping-testes`), crie `<AAAA-MM-DD>-<alvo>/` e traga o repositório do branch em teste: `git init repo && cd repo && git fetch --depth 1 https://github.com/fabianofranca/mapping pull/<n>/head && git checkout FETCH_HEAD` (a VM tem rede para o GitHub). Copie para a pasta da rodada só o que os roteiros pedem (`examples/libraries/material3`, `examples/specs/*.json`, `examples/proposta-exemplo.zip`, `examples/proposta-componentes.zip`). Nunca peça ao dono o caminho de um arquivo do repositório.
 1. Leia `docs/TESTING.md` inteiro, **com o apêndice A** (como agir sendo um agente) e o apêndice B (operações de disco). É a fonte da verdade dos passos, dos resultados esperados, dos nomes da interface e do template do relato. Este prompt não repete o guia.
 2. Veja na mensagem do dono o **modo** (completo, que é o padrão, ou dirigido, com o alvo), se é **sem interação** e a lista da passada visual, se houver. Se tiver dúvida, pergunte.
 3. **Confira sozinho o que dá para conferir**, antes de perguntar qualquer coisa:
@@ -101,7 +102,7 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 
 ## 5. O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, R0 a R12 (**sem o RP**), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
+**Rodada completa (padrão).** Todos os roteiros, R0 a R13 (**sem o RP**), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
 
 **Rodada dirigida.** O dono aponta o alvo de um destes três jeitos:
 
@@ -198,3 +199,34 @@ As fases C1 a C4 do épico `epic/instanciacao` (histórico em [`docs/history/PLA
 | R5.3                     | C3     | Decisões e notas pelo painel com o MCP 0.6.0 (a proposta lida e aplicada com a forma nova das respostas)                                                                                         |
 
 **Relato:** o mesmo template, em `docs/history/relato-<data>-instanciacao.md`; use o código da fase (C1 a C3) na coluna **Achado de origem**. **Registre a resposta literal à pergunta de conceito** e diga se passou ou reprovou pelo critério do R3.6. Se algo da lista não puder ser executado, marque "não executado (motivo)".
+
+---
+
+## 11. Rodada dirigida da etapa Proposto com componentes
+
+As fases PC1 e PC2 do épico `epic/proposto-componentes` (etapa descrita no [`PLAN.md`](../PLAN.md); o histórico vai para `docs/history/PLAN-etapa-proposto-componentes.md` quando a etapa fechar) fizeram a visão **Proposto** da revisão desenhar os componentes que a proposta cria (pendente, aceito, inválido, de um pacote que a proposta traz), deixar a criação **rejeitada** só como fantasma pontilhado com o nome e o ✕ (nas duas visões) e tirar o "(só em Atual)" da legenda. Nada de schema, formato de proposta nem MCP mudou (MCP 0.9.0): é só desenho na app. Vale como o modo dirigido "pelas fases de um plano", sobre o **preview do PR da PC2** (a PC1 já está mesclada no épico; o preview é publicado sozinho a cada PR aberto ou atualizado, seção 2, item 9).
+
+**Antes de começar**
+
+- O **build id** esperado é o do commit do PR da PC2 (a PC2 contém a PC1, pelo épico). Confira em **Configurações** › **Sobre**; se o preview mostrar outro build, siga o item 9 da seção 2 (dispare o Deploy do branch).
+- **Sem MCP:** nenhum passo desta rodada usa o MCP nem o Claude Code. O `mapping-mcp.js` e a seção 6 do guia não são necessários.
+- O arquivo da rodada é o `examples/proposta-componentes.zip` (copie para a pasta da rodada, seção 2, item 0). Ele é gerado por `npm run build:proposal-components` e conferido por teste: **não o regenere nem o edite**; se algo no conteúdo do zip não bater com o texto do R13, registre como achado.
+- Os roteiros partem de projetos novos: o R4 usa o `proposta-exemplo.zip` e o R13, o `proposta-componentes.zip`, cada um abrindo uma cópia **Neste dispositivo**. Não reaproveite pastas de rodadas anteriores; registre em "Estado prévio do navegador" o que já existia.
+
+**Lista dirigida** (depois do **R0 inteiro**):
+
+| Passos        | Fase      | O que confere                                                                                                                                                                                      |
+| ------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R13.1 a R13.2 | PC1       | A revisão começa na visão **Proposto** e desenha os componentes que a proposta cria (`data-components` 6 na Proposto e 1 na Atual)                                                                 |
+| R13.3 a R13.4 | PC1       | Criado pendente e aceito: desenho inteiro, linha tracejada e selo **+**; a decisão só nas marcas de decisão                                                                                        |
+| R13.5 a R13.6 | PC2       | Criação rejeitada: sem desenho, só o fantasma pontilhado com o nome e o ✕, nas duas visões; legenda sem "(só em Atual)"                                                                            |
+| R13.7 a R13.9 | PC1       | Inválido (linha e selo de inválida, **Aplicar** bloqueado), existente alterado (linha dupla) e campo obrigatório faltando (reservado e pendência de incompleta)                                    |
+| R13.10        | PC1       | Componente de um tipo do pacote da proposta: desenhado no Proposto, ausente na Atual                                                                                                               |
+| R13.11        | PC1       | Nada é gravado em `specs/` nem no `mapping.json` enquanto a proposta não é aplicada                                                                                                                |
+| R13.12        | PC2       | A legenda em inglês (sem "Current only")                                                                                                                                                           |
+| R4.1 a R4.11  | regressão | A revisão que a etapa toca, sem componentes: a **Proposto** e a **Atual** (R4.3), o Banner promoção hachurado e as criações do Campo Cupom e da Confirmação, decisões, aplicar, desfazer e retomar |
+| R8.1b e R8.2  | regressão | Tema escuro e inglês na revisão (o fantasma e os selos legíveis nos dois temas)                                                                                                                    |
+
+Na **passada visual**, olhe com atenção o canvas na **Proposto** e na **Atual** nos temas claro e escuro: a linha tracejada de criada, o fantasma pontilhado do **Rejeitado** (nome legível, ✕ visível), a linha vermelha e o ⚠ do **Inválido**, a linha dupla do **Existente**, a legenda das marcas, os botões desenhados cortados ou sobrepostos pelos selos e o **Detalhes** com a marca de decisão. Em cada caso do R13, confira também a captura em zoom (`Ctrl+=`), não só o `data-components`.
+
+**Relato:** o mesmo template, em `docs/history/relato-<data>-proposto-componentes.md`; use o código da fase (PC1 ou PC2) na coluna **Achado de origem** e liste em "O que atrapalhou" o que o R13 deixou ambíguo (por exemplo, a posição de cada marcação no canvas ou o texto exato de uma dica). Se algo da lista não puder ser executado, marque "não executado (motivo)".
