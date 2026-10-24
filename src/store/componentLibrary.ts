@@ -100,7 +100,41 @@ function declaredFonts(p: Project | null): DeclaredFont[] {
   return out;
 }
 
-function sameCatalog(a: ComponentCatalog, b: ComponentCatalog): boolean {
+/**
+ * Lê os arquivos de componente que a especialização cita (`read` devolve o texto de um caminho
+ * da raiz do projeto, ou `null`) e monta os componentes. Quem lê decide de onde: `specs/<id>/`,
+ * a cópia em memória da sessão ou `proposals/<id>/` (catálogo do Proposto).
+ */
+export async function readSpecComponents(
+  spec: Spec,
+  specFile: string,
+  version: number,
+  read: (path: string) => Promise<string | null>,
+): Promise<SpecComponents> {
+  const texts = new Map<string, string>();
+  for (const path of componentPaths(spec, specFile)) {
+    const text = await read(path);
+    if (text !== null) texts.set(path, text);
+  }
+  return loadSpecComponents(spec, specFile, version, (path) => texts.get(path));
+}
+
+/** Entrada vazia com o motivo: sem ela, cada edição do projeto tentaria ler de novo. */
+export function failedComponents(
+  specId: string,
+  version: number,
+  error: unknown,
+): SpecComponents {
+  reportError('components.load', error);
+  return {
+    specId,
+    version,
+    byType: new Map(),
+    problems: [error instanceof Error ? error.message : String(error)],
+  };
+}
+
+export function sameCatalog(a: ComponentCatalog, b: ComponentCatalog): boolean {
   if (a.size !== b.size) return false;
   for (const [id, components] of a) if (b.get(id) !== components) return false;
   return true;
@@ -169,23 +203,11 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
     try {
       const spec = owner.spec;
       if (spec === null) return;
-      const texts = new Map<string, string>();
-      for (const path of componentPaths(spec, owner.file)) {
-        const text = await readText(owner, path);
-        if (text !== null) texts.set(path, text);
-      }
-      loaded = loadSpecComponents(spec, owner.file, owner.version, (path) =>
-        texts.get(path),
+      loaded = await readSpecComponents(spec, owner.file, owner.version, (path) =>
+        readText(owner, path),
       );
     } catch (error) {
-      reportError('components.load', error);
-      // Entrada vazia com o motivo: sem ela, cada edição do projeto tentaria ler de novo.
-      loaded = {
-        specId: owner.id,
-        version: owner.version,
-        byType: new Map(),
-        problems: [error instanceof Error ? error.message : String(error)],
-      };
+      loaded = failedComponents(owner.id, owner.version, error);
     } finally {
       if (run === current) loading.delete(key);
     }

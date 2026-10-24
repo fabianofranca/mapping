@@ -22,12 +22,14 @@ import {
   applySpecialization,
   createArrow,
   loadSpecComponents,
+  parseSpec,
   projectIndex,
   projectIssues,
   type ComponentCatalog,
   type Project,
 } from '../../src/model';
 import { signal } from '@preact/signals';
+import { specFiles } from '../../src/model';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { createProjectStore } from '../../src/store/history';
@@ -35,10 +37,13 @@ import { createProjectActions } from '../../src/store/project';
 import { textMeasurer } from '../../src/store/textMeasure';
 import { createEditorUi } from '../../src/store/ui';
 import { M3_SCREEN } from '../../lab/components/samplesMaterial3';
+import { SPEC_ID, SPEC_JSON, testCatalog } from '../model/componentFixtures';
 import { emptyProject } from '../model/fixtures';
+import { propose } from '../model/proposalFixtures';
+import { openHarness } from '../store/proposalHarness';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
-import { installFakeCanvas } from './harness';
+import { componentSources, installFakeCanvas } from './harness';
 
 // Orçamento de uma renderização do canvas (docs/history/PLAN-etapa-2-1.md 14.3) com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -493,6 +498,169 @@ describe('tela de componentes dentro do CanvasController (Material 3)', () => {
       };
       for (let i = 0; i < 3; i++) zoom();
       expect(medianOf(15, zoom)).toBeLessThan(RENDER_BUDGET_MS);
+      controller.destroy();
+    },
+  );
+});
+
+// Visão Proposto com 60 componentes novos (PC1): trocar para o Proposto instancia as 60 cenas
+// novas de uma vez (como o quadro inteiro da tela de componentes: 1,5x o quadro); pan e zoom
+// depois não reinstanciam nada e cabem no quadro. Texto de teste é mais leve que o Material 3,
+// então o limite é o mesmo do quadro inteiro, com folga.
+const PROPOSED_COUNT = 60;
+describe('visão Proposto com 60 componentes novos', () => {
+  const frames: FrameRequestCallback[] = [];
+  const flush = (): void => {
+    for (const frame of frames.splice(0)) frame(performance.now());
+  };
+
+  beforeAll(() => {
+    installFakeCanvas();
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      frames.push(cb);
+      return frames.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+  });
+  afterAll(() => {
+    textMeasurer.value = approximateMeasurer;
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  async function setup() {
+    const catalog = testCatalog();
+    const parsed = parseSpec(SPEC_JSON);
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    let n = 0;
+    let base = applySpecialization(emptyProject(), parsed.spec, {
+      newId: () => `LS${++n}`,
+      packageSpecName: 'test.spec.json',
+    });
+    base = addBackgroundContainer(base, {
+      id: 'B1',
+      width: 2000,
+      height: 2000,
+      background: '#FFFFFF',
+      center: { x: 1000, y: 1000 },
+    });
+    let after = base;
+    for (let i = 0; i < PROPOSED_COUNT; i++) {
+      after = addComponentMarking(
+        after,
+        catalog,
+        {
+          markingId: `N${i}`,
+          annotationId: `A_N${i}`,
+          containerId: 'B1',
+          parentId: null,
+          specId: SPEC_ID,
+          typeId: 'text',
+          rect: {
+            x: 20 + (i % 10) * 150,
+            y: 20 + Math.floor(i / 10) * 60,
+            width: 100,
+            height: 40,
+          },
+          values: { label: `Novo ${i}` },
+        },
+        approximateMeasurer,
+      );
+    }
+    const { session, review } = await openHarness({
+      project: base,
+      proposals: [propose(base, after)],
+      files: Object.fromEntries(specFiles(base)),
+    });
+    review.open('P1');
+    review.setView('current');
+    const sources = componentSources(catalog);
+    const ui = createEditorUi();
+    const derived = createEditorDerived(
+      session.store,
+      ui,
+      review.derived.shownProject,
+      sources,
+    );
+    const container = document.createElement('div');
+    Object.defineProperty(container, 'clientWidth', { value: 380 });
+    Object.defineProperty(container, 'clientHeight', { value: 700 });
+    document.body.append(container);
+    const controller = new CanvasController({
+      container,
+      store: session.store,
+      actions: session.actions,
+      display: createDisplayImages<ImageBitmap>(() => new Promise(() => undefined)),
+      ui,
+      derived,
+      view: createCanvasViewState(),
+      review,
+    });
+    flush();
+    return { controller, container, review, derived };
+  }
+
+  const medianOf = (runs: number, run: () => number): number => {
+    const times = Array.from({ length: runs }, run);
+    return [...times].sort((a, b) => a - b)[Math.floor(runs / 2)] ?? Number.NaN;
+  };
+
+  it('a troca para o Proposto desenha as 60 cenas novas e a Atual, nenhuma', async () => {
+    const { controller, container, review } = await setup();
+    expect(container.dataset.components).toBe('0');
+    review.setView('proposed');
+    flush();
+    expect(container.dataset.components).toBe(String(PROPOSED_COUNT));
+    review.setView('current');
+    flush();
+    expect(container.dataset.components).toBe('0');
+    controller.destroy();
+  });
+
+  budgetIt(
+    `trocar para o Proposto (${PROPOSED_COUNT} cenas novas) cabe em ${FULL_FRAME_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    async () => {
+      const { controller, review } = await setup();
+      const toggle = (): number => {
+        review.setView('current');
+        flush();
+        const start = performance.now();
+        review.setView('proposed'); // Reinstancia as 60 cenas (a Atual descartou o cache delas).
+        flush();
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 3; i++) toggle(); // Aquecimento.
+      expect(medianOf(11, toggle)).toBeLessThan(FULL_FRAME_BUDGET_MS);
+      controller.destroy();
+    },
+  );
+
+  budgetIt(
+    `pan e zoom no Proposto cabem em ${RENDER_BUDGET_MS} ms e não reinstanciam cenas`,
+    BUDGET_OPTIONS,
+    async () => {
+      const { controller, review, derived } = await setup();
+      review.setView('proposed');
+      flush();
+      const shown = (): ReturnType<typeof derived.drawingsOf> =>
+        derived.drawingsOf(review.derived.shownProject.value);
+      const before = new Map(shown());
+      expect(before.size).toBe(PROPOSED_COUNT);
+      const render = vi.spyOn(ComponentLayerRenderer.prototype, 'render');
+      let step = 0;
+      const frame = (): number => {
+        const start = performance.now();
+        controller.zoomBy(step++ % 2 === 0 ? 1.1 : 1 / 1.1);
+        controller.centerOnPoint({ x: 500 + step * 3, y: 500 });
+        flush();
+        return performance.now() - start;
+      };
+      for (let i = 0; i < 3; i++) frame();
+      expect(medianOf(15, frame)).toBeLessThan(RENDER_BUDGET_MS);
+      expect(render).not.toHaveBeenCalled();
+      for (const [id, scene] of before) expect(shown().get(id)).toBe(scene);
+      render.mockRestore();
       controller.destroy();
     },
   );

@@ -128,6 +128,25 @@ describe('reviewMarks', () => {
     ).toEqual({ line: 'invalid', dim: false, badges: ['invalid', 'moved'] });
   });
 
+  it('criada no Proposto: pendente e aceita dão a mesma marca; inválida troca a linha e soma o selo', () => {
+    const { base, proposal, ids } = richScenario();
+    const pending = marks(proposal, base, 'proposed').markings.get('M5');
+    const accepted = marks(
+      decided(proposal, base, { level: 'item', id: 'M5' }, 'accepted'),
+      base,
+      'proposed',
+    ).markings.get('M5');
+    expect(pending).toEqual({ line: 'created', dim: false, badges: ['created'] });
+    expect(accepted).toEqual(pending);
+    expect(
+      marks(proposal, base, 'proposed', { invalid: [ids.marking] }).markings.get('M5'),
+    ).toEqual({ line: 'invalid', dim: false, badges: ['invalid', 'created'] });
+    // Na visão Atual a criada não tem marca, inválida ou não.
+    expect(
+      marks(proposal, base, 'current', { invalid: [ids.marking] }).markings.has('M5'),
+    ).toBe(false);
+  });
+
   it('o "como ficaria" desenha a imagem nova do arquivo que espera em proposals/', () => {
     const { base, proposal } = richScenario();
     const preview = previewProject(base, proposal).project;
