@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addComponentMarking,
   approximateMeasurer,
   createMarking,
   imageCanvasRect,
@@ -9,12 +8,12 @@ import {
 } from '../../src/model';
 import { createProjectStore, type ProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
-import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
+import { testCatalog } from '../model/componentFixtures';
 import { marking } from '../model/fixtures';
 import { NOTES_SPEC_ID, notesCatalog, notesProject } from '../model/notesFixtures';
 
-// ME4: o `near` do addComponent (flutuante perto do alvo) e o container destacado, como
-// actions do store (uma entrada de desfazer cada).
+// ME4: o `near` do addComponent (flutuante perto do alvo) como action do store (uma entrada
+// de desfazer).
 
 function setup(initial: Project, components = testCatalog()) {
   const store = createProjectStore({ now: () => '2026-10-01T00:00:00.000Z' });
@@ -81,61 +80,5 @@ describe('addComponent com near (tipo flutuante)', () => {
     const b = marking(current(store), second.value).rect;
     expect(b.x).toBe(a.x);
     expect(b.y).toBe(a.y + a.height + 24);
-  });
-});
-
-describe('detachMarking (container destacado)', () => {
-  it('sem componente: container em branco, uma entrada de desfazer, devolve o id', () => {
-    const base = createMarking(componentProject(), {
-      id: 'M',
-      containerId: 'I1',
-      rect: { x: 10, y: 10, width: 300, height: 200 },
-      name: 'Cartão',
-    });
-    const { store, actions } = setup(base);
-    const result = actions.detachMarking('M');
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    const p = current(store);
-    expect(p.containers.find((c) => c.id === result.value)).toMatchObject({
-      file: null,
-      width: 300,
-      height: 200,
-    });
-    expect(p.markings).toHaveLength(1);
-    expect(undoDepth(store)).toBe(1);
-    store.undo();
-    expect(current(store).containers).toHaveLength(1);
-  });
-
-  it('com componente: leva a marcação e as anotações para o container novo', () => {
-    const base = addComponentMarking(
-      componentProject(),
-      testCatalog(),
-      {
-        markingId: 'T',
-        annotationId: 'AT',
-        containerId: 'I1',
-        parentId: null,
-        specId: SPEC_ID,
-        typeId: 'text',
-        rect: { x: 100, y: 100, width: 200, height: 60 },
-      },
-      approximateMeasurer,
-    );
-    const { store, actions } = setup(base);
-    const result = actions.detachMarking('T');
-    if (!result.ok) throw new Error('detachMarking');
-    const p = current(store);
-    const copy = p.markings.find((m) => m.containerId === result.value);
-    expect(copy?.rect).toEqual({ x: 0, y: 0, width: 200, height: 60 });
-    expect(p.annotations.filter((a) => a.markingId === copy!.id)).toHaveLength(1);
-    expect(undoDepth(store)).toBe(1);
-  });
-
-  it('marcação inexistente: erro e nenhuma entrada', () => {
-    const { store, actions } = setup(componentProject());
-    expect(actions.detachMarking('zz').ok).toBe(false);
-    expect(undoDepth(store)).toBe(0);
   });
 });
