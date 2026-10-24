@@ -36,6 +36,7 @@ npm run dev:lab:react # demonstração do visualizador embutível em React (lab/
 npm run build:viewer # gera dist-viewer/ (visualizador embutível: núcleo, invólucro React e tipos)
 npm run build:guia   # regera public/guia/index.html (o npm run build já faz)
 npm run build:example # regera examples/exemplo-completo.zip a partir da pasta
+npm run build:proposal-components # regera examples/proposta-componentes.zip (proposta com componentes novos, roteiro R13)
 ```
 
 ## Guia interativo e projeto de exemplo

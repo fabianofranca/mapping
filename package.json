@@ -23,6 +23,7 @@
     "build:mcp": "tsc --noEmit -p mcp/tsconfig.json && node mcp/build.mjs",
     "build:examples": "node scripts/buildLibraryExamples.mjs",
     "build:example": "node scripts/exampleProject.mjs",
+    "build:proposal-components": "node scripts/proposalComponents.mjs",
     "build:guia": "node scripts/buildGuia.mjs",
     "build:viewer": "node lab/viewer/build.mjs"
   },

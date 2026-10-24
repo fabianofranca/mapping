@@ -37,6 +37,8 @@ const SMALL_SIDE = 3 * REVIEW_KIND_BADGE;
 const HATCH_LIGHT = 2;
 const HATCH_DARK = 4;
 const GHOST_DASH = [1.5, 3];
+/** Fantasma da criação rejeitada: um pouco mais fechado que o da movida. */
+const REJECTED_GHOST_DASH = [1.5, 2.5];
 const CREATED_DASH = [6, 4];
 
 const GLYPHS: Readonly<Record<ReviewBadge, readonly string[]>> = {
@@ -288,7 +290,9 @@ export class ReviewRenderer {
     const rejected = shape.badges.includes('rejected');
     // Fantasma (posição antiga ou rejeitada): pontilhado e esmaecido.
     node.group.opacity(removed ? 1 : tokens.opacity.ancestor);
-    const dash = removed ? [] : GHOST_DASH.map((d) => d / zoom);
+    const dash = removed
+      ? []
+      : (rejected ? REJECTED_GHOST_DASH : GHOST_DASH).map((d) => d / zoom);
     node.halo.setAttrs({
       ...rect,
       stroke: tokens.halo,

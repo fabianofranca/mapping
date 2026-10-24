@@ -27,6 +27,7 @@ O guia segue o **tema da app**: lê `mapping.theme` do `localStorage` (mesma ori
 
 ```bash
 npm run build:example   # examples/exemplo-completo.zip, a partir da pasta
+npm run build:proposal-components # examples/proposta-componentes.zip (ver abaixo)
 npm run build:guia      # public/guia/index.html, do template e do exemplo
 ```
 
@@ -34,6 +35,7 @@ npm run build:guia      # public/guia/index.html, do template e do exemplo
 - O repositório guarda os dois arquivos gerados (como `examples/libraries/material3/`). Se a pasta do exemplo ou o template mudar sem regerar, os testes `tests/examples/*.test.ts` apontam o comando a rodar.
 - Para mudar o exemplo: edite a pasta (de preferência abrindo-a na app com **Abrir pasta** e deixando a app gravar, para o `mapping.json` sair canônico), rode os dois comandos e, se as contagens mudarem (4 imagens, 32 marcações, 42 anotações, 9 camadas, 4 especializações), ajuste `tests/examples/*.test.ts`, os passos do guia (`const S` no template, que cita telas e marcações por nome) e o R11 do `docs/TESTING.md`.
 - **Quando o pacote Material 3 ou uma especialização mudar** (`npm run build:examples`, ou edição de `examples/specs/sdui.json` / `modelo-de-dados.json`): `examples/exemplo-completo/specs/` guarda cópias (`material3/` do pacote `examples/libraries/material3/`; `sdui.json` e `modelo-dados.json` de `examples/specs/`) e a `version` de cada uma em `specializations[]` do `mapping.json`. Copie a fonte nova para a pasta do exemplo, ajuste a `version` no `mapping.json` e rode `npm run build:example` e `npm run build:guia`. O teste "cópias do exemplo × fontes" (`tests/examples/exampleProject.test.ts`) falha com essa instrução se algo ficar velho: compara a lista de arquivos, os `.json` por igualdade profunda (a ordem das chaves não conta), os demais byte a byte e a `version`.
+- **Outros zips de exemplo (não fazem parte do guia).** `examples/proposta-exemplo.zip` (roteiro R4) sai do gerador `tests/e2e/proposalFixture.ts` (`UPDATE_EXAMPLES=1 npx vitest run tests/examples/proposalExample.test.ts`). `examples/proposta-componentes.zip` (roteiro R13: o projeto Telas com uma proposta aberta de componentes novos, nos casos pendente, aceito, rejeitado, inválido, alterado, sem rótulo e de um pacote da proposta) sai de `tests/e2e/proposedComponentsFixture.ts` por `npm run build:proposal-components`; o teste `tests/examples/proposalComponents.test.ts` falha se o zip estiver desatualizado e confere os estados da revisão ao abri-lo.
 - O exemplo não leva dados reais: nomes, e-mails (`exemplo.com`) e repositórios (`github.com/org/…`) são inventados.
 
 ## Service worker e publicação
