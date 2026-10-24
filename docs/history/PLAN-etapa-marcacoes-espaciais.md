@@ -18,7 +18,7 @@ Hoje uma marcação só existe dentro de um container e a hierarquia é um dado 
 
 1. **Marcação do canvas e pertencimento por geometria** (ME1 e ME2): uma marcação pode pertencer ao canvas e envolver vários containers (três telas que são variações dark, light e tema custom de uma mesma tela); quem contém quem é **resolvido pela geometria, pela própria ferramenta**, e gravado no JSON, de modo que o agente lê o pertencimento e **nunca calcula interseções**. Seleção múltipla, arrasto conjunto e arrastar componentes da Paleta até o destino.
 2. **Notas** (ME3): uma biblioteca de notas embutida no build e aplicada por padrão, pelo mesmo mecanismo de qualquer biblioteca; a nota é uma marcação com anotação tipada e desenho de post-it, visível no canvas para a pessoa e legível pelo agente ("esta tela serve para X", uma regra de negócio).
-3. **Setas e tabelas** (ME4): a seta como **marcação que aponta** (liga duas marcações, tem rota e estilo próprios e pode ter anotações por camada, decisão 14), a tabela desenhada (`repeat`) e as peças do item "Anexos e setas no canvas" do [`docs/ROADMAP.md`](docs/ROADMAP.md) que sobrevivem às decisões 13 e 14 (lista de referências como dado, container destacado); o anexo derivado e a seta desenhada a partir de um campo `ref` saíram.
+3. **Setas e tabelas** (ME4): a seta como **marcação que aponta** (liga duas marcações, tem rota e estilo próprios e pode ter anotações por camada, decisão 14), a tabela desenhada (`repeat`) e as peças do item "Anexos e setas no canvas" do [`docs/ROADMAP.md`](docs/ROADMAP.md) que sobrevivem às decisões 13 e 14 (lista de referências como dado); o anexo derivado e a seta desenhada a partir de um campo `ref` saíram.
 
 A ME5 leva tudo ao MCP e fecha a etapa. Antes de tudo, a **ME0** tira do formato a herança de anotações (`inherit`), que brigaria com o pertencimento por geometria (decisão 12).
 
@@ -382,7 +382,7 @@ Regras do arrasto conjunto: o deslocamento é em unidades do canvas e cada item 
 
 **Coordenador:** Opus. Formato que o produto herda (a seta como marcação) e um renderer novo. **Esforço:** xhigh; subagentes medium, xhigh no briefing do modelo da seta (coleção, invariantes, propostas) e high nos do motor (`repeat`) e do renderer das setas; mecânicos Haiku low. Todas as decisões estão fechadas (abaixo e na decisão 14).
 
-A seta é uma **marcação que aponta** (decisão 14): liga duas marcações, tem rota e estilo próprios e pode ter anotações por camada. O anexo (`callout`) do roadmap **saiu** (decisão 13): a tabela de analytics é uma marcação **flutuante** com desenho de tabela, ligada ao elemento por uma seta. A fase entrega a seta (modelo, canvas, painel, propostas e MCP), o `repeat` (a tabela desenhada), a Tabela genérica na biblioteca de notas, o `near` para colocar flutuantes perto de um container e as duas peças restantes do roadmap (container destacado e lista de referências como dado).
+A seta é uma **marcação que aponta** (decisão 14): liga duas marcações, tem rota e estilo próprios e pode ter anotações por camada. O anexo (`callout`) do roadmap **saiu** (decisão 13): a tabela de analytics é uma marcação **flutuante** com desenho de tabela, ligada ao elemento por uma seta. A fase entrega a seta (modelo, canvas, painel, propostas e MCP), o `repeat` (a tabela desenhada), a Tabela genérica na biblioteca de notas, o `near` para colocar flutuantes perto de um container e a peça restante do roadmap (lista de referências como dado).
 
 **Decisões da ME4** (as do [`docs/ROADMAP.md`](docs/ROADMAP.md), "Anexos e setas no canvas", fechadas com o dono em 2026-10-22; (a) e (b) ficaram sem objeto com a decisão 13, e a (f) caiu com a 14):
 
@@ -411,7 +411,7 @@ A seta é uma **marcação que aponta** (decisão 14): liga duas marcações, te
 - [x] `repeat` no motor (componente `formatVersion` 2; a 1 continua aceita) com `componentValues` passando as linhas; prova de desenho do validador com linhas no `preview`; teste
 - [x] `placeFloatingNear` no modelo e `near` no Adicionar, no arrasto da Paleta (o ponto solto vence) e no `create_marking` do MCP; teste
 - [x] Biblioteca de notas na versão 2 (tipo Tabela flutuante com `repeat`), aplicada pela atualização da B4 nos projetos que têm a versão 1; a nota e a tabela ligam-se ao alvo por uma seta; teste
-- [x] Container destacado e lista de referências (coluna `ref` em `table`, como dado), conforme (e); seletor compacto na célula; Catálogo mostra a Tabela com o `preview`
+- [x] Lista de referências (coluna `ref` em `table`, como dado), conforme (e); seletor compacto na célula; Catálogo mostra a Tabela com o `preview`
 - [x] Biblioteca de exemplo de analytics em `examples/` (tipo Evento flutuante com tabela de propriedades; tipo Transição aplicado à seta), escrita pela skill e validada por teste
 - [x] R12.17 a R12.22 no `docs/TESTING.md` (nota ligada à marcação de uma tela por uma seta criada pela alça e pela ação Ligar a…, arrumar a seta e trocar o estilo (reta, curva, canto), anotação numa seta, tabela de analytics ao lado da tela ligada a um botão, criada pelo MCP com `near` e `create_arrow`); zip e guia regenerados se o exemplo mudar
 
@@ -461,7 +461,6 @@ A seta é uma **marcação que aponta** (decisão 14): liga duas marcações, te
   - **`points` apagados** quando o `containerId` de uma ponta muda (assentar, `setMarkingFloating`, `space` de proposta); reescalados em `replaceContainer` com outra resolução.
   - **Trava da seta** é só dela e bloqueia rota, pontas, estilo e Excluir (nome e anotações seguem livres); excluir uma marcação leva as setas presas mesmo trancadas. Excluir pelo menu de contexto é direto (desfazível); Detalhes e Delete pedem confirmação quando há anotações.
   - **Propostas:** mudar campos de uma seta existente (estilo, nome) não é mudança de proposta (descartado com aviso; no MCP, `update_arrow` vale na prévia e avisa `ignored-argument`); a chave de dependência da seta é a da marcação.
-  - **Container destacado:** sem componente, o container fica em branco; o recorte da imagem como arquivo e a cópia das filhas ficaram para depois.
   - **`near` no MCP:** num tipo flutuante sem `container`, posiciona e o `rect` dá só o tamanho; fora disso é ignorado com `ignored-argument`.
   - **`appliesTo`:** mudar conta como mudança aditiva na atualização; a anotação que deixa de se aplicar vira pendência, sem perda de dado. `COMPONENT_FORMAT_VERSION` continua 1 nos geradores; a 2 só é exigida por quem usa `repeat`. "Ligar a…" usa o seletor próprio `MarkingPicker`, não um modo do `RefPicker`. Roteiros R12.17 a R12.22.
 - **ME5 (este PR):** MCP 0.9.0 (rótulo `mcp-rc` no PR). `get_marking`, `list_markings`, `get_container` e `get_project` expõem espaço, pai, membros, `floating`, setas e contagens; `update_marking` troca `container` (com `rect` nos pixels dele) e `floating`; o erro `canvas-marking` (com `hint`) substitui o `invalid-arguments` provisório da ME1; `docs/MCP.md` ("Mudança da 0.9.0"), `docs/AGENT-GUIDE.md`, `examples/workspace/`, a skill `spec-author` e os roteiros R12.23 a R12.27 em dia. Fechamento: este arquivo, `PLAN.md`, `docs/ROADMAP.md` e `CLAUDE.md`. Os detalhes finos da implementação ficam na descrição do PR da ME5.
@@ -482,7 +481,6 @@ Sem entrega nesta etapa (decidido no fechamento):
 
 - **`rect` em fração do container** nas saídas do MCP (opcional no plano da ME5), para o agente comparar marcações entre telas de tamanhos diferentes.
 - **`members` em `get_container`:** a tool expõe só o `parent` (a marcação do canvas que contém o container); a lista dos que estão dentro de um container continua sendo lida em `list_markings` por container.
-- **Recorte da imagem do container destacado** como arquivo e **cópia das filhas** da marcação para o container novo (ME4, decisão 9): o container destacado nasce em branco, ou com a marcação copiada quando ela desenha um componente.
 - **Restrições de origem e destino de seta por tipo** (por exemplo, "Open Deep Link" só de um botão para uma tela): `appliesTo` diz só onde o tipo se aplica (marcação, seta ou ambos).
 - **Rodada dirigida do Cowork** (R12, R9, R3/R5), a critério do dono, com o preview do épico; sem relato até aqui.
 - Do roadmap: "Depois, sem data" em [`../ROADMAP.md`](../ROADMAP.md); ficam fora também os itens da seção "Fora desta etapa" acima (grupos que se cruzam, seleção por laço, container dentro de container, o visualizador embutível, o MCP assentar por conta própria, layout de celular).

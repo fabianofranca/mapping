@@ -126,9 +126,6 @@ export const enUS: Dictionary = {
     'The image was replaced by one with a different aspect ratio and this marking was rescaled. Check its position.',
   'marking.confirmReview': 'Confirm position',
   'marking.delete': 'Delete marking',
-  'marking.detach': 'Detach into container',
-  'marking.detachHint':
-    'Creates a container without a file the size of this marking, next to its container. With a component, the marking and its annotations come along.',
   'marking.deleteTitle': 'Delete marking?',
   'marking.deleteMessage':
     '"{name}" will be deleted with {descendants} inner marking(s) and {annotations} annotation(s). You can undo this.',
