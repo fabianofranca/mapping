@@ -125,9 +125,6 @@ export const ptBR = {
     'A imagem foi trocada por outra com proporção diferente e esta marcação foi reescalada. Confira a posição.',
   'marking.confirmReview': 'Confirmar posição',
   'marking.delete': 'Excluir marcação',
-  'marking.detach': 'Destacar em container',
-  'marking.detachHint':
-    'Cria um container sem arquivo do tamanho desta marcação, ao lado do container dela. Com um componente, a marcação e as anotações vão junto.',
   'marking.deleteTitle': 'Excluir marcação?',
   'marking.deleteMessage':
     '"{name}" será excluída com {descendants} marcação(ões) interna(s) e {annotations} anotação(ões). Dá para desfazer.',

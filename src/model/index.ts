@@ -18,7 +18,6 @@ export {
 } from './project';
 export * from './layers';
 export * from './containers';
-export * from './detach';
 export * from './imageOptimization';
 export * from './exif';
 export * from './markings';
