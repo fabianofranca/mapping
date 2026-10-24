@@ -49,7 +49,7 @@ export function createEditorContextValue(
       store,
       ui,
       review.derived.shownProject,
-      session.components,
+      review.components,
     ),
     review,
     canvas: { current: null },

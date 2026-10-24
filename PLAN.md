@@ -115,16 +115,16 @@ Na revisão de propostas, a visão **Proposto** desenha os componentes que a pro
 
 **Toca em (aproximado):** `src/store/componentLibrary.ts`, `src/store/session.ts`, `src/store/derived.ts` (o derivado recebe o catálogo da visão), `src/store/review.ts` se precisar, `src/canvas/CanvasController.ts` só se precisar, `src/storage/` (ler o pacote em `proposals/<id>/`, pasta e zip), `tests/store/`, `tests/canvas/`, `tests/canvas/renderPerformance.test.ts`, `tests/e2e/`, `docs/ARCHITECTURE.md` (uma linha sobre o catálogo do Proposto).
 
-- [ ] Proposta que cria marcações de um tipo já aplicado: o Proposto desenha cada uma com os valores propostos, a linha tracejada e o selo "+" (teste de canvas)
-- [ ] Proposta que traz um pacote novo ou atualizado: os componentes dos tipos novos ou da versão nova aparecem no Proposto e não na Atual; nada é gravado em `specs/` antes de aplicar (testes de store e de canvas)
-- [ ] Aceita igual à pendente no canvas (teste); inválida com a linha `cv-invalid` e o selo de inválida, com desenho (teste)
-- [ ] Componente existente alterado desenhado com os valores propostos e a linha dupla (teste que garante o que já funciona)
-- [ ] Campo obrigatório faltando num componente novo: reservado/nó desconhecido no desenho e a pendência de incompleta (teste)
-- [ ] Visão Atual não desenha o componente criado (teste)
-- [ ] Cache: trocar de visão ou decidir uma mudança não reinstancia as marcações que não mudaram (identidade da cena), e pan/zoom não reinstanciam nada (teste)
-- [ ] Orçamento de desempenho: uma proposta com dezenas de componentes novos (por exemplo, 60) dentro do orçamento de quadro, no padrão de `tests/canvas/renderPerformance.test.ts` (roda no `npm run test:perf`)
-- [ ] E2E: no padrão dos testes da revisão em `tests/e2e/` (o host do canvas publica `data-components`), abrir uma proposta com componentes novos e conferir a contagem no Proposto e na Atual
-- [ ] `npm run lint && npm run typecheck && npm test && npm run build` passam
+- [x] Proposta que cria marcações de um tipo já aplicado: o Proposto desenha cada uma com os valores propostos, a linha tracejada e o selo "+" (teste de canvas)
+- [x] Proposta que traz um pacote novo ou atualizado: os componentes dos tipos novos ou da versão nova aparecem no Proposto e não na Atual; nada é gravado em `specs/` antes de aplicar (testes de store e de canvas)
+- [x] Aceita igual à pendente no canvas (teste); inválida com a linha `cv-invalid` e o selo de inválida, com desenho (teste)
+- [x] Componente existente alterado desenhado com os valores propostos e a linha dupla (teste que garante o que já funciona)
+- [x] Campo obrigatório faltando num componente novo: reservado/nó desconhecido no desenho e a pendência de incompleta (teste)
+- [x] Visão Atual não desenha o componente criado (teste)
+- [x] Cache: trocar de visão ou decidir uma mudança não reinstancia as marcações que não mudaram (identidade da cena), e pan/zoom não reinstanciam nada (teste)
+- [x] Orçamento de desempenho: uma proposta com dezenas de componentes novos (por exemplo, 60) dentro do orçamento de quadro, no padrão de `tests/canvas/renderPerformance.test.ts` (roda no `npm run test:perf`)
+- [x] E2E: no padrão dos testes da revisão em `tests/e2e/` (o host do canvas publica `data-components`), abrir uma proposta com componentes novos e conferir a contagem no Proposto e na Atual
+- [x] `npm run lint && npm run typecheck && npm test && npm run build` passam
 
 #### PC2 — Fantasma da criação rejeitada no Proposto, legenda, roteiro e fechamento
 
