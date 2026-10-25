@@ -71,6 +71,40 @@ describe('navegação até a mudança selecionada', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('o resumo da linha da mudança leva o texto inteiro no title', async () => {
+    const { base, after } = pairScenario();
+    const proposal = propose(base, after);
+    const h = await openReviewHarness({ project: base, proposals: [proposal] });
+    expect(h.review.open('P1').ok).toBe(true);
+    act(() => h.review.select({ level: 'item', id: 'M1' }));
+    renderInEditor(h, <PanelHost />);
+    const change = proposal.changes[0];
+    if (!change) throw new Error('fixture');
+    const row = document.querySelector(`[data-row="change:${change.id}"]`) as HTMLElement;
+    const text = row.querySelector('.review-row-text') as HTMLElement;
+    expect(text.textContent).not.toBe('');
+    expect(text.getAttribute('title')).toBe(text.textContent);
+  });
+
+  it('a coluna da marca da grade Chave/Valor segue o idioma', async () => {
+    const { base, after } = pairScenario();
+    const proposal = propose(base, after);
+    const h = await openReviewHarness({ project: base, proposals: [proposal] });
+    expect(h.review.open('P1').ok).toBe(true);
+    act(() => h.review.select({ level: 'item', id: 'M1' }));
+    renderInEditor(h, <PanelHost />);
+    const heads = () =>
+      [...document.querySelectorAll('[role="columnheader"].visually-hidden')].map(
+        (e) => e.textContent,
+      );
+    expect(heads()).toContain('Mudança');
+    act(() => {
+      locale.value = 'en-US';
+    });
+    await waitFor(() => expect(heads()).toContain('Change'));
+    expect(heads()).not.toContain('Mudança');
+  });
+
   it('o clique ou Enter na lista leva o foco ao marcador e abre o popover', async () => {
     const { base, after } = pairScenario();
     const proposal = propose(base, after);

@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import {
   addBackgroundContainer,
   addComponentMarking,
@@ -42,6 +42,24 @@ export function componentTexts(): Map<string, string> {
   );
 }
 
+/** Todos os arquivos de texto do pacote do Material 3 (caminho relativo → texto), ordenados. */
+export function packageTexts(): Map<string, string> {
+  const out = new Map<string, string>();
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir).sort()) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else
+        out.set(
+          relative(PACKAGE_DIR, full).split('\\').join('/'),
+          readFileSync(full, 'utf8'),
+        );
+    }
+  };
+  walk(PACKAGE_DIR);
+  return out;
+}
+
 /** A especialização do Material 3 com outro `id` (para simular um pacote que a proposta traz). */
 export function loadSpec(id: string): Spec {
   const raw = JSON.parse(
@@ -62,10 +80,14 @@ export function catalogOf(spec: Spec, texts: Map<string, string>): ComponentCata
 }
 
 /** Os arquivos do projeto base: `mapping.json`, `specs/` e o pacote do Material 3. */
-function baseFiles(base: Project, texts: Map<string, string>): Map<string, string> {
+function baseFiles(base: Project): Map<string, string> {
   const files = new Map<string, string>([['mapping.json', serialize(base)]]);
   for (const [path, text] of specFiles(base)) files.set(path, text);
-  for (const [path, text] of texts) files.set(`specs/material3/${path}`, text);
+  // O pacote inteiro (componentes, docs, exemplos, fontes): o Diagnóstico da app o confere.
+  for (const [path, text] of packageTexts()) {
+    const target = `specs/material3/${path}`;
+    if (!files.has(target)) files.set(target, text);
+  }
   return files;
 }
 
@@ -149,11 +171,13 @@ export async function fixtureZip(): Promise<Buffer> {
     title: 'Telas novas',
     createdAt: NOW,
   });
-  const files = baseFiles(base, texts);
+  const files = baseFiles(base);
   files.set(proposalFilePath(PROPOSAL_ID), serializeProposal(proposal));
   const pkg = `proposals/${PROPOSAL_ID}/specs/m3novo`;
   files.set(`${pkg}/m3novo.spec.json`, serializeSpec(extra));
-  for (const [path, text] of texts) files.set(`${pkg}/${path}`, text);
+  for (const [path, text] of packageTexts()) {
+    if (path !== 'material3.spec.json') files.set(`${pkg}/${path}`, text);
+  }
   return zipOf(files);
 }
 
@@ -291,11 +315,13 @@ export function showcase(): Showcase {
     proposal = { ...proposal, decisions: result.decisions };
   }
 
-  const files = baseFiles(base, texts);
+  const files = baseFiles(base);
   files.set(proposalFilePath(SHOWCASE_PROPOSAL_ID), serializeProposal(proposal));
   const pkg = `proposals/${SHOWCASE_PROPOSAL_ID}/specs/m3novo`;
   files.set(`${pkg}/m3novo.spec.json`, serializeSpec(extra));
-  for (const [path, text] of texts) files.set(`${pkg}/${path}`, text);
+  for (const [path, text] of packageTexts()) {
+    if (path !== 'material3.spec.json') files.set(`${pkg}/${path}`, text);
+  }
 
   return {
     base,

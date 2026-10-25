@@ -363,6 +363,7 @@ export function ReviewLevels() {
     const applied = Object.hasOwn(p.applied, c.id);
     const compare = comparison?.get(c.id);
     const label = changeTitle(names, c);
+    const summaryText = changeSummary(names, c);
     return (
       <ReviewRow
         key={key}
@@ -379,7 +380,11 @@ export function ReviewLevels() {
         decision={decision}
         decisionDisabled={!open || applied}
         disabledReason={applied ? t('review.appliedReason') : closedReason}
-        summary={<span class="review-row-text">{changeSummary(names, c)}</span>}
+        summary={
+          <span class="review-row-text" title={summaryText}>
+            {summaryText}
+          </span>
+        }
         flags={
           <>
             {s?.locked && (
