@@ -215,17 +215,17 @@ As fases PC1 e PC2 do épico `epic/proposto-componentes` (etapa descrita no [`PL
 
 **Lista dirigida** (depois do **R0 inteiro**):
 
-| Passos        | Fase      | O que confere                                                                                                                                                                                      |
-| ------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R13.1 a R13.2 | PC1       | A revisão começa na visão **Proposto** e desenha os componentes que a proposta cria (`data-components` 6 na Proposto e 1 na Atual)                                                                 |
-| R13.3 a R13.4 | PC1       | Criado pendente e aceito: desenho inteiro, linha tracejada e selo **+**; a decisão só nas marcas de decisão                                                                                        |
-| R13.5 a R13.6 | PC2       | Criação rejeitada: sem desenho, só o fantasma pontilhado com o nome e o ✕, nas duas visões; legenda sem "(só em Atual)"                                                                            |
-| R13.7 a R13.9 | PC1       | Inválido (linha e selo de inválida, **Aplicar** bloqueado), existente alterado (linha dupla) e campo obrigatório faltando (reservado e pendência de incompleta)                                    |
-| R13.10        | PC1       | Componente de um tipo do pacote da proposta: desenhado no Proposto, ausente na Atual                                                                                                               |
-| R13.11        | PC1       | Nada é gravado em `specs/` nem no `mapping.json` enquanto a proposta não é aplicada                                                                                                                |
-| R13.12        | PC2       | A legenda em inglês (sem "Current only")                                                                                                                                                           |
-| R4.1 a R4.11  | regressão | A revisão que a etapa toca, sem componentes: a **Proposto** e a **Atual** (R4.3), o Banner promoção hachurado e as criações do Campo Cupom e da Confirmação, decisões, aplicar, desfazer e retomar |
-| R8.1b e R8.2  | regressão | Tema escuro e inglês na revisão (o fantasma e os selos legíveis nos dois temas)                                                                                                                    |
+| Passos        | Fase      | O que confere                                                                                                                                                                                                |
+| ------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| R13.1 a R13.2 | PC1       | A revisão começa na visão **Proposto** e desenha os componentes que a proposta cria (`data-components` 6 na Proposto e 1 na Atual)                                                                           |
+| R13.3 a R13.4 | PC1       | Criado pendente e aceito: desenho inteiro, linha tracejada e selo **+**; a decisão só nas marcas de decisão                                                                                                  |
+| R13.5 a R13.6 | PC2       | Criação rejeitada: sem desenho, só o fantasma pontilhado com o nome e o ✕, nas duas visões; legenda sem "(só em Atual)"                                                                                      |
+| R13.7 a R13.9 | PC1       | Inválido (linha e selo de inválida, **Aplicar** bloqueado), existente alterado (linha dupla e selo ∿ nas duas visões) e campo obrigatório faltando (texto padrão no lugar, selo ⚠ e pendência de incompleta) |
+| R13.10        | PC1       | Componente de um tipo do pacote da proposta: desenhado no Proposto, ausente na Atual                                                                                                                         |
+| R13.11        | PC1       | Nada é gravado em `specs/` nem no `mapping.json` enquanto a proposta não é aplicada                                                                                                                          |
+| R13.12        | PC2       | A legenda em inglês (sem "Current only")                                                                                                                                                                     |
+| R4.1 a R4.11  | regressão | A revisão que a etapa toca, sem componentes: a **Proposto** e a **Atual** (R4.3), o Banner promoção hachurado e as criações do Campo Cupom e da Confirmação, decisões, aplicar, desfazer e retomar           |
+| R8.1b e R8.2  | regressão | Tema escuro e inglês na revisão (o fantasma e os selos legíveis nos dois temas)                                                                                                                              |
 
 Na **passada visual**, olhe com atenção o canvas na **Proposto** e na **Atual** nos temas claro e escuro: a linha tracejada de criada, o fantasma pontilhado do **Rejeitado** (nome legível, ✕ visível), a linha vermelha e o ⚠ do **Inválido**, a linha dupla do **Existente**, a legenda das marcas, os botões desenhados cortados ou sobrepostos pelos selos e o **Detalhes** com a marca de decisão. Em cada caso do R13, confira também a captura em zoom (`Ctrl+=`), não só o `data-components`.
 

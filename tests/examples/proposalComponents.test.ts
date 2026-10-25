@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { deserialize, parseProposalText, type Proposal } from '../../src/model';
+import { validateLibrary, type LibraryFile } from '../../src/model/library';
 import { readProjectZip } from '../../src/storage/zip';
 import { createEditorDerived } from '../../src/store/derived';
 import { createEditorUi } from '../../src/store/ui';
@@ -49,6 +50,19 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     for (const [path, content] of expected) {
       expect(await zip.file(path)?.async('string'), `${path}. ${HINT}`).toBe(content);
     }
+  });
+
+  it('o pacote specs/material3/ do zip é uma biblioteca válida (sem erro no Diagnóstico)', async () => {
+    const zip = await JSZip.loadAsync(readFileSync(EXAMPLE));
+    const prefix = 'specs/material3/';
+    const files: LibraryFile[] = [];
+    for (const [name, entry] of Object.entries(zip.files)) {
+      if (entry.dir || !name.startsWith(prefix)) continue;
+      files.push({ path: name.slice(prefix.length), text: await entry.async('string') });
+    }
+    const report = validateLibrary({ files, specPath: 'material3.spec.json' });
+    expect(report.errors.map((i) => `${i.file} ${i.path} ${i.message}`)).toEqual([]);
+    expect(report.ok).toBe(true);
   });
 
   it('a app lê o zip: o projeto e a proposta aberta com as decisões gravadas', async () => {

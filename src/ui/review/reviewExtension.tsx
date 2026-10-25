@@ -524,7 +524,10 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
       label: (count) => t('review.panel.showMore', { count }),
       reveal: args.reveal,
     },
-    markColumn: t('review.mark.column'),
+    // Lido na hora do render: o `useMemo` do painel não depende do idioma.
+    get markColumn() {
+      return t('review.mark.column');
+    },
   };
 }
 
