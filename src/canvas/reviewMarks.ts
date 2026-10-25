@@ -7,6 +7,7 @@ import {
   IDENTITY_PLACEMENT,
   changeImageFile,
   dominantChangeType,
+  findSpecType,
   isRecord,
   proposalImagePath,
   projectIndex,
@@ -28,7 +29,7 @@ export type ReviewBadge = ChangeType | 'conflict' | 'invalid' | 'rejected';
 
 /**
  * Linha da marcação: criada tracejada, alterada dupla, inválida tracejada em `cv-invalid`,
- * rejeitada pontilhada (só na visão Atual).
+ * rejeitada pontilhada (a existente, só na visão Atual; a criação rejeitada vira só o fantasma, nas duas).
  */
 export type ReviewLine = 'created' | 'changed' | 'invalid' | 'rejected';
 
@@ -116,6 +117,23 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
     drawnIndex.containers.get(imageId)?.placement ??
     currentIndex.containers.get(imageId)?.placement ??
     null;
+  /**
+   * Nome do tipo de componente de uma criação rejeitada sem `name` (a instância nasce sem
+   * nome): o da anotação tipada que a proposta cria para a marcação, como a Árvore mostra.
+   */
+  const createdTypeName = (markingId: string): string | null => {
+    for (const c of p.changes) {
+      if (c.entity !== 'annotation' || c.kind !== 'create' || c.markingId !== markingId)
+        continue;
+      const type = isRecord(c.to) && isRecord(c.to.type) ? c.to.type : null;
+      if (!type || typeof type.specId !== 'string' || typeof type.typeId !== 'string')
+        continue;
+      const ref = { specId: type.specId, typeId: type.typeId };
+      const found = findSpecType(drawn, ref) ?? findSpecType(current, ref);
+      if (found?.type.component !== undefined) return found.type.name;
+    }
+    return null;
+  };
   /** Posição de um espaço: a do container ou, no canvas (`null`), a identidade. */
   const spacePlacement = (containerId: JsonValue | undefined): Placement | null =>
     containerId === null
@@ -216,7 +234,8 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
             badges: badgesOf('created', conflict, isInvalid),
           });
         }
-      } else if (view === 'current' && placement) {
+      } else if (placement) {
+        // Criação rejeitada: só o fantasma, nas duas visões (a marcação não existe no "como ficaria").
         const record = isRecord(create.to) ? create.to : null;
         const rect = asRect(record?.rect);
         if (rect) {
@@ -224,7 +243,7 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
             key: `rejected:${id}`,
             placement,
             rect,
-            name: textOf(record?.name),
+            name: textOf(record?.name) ?? createdTypeName(id),
             badges: ['rejected'],
           });
         }

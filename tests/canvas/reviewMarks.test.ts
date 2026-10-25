@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   IDENTITY_PLACEMENT,
+  addBackgroundContainer,
+  addComponentMarking,
+  applySpecialization,
+  approximateMeasurer,
+  markingTypeName,
+  parseSpec,
   changeType,
   createMarking,
   moveMarking,
@@ -16,12 +22,13 @@ import {
   type ReviewView,
 } from '../../src/canvas/reviewMarks';
 import { visibleBadges } from '../../src/canvas/renderers/review';
-import { sampleProject } from '../model/fixtures';
+import { SPEC_ID, SPEC_JSON, testCatalog } from '../model/componentFixtures';
+import { emptyProject, sampleProject } from '../model/fixtures';
 import { decided, propose } from '../model/proposalFixtures';
 import { richScenario } from '../store/proposalHarness';
 
 // Marcas de revisão no canvas (HANDOFF-PROPOSALS 4): a forma da linha e o selo dizem o
-// tipo; rejeitadas só na visão Atual; movida com fantasma na outra posição.
+// tipo; rejeitadas: a existente só na visão Atual, a criação (fantasma) nas duas; movida com fantasma na outra posição.
 
 function marks(
   p: Proposal,
@@ -85,7 +92,7 @@ describe('reviewMarks', () => {
       dim: true,
       badges: ['rejected'],
     });
-    // A criação rejeitada numa imagem que existe vira fantasma com ✕ na visão Atual.
+    // A criação rejeitada numa imagem que existe vira fantasma com ✕ nas duas visões.
     const added = propose(
       base,
       createMarking(base, {
@@ -99,7 +106,129 @@ describe('reviewMarks', () => {
     expect(marks(noItem, base, 'current').ghosts.map((g) => [g.key, g.badges])).toEqual([
       ['rejected:M9', ['rejected']],
     ]);
-    expect(marks(noItem, base, 'proposed').ghosts).toEqual([]);
+    expect(marks(noItem, base, 'proposed').ghosts.map((g) => [g.key, g.badges])).toEqual([
+      ['rejected:M9', ['rejected']],
+    ]);
+  });
+
+  it('matriz: marcação criada e alterada por estado de decisão, em cada visão', () => {
+    const base = sampleProject();
+    const created = propose(
+      base,
+      createMarking(base, {
+        id: 'M9',
+        containerId: 'I1',
+        rect: { x: 10, y: 10, width: 50, height: 50 },
+        name: 'Novo',
+      }),
+    );
+    const item = { level: 'item', id: 'M9' } as const;
+    const ghostsOf = (m: ReturnType<typeof marks>) =>
+      m.ghosts
+        .filter((g) => g.key.startsWith('rejected:'))
+        .map((g) => [g.key, g.name, g.badges]);
+    const rejectedGhost = [['rejected:M9', 'Novo', ['rejected']]];
+    const createdMark = { line: 'created', dim: false, badges: ['created'] };
+    const cases = [
+      ['pendente', created, undefined, createdMark, []],
+      ['aceita', decided(created, base, item, 'accepted'), undefined, createdMark, []],
+      [
+        'rejeitada',
+        decided(created, base, item, 'rejected'),
+        undefined,
+        undefined,
+        rejectedGhost,
+      ],
+      [
+        'inválida',
+        created,
+        [created.changes[0]!.id],
+        { line: 'invalid', dim: false, badges: ['invalid', 'created'] },
+        [],
+      ],
+    ] as const satisfies readonly (readonly [
+      string,
+      Proposal,
+      readonly string[] | undefined,
+      unknown,
+      unknown,
+    ])[];
+    for (const [state, proposal, invalid, mark, ghosts] of cases) {
+      const proposed = marks(proposal, base, 'proposed', {
+        invalid: invalid ? [...invalid] : [],
+      });
+      expect(proposed.markings.get('M9'), `${state}, Proposto`).toEqual(mark);
+      expect(ghostsOf(proposed), `${state}, Proposto`).toEqual(ghosts);
+      const current = marks(proposal, base, 'current', {
+        invalid: invalid ? [...invalid] : [],
+      });
+      expect(current.markings.has('M9'), `${state}, Atual`).toBe(false);
+      expect(ghostsOf(current), `${state}, Atual`).toEqual(ghosts);
+    }
+
+    // Existente alterada: o fantasma de rejeitada só existe na Atual (a mudança rejeitada
+    // fica fora do "como ficaria"); pendente e aceita nunca o têm.
+    const moved = propose(base, moveMarking(base, 'M4', 10, 10));
+    const rejectedMove = decided(moved, base, { level: 'item', id: 'M4' }, 'rejected');
+    for (const [state, proposal] of [
+      ['pendente', moved],
+      ['aceita', decided(moved, base, { level: 'item', id: 'M4' }, 'accepted')],
+    ] as const) {
+      for (const view of ['proposed', 'current'] as const)
+        expect(ghostsOf(marks(proposal, base, view)), `${state}, ${view}`).toEqual([]);
+    }
+    expect(ghostsOf(marks(rejectedMove, base, 'proposed'))).toEqual([]);
+    expect(marks(rejectedMove, base, 'proposed').markings.has('M4')).toBe(false);
+    expect(marks(rejectedMove, base, 'current').markings.get('M4')).toEqual({
+      line: 'rejected',
+      dim: true,
+      badges: ['rejected'],
+    });
+  });
+
+  it('criação rejeitada de componente (sem name): o fantasma leva o nome do tipo', () => {
+    const spec = parseSpec(SPEC_JSON);
+    if (!spec.ok) throw new Error(spec.errors.join('\n'));
+    let n = 0;
+    let base = applySpecialization(emptyProject(), spec.spec, {
+      newId: () => `LS${++n}`,
+      packageSpecName: 'test.spec.json',
+    });
+    base = addBackgroundContainer(base, {
+      id: 'B1',
+      name: 'Tela',
+      width: 400,
+      height: 600,
+      background: '#FFFFFF',
+      center: { x: 500, y: 300 },
+    });
+    const withText = addComponentMarking(
+      base,
+      testCatalog(),
+      {
+        markingId: 'N1',
+        annotationId: 'A_N1',
+        containerId: 'B1',
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+        rect: { x: 20, y: 100, width: 100, height: 40 },
+      },
+      approximateMeasurer,
+    );
+    const typeName = markingTypeName(withText, 'N1');
+    expect(typeName).toBeTruthy();
+    const proposal = decided(
+      propose(base, withText),
+      base,
+      { level: 'item', id: 'N1' },
+      'rejected',
+    );
+    for (const view of ['proposed', 'current'] as const) {
+      expect(
+        marks(proposal, base, view).ghosts.map((g) => [g.key, g.name, g.badges]),
+      ).toEqual([['rejected:N1', typeName, ['rejected']]]);
+    }
   });
 
   it('removida: hachura com o nome (riscado) nas duas visões', () => {
@@ -126,6 +255,25 @@ describe('reviewMarks', () => {
     expect(
       marks(proposal, base, 'proposed', { invalid: [ids.rect] }).markings.get('M4'),
     ).toEqual({ line: 'invalid', dim: false, badges: ['invalid', 'moved'] });
+  });
+
+  it('criada no Proposto: pendente e aceita dão a mesma marca; inválida troca a linha e soma o selo', () => {
+    const { base, proposal, ids } = richScenario();
+    const pending = marks(proposal, base, 'proposed').markings.get('M5');
+    const accepted = marks(
+      decided(proposal, base, { level: 'item', id: 'M5' }, 'accepted'),
+      base,
+      'proposed',
+    ).markings.get('M5');
+    expect(pending).toEqual({ line: 'created', dim: false, badges: ['created'] });
+    expect(accepted).toEqual(pending);
+    expect(
+      marks(proposal, base, 'proposed', { invalid: [ids.marking] }).markings.get('M5'),
+    ).toEqual({ line: 'invalid', dim: false, badges: ['invalid', 'created'] });
+    // Na visão Atual a criada não tem marca, inválida ou não.
+    expect(
+      marks(proposal, base, 'current', { invalid: [ids.marking] }).markings.has('M5'),
+    ).toBe(false);
   });
 
   it('o "como ficaria" desenha a imagem nova do arquivo que espera em proposals/', () => {

@@ -230,7 +230,7 @@ export const reviewPtBR = {
   'review.legend.changed': 'Alterada: linha dupla e selo ∿',
   'review.legend.replaced': 'Imagem trocada: dois quadros no selo; use Comparar',
   'review.legend.conflict': 'Conflito: selo ⚠ amarelo, somado ao tipo',
-  'review.legend.rejected': 'Rejeitada: pontilhada e esmaecida, selo ✕ (só em Atual)',
+  'review.legend.rejected': 'Rejeitada: pontilhada e esmaecida, selo ✕',
   'review.legend.invalid': 'Inválida: tracejada vermelha e ⚠ (bloqueia Aplicar)',
   'review.legend.locked': 'Trancada: o cadeado continua depois de aplicar',
   'review.legend.note':
@@ -679,7 +679,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.legend.changed': 'Changed: double line and ∿ badge',
   'review.legend.replaced': 'Image replaced: two frames in the badge; use Compare',
   'review.legend.conflict': 'Conflict: yellow ⚠ badge, next to the type',
-  'review.legend.rejected': 'Rejected: dotted and faded, ✕ badge (Current only)',
+  'review.legend.rejected': 'Rejected: dotted and faded, ✕ badge',
   'review.legend.invalid': 'Invalid: red dashed line and ⚠ (blocks Apply)',
   'review.legend.locked': 'Locked: the lock stays on after applying',
   'review.legend.note':

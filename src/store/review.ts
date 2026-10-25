@@ -24,6 +24,7 @@ import type {
   NoteResult,
   RemoveResult,
 } from './proposalActions';
+import { createProposedComponents, type ProposedComponents } from './proposedCatalog';
 import type { ProjectSession } from './session';
 
 // Estado da revisão de uma proposta (etapa 4): qual proposta está aberta, o item
@@ -120,6 +121,12 @@ export interface ReviewState {
   readonly noteRequest: ReadonlySignal<MarkRequest | null>;
   /** Estado derivado (níveis, contagens, "como ficaria", pendências, conflitos). */
   readonly derived: ReviewDerived;
+  /**
+   * O catálogo de componentes que o desenho lê: na visão Proposto, o da biblioteca aplicada
+   * mais os pacotes da proposta aberta (lidos de `proposals/<id>/`, sem gravar); na Atual, o
+   * da biblioteca. Quem não desenha (paleta de inserir, Diagnóstico de fontes) lê `session.components`.
+   */
+  readonly components: ProposedComponents;
 
   /** Abre a revisão (projeto somente leitura) e volta ao ponto onde parou. */
   open(proposalId: string): OpenReviewResult;
@@ -368,6 +375,14 @@ export function createReviewState(session: ProjectSession): ReviewState {
     seen,
   });
 
+  const components = createProposedComponents({
+    base: session.components,
+    proposal: derived.proposal,
+    view,
+    shown: derived.shownProject,
+    read: (path) => session.readImage(path),
+  });
+
   const newConflicts = computed((): ReadonlySet<string> => {
     if (proposalId.value === null) return NO_CONFLICTS;
     const known = knownAtOpen.value;
@@ -493,6 +508,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     markRequest,
     noteRequest,
     derived,
+    components,
 
     open(id) {
       const p = proposals.get(id);
@@ -723,6 +739,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     dispose() {
       stopWatching();
       closeReview();
+      components.dispose();
     },
   };
 }
