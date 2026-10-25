@@ -81,29 +81,23 @@ describe('pacote libraries/notas', () => {
     }
   });
 
-  it('valida sem erro nos três níveis; os avisos são só o texto de exemplo da nota no tamanho mínimo', () => {
+  it('valida sem erro e sem aviso nos três níveis (uma biblioteca embutida não abre com aviso)', () => {
     const files = [...NOTES_FILES].map(([path, text]) => ({ path, text }));
     const report = validateLibrary({ files, specPath: NOTES_SPEC_FILE });
     expect(report.errors).toEqual([]);
-    // O `minSize` (96 × 48) é o piso do redimensionamento, não o tamanho de um texto longo: o
-    // `preview` e o exemplo cabem no tamanho inicial (240 × 120), mas não no mínimo.
-    expect(
-      report.warnings.map((w) => [w.file, w.path, w.message.includes('conteúdo maior')]),
-    ).toEqual([
-      ['components/nota.json', 'preview', true],
-      ['notas.spec.json', 'layers[0].annotationTypes[0].examples[0]', true],
-    ]);
+    // O `minSize` (160 × 96) comporta o `preview` e o exemplo com texto curto.
+    expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
     expect(report.summary).toMatchObject({ level: 3, types: 2, components: 2, docs: 2 });
   });
 
-  it('a especialização é a formatVersion 7, versão 2, com a nota e a tabela flutuantes e com componente', () => {
+  it('a especialização é a formatVersion 7, versão 3, com a nota e a tabela flutuantes e com componente', () => {
     const parsed = parseSpecText(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.spec.formatVersion).toBe(7);
     expect(parsed.spec.id).toBe('notas');
-    expect(parsed.spec.version).toBe(2);
+    expect(parsed.spec.version).toBe(3);
     const [layer] = parsed.spec.layers;
     expect(layer?.name).toBe('Notas');
     const [type, tabela] = layer?.annotationTypes ?? [];
@@ -156,7 +150,7 @@ describe('applyBundledLibrary', () => {
     expect(applied.project.specializations).toEqual([
       expect.objectContaining({
         id: 'notas',
-        version: 2,
+        version: 3,
         file: 'specs/notas/notas.spec.json',
       }),
     ]);
@@ -261,7 +255,7 @@ describe('atualização da biblioteca de notas da versão 1 para a 2', () => {
   it('atualiza: a versão sobe, a nota fica como estava e a Tabela passa a existir', () => {
     const p = withV1();
     const next = updateSpecialization(p, notesV2(), { newId: () => 'X' });
-    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 2 });
+    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 3 });
     expect(next.layers.map((l) => l.id)).toEqual(p.layers.map((l) => l.id));
     expect(next.annotations.find((a) => a.id === 'AN1')).toEqual(
       p.annotations.find((a) => a.id === 'AN1'),

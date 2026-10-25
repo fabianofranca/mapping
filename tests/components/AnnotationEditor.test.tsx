@@ -1,12 +1,12 @@
 import { cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Project } from '../../src/model';
+import { addTypedAnnotation, createMarking, type Project } from '../../src/model';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
 import { sampleProject } from '../model/fixtures';
-import { cadastroProject } from '../model/specFixtures';
+import { cadastroProject, layerOf } from '../model/specFixtures';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
 
 beforeEach(() => {
@@ -220,8 +220,8 @@ describe('AnnotationEditor — anotação tipada', () => {
   });
 });
 
-describe('AnnotationEditor — "Pertence a"', () => {
-  const owner = () => screen.getByLabelText('Pertence a') as HTMLSelectElement;
+describe('AnnotationEditor — "Vinculada a"', () => {
+  const owner = () => screen.getByLabelText('Vinculada a') as HTMLSelectElement;
 
   it('explica que só aparecem anotações da mesma marcação em outras camadas', () => {
     // A1 (M1, camada L1) pode pertencer a A2 (M1, camada L2).
@@ -233,18 +233,56 @@ describe('AnnotationEditor — "Pertence a"', () => {
     expect(options).toEqual(['Nenhuma', 'Vidros: tipo: trinca']);
   });
 
-  it('sem nenhuma opção: mostra a mensagem e deixa o campo desabilitado', () => {
+  it('sem nenhuma opção, sem dona e sem exigência: o campo não aparece', () => {
     // A3 é a única anotação de M2: não há outra camada com anotação para ser a dona.
     setup('A3', sampleProject());
-    expect(screen.getByText(t('annotation.ownerHelp'))).toBeTruthy();
-    expect(screen.getByText(t('annotation.ownerEmpty'))).toBeTruthy();
+    expect(screen.queryByLabelText('Vinculada a')).toBeNull();
+    expect(screen.queryByText(t('annotation.ownerHelp'))).toBeNull();
+    expect(screen.queryByText(t('annotation.ownerEmpty'))).toBeNull();
+  });
+
+  it('tipo que exige dona e sem opção: o campo aparece desabilitado com a mensagem', () => {
+    let p = cadastroProject();
+    p = createMarking(p, {
+      id: 'MX',
+      containerId: 'I1',
+      rect: { x: 10, y: 10, width: 20, height: 20 },
+      name: 'Solta',
+    });
+    p = addTypedAnnotation(p, {
+      id: 'AY',
+      markingId: 'MX',
+      layerId: layerOf(p, 'sdui', 'componentes'),
+      type: { specId: 'sdui', typeId: 'button' },
+      parentAnnotationId: null,
+    });
+    p = addTypedAnnotation(p, {
+      id: 'AX',
+      markingId: 'MX',
+      layerId: layerOf(p, 'sdui', 'eventos'),
+      type: { specId: 'sdui', typeId: 'onClick' },
+      parentAnnotationId: 'AY',
+    });
+    // Órfã, como após uma edição externa do arquivo: sem dona e sem quem possa sê-lo.
+    p = {
+      ...p,
+      annotations: p.annotations
+        .filter((a) => a.id !== 'AY')
+        .map((a) => (a.id === 'AX' ? { ...a, parentAnnotationId: null } : a)),
+    };
+    setup('AX', p);
     expect(owner().disabled).toBe(true);
-    expect([...owner().options].map((o) => o.textContent)).toEqual(['Nenhuma']);
+    expect(screen.getByText(t('annotation.ownerEmpty'))).toBeTruthy();
+  });
+
+  it('a anotação com dona continua mostrando o campo', () => {
+    setup('AOC');
+    expect(owner().value).toBe('AB');
   });
 
   it('a dica também vai no título do rótulo', () => {
     setup('A1', sampleProject());
-    expect(screen.getByText('Pertence a').getAttribute('title')).toBe(
+    expect(screen.getByText('Vinculada a').getAttribute('title')).toBe(
       t('annotation.ownerHelp'),
     );
   });

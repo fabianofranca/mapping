@@ -204,7 +204,7 @@
   display: block;
 }
 
-/* A mensagem de lista vazia ("Pertence a") fica um tom acima da ajuda. */
+/* A mensagem de lista vazia ("Vinculada a") fica um tom acima da ajuda. */
 .props-note > [data-owner-empty] {
   margin-top: var(--space-0-5);
   color: var(--color-text);
