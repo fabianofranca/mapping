@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mapping": {
+      "command": "bash",
+      "args": ["workspace/mcp.sh"]
+    }
+  }
+}
