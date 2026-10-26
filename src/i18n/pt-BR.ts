@@ -213,7 +213,7 @@ export const ptBR = {
   'annotation.error.empty-key': 'A chave não pode ficar vazia.',
   'annotation.error.duplicate-key': 'Já existe um par com esta chave.',
   'annotation.error.generic': 'Não foi possível alterar a anotação.',
-  'annotation.owner': 'Pertence a',
+  'annotation.owner': 'Vinculada a',
   'annotation.noOwner': 'Nenhuma',
   'annotation.ownerOption': '{layer}: {name}',
   'annotation.ownerHelp':

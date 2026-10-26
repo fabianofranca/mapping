@@ -154,6 +154,17 @@ export function AnnotationEditor({
   const ownerIssue = issuesOf(project, annotation.id).find(
     (i) => i.code === 'missing-owner' || i.code === 'owner-not-allowed',
   );
+  const ownerMark = ext?.mark(annotation.id, 'parentAnnotationId');
+  const ownerBelow = ext?.below(annotation.id, 'parentAnnotationId');
+  const hasContent = (c: unknown) => c !== undefined && c !== null && c !== false;
+  /** O campo só aparece quando tem algo a oferecer ou a explicar. */
+  const showOwner =
+    owners.length > 0 ||
+    annotation.parentAnnotationId !== null ||
+    ownerRequired ||
+    ownerIssue !== undefined ||
+    hasContent(ownerMark) ||
+    hasContent(ownerBelow);
 
   const requestDelete = () => {
     const impact = annotationDeletionImpact(project, annotation.id);
@@ -284,49 +295,54 @@ export function AnnotationEditor({
             />
           )}
 
-          <PropertyGrid>
-            <Property
-              label={t('annotation.owner')}
-              for={ownerId}
-              focusKey="owner"
-              hint={t('annotation.ownerHelp')}
-              mark={ext?.mark(annotation.id, 'parentAnnotationId')}
-              below={ext?.below(annotation.id, 'parentAnnotationId')}
-              note={
-                <>
-                  <span>{t('annotation.ownerHelp')}</span>
-                  {noOwnerOptions && (
-                    <span data-owner-empty>{t('annotation.ownerEmpty')}</span>
-                  )}
-                </>
-              }
-              issue={ownerIssue ? issueReason(project, annotation, ownerIssue) : null}
-            >
-              <Select
-                id={ownerId}
-                size="sm"
-                invalid={ownerIssue !== undefined}
-                value={annotation.parentAnnotationId ?? ''}
-                disabled={readOnly || noOwnerOptions}
-                onChange={(e) => {
-                  const value = e.currentTarget.value;
-                  actions.setAnnotationParent(annotation.id, value === '' ? null : value);
-                }}
+          {showOwner && (
+            <PropertyGrid>
+              <Property
+                label={t('annotation.owner')}
+                for={ownerId}
+                focusKey="owner"
+                hint={t('annotation.ownerHelp')}
+                mark={ownerMark}
+                below={ownerBelow}
+                note={
+                  <>
+                    <span>{t('annotation.ownerHelp')}</span>
+                    {noOwnerOptions && (
+                      <span data-owner-empty>{t('annotation.ownerEmpty')}</span>
+                    )}
+                  </>
+                }
+                issue={ownerIssue ? issueReason(project, annotation, ownerIssue) : null}
               >
-                {(!ownerRequired || annotation.parentAnnotationId === null) && (
-                  <option value="">{t('annotation.noOwner')}</option>
-                )}
-                {owners.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {t('annotation.ownerOption', {
-                      layer: layerOf(a.layerId)?.name ?? '',
-                      name: name(a),
-                    })}
-                  </option>
-                ))}
-              </Select>
-            </Property>
-          </PropertyGrid>
+                <Select
+                  id={ownerId}
+                  size="sm"
+                  invalid={ownerIssue !== undefined}
+                  value={annotation.parentAnnotationId ?? ''}
+                  disabled={readOnly || noOwnerOptions}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    actions.setAnnotationParent(
+                      annotation.id,
+                      value === '' ? null : value,
+                    );
+                  }}
+                >
+                  {(!ownerRequired || annotation.parentAnnotationId === null) && (
+                    <option value="">{t('annotation.noOwner')}</option>
+                  )}
+                  {owners.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {t('annotation.ownerOption', {
+                        layer: layerOf(a.layerId)?.name ?? '',
+                        name: name(a),
+                      })}
+                    </option>
+                  ))}
+                </Select>
+              </Property>
+            </PropertyGrid>
+          )}
 
           <LinkedRow
             project={project}

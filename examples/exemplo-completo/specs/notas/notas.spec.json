@@ -3,7 +3,7 @@
   "formatVersion": 7,
   "id": "notas",
   "name": "Notas",
-  "version": 2,
+  "version": 3,
   "description": "Notas no canvas: post-its flutuantes, um com título e texto livre e outro em forma de tabela (chave e valor), para comentar uma tela, registrar uma regra de negócio, listar os dados de um evento ou deixar um recado para quem lê o mapeamento.",
   "layers": [
     {
@@ -38,8 +38,8 @@
             {
               "name": "Regra de negócio",
               "values": {
-                "titulo": "Limite de crédito",
-                "texto": "O botão Contratar só habilita para clientes com limite aprovado."
+                "titulo": "Limite",
+                "texto": "Contratar só com limite aprovado."
               }
             }
           ]
