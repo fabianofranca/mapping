@@ -105,7 +105,7 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
   expect(mapping.specializations).toEqual(
     // A biblioteca de notas já vem aplicada em todo projeto novo (ME3).
     [
-      { id: 'notas', version: 2 },
+      { id: 'notas', version: 3 },
       { id: 'sdui', version: 3 },
     ].map((s) => expect.objectContaining(s)),
   );

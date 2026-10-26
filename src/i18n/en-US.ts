@@ -214,7 +214,7 @@ export const enUS: Dictionary = {
   'annotation.error.empty-key': 'The key cannot be empty.',
   'annotation.error.duplicate-key': 'A pair with this key already exists.',
   'annotation.error.generic': 'Could not change the annotation.',
-  'annotation.owner': 'Belongs to',
+  'annotation.owner': 'Linked to',
   'annotation.noOwner': 'None',
   'annotation.ownerOption': '{layer}: {name}',
   'annotation.ownerHelp':
