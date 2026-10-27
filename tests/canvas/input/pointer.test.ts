@@ -7,6 +7,7 @@ import {
   arrowRoute,
   createMarking,
   projectIndex,
+  type Rect,
   setArrowRoute,
   setArrowStyle,
   setContainerPlacement,
@@ -24,7 +25,11 @@ import { arrowProject, withArrow } from '../../model/arrowFixtures';
 import { canvasProject, editorFor } from '../harness';
 
 // Viewport 1:1 em (0, 0) e container em (0, 0) na página: tela = canvas.
-function setup(readOnly = false, project: Project = canvasProject()) {
+function setup(
+  readOnly = false,
+  project: Project = canvasProject(),
+  titles: ReadonlyMap<string, Rect> = new Map(),
+) {
   const editor = editorFor(project, readOnly);
   const container = document.createElement('div');
   document.body.append(container);
@@ -39,6 +44,7 @@ function setup(readOnly = false, project: Project = canvasProject()) {
     state,
     spaceDown: () => spaceDown,
     reviewing: () => reviewing,
+    containerTitles: () => titles,
   });
   const unbind = input.bind();
   const fire = (
@@ -363,6 +369,36 @@ describe('PointerInput: trava (etapa 2.5)', () => {
     s.fire('pointerdown', 250, 250, { kind: 'touch', id: 2 });
     s.fire('pointerup', 250, 250, { kind: 'touch', id: 2 });
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+    s.cleanup();
+  });
+});
+
+describe('PointerInput: rótulo do nome do container', () => {
+  // M9 cobre o container I1 inteiro; o rótulo de I1 fica logo acima dele.
+  const covered = () =>
+    createMarking(canvasProject(), {
+      id: 'M9',
+      containerId: 'I1',
+      rect: { x: 0, y: 0, width: 1000, height: 800 },
+    });
+  const titles = new Map([['I1', { x: 0, y: -20, width: 100, height: 16 }]]);
+
+  it('clicar no nome seleciona o container coberto por marcação; arrastar o move', () => {
+    const s = setup(false, covered(), titles);
+    s.click(900, 700);
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M9' });
+    s.click(50, -12);
+    expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'I1' });
+    s.drag([50, -12], [80, 18]);
+    expect(s.containerOf('I1')?.placement).toMatchObject({ x: 30, y: 30 });
+    s.cleanup();
+  });
+
+  it('rótulo de container não selecionado: arrastar faz pan', () => {
+    const s = setup(false, covered(), titles);
+    s.drag([50, -12], [80, 18]);
+    expect(s.containerOf('I1')?.placement).toMatchObject({ x: 0, y: 0 });
+    expect(s.viewport.viewport.value).toMatchObject({ x: 30, y: 30 });
     s.cleanup();
   });
 });

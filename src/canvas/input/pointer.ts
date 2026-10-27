@@ -87,6 +87,8 @@ export interface PointerInputOptions {
   readonly project?: () => Project | null;
   /** Revisão aberta: tudo é somente leitura e o menu de contexto não abre. */
   readonly reviewing?: () => boolean;
+  /** Retângulos dos nomes acima dos containers (canvas), medidos pelo renderer. */
+  readonly containerTitles?: () => ReadonlyMap<string, Rect>;
 }
 
 /** Gestos que arrastam itens: o cursor é o de mover. */
@@ -211,6 +213,7 @@ export class PointerInput {
       items: existingItems(project, peekSelectedItems(ui)),
       visibility: derived.markingVisibility.peek(),
       arrows: this.arrowShapes(project),
+      titles: this.o.containerTitles?.(),
       zoom: this.o.viewport.scale,
       spaceDown: this.o.spaceDown(),
     };
@@ -698,7 +701,13 @@ export class PointerInput {
       const project = this.project();
       const first =
         project &&
-        hitChain(project, derived.markingVisibility.peek(), c, this.arrowHit(project))[0];
+        hitChain(
+          project,
+          derived.markingVisibility.peek(),
+          c,
+          this.arrowHit(project),
+          this.o.containerTitles?.(),
+        )[0];
       if (first) toggleSelectedItem(ui, first);
       return;
     }
@@ -711,6 +720,7 @@ export class PointerInput {
       c,
       repeat,
       this.arrowHit(this.project()),
+      this.o.containerTitles?.(),
     );
   }
 
@@ -786,6 +796,7 @@ export class PointerInput {
       viewport.toCanvas(viewport.screenPoint(e)),
       false,
       this.arrowHit(this.project()),
+      this.o.containerTitles?.(),
     );
     if (!picked) return;
     if (!isItemSelected(peekSelectedItems(ui), picked)) ui.selection.value = picked;
