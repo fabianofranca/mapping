@@ -1,0 +1,44 @@
+# Sealed class
+
+Sealed class: hierarquia fechada e abstrata; os subtipos diretos são conhecidos em tempo de compilação, o que permite when exaustivo.
+
+## Quando usar
+
+- Resultados com formas diferentes (sucesso, erro, carregando) e hierarquias fechadas com estado.
+- Quando os subtipos precisam de construtor ou propriedades próprias.
+
+## O que não confundir
+
+- **Sealed × enum:** o enum tem instâncias fixas e iguais em forma; a sealed tem subtipos com dados próprios.
+- **Sealed class × sealed interface:** use a interface quando os subtipos não compartilham estado ou precisam de outra superclasse.
+
+## Campos principais
+
+- **Nome** (obrigatório): nome simples da declaração; leva a etiqueta `kotlin-type`, então supertipos e tipos de propriedade de outras marcações podem apontar para ela.
+- **Pacote**, **Visibilidade**, **Anotações** e **Descrição** (KDoc), **Parâmetros de tipo**.
+- É abstrata; o construtor é protected ou private.
+- Os subtipos são as declarações cujo `supertypes` aponta para ela (coluna `typeRef`).
+
+## Como o subtipo se liga
+
+Cada linha de `supertypes` traz o tipo como escrito no código e, em **Tipo mapeado** (`typeRef`), a declaração mapeada com a etiqueta `kotlin-type`. É assim que um subtipo se liga à sealed class ou interface: as subclasses são as declarações cujo `supertypes` aponta para ela.
+
+## Aninhamento
+
+Uma declaração aninhada é uma marcação desenhada **dentro** da marcação da declaração externa; o pertencimento vem da geometria (o agente lê `parent` e `members`), não de um campo.
+
+## Referências às propriedades
+
+- Outras anotações apontam para uma linha de `properties` por um campo `ref` que aceita `data-field` ou `kotlin-property`.
+- Funções (`functions`) têm a etiqueta `kotlin-function`.
+
+## Exemplo
+
+```kotlin
+sealed class Resultado<out T> {
+    val timestamp: Long = System.currentTimeMillis()
+
+    data class Sucesso<T>(val valor: T) : Resultado<T>()
+    data class Falha(val erro: Throwable) : Resultado<Nothing>()
+}
+```

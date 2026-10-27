@@ -24,6 +24,7 @@ Arquivos de apoio:
 - `examples/specs/sdui.json` (`formatVersion` 5) e `examples/specs/modelo-de-dados.json` (`formatVersion` 1): exemplos completos.
 - `examples/specs/biblioteca.json` (`formatVersion` 4): exemplo pequeno com `component`, `doc`, `examples`, `fonts`, `origins`, `path`/`ignore` nas `sources` e `migrations`. É só o arquivo da especialização: os arquivos que ele cita (`components/`, `docs/`, `examples/`, `fonts/`) não vêm junto.
 - `examples/libraries/material3/`: um pacote de biblioteca **completo** (especialização v6, quinze componentes, documentos, exemplos, os quatro tamanhos de container e uma tela de exemplo de um sistema externo), gerado por `npm run build:examples` (ver "Biblioteca: o pacote").
+- `examples/libraries/kotlin/`: biblioteca (v7) das declarações Kotlin (onze tipos de classe, objeto e interface, cada um com componente e documento); as propriedades são alvos de referência com a etiqueta `data-field`.
 
 ## Formato do arquivo
 

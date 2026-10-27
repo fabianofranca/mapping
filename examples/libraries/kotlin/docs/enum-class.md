@@ -1,0 +1,41 @@
+# Enum class
+
+Enum class: conjunto fixo de constantes de uma mesma forma.
+
+## Quando usar
+
+- Conjuntos fixos e conhecidos: status, tipos, direções.
+- Constantes que carregam dados simples (rótulo, código).
+
+## O que não confundir
+
+- **Enum × sealed class:** no enum todas as constantes têm a mesma forma; na sealed cada subtipo pode ter dados próprios.
+
+## Campos principais
+
+- **Nome** (obrigatório): nome simples da declaração; leva a etiqueta `kotlin-type`, então supertipos e tipos de propriedade de outras marcações podem apontar para ela.
+- **Pacote**, **Visibilidade**, **Anotações** e **Descrição** (KDoc).
+- As constantes ficam em `entries` (nome obrigatório, argumentos do construtor opcionais).
+- Não herda classes e não tem parâmetros de tipo.
+
+## Como o subtipo se liga
+
+Cada linha de `supertypes` traz o tipo como escrito no código e, em **Tipo mapeado** (`typeRef`), a declaração mapeada com a etiqueta `kotlin-type`. É assim que um subtipo se liga à sealed class ou interface: as subclasses são as declarações cujo `supertypes` aponta para ela.
+
+## Aninhamento
+
+Uma declaração aninhada é uma marcação desenhada **dentro** da marcação da declaração externa; o pertencimento vem da geometria (o agente lê `parent` e `members`), não de um campo.
+
+## Referências às propriedades
+
+- Outras anotações apontam para uma linha de `properties` por um campo `ref` que aceita `data-field` ou `kotlin-property`.
+- Funções (`functions`) têm a etiqueta `kotlin-function` e as constantes (`entries`), `kotlin-enum-entry`.
+
+## Exemplo
+
+```kotlin
+enum class Status(val label: String) : HasLabel {
+    ACTIVE("Ativo"),
+    BLOCKED("Bloqueado"),
+}
+```

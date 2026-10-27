@@ -1,0 +1,424 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 2,
+  "id": "interface",
+  "name": "Interface",
+  "description": "Cartão de diagrama de classes de Interface: cabeçalho colorido com estereótipo, nome e supertipos, e seções de propriedades e funções.",
+  "size": {
+    "width": 300,
+    "height": 230
+  },
+  "minSize": {
+    "width": 180,
+    "height": 210
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "name": "UserRepository",
+    "package": "com.app.domain",
+    "visibility": "public",
+    "typeParameters": "",
+    "annotations": "",
+    "kdoc": "Acesso a usuários.",
+    "supertypes": [
+      {
+        "type": "Repository<User>"
+      }
+    ],
+    "properties": [
+      {
+        "name": "count",
+        "type": "Int",
+        "mutability": "val",
+        "visibility": "public",
+        "defaultValue": ""
+      }
+    ],
+    "functions": [
+      {
+        "name": "find",
+        "parameters": "id: String",
+        "returnType": "User?",
+        "visibility": "public",
+        "modifiers": "suspend"
+      }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "interface",
+    "layout": {
+      "type": "column"
+    },
+    "fill": "#FFFFFF",
+    "stroke": {
+      "color": "#E44857",
+      "width": 1
+    },
+    "cornerRadius": 6,
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "layout": {
+          "type": "column",
+          "gap": 2,
+          "padding": 8
+        },
+        "fill": "#E44857",
+        "width": "fill",
+        "height": "hug",
+        "children": [
+          {
+            "type": "text",
+            "name": "anotações",
+            "text": {
+              "$field": "annotations"
+            },
+            "font": {
+              "size": 11,
+              "weight": 400,
+              "lineHeight": 14,
+              "italic": true
+            },
+            "color": "#FFFFFF",
+            "opacity": 0.85,
+            "visible": {
+              "$has": "annotations"
+            },
+            "width": "fill"
+          },
+          {
+            "type": "text",
+            "name": "estereótipo",
+            "text": {
+              "$concat": [
+                {
+                  "$switch": "visibility",
+                  "cases": {
+                    "internal": "internal ",
+                    "protected": "protected ",
+                    "private": "private "
+                  },
+                  "default": ""
+                },
+                "«interface»"
+              ]
+            },
+            "font": {
+              "size": 12,
+              "weight": 400,
+              "lineHeight": 16
+            },
+            "color": "#FFFFFF",
+            "opacity": 0.85,
+            "width": "fill"
+          },
+          {
+            "type": "text",
+            "name": "nome",
+            "text": {
+              "$concat": [
+                {
+                  "$field": "name"
+                },
+                {
+                  "$if": {
+                    "$has": "typeParameters"
+                  },
+                  "then": {
+                    "$concat": [
+                      "<",
+                      {
+                        "$field": "typeParameters"
+                      },
+                      ">"
+                    ]
+                  },
+                  "else": ""
+                }
+              ]
+            },
+            "font": {
+              "size": 14,
+              "weight": 700,
+              "lineHeight": 20
+            },
+            "color": "#FFFFFF",
+            "width": "fill"
+          },
+          {
+            "type": "text",
+            "name": "pacote",
+            "text": {
+              "$field": "package"
+            },
+            "font": {
+              "size": 11,
+              "weight": 400,
+              "lineHeight": 14
+            },
+            "color": "#FFFFFF",
+            "opacity": 0.85,
+            "visible": {
+              "$has": "package"
+            },
+            "width": "fill"
+          },
+          {
+            "type": "repeat",
+            "name": "supertipos",
+            "field": "supertypes",
+            "direction": "column",
+            "gap": 0,
+            "template": {
+              "type": "frame",
+              "name": "supertipo",
+              "layout": {
+                "type": "row"
+              },
+              "width": "fill",
+              "children": [
+                {
+                  "type": "text",
+                  "name": "supertipo",
+                  "text": {
+                    "$concat": [
+                      ": ",
+                      {
+                        "$field": "type"
+                      }
+                    ]
+                  },
+                  "font": {
+                    "size": 12,
+                    "weight": 400,
+                    "lineHeight": 16
+                  },
+                  "color": "#FFFFFF",
+                  "width": "fill"
+                }
+              ]
+            },
+            "visible": {
+              "$has": "supertypes"
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória propriedades",
+        "height": 1,
+        "width": "fill",
+        "fill": "#E4485740",
+        "visible": {
+          "$has": "properties"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "propriedades",
+        "layout": {
+          "type": "column",
+          "padding": 8
+        },
+        "width": "fill",
+        "height": "hug",
+        "visible": {
+          "$has": "properties"
+        },
+        "children": [
+          {
+            "type": "repeat",
+            "name": "properties",
+            "field": "properties",
+            "direction": "column",
+            "gap": 2,
+            "template": {
+              "type": "frame",
+              "name": "linha",
+              "layout": {
+                "type": "row"
+              },
+              "width": "fill",
+              "children": [
+                {
+                  "type": "text",
+                  "name": "linha",
+                  "text": {
+                    "$concat": [
+                      {
+                        "$switch": "visibility",
+                        "cases": {
+                          "internal": "internal ",
+                          "protected": "protected ",
+                          "private": "private "
+                        },
+                        "default": ""
+                      },
+                      {
+                        "$concat": [
+                          {
+                            "$field": "mutability",
+                            "default": "val"
+                          },
+                          " "
+                        ]
+                      },
+                      {
+                        "$field": "name"
+                      },
+                      ": ",
+                      {
+                        "$field": "type"
+                      }
+                    ]
+                  },
+                  "font": {
+                    "size": 12,
+                    "weight": 400,
+                    "lineHeight": 16
+                  },
+                  "color": "#1F1F1F",
+                  "width": "fill"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória funções",
+        "height": 1,
+        "width": "fill",
+        "fill": "#E4485740",
+        "visible": {
+          "$has": "functions"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "funções",
+        "layout": {
+          "type": "column",
+          "padding": 8
+        },
+        "width": "fill",
+        "height": "hug",
+        "visible": {
+          "$has": "functions"
+        },
+        "children": [
+          {
+            "type": "repeat",
+            "name": "functions",
+            "field": "functions",
+            "direction": "column",
+            "gap": 2,
+            "template": {
+              "type": "frame",
+              "name": "linha",
+              "layout": {
+                "type": "row"
+              },
+              "width": "fill",
+              "children": [
+                {
+                  "type": "text",
+                  "name": "linha",
+                  "text": {
+                    "$concat": [
+                      {
+                        "$switch": "visibility",
+                        "cases": {
+                          "internal": "internal ",
+                          "protected": "protected ",
+                          "private": "private "
+                        },
+                        "default": ""
+                      },
+                      "fun ",
+                      {
+                        "$field": "name"
+                      },
+                      "(",
+                      {
+                        "$field": "parameters"
+                      },
+                      ")",
+                      {
+                        "$if": {
+                          "$has": "returnType"
+                        },
+                        "then": {
+                          "$concat": [
+                            ": ",
+                            {
+                              "$field": "returnType"
+                            }
+                          ]
+                        },
+                        "else": ""
+                      }
+                    ]
+                  },
+                  "font": {
+                    "size": 12,
+                    "weight": 400,
+                    "lineHeight": 16
+                  },
+                  "color": "#1F1F1F",
+                  "width": "fill"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória descrição",
+        "height": 1,
+        "width": "fill",
+        "fill": "#E4485740",
+        "visible": {
+          "$has": "kdoc"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "descrição",
+        "layout": {
+          "type": "column",
+          "padding": 8
+        },
+        "width": "fill",
+        "height": "hug",
+        "visible": {
+          "$has": "kdoc"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "kdoc",
+            "text": {
+              "$field": "kdoc"
+            },
+            "font": {
+              "size": 11,
+              "weight": 400,
+              "lineHeight": 14
+            },
+            "color": "#555555",
+            "width": "fill"
+          }
+        ]
+      }
+    ]
+  }
+}
