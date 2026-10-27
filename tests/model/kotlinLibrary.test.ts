@@ -1,4 +1,4 @@
-// Biblioteca de exemplo Kotlin (`examples/libraries/kotlin/`): onze tipos de declaração (classe,
+// Biblioteca Kotlin (`libraries/kotlin/`, pronta para uso e aplicada pela pessoa): onze tipos de declaração (classe,
 // objeto e interface), cada um com componente e documento; as propriedades são alvos de referência.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -9,7 +9,7 @@ import { buildCatalog, drawEntry, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
 import type { SceneNode } from '../../src/model/components/scene';
 
-const ROOT = join(__dirname, '../../examples/libraries/kotlin');
+const ROOT = join(__dirname, '../../libraries/kotlin');
 const SPEC_FILE = 'kotlin.spec.json';
 
 const CLASS_TYPES = [
@@ -38,7 +38,7 @@ const files = listDisk(ROOT)
   .map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') }));
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
-describe('biblioteca de exemplo Kotlin', () => {
+describe('biblioteca Kotlin', () => {
   it('tem a especialização, um componente e um documento por tipo', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
