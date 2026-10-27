@@ -12,6 +12,8 @@ import {
   type Marking,
   type MarkingVisibility,
   type Project,
+  type ProjectContainer,
+  type Rect,
 } from '../../model';
 import {
   resolveSelection,
@@ -27,7 +29,13 @@ import {
   type ArrowShape,
 } from '../arrowGeometry';
 import type { DragMode } from '../gestureMachine';
-import { cornerAt, imageAt, pointInRect, type Corner } from '../imageGeometry';
+import {
+  cornerAt,
+  containerTitleAt,
+  imageAt,
+  pointInRect,
+  type Corner,
+} from '../imageGeometry';
 import {
   canvasToImagePixel,
   floatingAt,
@@ -108,6 +116,11 @@ export interface IntentContext {
    * toque alcança e onde ficam as alças da seta selecionada. Sem o campo, não há seta no toque.
    */
   readonly arrows?: readonly ArrowShape[];
+  /**
+   * Retângulos dos nomes acima dos containers (canvas): arrastar pelo nome do container selecionado
+   * o move. Sem o campo, o nome não conta.
+   */
+  readonly titles?: ReadonlyMap<string, Rect>;
   /** Pixels de tela por unidade do canvas. */
   readonly zoom: number;
   /** Espaço pressionado: arrastar sempre faz pan. */
@@ -155,14 +168,23 @@ export function intentAt(ctx: IntentContext, c: Point): Intent {
   if (selected?.kind === 'image') {
     const { image } = selected;
     const rect = imageCanvasRect(image, image.placement);
+    const onTitle = onContainerTitle(ctx, image.id, c);
     if (!canEditImagePlacement(project, image.id)) {
-      return pointInRect(c, rect) ? LOCKED : PAN;
+      return pointInRect(c, rect) || onTitle ? LOCKED : PAN;
     }
     const corner = cornerAt(rect, c, HANDLE_HIT_RADIUS / zoom);
     if (corner) return { kind: 'resize-image', containerId: image.id, corner };
-    if (pointInRect(c, rect)) return { kind: 'move-image', containerId: image.id };
+    if (pointInRect(c, rect) || onTitle) {
+      return { kind: 'move-image', containerId: image.id };
+    }
   }
   return PAN;
+}
+
+/** O ponto está no rótulo do nome do container `id` (`ctx.titles`)? */
+function onContainerTitle(ctx: IntentContext, id: string, c: Point): boolean {
+  const title = ctx.titles?.get(id);
+  return title !== undefined && pointInRect(c, title);
 }
 
 /**
@@ -199,7 +221,8 @@ function multiIntentAt(ctx: IntentContext, project: Project, c: Point): Intent {
       const container = index.containers.get(item.id);
       return (
         container !== undefined &&
-        pointInRect(c, imageCanvasRect(container, container.placement))
+        (pointInRect(c, imageCanvasRect(container, container.placement)) ||
+          onContainerTitle(ctx, item.id, c))
       );
     }
     const marking = index.markings.get(item.id);
@@ -260,6 +283,8 @@ export interface ArrowHit {
  *
  * 1. as marcações flutuantes sob o ponto, onde estiverem (a de cima primeiro);
  * 1b. as setas a até `ARROW_HIT_TOLERANCE` px de tela do ponto (`arrows`; a mais perto primeiro);
+ * 1c. o rótulo do nome acima de um container (`titles`): o container e as marcações do canvas que
+ *    o contêm, mesmo que ele esteja inteiramente coberto de marcações;
  * 2. dentro de um container: a marcação mais interna → os ancestrais → o container → as marcações
  *    do canvas que o contêm (pela cadeia de `parentId` do container) → as demais marcações do
  *    canvas sobrepostas ao ponto;
@@ -273,6 +298,7 @@ export function hitChain(
   visibility: ReadonlyMap<string, MarkingVisibility>,
   c: Point,
   arrows?: ArrowHit,
+  titles?: ReadonlyMap<string, Rect>,
 ): HitItem[] {
   const markings = selectableMarkings(project, visibility);
   const selectable = new Set(markings.map((m) => m.id));
@@ -291,6 +317,22 @@ export function hitChain(
       add({ kind: 'arrow', id: shape.arrow.id });
     }
   }
+  // As marcações do canvas que contêm o container, de dentro para fora.
+  const addCanvasParents = (container: ProjectContainer) => {
+    const byId = projectIndex(project).markings;
+    let parentId = container.parentId;
+    for (let guard = byId.size; parentId !== null && guard > 0; guard--) {
+      const parent = byId.get(parentId);
+      if (!parent) break;
+      if (selectable.has(parent.id)) add({ kind: 'marking', id: parent.id });
+      parentId = parent.parentId;
+    }
+  };
+  const titled = titles ? containerTitleAt(project.containers, titles, c) : null;
+  if (titled) {
+    add({ kind: 'image', id: titled.id });
+    addCanvasParents(titled);
+  }
   const image = imageAt(project.containers, c);
   if (image) {
     const pixel = canvasToImagePixel(image.placement, c);
@@ -298,15 +340,7 @@ export function hitChain(
       add({ kind: 'marking', id: m.id });
     }
     add({ kind: 'image', id: image.id });
-    // As marcações do canvas que contêm o container, de dentro para fora.
-    const byId = projectIndex(project).markings;
-    let parentId = image.parentId;
-    for (let guard = byId.size; parentId !== null && guard > 0; guard--) {
-      const parent = byId.get(parentId);
-      if (!parent) break;
-      if (selectable.has(parent.id)) add({ kind: 'marking', id: parent.id });
-      parentId = parent.parentId;
-    }
+    addCanvasParents(image);
   }
   for (const m of markingChainAt(markings, null, c)) add({ kind: 'marking', id: m.id });
   return chain;
@@ -323,9 +357,10 @@ export function tapSelection(
   c: Point,
   repeat: boolean,
   arrows?: ArrowHit,
+  titles?: ReadonlyMap<string, Rect>,
 ): Selection {
   if (!project) return null;
-  const chain = hitChain(project, visibility, c, arrows);
+  const chain = hitChain(project, visibility, c, arrows, titles);
   const keyOf = (pick: HitItem) => `${pick.kind}:${pick.id}`;
   const next = nextInChain(chain.map(keyOf), selection ? keyOf(selection) : null, repeat);
   return chain.find((pick) => keyOf(pick) === next) ?? null;
