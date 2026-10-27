@@ -321,6 +321,7 @@ export class CanvasController {
       spaceDown: space.down,
       project: () => this.drawnProject.peek(),
       reviewing: () => this.review?.proposalId.peek() != null,
+      containerTitles: () => this.images.titleRects(),
     });
 
     this.cleanups.push(
@@ -517,7 +518,13 @@ export class CanvasController {
     let lock: HoverLock | null = null;
     let marking: string | null = null;
     if (project && canvas && (locks || drawn.size > 0)) {
-      const top = hitChain(project, this.derived.markingVisibility.peek(), canvas)[0];
+      const top = hitChain(
+        project,
+        this.derived.markingVisibility.peek(),
+        canvas,
+        undefined,
+        this.images.titleRects(),
+      )[0];
       if (top?.kind === 'marking') {
         if (locks && isMarkingGeometryLocked(project, top.id)) {
           lock = { kind: 'marking', id: top.id };

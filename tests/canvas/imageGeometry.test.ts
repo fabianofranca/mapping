@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MIN_IMAGE_CANVAS_SIZE,
+  containerTitleAt,
   cornerAt,
   imageAt,
   imagesBounds,
@@ -19,6 +20,25 @@ describe('geometria das imagens no canvas', () => {
     expect(imageAt(p.containers, { x: 1100, y: 10 })?.id).toBe('I2');
     expect(imageAt(p.containers, { x: 1025, y: 10 })).toBeNull();
     expect(imageAt(p.containers, { x: -1, y: 10 })).toBeNull();
+  });
+
+  it('encontra o container pelo rótulo do nome, respeitando a ordem de desenho', () => {
+    // Rótulo de I1 em cima dele (y -20..-4) e um de I2 sobre o corpo de I1 (sem tapar I2).
+    const titles = new Map([
+      ['I1', { x: 0, y: -20, width: 100, height: 16 }],
+      ['I2', { x: 1100, y: -20, width: 100, height: 16 }],
+    ]);
+    expect(containerTitleAt(p.containers, titles, { x: 50, y: -10 })?.id).toBe('I1');
+    expect(containerTitleAt(p.containers, titles, { x: 1150, y: -10 })?.id).toBe('I2');
+    // Fora do texto (a faixa é mais larga que o texto) e no corpo: nada.
+    expect(containerTitleAt(p.containers, titles, { x: 500, y: -10 })).toBeNull();
+    expect(containerTitleAt(p.containers, titles, { x: 50, y: 100 })).toBeNull();
+    // Rótulo coberto pelo corpo de um container de cima: não vale.
+    const covered = new Map([['I1', { x: 1100, y: 100, width: 100, height: 16 }]]);
+    expect(containerTitleAt(p.containers, covered, { x: 1150, y: 110 })).toBeNull();
+    // Rótulo de um container de cima sobre o corpo de um de baixo vence.
+    const over = new Map([['I2', { x: 10, y: 100, width: 100, height: 16 }]]);
+    expect(containerTitleAt(p.containers, over, { x: 50, y: 110 })?.id).toBe('I2');
   });
 
   it('encontra o canto mais próximo dentro do raio', () => {

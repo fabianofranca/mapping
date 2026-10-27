@@ -44,6 +44,26 @@ export function imageAt(
   return null;
 }
 
+/**
+ * Container cujo rótulo (o nome acima dele, `titles` em coordenadas do canvas) está sob o ponto.
+ * Percorre na ordem inversa de desenho: o corpo de um container desenhado por cima cobre o
+ * rótulo dos de baixo.
+ */
+export function containerTitleAt(
+  containers: readonly ProjectContainer[],
+  titles: ReadonlyMap<string, Rect>,
+  p: Point,
+): ProjectContainer | null {
+  for (let i = containers.length - 1; i >= 0; i--) {
+    const container = containers[i];
+    if (!container) continue;
+    if (pointInRect(p, imageCanvasRect(container, container.placement))) return null;
+    const title = titles.get(container.id);
+    if (title && pointInRect(p, title)) return container;
+  }
+  return null;
+}
+
 /** Canto de `rect` a até `radius` (canvas) do ponto; o mais próximo vence. */
 export function cornerAt(rect: Rect, p: Point, radius: number): Corner | null {
   let best: Corner | null = null;

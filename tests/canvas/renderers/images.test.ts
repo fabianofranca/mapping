@@ -117,6 +117,27 @@ describe('ImageRenderer', () => {
     expect(renderer.node('I2')?.title.visible()).toBe(false);
   });
 
+  it('titleRects: só o texto do rótulo visível, em coordenadas do canvas; some com zoom e remoção', () => {
+    const { renderer, editor } = setup();
+    renderer.render(frameOf(editor));
+    const rect = renderer.titleRects().get('I1');
+    const title = renderer.node('I1')?.title;
+    expect(rect).toEqual({
+      x: 0,
+      y: title?.y(),
+      width: Math.min(title?.getTextWidth() ?? 0, 1000),
+      height: title?.height(),
+    });
+    expect(rect?.y).toBeLessThan(0);
+
+    // I2 (500 px) fica estreito demais na tela: sem rótulo, sem retângulo.
+    renderer.render(frameOf(editor, { viewport: { x: 0, y: 0, scale: 0.05 } }));
+    expect(renderer.titleRects().has('I2')).toBe(false);
+
+    renderer.render(frameOf(editor, { project: removeContainer(canvasProject(), 'I2') }));
+    expect([...renderer.titleRects().keys()]).toEqual(['I1']);
+  });
+
   it('espessuras em px de tela: divididas pelo zoom', () => {
     const { renderer, editor } = setup();
     const bitmaps = new Map([['images/a.jpg', { status: 'error' as const }]]);
