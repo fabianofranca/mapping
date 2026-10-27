@@ -17,6 +17,7 @@
     "height": "fill"
   },
   "preview": {
+    "outer": null,
     "name": "Validator",
     "package": "com.app.validation",
     "visibility": "public",
@@ -110,6 +111,20 @@
             "name": "nome",
             "text": {
               "$concat": [
+                {
+                  "$if": {
+                    "$has": "outer"
+                  },
+                  "then": {
+                    "$concat": [
+                      {
+                        "$field": "outer"
+                      },
+                      "."
+                    ]
+                  },
+                  "else": ""
+                },
                 {
                   "$field": "name"
                 },

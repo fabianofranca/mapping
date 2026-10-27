@@ -17,6 +17,7 @@
     "height": "fill"
   },
   "preview": {
+    "outer": null,
     "name": "UserId",
     "package": "com.app.domain",
     "visibility": "public",
@@ -120,6 +121,20 @@
             "name": "nome",
             "text": {
               "$concat": [
+                {
+                  "$if": {
+                    "$has": "outer"
+                  },
+                  "then": {
+                    "$concat": [
+                      {
+                        "$field": "outer"
+                      },
+                      "."
+                    ]
+                  },
+                  "else": ""
+                },
                 {
                   "$field": "name"
                 },

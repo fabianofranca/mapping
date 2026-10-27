@@ -17,6 +17,7 @@
     "height": "fill"
   },
   "preview": {
+    "outer": null,
     "name": "Status",
     "package": "com.app.domain",
     "visibility": "public",
@@ -124,7 +125,25 @@
             "type": "text",
             "name": "nome",
             "text": {
-              "$field": "name"
+              "$concat": [
+                {
+                  "$if": {
+                    "$has": "outer"
+                  },
+                  "then": {
+                    "$concat": [
+                      {
+                        "$field": "outer"
+                      },
+                      "."
+                    ]
+                  },
+                  "else": ""
+                },
+                {
+                  "$field": "name"
+                }
+              ]
             },
             "font": {
               "size": 14,

@@ -84,6 +84,9 @@ describe('biblioteca de exemplo Kotlin', () => {
         const name = type.fields.find((f) => f.key === 'name');
         expect(name?.tags).toContain('kotlin-type');
         expect(type.labelField).toBe('name');
+        const outer = type.fields.find((f) => f.key === 'outer');
+        expect(outer?.type).toBe('ref');
+        expect(outer?.type === 'ref' && outer.accepts?.tags).toEqual(['kotlin-type']);
       }
     }
   });
@@ -107,4 +110,18 @@ describe('biblioteca de exemplo Kotlin', () => {
       expect(texts.some((t) => t.startsWith(String(values.name)))).toBe(true);
     },
   );
+
+  it('class inner e open tem o estereótipo «inner open class»', () => {
+    const catalog = buildCatalog(files);
+    const entry = findEntry(catalog, 'class');
+    const values = { ...entry?.previewValues, inner: 'sim', modality: 'open' };
+    const drawing = drawEntry(entry!, values, approximateMeasurer);
+    const texts: string[] = [];
+    const visit = (node: SceneNode): void => {
+      if (node.type === 'text') texts.push(node.text);
+      if (node.type === 'frame') node.children.forEach(visit);
+    };
+    if (drawing) visit(drawing.root);
+    expect(texts.some((t) => t.includes('«inner open class»'))).toBe(true);
+  });
 });

@@ -17,6 +17,7 @@
     "height": "fill"
   },
   "preview": {
+    "outer": null,
     "name": "Loading",
     "package": "com.app.ui",
     "visibility": "public",
@@ -113,7 +114,25 @@
             "type": "text",
             "name": "nome",
             "text": {
-              "$field": "name"
+              "$concat": [
+                {
+                  "$if": {
+                    "$has": "outer"
+                  },
+                  "then": {
+                    "$concat": [
+                      {
+                        "$field": "outer"
+                      },
+                      "."
+                    ]
+                  },
+                  "else": ""
+                },
+                {
+                  "$field": "name"
+                }
+              ]
             },
             "font": {
               "size": 14,

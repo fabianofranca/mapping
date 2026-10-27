@@ -17,6 +17,7 @@
     "height": "fill"
   },
   "preview": {
+    "outer": null,
     "name": "UserRepositoryImpl",
     "package": "com.app.data",
     "visibility": "internal",
@@ -126,6 +127,7 @@
                 },
                 {
                   "$concat": [
+                    "«",
                     {
                       "$if": {
                         "$field": "inner"
@@ -136,12 +138,13 @@
                     {
                       "$switch": "modality",
                       "cases": {
-                        "final": "«class»",
-                        "open": "«open class»",
-                        "abstract": "«abstract class»"
+                        "final": "class",
+                        "open": "open class",
+                        "abstract": "abstract class"
                       },
-                      "default": "«class»"
-                    }
+                      "default": "class"
+                    },
+                    "»"
                   ]
                 }
               ]
@@ -160,6 +163,20 @@
             "name": "nome",
             "text": {
               "$concat": [
+                {
+                  "$if": {
+                    "$has": "outer"
+                  },
+                  "then": {
+                    "$concat": [
+                      {
+                        "$field": "outer"
+                      },
+                      "."
+                    ]
+                  },
+                  "else": ""
+                },
                 {
                   "$field": "name"
                 },

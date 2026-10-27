@@ -17,9 +17,9 @@ Annotation class: declara uma anotação (@Audited, @SerialName).
 - As propriedades são os parâmetros do construtor, sempre `val`.
 - Sem funções, supertipos nem corpo; `targets` e `retention` descrevem o alcance.
 
-## Aninhamento
+## Declaração aninhada
 
-Uma declaração aninhada é uma marcação desenhada **dentro** da marcação da declaração externa; o pertencimento vem da geometria (o agente lê `parent` e `members`), não de um campo.
+Uma declaração aninhada (nested, inner ou companion) se liga à externa pelo campo **Declarada em** (`outer`, etiqueta `kotlin-type`). O agente lê a ligação em `refs` (na aninhada) e `backlinks` (na externa). Desenhar a marcação dentro da externa é só arrumação visual e opcional: o pertencimento do canvas (`parent`/`members`) não define o aninhamento no código.
 
 ## Referências às propriedades
 

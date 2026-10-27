@@ -23,9 +23,22 @@ Classe Kotlin comum (class).
 
 Cada linha de `supertypes` traz o tipo como escrito no código e, em **Tipo mapeado** (`typeRef`), a declaração mapeada com a etiqueta `kotlin-type`. É assim que um subtipo se liga à sealed class ou interface: as subclasses são as declarações cujo `supertypes` aponta para ela.
 
-## Aninhamento
+## Declaração aninhada
 
-Uma declaração aninhada é uma marcação desenhada **dentro** da marcação da declaração externa; o pertencimento vem da geometria (o agente lê `parent` e `members`), não de um campo.
+Uma declaração aninhada (nested, inner ou companion) se liga à externa pelo campo **Declarada em** (`outer`, etiqueta `kotlin-type`). O agente lê a ligação em `refs` (na aninhada) e `backlinks` (na externa). Desenhar a marcação dentro da externa é só arrumação visual e opcional: o pertencimento do canvas (`parent`/`members`) não define o aninhamento no código.
+
+Exemplo de `inner class`: a classe externa `Pedido` e a inner `Item`.
+
+```kotlin
+class Pedido {
+    inner class Item(val sku: String)
+}
+```
+
+1. Crie a marcação **Class** `Pedido` (Modalidade final).
+2. Crie a marcação **Class** `Item`, com **Inner** = sim.
+3. Em `Item`, preencha **Declarada em** = `Pedido` (o campo aceita a etiqueta `kotlin-type`).
+4. Opcional: arrume `Item` dentro de `Pedido` no canvas, só para ler melhor.
 
 ## Referências às propriedades
 

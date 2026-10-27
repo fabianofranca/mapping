@@ -17,6 +17,7 @@
     "height": "fill"
   },
   "preview": {
+    "outer": null,
     "name": "UiState",
     "package": "com.app.ui",
     "visibility": "public",
@@ -114,6 +115,20 @@
             "name": "nome",
             "text": {
               "$concat": [
+                {
+                  "$if": {
+                    "$has": "outer"
+                  },
+                  "then": {
+                    "$concat": [
+                      {
+                        "$field": "outer"
+                      },
+                      "."
+                    ]
+                  },
+                  "else": ""
+                },
                 {
                   "$field": "name"
                 },

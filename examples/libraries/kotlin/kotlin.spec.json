@@ -14,7 +14,7 @@
         {
           "id": "class",
           "name": "Class",
-          "description": "Classe Kotlin comum (class). Use para tipos com comportamento e estado que não são só dados: serviços, repositórios, view models, implementações. A modalidade diz se pode ser herdada (open) ou é abstrata. Não confunda com data class (dados com equals/copy gerados), object (instância única) e interface. Classe aninhada = marcação desenhada dentro da marcação da classe externa (o pertencimento vem da geometria); inner só vale em classe aninhada. Um companion object é a marcação Object (com companion = sim) desenhada dentro da classe dona.",
+          "description": "Classe Kotlin comum (class). Use para tipos com comportamento e estado que não são só dados: serviços, repositórios, view models, implementações. A modalidade diz se pode ser herdada (open) ou é abstrata. Não confunda com data class (dados com equals/copy gerados), object (instância única) e interface. A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional. inner exige Declarada em. Um companion object é a marcação Object (com companion = sim) com Declarada em apontando para a classe dona.",
           "labelField": "name",
           "component": "components/class.json",
           "doc": "docs/class.md",
@@ -42,6 +42,15 @@
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
             },
             {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
               "key": "modality",
               "label": "Modalidade",
               "type": "enum",
@@ -55,7 +64,7 @@
               "type": "enum",
               "options": ["sim", "não"],
               "default": "não",
-              "description": "sim quando é uma classe inner (acessa a instância da externa); só vale em classe aninhada."
+              "description": "sim quando é uma inner class (acessa a instância da externa); exige Declarada em."
             },
             {
               "key": "typeParameters",
@@ -262,7 +271,7 @@
         {
           "id": "data-class",
           "name": "Data class",
-          "description": "Data class: classe de dados com equals, hashCode, copy, toString e componentN gerados a partir das propriedades do construtor primário. Precisa de ao menos uma propriedade no construtor (declaredIn = construtor). Não pode ser abstract, open, sealed nem inner. Use para modelos, DTOs e estado de UI imutável (prefira val). Não confunda com class comum (sem esses métodos) nem com value class (embrulha um único valor). Aninhada = marcação dentro da marcação da declaração externa (pertencimento pela geometria).",
+          "description": "Data class: classe de dados com equals, hashCode, copy, toString e componentN gerados a partir das propriedades do construtor primário. Precisa de ao menos uma propriedade no construtor (declaredIn = construtor). Não pode ser abstract, open, sealed nem inner. Use para modelos, DTOs e estado de UI imutável (prefira val). Não confunda com class comum (sem esses métodos) nem com value class (embrulha um único valor). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/data-class.json",
           "doc": "docs/data-class.md",
@@ -288,6 +297,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "typeParameters",
@@ -490,7 +508,7 @@
         {
           "id": "sealed-class",
           "name": "Sealed class",
-          "description": "Sealed class: hierarquia fechada e abstrata; os subtipos diretos são conhecidos em tempo de compilação, o que permite when exaustivo. Os subtipos são as declarações mapeadas cujo supertypes aponta (typeRef) para ela; o agente os acha por essa referência. Use para resultados e estados com formas diferentes. Não confunda com enum (instâncias fixas da mesma forma) nem com class open (hierarquia aberta). Subtipos aninhados são marcações desenhadas dentro desta (pertencimento pela geometria).",
+          "description": "Sealed class: hierarquia fechada e abstrata; os subtipos diretos são conhecidos em tempo de compilação, o que permite when exaustivo. Os subtipos são as declarações mapeadas cujo supertypes aponta (typeRef) para ela; o agente os acha por essa referência. Use para resultados e estados com formas diferentes. Não confunda com enum (instâncias fixas da mesma forma) nem com class open (hierarquia aberta). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/sealed-class.json",
           "doc": "docs/sealed-class.md",
@@ -516,6 +534,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "typeParameters",
@@ -718,7 +745,7 @@
         {
           "id": "enum-class",
           "name": "Enum class",
-          "description": "Enum class: conjunto fixo de constantes de uma mesma forma. As constantes ficam em entries (cada linha é alvo de referência com a etiqueta kotlin-enum-entry), com argumentos opcionais do construtor. Pode implementar interfaces, mas não herdar classes; não tem parâmetros de tipo. Não confunda com sealed class (subtipos com dados próprios). Aninhado = marcação dentro da marcação da declaração externa (pertencimento pela geometria).",
+          "description": "Enum class: conjunto fixo de constantes de uma mesma forma. As constantes ficam em entries (cada linha é alvo de referência com a etiqueta kotlin-enum-entry), com argumentos opcionais do construtor. Pode implementar interfaces, mas não herdar classes; não tem parâmetros de tipo. Não confunda com sealed class (subtipos com dados próprios). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/enum-class.json",
           "doc": "docs/enum-class.md",
@@ -744,6 +771,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "supertypes",
@@ -962,7 +998,7 @@
         {
           "id": "value-class",
           "name": "Value class",
-          "description": "Value class (@JvmInline): embrulha um único valor com tipo próprio, sem custo de objeto em tempo de execução. Tem exatamente uma propriedade no construtor primário (sempre val) e a anotação @JvmInline. Implementa interfaces, mas não herda classes. Use para ids e unidades (UserId, Meters). Não confunda com data class (várias propriedades, objeto de verdade). Aninhada = marcação dentro da marcação da declaração externa (pertencimento pela geometria).",
+          "description": "Value class (@JvmInline): embrulha um único valor com tipo próprio, sem custo de objeto em tempo de execução. Tem exatamente uma propriedade no construtor primário (sempre val) e a anotação @JvmInline. Implementa interfaces, mas não herda classes. Use para ids e unidades (UserId, Meters). Não confunda com data class (várias propriedades, objeto de verdade). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/value-class.json",
           "doc": "docs/value-class.md",
@@ -988,6 +1024,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "typeParameters",
@@ -1168,7 +1213,7 @@
         {
           "id": "annotation-class",
           "name": "Annotation class",
-          "description": "Annotation class: declara uma anotação (@Audited, @SerialName). As propriedades são os parâmetros do construtor (sempre val; tipos permitidos: primitivos, String, KClass, enum, outra anotação e arrays deles). targets (@Target) e retention (@Retention) dizem onde ela se aplica e até quando existe. Não tem corpo, funções nem supertipos. Não confunda com usar a anotação: a anotação aplicada a uma declaração vai no campo annotations dela. Aninhada = marcação dentro da marcação da externa (pertencimento pela geometria).",
+          "description": "Annotation class: declara uma anotação (@Audited, @SerialName). As propriedades são os parâmetros do construtor (sempre val; tipos permitidos: primitivos, String, KClass, enum, outra anotação e arrays deles). targets (@Target) e retention (@Retention) dizem onde ela se aplica e até quando existe. Não tem corpo, funções nem supertipos. Não confunda com usar a anotação: a anotação aplicada a uma declaração vai no campo annotations dela. A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/annotation-class.json",
           "doc": "docs/annotation-class.md",
@@ -1194,6 +1239,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "targets",
@@ -1290,7 +1344,7 @@
         {
           "id": "object",
           "name": "Object",
-          "description": "Object: declaração de instância única (singleton), criada de forma preguiçosa. Com companion = sim é o companion object, desenhado dentro da marcação da classe dona (o pertencimento vem da geometria; o nome do companion costuma ser o da classe). Pode herdar uma classe e implementar interfaces; não tem construtor nem parâmetros de tipo. Não confunda com class (várias instâncias) nem com data object (acrescenta toString/equals legíveis).",
+          "description": "Object: declaração de instância única (singleton), criada de forma preguiçosa. Com companion = sim é o companion object, ligado à classe dona pelo campo Declarada em (outer); o nome do companion costuma ser Companion. Desenhá-lo dentro da classe dona é só arrumação visual. Pode herdar uma classe e implementar interfaces; não tem construtor nem parâmetros de tipo. Não confunda com class (várias instâncias) nem com data object (acrescenta toString/equals legíveis).",
           "labelField": "name",
           "component": "components/object.json",
           "doc": "docs/object.md",
@@ -1318,12 +1372,21 @@
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
             },
             {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
               "key": "companion",
               "label": "Companion",
               "type": "enum",
               "options": ["sim", "não"],
               "default": "não",
-              "description": "sim quando é o companion object de uma classe; desenhe esta marcação dentro da marcação da classe dona."
+              "description": "sim quando é o companion object; exige Declarada em (a classe dona)."
             },
             {
               "key": "supertypes",
@@ -1512,7 +1575,7 @@
         {
           "id": "data-object",
           "name": "Data object",
-          "description": "Data object: object com toString, equals e hashCode gerados, útil como caso sem dados de uma sealed class ou interface (data object Loading). Instância única, sem construtor. Não confunda com object (sem esses métodos legíveis) nem com data class (várias instâncias). Para ligar o caso à hierarquia, aponte supertypes.typeRef para a sealed. Aninhado = marcação dentro da marcação da sealed (pertencimento pela geometria).",
+          "description": "Data object: object com toString, equals e hashCode gerados, útil como caso sem dados de uma sealed class ou interface (data object Loading). Instância única, sem construtor. Não confunda com object (sem esses métodos legíveis) nem com data class (várias instâncias). Para ligar o caso à hierarquia, aponte supertypes.typeRef para a sealed. A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/data-object.json",
           "doc": "docs/data-object.md",
@@ -1538,6 +1601,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "supertypes",
@@ -1731,7 +1803,7 @@
         {
           "id": "interface",
           "name": "Interface",
-          "description": "Interface Kotlin: contrato com funções (abstratas por padrão, ou com corpo) e propriedades (abstratas ou com getter). Sem estado: propriedades não têm campo de apoio. Pode herdar de outras interfaces. Não confunda com class abstract (pode ter estado e construtor) nem com fun interface (exatamente uma função abstrata, aceita lambda). Aninhada = marcação dentro da marcação da externa (pertencimento pela geometria).",
+          "description": "Interface Kotlin: contrato com funções (abstratas por padrão, ou com corpo) e propriedades (abstratas ou com getter). Sem estado: propriedades não têm campo de apoio. Pode herdar de outras interfaces. Não confunda com class abstract (pode ter estado e construtor) nem com fun interface (exatamente uma função abstrata, aceita lambda). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/interface.json",
           "doc": "docs/interface.md",
@@ -1757,6 +1829,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "typeParameters",
@@ -1944,7 +2025,7 @@
         {
           "id": "sealed-interface",
           "name": "Sealed interface",
-          "description": "Sealed interface: interface fechada; os implementadores diretos são conhecidos na compilação (when exaustivo) e ficam no mesmo módulo e pacote. Os subtipos são as declarações cujo supertypes aponta (typeRef) para ela. Mais flexível que sealed class: os subtipos podem ser data class, object, data object ou enum e herdar de outra classe. Não confunda com interface comum (aberta). Subtipos aninhados são marcações desenhadas dentro desta (pertencimento pela geometria).",
+          "description": "Sealed interface: interface fechada; os implementadores diretos são conhecidos na compilação (when exaustivo) e ficam no mesmo módulo e pacote. Os subtipos são as declarações cujo supertypes aponta (typeRef) para ela. Mais flexível que sealed class: os subtipos podem ser data class, object, data object ou enum e herdar de outra classe. Não confunda com interface comum (aberta). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/sealed-interface.json",
           "doc": "docs/sealed-interface.md",
@@ -1970,6 +2051,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "typeParameters",
@@ -2157,7 +2247,7 @@
         {
           "id": "fun-interface",
           "name": "Fun interface",
-          "description": "Fun interface (SAM): interface com exatamente uma função abstrata (sem corpo), o que permite criá-la com um lambda. Pode ter outras funções com corpo e propriedades sem estado. Use para callbacks e validadores. Não confunda com interface comum (várias funções abstratas, sem lambda) nem com typealias de função. Aninhada = marcação dentro da marcação da externa (pertencimento pela geometria).",
+          "description": "Fun interface (SAM): interface com exatamente uma função abstrata (sem corpo), o que permite criá-la com um lambda. Pode ter outras funções com corpo e propriedades sem estado. Use para callbacks e validadores. Não confunda com interface comum (várias funções abstratas, sem lambda) nem com typealias de função. A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
           "labelField": "name",
           "component": "components/fun-interface.json",
           "doc": "docs/fun-interface.md",
@@ -2183,6 +2273,15 @@
               "options": ["public", "internal", "protected", "private"],
               "default": "public",
               "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
             },
             {
               "key": "typeParameters",
