@@ -390,6 +390,10 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     setItemsLocked: (items: readonly model.ItemRef[], locked: boolean) =>
       store.apply((p) => model.setItemsLocked(p, items, locked)),
 
+    /** Cria a marcação pai que envolve a seleção; devolve o id dela (uma entrada de desfazer). */
+    wrapItems: (items: readonly model.ItemRef[]) =>
+      create((id) => (p) => model.wrapItems(p, { id, items }, settleOptions(p))),
+
     // Componentes (etapa Biblioteca, B3): cada action é uma entrada de desfazer.
     /** Cria a marcação e a anotação tipada que a desenha; devolve o id da marcação. */
     addComponent: (args: {
