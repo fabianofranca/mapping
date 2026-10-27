@@ -1,0 +1,2472 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 7,
+  "id": "kotlin",
+  "name": "Kotlin",
+  "version": 1,
+  "description": "Declarações Kotlin no canvas: classes, objetos e interfaces de todos os tipos, com propriedades, funções e supertipos; as propriedades são alvos de referência para anotações de outras camadas.",
+  "layers": [
+    {
+      "id": "kotlin-classes",
+      "name": "Classes Kotlin",
+      "color": "#7F52FF",
+      "annotationTypes": [
+        {
+          "id": "class",
+          "name": "Class",
+          "description": "Classe Kotlin comum (class). Use para tipos com comportamento e estado que não são só dados: serviços, repositórios, view models, implementações. A modalidade diz se pode ser herdada (open) ou é abstrata. Não confunda com data class (dados com equals/copy gerados), object (instância única) e interface. A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional. inner exige Declarada em. Um companion object é a marcação Object (com companion = sim) com Declarada em apontando para a classe dona.",
+          "labelField": "name",
+          "component": "components/class.json",
+          "doc": "docs/class.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "modality",
+              "label": "Modalidade",
+              "type": "enum",
+              "options": ["final", "open", "abstract"],
+              "default": "final",
+              "description": "final (padrão) não pode ser herdada; open pode; abstract não se instancia e pode ter membros abstratos."
+            },
+            {
+              "key": "inner",
+              "label": "Inner",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "description": "sim quando é uma inner class (acessa a instância da externa); exige Declarada em."
+            },
+            {
+              "key": "typeParameters",
+              "label": "Parâmetros de tipo",
+              "type": "string",
+              "description": "Parâmetros de tipo sem os sinais < >, com variância e limites (T, out R : Any)."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                },
+                {
+                  "key": "arguments",
+                  "label": "Argumentos",
+                  "type": "string",
+                  "description": "Argumentos passados ao construtor da superclasse, com parênteses (por exemplo (id)). Vazio para interfaces."
+                }
+              ],
+              "description": "Superclasse (com os argumentos do construtor) e interfaces implementadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "declaredIn",
+                  "label": "Declaração",
+                  "type": "enum",
+                  "options": ["construtor", "corpo"],
+                  "default": "construtor",
+                  "description": "Onde a propriedade é declarada: no construtor primário ou no corpo."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "O inicializador sem o sinal de igual (emptyList())."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções declaradas no corpo, uma por linha. Cada linha é alvo de referência (kotlin-function)."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Repositório",
+              "values": {
+                "name": "UserRepositoryImpl",
+                "package": "com.app.data",
+                "visibility": "internal",
+                "modality": "final",
+                "inner": "não"
+              }
+            },
+            {
+              "name": "Classe base",
+              "values": {
+                "name": "BaseViewModel",
+                "package": "com.app.ui",
+                "modality": "abstract",
+                "typeParameters": "S : UiState",
+                "annotations": "@HiltViewModel"
+              }
+            }
+          ]
+        },
+        {
+          "id": "data-class",
+          "name": "Data class",
+          "description": "Data class: classe de dados com equals, hashCode, copy, toString e componentN gerados a partir das propriedades do construtor primário. Precisa de ao menos uma propriedade no construtor (declaredIn = construtor). Não pode ser abstract, open, sealed nem inner. Use para modelos, DTOs e estado de UI imutável (prefira val). Não confunda com class comum (sem esses métodos) nem com value class (embrulha um único valor). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/data-class.json",
+          "doc": "docs/data-class.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "typeParameters",
+              "label": "Parâmetros de tipo",
+              "type": "string",
+              "description": "Parâmetros de tipo sem os sinais < >, com variância e limites (T, out R : Any)."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                },
+                {
+                  "key": "arguments",
+                  "label": "Argumentos",
+                  "type": "string",
+                  "description": "Argumentos passados ao construtor da superclasse, com parênteses (por exemplo (id)). Vazio para interfaces."
+                }
+              ],
+              "description": "Superclasse (com os argumentos do construtor) e interfaces implementadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "declaredIn",
+                  "label": "Declaração",
+                  "type": "enum",
+                  "options": ["construtor", "corpo"],
+                  "default": "construtor",
+                  "description": "Onde a propriedade é declarada. Só as do construtor entram em equals, hashCode, copy e toString."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "O inicializador sem o sinal de igual (emptyList())."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções declaradas no corpo, uma por linha. Cada linha é alvo de referência (kotlin-function)."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Modelo de usuário",
+              "values": {
+                "name": "Usuario",
+                "package": "com.app.domain",
+                "annotations": "@Serializable"
+              }
+            },
+            {
+              "name": "Par genérico",
+              "values": {
+                "name": "Resultado",
+                "typeParameters": "T",
+                "kdoc": "Valor e mensagem de uma operação."
+              }
+            }
+          ]
+        },
+        {
+          "id": "sealed-class",
+          "name": "Sealed class",
+          "description": "Sealed class: hierarquia fechada e abstrata; os subtipos diretos são conhecidos em tempo de compilação, o que permite when exaustivo. Os subtipos são as declarações mapeadas cujo supertypes aponta (typeRef) para ela; o agente os acha por essa referência. Use para resultados e estados com formas diferentes. Não confunda com enum (instâncias fixas da mesma forma) nem com class open (hierarquia aberta). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/sealed-class.json",
+          "doc": "docs/sealed-class.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "typeParameters",
+              "label": "Parâmetros de tipo",
+              "type": "string",
+              "description": "Parâmetros de tipo sem os sinais < >, com variância e limites (T, out R : Any)."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                },
+                {
+                  "key": "arguments",
+                  "label": "Argumentos",
+                  "type": "string",
+                  "description": "Argumentos passados ao construtor da superclasse, com parênteses (por exemplo (id)). Vazio para interfaces."
+                }
+              ],
+              "description": "Superclasse (com os argumentos do construtor) e interfaces implementadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "declaredIn",
+                  "label": "Declaração",
+                  "type": "enum",
+                  "options": ["construtor", "corpo"],
+                  "default": "construtor",
+                  "description": "Onde a propriedade é declarada: no construtor primário ou no corpo."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "O inicializador sem o sinal de igual (emptyList())."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções declaradas no corpo, uma por linha. Cada linha é alvo de referência (kotlin-function)."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Resultado de operação",
+              "values": {
+                "name": "Resultado",
+                "package": "com.app.core",
+                "typeParameters": "out T"
+              }
+            },
+            {
+              "name": "Erro de domínio",
+              "values": {
+                "name": "DomainError",
+                "package": "com.app.domain",
+                "kdoc": "Falhas esperadas do domínio."
+              }
+            }
+          ]
+        },
+        {
+          "id": "enum-class",
+          "name": "Enum class",
+          "description": "Enum class: conjunto fixo de constantes de uma mesma forma. As constantes ficam em entries (cada linha é alvo de referência com a etiqueta kotlin-enum-entry), com argumentos opcionais do construtor. Pode implementar interfaces, mas não herdar classes; não tem parâmetros de tipo. Não confunda com sealed class (subtipos com dados próprios). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/enum-class.json",
+          "doc": "docs/enum-class.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                }
+              ],
+              "description": "Interfaces implementadas ou herdadas, uma por linha."
+            },
+            {
+              "key": "entries",
+              "label": "Constantes",
+              "type": "table",
+              "tags": ["kotlin-enum-entry"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da constante (ACTIVE)."
+                },
+                {
+                  "key": "arguments",
+                  "label": "Argumentos",
+                  "type": "string",
+                  "description": "Argumentos do construtor da constante (\"Ativo\", 1)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a constante significa."
+                }
+              ],
+              "description": "As constantes do enum, uma por linha. Cada linha é alvo de referência com a etiqueta kotlin-enum-entry."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "declaredIn",
+                  "label": "Declaração",
+                  "type": "enum",
+                  "options": ["construtor", "corpo"],
+                  "default": "construtor",
+                  "description": "Onde a propriedade é declarada: no construtor primário ou no corpo."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "O inicializador sem o sinal de igual (emptyList())."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções declaradas no corpo, uma por linha. Cada linha é alvo de referência (kotlin-function)."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Status",
+              "values": {
+                "name": "Status",
+                "package": "com.app.domain",
+                "kdoc": "Situação da conta."
+              }
+            },
+            {
+              "name": "Direção",
+              "values": {
+                "name": "Direction",
+                "visibility": "internal"
+              }
+            }
+          ]
+        },
+        {
+          "id": "value-class",
+          "name": "Value class",
+          "description": "Value class (@JvmInline): embrulha um único valor com tipo próprio, sem custo de objeto em tempo de execução. Tem exatamente uma propriedade no construtor primário (sempre val) e a anotação @JvmInline. Implementa interfaces, mas não herda classes. Use para ids e unidades (UserId, Meters). Não confunda com data class (várias propriedades, objeto de verdade). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/value-class.json",
+          "doc": "docs/value-class.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "typeParameters",
+              "label": "Parâmetros de tipo",
+              "type": "string",
+              "description": "Parâmetros de tipo sem os sinais < >, com variância e limites (T, out R : Any)."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                }
+              ],
+              "description": "Interfaces implementadas ou herdadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "O inicializador sem o sinal de igual (emptyList())."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções declaradas no corpo, uma por linha. Cada linha é alvo de referência (kotlin-function)."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Identificador",
+              "values": {
+                "name": "UserId",
+                "package": "com.app.domain",
+                "annotations": "@JvmInline"
+              }
+            },
+            {
+              "name": "Unidade",
+              "values": {
+                "name": "Meters",
+                "package": "com.app.units",
+                "annotations": "@JvmInline"
+              }
+            }
+          ]
+        },
+        {
+          "id": "annotation-class",
+          "name": "Annotation class",
+          "description": "Annotation class: declara uma anotação (@Audited, @SerialName). As propriedades são os parâmetros do construtor (sempre val; tipos permitidos: primitivos, String, KClass, enum, outra anotação e arrays deles). targets (@Target) e retention (@Retention) dizem onde ela se aplica e até quando existe. Não tem corpo, funções nem supertipos. Não confunda com usar a anotação: a anotação aplicada a uma declaração vai no campo annotations dela. A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/annotation-class.json",
+          "doc": "docs/annotation-class.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "targets",
+              "label": "Alvos (@Target)",
+              "type": "string",
+              "description": "Onde a anotação pode ser aplicada (CLASS, PROPERTY, FUNCTION), separados por vírgula."
+            },
+            {
+              "key": "retention",
+              "label": "Retenção",
+              "type": "enum",
+              "options": ["RUNTIME", "BINARY", "SOURCE"],
+              "default": "RUNTIME",
+              "description": "Até quando a anotação existe: RUNTIME (visível por reflexão), BINARY (no bytecode) ou SOURCE (só no código-fonte)."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "Valor padrão do parâmetro, sem o sinal de igual."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Os parâmetros do construtor da anotação, sempre val; tipos permitidos: primitivos, String, KClass, enum, outra anotação e arrays deles. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Auditoria",
+              "values": {
+                "name": "Audited",
+                "package": "com.app.audit",
+                "targets": "CLASS, FUNCTION",
+                "retention": "RUNTIME"
+              }
+            },
+            {
+              "name": "Só em tempo de compilação",
+              "values": {
+                "name": "Internal",
+                "retention": "SOURCE",
+                "targets": "CLASS"
+              }
+            }
+          ]
+        },
+        {
+          "id": "object",
+          "name": "Object",
+          "description": "Object: declaração de instância única (singleton), criada de forma preguiçosa. Com companion = sim é o companion object, ligado à classe dona pelo campo Declarada em (outer); o nome do companion costuma ser Companion. Desenhá-lo dentro da classe dona é só arrumação visual. Pode herdar uma classe e implementar interfaces; não tem construtor nem parâmetros de tipo. Não confunda com class (várias instâncias) nem com data object (acrescenta toString/equals legíveis).",
+          "labelField": "name",
+          "component": "components/object.json",
+          "doc": "docs/object.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "companion",
+              "label": "Companion",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "description": "sim quando é o companion object; exige Declarada em (a classe dona)."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                },
+                {
+                  "key": "arguments",
+                  "label": "Argumentos",
+                  "type": "string",
+                  "description": "Argumentos passados ao construtor da superclasse, com parênteses (por exemplo (id)). Vazio para interfaces."
+                }
+              ],
+              "description": "Superclasse (com os argumentos do construtor) e interfaces implementadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "O inicializador sem o sinal de igual (emptyList())."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções declaradas no corpo, uma por linha. Cada linha é alvo de referência (kotlin-function)."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Singleton",
+              "values": {
+                "name": "UserMapper",
+                "package": "com.app.mapper",
+                "companion": "não"
+              }
+            },
+            {
+              "name": "Companion",
+              "values": {
+                "name": "Companion",
+                "companion": "sim",
+                "kdoc": "Fábricas da classe dona."
+              }
+            }
+          ]
+        },
+        {
+          "id": "data-object",
+          "name": "Data object",
+          "description": "Data object: object com toString, equals e hashCode gerados, útil como caso sem dados de uma sealed class ou interface (data object Loading). Instância única, sem construtor. Não confunda com object (sem esses métodos legíveis) nem com data class (várias instâncias). Para ligar o caso à hierarquia, aponte supertypes.typeRef para a sealed. A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/data-object.json",
+          "doc": "docs/data-object.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                },
+                {
+                  "key": "arguments",
+                  "label": "Argumentos",
+                  "type": "string",
+                  "description": "Argumentos passados ao construtor da superclasse, com parênteses (por exemplo (id)). Vazio para interfaces."
+                }
+              ],
+              "description": "Superclasse (com os argumentos do construtor) e interfaces implementadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "O inicializador sem o sinal de igual (emptyList())."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções declaradas no corpo, uma por linha. Cada linha é alvo de referência (kotlin-function)."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Estado de carga",
+              "values": {
+                "name": "Loading",
+                "kdoc": "Carregando dados."
+              }
+            },
+            {
+              "name": "Estado vazio",
+              "values": {
+                "name": "Empty",
+                "package": "com.app.ui"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kotlin-interfaces",
+      "name": "Interfaces Kotlin",
+      "color": "#E44857",
+      "annotationTypes": [
+        {
+          "id": "interface",
+          "name": "Interface",
+          "description": "Interface Kotlin: contrato com funções (abstratas por padrão, ou com corpo) e propriedades (abstratas ou com getter). Sem estado: propriedades não têm campo de apoio. Pode herdar de outras interfaces. Não confunda com class abstract (pode ter estado e construtor) nem com fun interface (exatamente uma função abstrata, aceita lambda). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/interface.json",
+          "doc": "docs/interface.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "typeParameters",
+              "label": "Parâmetros de tipo",
+              "type": "string",
+              "description": "Parâmetros de tipo sem os sinais < >, com variância e limites (T, out R : Any)."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                }
+              ],
+              "description": "Interfaces implementadas ou herdadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "Implementação do getter (o que vem depois de get() =); vazio = propriedade abstrata."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções da interface; uma função sem corpo é abstrata."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Repositório",
+              "values": {
+                "name": "UserRepository",
+                "package": "com.app.domain"
+              }
+            },
+            {
+              "name": "Genérica",
+              "values": {
+                "name": "Mapper",
+                "typeParameters": "I, O",
+                "kdoc": "Converte I em O."
+              }
+            }
+          ]
+        },
+        {
+          "id": "sealed-interface",
+          "name": "Sealed interface",
+          "description": "Sealed interface: interface fechada; os implementadores diretos são conhecidos na compilação (when exaustivo) e ficam no mesmo módulo e pacote. Os subtipos são as declarações cujo supertypes aponta (typeRef) para ela. Mais flexível que sealed class: os subtipos podem ser data class, object, data object ou enum e herdar de outra classe. Não confunda com interface comum (aberta). A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/sealed-interface.json",
+          "doc": "docs/sealed-interface.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "typeParameters",
+              "label": "Parâmetros de tipo",
+              "type": "string",
+              "description": "Parâmetros de tipo sem os sinais < >, com variância e limites (T, out R : Any)."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                }
+              ],
+              "description": "Interfaces implementadas ou herdadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "Implementação do getter (o que vem depois de get() =); vazio = propriedade abstrata."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções da interface; uma função sem corpo é abstrata."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Estado de UI",
+              "values": {
+                "name": "UiState",
+                "package": "com.app.ui"
+              }
+            },
+            {
+              "name": "Evento",
+              "values": {
+                "name": "UiEvent",
+                "package": "com.app.ui",
+                "kdoc": "Ações únicas da tela."
+              }
+            }
+          ]
+        },
+        {
+          "id": "fun-interface",
+          "name": "Fun interface",
+          "description": "Fun interface (SAM): interface com exatamente uma função abstrata (sem corpo), o que permite criá-la com um lambda. Pode ter outras funções com corpo e propriedades sem estado. Use para callbacks e validadores. Não confunda com interface comum (várias funções abstratas, sem lambda) nem com typealias de função. A declaração aninhada (inner, nested, companion) se liga à externa pelo campo Declarada em (outer); desenhar a marcação dentro da externa é só arrumação visual e opcional.",
+          "labelField": "name",
+          "component": "components/fun-interface.json",
+          "doc": "docs/fun-interface.md",
+          "fields": [
+            {
+              "key": "name",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "tags": ["kotlin-type"],
+              "description": "Nome simples da declaração como no código (Usuario, UiState). É alvo de referência (etiqueta kotlin-type) para supertipos e tipos de propriedade de outras marcações."
+            },
+            {
+              "key": "package",
+              "label": "Pacote",
+              "type": "string",
+              "description": "Pacote da declaração (com.app.domain). Vazio numa declaração aninhada."
+            },
+            {
+              "key": "visibility",
+              "label": "Visibilidade",
+              "type": "enum",
+              "options": ["public", "internal", "protected", "private"],
+              "default": "public",
+              "description": "Visibilidade da declaração. protected só vale em declaração aninhada."
+            },
+            {
+              "key": "outer",
+              "label": "Declarada em",
+              "type": "ref",
+              "accepts": {
+                "tags": ["kotlin-type"]
+              },
+              "description": "A declaração externa em que esta está declarada (classe aninhada, inner class, companion object). É a ligação que o agente lê (refs nesta anotação, backlinks na externa); não depende de a marcação estar desenhada dentro da externa. Vazio = declaração de topo."
+            },
+            {
+              "key": "typeParameters",
+              "label": "Parâmetros de tipo",
+              "type": "string",
+              "description": "Parâmetros de tipo sem os sinais < >, com variância e limites (T, out R : Any)."
+            },
+            {
+              "key": "supertypes",
+              "label": "Supertipos",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada correspondente, quando o supertipo também está no mapeamento; é assim que um subtipo se liga à sealed class ou interface."
+                }
+              ],
+              "description": "Interfaces implementadas ou herdadas, uma por linha."
+            },
+            {
+              "key": "properties",
+              "label": "Propriedades",
+              "type": "table",
+              "tags": ["data-field", "kotlin-property"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da propriedade."
+                },
+                {
+                  "key": "type",
+                  "label": "Tipo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Tipo da propriedade com nulabilidade (String?, List<Endereco>)."
+                },
+                {
+                  "key": "typeRef",
+                  "label": "Tipo mapeado",
+                  "type": "ref",
+                  "accepts": {
+                    "tags": ["kotlin-type"]
+                  },
+                  "description": "A declaração mapeada que é o tipo da propriedade, quando está no mapeamento."
+                },
+                {
+                  "key": "mutability",
+                  "label": "Mutabilidade",
+                  "type": "enum",
+                  "options": ["val", "var"],
+                  "default": "val",
+                  "description": "val é somente leitura; var é mutável."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da propriedade."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (override, lateinit, const, abstract, open)."
+                },
+                {
+                  "key": "defaultValue",
+                  "label": "Valor inicial",
+                  "type": "string",
+                  "description": "Implementação do getter (o que vem depois de get() =); vazio = propriedade abstrata."
+                },
+                {
+                  "key": "annotations",
+                  "label": "Anotações",
+                  "type": "string",
+                  "description": "Anotações da propriedade (@SerialName(\"user_id\"))."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a propriedade representa."
+                }
+              ],
+              "description": "Propriedades da declaração, uma por linha. Cada linha é alvo de referência: um campo ref de outra camada ou especialização que aceite data-field (ou kotlin-property) aponta para a propriedade."
+            },
+            {
+              "key": "functions",
+              "label": "Funções",
+              "type": "table",
+              "tags": ["kotlin-function"],
+              "rowLabel": "name",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true,
+                  "description": "Nome da função."
+                },
+                {
+                  "key": "parameters",
+                  "label": "Parâmetros",
+                  "type": "string",
+                  "description": "Lista de parâmetros como no código (id: String, force: Boolean = false)."
+                },
+                {
+                  "key": "returnType",
+                  "label": "Retorno",
+                  "type": "string",
+                  "description": "Tipo de retorno; vazio = Unit."
+                },
+                {
+                  "key": "visibility",
+                  "label": "Visibilidade",
+                  "type": "enum",
+                  "options": ["public", "internal", "protected", "private"],
+                  "default": "public",
+                  "description": "Visibilidade da função."
+                },
+                {
+                  "key": "modifiers",
+                  "label": "Modificadores",
+                  "type": "string",
+                  "description": "Modificadores separados por espaço (suspend, override, abstract, open, operator, inline)."
+                },
+                {
+                  "key": "kdoc",
+                  "label": "Descrição",
+                  "type": "string",
+                  "description": "O que a função faz."
+                }
+              ],
+              "description": "Funções da interface: exatamente uma abstrata (sem corpo); as demais têm corpo."
+            },
+            {
+              "key": "annotations",
+              "label": "Anotações",
+              "type": "string",
+              "description": "Anotações da declaração (@Serializable, @Entity(tableName = \"users\"))."
+            },
+            {
+              "key": "kdoc",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Descrição (KDoc) da declaração."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Validador",
+              "values": {
+                "name": "Validator",
+                "package": "com.app.validation",
+                "typeParameters": "T"
+              }
+            },
+            {
+              "name": "Callback",
+              "values": {
+                "name": "OnItemClick",
+                "kdoc": "Chamado ao tocar num item."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
