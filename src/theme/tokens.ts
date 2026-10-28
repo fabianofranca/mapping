@@ -235,6 +235,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-canvas-min': '320px',
   'size-resize-hit': '8px',
   'size-label-col': '92px',
+  /** Largura mínima de uma coluna de valor na tabela (DataGrid); acima disso a tabela rola. */
+  'size-grid-col-min': '96px',
   'size-dialog': '480px',
   'size-dialog-md': '560px',
   'size-dialog-lg': '820px',

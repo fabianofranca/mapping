@@ -560,6 +560,7 @@ button.layer-group-label:hover {
   grid-template-columns:
     var(--size-target-min) var(--size-target-min) repeat(var(--cols), 1fr)
     var(--control-height);
+  overflow-x: auto;
 }
 
 .data-grid .grid-row {
@@ -569,6 +570,18 @@ button.layer-group-label:hover {
 
 .data-grid .grid-cell-value {
   min-width: auto;
+}
+
+/*
+ * Os controles encolhem (largura 100%), então o mínimo das colunas de valor vem deles, e
+ * não da célula (o segmentado continua dimensionando a própria coluna). Tabela larga rola
+ * na própria caixa; as linhas ocupam a largura toda rolada.
+ */
+.data-grid .grid-cell-value .input,
+.data-grid .grid-cell-value .select,
+.data-grid .grid-cell-value .ref-cell,
+.data-grid .grid-cell-value .ref-control {
+  min-width: var(--size-grid-col-min);
 }
 
 .grid-head {
@@ -747,9 +760,8 @@ button.layer-group-label:hover {
 }
 
 .action-menu-list {
-  position: absolute;
-  top: 100%;
-  right: 0;
+  /* Posicionada por JS (ActionMenu): fora do fluxo, não é cortada por uma grade que rola. */
+  position: fixed;
   z-index: var(--z-popover);
   display: flex;
   flex-direction: column;
