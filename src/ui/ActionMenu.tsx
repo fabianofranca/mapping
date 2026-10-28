@@ -24,11 +24,30 @@ interface ActionMenuProps {
 }
 
 const ITEMS = '[role="menuitem"]:not(:disabled)';
+const GAP = 4;
+const EDGE = 8;
+
+/** Põe a lista (fixed) abaixo do gatilho, alinhada à direita; sobe se não couber. */
+function place(list: HTMLElement, anchor: HTMLElement): void {
+  const box = anchor.getBoundingClientRect();
+  const width = list.offsetWidth;
+  const height = list.offsetHeight;
+  const vw = globalThis.innerWidth || document.documentElement.clientWidth;
+  const vh = globalThis.innerHeight || document.documentElement.clientHeight;
+  const left = Math.max(EDGE, Math.min(box.right - width, vw - width - EDGE));
+  const below = box.bottom + GAP;
+  const above = box.top - GAP - height;
+  const fitsBelow = below + height <= vh - EDGE;
+  const top = fitsBelow || above < EDGE ? below : above;
+  list.style.left = `${left}px`;
+  list.style.top = `${Math.max(EDGE, Math.min(top, vh - height - EDGE))}px`;
+}
 
 export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const list = useRef<HTMLSpanElement>(null);
 
   const close = () => {
     returnFocusToTrigger(root.current, trigger.current);
@@ -41,10 +60,19 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
     const onDown = (e: PointerEvent) => {
       if (!root.current?.contains(e.target as Node)) close();
     };
+    // Fechar ao rolar (qualquer ancestral, em captura) ou redimensionar: a lista é fixa.
+    const onMove = () => close();
+    if (list.current && trigger.current) place(list.current, trigger.current);
     document.addEventListener('pointerdown', onDown);
+    document.addEventListener('scroll', onMove, true);
+    globalThis.addEventListener('resize', onMove);
     // Abre com o foco no primeiro item habilitado.
-    root.current?.querySelector<HTMLElement>(ITEMS)?.focus();
-    return () => document.removeEventListener('pointerdown', onDown);
+    root.current?.querySelector<HTMLElement>(ITEMS)?.focus({ preventScroll: true });
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('scroll', onMove, true);
+      globalThis.removeEventListener('resize', onMove);
+    };
   }, [open]);
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -77,7 +105,7 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
         onClick={() => setOpen(!open)}
       />
       {open && (
-        <span class="action-menu-list" role="menu" aria-label={label}>
+        <span class="action-menu-list" role="menu" aria-label={label} ref={list}>
           {items.map((item) => (
             <button
               key={item.label}

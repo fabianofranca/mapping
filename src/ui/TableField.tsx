@@ -277,7 +277,12 @@ export function TableEditor({
               #
             </span>
             {field.columns.map((c) => (
-              <span key={c.key} class="grid-cell" role="columnheader">
+              <span
+                key={c.key}
+                class="grid-cell"
+                role="columnheader"
+                title={fieldLabel(c)}
+              >
                 {fieldLabel(c)}
                 {c.required ? ' *' : ''}
               </span>

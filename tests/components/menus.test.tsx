@@ -187,6 +187,28 @@ describe('ActionMenu', () => {
   });
 });
 
+describe('ActionMenu (posição fixa)', () => {
+  it('a lista recebe left/top e fecha ao rolar', async () => {
+    render(<ActionMenu label="Ações" items={[{ label: 'Subir', onSelect: vi.fn() }]} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Ações' }));
+    const list = await screen.findByRole('menu');
+    expect(list.style.left).toMatch(/px$/);
+    expect(list.style.top).toMatch(/px$/);
+    fireEvent.scroll(document.body);
+    await vi.waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+  });
+
+  it('fecha ao redimensionar a janela', async () => {
+    render(<ActionMenu label="Ações" items={[{ label: 'Subir', onSelect: vi.fn() }]} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Ações' }));
+    await screen.findByRole('menu');
+    fireEvent(window, new Event('resize'));
+    await vi.waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+  });
+});
+
 describe('CanvasContextMenu', () => {
   function renderMenu() {
     const harness = createHarness(sampleProject());
