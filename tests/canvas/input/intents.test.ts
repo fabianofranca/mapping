@@ -16,6 +16,7 @@ import {
   setMarkingFloating,
   setMarkingLocked,
   type Project,
+  type Rect,
 } from '../../../src/model';
 import type { SelectionItem } from '../../../src/store/ui';
 import { visibleArrowShapes } from '../../../src/canvas/arrowGeometry';
@@ -173,6 +174,64 @@ describe('tapSelection', () => {
     const selection = { kind: 'image', id: 'I1' } as const;
     expect(tapSelection(project, selection, NONE, { x: 1050, y: 0 }, false)).toBeNull();
     expect(tapSelection(null, selection, NONE, { x: 250, y: 250 }, false)).toBeNull();
+  });
+});
+
+describe('rótulo do nome do container', () => {
+  const titles: ReadonlyMap<string, Rect> = new Map([
+    ['I1', { x: 0, y: -20, width: 100, height: 16 }],
+  ]);
+  const onTitle = { x: 50, y: -10 };
+
+  it('entra na cadeia do toque; sem os rótulos, o ponto não alcança nada', () => {
+    expect(hitChain(project, NONE, onTitle, undefined, titles)).toEqual([
+      { kind: 'image', id: 'I1' },
+    ]);
+    expect(hitChain(project, NONE, onTitle)).toEqual([]);
+    expect(tapSelection(project, null, NONE, onTitle, false, undefined, titles)).toEqual({
+      kind: 'image',
+      id: 'I1',
+    });
+  });
+
+  it('inclui as marcações do canvas que contêm o container', () => {
+    const p = spatialProject();
+    const chain = hitChain(p, NONE, onTitle, undefined, titles);
+    expect(chain.slice(0, 2)).toEqual([
+      { kind: 'image', id: 'I1' },
+      { kind: 'marking', id: 'C1' },
+    ]);
+  });
+
+  it('arrastar pelo rótulo do container selecionado o move; trancado, locked; não selecionado, pan', () => {
+    const selection = { kind: 'image', id: 'I1' } as const;
+    expect(intentAt(ctx({ selection, titles }), onTitle)).toEqual({
+      kind: 'move-image',
+      containerId: 'I1',
+    });
+    expect(intentAt(ctx({ selection }), onTitle)).toEqual({ kind: 'pan' });
+    expect(intentAt(ctx({ titles }), onTitle)).toEqual({ kind: 'pan' });
+    expect(
+      intentAt(
+        ctx({ project: setImageLocked(project, 'I1', true), selection, titles }),
+        onTitle,
+      ),
+    ).toEqual({ kind: 'locked' });
+  });
+
+  it('seleção múltipla: o rótulo de um container selecionado conta como dentro', () => {
+    const items: SelectionItem[] = [
+      { kind: 'marking', id: 'C2' },
+      { kind: 'image', id: 'I1' },
+    ];
+    const c = ctx({
+      project: spatialProject(),
+      items,
+      selection: items[1] ?? null,
+      titles,
+    });
+    expect(intentAt(c, onTitle)).toEqual({ kind: 'move-items', items });
+    expect(intentAt({ ...c, titles: undefined }, onTitle)).toEqual({ kind: 'pan' });
   });
 });
 
