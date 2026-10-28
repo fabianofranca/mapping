@@ -56,6 +56,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/relato-2026-10-20-instanciacao-reteste.md`](docs/history/relato-2026-10-20-instanciacao-reteste.md) | Reteste do R3.6a no Claude Code com a `mcp-v0.6.0-rc.2`: passou |
 | [`docs/history/relato-2026-10-21-recorte-url.md`](docs/history/relato-2026-10-21-recorte-url.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/recorte-url` (build `564b1e7`, MCP 0.7.0-rc.1): 35 ✅, nenhum achado |
 | [`docs/history/relato-2026-10-24-proposto-componentes.md`](docs/history/relato-2026-10-24-proposto-componentes.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/proposto-componentes` (build `70cc7ee`): 29 ✅, 4 ⚠️, achados corrigidos no fechamento |
+| [`docs/history/relato-2026-10-28-marcacao-pai.md`](docs/history/relato-2026-10-28-marcacao-pai.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/marcacao-pai` (build `5d7ac40`): 19 ✅, 1 achado baixo (texto cortado sem dica), corrigido no MP1b |
 | [`docs/history/revisao-tecnica-2026-10-12.md`](docs/history/revisao-tecnica-2026-10-12.md) | Revisão técnica dirigida (síntese e seis relatórios, 71 achados); origem da etapa 8 |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das próximas etapas (etapas Container, Marcações espaciais, notas e setas e Proposto com componentes concluídas), marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3, concluída; referência): componentes, tokens, mudanças B#, propostas P# e decisões |
@@ -96,6 +97,8 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 - [x] Action `wrapItems` no store, uma entrada no desfazer, devolve o id (teste)
 - [x] Botão **Envolver** no resumo da seleção múltipla, com a nova selecionada depois e a dica quando desabilitado; textos em pt-BR e en-US (teste de componente)
 - [x] Roteiro R12 com o passo novo, feito pelo agente sozinho (seção 8 do `docs/TESTING.md`)
+- [x] Rodada dirigida do Cowork (R0 e R12.1 a R12.11a; [`relato-2026-10-28-marcacao-pai.md`](docs/history/relato-2026-10-28-marcacao-pai.md)): 19 ✅ e 1 achado baixo, fora da feature
+- [x] MP1b: o achado 1 (texto cortado com reticências sem dica): `title` no resumo da linha da camada nos Detalhes e nos nomes do caminho acima do canvas (teste de componente); no guia, o R0.1 lista o **Guia interativo** na lateral e o R12.10 diz que o `C` fica sem pai quando o `Grupo 2` deixa de cobri-lo
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-marcacao-pai.md`, `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico)
 
 ## Etapa — Marcações espaciais, notas e setas (concluída, épico `epic/marcacoes-espaciais`)
