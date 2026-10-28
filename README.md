@@ -37,6 +37,7 @@ npm run build:viewer # gera dist-viewer/ (visualizador embutível: núcleo, inv�
 npm run build:guia   # regera public/guia/index.html (o npm run build já faz)
 npm run build:example # regera examples/exemplo-completo.zip a partir da pasta
 npm run build:proposal-components # regera examples/proposta-componentes.zip (proposta com componentes novos, roteiro R13)
+npm run build:suggestions-kotlin # regera examples/sugestoes-kotlin.zip (biblioteca Kotlin com duas data classes, roteiro R14)
 ```
 
 ## Guia interativo e projeto de exemplo

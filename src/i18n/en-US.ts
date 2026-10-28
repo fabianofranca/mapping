@@ -606,6 +606,7 @@ export const enUS: Dictionary = {
   'typed.enumNone': '(none)',
   'typed.invalidNumber': 'Type a number (use a dot or comma for decimals).',
   'typed.invalidValue': 'Invalid value for this field.',
+  'suggestions.listLabel': 'Suggestions',
   'typed.unknownType':
     'The type "{type}" no longer exists in the specialization. The annotation is read-only.',
   'typed.convertToFree': 'Convert to free annotation',

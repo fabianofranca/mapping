@@ -6,7 +6,7 @@ import { isPackagePath, packagePathProblem } from './packagePaths';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 7), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
+// Formato da especialização (`formatVersion` 1 a 8), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
 // etapas 3b e 4 e etapa Biblioteca do plano. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
@@ -17,7 +17,8 @@ export { isPackagePath };
 // a versão 6 é a 5 mais `containers` (presets de tamanho do diálogo Novo container); a versão 7
 // é a 6 mais `floating` no tipo (a instância é uma marcação flutuante, como uma nota),
 // `appliesTo` no tipo (onde a anotação se aplica: marcação, seta ou ambas) e `ref` como tipo
-// de coluna de `table` (a lista de referências como dado, ME4).
+// de coluna de `table` (a lista de referências como dado, ME4); a versão 8 é a 7 mais
+// `suggestions` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -30,9 +31,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 7;
+export const SPEC_FORMAT_VERSION = 8;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -174,7 +175,12 @@ interface SpecFieldBase {
 
 /** Campo simples (e coluna simples): texto, número, data ou enum. */
 export type SpecSimpleColumn =
-  | (SpecFieldBase & { type: 'string'; default?: string })
+  | (SpecFieldBase & {
+      type: 'string';
+      default?: string;
+      /** Vocabulário sugerido ao digitar (só `formatVersion` 8); não restringe o valor. */
+      suggestions?: string[];
+    })
   | (SpecFieldBase & { type: 'number'; default?: number })
   | (SpecFieldBase & { type: 'date'; default?: string })
   | (SpecFieldBase & { type: 'enum'; options: string[]; default?: string });
@@ -365,6 +371,7 @@ const fieldShape = z
     required: z.boolean().optional(),
     default: z.unknown().optional(),
     options: z.array(z.string()).optional(),
+    suggestions: z.array(z.string()).optional(),
     columns: z.array(z.unknown()).optional(),
     tags: tags.optional(),
     rowLabel: z.string().optional(),
@@ -411,6 +418,30 @@ function valueProblem(
   }
 }
 
+const MAX_SUGGESTIONS = 200;
+
+/** `suggestions` (v8): lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas. */
+function checkSuggestions(
+  suggestions: readonly string[],
+  add: (sub: string, message: string) => void,
+): void {
+  if (suggestions.length === 0) {
+    add('suggestions', 'não pode ser vazio; tire a chave ou liste ao menos uma sugestão');
+    return;
+  }
+  if (suggestions.length > MAX_SUGGESTIONS) {
+    add('suggestions', `no máximo ${MAX_SUGGESTIONS} sugestões`);
+  }
+  if (suggestions.some((x) => x === ''))
+    add('suggestions', 'sugestões não podem ser vazias');
+  if (suggestions.some((x) => x !== x.trim())) {
+    add('suggestions', 'sugestões não podem ter espaço no começo nem no fim');
+  }
+  if (new Set(suggestions).size !== suggestions.length) {
+    add('suggestions', 'sugestões repetidas');
+  }
+}
+
 /** Valida um campo; `column` = dentro de `table` (tipos simples e `ref`, nunca `table`). */
 function checkField(
   field: RawField,
@@ -443,6 +474,14 @@ function checkField(
     }
   } else if (field.options !== undefined) {
     add('options', 'só é permitido em enum');
+  }
+
+  if (field.suggestions !== undefined) {
+    if (type !== 'string') {
+      add('suggestions', 'só é permitido em campo ou coluna string');
+    } else {
+      checkSuggestions(field.suggestions, add);
+    }
   }
 
   if (type !== 'table') {
@@ -1386,6 +1425,7 @@ export const specSchema = z
         z.literal(5),
         z.literal(6),
         z.literal(7),
+        z.literal(8),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -1452,6 +1492,28 @@ export const specSchema = z
             (field.columns ?? []).forEach((column, ci) => {
               if (isRecord(column) && column.type === 'ref') {
                 only7(['fields', fi, 'columns', ci, 'type']);
+              }
+            });
+          });
+        });
+      });
+    }
+    // v8: `suggestions` em campo e coluna `string`. Antes dela, é erro no caminho exato.
+    if (spec.formatVersion < 8) {
+      spec.layers.forEach((layer, li) => {
+        layer.annotationTypes.forEach((type, ti) => {
+          type.fields.forEach((field, fi) => {
+            const fieldPath = ['layers', li, 'annotationTypes', ti, 'fields', fi];
+            const only8 = (sub: (string | number)[]) =>
+              ctx.addIssue({
+                code: 'custom',
+                path: [...fieldPath, ...sub],
+                message: 'só é permitido com formatVersion 8',
+              });
+            if (field.suggestions !== undefined) only8(['suggestions']);
+            (field.columns ?? []).forEach((column, ci) => {
+              if (isRecord(column) && column.suggestions !== undefined) {
+                only8(['columns', ci, 'suggestions']);
               }
             });
           });

@@ -608,6 +608,7 @@ export const ptBR = {
   'typed.enumNone': '—',
   'typed.invalidNumber': 'Digite um número (use ponto ou vírgula para decimais).',
   'typed.invalidValue': 'Valor inválido para este campo.',
+  'suggestions.listLabel': 'Sugestões',
   'typed.unknownType':
     'O tipo "{type}" não existe mais na especialização. A anotação está somente leitura.',
   'typed.convertToFree': 'Converter em anotação livre',

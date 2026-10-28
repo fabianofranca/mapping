@@ -66,6 +66,7 @@ Uma camada por natureza, não por módulo do código. `id` em `[a-z0-9-]+` e ún
 - `default` precisa ser válido para o tipo e, em `enum`, estar em `options`. Não existe para `table` nem `ref`.
 - `table`: colunas só `string`, `number`, `date` ou `enum`. Com `tags`, cada linha vira alvo de referência e `rowLabel` (uma coluna `string`) é obrigatório.
 - `options` de `enum`: strings únicas, nos valores do domínio (os valores do código vão em `code.values`; os da origem externa, em `sources[].values`).
+- **`suggestions` versus `enum`** (`formatVersion` 8): `enum` é um conjunto **fechado** (a pessoa só escolhe uma das `options`; booleanos, estados, estilos). `suggestions`, só em campo ou coluna `string`, é um vocabulário **aberto**: a lista aparece ao digitar, mas qualquer texto continua valendo (o tipo de uma propriedade de código, `String`, `Int`, mas também `String?` e `List<Endereco>`). Use `suggestions` quando o valor tem palavras recorrentes mas não se esgota nelas; `enum` quando valor fora da lista é erro do domínio. Regras: lista não vazia, até 200 itens, textos únicos, não vazios e sem espaço nas pontas; em outro tipo de campo é erro; numa versão anterior à 8 é erro (`só é permitido com formatVersion 8`). O `default` pode ficar fora da lista. Incluir, mudar ou tirar `suggestions` não é quebra e não pede migração.
 
 ### 5. Relações e referências
 
@@ -134,7 +135,7 @@ Uma especialização **não cita outra**: a biblioteca de notas já traz a **Tab
 
 ### 11. Versão
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`. A versão atual do formato é a 7. O **componente** tem a própria versão: `formatVersion` 1, ou 2 quando usa `repeat` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` em algum campo ou coluna `string`. A versão atual do formato é a 8. O **componente** tem a própria versão: `formatVersion` 1, ou 2 quando usa `repeat` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
@@ -222,6 +223,7 @@ Não aplique a especialização a um projeto nem crie proposta, a menos que o pr
 - Camada por módulo do código em vez de por natureza: os eventos acabam na mesma camada dos componentes e `allowedChildren` não valida.
 - `id` de tipo repetido em camadas diferentes (`button` em Componentes e `button` em Telas): o id é único na especialização inteira.
 - Booleano como `string` com `default: "true"`: use `enum`.
+- `enum` para um texto que não se esgota na lista (o tipo de uma propriedade): trava valores legítimos; use `string` com `suggestions`. E o contrário: `suggestions` para um conjunto fechado, que não impede o valor errado.
 - `default` fora de `options`, ou `default` em `ref`.
 - Campo `codeRef` (onde a instância foi escrita): saiu do formato; remova.
 - `symbol` com o nome do nó de saída (`"onClick"`, `"image"`) em vez da função ou classe que o gera.
@@ -240,7 +242,7 @@ O prompt só precisa especificar. Modelo:
 
 > /spec-author
 >
-> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7>.
+> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8>.
 >
 > **Origem:** <repositório, pasta ou design system>, lendo <o que ler: pasta dos componentes, catálogo exportado, documento>. Ignore <o que ignorar>.
 >

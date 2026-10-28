@@ -26,6 +26,10 @@ Cada linha de `supertypes` traz o tipo como escrito no código e, em **Tipo mape
 
 Uma declaração aninhada (nested, inner ou companion) se liga à externa pelo campo **Declarada em** (`outer`, etiqueta `kotlin-type`). O agente lê a ligação em `refs` (na aninhada) e `backlinks` (na externa). Desenhar a marcação dentro da externa é só arrumação visual e opcional: o pertencimento do canvas (`parent`/`members`) não define o aninhamento no código.
 
+## Sugestões de tipo
+
+Ao digitar no **Tipo** das propriedades e o **Retorno** das funções, aparecem os tipos básicos do Kotlin (`String`, `Int`, `Boolean`, `List`, `Map`...). É só uma ajuda: qualquer texto continua valendo, como `String?` ou `List<Endereco>`.
+
 ## Referências às propriedades
 
 - Outras anotações apontam para uma linha de `properties` por um campo `ref` que aceita `data-field` ou `kotlin-property`.
