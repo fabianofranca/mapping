@@ -1,8 +1,9 @@
 import { t } from '../i18n';
-import { canDeleteItems, type ItemRef, type Project } from '../model';
+import { canDeleteItems, canWrapItems, type ItemRef, type Project } from '../model';
 import { useEditor } from './EditorContext';
 import { Button } from './controls';
 import { Icon } from './icons';
+import { selectItems, showToast } from '../store/ui';
 
 interface MultiSelectionPanelProps {
   readonly project: Project;
@@ -20,7 +21,7 @@ export function MultiSelectionPanel({
   readOnly,
   onDelete,
 }: MultiSelectionPanelProps) {
-  const { actions } = useEditor();
+  const { actions, ui } = useEditor();
   const containers = items.filter((i) => i.kind === 'image').length;
   const arrows = items.filter((i) => i.kind === 'arrow').length;
   const markings = items.length - containers - arrows;
@@ -32,6 +33,7 @@ export function MultiSelectionPanel({
   );
   const locked = items.filter((i) => index.get(i.id) === true).length;
   const deletable = canDeleteItems(project, items);
+  const wrappable = canWrapItems(project, items);
   return (
     <div
       class="details-empty"
@@ -44,6 +46,17 @@ export function MultiSelectionPanel({
       {containers > 0 && <span>{t('multi.containers', { count: containers })}</span>}
       {arrows > 0 && <span>{t('multi.arrows', { count: arrows })}</span>}
       <div class="multi-actions">
+        <Button
+          disabled={readOnly || !wrappable}
+          title={!readOnly && !wrappable ? t('multi.wrapBlocked') : undefined}
+          onClick={() => {
+            const result = actions.wrapItems(items);
+            if (result.ok) selectItems(ui, [{ kind: 'marking', id: result.value }]);
+            else showToast(ui, t('multi.wrapFailed'));
+          }}
+        >
+          {t('multi.wrap')}
+        </Button>
         <Button
           disabled={readOnly || locked === items.length}
           onClick={() => actions.setItemsLocked(items, true)}

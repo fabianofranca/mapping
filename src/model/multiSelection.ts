@@ -1,8 +1,23 @@
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { fail } from './errors';
-import { containsRect, imageCanvasRect, rectsOverlap, translateRect } from './geometry';
+import {
+  MIN_MARKING_SIZE,
+  area,
+  boundingBox,
+  containsRect,
+  imageCanvasRect,
+  imagePixelRect,
+  isIntegerRect,
+  rectsOverlap,
+  translateRect,
+} from './geometry';
 import { ancestorsOf, descendantsOf } from './hierarchy';
-import { settleIf, spaceOf, type SettleOptions } from './hierarchySettle';
+import {
+  markingCanvasRectOf,
+  settleIf,
+  spaceOf,
+  type SettleOptions,
+} from './hierarchySettle';
 import {
   canDeleteImage,
   canDeleteMarking,
@@ -478,4 +493,187 @@ export function setItemsLocked(
         )
       : p.arrows,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Envolver
+
+function sameRect(a: Rect, b: Rect): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
+/** Margem, de cada lado, entre o conjunto envolvido e a marcação pai nova. */
+export const WRAP_MARGIN = MIN_MARKING_SIZE;
+
+/** Itens que entram numa marcação pai: marcações não flutuantes e containers existentes. */
+function wrappable(p: Project, items: readonly ItemRef[]) {
+  const selected = resolveItems(p, items);
+  const markings = [...selected.markings.values()].filter((m) => !m.floating);
+  const containers = [...selected.containers.values()];
+  return { selected, markings, containers };
+}
+
+/** Há ao menos um item que entra numa marcação pai (setas e notas flutuantes não entram). */
+export function canWrapItems(p: Project, items: readonly ItemRef[]): boolean {
+  const { markings, containers } = wrappable(p, items);
+  return markings.length + containers.length > 0;
+}
+
+/**
+ * Espaço e retângulo da marcação pai que envolve a seleção (PLAN.md, "Etapa — Marcação pai"):
+ * o retângulo do conjunto mais `WRAP_MARGIN` de cada lado, cortado ao container (espaço de
+ * container) e ao pai atual do conjunto, para a nova nunca tirá-lo de dentro dele. `null` se
+ * nada entra.
+ */
+export function wrapRect(
+  p: Project,
+  items: readonly ItemRef[],
+): { containerId: string | null; rect: Rect } | null {
+  const plan = planWrap(p, items);
+  return plan && { containerId: plan.containerId, rect: plan.rect };
+}
+
+interface WrapPlan {
+  readonly containerId: string | null;
+  readonly rect: Rect;
+  /** Índice, em `p.markings`, do pai atual do conjunto; -1 = nenhum. */
+  readonly enclosingIndex: number;
+}
+
+function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
+  const { selected, markings, containers } = wrappable(p, items);
+  if (markings.length + containers.length === 0) return null;
+  const index = projectIndex(p);
+
+  const first = markings[0]?.containerId ?? null;
+  const inContainer =
+    containers.length === 0 &&
+    first !== null &&
+    markings.every((m) => m.containerId === first);
+  const containerId = inContainer ? first : null;
+
+  let bbox: Rect;
+  if (inContainer) {
+    bbox = boundingBox(markings.map((m) => m.rect)) as Rect;
+  } else {
+    // No canvas, a marcação de container conta pelo container inteiro: só ele pode ser
+    // filho de uma marcação do canvas.
+    const raw = boundingBox([
+      ...markings.map((m) => {
+        const own = m.containerId === null ? null : index.containers.get(m.containerId);
+        return own ? imageCanvasRect(own, own.placement) : markingCanvasRectOf(p, m);
+      }),
+      ...containers.map((c) => imageCanvasRect(c, c.placement)),
+    ]) as Rect;
+    const x = Math.floor(raw.x);
+    const y = Math.floor(raw.y);
+    bbox = {
+      x,
+      y,
+      width: Math.ceil(raw.x + raw.width) - x,
+      height: Math.ceil(raw.y + raw.height) - y,
+    };
+  }
+
+  // Pai atual: a menor marcação do mesmo espaço, fora da seleção e dos descendentes dela.
+  const excluded = new Set<string>();
+  for (const m of selected.markings.values()) {
+    excluded.add(m.id);
+    for (const d of descendantsOf(p, m.id)) excluded.add(d.id);
+  }
+  let enclosing: Marking | null = null;
+  let enclosingIndex = -1;
+  p.markings.forEach((m, i) => {
+    if (m.floating || m.containerId !== containerId || excluded.has(m.id)) return;
+    if (!containsRect(m.rect, bbox)) return;
+    if (enclosing === null || area(m.rect) <= area(enclosing.rect)) {
+      enclosing = m;
+      enclosingIndex = i;
+    }
+  });
+
+  let limit: Rect | null = containerId
+    ? imagePixelRect(index.containers.get(containerId) as ProjectContainer)
+    : null;
+  if (enclosing !== null) {
+    const outer = (enclosing as Marking).rect;
+    if (limit === null) limit = outer;
+    else {
+      const x = Math.max(limit.x, outer.x);
+      const y = Math.max(limit.y, outer.y);
+      limit = {
+        x,
+        y,
+        width: Math.min(limit.x + limit.width, outer.x + outer.width) - x,
+        height: Math.min(limit.y + limit.height, outer.y + outer.height) - y,
+      };
+    }
+  }
+
+  const left = limit ? Math.max(bbox.x - WRAP_MARGIN, limit.x) : bbox.x - WRAP_MARGIN;
+  const top = limit ? Math.max(bbox.y - WRAP_MARGIN, limit.y) : bbox.y - WRAP_MARGIN;
+  const rightEdge = bbox.x + bbox.width + WRAP_MARGIN;
+  const bottomEdge = bbox.y + bbox.height + WRAP_MARGIN;
+  const rightLimited = limit ? Math.min(rightEdge, limit.x + limit.width) : rightEdge;
+  const bottomLimited = limit ? Math.min(bottomEdge, limit.y + limit.height) : bottomEdge;
+  return {
+    containerId,
+    rect: { x: left, y: top, width: rightLimited - left, height: bottomLimited - top },
+    enclosingIndex,
+  };
+}
+
+/**
+ * Cria uma marcação pai que envolve a seleção (PLAN.md, "Etapa — Marcação pai"). Entram as
+ * marcações não flutuantes e os containers; setas e notas são ignoradas, e sem nada que entre
+ * falha com `invalid-parent`. O espaço e o retângulo saem de `wrapRect`. A nova entra no array
+ * antes da primeira marcação selecionada (ou no fim, se só há containers) para ganhar o
+ * desempate de área igual; se o retângulo coincide com o do pai atual e ele vem depois dessa
+ * posição, entra logo depois dele. Quem passa a ser filho sai do assentar, nunca é escolhido
+ * aqui. Nenhuma geometria existente muda, então a trava não impede.
+ */
+export function wrapItems(
+  p: Project,
+  args: { readonly id: string; readonly items: readonly ItemRef[] },
+  options?: SettleOptions,
+): Project {
+  if (
+    p.markings.some((m) => m.id === args.id) ||
+    p.arrows.some((a) => a.id === args.id)
+  ) {
+    fail('duplicate-id', args.id);
+  }
+  const target = planWrap(p, args.items);
+  if (!target) fail('invalid-parent');
+  const { rect, containerId, enclosingIndex } = target;
+  if (!isIntegerRect(rect)) fail('rect-not-integer');
+  if (rect.width < MIN_MARKING_SIZE || rect.height < MIN_MARKING_SIZE) {
+    fail('rect-too-small');
+  }
+
+  const { markings } = wrappable(p, args.items);
+  const chosen = new Set(markings.map((m) => m.id));
+  let position = p.markings.findIndex((m) => chosen.has(m.id));
+  if (position < 0) position = p.markings.length;
+
+  // Pai atual com o mesmo retângulo e depois da posição escolhida: a nova entra depois dele.
+  const outer = enclosingIndex >= 0 ? p.markings[enclosingIndex] : undefined;
+  if (outer && enclosingIndex >= position && sameRect(outer.rect, rect)) {
+    position = enclosingIndex + 1;
+  }
+
+  const marking: Marking = {
+    id: args.id,
+    containerId,
+    parentId: null,
+    name: null,
+    rect,
+    needsReview: false,
+    locked: false,
+    floating: false,
+    source: null,
+  };
+  const list = [...p.markings];
+  list.splice(position, 0, marking);
+  return settleIf({ ...p, markings: list }, options);
 }
