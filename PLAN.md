@@ -130,7 +130,7 @@ Decisões de segurança: o agente não decide sozinho (regra do [`CLAUDE.md`](CL
 
 - [x] **D1 (decidida pelo dono em 2026-10-28).** Qualquer especialização e qualquer origem `https:`; a especialização não declara origens; a CSP libera `https:` e a garantia "nada sai do navegador", da etapa 2.4, passa a valer só até a pessoa consentir uma origem (ou ligar o interruptor).
 - [ ] **D2. Exigir CORS.** Recomendação: sim; servidor sem CORS fica no reservado.
-- [ ] **D3. O interruptor "Permitir imagens de qualquer origem".** Recomendação: existir, desligado por padrão.
+- [x] **D3 (decidida pelo dono em 2026-10-28). O interruptor "Permitir imagens de qualquer origem" existe**, desligado por padrão, com o aviso do risco.
 
 ### Fases
 
