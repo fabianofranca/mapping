@@ -9,6 +9,7 @@ import {
   isBackgroundContainer,
   type Placement,
   type ProjectContainer,
+  type Rect,
 } from '../../model';
 import type { DisplayImage } from '../../store/displayImages';
 import type { Frame } from '../frame';
@@ -37,6 +38,7 @@ export type ImageFrame = Pick<
 export class ImageRenderer {
   private readonly layer: Konva.Layer;
   private readonly nodes = new Map<string, ImageNode>();
+  private titles: ReadonlyMap<string, Rect> = new Map();
 
   constructor(layer: Konva.Layer) {
     this.layer = layer;
@@ -48,6 +50,14 @@ export class ImageRenderer {
   }
 
   /**
+   * Retângulo do texto do nome de cada container com o rótulo visível, em coordenadas do canvas
+   * (do último `render`). Container com o rótulo escondido pelo zoom não entra.
+   */
+  titleRects(): ReadonlyMap<string, Rect> {
+    return this.titles;
+  }
+
+  /**
    * Desenha as imagens na ordem do projeto e devolve a posição de cada uma
    * (com a prévia do gesto em andamento aplicada).
    */
@@ -56,6 +66,7 @@ export class ImageRenderer {
     const zoom = frame.viewport.scale;
     const images = project?.containers ?? [];
     const placements = new Map<string, Placement>();
+    const titles = new Map<string, Rect>();
     const seen = new Set<string>();
     images.forEach((image, index) => {
       seen.add(image.id);
@@ -72,7 +83,17 @@ export class ImageRenderer {
         zoom,
       );
       if (node.group.zIndex() !== index) node.group.zIndex(index);
+      if (node.title.visible()) {
+        const rect = imageCanvasRect(image, placement);
+        titles.set(image.id, {
+          x: rect.x,
+          y: rect.y + node.title.y(),
+          width: Math.min(node.title.getTextWidth(), rect.width),
+          height: node.title.height(),
+        });
+      }
     });
+    this.titles = titles;
     for (const [id, node] of this.nodes) {
       if (seen.has(id)) continue;
       node.group.destroy();
