@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje a etapa **Marcação pai**, épico `epic/marcacao-pai`, em andamento; a Proposto com componentes foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje a etapa **Sugestões no campo de texto**, épico `epic/sugestoes-campo`, detalhada e ainda não iniciada; a **Marcação pai**, épico `epic/marcacao-pai`, aguarda o fechamento; a Proposto com componentes foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -64,6 +64,65 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/redesign/HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) | Design das propostas de alteração (fase 4.0): telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto |
 | [`docs/redesign/BRIEF-REVIEW-DETAILS.md`](docs/redesign/BRIEF-REVIEW-DETAILS.md) | Briefing para o Claude Design dos Detalhes na revisão (fase 9.1, concluída; referência): problema, estado atual, requisitos, restrições e os estados E1 a E17 |
 | [`docs/redesign/HANDOFF-REVIEW-DETAILS.md`](docs/redesign/HANDOFF-REVIEW-DETAILS.md) | Design dos Detalhes na revisão (etapa 9, aprovado; referência): marcador e popover por campo, cabeçalho do item, “Outras mudanças”, comportamento, textos e decisões |
+
+---
+
+## Etapa — Sugestões no campo de texto (detalhada, épico `epic/sugestoes-campo`)
+
+- **Objetivo:** o dono pediu (2026-10-28) facilitar o preenchimento do **Tipo** na biblioteca Kotlin (`libraries/kotlin/`). Hoje Propriedades › Tipo, Funções › Retorno e Supertipos › Tipo são campos `string` livres nos onze tipos de declaração, sem nenhuma opção; nem os tipos básicos do Kotlin (`Int`, `String`, `Boolean`) aparecem. `enum` não serve, porque trava o valor e o tipo precisa aceitar `String?` e `List<Endereco>`.
+- **O que muda:** especialização `formatVersion` 8 (`suggestions` e `linkedRef` em campos e colunas `string`) e MCP 0.10.0. **Sem** schema novo do `mapping.json` (continua v13), formato de proposta (3) nem de componente (2) novos: os valores gravados continuam texto e `ref` comuns. Uma proposta pode trazer um pacote v8 porque a validação é a mesma da app.
+- **Genérico:** nada de Kotlin no núcleo; a lista vem da especialização e serve a qualquer linguagem ou vocabulário.
+- **Coordenador e esforço** (regra da seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md)):
+
+| Fase | Coordenador | Esforço do coordenador | Subagentes                         |
+| ---- | ----------- | ---------------------- | ---------------------------------- |
+| SG1  | Opus        | medium                 | Sonnet medium; mecânicos Haiku low |
+| SG2  | Sonnet      | high                   | Sonnet medium; mecânicos Haiku low |
+
+### Decisões
+
+1. **`suggestions`** (a partir da `formatVersion` 8): só em campo `string` ou coluna `string` de `table`. Lista não vazia (até 200 itens) de textos únicos, não vazios e sem espaço nas pontas. Erro em outro tipo de campo ou em `formatVersion` anterior. **Não restringe o valor:** qualquer texto continua aceito; texto fora da lista não é pendência nem aviso. Um `default`, se houver, não precisa estar na lista.
+2. **`linkedRef`** (a partir da `formatVersion` 8): no mesmo lugar (campo ou coluna `string`); é a chave de um campo `ref` do mesmo tipo (no campo) ou de uma coluna `ref` da mesma `table` (na coluna). Erro se a chave não existir, não for `ref` ou estiver em versão anterior. Efeito: a lista de sugestões ganha os rótulos dos alvos que esse `ref` aceita (os mesmos candidatos que o editor do `ref` oferece), cada um com o nome do tipo do alvo como texto secundário; os alvos do projeto vêm antes das sugestões fixas.
+3. **Interação (genérica):** o campo vira um combobox (ARIA `combobox` e `listbox`): `TextField` de `src/ui/controls/` ganha a propriedade de sugestões (nada de controle avulso), com a lista no `Popover` existente e só tokens. Completa a **palavra sob o cursor**: a sequência de letras, dígitos, `_` e `.` imediatamente antes do cursor. A lista filtra sem diferenciar maiúsculas, quem começa com a palavra antes de quem só a contém, até 8 visíveis com rolagem; sem correspondência, fica fechada. Abre ao digitar uma palavra que tenha correspondência, com ↓ ou Ctrl+Espaço, ou com um clique no campo vazio (com a palavra vazia mostra tudo). ↑/↓ navegam, Enter ou clique escolhem, Esc fecha sem mudar nada (o Esc seguinte segue a regra atual do campo), Tab fecha e mantém o texto digitado. **Escolher troca só a palavra sob o cursor pela sugestão, põe o cursor depois dela e mantém o campo em edição** (não grava): o próximo Enter ou sair do campo grava, como hoje (`CommitInput`). Assim `String` + `?` vira `String?` e `List<Usu` + escolha vira `List<Usuario`. Somente leitura ou desabilitado: sem lista. A filtragem e a troca da palavra são funções puras fora do componente, em `src/ui/` (não no `src/model/`, que é do MCP também), com teste.
+4. **Escolher um alvo do `linkedRef`:** além do texto, o campo guarda o alvo escolhido e, ao confirmar (Enter ou sair do campo), grava o texto e o `ref` juntos, numa entrada só do desfazer, desde que o rótulo do alvo ainda apareça como palavra no texto confirmado. O Esc que cancela a edição descarta os dois. Digitar o nome à mão sem escolher não mexe no `ref`; apagar o texto não limpa o `ref` (ele tem o próprio botão de limpar). Um `ref` já preenchido com outro alvo é trocado (a escolha é explícita).
+5. **Onde aparece:** em todo editor de campo e célula `string`: Detalhes (`SimpleEditor`/`StringEditor` em `src/ui/FieldEditors.tsx`), células de tabela (`src/ui/TableField.tsx`) e o formulário do Catálogo (`src/ui/TypedForm.tsx`). Na revisão (somente leitura), nada.
+6. **Biblioteca Kotlin** passa a `version` 2 e `formatVersion` 8, sem migrações. Propriedades › Tipo (inclusive na `annotation-class`): `suggestions` com a lista fixa e `linkedRef: "typeRef"`. Funções › Retorno: só a lista fixa (não há coluna `ref` ali; não se cria uma nesta etapa). Supertipos › Tipo: só `linkedRef: "typeRef"`. Lista fixa, nesta ordem: `String`, `Int`, `Long`, `Boolean`, `Double`, `Float`, `Short`, `Byte`, `Char`, `UInt`, `ULong`, `UShort`, `UByte`, `Any`, `Unit`, `Nothing`, `List`, `MutableList`, `Set`, `MutableSet`, `Map`, `MutableMap`, `Array`, `Pair`. As descrições das colunas e os documentos em `libraries/kotlin/docs/` que falam do Tipo citam as sugestões.
+7. **Contrato de versão** (`src/model/specVersions.ts`): incluir, mudar ou tirar `suggestions` ou `linkedRef` é compatível e não pede migração; a fase confere que um pacote pode passar da `formatVersion` 7 à 8 entre versões e, se não puder, ajusta e registra.
+8. **MCP 0.10.0** (bump em `mcp/version.ts` na SG1, uma versão só no épico): `get_specialization` já devolve os dois campos (é o JSON); `validate_specialization` e `validate_library` aceitam a v8 com os mesmos erros da app; nenhuma tool nova. `docs/AGENT-GUIDE.md`: `suggestions` é o vocabulário preferido (escrever exatamente como na lista quando couber), não uma restrição; com `linkedRef`, quando o texto nomeia um alvo mapeado, preencher também o `ref`. A skill `spec-author` explica quando usar `suggestions` (vocabulário aberto), `enum` (fechado) e `linkedRef` (texto com o `ref` ao lado). A descrição em `mcp/docs.ts` que diz "formatVersion 1 a 4" passa a "1 a 8".
+9. **Roteiro R14** (`docs/TESTING.md`, seção 8, feito pelo agente sozinho) com o projeto `examples/sugestoes-kotlin.zip`: a biblioteca Kotlin aplicada e duas data classes (`Usuario`, `Endereco`), gerado por script e conferido por teste, do mesmo jeito que o `examples/proposta-componentes.zip` (`scripts/proposalComponents.mjs`).
+10. **Fica fora:** sugestões tiradas dos valores já usados no projeto; sugestões em `number`; campo de vários valores (Modificadores separados por espaço); coluna `ref` nova em Funções › Retorno ou Parâmetros; aceitar a sugestão com Tab; trecho com cursor no meio (`List<|>`).
+
+### Fases
+
+#### SG1 — `suggestions` no formato e o campo com sugestões
+
+**Coordenador:** Opus. **Esforço:** medium; subagentes Sonnet medium; mecânicos Haiku low.
+
+**Toca em:** `src/model/spec.ts`, `docs/spec.schema.json`, `src/model/specVersions.ts`, `src/ui/controls/TextField.tsx` (e o CSS dele), função pura nova em `src/ui/`, `src/ui/FieldEditors.tsx`, `src/ui/TableField.tsx`, `src/ui/TypedForm.tsx`, `src/i18n/pt-BR.ts`, `src/i18n/en-US.ts`, `libraries/kotlin/`, `scripts/` e `examples/sugestoes-kotlin.zip`, `mcp/version.ts`, `mcp/docs.ts`, `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, `docs/MCP.md`, `.claude/skills/spec-author/`, `tests/model/`, `tests/ui/`, `tests/components/`, `tests/mcp/`, `docs/TESTING.md` (R14), `PLAN.md`.
+
+- [ ] `formatVersion` 8 e `suggestions` no validador e no JSON Schema (decisão 1); erro em versão anterior e fora de `string` (testes)
+- [ ] Contrato de versão: `suggestions` não pede migração (decisão 7, teste)
+- [ ] Filtragem e troca da palavra sob o cursor como funções puras (decisão 3, testes)
+- [ ] `TextField` com sugestões: teclado, clique, ARIA, somente leitura (decisão 3, teste de componente)
+- [ ] Sugestões nos editores de campo, de célula e do Catálogo (decisão 5, teste de componente)
+- [ ] Biblioteca Kotlin `version` 2 com a lista fixa, ainda sem `linkedRef` (decisão 6); `validateLibrary` sem erros (`tests/model/kotlinLibrary.test.ts`)
+- [ ] MCP 0.10.0 e documentação: validação da v8, `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, skill `spec-author`, `mcp/docs.ts` (decisão 8)
+- [ ] `examples/sugestoes-kotlin.zip` e roteiro R14 com os passos da lista fixa (decisão 9)
+
+#### SG2 — `linkedRef`: os alvos mapeados na lista
+
+**Coordenador:** Sonnet. **Esforço:** high; subagentes Sonnet medium; mecânicos Haiku low. Última fase do épico: o PR leva o rótulo `mcp-rc`.
+
+**Toca em:** `src/model/spec.ts`, `docs/spec.schema.json`, `src/model/specVersions.ts`, `src/store/` (a action que grava texto e `ref` numa entrada: a que já grava células, se aceitar várias; senão uma nova), `src/ui/controls/TextField.tsx`, `src/ui/FieldEditors.tsx`, `src/ui/TableField.tsx`, `src/ui/TypedForm.tsx`, `libraries/kotlin/`, `examples/sugestoes-kotlin.zip`, `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, `.claude/skills/spec-author/`, testes, `docs/TESTING.md` (R14), `PLAN.md`.
+
+- [ ] `linkedRef` no validador e no JSON Schema (decisão 2, testes); contrato de versão (decisão 7)
+- [ ] Os alvos do `ref` na lista, com o tipo como texto secundário e antes das fixas (decisão 2, teste de componente)
+- [ ] Escolher um alvo grava texto e `ref` juntos, numa entrada do desfazer; Esc descarta; digitar à mão não mexe no `ref` (decisão 4, testes de store e de componente)
+- [ ] Biblioteca Kotlin com `linkedRef: "typeRef"` em Propriedades › Tipo e Supertipos › Tipo (decisão 6)
+- [ ] Documentação: `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, skill `spec-author`
+- [ ] Roteiro R14 com os passos do alvo mapeado
+- [ ] Rodada dirigida do Cowork (R0 e R14) e correção dos achados
+- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-sugestoes-campo.md`, `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico)
 
 ---
 
