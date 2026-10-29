@@ -100,14 +100,14 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Toca em:** `src/model/spec.ts`, `docs/spec.schema.json`, `src/model/specVersions.ts`, `src/ui/controls/TextField.tsx` (e o CSS dele), função pura nova em `src/ui/`, `src/ui/FieldEditors.tsx`, `src/ui/TableField.tsx`, `src/ui/TypedForm.tsx`, `src/i18n/pt-BR.ts`, `src/i18n/en-US.ts`, `libraries/kotlin/`, `scripts/` e `examples/sugestoes-kotlin.zip`, `mcp/version.ts`, `mcp/docs.ts`, `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, `docs/MCP.md`, `.claude/skills/spec-author/`, `tests/model/`, `tests/ui/`, `tests/components/`, `tests/mcp/`, `docs/TESTING.md` (R14), `PLAN.md`.
 
-- [ ] `formatVersion` 8 e `suggestions` no validador e no JSON Schema (decisão 1); erro em versão anterior e fora de `string` (testes)
-- [ ] Contrato de versão: `suggestions` não pede migração (decisão 7, teste)
-- [ ] Filtragem e troca da palavra sob o cursor como funções puras (decisão 3, testes)
-- [ ] `TextField` com sugestões: teclado, clique, ARIA, somente leitura (decisão 3, teste de componente)
-- [ ] Sugestões nos editores de campo, de célula e do Catálogo (decisão 5, teste de componente)
-- [ ] Biblioteca Kotlin `version` 2 com a lista fixa, ainda sem `linkedRef` (decisão 6); `validateLibrary` sem erros (`tests/model/kotlinLibrary.test.ts`)
-- [ ] MCP 0.10.0 e documentação: validação da v8, `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, skill `spec-author`, `mcp/docs.ts` (decisão 8)
-- [ ] `examples/sugestoes-kotlin.zip` e roteiro R14 com os passos da lista fixa (decisão 9)
+- [x] `formatVersion` 8 e `suggestions` no validador e no JSON Schema (decisão 1); erro em versão anterior e fora de `string` (testes)
+- [x] Contrato de versão: `suggestions` não pede migração (decisão 7, teste)
+- [x] Filtragem e troca da palavra sob o cursor como funções puras (decisão 3, testes)
+- [x] `TextField` com sugestões: teclado, clique, ARIA, somente leitura (decisão 3, teste de componente)
+- [x] Sugestões nos editores de campo, de célula e do Catálogo (decisão 5, teste de componente)
+- [x] Biblioteca Kotlin `version` 2 com a lista fixa, ainda sem `linkedRef` (decisão 6); `validateLibrary` sem erros (`tests/model/kotlinLibrary.test.ts`)
+- [x] MCP 0.10.0 e documentação: validação da v8, `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, skill `spec-author`, `mcp/docs.ts` (decisão 8)
+- [x] `examples/sugestoes-kotlin.zip` e roteiro R14 com os passos da lista fixa (decisão 9)
 
 #### SG2 — `linkedRef`: os alvos mapeados na lista
 

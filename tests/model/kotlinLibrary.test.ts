@@ -24,6 +24,11 @@ const CLASS_TYPES = [
 ];
 const INTERFACE_TYPES = ['interface', 'sealed-interface', 'fun-interface'];
 const ALL_TYPES = [...CLASS_TYPES, ...INTERFACE_TYPES];
+const KOTLIN_SUGGESTIONS = [
+  ...['String', 'Int', 'Long', 'Boolean', 'Double', 'Float', 'Short', 'Byte', 'Char'],
+  ...['UInt', 'ULong', 'UShort', 'UByte', 'Any', 'Unit', 'Nothing', 'List'],
+  ...['MutableList', 'Set', 'MutableSet', 'Map', 'MutableMap', 'Array', 'Pair'],
+];
 
 function listDisk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -62,11 +67,11 @@ describe('biblioteca Kotlin', () => {
     });
   });
 
-  it('a especialização é a formatVersion 7 com duas camadas e as propriedades como alvos', () => {
+  it('a especialização é a formatVersion 8 com duas camadas e as propriedades como alvos', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec).toMatchObject({ formatVersion: 7, id: 'kotlin', version: 1 });
+    expect(parsed.spec).toMatchObject({ formatVersion: 8, id: 'kotlin', version: 2 });
     expect(parsed.spec.layers.map((l) => l.id)).toEqual([
       'kotlin-classes',
       'kotlin-interfaces',
@@ -123,5 +128,36 @@ describe('biblioteca Kotlin', () => {
     };
     if (drawing) visit(drawing.root);
     expect(texts.some((t) => t.includes('«inner open class»'))).toBe(true);
+  });
+
+  it('Propriedades › Tipo e Funções › Retorno têm a lista fixa de sugestões; Supertipos › Tipo não', () => {
+    const parsed = parseSpecText(text(SPEC_FILE));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const suggestionsOf = (
+      fields: readonly { key: string; columns?: readonly unknown[] }[],
+      table: string,
+      column: string,
+    ): unknown => {
+      const f = fields.find((x) => x.key === table);
+      const cols = (f?.columns ?? []) as { key: string; suggestions?: string[] }[];
+      return cols.find((c) => c.key === column)?.suggestions;
+    };
+    let checked = 0;
+    for (const layer of parsed.spec.layers) {
+      for (const type of layer.annotationTypes) {
+        expect(suggestionsOf(type.fields, 'properties', 'type'), type.id).toEqual(
+          KOTLIN_SUGGESTIONS,
+        );
+        if (type.fields.some((f) => f.key === 'functions')) {
+          expect(suggestionsOf(type.fields, 'functions', 'returnType'), type.id).toEqual(
+            KOTLIN_SUGGESTIONS,
+          );
+        }
+        expect(suggestionsOf(type.fields, 'supertypes', 'type'), type.id).toBeUndefined();
+        checked += 1;
+      }
+    }
+    expect(checked).toBe(ALL_TYPES.length);
   });
 });

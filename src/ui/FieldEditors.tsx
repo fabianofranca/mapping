@@ -196,6 +196,7 @@ export function SimpleEditor({
           aria-required={required}
           disabled={readOnly}
           value={text}
+          suggestions={field.suggestions}
           onCommit={(next) => report(onSet(next === '' ? null : next))}
         />
       );

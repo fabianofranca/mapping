@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 7)
+# Formato da especialização (`formatVersion` 1 a 8)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -10,12 +10,13 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 7; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 8; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
 - A `formatVersion` 6 é a 5 mais `containers`: a lista de **tamanhos prontos de container** que o diálogo **Novo container** oferece quando a especialização está aplicada (ver "Containers (tamanhos prontos)"). A 6 é aditiva: as versões 1 a 5 continuam aceitas sem mudança, e `containers` numa versão anterior é o erro `só é permitido com formatVersion 6`, no caminho exato. O núcleo da app não traz tamanhos de dispositivo; só **Personalizado** e **Tamanho da seleção**.
 - A `formatVersion` 7 é a 6 mais `floating` no tipo de anotação (o tipo cuja instância é uma **marcação flutuante**, um comentário solto sobre o canvas: ver "Tipo flutuante"), `appliesTo` no tipo (a que a anotação se aplica: marcação, seta ou ambas: ver "Onde o tipo se aplica") e `ref` como tipo de coluna de `table` (uma lista de referências como dado: ver "Tipos de valor"). A 7 é aditiva: as versões 1 a 6 continuam aceitas sem mudança, e cada chave da 7 numa versão anterior é o erro `só é permitido com formatVersion 7`, no caminho exato.
+- A `formatVersion` 8 é a 7 mais `suggestions` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor: ver "Sugestões de texto"). A 8 é aditiva: as versões 1 a 7 continuam aceitas sem mudança, e `suggestions` numa versão anterior é o erro `só é permitido com formatVersion 8`, no caminho exato.
 
 Arquivos de apoio:
 
@@ -69,7 +70,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `7`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `8`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -100,6 +101,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `7`), `id`, 
 | `required`    | não                | Padrão `false`. Vazio é permitido ao salvar, mas a anotação fica **incompleta**.                                                                                             |
 | `default`     | não                | Valor inicial. Precisa ser válido para o tipo. Não existe para `table` nem `ref`.                                                                                            |
 | `options`     | só `enum`          | Lista não vazia de strings únicas.                                                                                                                                           |
+| `suggestions` | só `string`        | A partir da `formatVersion` 8. Lista de sugestões de texto (ver "Sugestões de texto"); vale também numa coluna `string` de `table`.                                          |
 | `columns`     | só `table`         | Campos com a mesma estrutura, **apenas** `string`, `number`, `date` ou `enum` e, a partir da `formatVersion` 7, `ref` (com `accepts`). `table` dentro de `table` não existe. |
 | `tags`        | não                | Etiquetas que tornam o campo **alvo de referências** (`[a-z0-9-]+`). Em `table`, cada **linha** vira um alvo.                                                                |
 | `rowLabel`    | `table` com `tags` | Chave de uma coluna `string` que nomeia cada linha como alvo.                                                                                                                |
@@ -119,6 +121,23 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `7`), `id`, 
 **Lista de referências: coluna `ref` numa `table`.** Quando o tipo precisa apontar para vários alvos (ou levar dado junto com cada alvo), declare uma `table` com uma coluna `ref` (a partir da `formatVersion` 7; o `accepts` é o mesmo de um campo `ref`). Cada linha é uma referência e pode ter outras colunas ao lado; a linha tem `_id`, é alvo de referências como qualquer linha e entra nas migrações da biblioteca (`tabela.coluna`) e na comparação por linha das propostas. A coluna `ref` é **dado**: não desenha seta nem liga marcações (quem liga uma marcação a outra é a seta). Uma célula vazia é `null`; numa coluna obrigatória, vazia é pendência; alvo que sumiu é `broken-ref`; alvo que a coluna não aceita é `ref-not-accepted`. O componente do tipo lê a célula pelo rótulo do alvo (ver `repeat` em `docs/COMPONENT-FORMAT.md`).
 
 **Tipo de campo removido: `codeRef`.** Até a etapa 9 existia o tipo `codeRef` (o lugar da solução em que a instância foi escrita, por plataforma). Ele saiu do formato: a especialização guarda só o que ajuda a **instanciar** o tipo (o `code` dos tipos, com `symbol` e `path`), nunca onde a instância ficou. Um arquivo antigo com um campo `"type": "codeRef"` continua válido: a importação da app e o `validate_specialization` **leem e ignoram** o campo (ele sai do tipo, junto com as chaves de `params` do `code` que o citam) e dão um aviso com o caminho (`ignored-field`). Nenhuma `formatVersion` nova; as cópias em `specs/` dos projetos existentes continuam abrindo. O JSON Schema ([`spec.schema.json`](spec.schema.json)) descreve só o formato atual e recusa o campo. Ao encontrar um, remova-o do arquivo.
+
+## Sugestões de texto
+
+A `formatVersion` 8 deixa um campo `string` (ou uma coluna `string` de `table`) oferecer um **vocabulário sugerido** com `suggestions`: ao digitar, a pessoa vê uma lista com as sugestões que combinam com a palavra sob o cursor e pode escolher uma. É para texto **aberto** com palavras recorrentes, como o tipo de uma propriedade de código (`String`, `Int`, `List`), que também aceita `String?` e `List<Endereco>`.
+
+**`suggestions` não restringe o valor.** Qualquer texto continua aceito: o que não está na lista não é erro, aviso nem pendência, e um `default` não precisa estar nela. Para um conjunto **fechado** de valores use `enum` (`options`), que trava o valor.
+
+```json
+{
+  "key": "type",
+  "type": "string",
+  "suggestions": ["String", "Int", "Boolean", "List", "Map"]
+}
+```
+
+- `suggestions`: lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço no começo nem no fim. Só em campo ou coluna `string`: em `number`, `date`, `enum`, `ref` ou `table` o erro é `só é permitido em campo ou coluna string`, no caminho `…fields[n].suggestions`. Numa versão anterior à 8 o erro é `só é permitido com formatVersion 8`, no mesmo caminho (`…columns[m].suggestions` numa coluna).
+- **Contrato de versão:** incluir, mudar ou tirar `suggestions` é compatível e nunca pede migração (ver "Contrato de versão"); um pacote pode passar da `formatVersion` 7 à 8 entre versões.
 
 ## Relações entre anotações
 
@@ -569,7 +588,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Quebra** (e só isto): remover ou renomear um **tipo**, um **campo** (ou coluna) ou uma **opção de `enum`**; tornar um campo **obrigatório**, inclusive um campo novo que já nasce obrigatório (os valores existentes ficam incompletos); mudar o `type` de um campo.
 
-**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers` e `sources`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources` e `suggestions`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
 
 ### `migrations`
 
@@ -795,7 +814,7 @@ O pacote Material 3 do repositório (`examples/libraries/material3/`) passa pelo
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 7), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 8), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo;
@@ -805,6 +824,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
+- **v8, `suggestions`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].suggestions` ou `…columns[m].suggestions`); só em campo ou coluna `string`; lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço nas pontas; não restringe o valor, e o `default` pode ficar fora da lista;
 - **v7, `floating`, `appliesTo` e coluna `ref`:** só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho exato: `…annotationTypes[n].floating`, `…annotationTypes[n].appliesTo`, `…fields[n].columns[m].type`); `floating` booleano; `appliesTo` não vazio, sem repetição, só com `marking` e `arrow`, e um tipo que não se aplica a marcações (só `arrow`) não pode ter `component` nem `floating`;
 - **v6, `containers`:** só a partir da `formatVersion` 6 (numa versão anterior o erro é `só é permitido com formatVersion 6`, no caminho `containers`); `id` no formato `[a-z0-9-]+` e único na lista; `name` não vazio; `width` e `height` inteiros de 1 a 20000; `background` opcional no formato `#RRGGBB`; qualquer outra propriedade é recusada;
 - `sources` a partir da `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name` (ou `path`, na v4, em sistema de `origins`); `values` só em campos `enum` e com destinos que existam em `options`;

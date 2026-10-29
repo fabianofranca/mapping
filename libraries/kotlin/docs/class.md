@@ -40,6 +40,10 @@ class Pedido {
 3. Em `Item`, preencha **Declarada em** = `Pedido` (o campo aceita a etiqueta `kotlin-type`).
 4. Opcional: arrume `Item` dentro de `Pedido` no canvas, só para ler melhor.
 
+## Sugestões de tipo
+
+Ao digitar no **Tipo** das propriedades e o **Retorno** das funções, aparecem os tipos básicos do Kotlin (`String`, `Int`, `Boolean`, `List`, `Map`...). É só uma ajuda: qualquer texto continua valendo, como `String?` ou `List<Endereco>`.
+
 ## Referências às propriedades
 
 - Outras anotações apontam para uma linha de `properties` por um campo `ref` que aceita `data-field` ou `kotlin-property`.

@@ -34,7 +34,7 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     uri: 'mapping-docs://SPEC-FORMAT.md',
     title: 'Formato da especialização',
     description:
-      'Formato do arquivo de especialização (formatVersion 1 a 4): camadas, tipos de anotação, campos, referências, plataformas, origens e, na v4, o pacote da biblioteca (componentes, documentos, exemplos, fontes, origens executáveis e contrato de versão).',
+      'Formato do arquivo de especialização (formatVersion 1 a 8): camadas, tipos de anotação, campos, referências, plataformas, origens e, na v4, o pacote da biblioteca (componentes, documentos, exemplos, fontes, origens executáveis e contrato de versão) e, na v8, sugestões nos campos de texto.',
     text: specFormat,
   },
   {

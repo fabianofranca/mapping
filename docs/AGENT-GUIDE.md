@@ -437,6 +437,10 @@ O **repositório é da biblioteca**: cada especialização declara o da própria
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
 
+### Mudança na versão 0.10.0 (Sugestões no campo de texto)
+
+A especialização `formatVersion` 8 deixa um campo ou coluna `string` trazer `suggestions`, uma lista de textos sugeridos ao digitar (o `get_specialization` devolve a chave; nenhuma tool nova). **É o vocabulário preferido, não uma restrição:** ao preencher um campo `string` com `suggestions`, escreva exatamente como na lista quando o valor couber nela (`Int`, não `int` nem `Integer`), e escreva livremente quando não couber (`String?`, `List<Endereco>`). Texto fora da lista não é erro nem pendência. Para valores fechados o tipo usa `enum`, e aí só vale uma das `options`. Escrevendo uma especialização, veja a skill `spec-author` (quando usar `suggestions`, quando `enum`).
+
 ### Mudança na versão 0.9.0 (Marcações espaciais, notas e setas)
 
 O schema do `mapping.json` é o v13. O servidor lê o que o modelo passou a ter:
