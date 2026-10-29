@@ -172,3 +172,128 @@ describe('suggestions não restringe o valor', () => {
     expect(checkSimpleValue(field, 3)).toBe('invalid-value');
   });
 });
+
+// `linkedRef`: liga o texto a um campo/coluna `ref` irmão (mesmo tipo / mesma table).
+function linkedSpec(
+  formatVersion: number,
+  field: Json,
+  asColumn = false,
+  version = 1,
+  withRef = true,
+): Json {
+  const ref = { key: 'typeRef', type: 'ref', accepts: { free: true } };
+  const siblings = [{ key: 'nome', type: 'string' }, ...(withRef ? [ref] : []), field];
+  const fields = asColumn
+    ? [{ key: 'tabela', type: 'table', columns: siblings }]
+    : siblings;
+  const base = spec(formatVersion, field, false, version);
+  const layers = base.layers as { annotationTypes: Json[] }[];
+  layers[0]!.annotationTypes = [{ id: 't', name: 'T', fields }];
+  return base;
+}
+
+const linkedField = 'layers[0].annotationTypes[0].fields[2]';
+const linkedColumn = 'layers[0].annotationTypes[0].fields[0].columns[2]';
+const linked = (extra: Json = {}): Json => ({
+  key: 'tipo',
+  type: 'string',
+  linkedRef: 'typeRef',
+  ...extra,
+});
+
+describe('formatVersion 8: linkedRef', () => {
+  it('aceita linkedRef em campo e em coluna string, com ou sem suggestions', () => {
+    expect(
+      parsed(linkedSpec(8, linked())).layers[0]?.annotationTypes[0]?.fields[2],
+    ).toMatchObject({
+      linkedRef: 'typeRef',
+    });
+    expect(parseSpec(linkedSpec(8, linked(), true)).ok).toBe(true);
+    expect(parseSpec(linkedSpec(8, linked({ suggestions: ['Int'] }))).ok).toBe(true);
+    expect(parseSpec(linkedSpec(8, linked({ suggestions: ['Int'] }), true)).ok).toBe(
+      true,
+    );
+  });
+
+  it('em campo ou coluna que não é string é erro, apontando a chave', () => {
+    const cases: Json[] = [
+      { key: 'n', type: 'number' },
+      { key: 'e', type: 'enum', options: ['a'] },
+    ];
+    for (const base of cases) {
+      expect(issuesOf(linkedSpec(8, { ...base, linkedRef: 'typeRef' }))).toContainEqual({
+        path: `${linkedField}.linkedRef`,
+        message: 'só é permitido em campo ou coluna string',
+      });
+      expect(
+        issuesOf(linkedSpec(8, { ...base, linkedRef: 'typeRef' }, true)),
+      ).toContainEqual({
+        path: `${linkedColumn}.linkedRef`,
+        message: 'só é permitido em campo ou coluna string',
+      });
+    }
+  });
+
+  it('chave inexistente é erro', () => {
+    expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nada' })))).toContainEqual({
+      path: `${linkedField}.linkedRef`,
+      message: '"nada" não é um campo do tipo',
+    });
+    expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nada' }), true))).toContainEqual({
+      path: `${linkedColumn}.linkedRef`,
+      message: '"nada" não é uma coluna da tabela',
+    });
+  });
+
+  it('chave que existe mas não é ref é erro', () => {
+    expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nome' })))).toContainEqual({
+      path: `${linkedField}.linkedRef`,
+      message: '"nome" deve ser um campo ref',
+    });
+    expect(issuesOf(linkedSpec(8, linked({ linkedRef: 'nome' }), true))).toContainEqual({
+      path: `${linkedColumn}.linkedRef`,
+      message: '"nome" deve ser uma coluna ref',
+    });
+  });
+
+  it('a coluna não enxerga um campo de fora da tabela', () => {
+    const raw = linkedSpec(8, linked(), true, 1, false);
+    const layers = raw.layers as { annotationTypes: { fields: Json[] }[] }[];
+    const type = layers[0]!.annotationTypes[0]!;
+    type.fields.push({ key: 'typeRef', type: 'ref', accepts: { free: true } });
+    expect(issuesOf(raw)).toContainEqual({
+      path: 'layers[0].annotationTypes[0].fields[0].columns[1].linkedRef',
+      message: '"typeRef" não é uma coluna da tabela',
+    });
+  });
+
+  it('numa versão anterior é o erro "só é permitido com formatVersion 8", no caminho exato', () => {
+    for (const v of [1, 4, 7]) {
+      expect(issuesOf(linkedSpec(v, linked()))).toContainEqual({
+        path: `${linkedField}.linkedRef`,
+        message: 'só é permitido com formatVersion 8',
+      });
+      expect(issuesOf(linkedSpec(v, linked(), true))).toContainEqual({
+        path: `${linkedColumn}.linkedRef`,
+        message: 'só é permitido com formatVersion 8',
+      });
+    }
+  });
+
+  it('incluir, mudar ou tirar linkedRef (e suggestions) não gera diferença; a 7 passa à 8', () => {
+    const plain = (v: number, version: number, asColumn = false) =>
+      parsed(linkedSpec(v, { key: 'tipo', type: 'string' }, asColumn, version));
+    for (const asColumn of [false, true]) {
+      const before = plain(7, 1, asColumn);
+      const added = parsed(linkedSpec(8, linked({ suggestions: ['Int'] }), asColumn, 2));
+      const changed = parsed(
+        linkedSpec(8, linked({ suggestions: ['Int', 'Long'] }), asColumn, 3),
+      );
+      const removed = plain(8, 4, asColumn);
+      expect(diffSpecs(before, added)).toEqual([]);
+      expect(diffSpecs(added, changed)).toEqual([]);
+      expect(diffSpecs(changed, removed)).toEqual([]);
+      expect(diffSpecs(before, added).filter((c) => c.kind === 'breaking')).toEqual([]);
+    }
+  });
+});

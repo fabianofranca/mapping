@@ -16,7 +16,7 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
 - A `formatVersion` 6 é a 5 mais `containers`: a lista de **tamanhos prontos de container** que o diálogo **Novo container** oferece quando a especialização está aplicada (ver "Containers (tamanhos prontos)"). A 6 é aditiva: as versões 1 a 5 continuam aceitas sem mudança, e `containers` numa versão anterior é o erro `só é permitido com formatVersion 6`, no caminho exato. O núcleo da app não traz tamanhos de dispositivo; só **Personalizado** e **Tamanho da seleção**.
 - A `formatVersion` 7 é a 6 mais `floating` no tipo de anotação (o tipo cuja instância é uma **marcação flutuante**, um comentário solto sobre o canvas: ver "Tipo flutuante"), `appliesTo` no tipo (a que a anotação se aplica: marcação, seta ou ambas: ver "Onde o tipo se aplica") e `ref` como tipo de coluna de `table` (uma lista de referências como dado: ver "Tipos de valor"). A 7 é aditiva: as versões 1 a 6 continuam aceitas sem mudança, e cada chave da 7 numa versão anterior é o erro `só é permitido com formatVersion 7`, no caminho exato.
-- A `formatVersion` 8 é a 7 mais `suggestions` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor: ver "Sugestões de texto"). A 8 é aditiva: as versões 1 a 7 continuam aceitas sem mudança, e `suggestions` numa versão anterior é o erro `só é permitido com formatVersion 8`, no caminho exato.
+- A `formatVersion` 8 é a 7 mais `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor, e os alvos mapeados na mesma lista: ver "Sugestões de texto" e "Alvos mapeados na lista (`linkedRef`)"). A 8 é aditiva: as versões 1 a 7 continuam aceitas sem mudança, e `suggestions` ou `linkedRef` numa versão anterior é o erro `só é permitido com formatVersion 8`, no caminho exato.
 
 Arquivos de apoio:
 
@@ -93,21 +93,22 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `8`), `id`, 
 
 ### Campo
 
-| Propriedade   | Obrigatória        | Descrição                                                                                                                                                                    |
-| ------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`         | sim                | Chave gravada no JSON. `[A-Za-z0-9_]`, **não pode começar com `_`** (reservado). Única dentro do tipo.                                                                       |
-| `label`       | não                | Rótulo exibido (pode ter acentos). Padrão: `key`.                                                                                                                            |
-| `type`        | sim                | `string`, `number`, `date`, `enum`, `table` ou `ref`.                                                                                                                        |
-| `required`    | não                | Padrão `false`. Vazio é permitido ao salvar, mas a anotação fica **incompleta**.                                                                                             |
-| `default`     | não                | Valor inicial. Precisa ser válido para o tipo. Não existe para `table` nem `ref`.                                                                                            |
-| `options`     | só `enum`          | Lista não vazia de strings únicas.                                                                                                                                           |
-| `suggestions` | só `string`        | A partir da `formatVersion` 8. Lista de sugestões de texto (ver "Sugestões de texto"); vale também numa coluna `string` de `table`.                                          |
-| `columns`     | só `table`         | Campos com a mesma estrutura, **apenas** `string`, `number`, `date` ou `enum` e, a partir da `formatVersion` 7, `ref` (com `accepts`). `table` dentro de `table` não existe. |
-| `tags`        | não                | Etiquetas que tornam o campo **alvo de referências** (`[a-z0-9-]+`). Em `table`, cada **linha** vira um alvo.                                                                |
-| `rowLabel`    | `table` com `tags` | Chave de uma coluna `string` que nomeia cada linha como alvo.                                                                                                                |
-| `accepts`     | só `ref`           | `{ "tags": [...], "free": true\|false }`. Precisa de pelo menos uma etiqueta ou `free: true`.                                                                                |
-| `description` | não                | Texto de ajuda exibido no editor.                                                                                                                                            |
-| `sources`     | não                | A partir da `formatVersion` 3. Propriedades de origem do campo, inclusive em colunas; na v4, `path` em sistema declarado em `origins` (ver "Origens (sources)").             |
+| Propriedade   | Obrigatória        | Descrição                                                                                                                                                                                                   |
+| ------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`         | sim                | Chave gravada no JSON. `[A-Za-z0-9_]`, **não pode começar com `_`** (reservado). Única dentro do tipo.                                                                                                      |
+| `label`       | não                | Rótulo exibido (pode ter acentos). Padrão: `key`.                                                                                                                                                           |
+| `type`        | sim                | `string`, `number`, `date`, `enum`, `table` ou `ref`.                                                                                                                                                       |
+| `required`    | não                | Padrão `false`. Vazio é permitido ao salvar, mas a anotação fica **incompleta**.                                                                                                                            |
+| `default`     | não                | Valor inicial. Precisa ser válido para o tipo. Não existe para `table` nem `ref`.                                                                                                                           |
+| `options`     | só `enum`          | Lista não vazia de strings únicas.                                                                                                                                                                          |
+| `linkedRef`   | só `string`        | A partir da `formatVersion` 8. `key` de um campo `ref` do mesmo tipo (ou de uma coluna `ref` da mesma `table`): as declarações mapeadas que o `ref` aceita entram na lista (ver "Alvos mapeados na lista"). |
+| `suggestions` | só `string`        | A partir da `formatVersion` 8. Lista de sugestões de texto (ver "Sugestões de texto"); vale também numa coluna `string` de `table`.                                                                         |
+| `columns`     | só `table`         | Campos com a mesma estrutura, **apenas** `string`, `number`, `date` ou `enum` e, a partir da `formatVersion` 7, `ref` (com `accepts`). `table` dentro de `table` não existe.                                |
+| `tags`        | não                | Etiquetas que tornam o campo **alvo de referências** (`[a-z0-9-]+`). Em `table`, cada **linha** vira um alvo.                                                                                               |
+| `rowLabel`    | `table` com `tags` | Chave de uma coluna `string` que nomeia cada linha como alvo.                                                                                                                                               |
+| `accepts`     | só `ref`           | `{ "tags": [...], "free": true\|false }`. Precisa de pelo menos uma etiqueta ou `free: true`.                                                                                                               |
+| `description` | não                | Texto de ajuda exibido no editor.                                                                                                                                                                           |
+| `sources`     | não                | A partir da `formatVersion` 3. Propriedades de origem do campo, inclusive em colunas; na v4, `path` em sistema declarado em `origins` (ver "Origens (sources)").                                            |
 
 ## Tipos de valor
 
@@ -138,6 +139,27 @@ A `formatVersion` 8 deixa um campo `string` (ou uma coluna `string` de `table`) 
 
 - `suggestions`: lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço no começo nem no fim. Só em campo ou coluna `string`: em `number`, `date`, `enum`, `ref` ou `table` o erro é `só é permitido em campo ou coluna string`, no caminho `…fields[n].suggestions`. Numa versão anterior à 8 o erro é `só é permitido com formatVersion 8`, no mesmo caminho (`…columns[m].suggestions` numa coluna).
 - **Contrato de versão:** incluir, mudar ou tirar `suggestions` é compatível e nunca pede migração (ver "Contrato de versão"); um pacote pode passar da `formatVersion` 7 à 8 entre versões.
+
+## Alvos mapeados na lista (`linkedRef`)
+
+Também na `formatVersion` 8, um campo `string` (ou coluna `string` de `table`) pode trazer `linkedRef`: a `key` de um campo `ref` **do mesmo tipo** (na coluna, de uma coluna `ref` **da mesma `table`**). Ao digitar, a lista mostra, antes das `suggestions`, as declarações já mapeadas que esse `ref` aceita, cada uma com o nome do tipo dela ao lado. O texto inserido é o **nome** da declaração (o valor do campo `name` do alvo, como `Usuario`). Escolher só troca a palavra sob o cursor; ao confirmar (Enter ou sair do campo), a app grava o texto **e** o `ref` irmão juntos, numa entrada do desfazer (um Ctrl+Z desfaz os dois), desde que o nome escolhido ainda seja uma palavra do texto (`List<Usuario>` serve). O Esc descarta os dois. Digitar o nome à mão sem escolher não mexe no `ref`, apagar o texto não limpa o `ref` (ele tem o próprio botão de limpar) e um `ref` já preenchido com outro alvo é trocado pela escolha.
+
+`linkedRef` **não restringe o valor** e é independente de `suggestions`: um campo pode ter os dois, só `suggestions`, só `linkedRef` ou nenhum. No Catálogo e na revisão (sem projeto ou somente leitura) não há alvos para listar.
+
+```json
+[
+  {
+    "key": "type",
+    "type": "string",
+    "linkedRef": "typeRef",
+    "suggestions": ["String", "Int", "Boolean", "List", "Map"]
+  },
+  { "key": "typeRef", "type": "ref", "accepts": { "tags": ["kotlin-type"] } }
+]
+```
+
+- `linkedRef`: só em campo ou coluna `string` (em outro tipo o erro é `só é permitido em campo ou coluna string`) e só a partir da `formatVersion` 8 (antes, `só é permitido com formatVersion 8`, no caminho `…fields[n].linkedRef` ou `…columns[m].linkedRef`). A `key` precisa existir no mesmo nível (os campos do tipo, ou as colunas da mesma `table`) e ser um campo ou coluna `ref`; senão o erro aponta o `linkedRef`.
+- **Contrato de versão:** incluir, mudar ou tirar `linkedRef` é compatível e nunca pede migração (ver "Contrato de versão").
 
 ## Relações entre anotações
 
@@ -588,7 +610,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Quebra** (e só isto): remover ou renomear um **tipo**, um **campo** (ou coluna) ou uma **opção de `enum`**; tornar um campo **obrigatório**, inclusive um campo novo que já nasce obrigatório (os valores existentes ficam incompletos); mudar o `type` de um campo.
 
-**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources` e `suggestions`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions` e `linkedRef`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
 
 ### `migrations`
 
@@ -825,6 +847,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
 - **v8, `suggestions`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].suggestions` ou `…columns[m].suggestions`); só em campo ou coluna `string`; lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço nas pontas; não restringe o valor, e o `default` pode ficar fora da lista;
+- **v8, `linkedRef`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].linkedRef` ou `…columns[m].linkedRef`); só em campo ou coluna `string`; a `key` precisa ser a de um campo `ref` do mesmo tipo (na coluna, de uma coluna `ref` da mesma `table`); não restringe o valor e independe de `suggestions`;
 - **v7, `floating`, `appliesTo` e coluna `ref`:** só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho exato: `…annotationTypes[n].floating`, `…annotationTypes[n].appliesTo`, `…fields[n].columns[m].type`); `floating` booleano; `appliesTo` não vazio, sem repetição, só com `marking` e `arrow`, e um tipo que não se aplica a marcações (só `arrow`) não pode ter `component` nem `floating`;
 - **v6, `containers`:** só a partir da `formatVersion` 6 (numa versão anterior o erro é `só é permitido com formatVersion 6`, no caminho `containers`); `id` no formato `[a-z0-9-]+` e único na lista; `name` não vazio; `width` e `height` inteiros de 1 a 20000; `background` opcional no formato `#RRGGBB`; qualquer outra propriedade é recusada;
 - `sources` a partir da `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name` (ou `path`, na v4, em sistema de `origins`); `values` só em campos `enum` e com destinos que existam em `options`;

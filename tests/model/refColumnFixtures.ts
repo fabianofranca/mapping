@@ -101,7 +101,7 @@ export function spec(
  * Projeto com a especialização aplicada: AM (modelo) com as linhas R1 `cpf` e R2 `nome` em
  * `campos`; AL (lista) com a linha L1 (sem alvo); AF, uma anotação livre com a tupla E1.
  */
-export function build(version = 1): Project {
+export function build(version = 1, edit: (raw: Raw) => void = () => undefined): Project {
   let p = emptyProject();
   p = addContainer(p, { id: 'I1', file: 'images/a.png', width: 1000, height: 1000 });
   for (const id of ['M1', 'M2', 'M3']) {
@@ -111,7 +111,7 @@ export function build(version = 1): Project {
       rect: { x: 10, y: 10, width: 100, height: 100 },
     });
   }
-  p = applySpecialization(p, spec(version), { newId: idGen('LS') });
+  p = applySpecialization(p, spec(version, {}, edit), { newId: idGen('LS') });
   const layerDados = p.layers.find((l) => l.spec?.layerId === 'dados')!.id;
   const layerTelas = p.layers.find((l) => l.spec?.layerId === 'telas')!.id;
   p = addTypedAnnotation(p, {

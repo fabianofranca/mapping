@@ -18,7 +18,8 @@ export { isPackagePath };
 // é a 6 mais `floating` no tipo (a instância é uma marcação flutuante, como uma nota),
 // `appliesTo` no tipo (onde a anotação se aplica: marcação, seta ou ambas) e `ref` como tipo
 // de coluna de `table` (a lista de referências como dado, ME4); a versão 8 é a 7 mais
-// `suggestions` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor).
+// `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem
+// restringir o valor; `linkedRef` liga o texto a um campo/coluna `ref` do mesmo tipo/tabela).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -180,6 +181,8 @@ export type SpecSimpleColumn =
       default?: string;
       /** Vocabulário sugerido ao digitar (só `formatVersion` 8); não restringe o valor. */
       suggestions?: string[];
+      /** Chave de um campo/coluna `ref` irmão cujos alvos também entram na lista (só `formatVersion` 8). */
+      linkedRef?: string;
     })
   | (SpecFieldBase & { type: 'number'; default?: number })
   | (SpecFieldBase & { type: 'date'; default?: string })
@@ -372,6 +375,7 @@ const fieldShape = z
     default: z.unknown().optional(),
     options: z.array(z.string()).optional(),
     suggestions: z.array(z.string()).optional(),
+    linkedRef: z.string().optional(),
     columns: z.array(z.unknown()).optional(),
     tags: tags.optional(),
     rowLabel: z.string().optional(),
@@ -448,6 +452,7 @@ function checkField(
   ctx: z.RefinementCtx,
   path: (string | number)[],
   column: boolean,
+  siblings: ReadonlyMap<string, string>,
 ): void {
   const add = (sub: string, message: string) =>
     ctx.addIssue({ code: 'custom', path: [...path, sub], message });
@@ -481,6 +486,23 @@ function checkField(
       add('suggestions', 'só é permitido em campo ou coluna string');
     } else {
       checkSuggestions(field.suggestions, add);
+    }
+  }
+
+  if (field.linkedRef !== undefined) {
+    if (type !== 'string') {
+      add('linkedRef', 'só é permitido em campo ou coluna string');
+    } else {
+      const target = siblings.get(field.linkedRef);
+      const where = column ? 'uma coluna da tabela' : 'um campo do tipo';
+      if (target === undefined) {
+        add('linkedRef', `"${field.linkedRef}" não é ${where}`);
+      } else if (target !== 'ref') {
+        add(
+          'linkedRef',
+          `"${field.linkedRef}" deve ser ${column ? 'uma coluna' : 'um campo'} ref`,
+        );
+      }
     }
   }
 
@@ -530,6 +552,7 @@ function checkFields(
   path: (string | number)[],
 ): void {
   const seen = new Set<string>();
+  const siblings = new Map(fields.map((f) => [f.key, f.type as string]));
   fields.forEach((field, i) => {
     const p = [...path, i];
     if (seen.has(field.key)) {
@@ -540,7 +563,7 @@ function checkFields(
       });
     }
     seen.add(field.key);
-    checkField(field, ctx, p, false);
+    checkField(field, ctx, p, false, siblings);
 
     if (field.type !== 'table') return;
     const cols = field.columns;
@@ -554,6 +577,12 @@ function checkFields(
     }
     const colSeen = new Set<string>();
     const colTypes = new Map<string, string>();
+    const colSiblings = new Map<string, string>();
+    for (const raw of cols) {
+      if (isRecord(raw) && typeof raw.key === 'string' && typeof raw.type === 'string') {
+        colSiblings.set(raw.key, raw.type);
+      }
+    }
     cols.forEach((raw, j) => {
       const cp = [...p, 'columns', j];
       const parsed = fieldShape.safeParse(raw);
@@ -577,7 +606,7 @@ function checkFields(
       }
       colSeen.add(col.key);
       colTypes.set(col.key, col.type);
-      checkField(col, ctx, cp, true);
+      checkField(col, ctx, cp, true, colSiblings);
     });
 
     if ((field.tags?.length ?? 0) > 0) {
@@ -1498,7 +1527,7 @@ export const specSchema = z
         });
       });
     }
-    // v8: `suggestions` em campo e coluna `string`. Antes dela, é erro no caminho exato.
+    // v8: `suggestions` e `linkedRef` em campo e coluna `string`. Antes dela, é erro no caminho exato.
     if (spec.formatVersion < 8) {
       spec.layers.forEach((layer, li) => {
         layer.annotationTypes.forEach((type, ti) => {
@@ -1511,9 +1540,13 @@ export const specSchema = z
                 message: 'só é permitido com formatVersion 8',
               });
             if (field.suggestions !== undefined) only8(['suggestions']);
+            if (field.linkedRef !== undefined) only8(['linkedRef']);
             (field.columns ?? []).forEach((column, ci) => {
               if (isRecord(column) && column.suggestions !== undefined) {
                 only8(['columns', ci, 'suggestions']);
+              }
+              if (isRecord(column) && column.linkedRef !== undefined) {
+                only8(['columns', ci, 'linkedRef']);
               }
             });
           });

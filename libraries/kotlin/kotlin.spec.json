@@ -82,7 +82,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -121,7 +122,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -147,7 +148,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -375,7 +377,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -414,7 +417,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -440,7 +443,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -664,7 +668,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -703,7 +708,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -729,7 +734,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -947,7 +953,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -1009,7 +1016,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -1035,7 +1042,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -1258,7 +1266,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -1291,7 +1300,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -1317,7 +1326,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -1542,7 +1552,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -1568,7 +1578,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -1684,7 +1695,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -1723,7 +1735,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -1749,7 +1761,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -1959,7 +1972,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -1998,7 +2012,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -2024,7 +2038,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -2245,7 +2260,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -2278,7 +2294,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -2304,7 +2320,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -2519,7 +2536,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -2552,7 +2570,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -2578,7 +2596,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -2793,7 +2812,8 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable)."
+                  "description": "O supertipo como escrito no código, com argumentos de tipo (Base<Int>, Parcelable). As declarações mapeadas aparecem ao digitar; escolher uma preenche também o Tipo mapeado.",
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",
@@ -2826,7 +2846,7 @@
                   "label": "Tipo",
                   "type": "string",
                   "required": true,
-                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin aparecem ao digitar; qualquer texto continua valendo (String?, List<Endereco>).",
+                  "description": "Tipo da propriedade com nulabilidade. Os tipos básicos do Kotlin e as declarações mapeadas aparecem ao digitar; escolher uma declaração preenche também o Tipo mapeado. Qualquer texto continua valendo (String?, List<Endereco>).",
                   "suggestions": [
                     "String",
                     "Int",
@@ -2852,7 +2872,8 @@
                     "MutableMap",
                     "Array",
                     "Pair"
-                  ]
+                  ],
+                  "linkedRef": "typeRef"
                 },
                 {
                   "key": "typeRef",

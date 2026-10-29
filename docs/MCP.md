@@ -123,7 +123,7 @@ Em `get_marking`, `get_annotation`, `find_by_code`, `get_component` (campo `code
 
 ### Mudança da 0.10.0 (Sugestões no campo de texto)
 
-Sem tool nova e sem mudança no `mapping.json` (schema v13), na proposta (`formatVersion` 3) nem no componente (2). A especialização passa à `formatVersion` 8: campo e coluna `string` ganham `suggestions` (vocabulário sugerido ao digitar; **não restringe o valor**). `get_specialization` já devolve a chave (é o JSON); `validate_specialization` e `validate_library` aceitam a v8, com os mesmos erros da app (versão anterior, campo de outro tipo, lista vazia, repetida ou com texto vazio ou com espaço nas pontas). Uma proposta pode trazer um pacote v8. Detalhes em [`SPEC-FORMAT.md`](SPEC-FORMAT.md); como o agente usa as sugestões, no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
+Sem tool nova e sem mudança no `mapping.json` (schema v13), na proposta (`formatVersion` 3) nem no componente (2). A especialização passa à `formatVersion` 8: campo e coluna `string` ganham `suggestions` (vocabulário sugerido ao digitar; **não restringe o valor**) e `linkedRef` (a `key` de um `ref` irmão: os alvos mapeados entram na lista, e escolher um preenche o `ref` junto). `get_specialization` já devolve as chaves (é o JSON); `validate_specialization` e `validate_library` aceitam a v8, com os mesmos erros da app (versão anterior, campo de outro tipo, lista vazia, repetida ou com texto vazio ou com espaço nas pontas; `linkedRef` que não aponta para um campo ou coluna `ref` do mesmo nível). Uma proposta pode trazer um pacote v8. Detalhes em [`SPEC-FORMAT.md`](SPEC-FORMAT.md); como o agente usa as sugestões e o `linkedRef`, no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
 
 ### Mudança da 0.9.0 (Marcações espaciais, notas e setas)
 

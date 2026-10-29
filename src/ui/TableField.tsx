@@ -11,6 +11,7 @@ import {
   type JsonValue,
   type SpecField,
   type SpecRefColumn,
+  type SpecSimpleColumn,
   type TableRow,
 } from '../model';
 import { ActionMenu } from './ActionMenu';
@@ -22,7 +23,13 @@ import { Icon } from './icons';
 import { gripAt, isGrip, isNewRowKey } from './KeyValueGrid';
 import { useFocusRequest } from './focus';
 import { moveKeyDelta, useRowDrag } from './rowDrag';
-import { BacklinkList, SimpleEditor, type FieldContext } from './FieldEditors';
+import {
+  BacklinkList,
+  SimpleEditor,
+  type FieldContext,
+  type SimpleEditorProps,
+} from './FieldEditors';
+import { linkedCellTargets, type LinkedTargets } from './linkedRef';
 import { RefCell } from './RefCell';
 import type { ActionResult } from '../store/history';
 import { issueMessage, issuesOf } from './typedText';
@@ -44,6 +51,8 @@ export function TableField({
   const issues = issuesOf(project, annotation.id).filter(
     (i) => i.key === field.key && i.rowId !== undefined,
   );
+  // Os alvos de cada coluna com `linkedRef`, calculados uma vez por renderização.
+  const targetsByColumn = new Map<string, LinkedTargets>();
 
   return (
     <TableEditor
@@ -78,6 +87,28 @@ export function TableField({
         );
       }}
       annotationId={annotation.id}
+      linkedCell={(row, column) => {
+        const linkedKey = column.type === 'string' ? column.linkedRef : undefined;
+        if (linkedKey === undefined) return undefined;
+        let targets = targetsByColumn.get(column.key);
+        if (!targets) {
+          targets = linkedCellTargets(project, annotation, field.key, linkedKey);
+          targetsByColumn.set(column.key, targets);
+        }
+        const found = targets;
+        return {
+          items: found.items,
+          onSetLinked: (text, itemId) => {
+            const ref = found.find(itemId);
+            return ref
+              ? actions.setTableCells(annotation.id, field.key, row._id, {
+                  [column.key]: text,
+                  [linkedKey]: { ...ref },
+                })
+              : actions.setTableCell(annotation.id, field.key, row._id, column.key, text);
+          },
+        };
+      }}
       renderRefCell={({ row, column, label, invalid, title }) => (
         <RefCell
           project={project}
@@ -132,6 +163,14 @@ export interface TableEditorProps {
    * (o formulário de criação), a célula mostra o seletor indisponível.
    */
   readonly renderRefCell?: (cell: RefCellContext) => ComponentChildren;
+  /**
+   * `linkedRef` de uma coluna `string` (precisa do projeto): devolve os alvos e a gravação
+   * conjunta da célula. Sem ele (o formulário de criação), só valem as sugestões fixas.
+   */
+  readonly linkedCell?: (
+    row: TableRow,
+    column: SpecSimpleColumn,
+  ) => SimpleEditorProps['linked'];
 }
 
 /**
@@ -151,6 +190,7 @@ export function TableEditor({
   rowNote,
   annotationId,
   renderRefCell,
+  linkedCell,
 }: TableEditorProps) {
   const inherited = useDetailsExtension();
   const ext = annotationId !== undefined ? inherited : null;
@@ -399,6 +439,7 @@ export function TableEditor({
                           readOnly={readOnly}
                           invalid={issue !== undefined}
                           title={issue}
+                          linked={linkedCell?.(row, column)}
                           onSet={(next) => onSetCell(row._id, column.key, next)}
                         />
                       )}
