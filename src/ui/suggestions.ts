@@ -5,6 +5,8 @@
 export interface SuggestionItem {
   readonly label: string;
   readonly detail?: string;
+  /** Identifica um alvo de `linkedRef`; só os itens com `id` são devolvidos ao confirmar. */
+  readonly id?: string;
 }
 
 /** Item como o formato entrega (texto simples) ou já com texto secundário. */
@@ -81,4 +83,33 @@ export function replaceWord(
     text: text.slice(0, start) + suggestion + text.slice(end),
     cursor: start + suggestion.length,
   };
+}
+
+/**
+ * O rótulo aparece em `text` como palavra: sem caractere de palavra (letra, dígito, `_` ou `.`)
+ * colado a ele, à esquerda ou à direita. Maiúsculas contam; rótulo vazio nunca aparece.
+ */
+export function containsWord(text: string, label: string): boolean {
+  if (label === '') return false;
+  let from = 0;
+  for (;;) {
+    const at = text.indexOf(label, from);
+    if (at < 0) return false;
+    const before = [...text.slice(0, at)].pop() ?? '';
+    const after = [...text.slice(at + label.length)][0] ?? '';
+    if (!WORD_CHAR.test(before) && !WORD_CHAR.test(after)) return true;
+    from = at + 1;
+  }
+}
+
+/**
+ * Alvos do `linkedRef` primeiro, depois as sugestões fixas; a fixa cujo texto é igual ao de um
+ * alvo é descartada (o alvo vence).
+ */
+export function mergeLinkedItems(
+  targets: readonly SuggestionItem[],
+  fixed: readonly SuggestionInput[],
+): SuggestionItem[] {
+  const taken = new Set(targets.map((item) => item.label));
+  return [...targets, ...toItems(fixed).filter((item) => !taken.has(item.label))];
 }

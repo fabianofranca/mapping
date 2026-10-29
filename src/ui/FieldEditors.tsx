@@ -12,6 +12,7 @@ import type { ActionResult } from '../store/history';
 import type { AnnotationLocation } from '../store/ui';
 import { Segmented, Select, TextArea, TextField } from './controls';
 import { markingLabel } from './labels';
+import { mergeLinkedItems, type SuggestionItem } from './suggestions';
 import { annotationSourceLabel } from './typedText';
 
 // Peças comuns dos campos tipados: o editor de um valor simples (campo ou célula de
@@ -144,7 +145,7 @@ export function StringEditor(props: SimpleEditorProps) {
   );
 }
 
-interface SimpleEditorProps {
+export interface SimpleEditorProps {
   readonly field: SpecSimpleColumn;
   readonly value: JsonValue | undefined;
   /** Nome acessível do controle. */
@@ -158,6 +159,14 @@ interface SimpleEditorProps {
   readonly title?: string;
   /** Grava o valor (`null` limpa). */
   readonly onSet: (value: JsonValue) => ActionResult;
+  /**
+   * `linkedRef` (campo `string`): os alvos do `ref` irmão entram na lista antes das sugestões
+   * fixas; ao confirmar com um deles escolhido, `onSetLinked` grava o texto e o `ref` juntos.
+   */
+  readonly linked?: {
+    readonly items: readonly SuggestionItem[];
+    readonly onSetLinked: (text: JsonValue, itemId: string) => ActionResult;
+  };
 }
 
 /** Editor de um campo simples: texto, número, data ou opções. */
@@ -170,6 +179,7 @@ export function SimpleEditor({
   invalid = false,
   title,
   onSet,
+  linked,
 }: SimpleEditorProps) {
   const [error, setError] = useState<string | null>(null);
   const report = (result: ActionResult) => {
@@ -196,8 +206,19 @@ export function SimpleEditor({
           aria-required={required}
           disabled={readOnly}
           value={text}
-          suggestions={field.suggestions}
-          onCommit={(next) => report(onSet(next === '' ? null : next))}
+          suggestions={
+            linked
+              ? mergeLinkedItems(linked.items, field.suggestions ?? [])
+              : field.suggestions
+          }
+          onCommit={(next, chosen) => {
+            const value = next === '' ? null : next;
+            return report(
+              linked && chosen?.id !== undefined
+                ? linked.onSetLinked(value, chosen.id)
+                : onSet(value),
+            );
+          }}
         />
       );
       break;

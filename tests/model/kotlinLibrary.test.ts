@@ -160,4 +160,33 @@ describe('biblioteca Kotlin', () => {
     }
     expect(checked).toBe(ALL_TYPES.length);
   });
+
+  it('Propriedades › Tipo e Supertipos › Tipo têm linkedRef typeRef; Funções › Retorno não', () => {
+    const parsed = parseSpecText(text(SPEC_FILE));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const linkedOf = (
+      fields: readonly { key: string; columns?: readonly unknown[] }[],
+      table: string,
+      column: string,
+    ): string | undefined => {
+      const f = fields.find((x) => x.key === table);
+      const cols = (f?.columns ?? []) as { key: string; linkedRef?: string }[];
+      return cols.find((c) => c.key === column)?.linkedRef;
+    };
+    for (const layer of parsed.spec.layers) {
+      for (const type of layer.annotationTypes) {
+        expect(linkedOf(type.fields, 'properties', 'type'), type.id).toBe('typeRef');
+        if (type.fields.some((f) => f.key === 'supertypes')) {
+          expect(linkedOf(type.fields, 'supertypes', 'type'), type.id).toBe('typeRef');
+        }
+        if (type.fields.some((f) => f.key === 'functions')) {
+          expect(
+            linkedOf(type.fields, 'functions', 'returnType'),
+            type.id,
+          ).toBeUndefined();
+        }
+      }
+    }
+  });
 });

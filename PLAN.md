@@ -115,12 +115,12 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Toca em:** `src/model/spec.ts`, `docs/spec.schema.json`, `src/model/specVersions.ts`, `src/store/` (a action que grava texto e `ref` numa entrada: a que já grava células, se aceitar várias; senão uma nova), `src/ui/controls/TextField.tsx`, `src/ui/FieldEditors.tsx`, `src/ui/TableField.tsx`, `src/ui/TypedForm.tsx`, `libraries/kotlin/`, `examples/sugestoes-kotlin.zip`, `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, `.claude/skills/spec-author/`, testes, `docs/TESTING.md` (R14), `PLAN.md`.
 
-- [ ] `linkedRef` no validador e no JSON Schema (decisão 2, testes); contrato de versão (decisão 7)
-- [ ] Os alvos do `ref` na lista, com o tipo como texto secundário e antes das fixas (decisão 2, teste de componente)
-- [ ] Escolher um alvo grava texto e `ref` juntos, numa entrada do desfazer; Esc descarta; digitar à mão não mexe no `ref` (decisão 4, testes de store e de componente)
-- [ ] Biblioteca Kotlin com `linkedRef: "typeRef"` em Propriedades › Tipo e Supertipos › Tipo (decisão 6)
-- [ ] Documentação: `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, skill `spec-author`
-- [ ] Roteiro R14 com os passos do alvo mapeado
+- [x] `linkedRef` no validador e no JSON Schema (decisão 2, testes); contrato de versão (decisão 7)
+- [x] Os alvos do `ref` na lista, com o tipo como texto secundário e antes das fixas (decisão 2, teste de componente)
+- [x] Escolher um alvo grava texto e `ref` juntos, numa entrada do desfazer; Esc descarta; digitar à mão não mexe no `ref` (decisão 4, testes de store e de componente)
+- [x] Biblioteca Kotlin com `linkedRef: "typeRef"` em Propriedades › Tipo e Supertipos › Tipo (decisão 6)
+- [x] Documentação: `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, skill `spec-author`
+- [x] Roteiro R14 com os passos do alvo mapeado
 - [ ] Rodada dirigida do Cowork (R0 e R14) e correção dos achados
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-sugestoes-campo.md`, `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico)
 

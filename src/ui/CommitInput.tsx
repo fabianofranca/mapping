@@ -7,7 +7,9 @@ import {
   replaceWord,
   toItems,
   wordAtCursor,
+  containsWord,
   type SuggestionInput,
+  type SuggestionItem,
 } from './suggestions';
 
 type InputProps = Omit<
@@ -19,9 +21,11 @@ interface CommitInputProps extends InputProps {
   readonly value: string;
   /**
    * Chamado ao confirmar (Enter ou sair do campo) com um texto diferente do
-   * atual. Devolve `false` para descartar o texto e voltar ao valor atual.
+   * atual. Devolve `false` para descartar o texto e voltar ao valor atual. O segundo argumento
+   * só vem quando a pessoa escolheu na lista um item com `id` (alvo de `linkedRef`) cujo rótulo
+   * ainda é uma palavra do texto; nesse caso a confirmação acontece mesmo com o texto igual ao atual.
    */
-  readonly onCommit: (text: string) => boolean;
+  readonly onCommit: (text: string, chosen?: SuggestionItem) => boolean;
   /**
    * Sugestões do campo (combobox ARIA). A lista abre (digitando, ↓, Ctrl+Espaço ou clique no campo vazio) com o
    * primeiro item ativo, que volta ao primeiro a cada filtragem; Enter com ela aberta escolhe o
@@ -84,10 +88,14 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
         : null,
     );
   };
-  const choose = (label: string) => {
+  // Itens com `id` escolhidos nesta edição (e sobre qual valor externo): zerados ao confirmar,
+  // no Esc que reverte e quando o valor externo muda.
+  const chosen = useRef<{ readonly item: SuggestionItem; readonly base: string }[]>([]);
+  const choose = (item: SuggestionItem) => {
     const el = inputEl.current;
     if (!el) return;
-    const next = replaceWord(el.value, el.selectionStart ?? el.value.length, label);
+    if (item.id !== undefined) chosen.current.push({ item, base: value });
+    const next = replaceWord(el.value, el.selectionStart ?? el.value.length, item.label);
     pendingCursor.current = next.cursor;
     setText(next.text);
     closeList();
@@ -131,11 +139,18 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
   // Lê o texto do próprio campo: o `change` pode chegar antes da renderização que
   // acompanha o `input`, e `text` ainda seria o valor antigo.
   const commit = (typed: string) => {
-    if (typed === value) return;
-    if (committed.current?.base === value && committed.current.text === typed) return;
+    // A última escolha cujo rótulo ainda é palavra do texto vale; a lista é zerada em todo caso.
+    const picked = chosen.current
+      .filter((c) => c.base === value && containsWord(typed, c.item.label))
+      .pop()?.item;
+    chosen.current = [];
+    if (picked === undefined) {
+      if (typed === value) return;
+      if (committed.current?.base === value && committed.current.text === typed) return;
+    }
     // Gravado: o rascunho passa a ser o texto gravado. Sem isto, voltar depois ao valor de
     // antes (desfazer, limpar por outro botão) reaproveitaria o rascunho antigo.
-    if (onCommit(typed)) {
+    if (picked === undefined ? onCommit(typed) : onCommit(typed, picked)) {
       committed.current = { base: value, text: typed };
       setDraft({ base: typed, text: typed });
     } else {
@@ -208,7 +223,7 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
           if (visible && plain && e.key === 'Enter' && active >= 0) {
             e.preventDefault();
             const item = shown[active];
-            if (item) choose(item.label);
+            if (item) choose(item);
             return;
           }
           if (visible && e.key === 'Tab') closeList();
@@ -224,7 +239,8 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
         }
         // Também com Alt (nova linha): grava antes de a linha nova entrar.
         if (e.key === 'Enter') commit(el.value);
-        if (e.key === 'Escape' && el.value !== value) {
+        if (e.key === 'Escape' && (el.value !== value || chosen.current.length > 0)) {
+          chosen.current = [];
           setText(value);
           e.preventDefault();
           e.stopPropagation();
@@ -248,12 +264,12 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
         >
           {shown.map((item, index) => (
             <div
-              key={item.label}
+              key={index}
               id={`${listId}-${index}`}
               role="option"
               aria-selected={index === active}
               class="suggestion"
-              onClick={() => choose(item.label)}
+              onClick={() => choose(item)}
             >
               <span class="suggestion-label">{item.label}</span>
               {item.detail !== undefined && (

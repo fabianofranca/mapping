@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  containsWord,
   filterSuggestions,
+  mergeLinkedItems,
   replaceWord,
   toItems,
   wordAtCursor,
@@ -69,5 +71,42 @@ describe('replaceWord', () => {
       text: 'String, x',
       cursor: 6,
     });
+  });
+});
+
+describe('containsWord', () => {
+  it('o rótulo precisa estar solto de caracteres de palavra dos dois lados', () => {
+    expect(containsWord('Usuario', 'Usuario')).toBe(true);
+    expect(containsWord('List<Usuario>', 'Usuario')).toBe(true);
+    expect(containsWord('Map<Usuario, Int>', 'Usuario')).toBe(true);
+    expect(containsWord('Usuario?', 'Usuario')).toBe(true);
+    expect(containsWord('UsuarioDto', 'Usuario')).toBe(false);
+    expect(containsWord('MeuUsuario', 'Usuario')).toBe(false);
+    expect(containsWord('Usuario_1', 'Usuario')).toBe(false);
+    expect(containsWord('a.Usuario', 'Usuario')).toBe(false);
+    expect(containsWord('Usuario2', 'Usuario')).toBe(false);
+  });
+
+  it('procura nas outras ocorrências e diferencia maiúsculas', () => {
+    expect(containsWord('UsuarioDto Usuario', 'Usuario')).toBe(true);
+    expect(containsWord('usuario', 'Usuario')).toBe(false);
+    expect(containsWord('Pessoa', '')).toBe(false);
+    expect(containsWord('', 'Usuario')).toBe(false);
+  });
+
+  it('trata letras Unicode como parte da palavra', () => {
+    expect(containsWord('Endereço', 'Endere')).toBe(false);
+    expect(containsWord('List<Endereço>', 'Endereço')).toBe(true);
+  });
+});
+
+describe('mergeLinkedItems', () => {
+  it('alvos primeiro; a fixa de mesmo texto é descartada', () => {
+    const targets = [{ label: 'Usuario', detail: 'Classe', id: '1' }];
+    expect(mergeLinkedItems(targets, ['String', 'Usuario', { label: 'Int' }])).toEqual([
+      { label: 'Usuario', detail: 'Classe', id: '1' },
+      { label: 'String' },
+      { label: 'Int' },
+    ]);
   });
 });

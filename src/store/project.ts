@@ -522,6 +522,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       ),
     setFieldValue: (annotationId: string, key: string, value: JsonValue) =>
       store.apply((p) => model.setFieldValue(p, annotationId, key, value)),
+    setFieldValues: (annotationId: string, values: Readonly<Record<string, JsonValue>>) =>
+      store.apply((p) => model.setFieldValues(p, annotationId, values)),
     addTableRow: (annotationId: string, key: string) =>
       create((rowId) => (p) => model.addTableRow(p, annotationId, key, rowId)),
     setTableCell: (
@@ -532,6 +534,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       value: JsonValue,
     ) =>
       store.apply((p) => model.setTableCell(p, annotationId, key, rowId, column, value)),
+    setTableCells: (
+      annotationId: string,
+      key: string,
+      rowId: string,
+      cells: Readonly<Record<string, JsonValue>>,
+    ) => store.apply((p) => model.setTableCells(p, annotationId, key, rowId, cells)),
     removeTableRow: (annotationId: string, key: string, rowId: string) =>
       store.apply((p) => model.removeTableRow(p, annotationId, key, rowId)),
     moveTableRow: (annotationId: string, key: string, rowId: string, toIndex: number) =>
