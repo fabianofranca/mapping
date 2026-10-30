@@ -275,3 +275,85 @@ describe('slot (reservado do container)', () => {
     expect(result.warnings).toEqual([]);
   });
 });
+
+describe('imagem remota e embutida', () => {
+  const rectWith = (fill: object): SceneNode => ({
+    ...baseNode({ id: 'img', name: 'img', width: 40, height: 20 }),
+    type: 'rect',
+    cornerRadius: 0,
+    fills: [fill as never],
+  });
+
+  /** Espiona o construtor de `Image`: devolve as URLs atribuídas a `src`. */
+  function spyImage(): { sources: string[]; restore: () => void } {
+    const original = globalThis.Image;
+    const sources: string[] = [];
+    class SpyImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      naturalWidth = 1;
+      naturalHeight = 1;
+      set src(value: string) {
+        sources.push(value);
+      }
+    }
+    globalThis.Image = SpyImage as unknown as typeof Image;
+    return {
+      sources,
+      restore: () => {
+        globalThis.Image = original;
+      },
+    };
+  }
+
+  it('o paint com url desenha o reservado (forma cinza e X), sem Image e sem aviso', () => {
+    const spy = spyImage();
+    try {
+      const { byId, warnings } = renderScene(
+        scene(
+          rectWith({ type: 'image', fit: 'cover', url: 'https://cdn.exemplo.com/a.png' }),
+        ),
+      );
+      const [fill, cross] = byId.get('img')?.getChildren() ?? [];
+      expect((fill as Konva.Rect).fill()).toBe(DEFAULT_PALETTE.placeholderFill);
+      expect(cross).toBeInstanceOf(Konva.Line);
+      expect(spy.sources).toEqual([]);
+      expect(warnings).toEqual([]);
+    } finally {
+      spy.restore();
+    }
+  });
+
+  it('src de outro esquema vira reservado e nunca cria Image', () => {
+    const spy = spyImage();
+    try {
+      for (const src of [
+        'https://cdn.exemplo.com/a.png',
+        'http://x.com/a.png',
+        'blob:x',
+      ]) {
+        const { byId } = renderScene(scene(rectWith({ type: 'image', src })));
+        const children = byId.get('img')?.getChildren() ?? [];
+        expect(children).toHaveLength(2);
+        expect(children[1]).toBeInstanceOf(Konva.Line);
+      }
+      expect(spy.sources).toEqual([]);
+    } finally {
+      spy.restore();
+    }
+  });
+
+  it('src data: continua carregando a imagem embutida', () => {
+    const spy = spyImage();
+    try {
+      const src = 'data:image/png;base64,AAAA';
+      const { byId } = renderScene(scene(rectWith({ type: 'image', src })));
+      const children = byId.get('img')?.getChildren() ?? [];
+      expect(children).toHaveLength(1);
+      expect(children[0]).toBeInstanceOf(Konva.Image);
+      expect(spy.sources).toEqual([src]);
+    } finally {
+      spy.restore();
+    }
+  });
+});

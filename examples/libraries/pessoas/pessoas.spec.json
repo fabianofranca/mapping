@@ -1,0 +1,48 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 7,
+  "id": "pessoas",
+  "name": "Pessoas",
+  "version": 1,
+  "description": "Pessoas na interface: o avatar com a foto (uma imagem remota cuja URL vem da origem do trabalho) e o nome.",
+  "layers": [
+    {
+      "id": "pessoas",
+      "name": "Pessoas",
+      "color": "#0B7A75",
+      "annotationTypes": [
+        {
+          "id": "avatar",
+          "name": "Avatar",
+          "description": "Foto redonda de uma pessoa com o nome ao lado. A foto é uma imagem remota: o campo guarda só a URL.",
+          "labelField": "nome",
+          "component": "components/avatar.json",
+          "doc": "docs/avatar.md",
+          "fields": [
+            {
+              "key": "nome",
+              "label": "Nome",
+              "type": "string",
+              "required": true,
+              "description": "O nome da pessoa como aparece ao lado da foto."
+            },
+            {
+              "key": "foto",
+              "label": "Foto",
+              "type": "string",
+              "description": "A URL https:// da foto, copiada da origem do trabalho (o design, o app ou a API). Não invente a URL."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Ana Souza",
+              "values": {
+                "nome": "Ana Souza"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

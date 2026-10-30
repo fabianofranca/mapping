@@ -1,4 +1,4 @@
-# Formato do componente (`mapping-component`, `formatVersion` 1 e 2)
+# Formato do componente (`mapping-component`, `formatVersion` 1, 2 e 3)
 
 O formato do arquivo que desenha um tipo de anotação: um **componente**. É para quem escreve um à mão ou gera um (a skill `spec-author` e os agentes). O componente vive dentro do pacote de uma biblioteca (ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Biblioteca: o pacote"); este documento descreve só o arquivo dele.
 
@@ -10,7 +10,7 @@ Arquivos de apoio:
 
 ## O que é um componente
 
-Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho, slot e, na `formatVersion` 2, `repeat`) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
+Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho, slot, na `formatVersion` 2, `repeat` e, na 3, `image`) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
 
 - **Um arquivo por componente.** O tipo da especialização só o referencia, com a chave `component` (`"component": "components/m3-button.json"`).
 - O caminho é **relativo ao arquivo da especialização**, com `/`, sem `..`, sem `/` no começo e sem unidade de disco, e termina em `.json`.
@@ -66,7 +66,7 @@ Um componente é o **desenho genérico** de um tipo de anotação: uma árvore d
 | Propriedade     | Obrigatória | Descrição                                                                                                                                                                                                     |
 | --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `format`        | sim         | Sempre `"mapping-component"`.                                                                                                                                                                                 |
-| `formatVersion` | sim         | `1` ou `2`. A `2` é a `1` mais o nó `repeat` (a tabela desenhada); `repeat` numa `1` é erro. As duas são aceitas.                                                                                             |
+| `formatVersion` | sim         | `1`, `2` ou `3`. A `2` é a `1` mais o nó `repeat` (a tabela desenhada); a `3` é a `2` mais o nó `image`. `repeat` numa `1` e `image` numa `1` ou `2` são erro. As três são aceitas.                           |
 | `id`            | sim         | Texto no padrão `^[a-z0-9][a-z0-9-_]*$`.                                                                                                                                                                      |
 | `name`          | sim         | Nome exibido, não vazio.                                                                                                                                                                                      |
 | `description`   | não         | Texto de ajuda.                                                                                                                                                                                               |
@@ -80,7 +80,7 @@ Qualquer outra chave na raiz é problema (o formato é estrito).
 
 ## Nós do template
 
-Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path`, `slot` ou, na `formatVersion` 2, `repeat`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
+Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path`, `slot`, na `formatVersion` 2, `repeat` ou, na 3, `image`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
 
 | Chave             | Descrição                                                                                                                                                                                                                                                                       |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -117,6 +117,45 @@ Só as chaves comuns. `rect` aceita `cornerRadius`.
 | `font`  | `{ family?, size?, weight?, italic?, lineHeight?, letterSpacing?, align?, verticalAlign?, decoration? }`, todos aceitando expressão. Padrões: `size` 14, `weight` 400 (de 100 a 900), `italic` falso, `lineHeight` 1,2, `letterSpacing` 0, `align` `left`, `verticalAlign` `top`, `decoration` `none` (`underline` ou `line-through`). `lineHeight` até 3 é múltiplo do tamanho; acima disso é px. Sem `family`, o desenho usa `Inter`. |
 
 O texto **quebra linha** quando o nó tem largura definida (px, `fill` ou `%`) e **não quebra** quando a largura é `hug`. Sem `width` e `height`, o texto é `hug` nos dois eixos (todos os outros nós são `fill`).
+
+### `image` (imagem remota, `formatVersion` 3)
+
+Mostra uma imagem de uma URL `https://` (avatar, foto, logo cuja URL vem do dado). Exemplo, um avatar com nome:
+
+```json
+{
+  "type": "frame",
+  "name": "avatar",
+  "layout": { "type": "row", "gap": 8 },
+  "children": [
+    {
+      "type": "image",
+      "name": "foto",
+      "src": { "$field": "foto" },
+      "fit": "cover",
+      "width": 40,
+      "height": 40,
+      "fill": "#e0e0e0",
+      "cornerRadius": 20
+    },
+    { "type": "text", "text": { "$field": "nome" }, "width": "fill" }
+  ]
+}
+```
+
+| Chave  | Descrição                                                                                                                           |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `src`  | Obrigatória. Um texto literal `https://...` ou exatamente `{ "$field": "<campo>" }` (ver abaixo).                                   |
+| `fit`  | `cover` (padrão: preenche a caixa e corta o excesso), `contain` (cabe inteira) ou `fill` (estica).                                  |
+| comuns | `name`, `visible`, `opacity`, `width`, `height`, `anchors`, `fill` (o fundo, atrás da imagem), `stroke`, `shadow` e `cornerRadius`. |
+
+- **`src` restrito.** Só o literal ou `{ "$field": "<campo>" }`, sem `default`. `$concat`, `$switch`, `$if` e qualquer outra expressão são erro. Motivo: o componente não pode montar uma URL com valores de outros campos, o que mandaria dados do projeto ao servidor de quem escreveu a especialização.
+- **Literal.** Precisa ser uma URL `https://` absoluta, sem usuário e senha, com até 2048 caracteres. `http:`, `data:` e caminho relativo são erro (o relativo fica recusado para poder virar imagem local do pacote no futuro sem ambiguidade).
+- **O campo ligado** ao `src` precisa ser `string` (no `repeat`, uma coluna `string` da `table`); o validador da biblioteca confere. Nenhuma declaração de origem: a URL é o valor de um campo como qualquer outro.
+- **Tamanho.** `width`/`height` `"hug"` é **erro**: a arrumação nunca depende da imagem baixada, para o desenho ser o mesmo na app, no MCP e antes de carregar. O padrão dos dois eixos é `fill`, como nos outros nós que não são texto. Use px, `fill` ou `%`.
+- **Reservado.** Enquanto a imagem não carrega, sem consentimento da origem, com URL recusada ou com falha, o nó desenha o reservado (a caixa cinza com um X). O servidor MCP **nunca baixa** a imagem e desenha sempre o reservado.
+- **Consentimento.** A imagem só é pedida à rede depois de a pessoa permitir aquela origem na app (a partir da próxima versão da app); nada é gravado no projeto além da URL.
+- Vale dentro do `template` de um `repeat` (o `src` liga a uma coluna `string`).
 
 ### `path`
 
@@ -370,7 +409,7 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 ```
 
 - `errors[i]` é `"caminho: mensagem"` (ou só a mensagem quando o caminho é vazio), com o caminho JSON do problema: `template.children[1].text: esperava texto ou número`.
-- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1 ou 2`), `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
+- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1, 2 ou 3`), `image` numa `formatVersion` menor que 3 (`o nó image só existe na formatVersion 3`), `src` fora da regra do nó `image`, `width`/`height` `hug` no `image`, `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
 - `parseComponentText(texto)` lê o texto JSON (JSON inválido vira um problema de caminho vazio) e `validateComponent(json)` devolve só a lista `string[]`.
 - `docs/component.schema.json` espelha a estrutura (para editores e geradores); ele **não** substitui o parser, e o código é a fonte da verdade.
 - O **validador da biblioteca** (`src/model/library.ts`, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Validação da biblioteca") roda o `parseComponent` em cada componente do pacote e confere o que depende de mais de um arquivo (o campo citado pelo desenho existe no tipo, o `slot` declarado existe no template; num `repeat`, o `field` é uma `table` do tipo e cada chave citada no `template` é coluna dela ou campo do tipo; o `preview` de uma `table` é uma lista de linhas com colunas que existem).
@@ -378,8 +417,8 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 ## Limites conhecidos
 
 - **Um slot por componente.** Os filhos de uma instância vão sempre para o primeiro slot do template (busca em profundidade). Vários slots ficam para depois.
-- **Imagem não é primitiva.** O desenho é feito de quadro, retângulo, elipse, texto e caminho; fotos e bitmaps não entram.
-- **`formatVersion` 1 e 2.** A 2 acrescenta só o `repeat` e a 1 continua aceita sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
+- **Imagem só remota e só no nó `image`.** O arquivo do componente não carrega bitmap; a imagem vem de uma URL `https://` (um campo `string`) e não é gravada no projeto. Imagem local no pacote fica para depois (por isso o caminho relativo é recusado no `src`). Elipse e caminho não aceitam imagem como preenchimento.
+- **`formatVersion` 1, 2 e 3.** A 2 acrescenta só o `repeat`, a 3 só o `image`, e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
 - Gradiente só `linear`; sombra só uma por nó; borda uma por nó.
 - Listas que viram campos numerados (`label1`, `label2`…) são frágeis: para um dado em forma de tabela (os eventos de uma tela, as propriedades de uma chamada), declare um campo `table` e desenhe-o com `repeat`. Os componentes do Material 3 (a barra de navegação, a folha com N itens) ainda usam campos numerados.
 - O `repeat` não aninha (uma `table` não tem `table` dentro) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte.

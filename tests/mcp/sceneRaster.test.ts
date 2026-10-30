@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { approximateMeasurer } from '../../src/model';
+import { instantiate } from '../../src/model/components/instantiate';
+import { parseComponent } from '../../src/model/components/parseComponent';
 import {
   baseNode,
   translate,
@@ -423,5 +425,38 @@ describe('texto em barras', () => {
     expect(pixel(raster, 30, 10)).toEqual([0x11, 0x22, 0x33, 255]);
     expect(pixel(raster, 30, 18)).toEqual(WHITE);
     expect(pixel(raster, 80, 10)).toEqual(WHITE);
+  });
+});
+
+describe('imagem remota de um componente', () => {
+  it('um componente com o nó image desenha a cor do reservado, sem rede', () => {
+    const parsed = parseComponent({
+      format: 'mapping-component',
+      formatVersion: 3,
+      id: 'foto',
+      name: 'Foto',
+      size: { width: 20, height: 10 },
+      template: {
+        type: 'frame',
+        children: [{ type: 'image', src: { $field: 'foto' } }],
+      },
+    });
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    const { root } = instantiate(
+      parsed.component,
+      { foto: 'https://cdn.exemplo.com/a.png' },
+      { x: 0, y: 0, width: 20, height: 10 },
+      { measure: approximateMeasurer },
+    );
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const raster = canvas(20, 10);
+    paint(raster, root);
+    const [r, g, b] = pixel(raster, 10, 5);
+    expect(r).toBe(g);
+    expect(g).toBe(b);
+    expect(r).toBeLessThan(255);
+    expect(r).toBeGreaterThan(150);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 });

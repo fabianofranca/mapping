@@ -1,0 +1,62 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 3,
+  "id": "avatar",
+  "name": "Avatar",
+  "description": "Foto redonda de uma pessoa (imagem remota) com o nome ao lado. Sem a foto carregada, desenha o reservado.",
+  "size": {
+    "width": 220,
+    "height": 56
+  },
+  "minSize": {
+    "width": 180,
+    "height": 56
+  },
+  "preview": {
+    "nome": "Ana Souza"
+  },
+  "template": {
+    "type": "frame",
+    "name": "avatar",
+    "layout": {
+      "type": "row",
+      "gap": 12,
+      "padding": 8,
+      "align": "center"
+    },
+    "cornerRadius": 28,
+    "fill": "#FFFFFF",
+    "stroke": {
+      "color": "#0B7A75",
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "image",
+        "name": "foto",
+        "src": {
+          "$field": "foto"
+        },
+        "fit": "cover",
+        "width": 40,
+        "height": 40,
+        "fill": "#E0E0E0",
+        "cornerRadius": 20
+      },
+      {
+        "type": "text",
+        "name": "nome",
+        "text": {
+          "$field": "nome"
+        },
+        "font": {
+          "size": 14,
+          "weight": 600,
+          "lineHeight": 20
+        },
+        "color": "#0B3B38",
+        "width": "fill"
+      }
+    ]
+  }
+}

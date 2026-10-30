@@ -152,10 +152,14 @@ describe('parseComponent: repeat', () => {
     ]);
   });
 
-  it('a formatVersion 3 é recusada e as duas aceitas são citadas', () => {
-    const v3 = raw({ formatVersion: 3 });
-    v3.template.children.pop();
-    expect(errorsOf(v3)).toEqual(['formatVersion: esperava 1 ou 2']);
+  it('a formatVersion 4 é recusada e as aceitas são citadas', () => {
+    const v4 = raw({ formatVersion: 4 });
+    v4.template.children.pop();
+    expect(errorsOf(v4)).toEqual(['formatVersion: esperava 1, 2 ou 3']);
+  });
+
+  it('o repeat também vale na formatVersion 3', () => {
+    expect(parseComponent(raw({ formatVersion: 3 })).ok).toBe(true);
   });
 
   it('field e template são obrigatórios; field não pode ser vazio', () => {

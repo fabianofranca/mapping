@@ -67,9 +67,17 @@ export type Paint =
       readonly opacity?: number;
     }
   | {
-      /** Imagem: só com dados embutidos (`data:`); sem `src`, o renderizador desenha um reservado. */
+      /**
+       * Imagem, com duas origens que não se misturam. `src` é só a imagem embutida (`data:`),
+       * herança do laboratório e dos conversores Figma/SVG. `url` é a URL remota vinda do nó
+       * `image` do componente: o modelo nunca a baixa nem aplica a política (quem desenha
+       * decide). Sem imagem pronta ou liberada, o renderizador desenha um reservado.
+       */
       readonly type: 'image';
       readonly src?: string;
+      readonly url?: string;
+      /** Como a imagem ocupa a caixa (ausente = `cover`). */
+      readonly fit?: 'cover' | 'contain' | 'fill';
       readonly opacity?: number;
     };
 

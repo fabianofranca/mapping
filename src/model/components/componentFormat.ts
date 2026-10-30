@@ -5,7 +5,7 @@
  * fica no **próprio arquivo**; o tipo da especialização só o referencia
  * (`"component": "components/button.json"`, caminho relativo ao arquivo da especialização).
  * O desenho é um `template`: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto,
- * caminho, slot e, na `formatVersion` 2, `repeat`) cujos atributos podem ser **ligados aos campos** do tipo por expressões
+ * caminho, slot, na `formatVersion` 2 `repeat` e, na 3, `image`) cujos atributos podem ser **ligados aos campos** do tipo por expressões
  * (`{"$field": "label"}`, `{"$if": …}`, `{"$switch": …}`). Trocar o valor de um campo na
  * anotação redesenha o componente.
  *
@@ -19,8 +19,13 @@ export const COMPONENT_FORMAT = 'mapping-component';
 export const COMPONENT_FORMAT_VERSION = 1;
 /** A versão 2 acrescenta o nó `repeat` (a tabela desenhada); a 1 continua aceita e vale sem ele. */
 export const COMPONENT_FORMAT_VERSION_REPEAT = 2;
+/**
+ * A versão 3 acrescenta o nó `image` (imagem remota por URL `https://`); a 1 e a 2 continuam
+ * aceitas sem mudança (e o `repeat` vale na 2 e na 3).
+ */
+export const COMPONENT_FORMAT_VERSION_IMAGE = 3;
 /** Versões aceitas. */
-export const COMPONENT_FORMAT_VERSIONS = [1, 2] as const;
+export const COMPONENT_FORMAT_VERSIONS = [1, 2, 3] as const;
 export type ComponentFormatVersion = (typeof COMPONENT_FORMAT_VERSIONS)[number];
 
 // ---------------------------------------------------------------------------------------
@@ -240,6 +245,22 @@ export interface RepeatTemplate extends TemplateNodeBase {
   readonly template: FrameTemplate;
 }
 
+/**
+ * Imagem remota (`formatVersion` 3). O `src` é a URL `https://` da imagem e é **restrito**: só um
+ * texto literal ou exatamente `{ "$field": "<campo>" }` (campo `string` do tipo, ou coluna
+ * `string` dentro de um `repeat`). Nenhuma outra expressão (`$concat`, `$switch`, `$if`) vale,
+ * para o componente não montar a URL com dados de outros campos e enviá-los ao servidor de quem
+ * escreveu a especialização. `fit` (padrão `cover`) diz como a imagem ocupa a caixa. O `fill` do
+ * nó é o **fundo** atrás da imagem. `width`/`height` não aceitam `hug`: a arrumação nunca
+ * depende da imagem baixada. O modelo nunca baixa a imagem; quem desenha decide (o reservado
+ * aparece enquanto não houver imagem pronta ou liberada).
+ */
+export interface ImageTemplate extends TemplateNodeBase {
+  readonly type: 'image';
+  readonly src: string | { readonly $field: string };
+  readonly fit?: 'cover' | 'contain' | 'fill';
+}
+
 export type TemplateNode =
   | FrameTemplate
   | RectTemplate
@@ -247,7 +268,8 @@ export type TemplateNode =
   | TextTemplate
   | PathTemplate
   | SlotTemplate
-  | RepeatTemplate;
+  | RepeatTemplate
+  | ImageTemplate;
 
 // ---------------------------------------------------------------------------------------
 // Arquivo
