@@ -132,9 +132,17 @@ Um dado em forma de tabela que descreve um elemento de uma tela (os eventos de a
 
 Uma especialização **não cita outra**: a biblioteca de notas já traz a **Tabela** genérica (título e linhas chave/valor), mas uma especialização com colunas tipadas escreve o próprio tipo e o próprio componente do mesmo molde.
 
+#### Imagem remota: o nó `image` (componente `formatVersion` 3)
+
+Use `image` quando o desenho mostra uma foto cuja URL vem do dado (avatar, foto, logo). Ligue o `src` a um campo `string` do tipo, `{ "$field": "foto" }` (no `repeat`, a coluna `string` da `table`). Regras:
+
+- `src` é só o literal (`https://...` absoluto) ou o `$field` puro: **nunca `$concat`**, `$switch` ou `$if`; nunca `http:`, `data:` nem caminho relativo.
+- `fit`: `cover` (padrão), `contain` ou `fill`. Dê tamanho fixo, `fill` ou `%`; **nunca `hug`** (é erro). `fill` (cor) serve de fundo atrás da imagem e `cornerRadius` faz avatar redondo.
+- Um componente com nó `image` usa a `formatVersion` 3 do componente. A especialização não muda (nada de declarar origem) e o `preview` traz uma URL `https://` só se você a viu na origem.
+
 ### 11. Versão
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`. A versão atual do formato é a 7. O **componente** tem a própria versão: `formatVersion` 1, ou 2 quando usa `repeat` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`. A versão atual do formato é a 7. O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar

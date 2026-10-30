@@ -253,6 +253,14 @@ Regras:
 - **Tipo sem componente** (ou biblioteca não aplicada na app) é uma marcação comum: `rect` é obrigatório e nada é desenhado.
 - Uma biblioteca aplicada por proposta (`apply_specialization` com a **pasta** do pacote) traz os componentes como a aplicada pela app; uma especialização v1 a v3 aplicada por arquivo não tem componentes.
 
+### Imagens remotas nos componentes
+
+Um componente `formatVersion` 3 pode ter um nó `image` (avatar, foto, logo). A URL é o valor de um campo `string` do tipo, como qualquer outro (`values: { foto: "https://…" }`); nenhuma especialização declara origens.
+
+- **Vira requisição do navegador de quem abre o projeto**, e só depois que a pessoa consente aquela origem na app (nunca automático). O servidor MCP **nunca baixa a imagem**: `get_marking_image` desenha o **reservado** (caixa cinza com um X) no lugar dela, e a URL volta como texto nos valores.
+- **Grave só uma URL que veio da origem do trabalho** (o design, o código, o documento) **ou do dono**. Nunca invente uma, nem monte uma com dados do projeto (nomes, anotações, ids): abrir o projeto mandaria esses dados ao servidor da imagem. Só `https://`, sem usuário e senha, até 2048 caracteres.
+- Sem URL, o campo fica vazio e o desenho mostra o reservado.
+
 ## Lendo uma anotação
 
 - Anotação **livre**: `entries` é a lista de pares `{id, key, value}` (os valores são texto).
@@ -436,6 +444,10 @@ O **repositório é da biblioteca**: cada especialização declara o da própria
 ### O que o servidor nunca faz
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
+
+### Mudança na versão 0.10.0 (Imagens remotas)
+
+Componente `formatVersion` 3 com o nó `image`. `validate_library` o aceita e confere o `src`; `get_marking_image` desenha o reservado no lugar da imagem; o servidor nunca baixa nada. Ver "Imagens remotas nos componentes".
 
 ### Mudança na versão 0.9.0 (Marcações espaciais, notas e setas)
 
