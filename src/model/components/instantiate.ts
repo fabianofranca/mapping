@@ -10,7 +10,7 @@
  * - Padrão de `width`/`height` omitidos: `'hug'` para texto, `'fill'` para todo o resto, nos
  *   dois eixos. Num pai `none`, um filho sem tamanho e sem âncoras ocupa o pai inteiro.
  * - px fixos; `"N%"` é fração da área de conteúdo do pai; `'hug'` vem do conteúdo (texto
- *   medido, quadro que abraça os filhos, caminho = `viewBox`, retângulo/elipse/slot = 0).
+ *   medido, quadro que abraça os filhos, caminho = `viewBox`, retângulo/elipse/slot = 0; `image` não aceita `hug`).
  * - `'fill'` no eixo principal de `row`/`column` divide o que sobra entre os `fill`; no eixo
  *   cruzado e em `none` é a área de conteúdo toda (menos as âncoras, se houver).
  * - Quadro `hug`: primeiro mede-se o conteúdo (com `fill` e `%` valendo 0); depois o resultado
@@ -35,6 +35,7 @@ import type {
   FontSpec,
   FrameTemplate,
   GradientSpec,
+  ImageTemplate,
   PathTemplate,
   SizeSpec,
   StrokeSpec,
@@ -732,6 +733,35 @@ function createEngine(
     };
   };
 
+  /**
+   * `image` vira um retângulo: o `fill` do nó é o fundo e, por cima, o paint `image` com a URL
+   * (o literal, ou o valor do campo se for texto não vazio). O modelo não baixa a imagem nem
+   * aplica a política de URL (quem desenha decide); o layout não depende dela.
+   */
+  const buildImage = (
+    node: ImageTemplate,
+    id: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): SceneNode => {
+    const raw = typeof node.src === 'string' ? node.src : ev<unknown>(node.src, '');
+    const url = typeof raw === 'string' ? raw.trim() : '';
+    const stroke = strokeOf(node.stroke, 'inside', 1);
+    const base = common(node, id, x, y, w, h);
+    return {
+      ...base,
+      fills: [
+        ...base.fills,
+        { type: 'image', fit: node.fit ?? 'cover', ...(url === '' ? {} : { url }) },
+      ],
+      ...(stroke ? { stroke } : {}),
+      type: 'rect',
+      cornerRadius: radiusOf(node),
+    };
+  };
+
   const buildNode = (
     node: TemplateNode,
     path: string,
@@ -774,6 +804,8 @@ function createEngine(
           type: 'ellipse',
         };
       }
+      case 'image':
+        return buildImage(node, id, x, y, w, h);
       case 'repeat':
         // `expandRepeats` já trocou todo `repeat` por um quadro: nunca chega aqui.
         throw new Error('repeat não expandido');

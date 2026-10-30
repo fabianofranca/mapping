@@ -25,6 +25,9 @@ import {
   hasChildren,
 } from '../../model/components/scene';
 
+/** Única origem de imagem que o renderizador carrega sozinho (herança do laboratório). */
+const DATA_URL = /^data:/i;
+
 /** Cores do reservado de imagem e da caixa de nó desconhecido. */
 export interface RenderPalette {
   /** Preenchimento do reservado de imagem. */
@@ -296,7 +299,14 @@ class Renderer {
   }
 
   private imageFill(shape: ShapeWithFill, paint: Paint & { type: 'image' }, box: Box) {
-    if (!paint.src) {
+    // `paint.url` é a imagem remota do nó `image` do componente: nesta fase ela fica sempre no
+    // reservado (é o estado normal, sem aviso). A RI3 entrega a imagem pronta (já passada pela
+    // política e pelo consentimento) por uma função das opções; o renderizador nunca cria
+    // `Image` com URL remota.
+    if (!paint.src && paint.url !== undefined)
+      return placeholder(shape, box, this.palette);
+    // Só a imagem embutida (`data:`) é carregada aqui; qualquer outro esquema vira reservado.
+    if (!paint.src || !DATA_URL.test(paint.src)) {
       this.warnings.add('imagem sem pixels desenhada como reservado');
       return placeholder(shape, box, this.palette);
     }

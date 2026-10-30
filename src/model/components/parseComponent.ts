@@ -11,6 +11,7 @@ import {
   COMPONENT_FORMAT_VERSIONS,
   type ComponentFile,
 } from './componentFormat';
+import { checkRemoteImageUrl } from '../remoteImages';
 import { referencedFields } from './expressions';
 
 /** Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem. */
@@ -32,6 +33,7 @@ const NODE_TYPES = [
   'path',
   'slot',
   'repeat',
+  'image',
 ] as const;
 const EXPR_OPS = ['$field', '$if', '$switch', '$concat'] as const;
 const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
@@ -405,6 +407,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     path: ['d', 'viewBox', 'fillRule'],
     slot: ['label', 'layout'],
     repeat: ['field', 'direction', 'gap', 'template'],
+    image: ['src', 'fit'],
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
   for (const key of ['children', 'layout']) {
@@ -470,6 +473,43 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     case 'repeat':
       checkRepeat(value, path, out);
       return;
+    case 'image':
+      checkImage(value, path, out);
+      return;
+  }
+}
+
+/**
+ * `image` (formatVersion 3): `src` obrigatório e restrito (URL `https://` literal ou exatamente
+ * `{ "$field": "<campo>" }`), `fit` e nenhum `hug` (a arrumação não depende da imagem baixada).
+ * O host local não é erro de formato aqui: a política da app decide em tempo de execução.
+ */
+function checkImage(value: Rec, path: string, out: ComponentIssue[]): void {
+  const at = join(path, 'src');
+  if (!('src' in value)) add(out, at, 'campo obrigatório');
+  else {
+    const src = value.src;
+    if (typeof src === 'string') {
+      const check = checkRemoteImageUrl(src, {
+        allowHttp: false,
+        allowLocalNetwork: true,
+      });
+      if (!check.ok) add(out, at, `esperava URL https:// absoluta (${check.reason})`);
+    } else if (isRecord(src) && Object.keys(src).length === 1 && '$field' in src) {
+      checkFieldKey(src.$field, join(at, '$field'), out);
+    } else {
+      add(out, at, 'src só aceita texto literal ou { "$field": "<campo>" }');
+    }
+  }
+  if ('fit' in value)
+    oneOf(['cover', 'contain', 'fill'])(value.fit, join(path, 'fit'), out);
+  for (const key of ['width', 'height']) {
+    if (value[key] === 'hug')
+      add(
+        out,
+        join(path, key),
+        'o nó image não aceita hug: a arrumação não depende da imagem baixada',
+      );
   }
 }
 
@@ -577,7 +617,11 @@ function collectIssues(input: unknown): ComponentIssue[] {
     add(out, 'format', `esperava "${COMPONENT_FORMAT}"`);
   const version = input.formatVersion;
   if (!(COMPONENT_FORMAT_VERSIONS as readonly unknown[]).includes(version))
-    add(out, 'formatVersion', `esperava ${COMPONENT_FORMAT_VERSIONS.join(' ou ')}`);
+    add(
+      out,
+      'formatVersion',
+      `esperava ${COMPONENT_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${COMPONENT_FORMAT_VERSIONS.at(-1)}`,
+    );
 
   if (typeof input.id !== 'string' || !ID_PATTERN.test(input.id))
     add(out, 'id', 'esperava texto no padrão ^[a-z0-9][a-z0-9-_]*$');
@@ -618,9 +662,14 @@ function collectIssues(input: unknown): ComponentIssue[] {
     if (type !== 'frame' && (NODE_TYPES as readonly unknown[]).includes(type))
       add(out, 'template.type', 'a raiz do template deve ser do tipo "frame"');
     checkNode(input.template, 'template', out);
-    if (version !== 2) {
+    if (version === 1) {
       for (const node of nodesOfTypes(input.template, 'template', ['repeat'])) {
         add(out, node.path, 'o nó repeat só existe na formatVersion 2');
+      }
+    }
+    if (version === 1 || version === 2) {
+      for (const node of nodesOfTypes(input.template, 'template', ['image'])) {
+        add(out, node.path, 'o nó image só existe na formatVersion 3');
       }
     }
   }
