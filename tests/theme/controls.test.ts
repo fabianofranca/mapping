@@ -86,3 +86,12 @@ describe('etapa 6.4: tooltips, camadas, tabela e Diagnóstico', () => {
     );
   });
 });
+
+describe('campo de texto no Detalhes', () => {
+  it('o campo dentro do invólucro do editor de texto ocupa a coluna (sem largura intrínseca)', () => {
+    // Sem isto o <input> mantém ~220 px e passa da borda do painel estreito (barra horizontal).
+    expect(css['details.css']).toMatch(
+      /\.props-value > \.string-editor > \.input[^{]*\{[^}]*width:\s*100%/,
+    );
+  });
+});

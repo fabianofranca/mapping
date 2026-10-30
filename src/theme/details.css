@@ -180,6 +180,7 @@
 }
 
 .props-value > .input,
+.props-value > .string-editor > .input,
 .props-value > .select {
   width: 100%;
 }

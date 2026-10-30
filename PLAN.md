@@ -121,7 +121,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 - [x] Biblioteca Kotlin com `linkedRef: "typeRef"` em Propriedades › Tipo e Supertipos › Tipo (decisão 6)
 - [x] Documentação: `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, skill `spec-author`
 - [x] Roteiro R14 com os passos do alvo mapeado
-- [ ] Rodada dirigida do Cowork (R0 e R14) e correção dos achados
+- [x] Rodada dirigida do Cowork (R0 e R14; [`relato-2026-10-29-sugestoes-campo.md`](docs/history/relato-2026-10-29-sugestoes-campo.md)): 24 ✅ e 2 achados baixos; o 1 era o texto do R14.19 (apagar o texto não abre a lista, por decisão) e o 2, barra horizontal no Detalhes a ~919 px por um invólucro sem classe no `StringEditor`, corrigido em `details.css`
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-sugestoes-campo.md`, `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico)
 
 ---

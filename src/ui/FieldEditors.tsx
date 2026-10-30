@@ -107,6 +107,7 @@ export function StringEditor(props: SimpleEditorProps) {
   if (!multiline) {
     return (
       <div
+        class="string-editor"
         onKeyDownCapture={(e) => {
           const input = e.target;
           if (e.key !== 'Enter' || !e.shiftKey || readOnly) return;
