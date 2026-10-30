@@ -175,6 +175,113 @@ describe('validate_specialization com containers (v6)', () => {
   });
 });
 
+describe('validate_specialization com suggestions (v8)', () => {
+  const spec = (formatVersion: number, field: Record<string, unknown>) =>
+    JSON.stringify({
+      format: 'mapping-spec',
+      formatVersion,
+      id: 'lang',
+      name: 'Lang',
+      version: 1,
+      layers: [
+        {
+          id: 'l',
+          name: 'L',
+          color: '#112233',
+          annotationTypes: [{ id: 't', name: 'T', fields: [field] }],
+        },
+      ],
+    });
+
+  it('aceita a v8 com suggestions num campo string', async () => {
+    const result = ok(
+      await mcp.call<{ valid: boolean; errors: string[] }>('validate_specialization', {
+        text: spec(8, { key: 'type', type: 'string', suggestions: ['String', 'Int'] }),
+      }),
+    );
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toBe(true);
+  });
+
+  it('recusa suggestions em versão anterior, em outro tipo e repetida, com o caminho', async () => {
+    const call = async (formatVersion: number, field: Record<string, unknown>) =>
+      ok(
+        await mcp.call<{ valid: boolean; errors: string[] }>('validate_specialization', {
+          text: spec(formatVersion, field),
+        }),
+      );
+    const old = await call(7, { key: 'type', type: 'string', suggestions: ['A'] });
+    expect(old.valid).toBe(false);
+    expect(old.errors).toContain(
+      'layers[0].annotationTypes[0].fields[0].suggestions: só é permitido com formatVersion 8',
+    );
+    const wrong = await call(8, { key: 'n', type: 'number', suggestions: ['A'] });
+    expect(wrong.errors).toContain(
+      'layers[0].annotationTypes[0].fields[0].suggestions: só é permitido em campo ou coluna string',
+    );
+    const dup = await call(8, { key: 'type', type: 'string', suggestions: ['A', 'A'] });
+    expect(dup.errors.some((e) => e.includes('suggestions: sugestões repetidas'))).toBe(
+      true,
+    );
+  });
+});
+
+describe('validate_specialization com linkedRef (v8)', () => {
+  const spec = (formatVersion: number, field: Record<string, unknown>) =>
+    JSON.stringify({
+      format: 'mapping-spec',
+      formatVersion,
+      id: 'lang',
+      name: 'Lang',
+      version: 1,
+      layers: [
+        {
+          id: 'l',
+          name: 'L',
+          color: '#112233',
+          annotationTypes: [
+            {
+              id: 't',
+              name: 'T',
+              fields: [{ key: 'typeRef', type: 'ref', accepts: { free: true } }, field],
+            },
+          ],
+        },
+      ],
+    });
+  const call = async (formatVersion: number, field: Record<string, unknown>) =>
+    ok(
+      await mcp.call<{ valid: boolean; errors: string[] }>('validate_specialization', {
+        text: spec(formatVersion, field),
+      }),
+    );
+
+  it('aceita a v8 com linkedRef apontando para um campo ref', async () => {
+    const result = await call(8, { key: 'type', type: 'string', linkedRef: 'typeRef' });
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toBe(true);
+  });
+
+  it('recusa linkedRef em versão anterior, em outro tipo e com chave errada, com o caminho', async () => {
+    const old = await call(7, { key: 'type', type: 'string', linkedRef: 'typeRef' });
+    expect(old.errors).toContain(
+      'layers[0].annotationTypes[0].fields[1].linkedRef: só é permitido com formatVersion 8',
+    );
+    const wrong = await call(8, { key: 'n', type: 'number', linkedRef: 'typeRef' });
+    expect(wrong.errors).toContain(
+      'layers[0].annotationTypes[0].fields[1].linkedRef: só é permitido em campo ou coluna string',
+    );
+    const missing = await call(8, { key: 'type', type: 'string', linkedRef: 'nada' });
+    expect(missing.errors).toContain(
+      'layers[0].annotationTypes[0].fields[1].linkedRef: "nada" não é um campo do tipo',
+    );
+    const notRef = await call(8, { key: 'type', type: 'string', linkedRef: 'type' });
+    expect(notRef.errors).toContain(
+      'layers[0].annotationTypes[0].fields[1].linkedRef: "type" deve ser um campo ref',
+    );
+  });
+});
+
 describe('validate_library', () => {
   it('aprova o Material 3 (pasta ou arquivo): sem erros, com os avisos esperados', async () => {
     for (const path of ['lib/material3', 'lib/material3/material3.spec.json']) {

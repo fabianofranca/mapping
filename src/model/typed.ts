@@ -244,17 +244,39 @@ export function setFieldValue(
   key: string,
   value: JsonValue,
 ): Project {
-  return updateValues(p, annotationId, (values, type, a) => {
-    const field = fieldOf(type, key) ?? fail('unknown-field', key);
-    let next: JsonValue;
-    if (field.type === 'table') {
-      fail('invalid-value', key);
-    } else if (field.type === 'ref') {
-      next = checkedRef(p, a.id, field.accepts, key, value);
-    } else {
-      next = checkedSimple(field, value);
+  return setFieldValues(p, annotationId, { [key]: value });
+}
+
+/** Valor já validado de um campo simples ou `ref` do tipo (`table` e chave desconhecida falham). */
+function fieldValueOf(
+  p: Project,
+  type: SpecAnnotationType,
+  annotationId: string,
+  key: string,
+  value: JsonValue,
+): JsonValue {
+  const field = fieldOf(type, key) ?? fail('unknown-field', key);
+  if (field.type === 'table') fail('invalid-value', key);
+  return field.type === 'ref'
+    ? checkedRef(p, annotationId, field.accepts, key, value)
+    : checkedSimple(field, value);
+}
+
+/**
+ * Define vários campos de uma vez (uma só atualização do projeto, uma entrada no desfazer),
+ * com as mesmas regras de `setFieldValue` para cada valor. Se algum falhar, nada é gravado.
+ */
+export function setFieldValues(
+  p: Project,
+  annotationId: string,
+  values: Readonly<Record<string, JsonValue>>,
+): Project {
+  return updateValues(p, annotationId, (current, type, a) => {
+    const next: Record<string, JsonValue> = { ...current };
+    for (const [key, value] of Object.entries(values)) {
+      next[key] = fieldValueOf(p, type, a.id, key, value);
     }
-    return { ...values, [key]: next };
+    return next;
   });
 }
 
@@ -300,18 +322,35 @@ export function setTableCell(
   column: string,
   value: JsonValue,
 ): Project {
+  return setTableCells(p, annotationId, key, rowId, { [column]: value });
+}
+
+/**
+ * Define várias células da linha `rowId` de uma vez (uma só atualização do projeto), com as
+ * mesmas regras de `setTableCell` para cada valor. Se alguma falhar, nada é gravado.
+ */
+export function setTableCells(
+  p: Project,
+  annotationId: string,
+  key: string,
+  rowId: string,
+  cells: Readonly<Record<string, JsonValue>>,
+): Project {
   return updateValues(p, annotationId, (values, type, a) => {
     const field = tableField(type, key);
-    const col =
-      field.columns.find((c) => c.key === column) ?? fail('unknown-field', column);
-    const cell =
-      col.type === 'ref'
-        ? checkedRef(p, a.id, col.accepts, column, value)
-        : checkedSimple(col, value);
+    const checked: Record<string, JsonValue> = {};
+    for (const [column, value] of Object.entries(cells)) {
+      const col =
+        field.columns.find((c) => c.key === column) ?? fail('unknown-field', column);
+      checked[column] =
+        col.type === 'ref'
+          ? checkedRef(p, a.id, col.accepts, column, value)
+          : checkedSimple(col, value);
+    }
     const rows = rawRows(values, key);
     const index = rowIndex(rows, rowId);
     const next = rows.map((r, i) =>
-      i === index && isRecord(r) ? { ...r, [column]: cell } : r,
+      i === index && isRecord(r) ? { ...r, ...checked } : r,
     );
     return { ...values, [key]: next };
   });

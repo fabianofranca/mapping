@@ -1,5 +1,6 @@
 import type { ComponentChildren, JSX, Ref } from 'preact';
 import { CommitInput } from '../CommitInput';
+import type { SuggestionInput, SuggestionItem } from '../suggestions';
 import { classes } from './classes';
 
 type NativeInput = Omit<
@@ -28,7 +29,13 @@ type PlainProps = CommonProps &
 /** Só grava ao confirmar (Enter ou sair do campo), como o `CommitInput`. */
 type CommitProps = CommonProps &
   Omit<NativeInput, 'onInput' | 'onChange' | 'onKeyDown'> & {
-    readonly onCommit: (text: string) => boolean;
+    /** O segundo argumento é o item de `linkedRef` escolhido e ainda presente no texto. */
+    readonly onCommit: (text: string, chosen?: SuggestionItem) => boolean;
+    /**
+     * Sugestões ao digitar (só neste modo): lista flutuante de combobox que completa a
+     * palavra sob o cursor; não restringe o valor. Texto simples ou `{ label, detail? }`.
+     */
+    readonly suggestions?: readonly SuggestionInput[];
   };
 
 type TextFieldProps = PlainProps | CommitProps;
