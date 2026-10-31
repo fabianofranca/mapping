@@ -28,8 +28,8 @@ describe('guia interativo', () => {
     expect(readFileSync(GUIA_OUTPUT, 'utf8') === html, HINT).toBe(true);
   });
 
-  it('leva a CSP da app e não usa fonte, script nem rede de fora', () => {
-    expect(verifyCsp(html)).toEqual([]);
+  it('leva a CSP (perfil static) e não usa fonte, script nem rede de fora', () => {
+    expect(verifyCsp(html, 'static')).toEqual([]);
     expect(html.replace('http://www.w3.org/2000/svg', '')).not.toMatch(/https?:\/\//);
     expect(html).not.toMatch(/fonts\.(googleapis|gstatic)/);
   });

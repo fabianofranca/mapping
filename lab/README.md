@@ -1,6 +1,6 @@
 # Laboratório
 
-Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (`dist/lab/…`) para validar uma possibilidade antes de ela virar etapa do [`PLAN.md`](../PLAN.md). Nada daqui entra no `index.html` da app, nem nas regras do núcleo (i18n, store, tokens de design obrigatórios). As regras que continuam valendo: TypeScript strict, sem `any`, sem dependências novas além do React 19, que é só de desenvolvimento e só da página `react` (ver `viewer/`), sem requisição de rede (a página leva a mesma CSP da app) e testes no Vitest.
+Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (`dist/lab/…`) para validar uma possibilidade antes de ela virar etapa do [`PLAN.md`](../PLAN.md). Nada daqui entra no `index.html` da app, nem nas regras do núcleo (i18n, store, tokens de design obrigatórios). As regras que continuam valendo: TypeScript strict, sem `any`, sem dependências novas além do React 19, que é só de desenvolvimento e só da página `react` (ver `viewer/`), sem requisição de rede (a página leva a CSP de perfil `static`, a da app antes da etapa Imagens remotas: sem imagem remota nem Trusted Types) e testes no Vitest.
 
 O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranca/mapping/pull/160)): toda mudança entra por um PR com base nesse branch, nunca na `main`, conforme o [`CLAUDE.md`](../CLAUDE.md) ("Fluxo de trabalho").
 

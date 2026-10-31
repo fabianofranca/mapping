@@ -6,6 +6,7 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize } from 'node:path';
 import { addImage, createProject, watchViolations } from './helpers';
+import { solidPng } from './png';
 
 // Etapa 2.4: a CSP com o service worker (instalação, cache, aviso de nova versão),
 // na versão principal (/) e no preview (/preview/), como no GitHub Pages.
@@ -211,5 +212,58 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers�
   await expect(page.locator('#steps button')).toHaveCount(12);
   await context.setOffline(false);
 
+  expect(violations()).toEqual([]);
+});
+
+test('Trusted Types ligado: o service worker registra e controla a página; imagem de outra origem não passa por ele', async ({
+  page,
+  context,
+}) => {
+  const site = await serveSite({ main: DIST, preview: DIST }, { swVersionSuffix: '' });
+  openSite = site;
+  const violations = await watchViolations(page);
+  // Host fictício respondido pelo Playwright: nunca rede real.
+  const IMAGE = 'https://imagens.mapping.test/x.png';
+  const served: string[] = [];
+  await context.route('https://imagens.mapping.test/**', (route) => {
+    served.push(route.request().url());
+    return route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: solidPng(4, 4),
+      headers: { 'access-control-allow-origin': '*' },
+    });
+  });
+
+  await page.goto(`${site.origin}/`);
+  await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
+  // Prova da exceção `./sw.js` na política: o registro passou pelo `createScriptURL`.
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
+  await expect
+    .poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null))
+    .toBe(true);
+
+  const responsePromise = page.waitForResponse(IMAGE);
+  const loaded = await page.evaluate(
+    (src) =>
+      new Promise<boolean>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = src;
+      }),
+    IMAGE,
+  );
+  const response = await responsePromise;
+  expect(loaded).toBe(true);
+  expect(response.fromServiceWorker()).toBe(false);
+  expect(served).toEqual([IMAGE]);
+  // O service worker só atende a própria origem: nenhum pedido a outra origem foi dele.
+  expect(
+    context
+      .serviceWorkers()
+      .flatMap((worker) => worker.url())
+      .every((url) => url.startsWith(site.origin)),
+  ).toBe(true);
   expect(violations()).toEqual([]);
 });

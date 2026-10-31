@@ -24,6 +24,7 @@ import {
   type Stroke,
   hasChildren,
 } from '../../model/components/scene';
+import { loadEmbeddedImage } from './imageLoader';
 
 /** Única origem de imagem que o renderizador carrega sozinho (herança do laboratório). */
 const DATA_URL = /^data:/i;
@@ -318,29 +319,29 @@ class Renderer {
         cornerRadius: shape.cornerRadius(),
         opacity: paint.opacity ?? 1,
       });
-      const element = new Image();
-      element.onload = () => {
-        image.image(element);
-        this.options.onImageLoaded?.();
-      };
-      element.onerror = () => {
-        this.warnings.add('uma imagem embutida não pôde ser decodificada');
-      };
-      element.src = paint.src;
+      loadEmbeddedImage(paint.src, {
+        onLoad: (element) => {
+          image.image(element);
+          this.options.onImageLoaded?.();
+        },
+        onError: () => {
+          this.warnings.add('uma imagem embutida não pôde ser decodificada');
+        },
+      });
       return [image];
     }
     // Imagem como preenchimento de elipse/caminho: o Konva usa `fillPatternImage`.
-    const element = new Image();
-    element.onload = () => {
-      shape.fillPriority('pattern');
-      shape.fillPatternImage(element);
-      shape.fillPatternScale({
-        x: box.width / Math.max(1, element.naturalWidth),
-        y: box.height / Math.max(1, element.naturalHeight),
-      });
-      this.options.onImageLoaded?.();
-    };
-    element.src = paint.src;
+    loadEmbeddedImage(paint.src, {
+      onLoad: (element) => {
+        shape.fillPriority('pattern');
+        shape.fillPatternImage(element);
+        shape.fillPatternScale({
+          x: box.width / Math.max(1, element.naturalWidth),
+          y: box.height / Math.max(1, element.naturalHeight),
+        });
+        this.options.onImageLoaded?.();
+      },
+    });
     shape.fill(this.palette.placeholderFill);
     return [shape];
   }
