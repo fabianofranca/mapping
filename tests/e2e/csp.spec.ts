@@ -8,6 +8,7 @@ import {
   drawMarking,
   exportMapping,
   openExport,
+  projectAction,
   watchViolations,
 } from './helpers';
 import { solidPng } from './png';
@@ -53,8 +54,15 @@ test.describe('CSP do index.html', () => {
       .getAttribute('content');
     expect(policy).toContain("default-src 'none'");
     expect(policy).toContain("connect-src 'none'");
-    expect(policy).toContain("img-src 'self' data: blob:");
+    expect(policy).toContain("img-src 'self' data: blob: https: http:");
+    expect(policy).toContain("require-trusted-types-for 'script'");
+    expect(policy).toContain('trusted-types default');
     expect(policy).not.toMatch(/unsafe-(inline|eval)/);
+    // Sem Referer para as imagens remotas.
+    await expect(page.locator('meta[name="referrer"]')).toHaveAttribute(
+      'content',
+      'no-referrer',
+    );
     // A <meta> precisa preceder o primeiro <script> e o primeiro <style>.
     const order = await page.evaluate(() => {
       const nodes = [...document.head.children].map((el) => {
@@ -71,7 +79,7 @@ test.describe('CSP do index.html', () => {
     }
   });
 
-  test('bloqueia fetch, XHR, WebSocket, EventSource e imagem externa (nada sai da página)', async ({
+  test('bloqueia fetch, XHR, WebSocket, EventSource, script e estilo inline (rede fora do img-src)', async ({
     page,
     context,
   }) => {
@@ -135,12 +143,6 @@ test.describe('CSP do index.html', () => {
           done('bloqueado');
         };
       });
-      out.imagemExterna = await settle((done) => {
-        const img = new Image();
-        img.onload = () => done('permitido');
-        img.onerror = () => done('bloqueado');
-        img.src = 'https://example.com/pixel.png';
-      });
       out.eval = (() => {
         try {
           (0, eval)('1 + 1');
@@ -151,7 +153,13 @@ test.describe('CSP do index.html', () => {
       })();
       out.scriptInline = await settle((done) => {
         const script = document.createElement('script');
-        script.textContent = 'window.__injetado = true';
+        try {
+          // Com Trusted Types a própria atribuição lança (TypeError), antes da CSP de script.
+          script.textContent = 'window.__injetado = true';
+        } catch {
+          done('bloqueado');
+          return;
+        }
         document.head.append(script);
         setTimeout(
           () =>
@@ -183,17 +191,148 @@ test.describe('CSP do index.html', () => {
       xhr: 'bloqueado',
       webSocket: 'bloqueado',
       eventSource: 'bloqueado',
-      imagemExterna: 'bloqueado',
       eval: 'bloqueado',
       scriptInline: 'bloqueado',
       estiloPorJs: 'permitido',
       atributoStyle: 'bloqueado',
     });
-    const directives = new Set(violations().map((v) => v.directive));
-    expect(directives).toContain('connect-src');
-    expect(directives).toContain('img-src');
-    expect(directives).toContain('script-src');
+    // Os eventos de violação chegam de forma assíncrona.
+    await expect
+      .poll(() => violations().map((v) => v.directive))
+      .toEqual(expect.arrayContaining(['connect-src', 'require-trusted-types-for']));
     expect(escaped).toEqual([]);
+  });
+
+  test('imagem https: não é barrada pela CSP (img-src), mas fetch continua bloqueado', async ({
+    page,
+    context,
+  }) => {
+    const violations = await watchViolations(page);
+    await context.route('https://imagens.mapping.test/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: solidPng(4, 4),
+        headers: { 'access-control-allow-origin': '*' },
+      }),
+    );
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
+    const results = await page.evaluate(async () => {
+      const image = await new Promise<string>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve('carregou');
+        img.onerror = () => resolve('falhou');
+        img.src = 'https://imagens.mapping.test/x.png';
+      });
+      const fetched = await fetch('https://imagens.mapping.test/x.png').then(
+        () => 'permitido',
+        () => 'bloqueado',
+      );
+      return { image, fetched };
+    });
+    expect(results).toEqual({ image: 'carregou', fetched: 'bloqueado' });
+    await expect
+      .poll(() => violations().map((v) => v.directive))
+      .toEqual(['connect-src']);
+  });
+
+  test('Trusted Types: a app abre, desenha e abre um diálogo sem violação', async ({
+    page,
+  }) => {
+    const violations = await watchViolations(page);
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+    await createProject(page, 'Projeto TT');
+    await addImage(page);
+    await drawMarking(page, await canvasPoint(page));
+    await projectAction(page, 'Configurações');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toBeHidden();
+    expect(violations()).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
+  test('Trusted Types: innerHTML só aceita a string vazia e outras políticas são recusadas', async ({
+    page,
+  }) => {
+    const violations = await watchViolations(page);
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
+    const results = await page.evaluate(() => {
+      const trustedTypesOf = (w: Window) =>
+        (
+          w as unknown as {
+            trustedTypes?: {
+              createPolicy: (
+                name: string,
+                rules: { createHTML: (s: string) => string },
+              ) => unknown;
+            };
+          }
+        ).trustedTypes;
+      const div = document.createElement('div');
+      div.append(document.createElement('span'));
+      const attempt = (run: () => void): string => {
+        try {
+          run();
+          return 'permitido';
+        } catch (e) {
+          return e instanceof TypeError ? 'TypeError' : String(e);
+        }
+      };
+      const out: Record<string, string> = {};
+      out.vazio = attempt(() => {
+        div.innerHTML = '';
+      });
+      out.vazioLimpou = String(div.childElementCount);
+      out.html = attempt(() => {
+        div.innerHTML = '<b>x</b>';
+      });
+      out.imagem = attempt(() => {
+        div.innerHTML = '<img src="https://imagens.mapping.test/x.png">';
+      });
+      out.outraPolitica = attempt(() => {
+        trustedTypesOf(window)?.createPolicy('outra', { createHTML: (s: string) => s });
+      });
+      out.semPolitica = String(typeof trustedTypesOf(window)?.createPolicy);
+      return out;
+    });
+    expect(results).toEqual({
+      vazio: 'permitido',
+      vazioLimpou: '0',
+      html: 'TypeError',
+      imagem: 'TypeError',
+      outraPolitica: 'TypeError',
+      semPolitica: 'function',
+    });
+    // Os eventos de violação chegam de forma assíncrona.
+    await expect
+      .poll(
+        () =>
+          violations().filter((v) => v.directive === 'require-trusted-types-for').length,
+      )
+      .toBeGreaterThanOrEqual(2);
+    await expect
+      .poll(() => violations().some((v) => v.directive === 'trusted-types'))
+      .toBe(true);
+  });
+
+  test('o guia (perfil static) abre sem violação', async ({ page }) => {
+    const violations = await watchViolations(page);
+    await page.goto('/guia/');
+    await expect(page).toHaveTitle('Guia do Mapping');
+    await expect(page.locator('#steps button')).toHaveCount(12);
+    const policy = await page
+      .locator('meta[http-equiv="Content-Security-Policy"]')
+      .getAttribute('content');
+    expect(policy).not.toContain('trusted-types');
+    expect(policy).toContain("img-src 'self' data: blob:;");
+    expect(violations()).toEqual([]);
   });
 
   test('fluxo principal sem nenhuma violação (inclui copiar ID, colar e arrastar imagens)', async ({

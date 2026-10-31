@@ -51,7 +51,7 @@ function contentSecurityPolicy(): Plugin {
         const html = bundle['index.html'];
         if (html?.type !== 'asset')
           throw new Error('index.html não encontrado no bundle');
-        html.source = applyCsp(String(html.source));
+        html.source = applyCsp(String(html.source), 'app');
       },
     },
   };

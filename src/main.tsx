@@ -1,3 +1,5 @@
+// Primeiro de todos: a política `default` de Trusted Types precisa existir antes de qualquer código da app.
+import './app/trustedTypes';
 import { render } from 'preact';
 import './utils/zodConfig';
 import 'virtual:tokens.css';

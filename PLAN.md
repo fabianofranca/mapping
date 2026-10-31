@@ -165,14 +165,20 @@ Decisões de segurança: o agente não decide sozinho (regra do [`CLAUDE.md`](CL
 
 **Toca em:** `pwa/csp.ts`, `pwa/build.ts`, `index.html`, `pwa/sw.js` (só conferir, não deve mudar), a política `default` de Trusted Types (arquivo novo, por exemplo `src/app/trustedTypes.ts`, importado antes de qualquer outro código em `src/main.tsx`), `eslint.config.js` (a regra de decisão 14), `tests/app/cspBuild.test.ts`, `tests/examples/guia.test.ts` (lê a CSP), `tests/e2e/csp.spec.ts`, `tests/e2e/cspServiceWorker.spec.ts`, `tests/theme/tokenLiterals.test.ts` (referência) e o teste novo da regra de um só criador (em `tests/tooling/`), `docs/ARCHITECTURE.md` (tabela da CSP e o modelo de ameaças acima), `docs/ROADMAP.md` (a linha da CSP da etapa 2.4), `PLAN.md`.
 
-- [ ] `pwa/csp.ts` monta `img-src 'self' data: blob: https: http:` e o `verifyCsp` confere exatamente isso; `connect-src 'none'` e o resto da CSP intactos (teste em `tests/app/cspBuild.test.ts`; confira que `tests/examples/guia.test.ts` continua passando)
-- [ ] `<meta name="referrer" content="no-referrer">` no `index.html` (teste do build)
-- [ ] CSP com `require-trusted-types-for 'script'; trusted-types default` e a política `default` que só aceita a string vazia em `createHTML` e recusa o resto (teste de unidade da política; `verifyCsp` confere as duas diretivas)
-- [ ] Trusted Types ponta a ponta em Chromium: a app abre, desenha o canvas, abre diálogos e o guia sem violação, e uma atribuição de HTML não vazio é recusada (`tests/e2e/csp.spec.ts`); conferir à mão no Chrome e no Edge que nada mais quebra e, se aparecer outro uso de HTML, parar e registrar no PR em vez de afrouxar a política
-- [ ] O service worker não intercepta requisição de outra origem (teste ponta a ponta em `tests/e2e/cspServiceWorker.spec.ts`)
-- [ ] Regra de um só criador de imagem (decisão 14): `new Image`, `document.createElement('img')` e atribuição a `.src` só no carregador de `src/canvas/components/` e em `src/storage/` (teste da regra: código fora desses lugares falha, os dois lugares passam)
-- [ ] `docs/ARCHITECTURE.md` com a tabela da CSP e o modelo de ameaças; `docs/ROADMAP.md` com a linha da CSP da etapa 2.4 atualizada
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+- [x] `pwa/csp.ts` monta `img-src 'self' data: blob: https: http:` e o `verifyCsp` confere exatamente isso; `connect-src 'none'` e o resto da CSP intactos (teste em `tests/app/cspBuild.test.ts`; confira que `tests/examples/guia.test.ts` continua passando)
+- [x] `<meta name="referrer" content="no-referrer">` no `index.html` (teste do build)
+- [x] CSP com `require-trusted-types-for 'script'; trusted-types default` e a política `default` que só aceita a string vazia em `createHTML` e recusa o resto (teste de unidade da política; `verifyCsp` confere as duas diretivas)
+- [ ] Trusted Types ponta a ponta em Chromium (o e2e está feito e passa; falta a conferência à mão no Chrome e no Edge): a app abre, desenha o canvas, abre diálogos e o guia sem violação, e uma atribuição de HTML não vazio é recusada (`tests/e2e/csp.spec.ts`); conferir à mão no Chrome e no Edge que nada mais quebra e, se aparecer outro uso de HTML, parar e registrar no PR em vez de afrouxar a política
+- [x] O service worker não intercepta requisição de outra origem (teste ponta a ponta em `tests/e2e/cspServiceWorker.spec.ts`)
+- [x] Regra de um só criador de imagem (decisão 14): `new Image`, `document.createElement('img')` e atribuição a `.src` só no carregador de `src/canvas/components/` e em `src/storage/` (teste da regra: código fora desses lugares falha, os dois lugares passam)
+- [x] `docs/ARCHITECTURE.md` com a tabela da CSP e o modelo de ameaças; `docs/ROADMAP.md` com a linha da CSP da etapa 2.4 atualizada
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+**Decisões tomadas na RI2 (dono, 2026-10-31):**
+
+- **`./sw.js` na política `default`.** O Chromium trata `navigator.serviceWorker.register` como sink de `TrustedScriptURL`: só com `createHTML('')` o service worker deixava de registrar. A política ganhou `createScriptURL`, que aceita exatamente `'./sw.js'` (`SERVICE_WORKER_URL`, usada pelo registro) e recusa o resto; a CSP fica `trusted-types default`, como na decisão 13.
+- **Perfis da CSP.** `pwa/csp.ts` tem os perfis `app` (o `index.html`: `https:`/`http:` no `img-src`, Trusted Types e o `no-referrer` conferidos) e `static` (o guia e as páginas do `lab/`: a política de antes, sem imagem remota nem Trusted Types). O guia monta o painel com `innerHTML` não vazio e o lab não carrega a política `default`; nenhum dos dois mostra imagem remota, então neles a imagem para fora continua barrada pelo navegador. A RI4 revê o lab se o visualizador precisar.
+- **Carregador desde a RI2.** O `new Image()` do `renderScene` (só `data:`) foi para `src/canvas/components/imageLoader.ts` (`loadEmbeddedImage`), o arquivo que a regra da decisão 14 libera; a RI3 o completa.
 
 #### RI3 — Carregador, consentimento e canvas
 
