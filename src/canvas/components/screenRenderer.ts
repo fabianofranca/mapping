@@ -14,7 +14,7 @@
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
-import { renderScene } from './renderScene';
+import { type RemoteImageResult, renderScene } from './renderScene';
 import type { FieldValues } from '../../model/components/componentFormat';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
@@ -36,6 +36,13 @@ export interface ScreenRendererOptions {
   readonly measure?: TextMeasurer;
   /** Chamado uma vez por instância, quando o grupo dela é criado (o editor liga o arrasto aqui). */
   readonly onInstanceCreated?: (id: string, node: Konva.Group) => void;
+  /**
+   * Resolve a URL do nó `image` dos componentes (ver `RenderOptions.remoteImage`). Sem ela,
+   * toda imagem remota é o reservado.
+   */
+  readonly remoteImage?: (url: string) => RemoteImageResult;
+  /** O resultado será lido de volta (`toDataURL`): imagem `opaque` vira reservado. */
+  readonly pixelSafe?: boolean;
 }
 
 export interface ScreenRendererUpdateOptions {
@@ -49,6 +56,8 @@ interface Mounted {
   instance: Instance;
   readonly node: Konva.Group;
   label: string | undefined;
+  /** URLs remotas que o último desenho da instância pediu. */
+  imageUrls: readonly string[];
 }
 
 export class ScreenRenderer {
@@ -104,7 +113,7 @@ export class ScreenRenderer {
       } else {
         const node = new Konva.Group();
         node.setAttr('instanceId', instance.id);
-        const entry: Mounted = { instance, node, label: undefined };
+        const entry: Mounted = { instance, node, label: undefined, imageUrls: [] };
         this.group.add(node);
         this.mounted.set(instance.id, entry);
         this.renderInto(entry, instance);
@@ -191,6 +200,20 @@ export class ScreenRenderer {
     return undefined;
   }
 
+  /**
+   * Redesenha as instâncias que usam a URL remota (a imagem terminou de carregar, ou mudou de
+   * estado). Devolve true se alguma foi redesenhada.
+   */
+  refreshImage(url: string): boolean {
+    let changed = false;
+    for (const entry of this.mounted.values()) {
+      if (!entry.imageUrls.includes(url)) continue;
+      this.renderInto(entry, entry.instance);
+      changed = true;
+    }
+    return changed;
+  }
+
   /** Destrói os grupos das instâncias (o grupo recebido fica a cargo do chamador). */
   dispose(): void {
     for (const { node } of this.mounted.values()) node.destroy();
@@ -202,6 +225,7 @@ export class ScreenRenderer {
   private renderInto(entry: Mounted, instance: Instance): void {
     const { node } = entry;
     entry.instance = instance;
+    entry.imageUrls = [];
     node.destroyChildren();
     node.position({ x: instance.box.x, y: instance.box.y });
     node.scale({ x: 1, y: 1 });
@@ -245,7 +269,11 @@ export class ScreenRenderer {
       measure: this.measure,
       idPrefix: instance.id,
     });
-    const rendered = renderScene({ root: result.root, warnings: [] });
+    const rendered = renderScene(
+      { root: result.root, warnings: [] },
+      { remoteImage: this.options.remoteImage, pixelSafe: this.options.pixelSafe },
+    );
+    entry.imageUrls = rendered.imageUrls;
     rendered.root.listening(true);
     node.add(rendered.root);
     // Área de clique inteira (mesmo com fundo transparente).

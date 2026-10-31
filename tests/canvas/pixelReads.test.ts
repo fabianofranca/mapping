@@ -29,7 +29,7 @@ const AUDITED: Readonly<Record<string, string>> = {
   'lab/components/main.tsx':
     'laboratório: chama o `editor.toDataURL` acima (mesmo motivo)',
   'lab/viewer/viewer.ts':
-    'visualizador embutível: `renderScene` sem `remoteImage` (a RI4 liga a opção `remoteImages`, desligada por padrão, e deve manter `pixelSafe` aqui)',
+    'visualizador embutível: `ScreenRenderer` sempre com `pixelSafe: true`, e a opção `remoteImages` (desligada por padrão) nunca liga a nova tentativa sem CORS, então nenhuma imagem `opaque` existe; provado em tests/lab/viewer/remoteImages.test.ts',
 };
 
 function sources(dir: string): string[] {
