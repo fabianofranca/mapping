@@ -1,0 +1,2822 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "time-picker",
+  "name": "Time picker",
+  "description": "Seletor de hora em um diálogo de 328: no modo picker, os campos de hora e minuto e o relógio de 256 com o seletor; no modo input, só os campos com os rótulos. Sem 24 horas, mostra o AM/PM.",
+  "size": {
+    "width": 328,
+    "height": 456
+  },
+  "minSize": {
+    "width": 328,
+    "height": 143
+  },
+  "sizing": {
+    "width": 328,
+    "height": "hug"
+  },
+  "preview": {
+    "title": "Selecionar horário",
+    "mode": "picker",
+    "hour": 14,
+    "minute": 30,
+    "is24Hour": "true",
+    "selection": "hour"
+  },
+  "template": {
+    "type": "frame",
+    "name": "time picker",
+    "layout": {
+      "type": "column",
+      "padding": 24
+    },
+    "cornerRadius": 28,
+    "fill": "#ECE6F0",
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "layout": {
+          "type": "column"
+        },
+        "width": "fill",
+        "height": 36,
+        "visible": { "$has": "title" },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": { "$field": "title" },
+            "font": {
+              "family": "Roboto",
+              "size": 12,
+              "weight": 500,
+              "lineHeight": 16,
+              "letterSpacing": 0.5
+            },
+            "color": "#49454F"
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "mostrador",
+        "layout": {
+          "type": "column"
+        },
+        "width": "fill",
+        "height": "hug",
+        "visible": { "$not": { "$eq": ["mode", "input"] } },
+        "children": [
+          {
+            "type": "frame",
+            "name": "hora e minuto",
+            "layout": {
+              "type": "row",
+              "align": "start"
+            },
+            "width": "fill",
+            "height": 80,
+            "children": [
+              {
+                "type": "frame",
+                "name": "hora",
+                "layout": {
+                  "type": "row",
+                  "align": "center",
+                  "justify": "center"
+                },
+                "width": 96,
+                "height": 80,
+                "cornerRadius": 8,
+                "fill": {
+                  "$if": { "$not": { "$eq": ["selection", "minute"] } },
+                  "then": "#EADDFF",
+                  "else": "#E6E0E9"
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "name": "valor",
+                    "text": {
+                      "$if": { "$eq": ["is24Hour", "false"] },
+                      "then": {
+                        "$switch": "hour",
+                        "cases": {
+                          "0": "12",
+                          "1": "01",
+                          "2": "02",
+                          "3": "03",
+                          "4": "04",
+                          "5": "05",
+                          "6": "06",
+                          "7": "07",
+                          "8": "08",
+                          "9": "09",
+                          "10": "10",
+                          "11": "11",
+                          "12": "12",
+                          "13": "01",
+                          "14": "02",
+                          "15": "03",
+                          "16": "04",
+                          "17": "05",
+                          "18": "06",
+                          "19": "07",
+                          "20": "08",
+                          "21": "09",
+                          "22": "10",
+                          "23": "11"
+                        }
+                      },
+                      "else": {
+                        "$switch": "hour",
+                        "cases": {
+                          "0": "00",
+                          "1": "01",
+                          "2": "02",
+                          "3": "03",
+                          "4": "04",
+                          "5": "05",
+                          "6": "06",
+                          "7": "07",
+                          "8": "08",
+                          "9": "09",
+                          "10": "10",
+                          "11": "11",
+                          "12": "12",
+                          "13": "13",
+                          "14": "14",
+                          "15": "15",
+                          "16": "16",
+                          "17": "17",
+                          "18": "18",
+                          "19": "19",
+                          "20": "20",
+                          "21": "21",
+                          "22": "22",
+                          "23": "23"
+                        }
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 57,
+                      "weight": 400,
+                      "lineHeight": 64
+                    },
+                    "color": {
+                      "$if": { "$not": { "$eq": ["selection", "minute"] } },
+                      "then": "#21005D",
+                      "else": "#1D1B20"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dois pontos",
+                "layout": {
+                  "type": "row",
+                  "align": "center",
+                  "justify": "center"
+                },
+                "width": 24,
+                "height": 80,
+                "children": [
+                  {
+                    "type": "text",
+                    "name": "separador",
+                    "text": ":",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 57,
+                      "weight": 400,
+                      "lineHeight": 64
+                    },
+                    "color": "#1D1B20"
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "minuto",
+                "layout": {
+                  "type": "row",
+                  "align": "center",
+                  "justify": "center"
+                },
+                "width": 96,
+                "height": 80,
+                "cornerRadius": 8,
+                "fill": {
+                  "$if": { "$eq": ["selection", "minute"] },
+                  "then": "#EADDFF",
+                  "else": "#E6E0E9"
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "name": "valor",
+                    "text": {
+                      "$switch": "minute",
+                      "cases": {
+                        "0": "00",
+                        "1": "01",
+                        "2": "02",
+                        "3": "03",
+                        "4": "04",
+                        "5": "05",
+                        "6": "06",
+                        "7": "07",
+                        "8": "08",
+                        "9": "09",
+                        "10": "10",
+                        "11": "11",
+                        "12": "12",
+                        "13": "13",
+                        "14": "14",
+                        "15": "15",
+                        "16": "16",
+                        "17": "17",
+                        "18": "18",
+                        "19": "19",
+                        "20": "20",
+                        "21": "21",
+                        "22": "22",
+                        "23": "23",
+                        "24": "24",
+                        "25": "25",
+                        "26": "26",
+                        "27": "27",
+                        "28": "28",
+                        "29": "29",
+                        "30": "30",
+                        "31": "31",
+                        "32": "32",
+                        "33": "33",
+                        "34": "34",
+                        "35": "35",
+                        "36": "36",
+                        "37": "37",
+                        "38": "38",
+                        "39": "39",
+                        "40": "40",
+                        "41": "41",
+                        "42": "42",
+                        "43": "43",
+                        "44": "44",
+                        "45": "45",
+                        "46": "46",
+                        "47": "47",
+                        "48": "48",
+                        "49": "49",
+                        "50": "50",
+                        "51": "51",
+                        "52": "52",
+                        "53": "53",
+                        "54": "54",
+                        "55": "55",
+                        "56": "56",
+                        "57": "57",
+                        "58": "58",
+                        "59": "59"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 57,
+                      "weight": 400,
+                      "lineHeight": 64
+                    },
+                    "color": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "#21005D",
+                      "else": "#1D1B20"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "rect",
+                "name": "espaço",
+                "width": 12,
+                "height": 1,
+                "fill": "rgba(0, 0, 0, 0)",
+                "visible": { "$eq": ["is24Hour", "false"] }
+              },
+              {
+                "type": "frame",
+                "name": "AM e PM",
+                "layout": {
+                  "type": "column"
+                },
+                "width": 52,
+                "height": 80,
+                "cornerRadius": 8,
+                "stroke": {
+                  "color": "#79747E",
+                  "width": 1,
+                  "align": "inside"
+                },
+                "visible": { "$eq": ["is24Hour", "false"] },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "AM",
+                    "layout": {
+                      "type": "row",
+                      "align": "center",
+                      "justify": "center"
+                    },
+                    "width": "fill",
+                    "height": 40,
+                    "fill": {
+                      "$if": {
+                        "$not": {
+                          "$or": [
+                            { "$eq": ["hour", "12"] },
+                            { "$eq": ["hour", "13"] },
+                            { "$eq": ["hour", "14"] },
+                            { "$eq": ["hour", "15"] },
+                            { "$eq": ["hour", "16"] },
+                            { "$eq": ["hour", "17"] },
+                            { "$eq": ["hour", "18"] },
+                            { "$eq": ["hour", "19"] },
+                            { "$eq": ["hour", "20"] },
+                            { "$eq": ["hour", "21"] },
+                            { "$eq": ["hour", "22"] },
+                            { "$eq": ["hour", "23"] }
+                          ]
+                        }
+                      },
+                      "then": "#FFD8E4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "texto",
+                        "text": "AM",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 500,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.15
+                        },
+                        "color": {
+                          "$if": {
+                            "$not": {
+                              "$or": [
+                                { "$eq": ["hour", "12"] },
+                                { "$eq": ["hour", "13"] },
+                                { "$eq": ["hour", "14"] },
+                                { "$eq": ["hour", "15"] },
+                                { "$eq": ["hour", "16"] },
+                                { "$eq": ["hour", "17"] },
+                                { "$eq": ["hour", "18"] },
+                                { "$eq": ["hour", "19"] },
+                                { "$eq": ["hour", "20"] },
+                                { "$eq": ["hour", "21"] },
+                                { "$eq": ["hour", "22"] },
+                                { "$eq": ["hour", "23"] }
+                              ]
+                            }
+                          },
+                          "then": "#31111D",
+                          "else": "#49454F"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "PM",
+                    "layout": {
+                      "type": "row",
+                      "align": "center",
+                      "justify": "center"
+                    },
+                    "width": "fill",
+                    "height": 40,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          { "$eq": ["hour", "12"] },
+                          { "$eq": ["hour", "13"] },
+                          { "$eq": ["hour", "14"] },
+                          { "$eq": ["hour", "15"] },
+                          { "$eq": ["hour", "16"] },
+                          { "$eq": ["hour", "17"] },
+                          { "$eq": ["hour", "18"] },
+                          { "$eq": ["hour", "19"] },
+                          { "$eq": ["hour", "20"] },
+                          { "$eq": ["hour", "21"] },
+                          { "$eq": ["hour", "22"] },
+                          { "$eq": ["hour", "23"] }
+                        ]
+                      },
+                      "then": "#FFD8E4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "texto",
+                        "text": "PM",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 500,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.15
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              { "$eq": ["hour", "12"] },
+                              { "$eq": ["hour", "13"] },
+                              { "$eq": ["hour", "14"] },
+                              { "$eq": ["hour", "15"] },
+                              { "$eq": ["hour", "16"] },
+                              { "$eq": ["hour", "17"] },
+                              { "$eq": ["hour", "18"] },
+                              { "$eq": ["hour", "19"] },
+                              { "$eq": ["hour", "20"] },
+                              { "$eq": ["hour", "21"] },
+                              { "$eq": ["hour", "22"] },
+                              { "$eq": ["hour", "23"] }
+                            ]
+                          },
+                          "then": "#31111D",
+                          "else": "#49454F"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rect",
+            "name": "margem",
+            "width": "fill",
+            "height": 36,
+            "fill": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "type": "frame",
+            "name": "área do relógio",
+            "layout": {
+              "type": "row",
+              "justify": "center"
+            },
+            "width": "fill",
+            "height": 256,
+            "children": [
+              {
+                "type": "frame",
+                "name": "relógio",
+                "layout": {
+                  "type": "none"
+                },
+                "width": 256,
+                "height": 256,
+                "cornerRadius": 128,
+                "fill": "#E6E0E9",
+                "children": [
+                  {
+                    "type": "text",
+                    "name": "número 0",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "00",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "12",
+                        "else": "00"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 116.0,
+                      "top": 15.0
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 1",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "05",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "1",
+                        "else": "1"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 166.5,
+                      "top": 28.53
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 2",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "10",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "2",
+                        "else": "2"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 203.47,
+                      "top": 65.5
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 3",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "15",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "3",
+                        "else": "3"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 217.0,
+                      "top": 116.0
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 4",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "20",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "4",
+                        "else": "4"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 203.47,
+                      "top": 166.5
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 5",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "25",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "5",
+                        "else": "5"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 166.5,
+                      "top": 203.47
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 6",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "30",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "6",
+                        "else": "6"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 116.0,
+                      "top": 217.0
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 7",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "35",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "7",
+                        "else": "7"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 65.5,
+                      "top": 203.47
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 8",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "40",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "8",
+                        "else": "8"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 28.53,
+                      "top": 166.5
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 9",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "45",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "9",
+                        "else": "9"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 15.0,
+                      "top": 116.0
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 10",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "50",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "10",
+                        "else": "10"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 28.53,
+                      "top": 65.5
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 11",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "55",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "11",
+                        "else": "11"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 65.5,
+                      "top": 28.53
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 0",
+                    "text": "12",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 116.0,
+                      "top": 47.0
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 1",
+                    "text": "13",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 150.5,
+                      "top": 56.24
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 2",
+                    "text": "14",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 175.76,
+                      "top": 81.5
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 3",
+                    "text": "15",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 185.0,
+                      "top": 116.0
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 4",
+                    "text": "16",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 175.76,
+                      "top": 150.5
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 5",
+                    "text": "17",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 150.5,
+                      "top": 175.76
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 6",
+                    "text": "18",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 116.0,
+                      "top": 185.0
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 7",
+                    "text": "19",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 81.5,
+                      "top": 175.76
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 8",
+                    "text": "20",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 56.24,
+                      "top": 150.5
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 9",
+                    "text": "21",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 47.0,
+                      "top": 116.0
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 10",
+                    "text": "22",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 56.24,
+                      "top": 81.5
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 11",
+                    "text": "23",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#1D1B20",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 81.5,
+                      "top": 56.24
+                    },
+                    "visible": {
+                      "$and": [
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "path",
+                    "name": "seletor",
+                    "width": 256,
+                    "height": 256,
+                    "viewBox": [256, 256],
+                    "d": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": {
+                        "$switch": "minute",
+                        "cases": {
+                          "0": "M104 27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127 128L127 49L129 49L129 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "1": "M114.56 27.55a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.01 127.9L135.26 49.33L137.25 49.54L128.99 128.1ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "2": "M125 29.21a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.02 127.79L143.45 50.52L145.4 50.93L128.98 128.21ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "3": "M135.21 31.94a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.05 127.69L151.46 52.56L153.36 53.18L128.95 128.31ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "4": "M145.08 35.73a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.09 127.59L159.22 55.42L161.05 56.24L128.91 128.41ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "5": "M154.5 40.53a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 127.5L166.63 59.08L168.37 60.08L128.87 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "6": "M163.37 46.29a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.19 127.41L173.63 63.5L175.24 64.68L128.81 128.59ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "7": "M171.58 52.94a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.26 127.33L180.12 68.62L181.6 69.96L128.74 128.67ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "8": "M179.06 60.42a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.33 127.26L186.04 74.4L187.38 75.88L128.67 128.74ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "9": "M185.71 68.63a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.41 127.19L191.32 80.76L192.5 82.37L128.59 128.81ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "10": "M191.47 77.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 127.13L195.92 87.63L196.92 89.37L128.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "11": "M196.27 86.92a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.59 127.09L199.76 94.95L200.58 96.78L128.41 128.91ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "12": "M200.06 96.79a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.69 127.05L202.82 102.64L203.44 104.54L128.31 128.95ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "13": "M202.79 107a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.79 127.02L205.07 110.6L205.48 112.55L128.21 128.98ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "14": "M204.45 117.44a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.9 127.01L206.46 118.75L206.67 120.74L128.1 128.99ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "15": "M205 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 127L207 127L207 129L128 129ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "16": "M204.45 138.56a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.1 127.01L206.67 135.26L206.46 137.25L127.9 128.99ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "17": "M202.79 149a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.21 127.02L205.48 143.45L205.07 145.4L127.79 128.98ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "18": "M200.06 159.21a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.31 127.05L203.44 151.46L202.82 153.36L127.69 128.95ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "19": "M196.27 169.08a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.41 127.09L200.58 159.22L199.76 161.05L127.59 128.91ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "20": "M191.47 178.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 127.13L196.92 166.63L195.92 168.37L127.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "21": "M185.71 187.37a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.59 127.19L192.5 173.63L191.32 175.24L127.41 128.81ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "22": "M179.06 195.58a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.67 127.26L187.38 180.12L186.04 181.6L127.33 128.74ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "23": "M171.58 203.06a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.74 127.33L181.6 186.04L180.12 187.38L127.26 128.67ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "24": "M163.37 209.71a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.81 127.41L175.24 191.32L173.63 192.5L127.19 128.59ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "25": "M154.5 215.47a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 127.5L168.37 195.92L166.63 196.92L127.13 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "26": "M145.08 220.27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.91 127.59L161.05 199.76L159.22 200.58L127.09 128.41ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "27": "M135.21 224.06a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.95 127.69L153.36 202.82L151.46 203.44L127.05 128.31ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "28": "M125 226.79a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.98 127.79L145.4 205.07L143.45 205.48L127.02 128.21ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "29": "M114.56 228.45a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.99 127.9L137.25 206.46L135.26 206.67L127.01 128.1ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "30": "M104 229a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM129 128L129 207L127 207L127 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "31": "M93.44 228.45a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.99 128.1L120.74 206.67L118.75 206.46L127.01 127.9ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "32": "M83 226.79a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.98 128.21L112.55 205.48L110.6 205.07L127.02 127.79ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "33": "M72.79 224.06a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.95 128.31L104.54 203.44L102.64 202.82L127.05 127.69ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "34": "M62.92 220.27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.91 128.41L96.78 200.58L94.95 199.76L127.09 127.59ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "35": "M53.5 215.47a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 128.5L89.37 196.92L87.63 195.92L127.13 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "36": "M44.63 209.71a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.81 128.59L82.37 192.5L80.76 191.32L127.19 127.41ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "37": "M36.42 203.06a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.74 128.67L75.88 187.38L74.4 186.04L127.26 127.33ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "38": "M28.94 195.58a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.67 128.74L69.96 181.6L68.62 180.12L127.33 127.26ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "39": "M22.29 187.37a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.59 128.81L64.68 175.24L63.5 173.63L127.41 127.19ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "40": "M16.53 178.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 128.87L60.08 168.37L59.08 166.63L127.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "41": "M11.73 169.08a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.41 128.91L56.24 161.05L55.42 159.22L127.59 127.09ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "42": "M7.94 159.21a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.31 128.95L53.18 153.36L52.56 151.46L127.69 127.05ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "43": "M5.21 149a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.21 128.98L50.93 145.4L50.52 143.45L127.79 127.02ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "44": "M3.55 138.56a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.1 128.99L49.54 137.25L49.33 135.26L127.9 127.01ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "45": "M3 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 129L49 129L49 127L128 127ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "46": "M3.55 117.44a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.9 128.99L49.33 120.74L49.54 118.75L128.1 127.01ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "47": "M5.21 107a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.79 128.98L50.52 112.55L50.93 110.6L128.21 127.02ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "48": "M7.94 96.79a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.69 128.95L52.56 104.54L53.18 102.64L128.31 127.05ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "49": "M11.73 86.92a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.59 128.91L55.42 96.78L56.24 94.95L128.41 127.09ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "50": "M16.53 77.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 128.87L59.08 89.37L60.08 87.63L128.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "51": "M22.29 68.63a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.41 128.81L63.5 82.37L64.68 80.76L128.59 127.19ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "52": "M28.94 60.42a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.33 128.74L68.62 75.88L69.96 74.4L128.67 127.26ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "53": "M36.42 52.94a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.26 128.67L74.4 69.96L75.88 68.62L128.74 127.33ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "54": "M44.63 46.29a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.19 128.59L80.76 64.68L82.37 63.5L128.81 127.41ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "55": "M53.5 40.53a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 128.5L87.63 60.08L89.37 59.08L128.87 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "56": "M62.92 35.73a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.09 128.41L94.95 56.24L96.78 55.42L128.91 127.59ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "57": "M72.79 31.94a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.05 128.31L102.64 53.18L104.54 52.56L128.95 127.69ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "58": "M83 29.21a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.02 128.21L110.6 50.93L112.55 50.52L128.98 127.79ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                          "59": "M93.44 27.55a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.01 128.1L118.75 49.54L120.74 49.33L128.99 127.9ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z"
+                        },
+                        "default": "M104 27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127 128L127 49L129 49L129 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z"
+                      },
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": {
+                          "$switch": "hour",
+                          "cases": {
+                            "0": "M104 27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127 128L127 49L129 49L129 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "1": "M154.5 40.53a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 127.5L166.63 59.08L168.37 60.08L128.87 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "2": "M191.47 77.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 127.13L195.92 87.63L196.92 89.37L128.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "3": "M205 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 127L207 127L207 129L128 129ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "4": "M191.47 178.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 127.13L196.92 166.63L195.92 168.37L127.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "5": "M154.5 215.47a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 127.5L168.37 195.92L166.63 196.92L127.13 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "6": "M104 229a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM129 128L129 207L127 207L127 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "7": "M53.5 215.47a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 128.5L89.37 196.92L87.63 195.92L127.13 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "8": "M16.53 178.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 128.87L60.08 168.37L59.08 166.63L127.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "9": "M3 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 129L49 129L49 127L128 127ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "10": "M16.53 77.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 128.87L59.08 89.37L60.08 87.63L128.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "11": "M53.5 40.53a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 128.5L87.63 60.08L89.37 59.08L128.87 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "12": "M104 27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127 128L127 49L129 49L129 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "13": "M154.5 40.53a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 127.5L166.63 59.08L168.37 60.08L128.87 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "14": "M191.47 77.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 127.13L195.92 87.63L196.92 89.37L128.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "15": "M205 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 127L207 127L207 129L128 129ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "16": "M191.47 178.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 127.13L196.92 166.63L195.92 168.37L127.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "17": "M154.5 215.47a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 127.5L168.37 195.92L166.63 196.92L127.13 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "18": "M104 229a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM129 128L129 207L127 207L127 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "19": "M53.5 215.47a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 128.5L89.37 196.92L87.63 195.92L127.13 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "20": "M16.53 178.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 128.87L60.08 168.37L59.08 166.63L127.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "21": "M3 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 129L49 129L49 127L128 127ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "22": "M16.53 77.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 128.87L59.08 89.37L60.08 87.63L128.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "23": "M53.5 40.53a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 128.5L87.63 60.08L89.37 59.08L128.87 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z"
+                          },
+                          "default": "M104 27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127 128L127 49L129 49L129 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z"
+                        },
+                        "else": {
+                          "$switch": "hour",
+                          "cases": {
+                            "0": "M104 27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127 128L127 49L129 49L129 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "1": "M154.5 40.53a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 127.5L166.63 59.08L168.37 60.08L128.87 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "2": "M191.47 77.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 127.13L195.92 87.63L196.92 89.37L128.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "3": "M205 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 127L207 127L207 129L128 129ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "4": "M191.47 178.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 127.13L196.92 166.63L195.92 168.37L127.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "5": "M154.5 215.47a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 127.5L168.37 195.92L166.63 196.92L127.13 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "6": "M104 229a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM129 128L129 207L127 207L127 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "7": "M53.5 215.47a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 128.5L89.37 196.92L87.63 195.92L127.13 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "8": "M16.53 178.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 128.87L60.08 168.37L59.08 166.63L127.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "9": "M3 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 129L49 129L49 127L128 127ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "10": "M16.53 77.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 128.87L59.08 89.37L60.08 87.63L128.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "11": "M53.5 40.53a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 128.5L87.63 60.08L89.37 59.08L128.87 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "12": "M104 59a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127 128L127 81L129 81L129 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "13": "M138.5 68.24a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 127.5L150.63 86.8L152.37 87.8L128.87 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "14": "M163.76 93.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 127.13L168.2 103.63L169.2 105.37L128.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "15": "M173 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 127L175 127L175 129L128 129ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "16": "M163.76 162.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 127.13L169.2 150.63L168.2 152.37L127.5 128.87ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "17": "M138.5 187.76a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 127.5L152.37 168.2L150.63 169.2L127.13 128.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "18": "M104 197a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM129 128L129 175L127 175L127 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "19": "M69.5 187.76a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.87 128.5L105.37 169.2L103.63 168.2L127.13 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "20": "M44.24 162.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128.5 128.87L87.8 152.37L86.8 150.63L127.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "21": "M35 128a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM128 129L81 129L81 127L128 127ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "22": "M44.24 93.5a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.5 128.87L86.8 105.37L87.8 103.63L128.5 127.13ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z",
+                            "23": "M69.5 68.24a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127.13 128.5L103.63 87.8L105.37 86.8L128.87 127.5ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z"
+                          },
+                          "default": "M104 27a24 24 0 1 1 48 0a24 24 0 1 1 -48 0ZM127 128L127 49L129 49L129 128ZM124 128a4 4 0 1 1 8 0a4 4 0 1 1 -8 0Z"
+                        }
+                      }
+                    },
+                    "fill": "#6750A4",
+                    "anchors": {
+                      "left": 0,
+                      "top": 0
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 0 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "00",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "12",
+                        "else": "00"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 116.0,
+                      "top": 15.0
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "0"] },
+                                  { "$eq": ["hour", "12"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "0"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "0"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 1 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "05",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "1",
+                        "else": "1"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 166.5,
+                      "top": 28.53
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "1"] },
+                                  { "$eq": ["hour", "13"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "1"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "5"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 2 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "10",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "2",
+                        "else": "2"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 203.47,
+                      "top": 65.5
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "2"] },
+                                  { "$eq": ["hour", "14"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "2"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "10"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 3 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "15",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "3",
+                        "else": "3"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 217.0,
+                      "top": 116.0
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "3"] },
+                                  { "$eq": ["hour", "15"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "3"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "15"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 4 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "20",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "4",
+                        "else": "4"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 203.47,
+                      "top": 166.5
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "4"] },
+                                  { "$eq": ["hour", "16"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "4"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "20"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 5 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "25",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "5",
+                        "else": "5"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 166.5,
+                      "top": 203.47
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "5"] },
+                                  { "$eq": ["hour", "17"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "5"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "25"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 6 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "30",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "6",
+                        "else": "6"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 116.0,
+                      "top": 217.0
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "6"] },
+                                  { "$eq": ["hour", "18"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "6"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "30"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 7 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "35",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "7",
+                        "else": "7"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 65.5,
+                      "top": 203.47
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "7"] },
+                                  { "$eq": ["hour", "19"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "7"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "35"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 8 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "40",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "8",
+                        "else": "8"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 28.53,
+                      "top": 166.5
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "8"] },
+                                  { "$eq": ["hour", "20"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "8"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "40"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 9 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "45",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "9",
+                        "else": "9"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 15.0,
+                      "top": 116.0
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "9"] },
+                                  { "$eq": ["hour", "21"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "9"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "45"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 10 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "50",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "10",
+                        "else": "10"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 28.53,
+                      "top": 65.5
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "10"] },
+                                  { "$eq": ["hour", "22"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "10"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "50"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número 11 marcado",
+                    "text": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "55",
+                      "else": {
+                        "$if": { "$eq": ["is24Hour", "false"] },
+                        "then": "11",
+                        "else": "11"
+                      }
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 65.5,
+                      "top": 28.53
+                    },
+                    "visible": {
+                      "$or": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["selection", "minute"] } },
+                            {
+                              "$if": { "$eq": ["is24Hour", "false"] },
+                              "then": {
+                                "$or": [
+                                  { "$eq": ["hour", "11"] },
+                                  { "$eq": ["hour", "23"] }
+                                ]
+                              },
+                              "else": { "$eq": ["hour", "11"] }
+                            }
+                          ]
+                        },
+                        {
+                          "$and": [
+                            { "$eq": ["selection", "minute"] },
+                            { "$eq": ["minute", "55"] }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 0 marcado",
+                    "text": "12",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 116.0,
+                      "top": 47.0
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "12"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 1 marcado",
+                    "text": "13",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 150.5,
+                      "top": 56.24
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "13"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 2 marcado",
+                    "text": "14",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 175.76,
+                      "top": 81.5
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "14"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 3 marcado",
+                    "text": "15",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 185.0,
+                      "top": 116.0
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "15"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 4 marcado",
+                    "text": "16",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 175.76,
+                      "top": 150.5
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "16"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 5 marcado",
+                    "text": "17",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 150.5,
+                      "top": 175.76
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "17"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 6 marcado",
+                    "text": "18",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 116.0,
+                      "top": 185.0
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "18"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 7 marcado",
+                    "text": "19",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 81.5,
+                      "top": 175.76
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "19"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 8 marcado",
+                    "text": "20",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 56.24,
+                      "top": 150.5
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "20"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 9 marcado",
+                    "text": "21",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 47.0,
+                      "top": 116.0
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "21"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 10 marcado",
+                    "text": "22",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 56.24,
+                      "top": 81.5
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "22"] }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "name": "número interno 11 marcado",
+                    "text": "23",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 16,
+                      "weight": 400,
+                      "lineHeight": 24,
+                      "letterSpacing": 0.5,
+                      "align": "center",
+                      "verticalAlign": "middle"
+                    },
+                    "color": "#FFFFFF",
+                    "width": 24,
+                    "height": 24,
+                    "anchors": {
+                      "left": 81.5,
+                      "top": 56.24
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$and": [
+                            { "$not": { "$eq": ["is24Hour", "false"] } },
+                            { "$not": { "$eq": ["selection", "minute"] } }
+                          ]
+                        },
+                        { "$eq": ["hour", "23"] }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "campos",
+        "layout": {
+          "type": "column"
+        },
+        "width": "fill",
+        "height": "hug",
+        "visible": { "$eq": ["mode", "input"] },
+        "children": [
+          {
+            "type": "frame",
+            "name": "hora e minuto",
+            "layout": {
+              "type": "row",
+              "align": "start"
+            },
+            "width": "fill",
+            "height": 95,
+            "children": [
+              {
+                "type": "frame",
+                "name": "campo da hora",
+                "layout": {
+                  "type": "column",
+                  "gap": 7
+                },
+                "width": 96,
+                "height": "hug",
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "hora",
+                    "layout": {
+                      "type": "row",
+                      "align": "center",
+                      "justify": "center"
+                    },
+                    "width": 96,
+                    "height": 72,
+                    "cornerRadius": 8,
+                    "fill": {
+                      "$if": { "$not": { "$eq": ["selection", "minute"] } },
+                      "then": "#EADDFF",
+                      "else": "#E6E0E9"
+                    },
+                    "stroke": {
+                      "color": {
+                        "$if": { "$not": { "$eq": ["selection", "minute"] } },
+                        "then": "#6750A4",
+                        "else": "rgba(0, 0, 0, 0)"
+                      },
+                      "width": 2,
+                      "align": "inside"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "valor",
+                        "text": {
+                          "$if": { "$eq": ["is24Hour", "false"] },
+                          "then": {
+                            "$switch": "hour",
+                            "cases": {
+                              "0": "12",
+                              "1": "01",
+                              "2": "02",
+                              "3": "03",
+                              "4": "04",
+                              "5": "05",
+                              "6": "06",
+                              "7": "07",
+                              "8": "08",
+                              "9": "09",
+                              "10": "10",
+                              "11": "11",
+                              "12": "12",
+                              "13": "01",
+                              "14": "02",
+                              "15": "03",
+                              "16": "04",
+                              "17": "05",
+                              "18": "06",
+                              "19": "07",
+                              "20": "08",
+                              "21": "09",
+                              "22": "10",
+                              "23": "11"
+                            }
+                          },
+                          "else": {
+                            "$switch": "hour",
+                            "cases": {
+                              "0": "00",
+                              "1": "01",
+                              "2": "02",
+                              "3": "03",
+                              "4": "04",
+                              "5": "05",
+                              "6": "06",
+                              "7": "07",
+                              "8": "08",
+                              "9": "09",
+                              "10": "10",
+                              "11": "11",
+                              "12": "12",
+                              "13": "13",
+                              "14": "14",
+                              "15": "15",
+                              "16": "16",
+                              "17": "17",
+                              "18": "18",
+                              "19": "19",
+                              "20": "20",
+                              "21": "21",
+                              "22": "22",
+                              "23": "23"
+                            }
+                          }
+                        },
+                        "font": {
+                          "family": "Roboto",
+                          "size": 45,
+                          "weight": 400,
+                          "lineHeight": 52
+                        },
+                        "color": {
+                          "$if": { "$not": { "$eq": ["selection", "minute"] } },
+                          "then": "#21005D",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "name": "rótulo da hora",
+                    "text": "Hora",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 12,
+                      "weight": 400,
+                      "lineHeight": 16,
+                      "letterSpacing": 0.4,
+                      "align": "center"
+                    },
+                    "color": "#49454F",
+                    "width": 96
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dois pontos",
+                "layout": {
+                  "type": "row",
+                  "align": "center",
+                  "justify": "center"
+                },
+                "width": 24,
+                "height": 72,
+                "children": [
+                  {
+                    "type": "text",
+                    "name": "separador",
+                    "text": ":",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 45,
+                      "weight": 400,
+                      "lineHeight": 52
+                    },
+                    "color": "#1D1B20"
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "campo do minuto",
+                "layout": {
+                  "type": "column",
+                  "gap": 7
+                },
+                "width": 96,
+                "height": "hug",
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "minuto",
+                    "layout": {
+                      "type": "row",
+                      "align": "center",
+                      "justify": "center"
+                    },
+                    "width": 96,
+                    "height": 72,
+                    "cornerRadius": 8,
+                    "fill": {
+                      "$if": { "$eq": ["selection", "minute"] },
+                      "then": "#EADDFF",
+                      "else": "#E6E0E9"
+                    },
+                    "stroke": {
+                      "color": {
+                        "$if": { "$eq": ["selection", "minute"] },
+                        "then": "#6750A4",
+                        "else": "rgba(0, 0, 0, 0)"
+                      },
+                      "width": 2,
+                      "align": "inside"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "valor",
+                        "text": {
+                          "$switch": "minute",
+                          "cases": {
+                            "0": "00",
+                            "1": "01",
+                            "2": "02",
+                            "3": "03",
+                            "4": "04",
+                            "5": "05",
+                            "6": "06",
+                            "7": "07",
+                            "8": "08",
+                            "9": "09",
+                            "10": "10",
+                            "11": "11",
+                            "12": "12",
+                            "13": "13",
+                            "14": "14",
+                            "15": "15",
+                            "16": "16",
+                            "17": "17",
+                            "18": "18",
+                            "19": "19",
+                            "20": "20",
+                            "21": "21",
+                            "22": "22",
+                            "23": "23",
+                            "24": "24",
+                            "25": "25",
+                            "26": "26",
+                            "27": "27",
+                            "28": "28",
+                            "29": "29",
+                            "30": "30",
+                            "31": "31",
+                            "32": "32",
+                            "33": "33",
+                            "34": "34",
+                            "35": "35",
+                            "36": "36",
+                            "37": "37",
+                            "38": "38",
+                            "39": "39",
+                            "40": "40",
+                            "41": "41",
+                            "42": "42",
+                            "43": "43",
+                            "44": "44",
+                            "45": "45",
+                            "46": "46",
+                            "47": "47",
+                            "48": "48",
+                            "49": "49",
+                            "50": "50",
+                            "51": "51",
+                            "52": "52",
+                            "53": "53",
+                            "54": "54",
+                            "55": "55",
+                            "56": "56",
+                            "57": "57",
+                            "58": "58",
+                            "59": "59"
+                          }
+                        },
+                        "font": {
+                          "family": "Roboto",
+                          "size": 45,
+                          "weight": 400,
+                          "lineHeight": 52
+                        },
+                        "color": {
+                          "$if": { "$eq": ["selection", "minute"] },
+                          "then": "#21005D",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "name": "rótulo do minuto",
+                    "text": "Minuto",
+                    "font": {
+                      "family": "Roboto",
+                      "size": 12,
+                      "weight": 400,
+                      "lineHeight": 16,
+                      "letterSpacing": 0.4,
+                      "align": "center"
+                    },
+                    "color": "#49454F",
+                    "width": 96
+                  }
+                ]
+              },
+              {
+                "type": "rect",
+                "name": "espaço",
+                "width": 12,
+                "height": 1,
+                "fill": "rgba(0, 0, 0, 0)",
+                "visible": { "$eq": ["is24Hour", "false"] }
+              },
+              {
+                "type": "frame",
+                "name": "AM e PM",
+                "layout": {
+                  "type": "column"
+                },
+                "width": 52,
+                "height": 72,
+                "cornerRadius": 8,
+                "stroke": {
+                  "color": "#79747E",
+                  "width": 1,
+                  "align": "inside"
+                },
+                "visible": { "$eq": ["is24Hour", "false"] },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "AM",
+                    "layout": {
+                      "type": "row",
+                      "align": "center",
+                      "justify": "center"
+                    },
+                    "width": "fill",
+                    "height": 36,
+                    "fill": {
+                      "$if": {
+                        "$not": {
+                          "$or": [
+                            { "$eq": ["hour", "12"] },
+                            { "$eq": ["hour", "13"] },
+                            { "$eq": ["hour", "14"] },
+                            { "$eq": ["hour", "15"] },
+                            { "$eq": ["hour", "16"] },
+                            { "$eq": ["hour", "17"] },
+                            { "$eq": ["hour", "18"] },
+                            { "$eq": ["hour", "19"] },
+                            { "$eq": ["hour", "20"] },
+                            { "$eq": ["hour", "21"] },
+                            { "$eq": ["hour", "22"] },
+                            { "$eq": ["hour", "23"] }
+                          ]
+                        }
+                      },
+                      "then": "#FFD8E4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "texto",
+                        "text": "AM",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 500,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.15
+                        },
+                        "color": {
+                          "$if": {
+                            "$not": {
+                              "$or": [
+                                { "$eq": ["hour", "12"] },
+                                { "$eq": ["hour", "13"] },
+                                { "$eq": ["hour", "14"] },
+                                { "$eq": ["hour", "15"] },
+                                { "$eq": ["hour", "16"] },
+                                { "$eq": ["hour", "17"] },
+                                { "$eq": ["hour", "18"] },
+                                { "$eq": ["hour", "19"] },
+                                { "$eq": ["hour", "20"] },
+                                { "$eq": ["hour", "21"] },
+                                { "$eq": ["hour", "22"] },
+                                { "$eq": ["hour", "23"] }
+                              ]
+                            }
+                          },
+                          "then": "#31111D",
+                          "else": "#49454F"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "PM",
+                    "layout": {
+                      "type": "row",
+                      "align": "center",
+                      "justify": "center"
+                    },
+                    "width": "fill",
+                    "height": 36,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          { "$eq": ["hour", "12"] },
+                          { "$eq": ["hour", "13"] },
+                          { "$eq": ["hour", "14"] },
+                          { "$eq": ["hour", "15"] },
+                          { "$eq": ["hour", "16"] },
+                          { "$eq": ["hour", "17"] },
+                          { "$eq": ["hour", "18"] },
+                          { "$eq": ["hour", "19"] },
+                          { "$eq": ["hour", "20"] },
+                          { "$eq": ["hour", "21"] },
+                          { "$eq": ["hour", "22"] },
+                          { "$eq": ["hour", "23"] }
+                        ]
+                      },
+                      "then": "#FFD8E4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "texto",
+                        "text": "PM",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 500,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.15
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              { "$eq": ["hour", "12"] },
+                              { "$eq": ["hour", "13"] },
+                              { "$eq": ["hour", "14"] },
+                              { "$eq": ["hour", "15"] },
+                              { "$eq": ["hour", "16"] },
+                              { "$eq": ["hour", "17"] },
+                              { "$eq": ["hour", "18"] },
+                              { "$eq": ["hour", "19"] },
+                              { "$eq": ["hour", "20"] },
+                              { "$eq": ["hour", "21"] },
+                              { "$eq": ["hour", "22"] },
+                              { "$eq": ["hour", "23"] }
+                            ]
+                          },
+                          "then": "#31111D",
+                          "else": "#49454F"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
