@@ -649,7 +649,9 @@ export class CanvasController {
     // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
     // imagens com bitmap já desenhados (o DOM só é tocado quando eles mudam).
     const canvasMarkings = this.countCanvasMarkings(frame.project);
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}`;
+    const componentImages =
+      this.componentLayer.imageCount + this.floatingLayer.imageCount;
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
@@ -658,6 +660,7 @@ export class CanvasController {
       host.dataset.components = String(this.drawnComponents);
       host.dataset.canvasMarkings = String(canvasMarkings);
       host.dataset.arrows = String(this.drawnArrows);
+      host.dataset.componentImages = String(componentImages);
     }
   }
 

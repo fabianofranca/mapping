@@ -29,6 +29,8 @@ interface Mounted {
   readonly node: Konva.Group;
   /** URLs remotas que o desenho usa (para refazer só ele quando a imagem muda). */
   readonly imageUrls: readonly string[];
+  /** Quantas imagens (`Konva.Image`) o desenho tem de fato (o reservado não conta). */
+  readonly images: number;
 }
 
 type Parent = Konva.Group | Konva.Layer;
@@ -51,6 +53,13 @@ export class ComponentLayerRenderer {
   /** Quantos desenhos estão montados (publicado no container para os testes e2e). */
   get size(): number {
     return this.mounted.size;
+  }
+
+  /** Quantas imagens estão desenhadas de fato nos componentes (gancho de teste e2e). */
+  get imageCount(): number {
+    let total = 0;
+    for (const entry of this.mounted.values()) total += entry.images;
+    return total;
   }
 
   /**
@@ -111,9 +120,9 @@ export class ComponentLayerRenderer {
           continue;
         }
         current?.node.destroy();
-        const { node, imageUrls } = this.draw(drawing);
+        const { node, imageUrls, images } = this.draw(drawing);
         group.add(node);
-        this.mounted.set(drawing.markingId, { drawing, node, imageUrls });
+        this.mounted.set(drawing.markingId, { drawing, node, imageUrls, images });
         changed = true;
       }
       if (sortChildren(group, list, this.mounted)) changed = true;
@@ -135,12 +144,12 @@ export class ComponentLayerRenderer {
       const parent = entry.node.getParent();
       const index = entry.node.zIndex();
       entry.node.destroy();
-      const { node, imageUrls } = this.draw(entry.drawing);
+      const { node, imageUrls, images } = this.draw(entry.drawing);
       if (parent) {
         parent.add(node);
         node.zIndex(index);
       }
-      this.mounted.set(markingId, { drawing: entry.drawing, node, imageUrls });
+      this.mounted.set(markingId, { drawing: entry.drawing, node, imageUrls, images });
       changed = true;
     }
     return changed;
@@ -166,6 +175,7 @@ export class ComponentLayerRenderer {
   private draw(drawing: LayerDrawing): {
     node: Konva.Group;
     imageUrls: readonly string[];
+    images: number;
   } {
     const { root, imageUrls } = renderScene(
       { root: drawing.root, warnings: [] },
@@ -180,7 +190,7 @@ export class ComponentLayerRenderer {
     );
     root.listening(false);
     root.setAttr('markingId', drawing.markingId);
-    return { node: root, imageUrls };
+    return { node: root, imageUrls, images: root.find('Image').length };
   }
 }
 
