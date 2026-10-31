@@ -49,7 +49,11 @@ interface PopoverProps {
 }
 
 /** Posiciona o painel embaixo do botão, ou em cima se não couber, sempre dentro da janela. */
-function place(host: HTMLElement, panel: HTMLElement, align: 'start' | 'end'): void {
+export function place(
+  host: HTMLElement,
+  panel: HTMLElement,
+  align: 'start' | 'end',
+): void {
   const anchor = host.getBoundingClientRect();
   const width = panel.offsetWidth;
   const height = panel.offsetHeight;

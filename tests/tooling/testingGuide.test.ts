@@ -357,45 +357,45 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
       expect(text, path).not.toContain('etapa-6-testes-cowork.md');
     }
   });
-  // Etapa Imagens remotas (RI4): o R14 roda sozinho, com um servidor local que a shell sobe.
-  describe('R14 — Imagens remotas', () => {
+  // Etapa Imagens remotas (RI4): o R15 roda sozinho, com um servidor local que a shell sobe.
+  describe('R15 — Imagens remotas', () => {
     const guide = read('docs/TESTING.md');
-    const r14 = guide.slice(
-      guide.indexOf('### R14 '),
+    const r15 = guide.slice(
+      guide.indexOf('### R15 '),
       guide.indexOf('### Roteiros sob demanda (manuais)'),
     );
 
-    it('está no quadro "Comece aqui", entre os roteiros principais, depois do R13', () => {
-      expect(guide).toMatch(/^\| 16 +\| R14 — Imagens remotas/m);
-      expect(guide.indexOf('### R14 ')).toBeGreaterThan(guide.indexOf('### R13 '));
-      expect(guide.indexOf('### R14 ')).toBeLessThan(
+    it('está no quadro "Comece aqui", entre os roteiros principais, depois do R14', () => {
+      expect(guide).toMatch(/^\| 17 +\| R15 — Imagens remotas/m);
+      expect(guide.indexOf('### R15 ')).toBeGreaterThan(guide.indexOf('### R14 '));
+      expect(guide.indexOf('### R15 ')).toBeLessThan(
         guide.indexOf('### Roteiros sob demanda (manuais)'),
       );
-      expect(guide).toMatch(/^- R14 usa a pasta própria `remotas`/m);
+      expect(guide).toMatch(/^- R15 usa a pasta própria `remotas`/m);
     });
 
-    it('tem os passos R14.1 a R14.12, em ordem, e nenhum depende do dono', () => {
-      const codes = [...stepActions(r14).keys()];
-      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R14.${i + 1}`));
-      expect(/sem substituto/i.test(r14)).toBe(false);
+    it('tem os passos R15.1 a R15.12, em ordem, e nenhum depende do dono', () => {
+      const codes = [...stepActions(r15).keys()];
+      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R15.${i + 1}`));
+      expect(/sem substituto/i.test(r15)).toBe(false);
     });
 
     it('a rede local e o sem CORS usam um servidor local que a shell sobe, sem cabeçalho de CORS', () => {
-      expect(r14).toContain('python3 -m http.server 8765 --bind 127.0.0.1');
-      expect(r14).toContain('servidor.log');
-      expect(r14).toMatch(/não\*\* traz `Access-Control-Allow-Origin`/);
-      expect(r14).toContain('**Mostrar imagens de servidores sem CORS**');
-      expect(r14).toContain('**Permitir imagens da rede local**');
+      expect(r15).toContain('python3 -m http.server 8765 --bind 127.0.0.1');
+      expect(r15).toContain('servidor.log');
+      expect(r15).toMatch(/não\*\* traz `Access-Control-Allow-Origin`/);
+      expect(r15).toContain('**Mostrar imagens de servidores sem CORS**');
+      expect(r15).toContain('**Permitir imagens da rede local**');
     });
 
     it('o http: passa pelo mesmo servidor local, com os interruptores de http e de rede local', () => {
-      expect(r14).toContain('http://127.0.0.1:8765/foto.png');
-      expect(r14).toContain('**Permitir imagens sem criptografia (http)**');
-      expect(r14).toContain('**Permitir imagens de qualquer origem**');
+      expect(r15).toContain('http://127.0.0.1:8765/foto.png');
+      expect(r15).toContain('**Permitir imagens sem criptografia (http)**');
+      expect(r15).toContain('**Permitir imagens de qualquer origem**');
     });
 
     it('usa a imagem de teste de public/, servida pelo Pages, e ela existe', () => {
-      expect(r14).toContain('imagens-teste/foto.png');
+      expect(r15).toContain('imagens-teste/foto.png');
       const png = readFileSync('public/imagens-teste/foto.png');
       expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
       expect(png.readUInt32BE(16)).toBe(96);
@@ -416,14 +416,14 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
         'não carregou',
       ]) {
         expect(i18n, text).toContain(text);
-        expect(r14, text).toContain(text);
+        expect(r15, text).toContain(text);
       }
     });
 
-    it('o prompt do Cowork tem a rodada dirigida das imagens remotas, com o R14', () => {
+    it('o prompt do Cowork tem a rodada dirigida das imagens remotas, com o R15', () => {
       expect(prompt).toContain('## 12. Rodada dirigida da etapa Imagens remotas');
-      expect(prompt).toContain('R14.12');
-      expect(prompt).toContain('R0 a R14');
+      expect(prompt).toContain('R15.12');
+      expect(prompt).toContain('R0 a R15');
     });
   });
 });

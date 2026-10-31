@@ -643,6 +643,7 @@ export const ptBR = {
   'typed.enumNone': '—',
   'typed.invalidNumber': 'Digite um número (use ponto ou vírgula para decimais).',
   'typed.invalidValue': 'Valor inválido para este campo.',
+  'suggestions.listLabel': 'Sugestões',
   'typed.unknownType':
     'O tipo "{type}" não existe mais na especialização. A anotação está somente leitura.',
   'typed.convertToFree': 'Converter em anotação livre',
@@ -935,6 +936,9 @@ export const ptBR = {
   'multi.containers': '{count} container(s)',
   'multi.markings': '{count} marcação(ões)',
   'multi.delete': 'Excluir',
+  'multi.wrap': 'Envolver',
+  'multi.wrapBlocked': 'Notas e setas não entram numa marcação pai',
+  'multi.wrapFailed': 'Não foi possível criar a marcação pai',
   'multi.lock': 'Trancar',
   'multi.unlock': 'Destrancar',
   'multi.deleteTitle': 'Excluir {count} itens?',
