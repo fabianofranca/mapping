@@ -1,0 +1,133 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "lazy-vertical-grid",
+  "name": "LazyVerticalGrid",
+  "description": "Grade vertical que compõe só as células visíveis: as filhas ficam onde o retângulo delas diz; o contentPadding recua o conteúdo.",
+  "size": {
+    "width": 360,
+    "height": 400
+  },
+  "minSize": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "columns": 2,
+    "minColumnWidth": null,
+    "verticalSpacing": 8,
+    "horizontalSpacing": 8,
+    "contentPadding": 16,
+    "width": "wrap",
+    "height": "wrap",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "lazy-vertical-grid",
+    "clip": false,
+    "layout": {
+      "type": "column",
+      "padding": {
+        "$field": "contentPadding",
+        "default": 0
+      }
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "width": "fill",
+        "height": "fill",
+        "label": {
+          "$concat": [
+            "LazyVerticalGrid · ",
+            {
+              "$if": {
+                "$has": "minColumnWidth"
+              },
+              "then": {
+                "$concat": [
+                  "Adaptive(",
+                  {
+                    "$field": "minColumnWidth"
+                  },
+                  ")"
+                ]
+              },
+              "else": {
+                "$concat": [
+                  "Fixed(",
+                  {
+                    "$field": "columns",
+                    "default": 2
+                  },
+                  ")"
+                ]
+              }
+            },
+            " · ",
+            {
+              "$field": "width",
+              "default": "wrap"
+            },
+            " × ",
+            {
+              "$field": "height",
+              "default": "wrap"
+            },
+            {
+              "$if": {
+                "$has": "verticalSpacing"
+              },
+              "then": {
+                "$concat": [
+                  " · v ",
+                  {
+                    "$field": "verticalSpacing"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$has": "horizontalSpacing"
+              },
+              "then": {
+                "$concat": [
+                  " · h ",
+                  {
+                    "$field": "horizontalSpacing"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$has": "weight"
+              },
+              "then": {
+                "$concat": [
+                  " · weight ",
+                  {
+                    "$field": "weight"
+                  }
+                ]
+              },
+              "else": ""
+            }
+          ]
+        },
+        "layout": {
+          "type": "none"
+        }
+      }
+    ]
+  }
+}

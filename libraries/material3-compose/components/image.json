@@ -1,0 +1,163 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 3,
+  "id": "image",
+  "name": "Image",
+  "description": "Imagem remota (URL https) com o contentScale do Compose; sem URL, mostra a descrição e as medidas.",
+  "size": {
+    "width": 160,
+    "height": 120
+  },
+  "minSize": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": 160,
+    "height": 120
+  },
+  "preview": {
+    "url": "https://example.com/foto.jpg",
+    "contentDescription": "Foto",
+    "contentScale": "Fit",
+    "width": "wrap",
+    "height": "wrap",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "image",
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "image",
+        "name": "imagem cover",
+        "src": {
+          "$field": "url"
+        },
+        "fit": "cover",
+        "fill": "#E7E0EC",
+        "visible": {
+          "$or": [
+            {
+              "$eq": ["contentScale", "Crop"]
+            },
+            {
+              "$eq": ["contentScale", "FillWidth"]
+            },
+            {
+              "$eq": ["contentScale", "FillHeight"]
+            }
+          ]
+        }
+      },
+      {
+        "type": "image",
+        "name": "imagem fill",
+        "src": {
+          "$field": "url"
+        },
+        "fit": "fill",
+        "fill": "#E7E0EC",
+        "visible": {
+          "$or": [
+            {
+              "$eq": ["contentScale", "FillBounds"]
+            }
+          ]
+        }
+      },
+      {
+        "type": "image",
+        "name": "imagem contain",
+        "src": {
+          "$field": "url"
+        },
+        "fit": "contain",
+        "fill": "#E7E0EC",
+        "visible": {
+          "$not": {
+            "$or": [
+              {
+                "$eq": ["contentScale", "Crop"]
+              },
+              {
+                "$eq": ["contentScale", "FillWidth"]
+              },
+              {
+                "$eq": ["contentScale", "FillHeight"]
+              },
+              {
+                "$eq": ["contentScale", "FillBounds"]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "type": "text",
+        "name": "legenda",
+        "visible": {
+          "$not": {
+            "$has": "url"
+          }
+        },
+        "anchors": {
+          "left": 4,
+          "right": 4,
+          "centerY": true
+        },
+        "width": "fill",
+        "height": "hug",
+        "text": {
+          "$concat": [
+            {
+              "$if": {
+                "$has": "contentDescription"
+              },
+              "then": {
+                "$field": "contentDescription"
+              },
+              "else": "Image"
+            },
+            " · ",
+            {
+              "$field": "width",
+              "default": "wrap"
+            },
+            " × ",
+            {
+              "$field": "height",
+              "default": "wrap"
+            },
+            {
+              "$if": {
+                "$has": "weight"
+              },
+              "then": {
+                "$concat": [
+                  " · weight ",
+                  {
+                    "$field": "weight"
+                  }
+                ]
+              },
+              "else": ""
+            }
+          ]
+        },
+        "color": "#49454F",
+        "font": {
+          "family": "Roboto",
+          "size": 11,
+          "weight": 400,
+          "lineHeight": 16,
+          "align": "center"
+        }
+      }
+    ]
+  }
+}
