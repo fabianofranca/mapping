@@ -8,13 +8,13 @@ Dentro de `dist-viewer/` (a pasta gerada por `npm run build:viewer` no repositó
 
 ```bash
 npm pack
-# gera mapping-viewer-0.2.0.tgz
+# gera mapping-viewer-0.3.0.tgz
 ```
 
 No projeto que vai usar:
 
 ```bash
-npm install ./mapping-viewer-0.2.0.tgz
+npm install ./mapping-viewer-0.3.0.tgz
 ```
 
 Também dá para copiar a pasta `dist-viewer/` inteira para o projeto e importar `mapping-viewer.js` por caminho.
@@ -98,6 +98,31 @@ O núcleo não carrega fonte. Duas formas:
 
 Quando as fontes carregarem, remeça os textos: `viewer.redraw()` no núcleo, ou mude o valor de `fontsVersion` no `<MappingViewer/>`.
 
+## Imagens remotas
+
+Um componente pode ter um nó `image` cuja URL vem de um campo (formato `mapping-component` 3). O visualizador **não pede imagem nenhuma por padrão**: sem a opção `remoteImages`, o componente desenha o reservado (um retângulo cinza com o traço de imagem) e nada vai à rede.
+
+```ts
+createViewer(container, {
+  library,
+  screen,
+  remoteImages: true,
+  // O seu site decide, por origem. Sem esta função, tudo é recusado.
+  allowOrigin: (origin) => origin === 'https://cdn.exemplo.com',
+});
+```
+
+(No React: `<MappingViewer remoteImages allowOrigin={...} />`; as duas props valem na criação.)
+
+Com `remoteImages: true`, a imagem só é pedida quando as **duas portas** concordam:
+
+1. **A URL passa na política do Mapping:** só `https:`, sem usuário e senha, até 2048 caracteres e sem host da rede local (IP literal, `localhost`, nome sem ponto, `.local`, `.localhost`, `.internal`). `http:` e rede local **não têm interruptor** no visualizador.
+2. **Sua função `allowOrigin(origin)` devolve `true`** para a origem (`https://cdn.exemplo.com`). Lançar uma exceção equivale a recusar. O visualizador não guarda consentimento nem mostra pergunta: quem decide é o site hospedeiro.
+
+Como carrega: `crossOrigin = 'anonymous'` e `referrerPolicy = 'no-referrer'` (sem cookies e sem `Referer`), no máximo 6 pedidos ao mesmo tempo, tempo limite de 20 s, imagem de até 8192 px de lado e 40 milhões de pixels, bitmap reduzido a 2048 px e cache só em memória (a imagem nunca é gravada). O servidor da imagem precisa mandar `Access-Control-Allow-Origin`; sem CORS a imagem **não** aparece (fica o reservado). Por isso o `viewer.toDataURL()` continua válido com imagens remotas: nenhuma contamina o canvas.
+
+**A CSP é do site hospedeiro.** O visualizador não define política nenhuma. Se o seu site tem CSP, o `img-src` precisa liberar as origens das imagens (por exemplo `img-src 'self' data: blob: https://cdn.exemplo.com`); sem isso o navegador bloqueia o pedido e o componente fica no reservado, mesmo com `allowOrigin` aceitando. Se o site usa Trusted Types (`require-trusted-types-for 'script'`), o Konva precisa de uma política `default` que aceite a string vazia em `createHTML`.
+
 ## Árvore das instâncias
 
 `screenTree(screen, library)` devolve as raízes (na ordem de desenho) com os filhos aninhados; cada nó traz `id`, `parentId`, `depth`, `label` (o rótulo da instância), `typeId`, `typeName`, `instance` e `children`. `flattenTree(tree)` dá a mesma árvore em lista, em pré-ordem (a ordem de desenho), pronta para uma lista com recuo por `depth`. Seleção e realce voltam ao canvas por `setSelection` e `setHover`.
@@ -111,7 +136,7 @@ Do núcleo (`mapping-viewer`) e também reexportados por `mapping-viewer/react`:
 - tela: `parseScreen`, `serializeScreen`, `renderOrder`, `childrenOf`;
 - origem externa: `screenFromSource`, `translateSource`, `layoutScreen`, `SCREEN_ANCHORS`;
 - árvore: `screenTree`, `flattenTree`;
-- tipos: `Viewer`, `ViewerInput`, `ViewerOptions`, `InstanceWarnings`, `ScreenRendererOptions`, `ScreenRendererUpdateOptions`, `Library`, `TypeDef`, `FieldDef`, `LoadedFont`, `TextFile`, `Screen`, `Instance`, `Box`, `ComponentFile`, `FieldValue`, `FieldValues`, `TextMeasurer`, `TreeNode`, `LoadFromUrlOptions`, `FontStatus`, `FontHost`, `SourceResult`, `SourceOptions`, `TranslateResult`, `LayoutScreen`, `LayoutNode`, `LayoutRoot`, `LayoutResult`, `ScreenAnchor`.
+- tipos: `Viewer`, `ViewerInput`, `ViewerOptions`, `AllowOrigin`, `InstanceWarnings`, `ScreenRendererOptions`, `ScreenRendererUpdateOptions`, `Library`, `TypeDef`, `FieldDef`, `LoadedFont`, `TextFile`, `Screen`, `Instance`, `Box`, `ComponentFile`, `FieldValue`, `FieldValues`, `TextMeasurer`, `TreeNode`, `LoadFromUrlOptions`, `FontStatus`, `FontHost`, `SourceResult`, `SourceOptions`, `TranslateResult`, `LayoutScreen`, `LayoutNode`, `LayoutRoot`, `LayoutResult`, `ScreenAnchor`.
 
 Só em `mapping-viewer/react`: `MappingViewer` e `MappingViewerProps`.
 
@@ -120,4 +145,5 @@ Só em `mapping-viewer/react`: `MappingViewer` e `MappingViewerProps`.
 - Cada bundle é **autocontido**, com o Konva e o motor dentro. Use `mapping-viewer` **ou** `mapping-viewer/react` no mesmo site; os dois juntos carregam duas cópias do Konva.
 - O bundle do React deixa `react`, `react/jsx-runtime` e `react-dom` de fora: o seu site fornece o React dele.
 - O pacote é ESM (`"type": "module"`) e vem minificado, com mapas de código (`.js.map`).
+- Imagens remotas: desligadas por padrão (seção acima); `AllowOrigin` é o tipo da função `allowOrigin`.
 - `loadLibraryFromUrl` usa `fetch`: o site hospedeiro precisa permitir a requisição (CORS e, se houver, CSP `connect-src`).

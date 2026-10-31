@@ -21,7 +21,12 @@
  * `error`). Sem biblioteca, ou com `error`, nada é desenhado.
  *
  * As fontes são do hospedeiro: depois que uma fonte carregar, chame `redraw()` para remedir os
- * textos. O módulo não faz requisição de rede nem registra fonte.
+ * textos. O módulo não registra fonte e, por padrão, não faz requisição de rede.
+ *
+ * Imagens remotas (nó `image` do componente): desligadas por padrão. Com `remoteImages: true`,
+ * a URL precisa passar na política (só `https:`, sem rede local) e a origem, na função
+ * `allowOrigin` do hospedeiro (sem ela, tudo é recusado e o componente desenha o reservado). A
+ * CSP (`img-src`) é do site hospedeiro. Ver `remoteImages.ts` e o `PACKAGE-README.md`.
  */
 import Konva from 'konva';
 import type { Library } from '../../src/model/components/library';
@@ -29,6 +34,7 @@ import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { Box, Screen } from '../../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../../src/model/components/origin';
 import { capPixelRatio } from '../shared/pinch';
+import { type AllowOrigin, createViewerRemoteImages } from './remoteImages';
 import { konvaMeasurer } from '../../src/canvas/components/konvaMeasurer';
 import {
   type InstanceWarnings,
@@ -73,6 +79,16 @@ export interface ViewerOptions {
   /** Cores do realce (CSS); padrões: seleção '#1A63CC', hover 'rgba(26, 99, 204, 0.8)'. */
   readonly selectionColor?: string;
   readonly hoverColor?: string;
+  /**
+   * Mostra as imagens remotas dos componentes (padrão `false`: nenhuma requisição, o reservado
+   * no lugar). Ligada, só `https:` e só as origens que `allowOrigin` aceitar.
+   */
+  readonly remoteImages?: boolean;
+  /**
+   * Decide, por origem (ex.: `https://cdn.exemplo.com`), se a imagem pode ser pedida. Padrão:
+   * recusar tudo. Só vale com `remoteImages: true`; é lida na criação do visualizador.
+   */
+  readonly allowOrigin?: AllowOrigin;
 }
 
 export interface Viewer {
@@ -154,7 +170,15 @@ export function createViewer(
   stage.add(content, overlay);
 
   const measure = options.measure ?? konvaMeasurer;
-  const renderer = new ScreenRenderer(screenGroup, { measure });
+  // `pixelSafe` sempre: o `toDataURL` abaixo lê pixels, então nenhuma imagem `opaque` é desenhada.
+  const images = options.remoteImages
+    ? createViewerRemoteImages(options.allowOrigin)
+    : undefined;
+  const renderer = new ScreenRenderer(screenGroup, {
+    measure,
+    pixelSafe: true,
+    ...(images ? { remoteImage: (url: string) => images.resolve(url) } : {}),
+  });
   const selectionRects = new Map<string, Konva.Rect>();
 
   let library: Library | undefined = options.library;
@@ -329,6 +353,11 @@ export function createViewer(
     observer.observe(container);
   }
 
+  const unsubscribeImages = images?.subscribe((url) => {
+    if (disposed) return;
+    if (renderer.refreshImage(url)) draw();
+  });
+
   resolveScreen();
   if (library !== undefined || screen !== undefined) sync(false);
 
@@ -404,6 +433,8 @@ export function createViewer(
       if (disposed) return;
       disposed = true;
       observer?.disconnect();
+      unsubscribeImages?.();
+      images?.dispose();
       if (frame && typeof cancelAnimationFrame === 'function')
         cancelAnimationFrame(frame);
       frame = 0;
