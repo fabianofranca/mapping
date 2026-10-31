@@ -224,7 +224,7 @@ Decisões de segurança: o agente não decide sozinho (regra do [`CLAUDE.md`](CL
 - [x] O R14 testa o `http:` pelo mesmo servidor local (`http://localhost`, com os interruptores de `http:` e de rede local ligados); um servidor `http:` público só entra se houver um de teste, senão esse caso fica sob demanda, seguindo a seção 8 do `docs/TESTING.md` (teste `tests/tooling/testingGuide.test.ts`)
 - [ ] PR da RI4 aberto com o rótulo `mcp-rc` (última fase do épico; sem ele, rodar à mão o workflow MCP pre-release no `epic/imagens-remotas`)
 - [ ] Rodada dirigida do Cowork com o R14, e o relato entre os documentos da etapa
-- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-imagens-remotas.md`, `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico)
+- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-imagens-remotas.md`, `CHANGELOG.md` (a seção `[Não lançado]` ganha a data do merge), `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico)
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
 **Decisões tomadas na RI4:**

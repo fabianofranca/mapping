@@ -153,3 +153,18 @@ describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
     expect(release).toMatch(/ref: refs\/tags\/\$\{\{ env\.TAG \}\}/);
   });
 });
+
+describe('ci.yml exige o CHANGELOG.md nos PRs de épico para a main', () => {
+  it('o job epic confere que o PR altera o CHANGELOG.md', () => {
+    const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  check:'));
+    expect(job).toContain('Changelog atualizado');
+    expect(job).toMatch(/pulls\/\$PR\/files/);
+    expect(job).toMatch(/grep -qx 'CHANGELOG\.md'/);
+    expect(job).toMatch(/epic\/\*\) ;;/);
+  });
+
+  it('o CLAUDE.md descreve a regra e o CHANGELOG.md existe', () => {
+    expect(read('CLAUDE.md')).toContain('**Changelog por épico:**');
+    expect(existsSync('CHANGELOG.md')).toBe(true);
+  });
+});
