@@ -3,8 +3,10 @@ import {
   REMOTE_IMAGE_URL_MAX_LENGTH,
   checkRemoteImageUrl,
   isLocalNetworkHost,
+  sceneRemoteImageUrls,
   type RemoteImagePolicy,
 } from '../../src/model';
+import type { SceneNode } from '../../src/model/components/scene';
 
 const STRICT: RemoteImagePolicy = { allowHttp: false, allowLocalNetwork: false };
 const HTTP: RemoteImagePolicy = { allowHttp: true, allowLocalNetwork: false };
@@ -207,5 +209,57 @@ describe('isLocalNetworkHost', () => {
     ]) {
       expect(isLocalNetworkHost(host), host).toBe(false);
     }
+  });
+});
+
+describe('sceneRemoteImageUrls', () => {
+  const base = {
+    visible: true,
+    opacity: 1,
+    transform: [1, 0, 0, 1, 0, 0] as const,
+    width: 10,
+    height: 10,
+    effects: [],
+  };
+  it('coleta as URLs dos preenchimentos image, em ordem e sem repetir', () => {
+    const rect = (id: string, url?: string, src?: string): SceneNode => ({
+      ...base,
+      id,
+      name: id,
+      type: 'rect',
+      cornerRadius: 0,
+      fills: [
+        { type: 'solid', color: '#000000' },
+        { type: 'image', ...(url ? { url } : {}), ...(src ? { src } : {}) },
+      ],
+    });
+    const root: SceneNode = {
+      ...base,
+      id: 'r',
+      name: 'r',
+      type: 'frame',
+      clip: false,
+      cornerRadius: 0,
+      fills: [],
+      children: [
+        rect('a', 'https://a.com/1.png'),
+        {
+          ...base,
+          id: 'g',
+          name: 'g',
+          type: 'group',
+          fills: [],
+          children: [
+            rect('b', 'https://b.com/2.png'),
+            rect('c', 'https://a.com/1.png'),
+            rect('d', undefined, 'data:image/png;base64,AAA'),
+          ],
+        },
+      ],
+    };
+    expect(sceneRemoteImageUrls(root)).toEqual([
+      'https://a.com/1.png',
+      'https://b.com/2.png',
+    ]);
   });
 });

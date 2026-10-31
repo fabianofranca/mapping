@@ -2,6 +2,7 @@ import { t } from '../../i18n';
 import { Button } from '../controls';
 import { useEditor } from '../EditorContext';
 import { proposalNoticeMessage } from '../labels';
+import { ImageConsentBanner } from '../ImageConsentBanner';
 import { Notice } from '../Notice';
 import { useReviewCommands } from './useReviewCommands';
 import { undoMessage } from './useReview';
@@ -42,6 +43,7 @@ export function ProposalNotices() {
     <div class="canvas-corner">
       <ReviewUndoNotice />
       <ProposalNotice />
+      <ImageConsentBanner />
     </div>
   );
 }

@@ -4,7 +4,7 @@
 import Konva from 'konva/lib/Core';
 import { IDENTITY_PLACEMENT, type Placement } from '../../model';
 import type { FrameNode } from '../../model/components/scene';
-import { type RenderPalette, renderScene } from './renderScene';
+import { type RemoteImageResult, type RenderPalette, renderScene } from './renderScene';
 
 /** O que o renderer desenha de cada marcação (o `ComponentDrawing` do modelo tem esta forma). */
 export interface LayerDrawing {
@@ -20,11 +20,15 @@ export interface ComponentLayerOptions {
   readonly placeholder?: Partial<RenderPalette>;
   /** Uma imagem embutida (`data:`) terminou de carregar: o chamador pede um quadro. */
   readonly onImageLoaded?: () => void;
+  /** Resolve a URL do nó `image` do componente (portas da app + carregador); ver `renderScene`. */
+  readonly remoteImage?: (url: string) => RemoteImageResult;
 }
 
 interface Mounted {
   readonly drawing: LayerDrawing;
   readonly node: Konva.Group;
+  /** URLs remotas que o desenho usa (para refazer só ele quando a imagem muda). */
+  readonly imageUrls: readonly string[];
 }
 
 type Parent = Konva.Group | Konva.Layer;
@@ -107,12 +111,37 @@ export class ComponentLayerRenderer {
           continue;
         }
         current?.node.destroy();
-        const node = this.draw(drawing);
+        const { node, imageUrls } = this.draw(drawing);
         group.add(node);
-        this.mounted.set(drawing.markingId, { drawing, node });
+        this.mounted.set(drawing.markingId, { drawing, node, imageUrls });
         changed = true;
       }
       if (sortChildren(group, list, this.mounted)) changed = true;
+    }
+    return changed;
+  }
+
+  /**
+   * Refaz só os desenhos que usam alguma das `urls` (a imagem terminou de carregar, falhou ou
+   * saiu do cache), ou todos os que usam alguma imagem remota quando `urls` é `null` (o
+   * consentimento ou um interruptor mudou). O nó novo ocupa o lugar do antigo na ordem.
+   * Devolve `true` se algum foi refeito.
+   */
+  refreshImages(urls: ReadonlySet<string> | null): boolean {
+    let changed = false;
+    for (const [markingId, entry] of this.mounted) {
+      if (entry.imageUrls.length === 0) continue;
+      if (urls !== null && !entry.imageUrls.some((url) => urls.has(url))) continue;
+      const parent = entry.node.getParent();
+      const index = entry.node.zIndex();
+      entry.node.destroy();
+      const { node, imageUrls } = this.draw(entry.drawing);
+      if (parent) {
+        parent.add(node);
+        node.zIndex(index);
+      }
+      this.mounted.set(markingId, { drawing: entry.drawing, node, imageUrls });
+      changed = true;
     }
     return changed;
   }
@@ -134,18 +163,24 @@ export class ComponentLayerRenderer {
     return { group, created: true };
   }
 
-  private draw(drawing: LayerDrawing): Konva.Group {
-    const { root } = renderScene(
+  private draw(drawing: LayerDrawing): {
+    node: Konva.Group;
+    imageUrls: readonly string[];
+  } {
+    const { root, imageUrls } = renderScene(
       { root: drawing.root, warnings: [] },
       {
         palette: this.options.placeholder,
         showSlots: false,
         onImageLoaded: this.options.onImageLoaded,
+        // O canvas principal não lê pixels: imagem `opaque` (sem CORS) aparece.
+        pixelSafe: false,
+        ...(this.options.remoteImage ? { remoteImage: this.options.remoteImage } : {}),
       },
     );
     root.listening(false);
     root.setAttr('markingId', drawing.markingId);
-    return root;
+    return { node: root, imageUrls };
   }
 }
 

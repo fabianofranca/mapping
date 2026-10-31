@@ -8,6 +8,7 @@ import {
   type LayerDrawing,
 } from '../../src/canvas/components/componentLayer';
 import { renderScene } from '../../src/canvas/components/renderScene';
+import { type FrameNode, baseNode } from '../../src/model/components/scene';
 import { createCanvasViewState } from '../../src/canvas/viewState';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
 import {
@@ -309,6 +310,68 @@ describe('desenho de componentes (Material 3)', () => {
       }
       const median = [...times.slice(5)].sort((a, b) => a - b)[7] ?? Number.NaN;
       expect(median).toBeLessThan(RENDER_BUDGET_MS / 4);
+      layer.destroy();
+    },
+  );
+});
+
+// Imagens remotas (RI3): quando uma imagem termina de carregar, só as marcações dela são refeitas
+// (e o consentimento que muda refaz todas as que usam imagem); ambos cabem num quadro.
+describe('refazer marcações com imagem remota', () => {
+  const IMAGE_COUNT = 30;
+  const drawings = new Map<string, LayerDrawing>();
+  const image = { width: 64, height: 64 } as unknown as CanvasImageSource;
+  const placements = new Map([['screen', { x: 0, y: 0, scale: 1 }]]);
+
+  beforeAll(() => {
+    installFakeCanvas();
+    for (let i = 0; i < IMAGE_COUNT; i++) {
+      const id = `m${i}`;
+      const avatar = {
+        ...baseNode({ id: `${id}-avatar`, name: 'avatar', width: 48, height: 48 }),
+        type: 'rect' as const,
+        cornerRadius: 24,
+        fills: [
+          {
+            type: 'image' as const,
+            url: `https://img.test/${i}.png`,
+            fit: 'cover' as const,
+          },
+        ],
+      };
+      const root: FrameNode = {
+        ...baseNode({ id, name: id, width: 200, height: 60 }),
+        type: 'frame',
+        clip: false,
+        cornerRadius: 0,
+        fills: [{ type: 'solid', color: '#eeeeee' }],
+        children: [avatar],
+      };
+      drawings.set(id, { markingId: id, containerId: 'screen', root });
+    }
+  });
+
+  budgetIt(
+    `refazer 1 de ${IMAGE_COUNT} marcações com imagem cabe no quadro; refazer todas, em 1,5x`,
+    BUDGET_OPTIONS,
+    () => {
+      const layer = new ComponentLayerRenderer(new Konva.Group(), {
+        remoteImage: () => ({ state: 'loaded', image, width: 64, height: 64 }),
+      });
+      layer.render(drawings, () => true, placements);
+      const median = (run: () => void): number => {
+        for (let i = 0; i < 5; i++) run(); // Aquecimento.
+        const times = Array.from({ length: 15 }, () => {
+          const start = performance.now();
+          run();
+          return performance.now() - start;
+        });
+        return [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
+      };
+      const one = median(() => layer.refreshImages(new Set(['https://img.test/3.png'])));
+      const all = median(() => layer.refreshImages(null));
+      expect(one).toBeLessThan(RENDER_BUDGET_MS / 4);
+      expect(all).toBeLessThan(RENDER_BUDGET_MS * 1.5);
       layer.destroy();
     },
   );

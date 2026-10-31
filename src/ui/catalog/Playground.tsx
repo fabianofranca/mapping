@@ -33,6 +33,8 @@ interface Drawn {
 
 export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps) {
   const component = entry.component;
+  // Uma imagem remota que termina de carregar (ou o consentimento que muda) redesenha a prévia.
+  const imagesEpoch = renderer.imagesEpoch.value;
   const initial = entry.previewValues ?? {};
   const [values, setValues] = useState<Readonly<Record<string, unknown>>>(initial);
   // Eixos que o usuário fixou digitando; os `hug` fora daqui acompanham o conteúdo.
@@ -76,7 +78,7 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
       }
     });
     return () => cancelAnimationFrame(frame);
-  }, [entry, component, values, size, renderer, fontsEpoch]);
+  }, [entry, component, values, size, renderer, fontsEpoch, imagesEpoch]);
 
   const range = useMemo(
     () => (component === null ? null : playgroundSizeRange(component)),

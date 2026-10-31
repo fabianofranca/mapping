@@ -301,4 +301,99 @@ describe('ComponentLayerRenderer: espaço do canvas', () => {
     expect(below.size).toBe(2);
     expect(above.size).toBe(0);
   });
+
+  describe('imagens remotas', () => {
+    const A = 'https://cdn.exemplo.com/a.png';
+    const B = 'https://cdn.exemplo.com/b.png';
+    /** Desenho de uma marcação com uma imagem remota (o nó `image` do componente). */
+    function withImage(markingId: string, url?: string): LayerDrawing {
+      const base = drawing(markingId);
+      const image: SceneNode = {
+        ...baseNode({ id: `${markingId}-img`, name: 'img', width: 40, height: 40 }),
+        type: 'rect',
+        cornerRadius: 0,
+        fills: [
+          url === undefined
+            ? { type: 'solid', color: '#111111' }
+            : { type: 'image', url },
+        ],
+      };
+      return {
+        ...base,
+        root: { ...(base.root as FrameNode), fills: [], children: [image] },
+      };
+    }
+    const ready = { state: 'loaded', image: { width: 10, height: 10 } } as never;
+
+    function imageSetup() {
+      const states = new Map<string, unknown>();
+      const resolve = vi.fn((url: string) => states.get(url) ?? 'loading');
+      const parent = new Konva.Group();
+      const layer = new ComponentLayerRenderer(parent, { remoteImage: resolve as never });
+      const nodeOf = (id: string) =>
+        parent.find((n: Konva.Node) => n.getAttr('markingId') === id)[0] as Konva.Group;
+      return { states, resolve, layer, nodeOf, parent };
+    }
+
+    it('pede a imagem à função ao desenhar e mostra o reservado enquanto carrega', () => {
+      const { resolve, layer, nodeOf } = imageSetup();
+      layer.render(toMap(withImage('a', A)), all, PLACEMENTS);
+      expect(resolve).toHaveBeenCalledWith(A);
+      expect(nodeOf('a').find('Image')).toHaveLength(0);
+    });
+
+    it('refreshImages refaz só as marcações da URL, na mesma posição da ordem', () => {
+      const { states, resolve, layer, nodeOf, parent } = imageSetup();
+      layer.render(
+        toMap(withImage('a', A), withImage('b', B), withImage('c', A), withImage('d')),
+        all,
+        PLACEMENTS,
+      );
+      const before = ['a', 'b', 'c', 'd'].map(nodeOf);
+      resolve.mockClear();
+      states.set(A, ready);
+      expect(layer.refreshImages(new Set([A]))).toBe(true);
+      expect(resolve).toHaveBeenCalledTimes(2);
+      // b (outra URL) e d (sem imagem) ficam; a e c são nós novos, já com a imagem.
+      expect(nodeOf('b')).toBe(before[1]);
+      expect(nodeOf('d')).toBe(before[3]);
+      expect(nodeOf('a')).not.toBe(before[0]);
+      expect(nodeOf('c')).not.toBe(before[2]);
+      expect(nodeOf('a').find('Image')).toHaveLength(1);
+      const group = parent.getChildren()[0] as Konva.Group;
+      expect(
+        group.getChildren().map((n: Konva.Node) => n.getAttr('markingId') as string),
+      ).toEqual(['a', 'b', 'c', 'd']);
+    });
+
+    it('com null refaz todas as que usam imagem (o consentimento mudou)', () => {
+      const { resolve, layer } = imageSetup();
+      layer.render(
+        toMap(withImage('a', A), withImage('b', B), withImage('d')),
+        all,
+        PLACEMENTS,
+      );
+      resolve.mockClear();
+      expect(layer.refreshImages(null)).toBe(true);
+      expect(resolve.mock.calls.map(([u]) => u).sort()).toEqual([A, B]);
+    });
+
+    it('URL que nenhuma marcação usa não refaz nada', () => {
+      const { resolve, layer } = imageSetup();
+      layer.render(toMap(withImage('a', A), withImage('d')), all, PLACEMENTS);
+      resolve.mockClear();
+      expect(layer.refreshImages(new Set(['https://outra.exemplo.com/x.png']))).toBe(
+        false,
+      );
+      expect(resolve).not.toHaveBeenCalled();
+    });
+
+    it('sem a função de imagem, a camada desenha o reservado e refreshImages refaz sem lançar', () => {
+      const parent = new Konva.Group();
+      const layer = new ComponentLayerRenderer(parent);
+      layer.render(toMap(withImage('a', A)), all, PLACEMENTS);
+      expect(layer.refreshImages(null)).toBe(true);
+      expect(parent.find('Image')).toHaveLength(0);
+    });
+  });
 });

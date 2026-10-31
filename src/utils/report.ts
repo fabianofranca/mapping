@@ -87,6 +87,8 @@ export interface DiagnosticsInfo {
   readonly build: string;
   readonly channel: string;
   readonly schema: number;
+  /** Origens de imagem remota permitidas neste navegador. */
+  readonly remoteImageOrigins?: number;
   readonly storage: string | null;
   readonly userAgent: string;
   readonly window: { readonly width: number; readonly height: number };
@@ -102,13 +104,17 @@ export interface DiagnosticsInfo {
 
 /** Build, canal e schema, um por linha (também o "Copiar" do Sobre). */
 export function formatBuildInfo(
-  info: Pick<DiagnosticsInfo, 'build' | 'channel' | 'schema'>,
+  info: Pick<DiagnosticsInfo, 'build' | 'channel' | 'schema' | 'remoteImageOrigins'>,
 ): string {
-  return [
+  const lines = [
     `build: ${info.build}`,
     `channel: ${info.channel}`,
     `schema: ${info.schema}`,
-  ].join('\n');
+  ];
+  if (info.remoteImageOrigins !== undefined) {
+    lines.push(`remoteImages: ${info.remoteImageOrigins} allowed origins`);
+  }
+  return lines.join('\n');
 }
 
 /**

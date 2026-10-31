@@ -7,6 +7,7 @@ import {
   buildListing,
   changeStatus,
   changeType,
+  checkRemoteImageUrl,
   compareProposals,
   componentMinSize,
   componentTypes,
@@ -23,6 +24,7 @@ import {
   reviewKey,
   reviewProgress,
   reviewTree,
+  sceneRemoteImageUrls,
   summarizeDecisions,
   validateAccepted,
   type AcceptedValidation,
@@ -53,7 +55,9 @@ import {
   type ReviewProgress,
   type ReviewTree,
 } from '../model';
+import type { SceneNode } from '../model/components/scene';
 import type { ProjectStore } from './history';
+import * as imagePermissions from './imagePermissions';
 import { markingDisplay, showComponentsOnPhotos } from './settings';
 import { textMeasurer } from './textMeasure';
 import { resolveActiveLayerId, visibleLayers, type EditorUi } from './ui';
@@ -118,12 +122,41 @@ export interface EditorDerived {
    * enquanto nenhuma muda, para o canvas não refazer a camada de componentes à toa.
    */
   readonly floatingMarkings: ReadonlySignal<ReadonlySet<string>>;
+  /**
+   * Origens das imagens remotas usadas pelos componentes do projeto à vista (a política da URL
+   * com os interruptores atuais já aplicada). Segue a visão Proposto da revisão.
+   */
+  readonly remoteImageOrigins: ReadonlySignal<readonly RemoteImageOrigin[]>;
+  /** As origens de `remoteImageOrigins` que ainda pedem consentimento e não foram dispensadas. */
+  readonly pendingImageOrigins: ReadonlySignal<readonly RemoteImageOrigin[]>;
   /** Tipos com componente das especializações aplicadas, para a paleta. */
   readonly componentTypes: ReadonlySignal<readonly ComponentType[]>;
   /** Avisos do desenho de cada marcação que tem algum (Diagnóstico). */
   readonly componentWarnings: ReadonlySignal<
     readonly { readonly markingId: string; readonly warnings: readonly string[] }[]
   >;
+}
+
+/** Uma origem de imagem remota usada pelo projeto. */
+export interface RemoteImageOrigin {
+  readonly origin: string;
+  /** Rede local: sempre pede consentimento próprio. */
+  readonly local: boolean;
+  /** `http:` (sem criptografia). */
+  readonly insecure: boolean;
+}
+
+const NO_IMAGE_ORIGINS: readonly RemoteImageOrigin[] = [];
+
+/** URLs remotas por desenho (a cena é imutável): evita varrer o projeto a cada edição. */
+const sceneUrls = new WeakMap<object, readonly string[]>();
+function urlsOfScene(root: SceneNode): readonly string[] {
+  let urls = sceneUrls.get(root);
+  if (urls === undefined) {
+    urls = sceneRemoteImageUrls(root);
+    sceneUrls.set(root, urls);
+  }
+  return urls;
 }
 
 /** O que a sessão entrega ao derivado sobre os componentes (`session.components`). */
@@ -401,6 +434,53 @@ export function createEditorDerived(
 
   const incompleteCount = computed(() => issues.value.size);
 
+  let lastOrigins = NO_IMAGE_ORIGINS;
+  const remoteImageOrigins = computed((): readonly RemoteImageOrigin[] => {
+    const policy = {
+      allowHttp: imagePermissions.allowHttp.value,
+      allowLocalNetwork: imagePermissions.allowLocalNetwork.value,
+    };
+    const found = new Map<string, RemoteImageOrigin>();
+    for (const drawing of scenes.value.values()) {
+      for (const url of urlsOfScene(drawing.root)) {
+        const check = checkRemoteImageUrl(url, policy);
+        if (!check.ok || found.has(check.origin)) continue;
+        found.set(check.origin, {
+          origin: check.origin,
+          local: check.local,
+          insecure: check.origin.startsWith('http:'),
+        });
+      }
+    }
+    const next = [...found.values()];
+    const same =
+      next.length === lastOrigins.length &&
+      next.every(
+        (o, i) =>
+          o.origin === lastOrigins[i]?.origin &&
+          o.local === lastOrigins[i]?.local &&
+          o.insecure === lastOrigins[i]?.insecure,
+      );
+    if (same) return lastOrigins;
+    lastOrigins = next.length === 0 ? NO_IMAGE_ORIGINS : next;
+    return lastOrigins;
+  });
+
+  let lastPending = NO_IMAGE_ORIGINS;
+  const pendingImageOrigins = computed((): readonly RemoteImageOrigin[] => {
+    const permitted = new Set(imagePermissions.allowedOrigins.value);
+    const any = imagePermissions.allowAnyOrigin.value;
+    const skipped = imagePermissions.dismissedOrigins.value;
+    const next = remoteImageOrigins.value.filter(
+      (o) => !permitted.has(o.origin) && !(any && !o.local) && !skipped.has(o.origin),
+    );
+    const same =
+      next.length === lastPending.length && next.every((o, i) => o === lastPending[i]);
+    if (same) return lastPending;
+    lastPending = next.length === 0 ? NO_IMAGE_ORIGINS : next;
+    return lastPending;
+  });
+
   let lastMinSizes = NO_MIN_SIZES;
   const componentMinSizes = computed(() => {
     const p = project.value;
@@ -470,6 +550,8 @@ export function createEditorDerived(
     drawingsOf,
     drawnMarkings,
     componentMinSizes,
+    remoteImageOrigins,
+    pendingImageOrigins,
     componentTypes: types,
     componentWarnings,
   };
