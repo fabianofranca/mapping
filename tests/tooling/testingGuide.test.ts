@@ -380,10 +380,14 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
       expect(/sem substituto/i.test(r15)).toBe(false);
     });
 
-    it('a rede local e o sem CORS usam um servidor local que a shell sobe, sem cabeçalho de CORS', () => {
-      expect(r15).toContain('python3 -m http.server 8765 --bind 127.0.0.1');
+    it('a rede local e o sem CORS usam um servidor Node no computador do Chrome, sem cabeçalho de CORS', () => {
+      expect(r15).toContain('scripts/servidor-imagens.mjs');
+      expect(r15).toContain('iniciar-servidor.cmd');
+      expect(r15).toContain('**no mesmo computador do Chrome**');
+      expect(r15).toMatch(/GET \/foto\.png origin=none/);
+      expect(r15).toContain('http://127.0.0.1:8765/parar');
       expect(r15).toContain('servidor.log');
-      expect(r15).toMatch(/não\*\* traz `Access-Control-Allow-Origin`/);
+      expect(r15).toContain('não manda `Access-Control-Allow-Origin`');
       expect(r15).toContain('**Mostrar imagens de servidores sem CORS**');
       expect(r15).toContain('**Permitir imagens da rede local**');
     });

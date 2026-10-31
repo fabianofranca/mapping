@@ -239,14 +239,14 @@ As fases RI1 a RI4 do épico `epic/imagens-remotas` (etapa descrita no [`PLAN.md
 
 - O **build id** esperado é o do último commit do `epic/imagens-remotas`. Confira em **Configurações** › **Sobre**; se o preview mostrar outro build, siga o item 9 da seção 2 (dispare o Deploy do branch).
 - **Sem MCP:** nenhum passo desta rodada usa o MCP nem o Claude Code.
-- A imagem de teste é a do **preview** (`https://fabianofranca.github.io/mapping/preview/imagens-teste/foto.png`); o R15 explica o `PAGES`. A pasta `examples/libraries/pessoas/` e o `public/imagens-teste/foto.png` vêm do clone do repositório (seção 2 do guia), e a shell precisa de `python3` para o servidor local do R15.1.
+- A imagem de teste é a do **preview** (`https://fabianofranca.github.io/mapping/preview/imagens-teste/foto.png`); o R15 explica o `PAGES`. A pasta `examples/libraries/pessoas/` e o `public/imagens-teste/foto.png` vêm do clone do repositório (seção 2 do guia), e o computador do Chrome precisa de **Node 20 ou mais novo** para o servidor local do R15.1 (`scripts/servidor-imagens.mjs`). **A shell (`device_bash`) pode ser uma VM, e o `127.0.0.1` dela não é o do Chrome:** o servidor sobe no computador do Chrome, pelo duplo clique no `iniciar-servidor.cmd` (Explorer, controle do computador), e a shell só lê o `servidor.log` pela pasta de trabalho compartilhada. Se o Chrome não abrir `http://127.0.0.1:8765/foto.png` depois disso, marque o R15.8 a R15.11 "não executado (servidor local inalcançável)" e avise o dono: são passos de segurança.
 - Registre em "Estado prévio do navegador" as origens que a **Privacidade** já lista e os interruptores ligados: o R15 parte de "nenhuma origem, quatro interruptores desligados" e o R15.12 devolve a esse estado. **Não limpe** os dados do site; revogue e desligue só o que o roteiro mexeu.
 
 **Lista dirigida** (depois do **R0 inteiro**):
 
 | Passos         | Fase      | O que confere                                                                                                                     |
 | -------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| R15.1 a R15.2  | RI1       | O Avatar da biblioteca `pessoas` desenha o reservado sem foto; o servidor local sem CORS sobe                                     |
+| R15.1 a R15.2  | RI1       | O Avatar da biblioteca `pessoas` desenha o reservado sem foto; o servidor local sem CORS sobe no computador do Chrome             |
 | R15.3 a R15.6  | RI3       | Faixa de consentimento por origem, **Permitir estas**, persistência no navegador, nada gravado no projeto nem no zip, **Revogar** |
 | R15.7          | RI3       | Política de URL: `http:`, rede local e texto que não é endereço não geram pedido (o servidor local não registra nada)             |
 | R15.8 a R15.11 | RI3       | Interruptores `http`, rede local, servidor sem CORS e qualquer origem; a rede local sempre pede consentimento próprio             |
