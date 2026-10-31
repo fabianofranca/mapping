@@ -138,26 +138,56 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Coordenador:** Opus (define os padrões que as fases MD3 e MD4 copiam). **Esforço:** high; subagentes Sonnet high (pesquisa das assinaturas no código do androidx na tag fixada e os tipos de layout), Sonnet medium (documentos), Haiku low. Decisões 5 a 13.
 
-- [ ] Tag do `compose.material3` fixada no `repo.ref` e a lista de famílias estáveis nela (decisão 8), registrada no PR e no documento da biblioteca; o ambiente alcança o código do androidx pela rede (se não alcançar, parar e avisar o dono)
-- [ ] `libraries/material3-compose/` com a especialização v9 (`id`, nome, `version` 1, `platforms` com o `repo`, os `containers` de dispositivo, as fontes), `libraries/README.md` e `docs/SPEC-FORMAT.md` (a lista de bibliotecas)
-- [ ] Estruturas de layout e conteúdo da decisão 9, com `code` (`symbol`, `path`, `params`, `notes`), componente, documento e exemplos
-- [ ] Os 15 tipos do exemplo refeitos com `code`, `variants` e as variantes da decisão 13; ícones por `suggestions` (decisão 11); imagem pelo nó `image` (decisão 12)
-- [ ] Documento da biblioteca com o padrão dos espaços (decisão 10), do Scaffold e de tamanho e alinhamento
-- [ ] `tests/model/material3ComposeLibrary.test.ts` no molde de `kotlinLibrary.test.ts`: `validateLibrary` sem erros, todo tipo com `code.compose`, todo `path` dentro de `compose/`, toda `variants` resolvendo para um símbolo, todo arquivo do disco citado, todo exemplo desenhando
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+- [x] Tag do `compose.material3` fixada no `repo.ref` e a lista de famílias estáveis nela (decisão 8), registrada no PR e no documento da biblioteca; o ambiente alcança o código do androidx pela rede (se não alcançar, parar e avisar o dono)
+- [x] `libraries/material3-compose/` com a especialização v9 (`id`, nome, `version` 1, `platforms` com o `repo`, os `containers` de dispositivo, as fontes), `libraries/README.md` e `docs/SPEC-FORMAT.md` (a lista de bibliotecas)
+- [x] Estruturas de layout e conteúdo da decisão 9, com `code` (`symbol`, `path`, `params`, `notes`), componente, documento e exemplos
+- [x] Os 15 tipos do exemplo refeitos com `code`, `variants` e as variantes da decisão 13; ícones por `suggestions` (decisão 11); imagem pelo nó `image` (decisão 12)
+- [x] Documento da biblioteca com o padrão dos espaços (decisão 10), do Scaffold e de tamanho e alinhamento
+- [x] `tests/model/material3ComposeLibrary.test.ts` no molde de `kotlinLibrary.test.ts`: `validateLibrary` sem erros, todo tipo com `code.compose`, todo `path` dentro de `compose/`, toda `variants` resolvendo para um símbolo, todo arquivo do disco citado, todo exemplo desenhando
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+**Commit fixado e famílias (registro da MD2).** O espelho do androidx no GitHub não tem tags; o `repo.ref` é o commit `5113b82a4ed6416d6344efa50e41db8cb65928ff`, o fim do intervalo da release `compose.material3` 1.4.0 (24/09/2025) nas notas de versão (`libraryversions.toml` nele: `COMPOSE_MATERIAL3 = "1.4.0"`; a foundation no commit é a `1.10.0-alpha01`, com a mesma API estável da `1.9.0-beta01.txt`). Status lido na linha de cada função em `compose/material3/material3/api/current.txt`: `@ExperimentalMaterial3Api` na linha exige opt-in de quem chama; o `@OptIn` no fonte é interno. `@ExperimentalMaterial3ExpressiveApi` é `internal` e não aparece no `current.txt`: os expressivos da seção "Fora" (button group, toggle/split button, FAB menu, loading indicator, toolbars, app bar with search, Medium FAB) **não existem** como composable público no commit. Raiz dos arquivos: `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`.
+
+| Família | Composables | Arquivo | Status | Fase |
+| --- | --- | --- | --- | --- |
+| Icon buttons | `IconButton`, `IconToggleButton`, `FilledIconButton`, `FilledIconToggleButton`, `FilledTonalIconButton`, `FilledTonalIconToggleButton`, `OutlinedIconButton`, `OutlinedIconToggleButton` | `IconButton.kt` | estáveis | MD3 |
+| Segmented buttons | `SingleChoiceSegmentedButtonRow`, `MultiChoiceSegmentedButtonRow`, `SegmentedButton` | `SegmentedButton.kt` | estáveis | MD3 |
+| Radio button | `RadioButton` | `RadioButton.kt` | estável | MD3 |
+| Sliders | `Slider`, `RangeSlider` | `Slider.kt` | só o overload `(value, onValueChange, …)` é estável; os de `SliderState` pedem opt-in (usar o estável) | MD3 |
+| Search | `SearchBar`, `DockedSearchBar`, `ExpandedFullScreenSearchBar`, `ExpandedDockedSearchBar`, `TopSearchBar` | `SearchBar.kt` | `@ExperimentalMaterial3Api` | MD3 (opt-in) |
+| Date picker | `DatePicker`, `DateRangePicker`, `DatePickerDialog` | `DatePicker.kt`, `DateRangePicker.kt`, `DatePickerDialog.kt` | estáveis (os `remember…State` com `java.time` pedem opt-in) | MD3 |
+| Time picker | `TimePicker`, `TimeInput`, `TimePickerDialog` | `TimePicker.kt`, `TimePickerDialog.kt` | `TimePicker`/`TimeInput` com opt-in; `TimePickerDialog` estável | MD3 (opt-in) |
+| Badge | `Badge`, `BadgedBox` | `Badge.kt` | estáveis | MD3 |
+| Snackbar | `Snackbar`, `SnackbarHost` | `Snackbar.kt`, `SnackbarHost.kt` | estáveis | MD3 |
+| Tooltips | `TooltipBox`, `PlainTooltip`, `RichTooltip` | `Tooltip.kt` | `@ExperimentalMaterial3Api` | MD3 (opt-in) |
+| Progress indicators | `CircularProgressIndicator`, `LinearProgressIndicator` | `ProgressIndicator.kt` | estáveis | MD3 |
+| Secure text field | `SecureTextField`, `OutlinedSecureTextField` | `SecureTextField.kt` | estáveis | MD3 |
+| Divider | `HorizontalDivider`, `VerticalDivider` | `Divider.kt` | estáveis | MD4 |
+| Dialogs | `AlertDialog`, `BasicAlertDialog` | `AlertDialog.kt` | `AlertDialog` estável; `BasicAlertDialog` com opt-in | MD4 |
+| Menus | `DropdownMenu`, `DropdownMenuItem`, `ExposedDropdownMenuBox` | `Menu.kt`, `ExposedDropdownMenu.kt` | `DropdownMenu` estável; `ExposedDropdownMenuBox` com opt-in | MD4 |
+| Navigation rail | `NavigationRail`, `NavigationRailItem`, `WideNavigationRail`, `ModalWideNavigationRail`, `WideNavigationRailItem` | `NavigationRail.kt`, `WideNavigationRail.kt` | estáveis | MD4 |
+| Short navigation bar | `ShortNavigationBar`, `ShortNavigationBarItem` | `ShortNavigationBar.kt` | estáveis | MD4 |
+| Navigation drawer | `ModalNavigationDrawer`, `DismissibleNavigationDrawer`, `PermanentNavigationDrawer`, os `*DrawerSheet`, `NavigationDrawerItem` | `NavigationDrawer.kt` | estáveis | MD4 |
+| Tabs | `PrimaryTabRow`, `SecondaryTabRow`, `PrimaryScrollableTabRow`, `SecondaryScrollableTabRow`, `Tab`, `LeadingIconTab` | `TabRow.kt`, `Tab.kt` | estáveis (`TabRow`/`ScrollableTabRow` são `@Deprecated`) | MD4 |
+| Bottom app bar | `BottomAppBar` | `AppBar.kt` | estável sem `scrollBehavior` | MD4 |
+| Carousel | `HorizontalMultiBrowseCarousel`, `HorizontalUncontainedCarousel`, `HorizontalCenteredHeroCarousel` | `carousel/Carousel.kt` | `@ExperimentalMaterial3Api` | MD4 (opt-in) |
+| Pull to refresh | `PullToRefreshBox` | `pulltorefresh/PullToRefresh.kt` | estável | MD4 |
+| Swipe to dismiss | `SwipeToDismissBox` | `SwipeToDismissBox.kt` | estável | MD4 |
+| Side sheet | nenhum composable público | — | não existe | fora |
+
 
 #### MD3 — Ações, seleção e comunicação
 
 **Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Segue os padrões da MD2.
 
-- [ ] As famílias de ação, seleção e comunicação estáveis na tag fixada (por exemplo icon button, segmented button, radio button, slider, search, date picker, time picker, badge, snackbar, tooltip, progress indicator), cada uma com `code`, `variants`, componente, documento e exemplos; o teste da biblioteca cobre os tipos novos
+- [ ] As famílias de ação, seleção e comunicação estáveis na tag fixada (as da fase MD3 na tabela da MD2: icon button, segmented button, radio button, slider, search, date picker, time picker, badge, snackbar, tooltip, progress indicator e secure text field), cada uma com `code`, `variants`, componente, documento e exemplos; o teste da biblioteca cobre os tipos novos
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### MD4 — Navegação e contenção
 
 **Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Segue os padrões da MD2.
 
-- [ ] As famílias de navegação e contenção estáveis na tag fixada (por exemplo navigation rail, navigation drawer, tabs, bottom app bar, dialog, side sheet, menu, carousel, divider), cada uma com `code`, `variants`, componente, documento e exemplos; o teste da biblioteca cobre os tipos novos
+- [ ] As famílias de navegação e contenção estáveis na tag fixada (as da fase MD4 na tabela da MD2: divider, dialog, menu, navigation rail e wide rail, short navigation bar, navigation drawer, tabs, bottom app bar, carousel, pull to refresh e swipe to dismiss; o side sheet não tem composable público), cada uma com `code`, `variants`, componente, documento e exemplos; o teste da biblioteca cobre os tipos novos
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### MD5 — Roteiro e fechamento técnico
