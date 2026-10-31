@@ -1,0 +1,118 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "radio-button",
+  "name": "Radio button",
+  "description": "Radio button de 20 numa área de 40, com rótulo ao lado: anel de 2 e, selecionado, ponto de 12 em primary.",
+  "size": {
+    "width": 200,
+    "height": 40
+  },
+  "minSize": {
+    "width": 160,
+    "height": 40
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 40
+  },
+  "preview": {
+    "label": "Cartão de crédito",
+    "selected": "true",
+    "enabled": "true"
+  },
+  "template": {
+    "type": "frame",
+    "name": "radio button",
+    "layout": {
+      "type": "row",
+      "gap": 4,
+      "align": "center"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "área",
+        "width": 40,
+        "height": 40,
+        "layout": {
+          "type": "none"
+        },
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "anel",
+            "width": 20,
+            "height": 20,
+            "fill": "rgba(0, 0, 0, 0)",
+            "stroke": {
+              "color": {
+                "$if": {
+                  "$eq": ["enabled", "false"]
+                },
+                "then": "rgba(29, 27, 32, 0.38)",
+                "else": {
+                  "$if": {
+                    "$field": "selected"
+                  },
+                  "then": "#6750A4",
+                  "else": "#49454F"
+                }
+              },
+              "width": 2,
+              "align": "inside"
+            },
+            "anchors": {
+              "centerX": true,
+              "centerY": true
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "ponto",
+            "width": 12,
+            "height": 12,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            },
+            "visible": {
+              "$field": "selected"
+            },
+            "anchors": {
+              "centerX": true,
+              "centerY": true
+            }
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "label"
+        },
+        "font": {
+          "family": "Roboto",
+          "size": 16,
+          "weight": 400,
+          "lineHeight": 24
+        },
+        "color": {
+          "$if": {
+            "$eq": ["enabled", "false"]
+          },
+          "then": "rgba(29, 27, 32, 0.38)",
+          "else": "#1D1B20"
+        },
+        "width": "fill",
+        "visible": {
+          "$has": "label"
+        }
+      }
+    ]
+  }
+}

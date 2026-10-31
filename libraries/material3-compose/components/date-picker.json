@@ -1,0 +1,3154 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "date-picker",
+  "name": "Date picker",
+  "description": "Calendário de mês de 360 de largura: cabeçalho com título e a data escolhida, mês exibido com setas e a grade de dias com o dia marcado (single) ou o intervalo (range). A grade é sempre um mês de 31 dias que começa numa quarta-feira.",
+  "size": { "width": 360, "height": 469 },
+  "minSize": { "width": 360, "height": 469 },
+  "sizing": { "width": 360, "height": "hug" },
+  "preview": {
+    "title": "",
+    "headline": "qua., 15 de out.",
+    "displayedMonth": "Outubro de 2025",
+    "selectedDay": 15,
+    "rangeStartDay": null,
+    "rangeEndDay": null,
+    "showModeToggle": "true",
+    "selection": "single"
+  },
+  "template": {
+    "type": "frame",
+    "name": "date picker",
+    "layout": { "type": "column" },
+    "cornerRadius": 28,
+    "fill": "#ECE6F0",
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "layout": { "type": "none" },
+        "width": "fill",
+        "height": 120,
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$if": { "$has": "title" },
+              "then": { "$field": "title" },
+              "else": {
+                "$switch": "selection",
+                "cases": { "range": "Selecionar datas" },
+                "default": "Selecionar data"
+              }
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 12,
+              "weight": 500,
+              "lineHeight": 16,
+              "letterSpacing": 0.5
+            },
+            "color": "#49454F",
+            "anchors": { "left": 24, "right": 72, "top": 16 }
+          },
+          {
+            "type": "text",
+            "name": "manchete",
+            "text": {
+              "$if": { "$has": "headline" },
+              "then": { "$field": "headline" },
+              "else": {
+                "$switch": "selection",
+                "cases": { "range": "Início – Fim" },
+                "default": "Data selecionada"
+              }
+            },
+            "font": {
+              "family": "Roboto",
+              "size": {
+                "$if": { "$eq": ["selection", "range"] },
+                "then": 24,
+                "else": 28
+              },
+              "weight": 400,
+              "lineHeight": {
+                "$if": { "$eq": ["selection", "range"] },
+                "then": 32,
+                "else": 36
+              }
+            },
+            "color": "#1D1B20",
+            "anchors": { "left": 24, "right": 72, "bottom": 12 }
+          },
+          {
+            "type": "path",
+            "name": "alternar modo",
+            "width": 24,
+            "height": 24,
+            "viewBox": [24, 24],
+            "d": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+            "fill": "#49454F",
+            "anchors": { "right": 24, "bottom": 24 },
+            "visible": { "$not": { "$eq": ["showModeToggle", "false"] } }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisor",
+        "width": "fill",
+        "height": 1,
+        "fill": "#CAC4D0"
+      },
+      {
+        "type": "frame",
+        "name": "mês",
+        "layout": {
+          "type": "row",
+          "gap": 8,
+          "padding": [0, 12, 0, 24],
+          "align": "center"
+        },
+        "width": "fill",
+        "height": 48,
+        "children": [
+          {
+            "type": "text",
+            "name": "mês exibido",
+            "text": { "$field": "displayedMonth" },
+            "font": {
+              "family": "Roboto",
+              "size": 14,
+              "weight": 500,
+              "lineHeight": 20,
+              "letterSpacing": 0.1
+            },
+            "color": "#49454F",
+            "visible": { "$has": "displayedMonth" }
+          },
+          {
+            "type": "path",
+            "name": "abrir anos",
+            "width": 18,
+            "height": 18,
+            "viewBox": [24, 24],
+            "d": "M7.41 8.59L12 13.17l4.59-4.58L19 10l-7 7-7-7z",
+            "fill": "#49454F",
+            "visible": { "$has": "displayedMonth" }
+          },
+          {
+            "type": "rect",
+            "name": "espaço",
+            "width": "fill",
+            "height": 1,
+            "fill": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "type": "frame",
+            "name": "anterior",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "path",
+                "name": "seta",
+                "width": 24,
+                "height": 24,
+                "viewBox": [24, 24],
+                "d": "M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z",
+                "fill": "#49454F"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "próximo",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "path",
+                "name": "seta",
+                "width": 24,
+                "height": 24,
+                "viewBox": [24, 24],
+                "d": "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z",
+                "fill": "#49454F"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "dias da semana",
+        "layout": { "type": "row", "padding": [0, 12] },
+        "width": "fill",
+        "height": 48,
+        "children": [
+          {
+            "type": "frame",
+            "name": "dia da semana 1",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "text",
+                "name": "letra",
+                "text": "D",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24,
+                  "letterSpacing": 0.5
+                },
+                "color": "#1D1B20"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "dia da semana 2",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "text",
+                "name": "letra",
+                "text": "S",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24,
+                  "letterSpacing": 0.5
+                },
+                "color": "#1D1B20"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "dia da semana 3",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "text",
+                "name": "letra",
+                "text": "T",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24,
+                  "letterSpacing": 0.5
+                },
+                "color": "#1D1B20"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "dia da semana 4",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "text",
+                "name": "letra",
+                "text": "Q",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24,
+                  "letterSpacing": 0.5
+                },
+                "color": "#1D1B20"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "dia da semana 5",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "text",
+                "name": "letra",
+                "text": "Q",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24,
+                  "letterSpacing": 0.5
+                },
+                "color": "#1D1B20"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "dia da semana 6",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "text",
+                "name": "letra",
+                "text": "S",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24,
+                  "letterSpacing": 0.5
+                },
+                "color": "#1D1B20"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "dia da semana 7",
+            "layout": { "type": "row", "align": "center", "justify": "center" },
+            "width": 48,
+            "height": 48,
+            "children": [
+              {
+                "type": "text",
+                "name": "letra",
+                "text": "S",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24,
+                  "letterSpacing": 0.5
+                },
+                "color": "#1D1B20"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "dias",
+        "layout": { "type": "column" },
+        "width": "fill",
+        "height": "hug",
+        "children": [
+          {
+            "type": "frame",
+            "name": "semana 1",
+            "layout": { "type": "none" },
+            "width": "fill",
+            "height": 48,
+            "children": [
+              {
+                "type": "frame",
+                "name": "faixa do intervalo",
+                "layout": {
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "2": [0, 0, 0, 228],
+                      "3": [0, 0, 0, 276],
+                      "4": [0, 0, 0, 324]
+                    },
+                    "default": [0, 0, 0, 156]
+                  }
+                },
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    {
+                      "$or": [
+                        { "$eq": ["rangeStartDay", "1"] },
+                        { "$eq": ["rangeStartDay", "2"] },
+                        { "$eq": ["rangeStartDay", "3"] },
+                        { "$eq": ["rangeStartDay", "4"] }
+                      ]
+                    },
+                    { "$and": [{ "$has": "rangeEndDay" }, { "$not": { "$or": [] } }] }
+                  ]
+                },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "1": [0, 180, 0, 0],
+                          "2": [0, 132, 0, 0],
+                          "3": [0, 84, 0, 0]
+                        },
+                        "default": [0, 12, 0, 0]
+                      }
+                    },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "vazio",
+                    "width": 40,
+                    "height": 40,
+                    "children": []
+                  },
+                  {
+                    "type": "frame",
+                    "name": "vazio",
+                    "width": 40,
+                    "height": 40,
+                    "children": []
+                  },
+                  {
+                    "type": "frame",
+                    "name": "vazio",
+                    "width": 40,
+                    "height": 40,
+                    "children": []
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 1",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "1"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "1"] },
+                                  { "$eq": ["rangeEndDay", "1"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "1",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "1"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "1"] },
+                                      { "$eq": ["rangeEndDay", "1"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 2",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "2"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "2"] },
+                                  { "$eq": ["rangeEndDay", "2"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "2",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "2"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "2"] },
+                                      { "$eq": ["rangeEndDay", "2"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 3",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "3"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "3"] },
+                                  { "$eq": ["rangeEndDay", "3"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "3",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "3"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "3"] },
+                                      { "$eq": ["rangeEndDay", "3"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 4",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "4"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "4"] },
+                                  { "$eq": ["rangeEndDay", "4"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "4",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "4"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "4"] },
+                                      { "$eq": ["rangeEndDay", "4"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "semana 2",
+            "layout": { "type": "none" },
+            "width": "fill",
+            "height": 48,
+            "children": [
+              {
+                "type": "frame",
+                "name": "faixa do intervalo",
+                "layout": {
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "6": [0, 0, 0, 84],
+                      "7": [0, 0, 0, 132],
+                      "8": [0, 0, 0, 180],
+                      "9": [0, 0, 0, 228],
+                      "10": [0, 0, 0, 276],
+                      "11": [0, 0, 0, 324]
+                    },
+                    "default": [0, 0, 0, 12]
+                  }
+                },
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    {
+                      "$or": [
+                        { "$eq": ["rangeStartDay", "1"] },
+                        { "$eq": ["rangeStartDay", "2"] },
+                        { "$eq": ["rangeStartDay", "3"] },
+                        { "$eq": ["rangeStartDay", "4"] },
+                        { "$eq": ["rangeStartDay", "5"] },
+                        { "$eq": ["rangeStartDay", "6"] },
+                        { "$eq": ["rangeStartDay", "7"] },
+                        { "$eq": ["rangeStartDay", "8"] },
+                        { "$eq": ["rangeStartDay", "9"] },
+                        { "$eq": ["rangeStartDay", "10"] },
+                        { "$eq": ["rangeStartDay", "11"] }
+                      ]
+                    },
+                    {
+                      "$and": [
+                        { "$has": "rangeEndDay" },
+                        {
+                          "$not": {
+                            "$or": [
+                              { "$eq": ["rangeEndDay", "1"] },
+                              { "$eq": ["rangeEndDay", "2"] },
+                              { "$eq": ["rangeEndDay", "3"] },
+                              { "$eq": ["rangeEndDay", "4"] }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "5": [0, 324, 0, 0],
+                          "6": [0, 276, 0, 0],
+                          "7": [0, 228, 0, 0],
+                          "8": [0, 180, 0, 0],
+                          "9": [0, 132, 0, 0],
+                          "10": [0, 84, 0, 0]
+                        },
+                        "default": [0, 12, 0, 0]
+                      }
+                    },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "dia 5",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "5"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "5"] },
+                                  { "$eq": ["rangeEndDay", "5"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "5",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "5"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "5"] },
+                                      { "$eq": ["rangeEndDay", "5"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 6",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "6"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "6"] },
+                                  { "$eq": ["rangeEndDay", "6"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "6",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "6"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "6"] },
+                                      { "$eq": ["rangeEndDay", "6"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 7",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "7"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "7"] },
+                                  { "$eq": ["rangeEndDay", "7"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "7",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "7"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "7"] },
+                                      { "$eq": ["rangeEndDay", "7"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 8",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "8"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "8"] },
+                                  { "$eq": ["rangeEndDay", "8"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "8",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "8"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "8"] },
+                                      { "$eq": ["rangeEndDay", "8"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 9",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "9"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "9"] },
+                                  { "$eq": ["rangeEndDay", "9"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "9",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "9"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "9"] },
+                                      { "$eq": ["rangeEndDay", "9"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 10",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "10"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "10"] },
+                                  { "$eq": ["rangeEndDay", "10"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "10",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "10"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "10"] },
+                                      { "$eq": ["rangeEndDay", "10"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 11",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "11"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "11"] },
+                                  { "$eq": ["rangeEndDay", "11"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "11",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "11"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "11"] },
+                                      { "$eq": ["rangeEndDay", "11"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "semana 3",
+            "layout": { "type": "none" },
+            "width": "fill",
+            "height": 48,
+            "children": [
+              {
+                "type": "frame",
+                "name": "faixa do intervalo",
+                "layout": {
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "13": [0, 0, 0, 84],
+                      "14": [0, 0, 0, 132],
+                      "15": [0, 0, 0, 180],
+                      "16": [0, 0, 0, 228],
+                      "17": [0, 0, 0, 276],
+                      "18": [0, 0, 0, 324]
+                    },
+                    "default": [0, 0, 0, 12]
+                  }
+                },
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    {
+                      "$and": [
+                        { "$has": "rangeStartDay" },
+                        {
+                          "$not": {
+                            "$or": [
+                              { "$eq": ["rangeStartDay", "19"] },
+                              { "$eq": ["rangeStartDay", "20"] },
+                              { "$eq": ["rangeStartDay", "21"] },
+                              { "$eq": ["rangeStartDay", "22"] },
+                              { "$eq": ["rangeStartDay", "23"] },
+                              { "$eq": ["rangeStartDay", "24"] },
+                              { "$eq": ["rangeStartDay", "25"] },
+                              { "$eq": ["rangeStartDay", "26"] },
+                              { "$eq": ["rangeStartDay", "27"] },
+                              { "$eq": ["rangeStartDay", "28"] },
+                              { "$eq": ["rangeStartDay", "29"] },
+                              { "$eq": ["rangeStartDay", "30"] },
+                              { "$eq": ["rangeStartDay", "31"] }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "$and": [
+                        { "$has": "rangeEndDay" },
+                        {
+                          "$not": {
+                            "$or": [
+                              { "$eq": ["rangeEndDay", "1"] },
+                              { "$eq": ["rangeEndDay", "2"] },
+                              { "$eq": ["rangeEndDay", "3"] },
+                              { "$eq": ["rangeEndDay", "4"] },
+                              { "$eq": ["rangeEndDay", "5"] },
+                              { "$eq": ["rangeEndDay", "6"] },
+                              { "$eq": ["rangeEndDay", "7"] },
+                              { "$eq": ["rangeEndDay", "8"] },
+                              { "$eq": ["rangeEndDay", "9"] },
+                              { "$eq": ["rangeEndDay", "10"] },
+                              { "$eq": ["rangeEndDay", "11"] }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "12": [0, 324, 0, 0],
+                          "13": [0, 276, 0, 0],
+                          "14": [0, 228, 0, 0],
+                          "15": [0, 180, 0, 0],
+                          "16": [0, 132, 0, 0],
+                          "17": [0, 84, 0, 0]
+                        },
+                        "default": [0, 12, 0, 0]
+                      }
+                    },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "dia 12",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "12"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "12"] },
+                                  { "$eq": ["rangeEndDay", "12"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "12",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "12"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "12"] },
+                                      { "$eq": ["rangeEndDay", "12"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 13",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "13"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "13"] },
+                                  { "$eq": ["rangeEndDay", "13"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "13",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "13"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "13"] },
+                                      { "$eq": ["rangeEndDay", "13"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 14",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "14"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "14"] },
+                                  { "$eq": ["rangeEndDay", "14"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "14",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "14"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "14"] },
+                                      { "$eq": ["rangeEndDay", "14"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 15",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "15"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "15"] },
+                                  { "$eq": ["rangeEndDay", "15"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "15",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "15"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "15"] },
+                                      { "$eq": ["rangeEndDay", "15"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 16",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "16"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "16"] },
+                                  { "$eq": ["rangeEndDay", "16"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "16",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "16"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "16"] },
+                                      { "$eq": ["rangeEndDay", "16"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 17",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "17"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "17"] },
+                                  { "$eq": ["rangeEndDay", "17"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "17",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "17"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "17"] },
+                                      { "$eq": ["rangeEndDay", "17"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 18",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "18"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "18"] },
+                                  { "$eq": ["rangeEndDay", "18"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "18",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "18"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "18"] },
+                                      { "$eq": ["rangeEndDay", "18"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "semana 4",
+            "layout": { "type": "none" },
+            "width": "fill",
+            "height": 48,
+            "children": [
+              {
+                "type": "frame",
+                "name": "faixa do intervalo",
+                "layout": {
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "20": [0, 0, 0, 84],
+                      "21": [0, 0, 0, 132],
+                      "22": [0, 0, 0, 180],
+                      "23": [0, 0, 0, 228],
+                      "24": [0, 0, 0, 276],
+                      "25": [0, 0, 0, 324]
+                    },
+                    "default": [0, 0, 0, 12]
+                  }
+                },
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    {
+                      "$and": [
+                        { "$has": "rangeStartDay" },
+                        {
+                          "$not": {
+                            "$or": [
+                              { "$eq": ["rangeStartDay", "26"] },
+                              { "$eq": ["rangeStartDay", "27"] },
+                              { "$eq": ["rangeStartDay", "28"] },
+                              { "$eq": ["rangeStartDay", "29"] },
+                              { "$eq": ["rangeStartDay", "30"] },
+                              { "$eq": ["rangeStartDay", "31"] }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "$or": [
+                        { "$eq": ["rangeEndDay", "19"] },
+                        { "$eq": ["rangeEndDay", "20"] },
+                        { "$eq": ["rangeEndDay", "21"] },
+                        { "$eq": ["rangeEndDay", "22"] },
+                        { "$eq": ["rangeEndDay", "23"] },
+                        { "$eq": ["rangeEndDay", "24"] },
+                        { "$eq": ["rangeEndDay", "25"] },
+                        { "$eq": ["rangeEndDay", "26"] },
+                        { "$eq": ["rangeEndDay", "27"] },
+                        { "$eq": ["rangeEndDay", "28"] },
+                        { "$eq": ["rangeEndDay", "29"] },
+                        { "$eq": ["rangeEndDay", "30"] },
+                        { "$eq": ["rangeEndDay", "31"] }
+                      ]
+                    }
+                  ]
+                },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "19": [0, 324, 0, 0],
+                          "20": [0, 276, 0, 0],
+                          "21": [0, 228, 0, 0],
+                          "22": [0, 180, 0, 0],
+                          "23": [0, 132, 0, 0],
+                          "24": [0, 84, 0, 0]
+                        },
+                        "default": [0, 12, 0, 0]
+                      }
+                    },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "dia 19",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "19"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "19"] },
+                                  { "$eq": ["rangeEndDay", "19"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "19",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "19"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "19"] },
+                                      { "$eq": ["rangeEndDay", "19"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 20",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "20"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "20"] },
+                                  { "$eq": ["rangeEndDay", "20"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "20",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "20"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "20"] },
+                                      { "$eq": ["rangeEndDay", "20"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 21",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "21"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "21"] },
+                                  { "$eq": ["rangeEndDay", "21"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "21",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "21"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "21"] },
+                                      { "$eq": ["rangeEndDay", "21"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 22",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "22"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "22"] },
+                                  { "$eq": ["rangeEndDay", "22"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "22",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "22"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "22"] },
+                                      { "$eq": ["rangeEndDay", "22"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 23",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "23"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "23"] },
+                                  { "$eq": ["rangeEndDay", "23"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "23",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "23"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "23"] },
+                                      { "$eq": ["rangeEndDay", "23"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 24",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "24"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "24"] },
+                                  { "$eq": ["rangeEndDay", "24"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "24",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "24"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "24"] },
+                                      { "$eq": ["rangeEndDay", "24"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 25",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "25"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "25"] },
+                                  { "$eq": ["rangeEndDay", "25"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "25",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "25"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "25"] },
+                                      { "$eq": ["rangeEndDay", "25"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "semana 5",
+            "layout": { "type": "none" },
+            "width": "fill",
+            "height": 48,
+            "children": [
+              {
+                "type": "frame",
+                "name": "faixa do intervalo",
+                "layout": {
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "27": [0, 0, 0, 84],
+                      "28": [0, 0, 0, 132],
+                      "29": [0, 0, 0, 180],
+                      "30": [0, 0, 0, 228],
+                      "31": [0, 0, 0, 276]
+                    },
+                    "default": [0, 0, 0, 12]
+                  }
+                },
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    { "$and": [{ "$has": "rangeStartDay" }, { "$not": { "$or": [] } }] },
+                    {
+                      "$or": [
+                        { "$eq": ["rangeEndDay", "26"] },
+                        { "$eq": ["rangeEndDay", "27"] },
+                        { "$eq": ["rangeEndDay", "28"] },
+                        { "$eq": ["rangeEndDay", "29"] },
+                        { "$eq": ["rangeEndDay", "30"] },
+                        { "$eq": ["rangeEndDay", "31"] }
+                      ]
+                    }
+                  ]
+                },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "26": [0, 324, 0, 0],
+                          "27": [0, 276, 0, 0],
+                          "28": [0, 228, 0, 0],
+                          "29": [0, 180, 0, 0],
+                          "30": [0, 132, 0, 0]
+                        },
+                        "default": [0, 60, 0, 0]
+                      }
+                    },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "dia 26",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "26"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "26"] },
+                                  { "$eq": ["rangeEndDay", "26"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "26",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "26"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "26"] },
+                                      { "$eq": ["rangeEndDay", "26"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 27",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "27"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "27"] },
+                                  { "$eq": ["rangeEndDay", "27"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "27",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "27"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "27"] },
+                                      { "$eq": ["rangeEndDay", "27"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 28",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "28"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "28"] },
+                                  { "$eq": ["rangeEndDay", "28"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "28",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "28"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "28"] },
+                                      { "$eq": ["rangeEndDay", "28"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 29",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "29"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "29"] },
+                                  { "$eq": ["rangeEndDay", "29"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "29",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "29"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "29"] },
+                                      { "$eq": ["rangeEndDay", "29"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 30",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "30"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "30"] },
+                                  { "$eq": ["rangeEndDay", "30"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "30",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "30"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "30"] },
+                                      { "$eq": ["rangeEndDay", "30"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "dia 31",
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
+                    "width": 40,
+                    "height": 40,
+                    "cornerRadius": 20,
+                    "fill": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "range"] } },
+                              { "$eq": ["selectedDay", "31"] }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "range"] },
+                              {
+                                "$or": [
+                                  { "$eq": ["rangeStartDay", "31"] },
+                                  { "$eq": ["rangeEndDay", "31"] }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#6750A4",
+                      "else": "rgba(0, 0, 0, 0)"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "número",
+                        "text": "31",
+                        "font": {
+                          "family": "Roboto",
+                          "size": 16,
+                          "weight": 400,
+                          "lineHeight": 24,
+                          "letterSpacing": 0.5
+                        },
+                        "color": {
+                          "$if": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["selection", "range"] } },
+                                  { "$eq": ["selectedDay", "31"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["selection", "range"] },
+                                  {
+                                    "$or": [
+                                      { "$eq": ["rangeStartDay", "31"] },
+                                      { "$eq": ["rangeEndDay", "31"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          "then": "#FFFFFF",
+                          "else": "#1D1B20"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "vazio",
+                    "width": 40,
+                    "height": 40,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "margem",
+        "width": "fill",
+        "height": 12,
+        "fill": "rgba(0, 0, 0, 0)"
+      }
+    ]
+  }
+}
